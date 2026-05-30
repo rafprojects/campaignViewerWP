@@ -10,8 +10,15 @@
  * was setting `display: 'block'` which turned the library's horizontal
  * flex-row into a vertical stack. The fix is simple — never override the
  * button's display property; let react-photo-album control it.
+ *
+ * P35-F: Listing-mode branch.
+ * When `items` and `renderItem` are present the adapter renders arbitrary
+ * items (e.g. campaign cards) using flex-stretch rows so cards expand to
+ * fill each row — preserving the "justified" aesthetic for uniform items.
+ * Lightbox and photo-album are not mounted in listing mode.
  */
 import { useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { RowsPhotoAlbum } from 'react-photo-album';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { Box, Stack, Title, Group } from '@mantine/core';
@@ -22,12 +29,14 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
+import type { ListingItem } from '../GalleryAdapter';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { resolveListingColumns } from '@/utils/gridLayout';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
@@ -47,20 +56,82 @@ interface JustifiedGalleryProps {
   settings: GalleryBehaviorSettings;
   runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
+  // P35-F: listing-mode fields (from GalleryAdapterProps)
+  items?: ListingItem[];
+  renderItem?: (item: ListingItem, index: number) => ReactNode;
+  listingMode?: { surface: 'campaign-listing' };
 }
 
-export function JustifiedGallery({ media, settings, runtime }: JustifiedGalleryProps) {
+export function JustifiedGallery({ media, settings, runtime, containerDimensions, items, renderItem }: JustifiedGalleryProps) {
+  // P35-F: listing-mode detection
+  const isListingMode = !!(items && renderItem);
+
+  // ── All hooks must be called unconditionally (Rules of Hooks) ─────────────
+
+  // P12 / justified media-mode hooks
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const enriched = useMediaDimensions(media);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
   const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
+  // useCallback hooks — must precede any early return.
   const openAt = useCallback(
     (i: number) => { setCurrentIndex(i); setLightboxOpen(true); },
     [setCurrentIndex],
   );
   const close = useCallback(() => setLightboxOpen(false), []);
+
+  // ── P35-F: Listing-mode render (hooks already called above) ───────────────
+  // Flex-stretch rows: items expand to fill each row, creating the
+  // "justified" appearance for campaign cards.
+  if (isListingMode) {
+    const containerWidth = containerDimensions?.width ?? 0;
+
+    // Column count — shared helper covers gridCardMaxColumns → cardGridColumns → auto chain.
+    const effectiveColumns = resolveListingColumns(settings, containerWidth);
+
+    const gapH = settings.cardGapH ?? 16;
+    const gapHUnit = settings.cardGapHUnit ?? 'px';
+    const gapV = settings.cardGapV ?? 16;
+    const gapVUnit = settings.cardGapVUnit ?? 'px';
+    // flex-basis sets the minimum width for each item per the column count.
+    // flex-grow:1 (no maxWidth cap) lets items stretch to fill any leftover
+    // space in each row — the defining "justified" behaviour.
+    // The last partial row also stretches; this is intentional for the
+    // justified aesthetic (vs. compact-grid which left-aligns partial rows).
+    const flexBasis = effectiveColumns <= 1
+      ? '100%'
+      : `calc((100% - ${toCss((effectiveColumns - 1) * gapH, gapHUnit)}) / ${effectiveColumns})`;
+
+    return (
+      <Box
+        {...getWpsgDebugProps('JustifiedGallery', 'listing-grid')}
+        data-testid="justified-listing-grid"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: `${toCss(gapV, gapVUnit)} ${toCss(gapH, gapHUnit)}`,
+          width: '100%',
+        }}
+      >
+        {items!.map((item, idx) => (
+          <Box
+            key={item.id}
+            data-testid="justified-listing-item"
+            style={{
+              flex: `1 0 ${flexBasis}`,
+              minWidth: 0,
+            }}
+          >
+            {renderItem!(item, idx)}
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  // ── Justified media-mode render (original path) ───────────────────────────
 
   const gap = settings.thumbnailGap ?? 6;
   const itemSc = settings.itemScale ?? 1;

@@ -67,14 +67,17 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
       'per-breakpoint-gallery': 'Classic',
       'campaign-override': 'Classic Carousel',
     },
-    capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
+    // P35-A: listing-compatible; carousel owns its own slide/pagination state.
+    capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe', 'listing-compatible'],
     settingGroups: ['media-frame', 'carousel'],
     component: MediaCarouselAdapter,
+    paginationOwnership: 'adapter',
   },
   {
     id: 'compact-grid',
     label: 'Compact Grid',
-    capabilities: ['grid-layout', 'lightbox'],
+    // P35-A: listing-compatible; host drives pagination.
+    capabilities: ['grid-layout', 'lightbox', 'listing-compatible'],
     settingGroups: ['media-frame', 'compact-grid'],
     component: CompactGridGallery as ComponentType<GalleryAdapterProps>,
   },
@@ -87,14 +90,16 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
       'per-type-gallery': 'Justified Rows (Flickr-style)',
       'campaign-override': 'Justified',
     },
-    capabilities: ['grid-layout', 'lightbox'],
+    // P35-A: listing-compatible; host drives pagination.
+    capabilities: ['grid-layout', 'lightbox', 'listing-compatible'],
     settingGroups: ['media-frame', 'photo-grid', 'tile-appearance', 'justified'],
     component: JustifiedGallery as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'masonry',
     label: 'Masonry',
-    capabilities: ['grid-layout', 'lightbox'],
+    // P35-A: listing-compatible; host drives pagination.
+    capabilities: ['grid-layout', 'lightbox', 'listing-compatible'],
     settingGroups: ['media-frame', 'photo-grid', 'tile-appearance', 'masonry'],
     component: MasonryGallery as ComponentType<GalleryAdapterProps>,
   },
@@ -1033,6 +1038,30 @@ export function getAdapterSelectOptions(options: {
       disabled,
     };
   });
+}
+
+/**
+ * P35-A: Return select options for adapters that can render a campaign listing.
+ * Filtered to adapters tagged with `'listing-compatible'` capability, optionally
+ * further filtered by breakpoint support.
+ */
+export function getListingAdapterSelectOptions(breakpoint?: Breakpoint): AdapterSelectOption[] {
+  return getRegisteredAdapters()
+    .filter((adapter) => adapter.capabilities.includes('listing-compatible'))
+    .filter((adapter) => breakpoint === undefined || isAdapterSupportedAtBreakpoint(adapter.id, breakpoint))
+    .map((adapter) => ({
+      value: adapter.id,
+      label: adapter.optionLabels?.['campaign-listing'] ?? adapter.label,
+    }));
+}
+
+/**
+ * P35-A: Returns true when the adapter with the given id owns its own pagination
+ * state in listing mode (e.g. the classic carousel).  The host (CardGallery) hides
+ * its display-mode controls when this returns true.
+ */
+export function adapterOwnsPagination(id: string): boolean {
+  return getAdapterRegistration(normalizeAdapterId(id))?.paginationOwnership === 'adapter';
 }
 
 /**

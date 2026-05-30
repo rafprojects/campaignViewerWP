@@ -8,8 +8,14 @@
  * and also open in the lightbox (the lightbox handles both types).
  *
  * Registered as adapter id="compact-grid".
+ *
+ * P35-D: Listing-mode branch.
+ * When `items` and `renderItem` are present the adapter renders arbitrary
+ * items (e.g. campaign cards) using the card-grid geometry from `settings`.
+ * The layout is byte-identical to the legacy CardGallery inline flex grid
+ * under default settings.  Lightbox is not mounted in listing mode.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
@@ -19,8 +25,10 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
+import type { ListingItem } from '../GalleryAdapter';
+import type { ReactNode } from 'react';
 import { toCss, toCssOrNumber } from '@/utils/cssUnits';
-import { gridRowMaxWidthCss } from '@/utils/gridLayout';
+import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -36,19 +44,32 @@ function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWi
   return `${Math.max(1, cardWidth)} / ${legacyCardHeight}`;
 }
 
+/** Below this resolved pixel width, fixed-width cards fall back to the responsive branch. */
+const MIN_FIXED_CARD_WIDTH_PX = 120;
+
 interface CompactGridGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
   runtime?: ResolvedGallerySectionRuntime;
   containerDimensions?: ContainerDimensions;
+  // P35-D: listing-mode fields (from GalleryAdapterProps)
+  items?: ListingItem[];
+  renderItem?: (item: ListingItem, index: number) => ReactNode;
+  listingMode?: { surface: 'campaign-listing' };
 }
 
-export function CompactGridGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: CompactGridGalleryProps) {
+export function CompactGridGallery({ media, settings, runtime, containerDimensions, items, renderItem }: CompactGridGalleryProps) {
+  const isListingMode = !!(items && renderItem);
+
+  // ── All hooks must be called unconditionally (Rules of Hooks) ─────────────
+
+  // P12-C: media-mode hooks (used when isListingMode === false)
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
   const heading = resolveGalleryHeading(common, media, runtime?.scope);
 
+  // useCallback hooks — must precede any early return (Rules of Hooks).
   const openAt = useCallback(
     (index: number) => {
       setCurrentIndex(index);
@@ -56,8 +77,108 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
     },
     [setCurrentIndex],
   );
-
   const closeLightbox = useCallback(() => setLightboxOpen(false), []);
+
+  // P35-D: listing-mode layout computation
+  const listingLayout = useMemo(() => {
+    if (!isListingMode) return null;
+    const containerWidth = containerDimensions?.width ?? 0;
+
+    // Column count — shared helper covers gridCardMaxColumns → cardGridColumns → auto chain.
+    const effectiveColumns = resolveListingColumns(settings, containerWidth);
+
+    // Gap — mirrors CardGallery.effectiveGapH / cardGapV.
+    const cardGapHUnit = settings.cardGapHUnit ?? 'px';
+    const cardGapVUnit = settings.cardGapVUnit ?? 'px';
+    const effectiveGapH = formatGapCss(settings.cardGapH ?? 16, cardGapHUnit, containerWidth, 4);
+    const cardGapV = settings.cardGapV ?? 16;
+
+    // Fixed vs. responsive card width — mirrors CardGallery.fixedCardWidth.
+    const hasFixedCardWidth = (settings.cardMaxWidth ?? 0) > 0;
+    const fixedCardWidth = hasFixedCardWidth
+      ? resolveFixedCardWidth(
+          settings.cardMaxWidth ?? 0,
+          settings.cardMaxWidthUnit ?? 'px',
+          settings.cardScale ?? 1,
+          containerWidth,
+          MIN_FIXED_CARD_WIDTH_PX,
+        )
+      : null;
+
+    const responsiveCardWidth = effectiveColumns <= 1
+      ? '100%'
+      : `calc((100% - ${toCss((effectiveColumns - 1) * (settings.cardGapH ?? 16), cardGapHUnit)}) / ${effectiveColumns})`;
+
+    // Container-level styles — byte-identical to the old CardGallery `card-gallery-grid` Box.
+    const cardGridJustification = settings.cardJustifyContent || 'center';
+    const cardGridVerticalAlign = settings.cardGalleryVerticalAlign || 'start';
+    const cardGridMinHeight = settings.cardGalleryMinHeight ?? 0;
+    const cardGridMaxHeight = settings.cardGalleryMaxHeight ?? 0;
+    const cardGridOffsetX = settings.cardGalleryOffsetX ?? 0;
+    const cardGridOffsetY = settings.cardGalleryOffsetY ?? 0;
+    const cardGalleryOffsetXUnit = settings.cardGalleryOffsetXUnit ?? 'px';
+    const cardGalleryOffsetYUnit = settings.cardGalleryOffsetYUnit ?? 'px';
+    const cardGalleryMinHeightUnit = settings.cardGalleryMinHeightUnit ?? 'px';
+    const cardGalleryMaxHeightUnit = settings.cardGalleryMaxHeightUnit ?? 'px';
+
+    const containerStyle: React.CSSProperties = {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: `${toCss(cardGapV, cardGapVUnit)} ${effectiveGapH}`,
+      justifyContent: cardGridJustification,
+      alignContent: cardGridVerticalAlign,
+      width: '100%',
+      ...(cardGridMinHeight > 0 ? { minHeight: toCssOrNumber(cardGridMinHeight, cardGalleryMinHeightUnit) } : {}),
+      ...(cardGridMaxHeight > 0 ? { maxHeight: toCssOrNumber(cardGridMaxHeight, cardGalleryMaxHeightUnit), overflow: 'auto' as const } : {}),
+      ...(cardGridOffsetX !== 0 || cardGridOffsetY !== 0
+        ? { transform: `translate(${toCss(cardGridOffsetX, cardGalleryOffsetXUnit)}, ${toCss(cardGridOffsetY, cardGalleryOffsetYUnit)})` }
+        : {}),
+      ...(fixedCardWidth ? {
+        maxWidth: gridRowMaxWidthCss(fixedCardWidth.value, fixedCardWidth.unit, effectiveColumns, effectiveGapH),
+        marginInline: 'auto',
+      } : {}),
+    };
+
+    return { fixedCardWidth, responsiveCardWidth, containerStyle };
+  }, [isListingMode, containerDimensions, settings]);
+
+  // ── P35-D: Listing-mode render (hooks already called above) ──────────────
+  if (isListingMode && listingLayout) {
+    return (
+      <Box
+        {...getWpsgDebugProps('CompactGridGallery', 'grid')}
+        data-testid="card-gallery-grid"
+        style={listingLayout.containerStyle}
+      >
+        {items!.map((item, idx) => {
+          if (listingLayout.fixedCardWidth) {
+            // Fixed-width mode: CampaignCard already carries its own maxWidth prop.
+            return (
+              <Box key={item.id} data-testid="card-fixed-wrapper">
+                {renderItem!(item, idx)}
+              </Box>
+            );
+          }
+          // Responsive mode: the wrapper drives flex-basis so cards fill the row.
+          return (
+            <Box
+              key={item.id}
+              data-testid="card-responsive-wrapper"
+              style={{
+                flex: `0 0 ${listingLayout.responsiveCardWidth}`,
+                maxWidth: listingLayout.responsiveCardWidth,
+                minWidth: 0,
+              }}
+            >
+              {renderItem!(item, idx)}
+            </Box>
+          );
+        })}
+      </Box>
+    );
+  }
+
+  // ── P12-C: Media-mode render (original path) ──────────────────────────────
 
   const itemSc = settings.itemScale ?? 1;
   const cardWidth = Math.round((settings.gridCardWidth ?? 160) * itemSc);

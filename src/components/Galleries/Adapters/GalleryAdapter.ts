@@ -5,8 +5,16 @@
  * Each adapter registers with an id and provides a React component
  * that accepts a mixed media array — both images and videos — so a
  * single adapter can display all campaign media in one layout.
+ *
+ * P35-A: Widened contract for listing-mode rendering.
+ * Optional `items` + `renderItem` allow a host (CardGallery) to delegate
+ * arbitrary-item layout to an adapter without the adapter owning item data.
+ * The `listingMode` discriminant lets adapters opt into surface-aware
+ * affordances. `AdapterCapability` gains `'listing-compatible'` and
+ * `AdapterRegistration` gains `paginationOwnership` to model carousel-owned
+ * pagination cleanly.
  */
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type {
   MediaItem,
   GalleryBehaviorSettings,
@@ -37,7 +45,9 @@ export type AdapterCapability =
   | 'carousel-layout'
   | 'keyboard-nav'
   | 'touch-swipe'
-  | 'layout-builder';
+  | 'layout-builder'
+  /** P35-A: adapter can render arbitrary items via the host-supplied renderItem renderer. */
+  | 'listing-compatible';
 
 export type AdapterSettingGroup =
   | 'media-frame'
@@ -149,9 +159,20 @@ export type AdapterOptionContext =
   | 'unified-gallery'
   | 'per-type-gallery'
   | 'per-breakpoint-gallery'
-  | 'campaign-override';
+  | 'campaign-override'
+  /** P35-A: listing adapter selector shown in the Campaign Listing settings accordion. */
+  | 'campaign-listing';
 
 export type AdapterMediaScope = 'image' | 'video';
+
+/**
+ * P35-A: Minimum contract for items supplied by a listing-mode host.
+ * Adapters receive ListingItem[] and call renderItem(item, idx); they do not
+ * access item properties directly.
+ */
+export interface ListingItem {
+  id: string;
+}
 
 /** Unified, type-agnostic props every gallery adapter component must accept. */
 export interface GalleryAdapterProps {
@@ -162,6 +183,22 @@ export interface GalleryAdapterProps {
   runtime?: ResolvedGallerySectionRuntime;
   /** Measured container dimensions from GallerySectionWrapper. Optional during migration. */
   containerDimensions?: ContainerDimensions;
+  /**
+   * P35-A: Arbitrary items supplied by a listing-mode host (e.g. campaigns in CardGallery).
+   * When present, adapters render via `renderItem` instead of their media-tile path.
+   */
+  items?: ListingItem[];
+  /**
+   * P35-A: Host-supplied renderer called once per item in listing mode.
+   * The adapter is responsible for container/layout; the host is responsible for
+   * what each item looks like.
+   */
+  renderItem?: (item: ListingItem, index: number) => ReactNode;
+  /**
+   * P35-A: Discriminant that lets adapters render surface-aware affordances.
+   * Absent outside listing mode.
+   */
+  listingMode?: { surface: 'campaign-listing' };
 }
 
 /** Registered metadata for a gallery adapter. */
@@ -174,4 +211,11 @@ export interface AdapterRegistration {
   settingGroups: AdapterSettingGroup[];
   supportsMobile?: boolean;
   component: ComponentType<GalleryAdapterProps>;
+  /**
+   * P35-A: Who owns pagination when this adapter is active in listing mode.
+   * `'host'` (default) — CardGallery drives load-more / paginated / show-all.
+   * `'adapter'` — the adapter manages its own slide state (e.g. classic carousel);
+   * the host hides its pagination UI entirely.
+   */
+  paginationOwnership?: 'host' | 'adapter';
 }

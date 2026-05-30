@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
   getActiveSettingGroupDefinitions,
   anyAdapterUsesSettingGroup,
+  getAdapterRegistration,
   getAdapterSelectOptions,
+  getListingAdapterSelectOptions,
+  adapterOwnsPagination,
   getSettingGroupFieldDefinitions,
   normalizeAdapterId,
   resolveAdapter,
@@ -192,5 +195,63 @@ describe('adapterRegistry', () => {
     const mobileOptions = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' });
     const snap = mobileOptions.find((o) => o.value === 'scroll-snap');
     expect(snap?.disabled).toBeFalsy();
+  });
+
+  // P35-A: listing-compatible capability and pagination ownership
+  describe('P35-A listing-compatible capability', () => {
+    const LISTING_ADAPTER_IDS = ['compact-grid', 'masonry', 'justified', 'classic'] as const;
+    const NON_LISTING_ADAPTER_IDS = ['hexagonal', 'circular', 'diamond', 'layout-builder', 'spotlight', 'scroll-snap'] as const;
+
+    it('tags exactly the four Phase-1 adapters with listing-compatible', () => {
+      for (const id of LISTING_ADAPTER_IDS) {
+        expect(
+          getAdapterRegistration(id)?.capabilities,
+          `${id} should have listing-compatible`,
+        ).toContain('listing-compatible');
+      }
+      for (const id of NON_LISTING_ADAPTER_IDS) {
+        expect(
+          getAdapterRegistration(id)?.capabilities,
+          `${id} should NOT have listing-compatible`,
+        ).not.toContain('listing-compatible');
+      }
+    });
+
+    it('classic adapter has paginationOwnership adapter; others default to host', () => {
+      expect(getAdapterRegistration('classic')?.paginationOwnership).toBe('adapter');
+      for (const id of (['compact-grid', 'masonry', 'justified'] as const)) {
+        const ownership = getAdapterRegistration(id)?.paginationOwnership;
+        expect(ownership === undefined || ownership === 'host', `${id} paginationOwnership should be host or undefined`).toBe(true);
+      }
+    });
+
+    it('adapterOwnsPagination returns true only for classic', () => {
+      expect(adapterOwnsPagination('classic')).toBe(true);
+      expect(adapterOwnsPagination('carousel')).toBe(true); // alias
+      expect(adapterOwnsPagination('compact-grid')).toBe(false);
+      expect(adapterOwnsPagination('masonry')).toBe(false);
+      expect(adapterOwnsPagination('justified')).toBe(false);
+      expect(adapterOwnsPagination('unknown-id')).toBe(false);
+    });
+
+    it('getListingAdapterSelectOptions returns exactly the four Phase-1 adapters', () => {
+      const options = getListingAdapterSelectOptions();
+      const ids = options.map((o) => o.value).sort();
+      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'masonry'].sort());
+    });
+
+    it('getListingAdapterSelectOptions with mobile breakpoint includes all four (none are mobile-restricted)', () => {
+      const options = getListingAdapterSelectOptions('mobile');
+      const ids = options.map((o) => o.value).sort();
+      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'masonry'].sort());
+    });
+
+    it('getListingAdapterSelectOptions uses adapter label as display text', () => {
+      const options = getListingAdapterSelectOptions();
+      expect(options.find((o) => o.value === 'compact-grid')?.label).toBe('Compact Grid');
+      expect(options.find((o) => o.value === 'masonry')?.label).toBe('Masonry');
+      expect(options.find((o) => o.value === 'justified')?.label).toBe('Justified');
+      expect(options.find((o) => o.value === 'classic')?.label).toBe('Classic');
+    });
   });
 });

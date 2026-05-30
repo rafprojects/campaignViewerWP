@@ -12,6 +12,8 @@ import {
   clearCardBreakpointOverride,
   clearCardDimensionOverride,
 } from '@/utils/cardConfig';
+// P35-B: Listing adapter selector
+import { getListingAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -608,6 +610,51 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               onChange={(event) => writeField('cardAutoColumnsBreakpoints', event.currentTarget.value)}
             />
             <ResetLink fieldKey="cardAutoColumnsBreakpoints" />
+          </Stack>
+        </Accordion.Panel>
+      </Accordion.Item>
+
+      {/* P35-B: Campaign Listing layout selector */}
+      <Accordion.Item value="campaign-listing">
+        <Accordion.Control>Campaign Listing</Accordion.Control>
+        <Accordion.Panel>
+          <Stack gap="md">
+            <Text size="xs" c="dimmed">
+              Choose the layout adapter used to render the public campaign listing.
+              Adapter-specific knobs (gap, columns, target row height) are shared with
+              per-campaign galleries in Phase 1.
+            </Text>
+            <ModalSelect
+              label="Listing Layout (Desktop)"
+              description="Layout adapter for the campaign listing on desktop."
+              data={getListingAdapterSelectOptions('desktop')}
+              value={settings.campaignListingAdapterId ?? 'compact-grid'}
+              onChange={(value) => updateSetting('campaignListingAdapterId', value ?? 'compact-grid')}
+            />
+            <ModalSelect
+              label="Listing Layout (Tablet)"
+              description="Optional override for tablet. Leave unset to inherit the desktop selection."
+              data={[
+                { value: '', label: 'Inherit from desktop' },
+                ...getListingAdapterSelectOptions('tablet'),
+              ]}
+              value={settings.campaignListingAdapterIdTablet ?? ''}
+              onChange={(value) =>
+                updateSetting('campaignListingAdapterIdTablet', value ?? '')
+              }
+            />
+            <ModalSelect
+              label="Listing Layout (Mobile)"
+              description="Optional override for mobile. Leave unset to inherit the desktop selection."
+              data={[
+                { value: '', label: 'Inherit from desktop' },
+                ...getListingAdapterSelectOptions('mobile'),
+              ]}
+              value={settings.campaignListingAdapterIdMobile ?? ''}
+              onChange={(value) =>
+                updateSetting('campaignListingAdapterIdMobile', value ?? '')
+              }
+            />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

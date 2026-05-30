@@ -1,0 +1,60 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`CompactGridGallery listing mode (P35-D) > snapshot: responsive-grid structure at default settings with 4 items 1`] = `
+<div
+  class=""
+  data-testid="card-gallery-grid"
+  data-wpsg-component="CompactGridGallery"
+  data-wpsg-slot="grid"
+  style="display: flex; flex-wrap: wrap; gap: 16px 16px; justify-content: center; align-content: start; width: 100%;"
+>
+  <div
+    class=""
+    data-testid="card-responsive-wrapper"
+    style="flex: 0 0 100%; max-width: 100%; min-width: 0;"
+  >
+    <div
+      data-item-id="item-1"
+      data-testid="rendered-item"
+    >
+      item-1
+    </div>
+  </div>
+  <div
+    class=""
+    data-testid="card-responsive-wrapper"
+    style="flex: 0 0 100%; max-width: 100%; min-width: 0;"
+  >
+    <div
+      data-item-id="item-2"
+      data-testid="rendered-item"
+    >
+      item-2
+    </div>
+  </div>
+  <div
+    class=""
+    data-testid="card-responsive-wrapper"
+    style="flex: 0 0 100%; max-width: 100%; min-width: 0;"
+  >
+    <div
+      data-item-id="item-3"
+      data-testid="rendered-item"
+    >
+      item-3
+    </div>
+  </div>
+  <div
+    class=""
+    data-testid="card-responsive-wrapper"
+    style="flex: 0 0 100%; max-width: 100%; min-width: 0;"
+  >
+    <div
+      data-item-id="item-4"
+      data-testid="rendered-item"
+    >
+      item-4
+    </div>
+  </div>
+</div>
+`;

@@ -1080,6 +1080,13 @@ export interface GalleryBehaviorSettings {
   settingsDrawerBlurEnabled: boolean;
   // P25-X Phase 5: Card breakpoint overrides
   cardConfig: CardConfig;
+  // P35-B: Campaign listing adapter selection
+  /** Adapter used to render the public campaign listing (CardGallery). Default 'compact-grid'. */
+  campaignListingAdapterId: string;
+  /** Per-breakpoint override for the listing adapter on mobile. Omit to inherit desktop value. */
+  campaignListingAdapterIdMobile?: string;
+  /** Per-breakpoint override for the listing adapter on tablet. Omit to inherit desktop value. */
+  campaignListingAdapterIdTablet?: string;
 }
 
 // ── Card breakpoint override model ───────────────────────────────────────────
@@ -1591,4 +1598,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   settingsDrawerBlurEnabled: true,
   // P25-X Phase 5: Card breakpoint overrides
   cardConfig: { breakpoints: {} },
+  // P35-B: Campaign listing adapter — default produces byte-identical DOM to the legacy CardGallery flex grid
+  campaignListingAdapterId: 'compact-grid',
 };

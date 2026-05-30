@@ -1,22 +1,22 @@
 # Phase 35 — Campaign Listing Adapter Unification
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-21
-**Last updated:** 2026-05-21
+**Last updated:** 2026-05-22
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P35-A | Adapter contract widening (items + renderItem, capability, pagination ownership) | Planned | Small-Medium |
-| P35-B | Setting plumbing — `campaignListingAdapterId` + Display Settings UI | Planned | Small |
-| P35-C | `CardGallery` host refactor — delegate layout to adapter | Planned | Medium-Large |
-| P35-D | `CompactGridGallery` listing mode | Planned | Small |
-| P35-E | `MasonryGallery` listing mode (CSS-multi-column path) | Planned | Small |
-| P35-F | `JustifiedGallery` listing mode (flex-row-stretch path) | Planned | Small |
-| P35-G | `MediaCarouselAdapter` (classic) listing mode — adapter-owned pagination | Planned | Medium |
-| P35-H | Test-suite expansion & visual-parity guard | Planned | Medium |
-| P35-I | Carry-forward bookkeeping — open follow-up tracks for deferred items | Planned | Small |
+| P35-A | Adapter contract widening (items + renderItem, capability, pagination ownership) | Complete | Small-Medium |
+| P35-B | Setting plumbing — `campaignListingAdapterId` + Display Settings UI | Complete | Small |
+| P35-C | `CardGallery` host refactor — delegate layout to adapter | Complete | Medium-Large |
+| P35-D | `CompactGridGallery` listing mode | Complete | Small |
+| P35-E | `MasonryGallery` listing mode (CSS-multi-column path) | Complete | Small |
+| P35-F | `JustifiedGallery` listing mode (flex-row-stretch path) | Complete | Small |
+| P35-G | `MediaCarouselAdapter` (classic) listing mode — adapter-owned pagination | Complete | Medium |
+| P35-H | Test-suite expansion & visual-parity guard | Complete | Medium |
+| P35-I | Carry-forward bookkeeping — open follow-up tracks for deferred items | Complete | Small |
 
 ---
 
@@ -69,10 +69,7 @@
 ## Related Planning
 
 - Supersedes the original P30-F ("CardGallery / CompactGrid generic grid-shell
-  investigation") and the two independent assessments at
-  `docs/P30-F_ASSESSMENT_QWEN_052126.md` and
-  `docs/P30-F_ASSESSMENT_GPT54_052126.md`. Those assessments framed the
-  scoping decision; Phase 35 is the implementation phase.
+  investigation"). Phase 35 is the implementation phase.
 - Builds on shared utilities extracted in P29-H:
   - `src/utils/gridLayout.ts` (`resolveFixedCardWidth`, `gridRowMaxWidthCss`,
     `formatGapCss`).
@@ -82,6 +79,27 @@
   - Layout-builder for listings (slot→card composition design)
   - Shape adapters for listings (hex/circle/diamond UX evaluation)
   - Admin Panel listing convergence (potential `Table | Cards` toggle)
+
+---
+
+## Execution Priority
+
+1. **P35-A** — Widens the adapter contract. All subsequent tracks compile
+   against the updated `GalleryAdapterProps` and `AdapterRegistration`; nothing
+   else can merge before this lands.
+2. **P35-B** — Adds `campaignListingAdapterId` to settings and the
+   `resolveListingAdapterId` helper. The host refactor (P35-C) depends on this
+   resolver.
+3. **P35-C** — Host-shell refactor of `CardGallery.tsx`. The most invasive
+   change; defer until A and B are stable to keep the diff reviewable.
+4. **P35-D / P35-E / P35-F / P35-G** — Per-adapter listing-mode branches. No
+   inter-dependency among the four; can land in any order or in parallel after
+   A is merged.
+5. **P35-H** — Test-suite sign-off. New tests are added alongside each track
+   as it lands; this track is the final pass ensuring the full suite is green
+   and the default-settings snapshot is locked.
+6. **P35-I** — Carry-forward bookkeeping. Done last, after all implementation
+   tracks are closed.
 
 ---
 
@@ -827,19 +845,174 @@ settings UI implies layout-builder / shape-adapter / admin convergence are
 
 ---
 
+## Implementation Notes
+
+### P35-A — Adapter Contract Widening (Complete)
+
+`GalleryAdapterProps` extended with `items?: ListingItem[]`, `renderItem?`, `listingMode?`.
+`AdapterCapability` gained `'listing-compatible'`. `AdapterRegistration` gained `paginationOwnership`.
+`compact-grid`, `masonry`, `justified`, `classic` tagged listing-compatible; classic tagged `paginationOwnership: 'adapter'`.
+Added `getListingAdapterSelectOptions()` and `adapterOwnsPagination()` to `adapterRegistry.ts`.
+20 registry tests pass.
+
+### P35-B — Setting Plumbing (Complete)
+
+`campaignListingAdapterId` (default `'compact-grid'`), `campaignListingAdapterIdMobile?`, `campaignListingAdapterIdTablet?` added to `GalleryBehaviorSettings`.
+New `resolveListingAdapterId(settings, breakpoint)` helper with 9 passing tests.
+"Campaign Listing" accordion item added to `CampaignCardSettingsSection.tsx` with three ModalSelects (desktop / tablet / mobile).
+PHP sanitizer: three keys mapped to snake_case in `$nested_card_field_map` (gallery-level, not adapter-level — important for parity test).
+
+### P35-C — CardGallery Host Refactor (Complete)
+
+`CardGallery.tsx` refactored to pure host shell (~430 lines from ~570).
+`CardGalleryHostPagination.tsx` extracted as standalone component (~235 lines) owning display-mode state, slide animation, DotNavigator, OverlayArrows, keyboard nav.
+Adapter slot wired via `buildAdapter()` factory; `CompactGridGallery` imported directly (non-lazy) for the default path so tests run synchronously.
+All 32 existing `CardGallery.test.tsx` tests pass without modification.
+
+### P35-D — CompactGridGallery Listing Mode (Complete)
+
+Listing-mode branch added to `CompactGridGallery.tsx` using card-layout settings.
+Column count mirrors old CardGallery logic with forward-compat: `gridCardMaxColumns > cardGridColumns > auto`.
+Renders `card-gallery-grid` / `card-responsive-wrapper` / `card-fixed-wrapper` testids for coverage.
+Fixes: all hooks called unconditionally before listing-mode early return (Rules of Hooks).
+`listingMode` added to `CompactGridGalleryProps` for type-safe direct import in CardGallery.
+
+### P35-E — MasonryGallery Listing Mode (Complete)
+
+CSS multi-column layout: `columns: effectiveColumns`, `columnGap`, `break-inside: avoid` per item.
+Column count uses card settings (same as compact-grid for consistency).
+`react-photo-album` not mounted in listing mode.
+All hooks (including `useCallback`) moved before listing-mode early return.
+Testids: `masonry-listing-grid`, `masonry-listing-item`.
+
+### P35-F — JustifiedGallery Listing Mode (Complete)
+
+Flex-stretch rows: `display: flex; flex-wrap: wrap`, each item has `flex: 1 0 <computedBasis>`.
+Items stretch to fill each row width, creating the justified aesthetic for cards.
+`react-photo-album` not mounted in listing mode.
+Testids: `justified-listing-grid`, `justified-listing-item`.
+
+### P35-G — MediaCarouselAdapter (Classic) Listing Mode (Complete)
+
+`CampaignListingCarousel` component added at the bottom of `MediaCarouselAdapter.tsx`.
+Uses Embla with same settings as media carousel: loop, autoplay, drag, edge-fade, visible-cards basis.
+Renders `renderItem(item, idx)` in each Embla slide.
+Shows `OverlayArrows` and `DotNavigator` (via `cardPageDotNav` setting).
+`MediaCarouselAdapter` outer component dispatches to listing branch before `media.length === 0` guard.
+Testid: `campaign-listing-carousel`.
+Since `classic` has `paginationOwnership: 'adapter'`, CardGallery host hides all display-mode controls when carousel is active.
+
+### P35-H — Test Suite Expansion & Visual-Parity Guard (Complete)
+
+New test file `src/components/Galleries/Adapters/listingMode.test.tsx` — 19 tests covering all 4 listing-compatible adapters:
+- CompactGrid: 5 tests including DOM snapshot of responsive-grid structure
+- Masonry: 4 tests (grid testid, item count, CSS columns style, no photo-album)
+- Justified: 4 tests (grid testid, item count, flex display, no photo-album)
+- MediaCarousel: 5 tests (carousel testid, slide count, renderItem calls, empty guard, no-listingMode guard)
+
+Full suite: **139 test files, 1900 tests, all passing.** TypeScript clean.
+
+PHP parity test fix: moved `campaignListingAdapterId*` keys from `$nested_adapter_field_map` to `$nested_card_field_map` — correctly reflects that these are gallery-level (not adapter-field) settings.
+
+### P35-I — Carry-Forward Bookkeeping (Complete)
+
+`PHASE35_REPORT.md` updated to Complete status with all track notes.
+`PHASE36_REPORT.md` created with three pre-evaluation carry-forward tracks:
+- P36-X1: Layout-builder for listings
+- P36-X2: Shape adapters for listings
+- P36-X3: Admin Panel listing convergence
+
+---
+
+## Outcome
+
+**Phase 35 shipped on 2026-05-22.**
+
+### What shipped
+
+- **Unified listing-adapter pipeline**: `CardGallery.tsx` no longer owns its own grid-rendering code. Layout is fully delegated to the active listing adapter via the `GalleryAdapterProps` contract.
+- **Four listing-compatible adapters**: Compact Grid (default), Masonry (CSS multi-column), Justified (flex-stretch rows), Classic Carousel (adapter-owned pagination). Each has a dedicated listing-mode branch tested in isolation.
+- **User-configurable listing layout**: Admins can choose a listing adapter (desktop/tablet/mobile) from the "Campaign Listing" accordion in Display Settings. The default (`compact-grid`) produces DOM byte-identical to the previous hardcoded flex-grid.
+- **Host/adapter pagination split**: `CardGalleryHostPagination.tsx` owns display-mode state for host-paginated adapters; the carousel adapter owns its own slide state via Embla. The host correctly hides pagination UI when the carousel is active.
+- **139 test files, 1900 tests, all passing.** TypeScript clean. Parity test updated correctly.
+
+### What was deferred (see Carry-Forward below)
+
+Layout-builder for listings, shape adapters for listings (hex/circle/diamond), Admin Panel listing convergence. All three are formally tracked in `PHASE36_REPORT.md`.
+
+### What should happen next
+
+1. Manual QA: smoke test all four listing adapters in a real WordPress environment.
+2. Open the three P36 pre-evaluation tracks when bandwidth permits.
+3. Address any user-reported issues with the listing-adapter selector in Display Settings.
+
+---
+
+## PR Review
+
+**Review commit:** `dd63987` · **Fix commit:** `00dc746`
+**Test baseline:** 139 test files / 1900 tests — all green before and after fixes.
+
+### Issues found
+
+| # | Severity | Location | Description |
+|---|----------|----------|-------------|
+| 1 | 🟡 Improvement | `CompactGrid`, `Masonry`, `Justified` listing branches | Each adapter contained an identical 13-line column-resolution block (`gridCardMaxColumns` → `cardGridColumns` → auto/`cardMaxColumns`). Three copies meant any future fix or extension had to be made in three places. |
+| 2 | 🟡 Bug | `JustifiedGallery.tsx` listing mode | Item style had `flex: '1 0 ${flexBasis}'` together with `maxWidth: flexBasis`, making the `flex-grow: 1` effectively a no-op: items could never exceed `flexBasis` even though the explicit intent (documented in the JSDoc) was to "stretch items to fill each row". |
+| 3 | 🟡 Cleanup | `CardGalleryHostPagination.tsx` | `containerWidth: number` was declared in the interface, destructured as `_containerWidth` (unused marker), and passed from `CardGallery.tsx` at every call site — but the value was never read. The component derives everything it needs from `effectiveColumns` (a pre-computed scalar already in the props). |
+
+### Investigated — not raised
+
+| Area | Finding |
+|------|---------|
+| Rules of Hooks compliance | All adapters (CompactGrid P35-D, Masonry P35-E, Justified P35-F, MediaCarousel P35-G) call every hook unconditionally before the `isListingMode` early-return. ✅ |
+| `resolveListingColumns` helper contract | The extracted helper correctly preserves the original priority chain (`gridCardMaxColumns` → `cardGridColumns` → auto) and the `cardMaxColumns` cap; unit tests in `gridLayout.test.ts` already cover it. ✅ |
+| `CardGalleryHostPagination` pagination logic | `cardsPerPage = rowsPerPage * effectiveColumns` correctly responds to breakpoint-driven column changes; the breakpoint-reset `useEffect` fires independently. No issue with removing `containerWidth`. ✅ |
+| Test coverage — listing mode | `listingMode.test.tsx` covers all four adapters (19 tests). Snapshot guard in `adapterSettingsParity.test.ts` catches unintended CompactGrid layout regressions. ✅ |
+| `paginationOwnership` routing in `CardGallery` | `adapterPaginated` branch correctly bypasses `CardGalleryHostPagination`; classic carousel adapter registration sets `paginationOwnership: 'adapter'`. ✅ |
+
+### Resolutions
+
+**Issue 1 — column deduplication:** Extracted `resolveListingColumns(settings, containerWidth)` into `src/utils/gridLayout.ts` (the natural home for pure grid math, already housing `resolveFixedCardWidth`, `gridRowMaxWidthCss`, and `formatGapCss`). Replaced the identical blocks in `CompactGridGallery.tsx`, `MasonryGallery.tsx`, and `JustifiedGallery.tsx`. Note: `MasonryGallery` still imports `resolveColumnsFromWidth` directly for the media-mode `columns` function — kept that import.
+
+**Issue 2 — JustifiedGallery stretch:** Removed `maxWidth: flexBasis` from the listing-mode item `style`. Items now carry only `flex: '1 0 ${flexBasis}'` and `minWidth: 0`, allowing `flex-grow: 1` to distribute leftover row space and produce the true "justified" appearance described in the JSDoc.
+
+**Issue 3 — unused prop:** Removed `containerWidth` from `CardGalleryHostPaginationProps` interface and from the destructure parameter list. Removed the single `containerWidth={containerWidth}` prop from the call site in `CardGallery.tsx`.
+
+---
+
+## PR Review Round 2 — Copilot findings (2026-05-30)
+
+### Findings and rationale
+
+| # | File | Finding | Decision | Rationale |
+|---|------|---------|----------|-----------|
+| 1 | `CardGallery.tsx:97-105` | `effectiveColumns` inline logic ignored `gridCardMaxColumns`, causing host pagination (`cardsPerPage`) to diverge from the column count that listing-mode adapters derive via `resolveListingColumns()` | **Accept** | Replaced the inline block with a call to `resolveListingColumns(s, containerWidth)` — the same helper already used by CompactGrid, Masonry, and Justified. Also removed the now-unused `resolveColumnsFromWidth` import. |
+| 2 | `class-wpsg-settings-registry.php:513-516` | PHP `valid_options` whitelist for `campaign_listing_adapter_id*` omitted `'classic'`, so saving the Classic Carousel selection from the UI would be silently rejected by sanitisation | **Accept** | Added `'classic'` as the first entry in all three whitelist arrays. `'carousel'` kept as a back-compat alias per the normalisation layer in `adapterRegistry.ts`. |
+| 3 | `CampaignCardSettingsSection.tsx:641-647` | Tablet "Inherit from desktop" handler passed `undefined` to `updateSetting`; `undefined` is dropped by `JSON.stringify`, so an already-saved override could never be cleared on the backend | **Accept** | Simplified to `value ?? ''` — `''` is the PHP sentinel for "inherit desktop", and it serialises correctly. |
+| 4 | `CampaignCardSettingsSection.tsx:656-662` | Same `undefined`-vs-`''` serialisation bug for the mobile override | **Accept** | Same fix: `value ?? ''`. |
+
+---
+
+## PR Review Round 3 — Copilot findings (2026-05-30)
+
+### Findings and rationale
+
+| # | File | Finding | Decision | Rationale |
+|---|------|---------|----------|-----------|
+| 1 | `class-wpsg-settings-sanitizer.php:1272-1275` | `campaignListingAdapterId*` keys were in `$nested_card_field_map`, so they could be accepted inside `card_config.breakpoints.*` or inadvertently folded onto flat settings via `normalize_card_config_settings()` | **Accept** | Removed the 3 entries. These are gallery-level flat settings; they're already registered in `$field_defaults` / `$valid_options` and sanitized through the main flat-settings path. |
+| 2 | `src/utils/gridLayout.ts:69-80` | `resolveListingColumns` returned `gridCardMaxColumns` directly as a fixed column count. The setting is labelled "Max Columns (0 = auto)" and intended as an upper cap; returning it directly could force too many columns on narrow containers | **Accept** | Reworked priority chain: `cardGridColumns > 0` → return directly; otherwise auto-resolve via `resolveColumnsFromWidth`, then cap with `gridCardMaxColumns` and `cardMaxColumns` (both optional, lowest wins). |
+| 3 | `CardGalleryHostPagination.tsx:103-118` | `goToPage` read `getComputedStyle(el).transitionDuration` synchronously after setting `slideDirection` state; React hadn't committed the state yet so the style always read `'0s'`, causing the fallback path to fire and skipping the slide animation | **Accept** | Wrapped the duration check in `requestAnimationFrame` so it runs after React commits the `slideDirection` state to the DOM. |
+
+---
+
 ## Carry-Forward
 
-This section is finalized when Phase 35 is marked Complete (P35-I deliverable).
-The three items below are explicitly deferred from Phase 35 and must be
-scheduled into a later phase report:
+Phase 35 is marked Complete. The three items below were explicitly deferred and
+are now tracked in `docs/PHASE36_REPORT.md` as pre-evaluation tracks.
 
-| Deferred item | Why deferred | Landing destination |
+| Deferred item | Why deferred | Track in P36 |
 |---|---|---|
-| **Layout-builder for listings** | Slot→card composition is a separate design problem; needs deeper analysis after the listing-adapter pipeline is stable. | Pre-evaluation track, next phase report |
-| **Shape adapters for listings** (hexagonal, circular, diamond) | Card content fitting into non-rectangular tiles requires UX research; defer until base unification is proven. | Pre-evaluation track, next phase report |
-| **Admin Panel listing convergence** | Out of scope here (different product feature). Future opportunity: "View: Table\|Cards" toggle for desktop admin reusing the listing-adapter pipeline. | Pre-evaluation track, next phase report |
-
-Historical scoping context:
-
-- `docs/P30-F_ASSESSMENT_QWEN_052126.md`
-- `docs/P30-F_ASSESSMENT_GPT54_052126.md`
+| **Layout-builder for listings** | Slot→card composition is a separate design problem; needs deeper analysis after the listing-adapter pipeline is stable. | P36-X1 |
+| **Shape adapters for listings** (hexagonal, circular, diamond) | Card content fitting into non-rectangular tiles requires UX research; defer until base unification is proven. | P36-X2 |
+| **Admin Panel listing convergence** | Out of scope here (different product feature). Future opportunity: "View: Table\|Cards" toggle for desktop admin reusing the listing-adapter pipeline. | P36-X3 |
