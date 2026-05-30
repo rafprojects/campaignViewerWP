@@ -108,13 +108,17 @@ export function CardGalleryHostPagination({
       setIsAnimating(false);
     };
     el.addEventListener('transitionend', onEnd);
-    const dur = window.getComputedStyle(el).transitionDuration;
-    if (!dur || dur === '0s' || dur === '') {
-      el.removeEventListener('transitionend', onEnd);
-      setCurrentPage(page);
-      setSlideDirection(null);
-      setIsAnimating(false);
-    }
+    // Defer the duration check until after React has committed the new slideDirection
+    // state to the DOM; reading getComputedStyle before that always returns '0s'.
+    requestAnimationFrame(() => {
+      const dur = window.getComputedStyle(el).transitionDuration;
+      if (!dur || dur === '0s' || dur === '') {
+        el.removeEventListener('transitionend', onEnd);
+        setCurrentPage(page);
+        setSlideDirection(null);
+        setIsAnimating(false);
+      }
+    });
   }, [currentPage, isAnimating, totalPages]);
 
   const goPrev = useCallback(() => goToPage(currentPage - 1), [currentPage, goToPage]);

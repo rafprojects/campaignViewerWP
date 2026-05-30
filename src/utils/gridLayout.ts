@@ -56,27 +56,30 @@ export function gridRowMaxWidthCss(
  * P35: Resolve the effective column count for listing-mode adapters
  * (CompactGrid, Masonry, Justified) from card settings + container width.
  *
- * Priority chain (highest → lowest):
- *   1. `gridCardMaxColumns` — explicit listing-adapter cap (P35).
- *   2. `cardGridColumns`    — legacy card-gallery column knob (forward-compat).
- *   3. Auto from `resolveColumnsFromWidth` + optional `cardMaxColumns` cap.
- *   4. 1 column when containerWidth is unknown (SSR / test with no dimensions).
+ * Priority chain:
+ *   1. `cardGridColumns > 0` — explicit fixed count, returned as-is.
+ *   2. Auto from `resolveColumnsFromWidth` (falls back to 1 when containerWidth is unknown).
+ *   3. Capped by `gridCardMaxColumns` (P35 listing-adapter cap, "Max Columns").
+ *   4. Capped by `cardMaxColumns` (legacy cap).
  */
 export function resolveListingColumns(
   settings: GalleryBehaviorSettings,
   containerWidth: number,
 ): number {
-  const gridMax = settings.gridCardMaxColumns ?? 0;
   const cardCols = settings.cardGridColumns ?? 0;
-  const explicitCols = gridMax > 0 ? gridMax : cardCols;
+  if (cardCols > 0) return cardCols;
 
-  if (explicitCols > 0) return explicitCols;
-
-  const maxCols = settings.cardMaxColumns ?? 0;
   const auto = containerWidth > 0
     ? resolveColumnsFromWidth(containerWidth, 0, settings.cardAutoColumnsBreakpoints)
     : 1;
-  return maxCols > 0 ? Math.min(auto, maxCols) : auto;
+
+  const gridMax = settings.gridCardMaxColumns ?? 0;
+  const legacyMax = settings.cardMaxColumns ?? 0;
+
+  let cols = auto;
+  if (gridMax > 0) cols = Math.min(cols, gridMax);
+  if (legacyMax > 0) cols = Math.min(cols, legacyMax);
+  return cols;
 }
 
 /**
