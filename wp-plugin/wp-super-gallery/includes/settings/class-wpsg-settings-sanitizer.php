@@ -508,6 +508,12 @@ class WPSG_Settings_Sanitizer {
         if (isset($input['app_padding'])) {
             $sanitized['app_padding'] = max(0, min(100, intval($input['app_padding'])));
         }
+        if (isset($input['settings_panel_width'])) {
+            $sanitized['settings_panel_width'] = max(0, min(3000, intval($input['settings_panel_width'])));
+        }
+        if (isset($input['admin_panel_max_width'])) {
+            $sanitized['admin_panel_max_width'] = max(0, min(3000, intval($input['admin_panel_max_width'])));
+        }
         if (isset($input['wp_full_bleed_desktop'])) {
             $sanitized['wp_full_bleed_desktop'] = (bool) $input['wp_full_bleed_desktop'];
         }

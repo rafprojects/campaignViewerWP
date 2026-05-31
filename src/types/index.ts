@@ -817,6 +817,12 @@ export interface GalleryBehaviorSettings {
   // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
   appPadding: number;
   appPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  // P36-D: Settings Panel (right-side drawer) width on non-small screens.
+  settingsPanelWidth: number;
+  settingsPanelWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  // P36-D: Admin Panel (main container) max-width. 0 = no constraint (full width).
+  adminPanelMaxWidth: number;
+  adminPanelMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   /**
    * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
    *
@@ -1313,6 +1319,12 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P13-E: Container horizontal padding (px)
   appPadding: 16,
   appPaddingUnit: 'px',
+  // P36-D: Settings Panel width
+  settingsPanelWidth: 600,
+  settingsPanelWidthUnit: 'px',
+  // P36-D: Admin Panel max-width (0 = no constraint)
+  adminPanelMaxWidth: 0,
+  adminPanelMaxWidthUnit: 'px',
   // P13-E: WP Full Bleed (per breakpoint)
   wpFullBleedDesktop: false,
   wpFullBleedTablet: false,

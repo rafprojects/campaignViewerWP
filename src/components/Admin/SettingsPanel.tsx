@@ -68,6 +68,7 @@ import {
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
+import { toCss } from '@/utils/cssUnits';
 
 /**
  * P36-A: Settings draft persistence.
@@ -647,7 +648,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       onClose={() => { revertThemePreview(); onClose(); }}
       title={<SettingsPanelTitle />}
       position="right"
-      size={isSmallScreen ? '100%' : 'lg'}
+      size={isSmallScreen ? '100%' : toCss(settings.settingsPanelWidth ?? 600, settings.settingsPanelWidthUnit ?? 'px')}
       zIndex={450}
       withinPortal={false}
       closeOnClickOutside={!hasChanges}

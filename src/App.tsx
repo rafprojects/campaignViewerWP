@@ -34,6 +34,7 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
+import { toCss } from '@/utils/cssUnits';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -262,6 +263,10 @@ function AppContent({
   const appContainerSize = resolvedSettings.appMaxWidth > 0 ? resolvedSettings.appMaxWidth : undefined;
   const appContainerFluid = resolvedSettings.appMaxWidth === 0;
   const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
+  const adminPanelContainerSize =
+    (resolvedSettings.adminPanelMaxWidth ?? 0) > 0
+      ? toCss(resolvedSettings.adminPanelMaxWidth, resolvedSettings.adminPanelMaxWidthUnit ?? 'px')
+      : undefined;
 
   // [P20-K] Auto-logout after configurable period of inactivity.
   useIdleTimeout({
@@ -334,7 +339,7 @@ function AppContent({
           </ErrorBoundary>
         )}
         {isAdminPanelOpen ? (
-          <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} py="xl" style={appContainerPaddingStyle}>
+          <Container {...(adminPanelContainerSize !== undefined ? { size: adminPanelContainerSize } : appContainerSize !== undefined ? { size: appContainerSize } : {})} py="xl" style={appContainerPaddingStyle}>
             <ErrorBoundary onReset={closeAdminPanel}>
               <Suspense fallback={<Center py={120}><Loader /></Center>}>
                 <AdminPanel
