@@ -40,15 +40,15 @@ export function CompanyCombobox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, companies]);
 
-  const filtered = useMemo(
-    () => companies.filter((c) => c.name.toLowerCase().includes(inputValue.toLowerCase())),
-    [companies, inputValue],
-  );
+  const filtered = useMemo(() => {
+    const q = inputValue.toLowerCase();
+    return companies.filter((c) => c.name.toLowerCase().includes(q) || c.slug.toLowerCase().includes(q));
+  }, [companies, inputValue]);
 
-  const exactMatch = useMemo(
-    () => companies.some((c) => c.name.toLowerCase() === inputValue.toLowerCase()),
-    [companies, inputValue],
-  );
+  const exactMatch = useMemo(() => {
+    const q = inputValue.toLowerCase();
+    return companies.some((c) => c.name.toLowerCase() === q || c.slug.toLowerCase() === q);
+  }, [companies, inputValue]);
 
   const handleOptionSubmit = (optionValue: string) => {
     onChange(optionValue);
