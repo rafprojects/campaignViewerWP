@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Combobox, Loader, TextInput, useCombobox } from '@mantine/core';
 import type { MantineSize } from '@mantine/core';
 import type { CompanyInfo } from '@/services/adminQuery';
@@ -33,10 +33,14 @@ export function CompanyCombobox({
   };
 
   const [inputValue, setInputValue] = useState(() => resolveDisplay(value));
+  // Track whether the current value was committed via option selection so
+  // blur doesn't fire a duplicate onChange.
+  const committedRef = useRef(true);
 
   // Keep display in sync when companies load after mount or value changes externally.
   useEffect(() => {
     setInputValue(resolveDisplay(value));
+    committedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, companies]);
 
@@ -51,10 +55,24 @@ export function CompanyCombobox({
   }, [companies, inputValue]);
 
   const handleOptionSubmit = (optionValue: string) => {
-    onChange(optionValue);
     const match = companies.find((c) => c.slug === optionValue);
     setInputValue(match ? match.name : optionValue);
+    committedRef.current = true;
+    onChange(optionValue);
     combobox.closeDropdown();
+  };
+
+  const handleBlur = () => {
+    combobox.closeDropdown();
+    if (!committedRef.current) {
+      committedRef.current = true;
+      const trimmed = inputValue.trim();
+      // Resolve to slug if the text matches an existing company name or slug.
+      const match = companies.find(
+        (c) => c.name.toLowerCase() === trimmed.toLowerCase() || c.slug.toLowerCase() === trimmed.toLowerCase(),
+      );
+      onChange(match ? match.slug : trimmed);
+    }
   };
 
   return (
@@ -65,19 +83,16 @@ export function CompanyCombobox({
           required={required ?? false}
           {...(size !== undefined && { size })}
           value={inputValue}
-          placeholder={placeholder ?? 'Search or add company…'}
-          rightSection={loading ? <Loader size="xs" /> : <Combobox.Chevron />}
-          rightSectionPointerEvents="none"
+          placeholder={placeholder}
+          rightSection={loading ? <Loader size="xs" /> : null}
           onChange={(e) => {
             const next = e.currentTarget.value;
             setInputValue(next);
-            onChange(next);
+            committedRef.current = false;
             combobox.openDropdown();
             combobox.updateSelectedOptionIndex();
           }}
-          onFocus={() => combobox.openDropdown()}
-          onBlur={() => combobox.closeDropdown()}
-          onClick={() => combobox.openDropdown()}
+          onBlur={handleBlur}
         />
       </Combobox.Target>
 

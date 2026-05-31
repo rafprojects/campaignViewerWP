@@ -79,4 +79,52 @@ describe('CompanyCombobox', () => {
     fireEvent.click(createOption);
     expect(onChange).toHaveBeenCalledWith('New Startup');
   });
+
+  it('does not call onChange while typing (only on selection or blur)', () => {
+    const onChange = vi.fn();
+    render(<CompanyCombobox value="" onChange={onChange} companies={companies} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Ac' } });
+    fireEvent.change(input, { target: { value: 'Acm' } });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('resolves typed company name to slug on blur', () => {
+    const onChange = vi.fn();
+    render(<CompanyCombobox value="" onChange={onChange} companies={companies} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Acme Corp' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('acme-corp');
+  });
+
+  it('resolves typed company slug to slug on blur', () => {
+    const onChange = vi.fn();
+    render(<CompanyCombobox value="" onChange={onChange} companies={companies} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'acme-corp' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('acme-corp');
+  });
+
+  it('passes raw text on blur when typing a new company name', () => {
+    const onChange = vi.fn();
+    render(<CompanyCombobox value="" onChange={onChange} companies={companies} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Brand New Co' } });
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledWith('Brand New Co');
+  });
+
+  it('does not call onChange twice when selecting an option then blurring', async () => {
+    const onChange = vi.fn();
+    render(<CompanyCombobox value="" onChange={onChange} companies={companies} />);
+    const input = screen.getByRole('textbox');
+    fireEvent.change(input, { target: { value: 'Acme' } });
+    const option = await screen.findByRole('option', { name: 'Acme Corp' });
+    fireEvent.click(option);
+    fireEvent.blur(input);
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith('acme-corp');
+  });
 });
