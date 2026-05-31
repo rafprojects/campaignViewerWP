@@ -2,7 +2,7 @@
 
 **Status:** Planned
 **Created:** 2026-05-22
-**Last updated:** 2026-05-30
+**Last updated:** 2026-05-31
 
 ### Tracks
 
@@ -11,10 +11,11 @@
 | P36-A | Location & state persistence on reload (phased) | ✅ Completed | L |
 | P36-B | Admin CampaignsTab inline edits + X3 convergence note | ✅ Completed | M |
 | P36-C | Draft permissions audit & fix | ✅ Completed | M |
+| P36-D | Settings panel & admin panel width controls | ✅ Completed | S |
 | P36-X1 | Layout-builder for listings — evaluation only | ✅ Evaluated → GO (P37-LB) | S |
 | P36-X2 | Shape adapters for listings — evaluation only | ✅ Evaluated → Rejected | S |
 
-> **Note:** P36-A / P36-B / P36-C are implementation tracks. P36-X1 and P36-X2
+> **Note:** P36-A / P36-B / P36-C / P36-D are implementation tracks. P36-X1 and P36-X2
 > are carry-forwards from Phase 35 kept as *evaluation* tracks only — the output
 > of each is a recommendation + effort estimate that the user will feed into a
 > multi-agent evaluation pass for conversion into Phase 37+ implementation
@@ -534,6 +535,75 @@ leadership initiates a scoped prototype. Full evaluation in
 
 ---
 
+## Track P36-D — Settings Panel & Admin Panel Width Controls
+
+### Problem
+
+Two admin UI containers had no user-configurable width control:
+
+- The **Settings Panel** (Mantine `Drawer`, positioned right) was hardcoded to
+  Mantine's named `'lg'` size on non-small screens with no way to adjust it.
+- The **Admin Panel** container (`<Container>` in `App.tsx` wrapping
+  `<AdminPanel>`) shared the gallery's `appMaxWidth` setting and had no
+  independent override; operators who wanted the gallery content narrow and the
+  admin panel wide had no mechanism to express that.
+
+### Goal
+
+Expose both widths as first-class dimension settings (numeric value + CSS unit)
+in the Advanced settings accordion, following the established
+`appMaxWidth`/`appMaxWidthUnit` pair pattern.
+
+### Implementation outline
+
+1. Add `settingsPanelWidth`/`settingsPanelWidthUnit` to `GalleryBehaviorSettings`
+   (default `600 px`). Applied to the `<Drawer size>` prop in `SettingsPanel.tsx`
+   via `toCss()`. Surfaced in the existing **Settings Drawer** accordion item in
+   `AdvancedSettingsSection.tsx`.
+2. Add `adminPanelMaxWidth`/`adminPanelMaxWidthUnit` to `GalleryBehaviorSettings`
+   (default `0` = no constraint, matching the `appMaxWidth` convention). Applied
+   to the `<Container size>` wrapping `<AdminPanel>` in `App.tsx` (takes
+   precedence over `appMaxWidth` when non-zero; falls back to `appMaxWidth`
+   otherwise). Surfaced in a new **Admin Panel** accordion item in
+   `AdvancedSettingsSection.tsx`.
+3. **PHP parity required.** `WPSG_Settings_Utils::from_js()` iterates over
+   `$defaults` to whitelist incoming camelCase keys; any key absent from the
+   PHP defaults is silently dropped on save and never returned from the API.
+   Both new field pairs were added to `class-wpsg-settings-registry.php`
+   (numeric defaults, unit string defaults, allowed-unit arrays, numeric ranges)
+   and their numeric values added to `class-wpsg-settings-sanitizer.php`.
+   Without this PHP-side registration the settings would save as `0`/`'px'`
+   on every round-trip regardless of what the user set.
+
+### Key files
+
+- `src/types/index.ts` — `GalleryBehaviorSettings` interface + defaults.
+- `src/components/Settings/AdvancedSettingsSection.tsx` — two `DimensionInput`
+  controls (one per new setting); new `adv-admin-panel` accordion item.
+- `src/components/Admin/SettingsPanel.tsx` — `toCss(settingsPanelWidth, unit)`
+  applied to `<Drawer size>`.
+- `src/App.tsx` — `adminPanelContainerSize` derived from new setting; applied
+  to `<Container>` wrapping `<AdminPanel>`.
+- `wp-plugin/…/settings/class-wpsg-settings-registry.php` — register both
+  field pairs in numeric defaults, unit defaults, allowed-unit arrays, and
+  numeric-range arrays.
+- `wp-plugin/…/settings/class-wpsg-settings-sanitizer.php` — sanitize numeric
+  values for both new fields.
+
+### Acceptance criteria
+
+- Settings Panel width adjustable via Advanced → Settings Drawer accordion;
+  changes take effect immediately on the open drawer.
+- Admin Panel max-width adjustable via Advanced → Admin Panel accordion; `0`
+  means no constraint (full width), matching `appMaxWidth` convention.
+- Both settings round-trip correctly through the REST API and persist after
+  page reload.
+- `npx tsc --noEmit` and `npx vitest run` pass.
+
+### Status: ✅ Completed
+
+---
+
 ## Implementation Notes
 
 _Updated as tracks land._
@@ -591,6 +661,19 @@ Both pre-implementation follow-ups are resolved. Full findings in
   permission default.
 - The `manage_wpsg` / `manage_options` inconsistency in `list_campaigns` vs `can_view_campaign`
   pre-dates P36-C and is tracked separately under P37-KS1.
+
+---
+
+### P36-D — PHP settings registry parity requirement
+
+Any new `GalleryBehaviorSettings` field pair (value + unit) must be registered
+in the PHP settings layer before it will round-trip through the REST API.
+`WPSG_Settings_Utils::from_js()` uses `$defaults` as a whitelist — keys absent
+from `WPSG_Settings_Registry::get_defaults()` are silently dropped on both save
+and response. Four sections of `class-wpsg-settings-registry.php` require
+updates per new field: numeric defaults, unit-string defaults, allowed-unit
+arrays, and numeric-range arrays. The sanitizer (`class-wpsg-settings-sanitizer.php`)
+needs a clamped `intval` block for each new numeric field.
 
 ---
 
