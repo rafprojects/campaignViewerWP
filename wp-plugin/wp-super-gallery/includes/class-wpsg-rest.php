@@ -1504,6 +1504,12 @@ class WPSG_REST {
                     'key' => 'visibility',
                     'value' => 'public',
                 ];
+                // P36-C: Exclude campaigns with an explicit draft status from anonymous listings.
+                $meta_query[] = [
+                    'relation' => 'OR',
+                    ['key' => 'status', 'compare' => 'NOT EXISTS'],
+                    ['key' => 'status', 'value' => 'draft', 'compare' => '!='],
+                ];
                 $args['meta_query'] = $meta_query;
             } else {
                 $accessible_ids = self::get_accessible_campaign_ids($user_id);
@@ -5391,6 +5397,16 @@ class WPSG_REST {
 
         if (!self::is_campaign_within_schedule_window($post_id)) {
             return false;
+        }
+
+        // P36-C: Draft campaigns are only visible to their author.
+        $campaign_status = (string) get_post_meta($post_id, 'status', true);
+        if ($campaign_status === 'draft') {
+            if (!$user_id) {
+                return false;
+            }
+            $post = get_post($post_id);
+            return $post && intval($post->post_author) === $user_id;
         }
 
         $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';

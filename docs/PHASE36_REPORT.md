@@ -9,8 +9,8 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P36-A | Location & state persistence on reload (phased) | ✅ Completed | L |
-| P36-B | Admin CampaignsTab inline edits + X3 convergence note | Planned | M |
-| P36-C | Draft permissions audit & fix | Planned | M |
+| P36-B | Admin CampaignsTab inline edits + X3 convergence note | ✅ Completed | M |
+| P36-C | Draft permissions audit & fix | ✅ Completed | M |
 | P36-X1 | Layout-builder for listings — evaluation only | ✅ Evaluated → GO (P37-LB) | S |
 | P36-X2 | Shape adapters for listings — evaluation only | ✅ Evaluated → Rejected | S |
 
@@ -445,7 +445,7 @@ campaigns, with regression coverage.
 - PHPUnit role × draft matrix passes.
 - Permission matrix documented in this report.
 
-### Status: Planned
+### Status: ✅ Completed
 
 ---
 
@@ -558,6 +558,41 @@ Both pre-implementation follow-ups are resolved. Full findings in
   UnifiedCampaignModal, and an extended campaign save/read contract that
   supports either existing company selection or explicit new-company
   `{ name, slug }` creation.
+
+### P36-C — Draft visibility permission matrix
+
+| Role | `list_campaigns` | `GET /campaigns/{id}` | `GET /campaigns/{id}/media` |
+|---|---|---|---|
+| Admin (`manage_options`) | all drafts visible | 200 | 200 |
+| Campaign author (`post_author`) | own drafts visible | 200 | 200 |
+| Granted-access non-admin | drafts **excluded** | **403** | **403** |
+| Granted-access admin | all drafts visible (admin bypass) | 200 | 200 |
+| Anonymous | drafts **excluded** | **403** | **403** |
+
+**Enforcement points:**
+
+- `can_view_campaign()` — after the admin short-circuit and schedule-window check, a `status = 'draft'`
+  post-meta value immediately gates: anonymous users return `false`; logged-in users return `true`
+  only if they are the `post_author`. Admins (`manage_options`) have already returned `true`
+  before this check. Because `get_campaign` and `list_media` both call `can_view_campaign`, this
+  single function covers both endpoints.
+- `list_campaigns` anonymous branch — adds a meta_query clause
+  `(status NOT EXISTS OR status != 'draft')` alongside the existing `visibility = 'public'` filter,
+  so public-visibility drafts are excluded from listing responses for unauthenticated callers.
+- Logged-in non-admin branch — uses `get_accessible_campaign_ids → can_view_campaign`, which
+  inherits the draft check above; no additional meta_query clause needed.
+
+**Scope notes:**
+
+- Campaigns without an explicit `status` post-meta (legacy rows) are treated as non-draft by the
+  permission check (the `NOT EXISTS` meta_query condition keeps them in public listings; the strict
+  `=== 'draft'` string comparison in `can_view_campaign` leaves them accessible). `format_campaign`
+  still displays them as `'draft'` for admin UI purposes — this is a display default, not a
+  permission default.
+- The `manage_wpsg` / `manage_options` inconsistency in `list_campaigns` vs `can_view_campaign`
+  pre-dates P36-C and is tracked separately under P37-KS1.
+
+---
 
 ### P36-X3 — Admin Panel listing convergence (recommendation)
 
