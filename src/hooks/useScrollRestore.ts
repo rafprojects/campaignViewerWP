@@ -65,7 +65,10 @@ export function useScrollRestore(feature: string, tabKey?: string | null) {
   }, [handleScroll]);
 
   // When the tabKey changes, restore scroll for the new tab.
+  // Cancel any pending debounced save first — otherwise a save scheduled on
+  // the previous tab could fire ~200ms later and overwrite the restored value.
   useEffect(() => {
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
     const el = elementRef.current;
     if (!el) return;
     try {

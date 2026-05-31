@@ -439,7 +439,7 @@ describe('UnifiedCampaignModal layout selector', () => {
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-layoutTemplates={mockTemplates}
+        layoutTemplates={mockTemplates}
       />,
     );
 
@@ -453,7 +453,7 @@ layoutTemplates={mockTemplates}
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-layoutTemplates={[]}
+        layoutTemplates={[]}
       />,
     );
 
@@ -468,7 +468,7 @@ layoutTemplates={[]}
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-layoutTemplates={mockTemplates}
+        layoutTemplates={mockTemplates}
         onEditLayout={onEditLayout}
       />,
     );

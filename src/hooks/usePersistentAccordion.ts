@@ -29,13 +29,12 @@ export function usePersistentAccordion(storageKey: string, defaultValue: string 
     return defaultValue;
   };
 
-  const initial = readStored();
+  const [mounted, setMounted] = useState<Set<string>>(() => {
+    const initial = readStored();
+    return initial != null ? new Set([initial]) : new Set();
+  });
 
-  const [mounted, setMounted] = useState<Set<string>>(() =>
-    initial != null ? new Set([initial]) : new Set(),
-  );
-
-  const [value, setValue] = useState<string | null>(initial);
+  const [value, setValue] = useState<string | null>(readStored);
 
   const onChange = useCallback(
     (next: string | null) => {

@@ -723,6 +723,26 @@ _To be filled when Phase 36 is marked Complete._
 
 ---
 
+## PR #51 Review — Copilot Comment Resolutions
+
+### Thread 1 — `LayoutBuilderGallery.test.tsx` indentation (lines 442 / 456 / 471)
+**Decision: Accept.**  
+Three `layoutTemplates={...}` JSX prop lines were flush against the left margin — a rebase/formatting artifact. Restored 8-space indentation to match the surrounding prop alignment. No logic change.
+
+### Thread 2 — `useScrollRestore.ts` debounce race on tab change (line 68–75)
+**Decision: Accept.**  
+Valid race: a `handleScroll` debounce scheduled on tab A could fire ~200 ms after the tab-change effect restores tab B's scroll position, overwriting it with tab A's stale `el.scrollTop` (now the B element) under the B storage key. Fix: clear `timerRef.current` at the top of the `[storageKey]` effect, matching the same guard already present in `handleScroll` and the unmount cleanup.
+
+### Thread 3 — `usePersistentAccordion.ts` `readStored()` called on every render (lines 32–38)
+**Decision: Accept.**  
+`const initial = readStored()` ran a `localStorage.getItem` + `JSON.parse` on every render, though only the mount-time value matters for the `useState` initializers. Removed the eager call and passed `readStored` as a lazy initializer to `useState<string | null>`, and inlined a callback initializer for the `Set<string>` state. Each `localStorage` read now happens exactly once per mount.
+
+### Thread 4 — PHP `valid_options` alignment for `settings_panel_width_unit` / `admin_panel_max_width_unit`
+**Decision: Accept (no code change — already aligned).**  
+Both PHP `valid_options` entries use `['px', '%', 'vw', 'em', 'rem']`, which is identical to `CSS_WIDTH_UNITS` in `src/utils/cssUnits.ts`. No mismatch exists; the comment was asking for confirmation rather than reporting a bug.
+
+---
+
 ## Related Planning
 
 - Continues from: `docs/PHASE35_REPORT.md` (Campaign Listing Adapter
