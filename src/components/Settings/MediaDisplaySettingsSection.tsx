@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 
 import { Accordion, Divider, Group, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 
 import {
@@ -74,12 +74,12 @@ function useAdapterHelpers(
 
 /** Accordion items: Viewport & Layout, Tile Appearance, Transitions. */
 export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }: MediaDisplaySettingsSectionProps) {
-  const { mounted, onChange } = useLazyAccordion('viewport');
+  const { mounted, value, onChange } = usePersistentAccordion('gallery-style', 'viewport');
   const { gallerySizingMode, galleryManualHeight, getAdapterSettingValue, updateAdapterSetting, updateViewerCommonSetting } =
     useAdapterHelpers(settings, updateSetting);
 
   return (
-    <Accordion variant="separated" defaultValue="viewport" onChange={onChange}>
+    <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="viewport">
         <Accordion.Control>Viewport &amp; Layout</Accordion.Control>
         <Accordion.Panel>
@@ -350,11 +350,11 @@ export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }:
 
 /** Accordion items: Navigation (arrows, dots), Thumbnail Strip. */
 export function GalleryNavigationAccordion({ settings, updateSetting, tooltipLabel: _tooltipLabel }: MediaDisplaySettingsSectionProps) {
-  const { mounted, onChange } = useLazyAccordion('navigation');
+  const { mounted, value, onChange } = usePersistentAccordion('gallery-navigation', 'navigation');
   const { getAdapterSettingValue, updateAdapterSetting } = useAdapterHelpers(settings, updateSetting);
 
   return (
-    <Accordion variant="separated" defaultValue="navigation" onChange={onChange}>
+    <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="thumbnail-strip">
         <Accordion.Control>Thumbnail Strip</Accordion.Control>
         <Accordion.Panel>

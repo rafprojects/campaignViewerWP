@@ -1,5 +1,5 @@
 import { Accordion, Button, Group, Text } from '@mantine/core';
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 
 import type { GalleryBehaviorSettings } from '@/types';
 
@@ -18,10 +18,10 @@ export function GalleryLayoutSettingsSection({
   updateSetting,
   onOpenResponsiveConfig,
 }: GalleryLayoutSettingsSectionProps) {
-  const { mounted, onChange } = useLazyAccordion('adapters');
+  const { mounted, value, onChange } = usePersistentAccordion('gallery-layout', 'adapters');
 
   return (
-    <Accordion variant="separated" defaultValue="adapters" onChange={onChange}>
+    <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="adapters">
         <Accordion.Control>Gallery Adapters</Accordion.Control>
         <Accordion.Panel>

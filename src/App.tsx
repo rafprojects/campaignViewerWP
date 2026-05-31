@@ -20,6 +20,8 @@ import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
 import { sortByOrder } from './utils/sortByOrder';
 import { useBuilderDeepLink } from './hooks/useBuilderDeepLink';
+import { useReloadSafeView } from './hooks/useReloadSafeView';
+import { useRootId } from './contexts/RootIdContext';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
 import { useIdleTimeout } from './hooks/useIdleTimeout';
@@ -86,6 +88,10 @@ function AppContent({
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  // P36-A: Persist the active top-level panel across reloads.
+  // Single string key avoids two separate localStorage reads; null = campaign listing.
+  const [savedActiveView, setSavedActiveView] = useReloadSafeView<'admin' | 'settings' | null>('active_view', null);
   const [isAdminPanelOpen, { open: openAdminPanel, close: closeAdminPanel }] = useDisclosure(false);
   const [isSettingsOpen, { open: openSettings, close: closeSettings }] = useDisclosure(false);
   const [isSignInOpen, { open: openSignIn, close: closeSignIn }] = useDisclosure(false);
@@ -110,6 +116,55 @@ function AppContent({
     deepLinkHandledRef.current = true;
     openAdminPanel();
   }, [initialBuilderTemplateId, isReady, isAdmin, openAdminPanel]);
+
+  // P36-A: Persist the active top-level view whenever it changes (only after
+  // auth has resolved to avoid writing null during the loading phase).
+  useEffect(() => {
+    if (!isReady) return;
+    if (isAdminPanelOpen) setSavedActiveView('admin');
+    else if (isSettingsOpen) setSavedActiveView('settings');
+    else setSavedActiveView(null);
+  }, [isAdminPanelOpen, isSettingsOpen, isReady, setSavedActiveView]);
+
+  // P36-A/A2: Restore the active top-level view + scroll position once, after
+  // auth resolves. Combined in one effect so scroll restores to the right view.
+  const viewRestoredRef = useRef(false);
+  const rootId = useRootId();
+  useEffect(() => {
+    if (!isReady || viewRestoredRef.current) return;
+    viewRestoredRef.current = true;
+
+    if (isAdmin) {
+      if (savedActiveView === 'admin') openAdminPanel();
+      else if (savedActiveView === 'settings') openSettings();
+    }
+
+    // Restore window scroll for the target view.
+    const targetView = savedActiveView === 'admin' && isAdmin ? 'admin' : 'listing';
+    try {
+      const scrollKey = `wpsg_view_${rootId}_scroll_${targetView}`;
+      const stored = localStorage.getItem(scrollKey);
+      const scrollY = stored !== null ? (JSON.parse(stored) as number) : 0;
+      if (scrollY > 0) {
+        requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
+      }
+    } catch { /* ignore */ }
+  }, [isReady, isAdmin, savedActiveView, openAdminPanel, openSettings, rootId]);
+
+  // P36-A2: Capture window scroll position per-view (debounced 200 ms).
+  useEffect(() => {
+    const activeView = isAdminPanelOpen ? 'admin' : 'listing';
+    const scrollKey = `wpsg_view_${rootId}_scroll_${activeView}`;
+    let timer: ReturnType<typeof setTimeout>;
+    const handleScroll = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        try { localStorage.setItem(scrollKey, JSON.stringify(window.scrollY)); } catch { /* ignore */ }
+      }, 200);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', handleScroll); clearTimeout(timer); };
+  }, [rootId, isAdminPanelOpen]);
 
   // Close admin-only panels when the user signs out or loses admin privileges.
   useEffect(() => {

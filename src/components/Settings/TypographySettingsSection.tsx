@@ -1,4 +1,5 @@
 import { Accordion, Button, Divider, Stack, Text } from '@mantine/core';
+import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 
 import { TypographyEditor, type CustomFontEntry } from '@/components/Common/TypographyEditor';
 import { FontLibraryManager } from '@/components/Admin/FontLibraryManager';
@@ -42,6 +43,8 @@ export function TypographySettingsSection({
   onResetAll,
   onOverrideChange,
 }: TypographySettingsSectionProps) {
+  const { value: accordionValue, onChange: onAccordionChange } = usePersistentAccordion('typography', null);
+
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
@@ -67,7 +70,7 @@ export function TypographySettingsSection({
         Reset all typography
       </Button>
 
-      <Accordion variant="separated" chevronPosition="left">
+      <Accordion variant="separated" chevronPosition="left" value={accordionValue} onChange={onAccordionChange}>
         {TYPOGRAPHY_SECTIONS.map((section) => (
           <Accordion.Item key={section.id} value={section.id}>
             <Accordion.Control>{section.label}</Accordion.Control>

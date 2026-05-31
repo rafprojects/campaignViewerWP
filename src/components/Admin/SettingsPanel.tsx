@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useStore } from 'zustand';
@@ -53,6 +53,11 @@ import { CampaignCardSettingsSection } from '../Settings/CampaignCardSettingsSec
 import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
+import { useRootId } from '@/contexts/RootIdContext';
+import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
+import { useScrollRestore } from '@/hooks/useScrollRestore';
+import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -63,6 +68,55 @@ import {
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
+
+/**
+ * P36-A: Settings draft persistence.
+ * Key builder returns root-scoped localStorage keys so multi-shortcode pages
+ * don't collide. Draft payload includes savedAt for the restore prompt.
+ */
+interface SettingsDraftStoragePayload {
+  savedAt: number;
+  settings: SettingsData;
+}
+
+function settingsDraftKey(rootId: string) {
+  return `wpsg_settings_draft_${rootId}`;
+}
+
+function settingsTabKey(rootId: string) {
+  return `wpsg_view_${rootId}_settings_tab`;
+}
+
+function readSettingsDraft(rootId: string): SettingsDraftStoragePayload | null {
+  try {
+    const raw = localStorage.getItem(settingsDraftKey(rootId));
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'savedAt' in parsed &&
+      'settings' in parsed &&
+      typeof (parsed as Record<string, unknown>).savedAt === 'number'
+    ) {
+      return parsed as SettingsDraftStoragePayload;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSettingsDraft(rootId: string, settings: SettingsData) {
+  try {
+    const payload: SettingsDraftStoragePayload = { savedAt: Date.now(), settings };
+    localStorage.setItem(settingsDraftKey(rootId), JSON.stringify(payload));
+  } catch { /* localStorage full or unavailable */ }
+}
+
+function clearSettingsDraft(rootId: string) {
+  try { localStorage.removeItem(settingsDraftKey(rootId)); } catch { /* ignore */ }
+}
 
 const LazyGalleryConfigEditorModal = lazy(() =>
   import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
@@ -206,8 +260,11 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   setCustomFonts,
   updateTypoOverride,
   tooltipLabel,
-}) => (
-  <Stack gap="md">
+}) => {
+  // P36-A2: Persist the Cards tab accordion expansion.
+  const { value: cardAccordionValue, onChange: cardAccordionOnChange } = usePersistentAccordion('cards', 'appearance');
+
+  return <Stack gap="md">
     <Tabs
       value={activeTab}
       onChange={setActiveTab}
@@ -279,7 +336,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
                 fullWidth
               />
             </Box>
-            <Accordion variant="separated" defaultValue="appearance">
+            <Accordion variant="separated" value={cardAccordionValue} onChange={cardAccordionOnChange}>
               <CampaignCardSettingsSection
                 settings={settings}
                 updateSetting={updateGallerySetting}
@@ -361,8 +418,8 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         </Tabs.Panel>
       )}
     </Tabs>
-  </Stack>
-);
+  </Stack>;
+};
 
 setWpsgDebugDisplayName(SettingsPanelTabsContent, 'SettingsPanel:TabsContent');
 
@@ -404,15 +461,33 @@ setWpsgDebugDisplayName(SettingsPanelFooter, 'SettingsPanel:Footer');
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
+  const rootId = useRootId();
   const { data: fetchedSettings } = useGetSettings(apiClient);
   const updateSettingsMutation = useUpdateSettings(apiClient);
+
+  const persistedDraft = useMemo(() => readSettingsDraft(rootId), [rootId]);
   const seedSettings: SettingsData = initialSettings
     ? mapResponseToSettings(initialSettings)
     : fetchedSettings
       ? mapResponseToSettings(fetchedSettings)
       : DEFAULT_SETTINGS_DATA;
   const [settingsStore] = useState(() => createSettingsDraftStore(seedSettings));
-  const [activeTab, setActiveTab] = useState<string | null>('appearance');
+
+  // P36-A: Restore the active tab from localStorage.
+  const [activeTab, setActiveTab] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(settingsTabKey(rootId)) ?? 'appearance';
+    } catch {
+      return 'appearance';
+    }
+  });
+  const handleTabChange = useCallback((tab: string | null) => {
+    setActiveTab(tab);
+    try {
+      if (tab) localStorage.setItem(settingsTabKey(rootId), tab);
+    } catch { /* ignore */ }
+  }, [rootId]);
+
   const [cardSettingsBreakpoint, setCardSettingsBreakpoint] = useState<CardConfigBreakpoint>('desktop');
   const [customFonts, setCustomFonts] = useState<CustomFontEntry[]>([]);
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
@@ -429,6 +504,54 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const resetToOriginal = useStore(settingsStore, (state) => state.resetToOriginal);
   const isLoading = opened && !sourceSettings;
   const isSaving = updateSettingsMutation.isPending;
+
+  // P36-A: Show the restore/discard prompt once on mount when a persisted draft exists.
+  const draftPromptShownRef = useRef(false);
+  useEffect(() => {
+    if (!opened || !persistedDraft || draftPromptShownRef.current) return;
+    draftPromptShownRef.current = true;
+    const draftAge = Math.round((Date.now() - persistedDraft.savedAt) / 60_000);
+    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+    modals.openConfirmModal({
+      title: 'Unsaved settings found',
+      children: (
+        <Text size="sm">
+          You have unsaved settings changes from {ageLabel}. Would you like to restore them?
+        </Text>
+      ),
+      labels: { confirm: 'Restore', cancel: 'Discard' },
+      confirmProps: { color: 'blue' },
+      onConfirm: () => {
+        applySettingsUpdate(() => persistedDraft!.settings);
+        notifications.show({
+          title: 'Settings restored',
+          message: 'Your previous unsaved changes have been restored.',
+          color: 'blue',
+          autoClose: 4000,
+        });
+      },
+      onCancel: () => {
+        resetToOriginal();
+        clearSettingsDraft(rootId);
+        notifications.show({
+          message: 'Unsaved settings discarded.',
+          color: 'gray',
+          autoClose: 3000,
+        });
+      },
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened]);
+
+  // P36-A: Persist the settings draft to localStorage whenever it changes.
+  useEffect(() => {
+    if (!opened) return;
+    if (hasChanges) {
+      writeSettingsDraft(rootId, settings);
+    } else {
+      clearSettingsDraft(rootId);
+    }
+  }, [opened, hasChanges, settings, rootId]);
 
   const revertThemePreview = useCallback(() => {
     if (settings.theme !== originalSettings.theme && typeof originalSettings.theme === 'string') {
@@ -466,6 +589,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       const response = await updateSettingsMutation.mutateAsync(payload as unknown as import('@/services/apiClient').SettingsUpdateRequest);
       const saved = mapResponseToSettings(response);
       markSaved(saved);
+      clearSettingsDraft(rootId);
       onSettingsSaved?.(saved);
       const persistedTheme = typeof saved.theme === 'string' ? saved.theme : settings.theme;
       if (typeof persistedTheme === 'string') {
@@ -480,10 +604,14 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
   const handleReset = () => {
     resetToOriginal();
+    clearSettingsDraft(rootId);
     revertThemePreview();
   };
 
   const isSmallScreen = useMediaQuery('(max-width: 575px)');
+
+  // P36-A2: Restore scroll position per-tab in the settings panel body.
+  const scrollBodyRef = useScrollRestore('settings', activeTab);
 
   /** Shorthand: wrap a label with an info tooltip when tooltips are enabled. */
   const tt = (label: string, key: string) => (
@@ -542,10 +670,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         </Center>
       ) : (
         <>
-          <Box style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
+          <Box ref={scrollBodyRef} style={{ flex: 1, overflowY: 'auto', padding: 'var(--mantine-spacing-md)' }}>
             <SettingsPanelTabsContent
               activeTab={activeTab}
-              setActiveTab={setActiveTab}
+              setActiveTab={handleTabChange}
               settings={settings}
               updateSetting={updateSetting}
               updateGallerySetting={updateGallerySetting}
