@@ -258,7 +258,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     includeArchived,
   ].filter(Boolean).length;
 
-  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary });
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 
@@ -460,6 +460,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
 
         <UnifiedCampaignModal
           modal={unifiedModal}
+          apiClient={apiClient}
           layoutTemplates={layoutTemplates ?? []}
           onEditLayout={(id) => { unifiedModal.close(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
           categoryItems={campaignCategories}

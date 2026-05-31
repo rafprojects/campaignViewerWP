@@ -42,6 +42,7 @@ describe('AdminPanel', () => {
    *  errors that delay renders and leak timers across sequential tests. */
   function withDefaults(partial: Record<string, unknown>) {
     const base = {
+      getBaseUrl: vi.fn().mockReturnValue('test'),
       getLayoutTemplates: vi.fn().mockResolvedValue([]),
       listCampaignCategories: vi.fn().mockResolvedValue([]),
       getAccessSummary: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, perPage: 50, totalPages: 0 }),
@@ -145,7 +146,7 @@ describe('AdminPanel', () => {
 
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
-    fireEvent.change(screen.getByPlaceholderText('company-id'), { target: { value: 'acme' } });
+    fireEvent.change(screen.getByPlaceholderText('Search or add company…'), { target: { value: 'acme' } });
     fireEvent.change(screen.getByPlaceholderText('tag1, tag2, tag3'), { target: { value: 'a,b' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));

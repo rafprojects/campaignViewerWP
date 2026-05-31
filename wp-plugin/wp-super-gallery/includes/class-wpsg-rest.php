@@ -5516,6 +5516,7 @@ class WPSG_REST {
         return [
             'id' => (string) $post->ID,
             'companyId' => $company_id,
+            'companyName' => $company_term ? $company_term->name : '',
             'title' => $post->post_title,
             'description' => $post->post_content,
             'thumbnail' => $thumbnail_url,

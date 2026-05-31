@@ -3,7 +3,9 @@ import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
-import type { CampaignCategoryEntry } from '@/services/apiClient';
+import type { ApiClient, CampaignCategoryEntry } from '@/services/apiClient';
+import { useAllCompanies, type CompanyInfo } from '@/services/adminQuery';
+import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
@@ -89,6 +91,7 @@ function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: strin
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
+  apiClient: ApiClient;
   galleryBehaviorSettings?: GalleryBehaviorSettings;
   /** When 'individual', show per-card border color picker. */
   cardBorderMode?: 'single' | 'auto' | 'individual';
@@ -138,6 +141,8 @@ interface UnifiedCampaignDetailsPanelProps {
   onClose: () => void;
   onSave: () => void;
   isSaving: boolean;
+  companies: CompanyInfo[];
+  companiesLoading: boolean;
 }
 
 const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelProps> = ({
@@ -151,6 +156,8 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
   onClose,
   onSave,
   isSaving,
+  companies,
+  companiesLoading,
 }) => (
   <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'details-panel')} value="details" pt="md">
     <Stack {...getWpsgDebugProps('UnifiedCampaignModal', 'details-stack')} gap="md">
@@ -168,13 +175,13 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
         onChange={(e) => updateForm({ ...formState, description: e.currentTarget.value })}
         minRows={3}
       />
-      <TextInput
-        label="Company Slug"
-        placeholder="company-id"
+      <CompanyCombobox
+        label="Company"
         value={formState.company}
-        onChange={(e) => updateForm({ ...formState, company: e.currentTarget.value })}
+        onChange={(v) => updateForm({ ...formState, company: v })}
+        companies={companies}
+        loading={companiesLoading}
         required
-        description="Unique identifier for the company"
       />
 
       <Card withBorder>
@@ -504,6 +511,7 @@ setWpsgDebugDisplayName(UnifiedCampaignSettingsPanel, 'UnifiedCampaignSettingsPa
 
 export function UnifiedCampaignModal({
   modal,
+  apiClient,
   galleryBehaviorSettings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   cardBorderMode,
   layoutTemplates = [],
@@ -511,6 +519,7 @@ export function UnifiedCampaignModal({
   categoryItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
+  const { companies, companiesLoading } = useAllCompanies(apiClient, modal.opened);
   const {
     opened, mode, formState, updateForm, isSaving,
     coverImageUploading, handleSelectCoverImage, handleUploadCoverImage,
@@ -590,6 +599,8 @@ export function UnifiedCampaignModal({
             onClose={guardedClose}
             onSave={handleSave}
             isSaving={isSaving}
+            companies={companies}
+            companiesLoading={companiesLoading}
           />
 
           {/* ── Media Tab (edit only) ──────────────────────────────── */}

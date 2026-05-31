@@ -1,9 +1,24 @@
 import { useMemo } from 'react';
-import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox } from '@mantine/core';
+import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
+import { useAllCompanies, usePatchCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
+import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
+import type { ApiClient } from '@/services/apiClient';
+
+const STATUS_OPTIONS = [
+  { value: 'draft', label: 'Draft' },
+  { value: 'active', label: 'Active' },
+  { value: 'archived', label: 'Archived' },
+] as const;
+
+const VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+] as const;
 
 /** Derive a human-readable schedule label from publishAt / unpublishAt dates. */
 function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string; color: string } | null {
@@ -20,11 +35,12 @@ function scheduleLabel(publishAt?: string, unpublishAt?: string): { text: string
 interface Options {
   campaigns: AdminCampaign[];
   campaignActions: CampaignActionsHandle;
+  apiClient: ApiClient;
   /** Map of campaign id (number) → AccessSummaryItem. Undefined while loading. */
   grantSummary?: Map<number, AccessSummaryItem> | undefined;
 }
 
-export function useCampaignsRows({ campaigns, campaignActions, grantSummary }: Options) {
+export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient }: Options) {
   const {
     selectMode, selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
@@ -33,12 +49,17 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary }: O
     restoringIds, archivingIds, deletingIds,
   } = campaignActions;
 
+  const { mutate: patchCampaign } = usePatchCampaign(apiClient);
+  const { companies, companiesLoading } = useAllCompanies(apiClient);
+
   return useMemo(() => {
     return campaigns.map((c) => {
       const cid = String(c.id);
       const isSelected = selectedCampaignIds.has(cid);
       const galleryOverrideSummary = describeCampaignGalleryOverrides(c);
       const summary = grantSummary?.get(Number(c.id));
+      const sched = scheduleLabel(c.publishAt, c.unpublishAt);
+
       return (
         <Table.Tr key={c.id} data-selected={isSelected || undefined}>
           {selectMode && (
@@ -71,18 +92,63 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary }: O
             </Box>
           </Table.Td>
           <Table.Td>
-            <Group gap={4} wrap="wrap">
-              <Badge color={c.status === 'active' ? 'teal' : c.status === 'archived' ? 'gray' : 'yellow'}>
-                {c.status}
-              </Badge>
-              {(() => {
-                const sched = scheduleLabel(c.publishAt, c.unpublishAt);
-                return sched ? <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge> : null;
-              })()}
+            <Group gap={4} wrap="nowrap" align="center">
+              <Select
+                size="xs"
+                variant="filled"
+                data={STATUS_OPTIONS}
+                value={c.status}
+                onChange={(v) => {
+                  if (!v || v === c.status) return;
+                  const status = v as AdminCampaign['status'];
+                  patchCampaign(
+                    { id: cid, apiPatch: { status }, optimisticPatch: { status } },
+                    { onError: () => notifications.show({ message: 'Failed to update status.', color: 'red', autoClose: 3000 }) },
+                  );
+                }}
+                styles={{ input: { minWidth: 90 } }}
+                comboboxProps={{ width: 120 }}
+                withCheckIcon={false}
+                aria-label={`Status for ${c.title}`}
+              />
+              {sched && <Badge variant="light" color={sched.color} size="xs">{sched.text}</Badge>}
             </Group>
           </Table.Td>
-          <Table.Td><Badge variant="light">{c.visibility}</Badge></Table.Td>
-          <Table.Td>{c.companyId || '—'}</Table.Td>
+          <Table.Td>
+            <Select
+              size="xs"
+              variant="filled"
+              data={VISIBILITY_OPTIONS}
+              value={c.visibility}
+              onChange={(v) => {
+                if (!v || v === c.visibility) return;
+                const visibility = v as AdminCampaign['visibility'];
+                patchCampaign(
+                  { id: cid, apiPatch: { visibility }, optimisticPatch: { visibility } },
+                  { onError: () => notifications.show({ message: 'Failed to update visibility.', color: 'red', autoClose: 3000 }) },
+                );
+              }}
+              styles={{ input: { minWidth: 80 } }}
+              withCheckIcon={false}
+              aria-label={`Visibility for ${c.title}`}
+            />
+          </Table.Td>
+          <Table.Td>
+            <CompanyCombobox
+              value={c.companyId}
+              onChange={(v) => {
+                if (v === c.companyId) return;
+                patchCampaign(
+                  { id: cid, apiPatch: { company: v } },
+                  { onError: () => notifications.show({ message: 'Failed to update company.', color: 'red', autoClose: 3000 }) },
+                );
+              }}
+              companies={companies}
+              loading={companiesLoading}
+              size="xs"
+              placeholder={c.companyName ?? c.companyId ?? '—'}
+            />
+          </Table.Td>
           <Table.Td>
             {summary !== undefined ? (
               <Group gap={4} wrap="nowrap">
@@ -121,5 +187,5 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary }: O
         </Table.Tr>
       );
     });
-  }, [campaigns, selectMode, selectedCampaignIds, grantSummary, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectMode, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }
