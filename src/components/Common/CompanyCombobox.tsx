@@ -20,7 +20,7 @@ export function CompanyCombobox({
   onChange,
   companies,
   loading,
-  label = 'Company',
+  label,
   required,
   size,
   placeholder = 'Search or add company…',
