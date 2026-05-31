@@ -375,7 +375,7 @@ function AppContent({
           />
         )}
 
-        <UnifiedCampaignModal modal={editModal} apiClient={apiClient} galleryBehaviorSettings={resolvedSettings} />
+        <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
 
         <ArchiveCampaignModal
           opened={!!archiveModal.archiveModalCampaign}

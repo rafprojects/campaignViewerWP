@@ -24,8 +24,11 @@
 > touch CampaignsTab; the X3 evaluation deliverable lives inside the P36-B
 > section below.
 >
-> Out of P36 scope and deferred to P37+: hero/spotlight adapter sizing
-> controls (HA1) and Layout Builder non-canvas theme propagation (LB1).
+> Out of P36 scope and promoted to Phase 37: hero/spotlight adapter sizing
+> controls (`P37-HA1`), Layout Builder non-canvas theme propagation
+> (`P37-LB1`), shared searchable entity input adoption (`P37-SE1`, after
+> accepted P36-B corrections), and the legacy storage-key scoping audit
+> (`P37-KS1`).
 
 ---
 
@@ -608,24 +611,27 @@ _To be filled when Phase 36 is marked Complete._
   Unification — Complete).
 - Builds on: Phase 35 listing-adapter pipeline (`CardGallery.tsx` host,
   `CardGalleryHostPagination.tsx`, four listing-compatible adapters).
-- Deferred to P37+:
-  - **HA1** — Hero / Spotlight gallery sizing controls. Targeted: add a
-    `spotlightHeroMaxWidth` dimension control, and a parallel
-    `scrollSnapMaxWidth` for the Scroll Snap adapter, which has the same
-    gap. Other adapters (compact-grid, masonry, justified, shape) already
-    expose width / column / tile-size controls.
-  - **LB1** — Layout Builder non-canvas theme propagation. Audit + remap
-    the ~15–20 files that hardcode rgba/hex colors (canvas overlays: grid,
-    rulers, smart guides, measurement labels; plus slot selection borders
-    and a few panel backgrounds). Canvas content rendering is explicitly
-    out of scope.
-  - **SE1** — Shared searchable entity input adoption. Promote P36-B's shared
-    company-entry combobox into a broader reusable entity-input primitive,
-    starting with `AccessTab` user search and future tag/category/company
-    selectors.
-  - **KS1** — Legacy storage-key scoping audit. Audit and migrate pre-existing
-    admin/media localStorage keys that remain globally scoped after P36-A;
-    auth/theme globals remain intentionally shared.
+- Promoted to Phase 37 (see `docs/PHASE37_REPORT.md`):
+  - **P37-HA1** — Hero / Spotlight gallery sizing controls. Add
+    `spotlightHeroMaxWidth` and `scrollSnapMaxWidth` dimension controls
+    through the existing adapter metadata, TypeScript, Zod, and PHP settings
+    parity pipeline, then apply them to the Spotlight and Scroll Snap
+    containers. Other adapters already expose width / column / tile-size
+    controls.
+  - **P37-LB1** — Layout Builder non-canvas theme propagation. Remap the
+    builder's hardcoded overlay and chrome colors (grid, rulers, smart guides,
+    measurement labels, slot selection borders, empty-slot placeholders, and a
+    few builder panels) to theme-derived tokens. Canvas content rendering
+    remains explicitly out of scope.
+  - **P37-SE1** — Shared searchable entity input adoption. Extract the current
+    P36-B company-entry combobox into a generic searchable/freeform
+    single-entity input and reuse it first in `AccessTab` user search.
+    Broader tag/category adoption is deferred until that primitive is proven.
+    This track starts only after accepted P36-B company-entry fixes.
+  - **P37-KS1** — Legacy storage-key scoping audit and migration. Audit the
+    remaining globally scoped admin/media/builder localStorage keys after
+    P36-A, migrate the collision-prone key families, and keep auth/theme/debug
+    plus already-scoped keys intentionally unchanged.
 - Carry-forward bookkeeping: P36-X1 / P36-X2 originated from P35-I
   carry-forward; P36-X3 originated likewise and is folded into P36-B in
   this phase.

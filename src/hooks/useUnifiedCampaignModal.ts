@@ -9,8 +9,9 @@
  * - Save handler that sends ALL fields in a single PUT/POST
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
-import type { AdminCampaign } from '@/services/adminQuery';
+import { useAllCompanies, getAllCompaniesQueryKey, type AdminCampaign, type CompanyInfo } from '@/services/adminQuery';
 import type {
   BatchUploadResponse,
   Campaign,
@@ -27,6 +28,19 @@ import {
 } from '@/utils/campaignGalleryOverrides';
 import { useXhrUpload } from './useXhrUpload';
 import type { GalleryConfig } from '@/types';
+
+function toSlug(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function resolveCompanyPayload(
+  value: string,
+  companies: CompanyInfo[],
+): string | { name: string; slug: string } {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  return companies.some((c) => c.slug === trimmed) ? trimmed : { name: trimmed, slug: toSlug(trimmed) };
+}
 
 function normalizeSelectedFiles(value: File | File[] | null): File[] {
   if (!value) {
@@ -84,11 +98,14 @@ export function useUnifiedCampaignModal({
   onMutate,
   onNotify,
 }: UseUnifiedCampaignModalOptions) {
+  const queryClient = useQueryClient();
   const [opened, setOpened] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('edit');
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
   const [formState, setFormState] = useState<UnifiedCampaignFormState>({ ...emptyForm });
   const [isSaving, setIsSaving] = useState(false);
+
+  const { companies, companiesLoading } = useAllCompanies(apiClient, opened);
 
   // Thumbnail / cover image
   const [coverImageChanged, setCoverImageChanged] = useState(false);
@@ -239,10 +256,11 @@ export function useUnifiedCampaignModal({
     savingRef.current = true;
     setIsSaving(true);
 
+    const companyPayload = resolveCompanyPayload(formState.company, companies);
     const payload: Record<string, unknown> = {
       title: formState.title,
       description: formState.description,
-      company: formState.company,
+      company: companyPayload,
       status: formState.status,
       visibility: formState.visibility,
       tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
@@ -265,13 +283,16 @@ export function useUnifiedCampaignModal({
       }
       close();
       await onMutate();
+      if (typeof companyPayload === 'object') {
+        void queryClient.invalidateQueries({ queryKey: getAllCompaniesQueryKey(apiClient) });
+      }
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save campaign.') });
     } finally {
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [formState, editingCampaignId, coverImageChanged, apiClient, onNotify, close, onMutate]);
+  }, [formState, companies, editingCampaignId, coverImageChanged, apiClient, queryClient, onNotify, close, onMutate]);
 
   // ── Media management ──────────────────────────────────────
 
@@ -490,6 +511,10 @@ export function useUnifiedCampaignModal({
     librarySearch,
     setLibrarySearch,
     loadLibraryMedia,
+
+    // Companies (for company-entry combobox)
+    companies,
+    companiesLoading,
 
     // Actions
     openForEdit,

@@ -9,6 +9,10 @@ import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@
 import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
 import type { ApiClient } from '@/services/apiClient';
 
+function toSlug(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
 const STATUS_OPTIONS = [
   { value: 'draft', label: 'Draft' },
   { value: 'active', label: 'Active' },
@@ -138,8 +142,10 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
               value={c.companyId}
               onChange={(v) => {
                 if (v === c.companyId) return;
+                const existing = companies.find((co) => co.slug === v);
+                const companyPayload = existing ? v : { name: v, slug: toSlug(v) };
                 patchCampaign(
-                  { id: cid, apiPatch: { company: v } },
+                  { id: cid, apiPatch: { company: companyPayload } },
                   { onError: () => notifications.show({ message: 'Failed to update company.', color: 'red', autoClose: 3000 }) },
                 );
               }}

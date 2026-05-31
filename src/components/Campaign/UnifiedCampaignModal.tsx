@@ -3,8 +3,8 @@ import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
-import type { ApiClient, CampaignCategoryEntry } from '@/services/apiClient';
-import { useAllCompanies, type CompanyInfo } from '@/services/adminQuery';
+import type { CampaignCategoryEntry } from '@/services/apiClient';
+import type { CompanyInfo } from '@/services/adminQuery';
 import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
@@ -91,7 +91,6 @@ function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: strin
 
 interface UnifiedCampaignModalProps {
   modal: UnifiedCampaignModalHandle;
-  apiClient: ApiClient;
   galleryBehaviorSettings?: GalleryBehaviorSettings;
   /** When 'individual', show per-card border color picker. */
   cardBorderMode?: 'single' | 'auto' | 'individual';
@@ -511,7 +510,6 @@ setWpsgDebugDisplayName(UnifiedCampaignSettingsPanel, 'UnifiedCampaignSettingsPa
 
 export function UnifiedCampaignModal({
   modal,
-  apiClient,
   galleryBehaviorSettings = DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
   cardBorderMode,
   layoutTemplates = [],
@@ -519,7 +517,6 @@ export function UnifiedCampaignModal({
   categoryItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
-  const { companies, companiesLoading } = useAllCompanies(apiClient, modal.opened);
   const {
     opened, mode, formState, updateForm, isSaving,
     coverImageUploading, handleSelectCoverImage, handleUploadCoverImage,
@@ -530,6 +527,7 @@ export function UnifiedCampaignModal({
     addMediaUrl, setAddMediaUrl, addMediaType, setAddMediaType,
     addMediaCaption, setAddMediaCaption, addMediaLoading,
     libraryMedia, libraryLoading, librarySearch, setLibrarySearch, loadLibraryMedia,
+    companies, companiesLoading,
     close, save,
   } = modal;
 

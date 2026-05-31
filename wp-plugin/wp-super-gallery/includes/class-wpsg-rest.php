@@ -5678,11 +5678,31 @@ class WPSG_REST {
             return;
         }
 
-        $company = sanitize_text_field($company);
-        $term = term_exists($company, 'wpsg_company');
-        if (!$term) {
-            $term = wp_insert_term($company, 'wpsg_company');
+        if (is_array($company)) {
+            $name = isset($company['name']) ? sanitize_text_field($company['name']) : '';
+            $slug = isset($company['slug']) ? sanitize_title($company['slug']) : '';
+            if (empty($name)) {
+                return;
+            }
+            $term = $slug ? term_exists($slug, 'wpsg_company') : null;
+            if (!$term) {
+                $term = term_exists($name, 'wpsg_company');
+            }
+            if (!$term) {
+                $args = $slug ? ['slug' => $slug] : [];
+                $term = wp_insert_term($name, 'wpsg_company', $args);
+            }
+        } else {
+            $company = sanitize_text_field($company);
+            if (empty($company)) {
+                return;
+            }
+            $term = term_exists($company, 'wpsg_company');
+            if (!$term) {
+                $term = wp_insert_term($company, 'wpsg_company');
+            }
         }
+
         if (!is_wp_error($term)) {
             wp_set_object_terms($post_id, intval($term['term_id']), 'wpsg_company', false);
         }

@@ -460,7 +460,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
 
         <UnifiedCampaignModal
           modal={unifiedModal}
-          apiClient={apiClient}
           layoutTemplates={layoutTemplates ?? []}
           onEditLayout={(id) => { unifiedModal.close(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
           categoryItems={campaignCategories}
