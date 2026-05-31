@@ -433,10 +433,20 @@ export function getAllCompaniesQueryKey(apiClient: ApiClient) {
 }
 
 async function fetchAllCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
-  const response = await apiClient.get<ListResponse<CompanyInfo>>(
-    '/wp-json/wp-super-gallery/v1/companies?per_page=100',
+  const first = await apiClient.get<{ items: CompanyInfo[]; totalPages: number }>(
+    '/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1',
   );
-  return normalizeListResponse(response);
+  const items = first.items ?? [];
+  const totalPages = first.totalPages ?? 1;
+  if (totalPages <= 1) return items;
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, i) =>
+      apiClient
+        .get<{ items: CompanyInfo[] }>(`/wp-json/wp-super-gallery/v1/companies?per_page=100&page=${i + 2}`)
+        .then((r) => r.items ?? []),
+    ),
+  );
+  return items.concat(...rest);
 }
 
 export function useAllCompanies(apiClient: ApiClient, enabled = true) {
@@ -481,8 +491,11 @@ export function usePatchCampaign(apiClient: ApiClient) {
       }
     },
 
-    onSettled: () => {
+    onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({ queryKey: campaignsPrefix });
+      if ('company' in vars.apiPatch) {
+        void queryClient.invalidateQueries({ queryKey: getAllCompaniesQueryKey(apiClient) });
+      }
     },
   });
 }
