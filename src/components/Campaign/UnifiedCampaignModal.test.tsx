@@ -143,6 +143,8 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
     librarySearch: '',
     setLibrarySearch: vi.fn(),
     loadLibraryMedia: vi.fn(),
+    companies: [{ id: 1, name: 'Acme Corp', slug: 'acme', campaignCount: 1, activeCampaigns: 1, archivedCampaigns: 0, accessGrantCount: 0, campaigns: [] }],
+    companiesLoading: false,
     openForEdit: vi.fn(),
     openForCreate: vi.fn(),
     close: vi.fn(),
@@ -165,11 +167,6 @@ async function openCampaignResponsiveConfigDialog() {
   });
 }
 
-const mockApiClient = {
-  getBaseUrl: () => 'test',
-  get: vi.fn().mockResolvedValue([]),
-} as any;
-
 describe('UnifiedCampaignModal', () => {
   beforeEach(() => {
     capturedGalleryConfigEditorZIndex = undefined;
@@ -177,22 +174,22 @@ describe('UnifiedCampaignModal', () => {
 
   it('does not render when opened is false', () => {
     const modal = makeMockModal({ opened: false });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('renders Details tab with title, description, and company inputs', () => {
     const modal = makeMockModal();
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByDisplayValue('Test Campaign')).toBeInTheDocument();
     expect(screen.getByDisplayValue('A test campaign')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('acme')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument();
   });
 
   it('fires updateForm when title changes', () => {
     const updateForm = vi.fn();
     const modal = makeMockModal({ updateForm });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     fireEvent.change(screen.getByDisplayValue('Test Campaign'), {
       target: { value: 'New Title' },
     });
@@ -204,7 +201,7 @@ describe('UnifiedCampaignModal', () => {
   it('fires updateForm when description changes', () => {
     const updateForm = vi.fn();
     const modal = makeMockModal({ updateForm });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     fireEvent.change(screen.getByDisplayValue('A test campaign'), {
       target: { value: 'Updated Desc' },
     });
@@ -216,7 +213,7 @@ describe('UnifiedCampaignModal', () => {
   it('calls save when Save Changes is clicked', () => {
     const save = vi.fn();
     const modal = makeMockModal({ save });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
     expect(save).toHaveBeenCalled();
   });
@@ -224,7 +221,7 @@ describe('UnifiedCampaignModal', () => {
   it('calls close (via guardedClose) when Cancel is clicked on clean form', async () => {
     const close = vi.fn();
     const modal = makeMockModal({ close });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     await waitFor(() => {
       expect(close).toHaveBeenCalled();
@@ -233,13 +230,13 @@ describe('UnifiedCampaignModal', () => {
 
   it('shows "New Campaign" title in create mode', () => {
     const modal = makeMockModal({ mode: 'create', editingCampaignId: null });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByText('New Campaign')).toBeInTheDocument();
   });
 
   it('hides Media tab in create mode', () => {
     const modal = makeMockModal({ mode: 'create', editingCampaignId: null });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.queryByRole('tab', { name: /media/i })).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /details/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /settings/i })).toBeInTheDocument();
@@ -247,13 +244,13 @@ describe('UnifiedCampaignModal', () => {
 
   it('shows Media tab in edit mode', () => {
     const modal = makeMockModal({ mode: 'edit' });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByRole('tab', { name: /media/i })).toBeInTheDocument();
   });
 
   it('renders Settings tab with status and visibility', () => {
     const modal = makeMockModal({ activeTab: 'settings' });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Visibility')).toBeInTheDocument();
     expect(screen.getByText('Gallery Mode Override')).toBeInTheDocument();
@@ -265,7 +262,7 @@ describe('UnifiedCampaignModal', () => {
 
   it('opens the campaign responsive config editor above the parent campaign modal', async () => {
     const modal = makeMockModal({ activeTab: 'settings' });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     await openCampaignResponsiveConfigDialog();
 
@@ -291,7 +288,7 @@ describe('UnifiedCampaignModal', () => {
         categories: [],
       },
     });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     expect(screen.getByDisplayValue('Unified')).toBeInTheDocument();
     expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
@@ -328,7 +325,7 @@ describe('UnifiedCampaignModal', () => {
       },
     });
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} galleryBehaviorSettings={galleryBehaviorSettings} />);
+    render(<UnifiedCampaignModal modal={modal} galleryBehaviorSettings={galleryBehaviorSettings} />);
 
     expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
     expect(screen.getByLabelText('Tablet Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
@@ -360,7 +357,7 @@ describe('UnifiedCampaignModal', () => {
     const unifiedAdapterLabel = getAdapterSelectOptions({ context: 'unified-gallery', breakpoint: 'tablet' })
       .find((option) => option.value === 'classic')?.label;
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     fireEvent.click(screen.getByLabelText('Tablet Unified Gallery Adapter', { selector: 'input' }));
     fireEvent.click(screen.getByRole('option', { name: unifiedAdapterLabel ?? 'Classic' }));
@@ -412,7 +409,7 @@ describe('UnifiedCampaignModal', () => {
       },
     });
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     expect(screen.getByLabelText('Desktop Image Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
     expect(screen.getByLabelText('Desktop Video Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
@@ -446,7 +443,7 @@ describe('UnifiedCampaignModal', () => {
       },
     });
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     fireEvent.click(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' }));
     fireEvent.click(screen.getByRole('option', { name: perTypeAdapterLabel ?? 'Masonry' }));
@@ -465,7 +462,7 @@ describe('UnifiedCampaignModal', () => {
 
   it('opens the shared responsive editor from campaign settings', async () => {
     const modal = makeMockModal({ activeTab: 'settings' });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     const dialog = await openCampaignResponsiveConfigDialog();
 
@@ -500,7 +497,7 @@ describe('UnifiedCampaignModal', () => {
         categories: [],
       },
     });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     const dialog = await openCampaignResponsiveConfigDialog();
 
@@ -542,7 +539,7 @@ describe('UnifiedCampaignModal', () => {
       },
     });
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     expect(screen.getByText('Custom gallery overrides')).toBeInTheDocument();
     expect(screen.getByText('Responsive settings: customized')).toBeInTheDocument();
@@ -560,7 +557,7 @@ describe('UnifiedCampaignModal', () => {
     const updateForm = vi.fn();
     const modal = makeMockModal({ activeTab: 'settings', updateForm });
 
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
 
     const dialog = await openCampaignResponsiveConfigDialog();
 
@@ -607,7 +604,7 @@ describe('UnifiedCampaignModal', () => {
       mediaItems: [mediaItem],
       handleRemoveMedia,
     });
-    render(<UnifiedCampaignModal modal={modal} apiClient={mockApiClient} />);
+    render(<UnifiedCampaignModal modal={modal} />);
     const removeBtn = screen.getByRole('button', { name: /remove from campaign/i });
     fireEvent.click(removeBtn);
     expect(handleRemoveMedia).toHaveBeenCalledWith(mediaItem);

@@ -336,8 +336,6 @@ describe('LayoutBuilderGallery', () => {
 // ─── UnifiedCampaignModal layoutTemplateId tests ─────────────────────────────
 
 describe('UnifiedCampaignModal layout selector', () => {
-  const mockApiClient = { getBaseUrl: () => 'test', get: vi.fn().mockResolvedValue([]) } as any;
-
   const defaultFormState = {
     title: 'Test',
     description: 'Desc',
@@ -387,6 +385,8 @@ describe('UnifiedCampaignModal layout selector', () => {
       librarySearch: '',
       setLibrarySearch: vi.fn(),
       loadLibraryMedia: vi.fn(),
+      companies: [],
+      companiesLoading: false,
       openForEdit: vi.fn(),
       openForCreate: vi.fn(),
       close: vi.fn(),
@@ -439,8 +439,7 @@ describe('UnifiedCampaignModal layout selector', () => {
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-        apiClient={mockApiClient}
-        layoutTemplates={mockTemplates}
+layoutTemplates={mockTemplates}
       />,
     );
 
@@ -454,8 +453,7 @@ describe('UnifiedCampaignModal layout selector', () => {
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-        apiClient={mockApiClient}
-        layoutTemplates={[]}
+layoutTemplates={[]}
       />,
     );
 
@@ -470,8 +468,7 @@ describe('UnifiedCampaignModal layout selector', () => {
     render(
       <UnifiedCampaignModal
         modal={modal as never}
-        apiClient={mockApiClient}
-        layoutTemplates={mockTemplates}
+layoutTemplates={mockTemplates}
         onEditLayout={onEditLayout}
       />,
     );
