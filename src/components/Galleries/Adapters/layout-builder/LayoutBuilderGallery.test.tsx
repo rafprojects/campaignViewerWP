@@ -385,6 +385,8 @@ describe('UnifiedCampaignModal layout selector', () => {
       librarySearch: '',
       setLibrarySearch: vi.fn(),
       loadLibraryMedia: vi.fn(),
+      companies: [],
+      companiesLoading: false,
       openForEdit: vi.fn(),
       openForCreate: vi.fn(),
       close: vi.fn(),

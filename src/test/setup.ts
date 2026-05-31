@@ -189,4 +189,5 @@ if (typeof URL.revokeObjectURL !== 'function') {
 
 afterEach(() => {
 	cleanup();
+	localStorage.clear();
 });

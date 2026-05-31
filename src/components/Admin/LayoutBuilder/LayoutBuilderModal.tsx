@@ -27,6 +27,7 @@ import type { ApiClient } from '@/services/apiClient';
 import {
   useLayoutBuilderState,
   createEmptyTemplate,
+  type LayoutDraftPayload,
 } from '@/hooks/useLayoutBuilderState';
 import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
@@ -213,48 +214,76 @@ export function LayoutBuilderModal({
    
   }, [initialTemplate?.id]);
 
-  // ── Draft restore/discard prompt ──
+  // ── P36-A: Draft restore/discard prompt ──
+  // Uses the LayoutDraftPayload wrapper (savedAt + serverUpdatedAt + template).
+  // Old raw-template drafts (pre-P36-A) lack savedAt and are silently discarded.
   useEffect(() => {
     if (!opened) {
       draftCheckedRef.current = false;
       return;
     }
     if (draftCheckedRef.current) return;
-    draftCheckedRef.current = true;
 
     const templateId = initialTemplate?.id;
     if (!templateId) return;
+
+    draftCheckedRef.current = true;
 
     const stored = (() => {
       try { return localStorage.getItem(`wpsg_layout_draft_${templateId}`); } catch { return null; }
     })();
     if (!stored) return;
 
-    let draft: LayoutTemplate | null = null;
-    try { draft = JSON.parse(stored) as LayoutTemplate; } catch { return; }
-    if (!draft) return;
+    let payload: LayoutDraftPayload | null = null;
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      // New payload format: must have savedAt + template fields
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'savedAt' in parsed &&
+        'template' in parsed &&
+        typeof (parsed as Record<string, unknown>).savedAt === 'number'
+      ) {
+        payload = parsed as LayoutDraftPayload;
+      }
+    } catch { return; }
 
-    // Only prompt if the draft is newer than the initial template
-    const draftTime = draft.updatedAt ? new Date(draft.updatedAt).getTime() : 0;
-    const savedTime = initialTemplate?.updatedAt ? new Date(initialTemplate.updatedAt).getTime() : 0;
-    if (draftTime <= savedTime) {
-      // Draft is stale — clear silently
+    if (!payload) {
+      // Old format (raw LayoutTemplate) — discard silently; can't determine age
       try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
       return;
     }
 
-    const draftSnapshot = draft;
+    // The draft is valid if it was autosaved after the template was last server-saved.
+    const serverSavedAt = initialTemplate?.updatedAt
+      ? new Date(initialTemplate.updatedAt).getTime()
+      : 0;
+    if (payload.savedAt <= serverSavedAt) {
+      // Draft predates the current server version — silently discard
+      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      return;
+    }
+
+    const isConflict = payload.serverUpdatedAt !== (initialTemplate?.updatedAt ?? '');
+    const draftAge = Math.round((Date.now() - payload.savedAt) / 60_000);
+    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+
+    const draftSnapshot = payload.template;
     modals.openConfirmModal({
-      title: 'Unsaved draft found',
+      title: isConflict ? 'Draft conflict detected' : 'Unsaved draft found',
       children: (
         <Text size="sm">
-          An autosaved draft from a previous session was found. Would you like to restore it?
+          {isConflict
+            ? `This template was saved in another session after your draft was created (${ageLabel}). Restoring your draft will overwrite those changes.`
+            : `An autosaved draft from ${ageLabel} was found. Would you like to restore it?`}
         </Text>
       ),
       labels: { confirm: 'Restore draft', cancel: 'Discard' },
-      confirmProps: { color: 'blue' },
+      confirmProps: { color: isConflict ? 'orange' : 'blue' },
       onConfirm: () => {
         builder.setTemplate(draftSnapshot, { preserveSelection: false });
+        builder.clearDraft();
         notifications.show({
           title: 'Draft restored',
           message: 'Your previous session has been restored.',
@@ -272,7 +301,7 @@ export function LayoutBuilderModal({
       },
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opened]);
+  }, [opened, initialTemplate?.id]);
 
   // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
   // The ref keeps a stable pointer to the latest `migrateGroupsIfNeeded` so
@@ -296,13 +325,14 @@ export function LayoutBuilderModal({
           cancel: 'Keep editing',
         },
         confirmProps: { color: 'red' },
-        onConfirm: onClose,
+        onConfirm: () => { builder.clearDraft(); onClose(); },
       });
       return;
     }
 
+    builder.clearDraft();
     onClose();
-  }, [builder.isDirty, onClose]);
+  }, [builder, onClose]);
 
   // ── Save ──
   const handleSave = useCallback(async () => {

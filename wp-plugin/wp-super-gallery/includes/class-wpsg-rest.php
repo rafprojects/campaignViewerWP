@@ -1504,6 +1504,12 @@ class WPSG_REST {
                     'key' => 'visibility',
                     'value' => 'public',
                 ];
+                // P36-C: Exclude campaigns with an explicit draft status from anonymous listings.
+                $meta_query[] = [
+                    'relation' => 'OR',
+                    ['key' => 'status', 'compare' => 'NOT EXISTS'],
+                    ['key' => 'status', 'value' => 'draft', 'compare' => '!='],
+                ];
                 $args['meta_query'] = $meta_query;
             } else {
                 $accessible_ids = self::get_accessible_campaign_ids($user_id);
@@ -5393,6 +5399,16 @@ class WPSG_REST {
             return false;
         }
 
+        // P36-C: Draft campaigns are only visible to their author.
+        $campaign_status = (string) get_post_meta($post_id, 'status', true);
+        if ($campaign_status === 'draft') {
+            if (!$user_id) {
+                return false;
+            }
+            $post = get_post($post_id);
+            return $post && intval($post->post_author) === $user_id;
+        }
+
         $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
         if ($visibility === 'public') {
             return true;
@@ -5516,6 +5532,7 @@ class WPSG_REST {
         return [
             'id' => (string) $post->ID,
             'companyId' => $company_id,
+            'companyName' => $company_term ? $company_term->name : '',
             'title' => $post->post_title,
             'description' => $post->post_content,
             'thumbnail' => $thumbnail_url,
@@ -5677,11 +5694,31 @@ class WPSG_REST {
             return;
         }
 
-        $company = sanitize_text_field($company);
-        $term = term_exists($company, 'wpsg_company');
-        if (!$term) {
-            $term = wp_insert_term($company, 'wpsg_company');
+        if (is_array($company)) {
+            $name = isset($company['name']) ? sanitize_text_field($company['name']) : '';
+            $slug = isset($company['slug']) ? sanitize_title($company['slug']) : '';
+            if (empty($name)) {
+                return;
+            }
+            $term = $slug ? term_exists($slug, 'wpsg_company') : null;
+            if (!$term) {
+                $term = term_exists($name, 'wpsg_company');
+            }
+            if (!$term) {
+                $args = $slug ? ['slug' => $slug] : [];
+                $term = wp_insert_term($name, 'wpsg_company', $args);
+            }
+        } else {
+            $company = sanitize_text_field($company);
+            if (empty($company)) {
+                return;
+            }
+            $term = term_exists($company, 'wpsg_company');
+            if (!$term) {
+                $term = wp_insert_term($company, 'wpsg_company');
+            }
         }
+
         if (!is_wp_error($term)) {
             wp_set_object_terms($post_id, intval($term['term_id']), 'wpsg_company', false);
         }

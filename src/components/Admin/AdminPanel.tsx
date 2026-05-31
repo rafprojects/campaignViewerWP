@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
+import { useReloadSafeView } from '@/hooks/useReloadSafeView';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
@@ -61,12 +61,35 @@ interface AdminPanelProps {
 
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId }: AdminPanelProps) {
   const queryClient = useQueryClient();
-  // P30-D: If arriving via a deep-link builder URL, start on the layouts tab
-  const [activeTab, setActiveTab] = useLocalStorage<string | null>({
-    key: 'wpsg_admin_active_tab',
-    defaultValue: initialBuilderTemplateId ? 'layouts' : 'campaigns',
-    getInitialValueInEffect: false,
-  });
+
+  // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
+  // first use so existing tab state is not lost when upgrading from pre-P36-A.
+  const legacyTabDefault = (() => {
+    try {
+      return localStorage.getItem('wpsg_admin_active_tab');
+    } catch {
+      return null;
+    }
+  })();
+  const [activeTab, setActiveTab] = useReloadSafeView<string | null>(
+    'admin_tab',
+    // P30-D: deep-link takes precedence; fall through to migrated legacy value or default.
+    initialBuilderTemplateId ? 'layouts' : (legacyTabDefault ?? 'campaigns'),
+  );
+
+  // One-time migration: write the legacy value to the new scoped key before
+  // deleting it, so the migrated tab survives the first session even if the
+  // user never changes tabs (setActiveTab is the only write path for the hook).
+  useEffect(() => {
+    try {
+      const legacyValue = localStorage.getItem('wpsg_admin_active_tab');
+      if (legacyValue !== null) {
+        setActiveTab(legacyValue);
+        localStorage.removeItem('wpsg_admin_active_tab');
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [mediaCampaignId, setMediaCampaignId] = useState('');
   // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
@@ -235,7 +258,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     includeArchived,
   ].filter(Boolean).length;
 
-  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary });
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 

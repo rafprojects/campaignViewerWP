@@ -1,10 +1,24 @@
+import { useState } from 'react';
 import { act, renderHook } from '@testing-library/react';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign } from '@/types';
+import { createTestQueryClient } from '@/services/queryClient';
 
 import { useUnifiedCampaignModal } from './useUnifiedCampaignModal';
+
+function makeWrapper() {
+  return function Wrapper({ children }: { children: React.ReactNode }) {
+    const [queryClient] = useState(createTestQueryClient);
+    return (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  };
+}
 
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {
@@ -51,7 +65,7 @@ describe('useUnifiedCampaignModal', () => {
       isAdmin: true,
       onMutate: vi.fn().mockResolvedValue(undefined),
       onNotify: vi.fn(),
-    }));
+    }), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.openForEdit(makeCampaign({
@@ -78,7 +92,7 @@ describe('useUnifiedCampaignModal', () => {
       isAdmin: true,
       onMutate: vi.fn().mockResolvedValue(undefined),
       onNotify: vi.fn(),
-    }));
+    }), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.openForEdit(makeCampaign());
@@ -94,7 +108,7 @@ describe('useUnifiedCampaignModal', () => {
       isAdmin: true,
       onMutate: vi.fn().mockResolvedValue(undefined),
       onNotify: vi.fn(),
-    }));
+    }), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.openForEdit(makeCampaign());
@@ -144,7 +158,7 @@ describe('useUnifiedCampaignModal', () => {
       isAdmin: true,
       onMutate: vi.fn().mockResolvedValue(undefined),
       onNotify: vi.fn(),
-    }));
+    }), { wrapper: makeWrapper() });
 
     await act(async () => {
       await result.current.openForEdit(makeCampaign());
@@ -195,7 +209,7 @@ describe('useUnifiedCampaignModal', () => {
       isAdmin: true,
       onMutate: vi.fn().mockResolvedValue(undefined),
       onNotify,
-    }));
+    }), { wrapper: makeWrapper() });
 
     act(() => {
       result.current.openForCreate();

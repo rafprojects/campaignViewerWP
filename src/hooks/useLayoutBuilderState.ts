@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { produce, enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
@@ -18,8 +18,23 @@ enableMapSet();
 // ── Constants ────────────────────────────────────────────────
 
 const MAX_HISTORY = 50;
-const AUTOSAVE_INTERVAL_MS = 30_000;
 const STORAGE_KEY_PREFIX = 'wpsg_layout_draft_';
+
+/**
+ * P36-A: Autosave payload wrapper. The `savedAt` timestamp is set at each
+ * autosave tick (not the template's `updatedAt`, which only changes on server
+ * save). `serverUpdatedAt` captures the server's `updatedAt` at save time so
+ * the restore prompt can detect a server-side conflict.
+ */
+export interface LayoutDraftPayload {
+  /** Unix ms timestamp of the last local autosave. */
+  savedAt: number;
+  /** `template.updatedAt` at the time of this autosave — used to detect server conflicts. */
+  serverUpdatedAt: string;
+  /** `template.schemaVersion` at the time of this autosave. */
+  schemaVersion: number;
+  template: LayoutTemplate;
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -1131,21 +1146,22 @@ export function useLayoutBuilderState(
   }, [template.id]);
 
   // ── Autosave to localStorage ──
-  const templateRef = useRef(template);
-  templateRef.current = template;
-
   useEffect(() => {
-    if (!template.id) return; // Don't autosave unsaved templates
+    if (!template.id) return;
     const key = STORAGE_KEY_PREFIX + template.id;
-    const interval = setInterval(() => {
+    const timer = setTimeout(() => {
       try {
-        localStorage.setItem(key, JSON.stringify(templateRef.current));
-      } catch {
-        // localStorage full or unavailable — silently skip
-      }
-    }, AUTOSAVE_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [template.id]);
+        const payload: LayoutDraftPayload = {
+          savedAt: Date.now(),
+          serverUpdatedAt: template.updatedAt,
+          schemaVersion: template.schemaVersion,
+          template,
+        };
+        localStorage.setItem(key, JSON.stringify(payload));
+      } catch { /* storage unavailable */ }
+    }, 2_000);
+    return () => clearTimeout(timer);
+  }, [template]);
 
   return {
     // State

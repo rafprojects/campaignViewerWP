@@ -4,7 +4,7 @@ import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import type { GalleryBehaviorSettings, GalleryCommonSettings } from '@/types';
 import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import {
@@ -21,7 +21,7 @@ interface CampaignViewerSettingsSectionProps {
 }
 
 export function CampaignViewerSettingsSection({ settings, updateSetting }: CampaignViewerSettingsSectionProps) {
-  const { mounted, onChange } = useLazyAccordion('cv-open-mode');
+  const { mounted, value, onChange } = usePersistentAccordion('campaign-viewer', 'cv-open-mode');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'showCampaignGalleryLabels') as boolean | undefined;
   const galleryImageLabel = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'galleryImageLabel') as string | undefined;
@@ -44,7 +44,7 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
   };
 
   return (
-    <Accordion variant="separated" defaultValue="cv-open-mode" onChange={onChange}>
+    <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="cv-open-mode">
         <Accordion.Control>Open Mode &amp; Sizing</Accordion.Control>
         <Accordion.Panel>

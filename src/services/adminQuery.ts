@@ -1,5 +1,7 @@
 import {
   useQuery,
+  useMutation,
+  useQueryClient,
   type QueryClient,
 } from '@tanstack/react-query';
 
@@ -424,6 +426,78 @@ export function useCompanies(apiClient: ApiClient, enabled: boolean) {
     companiesError: error ?? null,
     mutateCompanies: refetch,
   };
+}
+
+export function getAllCompaniesQueryKey(apiClient: ApiClient) {
+  return [...getAdminQueryPrefix(apiClient), 'companies-all'] as const;
+}
+
+async function fetchAllCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
+  const first = await apiClient.get<{ items: CompanyInfo[]; totalPages: number }>(
+    '/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1',
+  );
+  const items = first.items ?? [];
+  const totalPages = first.totalPages ?? 1;
+  if (totalPages <= 1) return items;
+  const rest = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, i) =>
+      apiClient
+        .get<{ items: CompanyInfo[] }>(`/wp-json/wp-super-gallery/v1/companies?per_page=100&page=${i + 2}`)
+        .then((r) => r.items ?? []),
+    ),
+  );
+  return items.concat(...rest);
+}
+
+export function useAllCompanies(apiClient: ApiClient, enabled = true) {
+  const { data, isLoading } = useQuery({
+    queryKey: getAllCompaniesQueryKey(apiClient),
+    queryFn: () => fetchAllCompanies(apiClient),
+    enabled,
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+  return { companies: data ?? [], companiesLoading: isLoading };
+}
+
+type CampaignPatchVars = {
+  id: string;
+  apiPatch: Partial<Record<string, unknown>>;
+  optimisticPatch?: Partial<AdminCampaign>;
+};
+
+export function usePatchCampaign(apiClient: ApiClient) {
+  const queryClient = useQueryClient();
+  const campaignsPrefix = [...getAdminQueryPrefix(apiClient), 'campaigns'] as const;
+
+  return useMutation<unknown, Error, CampaignPatchVars, { snapshots: [unknown, unknown][] }>({
+    mutationFn: ({ id, apiPatch }) =>
+      apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${id}`, apiPatch),
+
+    onMutate: async ({ id, optimisticPatch }) => {
+      if (!optimisticPatch) return { snapshots: [] };
+      await queryClient.cancelQueries({ queryKey: campaignsPrefix });
+      const snapshots = queryClient.getQueriesData<{ campaigns: AdminCampaign[] }>({ queryKey: campaignsPrefix });
+      queryClient.setQueriesData<{ campaigns: AdminCampaign[]; pagination: unknown }>(
+        { queryKey: campaignsPrefix },
+        (old) => old ? { ...old, campaigns: old.campaigns.map((c) => String(c.id) === id ? { ...c, ...optimisticPatch } : c) } : old,
+      );
+      return { snapshots: snapshots as [unknown, unknown][] };
+    },
+
+    onError: (_err, _vars, context) => {
+      for (const [key, data] of (context?.snapshots ?? [])) {
+        queryClient.setQueryData(key as Parameters<typeof queryClient.setQueryData>[0], data);
+      }
+    },
+
+    onSettled: (_data, _error, vars) => {
+      void queryClient.invalidateQueries({ queryKey: campaignsPrefix });
+      if ('company' in vars.apiPatch) {
+        void queryClient.invalidateQueries({ queryKey: getAllCompaniesQueryKey(apiClient) });
+      }
+    },
+  });
 }
 
 export function useAuditEntries(apiClient: ApiClient, campaignId: string, filters: AuditFilters = {}) {

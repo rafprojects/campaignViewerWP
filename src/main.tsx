@@ -16,6 +16,7 @@ import { createAppQueryClient } from './services/queryClient'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
+import { RootIdProvider } from './contexts/RootIdContext'
 
 type MountProps = Record<string, unknown>
 
@@ -73,6 +74,19 @@ const ensureThemeScopeSelector = (host: HTMLElement): string => {
 }
 
 /**
+ * P36-A: Stable root identity for a host element. Used to scope localStorage
+ * keys (`wpsg_view_<rootId>_<feature>`) across multiple shortcode mounts.
+ * Priority: element id → page-path + positional index fallback.
+ * The path component prevents positional keys ('wpsg-0') from colliding
+ * across unrelated pages that each render a single un-id'd shortcode.
+ */
+const getRootId = (host: HTMLElement, index = 0): string => {
+  if (host.id) return host.id;
+  const slug = window.location.pathname.replace(/\//g, '-').replace(/^-|-$/g, '') || 'root';
+  return `wpsg-${slug}-${index}`;
+}
+
+/**
  * Inner shell that consumes the ThemeContext and feeds the resolved
  * MantineThemeOverride into MantineProvider. This component re-renders
  * only when the theme changes (O(1) map lookup, pre-computed objects).
@@ -120,6 +134,7 @@ const renderApp = (
   mountNode: Element,
   hostElement: HTMLElement,
   props: MountProps,
+  rootId: string,
   shadowRootEl?: ShadowRoot,
 ) => {
   const isShadow = !!shadowRootEl
@@ -129,24 +144,26 @@ const renderApp = (
   createRoot(mountNode).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider
-          shadowRoot={shadowRootEl ?? null}
-          hostElement={hostElement}
-          themeScopeSelector={themeScopeSelector}
-          allowPersistence={allowThemePersistence}
-        >
-          <ThemedApp
-            props={props}
-            isShadowDom={isShadow}
-            shadowRootEl={shadowRootEl}
-          />
-        </ThemeProvider>
+        <RootIdProvider value={rootId}>
+          <ThemeProvider
+            shadowRoot={shadowRootEl ?? null}
+            hostElement={hostElement}
+            themeScopeSelector={themeScopeSelector}
+            allowPersistence={allowThemePersistence}
+          >
+            <ThemedApp
+              props={props}
+              isShadowDom={isShadow}
+              shadowRootEl={shadowRootEl}
+            />
+          </ThemeProvider>
+        </RootIdProvider>
       </QueryClientProvider>
     </StrictMode>,
   )
 }
 
-const mountWithShadow = (host: HTMLElement, props: MountProps) => {
+const mountWithShadow = (host: HTMLElement, props: MountProps, rootId: string) => {
   // Prevent double mounting - check host element first
   if (host.hasAttribute('data-wpsg-mounted')) {
     return
@@ -165,16 +182,16 @@ const mountWithShadow = (host: HTMLElement, props: MountProps) => {
   const mountPoint = document.createElement('div')
   mountPoint.setAttribute('data-wpsg-mount', 'true')
   shadowRoot.appendChild(mountPoint)
-  renderApp(mountPoint, host, props, shadowRoot)
+  renderApp(mountPoint, host, props, rootId, shadowRoot)
 }
 
-const mountDefault = (host: HTMLElement, props: MountProps) => {
+const mountDefault = (host: HTMLElement, props: MountProps, rootId: string) => {
   // Prevent double mounting
   if (host.hasAttribute('data-wpsg-mounted')) {
     return
   }
   host.setAttribute('data-wpsg-mounted', 'true')
-  renderApp(host, host, props)
+  renderApp(host, host, props, rootId)
 }
 
 /**
@@ -200,7 +217,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
 
   const instances: MountInstance[] = []
 
-  nodes.forEach((host) => {
+  nodes.forEach((host, index) => {
     if (host.hasAttribute('data-wpsg-mounted')) return
     host.setAttribute('data-wpsg-mounted', 'true')
 
@@ -217,10 +234,10 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
       const mountPoint = document.createElement('div')
       mountPoint.setAttribute('data-wpsg-mount', 'true')
       shadowRoot.appendChild(mountPoint)
-      const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
+      const portalKey = getRootId(host, index)
       instances.push({ mountPoint, hostElement: host, shadowRoot, props: parseProps(host), portalKey })
     } else {
-      const portalKey = host.id || (host.dataset.wpsgKey ??= `wpsg-${Math.random().toString(36).slice(2, 10)}`)
+      const portalKey = getRootId(host, index)
       instances.push({
         mountPoint: host,
         hostElement: host,
@@ -265,18 +282,20 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
       <QueryClientProvider client={queryClient}>
         {instances.map((inst, i) =>
           createPortal(
-            <ThemeProvider
-              shadowRoot={inst.shadowRoot ?? null}
-              hostElement={inst.hostElement}
-              themeScopeSelector={inst.themeScopeSelector}
-              allowPersistence={i === 0 && allowThemePersistence}
-            >
-              <ThemedApp
-                props={inst.props}
-                isShadowDom={!!inst.shadowRoot}
-                shadowRootEl={inst.shadowRoot}
-              />
-            </ThemeProvider>,
+            <RootIdProvider value={inst.portalKey}>
+              <ThemeProvider
+                shadowRoot={inst.shadowRoot ?? null}
+                hostElement={inst.hostElement}
+                themeScopeSelector={inst.themeScopeSelector}
+                allowPersistence={i === 0 && allowThemePersistence}
+              >
+                <ThemedApp
+                  props={inst.props}
+                  isShadowDom={!!inst.shadowRoot}
+                  shadowRootEl={inst.shadowRoot}
+                />
+              </ThemeProvider>
+            </RootIdProvider>,
             inst.mountPoint,
             inst.portalKey,
           ),
@@ -295,11 +314,12 @@ if (import.meta.env.DEV) {
 if (rootHost) {
   if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')
   const props = parseProps(rootHost)
+  const rootId = getRootId(rootHost)
   if (useShadowDom) {
-    mountWithShadow(rootHost, props)
+    mountWithShadow(rootHost, props, rootId)
   } else {
     import('./styles/global.scss')
-    mountDefault(rootHost, props)
+    mountDefault(rootHost, props, rootId)
   }
 } else {
   // Only search for .wp-super-gallery if #root doesn't exist
@@ -315,11 +335,12 @@ if (rootHost) {
     nodes.forEach((node, index) => {
       if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
       const props = parseProps(node)
+      const rootId = getRootId(node, index)
       if (useShadowDom) {
-        mountWithShadow(node, props)
+        mountWithShadow(node, props, rootId)
       } else {
         import('./styles/global.scss')
-        mountDefault(node, props)
+        mountDefault(node, props, rootId)
       }
     })
   }

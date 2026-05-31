@@ -31,11 +31,44 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
           <Accordion.Panel>
             {mounted.has('adv-drawer') ? (
               <Stack gap="md">
+                <DimensionInput
+                  label={tooltipLabel('Settings Panel Width', 'settingsPanelWidth')}
+                  description="Width of the settings panel drawer on medium and large screens. On small screens it is always 100%."
+                  value={settings.settingsPanelWidth ?? 600}
+                  unit={settings.settingsPanelWidthUnit ?? 'px'}
+                  onValueChange={(value) => updateSetting('settingsPanelWidth', value)}
+                  onUnitChange={(unit) => updateSetting('settingsPanelWidthUnit', unit as GalleryBehaviorSettings['settingsPanelWidthUnit'])}
+                  allowedUnits={CSS_WIDTH_UNITS}
+                  max={3000}
+                  step={50}
+                />
                 <Switch
                   label={tooltipLabel('Settings Drawer Backdrop Blur', 'settingsDrawerBlurEnabled')}
                   description="When enabled, content behind open settings drawers is blurred."
                   checked={settings.settingsDrawerBlurEnabled ?? true}
                   onChange={(event) => updateSetting('settingsDrawerBlurEnabled', event.currentTarget.checked)}
+                />
+              </Stack>
+            ) : null}
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value="adv-admin-panel">
+          <Accordion.Control>Admin Panel</Accordion.Control>
+          <Accordion.Panel>
+            {mounted.has('adv-admin-panel') ? (
+              <Stack gap="md">
+                <DimensionInput
+                  label={tooltipLabel('Admin Panel Max Width', 'adminPanelMaxWidth')}
+                  description="Maximum width of the admin panel container. Set to 0 for full width (no constraint)."
+                  value={settings.adminPanelMaxWidth ?? 0}
+                  unit={settings.adminPanelMaxWidthUnit ?? 'px'}
+                  onValueChange={(value) => updateSetting('adminPanelMaxWidth', value)}
+                  onUnitChange={(unit) => updateSetting('adminPanelMaxWidthUnit', unit as GalleryBehaviorSettings['adminPanelMaxWidthUnit'])}
+                  allowedUnits={CSS_WIDTH_UNITS}
+                  max={3000}
+                  step={50}
+                  placeholder="0 = full width"
                 />
               </Stack>
             ) : null}

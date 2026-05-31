@@ -143,6 +143,8 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
     librarySearch: '',
     setLibrarySearch: vi.fn(),
     loadLibraryMedia: vi.fn(),
+    companies: [{ id: 1, name: 'Acme Corp', slug: 'acme', campaignCount: 1, activeCampaigns: 1, archivedCampaigns: 0, accessGrantCount: 0, campaigns: [] }],
+    companiesLoading: false,
     openForEdit: vi.fn(),
     openForCreate: vi.fn(),
     close: vi.fn(),
@@ -181,7 +183,7 @@ describe('UnifiedCampaignModal', () => {
     render(<UnifiedCampaignModal modal={modal} />);
     expect(screen.getByDisplayValue('Test Campaign')).toBeInTheDocument();
     expect(screen.getByDisplayValue('A test campaign')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('acme')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Acme Corp')).toBeInTheDocument();
   });
 
   it('fires updateForm when title changes', () => {
