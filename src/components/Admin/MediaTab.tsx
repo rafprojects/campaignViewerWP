@@ -243,17 +243,15 @@ function SortableGridItem({
             height={mediaHeight}
             compact={isCompact}
             showUrl={showUrl}
+            overlayBadge={usageSummaryLoading
+              ? <Skeleton width={64} height={20} radius="xl" />
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} size="xs" />}
             onEdit={() => openEdit(item)}
             onDelete={() => handleDelete(item)}
             onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
             cardStyle={getInsertionStyle(item.id, 'horizontal')}
             dragHandleProps={dragDisabled ? undefined : { ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
           />
-          <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
-            {usageSummaryLoading
-              ? <Skeleton width={64} height={20} radius="xl" />
-              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-          </Box>
         </div>
         {isDragging && (
           <div style={{

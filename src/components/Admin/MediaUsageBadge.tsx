@@ -17,6 +17,7 @@ interface MediaUsageBadgeProps {
   count: number;
   mediaId: string;
   apiClient: ApiClient;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | undefined;
 }
 
 interface MediaUsageBadgeContentProps {
@@ -75,7 +76,7 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
 
 setWpsgDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
 
-export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgeProps) {
+export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: MediaUsageBadgeProps) {
   const [opened, setOpened] = useState(false);
   const [detail, setDetail] = useState<MediaUsageCampaignRef[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -120,9 +121,12 @@ export function MediaUsageBadge({ count, mediaId, apiClient }: MediaUsageBadgePr
           {...getWpsgDebugProps('MediaUsageBadge', 'badge')}
           color={color}
           variant="light"
-          size="sm"
-          style={{ cursor: 'pointer' }}
-          onClick={() => handleOpen(!opened)}
+          size={size}
+          style={{ cursor: 'pointer', pointerEvents: 'auto' }}
+          onClick={(event) => {
+            event.stopPropagation();
+            handleOpen(!opened);
+          }}
           aria-label={`Media used in ${label}`}
         >
           {label}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor, act, within } from '../../test/test-utils';
 import MediaTab from './MediaTab';
 import { showNotification } from '@mantine/notifications';
 
@@ -29,6 +29,7 @@ describe('MediaTab', () => {
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
     // P18-G: media usage — default to empty map so tests aren't affected
     getMediaUsageSummary: vi.fn().mockResolvedValue({}),
+    getMediaUsage: vi.fn().mockResolvedValue({ campaigns: [] }),
   } as unknown as {
     get: ReturnType<typeof vi.fn>;
     post: ReturnType<typeof vi.fn>;
@@ -39,6 +40,7 @@ describe('MediaTab', () => {
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
     getMediaUsageSummary: ReturnType<typeof vi.fn>;
+    getMediaUsage: ReturnType<typeof vi.fn>;
   });
 
   // Default apiClient for tests that don't need a fresh one
@@ -63,6 +65,33 @@ describe('MediaTab', () => {
     apiClient.addCampaignMediaBatch.mockReset();
     apiClient.getMediaUsageSummary.mockReset();
     apiClient.getMediaUsageSummary.mockResolvedValue({});
+    apiClient.getMediaUsage.mockReset();
+    apiClient.getMediaUsage.mockResolvedValue({ campaigns: [] });
+  });
+
+  it('renders the usage badge in the card overlay for grid view', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'Overlay Item',
+        order: 1,
+      },
+    ]);
+    apiClient.getMediaUsageSummary.mockResolvedValueOnce({ m1: 2 });
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+
+    await screen.findByText('Overlay Item');
+
+    const gridItem = screen.getByTestId('media-draggable-m1');
+    const overlay = within(gridItem).getByTestId('media-card-overlay-stack');
+
+    expect(within(overlay).getByText('2 campaigns')).toBeInTheDocument();
+    expect(gridItem.querySelector('[style*="bottom: 8px"][style*="left: 8px"]')).toBeNull();
   });
 
   it('renders media items and supports edit/delete/drag-reorder', async () => {

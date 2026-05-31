@@ -270,9 +270,9 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         WPSG_DB::maybe_upgrade();
 
         $cid = $this->create_campaign('Usage Test');
-        WPSG_DB::sync_media_refs($cid, [['id' => 'mu_1']]);
+        WPSG_DB::sync_media_refs($cid, [['id' => 'media-1']]);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media/mu_1/usage');
+        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media/media-1/usage');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
