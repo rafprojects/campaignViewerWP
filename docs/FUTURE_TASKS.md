@@ -8,7 +8,7 @@ Cross-checked against current code, current phase reports, and archived Phase 28
 
 The broader second-pass cleanup also removed additional shipped Phase 28 backlog items outside the original estimate, including campaign templates and access audit export, reframed duplicate detection to the remaining near-duplicate work, and retired stale non-backlog entries such as secondary admin code-splitting and deferred review item `D-8`.
 
-A final wrap-up pass removed duplicate detailed sections for work now owned by Phases 32-34 so this document remains a true long-tail and exploratory backlog.
+A later cleanup pass also removed detailed backlog entries queued into Phase 38 so this document remains a true long-tail and exploratory backlog.
 
 | Estimated item | Current code status | Decision | Phase / note |
 |----------------|---------------------|----------|--------------|
@@ -50,22 +50,6 @@ These items are intentionally not repeated in the backlog sections below.
 
 ---
 
-## Admin Panel Redesign
-
-### AdminPanel > Media Tab Card Layout Refresh
-
-**Context:** The current Media tab card presentation has accumulated a few one-off layout decisions across grid, compact, and list views. The immediate fix keeps the usage badge aligned inline with the other media badges in grid cards, but the broader card layout still needs a more deliberate redesign pass.
-
-**Design goals for a future pass:**
-- Revisit the grid-card badge hierarchy and spacing as one system instead of incrementally placing individual badges.
-- Move the campaigns usage badge into a deliberate overlay treatment in the image thumbnail's upper-left corner.
-- Normalize card chrome across grid, compact, and list presentations so captions, badges, actions, and thumbnail treatments feel consistent.
-- Review whether card metadata should live in a dedicated row below the image, with overlay badges reserved only for high-priority thumbnail metadata.
-
-**Effort:** Medium | **Impact:** Medium
-
----
-
 ## Builder
 
 ### URL-Based Image Inputs (Mask, Overlay, Background)
@@ -85,24 +69,6 @@ These items are intentionally not repeated in the backlog sections below.
 - Consider a URL allowlist or domain whitelist for additional security.
 
 **Effort:** Medium | **Impact:** Low — upload-only covers the primary use case; URL import is a convenience feature for advanced users.
-
----
-
-### Shortcut User Configuration
-
-**Context:** P18-E deploys a fixed shortcut map. Power users will want to remap keys — e.g. `Ctrl+K` instead of `/` for search (VS Code convention), or avoiding `Ctrl+N` for users who rely on browser new-tab.
-
-**What it would take:**
-- Settings page section: "Keyboard Shortcuts" — a table of all shortcuts with editable key binding fields.
-- Store the map in `localStorage` as JSON keyed by action ID.
-- A "Reset to defaults" button.
-- Conflicts detected at save time (two actions bound to the same key → validation error).
-
-**Open questions:**
-- Q1: Should shortcut config be per-user (browser-local) or per-site (WP user meta)? Local storage is simpler but doesn't persist across devices.
-- Q2: Should certain shortcuts (Escape, standard browser shortcuts) be locked against remapping?
-
-**Effort:** Medium | **Impact:** Low — niche power-user feature
 
 ---
 
@@ -169,28 +135,6 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 **Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate).
 
 **Effort:** High (2–4 days) | **Impact:** High for cross-origin standalone SPA deployments; Low for standard WordPress shortcode usage
-
----
-
-## Media Management
-
-Phase-owned follow-on in this area: advanced media sorting now lives in [PHASE34_REPORT.md](PHASE34_REPORT.md). The remaining backlog item here is near-duplicate detection.
-
-### Near-Duplicate Detection (pHash Follow-Up)
-
-**Context:** Phase 28-N already ships MD5-based exact duplicate detection and duplicate-response handling during upload. The remaining gap is *near*-duplicate detection for visually identical but not byte-identical images.
-
-**What remains:**
-- Compute a perceptual hash (pHash) of uploaded images serverside using GD-compatible tooling.
-- Compare against a pHash index for existing attachments.
-- When the Hamming distance is below a configured threshold, show a side-by-side warning and offer to reuse the existing asset.
-
-**Open questions:**
-- Q1: Is pHash computation feasible in PHP without a native extension? The `jenssegers/imagehash` Composer package is a candidate, but its GD compatibility and performance on large images need validation.
-- Q2: Should near-duplicate detection run synchronously during upload or as a secondary post-upload check?
-- Q3: What Hamming distance threshold should count as a near-duplicate, and should it be configurable?
-
-**Effort:** Medium | **Impact:** Low-Medium
 
 ---
 
@@ -435,4 +379,4 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*
-*Last updated: May 19, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), and kept the rest as long-tail reference material.*
+*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material.*
