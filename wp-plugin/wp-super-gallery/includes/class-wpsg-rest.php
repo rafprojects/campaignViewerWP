@@ -2718,7 +2718,15 @@ class WPSG_REST {
     private static function find_near_duplicates_by_phash(string $phash, int $threshold): array {
         global $wpdb;
         $rows = $wpdb->get_results(
-            "SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_wpsg_file_phash'",
+            $wpdb->prepare(
+                "SELECT pm.post_id, pm.meta_value
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE pm.meta_key = %s
+                   AND p.post_type = 'attachment'
+                   AND p.post_status = 'inherit'",
+                '_wpsg_file_phash'
+            ),
             ARRAY_A
         );
         if (empty($rows)) {
@@ -2730,6 +2738,11 @@ class WPSG_REST {
 
         foreach ($rows as $row) {
             $d = WPSG_PHash::hamming_distance($phash, (string) $row['meta_value']);
+            if ($d === 0) {
+                $best_id       = intval($row['post_id']);
+                $best_distance = 0;
+                break;
+            }
             if ($d < $best_distance) {
                 $best_distance = $d;
                 $best_id       = intval($row['post_id']);
@@ -2812,10 +2825,11 @@ class WPSG_REST {
         }
 
         // P38-MD1: pHash near-duplicate detection for images (runs after exact-duplicate check).
+        // Compute unconditionally so forced uploads still get their hash stored for future scans.
         $phash = null;
-        if (!$force && class_exists('WPSG_PHash') && WPSG_PHash::is_image_mime($mime)) {
+        if (class_exists('WPSG_PHash') && WPSG_PHash::is_image_mime($mime)) {
             $phash = WPSG_PHash::compute($file['tmp_name']);
-            if ($phash !== null) {
+            if ($phash !== null && !$force) {
                 $threshold  = intval(apply_filters('wpsg_phash_hamming_threshold', 10));
                 $near_match = self::find_near_duplicates_by_phash($phash, $threshold);
                 if (!empty($near_match)) {

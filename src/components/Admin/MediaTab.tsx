@@ -638,7 +638,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
           campaigns: result.similar_campaigns ?? [],
         }));
 
-      const nearDupFilenames = new Set(nearDupEntries.map((e) => e.filename));
+      const nearDupFiles = new Set(nearDupEntries.map((e) => e.file));
 
       const failedUploadEntries = uploadResponse.results
         .map((result, index) => {
@@ -661,7 +661,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
           return { file: selectedFiles[index], error };
         })
         .filter((entry): entry is { file: File; error: string } =>
-          Boolean(entry.file) && Boolean(entry.error) && !nearDupFilenames.has(entry.file!.name),
+          Boolean(entry.file) && Boolean(entry.error) && !nearDupFiles.has(entry.file!),
         );
 
       if (nearDupEntries.length > 0) {

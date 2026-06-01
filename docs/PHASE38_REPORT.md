@@ -582,6 +582,53 @@ tests pass; 1978 React tests pass.
 
 ---
 
+## PR Review — Comment Resolutions (PR #53)
+
+### Thread: pHash not computed/stored when `force=true` (Copilot)
+
+**Decision: Accept.**
+
+The pHash computation block was gated entirely on `!$force`, mirroring the
+near-duplicate *check* but unlike MD5, which is always computed (only the check is
+guarded). This meant "Upload anyway" results never stored `_wpsg_file_phash`, so
+they were permanently invisible to future near-duplicate scans.
+
+Fix: moved the class-exists/mime guard outward so pHash is computed for all image
+uploads; the near-duplicate check (`find_near_duplicates_by_phash`) remains gated on
+`!$force`.
+
+**Changes:** `class-wpsg-rest.php` ~line 2816 — `!$force` moved from outer `if`
+condition to the inner `if ($phash !== null && !$force)` check.
+
+### Thread: `find_near_duplicates_by_phash()` O(N) full-table scan (Copilot)
+
+**Decision: Accept.**
+
+Three issues fixed:
+1. **Scope** — query now JOINs `wp_posts` and filters `post_type = 'attachment'`
+   AND `post_status = 'inherit'`, excluding non-attachment postmeta rows.
+2. **Early exit** — distance-0 (exact perceptual match) now breaks the loop
+   immediately rather than continuing to scan remaining rows.
+3. **Prepared statement** — query wrapped in `$wpdb->prepare()` to satisfy
+   WPDB/PHPCS prepared-SQL requirements even for constant meta-key literals.
+
+**Changes:** `class-wpsg-rest.php` `find_near_duplicates_by_phash()` — query
+rewritten with JOIN + prepare; early break added on `$d === 0`.
+
+### Thread: `nearDupFilenames` Set uses filename string instead of File identity (Copilot)
+
+**Decision: Accept.**
+
+Files from different folders with the same name share a filename string, so using a
+`Set<string>` of names could incorrectly suppress hard-error entries for files that
+are not near-duplicates. `File` objects are reference-typed, so a `Set<File>` gives
+correct identity semantics at zero extra cost.
+
+**Changes:** `MediaTab.tsx` ~line 641 — `nearDupFilenames` (Set of `.name` strings)
+replaced with `nearDupFiles` (Set of `File` references); filter updated accordingly.
+
+---
+
 ## Outcome
 
 All five tracks complete. Phase 38 delivered: container-measured column counting in
