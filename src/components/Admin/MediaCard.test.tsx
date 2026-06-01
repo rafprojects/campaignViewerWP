@@ -101,8 +101,8 @@ describe('MediaCard — basic render', () => {
         overlayBadge={<span>2 campaigns</span>}
       />,
     );
-    const overlay = screen.getByTestId('media-card-overlay-stack');
-    expect(overlay).toHaveTextContent('2 campaigns');
+    const usageOverlay = screen.getByTestId('media-card-usage-overlay');
+    expect(usageOverlay).toHaveTextContent('2 campaigns');
   });
 });
 
@@ -269,6 +269,13 @@ describe('MediaCard — drag handle', () => {
     expect(
       screen.queryByRole('button', { name: /drag media to reorder/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders drag handle button in compact mode when dragHandleProps is provided', () => {
+    render(<MediaCard item={imageItem} compact {...defaultProps} dragHandleProps={{}} />);
+    expect(
+      screen.getByRole('button', { name: /drag media to reorder/i }),
+    ).toBeInTheDocument();
   });
 
   it('passes dragHandleProps to the drag handle button', () => {

@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P38-MA0 | Admin Media responsive-grid investigation spike | Complete | M |
 | P38-MA1 | Admin Media container-measured column counting (narrowed) | Complete | S |
-| P38-MA2 | Admin Media card layout refresh | Planned · align with P38-MA0 findings | M |
+| P38-MA2 | Admin Media card layout refresh | Complete | M |
 | P38-UX1 | Admin keyboard shortcut user configuration | Complete | M |
 | P38-MD1 | Near-duplicate detection (pHash follow-up) | Planned · start with feasibility validation | M |
 
@@ -322,7 +322,7 @@ chrome without fighting the responsive-layout direction established by
 - Manual QA passes at narrow/default/wide admin widths, and tests are updated
   for the refreshed card chrome where practical.
 
-### Status: Planned · align with P38-MA0 findings
+### Status: Complete — badge hierarchy unified, compact drag handle added (2026-06-01)
 
 ---
 
@@ -489,6 +489,17 @@ Keyboard shortcut user configuration shipped: `useShortcutConfig` hook,
 `useAdminCampaignActions`. `SettingsPanel.tsx` was not touched — the edit UI
 is correctly placed in the shortcuts modal, not the gallery settings panel.
 
+### P38-MA2 (2026-06-01)
+
+`overlayBadge` (campaign-usage badge) moved from the inline type/source badge row to a separate
+`data-testid="media-card-usage-overlay"` element positioned top-right on the thumbnail overlay,
+resolving the TODO comment at `MediaCard.tsx:90`. Type/source badges remain at top-left in
+`media-card-overlay-stack`. Compact mode now renders a drag handle button when `dragHandleProps`
+is provided, matching the full-mode affordance. `MediaCard.module.scss` gains `.usageBadgeOverlay`
+(`position: absolute; top/right: 8px; pointer-events: auto`). `MediaCard.test.tsx` updated:
+overlay-badge assertion migrated to `media-card-usage-overlay`; new test covers compact drag handle.
+25 tests pass.
+
 ### P38-MA1 (2026-06-01)
 
 `mapToMediaGridBreakpoint` added to `mediaTabLayout.ts` (mobile→base, tablet→md,
@@ -501,7 +512,6 @@ to `number`. CSS-var max-width system and `sizeConfig` presets are untouched.
 
 ### Open follow-ups
 
-- `P38-MA2`: Card layout refresh — align with MA0 findings before final visual lock.
 - `P38-MD1`: pHash feasibility — PHP-side work, separate from React surface.
 
 ---

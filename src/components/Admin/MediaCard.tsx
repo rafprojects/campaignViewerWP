@@ -87,10 +87,16 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 <Group gap={4} wrap="nowrap" align="center" {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
                   <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
                   <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
-                  {/* Future Admin Panel redesign: move overlayBadge into its own upper-left thumbnail overlay layer instead of this shared inline badge row. */}
-                  {overlayBadge}
                 </Group>
               </Box>
+              {overlayBadge && (
+                <Box
+                  data-testid="media-card-usage-overlay"
+                  {...(styles.usageBadgeOverlay ? { className: styles.usageBadgeOverlay } : {})}
+                >
+                  {overlayBadge}
+                </Box>
+              )}
             </Box>
           </Card.Section>
 
@@ -122,8 +128,19 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               </Group>
             </Group>
           ) : (
-            /* Compact/Small: hover overlay for actions */
             <Group justify="center" mt={4} gap={4}>
+              {dragHandleProps !== undefined && (
+                <ActionIcon
+                  size="sm"
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  {...(dragHandleProps as any)}
+                  variant="subtle"
+                  aria-label="Drag media to reorder"
+                  style={{ cursor: 'grab' }}
+                >
+                  <IconGripVertical size={14} />
+                </ActionIcon>
+              )}
               <ActionIcon size="sm" variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={14} /></ActionIcon>
               <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={14} /></ActionIcon>
             </Group>
