@@ -491,14 +491,26 @@ is correctly placed in the shortcuts modal, not the gallery settings panel.
 
 ### P38-MA2 (2026-06-01)
 
-`overlayBadge` (campaign-usage badge) moved from the inline type/source badge row to a separate
-`data-testid="media-card-usage-overlay"` element positioned top-right on the thumbnail overlay,
-resolving the TODO comment at `MediaCard.tsx:90`. Type/source badges remain at top-left in
-`media-card-overlay-stack`. Compact mode now renders a drag handle button when `dragHandleProps`
-is provided, matching the full-mode affordance. `MediaCard.module.scss` gains `.usageBadgeOverlay`
-(`position: absolute; top/right: 8px; pointer-events: auto`). `MediaCard.test.tsx` updated:
-overlay-badge assertion migrated to `media-card-usage-overlay`; new test covers compact drag handle.
-25 tests pass.
+`overlayBadge` (campaign-usage badge) separated from the inline type/source badge row into
+its own `data-testid="media-card-usage-overlay"` element, resolving the TODO comment at
+`MediaCard.tsx:90`. Type/source badges remain at top-left; usage badge sits bottom-right.
+Compact mode now renders a drag handle button when `dragHandleProps` is provided, matching
+full-mode affordance. `MediaCard.test.tsx` updated: overlay-badge assertion migrated to
+`media-card-usage-overlay`; new test covers compact drag handle. 25 tests pass.
+
+**Follow-up fixes during MA2:**
+
+- Overlay positioning was originally CSS-module-class-only, which collapsed when classes
+  evaluated falsy. Reworked to explicit inline `style` props (`position: relative/absolute`,
+  `top/bottom/left/right`, `zIndex`) on all overlay elements; removed the now-redundant
+  `.previewWrapper`, `.overlayStack`, `.badgeGroup`, and `.usageBadgeOverlay` SCSS classes.
+  Only `.mediaCard` and the reduced-motion block remain in `MediaCard.module.scss`.
+
+- Hover glow for the usage badge was originally a CSS `:hover` rule on the wrapper Box, which
+  did not trigger due to Mantine `Popover.Target`'s `cloneElement` interfering with event
+  propagation. Switched to `onMouseEnter`/`onMouseLeave` React state driving an inline
+  `filter: drop-shadow()` on hover. `drop-shadow` traces the Badge's visual alpha shape rather
+  than the wrapper Box's bounding rectangle, so the glow aligns correctly with the pill.
 
 ### P38-MA1 (2026-06-01)
 
