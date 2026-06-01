@@ -90,7 +90,7 @@ function ToolbarDivider() {
       style={{
         width: 1,
         height: 18,
-        background: 'var(--mantine-color-dark-4)',
+        background: 'var(--mantine-color-default-border)',
         margin: '0 2px',
         flexShrink: 0,
       }}
@@ -184,8 +184,8 @@ export function ContextualToolbar({
         top: clampedTop,
         height: TOOLBAR_HEIGHT,
         zIndex: 9999,
-        background: 'var(--mantine-color-dark-7)',
-        border: '1px solid var(--mantine-color-dark-4)',
+        background: 'var(--mantine-color-body)',
+        border: '1px solid var(--mantine-color-default-border)',
         borderRadius: 6,
         boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
         display: 'flex',

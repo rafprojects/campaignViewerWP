@@ -1,22 +1,31 @@
 # Phase 37 — Layout-Builder Listings & Carry-Forward Implementation Tracks
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-30
-**Last updated:** 2026-05-30
+**Last updated:** 2026-05-31 (P37-LB Pass A + B complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P37-LB | Layout-builder adapter for campaign listings (whole-card-per-slot) | Planned | L |
-| P37-HA1 | Hero / Spotlight sizing controls | Planned | S |
-| P37-LB1 | Layout Builder non-canvas theme propagation | Planned | M |
-| P37-SE1 | Shared searchable entity input adoption | Planned · blocked on P36-B stabilization | M |
-| P37-KS1 | Legacy storage-key scoping audit and migration | Planned | M |
+| P37-LB | Layout-builder adapter for campaign listings (whole-card-per-slot) | Complete | L |
+| P37-HA1 | Hero / Spotlight sizing controls | Complete | S |
+| P37-LB1 | Layout Builder non-canvas theme propagation | Complete | M |
+| P37-SE1 | Shared searchable entity input adoption | Complete | M |
+| P37-KS1 | Legacy storage-key scoping audit and migration | Complete | M |
+| P37-MT1 | Media tab usage-badge overlay cleanup | Complete | S |
+| P37-MT2 | Media tab card-width stabilization | Complete | M |
 
 > **Note:** Phase 37 combines the promoted P36-X1 implementation track
 > (`P37-LB`) with four direct carry-forwards from the P36 Related Planning
 > section (`P37-HA1`, `P37-LB1`, `P37-SE1`, `P37-KS1`).
+>
+> Two additional admin-media follow-ups (`P37-MT1`, `P37-MT2`) are added from
+> the 2026-05-31 Admin Panel > Media review. `P37-MT2` is intentionally limited
+> to bounded width stabilization inside the current Media tab layout. The full
+> "decouple card widths from admin panel width" investigation and any resulting
+> implementation are promoted into Phase 38 as a separate discovery-first pair
+> of tracks (`P38-MA0`, `P38-MA1`).
 >
 > P36-X2 (shape adapters for listings) remains formally rejected. That
 > determination is recorded in the Implementation Notes below; it is not a
@@ -42,8 +51,12 @@ one implementation plan:
   were intentionally left out of P36 delivery: `HA1`, `LB1`, `SE1`, and `KS1`.
   Those items are implementation work, not open-ended placeholders, and they now
   need concrete track definitions in Phase 37.
+- **Admin Panel > Media review (2026-05-31)** surfaced two bounded follow-ups:
+  clean up the campaign-usage badge overlay (`MT1`) and stabilize grid/compact
+  card widths against wider admin-panel containers (`MT2`) without prematurely
+  expanding into a full responsive-layout refactor.
 
-Phase 37 therefore groups five implementation tracks:
+Phase 37 therefore groups seven implementation tracks:
 
 1. **Layout-builder listing support (`P37-LB`)** — the main promoted track from
   P36-X1.
@@ -58,11 +71,24 @@ Phase 37 therefore groups five implementation tracks:
   one immediate reuse outside the campaign company flow.
 5. **Legacy storage-key scoping audit (`P37-KS1`)** — finish the intentionally
   deferred admin/media/builder localStorage audit after P36-A.
+6. **Media tab usage-badge cleanup (`P37-MT1`)** — move the campaign-usage
+  badge out of the lower-left card overlay path so it stops competing with the
+  media caption block.
+7. **Media tab card-width stabilization (`P37-MT2`)** — keep the existing
+  compact/small/medium/large card presets visually proportional as admin-panel
+  width changes, using bounded width behavior rather than a full layout-system
+  replacement.
 
 `P37-LB` remains the largest track and the architectural anchor. `P37-HA1`,
-`P37-LB1`, and `P37-KS1` are independent carry-forwards that can proceed in
-parallel. `P37-SE1` is intentionally gated on accepted P36-B corrections so the
-new primitive is not extracted from a still-unsettled company-entry surface.
+`P37-LB1`, `P37-KS1`, `P37-MT1`, and `P37-MT2` are independent
+carry-forwards/additions that can proceed in parallel. `P37-SE1` is
+intentionally gated on accepted P36-B corrections so the new primitive is not
+extracted from a still-unsettled company-entry surface.
+
+`P37-MT2` is intentionally bounded. If product direction remains "make Media tab
+card widths truly independent from admin panel width," that work is handled by
+Phase 38's investigation-first track pair rather than by expanding `P37-MT2` in
+place.
 
 The Phase 35 host/adapter split is the implementation anchor:
 - The host (`CardGallery`) owns item rendering, filters, modal state, and
@@ -219,7 +245,26 @@ effects intentionally on listing templates.
   correctly restricted.
 - `QA_PLAN_LAYOUT_BUILDER.md` updated with listing-mode scenarios.
 
-### Status: Planned
+### Implementation Notes
+
+**Pagination approach (revised from spec):** The track originally said "wire `CardGalleryHostPagination` to derive page size from template slot count." This is architecturally infeasible — the template slot count is only known after an async load inside the adapter, but `CardGalleryHostPagination` slices items before calling the adapter. Implemented instead as `paginationOwnership: 'adapter'`: layout-builder receives all filtered campaigns and renders `min(slots.length, items.length)` of them, making slot count the natural page size without any host-side plumbing. `CardGallery` bypasses `CardGalleryHostPagination` and suppresses host pagination UI (same pattern as classic carousel).
+
+**Template ID channel:** `GalleryAdapterProps` has no `templateId` field. Added `campaignListingLayoutTemplateId?: string` to `GalleryBehaviorSettings`; the adapter reads it from `settings` in listing mode. A template selector in `CampaignCardSettingsSection` (new) persists the value; `SettingsPanel` passes `apiClient` down to enable the fetch.
+
+**Files changed:**
+- `src/types/index.ts` — `campaignListingLayoutTemplateId` in `GalleryBehaviorSettings`
+- `wp-plugin/.../class-wpsg-settings-registry.php` — default + `layout-builder` in allowed values
+- `src/components/Galleries/Adapters/adapterRegistry.ts` — `listing-compatible`, `paginationOwnership: 'adapter'`, lazy `LayoutBuilderRegistryFallback`
+- `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx` — listing-mode render branch
+- `src/components/Settings/CampaignCardSettingsSection.tsx` — template selector
+- `src/components/Admin/SettingsPanel.tsx` — pass `apiClient` to `CampaignCardSettingsSection`
+- `src/components/Admin/LayoutBuilder/BuilderDockContext.tsx` — `listingMode` in context
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — `listingMode` prop
+- `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` — forward `listingMode`
+- `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` — listing-mode guardrails + warning banner
+- `src/components/Galleries/Adapters/adapterRegistry.test.ts` — updated for layout-builder listing support
+
+### Status: Complete
 
 ---
 
@@ -273,7 +318,16 @@ adapter-settings contract already used elsewhere in the gallery system.
 - Responsive manual QA confirms expected behavior at mobile, tablet, and
   desktop widths.
 
-### Status: Planned
+### Implementation Notes
+
+- `spotlightHeroMaxWidth` / `spotlightHeroMaxWidthUnit` added to: `adapterRegistry.ts` (spotlight group), `GalleryBehaviorSettings`, `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`, `GalleryAdapterSettingsSchema`, and the PHP `$nested_adapter_field_map`.
+- `scrollSnapMaxWidth` / `scrollSnapMaxWidthUnit` added to the same four layers for the scroll-snap group.
+- Both adapters apply the configured max-width to their outer `Stack` shell via `marginInline: 'auto'` centering; a value of `0` (default) leaves current behavior unchanged.
+- `toCss` import added to `ScrollSnapGallery.tsx` (previously only `toCssOrNumber` was imported).
+- `scripts/validate-adapter-settings-parity.mjs` passes: all 86 registry keys present in the PHP map.
+- TypeScript: no errors.
+
+### Status: Complete
 
 ---
 
@@ -329,7 +383,23 @@ content rendering semantics.
   masking, or slot interaction.
 - Canvas content rendering remains explicitly out of scope and unchanged.
 
-### Status: Planned
+### Implementation Notes
+
+- Created `src/hooks/useBuilderOverlayColors.ts` — a thin hook that calls `useTheme()` and returns a typed `BuilderOverlayColors` object with concrete color strings for both dark and light `colorScheme` values.
+- Follow-up shell pass added `src/hooks/useBuilderShellColors.ts` plus local `--wpsg-builder-*` vars on `LayoutBuilderModal.tsx` so non-canvas builder chrome can use concrete theme-derived surface/border/text tokens without touching the actual canvas background.
+- `CanvasRulers.tsx`: removed 4 module-level color constants (`RULER_BG`, `TICK_COLOR`, `LABEL_COLOR`, `SELECTION_COLOR`); replaced with `useBuilderOverlayColors()` call and token references.
+- `CanvasGrid.tsx`: removed `MAJOR_STROKE` / `MINOR_STROKE` constants; replaced with `colors.gridMajor` / `colors.gridMinor` from the hook.
+- `SmartGuides.tsx`: removed `EDGE_COLOR`, `CENTER_COLOR`, `SPACING_COLOR`; `guideColor()` now accepts the colors object as a second argument.
+- `MeasurementOverlay.tsx`: removed `LINE_COLOR`, `LABEL_BG`, `LABEL_FG`; split the internal `MeasureLine` interface into `MeasureLineData` (data-only) and `MeasureLineProps` (extends data + `colors`) so `useMemo` can build lines without colors and the render step injects them.
+- `LayoutSlotComponent.tsx`: replaced 3 hardcoded badge/tooltip background values (`rgba(0,0,0,0.6/0.65/0.82)`) with `overlayColors.slotBadgeBg`, `slotLockBg`, and `slotLiveInfoBg`.
+- `LayoutBuilderModal.tsx` now passes Dockview a real custom `theme` whose `className` is `dockview-theme-wpsg`, replacing Dockview's default `themeAbyss` dark-blue chrome; `src/styles/builder.css` remaps Dockview's root `--dv-*` variables from the injected builder-shell vars on that actual theme root so the side-panel tabs, background strip, and separators use the active builder-shell colors.
+- Final follow-up after visual QA: the last unthemed strip between the builder toolbar and the dock/canvas row was still coming from Dockview's default theme-selection path. Switching from `className`-only wiring to Dockview's explicit `theme` option closed that gap while keeping the canvas itself on the intentionally hardcoded dark-gray background.
+- `LayoutBuilderLayersPanel.tsx`, `LayoutBuilderMediaPanel.tsx`, `LayoutBuilderPropertiesPanel.tsx`, `LayerPanel.tsx`, and the non-canvas footer bars in `LayoutBuilderCanvasPanel.tsx` now use the same builder-shell vars, keeping panel bodies and toolbar/footer surfaces aligned with the active theme while leaving the hardcoded dark canvas unchanged.
+- Dark-scheme values in the hook match the previous hardcoded constants exactly, preserving all 309 existing builder tests (18 SmartGuides color assertions pass unchanged).
+- TypeScript: no errors.
+- Canvas content rendering (slot images, overlays, clip-paths, Mantine CSS vars already in use) was not touched.
+
+### Status: Complete
 
 ---
 
@@ -381,7 +451,17 @@ immediate reuse outside the campaign company flow.
 - This track does not absorb hierarchical category selectors or reopen the
   P36-B company save/read contract.
 
-### Status: Planned · blocked on accepted P36-B corrections
+### Implementation Notes
+
+- `SearchableEntityInput` (`src/components/Common/SearchableEntityInput.tsx`) is the new generic primitive. It owns the Mantine combobox store, blur lifecycle (150ms dropdown-close delay, synchronous `onBlur` callback), and right-section logic (clear button / loader / search icon). Dropdown content is passed as `children` — consumers render their own `Combobox.Option` and `Combobox.Empty` elements, keeping domain logic out of the primitive.
+- `CompanyCombobox` retains its existing public props API unchanged. Internally it delegates the combobox shell to `SearchableEntityInput`, passing filtered company options and the optional create entry as children. The slug-resolution blur handler fires via the `onBlur` prop.
+- `AccessTab` user search replaces the inline 70-line Combobox block with `SearchableEntityInput`. The numeric user-ID fallback logic remains in `AccessTab`'s `onInputChange` handler (domain-specific). `userCombobox` store and `blurTimeoutRef` were removed from `useAdminAccessState` — they now live inside the primitive.
+- `SearchableEntityInput.test.tsx` covers all four acceptance criteria areas: display resolution, search/filter behavior, freeform create affordance, and focus/blur lifecycle.
+- `CompanyCombobox.test.tsx` regression: all 13 tests pass without modification (public API unchanged).
+- `AccessTab.test.tsx` regression: one aria-label updated (`"Clear selected user"` → `"Clear selection"`) to match the primitive's generic label; all 15 tests pass.
+- TypeScript: no errors.
+
+### Status: Complete
 
 ---
 
@@ -417,8 +497,8 @@ families, and document which keys remain intentionally global.
 - `src/components/Admin/MediaTab.tsx`
 - `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`
 - `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx`
-- `src/components/Auth/AuthBarFloating.tsx`
-- `src/hooks/useReloadSafeView.ts`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderMediaPanel.tsx`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx`
 - `src/contexts/RootIdContext.tsx`
 
 ### Acceptance criteria
@@ -434,7 +514,261 @@ families, and document which keys remain intentionally global.
 - Documentation clearly records which keys remain intentionally global after
   the audit.
 
-### Status: Planned
+### Implementation Notes
+
+**KS1-C decision — `wpsg-authbar-pos` is intentionally global.** The floating
+auth button overlays the entire page viewport, not a specific gallery surface.
+On multi-root pages the auth bar position represents a single "where on screen
+is my floating button" preference, and sharing it across roots is the correct
+behavior. No migration applied; `AuthBarFloating.tsx` is unchanged.
+
+**Migrated keys (KS1-A + KS1-B):**
+
+| Old key (global) | New key (root-scoped) | Sub-track |
+|---|---|---|
+| `wpsg_media_sortMode` | `wpsg_media_sortMode_${rootId}` | KS1-A |
+| `wpsg_builder_snap_mode` | `wpsg_builder_${rootId}_snap_mode` | KS1-B |
+| `wpsg_builder_show_grid` | `wpsg_builder_${rootId}_show_grid` | KS1-B |
+| `wpsg_builder_grid_size` | `wpsg_builder_${rootId}_grid_size` | KS1-B |
+| `wpsg_builder_show_rulers` | `wpsg_builder_${rootId}_show_rulers` | KS1-B |
+| `wpsg_builder_show_measurements` | `wpsg_builder_${rootId}_show_measurements` | KS1-B |
+| `wpsg_builder_design_assets_open` | `wpsg_builder_${rootId}_design_assets_open` | KS1-B |
+| `wpsg_builder_layout` | `wpsg_builder_${rootId}_layout` | KS1-B |
+| `wpsg_builder_preview_preset` | `wpsg_builder_${rootId}_preview_preset` | KS1-B |
+| `wpsg_builder_custom_preview_width` | `wpsg_builder_${rootId}_custom_preview_width` | KS1-B |
+| `wpsg_builder_show_preview_frame` | `wpsg_builder_${rootId}_show_preview_frame` | KS1-B |
+
+Note: three of the KS1-B builder keys (`preview_preset`, `custom_preview_width`,
+`show_preview_frame`) live in `LayoutBuilderCanvasPanel.tsx` and were not listed
+in the original track outline; they belong to the same global-workspace-pref
+family and were migrated in the same pass. `wpsg_builder_design_assets_open` is
+written from three files (Modal, MediaPanel, LayersPanel); all three sites were
+updated.
+
+**One-time migration helpers follow the AdminPanel.tsx precedent** (P36-A):
+read legacy value → write to new scoped key → delete legacy key, batched in a
+single `useEffect` with `[]` dependencies so it runs once on first mount.
+
+**Confirmed intentionally global keys (no migration):**
+
+| Key | Rationale |
+|---|---|
+| `wpsg-authbar-pos` | Page-level floating button position (KS1-C) |
+| `wpsg-theme-id` | User theme preference shared across all gallery instances |
+| `wpsg-recent-fonts` | Cross-context font history |
+| `wpsg_access_mode` | Global viewer lock/hide mode |
+| `wpsg_debug` | Debug flag |
+| `wpsg_access_token`, `wpsg_user`, `wpsg_permissions` | Auth identity (single per origin) |
+
+**Already correctly scoped (no change needed):**
+- `wpsg_view_${rootId}_*` — established by P36-A ✓
+- `wpsg_settings_draft_${rootId}` — P36-A ✓
+- `wpsg_media_viewMode_${campaignId}`, `cardSize`, `listPage`, `orphanFilter` — campaign-scoped ✓
+- `wpsg_layout_draft_${templateId}` — template-scoped ✓
+- `wpsg_layout_builder_campaign_${templateId}` — template-scoped ✓
+
+### Status: Complete
+
+---
+
+## Track P37-MT1 — Media Tab Usage-Badge Overlay Cleanup
+
+### Problem
+
+In the Media tab grid and compact views, the campaign-usage chip is rendered as
+a separate absolute overlay in `MediaTab.tsx`, pinned to the lower-left corner
+of the card wrapper. That placement competes with the caption/details area and
+is the direct cause of the reported overlap with the media name.
+
+`MediaCard.tsx` already owns a top-left overlay cluster for media-type and
+source badges. The usage badge currently bypasses that composition path, so the
+card ends up with two unrelated overlay systems.
+
+### Goal
+
+Render the campaign-usage badge in the upper-left overlay area for grid and
+compact cards so it no longer obscures the media name, while preserving current
+list-view behavior and the existing usage popover interaction.
+
+### Implementation outline
+
+1. Remove the lower-left absolute usage-badge overlay from the grid/compact
+   render path in `src/components/Admin/MediaTab.tsx`.
+2. Re-anchor the usage badge to the top-left overlay system already owned by
+   `src/components/Admin/MediaCard.tsx`, either by extending the existing badge
+   stack or by adding a small dedicated top-left secondary slot that shares the
+   same preview-overlay coordinate system.
+3. Keep the list-view usage column unchanged; this track is about the card
+   overlay only.
+4. Verify the top-left composition wraps or stacks cleanly in compact/small
+   card modes and does not collide with drag handles or action controls.
+
+### Key files
+
+- `src/components/Admin/MediaTab.tsx`
+- `src/components/Admin/MediaCard.tsx`
+- `src/components/Admin/MediaCard.module.scss`
+- `src/components/Admin/MediaUsageBadge.tsx`
+- `src/components/Admin/MediaTab.test.tsx`
+- `src/components/Admin/MediaCard.test.tsx`
+- `src/components/Admin/MediaUsageBadge.test.tsx`
+
+### Pre-conditions
+
+- The current `MediaUsageBadge` popover and accessible-label behavior remain the
+  source of truth (✓ done).
+- List-view usage rendering remains a separate column and should not be folded
+  into the card-overlay change.
+
+### Open follow-ups
+
+- **Compact badge density** — if the top-left cluster becomes too dense on the
+  smallest cards, prefer stacking or wrapping within the existing overlay area
+  rather than reintroducing a second lower-left overlay system.
+
+### Acceptance criteria
+
+- In grid and compact views, the usage badge no longer renders in the lower-left
+  overlay position.
+- In grid and compact views, the usage badge renders in the upper-left overlay
+  area and no longer covers the media caption/name block.
+- List view still renders the usage badge in the dedicated Usage column.
+- Clicking the usage badge still opens the existing popover and retains its
+  accessible label semantics.
+- Compact/small cards still show a readable badge composition without
+  badge/control overlap.
+
+### Implementation Notes
+
+- `src/components/Admin/MediaCard.tsx` now owns a small top-left overlay stack
+  instead of a single non-interactive badge row. The existing media-type/source
+  badges remain non-interactive, while an optional `overlayBadge` slot renders
+  below them for interactive overlay content.
+- `src/components/Admin/MediaCard.module.scss` now splits the overlay into a
+  pointer-events-disabled metadata layer and a pointer-events-enabled
+  `interactiveOverlay` row so the usage badge can be clicked without reopening
+  the underlying image preview.
+- `src/components/Admin/MediaTab.tsx` passes `MediaUsageBadge` into the new
+  `overlayBadge` slot for grid/compact cards and removes the former
+  lower-left absolute usage-badge wrapper.
+- `src/components/Admin/MediaUsageBadge.tsx` accepts an optional `size` prop;
+  the Media tab uses `xs` sizing in the card overlay while preserving the
+  existing default behavior elsewhere.
+- Tests added/updated:
+  - `MediaCard.test.tsx` covers custom overlay rendering and verifies clicking
+    the interactive overlay does not trigger image preview.
+  - `MediaTab.test.tsx` verifies the usage badge renders inside the card overlay
+    path in grid view and the old bottom-left wrapper is gone.
+  - Focused validation passed: `MediaCard.test.tsx`, `MediaUsageBadge.test.tsx`,
+    and `MediaTab.test.tsx`.
+
+### Status: Complete
+
+---
+
+## Track P37-MT2 — Media Tab Card-Width Stabilization
+
+### Problem
+
+`MediaTab.tsx` sizes cards entirely through fixed Mantine `Grid.Col` span
+presets. Card width therefore remains a direct function of the admin panel
+container width. After the addition of the admin-panel max-width control, wider
+admin-panel values make the current grid and compact cards balloon horizontally
+and look out of proportion.
+
+The current Media tab already distinguishes card sizes (`small`, `medium`,
+`large`, plus compact view), but those presets only change spans and heights.
+There is no absolute per-size width guard.
+
+### Goal
+
+Keep Media tab cards visually proportional as admin-panel width changes by
+adding bounded per-size width behavior for grid and compact cards, without
+turning this track into a full responsive-layout refactor.
+
+### Implementation outline
+
+1. Define bounded target/max widths for the existing admin Media tab size
+   presets (`compact`, `small`, `medium`, `large`) so each preset keeps a stable
+   visual scale even when the admin panel is much wider.
+2. Reuse the fixed-width card pattern already proven in
+   `src/components/CampaignGallery/CardGallery.tsx` and
+  `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` by
+  adapting the width-capping strategy into a small Media-tab-specific layout
+  helper rather than copying the listing-grid math verbatim.
+3. Apply the width cap through a centered row-level shell around the existing
+  Mantine `Grid` in `src/components/Admin/MediaTab.tsx`, keeping the current
+  card-size selector semantics, drag-and-drop, and list view intact. Use an
+  inner per-card cap only if the row-level shell proves insufficient in QA.
+4. Keep this first pass front-end only. Do not add a new advanced setting unless
+  post-QA tuning shows the automatic caps are insufficient.
+5. If cap-based stabilization leaves unacceptable wide-column whitespace or
+  still fails proportionality goals, promote the full decoupling work tracked
+  in Phase 38 rather than widening this item in place.
+
+### Key files
+
+- `src/components/Admin/MediaTab.tsx`
+- `src/components/Admin/mediaTabLayout.ts`
+- `src/components/Admin/MediaTab.module.scss`
+- `src/components/CampaignGallery/CardGallery.tsx`
+- `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx`
+- `src/components/Admin/MediaTab.test.tsx`
+
+### Pre-conditions
+
+- Current Media tab grid/list/compact interactions are stable enough to treat
+  width work as a presentation-layer change.
+- `P37-MT1` is independent and may land before or after this track.
+
+### Open follow-ups
+
+- **Manual tuning request** — if operators still need an explicit override after
+  the automatic-cap pass, add a separate settings-oriented follow-up modeled on
+  the Phase 36 admin-width work rather than widening `P37-MT2` mid-flight.
+- **True decoupling requirement** — if the product requirement remains "card
+  widths are computed from the Media tab container, not inherited from admin
+  panel width," proceed through `docs/PHASE38_REPORT.md` (`P38-MA0`,
+  `P38-MA1`) instead of stretching this Phase 37 track.
+
+### Acceptance criteria
+
+- Increasing admin-panel width no longer causes grid/compact cards to stretch to
+  visually oversized widths.
+- The existing card-size presets remain visibly distinct and proportional to one
+  another.
+- Narrow admin-panel widths still degrade gracefully without overflow or broken
+  drag/reorder behavior.
+- Grid/compact card interactions (lightbox open, edit/delete, reorder
+  affordances, usage popover) remain unchanged aside from the intended width
+  behavior.
+- Manual QA confirms acceptable layout at narrow/default/wide admin-panel widths
+  for compact, small, medium, and large card modes.
+
+### Implementation Notes
+
+- `src/components/Admin/mediaTabLayout.ts` now owns the bounded-width policy for
+  the Media tab: preset selection (`compact` is treated as a separate view mode,
+  not a `cardSize` value), base/sm/md/lg span inheritance, derived column count,
+  and responsive row-shell max-width variables.
+- `src/components/Admin/MediaTab.tsx` now resolves one active preset for the
+  current grid/compact view and applies a centered bounded-width shell around
+  the existing Mantine `Grid` instead of relying only on unbounded `Grid.Col`
+  spans.
+- `src/components/Admin/MediaTab.module.scss` applies the responsive
+  base/sm/md/lg width caps to that grid shell; list view remains outside this
+  path.
+- Post-implementation build follow-up: `CompactGridGallery` and `Lightbox`
+  import paths were made consistent, `ErrorBoundary.tsx` moved Sentry capture to
+  the same lazy import path used by monitoring init, and `vite.config.ts`
+  vendor chunking was refined. `npm run build:wp` now completes without the
+  earlier import-splitting warnings or chunk-size warnings.
+- Focused validation passed: `npx vitest run src/components/Admin/mediaTabLayout.test.ts src/components/Admin/MediaTab.test.tsx`.
+- Manual QA review judged the bounded row-cap pass acceptable for the current
+  Phase 37 scope; the track is marked complete and any further decoupling work
+  remains deferred to Phase 38.
+
+### Status: Complete
 
 ---
 
@@ -471,6 +805,64 @@ flag). These are pre-implementation gates for Pass A and Pass B respectively.
 
 ---
 
+## PR Review — Comment Resolutions (PR #52)
+
+### Thread: `CampaignCardSettingsSection` — `apiClient` prop optionality (Copilot)
+
+**Decision: Accept.**
+
+`useLayoutTemplates` calls `getLayoutTemplatesQueryKey(apiClient)` synchronously
+at render time to build the React Query key, which in turn calls
+`apiClient.getBaseUrl()`. This happens before the `enabled` guard is checked, so
+passing `undefined` cast as `ApiClient` would throw if the prop were ever omitted.
+
+The `enabled: !!apiClient` workaround masked the real issue rather than fixing it.
+Since the only caller (`SettingsPanel`) always supplies a required `ApiClient`, the
+correct fix is to make the prop required in the interface and remove both the unsafe
+`as ApiClient` cast and the redundant `!!apiClient` guard.
+
+**Changes:** `CampaignCardSettingsSectionProps.apiClient` changed from optional to
+required; `useLayoutTemplates` call simplified to `useLayoutTemplates(apiClient)`.
+
+### Thread: Template selector only guarded by desktop adapter (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The `campaignListingLayoutTemplateId` selector was gated solely on the desktop
+adapter being `layout-builder`. If the user set the tablet or mobile breakpoint
+override to `layout-builder` while leaving the desktop adapter as something else,
+they had no UI path to configure the required template, yet the adapter would still
+run and attempt to use it.
+
+Fix: expanded the condition to `OR` across all three breakpoint adapter settings.
+
+**Changes:** `CampaignCardSettingsSection.tsx` line 667 — condition now includes
+`campaignListingAdapterIdTablet` and `campaignListingAdapterIdMobile`.
+
+### Thread: Route parameter regex widened to `[^/]+` (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The original regex `[a-zA-Z0-9_.]+` was broadened to `[^/]+` to allow `-` in
+media IDs, but `[^/]+` admits spaces and all punctuation, which is far too
+permissive for an identifier that flows into a DB lookup. The minimal fix is to
+add `-` to the explicit character class: `[a-zA-Z0-9_.-]+`.
+
+**Changes:** `class-wpsg-rest.php` line 208 — regex restored to
+`[a-zA-Z0-9_.-]+`.
+
+### Thread: Missing newline in `MediaTab.module.scss` (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The closing `}` of the `@media (min-width: 75em)` block abutted `.mediaCard {`
+with no blank line, making the file hard to scan. Added a blank line between the
+two blocks.
+
+**Changes:** `MediaTab.module.scss` line 23 — blank line inserted.
+
+---
+
 ## Outcome
 
 _To be filled when Phase 37 is marked Complete._
@@ -491,7 +883,14 @@ _To be filled when Phase 37 is marked Complete._
   - **P37-SE1** — Shared searchable entity input adoption (blocked on accepted
     P36-B corrections).
   - **P37-KS1** — Legacy storage-key scoping audit and migration.
-- Deferred to P38+:
+- Added in this phase from the 2026-05-31 Admin Panel > Media review:
+  - **P37-MT1** — Media tab usage-badge overlay cleanup.
+  - **P37-MT2** — Media tab card-width stabilization.
+- Promoted into Phase 38:
+  - **P38-MA0** — Admin Media responsive-grid investigation spike.
+  - **P38-MA1** — Admin Media responsive-grid decoupling implementation (gated
+    on accepted `P38-MA0` findings).
+- Deferred to P38+ or later:
   - **X2-experimental** — shape-adapter thumbnail-only prototype (not recommended;
     requires explicit product leadership initiation).
   - **LB-section** — slot-to-card-section composition (R&D track; not scheduled).

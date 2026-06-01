@@ -7,6 +7,7 @@
  */
 import { useMemo } from 'react';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -19,16 +20,10 @@ export interface CanvasGridProps {
   gridSizePx: number;
 }
 
-// ── Colours ───────────────────────────────────────────────────────────────────
-
-// Grid line colours — intentionally muted. Chosen to be visible on both light
-// and dark canvas backgrounds without dominating the composition.
-const MAJOR_STROKE = 'rgba(128,128,128,0.25)'; // every 5 cells
-const MINOR_STROKE = 'rgba(128,128,128,0.12)'; // every 1 cell
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function CanvasGrid({ canvasWidth, canvasHeight, gridSizePx }: CanvasGridProps) {
+  const colors = useBuilderOverlayColors();
   const { verticals, horizontals } = useMemo(() => {
     if (gridSizePx <= 0) return { verticals: [], horizontals: [] };
 
@@ -67,7 +62,7 @@ export function CanvasGrid({ canvasWidth, canvasHeight, gridSizePx }: CanvasGrid
           y1={0}
           x2={x}
           y2={canvasHeight}
-          stroke={major ? MAJOR_STROKE : MINOR_STROKE}
+          stroke={major ? colors.gridMajor : colors.gridMinor}
           strokeWidth={1}
         />
       ))}
@@ -78,7 +73,7 @@ export function CanvasGrid({ canvasWidth, canvasHeight, gridSizePx }: CanvasGrid
           y1={y}
           x2={canvasWidth}
           y2={y}
-          stroke={major ? MAJOR_STROKE : MINOR_STROKE}
+          stroke={major ? colors.gridMajor : colors.gridMinor}
           strokeWidth={1}
         />
       ))}

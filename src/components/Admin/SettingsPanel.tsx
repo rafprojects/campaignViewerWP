@@ -342,6 +342,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
                 settings={settings}
                 updateSetting={updateGallerySetting}
                 activeBreakpoint={cardSettingsBreakpoint}
+                apiClient={apiClient}
               />
             </Accordion>
           </Stack>

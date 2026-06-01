@@ -7,6 +7,7 @@ import { getClipPath } from '@/utils/clipPath';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
+import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── MaskDragOverlay: draggable mask position/size on canvas ──
@@ -263,6 +264,7 @@ export function LayoutSlotComponent({
   const wasInMultiSelectRef = useRef(false);
   const clipPath = getClipPath(slot);
   const { scale, isHandTool } = useCanvasTransform();
+  const overlayColors = useBuilderOverlayColors();
 
   // ── Live info overlay during drag / resize ──
   const [liveInfo, setLiveInfo] = useState<{
@@ -739,7 +741,7 @@ export function LayoutSlotComponent({
                 position: 'absolute',
                 top: 4,
                 left: 4,
-                background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+                background: isSelected ? 'var(--mantine-color-blue-6)' : overlayColors.slotBadgeBg,
                 color: '#fff',
                 fontSize: 10,
                 fontWeight: 700,
@@ -765,7 +767,7 @@ export function LayoutSlotComponent({
                 position: 'absolute',
                 top: 4,
                 right: 4,
-                background: 'rgba(0,0,0,0.65)',
+                background: overlayColors.slotLockBg,
                 color: '#fff',
                 width: 16,
                 height: 16,
@@ -868,7 +870,7 @@ export function LayoutSlotComponent({
                 position: 'absolute',
                 top: 4,
                 left: 4,
-                background: isSelected ? 'var(--mantine-color-blue-6)' : 'rgba(0,0,0,0.6)',
+                background: isSelected ? 'var(--mantine-color-blue-6)' : overlayColors.slotBadgeBg,
                 color: '#fff',
                 fontSize: 10,
                 fontWeight: 700,
@@ -893,7 +895,7 @@ export function LayoutSlotComponent({
                 position: 'absolute',
                 top: 4,
                 right: 4,
-                background: 'rgba(0,0,0,0.65)',
+                background: overlayColors.slotLockBg,
                 color: '#fff',
                 width: 16,
                 height: 16,
@@ -917,7 +919,7 @@ export function LayoutSlotComponent({
                 bottom: -22,
                 left: '50%',
                 transform: 'translateX(-50%)',
-                background: 'rgba(0,0,0,0.82)',
+                background: overlayColors.slotLiveInfoBg,
                 color: '#fff',
                 fontSize: 10,
                 fontWeight: 600,

@@ -11,13 +11,11 @@ import { useMemo } from 'react';
 import type { PctRect } from '@/utils/canvasMeasurement';
 import { computeEdgeDistances, formatMeasurement } from '@/utils/canvasMeasurement';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const LINE_COLOR = 'rgba(70,180,255,0.7)';
 const LINE_DASH = '4 3';
-const LABEL_BG = 'rgba(0,0,30,0.75)';
-const LABEL_FG = 'rgba(200,230,255,1)';
 const ARROW_SIZE = 4;
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -33,7 +31,7 @@ export interface MeasurementOverlayProps {
 
 // ── Helper: labelled measurement line ─────────────────────────────────────────
 
-interface MeasureLine {
+interface MeasureLineData {
   x1: number;
   y1: number;
   x2: number;
@@ -44,19 +42,23 @@ interface MeasureLine {
   axis: 'h' | 'v';
 }
 
-function MeasureLine({ x1, y1, x2, y2, labelX, labelY, label }: MeasureLine) {
+interface MeasureLineProps extends MeasureLineData {
+  colors: BuilderOverlayColors;
+}
+
+function MeasureLine({ x1, y1, x2, y2, labelX, labelY, label, colors }: MeasureLineProps) {
   return (
     <g>
       <line
         x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={LINE_COLOR}
+        stroke={colors.measureLine}
         strokeWidth={1}
         strokeDasharray={LINE_DASH}
       />
       {/* Arrow at start */}
-      <circle cx={x1} cy={y1} r={ARROW_SIZE / 2} fill={LINE_COLOR} />
+      <circle cx={x1} cy={y1} r={ARROW_SIZE / 2} fill={colors.measureLine} />
       {/* Arrow at end */}
-      <circle cx={x2} cy={y2} r={ARROW_SIZE / 2} fill={LINE_COLOR} />
+      <circle cx={x2} cy={y2} r={ARROW_SIZE / 2} fill={colors.measureLine} />
       {/* Label background */}
       <rect
         x={labelX - 2}
@@ -64,12 +66,12 @@ function MeasureLine({ x1, y1, x2, y2, labelX, labelY, label }: MeasureLine) {
         width={label.length * 5.5 + 4}
         height={12}
         rx={2}
-        fill={LABEL_BG}
+        fill={colors.measureLabelBg}
       />
       <text
         x={labelX}
         y={labelY}
-        fill={LABEL_FG}
+        fill={colors.measureLabelFg}
         fontSize={9}
         fontFamily="monospace"
       >
@@ -82,7 +84,8 @@ function MeasureLine({ x1, y1, x2, y2, labelX, labelY, label }: MeasureLine) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function MeasurementOverlay({ selectionPct, canvasWidth, canvasHeight }: MeasurementOverlayProps) {
-  const lines = useMemo<MeasureLine[]>(() => {
+  const colors = useBuilderOverlayColors();
+  const lines = useMemo<MeasureLineData[]>(() => {
     const d = computeEdgeDistances(selectionPct);
 
     // Convert % distances to canvas-px
@@ -93,7 +96,7 @@ export function MeasurementOverlay({ selectionPct, canvasWidth, canvasHeight }: 
     const midX = (slotLeft + slotRight) / 2;
     const midY = (slotTop + slotBottom) / 2;
 
-    const result: MeasureLine[] = [];
+    const result: MeasureLineData[] = [];
 
     // Left measurement (canvas edge → slot left edge)
     if (d.left > 0.5) {
@@ -160,7 +163,7 @@ export function MeasurementOverlay({ selectionPct, canvasWidth, canvasHeight }: 
       data-testid="measurement-overlay"
     >
       {lines.map((line, i) => (
-        <MeasureLine key={i} {...line} />
+        <MeasureLine key={i} {...line} colors={colors} />
       ))}
     </svg>
   );

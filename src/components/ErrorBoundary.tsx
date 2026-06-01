@@ -1,7 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { Alert, Button, Stack, Text } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
-import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -26,8 +25,12 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    Sentry.captureException(error, {
-      contexts: { react: { componentStack: errorInfo.componentStack ?? '' } },
+    void import('@sentry/react').then((Sentry) => {
+      Sentry.captureException(error, {
+        contexts: { react: { componentStack: errorInfo.componentStack ?? '' } },
+      });
+    }).catch(() => {
+      // Ignore monitoring failures; the boundary itself must stay resilient.
     });
   }
 

@@ -116,12 +116,16 @@ class WPSG_Settings_Sanitizer {
         // P31-F: Vertical Scroll Snap adapter
         'scrollSnapAlignment' => 'scroll_snap_alignment',
         'scrollSnapPageIndicator' => 'scroll_snap_page_indicator',
+        'scrollSnapMaxWidth' => 'scroll_snap_max_width',
+        'scrollSnapMaxWidthUnit' => 'scroll_snap_max_width_unit',
         // P31-E: Spotlight / Hero adapter
         'spotlightHeroAspectRatio' => 'spotlight_hero_aspect_ratio',
         'spotlightThumbnailSize' => 'spotlight_thumbnail_size',
         'spotlightThumbnailSizeUnit' => 'spotlight_thumbnail_size_unit',
         'spotlightTransitionDuration' => 'spotlight_transition_duration',
         'spotlightStripPosition' => 'spotlight_strip_position',
+        'spotlightHeroMaxWidth' => 'spotlight_hero_max_width',
+        'spotlightHeroMaxWidthUnit' => 'spotlight_hero_max_width_unit',
         'imageViewportHeight' => 'image_viewport_height',
         'imageViewportHeightUnit' => 'image_viewport_height_unit',
         'videoViewportHeight' => 'video_viewport_height',

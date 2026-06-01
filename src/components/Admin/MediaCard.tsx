@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties, type HTMLAttributes } from 'react';
+import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
@@ -11,6 +11,7 @@ interface MediaCardProps {
   height: number;
   compact?: boolean | undefined;
   showUrl?: boolean | undefined;
+  overlayBadge?: ReactNode;
   onEdit: () => void;
   onDelete: () => void;
   onImageClick?: (() => void) | undefined;
@@ -25,6 +26,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     height,
     compact = false,
     showUrl = false,
+    overlayBadge,
     onEdit,
     onDelete,
     onImageClick,
@@ -78,10 +80,17 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                 loading="lazy"
                 fallbackSrc={FALLBACK_IMAGE_SRC}
               />
-              <Group gap={4} {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
-                <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
-                <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
-              </Group>
+              <Box
+                data-testid="media-card-overlay-stack"
+                {...(styles.overlayStack ? { className: styles.overlayStack } : {})}
+              >
+                <Group gap={4} wrap="nowrap" align="center" {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
+                  <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
+                  <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
+                  {/* Future Admin Panel redesign: move overlayBadge into its own upper-left thumbnail overlay layer instead of this shared inline badge row. */}
+                  {overlayBadge}
+                </Group>
+              </Box>
             </Box>
           </Card.Section>
 

@@ -18,6 +18,7 @@ import type {
 } from './GalleryAdapter';
 import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { MediaCarouselAdapter } from './MediaCarouselAdapter';
+import { CompactGridGallery } from './compact-grid/CompactGridGallery';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;
@@ -25,9 +26,6 @@ export interface AdapterSelectOption {
   disabled?: boolean;
 }
 
-const CompactGridGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
-);
 const JustifiedGallery = lazy(() =>
   import('@/components/Galleries/Adapters/justified/JustifiedGallery').then((m) => ({ default: m.JustifiedGallery })),
 );
@@ -49,8 +47,11 @@ const SpotlightGallery = lazy(() =>
 const ScrollSnapGallery = lazy(() =>
   import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery').then((m) => ({ default: m.ScrollSnapGallery })),
 );
+const LazyLayoutBuilderGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
+);
 function LayoutBuilderRegistryFallback(props: GalleryAdapterProps) {
-  return createElement(MediaCarouselAdapter, props);
+  return createElement(LazyLayoutBuilderGallery, props);
 }
 
 // Internal map keyed by adapter id
@@ -153,10 +154,13 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     label: 'Layout Builder',
     optionLabels: {
       'per-type-gallery': 'Layout Builder -> per-breakpoint',
+      'campaign-listing': 'Layout Builder',
     },
-    capabilities: ['layout-builder'],
+    // P37-LB: listing-compatible; adapter owns pagination (slot count = page size).
+    capabilities: ['layout-builder', 'listing-compatible'],
     settingGroups: ['layout-builder'],
     supportsMobile: false,
+    paginationOwnership: 'adapter',
     component: LayoutBuilderRegistryFallback,
   },
 ];
@@ -829,6 +833,17 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
           { value: 'right', label: 'Right (wide containers)' },
         ],
       },
+      {
+        control: 'dimension',
+        key: 'spotlightHeroMaxWidth',
+        unitKey: 'spotlightHeroMaxWidthUnit',
+        label: 'Hero Max Width',
+        description: 'Maximum width of the spotlight layout. Set 0 to disable (full container width).',
+        allowedUnits: CSS_WIDTH_UNITS,
+        max: 1800,
+        step: 10,
+        fallback: 0,
+      },
     ],
   },
   'scroll-snap': {
@@ -853,6 +868,17 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         label: 'Page Indicator',
         description: 'Show a slide counter (n / total) in the lower-right corner of each slide.',
         fallback: true,
+      },
+      {
+        control: 'dimension',
+        key: 'scrollSnapMaxWidth',
+        unitKey: 'scrollSnapMaxWidthUnit',
+        label: 'Container Max Width',
+        description: 'Maximum width of the scroll-snap container. Set 0 to disable (full container width).',
+        allowedUnits: CSS_WIDTH_UNITS,
+        max: 1800,
+        step: 10,
+        fallback: 0,
       },
     ],
   },

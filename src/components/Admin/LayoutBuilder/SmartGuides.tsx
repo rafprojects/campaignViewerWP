@@ -5,6 +5,7 @@
 
 import type { GuideLine } from '@/utils/smartGuides';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -17,20 +18,16 @@ export interface SmartGuidesProps {
   canvasHeight: number;
 }
 
-// ── Colours ──────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
 
-const EDGE_COLOR = '#ff6b6b';
-const CENTER_COLOR = '#4dabf7';
-const SPACING_COLOR = '#69db7c';
-
-function guideColor(type: GuideLine['type']): string {
+function guideColor(type: GuideLine['type'], colors: BuilderOverlayColors): string {
   switch (type) {
     case 'edge':
-      return EDGE_COLOR;
+      return colors.guideEdge;
     case 'center':
-      return CENTER_COLOR;
+      return colors.guideCenter;
     case 'spacing':
-      return SPACING_COLOR;
+      return colors.guideSpacing;
   }
 }
 
@@ -52,6 +49,8 @@ export function SmartGuides({
   canvasWidth,
   canvasHeight,
 }: SmartGuidesProps) {
+  const colors = useBuilderOverlayColors();
+
   if (guides.length === 0) return null;
 
   return (
@@ -69,7 +68,7 @@ export function SmartGuides({
       aria-hidden="true"
     >
       {guides.map((guide, i) => {
-        const color = guideColor(guide.type);
+        const color = guideColor(guide.type, colors);
         const dash = guideDash(guide.type);
 
         if (guide.axis === 'x') {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
@@ -29,6 +29,8 @@ import {
   createEmptyTemplate,
   type LayoutDraftPayload,
 } from '@/hooks/useLayoutBuilderState';
+import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
+import { useTheme } from '@/hooks/useTheme';
 import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
@@ -48,6 +50,7 @@ import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 import type { SnapMode } from '@/utils/canvasMeasurement';
+import { useRootId } from '@/contexts/RootIdContext';
 
 // ── P30-D: Cross-tab stale detection ─────────────────────────────────────────
 const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
@@ -78,6 +81,8 @@ export interface LayoutBuilderModalProps {
   initialTemplate?: LayoutTemplate | undefined;
   onSaved?: ((template: LayoutTemplate) => void) | undefined;
   onNotify?: ((msg: { type: 'error' | 'success'; text: string }) => void) | undefined;
+  /** P37-LB: true when editing a template used in campaign listing mode; activates builder guardrails. */
+  listingMode?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -89,11 +94,43 @@ export function LayoutBuilderModal({
   initialTemplate,
   onSaved,
   onNotify,
+  listingMode = false,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
+  const rootId = useRootId();
+  const { colorScheme } = useTheme();
+  const shellColors = useBuilderShellColors();
   const dockApiRef = useRef<DockviewApi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  const builderShellVars = useMemo(
+    () => ({
+      '--wpsg-builder-surface': shellColors.surface,
+      '--wpsg-builder-surface-2': shellColors.surface2,
+      '--wpsg-builder-surface-3': shellColors.surface3,
+      '--wpsg-builder-background': shellColors.background,
+      '--wpsg-builder-border': shellColors.border,
+      '--wpsg-builder-border-muted': shellColors.borderMuted,
+      '--wpsg-builder-text': shellColors.text,
+      '--wpsg-builder-text-muted': shellColors.textMuted,
+      '--wpsg-builder-text-muted-2': shellColors.textMuted2,
+      '--wpsg-builder-accent': shellColors.accent,
+      '--wpsg-builder-accent-soft': shellColors.accentSoft,
+      '--wpsg-builder-icon-hover': shellColors.iconHover,
+      '--wpsg-builder-shadow': shellColors.shadow,
+      '--wpsg-builder-scrollbar': shellColors.scrollbar,
+    }) as CSSProperties,
+    [shellColors],
+  );
+
+  const dockTheme = useMemo(
+    () => ({
+      name: `wpsg-builder-shell-${colorScheme}`,
+      className: 'dockview-theme-wpsg',
+    }),
+    [colorScheme],
+  );
 
   // ── Fetch campaign list for the media picker ──
   const campaignOptions = useAllCampaignOptions(apiClient, opened);
@@ -143,34 +180,57 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
-  // ── P30-B workspace preferences (persisted in localStorage) ──
+  // ── P30-B workspace preferences (persisted in localStorage, root-scoped per P37-KS1) ──
   const [snapMode, setSnapMode] = useState<SnapMode>(() => {
-    try { return (safeLocalStorage.getItem('wpsg_builder_snap_mode') as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
+    try { return (safeLocalStorage.getItem(`wpsg_builder_${rootId}_snap_mode`) as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
   });
   const [snapThreshold, setSnapThreshold] = useState(5);
   const [showGrid, setShowGrid] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_grid') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_grid`) === 'true'; } catch { return false; }
   });
   const [gridSizePx, setGridSizePx] = useState(() => {
-    try { return Number(safeLocalStorage.getItem('wpsg_builder_grid_size')) || 20; } catch { return 20; }
+    try { return Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_grid_size`)) || 20; } catch { return 20; }
   });
   const [showRulers, setShowRulers] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_rulers') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_rulers`) === 'true'; } catch { return false; }
   });
   const [showMeasurements, setShowMeasurements] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_measurements') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_measurements`) === 'true'; } catch { return false; }
   });
 
   // Persist P30-B workspace preferences.
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_snap_mode', snapMode); }, [snapMode]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_grid', String(showGrid)); }, [showGrid]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_grid_size', String(gridSizePx)); }, [gridSizePx]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_rulers', String(showRulers)); }, [showRulers]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_measurements', String(showMeasurements)); }, [showMeasurements]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_rulers`, String(showRulers)); }, [rootId, showRulers]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_measurements`, String(showMeasurements)); }, [rootId, showMeasurements]);
+
+  // P37-KS1: one-time migration of legacy global builder workspace keys to root-scoped keys.
+  useEffect(() => {
+    const migrations: [string, string][] = [
+      ['wpsg_builder_snap_mode', `wpsg_builder_${rootId}_snap_mode`],
+      ['wpsg_builder_show_grid', `wpsg_builder_${rootId}_show_grid`],
+      ['wpsg_builder_grid_size', `wpsg_builder_${rootId}_grid_size`],
+      ['wpsg_builder_show_rulers', `wpsg_builder_${rootId}_show_rulers`],
+      ['wpsg_builder_show_measurements', `wpsg_builder_${rootId}_show_measurements`],
+      ['wpsg_builder_design_assets_open', `wpsg_builder_${rootId}_design_assets_open`],
+      ['wpsg_builder_layout', `wpsg_builder_${rootId}_layout`],
+    ];
+    for (const [oldKey, newKey] of migrations) {
+      try {
+        const v = localStorage.getItem(oldKey);
+        if (v !== null) {
+          safeLocalStorage.setItem(newKey, v);
+          localStorage.removeItem(oldKey);
+        }
+      } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('wpsg_builder_design_assets_open');
+      const stored = localStorage.getItem(`wpsg_builder_${rootId}_design_assets_open`);
       return stored === null ? true : stored === 'true';
     } catch {
       return true;
@@ -211,7 +271,7 @@ export function LayoutBuilderModal({
       channel.close();
       bcRef.current = null;
     };
-   
+
   }, [initialTemplate?.id]);
 
   // ── P36-A: Draft restore/discard prompt ──
@@ -300,7 +360,7 @@ export function LayoutBuilderModal({
         });
       },
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, initialTemplate?.id]);
 
   // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
@@ -311,7 +371,7 @@ export function LayoutBuilderModal({
   useEffect(() => {
     if (!opened) return;
     migrateGroupsRef.current();
-     
+
   }, [opened]);
 
   // ── Close with dirty guard ──
@@ -833,7 +893,7 @@ export function LayoutBuilderModal({
   // ── Dockview ready handler (P17-E) ──
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
-    const LAYOUT_KEY = 'wpsg_builder_layout';
+    const LAYOUT_KEY = `wpsg_builder_${rootId}_layout`;
     // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
     // that is now surfaced in the header; they are cleared so users get the
     // clean default layout without the redundant History tab.
@@ -875,7 +935,7 @@ export function LayoutBuilderModal({
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
-  }, []);
+  }, [rootId]);
 
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {
@@ -895,6 +955,7 @@ export function LayoutBuilderModal({
     handleCreateGroup, handleUngroupSelected,
     handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,
     handleBringForwardSelected, handleSendBackwardSelected,
+    listingMode,
   };
 
   return (
@@ -913,15 +974,22 @@ export function LayoutBuilderModal({
     >
       <div
         data-testid="builder-keyboard-handler"
-        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        style={{
+          ...builderShellVars,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          background: 'var(--wpsg-builder-surface)',
+          color: 'var(--wpsg-builder-text)',
+        }}
       >
         {/* ── Header Bar ── */}
         <Box
           px="md"
           py="xs"
           style={{
-            borderBottom: '1px solid var(--mantine-color-default-border)',
-            background: 'var(--mantine-color-body)',
+            borderBottom: '1px solid var(--wpsg-builder-border)',
+            background: 'var(--wpsg-builder-surface)',
             flexShrink: 0,
           }}
         >
@@ -1037,9 +1105,9 @@ export function LayoutBuilderModal({
         <BuilderDockContext.Provider value={contextValue}>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <DockviewReact
-              className="dockview-theme-dark"
               components={dockComponents}
               onReady={handleDockReady}
+              theme={dockTheme}
             />
           </div>
         </BuilderDockContext.Provider>

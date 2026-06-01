@@ -205,7 +205,7 @@ class WPSG_REST {
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.]+)/usage', [
+        register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.-]+)/usage', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_media_usage'],

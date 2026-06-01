@@ -50,6 +50,15 @@ import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useRootId } from '@/contexts/RootIdContext';
+import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import {
+  buildMediaGridShellVars,
+  MEDIA_GRID_GUTTER_PX,
+  MEDIA_GRID_MAX_WIDTHS,
+  resolveMediaGridPresetKey,
+} from './mediaTabLayout';
+import styles from './MediaTab.module.scss';
 
 // Position the DragOverlay so its top-center sits just below the cursor.
 // The overlay is 140 px wide; placing the cursor at (width/2, 12) gives a natural
@@ -243,17 +252,15 @@ function SortableGridItem({
             height={mediaHeight}
             compact={isCompact}
             showUrl={showUrl}
+            overlayBadge={usageSummaryLoading
+              ? <Skeleton width={64} height={20} radius="xl" />
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} size="xs" />}
             onEdit={() => openEdit(item)}
             onDelete={() => handleDelete(item)}
             onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
             cardStyle={getInsertionStyle(item.id, 'horizontal')}
             dragHandleProps={dragDisabled ? undefined : { ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
           />
-          <Box style={{ position: 'absolute', bottom: 8, left: 8 }}>
-            {usageSummaryLoading
-              ? <Skeleton width={64} height={20} radius="xl" />
-              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-          </Box>
         </div>
         {isDragging && (
           <div style={{
@@ -273,6 +280,7 @@ function SortableGridItem({
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
+  const rootId = useRootId();
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
   // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
@@ -329,13 +337,25 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     getInitialValueInEffect: false,
   });
 
-  // P34-B: sort mode — shared across campaigns (single key) so the user's preferred
-  // sort style persists regardless of which campaign they switch to.
+  // P34-B / P37-KS1: sort mode — shared across campaigns within a root so the
+  // user's preferred sort style persists regardless of which campaign they switch
+  // to, while separate gallery instances on the same page remain independent.
+  const sortModeKey = useMemo(() => `wpsg_media_sortMode_${rootId}`, [rootId]);
   const [sortMode, setSortMode] = useLocalStorage<MediaSortMode>({
-    key: 'wpsg_media_sortMode',
+    key: sortModeKey,
     defaultValue: 'order',
     getInitialValueInEffect: false,
   });
+  useEffect(() => {
+    try {
+      const legacy = localStorage.getItem('wpsg_media_sortMode');
+      if (legacy !== null) {
+        safeLocalStorage.setItem(sortModeKey, legacy);
+        localStorage.removeItem('wpsg_media_sortMode');
+      }
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
 
   const sensors = useSensors(
@@ -419,11 +439,21 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
   // Card size configurations
   const sizeConfig = useMemo(() => ({
-    compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72 },
-    small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110 },
-    medium: { span: { base: 12, sm: 6, md: 4 }, height: 170 },
-    large: { span: { base: 12, sm: 6 }, height: 240 },
+    compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72, maxWidth: MEDIA_GRID_MAX_WIDTHS.compact },
+    small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110, maxWidth: MEDIA_GRID_MAX_WIDTHS.small },
+    medium: { span: { base: 12, sm: 6, md: 4 }, height: 170, maxWidth: MEDIA_GRID_MAX_WIDTHS.medium },
+    large: { span: { base: 12, sm: 6 }, height: 240, maxWidth: MEDIA_GRID_MAX_WIDTHS.large },
   }), []);
+
+  const activeGridPreset = useMemo(() => {
+    const presetKey = resolveMediaGridPresetKey(viewMode, cardSize);
+    return sizeConfig[presetKey];
+  }, [viewMode, cardSize, sizeConfig]);
+
+  const mediaGridShellVars = useMemo(
+    () => buildMediaGridShellVars(activeGridPreset, MEDIA_GRID_GUTTER_PX),
+    [activeGridPreset],
+  );
 
   // Show skeleton only on first load when no cached query data exists yet.
   const effectiveLoading = mediaQueryLoading && media.length === 0;
@@ -1039,13 +1069,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       </Group>
 
       {effectiveLoading ? (
-        <Grid>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Grid.Col key={i} span={sizeConfig[cardSize]?.span ?? sizeConfig.medium.span}>
-              <Skeleton height={sizeConfig[cardSize]?.height ?? 170} radius="md" />
-            </Grid.Col>
-          ))}
-        </Grid>
+        <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+          <Grid gap={MEDIA_GRID_GUTTER_PX}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Grid.Col key={i} span={activeGridPreset.span}>
+                <Skeleton height={activeGridPreset.height} radius="md" />
+              </Grid.Col>
+            ))}
+          </Grid>
+        </Box>
       ) : (
         <DndContext
           sensors={sensors}
@@ -1098,20 +1130,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             </>
           ) : (
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
-              <Grid>
-                {displayedMedia.map((item) => (
-                  <SortableGridItem
-                    key={item.id}
-                    item={item}
-                    {...sharedSortableProps}
-                    viewMode={viewMode}
-                    cardSize={cardSize}
-                    mediaHeight={viewMode === 'compact' ? sizeConfig.compact.height : sizeConfig[cardSize].height}
-                    gridSpan={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
-                    showUrl={cardSize === 'large'}
-                  />
-                ))}
-              </Grid>
+              <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+                <Grid gap={MEDIA_GRID_GUTTER_PX}>
+                  {displayedMedia.map((item) => (
+                    <SortableGridItem
+                      key={item.id}
+                      item={item}
+                      {...sharedSortableProps}
+                      viewMode={viewMode}
+                      cardSize={cardSize}
+                      mediaHeight={activeGridPreset.height}
+                      gridSpan={activeGridPreset.span}
+                      showUrl={viewMode !== 'compact' && cardSize === 'large'}
+                    />
+                  ))}
+                </Grid>
+              </Box>
             </SortableContext>
           )}
 

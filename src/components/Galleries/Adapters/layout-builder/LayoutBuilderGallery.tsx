@@ -15,8 +15,9 @@
  *
  * Adapter ID: `'layout-builder'`
  */
-import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import type { ApiClient } from '@/services/apiClient';
+import type { ListingItem } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { useRecordAnalyticsEvent } from '@/hooks/useRecordAnalyticsEvent';
 import { Box, Center, Loader, Text, Stack } from '@mantine/core';
 import { IconLayoutDashboard, IconAlertTriangle, IconInfoCircle } from '@tabler/icons-react';
@@ -413,8 +414,8 @@ export interface LayoutBuilderGalleryProps {
   media: MediaItem[];
   settings: GalleryBehaviorSettings;
   runtime?: ResolvedGallerySectionRuntime;
-  /** Campaign layout template ID (from campaign.layoutTemplateId). */
-  templateId: string;
+  /** Campaign layout template ID (from campaign.layoutTemplateId). Required in media mode; omit in listing mode (read from settings.campaignListingLayoutTemplateId). */
+  templateId?: string;
   /** Per-campaign slot overrides (media binding, focal point). */
   slotOverrides?: CampaignLayoutBinding['slotOverrides'];
   /** When true, show admin-level assignment info banners. */
@@ -425,6 +426,10 @@ export interface LayoutBuilderGalleryProps {
   campaignId?: string;
   /** API client for recording analytics events. */
   apiClient?: ApiClient | undefined;
+  // P37-LB: listing-mode fields (from GalleryAdapterProps contract)
+  items?: ListingItem[];
+  renderItem?: (item: ListingItem, index: number) => ReactNode;
+  listingMode?: { surface: 'campaign-listing' };
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
@@ -439,8 +444,15 @@ export function LayoutBuilderGallery({
   containerDimensions: _containerDimensions,
   campaignId,
   apiClient,
+  items,
+  renderItem,
+  listingMode,
 }: LayoutBuilderGalleryProps) {
-  const { template, isLoading, error } = useLayoutTemplate(templateId);
+  const isListingMode = !!(items && renderItem && listingMode);
+  const effectiveTemplateId = isListingMode
+    ? (settings.campaignListingLayoutTemplateId ?? '')
+    : (templateId ?? '');
+  const { template, isLoading, error } = useLayoutTemplate(effectiveTemplateId);
 
   // Lightbox state — navigates the full media array
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -498,6 +510,9 @@ export function LayoutBuilderGallery({
       onCloseLightbox={closeLightbox}
       onNext={next}
       onPrev={prev}
+      isListingMode={isListingMode}
+      items={items}
+      renderItem={renderItem}
     />
   );
 }
@@ -517,6 +532,10 @@ interface InnerProps {
   onCloseLightbox: () => void;
   onNext: () => void;
   onPrev: () => void;
+  // P37-LB
+  isListingMode: boolean;
+  items: ListingItem[] | undefined;
+  renderItem: ((item: ListingItem, index: number) => ReactNode) | undefined;
 }
 
 function LayoutBuilderGalleryInner({
@@ -532,6 +551,9 @@ function LayoutBuilderGalleryInner({
   onCloseLightbox,
   onNext,
   onPrev,
+  isListingMode,
+  items,
+  renderItem,
 }: InnerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -551,10 +573,12 @@ function LayoutBuilderGalleryInner({
     return () => ro.disconnect();
   }, []);
 
-  // ── Media assignment ──────────────────────────────────────────────────────
+  // ── Media assignment (skipped in listing mode) ────────────────────────────
   const { assignments, summary } = useMemo(
-    () => assignMediaToSlots(template, media, slotOverrides),
-    [template, media, slotOverrides],
+    () => isListingMode
+      ? { assignments: new Map<string, MediaItem | undefined>(), summary: { kept: [], cleared: [], autoFilled: [], empty: [] } }
+      : assignMediaToSlots(template, media, slotOverrides),
+    [isListingMode, template, media, slotOverrides],
   );
 
   // Build a quick mediaId→index map for lightbox navigation
@@ -609,8 +633,8 @@ function LayoutBuilderGalleryInner({
         </Text>
       )}
 
-      {/* Mismatch warning */}
-      {hasMismatch && (
+      {/* Mismatch warning — only relevant in media mode */}
+      {!isListingMode && hasMismatch && (
         <Box
           {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{
@@ -632,8 +656,8 @@ function LayoutBuilderGalleryInner({
         </Box>
       )}
 
-      {/* Admin: slot assignment summary */}
-      {isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
+      {/* Admin: slot assignment summary — only relevant in media mode */}
+      {!isListingMode && isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
           {...getWpsgDebugProps('LayoutBuilderGallery', 'assignment-summary')}
           style={{
@@ -722,7 +746,46 @@ function LayoutBuilderGalleryInner({
                 draggable={false}
               />
             )}
-            {template.slots.map((rawSlot) => {
+            {template.slots.map((rawSlot, slotIndex) => {
+              // P37-LB: listing mode — each slot is a positioned container for renderItem
+              if (isListingMode) {
+                if (slotIndex >= (items?.length ?? 0)) return null;
+                const item = items![slotIndex];
+                if (!item) return null;
+                const pxX = (rawSlot.x / 100) * finalCanvasWidth;
+                const pxY = (rawSlot.y / 100) * canvasHeight;
+                const pxW = (rawSlot.width / 100) * finalCanvasWidth;
+                const pxH = (rawSlot.height / 100) * canvasHeight;
+                const containerStyle: React.CSSProperties = {
+                  position: 'absolute',
+                  left: pxX,
+                  top: pxY,
+                  width: pxW,
+                  height: pxH,
+                  zIndex: rawSlot.zIndex,
+                  borderRadius: rawSlot.borderRadius || undefined,
+                  border: rawSlot.borderWidth > 0
+                    ? `${rawSlot.borderWidth}px solid ${rawSlot.borderColor}`
+                    : undefined,
+                  overflow: 'hidden',
+                  filter: buildFilterCss(rawSlot.filterEffects, rawSlot.shadow) || undefined,
+                  mixBlendMode: (getBlendModeCss(rawSlot.blendMode) as React.CSSProperties['mixBlendMode']) || undefined,
+                };
+                if (rawSlot.tilt?.enabled) {
+                  return (
+                    <TiltWrapper key={rawSlot.id} tilt={rawSlot.tilt} style={containerStyle}>
+                      {renderItem!(item, slotIndex)}
+                    </TiltWrapper>
+                  );
+                }
+                return (
+                  <div key={rawSlot.id} style={containerStyle}>
+                    {renderItem!(item, slotIndex)}
+                  </div>
+                );
+              }
+
+              // Media mode — identity-based slot rendering
               const slot = resolveSlotWithOverrides(rawSlot, slotOverrides);
               const assigned = assignments.get(slot.id);
               return (
@@ -786,20 +849,22 @@ function LayoutBuilderGalleryInner({
         )}
       </div>
 
-      {/* Lightbox */}
-      <Lightbox
-        isOpen={lightboxOpen}
-        media={media}
-        currentIndex={currentIndex}
-        onPrev={onPrev}
-        onNext={onNext}
-        onClose={onCloseLightbox}
-        videoMaxWidth={settings.lightboxVideoMaxWidth}
-        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight}
-        videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight}
-      />
+      {/* Lightbox — not used in listing mode (card owns click) */}
+      {!isListingMode && (
+        <Lightbox
+          isOpen={lightboxOpen}
+          media={media}
+          currentIndex={currentIndex}
+          onPrev={onPrev}
+          onNext={onNext}
+          onClose={onCloseLightbox}
+          videoMaxWidth={settings.lightboxVideoMaxWidth}
+          videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
+          videoHeight={settings.lightboxVideoHeight}
+          videoHeightUnit={settings.lightboxVideoHeightUnit}
+          mediaMaxHeight={settings.lightboxMediaMaxHeight}
+        />
+      )}
     </Stack>
   );
 }

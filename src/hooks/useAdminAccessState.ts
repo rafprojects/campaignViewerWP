@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
-import { useCombobox } from '@mantine/core';
 import type { ApiClient } from '@/services/apiClient';
 import type { CompanyInfo, CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
 import { getErrorMessage } from '@/utils/getErrorMessage';
@@ -54,8 +53,6 @@ export function useAdminAccessState({
   const [userSearchResults, setUserSearchResults] = useState<WpUser[]>([]);
   const [userSearchLoading, setUserSearchLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<WpUser | null>(null);
-  const userCombobox = useCombobox({ onDropdownClose: () => userCombobox.resetSelectedOption() });
-  const blurTimeoutRef = useRef<number | null>(null);
 
   const [quickAddUserOpen, setQuickAddUserOpen] = useState(false);
   const [quickAddEmail, setQuickAddEmail] = useState('');
@@ -65,16 +62,6 @@ export function useAdminAccessState({
   const [quickAddSaving, setQuickAddSaving] = useState(false);
   const [quickAddResult, setQuickAddResult] = useState<{ success: boolean; message: string; resetUrl?: string | undefined } | null>(null);
   const [quickAddTestMode, setQuickAddTestMode] = useState(false);
-
-  // Cleanup blur timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (blurTimeoutRef.current) {
-        clearTimeout(blurTimeoutRef.current);
-        blurTimeoutRef.current = null;
-      }
-    };
-  }, []);
 
   // Search users when debounced query changes
   useEffect(() => {
@@ -266,8 +253,6 @@ export function useAdminAccessState({
     userSearchResults,
     userSearchLoading,
     selectedUser, setSelectedUser,
-    userCombobox,
-    blurTimeoutRef,
     quickAddUserOpen, setQuickAddUserOpen,
     quickAddEmail, setQuickAddEmail,
     quickAddName, setQuickAddName,

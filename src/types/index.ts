@@ -737,12 +737,16 @@ export interface GalleryBehaviorSettings {
   // P31-F: Vertical Scroll Snap adapter
   scrollSnapAlignment: string;        // 'start' | 'center' | 'end'
   scrollSnapPageIndicator: boolean;   // show slide counter (n / total)
+  scrollSnapMaxWidth: number;         // 0 = no max-width (full container)
+  scrollSnapMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
   spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
   spotlightThumbnailSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
   spotlightTransitionDuration: number;                                       // ms: hero swap / border transition
   spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
+  spotlightHeroMaxWidth: number;      // 0 = no max-width (full container)
+  spotlightHeroMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -1093,6 +1097,8 @@ export interface GalleryBehaviorSettings {
   campaignListingAdapterIdMobile?: string;
   /** Per-breakpoint override for the listing adapter on tablet. Omit to inherit desktop value. */
   campaignListingAdapterIdTablet?: string;
+  /** P37-LB: Template ID used when campaignListingAdapterId is 'layout-builder'. */
+  campaignListingLayoutTemplateId?: string;
 }
 
 // ── Card breakpoint override model ───────────────────────────────────────────
@@ -1465,12 +1471,16 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P31-F: Vertical Scroll Snap adapter
   scrollSnapAlignment: 'start',
   scrollSnapPageIndicator: true,
+  scrollSnapMaxWidth: 0,
+  scrollSnapMaxWidthUnit: 'px',
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: '16:9',
   spotlightThumbnailSize: 80,
   spotlightThumbnailSizeUnit: 'px',
   spotlightTransitionDuration: 250,
   spotlightStripPosition: 'below',
+  spotlightHeroMaxWidth: 0,
+  spotlightHeroMaxWidthUnit: 'px',
   // P21-B: Card visibility toggles
   showCardCompanyName: true,
   showCardMediaCounts: true,

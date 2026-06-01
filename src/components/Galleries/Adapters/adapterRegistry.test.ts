@@ -157,13 +157,25 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for the spotlight setting group', () => {
-    const fieldKeys = getSettingGroupFieldDefinitions('spotlight').map((f) => f.key);
-    expect(fieldKeys).toEqual([
+    const fields = getSettingGroupFieldDefinitions('spotlight');
+
+    expect(fields.map((field) => field.key)).toEqual([
       'spotlightHeroAspectRatio',
       'spotlightThumbnailSize',
       'spotlightTransitionDuration',
       'spotlightStripPosition',
+      'spotlightHeroMaxWidth',
     ]);
+
+    expect(fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: 'spotlightHeroMaxWidth',
+        control: 'dimension',
+        unitKey: 'spotlightHeroMaxWidthUnit',
+        label: 'Hero Max Width',
+        fallback: 0,
+      }),
+    ]));
   });
 
   it('reports spotlight in active setting groups when the adapter is selected', () => {
@@ -187,8 +199,23 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for the scroll-snap setting group', () => {
-    const fieldKeys = getSettingGroupFieldDefinitions('scroll-snap').map((f) => f.key);
-    expect(fieldKeys).toEqual(['scrollSnapAlignment', 'scrollSnapPageIndicator']);
+    const fields = getSettingGroupFieldDefinitions('scroll-snap');
+
+    expect(fields.map((field) => field.key)).toEqual([
+      'scrollSnapAlignment',
+      'scrollSnapPageIndicator',
+      'scrollSnapMaxWidth',
+    ]);
+
+    expect(fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: 'scrollSnapMaxWidth',
+        control: 'dimension',
+        unitKey: 'scrollSnapMaxWidthUnit',
+        label: 'Container Max Width',
+        fallback: 0,
+      }),
+    ]));
   });
 
   it('scroll-snap adapter is not disabled at mobile breakpoint', () => {
@@ -199,10 +226,10 @@ describe('adapterRegistry', () => {
 
   // P35-A: listing-compatible capability and pagination ownership
   describe('P35-A listing-compatible capability', () => {
-    const LISTING_ADAPTER_IDS = ['compact-grid', 'masonry', 'justified', 'classic'] as const;
-    const NON_LISTING_ADAPTER_IDS = ['hexagonal', 'circular', 'diamond', 'layout-builder', 'spotlight', 'scroll-snap'] as const;
+    const LISTING_ADAPTER_IDS = ['compact-grid', 'masonry', 'justified', 'classic', 'layout-builder'] as const;
+    const NON_LISTING_ADAPTER_IDS = ['hexagonal', 'circular', 'diamond', 'spotlight', 'scroll-snap'] as const;
 
-    it('tags exactly the four Phase-1 adapters with listing-compatible', () => {
+    it('tags listing-compatible adapters (P35-A + P37-LB)', () => {
       for (const id of LISTING_ADAPTER_IDS) {
         expect(
           getAdapterRegistration(id)?.capabilities,
@@ -217,30 +244,32 @@ describe('adapterRegistry', () => {
       }
     });
 
-    it('classic adapter has paginationOwnership adapter; others default to host', () => {
+    it('classic and layout-builder have paginationOwnership adapter; others default to host', () => {
       expect(getAdapterRegistration('classic')?.paginationOwnership).toBe('adapter');
+      expect(getAdapterRegistration('layout-builder')?.paginationOwnership).toBe('adapter');
       for (const id of (['compact-grid', 'masonry', 'justified'] as const)) {
         const ownership = getAdapterRegistration(id)?.paginationOwnership;
         expect(ownership === undefined || ownership === 'host', `${id} paginationOwnership should be host or undefined`).toBe(true);
       }
     });
 
-    it('adapterOwnsPagination returns true only for classic', () => {
+    it('adapterOwnsPagination returns true for classic and layout-builder', () => {
       expect(adapterOwnsPagination('classic')).toBe(true);
       expect(adapterOwnsPagination('carousel')).toBe(true); // alias
+      expect(adapterOwnsPagination('layout-builder')).toBe(true);
       expect(adapterOwnsPagination('compact-grid')).toBe(false);
       expect(adapterOwnsPagination('masonry')).toBe(false);
       expect(adapterOwnsPagination('justified')).toBe(false);
       expect(adapterOwnsPagination('unknown-id')).toBe(false);
     });
 
-    it('getListingAdapterSelectOptions returns exactly the four Phase-1 adapters', () => {
+    it('getListingAdapterSelectOptions returns P35-A adapters plus layout-builder (P37-LB)', () => {
       const options = getListingAdapterSelectOptions();
       const ids = options.map((o) => o.value).sort();
-      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'masonry'].sort());
+      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'layout-builder', 'masonry'].sort());
     });
 
-    it('getListingAdapterSelectOptions with mobile breakpoint includes all four (none are mobile-restricted)', () => {
+    it('getListingAdapterSelectOptions with mobile breakpoint excludes layout-builder (supportsMobile: false)', () => {
       const options = getListingAdapterSelectOptions('mobile');
       const ids = options.map((o) => o.value).sort();
       expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'masonry'].sort());

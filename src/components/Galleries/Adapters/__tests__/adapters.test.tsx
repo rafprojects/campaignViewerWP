@@ -532,6 +532,22 @@ describe('SpotlightGallery — specific', () => {
     });
   });
 
+  it('applies spotlightHeroMaxWidth to the adapter shell and keeps it centered', () => {
+    const constrainedSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      spotlightHeroMaxWidth: 48,
+      spotlightHeroMaxWidthUnit: 'rem',
+    };
+
+    const { container } = render(
+      <SpotlightGallery media={THREE_IMAGES} settings={constrainedSettings} />,
+    );
+
+    const shell = container.querySelector('[data-wpsg-component="SpotlightGallery"]') as HTMLElement | null;
+    expect(shell?.style.maxWidth).toBe('48rem');
+    expect(shell?.style.marginInline).toBe('auto');
+  });
+
   it('renders gracefully with empty media — hero shows empty state', () => {
     const { container } = render(
       <SpotlightGallery media={[]} settings={SETTINGS} />,
@@ -589,6 +605,22 @@ describe('ScrollSnapGallery — specific', () => {
     };
     render(<ScrollSnapGallery media={THREE_IMAGES} settings={noIndicatorSettings} />);
     expect(screen.queryByText('1 / 3')).not.toBeInTheDocument();
+  });
+
+  it('applies scrollSnapMaxWidth to the adapter shell and keeps it centered', () => {
+    const constrainedSettings: GalleryBehaviorSettings = {
+      ...SETTINGS,
+      scrollSnapMaxWidth: 75,
+      scrollSnapMaxWidthUnit: '%',
+    };
+
+    const { container } = render(
+      <ScrollSnapGallery media={THREE_IMAGES} settings={constrainedSettings} />,
+    );
+
+    const shell = container.querySelector('[data-wpsg-component="ScrollSnapGallery"]') as HTMLElement | null;
+    expect(shell?.style.maxWidth).toBe('75%');
+    expect(shell?.style.marginInline).toBe('auto');
   });
 
   it('clicking a slide opens the lightbox', () => {

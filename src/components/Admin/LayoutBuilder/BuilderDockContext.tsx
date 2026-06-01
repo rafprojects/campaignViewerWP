@@ -70,6 +70,9 @@ export interface BuilderDockContextValue {
   // A11y
   announce: (msg: string) => void;
 
+  // P37-LB: listing-mode flag (true when editing a template used for campaign listing)
+  listingMode: boolean;
+
   // Handlers
   handleSave: () => Promise<boolean | void>;
   handleClose: () => void;

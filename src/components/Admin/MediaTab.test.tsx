@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '../../test/test-utils';
+import { render, screen, fireEvent, waitFor, act, within } from '../../test/test-utils';
 import MediaTab from './MediaTab';
 import { showNotification } from '@mantine/notifications';
 
@@ -29,6 +29,7 @@ describe('MediaTab', () => {
     getAuthHeaders: vi.fn().mockResolvedValue({ Authorization: 'Bearer test' }),
     // P18-G: media usage — default to empty map so tests aren't affected
     getMediaUsageSummary: vi.fn().mockResolvedValue({}),
+    getMediaUsage: vi.fn().mockResolvedValue({ campaigns: [] }),
   } as unknown as {
     get: ReturnType<typeof vi.fn>;
     post: ReturnType<typeof vi.fn>;
@@ -39,6 +40,7 @@ describe('MediaTab', () => {
     getBaseUrl: ReturnType<typeof vi.fn>;
     getAuthHeaders: ReturnType<typeof vi.fn>;
     getMediaUsageSummary: ReturnType<typeof vi.fn>;
+    getMediaUsage: ReturnType<typeof vi.fn>;
   });
 
   // Default apiClient for tests that don't need a fresh one
@@ -46,6 +48,7 @@ describe('MediaTab', () => {
 
   beforeEach(() => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -63,6 +66,104 @@ describe('MediaTab', () => {
     apiClient.addCampaignMediaBatch.mockReset();
     apiClient.getMediaUsageSummary.mockReset();
     apiClient.getMediaUsageSummary.mockResolvedValue({});
+    apiClient.getMediaUsage.mockReset();
+    apiClient.getMediaUsage.mockResolvedValue({ campaigns: [] });
+  });
+
+  it('renders the usage badge in the card overlay for grid view', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm1',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/1.jpg',
+        thumbnail: 'https://example.com/1.jpg',
+        caption: 'Overlay Item',
+        order: 1,
+      },
+    ]);
+    apiClient.getMediaUsageSummary.mockResolvedValueOnce({ m1: 2 });
+
+    render(<MediaTab campaignId="101" apiClient={apiClient as any} />);
+
+    await screen.findByText('Overlay Item');
+
+    const gridItem = screen.getByTestId('media-draggable-m1');
+    const overlay = within(gridItem).getByTestId('media-card-overlay-stack');
+
+    expect(within(overlay).getByText('2 campaigns')).toBeInTheDocument();
+    expect(gridItem.querySelector('[style*="bottom: 8px"][style*="left: 8px"]')).toBeNull();
+  });
+
+  it('applies bounded row-width vars for the default grid preset', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm-grid',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/grid.jpg',
+        thumbnail: 'https://example.com/grid.jpg',
+        caption: 'Grid Width Item',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="layout-grid" apiClient={apiClient as any} />);
+
+    await screen.findByText('Grid Width Item');
+
+    const shell = screen.getByTestId('media-grid-shell');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-base')).toBe('224px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-sm')).toBe('464px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-md')).toBe('704px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-lg')).toBe('704px');
+  });
+
+  it('uses the compact bounded-width preset when compact view is restored from storage', async () => {
+    window.localStorage.setItem('wpsg_media_viewMode_layout-compact', JSON.stringify('compact'));
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm-compact',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/compact.jpg',
+        thumbnail: 'https://example.com/compact.jpg',
+        caption: 'Compact Width Item',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="layout-compact" apiClient={apiClient as any} />);
+
+    await screen.findByTestId('media-draggable-m-compact');
+
+    const shell = screen.getByTestId('media-grid-shell');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-base')).toBe('240px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-sm')).toBe('496px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-md')).toBe('752px');
+    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-lg')).toBe('752px');
+  });
+
+  it('keeps the list branch outside the bounded grid shell', async () => {
+    window.localStorage.setItem('wpsg_media_viewMode_layout-list', JSON.stringify('list'));
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm-list',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/list.jpg',
+        thumbnail: 'https://example.com/list.jpg',
+        caption: 'List Width Item',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="layout-list" apiClient={apiClient as any} />);
+
+    await screen.findByText('List Width Item');
+
+    expect(screen.queryByTestId('media-grid-shell')).toBeNull();
+    expect(screen.getAllByRole('table')).toHaveLength(2);
   });
 
   it('renders media items and supports edit/delete/drag-reorder', async () => {
@@ -769,7 +870,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (list view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode');
+    localStorage.removeItem('wpsg_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'm1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Alpha', order: 1 },
@@ -799,7 +900,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (grid view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode');
+    localStorage.removeItem('wpsg_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'g1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Gamma', order: 1 },

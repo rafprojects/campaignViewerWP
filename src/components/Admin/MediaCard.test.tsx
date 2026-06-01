@@ -92,6 +92,18 @@ describe('MediaCard — basic render', () => {
     render(<MediaCard item={noCaption} {...defaultProps} />);
     expect(screen.getByText('—')).toBeInTheDocument();
   });
+
+  it('renders custom overlay badge content when provided', () => {
+    render(
+      <MediaCard
+        item={imageItem}
+        {...defaultProps}
+        overlayBadge={<span>2 campaigns</span>}
+      />,
+    );
+    const overlay = screen.getByTestId('media-card-overlay-stack');
+    expect(overlay).toHaveTextContent('2 campaigns');
+  });
 });
 
 // ─── Full vs compact mode ────────────────────────────────────────────────────
@@ -159,6 +171,37 @@ describe('MediaCard — callbacks', () => {
     expect(
       screen.queryByRole('button', { name: /open image preview/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('does not trigger image preview when the interactive overlay badge is clicked', () => {
+    const onImageClick = vi.fn();
+    const onOverlayClick = vi.fn();
+
+    render(
+      <MediaCard
+        item={imageItem}
+        height={120}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onImageClick={onImageClick}
+        overlayBadge={(
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onOverlayClick();
+            }}
+          >
+            Usage
+          </button>
+        )}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usage' }));
+
+    expect(onOverlayClick).toHaveBeenCalledOnce();
+    expect(onImageClick).not.toHaveBeenCalled();
   });
 });
 

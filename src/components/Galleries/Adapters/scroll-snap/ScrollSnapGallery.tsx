@@ -30,7 +30,7 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/utils/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
@@ -71,6 +71,8 @@ export function ScrollSnapGallery({
   // ── Settings resolution ───────────────────────────────────────────────────
   const snapAlignment = settings.scrollSnapAlignment ?? 'start';
   const showPageIndicator = settings.scrollSnapPageIndicator ?? true;
+  const snapMaxWidth = settings.scrollSnapMaxWidth ?? 0;
+  const snapMaxWidthUnit = settings.scrollSnapMaxWidthUnit ?? 'px';
 
   // Container height: prefer the measured section height; fall back to constant.
   const snapHeight =
@@ -115,7 +117,14 @@ export function ScrollSnapGallery({
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <Stack gap="xs" style={adapterSizing} {...getWpsgDebugProps('ScrollSnapGallery')}>
+    <Stack
+      gap="xs"
+      style={{
+        ...adapterSizing,
+        ...(snapMaxWidth > 0 ? { maxWidth: toCss(snapMaxWidth, snapMaxWidthUnit), marginInline: 'auto' } : {}),
+      }}
+      {...getWpsgDebugProps('ScrollSnapGallery')}
+    >
       {/* Optional gallery heading */}
       {heading.visible && (
         <Title

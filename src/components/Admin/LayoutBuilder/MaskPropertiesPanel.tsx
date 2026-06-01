@@ -64,7 +64,7 @@ function SectionHeader({ label }: { label: string }) {
       mt={6}
       mb={2}
       pb={3}
-      style={{ borderBottom: '1px solid var(--mantine-color-dark-5)' }}
+      style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}
     >
       <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>
         {label}
@@ -146,11 +146,11 @@ export function MaskPropertiesPanel({
           height: 64,
           borderRadius: 4,
           background: hasImage
-            ? `url(${ml.url}) center/contain no-repeat var(--mantine-color-dark-7)`
-            : 'var(--mantine-color-dark-7)',
+            ? `url(${ml.url}) center/contain no-repeat var(--mantine-color-default)`
+            : 'var(--mantine-color-default)',
           border: isDragOver
             ? '2px dashed var(--mantine-color-violet-5)'
-            : '1px solid var(--mantine-color-dark-5)',
+            : '1px solid var(--mantine-color-default-border)',
           display: hasImage ? undefined : 'flex',
           alignItems: hasImage ? undefined : 'center',
           justifyContent: hasImage ? undefined : 'center',

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Combobox, Loader, TextInput, useCombobox } from '@mantine/core';
+import { Combobox } from '@mantine/core';
 import type { MantineSize } from '@mantine/core';
 import type { CompanyInfo } from '@/services/adminQuery';
+import { SearchableEntityInput } from './SearchableEntityInput';
 
 export interface CompanyComboboxProps {
   /** Company slug (for existing) or name (for new/freeform). */
@@ -25,8 +26,6 @@ export function CompanyCombobox({
   size,
   placeholder = 'Search or add company…',
 }: CompanyComboboxProps) {
-  const combobox = useCombobox({ onDropdownClose: () => combobox.resetSelectedOption() });
-
   const resolveDisplay = (v: string) => {
     const match = companies.find((c) => c.slug === v);
     return match ? match.name : v;
@@ -59,11 +58,9 @@ export function CompanyCombobox({
     setInputValue(match ? match.name : optionValue);
     committedRef.current = true;
     onChange(optionValue);
-    combobox.closeDropdown();
   };
 
   const handleBlur = () => {
-    combobox.closeDropdown();
     if (!committedRef.current) {
       committedRef.current = true;
       const trimmed = inputValue.trim();
@@ -75,44 +72,36 @@ export function CompanyCombobox({
     }
   };
 
-  return (
-    <Combobox store={combobox} onOptionSubmit={handleOptionSubmit}>
-      <Combobox.Target>
-        <TextInput
-          label={label}
-          required={required ?? false}
-          {...(size !== undefined && { size })}
-          value={inputValue}
-          placeholder={placeholder}
-          rightSection={loading ? <Loader size="xs" /> : null}
-          onChange={(e) => {
-            const next = e.currentTarget.value;
-            setInputValue(next);
-            committedRef.current = false;
-            combobox.openDropdown();
-            combobox.updateSelectedOptionIndex();
-          }}
-          onBlur={handleBlur}
-        />
-      </Combobox.Target>
+  const handleInputChange = (next: string) => {
+    setInputValue(next);
+    committedRef.current = false;
+  };
 
-      <Combobox.Dropdown>
-        <Combobox.Options>
-          {filtered.map((company) => (
-            <Combobox.Option key={company.slug} value={company.slug}>
-              {company.name}
-            </Combobox.Option>
-          ))}
-          {!exactMatch && inputValue.trim() && (
-            <Combobox.Option value={inputValue.trim()}>
-              + Create &ldquo;{inputValue.trim()}&rdquo;
-            </Combobox.Option>
-          )}
-          {filtered.length === 0 && !inputValue.trim() && (
-            <Combobox.Empty>No companies found</Combobox.Empty>
-          )}
-        </Combobox.Options>
-      </Combobox.Dropdown>
-    </Combobox>
+  return (
+    <SearchableEntityInput
+      displayValue={inputValue}
+      onInputChange={handleInputChange}
+      onOptionSubmit={handleOptionSubmit}
+      onBlur={handleBlur}
+      loading={loading}
+      label={label}
+      required={required}
+      size={size}
+      placeholder={placeholder}
+    >
+      {filtered.map((company) => (
+        <Combobox.Option key={company.slug} value={company.slug}>
+          {company.name}
+        </Combobox.Option>
+      ))}
+      {!exactMatch && inputValue.trim() && (
+        <Combobox.Option value={inputValue.trim()}>
+          + Create &ldquo;{inputValue.trim()}&rdquo;
+        </Combobox.Option>
+      )}
+      {filtered.length === 0 && !inputValue.trim() && (
+        <Combobox.Empty>No companies found</Combobox.Empty>
+      )}
+    </SearchableEntityInput>
   );
 }

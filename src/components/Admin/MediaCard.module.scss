@@ -18,12 +18,20 @@
   position: relative;
 }
 
-.badgeGroup {
+.overlayStack {
   position: absolute;
   top: 8px;
   left: 8px;
   z-index: 2;
+  max-width: calc(100% - 16px);
   pointer-events: none;
+  overflow: hidden;
+}
+
+.badgeGroup {
+  pointer-events: none;
+  align-items: center;
+  flex-wrap: nowrap;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -10,6 +10,7 @@ import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { AssetUploader } from './AssetUploader';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useRootId } from '@/contexts/RootIdContext';
 
 export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
   const {
@@ -26,6 +27,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
     handleDeleteLibraryOverlay,
     handleAutoAssign,
   } = useBuilderDock();
+  const rootId = useRootId();
 
   return (
     <div
@@ -33,6 +35,8 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         height: '100%',
         overflowY: 'auto',
         padding: 'var(--mantine-spacing-sm)',
+        background: 'var(--wpsg-builder-surface)',
+        color: 'var(--wpsg-builder-text)',
       }}
     >
       <Select
@@ -65,7 +69,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
           const next = val === 'design-assets';
           setDesignAssetsOpen(next);
           try {
-            localStorage.setItem('wpsg_builder_design_assets_open', String(next));
+            localStorage.setItem(`wpsg_builder_${rootId}_design_assets_open`, String(next));
           } catch { /* ignore */ }
         }}
         mt="sm"

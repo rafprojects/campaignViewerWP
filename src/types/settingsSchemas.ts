@@ -128,12 +128,16 @@ export const GalleryAdapterSettingsSchema = z.object({
   // P31-F: Vertical Scroll Snap adapter
   scrollSnapAlignment: optionalEnum(SCROLL_SNAP_ALIGNMENTS),
   scrollSnapPageIndicator: optionalBoolean,
+  scrollSnapMaxWidth: optionalFiniteNumber,
+  scrollSnapMaxWidthUnit: optionalEnum(CSS_WIDTH_UNITS),
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: optionalString,
   spotlightThumbnailSize: optionalFiniteNumber,
   spotlightThumbnailSizeUnit: optionalEnum(CSS_WIDTH_UNITS),
   spotlightTransitionDuration: optionalFiniteNumber,
   spotlightStripPosition: optionalEnum(SPOTLIGHT_STRIP_POSITIONS),
+  spotlightHeroMaxWidth: optionalFiniteNumber,
+  spotlightHeroMaxWidthUnit: optionalEnum(CSS_WIDTH_UNITS),
   imageViewportHeight: optionalFiniteNumber,
   imageViewportHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
   videoViewportHeight: optionalFiniteNumber,

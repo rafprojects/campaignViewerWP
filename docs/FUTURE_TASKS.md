@@ -50,6 +50,22 @@ These items are intentionally not repeated in the backlog sections below.
 
 ---
 
+## Admin Panel Redesign
+
+### AdminPanel > Media Tab Card Layout Refresh
+
+**Context:** The current Media tab card presentation has accumulated a few one-off layout decisions across grid, compact, and list views. The immediate fix keeps the usage badge aligned inline with the other media badges in grid cards, but the broader card layout still needs a more deliberate redesign pass.
+
+**Design goals for a future pass:**
+- Revisit the grid-card badge hierarchy and spacing as one system instead of incrementally placing individual badges.
+- Move the campaigns usage badge into a deliberate overlay treatment in the image thumbnail's upper-left corner.
+- Normalize card chrome across grid, compact, and list presentations so captions, badges, actions, and thumbnail treatments feel consistent.
+- Review whether card metadata should live in a dedicated row below the image, with overlay badges reserved only for high-priority thumbnail metadata.
+
+**Effort:** Medium | **Impact:** Medium
+
+---
+
 ## Builder
 
 ### URL-Based Image Inputs (Mask, Overlay, Background)
