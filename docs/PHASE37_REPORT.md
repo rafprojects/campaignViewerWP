@@ -2,7 +2,7 @@
 
 **Status:** Planned
 **Created:** 2026-05-30
-**Last updated:** 2026-05-31 (P37-MT2 implementation started)
+**Last updated:** 2026-05-31 (P37-MT2 complete)
 
 ### Tracks
 
@@ -14,7 +14,7 @@
 | P37-SE1 | Shared searchable entity input adoption | Complete | M |
 | P37-KS1 | Legacy storage-key scoping audit and migration | Complete | M |
 | P37-MT1 | Media tab usage-badge overlay cleanup | Complete | S |
-| P37-MT2 | Media tab card-width stabilization | In Progress | M |
+| P37-MT2 | Media tab card-width stabilization | Complete | M |
 
 > **Note:** Phase 37 combines the promoted P36-X1 implementation track
 > (`P37-LB`) with four direct carry-forwards from the P36 Related Planning
@@ -745,10 +745,11 @@ turning this track into a full responsive-layout refactor.
   vendor chunking was refined. `npm run build:wp` now completes without the
   earlier import-splitting warnings or chunk-size warnings.
 - Focused validation passed: `npx vitest run src/components/Admin/mediaTabLayout.test.ts src/components/Admin/MediaTab.test.tsx`.
-- Manual QA across narrow/default/wide admin-panel widths is still required
-  before this track can move to Complete.
+- Manual QA review judged the bounded row-cap pass acceptable for the current
+  Phase 37 scope; the track is marked complete and any further decoupling work
+  remains deferred to Phase 38.
 
-### Status: In Progress
+### Status: Complete
 
 ---
 
