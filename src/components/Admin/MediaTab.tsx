@@ -33,6 +33,7 @@ import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
+import { NearDuplicateWarning } from '@/components/Common/NearDuplicateWarning';
 import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
@@ -45,6 +46,7 @@ import type {
   CampaignMediaBatchRequestItem,
   MediaItem,
   OEmbedResponse,
+  UploadDuplicateCampaign,
 } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
@@ -282,6 +284,16 @@ function SortableGridItem({
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
+interface NearDuplicateEntry {
+  file: File;
+  filename: string;
+  similarId: number;
+  similarUrl: string;
+  distance: number;
+  similarName: string;
+  campaigns: UploadDuplicateCampaign[];
+}
+
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
   const rootId = useRootId();
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
@@ -295,7 +307,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Array<string | null>>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const { uploadMany, batchProgress, isUploading: uploading, resetProgress } = useXhrUpload();
+  const { upload, uploadMany, batchProgress, isUploading: uploading, resetProgress } = useXhrUpload();
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
@@ -369,6 +381,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // P38-MD1: Near-duplicate warning queue — one entry per file that triggered a near-duplicate 409.
+  const [pendingNearDuplicates, setPendingNearDuplicates] = useState<NearDuplicateEntry[]>([]);
+  const [nearDupLoading, setNearDupLoading] = useState(false);
 
   // Scroll position preservation across tab switches (sessionStorage, per-campaign)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -608,12 +624,49 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         }
       }
 
+      // Separate near-duplicates (interactive resolution) from hard errors.
+      const nearDupEntries: NearDuplicateEntry[] = uploadResponse.results
+        .map((result, index) => ({ result, file: selectedFiles[index] }))
+        .filter(({ result, file }) => Boolean(file) && !result.success && result.near_duplicate === true)
+        .map(({ result, file }) => ({
+          file: file!,
+          filename: file!.name,
+          similarId: result.similar_id!,
+          similarUrl: result.similar_url!,
+          distance: result.distance ?? 0,
+          similarName: result.similar_name ?? '',
+          campaigns: result.similar_campaigns ?? [],
+        }));
+
+      const nearDupFilenames = new Set(nearDupEntries.map((e) => e.filename));
+
       const failedUploadEntries = uploadResponse.results
-        .map((result, index) => ({
-          file: selectedFiles[index],
-          error: result.success ? null : (result.error ?? 'Upload failed.'),
-        }))
-        .filter((entry): entry is { file: File; error: string } => Boolean(entry.file) && Boolean(entry.error));
+        .map((result, index) => {
+          let error: string | null = null;
+          if (!result.success && !result.near_duplicate) {
+            if (result.duplicate && result.existing_name) {
+              const name = result.existing_name;
+              const camps = result.existing_campaigns ?? [];
+              if (camps.length === 0) {
+                error = `Already uploaded as '${name}'`;
+              } else if (camps.length === 1) {
+                error = `Already uploaded as '${name}' — used in ${camps[0]!.title}`;
+              } else {
+                error = `Already uploaded as '${name}' — used in ${camps.length} campaigns`;
+              }
+            } else {
+              error = result.error ?? 'Upload failed.';
+            }
+          }
+          return { file: selectedFiles[index], error };
+        })
+        .filter((entry): entry is { file: File; error: string } =>
+          Boolean(entry.file) && Boolean(entry.error) && !nearDupFilenames.has(entry.file!.name),
+        );
+
+      if (nearDupEntries.length > 0) {
+        setPendingNearDuplicates((prev) => [...prev, ...nearDupEntries]);
+      }
 
       const uploadedCount = addedMedia.length;
       const totalCount = selectedFiles.length;
@@ -641,6 +694,84 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     } finally {
       resetProgress();
     }
+  }
+
+  // P38-MD1: Near-duplicate resolution handlers.
+  async function handleNearDupUseExisting() {
+    const entry = pendingNearDuplicates[0];
+    if (!entry) return;
+    setNearDupLoading(true);
+    try {
+      const nextOrder = getNextMediaOrder(media);
+      const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, [{
+        type: 'image',
+        source: 'upload',
+        provider: 'wordpress',
+        attachmentId: entry.similarId,
+        url: entry.similarUrl,
+        thumbnail: entry.similarUrl,
+        caption: entry.filename,
+        order: nextOrder,
+      }]);
+      if (batchAddResponse.added.length > 0) {
+        setMedia((current) => [...current, ...batchAddResponse.added]);
+        queryClient.setQueryData<MediaItem[]>(
+          getMediaItemsQueryKey(apiClient, campaignId),
+          (prev) => [...(prev ?? []), ...batchAddResponse.added],
+        );
+        onCampaignsUpdated?.();
+        showNotification({ title: 'Existing image added', message: `Using existing image for "${entry.filename}".`, color: 'blue' });
+      }
+    } catch (err) {
+      showNotification({ title: 'Failed to add image', message: getErrorMessage(err, 'Could not add existing image.'), color: 'red' });
+    } finally {
+      setNearDupLoading(false);
+      setPendingNearDuplicates((prev) => prev.slice(1));
+    }
+  }
+
+  async function handleNearDupUploadAnyway() {
+    const entry = pendingNearDuplicates[0];
+    if (!entry) return;
+    setNearDupLoading(true);
+    try {
+      const authHeaders = await apiClient.getAuthHeaders();
+      const singleResult = await upload<{ attachmentId: number; url: string; thumbnail?: string }>({
+        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        file: entry.file,
+        headers: authHeaders,
+        extraFields: { force: '1' },
+      });
+      const nextOrder = getNextMediaOrder(media);
+      const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, [{
+        type: entry.file.type.startsWith('image') ? 'image' : 'video',
+        source: 'upload',
+        provider: 'wordpress',
+        attachmentId: singleResult.attachmentId,
+        url: singleResult.url,
+        thumbnail: singleResult.thumbnail ?? singleResult.url,
+        caption: entry.filename,
+        order: nextOrder,
+      }]);
+      if (batchAddResponse.added.length > 0) {
+        setMedia((current) => [...current, ...batchAddResponse.added]);
+        queryClient.setQueryData<MediaItem[]>(
+          getMediaItemsQueryKey(apiClient, campaignId),
+          (prev) => [...(prev ?? []), ...batchAddResponse.added],
+        );
+        onCampaignsUpdated?.();
+        showNotification({ title: 'Image uploaded', message: `"${entry.filename}" uploaded successfully.`, color: 'blue' });
+      }
+    } catch (err) {
+      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
+    } finally {
+      setNearDupLoading(false);
+      setPendingNearDuplicates((prev) => prev.slice(1));
+    }
+  }
+
+  function handleNearDupDismiss() {
+    setPendingNearDuplicates((prev) => prev.slice(1));
   }
 
   async function handleAddExternal() {
@@ -1247,6 +1378,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         onConfirm={confirmDelete}
         usageCount={Math.max(0, (usageSummary[deleteItem?.id ?? ''] ?? 1) - 1)}
       />
+
+      {pendingNearDuplicates.length > 0 && (
+        <NearDuplicateWarning
+          opened
+          filename={pendingNearDuplicates[0]!.filename}
+          similarUrl={pendingNearDuplicates[0]!.similarUrl}
+          similarId={pendingNearDuplicates[0]!.similarId}
+          distance={pendingNearDuplicates[0]!.distance}
+          originalName={pendingNearDuplicates[0]!.similarName}
+          campaigns={pendingNearDuplicates[0]!.campaigns}
+          onUseExisting={handleNearDupUseExisting}
+          onUploadAnyway={handleNearDupUploadAnyway}
+          onDismiss={handleNearDupDismiss}
+          loading={nearDupLoading}
+        />
+      )}
     </div>
   );
 }

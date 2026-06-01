@@ -1,6 +1,6 @@
 # Phase 38 — Admin Media Expansion & Promoted Follow-On Tracks
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-05-31
 **Last updated:** 2026-06-01
 
@@ -12,7 +12,7 @@
 | P38-MA1 | Admin Media container-measured column counting (narrowed) | Complete | S |
 | P38-MA2 | Admin Media card layout refresh | Complete | M |
 | P38-UX1 | Admin keyboard shortcut user configuration | Complete | M |
-| P38-MD1 | Near-duplicate detection (pHash follow-up) | Planned · start with feasibility validation | M |
+| P38-MD1 | Near-duplicate detection (pHash follow-up) | Complete | M |
 
 > **Note:** Phase 38 started as a tightly scoped admin-media discovery spike
 > plus a gated implementation track.
@@ -469,7 +469,7 @@ confirms the implementation approach, threshold strategy, and upload-path cost.
 - Threshold behavior and override paths are covered by focused tests and manual
   QA.
 
-### Status: Planned · start with feasibility validation
+### Status: Complete (2026-06-01)
 
 ---
 
@@ -522,15 +522,79 @@ a single `span` number via `resolveResponsiveMediaGridSpan` before passing it to
 to `number`. CSS-var max-width system and `sizeConfig` presets are untouched.
 `mediaTabLayout.test.ts` and `MediaTab.test.tsx` updated (36 tests, all pass).
 
-### Open follow-ups
+### P38-MD1 (2026-06-01)
 
-- `P38-MD1`: pHash feasibility — PHP-side work, separate from React surface.
+Feasibility validated and shipped in full within the same session.
+
+**PHP — new `WPSG_PHash` class** (`class-wpsg-phash.php`): dHash implementation
+using GD's `imagescale` to resize to 9×8, then comparing adjacent pixel
+brightness to build a 64-bit fingerprint encoded as 16 lowercase hex chars.
+`compute(string $path): ?string`, `hamming_distance(string $a, string $b): int`,
+`is_image_mime(string $mime): bool` are the public surface. All GD calls are
+guarded; non-image files and GD errors return `null`.
+
+**PHP — `WPSG_DB::get_campaigns_for_attachment_id(int $id): array`**: scans all
+non-trashed `wpsg_campaign` posts, reads their `media_items` postmeta, and returns
+`[['id' => string, 'title' => string], ...]` for each campaign that references the
+given WordPress attachment ID. Bypasses the UUID-indexed `wp_wpsg_media_refs` table
+because that table indexes media UUIDs, not attachment IDs. Called only on duplicate
+detection so the O(campaigns) scan is acceptable.
+
+**PHP — `WPSG_REST` changes**: two new private helpers:
+`find_near_duplicates_by_phash()` (scans `_wpsg_file_phash` postmeta for the
+closest Hamming match within the configurable `wpsg_phash_hamming_threshold` filter,
+default 10 bits) and `find_attachment_origin_meta()` (returns filename + campaign
+list for a given attachment ID). `upload_single_media_file()` now: (a) enriches
+the exact-duplicate `wpsg_duplicate_file` error with `existing_name` /
+`existing_campaigns`, (b) runs pHash near-duplicate detection after the MD5 check
+and returns `wpsg_near_duplicate_file` with `similar_id`, `similar_url`, `distance`,
+`similar_name`, `similar_campaigns`, and (c) stores the computed pHash as
+`_wpsg_file_phash` postmeta on successful upload. Both single-file and batch
+response paths in `upload_media()` pass the new fields through to the REST response.
+
+**TS — `types/index.ts`**: new `UploadDuplicateCampaign` interface; `BatchUploadResult`
+extended with `existing_name`, `existing_campaigns`, `near_duplicate`, `similar_id`,
+`similar_url`, `similar_name`, `similar_campaigns`, `distance`.
+
+**React — new `NearDuplicateWarning` component** (`src/components/Common/NearDuplicateWarning.tsx`):
+shows a side-by-side warning card when a near-duplicate is detected. Title:
+"Visually similar image found". Body names the original file (`originalName` prop).
+Campaign membership is rendered as a single compact line — "Not in any campaign" /
+"Used in: A" / "Used in: A, B" / "Used in: A, B and N more". Offers "Upload Anyway"
+(force re-upload) and "Use Existing" (add the matched attachment to the campaign
+without a new upload). Separate loading spinners for each action path.
+
+**React — `MediaTab.tsx`**: added `NearDuplicateEntry` interface (file, filename,
+similarId, similarUrl, distance, similarName, campaigns) and a
+`pendingNearDuplicates` queue. `handleUpload()` splits upload results into
+near-duplicate entries (routed to the queue) and hard errors (shown inline); exact
+duplicate inline errors are now formatted as "Already uploaded as 'name'" /
+"…used in Campaign" / "…used in N campaigns" instead of the raw `result.error`
+string. `handleNearDupUseExisting()` / `handleNearDupForceUpload()` resolve the
+front-of-queue entry and refresh the media list on success.
+
+**Tests**: `WPSG_P38MD1_PHash_Test.php` (new — 10 tests: dHash unit tests, pHash
+storage on upload, near-duplicate 409 detection with origin meta, campaign lookup
+correctness, exact-duplicate 409 unchanged, force=true bypass, video exclusion).
+`WPSG_P28N_Duplicate_Detection_Test.php` and `WPSG_P28D_Batch_Media_Upload_Test.php`
+updated to assert the new `existing_name` / `existing_campaigns` fields. 741 PHP
+tests pass; 1978 React tests pass.
 
 ---
 
 ## Outcome
 
-_To be filled when Phase 38 is marked Complete._
+All five tracks complete. Phase 38 delivered: container-measured column counting in
+the Admin Media grid (P38-MA0/MA1), a unified badge hierarchy and overlay treatment
+for Media cards (P38-MA2), browser-local admin keyboard shortcut remapping with
+conflict validation (P38-UX1), and perceptual-hash near-duplicate detection with
+richer duplicate messaging for both exact and near-match upload cases (P38-MD1).
+
+Additional fix landed during P38-MD1 work: sign-in modal and `ArchiveCampaignModal`
+were missing `withinPortal={false}`, making them invisible in shadow DOM mode due
+to Mantine's theme color CSS variables being scoped to `:host` and unavailable to
+portal-rendered elements outside the shadow root. Both modals are now consistent
+with every other modal in the app.
 
 ---
 

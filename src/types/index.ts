@@ -202,6 +202,11 @@ export interface UploadResponse {
   mimeType?: string;
 }
 
+export interface UploadDuplicateCampaign {
+  id: string;
+  title: string;
+}
+
 export interface BatchUploadResult {
   filename: string;
   success: boolean;
@@ -210,6 +215,19 @@ export interface BatchUploadResult {
   thumbnail?: string;
   mimeType?: string;
   error?: string;
+  /** P28-N exact duplicate */
+  duplicate?: boolean;
+  existing_id?: number;
+  existing_url?: string;
+  existing_name?: string;
+  existing_campaigns?: UploadDuplicateCampaign[];
+  /** P38-MD1 near-duplicate */
+  near_duplicate?: boolean;
+  similar_id?: number;
+  similar_url?: string;
+  similar_name?: string;
+  similar_campaigns?: UploadDuplicateCampaign[];
+  distance?: number;
 }
 
 export interface BatchUploadResponse {
