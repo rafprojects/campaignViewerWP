@@ -50,6 +50,8 @@ import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useRootId } from '@/contexts/RootIdContext';
+import { safeLocalStorage } from '@/utils/safeLocalStorage';
 
 // Position the DragOverlay so its top-center sits just below the cursor.
 // The overlay is 140 px wide; placing the cursor at (width/2, 12) gives a natural
@@ -271,6 +273,7 @@ function SortableGridItem({
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
+  const rootId = useRootId();
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
   // reorder, oEmbed enrichment). Query data seeds it on mount / campaign change.
@@ -327,13 +330,25 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     getInitialValueInEffect: false,
   });
 
-  // P34-B: sort mode — shared across campaigns (single key) so the user's preferred
-  // sort style persists regardless of which campaign they switch to.
+  // P34-B / P37-KS1: sort mode — shared across campaigns within a root so the
+  // user's preferred sort style persists regardless of which campaign they switch
+  // to, while separate gallery instances on the same page remain independent.
+  const sortModeKey = useMemo(() => `wpsg_media_sortMode_${rootId}`, [rootId]);
   const [sortMode, setSortMode] = useLocalStorage<MediaSortMode>({
-    key: 'wpsg_media_sortMode',
+    key: sortModeKey,
     defaultValue: 'order',
     getInitialValueInEffect: false,
   });
+  useEffect(() => {
+    try {
+      const legacy = localStorage.getItem('wpsg_media_sortMode');
+      if (legacy !== null) {
+        safeLocalStorage.setItem(sortModeKey, legacy);
+        localStorage.removeItem('wpsg_media_sortMode');
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
 
   const sensors = useSensors(

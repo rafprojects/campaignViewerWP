@@ -12,7 +12,7 @@
 | P37-HA1 | Hero / Spotlight sizing controls | Complete | S |
 | P37-LB1 | Layout Builder non-canvas theme propagation | Complete | M |
 | P37-SE1 | Shared searchable entity input adoption | Planned · blocked on P36-B stabilization | M |
-| P37-KS1 | Legacy storage-key scoping audit and migration | Planned | M |
+| P37-KS1 | Legacy storage-key scoping audit and migration | Complete | M |
 | P37-MT1 | Media tab usage-badge overlay cleanup | Complete | S |
 | P37-MT2 | Media tab card-width stabilization | Planned | M |
 
@@ -468,8 +468,8 @@ families, and document which keys remain intentionally global.
 - `src/components/Admin/MediaTab.tsx`
 - `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`
 - `src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx`
-- `src/components/Auth/AuthBarFloating.tsx`
-- `src/hooks/useReloadSafeView.ts`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderMediaPanel.tsx`
+- `src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx`
 - `src/contexts/RootIdContext.tsx`
 
 ### Acceptance criteria
@@ -485,7 +485,60 @@ families, and document which keys remain intentionally global.
 - Documentation clearly records which keys remain intentionally global after
   the audit.
 
-### Status: Planned
+### Implementation Notes
+
+**KS1-C decision — `wpsg-authbar-pos` is intentionally global.** The floating
+auth button overlays the entire page viewport, not a specific gallery surface.
+On multi-root pages the auth bar position represents a single "where on screen
+is my floating button" preference, and sharing it across roots is the correct
+behavior. No migration applied; `AuthBarFloating.tsx` is unchanged.
+
+**Migrated keys (KS1-A + KS1-B):**
+
+| Old key (global) | New key (root-scoped) | Sub-track |
+|---|---|---|
+| `wpsg_media_sortMode` | `wpsg_media_sortMode_${rootId}` | KS1-A |
+| `wpsg_builder_snap_mode` | `wpsg_builder_${rootId}_snap_mode` | KS1-B |
+| `wpsg_builder_show_grid` | `wpsg_builder_${rootId}_show_grid` | KS1-B |
+| `wpsg_builder_grid_size` | `wpsg_builder_${rootId}_grid_size` | KS1-B |
+| `wpsg_builder_show_rulers` | `wpsg_builder_${rootId}_show_rulers` | KS1-B |
+| `wpsg_builder_show_measurements` | `wpsg_builder_${rootId}_show_measurements` | KS1-B |
+| `wpsg_builder_design_assets_open` | `wpsg_builder_${rootId}_design_assets_open` | KS1-B |
+| `wpsg_builder_layout` | `wpsg_builder_${rootId}_layout` | KS1-B |
+| `wpsg_builder_preview_preset` | `wpsg_builder_${rootId}_preview_preset` | KS1-B |
+| `wpsg_builder_custom_preview_width` | `wpsg_builder_${rootId}_custom_preview_width` | KS1-B |
+| `wpsg_builder_show_preview_frame` | `wpsg_builder_${rootId}_show_preview_frame` | KS1-B |
+
+Note: three of the KS1-B builder keys (`preview_preset`, `custom_preview_width`,
+`show_preview_frame`) live in `LayoutBuilderCanvasPanel.tsx` and were not listed
+in the original track outline; they belong to the same global-workspace-pref
+family and were migrated in the same pass. `wpsg_builder_design_assets_open` is
+written from three files (Modal, MediaPanel, LayersPanel); all three sites were
+updated.
+
+**One-time migration helpers follow the AdminPanel.tsx precedent** (P36-A):
+read legacy value → write to new scoped key → delete legacy key, batched in a
+single `useEffect` with `[]` dependencies so it runs once on first mount.
+
+**Confirmed intentionally global keys (no migration):**
+
+| Key | Rationale |
+|---|---|
+| `wpsg-authbar-pos` | Page-level floating button position (KS1-C) |
+| `wpsg-theme-id` | User theme preference shared across all gallery instances |
+| `wpsg-recent-fonts` | Cross-context font history |
+| `wpsg_access_mode` | Global viewer lock/hide mode |
+| `wpsg_debug` | Debug flag |
+| `wpsg_access_token`, `wpsg_user`, `wpsg_permissions` | Auth identity (single per origin) |
+
+**Already correctly scoped (no change needed):**
+- `wpsg_view_${rootId}_*` — established by P36-A ✓
+- `wpsg_settings_draft_${rootId}` — P36-A ✓
+- `wpsg_media_viewMode_${campaignId}`, `cardSize`, `listPage`, `orphanFilter` — campaign-scoped ✓
+- `wpsg_layout_draft_${templateId}` — template-scoped ✓
+- `wpsg_layout_builder_campaign_${templateId}` — template-scoped ✓
+
+### Status: Complete
 
 ---
 

@@ -798,7 +798,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (list view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode');
+    localStorage.removeItem('wpsg_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'm1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Alpha', order: 1 },
@@ -828,7 +828,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (grid view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode');
+    localStorage.removeItem('wpsg_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'g1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Gamma', order: 1 },

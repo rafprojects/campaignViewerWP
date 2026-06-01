@@ -50,6 +50,7 @@ import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 import type { SnapMode } from '@/utils/canvasMeasurement';
+import { useRootId } from '@/contexts/RootIdContext';
 
 // ── P30-D: Cross-tab stale detection ─────────────────────────────────────────
 const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
@@ -93,6 +94,7 @@ export function LayoutBuilderModal({
   onNotify,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
+  const rootId = useRootId();
   const { colorScheme } = useTheme();
   const shellColors = useBuilderShellColors();
   const dockApiRef = useRef<DockviewApi | null>(null);
@@ -175,34 +177,57 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
-  // ── P30-B workspace preferences (persisted in localStorage) ──
+  // ── P30-B workspace preferences (persisted in localStorage, root-scoped per P37-KS1) ──
   const [snapMode, setSnapMode] = useState<SnapMode>(() => {
-    try { return (safeLocalStorage.getItem('wpsg_builder_snap_mode') as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
+    try { return (safeLocalStorage.getItem(`wpsg_builder_${rootId}_snap_mode`) as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
   });
   const [snapThreshold, setSnapThreshold] = useState(5);
   const [showGrid, setShowGrid] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_grid') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_grid`) === 'true'; } catch { return false; }
   });
   const [gridSizePx, setGridSizePx] = useState(() => {
-    try { return Number(safeLocalStorage.getItem('wpsg_builder_grid_size')) || 20; } catch { return 20; }
+    try { return Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_grid_size`)) || 20; } catch { return 20; }
   });
   const [showRulers, setShowRulers] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_rulers') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_rulers`) === 'true'; } catch { return false; }
   });
   const [showMeasurements, setShowMeasurements] = useState(() => {
-    try { return safeLocalStorage.getItem('wpsg_builder_show_measurements') === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_measurements`) === 'true'; } catch { return false; }
   });
 
   // Persist P30-B workspace preferences.
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_snap_mode', snapMode); }, [snapMode]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_grid', String(showGrid)); }, [showGrid]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_grid_size', String(gridSizePx)); }, [gridSizePx]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_rulers', String(showRulers)); }, [showRulers]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_measurements', String(showMeasurements)); }, [showMeasurements]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_rulers`, String(showRulers)); }, [rootId, showRulers]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_measurements`, String(showMeasurements)); }, [rootId, showMeasurements]);
+
+  // P37-KS1: one-time migration of legacy global builder workspace keys to root-scoped keys.
+  useEffect(() => {
+    const migrations: [string, string][] = [
+      ['wpsg_builder_snap_mode', `wpsg_builder_${rootId}_snap_mode`],
+      ['wpsg_builder_show_grid', `wpsg_builder_${rootId}_show_grid`],
+      ['wpsg_builder_grid_size', `wpsg_builder_${rootId}_grid_size`],
+      ['wpsg_builder_show_rulers', `wpsg_builder_${rootId}_show_rulers`],
+      ['wpsg_builder_show_measurements', `wpsg_builder_${rootId}_show_measurements`],
+      ['wpsg_builder_design_assets_open', `wpsg_builder_${rootId}_design_assets_open`],
+      ['wpsg_builder_layout', `wpsg_builder_${rootId}_layout`],
+    ];
+    for (const [oldKey, newKey] of migrations) {
+      try {
+        const v = localStorage.getItem(oldKey);
+        if (v !== null) {
+          safeLocalStorage.setItem(newKey, v);
+          localStorage.removeItem(oldKey);
+        }
+      } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem('wpsg_builder_design_assets_open');
+      const stored = localStorage.getItem(`wpsg_builder_${rootId}_design_assets_open`);
       return stored === null ? true : stored === 'true';
     } catch {
       return true;
@@ -865,7 +890,7 @@ export function LayoutBuilderModal({
   // ── Dockview ready handler (P17-E) ──
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
-    const LAYOUT_KEY = 'wpsg_builder_layout';
+    const LAYOUT_KEY = `wpsg_builder_${rootId}_layout`;
     // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
     // that is now surfaced in the header; they are cleared so users get the
     // clean default layout without the redundant History tab.
@@ -907,7 +932,7 @@ export function LayoutBuilderModal({
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
-  }, []);
+  }, [rootId]);
 
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {

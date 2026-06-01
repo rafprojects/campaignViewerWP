@@ -14,6 +14,7 @@ import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
 import { SNAP_MODE_LABELS, type SnapMode } from '@/utils/canvasMeasurement';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useRootId } from '@/contexts/RootIdContext';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 
@@ -75,6 +76,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     handleBringForwardSelected,
     handleSendBackwardSelected,
   } = useBuilderDock();
+
+  const rootId = useRootId();
 
   const contextualToolbarCallbacks = useMemo<ContextualToolbarCallbacks>(
     () => ({
@@ -182,20 +185,39 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     ['-', () => transformRef.current?.zoomOut()],
   ]);
 
-  // ── P30-C: Device preview presets ────────────────────────────────────────
+  // ── P30-C: Device preview presets (root-scoped per P37-KS1) ─────────────
   const [previewPreset, setPreviewPreset] = useState<PreviewPreset>(() =>
-    (safeLocalStorage.getItem('wpsg_builder_preview_preset') as PreviewPreset | null) ?? 'none',
+    (safeLocalStorage.getItem(`wpsg_builder_${rootId}_preview_preset`) as PreviewPreset | null) ?? 'none',
   );
   const [customPreviewWidth, setCustomPreviewWidth] = useState<number>(() =>
-    Number(safeLocalStorage.getItem('wpsg_builder_custom_preview_width')) || 800,
+    Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_custom_preview_width`)) || 800,
   );
   const [showPreviewFrame, setShowPreviewFrame] = useState<boolean>(
-    () => safeLocalStorage.getItem('wpsg_builder_show_preview_frame') === 'true',
+    () => safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_preview_frame`) === 'true',
   );
 
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_preview_preset', previewPreset); }, [previewPreset]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_custom_preview_width', String(customPreviewWidth)); }, [customPreviewWidth]);
-  useEffect(() => { safeLocalStorage.setItem('wpsg_builder_show_preview_frame', String(showPreviewFrame)); }, [showPreviewFrame]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_preview_preset`, previewPreset); }, [rootId, previewPreset]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_custom_preview_width`, String(customPreviewWidth)); }, [rootId, customPreviewWidth]);
+  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_preview_frame`, String(showPreviewFrame)); }, [rootId, showPreviewFrame]);
+
+  // P37-KS1: one-time migration of legacy global preview keys to root-scoped keys.
+  useEffect(() => {
+    const migrations: [string, string][] = [
+      ['wpsg_builder_preview_preset', `wpsg_builder_${rootId}_preview_preset`],
+      ['wpsg_builder_custom_preview_width', `wpsg_builder_${rootId}_custom_preview_width`],
+      ['wpsg_builder_show_preview_frame', `wpsg_builder_${rootId}_show_preview_frame`],
+    ];
+    for (const [oldKey, newKey] of migrations) {
+      try {
+        const v = localStorage.getItem(oldKey);
+        if (v !== null) {
+          safeLocalStorage.setItem(newKey, v);
+          localStorage.removeItem(oldKey);
+        }
+      } catch { /* ignore */ }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Resolved pixel width of the active device preset (null = unconstrained). */
   const activePresetWidth = useMemo<number | null>(() => {

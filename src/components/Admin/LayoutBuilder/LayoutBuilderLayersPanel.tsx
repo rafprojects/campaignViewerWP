@@ -18,6 +18,7 @@ import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useRootId } from '@/contexts/RootIdContext';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   const {
@@ -35,6 +36,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
     handleDeleteSelected,
     handleDuplicateSelected,
   } = useBuilderDock();
+  const rootId = useRootId();
 
   /** Delete a single layer by ID (slot, overlay, or mask). */
   const handleDeleteLayer = useCallback(
@@ -284,7 +286,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             dockApiRef.current?.getPanel('media')?.api.setActive();
             setDesignAssetsOpen(true);
             try {
-              localStorage.setItem('wpsg_builder_design_assets_open', 'true');
+              localStorage.setItem(`wpsg_builder_${rootId}_design_assets_open`, 'true');
             } catch { /* ignore */ }
             requestAnimationFrame(() =>
               bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
