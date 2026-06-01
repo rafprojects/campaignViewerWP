@@ -100,7 +100,8 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               {overlayBadge && (
                 <Box
                   data-testid="media-card-usage-overlay"
-                  style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}
+                  className={styles.usageBadgeInteractive ?? ''}
+                  style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 2 }}
                 >
                   {overlayBadge}
                 </Box>
