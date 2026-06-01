@@ -1,7 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { useRef } from 'react';
-import { useCombobox } from '@mantine/core';
 import { render, screen, fireEvent } from '../../test/test-utils';
 import { AccessTab } from './AccessTab';
 import type { AdminAccessState } from '@/hooks/useAdminAccessState';
@@ -44,7 +42,6 @@ type AccessTabWrapperProps = {
   accessRows?: React.ReactNode;
 } & AccessStateOverrides;
 
-// Wrapper that provides the real useCombobox store and blurTimeoutRef
 function AccessTabWrapper({
   accessViewMode = 'campaign',
   onAccessViewModeChange = vi.fn(),
@@ -79,11 +76,7 @@ function AccessTabWrapper({
   onQuickAddUser = vi.fn(),
   onArchiveCompanyClick,
 }: AccessTabWrapperProps) {
-  const userCombobox = useCombobox();
-  const blurTimeoutRef = useRef<number | null>(null);
-
   const accessState: AdminAccessState = {
-    userCombobox,
     userSearchResults,
     userSearchQuery,
     userSearchLoading,
@@ -92,7 +85,6 @@ function AccessTabWrapper({
     setUserSearchQuery,
     setAccessUserId,
     accessUserId,
-    blurTimeoutRef,
     accessSource,
     setAccessSource: vi.fn(),
     accessAction,
@@ -236,7 +228,7 @@ describe('AccessTab', () => {
         setAccessUserId={setAccessUserId}
       />,
     );
-    const clearBtn = screen.getByRole('button', { name: /clear selected user/i });
+    const clearBtn = screen.getByRole('button', { name: /clear selection/i });
     fireEvent.click(clearBtn);
     expect(setSelectedUser).toHaveBeenCalledWith(null);
     expect(setUserSearchQuery).toHaveBeenCalledWith('');

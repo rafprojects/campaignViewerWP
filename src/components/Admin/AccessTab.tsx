@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import {
-  ActionIcon,
   Alert,
   Badge,
   Box,
@@ -10,8 +9,6 @@ import {
   Checkbox,
   Combobox,
   Group,
-  InputBase,
-  Loader,
   ScrollArea,
   SegmentedControl,
   Select,
@@ -22,8 +19,9 @@ import {
   TextInput,
   Tooltip,
 } from '@mantine/core';
-import { IconAlertCircle, IconSearch, IconTrash, IconArchive, IconUserPlus } from '@tabler/icons-react';
+import { IconAlertCircle, IconArchive, IconUserPlus } from '@tabler/icons-react';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
+import { SearchableEntityInput } from '@/components/Common/SearchableEntityInput';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import type { AdminAccessState } from '@/hooks/useAdminAccessState';
@@ -91,7 +89,6 @@ export function AccessTab({
   isMobile = false,
 }: AccessTabProps) {
   const {
-    userCombobox,
     userSearchResults,
     userSearchQuery,
     userSearchLoading,
@@ -100,7 +97,6 @@ export function AccessTab({
     setUserSearchQuery,
     setAccessUserId,
     accessUserId,
-    blurTimeoutRef,
     accessSource,
     setAccessSource: onAccessSourceChange,
     accessAction,
@@ -319,8 +315,20 @@ export function AccessTab({
             <Group align="flex-end" gap="sm" wrap="wrap">
               {/* Unified user search with ID fallback built-in */}
               <Box style={{ flex: 1, minWidth: isMobile ? undefined : 250, width: isMobile ? '100%' : undefined }}>
-                <Combobox
-                  store={userCombobox}
+                <SearchableEntityInput
+                  label={<Text size="sm" fw={500}>User</Text>}
+                  placeholder="Search name, email, or enter ID..."
+                  displayValue={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
+                  onInputChange={(val) => {
+                    setUserSearchQuery(val);
+                    setSelectedUser(null);
+                    // If it looks like a number, treat as User ID.
+                    if (/^\d+$/.test(val)) {
+                      setAccessUserId(val);
+                    } else {
+                      setAccessUserId('');
+                    }
+                  }}
                   onOptionSubmit={(val) => {
                     const user = userSearchResults.find((u) => String(u.id) === val);
                     if (user) {
@@ -328,85 +336,34 @@ export function AccessTab({
                       setAccessUserId('');
                       setUserSearchQuery('');
                     }
-                    userCombobox.closeDropdown();
                   }}
+                  hasSelection={!!selectedUser}
+                  onClear={() => {
+                    setSelectedUser(null);
+                    setUserSearchQuery('');
+                    setAccessUserId('');
+                  }}
+                  loading={userSearchLoading}
                 >
-                  <Combobox.Target>
-                    <InputBase
-                      label={<Text size="sm" fw={500}>User</Text>}
-                      placeholder="Search name, email, or enter ID..."
-                      value={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
-                      onChange={(e) => {
-                        const val = e.currentTarget.value;
-                        setUserSearchQuery(val);
-                        setSelectedUser(null);
-                        // If it looks like a number, treat as User ID
-                        if (/^\d+$/.test(val)) {
-                          setAccessUserId(val);
-                        } else {
-                          setAccessUserId('');
-                        }
-                        userCombobox.openDropdown();
-                        userCombobox.updateSelectedOptionIndex();
-                      }}
-                      onClick={() => userCombobox.openDropdown()}
-                      onFocus={() => userCombobox.openDropdown()}
-                      onBlur={() => {
-                        if (blurTimeoutRef.current) {
-                          clearTimeout(blurTimeoutRef.current);
-                        }
-                        blurTimeoutRef.current = window.setTimeout(() => {
-                          userCombobox.closeDropdown();
-                          blurTimeoutRef.current = null;
-                        }, 150);
-                      }}
-                      rightSection={
-                        selectedUser ? (
-                          <ActionIcon
-                            size="sm"
-                            variant="subtle"
-                            aria-label="Clear selected user"
-                            onClick={() => {
-                              setSelectedUser(null);
-                              setUserSearchQuery('');
-                              setAccessUserId('');
-                            }}
-                          >
-                            <IconTrash size={14} />
-                          </ActionIcon>
-                        ) : userSearchLoading ? (
-                          <Loader size={16} />
-                        ) : (
-                          <IconSearch size={16} />
-                        )
-                      }
-                      rightSectionPointerEvents={selectedUser ? 'auto' : 'none'}
-                    />
-                  </Combobox.Target>
-
-                  <Combobox.Dropdown>
-                    <Combobox.Options>
-                      {userSearchResults.length === 0 && userSearchQuery.length >= 2 && !userSearchLoading && !/^\d+$/.test(userSearchQuery) && (
-                        <Combobox.Empty>No users found</Combobox.Empty>
-                      )}
-                      {/^\d+$/.test(userSearchQuery) && (
-                        <Combobox.Empty>Using User ID: {userSearchQuery}</Combobox.Empty>
-                      )}
-                      {userSearchQuery.length < 2 && !/^\d+$/.test(userSearchQuery) && (
-                        <Combobox.Empty>Type name/email or enter user ID</Combobox.Empty>
-                      )}
-                      {userSearchResults.map((user) => (
-                        <Combobox.Option key={user.id} value={String(user.id)}>
-                          <Group gap="xs">
-                            <Text size="sm" fw={500}>{user.displayName}</Text>
-                            <Text size="xs" c="dimmed">{user.email}</Text>
-                            {user.isAdmin && <Badge size="xs" color="blue">Admin</Badge>}
-                          </Group>
-                        </Combobox.Option>
-                      ))}
-                    </Combobox.Options>
-                  </Combobox.Dropdown>
-                </Combobox>
+                  {userSearchResults.length === 0 && userSearchQuery.length >= 2 && !userSearchLoading && !/^\d+$/.test(userSearchQuery) && (
+                    <Combobox.Empty>No users found</Combobox.Empty>
+                  )}
+                  {/^\d+$/.test(userSearchQuery) && (
+                    <Combobox.Empty>Using User ID: {userSearchQuery}</Combobox.Empty>
+                  )}
+                  {userSearchQuery.length < 2 && !/^\d+$/.test(userSearchQuery) && (
+                    <Combobox.Empty>Type name/email or enter user ID</Combobox.Empty>
+                  )}
+                  {userSearchResults.map((user) => (
+                    <Combobox.Option key={user.id} value={String(user.id)}>
+                      <Group gap="xs">
+                        <Text size="sm" fw={500}>{user.displayName}</Text>
+                        <Text size="xs" c="dimmed">{user.email}</Text>
+                        {user.isAdmin && <Badge size="xs" color="blue">Admin</Badge>}
+                      </Group>
+                    </Combobox.Option>
+                  ))}
+                </SearchableEntityInput>
               </Box>
 
               {/* Campaign mode: show scope and action options */}

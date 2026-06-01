@@ -2,7 +2,7 @@
 
 **Status:** Planned
 **Created:** 2026-05-30
-**Last updated:** 2026-05-31
+**Last updated:** 2026-05-31 (P37-SE1 complete)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P37-LB | Layout-builder adapter for campaign listings (whole-card-per-slot) | Planned | L |
 | P37-HA1 | Hero / Spotlight sizing controls | Complete | S |
 | P37-LB1 | Layout Builder non-canvas theme propagation | Complete | M |
-| P37-SE1 | Shared searchable entity input adoption | Planned · blocked on P36-B stabilization | M |
+| P37-SE1 | Shared searchable entity input adoption | Complete | M |
 | P37-KS1 | Legacy storage-key scoping audit and migration | Complete | M |
 | P37-MT1 | Media tab usage-badge overlay cleanup | Complete | S |
 | P37-MT2 | Media tab card-width stabilization | Planned | M |
@@ -432,7 +432,17 @@ immediate reuse outside the campaign company flow.
 - This track does not absorb hierarchical category selectors or reopen the
   P36-B company save/read contract.
 
-### Status: Planned · blocked on accepted P36-B corrections
+### Implementation Notes
+
+- `SearchableEntityInput` (`src/components/Common/SearchableEntityInput.tsx`) is the new generic primitive. It owns the Mantine combobox store, blur lifecycle (150ms dropdown-close delay, synchronous `onBlur` callback), and right-section logic (clear button / loader / search icon). Dropdown content is passed as `children` — consumers render their own `Combobox.Option` and `Combobox.Empty` elements, keeping domain logic out of the primitive.
+- `CompanyCombobox` retains its existing public props API unchanged. Internally it delegates the combobox shell to `SearchableEntityInput`, passing filtered company options and the optional create entry as children. The slug-resolution blur handler fires via the `onBlur` prop.
+- `AccessTab` user search replaces the inline 70-line Combobox block with `SearchableEntityInput`. The numeric user-ID fallback logic remains in `AccessTab`'s `onInputChange` handler (domain-specific). `userCombobox` store and `blurTimeoutRef` were removed from `useAdminAccessState` — they now live inside the primitive.
+- `SearchableEntityInput.test.tsx` covers all four acceptance criteria areas: display resolution, search/filter behavior, freeform create affordance, and focus/blur lifecycle.
+- `CompanyCombobox.test.tsx` regression: all 13 tests pass without modification (public API unchanged).
+- `AccessTab.test.tsx` regression: one aria-label updated (`"Clear selected user"` → `"Clear selection"`) to match the primitive's generic label; all 15 tests pass.
+- TypeScript: no errors.
+
+### Status: Complete
 
 ---
 
