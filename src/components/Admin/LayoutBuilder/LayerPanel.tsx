@@ -222,17 +222,26 @@ export function LayerPanel({
   // ── Render ────────────────────────────────────────────────
 
   return (
-    <Stack gap={0} style={{ width: 220, minWidth: 220 }}>
+    <Stack
+      gap={0}
+      style={{
+        width: 220,
+        minWidth: 220,
+        height: '100%',
+        background: 'var(--wpsg-builder-surface)',
+        color: 'var(--wpsg-builder-text)',
+      }}
+    >
       <Text
         size="xs"
         fw={600}
         px={6}
         py={4}
         style={{
-          borderBottom: '1px solid var(--mantine-color-gray-2)',
+          borderBottom: '1px solid var(--wpsg-builder-border)',
           letterSpacing: '0.05em',
           textTransform: 'uppercase',
-          color: 'var(--mantine-color-gray-6)',
+          color: 'var(--wpsg-builder-text-muted)',
         }}
       >
         Layers

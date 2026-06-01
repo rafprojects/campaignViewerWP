@@ -42,7 +42,7 @@ setWpsgDebugDisplayName(GRow, 'LayoutBuilder:GRow');
 
 function SectionHeader({ label }: { label: string }) {
   return (
-    <Box mt={6} mb={2} pb={3} style={{ borderBottom: '1px solid var(--mantine-color-dark-5)' }}>
+    <Box mt={6} mb={2} pb={3} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
       <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>{label}</Text>
     </Box>
   );
@@ -187,7 +187,7 @@ function BackgroundModeControls({
 
     return (
       <Stack gap={6}>
-        <Box style={{ height: 28, borderRadius: 4, background: previewCss, border: '1px solid var(--mantine-color-dark-4)' }} />
+        <Box style={{ height: 28, borderRadius: 4, background: previewCss, border: '1px solid var(--mantine-color-default-border)' }} />
 
         <GRow label="Type">
           <SegmentedControl
@@ -307,7 +307,7 @@ function BackgroundModeControls({
     <Stack gap={6}>
       {builder.template.backgroundImage ? (
         <Box>
-          <div style={{ background: 'var(--mantine-color-dark-7)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
+          <div style={{ background: 'var(--mantine-color-default)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
             <img src={builder.template.backgroundImage} alt="Background preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
           </div>
           <Button size="xs" color="red" variant="light" fullWidth leftSection={<IconTrash size={12} />} onClick={() => builder.setBackgroundImage('')} mb={2}>

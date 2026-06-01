@@ -65,7 +65,7 @@ export function DesignAssetsGrid({
             >
               <div
                 style={{
-                  background: 'var(--mantine-color-dark-7)',
+                  background: 'var(--mantine-color-default)',
                   height: 52,
                   display: 'flex',
                   alignItems: 'center',

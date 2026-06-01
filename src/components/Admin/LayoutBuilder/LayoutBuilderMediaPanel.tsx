@@ -33,6 +33,8 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         height: '100%',
         overflowY: 'auto',
         padding: 'var(--mantine-spacing-sm)',
+        background: 'var(--wpsg-builder-surface)',
+        color: 'var(--wpsg-builder-text)',
       }}
     >
       <Select

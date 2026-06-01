@@ -29,9 +29,16 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     isBackgroundSelected,
   } = useBuilderDock();
 
+  const panelStyle = {
+    overflowY: 'auto' as const,
+    height: '100%',
+    background: 'var(--wpsg-builder-surface)',
+    color: 'var(--wpsg-builder-text)',
+  };
+
   if (builder.isPreview) {
     return (
-      <Box p="sm">
+      <Box p="sm" style={{ ...panelStyle }}>
         <Text size="sm" c="dimmed">Properties are unavailable in preview mode.</Text>
       </Box>
     );
@@ -40,7 +47,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   // Background selected — show dedicated background properties
   if (isBackgroundSelected) {
     return (
-      <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+      <Box p="sm" style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" mb="xs">BACKGROUND</Text>
         <BackgroundPropertiesPanel />
       </Box>
@@ -50,7 +57,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   // Mask sublayer selected — show dedicated mask properties panel
   if (selectedMaskSlotId && selectedSlot) {
     return (
-      <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+      <Box p="sm" style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" mb="xs">MASK PROPERTIES</Text>
         <MaskPropertiesPanel
           slot={selectedSlot}
@@ -64,7 +71,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
 
   if (selectedSlot) {
     return (
-      <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+      <Box p="sm" style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" mb="xs">SLOT PROPERTIES</Text>
         <SlotPropertiesPanel
           slot={selectedSlot}
@@ -80,7 +87,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
 
   if (selectedOverlay) {
     return (
-      <Box style={{ overflowY: 'auto', height: '100%' }}>
+      <Box style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>GRAPHIC LAYER</Text>
         <GraphicLayerPropertiesPanel
           key={selectedOverlay.id}
@@ -107,7 +114,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const recentActions = builder.historyEntries.slice(-5).reverse();
 
   return (
-    <Box p="sm" style={{ overflowY: 'auto', height: '100%' }}>
+    <Box p="sm" style={panelStyle}>
       <Text size="xs" fw={600} c="dimmed" mb="xs">CANVAS</Text>
       <Stack gap="xs">
         <Box>

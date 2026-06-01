@@ -142,7 +142,7 @@ function SectionHeader({ label }: { label: string }) {
       mb={2}
       pb={3}
       style={{
-        borderBottom: '1px solid var(--mantine-color-dark-5)',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
       }}
     >
       <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>
@@ -179,7 +179,7 @@ export function SlotPropertiesPanel({
       defaultValue={['layout', 'image', 'effects', 'stacking']}
       chevronPosition="right"
       styles={{
-        item: { borderBottom: '1px solid var(--mantine-color-dark-5)' },
+        item: { borderBottom: '1px solid var(--mantine-color-default-border)' },
         control: { paddingBlock: 6, paddingInline: 4 },
         panel: { padding: 0 },
         content: { padding: '4px 4px 8px' },
@@ -331,11 +331,11 @@ export function SlotPropertiesPanel({
                         height: 24,
                         border: isActive
                           ? '2px solid var(--mantine-color-blue-5)'
-                          : '1px solid var(--mantine-color-dark-4)',
+                          : '1px solid var(--mantine-color-default-border)',
                         borderRadius: 3,
                         background: isActive
                           ? 'var(--mantine-color-blue-7)'
-                          : 'var(--mantine-color-dark-6)',
+                          : 'var(--mantine-color-default)',
                         cursor: 'pointer',
                         padding: 0,
                         position: 'relative',
@@ -352,7 +352,7 @@ export function SlotPropertiesPanel({
                           borderRadius: '50%',
                           background: isActive
                             ? '#fff'
-                            : 'var(--mantine-color-dark-1)',
+                            : 'var(--mantine-color-text)',
                           left: dotX,
                           top: dotY,
                           transform: 'translate(-50%, -50%)',

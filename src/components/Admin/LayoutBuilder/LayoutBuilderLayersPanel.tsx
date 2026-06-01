@@ -110,7 +110,16 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        overflow: 'hidden',
+        background: 'var(--wpsg-builder-surface)',
+        color: 'var(--wpsg-builder-text)',
+      }}
+    >
       {/* Slot toolbar */}
       {!builder.isPreview && (
         <Group
@@ -118,7 +127,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={4}
           style={{
-            borderBottom: '1px solid var(--mantine-color-default-border)',
+            borderBottom: '1px solid var(--wpsg-builder-border)',
             flexShrink: 0,
           }}
         >
@@ -176,7 +185,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={3}
           style={{
-            borderBottom: '1px solid var(--mantine-color-default-border)',
+            borderBottom: '1px solid var(--wpsg-builder-border)',
             flexShrink: 0,
           }}
         >

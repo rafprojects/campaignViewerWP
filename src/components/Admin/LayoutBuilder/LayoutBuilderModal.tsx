@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
@@ -29,6 +29,8 @@ import {
   createEmptyTemplate,
   type LayoutDraftPayload,
 } from '@/hooks/useLayoutBuilderState';
+import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
+import { useTheme } from '@/hooks/useTheme';
 import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
@@ -91,9 +93,39 @@ export function LayoutBuilderModal({
   onNotify,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
+  const { colorScheme } = useTheme();
+  const shellColors = useBuilderShellColors();
   const dockApiRef = useRef<DockviewApi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const importFileRef = useRef<HTMLInputElement>(null);
+
+  const builderShellVars = useMemo(
+    () => ({
+      '--wpsg-builder-surface': shellColors.surface,
+      '--wpsg-builder-surface-2': shellColors.surface2,
+      '--wpsg-builder-surface-3': shellColors.surface3,
+      '--wpsg-builder-background': shellColors.background,
+      '--wpsg-builder-border': shellColors.border,
+      '--wpsg-builder-border-muted': shellColors.borderMuted,
+      '--wpsg-builder-text': shellColors.text,
+      '--wpsg-builder-text-muted': shellColors.textMuted,
+      '--wpsg-builder-text-muted-2': shellColors.textMuted2,
+      '--wpsg-builder-accent': shellColors.accent,
+      '--wpsg-builder-accent-soft': shellColors.accentSoft,
+      '--wpsg-builder-icon-hover': shellColors.iconHover,
+      '--wpsg-builder-shadow': shellColors.shadow,
+      '--wpsg-builder-scrollbar': shellColors.scrollbar,
+    }) as CSSProperties,
+    [shellColors],
+  );
+
+  const dockTheme = useMemo(
+    () => ({
+      name: `wpsg-builder-shell-${colorScheme}`,
+      className: 'dockview-theme-wpsg',
+    }),
+    [colorScheme],
+  );
 
   // ── Fetch campaign list for the media picker ──
   const campaignOptions = useAllCampaignOptions(apiClient, opened);
@@ -211,7 +243,7 @@ export function LayoutBuilderModal({
       channel.close();
       bcRef.current = null;
     };
-   
+
   }, [initialTemplate?.id]);
 
   // ── P36-A: Draft restore/discard prompt ──
@@ -300,7 +332,7 @@ export function LayoutBuilderModal({
         });
       },
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opened, initialTemplate?.id]);
 
   // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
@@ -311,7 +343,7 @@ export function LayoutBuilderModal({
   useEffect(() => {
     if (!opened) return;
     migrateGroupsRef.current();
-     
+
   }, [opened]);
 
   // ── Close with dirty guard ──
@@ -913,15 +945,22 @@ export function LayoutBuilderModal({
     >
       <div
         data-testid="builder-keyboard-handler"
-        style={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+        style={{
+          ...builderShellVars,
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          background: 'var(--wpsg-builder-surface)',
+          color: 'var(--wpsg-builder-text)',
+        }}
       >
         {/* ── Header Bar ── */}
         <Box
           px="md"
           py="xs"
           style={{
-            borderBottom: '1px solid var(--mantine-color-default-border)',
-            background: 'var(--mantine-color-body)',
+            borderBottom: '1px solid var(--wpsg-builder-border)',
+            background: 'var(--wpsg-builder-surface)',
             flexShrink: 0,
           }}
         >
@@ -1037,9 +1076,9 @@ export function LayoutBuilderModal({
         <BuilderDockContext.Provider value={contextValue}>
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <DockviewReact
-              className="dockview-theme-dark"
               components={dockComponents}
               onReady={handleDockReady}
+              theme={dockTheme}
             />
           </div>
         </BuilderDockContext.Provider>

@@ -1,0 +1,50 @@
+/**
+ * P37-LB1: Layout Builder — Structural Dockview overrides
+ *
+ * .dockview-theme-wpsg is supplied as Dockview's active theme class from
+ * LayoutBuilderModal. Dockview otherwise defaults to themeAbyss, which is the
+ * source of the built-in dark-blue panel chrome.
+ *
+ * The modal can render through a portal, so the concrete --wpsg-builder-* vars
+ * are injected by React on an ancestor shell. This class remaps Dockview's
+ * built-in --dv-* variables on the active Dockview theme root so tabs, panel
+ * chrome, and separators inherit the builder shell colors instead.
+ */
+.dockview-theme-wpsg {
+  /* ── Structural (non-color) ──────────────────────────────────────────────── */
+  --dv-tabs-and-actions-container-font-size: 13px;
+  --dv-tabs-and-actions-container-height: 35px;
+  --dv-overlay-z-index: 999;
+  --dv-tab-font-size: inherit;
+  --dv-border-radius: 0px;
+  --dv-tab-margin: 0;
+  --dv-sash-color: transparent;
+  --dv-active-sash-color: transparent;
+  --dv-active-sash-transition-duration: 0.1s;
+  --dv-active-sash-transition-delay: 0.5s;
+
+  /* ── Theme-driven Dockview shell colors ──────────────────────────────────── */
+  --dv-group-view-background-color: var(--wpsg-builder-surface);
+  --dv-tabs-and-actions-container-background-color: var(--wpsg-builder-surface-2);
+  --dv-activegroup-visiblepanel-tab-background-color: var(--wpsg-builder-surface);
+  --dv-activegroup-hiddenpanel-tab-background-color: var(--wpsg-builder-surface-3);
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--wpsg-builder-surface);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: var(--wpsg-builder-surface-3);
+  --dv-tab-divider-color: var(--wpsg-builder-border-muted);
+  --dv-activegroup-visiblepanel-tab-color: var(--wpsg-builder-text);
+  --dv-activegroup-hiddenpanel-tab-color: var(--wpsg-builder-text-muted);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--wpsg-builder-text-muted);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--wpsg-builder-text-muted-2);
+  --dv-separator-border: var(--wpsg-builder-border-muted);
+  --dv-paneview-header-border-color: var(--wpsg-builder-border-muted);
+  --dv-tabs-container-scrollbar-color: var(--wpsg-builder-scrollbar);
+  --dv-scrollbar-background-color: var(--wpsg-builder-scrollbar);
+  --dv-icon-hover-background-color: var(--wpsg-builder-icon-hover);
+  --dv-paneview-active-outline-color: var(--wpsg-builder-accent);
+  --dv-drag-over-border-color: var(--wpsg-builder-accent);
+  --dv-drag-over-background-color: var(--wpsg-builder-accent-soft);
+  --dv-floating-box-shadow: var(--wpsg-builder-shadow);
+
+  background: var(--wpsg-builder-surface);
+  color: var(--wpsg-builder-text);
+}

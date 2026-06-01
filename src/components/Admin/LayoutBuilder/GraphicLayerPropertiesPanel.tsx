@@ -95,7 +95,7 @@ export function GraphicLayerPropertiesPanel({
       {overlay.imageUrl && (
         <Box
           style={{
-            background: 'var(--mantine-color-dark-6)',
+            background: 'var(--mantine-color-default)',
             borderRadius: 4,
             padding: 4,
             textAlign: 'center',

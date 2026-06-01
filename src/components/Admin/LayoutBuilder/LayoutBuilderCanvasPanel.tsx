@@ -25,12 +25,12 @@ interface PresetDef {
 }
 
 const PRESET_DEFS: Record<PreviewPreset, PresetDef> = {
-  none:    { label: 'Full',    width: null },
+  none: { label: 'Full', width: null },
   desktop: { label: 'Desktop', width: 1280 },
-  laptop:  { label: 'Laptop',  width: 1024 },
-  tablet:  { label: 'Tablet',  width: 768  },
-  mobile:  { label: 'Mobile',  width: 390  },
-  custom:  { label: 'Custom',  width: null }, // width set by customPreviewWidth
+  laptop: { label: 'Laptop', width: 1024 },
+  tablet: { label: 'Tablet', width: 768 },
+  mobile: { label: 'Mobile', width: 390 },
+  custom: { label: 'Custom', width: null }, // width set by customPreviewWidth
 };
 
 const PRESET_SEGMENTED_DATA = (Object.entries(PRESET_DEFS) as [PreviewPreset, PresetDef][]).map(
@@ -233,9 +233,9 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               overflow: 'hidden',
               // Device chrome frame
               ...(activePresetWidth && showPreviewFrame ? {
-                border: '8px solid var(--mantine-color-dark-4)',
+                border: '8px solid var(--mantine-color-default-border)',
                 borderRadius: 12,
-                boxShadow: '0 0 0 2px var(--mantine-color-dark-3), 0 8px 32px rgba(0,0,0,0.5)',
+                boxShadow: '0 0 0 2px var(--mantine-color-default-border), 0 8px 32px rgba(0,0,0,0.5)',
                 margin: '12px 0',
               } : {}),
             }}
@@ -304,8 +304,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             px="md"
             py={6}
             style={{
-              borderTop: '1px solid var(--mantine-color-default-border)',
-              background: 'var(--mantine-color-body)',
+              borderTop: '1px solid var(--wpsg-builder-border)',
+              background: 'var(--wpsg-builder-surface)',
               flexShrink: 0,
             }}
           >
@@ -487,8 +487,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             py={6}
             data-testid="preview-preset-bar"
             style={{
-              borderTop: '1px solid var(--mantine-color-default-border)',
-              background: 'var(--mantine-color-body)',
+              borderTop: '1px solid var(--wpsg-builder-border)',
+              background: 'var(--wpsg-builder-surface)',
               flexShrink: 0,
             }}
           >

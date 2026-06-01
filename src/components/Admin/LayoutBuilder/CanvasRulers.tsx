@@ -14,14 +14,11 @@ import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
 import { rulerTickIntervals } from '@/utils/canvasMeasurement';
 import type { PctRect } from '@/utils/canvasMeasurement';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const RULER_SIZE = 16; // px — ruler strip height (H) or width (V)
-const RULER_BG = 'rgba(30,30,30,0.75)';
-const TICK_COLOR = 'rgba(200,200,200,0.7)';
-const LABEL_COLOR = 'rgba(200,200,200,0.85)';
-const SELECTION_COLOR = 'rgba(70,150,255,0.35)';
 const MAJOR_TICK_HEIGHT = 8;
 const MINOR_TICK_HEIGHT = 4;
 
@@ -61,6 +58,7 @@ function buildTicks(canvasPx: number, scale: number): Tick[] {
 
 export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: CanvasRulersProps) {
   const { scale } = useCanvasTransform();
+  const colors = useBuilderOverlayColors();
 
   const hTicks = useMemo(() => buildTicks(canvasWidth, scale), [canvasWidth, scale]);
   const vTicks = useMemo(() => buildTicks(canvasHeight, scale), [canvasHeight, scale]);
@@ -93,7 +91,7 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
         data-testid="canvas-ruler-horizontal"
       >
         {/* Background */}
-        <rect x={0} y={0} width={canvasWidth} height={RULER_SIZE} fill={RULER_BG} />
+        <rect x={0} y={0} width={canvasWidth} height={RULER_SIZE} fill={colors.rulerBg} />
 
         {/* Selection highlight */}
         {selHL && (
@@ -102,7 +100,7 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
             y={0}
             width={selHL.hEnd - selHL.hStart}
             height={RULER_SIZE}
-            fill={SELECTION_COLOR}
+            fill={colors.rulerSelection}
           />
         )}
 
@@ -114,14 +112,14 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
               y1={RULER_SIZE - (major ? MAJOR_TICK_HEIGHT : MINOR_TICK_HEIGHT)}
               x2={pos}
               y2={RULER_SIZE}
-              stroke={TICK_COLOR}
+              stroke={colors.rulerTick}
               strokeWidth={1}
             />
             {major && pos > 0 && (
               <text
                 x={pos + 2}
                 y={RULER_SIZE - MAJOR_TICK_HEIGHT - 1}
-                fill={LABEL_COLOR}
+                fill={colors.rulerLabel}
                 fontSize={8}
                 fontFamily="monospace"
               >
@@ -147,7 +145,7 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
         data-testid="canvas-ruler-vertical"
       >
         {/* Background */}
-        <rect x={0} y={0} width={RULER_SIZE} height={canvasHeight} fill={RULER_BG} />
+        <rect x={0} y={0} width={RULER_SIZE} height={canvasHeight} fill={colors.rulerBg} />
 
         {/* Selection highlight */}
         {selHL && (
@@ -156,7 +154,7 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
             y={selHL.vStart}
             width={RULER_SIZE}
             height={selHL.vEnd - selHL.vStart}
-            fill={SELECTION_COLOR}
+            fill={colors.rulerSelection}
           />
         )}
 
@@ -168,14 +166,14 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
               y1={0}
               x2={RULER_SIZE}
               y2={0}
-              stroke={TICK_COLOR}
+              stroke={colors.rulerTick}
               strokeWidth={1}
             />
             {major && pos > 0 && (
               <text
                 x={1}
                 y={-2}
-                fill={LABEL_COLOR}
+                fill={colors.rulerLabel}
                 fontSize={8}
                 fontFamily="monospace"
                 transform={`rotate(-90, 1, -2)`}
@@ -200,7 +198,7 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
         }}
         aria-hidden="true"
       >
-        <rect x={0} y={0} width={RULER_SIZE} height={RULER_SIZE} fill={RULER_BG} />
+        <rect x={0} y={0} width={RULER_SIZE} height={RULER_SIZE} fill={colors.rulerBg} />
       </svg>
     </>
   );
