@@ -294,6 +294,11 @@ Files: `class-wpsg-rest.php`, `class-wpsg-cli.php`
 Add chunked/streamed export for campaigns with large media arrays. Most campaigns have <100 items.
 LOE: Medium (4-6 hours) | Impact: Low
 
+**D-15: `get_campaigns_for_attachment_id()` N+1 Meta Reads**
+Files: `class-wpsg-db.php`
+`get_campaigns_for_attachment_id()` (used to enrich duplicate/near-duplicate 409 responses) fetches every campaign ID from `wp_posts`, then calls `get_post_meta()` once per campaign to load and scan its `media_items` array in PHP. On sites with many campaigns this is O(campaigns) in both queries and memory. The path only fires when an uploaded file matches an existing attachment's MD5 or pHash, so real-world cost is negligible today, but the pattern should be replaced once a dedicated WP-attachment-ID → campaign mapping is available (e.g. extending the `wpsg_media_refs` table or adding an `attachment_id` column). A LIKE-based query against the serialized `media_items` postmeta is not a safe alternative due to PHP serialization format fragility.
+LOE: Small-Medium (2-4 hours once mapping table exists) | Impact: Low (rare code path)
+
 ### React — Long-Tail Only (from archived REACT_IMPLEMENTATION_REVIEW.txt)
 
 **RD-2: SettingsPanel Tab-Level Code Splitting**
@@ -379,4 +384,4 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*
-*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material.*
+*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review.*
