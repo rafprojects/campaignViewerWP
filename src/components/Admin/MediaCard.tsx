@@ -108,10 +108,9 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                     bottom: 8,
                     right: 8,
                     zIndex: 2,
-                    borderRadius: 'var(--mantine-radius-xl)',
-                    transition: 'box-shadow 150ms ease',
-                    boxShadow: badgeHovered
-                      ? '0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 40%, transparent)'
+                    transition: 'filter 150ms ease',
+                    filter: badgeHovered
+                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--wpsg-color-primary) 80%, transparent))'
                       : undefined,
                   }}
                 >
