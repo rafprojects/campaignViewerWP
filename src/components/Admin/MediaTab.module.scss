@@ -20,7 +20,9 @@
   .mediaGridShell {
     max-width: var(--wpsg-media-grid-max-lg, var(--wpsg-media-grid-max-md, var(--wpsg-media-grid-max-sm, var(--wpsg-media-grid-max-base, 100%))));
   }
-}.mediaCard {
+}
+
+.mediaCard {
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
   border: 1px solid color-mix(in srgb, var(--wpsg-color-text-muted) 25%, transparent);
 }

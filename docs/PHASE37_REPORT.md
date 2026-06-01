@@ -824,6 +824,43 @@ correct fix is to make the prop required in the interface and remove both the un
 **Changes:** `CampaignCardSettingsSectionProps.apiClient` changed from optional to
 required; `useLayoutTemplates` call simplified to `useLayoutTemplates(apiClient)`.
 
+### Thread: Template selector only guarded by desktop adapter (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The `campaignListingLayoutTemplateId` selector was gated solely on the desktop
+adapter being `layout-builder`. If the user set the tablet or mobile breakpoint
+override to `layout-builder` while leaving the desktop adapter as something else,
+they had no UI path to configure the required template, yet the adapter would still
+run and attempt to use it.
+
+Fix: expanded the condition to `OR` across all three breakpoint adapter settings.
+
+**Changes:** `CampaignCardSettingsSection.tsx` line 667 — condition now includes
+`campaignListingAdapterIdTablet` and `campaignListingAdapterIdMobile`.
+
+### Thread: Route parameter regex widened to `[^/]+` (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The original regex `[a-zA-Z0-9_.]+` was broadened to `[^/]+` to allow `-` in
+media IDs, but `[^/]+` admits spaces and all punctuation, which is far too
+permissive for an identifier that flows into a DB lookup. The minimal fix is to
+add `-` to the explicit character class: `[a-zA-Z0-9_.-]+`.
+
+**Changes:** `class-wpsg-rest.php` line 208 — regex restored to
+`[a-zA-Z0-9_.-]+`.
+
+### Thread: Missing newline in `MediaTab.module.scss` (Copilot — Round 2)
+
+**Decision: Accept.**
+
+The closing `}` of the `@media (min-width: 75em)` block abutted `.mediaCard {`
+with no blank line, making the file hard to scan. Added a blank line between the
+two blocks.
+
+**Changes:** `MediaTab.module.scss` line 23 — blank line inserted.
+
 ---
 
 ## Outcome

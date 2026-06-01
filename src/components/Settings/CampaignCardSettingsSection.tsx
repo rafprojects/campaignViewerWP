@@ -664,7 +664,9 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               }
             />
             {/* P37-LB: template selector for layout-builder listing adapter */}
-            {settings.campaignListingAdapterId === 'layout-builder' && (
+            {(settings.campaignListingAdapterId === 'layout-builder' ||
+              settings.campaignListingAdapterIdTablet === 'layout-builder' ||
+              settings.campaignListingAdapterIdMobile === 'layout-builder') && (
               <ModalSelect
                 label="Listing Layout Template"
                 description="The template whose slots define the positioned containers for campaign cards."
