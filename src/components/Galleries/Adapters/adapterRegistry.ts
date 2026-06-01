@@ -47,8 +47,11 @@ const SpotlightGallery = lazy(() =>
 const ScrollSnapGallery = lazy(() =>
   import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery').then((m) => ({ default: m.ScrollSnapGallery })),
 );
+const LazyLayoutBuilderGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
+);
 function LayoutBuilderRegistryFallback(props: GalleryAdapterProps) {
-  return createElement(MediaCarouselAdapter, props);
+  return createElement(LazyLayoutBuilderGallery, props);
 }
 
 // Internal map keyed by adapter id
@@ -151,10 +154,13 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     label: 'Layout Builder',
     optionLabels: {
       'per-type-gallery': 'Layout Builder -> per-breakpoint',
+      'campaign-listing': 'Layout Builder',
     },
-    capabilities: ['layout-builder'],
+    // P37-LB: listing-compatible; adapter owns pagination (slot count = page size).
+    capabilities: ['layout-builder', 'listing-compatible'],
     settingGroups: ['layout-builder'],
     supportsMobile: false,
+    paginationOwnership: 'adapter',
     component: LayoutBuilderRegistryFallback,
   },
 ];

@@ -359,6 +359,8 @@ class WPSG_Settings_Registry {
         'campaign_listing_adapter_id'        => 'compact-grid',
         'campaign_listing_adapter_id_mobile' => '',
         'campaign_listing_adapter_id_tablet' => '',
+        // P37-LB: Layout template used when campaign_listing_adapter_id is 'layout-builder'
+        'campaign_listing_layout_template_id' => '',
     ];
 
     /**
@@ -518,9 +520,10 @@ class WPSG_Settings_Registry {
         'photo_normalize_height_unit'    => ['px', '%', 'vh', 'dvh', 'svh', 'lvh', 'em', 'rem'],
         // P35-B: Campaign listing adapter ID values ('' = inherit desktop value on mobile/tablet)
         // 'classic' is the canonical id; 'carousel' is kept as a back-compat alias.
-        'campaign_listing_adapter_id'        => ['classic', 'compact-grid', 'masonry', 'justified', 'carousel'],
-        'campaign_listing_adapter_id_mobile' => ['', 'classic', 'compact-grid', 'masonry', 'justified', 'carousel'],
-        'campaign_listing_adapter_id_tablet' => ['', 'classic', 'compact-grid', 'masonry', 'justified', 'carousel'],
+        // P37-LB: 'layout-builder' added as a listing-compatible adapter.
+        'campaign_listing_adapter_id'        => ['classic', 'compact-grid', 'masonry', 'justified', 'carousel', 'layout-builder'],
+        'campaign_listing_adapter_id_mobile' => ['', 'classic', 'compact-grid', 'masonry', 'justified', 'carousel', 'layout-builder'],
+        'campaign_listing_adapter_id_tablet' => ['', 'classic', 'compact-grid', 'masonry', 'justified', 'carousel', 'layout-builder'],
     ];
 
     /**

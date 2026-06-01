@@ -1097,6 +1097,8 @@ export interface GalleryBehaviorSettings {
   campaignListingAdapterIdMobile?: string;
   /** Per-breakpoint override for the listing adapter on tablet. Omit to inherit desktop value. */
   campaignListingAdapterIdTablet?: string;
+  /** P37-LB: Template ID used when campaignListingAdapterId is 'layout-builder'. */
+  campaignListingLayoutTemplateId?: string;
 }
 
 // ── Card breakpoint override model ───────────────────────────────────────────

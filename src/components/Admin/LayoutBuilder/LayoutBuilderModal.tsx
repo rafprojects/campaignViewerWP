@@ -81,6 +81,8 @@ export interface LayoutBuilderModalProps {
   initialTemplate?: LayoutTemplate | undefined;
   onSaved?: ((template: LayoutTemplate) => void) | undefined;
   onNotify?: ((msg: { type: 'error' | 'success'; text: string }) => void) | undefined;
+  /** P37-LB: true when editing a template used in campaign listing mode; activates builder guardrails. */
+  listingMode?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -92,6 +94,7 @@ export function LayoutBuilderModal({
   initialTemplate,
   onSaved,
   onNotify,
+  listingMode = false,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
@@ -952,6 +955,7 @@ export function LayoutBuilderModal({
     handleCreateGroup, handleUngroupSelected,
     handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,
     handleBringForwardSelected, handleSendBackwardSelected,
+    listingMode,
   };
 
   return (

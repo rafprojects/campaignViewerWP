@@ -27,6 +27,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     handleUploadMask,
     overlayLibrary,
     isBackgroundSelected,
+    listingMode,
   } = useBuilderDock();
 
   const panelStyle = {
@@ -80,6 +81,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           onSendToBack={() => builder.sendToBack([selectedSlot.id])}
           onBringForward={() => builder.bringForward([selectedSlot.id])}
           onSendBackward={() => builder.sendBackward([selectedSlot.id])}
+          listingMode={listingMode}
         />
       </Box>
     );

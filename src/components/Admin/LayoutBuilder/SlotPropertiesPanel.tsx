@@ -19,6 +19,7 @@ import {
   IconArrowBigDownLine,
   IconArrowUp,
   IconArrowDown,
+  IconAlertTriangle,
   IconInfoCircle,
   IconLink,
   IconUnlink,
@@ -44,7 +45,8 @@ export interface SlotPropertiesPanelProps {
   onSendToBack?: () => void;
   onBringForward?: () => void;
   onSendBackward?: () => void;
-
+  /** P37-LB: When true, hide image-level controls and show listing-mode warning. */
+  listingMode?: boolean;
 }
 
 // ── Options ──────────────────────────────────────────────────
@@ -163,6 +165,7 @@ export function SlotPropertiesPanel({
   onSendToBack,
   onBringForward,
   onSendBackward,
+  listingMode = false,
 }: SlotPropertiesPanelProps) {
   const lockSizeRatio = slot.lockAspectRatio ?? false;
   const aspectRatio = useMemo(() => {
@@ -174,6 +177,29 @@ export function SlotPropertiesPanel({
   const clampPct = (value: number) => Math.max(1, Math.min(100, value));
 
   return (
+    <>
+      {listingMode && (
+        <Box
+          mb={6}
+          style={{
+            display: 'flex',
+            gap: 8,
+            padding: '8px 10px',
+            borderRadius: 6,
+            background: 'var(--mantine-color-yellow-light)',
+            color: 'var(--mantine-color-yellow-9)',
+            fontSize: '0.8125rem',
+            lineHeight: 1.4,
+          }}
+          role="note"
+        >
+          <IconAlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>
+            Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper.
+            Image-specific controls are hidden.
+          </span>
+        </Box>
+      )}
     <Accordion
       multiple
       defaultValue={['layout', 'image', 'effects', 'stacking']}
@@ -290,6 +316,22 @@ export function SlotPropertiesPanel({
       </Accordion.Item>
 
       {/* ── Image ──────────────────────────────────────────── */}
+      {listingMode ? (
+        <Box
+          style={{
+            padding: '8px 4px',
+            fontSize: '0.8125rem',
+            color: 'var(--mantine-color-dimmed)',
+            borderBottom: '1px solid var(--mantine-color-default-border)',
+            display: 'flex',
+            gap: 6,
+            alignItems: 'flex-start',
+          }}
+        >
+          <IconInfoCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards.</span>
+        </Box>
+      ) : (
       <Accordion.Item value="image">
         <Accordion.Control>
           <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>Image</Text>
@@ -405,6 +447,7 @@ export function SlotPropertiesPanel({
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
+      )}
 
       {/* ── Effects ────────────────────────────────────────── */}
       <Accordion.Item value="effects">
@@ -628,17 +671,33 @@ export function SlotPropertiesPanel({
             </Group>
 
             <SectionHeader label="Interaction" />
-            <PropRow label="Click">
-              <SegmentedControl
-                data={CLICK_OPTIONS}
-                value={slot.clickAction}
-                onChange={(val) =>
-                  onUpdate({ clickAction: val as LayoutSlot['clickAction'] })
-                }
-                size="xs"
-                fullWidth
-              />
-            </PropRow>
+            {listingMode ? (
+              <Box
+                style={{
+                  padding: '4px 0',
+                  fontSize: '0.8125rem',
+                  color: 'var(--mantine-color-dimmed)',
+                  display: 'flex',
+                  gap: 6,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <IconInfoCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
+                <span>Card click is controlled by the campaign card component.</span>
+              </Box>
+            ) : (
+              <PropRow label="Click">
+                <SegmentedControl
+                  data={CLICK_OPTIONS}
+                  value={slot.clickAction}
+                  onChange={(val) =>
+                    onUpdate({ clickAction: val as LayoutSlot['clickAction'] })
+                  }
+                  size="xs"
+                  fullWidth
+                />
+              </PropRow>
+            )}
             <PropRow label="Hover">
               <SegmentedControl
                 data={HOVER_OPTIONS}
@@ -672,6 +731,7 @@ export function SlotPropertiesPanel({
         </Accordion.Panel>
       </Accordion.Item>
     </Accordion>
+    </>
   );
 }
 

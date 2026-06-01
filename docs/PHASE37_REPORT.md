@@ -1,14 +1,14 @@
 # Phase 37 — Layout-Builder Listings & Carry-Forward Implementation Tracks
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-05-30
-**Last updated:** 2026-05-31 (P37-MT2 complete)
+**Last updated:** 2026-05-31 (P37-LB Pass A + B complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P37-LB | Layout-builder adapter for campaign listings (whole-card-per-slot) | Planned | L |
+| P37-LB | Layout-builder adapter for campaign listings (whole-card-per-slot) | Complete | L |
 | P37-HA1 | Hero / Spotlight sizing controls | Complete | S |
 | P37-LB1 | Layout Builder non-canvas theme propagation | Complete | M |
 | P37-SE1 | Shared searchable entity input adoption | Complete | M |
@@ -245,7 +245,26 @@ effects intentionally on listing templates.
   correctly restricted.
 - `QA_PLAN_LAYOUT_BUILDER.md` updated with listing-mode scenarios.
 
-### Status: Planned
+### Implementation Notes
+
+**Pagination approach (revised from spec):** The track originally said "wire `CardGalleryHostPagination` to derive page size from template slot count." This is architecturally infeasible — the template slot count is only known after an async load inside the adapter, but `CardGalleryHostPagination` slices items before calling the adapter. Implemented instead as `paginationOwnership: 'adapter'`: layout-builder receives all filtered campaigns and renders `min(slots.length, items.length)` of them, making slot count the natural page size without any host-side plumbing. `CardGallery` bypasses `CardGalleryHostPagination` and suppresses host pagination UI (same pattern as classic carousel).
+
+**Template ID channel:** `GalleryAdapterProps` has no `templateId` field. Added `campaignListingLayoutTemplateId?: string` to `GalleryBehaviorSettings`; the adapter reads it from `settings` in listing mode. A template selector in `CampaignCardSettingsSection` (new) persists the value; `SettingsPanel` passes `apiClient` down to enable the fetch.
+
+**Files changed:**
+- `src/types/index.ts` — `campaignListingLayoutTemplateId` in `GalleryBehaviorSettings`
+- `wp-plugin/.../class-wpsg-settings-registry.php` — default + `layout-builder` in allowed values
+- `src/components/Galleries/Adapters/adapterRegistry.ts` — `listing-compatible`, `paginationOwnership: 'adapter'`, lazy `LayoutBuilderRegistryFallback`
+- `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx` — listing-mode render branch
+- `src/components/Settings/CampaignCardSettingsSection.tsx` — template selector
+- `src/components/Admin/SettingsPanel.tsx` — pass `apiClient` to `CampaignCardSettingsSection`
+- `src/components/Admin/LayoutBuilder/BuilderDockContext.tsx` — `listingMode` in context
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx` — `listingMode` prop
+- `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.tsx` — forward `listingMode`
+- `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` — listing-mode guardrails + warning banner
+- `src/components/Galleries/Adapters/adapterRegistry.test.ts` — updated for layout-builder listing support
+
+### Status: Complete
 
 ---
 

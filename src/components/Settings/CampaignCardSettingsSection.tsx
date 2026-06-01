@@ -14,6 +14,9 @@ import {
 } from '@/utils/cardConfig';
 // P35-B: Listing adapter selector
 import { getListingAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
+// P37-LB: Layout templates for listing-builder template selector
+import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
+import type { ApiClient } from '@/services/apiClient';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
@@ -21,10 +24,15 @@ interface CampaignCardSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
   activeBreakpoint: CardConfigBreakpoint;
+  /** P37-LB: Required to fetch layout templates for the listing-builder template selector. */
+  apiClient?: ApiClient;
 }
 
-export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint }: CampaignCardSettingsSectionProps) {
+export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint, apiClient }: CampaignCardSettingsSectionProps) {
   const isDesktop = activeBreakpoint === 'desktop';
+
+  // P37-LB: Fetch layout templates for listing-builder template selector
+  const { data: layoutTemplates } = useLayoutTemplates(apiClient as ApiClient, !!apiClient);
 
   // Resolved settings = flat base + cascaded overrides for the active breakpoint.
   const resolved = useMemo(
@@ -655,6 +663,21 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                 updateSetting('campaignListingAdapterIdMobile', value ?? '')
               }
             />
+            {/* P37-LB: template selector for layout-builder listing adapter */}
+            {settings.campaignListingAdapterId === 'layout-builder' && (
+              <ModalSelect
+                label="Listing Layout Template"
+                description="The template whose slots define the positioned containers for campaign cards."
+                data={[
+                  { value: '', label: 'No template selected' },
+                  ...(layoutTemplates ?? []).map((t) => ({ value: t.id, label: t.name })),
+                ]}
+                value={settings.campaignListingLayoutTemplateId ?? ''}
+                onChange={(value) =>
+                  updateSetting('campaignListingLayoutTemplateId', value ?? '')
+                }
+              />
+            )}
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
