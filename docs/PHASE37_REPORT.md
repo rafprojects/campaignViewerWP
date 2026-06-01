@@ -2,7 +2,7 @@
 
 **Status:** Planned
 **Created:** 2026-05-30
-**Last updated:** 2026-05-31 (P37-SE1 complete)
+**Last updated:** 2026-05-31 (P37-MT2 implementation started)
 
 ### Tracks
 
@@ -14,7 +14,7 @@
 | P37-SE1 | Shared searchable entity input adoption | Complete | M |
 | P37-KS1 | Legacy storage-key scoping audit and migration | Complete | M |
 | P37-MT1 | Media tab usage-badge overlay cleanup | Complete | S |
-| P37-MT2 | Media tab card-width stabilization | Planned | M |
+| P37-MT2 | Media tab card-width stabilization | In Progress | M |
 
 > **Note:** Phase 37 combines the promoted P36-X1 implementation track
 > (`P37-LB`) with four direct carry-forwards from the P36 Related Planning
@@ -674,21 +674,24 @@ turning this track into a full responsive-layout refactor.
    visual scale even when the admin panel is much wider.
 2. Reuse the fixed-width card pattern already proven in
    `src/components/CampaignGallery/CardGallery.tsx` and
-   `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` by
-   adapting `src/utils/gridLayout.ts` helpers where practical.
-3. Apply the width cap at the card/wrapper or row level in
-   `src/components/Admin/MediaTab.tsx` while keeping the current card-size
-   selector semantics, drag-and-drop, and list view intact.
+  `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` by
+  adapting the width-capping strategy into a small Media-tab-specific layout
+  helper rather than copying the listing-grid math verbatim.
+3. Apply the width cap through a centered row-level shell around the existing
+  Mantine `Grid` in `src/components/Admin/MediaTab.tsx`, keeping the current
+  card-size selector semantics, drag-and-drop, and list view intact. Use an
+  inner per-card cap only if the row-level shell proves insufficient in QA.
 4. Keep this first pass front-end only. Do not add a new advanced setting unless
-   post-QA tuning shows the automatic caps are insufficient.
+  post-QA tuning shows the automatic caps are insufficient.
 5. If cap-based stabilization leaves unacceptable wide-column whitespace or
-   still fails proportionality goals, promote the full decoupling work tracked
-   in Phase 38 rather than widening this item in place.
+  still fails proportionality goals, promote the full decoupling work tracked
+  in Phase 38 rather than widening this item in place.
 
 ### Key files
 
 - `src/components/Admin/MediaTab.tsx`
-- `src/utils/gridLayout.ts`
+- `src/components/Admin/mediaTabLayout.ts`
+- `src/components/Admin/MediaTab.module.scss`
 - `src/components/CampaignGallery/CardGallery.tsx`
 - `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx`
 - `src/components/Admin/MediaTab.test.tsx`
@@ -723,7 +726,24 @@ turning this track into a full responsive-layout refactor.
 - Manual QA confirms acceptable layout at narrow/default/wide admin-panel widths
   for compact, small, medium, and large card modes.
 
-### Status: Planned
+### Implementation Notes
+
+- `src/components/Admin/mediaTabLayout.ts` now owns the bounded-width policy for
+  the Media tab: preset selection (`compact` is treated as a separate view mode,
+  not a `cardSize` value), base/sm/md/lg span inheritance, derived column count,
+  and responsive row-shell max-width variables.
+- `src/components/Admin/MediaTab.tsx` now resolves one active preset for the
+  current grid/compact view and applies a centered bounded-width shell around
+  the existing Mantine `Grid` instead of relying only on unbounded `Grid.Col`
+  spans.
+- `src/components/Admin/MediaTab.module.scss` applies the responsive
+  base/sm/md/lg width caps to that grid shell; list view remains outside this
+  path.
+- Focused validation passed: `npx vitest run src/components/Admin/mediaTabLayout.test.ts src/components/Admin/MediaTab.test.tsx`.
+- Manual QA across narrow/default/wide admin-panel widths is still required
+  before this track can move to Complete.
+
+### Status: In Progress
 
 ---
 

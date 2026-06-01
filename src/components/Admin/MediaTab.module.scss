@@ -1,4 +1,26 @@
-.mediaCard {
+.mediaGridShell {
+  width: 100%;
+  max-width: var(--wpsg-media-grid-max-base, 100%);
+  margin-inline: auto;
+}
+
+@media (min-width: 48em) {
+  .mediaGridShell {
+    max-width: var(--wpsg-media-grid-max-sm, var(--wpsg-media-grid-max-base, 100%));
+  }
+}
+
+@media (min-width: 62em) {
+  .mediaGridShell {
+    max-width: var(--wpsg-media-grid-max-md, var(--wpsg-media-grid-max-sm, var(--wpsg-media-grid-max-base, 100%)));
+  }
+}
+
+@media (min-width: 75em) {
+  .mediaGridShell {
+    max-width: var(--wpsg-media-grid-max-lg, var(--wpsg-media-grid-max-md, var(--wpsg-media-grid-max-sm, var(--wpsg-media-grid-max-base, 100%))));
+  }
+}.mediaCard {
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
   border: 1px solid color-mix(in srgb, var(--wpsg-color-text-muted) 25%, transparent);
 }

@@ -52,6 +52,13 @@ import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@/contexts/RootIdContext';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import {
+  buildMediaGridShellVars,
+  MEDIA_GRID_GUTTER_PX,
+  MEDIA_GRID_MAX_WIDTHS,
+  resolveMediaGridPresetKey,
+} from './mediaTabLayout';
+import styles from './MediaTab.module.scss';
 
 // Position the DragOverlay so its top-center sits just below the cursor.
 // The overlay is 140 px wide; placing the cursor at (width/2, 12) gives a natural
@@ -347,7 +354,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         localStorage.removeItem('wpsg_media_sortMode');
       }
     } catch { /* ignore */ }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
 
@@ -432,11 +439,21 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
   // Card size configurations
   const sizeConfig = useMemo(() => ({
-    compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72 },
-    small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110 },
-    medium: { span: { base: 12, sm: 6, md: 4 }, height: 170 },
-    large: { span: { base: 12, sm: 6 }, height: 240 },
+    compact: { span: { base: 6, sm: 3, md: 2, lg: 2 }, height: 72, maxWidth: MEDIA_GRID_MAX_WIDTHS.compact },
+    small: { span: { base: 6, sm: 4, md: 3, lg: 3 }, height: 110, maxWidth: MEDIA_GRID_MAX_WIDTHS.small },
+    medium: { span: { base: 12, sm: 6, md: 4 }, height: 170, maxWidth: MEDIA_GRID_MAX_WIDTHS.medium },
+    large: { span: { base: 12, sm: 6 }, height: 240, maxWidth: MEDIA_GRID_MAX_WIDTHS.large },
   }), []);
+
+  const activeGridPreset = useMemo(() => {
+    const presetKey = resolveMediaGridPresetKey(viewMode, cardSize);
+    return sizeConfig[presetKey];
+  }, [viewMode, cardSize, sizeConfig]);
+
+  const mediaGridShellVars = useMemo(
+    () => buildMediaGridShellVars(activeGridPreset, MEDIA_GRID_GUTTER_PX),
+    [activeGridPreset],
+  );
 
   // Show skeleton only on first load when no cached query data exists yet.
   const effectiveLoading = mediaQueryLoading && media.length === 0;
@@ -1052,13 +1069,15 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       </Group>
 
       {effectiveLoading ? (
-        <Grid>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Grid.Col key={i} span={sizeConfig[cardSize]?.span ?? sizeConfig.medium.span}>
-              <Skeleton height={sizeConfig[cardSize]?.height ?? 170} radius="md" />
-            </Grid.Col>
-          ))}
-        </Grid>
+        <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+          <Grid gap={MEDIA_GRID_GUTTER_PX}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Grid.Col key={i} span={activeGridPreset.span}>
+                <Skeleton height={activeGridPreset.height} radius="md" />
+              </Grid.Col>
+            ))}
+          </Grid>
+        </Box>
       ) : (
         <DndContext
           sensors={sensors}
@@ -1111,20 +1130,22 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             </>
           ) : (
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
-              <Grid>
-                {displayedMedia.map((item) => (
-                  <SortableGridItem
-                    key={item.id}
-                    item={item}
-                    {...sharedSortableProps}
-                    viewMode={viewMode}
-                    cardSize={cardSize}
-                    mediaHeight={viewMode === 'compact' ? sizeConfig.compact.height : sizeConfig[cardSize].height}
-                    gridSpan={viewMode === 'compact' ? sizeConfig.compact.span : sizeConfig[cardSize].span}
-                    showUrl={cardSize === 'large'}
-                  />
-                ))}
-              </Grid>
+              <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+                <Grid gap={MEDIA_GRID_GUTTER_PX}>
+                  {displayedMedia.map((item) => (
+                    <SortableGridItem
+                      key={item.id}
+                      item={item}
+                      {...sharedSortableProps}
+                      viewMode={viewMode}
+                      cardSize={cardSize}
+                      mediaHeight={activeGridPreset.height}
+                      gridSpan={activeGridPreset.span}
+                      showUrl={viewMode !== 'compact' && cardSize === 'large'}
+                    />
+                  ))}
+                </Grid>
+              </Box>
             </SortableContext>
           )}
 
