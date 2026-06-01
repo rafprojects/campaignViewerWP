@@ -157,13 +157,25 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for the spotlight setting group', () => {
-    const fieldKeys = getSettingGroupFieldDefinitions('spotlight').map((f) => f.key);
-    expect(fieldKeys).toEqual([
+    const fields = getSettingGroupFieldDefinitions('spotlight');
+
+    expect(fields.map((field) => field.key)).toEqual([
       'spotlightHeroAspectRatio',
       'spotlightThumbnailSize',
       'spotlightTransitionDuration',
       'spotlightStripPosition',
+      'spotlightHeroMaxWidth',
     ]);
+
+    expect(fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: 'spotlightHeroMaxWidth',
+        control: 'dimension',
+        unitKey: 'spotlightHeroMaxWidthUnit',
+        label: 'Hero Max Width',
+        fallback: 0,
+      }),
+    ]));
   });
 
   it('reports spotlight in active setting groups when the adapter is selected', () => {
@@ -187,8 +199,23 @@ describe('adapterRegistry', () => {
   });
 
   it('exposes schema-driven field definitions for the scroll-snap setting group', () => {
-    const fieldKeys = getSettingGroupFieldDefinitions('scroll-snap').map((f) => f.key);
-    expect(fieldKeys).toEqual(['scrollSnapAlignment', 'scrollSnapPageIndicator']);
+    const fields = getSettingGroupFieldDefinitions('scroll-snap');
+
+    expect(fields.map((field) => field.key)).toEqual([
+      'scrollSnapAlignment',
+      'scrollSnapPageIndicator',
+      'scrollSnapMaxWidth',
+    ]);
+
+    expect(fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        key: 'scrollSnapMaxWidth',
+        control: 'dimension',
+        unitKey: 'scrollSnapMaxWidthUnit',
+        label: 'Container Max Width',
+        fallback: 0,
+      }),
+    ]));
   });
 
   it('scroll-snap adapter is not disabled at mobile breakpoint', () => {
