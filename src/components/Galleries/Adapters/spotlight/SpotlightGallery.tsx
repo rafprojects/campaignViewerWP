@@ -68,6 +68,8 @@ export function SpotlightGallery({
   const thumbSizeUnit = settings.spotlightThumbnailSizeUnit ?? 'px';
   const transitionMs = settings.spotlightTransitionDuration ?? 250;
   const stripPositionSetting = settings.spotlightStripPosition ?? 'below';
+  const heroMaxWidth = settings.spotlightHeroMaxWidth ?? 0;
+  const heroMaxWidthUnit = settings.spotlightHeroMaxWidthUnit ?? 'px';
 
   // Strip placement: honour 'right' only when container is wide enough.
   const containerWidth = containerDimensions?.width ?? 0;
@@ -106,7 +108,10 @@ export function SpotlightGallery({
   return (
     <Stack
       gap="xs"
-      style={adapterSizing}
+      style={{
+        ...adapterSizing,
+        ...(heroMaxWidth > 0 ? { maxWidth: toCss(heroMaxWidth, heroMaxWidthUnit), marginInline: 'auto' } : {}),
+      }}
       {...getWpsgDebugProps('SpotlightGallery')}
     >
       {/* Optional gallery heading */}
