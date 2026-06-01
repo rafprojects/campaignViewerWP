@@ -664,6 +664,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           <KeyboardShortcutsModal
             opened={campaignActions.shortcutHelpOpen}
             onClose={() => campaignActions.setShortcutHelpOpen(false)}
+            config={campaignActions.shortcutConfig}
           />
         </Suspense>
       )}

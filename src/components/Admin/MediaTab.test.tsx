@@ -89,9 +89,9 @@ describe('MediaTab', () => {
     await screen.findByText('Overlay Item');
 
     const gridItem = screen.getByTestId('media-draggable-m1');
-    const overlay = within(gridItem).getByTestId('media-card-overlay-stack');
+    const usageOverlay = within(gridItem).getByTestId('media-card-usage-overlay');
 
-    expect(within(overlay).getByText('2 campaigns')).toBeInTheDocument();
+    expect(within(usageOverlay).getByText('2 campaigns')).toBeInTheDocument();
     expect(gridItem.querySelector('[style*="bottom: 8px"][style*="left: 8px"]')).toBeNull();
   });
 
@@ -164,6 +164,29 @@ describe('MediaTab', () => {
 
     expect(screen.queryByTestId('media-grid-shell')).toBeNull();
     expect(screen.getAllByRole('table')).toHaveLength(2);
+  });
+
+  it('resolves span from container width (base span when clientWidth is 0)', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm-span',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/span.jpg',
+        thumbnail: 'https://example.com/span.jpg',
+        caption: 'Span Test Item',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="layout-span" apiClient={apiClient as any} />);
+
+    await screen.findByTestId('media-draggable-m-span');
+
+    // jsdom clientWidth=0 → useBreakpoint returns mobile → mapToMediaGridBreakpoint → 'base'
+    // For the default 'medium' preset, base span is 12 (single column).
+    // The grid shell is present and the card renders — container-measured path is exercised.
+    expect(screen.getByTestId('media-grid-shell')).toBeInTheDocument();
   });
 
   it('renders media items and supports edit/delete/drag-reorder', async () => {

@@ -52,6 +52,7 @@ export function ArchiveCampaignModal({
       title="Archive Campaign"
       zIndex={300}
       padding="md"
+      withinPortal={false}
     >
       <ArchiveCampaignModalContent campaign={campaign} onClose={onClose} onConfirm={onConfirm} />
     </Modal>

@@ -80,6 +80,10 @@ class WPSG_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
         $this->assertTrue($data['duplicate']);
         $this->assertEquals($first_id, $data['existing_id']);
         $this->assertNotEmpty($data['existing_url']);
+        $this->assertArrayHasKey('existing_name', $data, 'existing_name must be present in duplicate response');
+        $this->assertNotEmpty($data['existing_name'], 'existing_name must be a non-empty string');
+        $this->assertArrayHasKey('existing_campaigns', $data, 'existing_campaigns must be present in duplicate response');
+        $this->assertIsArray($data['existing_campaigns'], 'existing_campaigns must be an array');
     }
 
     public function test_force_true_bypasses_duplicate_check() {

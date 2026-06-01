@@ -2713,6 +2713,65 @@ class WPSG_REST {
         return $id ? intval($id) : 0;
     }
 
+    // P38-MD1: Find the closest pHash match within $threshold Hamming bits.
+    // Returns ['id' => int, 'url' => string, 'distance' => int] or [].
+    private static function find_near_duplicates_by_phash(string $phash, int $threshold): array {
+        global $wpdb;
+        $limit = max(1, intval(apply_filters('wpsg_phash_max_scan', 5000)));
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT pm.post_id, pm.meta_value
+                 FROM {$wpdb->postmeta} pm
+                 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+                 WHERE pm.meta_key = %s
+                   AND p.post_type = 'attachment'
+                   AND p.post_status = 'inherit'
+                 LIMIT %d",
+                '_wpsg_file_phash',
+                $limit
+            ),
+            ARRAY_A
+        );
+        if (empty($rows)) {
+            return [];
+        }
+
+        $best_id       = 0;
+        $best_distance = PHP_INT_MAX;
+
+        foreach ($rows as $row) {
+            $d = WPSG_PHash::hamming_distance($phash, (string) $row['meta_value']);
+            if ($d === 0) {
+                $best_id       = intval($row['post_id']);
+                $best_distance = 0;
+                break;
+            }
+            if ($d < $best_distance) {
+                $best_distance = $d;
+                $best_id       = intval($row['post_id']);
+            }
+        }
+
+        if ($best_distance > $threshold || $best_id <= 0) {
+            return [];
+        }
+
+        return [
+            'id'       => $best_id,
+            'url'      => wp_get_attachment_url($best_id) ?: '',
+            'distance' => $best_distance,
+        ];
+    }
+
+    // P38-MD1: Return display name and campaign list for a WordPress attachment.
+    // Used to enrich duplicate/near-duplicate 409 responses with context.
+    private static function find_attachment_origin_meta(int $id): array {
+        $file = get_attached_file($id);
+        $name = $file ? basename($file) : (get_the_title($id) ?: '');
+        $campaigns = class_exists('WPSG_DB') ? WPSG_DB::get_campaigns_for_attachment_id($id) : [];
+        return ['name' => $name, 'campaigns' => $campaigns];
+    }
+
     private static function upload_single_media_file(array $file, bool $force = false) {
         $error = self::get_upload_error_data($file);
         if ($error) {
@@ -2757,11 +2816,36 @@ class WPSG_REST {
         if ($md5 && !$force) {
             $existing_id = self::find_attachment_by_md5($md5);
             if ($existing_id > 0) {
+                $origin = self::find_attachment_origin_meta($existing_id);
                 return new WP_Error('wpsg_duplicate_file', 'This file has already been uploaded.', [
-                    'status'       => 409,
-                    'existing_id'  => $existing_id,
-                    'existing_url' => wp_get_attachment_url($existing_id),
+                    'status'              => 409,
+                    'existing_id'         => $existing_id,
+                    'existing_url'        => wp_get_attachment_url($existing_id),
+                    'existing_name'       => $origin['name'],
+                    'existing_campaigns'  => $origin['campaigns'],
                 ]);
+            }
+        }
+
+        // P38-MD1: pHash near-duplicate detection for images (runs after exact-duplicate check).
+        // Compute unconditionally so forced uploads still get their hash stored for future scans.
+        $phash = null;
+        if (class_exists('WPSG_PHash') && WPSG_PHash::is_image_mime($mime)) {
+            $phash = WPSG_PHash::compute($file['tmp_name']);
+            if ($phash !== null && !$force) {
+                $threshold  = intval(apply_filters('wpsg_phash_hamming_threshold', 10));
+                $near_match = self::find_near_duplicates_by_phash($phash, $threshold);
+                if (!empty($near_match)) {
+                    $origin = self::find_attachment_origin_meta($near_match['id']);
+                    return new WP_Error('wpsg_near_duplicate_file', 'A visually similar image has already been uploaded.', [
+                        'status'           => 409,
+                        'similar_id'       => $near_match['id'],
+                        'similar_url'      => $near_match['url'],
+                        'distance'         => $near_match['distance'],
+                        'similar_name'     => $origin['name'],
+                        'similar_campaigns' => $origin['campaigns'],
+                    ]);
+                }
             }
         }
 
@@ -2795,6 +2879,11 @@ class WPSG_REST {
         // P28-N: Store MD5 for future duplicate detection.
         if ($md5) {
             update_post_meta($attachment_id, '_wpsg_file_md5', $md5);
+        }
+
+        // P38-MD1: Store pHash for near-duplicate detection on future uploads.
+        if ($phash !== null) {
+            update_post_meta($attachment_id, '_wpsg_file_phash', $phash);
         }
 
         return self::prepare_uploaded_attachment_payload($attachment_id);
@@ -4443,9 +4532,22 @@ class WPSG_REST {
                 if ($upload->get_error_code() === 'wpsg_duplicate_file') {
                     $data = $upload->get_error_data();
                     return new WP_REST_Response([
-                        'duplicate'    => true,
-                        'existing_id'  => $data['existing_id'],
-                        'existing_url' => $data['existing_url'],
+                        'duplicate'          => true,
+                        'existing_id'        => $data['existing_id'],
+                        'existing_url'       => $data['existing_url'],
+                        'existing_name'      => $data['existing_name'] ?? '',
+                        'existing_campaigns' => $data['existing_campaigns'] ?? [],
+                    ], 409);
+                }
+                if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
+                    $data = $upload->get_error_data();
+                    return new WP_REST_Response([
+                        'near_duplicate'    => true,
+                        'similar_id'        => $data['similar_id'],
+                        'similar_url'       => $data['similar_url'],
+                        'distance'          => $data['distance'],
+                        'similar_name'      => $data['similar_name'] ?? '',
+                        'similar_campaigns' => $data['similar_campaigns'] ?? [],
                     ], 409);
                 }
                 return $upload;
@@ -4469,9 +4571,20 @@ class WPSG_REST {
                 ];
                 if ($upload->get_error_code() === 'wpsg_duplicate_file') {
                     $data = $upload->get_error_data();
-                    $result['duplicate']    = true;
-                    $result['existing_id']  = $data['existing_id'];
-                    $result['existing_url'] = $data['existing_url'];
+                    $result['duplicate']          = true;
+                    $result['existing_id']        = $data['existing_id'];
+                    $result['existing_url']       = $data['existing_url'];
+                    $result['existing_name']      = $data['existing_name'] ?? '';
+                    $result['existing_campaigns'] = $data['existing_campaigns'] ?? [];
+                }
+                if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
+                    $data = $upload->get_error_data();
+                    $result['near_duplicate']    = true;
+                    $result['similar_id']        = $data['similar_id'];
+                    $result['similar_url']       = $data['similar_url'];
+                    $result['distance']          = $data['distance'];
+                    $result['similar_name']      = $data['similar_name'] ?? '';
+                    $result['similar_campaigns'] = $data['similar_campaigns'] ?? [];
                 }
                 $results[] = $result;
                 continue;

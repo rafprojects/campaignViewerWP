@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
 import type { AdminCampaign } from '@/services/adminQuery';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { useShortcutConfig, type ShortcutConfigHandle } from './useShortcutConfig';
 
 interface Options {
   apiClient: ApiClient;
@@ -38,6 +39,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [isImporting, setIsImporting] = useState(false);
 
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
+
+  const shortcutConfig = useShortcutConfig();
 
   const handleEdit = useCallback((campaign: AdminCampaign) => {
     onOpenEdit(campaign);
@@ -202,16 +205,23 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
-  const hotkeyHandler = getHotkeyHandler([
-    ['?',            () => setShortcutHelpOpen(true)],
-    ['mod+n',        () => { if (!createModalOpen) handleCreate(); }],
-    ['mod+i',        () => setImportModalOpen(true)],
-    ['mod+shift+a',  () => handleToggleSelectMode()],
-  ]);
+  const { effectiveMap } = shortcutConfig;
+  const hotkeyHandler = useMemo(
+    () => getHotkeyHandler([
+      [effectiveMap.openHelp,    () => setShortcutHelpOpen(true)],
+      [effectiveMap.newCampaign, () => { if (!createModalOpen) handleCreate(); }],
+      [effectiveMap.importJson,  () => setImportModalOpen(true)],
+      [effectiveMap.bulkSelect,  () => handleToggleSelectMode()],
+    ]),
+     
+    [effectiveMap.openHelp, effectiveMap.newCampaign, effectiveMap.importJson, effectiveMap.bulkSelect, createModalOpen, handleCreate, handleToggleSelectMode],
+  );
 
   return {
     // Scoped hotkey handler — attach via onKeyDown on a container
     hotkeyHandler,
+    // Shortcut configuration
+    shortcutConfig,
     // Archive/restore
     confirmArchive,
     setConfirmArchive,
@@ -256,3 +266,4 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 }
 
 export type CampaignActionsHandle = ReturnType<typeof useAdminCampaignActions>;
+export type { ShortcutConfigHandle };

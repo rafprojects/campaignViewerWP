@@ -5,6 +5,10 @@ class WPSG_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
     private $admin_id;
 
     public function setUp(): void {
+        if (!function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension not available');
+        }
+
         parent::setUp();
 
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
@@ -33,14 +37,25 @@ class WPSG_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
     }
 
     private function create_temp_gif(int $variant = 0): string {
-        $tmp_path = tempnam(sys_get_temp_dir(), 'wpsg-gif-');
-        $base = base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
-        // Append a GIF comment extension to produce a distinct MD5 per variant.
-        // Comment block: 0x21 0xFE <len> <data> 0x00
-        $comment = str_pad((string) $variant, 4, '0', STR_PAD_LEFT);
-        $data = $base . "\x21\xFE" . chr(strlen($comment)) . $comment . "\x00";
-        file_put_contents($tmp_path, $data);
-        return $tmp_path;
+        // Use a 16×9 gradient GIF so pHash (P38-MD1) produces a meaningful hash.
+        // Variant 0 = left-to-right gradient  → dHash ≈ 0x0000000000000000
+        // Variant 1 = right-to-left gradient  → dHash ≈ 0xffffffffffffffff
+        // Hamming distance ≈ 64, well above the 10-bit threshold, so the two
+        // images are never flagged as near-duplicates in batch-upload tests.
+        $img = imagecreatetruecolor(16, 9);
+        for ($x = 0; $x < 16; $x++) {
+            $v = $variant === 0
+                ? intval(($x / 15) * 255)
+                : intval(((15 - $x) / 15) * 255);
+            for ($y = 0; $y < 9; $y++) {
+                $c = imagecolorallocate($img, $v, $v, $v);
+                imagesetpixel($img, $x, $y, $c);
+            }
+        }
+        $path = tempnam(sys_get_temp_dir(), 'wpsg-gif-');
+        imagegif($img, $path);
+        imagedestroy($img);
+        return $path;
     }
 
     private function build_batch_file_params(array $files): array {

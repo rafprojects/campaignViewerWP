@@ -229,6 +229,43 @@ class WPSG_DB {
     }
 
     /**
+     * Find which campaigns contain a WordPress attachment by its post ID.
+     *
+     * P38-MD1: Used to surface campaign context in duplicate/near-duplicate upload warnings.
+     * The wp_wpsg_media_refs lookup table uses media UUIDs, not WordPress attachment IDs, so
+     * this method scans campaign media_items postmeta directly. Only called when a duplicate
+     * is actually detected (infrequent), so the O(campaigns) scan is acceptable.
+     *
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return array Array of ['id' => string, 'title' => string].
+     */
+    public static function get_campaigns_for_attachment_id(int $attachment_id): array {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $campaign_ids = $wpdb->get_col(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
+        );
+
+        $result = [];
+        foreach ($campaign_ids as $campaign_id) {
+            $items = get_post_meta((int) $campaign_id, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            foreach ($items as $item) {
+                if (isset($item['attachmentId']) && intval($item['attachmentId']) === $attachment_id) {
+                    $result[] = [
+                        'id'    => strval($campaign_id),
+                        'title' => get_the_title((int) $campaign_id),
+                    ];
+                    break; // One entry per campaign — stop scanning this campaign's items.
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get usage counts for multiple media IDs at once.
      *
      * @since 0.18.0 P20-I-2

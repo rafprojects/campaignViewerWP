@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
@@ -34,6 +34,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     cardStyle,
     dragHandleProps,
   }, ref) => {
+    const [badgeHovered, setBadgeHovered] = useState(false);
     const isClickableImage = item.type === 'image' && onImageClick;
     const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
     const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
@@ -71,7 +72,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               }
             }}
           >
-            <Box {...(styles.previewWrapper ? { className: styles.previewWrapper } : {})}>
+            <Box style={{ position: 'relative' }}>
               <Image
                 src={item.thumbnail ?? item.url}
                 alt={item.caption || 'Media thumbnail'}
@@ -82,15 +83,40 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               />
               <Box
                 data-testid="media-card-overlay-stack"
-                {...(styles.overlayStack ? { className: styles.overlayStack } : {})}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  zIndex: 2,
+                  maxWidth: 'calc(100% - 16px)',
+                  pointerEvents: 'none',
+                  overflow: 'hidden',
+                }}
               >
-                <Group gap={4} wrap="nowrap" align="center" {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
+                <Group gap={4} wrap="nowrap" align="center" style={{ pointerEvents: 'none' }}>
                   <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
                   <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
-                  {/* Future Admin Panel redesign: move overlayBadge into its own upper-left thumbnail overlay layer instead of this shared inline badge row. */}
-                  {overlayBadge}
                 </Group>
               </Box>
+              {overlayBadge && (
+                <Box
+                  data-testid="media-card-usage-overlay"
+                  onMouseEnter={() => setBadgeHovered(true)}
+                  onMouseLeave={() => setBadgeHovered(false)}
+                  style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    zIndex: 2,
+                    transition: 'filter 150ms ease',
+                    filter: badgeHovered
+                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--wpsg-color-primary) 80%, transparent))'
+                      : undefined,
+                  }}
+                >
+                  {overlayBadge}
+                </Box>
+              )}
             </Box>
           </Card.Section>
 
@@ -122,8 +148,19 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               </Group>
             </Group>
           ) : (
-            /* Compact/Small: hover overlay for actions */
             <Group justify="center" mt={4} gap={4}>
+              {dragHandleProps !== undefined && (
+                <ActionIcon
+                  size="sm"
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  {...(dragHandleProps as any)}
+                  variant="subtle"
+                  aria-label="Drag media to reorder"
+                  style={{ cursor: 'grab' }}
+                >
+                  <IconGripVertical size={14} />
+                </ActionIcon>
+              )}
               <ActionIcon size="sm" variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={14} /></ActionIcon>
               <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={14} /></ActionIcon>
             </Group>
