@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildMediaGridShellVars,
+  mapToMediaGridBreakpoint,
   mediaGridRowMaxWidthCss,
   resolveMediaGridColumns,
   resolveMediaGridPresetKey,
@@ -59,5 +60,19 @@ describe('mediaTabLayout', () => {
     expect(vars['--wpsg-media-grid-max-sm']).toBe('496px');
     expect(vars['--wpsg-media-grid-max-md']).toBe('752px');
     expect(vars['--wpsg-media-grid-max-lg']).toBe('752px');
+  });
+
+  describe('mapToMediaGridBreakpoint', () => {
+    it('maps mobile to base', () => {
+      expect(mapToMediaGridBreakpoint('mobile')).toBe('base');
+    });
+
+    it('maps tablet to md', () => {
+      expect(mapToMediaGridBreakpoint('tablet')).toBe('md');
+    });
+
+    it('maps desktop to lg', () => {
+      expect(mapToMediaGridBreakpoint('desktop')).toBe('lg');
+    });
   });
 });

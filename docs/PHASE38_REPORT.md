@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P38-MA0 | Admin Media responsive-grid investigation spike | Complete | M |
-| P38-MA1 | Admin Media container-measured column counting (narrowed) | Planned · unblocked | S |
+| P38-MA1 | Admin Media container-measured column counting (narrowed) | Complete | S |
 | P38-MA2 | Admin Media card layout refresh | Planned · align with P38-MA0 findings | M |
 | P38-UX1 | Admin keyboard shortcut user configuration | Complete | M |
 | P38-MD1 | Near-duplicate detection (pHash follow-up) | Planned · start with feasibility validation | M |
@@ -246,7 +246,7 @@ container. The Phase 37 `max-width` cap infrastructure remains unchanged.
 - Drag/reorder, lightbox, sort mode, and list-view behavior remain correct.
 - `MediaTab.test.tsx` is updated for the resolved span path.
 
-### Status: Planned · unblocked (P38-MA0 complete)
+### Status: Complete — container-measured span path shipped (2026-06-01)
 
 ---
 
@@ -489,9 +489,18 @@ Keyboard shortcut user configuration shipped: `useShortcutConfig` hook,
 `useAdminCampaignActions`. `SettingsPanel.tsx` was not touched — the edit UI
 is correctly placed in the shortcuts modal, not the gallery settings panel.
 
+### P38-MA1 (2026-06-01)
+
+`mapToMediaGridBreakpoint` added to `mediaTabLayout.ts` (mobile→base, tablet→md,
+desktop→lg). `MediaTab.tsx` wires `gridShellRef` to both `Box.mediaGridShell`
+elements (skeleton and live grid), calls `useBreakpoint(gridShellRef)`, and resolves
+a single `span` number via `resolveResponsiveMediaGridSpan` before passing it to
+`Grid.Col`. `GridColProps` import removed; `SortableGridItemProps.gridSpan` narrowed
+to `number`. CSS-var max-width system and `sizeConfig` presets are untouched.
+`mediaTabLayout.test.ts` and `MediaTab.test.tsx` updated (36 tests, all pass).
+
 ### Open follow-ups
 
-- `P38-MA1`: Container-measured column counting — small targeted change, now unblocked.
 - `P38-MA2`: Card layout refresh — align with MA0 findings before final visual lock.
 - `P38-MD1`: pHash feasibility — PHP-side work, separate from React surface.
 

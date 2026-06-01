@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import type { Breakpoint } from '@/hooks/useBreakpoint';
 
 export type MediaGridBreakpoint = 'base' | 'sm' | 'md' | 'lg';
 export type MediaGridPresetKey = 'compact' | 'small' | 'medium' | 'large';
@@ -95,4 +96,10 @@ export function buildMediaGridShellVars(
   }
 
   return vars;
+}
+
+export function mapToMediaGridBreakpoint(bp: Breakpoint): MediaGridBreakpoint {
+  if (bp === 'mobile') return 'base';
+  if (bp === 'tablet') return 'md';
+  return 'lg';
 }

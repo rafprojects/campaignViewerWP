@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Select, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type GridColProps, type Primitive } from '@mantine/core';
+import { Button, Grid, Image, Text, Group, SegmentedControl, Select, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type Primitive } from '@mantine/core';
 
 // Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
 // React's "maximum update depth" error when the component re-renders rapidly.
@@ -48,15 +48,18 @@ import type {
 } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useXhrUpload } from '@/hooks/useXhrUpload';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@/contexts/RootIdContext';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import {
   buildMediaGridShellVars,
+  mapToMediaGridBreakpoint,
   MEDIA_GRID_GUTTER_PX,
   MEDIA_GRID_MAX_WIDTHS,
   resolveMediaGridPresetKey,
+  resolveResponsiveMediaGridSpan,
 } from './mediaTabLayout';
 import styles from './MediaTab.module.scss';
 
@@ -214,7 +217,7 @@ type SortableGridItemProps = SharedSortableProps & {
   viewMode: ViewMode;
   cardSize: CardSize;
   mediaHeight: number;
-  gridSpan: GridColProps['span'];
+  gridSpan: number;
   showUrl: boolean;
 };
 
@@ -453,6 +456,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const mediaGridShellVars = useMemo(
     () => buildMediaGridShellVars(activeGridPreset, MEDIA_GRID_GUTTER_PX),
     [activeGridPreset],
+  );
+
+  const gridShellRef = useRef<HTMLDivElement | null>(null);
+  const { breakpoint: containerBp } = useBreakpoint(gridShellRef);
+  const resolvedSpan = useMemo(
+    () => resolveResponsiveMediaGridSpan(activeGridPreset.span, mapToMediaGridBreakpoint(containerBp)),
+    [activeGridPreset.span, containerBp],
   );
 
   // Show skeleton only on first load when no cached query data exists yet.
@@ -1069,10 +1079,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       </Group>
 
       {effectiveLoading ? (
-        <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+        <Box ref={gridShellRef} className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
           <Grid gap={MEDIA_GRID_GUTTER_PX}>
             {Array.from({ length: 6 }).map((_, i) => (
-              <Grid.Col key={i} span={activeGridPreset.span}>
+              <Grid.Col key={i} span={resolvedSpan}>
                 <Skeleton height={activeGridPreset.height} radius="md" />
               </Grid.Col>
             ))}
@@ -1130,7 +1140,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             </>
           ) : (
             <SortableContext items={mediaIds} strategy={rectSortingStrategy}>
-              <Box className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
+              <Box ref={gridShellRef} className={styles.mediaGridShell ?? ''} style={mediaGridShellVars} data-testid="media-grid-shell">
                 <Grid gap={MEDIA_GRID_GUTTER_PX}>
                   {displayedMedia.map((item) => (
                     <SortableGridItem
@@ -1140,7 +1150,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                       viewMode={viewMode}
                       cardSize={cardSize}
                       mediaHeight={activeGridPreset.height}
-                      gridSpan={activeGridPreset.span}
+                      gridSpan={resolvedSpan}
                       showUrl={viewMode !== 'compact' && cardSize === 'large'}
                     />
                   ))}

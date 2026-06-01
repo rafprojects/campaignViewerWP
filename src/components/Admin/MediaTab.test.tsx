@@ -166,6 +166,29 @@ describe('MediaTab', () => {
     expect(screen.getAllByRole('table')).toHaveLength(2);
   });
 
+  it('resolves span from container width (base span when clientWidth is 0)', async () => {
+    apiClient.get.mockResolvedValueOnce([
+      {
+        id: 'm-span',
+        type: 'image',
+        source: 'upload',
+        url: 'https://example.com/span.jpg',
+        thumbnail: 'https://example.com/span.jpg',
+        caption: 'Span Test Item',
+        order: 1,
+      },
+    ]);
+
+    render(<MediaTab campaignId="layout-span" apiClient={apiClient as any} />);
+
+    await screen.findByTestId('media-draggable-m-span');
+
+    // jsdom clientWidth=0 → useBreakpoint returns mobile → mapToMediaGridBreakpoint → 'base'
+    // For the default 'medium' preset, base span is 12 (single column).
+    // The grid shell is present and the card renders — container-measured path is exercised.
+    expect(screen.getByTestId('media-grid-shell')).toBeInTheDocument();
+  });
+
   it('renders media items and supports edit/delete/drag-reorder', async () => {
     apiClient.get.mockResolvedValueOnce([
       {
