@@ -286,7 +286,7 @@ function AppContent({
         style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
       >
         {!isAuthenticated && isReady && (
-          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered>
+          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered withinPortal={false}>
             <LoginForm onSubmit={handleLogin} compact minPasswordLength={resolvedSettings.loginMinPasswordLength} />
           </Modal>
         )}
