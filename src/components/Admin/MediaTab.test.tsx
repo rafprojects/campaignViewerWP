@@ -89,9 +89,9 @@ describe('MediaTab', () => {
     await screen.findByText('Overlay Item');
 
     const gridItem = screen.getByTestId('media-draggable-m1');
-    const overlay = within(gridItem).getByTestId('media-card-overlay-stack');
+    const usageOverlay = within(gridItem).getByTestId('media-card-usage-overlay');
 
-    expect(within(overlay).getByText('2 campaigns')).toBeInTheDocument();
+    expect(within(usageOverlay).getByText('2 campaigns')).toBeInTheDocument();
     expect(gridItem.querySelector('[style*="bottom: 8px"][style*="left: 8px"]')).toBeNull();
   });
 
