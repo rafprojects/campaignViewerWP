@@ -2717,6 +2717,7 @@ class WPSG_REST {
     // Returns ['id' => int, 'url' => string, 'distance' => int] or [].
     private static function find_near_duplicates_by_phash(string $phash, int $threshold): array {
         global $wpdb;
+        $limit = max(1, intval(apply_filters('wpsg_phash_max_scan', 5000)));
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT pm.post_id, pm.meta_value
@@ -2724,8 +2725,10 @@ class WPSG_REST {
                  INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
                  WHERE pm.meta_key = %s
                    AND p.post_type = 'attachment'
-                   AND p.post_status = 'inherit'",
-                '_wpsg_file_phash'
+                   AND p.post_status = 'inherit'
+                 LIMIT %d",
+                '_wpsg_file_phash',
+                $limit
             ),
             ARRAY_A
         );

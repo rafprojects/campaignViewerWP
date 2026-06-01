@@ -84,6 +84,10 @@ export function useShortcutConfig(): ShortcutConfigHandle {
   const updateShortcut = useCallback((id: ShortcutActionId, key: string): string | null => {
     const normalized = key.trim().toLowerCase();
 
+    if (!normalized) {
+      return 'Shortcut key cannot be empty';
+    }
+
     if (RESERVED_KEYS.has(normalized)) {
       return `"${key}" is reserved and cannot be used`;
     }

@@ -627,6 +627,67 @@ correct identity semantics at zero extra cost.
 **Changes:** `MediaTab.tsx` ~line 641 — `nearDupFilenames` (Set of `.name` strings)
 replaced with `nearDupFiles` (Set of `File` references); filter updated accordingly.
 
+## PR Review — Comment Resolutions (PR #53, Round 2)
+
+### Thread: `find_near_duplicates_by_phash()` scalability concern (Copilot — Round 2)
+
+**Decision: Accept (partial — max-scan limit).**
+
+The O(N) full-scan concern was partially addressed in Round 1 (attachment JOIN +
+early-exit on distance 0). Copilot's suggestion of a dedicated indexed table or
+prefix bucketing is out of scope for this PR. The pragmatic middle ground is a
+configurable row cap: a `wpsg_phash_max_scan` filter (default 5000) maps to a
+`LIMIT %d` in the SQL, bounding worst-case memory and time without a schema change.
+Implementors needing coverage beyond 5000 hashed attachments can raise the limit
+via the filter or introduce a dedicated lookup table in a future phase.
+
+**Changes:** `class-wpsg-rest.php` `find_near_duplicates_by_phash()` — `LIMIT %d`
+added to query, driven by `apply_filters('wpsg_phash_max_scan', 5000)`.
+
+### Thread: `get_campaigns_for_attachment_id()` N+1 meta reads (Copilot — Round 2)
+
+**Decision: Reject.**
+
+This function runs only on the rare duplicate/near-duplicate detection path (at most
+once per upload attempt that happens to collide). The suggested fix — querying
+`postmeta` with LIKE for a serialized `media_items` value — is fragile against PHP
+serialization format variations and not meaningfully faster for typical campaign
+counts. Flagged for future consideration if a campaign→attachment mapping table is
+introduced.
+
+### Thread: PHash test suite missing GD availability guard (Copilot — Round 2)
+
+**Decision: Accept.**
+
+`WPSG_P38MD1_PHash_Test` uses `imagecreatetruecolor()` / `imagepng()` throughout.
+Without a guard, the suite hard-fails in environments without GD. Pattern taken from
+`WPSG_Image_Optimizer_Test`.
+
+**Changes:** `WPSG_P38MD1_PHash_Test::setUp()` — early `markTestSkipped` when
+`imagecreatetruecolor` is not available.
+
+### Thread: Batch upload test `create_temp_gif()` missing GD guard (Copilot — Round 2)
+
+**Decision: Accept.**
+
+`WPSG_P28D_Batch_Media_Upload_Test::create_temp_gif()` was rewritten from a
+base64-fixture approach to GD-based image generation. Same GD guard needed.
+
+**Changes:** `WPSG_P28D_Batch_Media_Upload_Test::setUp()` — early `markTestSkipped`
+when `imagecreatetruecolor` is not available.
+
+### Thread: `updateShortcut()` allows empty/whitespace key binding (Copilot — Round 2)
+
+**Decision: Accept.**
+
+An empty string passes the reserved-key check, conflicts check, and ends up stored
+in the overrides map, producing an unrecoverable binding. Added an explicit guard
+before the reserved-key check that returns a validation error for empty/whitespace
+input.
+
+**Changes:** `useShortcutConfig.ts` `updateShortcut()` — empty `normalized` check
+added as the first guard.
+
 ---
 
 ## Outcome

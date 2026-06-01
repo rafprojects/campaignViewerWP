@@ -5,6 +5,10 @@ class WPSG_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
     private $admin_id;
 
     public function setUp(): void {
+        if (!function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension not available');
+        }
+
         parent::setUp();
 
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
