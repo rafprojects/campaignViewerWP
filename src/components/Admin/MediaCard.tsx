@@ -1,4 +1,4 @@
-import { forwardRef, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
@@ -34,6 +34,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     cardStyle,
     dragHandleProps,
   }, ref) => {
+    const [badgeHovered, setBadgeHovered] = useState(false);
     const isClickableImage = item.type === 'image' && onImageClick;
     const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
     const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
@@ -100,8 +101,19 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               {overlayBadge && (
                 <Box
                   data-testid="media-card-usage-overlay"
-                  className={styles.usageBadgeInteractive ?? ''}
-                  style={{ position: 'absolute', bottom: 8, right: 8, zIndex: 2 }}
+                  onMouseEnter={() => setBadgeHovered(true)}
+                  onMouseLeave={() => setBadgeHovered(false)}
+                  style={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    zIndex: 2,
+                    borderRadius: 'var(--mantine-radius-xl)',
+                    transition: 'box-shadow 150ms ease',
+                    boxShadow: badgeHovered
+                      ? '0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 40%, transparent)'
+                      : undefined,
+                  }}
                 >
                   {overlayBadge}
                 </Box>
