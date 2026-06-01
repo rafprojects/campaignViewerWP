@@ -71,7 +71,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               }
             }}
           >
-            <Box {...(styles.previewWrapper ? { className: styles.previewWrapper } : {})}>
+            <Box style={{ position: 'relative' }}>
               <Image
                 src={item.thumbnail ?? item.url}
                 alt={item.caption || 'Media thumbnail'}
@@ -82,9 +82,17 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               />
               <Box
                 data-testid="media-card-overlay-stack"
-                {...(styles.overlayStack ? { className: styles.overlayStack } : {})}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  zIndex: 2,
+                  maxWidth: 'calc(100% - 16px)',
+                  pointerEvents: 'none',
+                  overflow: 'hidden',
+                }}
               >
-                <Group gap={4} wrap="nowrap" align="center" {...(styles.badgeGroup ? { className: styles.badgeGroup } : {})}>
+                <Group gap={4} wrap="nowrap" align="center" style={{ pointerEvents: 'none' }}>
                   <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
                   <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
                 </Group>
@@ -92,7 +100,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
               {overlayBadge && (
                 <Box
                   data-testid="media-card-usage-overlay"
-                  {...(styles.usageBadgeOverlay ? { className: styles.usageBadgeOverlay } : {})}
+                  style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}
                 >
                   {overlayBadge}
                 </Box>

@@ -14,34 +14,6 @@
   }
 }
 
-.previewWrapper {
-  position: relative;
-}
-
-.overlayStack {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 2;
-  max-width: calc(100% - 16px);
-  pointer-events: none;
-  overflow: hidden;
-}
-
-.badgeGroup {
-  pointer-events: none;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-
-.usageBadgeOverlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 2;
-  pointer-events: auto;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .mediaCard {
     transition: none;
