@@ -739,6 +739,11 @@ turning this track into a full responsive-layout refactor.
 - `src/components/Admin/MediaTab.module.scss` applies the responsive
   base/sm/md/lg width caps to that grid shell; list view remains outside this
   path.
+- Post-implementation build follow-up: `CompactGridGallery` and `Lightbox`
+  import paths were made consistent, `ErrorBoundary.tsx` moved Sentry capture to
+  the same lazy import path used by monitoring init, and `vite.config.ts`
+  vendor chunking was refined. `npm run build:wp` now completes without the
+  earlier import-splitting warnings or chunk-size warnings.
 - Focused validation passed: `npx vitest run src/components/Admin/mediaTabLayout.test.ts src/components/Admin/MediaTab.test.tsx`.
 - Manual QA across narrow/default/wide admin-panel widths is still required
   before this track can move to Complete.

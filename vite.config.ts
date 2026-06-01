@@ -4,6 +4,68 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
 
+function resolveVendorChunk(id: string): string | undefined {
+  if (!id.includes('/node_modules/')) {
+    return undefined
+  }
+
+  const matchesAny = (needles: string[]) => needles.some((needle) => id.includes(needle))
+
+  if (matchesAny(['dockview'])) {
+    return 'vendor-dockview'
+  }
+
+  if (matchesAny([
+    '@mantine/core',
+    '@mantine/form',
+    '@mantine/modals',
+    '@mantine/notifications',
+    '@floating-ui/',
+  ])) {
+    return 'vendor-mantine-core'
+  }
+
+  if (matchesAny([
+    '@mantine/',
+    'react-transition-group',
+    'react-remove-scroll',
+    'react-remove-scroll-bar',
+    'react-style-singleton',
+    'use-callback-ref',
+    'use-sidecar',
+    'tabbable',
+    'aria-hidden',
+  ])) {
+    return 'vendor-mantine-helpers'
+  }
+
+  if (matchesAny(['@tabler/icons-react'])) {
+    return 'vendor-icons'
+  }
+
+  if (matchesAny(['@tanstack/react-query'])) {
+    return 'vendor-query'
+  }
+
+  if (matchesAny(['embla-carousel', 'embla-carousel-react', 'embla-carousel-autoplay'])) {
+    return 'vendor-carousel'
+  }
+
+  if (matchesAny(['recharts', 'victory-vendor', 'redux', 'redux-thunk', 'reselect'])) {
+    return 'vendor-charts'
+  }
+
+  if (matchesAny(['react-rnd', 'react-photo-album', 'react-zoom-pan-pinch'])) {
+    return 'vendor-gallery'
+  }
+
+  if (matchesAny(['chroma-js', 'dayjs', 'dompurify', 'immer', 'zod', 'zustand'])) {
+    return 'vendor-utils'
+  }
+
+  return undefined
+}
+
 export default defineConfig({
   base: './',
   plugins: [
@@ -26,14 +88,7 @@ export default defineConfig({
     cssCodeSplit: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Core vendor chunks
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-mantine': ['@mantine/core', '@mantine/hooks', '@mantine/modals', '@mantine/notifications'],
-          'vendor-icons': ['@tabler/icons-react'],
-          // Dockview — isolated so it only loads when LayoutBuilderModal opens (lazy).
-          'vendor-dockview': ['dockview'],
-        },
+        manualChunks: resolveVendorChunk,
       },
     },
     chunkSizeWarningLimit: 600,

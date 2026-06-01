@@ -18,6 +18,7 @@ import type {
 } from './GalleryAdapter';
 import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 import { MediaCarouselAdapter } from './MediaCarouselAdapter';
+import { CompactGridGallery } from './compact-grid/CompactGridGallery';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;
@@ -25,9 +26,6 @@ export interface AdapterSelectOption {
   disabled?: boolean;
 }
 
-const CompactGridGallery = lazy(() =>
-  import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
-);
 const JustifiedGallery = lazy(() =>
   import('@/components/Galleries/Adapters/justified/JustifiedGallery').then((m) => ({ default: m.JustifiedGallery })),
 );
