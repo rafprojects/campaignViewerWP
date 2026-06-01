@@ -25,14 +25,14 @@ interface CampaignCardSettingsSectionProps {
   updateSetting: UpdateGallerySetting;
   activeBreakpoint: CardConfigBreakpoint;
   /** P37-LB: Required to fetch layout templates for the listing-builder template selector. */
-  apiClient?: ApiClient;
+  apiClient: ApiClient;
 }
 
 export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint, apiClient }: CampaignCardSettingsSectionProps) {
   const isDesktop = activeBreakpoint === 'desktop';
 
   // P37-LB: Fetch layout templates for listing-builder template selector
-  const { data: layoutTemplates } = useLayoutTemplates(apiClient as ApiClient, !!apiClient);
+  const { data: layoutTemplates } = useLayoutTemplates(apiClient);
 
   // Resolved settings = flat base + cascaded overrides for the active breakpoint.
   const resolved = useMemo(

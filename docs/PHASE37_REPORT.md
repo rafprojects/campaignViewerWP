@@ -805,6 +805,27 @@ flag). These are pre-implementation gates for Pass A and Pass B respectively.
 
 ---
 
+## PR Review — Comment Resolutions (PR #52)
+
+### Thread: `CampaignCardSettingsSection` — `apiClient` prop optionality (Copilot)
+
+**Decision: Accept.**
+
+`useLayoutTemplates` calls `getLayoutTemplatesQueryKey(apiClient)` synchronously
+at render time to build the React Query key, which in turn calls
+`apiClient.getBaseUrl()`. This happens before the `enabled` guard is checked, so
+passing `undefined` cast as `ApiClient` would throw if the prop were ever omitted.
+
+The `enabled: !!apiClient` workaround masked the real issue rather than fixing it.
+Since the only caller (`SettingsPanel`) always supplies a required `ApiClient`, the
+correct fix is to make the prop required in the interface and remove both the unsafe
+`as ApiClient` cast and the redundant `!!apiClient` guard.
+
+**Changes:** `CampaignCardSettingsSectionProps.apiClient` changed from optional to
+required; `useLayoutTemplates` call simplified to `useLayoutTemplates(apiClient)`.
+
+---
+
 ## Outcome
 
 _To be filled when Phase 37 is marked Complete._
