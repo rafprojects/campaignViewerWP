@@ -1409,6 +1409,12 @@ class WPSG_REST {
             return true;
         }
 
+        // Application Password auth uses HTTP Basic. WP authenticates it before this
+        // callback runs — no CSRF nonce is needed (nonces protect cookie sessions only).
+        if (!empty($auth_header) && stripos($auth_header, 'Basic ') === 0) {
+            return is_user_logged_in();
+        }
+
         // Allow nonce bypass ONLY when the explicit WPSG_ALLOW_NONCE_BYPASS
         // constant is set AND we are in a recognised test/debug environment.
         // wp-env's test container sets WP_DEBUG=false in wp-config.php, so we

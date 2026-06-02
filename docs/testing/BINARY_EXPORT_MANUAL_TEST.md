@@ -39,25 +39,19 @@ npx wp-env run cli wp user application-password create admin test-token --porcel
 
 Save the printed token. Use it as `<APP_PASS>` throughout this guide.
 
-### 4. Nonce
+### 4. Plugin activation
 
-Admin routes require an `X-WP-Nonce` header alongside Application Password
-auth. Generate one:
+After a fresh `wp-env start`, run the plugin activation sequence to ensure the
+`manage_wpsg` capability is assigned:
 
 ```bash
-NONCE=$(npx wp-env run cli wp eval --user=1 'echo wp_create_nonce("wp_rest");' 2>/dev/null)
-echo "NONCE=[$NONCE]"
+npx wp-env run cli wp plugin deactivate wp-super-gallery
+npx wp-env run cli wp plugin activate wp-super-gallery
 ```
 
-The nonce is valid for ~12 hours. Re-run this in any new terminal session.
-
-> **Note:** After a fresh `wp-env start`, run the plugin activation sequence to
-> ensure the `manage_wpsg` capability is assigned:
->
-> ```bash
-> npx wp-env run cli wp plugin deactivate wp-super-gallery
-> npx wp-env run cli wp plugin activate wp-super-gallery
-> ```
+> **Note:** Application Passwords authenticate at the HTTP transport layer, so
+> no `X-WP-Nonce` header is needed for the curl commands in this guide. Nonces
+> are only required for cookie-based (browser) sessions.
 
 ### 5. A note on media URLs in wp-env
 
@@ -72,23 +66,23 @@ HTTP client, which is the normal case.
 
 ## Helper variable
 
-All admin curl calls share the same auth flags. To keep commands readable,
-define:
+All admin curl calls use Application Password auth. To avoid repeating flags,
+use a bash array:
 
 ```bash
-AUTH='-u "admin:<APP_PASS>" -H "X-WP-Nonce: '$NONCE'"'
+APP_PASS="<paste token from step 3>"
+AUTH=(-u "admin:$APP_PASS")
 ```
 
-Or paste the flags directly — each command below shows them in full.
+Then every curl call below uses `"${AUTH[@]}"` to expand correctly. No nonce
+needed — Application Passwords authenticate at the HTTP level.
 
 ---
 
 ## Step 1 — Verify new REST routes are registered
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   http://localhost:8888/wp-json/wp-super-gallery/v1 \
   | python3 -m json.tool | grep -E "export|import/binary"
 ```
@@ -132,9 +126,7 @@ npx wp-env run cli wp eval "
 Verify the campaign exists:
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID
 ```
 
@@ -145,9 +137,7 @@ Expected: JSON object with `"title": "Binary Export Test"` and `"status": "activ
 ## Step 3 — Start a binary export job
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X POST \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export/binary
 ```
@@ -186,9 +176,7 @@ already fired automatically, this is a no-op.
 ## Step 5 — Poll job status
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID \
   | python3 -m json.tool
 ```
@@ -215,10 +203,8 @@ cause.
 ## Step 6 — Download the ZIP
 
 ```bash
-curl -s \
+curl -s "${AUTH[@]}" \
   -o campaign-$CID.zip \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
   "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID/download"
 
 ls -lh campaign-$CID.zip
@@ -270,9 +256,7 @@ Check:
 Upload the ZIP and import it as a new campaign:
 
 ```bash
-IMPORT_RESP=$(curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+IMPORT_RESP=$(curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@campaign-$CID.zip" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary)
@@ -328,9 +312,7 @@ campaign appears in the list with status "Draft".
 After a successful download, delete the server-side job and its ZIP file:
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X DELETE \
   "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID"
 ```
@@ -340,9 +322,7 @@ Expected: `{"deleted": true}`
 Polling the job ID again should now return `404`:
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID \
   | python3 -m json.tool
 ```
@@ -430,17 +410,13 @@ try to download — the job should still be pending.
 > behaviour, not a bug. Check the job status with Step 5 to confirm.
 
 ```bash
-JOB_PENDING=$(curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+JOB_PENDING=$(curl -s "${AUTH[@]}" \
   -X POST \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export/binary \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['jobId'])")
 
 # Attempt download immediately (before triggering cron)
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_PENDING/download"
 ```
 
@@ -449,9 +425,7 @@ Expected (if cron has not yet fired): `HTTP 409` — `"Export is not complete (s
 Clean up:
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X DELETE \
   "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_PENDING"
 ```
@@ -462,9 +436,7 @@ Create a ZIP with a version-1 manifest (the original JSON export format):
 
 ```bash
 # Get a JSON export, zip it up as if it were a binary export
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export \
   > manifest_v1.json
 
@@ -475,9 +447,7 @@ with zipfile.ZipFile('/tmp/bad-version.zip', 'w') as z:
     z.write('manifest_v1.json', 'manifest.json')
 "
 
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@/tmp/bad-version.zip" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary
@@ -494,9 +464,7 @@ with zipfile.ZipFile('/tmp/no-manifest.zip', 'w') as z:
     z.writestr('readme.txt', 'no manifest here')
 "
 
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@/tmp/no-manifest.zip" \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary
@@ -507,9 +475,7 @@ Expected: `HTTP 400` — `"manifest.json not found in archive"`
 ### 10d — Export of a non-existent campaign
 
 ```bash
-curl -s \
-  -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+curl -s "${AUTH[@]}" \
   -X POST \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/999999/export/binary
 ```
@@ -522,8 +488,8 @@ Expected: `HTTP 404` — `"Campaign not found"`
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| `rest_forbidden` 401 | Plain password used | Use an Application Password |
-| `rest_forbidden` 403 | `manage_wpsg` cap missing or nonce absent | Re-run plugin deactivate/activate; regenerate `$NONCE` |
+| `rest_forbidden` 401 | Plain password used, or `AUTH` array not set | Use an Application Password; define `AUTH=(-u "admin:$APP_PASS")` |
+| `rest_forbidden` 403 | `manage_wpsg` cap missing | Re-run plugin deactivate/activate |
 | Job stuck at `pending` after cron trigger | WP-Cron already ran and failed silently | Poll the job — check `error` field; re-run `wp cron event run` |
 | `status: failed`, `error: "ext-zip is required"` | `ZipArchive` not available in the container | Verify with `npx wp-env run cli php -r "echo class_exists('ZipArchive');"` |
 | `status: failed`, `error: "Export would exceed … MB size limit"` | Total media size exceeds 100 MB | Use a campaign with fewer or smaller media items for testing |
