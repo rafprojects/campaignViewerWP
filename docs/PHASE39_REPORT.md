@@ -11,7 +11,7 @@
 | P39-CO1 | CORS origin allow-list and admin UI | Deferred — returned to FUTURE_TASKS | M |
 | P39-AU1 | JWT in-memory token auth for standalone SPA | Deferred — returned to FUTURE_TASKS | L |
 | P39-IN1 | Webhook support for campaign events | Complete | L |
-| P39-CM1 | Campaign export full binary media export | Planned · requires export-mode and packaging decisions | M |
+| P39-CM1 | Campaign export full binary media export | Complete | M |
 | P39-OC1 | Redis/Memcached object-cache guidance and health surface | Planned | M |
 | P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Planned · do after other P39 tracks | S |
 
@@ -419,7 +419,43 @@ URLs remain reachable.
 - Import behavior for packaged exports is defined and testable.
 - Coverage exists for generation, failure, and round-trip cases.
 
-### Status: Planned · requires export-mode and packaging decisions
+### Status: Complete
+
+### Implementation notes
+
+**Design decisions:**
+- **Archive dependency**: `ext-zip` (`ZipArchive`) required. Engine checks availability at export request time and returns a clear 500 if missing.
+- **Size limit**: 100 MB total. HEAD check used to reject early; per-file and cumulative checks during download.
+- **Generation mode**: Background via WP-Cron (REST path) + synchronous for CLI.
+- **Modular engine**: `WPSG_Export_Engine` owns all job plumbing and ZIP packaging. Future export types (audit, media library) hand the engine a manifest + media list; the engine handles the rest.
+
+**New files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-export-engine.php` — reusable background export job manager: `create_job()`, `get_job()`, `delete_job()`, `process_job()` (WP-Cron callback), `cleanup_expired_jobs()`, `get_media_filename()` (deterministic naming shared by manifest builder and ZIP builder), `check_zip_available()`. Job state stored in transients; job IDs tracked in `wpsg_export_job_index` option.
+- `wp-plugin/wp-super-gallery/tests/WPSG_P39CM1_Export_Test.php` — 24 PHP tests covering engine CRUD, ZIP building, size-limit enforcement, cleanup, all 5 REST routes, manifest structure, filename consistency between manifest and ZIP.
+- `src/services/api/exportApi.ts` — `ExportApi` domain module: `startCampaignBinaryExport()`, `getExportJob()`, `deleteExportJob()`, `downloadExportJob()` (fetch with auth headers → blob download).
+- `wp-plugin/wp-super-gallery/tests/stubs/1x1.jpg` — minimal JPEG stub for HTTP-intercepted media fetch tests.
+
+**Modified files:**
+- `wp-plugin/wp-super-gallery/wp-super-gallery.php` — `require_once` + `add_action('init', ['WPSG_Export_Engine', 'register'])` + deactivation cleanup for both `JOB_PROCESS_HOOK` and `JOB_CLEANUP_HOOK`.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` — 5 new REST routes (`POST /campaigns/{id}/export/binary`, `GET /export-jobs/{id}`, `DELETE /export-jobs/{id}`, `GET /export-jobs/{id}/download`, `POST /campaigns/import/binary`) with corresponding callbacks. Binary import is SSRF-safe: reads media from the ZIP archive, never follows URLs from the manifest.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-cli.php` — extended `campaign_export` with `--format=binary [--output=path]` (synchronous: creates job then processes immediately, no WP-Cron needed in CLI context); extended `campaign_import` to auto-detect `.zip` extension and call `campaign_import_binary()`.
+- `src/services/apiClient.ts` — imports `ExportApi`, exposes `startCampaignBinaryExport`, `getExportJob`, `deleteExportJob`, `downloadExportJob`.
+- `src/hooks/useAdminCampaignActions.ts` — `handleBinaryExportCampaign`: starts job, polls every 3s up to 5 min, then calls `downloadExportJob()` and cleans up the server-side job. `binaryExportingIds` set tracks in-flight exports per campaign.
+
+**ZIP archive format (manifest version 2):**
+```
+campaign-{id}.zip
+├── manifest.json   (version: 2; media_references include "filename" field)
+└── media/
+    ├── media-{id1}.jpg
+    └── media-{id2}.png
+```
+
+**Import flow:** ZIP upload → extract `manifest.json` → validate version 2 → create campaign post → sideload each `media/{filename}` via `media_handle_sideload()` (WP attachment creation) → store attachment IDs + URLs in `media_items` meta.
+
+**PHP test count:** 24 tests in `WPSG_P39CM1_Export_Test.php`. Full suite: 804 tests, 2527 assertions — clean.
+
+**Future extensions** (planned via FUTURE_TASKS): audit log binary export, media library binary export. Both would reuse `WPSG_Export_Engine` with a different manifest builder.
 
 ---
 

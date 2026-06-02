@@ -50,6 +50,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -71,6 +72,8 @@ function wpsg_deactivate() {
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
     wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
     wp_clear_scheduled_hook(WPSG_Webhooks::RETRY_HOOK);
+    wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_PROCESS_HOOK);
+    wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_CLEANUP_HOOK);
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -126,6 +129,7 @@ add_action('init', ['WPSG_Maintenance', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Webhooks', 'register']);
+add_action('init', ['WPSG_Export_Engine', 'register']);
 
 // P20-I-2: Automatically sync media refs whenever media_items meta is updated.
 add_action('updated_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {

@@ -197,6 +197,41 @@ class WPSG_REST {
             ],
         ]);
 
+        // P39-CM1: Binary export / import
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'export_campaign_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/campaigns/import/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'import_campaign_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_export_job'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_export_job'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})/download', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'download_export_job'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
         // P18-G: Media usage tracking — summary route BEFORE parameterised route
         register_rest_route('wp-super-gallery/v1', '/media/usage-summary', [
             [
@@ -2039,6 +2074,321 @@ class WPSG_REST {
         self::clear_accessible_campaigns_cache();
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // P39-CM1: Binary export / import
+    // ─────────────────────────────────────────────────────────────────────
+
+    // POST /campaigns/{id}/export/binary — enqueue a background ZIP export job.
+    public static function export_campaign_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 500]
+            );
+        }
+
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $post     = get_post($post_id);
+        $campaign = self::format_campaign($post);
+        $media    = get_post_meta($post_id, 'media_items', true) ?: [];
+
+        $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+        $layout_template = null;
+        if ($template_id) {
+            $tmpl = get_post(intval($template_id));
+            if ($tmpl) {
+                $layout_template = [
+                    'id'             => (string) $tmpl->ID,
+                    'title'          => $tmpl->post_title,
+                    'slots'          => get_post_meta($tmpl->ID, 'slots', true) ?: [],
+                    'background'     => get_post_meta($tmpl->ID, 'background', true) ?: [],
+                    'graphicLayers'  => get_post_meta($tmpl->ID, 'graphic_layers', true) ?: [],
+                ];
+            }
+        }
+
+        // Build v2 manifest — same as v1 but version=2 and each media_reference
+        // carries a `filename` matching the file the engine will write to media/.
+        $media_references = array_values(array_map(function ($item) {
+            return [
+                'id'       => $item['id'] ?? '',
+                'url'      => $item['url'] ?? '',
+                'title'    => $item['title'] ?? '',
+                'filename' => WPSG_Export_Engine::get_media_filename($item),
+            ];
+        }, (array) $media));
+
+        $manifest = wp_json_encode([
+            'version'          => 2,
+            'exported_at'      => gmdate('c'),
+            'campaign'         => $campaign,
+            'layout_template'  => $layout_template,
+            'media_references' => $media_references,
+        ]);
+
+        $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
+
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
+    // GET /export-jobs/{job_id} — poll job status.
+    public static function get_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        $payload = [
+            'jobId'      => $job['id'],
+            'type'       => $job['type'],
+            'status'     => $job['status'],
+            'createdAt'  => $job['created_at'],
+            'error'      => $job['error'],
+        ];
+
+        if ($job['status'] === 'complete') {
+            $payload['downloadUrl'] = rest_url('wp-super-gallery/v1/export-jobs/' . $job_id . '/download');
+        }
+
+        return new WP_REST_Response($payload, 200);
+    }
+
+    // DELETE /export-jobs/{job_id} — cancel / discard a job.
+    public static function delete_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        WPSG_Export_Engine::delete_job($job_id);
+        return new WP_REST_Response(['deleted' => true], 200);
+    }
+
+    // GET /export-jobs/{job_id}/download — stream the ZIP file.
+    public static function download_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        if ($job['status'] !== 'complete') {
+            return new WP_Error(
+                'wpsg_not_ready',
+                'Export is not complete (status: ' . esc_html($job['status']) . ')',
+                ['status' => 409]
+            );
+        }
+
+        $zip_path = $job['zip_path'];
+        if (!$zip_path || !file_exists($zip_path)) {
+            return new WP_Error('wpsg_file_missing', 'Export file not found', ['status' => 404]);
+        }
+
+        $filename = basename($zip_path);
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($zip_path));
+        header('Cache-Control: no-store');
+        readfile($zip_path); // phpcs:ignore WordPress.WP.AlternativeFunctions
+        // phpcs:enable
+        exit;
+    }
+
+    // POST /campaigns/import/binary — accept a ZIP upload and import its campaign.
+    public static function import_campaign_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary import.',
+                ['status' => 500]
+            );
+        }
+
+        $files = $request->get_file_params();
+        if (empty($files['file'])) {
+            return new WP_Error('wpsg_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
+        }
+
+        $file = $files['file'];
+        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
+            return new WP_Error('wpsg_upload_error', 'File upload failed', ['status' => 400]);
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($file['tmp_name']) !== true) {
+            return new WP_Error('wpsg_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
+        }
+
+        $manifest_json = $zip->getFromName('manifest.json');
+        if ($manifest_json === false) {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
+        }
+
+        $body = json_decode($manifest_json, true);
+        if (!$body || !isset($body['campaign'])) {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+        }
+
+        $version = intval($body['version'] ?? 0);
+        if ($version !== 2) {
+            $zip->close();
+            return new WP_Error(
+                'wpsg_unsupported_version',
+                'Binary import requires manifest version 2',
+                ['status' => 400]
+            );
+        }
+
+        // Create the campaign post.
+        $src         = $body['campaign'];
+        $title       = sanitize_text_field($src['title'] ?? 'Imported Campaign');
+        $description = sanitize_textarea_field($src['description'] ?? '');
+
+        $post_id = wp_insert_post([
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_type'    => 'wpsg_campaign',
+            'post_status'  => 'publish',
+        ], true);
+
+        if (is_wp_error($post_id)) {
+            $zip->close();
+            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+        }
+
+        // Apply scalar campaign meta (same as JSON import).
+        $meta_map = [
+            'visibility'  => 'visibility',
+            'tags'        => 'tags',
+            'coverImage'  => 'cover_image',
+            'publishAt'   => 'publish_at',
+            'unpublishAt' => 'unpublish_at',
+        ];
+        update_post_meta($post_id, 'status', 'draft');
+        foreach ($meta_map as $src_key => $meta_key) {
+            if (!empty($src[$src_key])) {
+                if ($src_key === 'tags' && is_array($src[$src_key])) {
+                    update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } else {
+                    update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
+                }
+            }
+        }
+
+        $gallery_overrides = self::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
+        if (!empty($gallery_overrides)) {
+            update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
+        }
+
+        // Embed layout template if present.
+        $layout_template = $body['layout_template'] ?? null;
+        if ($layout_template && is_array($layout_template)) {
+            $sanitized = WPSG_Layout_Templates::sanitize_template_data($layout_template);
+            $tmpl_id   = wp_insert_post([
+                'post_title'  => sanitize_text_field($layout_template['title'] ?? 'Imported Template'),
+                'post_type'   => 'wpsg_layout_template',
+                'post_status' => 'publish',
+            ]);
+            if (!is_wp_error($tmpl_id)) {
+                update_post_meta($tmpl_id, 'slots', $sanitized['slots']);
+                update_post_meta($tmpl_id, 'background', [
+                    'backgroundMode'             => $sanitized['backgroundMode'],
+                    'backgroundColor'            => $sanitized['backgroundColor'],
+                    'backgroundGradientDirection' => $sanitized['backgroundGradientDirection'],
+                    'backgroundGradientStops'    => $sanitized['backgroundGradientStops'],
+                    'backgroundGradientType'     => $sanitized['backgroundGradientType'],
+                    'backgroundGradientAngle'    => $sanitized['backgroundGradientAngle'],
+                    'backgroundRadialShape'      => $sanitized['backgroundRadialShape'],
+                    'backgroundRadialSize'       => $sanitized['backgroundRadialSize'],
+                    'backgroundGradientCenterX'  => $sanitized['backgroundGradientCenterX'],
+                    'backgroundGradientCenterY'  => $sanitized['backgroundGradientCenterY'],
+                    'backgroundImage'            => $sanitized['backgroundImage'],
+                    'backgroundImageFit'         => $sanitized['backgroundImageFit'],
+                    'backgroundImageOpacity'     => $sanitized['backgroundImageOpacity'],
+                ]);
+                update_post_meta($tmpl_id, 'graphic_layers', $sanitized['overlays']);
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id);
+                if (!empty($src['layoutBinding'])) {
+                    $binding = $src['layoutBinding'];
+                    if (is_array($binding)) {
+                        array_walk_recursive($binding, function (&$v) {
+                            if (is_string($v)) { $v = sanitize_text_field($v); }
+                        });
+                    }
+                    update_post_meta($post_id, '_wpsg_layout_binding', $binding);
+                }
+            }
+        }
+
+        // Sideload media from the ZIP — SSRF-safe: we read from the archive,
+        // never from the URLs in the manifest.
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $media_items = [];
+        foreach ((array) ($body['media_references'] ?? []) as $ref) {
+            $filename = sanitize_file_name($ref['filename'] ?? '');
+            if (!$filename) {
+                continue;
+            }
+
+            $file_data = $zip->getFromName('media/' . $filename);
+            if ($file_data === false) {
+                continue;
+            }
+
+            $tmp = wp_tempnam($filename);
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            file_put_contents($tmp, $file_data);
+            unset($file_data);
+
+            $file_array = ['name' => $filename, 'tmp_name' => $tmp];
+            $att_id     = media_handle_sideload($file_array, $post_id, sanitize_text_field($ref['title'] ?? ''));
+            @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+
+            if (is_wp_error($att_id)) {
+                continue;
+            }
+
+            $media_items[] = [
+                'id'     => (string) $att_id,
+                'url'    => wp_get_attachment_url($att_id),
+                'title'  => sanitize_text_field($ref['title'] ?? ''),
+                'type'   => 'image',
+                'source' => 'upload',
+                'order'  => 0,
+            ];
+        }
+
+        $zip->close();
+
+        if (!empty($media_items)) {
+            update_post_meta($post_id, 'media_items', $media_items);
+        }
+
+        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title, 'source' => 'binary']);
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
 
     // ─────────────────────────────────────────────────────────────────────

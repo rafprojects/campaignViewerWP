@@ -38,6 +38,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
+  const [binaryExportingIds, setBinaryExportingIds] = useState<Set<string>>(new Set());
+
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
   const shortcutConfig = useShortcutConfig();
@@ -189,6 +191,37 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify]);
 
+  const handleBinaryExportCampaign = useCallback(async (campaign: AdminCampaign) => {
+    const id = String(campaign.id);
+    setBinaryExportingIds((prev) => new Set(prev).add(id));
+    try {
+      const { jobId } = await apiClient.startCampaignBinaryExport(id);
+      onNotify({ type: 'success', text: 'Building ZIP export — this may take a moment.' });
+
+      // Poll every 3 seconds, up to 5 minutes.
+      const deadline = Date.now() + 300_000;
+      let job = await apiClient.getExportJob(jobId);
+      while (job.status === 'pending' || job.status === 'processing') {
+        if (Date.now() > deadline) {
+          throw new Error('Export timed out after 5 minutes.');
+        }
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        job = await apiClient.getExportJob(jobId);
+      }
+
+      if (job.status === 'failed') {
+        throw new Error(job.error ?? 'Export failed');
+      }
+
+      await apiClient.downloadExportJob(jobId, `campaign-${id}.zip`);
+      await apiClient.deleteExportJob(jobId);
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Binary export failed') });
+    } finally {
+      setBinaryExportingIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  }, [apiClient, onNotify]);
+
   const handleImportCampaign = useCallback(async (payload: CampaignExportPayload) => {
     setIsImporting(true);
     try {
@@ -244,6 +277,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     importModalOpen,
     setImportModalOpen,
     isImporting,
+    // Binary export
+    binaryExportingIds,
     // Shortcuts help
     shortcutHelpOpen,
     setShortcutHelpOpen,
@@ -261,6 +296,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleBulkRestore,
     handleDuplicateCampaign,
     handleExportCampaign,
+    handleBinaryExportCampaign,
     handleImportCampaign,
   };
 }

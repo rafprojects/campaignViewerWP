@@ -92,16 +92,35 @@ Additionally, group-as-entity alignment requires P30-G's group coordinate model,
 
 ## Campaign Management
 
-### Campaign Export — Full Binary Media Export (P18-D Follow-Up)
+### Audit Log Binary Export
 
-**Context:** P18-D exports media by URL reference only. For deployments where source media is on a CDN that the target WP instance cannot access, a full binary export (ZIP of media files + JSON manifest) would be needed.
+**Context:** P39-CM1 shipped `WPSG_Export_Engine`, a reusable background job manager for building ZIP archives with a `manifest.json` + media folder. The engine is not campaign-specific: any caller that builds a manifest + media list can use it. The audit log is the next natural candidate. Operators currently download the audit log only as CSV; a binary ZIP that includes the CSV plus any referenced campaign media snapshots would make it useful for offline analysis, archival, and regulatory compliance handoffs.
 
-**Open questions:**
-- Q1: ZIP generation on the server requires `ext-zip`. Should the feature require this PHP extension, or use `file_get_contents` to stream media (which has SSRF risk if URLs are untrusted)?
-- Q2: What is a reasonable size limit for a single export? (Proposed: 50 MB hard limit, user-configurable up to 250 MB in settings.)
-- Q3: Should the export be generated synchronously (small galleries only) or via a background WP-Cron job with a progress indicator?
+**What it would take:**
+- A manifest builder for audit data (JSON index of log entries, associated campaign IDs and titles, date range).
+- An optional media snapshot pass: for each campaign referenced in the log window, include its cover image and media thumbnails in the `media/` folder.
+- A new REST route (`POST /admin/audit-log/export/binary`) that calls `WPSG_Export_Engine::create_job('audit', $manifest, $media_items)`.
+- A frontend trigger in the audit log admin view (alongside the existing CSV export).
 
-**Effort:** Medium | **Impact:** Medium — primarily needed for multi-instance deployments
+**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required (same constraint as campaign binary export).
+
+**Effort:** Small-Medium | **Impact:** Low-Medium — primarily useful for compliance-heavy deployments
+
+---
+
+### Media Library Binary Export
+
+**Context:** P39-CM1 shipped `WPSG_Export_Engine`. A media library export type would let operators download all or selected WP media attachments as a portable ZIP with a `manifest.json` index. Useful for migrating assets between WordPress instances or archiving a gallery's media before a site migration.
+
+**What it would take:**
+- A manifest builder that queries WP attachments (filtered by campaign, date, MIME type, or a selection) and produces a media reference list.
+- `WPSG_Export_Engine::create_job('media_library', $manifest, $media_items)` does the rest.
+- A new REST route and a frontend trigger in the media admin surface.
+- Import: extend `POST /campaigns/import/binary` or add a separate `POST /media/import/binary` that sideloads the ZIP contents into the WP media library.
+
+**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
+
+**Effort:** Small-Medium | **Impact:** Medium — useful for any multi-instance migration scenario
 
 ---
 
@@ -294,9 +313,9 @@ Files: `class-wpsg-thumbnail-cache.php`
 Move thumbnail cache index to per-hash entries or custom table. Cache is self-healing (regenerated on miss).
 LOE: Medium (4-6 hours) | Impact: Low
 
-**D-14: Campaign Export — Stream Large Media Sets**
-Files: `class-wpsg-rest.php`, `class-wpsg-cli.php`
-Add chunked/streamed export for campaigns with large media arrays. Most campaigns have <100 items.
+**D-14: Campaign Binary Export — Stream Large Media Sets**
+Files: `class-wpsg-export-engine.php`
+P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via curl CURLOPT_FILE rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
 LOE: Medium (4-6 hours) | Impact: Low
 
 **D-15: `get_campaigns_for_attachment_id()` N+1 Meta Reads**

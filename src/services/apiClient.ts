@@ -26,6 +26,7 @@ import { AnalyticsApi } from './api/analyticsApi';
 import { CampaignsApi } from './api/campaignsApi';
 import { AdminApi } from './api/adminApi';
 import { WebhooksApi } from './api/webhooksApi';
+import { ExportApi } from './api/exportApi';
 
 // ── Type re-exports for backward compatibility ────────────────────────────────
 // All types that callers currently import from '@/services/apiClient' are
@@ -102,6 +103,7 @@ export class ApiClient extends HttpTransportImpl {
   private readonly _campaigns: CampaignsApi;
   private readonly _admin: AdminApi;
   private readonly _webhooks: WebhooksApi;
+  private readonly _export: ExportApi;
 
   constructor(options: ApiClientOptions) {
     super(options);
@@ -111,6 +113,7 @@ export class ApiClient extends HttpTransportImpl {
     this._campaigns = new CampaignsApi(this);
     this._admin = new AdminApi(this);
     this._webhooks = new WebhooksApi(this);
+    this._export = new ExportApi(this);
   }
 
   // ── Settings ──────────────────────────────────────────────────────────────
@@ -355,5 +358,25 @@ export class ApiClient extends HttpTransportImpl {
 
   listWebhookDeliveries(limit?: number): Promise<import('./api/webhooksApi').WebhookDelivery[]> {
     return this._webhooks.listDeliveries(limit);
+  }
+
+  // ── Binary Export ─────────────────────────────────────────────────────────
+
+  startCampaignBinaryExport(
+    campaignId: string,
+  ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
+    return this._export.startCampaignBinaryExport(campaignId);
+  }
+
+  getExportJob(jobId: string): Promise<import('./api/exportApi').ExportJob> {
+    return this._export.getExportJob(jobId);
+  }
+
+  deleteExportJob(jobId: string): Promise<{ deleted: boolean }> {
+    return this._export.deleteExportJob(jobId);
+  }
+
+  downloadExportJob(jobId: string, filename?: string): Promise<void> {
+    return this._export.downloadExportJob(jobId, filename);
   }
 }
