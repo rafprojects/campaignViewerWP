@@ -71,6 +71,21 @@ class WPSG_Export_Engine {
         return is_array($job) ? $job : null;
     }
 
+    /**
+     * Reset a stuck job back to pending so process_job() will re-run it.
+     * Safe to call on any status; no-ops if the job does not exist.
+     */
+    public static function reset_job(string $id): bool {
+        $job = self::get_job($id);
+        if (!$job) {
+            return false;
+        }
+        $job['status'] = 'pending';
+        $job['error']  = null;
+        set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);
+        return true;
+    }
+
     public static function delete_job(string $id): void {
         $job = self::get_job($id);
         if ($job && !empty($job['zip_path']) && file_exists($job['zip_path'])) {
@@ -96,7 +111,7 @@ class WPSG_Export_Engine {
             $job['status']   = 'complete';
             $job['zip_path'] = $zip_path;
             $job['error']    = null;
-        } catch (RuntimeException $e) {
+        } catch (\Throwable $e) {
             $job['status'] = 'failed';
             $job['error']  = $e->getMessage();
         }
