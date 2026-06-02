@@ -8,8 +8,8 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P39-CO1 | CORS origin allow-list and admin UI | Planned · align with P39-AU1 | M |
-| P39-AU1 | JWT in-memory token auth for standalone SPA | Planned · gated on accepted cross-origin policy decisions | L |
+| P39-CO1 | CORS origin allow-list and admin UI | Deferred — returned to FUTURE_TASKS | M |
+| P39-AU1 | JWT in-memory token auth for standalone SPA | Deferred — returned to FUTURE_TASKS | L |
 | P39-IN1 | Webhook support for campaign events | Planned · requires delivery/signing decisions | L |
 | P39-CM1 | Campaign export full binary media export | Planned · requires export-mode and packaging decisions | M |
 | P39-OC1 | Redis/Memcached object-cache guidance and health surface | Planned | M |
@@ -151,7 +151,17 @@ credentials combinations.
 - The runtime CORS headers reflect the effective configured policy.
 - Coverage exists for allowed, rejected, and malformed origin cases.
 
-### Status: Planned · align with P39-AU1
+### Status: Deferred — returned to FUTURE_TASKS (see D-1)
+
+### Deferral rationale
+
+P39-CO1 was implemented in full (settings registry, sanitizer, admin UI, PHP tests, React tests) but rolled back after manual verification revealed that CORS restriction provides no value for the primary deployment model.
+
+**Why it does not matter for standard deployments:** When the plugin is embedded via WordPress shortcode, the gallery and the REST API are on the same origin — CORS is not triggered at all. WP core's own `rest_send_cors_headers()` already reflects any `Origin` header back unconditionally (registered at priority 10 on `rest_pre_serve_request`). Our plugin's hook, also at priority 10, ran *before* WP's handler, making `header_remove()` a no-op. Correcting for that required changing the hook priority to 20, adding complexity to fight a behavior that was irrelevant for the primary use case.
+
+**Why the standalone SPA case is not ready:** The track's real value is gating cross-origin credentials to a specific allow-list when the gallery is deployed as a standalone SPA on a different origin. That deployment model requires preparatory work (routing changes, build/bundle config, WPSG_ENABLE_JWT env-var gate, deployment documentation) that is not yet in scope. Implementing CORS restriction without that foundation would protect nothing and add surface area.
+
+**No code shipped.** All implementation files were reverted to pre-session state via `git checkout`. Test files created during the session were deleted. No database schema changes, settings keys, or filter registrations were left in place.
 
 ---
 
@@ -231,7 +241,11 @@ cross-origin policy accepted by `P39-CO1`.
 - Same-origin nonce-based deployments remain the default.
 - Coverage exists for login, refresh, expiry, and logout behavior.
 
-### Status: Planned · gated on accepted cross-origin policy decisions
+### Status: Deferred — returned to FUTURE_TASKS (see JWT In-Memory Token Auth entry)
+
+### Deferral rationale
+
+P39-AU1 was gated on P39-CO1. Both tracks are being deferred together. The core reason is that the standalone SPA deployment model — the only context where cross-origin JWT auth is required — is not ready. The app was built around WordPress embedding and would need routing, build, and deployment preparation work before it can optionally operate as a standalone SPA. Implementing the auth layer first, without that foundation, would be building on an undefined surface. Revisit when there is a concrete standalone SPA deployment requirement and the preparatory work is in scope.
 
 ---
 

@@ -132,7 +132,9 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 - Q2: What is the refresh-cookie TTL? 7 days (convenience) vs. 24 hours (security) — should it be admin-configurable?
 - Q3: Is a `/wpsg/v1/token/revoke-all` endpoint needed for the "log out everywhere" use case?
 
-**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate).
+**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
+
+**P39-AU1 deferral note (2026-06-01):** P39-AU1 was gated on P39-CO1. Both tracks were deferred together — the CORS restriction work itself was rolled back because the primary deployment model (embedded WordPress shortcode) is same-origin and does not need cross-origin auth. The standalone SPA path requires the app to be prepared for that deployment model first (routing, build config, deployment documentation, CORS policy). Revisit when there is a concrete standalone SPA deployment requirement.
 
 **Effort:** High (2–4 days) | **Impact:** High for cross-origin standalone SPA deployments; Low for standard WordPress shortcode usage
 
@@ -262,7 +264,10 @@ Follow-up audit on 2026-05-19 found no additional phase-worthy tracks here beyon
 **D-1: CORS Origin Allow-List & Admin UI**
 Files: `wp-super-gallery.php`, `class-wpsg-settings.php`
 Add CORS allowed-origins setting and reject wildcard with credentials. Only affects cross-origin REST API usage. Filter workaround exists.
-LOE: Medium (4-6 hours) | Impact: Low
+
+**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back after implementation because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. WP core's `rest_send_cors_headers()` already reflects any origin unconditionally; overriding it adds complexity without user benefit in standard deployments. This track becomes relevant only if WPSG is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for P39-AU1.
+
+LOE: Medium (4-6 hours) | Impact: Low — standard WP shortcode deployments unaffected; meaningful only for standalone SPA deployments
 
 **D-2: Migrate Overlay Library from wp_options to Custom Table**
 Files: `class-wpsg-overlay-library.php`, `class-wpsg-db.php`, `uninstall.php`
@@ -384,4 +389,4 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*
-*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review.*
+*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review. Updated D-1 and JWT entries with P39-CO1/P39-AU1 deferral rationale after both tracks were rolled back — CORS restriction is unnecessary for the primary same-origin embedded WP use case.*
