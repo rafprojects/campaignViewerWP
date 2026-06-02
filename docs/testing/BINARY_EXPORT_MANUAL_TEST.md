@@ -74,8 +74,9 @@ APP_PASS="<paste token from step 3>"
 AUTH=(-u "admin:$APP_PASS")
 ```
 
-Then every curl call below uses `"${AUTH[@]}"` to expand correctly. No nonce
-needed — Application Passwords authenticate at the HTTP level.
+Then every curl call below uses `"${AUTH[@]}"` to expand correctly. 
+(echo "${AUTH[@]}" manually to check it, regular echo $AUTH won't work)
+No nonce needed — Application Passwords authenticate at the HTTP level.
 
 ---
 
@@ -159,17 +160,20 @@ JOB_ID="<jobId from above>"
 
 ---
 
-## Step 4 — Trigger the WP-Cron job
+## Step 4 — Process the export job
 
-The export engine schedules a WP-Cron event (`wpsg_export_process_job`) to run
-the ZIP builder in the background. In wp-env, trigger it explicitly:
+WordPress calls `spawn_cron()` on every REST response, so the job may have
+already been processed by the time you reach this step. Force-run it directly
+via `wp eval` — `process_job` is a no-op if the job is already complete, so
+this is always safe:
 
 ```bash
-npx wp-env run cli wp cron event run wpsg_export_process_job --due-now
+npx wp-env run cli wp eval 'WPSG_Export_Engine::process_job("'"$JOB_ID"'");'
 ```
 
-This runs all pending `wpsg_export_process_job` events. If the export has
-already fired automatically, this is a no-op.
+> **Why not `wp cron event run`?** That command fails with "Invalid cron event"
+> if the event was already consumed. The `wp eval` approach bypasses the
+> schedule and works regardless of whether the event already fired.
 
 ---
 
@@ -490,7 +494,7 @@ Expected: `HTTP 404` — `"Campaign not found"`
 |---|---|---|
 | `rest_forbidden` 401 | Plain password used, or `AUTH` array not set | Use an Application Password; define `AUTH=(-u "admin:$APP_PASS")` |
 | `rest_forbidden` 403 | `manage_wpsg` cap missing | Re-run plugin deactivate/activate |
-| Job stuck at `pending` after cron trigger | WP-Cron already ran and failed silently | Poll the job — check `error` field; re-run `wp cron event run` |
+| Job stuck at `pending` after step 4 | `process_job` may not have loaded the engine | Verify plugin is active; re-run the `wp eval WPSG_Export_Engine::process_job(...)` command |
 | `status: failed`, `error: "ext-zip is required"` | `ZipArchive` not available in the container | Verify with `npx wp-env run cli php -r "echo class_exists('ZipArchive');"` |
 | `status: failed`, `error: "Export would exceed … MB size limit"` | Total media size exceeds 100 MB | Use a campaign with fewer or smaller media items for testing |
 | ZIP downloaded but is 0 bytes | Download route fired before job completed | Check job status first (`GET /export-jobs/{id}`); wait for `complete` |
