@@ -199,6 +199,13 @@ class WPSG_Monitoring {
         // needing raw server access.
         $recent_logs = class_exists('WPSG_Logger') ? WPSG_Logger::get_recent_logs(50) : [];
 
+        // P39-IN1: Webhook delivery summary.
+        $webhook_deliveries = class_exists('WPSG_Webhooks') ? WPSG_Webhooks::get_delivery_log() : [];
+        $webhook_endpoint_count = class_exists('WPSG_Webhooks') ? count(WPSG_Webhooks::get_endpoints()) : 0;
+        $webhook_recent  = array_slice($webhook_deliveries, 0, 10);
+        $webhook_success = count(array_filter($webhook_deliveries, fn($d) => !empty($d['success'])));
+        $webhook_failed  = count($webhook_deliveries) - $webhook_success;
+
         return [
             'restRequestCount'             => $request_count,
             'restErrorCount'               => $error_count,
@@ -220,6 +227,13 @@ class WPSG_Monitoring {
             'pluginVersion'                => defined('WPSG_VERSION') ? WPSG_VERSION : 'unknown',
             'timestamp'                    => time(),
             'recentLogs'                   => $recent_logs,
+            'webhooks'                     => [
+                'endpointCount'  => $webhook_endpoint_count,
+                'totalDeliveries' => count($webhook_deliveries),
+                'successCount'   => $webhook_success,
+                'failedCount'    => $webhook_failed,
+                'recentDeliveries' => $webhook_recent,
+            ],
         ];
     }
 

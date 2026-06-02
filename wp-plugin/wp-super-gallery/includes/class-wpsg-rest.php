@@ -978,6 +978,49 @@ class WPSG_REST {
                 'permission_callback' => '__return_true',
             ],
         ]);
+
+        // P39-IN1: Webhook endpoint management.
+        register_rest_route('wp-super-gallery/v1', '/webhooks', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_webhook_endpoints'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/delivery-log', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_webhook_deliveries'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)/rotate-secret', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'rotate_webhook_secret'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
     }
 
     public static function rate_limit_public($request) {
@@ -1618,6 +1661,7 @@ class WPSG_REST {
             'title' => $title,
         ]);
 
+        do_action('wpsg_campaign_created', $post_id, ['title' => $title]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
@@ -1670,6 +1714,10 @@ class WPSG_REST {
             'status' => $request->get_param('status'),
         ]);
 
+        do_action('wpsg_campaign_updated', $post_id, [
+            'title' => $title,
+            'status' => $request->get_param('status'),
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
@@ -1682,6 +1730,7 @@ class WPSG_REST {
 
         update_post_meta($post_id, 'status', 'archived');
         self::add_audit_entry($post_id, 'campaign.archived', []);
+        do_action('wpsg_campaign_archived', $post_id);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
@@ -1694,6 +1743,7 @@ class WPSG_REST {
 
         update_post_meta($post_id, 'status', 'active');
         self::add_audit_entry($post_id, 'campaign.restored', []);
+        do_action('wpsg_campaign_restored', $post_id);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
     }
@@ -1717,11 +1767,12 @@ class WPSG_REST {
 
         $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
 
-        // Audit BEFORE deletion so the entry is preserved in any external sink
+        // Audit and webhook BEFORE deletion so the entry is preserved in any external sink
         // (post meta entry itself is dropped with the post).
         self::add_audit_entry($post_id, 'campaign.deleted', [
             'purge_analytics' => $purge_analytics,
         ]);
+        do_action('wpsg_campaign_deleted', $post_id);
 
         WPSG_DB::delete_media_refs($post_id);
         WPSG_DB::delete_access_requests_for_campaign($post_id);
@@ -1822,6 +1873,7 @@ class WPSG_REST {
             }
             update_post_meta($post_id, 'status', $new_status);
             self::add_audit_entry($post_id, "campaign.{$action}d", []);
+            do_action("wpsg_campaign_{$action}d", $post_id);
             $success[] = (string) $post_id;
         }
 
@@ -2932,6 +2984,7 @@ class WPSG_REST {
             'url' => $media_item['url'] ?? '',
             'attachmentId' => $media_item['attachmentId'] ?? 0,
         ]);
+        do_action('wpsg_media_added', $post_id, ['mediaId' => $media_item['id'], 'count' => 1]);
         self::bump_cache_version();
 
         return new WP_REST_Response($media_item, 201);
@@ -2999,6 +3052,7 @@ class WPSG_REST {
                     return $item['id'];
                 }, $added)),
             ]);
+            do_action('wpsg_media_added', $post_id, ['count' => count($added)]);
             self::bump_cache_version();
         }
 
@@ -3162,6 +3216,9 @@ class WPSG_REST {
             'action' => $action,
         ]);
 
+        if ($action !== 'deny') {
+            do_action('wpsg_access_granted', $post_id, ['userId' => $user_id, 'source' => $source]);
+        }
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
@@ -3200,6 +3257,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'access.revoked', [
             'userId' => $user_id,
         ]);
+        do_action('wpsg_access_revoked', $post_id, ['userId' => $user_id]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
     }
@@ -4413,6 +4471,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'media.deleted', [
             'mediaId' => $media_id,
         ]);
+        do_action('wpsg_media_removed', $post_id, ['mediaId' => $media_id]);
         self::bump_cache_version();
 
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
@@ -6742,5 +6801,122 @@ class WPSG_REST {
         }
 
         return new WP_REST_Response($template, 200);
+    }
+
+    // ── P39-IN1: Webhook endpoint management ─────────────────────────────────
+
+    public static function list_webhook_endpoints($request) {
+        $endpoints = WPSG_Webhooks::get_endpoints();
+        $items = [];
+        foreach ($endpoints as $idx => $endpoint) {
+            $items[] = WPSG_Webhooks::format_endpoint_for_api($idx, $endpoint);
+        }
+        return new WP_REST_Response($items, 200);
+    }
+
+    public static function create_webhook_endpoint($request) {
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (count($endpoints) >= WPSG_Webhooks::MAX_ENDPOINTS) {
+            return new WP_Error(
+                'wpsg_webhook_limit',
+                sprintf('Maximum of %d webhook endpoints allowed.', WPSG_Webhooks::MAX_ENDPOINTS),
+                ['status' => 400]
+            );
+        }
+
+        $url = WPSG_Webhooks::sanitize_url($request->get_param('url') ?? '');
+        if (empty($url)) {
+            return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+        }
+
+        $raw_events = $request->get_param('events');
+        $events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+        $enabled = $request->get_param('enabled') !== false;
+        $secret = WPSG_Webhooks::generate_secret();
+
+        $endpoint = [
+            'url'     => $url,
+            'secret'  => $secret,
+            'events'  => $events,
+            'enabled' => (bool) $enabled,
+        ];
+
+        $endpoints[] = $endpoint;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        $idx = count($endpoints) - 1;
+        $response = WPSG_Webhooks::format_endpoint_for_api($idx, $endpoint);
+        $response['secret'] = $secret; // One-time full secret exposure on creation.
+
+        return new WP_REST_Response($response, 201);
+    }
+
+    public static function update_webhook_endpoint($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        $existing = $endpoints[$idx];
+
+        if ($request->get_param('url') !== null) {
+            $url = WPSG_Webhooks::sanitize_url($request->get_param('url'));
+            if (empty($url)) {
+                return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+            }
+            $existing['url'] = $url;
+        }
+
+        if ($request->get_param('events') !== null) {
+            $raw_events = $request->get_param('events');
+            $existing['events'] = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+        }
+
+        if ($request->get_param('enabled') !== null) {
+            $existing['enabled'] = (bool) $request->get_param('enabled');
+        }
+
+        $endpoints[$idx] = $existing;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(WPSG_Webhooks::format_endpoint_for_api($idx, $existing), 200);
+    }
+
+    public static function delete_webhook_endpoint($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        array_splice($endpoints, $idx, 1);
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(['deleted' => true], 200);
+    }
+
+    public static function rotate_webhook_secret($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        $new_secret           = WPSG_Webhooks::generate_secret();
+        $endpoints[$idx]['secret'] = $new_secret;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(['secret' => $new_secret], 200);
+    }
+
+    public static function list_webhook_deliveries($request) {
+        $log   = WPSG_Webhooks::get_delivery_log();
+        $limit = min(intval($request->get_param('limit') ?? 50), 50);
+        return new WP_REST_Response(array_slice($log, 0, $limit), 200);
     }
 }

@@ -108,6 +108,7 @@ function createMockApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
       scrollAnimationEasing: 'ease',
     }),
     testConnection: vi.fn().mockResolvedValue({ success: true, message: 'ok' }),
+    listWebhookEndpoints: vi.fn().mockResolvedValue([]),
     ...overrides,
   } as unknown as ApiClient;
 }
@@ -2178,5 +2179,32 @@ describe('SettingsPanel', () => {
         expect(apiClient.testConnection).toHaveBeenCalled();
       });
     }
+  });
+
+  // P39-IN1: Integrations tab and webhook section.
+  it('renders the Integrations tab', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    expect(screen.getByRole('tab', { name: /Integrations/i })).toBeDefined();
+  });
+
+  it('renders the webhook section when the Integrations tab is active', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /Integrations/i }));
+
+    await waitFor(() => {
+      expect(apiClient.listWebhookEndpoints).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/No webhook endpoints configured/i)).toBeDefined();
+    });
   });
 });

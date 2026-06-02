@@ -1,8 +1,8 @@
 # Phase 39 — Enterprise Scale & Integration Tracks
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-02
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P39-CO1 | CORS origin allow-list and admin UI | Deferred — returned to FUTURE_TASKS | M |
 | P39-AU1 | JWT in-memory token auth for standalone SPA | Deferred — returned to FUTURE_TASKS | L |
-| P39-IN1 | Webhook support for campaign events | Planned · requires delivery/signing decisions | L |
+| P39-IN1 | Webhook support for campaign events | Complete | L |
 | P39-CM1 | Campaign export full binary media export | Planned · requires export-mode and packaging decisions | M |
 | P39-OC1 | Redis/Memcached object-cache guidance and health surface | Planned | M |
 | P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Planned · do after other P39 tracks | S |
@@ -316,7 +316,42 @@ delivery visibility.
 - Operators can see enough delivery state to understand success and failure.
 - Coverage exists for payload generation, signing, and retry behavior.
 
-### Status: Planned · requires delivery/signing decisions
+### Status: Complete
+
+### Implementation notes
+
+**Design decisions accepted before implementation:**
+- **Configuration model**: Bounded hybrid — up to 5 endpoints each with URL, HMAC secret, optional per-event-type filter, and enabled toggle. Stored in `wpsg_webhook_endpoints` option (separate from the main settings option).
+- **Retry guarantees**: 3 attempts via WP-Cron — immediate → +5 min → +30 min. Terminal failures logged in the delivery ring buffer. Retry hook clears on plugin deactivation.
+- **Signing**: Auto-generated 64-char hex HMAC-SHA256 secret per endpoint (`random_bytes(32)`). Full secret exposed once on creation/rotation. Signature delivered as `X-WPSG-Signature: sha256=<hex>` per the GitHub convention.
+
+**New files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-webhooks.php` — engine: event hooks, dispatch, delivery, retry scheduling, delivery log, HMAC signing.
+- `wp-plugin/wp-super-gallery/tests/WPSG_P39IN1_Webhook_Test.php` — PHP test coverage for endpoint storage, delivery, filtering, signing, and all REST routes.
+- `src/services/api/webhooksApi.ts` — dedicated API domain module.
+- `src/components/Settings/WebhookSettingsSection.tsx` — standalone React component with endpoint list, add form, enable toggle, event filter, rotate secret, one-time secret modal.
+
+**Modified files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` — added `do_action` hooks at all 9 campaign-mutation callsites (create, update, archive, restore, delete, batch archive/restore, media add, media remove, access grant, access revoke). Added REST routes at `/webhooks`, `/webhooks/{index}`, `/webhooks/{index}/rotate-secret`, `/webhooks/delivery-log` with `require_admin` permission.
+- `wp-plugin/wp-super-gallery/wp-super-gallery.php` — `require_once` + `add_action('init', ['WPSG_Webhooks', 'register'])` + deactivation hook clears the retry cron hook.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-monitoring.php` — `get_health_data()` includes a `webhooks` summary key with endpoint count, delivery totals, success/failure counts, and last 10 deliveries.
+- `src/services/apiClient.ts` — imports `WebhooksApi`, adds `listWebhookEndpoints`, `createWebhookEndpoint`, `updateWebhookEndpoint`, `deleteWebhookEndpoint`, `rotateWebhookSecret`, `listWebhookDeliveries` methods.
+- `src/components/Admin/SettingsPanel.tsx` — new permanent "Integrations" tab (no `advancedSettingsEnabled` gate) renders `WebhookSettingsSection`.
+- `src/components/Admin/SettingsPanel.test.tsx` — added `listWebhookEndpoints` mock and two new tests for the Integrations tab.
+
+**Event catalog (first-pass, 9 events):** `campaign.created`, `campaign.updated`, `campaign.archived`, `campaign.restored`, `campaign.deleted`, `media.added`, `media.removed`, `access.granted`, `access.revoked`.
+
+**Delivery log:** Bounded ring buffer of last 50 entries in `wpsg_webhook_delivery_log` option. Each entry records `deliveryId`, `event`, `url`, `attempt`, `success`, `statusCode`, `timestamp`. Also surfaced in `GET /admin/health` under `webhooks.recentDeliveries`.
+
+**PHP tests:** 36 test cases covering endpoint storage, secret generation, masking, signing, URL sanitization, event filtering, delivery (success, failure, disabled, event-filter, all-events), payload shape, HMAC signature header, WP action hook wiring, log capping, and all 6 REST routes (list, create, update, delete, rotate, delivery log) including admin-only enforcement.
+
+**Manual testing:** End-to-end verified against a live wp-env environment with webhook.site as the receiver. Confirmed: REST route availability, endpoint CRUD, `campaign.created` delivery and HMAC signature, event filter (all-events endpoint receives `campaign.created`; filtered endpoint suppresses it and fires on `campaign.archived` via the dedicated `/campaigns/{id}/archive` route), and secret rotation (new secret verifies the delivered signature; old secret does not). See `docs/testing/WEBHOOK_MANUAL_TEST.md`.
+
+**Testing findings:**
+- Admin routes require both Application Password auth and `X-WP-Nonce`. Generate the nonce via `wp eval --user=1 'echo wp_create_nonce("wp_rest");'`.
+- The `manage_wpsg` capability is granted by the plugin activation hook. Re-run deactivate/activate after a fresh wp-env start.
+- Archiving a campaign fires `campaign.archived` only via the dedicated `POST /campaigns/{id}/archive` route. A `PUT /campaigns/{id}` with `status: archived` fires `campaign.updated` instead.
+- Deleting multiple endpoints in sequence must proceed from highest index to lowest. Each deletion calls `array_values()` internally, which re-indexes the stored array. Deleting index 0 first causes remaining endpoints to shift down, making subsequent index-based deletes target the wrong slot.
 
 ---
 
