@@ -633,7 +633,7 @@ class WPSG_DB {
             'resource_type'  => sanitize_text_field($data['resource_type'] ?? ''),
             'resource_id'    => sanitize_text_field($data['resource_id'] ?? ''),
             'resource_label' => sanitize_text_field($data['resource_label'] ?? ''),
-            'source'         => sanitize_text_field($data['source'] ?? ''),
+            'source'         => sanitize_text_field($data['source'] ?? 'rest'),
         ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']);
     }
 
@@ -655,6 +655,7 @@ class WPSG_DB {
                 'actor_login' => '',
                 'details'     => $entry['details'] ?? [],
                 'created_at'  => $created_at,
+                'source'      => 'legacy',
             ]);
         }
     }

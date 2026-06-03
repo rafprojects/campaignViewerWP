@@ -49,7 +49,7 @@ describe('GlobalAuditTab', () => {
 
   it('shows loading skeleton table when loading', () => {
     render(<GlobalAuditTab {...baseProps} loading={true} />);
-    expect(screen.getByRole('table', { name: /loading global audit/i })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /loading system audit/i })).toBeInTheDocument();
   });
 
   it('renders audit entries table when entries are provided', () => {

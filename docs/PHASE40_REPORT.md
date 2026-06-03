@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (PR #55 r2 review fixes)
+**Last updated:** 2026-06-03 (PR #55 r3 review fixes)
 
 ### Tracks
 
@@ -742,3 +742,9 @@ Four issues identified by Copilot review and addressed in commit `02cc499a`:
 ### Round 2
 
 **`class-wpsg-db.php` — `maybe_upgrade_audit_log_v9` docblock.** The docblock claimed to "normalise the campaign_id DEFAULT to 0" but the method only guards on the `severity` column and re-runs `dbDelta`. Corrected the docblock to accurately describe what the method does: adds the seven new P40-CT1 audit columns via `dbDelta`, guarded by presence of `severity` as the first new column.
+
+### Round 3
+
+**`class-wpsg-db.php` — `insert_audit_entry` source default.** The raw insert function defaulted `source` to `''`, diverging from the `'rest'` default established by `WPSG_REST::add_audit_entry`. Changed the fallback to `'rest'`. `backfill_audit_entries` does not pass `source` and its entries predate the REST layer, so it now explicitly passes `'source' => 'legacy'` to avoid being mislabelled.
+
+**`GlobalAuditTab.tsx` — stale aria-labels.** The tab was renamed to "System Audit" in P40-UX1 but the two `Table` aria-labels (`"Loading global audit entries"`, `"Global audit entries"`) were not updated. Changed to `"Loading system audit entries"` and `"System audit entries"` respectively. Corresponding test assertion in `GlobalAuditTab.test.tsx` updated to match.

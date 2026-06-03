@@ -93,7 +93,7 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
       </Group>
       {loading ? (
         <Table.ScrollContainer minWidth={750}>
-          <Table verticalSpacing="sm" aria-label="Loading global audit entries">
+          <Table verticalSpacing="sm" aria-label="Loading system audit entries">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th miw={140}>When</Table.Th>
@@ -112,7 +112,7 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
       ) : (
         <ScrollArea offsetScrollbars type="always" scrollbars="y" className="wpsg-scrollarea" h={400}>
           <Table.ScrollContainer minWidth={750}>
-            <Table verticalSpacing="sm" highlightOnHover aria-label="Global audit entries">
+            <Table verticalSpacing="sm" highlightOnHover aria-label="System audit entries">
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th miw={140}>When</Table.Th>
