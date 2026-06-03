@@ -588,10 +588,12 @@ class WPSG_DB {
     }
 
     /**
-     * P40-CT1: Idempotent migration — adds new audit columns when upgrading
-     * from a pre-v9 schema. dbDelta handles the ADD COLUMN for most columns,
-     * but we also normalise the campaign_id DEFAULT to 0 for any installs
-     * that still have the old NOT NULL without DEFAULT.
+     * P40-CT1: Idempotent migration — adds the seven new audit columns
+     * (severity, scope, summary, resource_type, resource_id, resource_label,
+     * source) when upgrading from a pre-v9 schema. dbDelta handles ADD COLUMN
+     * for any missing columns. The presence of `severity` is used as the guard
+     * because it is the first of the new columns; if it exists the full
+     * migration has already run.
      */
     private static function maybe_upgrade_audit_log_v9(): void {
         global $wpdb;

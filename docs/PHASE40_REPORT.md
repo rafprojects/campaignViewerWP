@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (PR #55 review fixes)
+**Last updated:** 2026-06-03 (PR #55 r2 review fixes)
 
 ### Tracks
 
@@ -738,3 +738,7 @@ Four issues identified by Copilot review and addressed in commit `02cc499a`:
 **CA1 `test_batch_created_with_all_valid_items_has_info_severity`.** The original test used `assertContains([201, 200])` and wrapped the severity assertion in an `if (!empty($batch))` guard that could pass silently if the audit entry was never written. Tightened to assert `201` explicitly, then `assertNotEmpty` on the batch entry, then the `info` severity assertion — all unconditional.
 
 **CA1 `test_batch_created_with_failures_has_warning_severity`.** The original test had a `markTestSkipped` branch that could mask regressions on a payload that deterministically produces one added and one failed item. Replaced with unconditional assertions: `assertEquals(201)`, `assertCount(1, added)`, `assertCount(1, failed)`, then the `media.batch_created` / `warning` severity assertions. Suite total after fix: `OK (10 tests, 32 assertions)` (+4 assertions from the strengthened batch tests).
+
+### Round 2
+
+**`class-wpsg-db.php` — `maybe_upgrade_audit_log_v9` docblock.** The docblock claimed to "normalise the campaign_id DEFAULT to 0" but the method only guards on the `severity` column and re-runs `dbDelta`. Corrected the docblock to accurately describe what the method does: adds the seven new P40-CT1 audit columns via `dbDelta`, guarded by presence of `severity` as the first new column.
