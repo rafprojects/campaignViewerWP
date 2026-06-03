@@ -200,6 +200,68 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
         WPSG_Export_Engine::delete_job($id);
     }
 
+    public function test_process_job_catches_throwable_and_sets_failed_not_processing() {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Inject a \TypeError (not RuntimeException) via pre_http_request so it
+        // fires inside build_zip() when wp_remote_head() is called.
+        // Only throws for our test URL to avoid interfering with WP internals.
+        $throw_error = function ( $response, $args, $url ) {
+            if (str_contains($url, 'example.com')) {
+                throw new \TypeError('Simulated PHP TypeError inside build_zip');
+            }
+            return $response;
+        };
+        add_filter('pre_http_request', $throw_error, 5, 3);
+
+        $media_items = [['id' => 'm1', 'url' => 'https://example.com/img.jpg', 'title' => 'I1']];
+        $id = WPSG_Export_Engine::create_job('campaign', '{"version":2}', $media_items);
+        WPSG_Export_Engine::process_job($id);
+
+        remove_filter('pre_http_request', $throw_error, 5);
+
+        $job = WPSG_Export_Engine::get_job($id);
+        $this->assertSame('failed', $job['status'], 'A PHP Throwable must not leave the job stuck in processing');
+        $this->assertNotEmpty($job['error']);
+        $this->assertStringContainsString('TypeError', $job['error']);
+
+        WPSG_Export_Engine::delete_job($id);
+    }
+
+    public function test_reset_job_allows_stuck_processing_job_to_be_retried() {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $id = WPSG_Export_Engine::create_job('campaign', '{"version":2}', []);
+
+        // Simulate a crash mid-processing: flip status to processing without completing.
+        $job = WPSG_Export_Engine::get_job($id);
+        $job['status'] = 'processing';
+        set_transient('wpsg_export_job_' . $id, $job, WPSG_Export_Engine::JOB_TTL);
+
+        // process_job must be a no-op while stuck in processing.
+        WPSG_Export_Engine::process_job($id);
+        $this->assertSame('processing', WPSG_Export_Engine::get_job($id)['status']);
+
+        // reset_job restores the job to pending.
+        $this->assertTrue(WPSG_Export_Engine::reset_job($id));
+        $this->assertSame('pending', WPSG_Export_Engine::get_job($id)['status']);
+        $this->assertNull(WPSG_Export_Engine::get_job($id)['error']);
+
+        // process_job now runs to completion.
+        WPSG_Export_Engine::process_job($id);
+        $this->assertSame('complete', WPSG_Export_Engine::get_job($id)['status']);
+
+        WPSG_Export_Engine::delete_job($id);
+    }
+
+    public function test_reset_job_returns_false_for_unknown_id() {
+        $this->assertFalse(WPSG_Export_Engine::reset_job('deadbeef00000000deadbeef00000000'));
+    }
+
     public function test_cleanup_removes_expired_jobs() {
         $id  = WPSG_Export_Engine::create_job('campaign', '{}', []);
         $job = WPSG_Export_Engine::get_job($id);

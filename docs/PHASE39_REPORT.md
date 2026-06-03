@@ -453,9 +453,16 @@ campaign-{id}.zip
 
 **Import flow:** ZIP upload → extract `manifest.json` → validate version 2 → create campaign post → sideload each `media/{filename}` via `media_handle_sideload()` (WP attachment creation) → store attachment IDs + URLs in `media_items` meta.
 
-**PHP test count:** 24 tests in `WPSG_P39CM1_Export_Test.php`. Full suite: 804 tests, 2527 assertions — clean.
+**PHP test count:** 27 tests in `WPSG_P39CM1_Export_Test.php` (3 added post-implementation). Full suite: 807 tests — clean.
 
 **Future extensions** (planned via FUTURE_TASKS): audit log binary export, media library binary export. Both would reuse `WPSG_Export_Engine` with a different manifest builder.
+
+**Post-implementation fixes (found during manual testing):**
+
+- **`verify_admin_auth()` rejected Application Passwords** — The auth gate checked for Bearer tokens or nonces only. WordPress Application Password auth uses HTTP Basic; WP authenticates it before the permission callback runs, so no CSRF nonce is needed. Added an explicit Basic branch: `if Authorization starts with 'Basic' → return is_user_logged_in()`. (`class-wpsg-rest.php`)
+- **`process_job()` catch too narrow** — `catch (RuntimeException $e)` did not catch PHP `Error` or other `Throwable` subclasses. A crash inside `build_zip()` left jobs permanently stuck in `processing` status. Broadened to `catch (\Throwable $e)` so all failures land in `failed` with an error message. (`class-wpsg-export-engine.php`)
+- **`reset_job()` added** — Public static method to restore a stuck job to `pending` so it can be retried without creating a new export. Used for manual recovery and tested in `WPSG_P39CM1_Export_Test.php`. (`class-wpsg-export-engine.php`)
+- **Manual test guide auth/cron fixes** — `$AUTH` bash string variable (broken expansion) replaced with `AUTH=(-u "admin:$APP_PASS")` array. Nonce requirement removed throughout (Application Passwords authenticate at HTTP level). WP-Cron trigger (`wp cron event run`) replaced with `wp eval WPSG_Export_Engine::process_job(...)` — idempotent and works whether or not the cron event was already consumed by `spawn_cron()`. (`docs/testing/BINARY_EXPORT_MANUAL_TEST.md`)
 
 ---
 
