@@ -664,6 +664,10 @@ class WPSG_REST {
                         'type'    => 'boolean',
                         'default' => false,
                     ],
+                    'campaign_id' => [
+                        'type'    => 'integer',
+                        'default' => 0,
+                    ],
                 ],
             ],
         ]);
@@ -1987,6 +1991,16 @@ class WPSG_REST {
             }, $media)),
         ];
 
+        self::add_audit_entry($post_id, 'campaign.exported', [
+            'format'     => 'json',
+            'mediaCount' => count($media),
+        ], [
+            'summary'        => 'Campaign exported as JSON (' . count($media) . ' media references)',
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $campaign['title'] ?? '',
+        ]);
+
         $response = new WP_REST_Response($payload, 200);
         $response->header('Content-Disposition', 'attachment; filename="campaign-' . $post_id . '.json"');
         return $response;
@@ -2104,7 +2118,16 @@ class WPSG_REST {
             update_post_meta($post_id, 'media_items', $media_items);
         }
 
-        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
+        self::add_audit_entry($post_id, 'campaign.imported', [
+            'source_title'  => $title,
+            'format'        => 'json',
+            'mediaRefCount' => count($media_refs),
+        ], [
+            'summary'        => "Campaign imported from JSON: {$title}",
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $title,
+        ]);
         self::clear_accessible_campaigns_cache();
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
@@ -2159,6 +2182,17 @@ class WPSG_REST {
         }
 
         $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
+
+        self::add_audit_entry($post_id, 'campaign.exported', [
+            'format'     => 'binary',
+            'mediaCount' => count($media),
+            'jobId'      => $job_id,
+        ], [
+            'summary'       => 'Binary ZIP export enqueued (' . count($media) . ' media files)',
+            'resource_type' => 'campaign',
+            'resource_id'   => (string) $post_id,
+            'resource_label' => $campaign['title'] ?? '',
+        ]);
 
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
@@ -2397,7 +2431,16 @@ class WPSG_REST {
             update_post_meta($post_id, 'media_items', $media_items);
         }
 
-        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title, 'source' => 'binary']);
+        self::add_audit_entry($post_id, 'campaign.imported', [
+            'source_title' => $title,
+            'format'       => 'binary',
+            'mediaCount'   => count($media_items),
+        ], [
+            'summary'        => "Campaign imported from binary ZIP: {$title}",
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $title,
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
@@ -3406,12 +3449,19 @@ class WPSG_REST {
         if (!empty($added)) {
             $media_items = array_merge($media_items, $added);
             update_post_meta($post_id, 'media_items', $media_items);
+            $batch_failed = count($failed);
             self::add_audit_entry($post_id, 'media.batch_created', [
-                'count' => count($added),
-                'failed' => count($failed),
+                'count'    => count($added),
+                'failed'   => $batch_failed,
                 'mediaIds' => array_values(array_map(function ($item) {
                     return $item['id'];
                 }, $added)),
+            ], [
+                'severity'      => $batch_failed > 0 ? 'warning' : 'info',
+                'summary'       => count($added) . ' item' . (count($added) === 1 ? '' : 's') . ' added to campaign'
+                                   . ($batch_failed > 0 ? " ({$batch_failed} failed)" : ''),
+                'resource_type' => 'campaign',
+                'resource_id'   => (string) $post_id,
             ]);
             do_action('wpsg_media_added', $post_id, ['count' => count($added)]);
             self::bump_cache_version();
@@ -4938,7 +4988,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
         }
 
-        $force = (bool) ($request->get_param('force') ?? false);
+        $force       = (bool) ($request->get_param('force') ?? false);
+        $campaign_id = intval($request->get_param('campaign_id') ?? 0);
 
         $is_batch = count($entries) > 1 || isset($files['files']);
         $max_batch_upload_size = self::get_max_batch_upload_size();
@@ -4951,10 +5002,23 @@ class WPSG_REST {
         }
 
         if (!$is_batch) {
-            $upload = self::upload_single_media_file($entries[0], $force);
+            $upload   = self::upload_single_media_file($entries[0], $force);
+            $filename = sanitize_file_name($entries[0]['name'] ?? '');
             if (is_wp_error($upload)) {
                 if ($upload->get_error_code() === 'wpsg_duplicate_file') {
                     $data = $upload->get_error_data();
+                    if ($campaign_id > 0) {
+                        self::add_audit_entry($campaign_id, 'media.duplicate_rejected', [
+                            'filename'    => $filename,
+                            'existingId'  => $data['existing_id'],
+                            'existingName' => $data['existing_name'] ?? '',
+                        ], [
+                            'severity'       => 'warning',
+                            'summary'        => "Duplicate file rejected: {$filename}",
+                            'resource_type'  => 'media',
+                            'resource_label' => $filename,
+                        ]);
+                    }
                     return new WP_REST_Response([
                         'duplicate'          => true,
                         'existing_id'        => $data['existing_id'],
@@ -4965,6 +5029,19 @@ class WPSG_REST {
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
                     $data = $upload->get_error_data();
+                    if ($campaign_id > 0) {
+                        self::add_audit_entry($campaign_id, 'media.near_duplicate_detected', [
+                            'filename'    => $filename,
+                            'similarId'   => $data['similar_id'],
+                            'similarName' => $data['similar_name'] ?? '',
+                            'distance'    => $data['distance'],
+                        ], [
+                            'severity'       => 'warning',
+                            'summary'        => "Near-duplicate detected: {$filename}",
+                            'resource_type'  => 'media',
+                            'resource_label' => $filename,
+                        ]);
+                    }
                     return new WP_REST_Response([
                         'near_duplicate'    => true,
                         'similar_id'        => $data['similar_id'],
@@ -4977,14 +5054,27 @@ class WPSG_REST {
                 return $upload;
             }
 
+            if ($force && $campaign_id > 0) {
+                self::add_audit_entry($campaign_id, 'media.upload_forced', [
+                    'filename' => $filename,
+                ], [
+                    'summary'        => "Duplicate check bypassed for: {$filename}",
+                    'resource_type'  => 'media',
+                    'resource_label' => $filename,
+                ]);
+            }
+
             return new WP_REST_Response($upload, 201);
         }
 
-        $results = [];
+        $results      = [];
         $success_count = 0;
+        $dup_count    = 0;
+        $near_dup_count = 0;
+        $forced_count = 0;
 
         foreach ($entries as $entry) {
-            $upload = self::upload_single_media_file($entry, $force);
+            $upload   = self::upload_single_media_file($entry, $force);
             $filename = sanitize_file_name($entry['name'] ?? '');
 
             if (is_wp_error($upload)) {
@@ -5000,6 +5090,7 @@ class WPSG_REST {
                     $result['existing_url']       = $data['existing_url'];
                     $result['existing_name']      = $data['existing_name'] ?? '';
                     $result['existing_campaigns'] = $data['existing_campaigns'] ?? [];
+                    $dup_count++;
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
                     $data = $upload->get_error_data();
@@ -5009,16 +5100,49 @@ class WPSG_REST {
                     $result['distance']          = $data['distance'];
                     $result['similar_name']      = $data['similar_name'] ?? '';
                     $result['similar_campaigns'] = $data['similar_campaigns'] ?? [];
+                    $near_dup_count++;
                 }
                 $results[] = $result;
                 continue;
             }
 
+            if ($force) {
+                $forced_count++;
+            }
             $results[] = array_merge([
                 'filename' => $filename,
                 'success'  => true,
             ], $upload);
             $success_count++;
+        }
+
+        if ($campaign_id > 0) {
+            if ($dup_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.duplicate_rejected', [
+                    'count' => $dup_count,
+                ], [
+                    'severity'      => 'warning',
+                    'summary'       => "{$dup_count} duplicate file" . ($dup_count === 1 ? '' : 's') . " rejected in batch upload",
+                    'resource_type' => 'media',
+                ]);
+            }
+            if ($near_dup_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.near_duplicate_detected', [
+                    'count' => $near_dup_count,
+                ], [
+                    'severity'      => 'warning',
+                    'summary'       => "{$near_dup_count} near-duplicate" . ($near_dup_count === 1 ? '' : 's') . " detected in batch upload",
+                    'resource_type' => 'media',
+                ]);
+            }
+            if ($force && $forced_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.upload_forced', [
+                    'count' => $forced_count,
+                ], [
+                    'summary'       => "{$forced_count} file" . ($forced_count === 1 ? '' : 's') . " uploaded with duplicate check bypassed",
+                    'resource_type' => 'media',
+                ]);
+            }
         }
 
         return new WP_REST_Response([

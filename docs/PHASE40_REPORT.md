@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (P40-UX1 complete)
+**Last updated:** 2026-06-03 (P40-CA1 complete)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P40-BS1 | Campaign audit baseline stabilization and current bug fix | Complete | S |
 | P40-CT1 | Canonical audit event contract, storage, and API evolution | Complete | L |
 | P40-UX1 | Audit surface naming, summaries, and shared event presentation | Complete | M |
-| P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Planned · depends on P40-CT1 | L |
+| P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Complete | L |
 | P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Planned · depends on P40-CT1 | L |
 | P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Planned · do after the other P40 tracks land or narrow | M |
 
@@ -469,7 +469,21 @@ keeping the log intentionally selective and reviewable.
 - The added entries use the Phase 40 severity and summary conventions.
 - Automated coverage exists for duplicate and near-duplicate audit behavior.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Investigation outcome:** Five audit gaps confirmed in static analysis: `upload_media` had no campaign context to write duplicate/near-dup entries; `export_campaign` and `export_campaign_binary` had no export audit entries; `create_media_batch` wrote audit entries without severity or summary; `campaign.imported` calls used the pre-CT1 format.
+
+**Changes shipped:**
+
+- `class-wpsg-rest.php` — `upload_media` route accepts optional `campaign_id` integer param. When supplied: `media.duplicate_rejected` (warning) on MD5 duplicate, `media.near_duplicate_detected` (warning) on pHash near-dup, `media.upload_forced` (info) on successful force bypass. Batch upload aggregates per-type counts into a single audit entry each. `create_media_batch` audit entry now carries `severity: 'warning'` and descriptive `summary` when `failed > 0`. `export_campaign` writes `campaign.exported` with format, mediaCount, summary, and resource fields. `export_campaign_binary` writes `campaign.exported` with jobId. Both `campaign.imported` calls (JSON and binary) upgraded with summary, resource_type, resource_id, resource_label, and format/count fields.
+- `src/components/Admin/MediaTab.tsx` — `handleUpload` passes `campaign_id` to `uploadMany` so the upload endpoint can write campaign-scoped duplicate/near-dup audit entries. `handleNearDupUploadAnyway` also passes `campaign_id` in extraFields so forced near-dup bypass is auditable.
+- `WPSG_P40_CA1_Campaign_Coverage_Test.php` — 10 regression tests: duplicate rejection with and without campaign_id, duplicate rejection severity and summary fields, forced upload audit entry and summary, JSON export audit entry and summary, JSON import audit entry with summary, all-success batch severity (info), partial-failure batch severity (warning).
+
+**Noise exclusions applied:** Duplicate/near-dup detection is only audited when `campaign_id` is explicitly provided. Upload-level events without a campaign context produce no audit entries. Read-only operations (list, view) remain excluded.
+
+**Verification:** 10 PHP tests pass (`OK (10 tests, 28 assertions)`); full suite passes (`OK (833 tests, 2640 assertions)`); lint clean; build clean.
+
+### Status: Complete
 
 ---
 
