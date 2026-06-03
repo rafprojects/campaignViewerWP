@@ -7,7 +7,10 @@ import type { AuditFilters } from '@/services/adminQuery';
 function mergeFilter(base: AuditFilters, key: keyof AuditFilters, value: string): AuditFilters {
   const next = { ...base };
   if (value) {
-    next[key] = value;
+    // The filter values are always free-text strings from input fields; narrower
+    // union types on the interface are for the API boundary, not this setter.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (next as any)[key] = value;
   } else {
     delete next[key];
   }
@@ -43,6 +46,7 @@ interface AuditTabProps {
   filters: AuditFilters;
   onFiltersChange: (filters: AuditFilters) => void;
   onExportCsv: () => void;
+  auditError?: Error | null;
 }
 
 export function AuditTab({
@@ -55,6 +59,7 @@ export function AuditTab({
   filters,
   onFiltersChange,
   onExportCsv,
+  auditError,
 }: AuditTabProps) {
   return (
     <>
@@ -111,6 +116,8 @@ export function AuditTab({
             <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
           </Table>
         </Table.ScrollContainer>
+      ) : auditError ? (
+        <Text c="red" role="alert" aria-live="assertive">Failed to load audit entries: {auditError.message}</Text>
       ) : auditEntriesCount === 0 ? (
         <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
       ) : (

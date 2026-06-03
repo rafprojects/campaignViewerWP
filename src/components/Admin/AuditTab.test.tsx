@@ -38,6 +38,20 @@ describe('AuditTab', () => {
         expect(screen.getByText('No audit entries yet.')).toBeInTheDocument();
     });
 
+    it('shows error message when auditError is set', () => {
+        render(
+            <AuditTab
+                {...baseProps}
+                auditLoading={false}
+                auditEntriesCount={0}
+                auditError={new Error('Fetch failed')}
+            />,
+        );
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toHaveTextContent('Fetch failed');
+        expect(screen.queryByText('No audit entries yet.')).not.toBeInTheDocument();
+    });
+
     it('calls onFiltersChange with updated from when from input changes', () => {
         const onFiltersChange = vi.fn();
         render(<AuditTab {...baseProps} onFiltersChange={onFiltersChange} />);

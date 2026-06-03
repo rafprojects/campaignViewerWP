@@ -138,7 +138,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
-  const { auditEntries, auditLoading } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
+  const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
   const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, activeTab === 'globalAudit' ? globalAuditFilters : {});
 
   const unifiedModal = useUnifiedCampaignModal({
@@ -540,6 +540,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             auditRows={auditRows}
             filters={auditFilters}
             onFiltersChange={setAuditFilters}
+            auditError={auditError}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
           />
         </Tabs.Panel>
