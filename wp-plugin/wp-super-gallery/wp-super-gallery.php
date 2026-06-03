@@ -71,8 +71,8 @@ function wpsg_deactivate() {
     wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
     wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
     wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
-    wp_clear_scheduled_hook(WPSG_Webhooks::RETRY_HOOK);
-    wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_PROCESS_HOOK);
+    wp_unschedule_hook(WPSG_Webhooks::RETRY_HOOK);
+    wp_unschedule_hook(WPSG_Export_Engine::JOB_PROCESS_HOOK);
     wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_CLEANUP_HOOK);
 }
 

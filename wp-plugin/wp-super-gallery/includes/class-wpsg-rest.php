@@ -7215,7 +7215,8 @@ class WPSG_REST {
             );
         }
 
-        $url = WPSG_Webhooks::sanitize_url($request->get_param('url') ?? '');
+        $raw_url = $request->get_param('url');
+        $url = WPSG_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
         if (empty($url)) {
             return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
         }
@@ -7255,7 +7256,8 @@ class WPSG_REST {
         $existing = $endpoints[$idx];
 
         if ($request->get_param('url') !== null) {
-            $url = WPSG_Webhooks::sanitize_url($request->get_param('url'));
+            $raw_url = $request->get_param('url');
+            $url = WPSG_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
             if (empty($url)) {
                 return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
             }
