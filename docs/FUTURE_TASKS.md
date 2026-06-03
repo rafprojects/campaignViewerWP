@@ -34,6 +34,8 @@ A later cleanup pass also removed detailed backlog entries queued into Phase 38 
 | Structured server-side logging | Monitoring exists, but operators still lack durable structured logs and an admin-visible sink | [PHASE32_REPORT.md](PHASE32_REPORT.md) |
 | Analytics live refresh | Core analytics shipped; the remaining UX gap is stale data during long admin sessions | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
 | Advanced media sort follow-up | Core sorting shipped; file-size and usage-count ordering still have real admin value | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
+| Webhook support for campaign events | P39-IN1 shipped endpoint management, HMAC-signed delivery, retry queue, and WP-CLI commands | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
+| Object-cache guidance and health surface | P39-OC1 shipped Redis/APCu/Memcached docs, health endpoint, warm_settings(), and TTL policy constants | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
 
 These items are intentionally not repeated in the backlog sections below.
 
@@ -161,23 +163,7 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## Infrastructure & Performance
 
-Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). The remaining backlog item here is deployment-scale object-cache guidance.
-
-### Redis / Memcached Object Cache
-
-**Context:** WP Super Gallery relies on WP's default database-backed object cache. High-traffic gallery embeds with many concurrent anonymous visitors hit the DB on every `get_option()` call. This is adequate for most deployments but becomes a bottleneck above approximately 500 concurrent users.
-
-**What it would take:**
-- Document how to configure WP's object cache drop-in with Redis or Memcached.
-- Add a `WPSG_DB::warm_cache()` utility that pre-loads frequently-read options on `init`.
-- Admin health screen: a "Cache" section showing hit/miss rates via `WP_Object_Cache::stats()`.
-- Eviction guidance: gallery settings suit a long TTL (hours); access grant lists need a short TTL (seconds–minutes) so revocations take effect promptly.
-
-**Open questions:**
-- Q1: Should `WPSG_REST::check_access()` ever bypass the object cache for real-time access control checks? (Yes — access grants must not be stale by more than the cache TTL, which must be configurable.)
-- Q2: Is there a network security constraint preventing some WP hosts from running Redis? (Yes — document APCu as an alternative for single-server setups.)
-
-**Effort:** Medium | **Impact:** Medium — significant only for high-traffic deployments
+Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). Object-cache guidance shipped in P39-OC1 — see [PHASE39_REPORT.md](PHASE39_REPORT.md) and [object-cache-setup.md](object-cache-setup.md).
 
 ---
 
@@ -231,24 +217,6 @@ Phase-owned follow-on in this area: structured server-side logging now lives in 
 
 ---
 
-### Webhook Support for Campaign Events
-
-**Context:** Campaign state changes (created, archived, media added, access granted) could trigger webhooks to external services (Zapier, Slack, CRM systems), enabling automation.
-
-**Proposed events:**
-- `campaign.created`, `campaign.archived`, `campaign.restored`, `campaign.deleted`
-- `media.added`, `media.removed`
-- `access.granted`, `access.revoked`
-- `analytics.milestone` (e.g. N views — configurable threshold)
-
-**Open questions:**
-- Q1: Should webhooks be configured per-event-type or per-URL (one URL receives all events)? Per-URL is simpler to implement; per-event is more useful.
-- Q2: Delivery guarantees: should failed webhook deliveries be retried? If so, what is the retry schedule and max-attempt count?
-- Q3: Security: webhook payloads should be signed (HMAC-SHA256 header) so the receiver can verify origin. How is the signing secret generated and rotated?
-
-**Effort:** Medium-High | **Impact:** Medium — primarily for automation-heavy workflows
-
----
 
 ### GraphQL API Alternative
 
@@ -302,11 +270,6 @@ LOE: Medium (4-6 hours) | Impact: Low
 Files: `class-wpsg-rest.php` → 8+ new files
 Split the still-monolithic `WPSG_REST` class. Current test coverage is strong; this remains a DX/maintainability refactor rather than a user-facing gap.
 LOE: X-Large (16-24 hours) | Impact: Low (DX only)
-
-**D-12: Rate Limiter Transient Bloat Under Load**
-Files: `class-wpsg-rate-limiter.php`
-Document persistent object cache requirement; optionally add APCu fallback. Standard WP practice, only problematic without Redis/Memcached under heavy load.
-LOE: Small (1-2 hours docs, 4-6 hours APCu) | Impact: Low
 
 **D-13: Thumbnail Cache Index — Single wp_options Row Scalability**
 Files: `class-wpsg-thumbnail-cache.php`
@@ -409,3 +372,5 @@ When promoting future tasks to an active phase:
 
 *Document created: February 1, 2026*
 *Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review. Updated D-1 and JWT entries with P39-CO1/P39-AU1 deferral rationale after both tracks were rolled back — CORS restriction is unnecessary for the primary same-origin embedded WP use case.*
+
+*Updated: June 3, 2026 (P39-CL1) — Removed "Webhook Support for Campaign Events" (shipped P39-IN1) and "Redis/Memcached Object Cache" (shipped P39-OC1); retired D-12 (rate-limiter object-cache docs, now covered by P39-OC1); added P39-IN1 and P39-OC1 to the ownership snapshot; updated Infrastructure & Performance section intro.*

@@ -13,7 +13,7 @@
 | P39-IN1 | Webhook support for campaign events | Complete | L |
 | P39-CM1 | Campaign export full binary media export | Complete | M |
 | P39-OC1 | Redis/Memcached object-cache guidance and health surface | Complete | M |
-| P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Planned · do after other P39 tracks | S |
+| P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Complete | S |
 
 > **Note:** Phase 39 is intentionally framed as a deployment, cross-origin,
 > and interoperability phase rather than a broad backlog sweep.
@@ -648,25 +648,40 @@ reflects the actual disposition of the work.
 - The ownership snapshot and document metadata reflect the completed cleanup.
 - The backlog is narrower and more accurate after the phase than before it.
 
-### Status: Planned · do after other P39 tracks
+### Implementation notes
 
----
+**Dispositions applied to `docs/FUTURE_TASKS.md`:**
 
-## Implementation Notes
+| Track | Originating backlog entry | Disposition |
+|-------|--------------------------|-------------|
+| P39-CO1 | D-1: CORS Origin Allow-List & Admin UI | Retained — deferral note added June 1; entry narrowed to standalone SPA context only |
+| P39-AU1 | JWT In-Memory Token Auth (Standalone SPA) | Retained — deferral note added June 1; gated on P39-CO1 and standalone SPA deployment model |
+| P39-IN1 | Webhook Support for Campaign Events | **Removed** — fully shipped |
+| P39-CM1 | (No stale entry to remove; follow-on items Audit Log Binary Export and Media Library Binary Export added as new backlog entries) | No action needed |
+| P39-OC1 | Redis/Memcached Object Cache | **Removed** — fully shipped; D-12 (rate-limiter object-cache docs) also retired |
 
-_Updated as tracks land._
+**Residual scope policy adopted:** Follow-on items identified during a track's implementation (e.g. audit-log binary export, media library export) are added as new backlog entries and do not block the originating track from being removed. The originating entry is removed once the core scope ships.
 
-### Open follow-ups
+**Ownership snapshot updated:** P39-IN1 and P39-OC1 added to the "Recently promoted and now phase-owned" table.
 
-Track-level follow-ups remain in the sections above until the cross-origin,
-export, automation, and cache-readiness decisions are resolved and the cleanup
-track can close the loop in `docs/FUTURE_TASKS.md`.
+### Status: Complete
 
 ---
 
 ## Outcome
 
-_To be filled when Phase 39 is marked Complete._
+Phase 39 delivered four of five substantive tracks. P39-CO1 and P39-AU1 were
+rolled back together after implementation revealed the primary deployment model
+(embedded WP shortcode) is same-origin and gains nothing from explicit CORS
+restriction; both are retained in the backlog with deferral notes gating them
+on a concrete standalone SPA deployment requirement.
+
+P39-IN1 shipped webhook automation with HMAC-signed delivery, a retry queue,
+and WP-CLI management commands. P39-CM1 shipped `WPSG_Export_Engine` for
+background ZIP generation and unlocked two new follow-on export types. P39-OC1
+shipped Redis/APCu/Memcached deployment docs, a health surface in the admin
+panel, warm-cache and TTL-policy primitives, and a PHPUnit + React test suite.
+P39-CL1 closed the backlog loop.
 
 ---
 
