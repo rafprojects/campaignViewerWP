@@ -5555,6 +5555,15 @@ class WPSG_REST {
             /** This action is documented in wp-includes/user.php */
             do_action('wp_login_failed', $username, $user);
 
+            self::add_audit_entry(0, 'auth.login_failed', [
+                'login' => sanitize_text_field($username ?? ''),
+            ], [
+                'scope'         => 'system',
+                'severity'      => 'warning',
+                'summary'       => 'Failed login attempt: ' . sanitize_text_field($username ?? '(unknown)'),
+                'resource_type' => 'user',
+            ]);
+
             return new WP_REST_Response([
                 'code'    => 'invalid_credentials',
                 'message' => 'Invalid username or password.',
@@ -5564,6 +5573,17 @@ class WPSG_REST {
         // Explicitly set the current user so subsequent calls
         // (wp_create_nonce, current_user_can, etc.) work in this request.
         wp_set_current_user($user->ID);
+
+        self::add_audit_entry(0, 'auth.login_success', [
+            'userId' => $user->ID,
+            'login'  => $user->user_login,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Login: {$user->user_login}",
+            'resource_type'  => 'user',
+            'resource_id'    => (string) $user->ID,
+            'resource_label' => $user->user_login,
+        ]);
 
         $is_admin = current_user_can('manage_wpsg');
         $campaign_ids = self::get_accessible_campaign_ids($user->ID);
@@ -5588,6 +5608,23 @@ class WPSG_REST {
      * @return WP_REST_Response
      */
     public static function handle_cookie_logout() {
+        $logout_user    = wp_get_current_user();
+        $logout_user_id = $logout_user->ID ?? 0;
+        $logout_login   = $logout_user->user_login ?? '';
+
+        if ($logout_user_id > 0) {
+            self::add_audit_entry(0, 'auth.logout', [
+                'userId' => $logout_user_id,
+                'login'  => $logout_login,
+            ], [
+                'scope'          => 'system',
+                'summary'        => "Logout: {$logout_login}",
+                'resource_type'  => 'user',
+                'resource_id'    => (string) $logout_user_id,
+                'resource_label' => $logout_login,
+            ]);
+        }
+
         wp_logout();
 
         // wp_logout() calls wp_clear_auth_cookie() which sends Set-Cookie
@@ -5856,14 +5893,27 @@ class WPSG_REST {
         if (!class_exists('WPSG_Settings')) {
             return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
-        $body = $request->get_json_params();
-        $input = WPSG_Settings::from_js($body);
+        $body      = $request->get_json_params();
+        $input     = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current = WPSG_Settings::get_settings();
-        $merged = array_merge($current, $sanitized);
+        $current   = WPSG_Settings::get_settings();
+        $merged    = array_merge($current, $sanitized);
+
+        $changed_keys = array_keys(array_filter($sanitized, function ($v, $k) use ($current) {
+            return !array_key_exists($k, $current) || $current[$k] !== $v;
+        }, ARRAY_FILTER_USE_BOTH));
 
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
+
+        if (!empty($changed_keys)) {
+            self::add_audit_entry(0, 'settings.updated', [
+                'changedKeys' => $changed_keys,
+            ], [
+                'scope'   => 'system',
+                'summary' => 'App settings updated: ' . implode(', ', $changed_keys),
+            ]);
+        }
 
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
@@ -5875,14 +5925,30 @@ class WPSG_REST {
         if (!class_exists('WPSG_Settings')) {
             return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
-        $body  = $request->get_json_params() ?: [];
-        $input = WPSG_Settings::from_js($body);
+        $body      = $request->get_json_params() ?: [];
+        $input     = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current = WPSG_Settings::get_settings();
+        $current   = WPSG_Settings::get_settings();
+        $applied   = array_intersect_key($sanitized, $input);
+
+        $changed_keys = array_keys(array_filter($applied, function ($v, $k) use ($current) {
+            return !array_key_exists($k, $current) || $current[$k] !== $v;
+        }, ARRAY_FILTER_USE_BOTH));
+
         // Only merge the keys the caller actually sent.
-        $merged = array_merge($current, array_intersect_key($sanitized, $input));
+        $merged = array_merge($current, $applied);
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
+
+        if (!empty($changed_keys)) {
+            self::add_audit_entry(0, 'settings.updated', [
+                'changedKeys' => $changed_keys,
+            ], [
+                'scope'   => 'system',
+                'summary' => 'App settings patched: ' . implode(', ', $changed_keys),
+            ]);
+        }
+
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
             200
@@ -6866,6 +6932,15 @@ class WPSG_REST {
         ];
     }
 
+    private static function taxonomy_label(string $taxonomy): string {
+        $labels = [
+            'wpsg_campaign_category' => 'Campaign category',
+            'wpsg_campaign_tag'      => 'Campaign tag',
+            'wpsg_media_tag'         => 'Media tag',
+        ];
+        return $labels[$taxonomy] ?? $taxonomy;
+    }
+
     private static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201, $parent_id = 0) {
         $name = sanitize_text_field($name ?? '');
         if ($name === '') {
@@ -6886,6 +6961,18 @@ class WPSG_REST {
             }
             return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
         }
+        $label = self::taxonomy_label($taxonomy);
+        self::add_audit_entry(0, 'taxonomy.term_created', [
+            'taxonomy' => $taxonomy,
+            'name'     => $name,
+            'termId'   => strval($result['term_id']),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "{$label} created: {$name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($result['term_id']),
+            'resource_label' => $name,
+        ]);
         $term = get_term($result['term_id'], $taxonomy);
         return new WP_REST_Response(self::format_term($term), $created_status);
     }
@@ -6896,10 +6983,23 @@ class WPSG_REST {
         if (!$term || is_wp_error($term)) {
             return new WP_Error('wpsg_not_found', 'Term not found', ['status' => 404]);
         }
+        $term_name = $term->name;
         $result = wp_delete_term($term_id, $taxonomy);
         if (is_wp_error($result) || $result === false) {
             return new WP_Error('wpsg_internal_error', 'Failed to delete term', ['status' => 500]);
         }
+        $label = self::taxonomy_label($taxonomy);
+        self::add_audit_entry(0, 'taxonomy.term_deleted', [
+            'taxonomy' => $taxonomy,
+            'name'     => $term_name,
+            'termId'   => strval($term_id),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "{$label} deleted: {$term_name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($term_id),
+            'resource_label' => $term_name,
+        ]);
         return new WP_REST_Response(['deleted' => true, 'id' => strval($term_id)], 200);
     }
 
@@ -6943,8 +7043,20 @@ class WPSG_REST {
             }
             return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
         }
-        $term = get_term($result['term_id'], 'wpsg_campaign_category');
-        return new WP_REST_Response(self::format_term($term), 200);
+        $updated_term = get_term($result['term_id'], 'wpsg_campaign_category');
+        $updated_name = $updated_term ? $updated_term->name : ($args['name'] ?? '');
+        self::add_audit_entry(0, 'taxonomy.term_updated', [
+            'taxonomy' => 'wpsg_campaign_category',
+            'name'     => $updated_name,
+            'termId'   => strval($term_id),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Campaign category updated: {$updated_name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($term_id),
+            'resource_label' => $updated_name,
+        ]);
+        return new WP_REST_Response(self::format_term($updated_term), 200);
     }
 
     public static function delete_campaign_category(WP_REST_Request $request) {
@@ -6996,6 +7108,18 @@ class WPSG_REST {
             return $result;
         }
 
+        $tmpl_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.created', [
+            'templateId' => $result['id'] ?? '',
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template created: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $result['id'] ?? '',
+            'resource_label' => $tmpl_name,
+        ]);
+
         return new WP_REST_Response($result, 201);
     }
 
@@ -7026,6 +7150,18 @@ class WPSG_REST {
         }
         self::bump_cache_version();
 
+        $tmpl_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.updated', [
+            'templateId' => $id,
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template updated: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $id,
+            'resource_label' => $tmpl_name,
+        ]);
+
         return new WP_REST_Response($result, 200);
     }
 
@@ -7033,13 +7169,27 @@ class WPSG_REST {
      * Delete a layout template (admin).
      */
     public static function delete_layout_template($request) {
-        $id      = $request->get_param('templateId');
+        $id       = $request->get_param('templateId');
+        $template = WPSG_Layout_Templates::get($id);
+        $tmpl_name = $template ? ($template['name'] ?? $id) : $id;
+
         $deleted = WPSG_Layout_Templates::delete($id);
 
         if (!$deleted) {
             return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
         }
         self::bump_cache_version();
+
+        self::add_audit_entry(0, 'layout_template.deleted', [
+            'templateId' => $id,
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template deleted: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $id,
+            'resource_label' => $tmpl_name,
+        ]);
 
         return new WP_REST_Response(['deleted' => true], 200);
     }
@@ -7056,6 +7206,19 @@ class WPSG_REST {
         if (is_wp_error($result)) {
             return $result;
         }
+
+        $dup_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.duplicated', [
+            'sourceId'   => $id,
+            'templateId' => $result['id'] ?? '',
+            'name'       => $dup_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template duplicated: {$dup_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $result['id'] ?? '',
+            'resource_label' => $dup_name,
+        ]);
 
         return new WP_REST_Response($result, 201);
     }

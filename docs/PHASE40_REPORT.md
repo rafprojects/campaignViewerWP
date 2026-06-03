@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (P40-CA1 complete)
+**Last updated:** 2026-06-03 (P40-SA1 complete)
 
 ### Tracks
 
@@ -12,7 +12,7 @@
 | P40-CT1 | Canonical audit event contract, storage, and API evolution | Complete | L |
 | P40-UX1 | Audit surface naming, summaries, and shared event presentation | Complete | M |
 | P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Complete | L |
-| P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Planned · depends on P40-CT1 | L |
+| P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Complete | L |
 | P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Planned · do after the other P40 tracks land or narrow | M |
 
 > **Note:** Phase 40 is intentionally a focused audit-domain phase.
@@ -562,7 +562,22 @@ application as a whole or do not belong to a single campaign.
 - Automated coverage exists for the main settings, auth, template, and taxonomy
   audit paths.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Coverage targets shipped vs. deferred:**
+- `auth.login_success` / `auth.login_failed` / `auth.logout` — all implemented. Login failure uses `severity: 'warning'`. Logout captures actor before `wp_logout()` so the session is still valid when the audit entry is written.
+- `settings.updated` — written by both `update_settings` (POST) and `patch_settings` (PATCH) only when keys actually changed vs. current stored values; no-ops produce no entry. Values are redacted; only changed key names are logged.
+- `layout_template.created/updated/deleted/duplicated` — all four mutations audited with template name, resource_type, scope=system.
+- `taxonomy.term_created/updated/deleted` — implemented via `handle_term_insert` and `handle_term_delete` shared helpers + direct call in `update_campaign_category`. Covers campaign categories, campaign tags, and media tags.
+- Layout template import/export — no routes exist in the current codebase; deferred to a future phase if those routes are added.
+
+**Changes shipped:**
+- `class-wpsg-rest.php` — `handle_cookie_login`: `auth.login_failed` (warning) on 401 path; `auth.login_success` after `wp_set_current_user`. `handle_cookie_logout`: audit written before `wp_logout()` to preserve actor context. `update_settings`/`patch_settings`: `settings.updated` with `changedKeys` array; skipped on no-ops. `create/update/delete/duplicate_layout_template`: system-scope audit entries with name, resource_type. `update_campaign_category`: `taxonomy.term_updated` inline. `handle_term_insert`: `taxonomy.term_created` after successful insert. `handle_term_delete`: `taxonomy.term_deleted` before return. `taxonomy_label()` private helper maps taxonomy slugs to human-readable labels.
+- `WPSG_P40_SA1_System_Coverage_Test.php` — 19 tests / 62 assertions covering all new system-scope paths.
+
+**Verification:** 19 SA1 tests pass; full suite `OK (852 tests, 2702 assertions)`; lint clean; build clean.
+
+### Status: Complete
 
 ---
 
