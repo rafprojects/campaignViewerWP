@@ -198,23 +198,26 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       const { jobId } = await apiClient.startCampaignBinaryExport(id);
       onNotify({ type: 'success', text: 'Building ZIP export — this may take a moment.' });
 
-      // Poll every 3 seconds, up to 5 minutes.
-      const deadline = Date.now() + 300_000;
-      let job = await apiClient.getExportJob(jobId);
-      while (job.status === 'pending' || job.status === 'processing') {
-        if (Date.now() > deadline) {
-          throw new Error('Export timed out after 5 minutes.');
+      try {
+        // Poll every 3 seconds, up to 5 minutes.
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) {
+            throw new Error('Export timed out after 5 minutes.');
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
         }
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        job = await apiClient.getExportJob(jobId);
-      }
 
-      if (job.status === 'failed') {
-        throw new Error(job.error ?? 'Export failed');
-      }
+        if (job.status === 'failed') {
+          throw new Error(job.error ?? 'Export failed');
+        }
 
-      await apiClient.downloadExportJob(jobId, `campaign-${id}.zip`);
-      await apiClient.deleteExportJob(jobId);
+        await apiClient.downloadExportJob(jobId, `campaign-${id}.zip`);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => {});
+      }
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Binary export failed') });
     } finally {

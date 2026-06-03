@@ -44,7 +44,7 @@ class WPSG_Webhooks {
         add_action('wpsg_media_removed',     [self::class, 'on_media_removed'],     10, 2);
         add_action('wpsg_access_granted',    [self::class, 'on_access_granted'],    10, 2);
         add_action('wpsg_access_revoked',    [self::class, 'on_access_revoked'],    10, 2);
-        add_action(self::RETRY_HOOK,         [self::class, 'retry_delivery'],       10, 5);
+        add_action(self::RETRY_HOOK,         [self::class, 'retry_delivery'],       10, 4);
     }
 
     // ── Event handlers ─────────────────────────────────────────────────────────
@@ -142,23 +142,30 @@ class WPSG_Webhooks {
         self::log_delivery($event, $url, $attempt, $success, $status_code, $delivery_id);
 
         if (!$success && $attempt < self::MAX_ATTEMPTS) {
-            self::schedule_retry($idx, $endpoint, $event, $full_payload, $attempt + 1);
+            self::schedule_retry($idx, $event, $full_payload, $attempt + 1);
         }
     }
 
-    private static function schedule_retry(int $idx, array $endpoint, string $event, array $payload, int $attempt) {
+    private static function schedule_retry(int $idx, string $event, array $payload, int $attempt) {
         // Attempt 2: +5 min. Attempt 3: +30 min.
+        // Only $idx (not the endpoint array) is persisted in WP-Cron to avoid
+        // storing the HMAC secret in plain-text option storage. The endpoint is
+        // reloaded from the option at retry time.
         $delays = [0, 300, 1800];
         $delay  = $delays[$attempt - 1] ?? 1800;
         wp_schedule_single_event(
             time() + $delay,
             self::RETRY_HOOK,
-            [$idx, $endpoint, $event, $payload, $attempt]
+            [$idx, $event, $payload, $attempt]
         );
     }
 
-    public static function retry_delivery(int $idx, array $endpoint, string $event, array $payload, int $attempt) {
-        self::deliver($idx, $endpoint, $event, $payload, $attempt);
+    public static function retry_delivery(int $idx, string $event, array $payload, int $attempt) {
+        $endpoints = self::get_endpoints();
+        if (!isset($endpoints[$idx])) {
+            return; // Endpoint was removed between schedule and retry — skip silently.
+        }
+        self::deliver($idx, $endpoints[$idx], $event, $payload, $attempt);
     }
 
     // ── Endpoint storage ───────────────────────────────────────────────────────

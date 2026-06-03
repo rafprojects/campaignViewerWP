@@ -7291,7 +7291,7 @@ class WPSG_REST {
 
     public static function list_webhook_deliveries($request) {
         $log   = WPSG_Webhooks::get_delivery_log();
-        $limit = min(intval($request->get_param('limit') ?? 50), 50);
+        $limit = max(0, min(intval($request->get_param('limit') ?? 50), 50));
         return new WP_REST_Response(array_slice($log, 0, $limit), 200);
     }
 }
