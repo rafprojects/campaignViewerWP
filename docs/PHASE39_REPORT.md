@@ -680,6 +680,10 @@ Five Copilot threads addressed:
 | `create_webhook_endpoint()` `enabled` coercion | `class-wpsg-rest.php:7206` | **Accept — fixed** | `!== false` treats `0`/`'0'` as enabled. Aligned with update endpoint: `null` → default `true`, otherwise `(bool)` cast. |
 | WEBHOOK_MANUAL_TEST.md nonce prerequisite | `docs/testing/WEBHOOK_MANUAL_TEST.md:41` | **Accept — fixed** | Guide incorrectly stated nonce is required alongside Application Password. `verify_admin_auth()` explicitly skips the nonce for HTTP Basic requests. Removed nonce from section 4 and all curl commands; matches binary export guide wording. |
 
+**Post-review CI fix — PHP 8.2 stat cache (`class-wpsg-export-engine.php`):**
+
+The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
+
 ---
 
 ## Outcome
