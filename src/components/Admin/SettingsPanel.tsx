@@ -28,6 +28,7 @@ import {
   IconEye,
   IconPalette,
   IconArrowsHorizontal,
+  IconPlugConnected,
 } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import {
@@ -51,6 +52,7 @@ import { GalleryLayoutSettingsSection } from '../Settings/GalleryLayoutSettingsS
 import { CampaignViewerSettingsSection } from '../Settings/CampaignViewerSettingsSection';
 import { CampaignCardSettingsSection } from '../Settings/CampaignCardSettingsSection';
 import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
+import { WebhookSettingsSection } from '../Settings/WebhookSettingsSection';
 import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
 import { useTheme } from '@/hooks/useTheme';
 import { useRootId } from '@/contexts/RootIdContext';
@@ -304,6 +306,9 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
           Typography
         </Tabs.Tab>
+        <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
+          Integrations
+        </Tabs.Tab>
         {settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
@@ -401,6 +406,12 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         )}
       </Tabs.Panel>
 
+      <Tabs.Panel value="integrations" pt="md">
+        {activeTab === 'integrations' && (
+          <WebhookSettingsSection apiClient={apiClient} />
+        )}
+      </Tabs.Panel>
+
       {settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           {activeTab === 'system-admin' && (
@@ -414,6 +425,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
                 settings={settings}
                 updateSetting={updateGallerySetting}
                 tooltipLabel={tooltipLabel}
+                apiClient={apiClient}
               />
             </Stack>
           )}

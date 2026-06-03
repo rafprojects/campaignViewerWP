@@ -1,19 +1,19 @@
 # Phase 39 — Enterprise Scale & Integration Tracks
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-03
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P39-CO1 | CORS origin allow-list and admin UI | Planned · align with P39-AU1 | M |
-| P39-AU1 | JWT in-memory token auth for standalone SPA | Planned · gated on accepted cross-origin policy decisions | L |
-| P39-IN1 | Webhook support for campaign events | Planned · requires delivery/signing decisions | L |
-| P39-CM1 | Campaign export full binary media export | Planned · requires export-mode and packaging decisions | M |
-| P39-OC1 | Redis/Memcached object-cache guidance and health surface | Planned | M |
-| P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Planned · do after other P39 tracks | S |
+| P39-CO1 | CORS origin allow-list and admin UI | Deferred — returned to FUTURE_TASKS | M |
+| P39-AU1 | JWT in-memory token auth for standalone SPA | Deferred — returned to FUTURE_TASKS | L |
+| P39-IN1 | Webhook support for campaign events | Complete | L |
+| P39-CM1 | Campaign export full binary media export | Complete | M |
+| P39-OC1 | Redis/Memcached object-cache guidance and health surface | Complete | M |
+| P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Complete | S |
 
 > **Note:** Phase 39 is intentionally framed as a deployment, cross-origin,
 > and interoperability phase rather than a broad backlog sweep.
@@ -151,7 +151,17 @@ credentials combinations.
 - The runtime CORS headers reflect the effective configured policy.
 - Coverage exists for allowed, rejected, and malformed origin cases.
 
-### Status: Planned · align with P39-AU1
+### Status: Deferred — returned to FUTURE_TASKS (see D-1)
+
+### Deferral rationale
+
+P39-CO1 was implemented in full (settings registry, sanitizer, admin UI, PHP tests, React tests) but rolled back after manual verification revealed that CORS restriction provides no value for the primary deployment model.
+
+**Why it does not matter for standard deployments:** When the plugin is embedded via WordPress shortcode, the gallery and the REST API are on the same origin — CORS is not triggered at all. WP core's own `rest_send_cors_headers()` already reflects any `Origin` header back unconditionally (registered at priority 10 on `rest_pre_serve_request`). Our plugin's hook, also at priority 10, ran *before* WP's handler, making `header_remove()` a no-op. Correcting for that required changing the hook priority to 20, adding complexity to fight a behavior that was irrelevant for the primary use case.
+
+**Why the standalone SPA case is not ready:** The track's real value is gating cross-origin credentials to a specific allow-list when the gallery is deployed as a standalone SPA on a different origin. That deployment model requires preparatory work (routing changes, build/bundle config, WPSG_ENABLE_JWT env-var gate, deployment documentation) that is not yet in scope. Implementing CORS restriction without that foundation would protect nothing and add surface area.
+
+**No code shipped.** All implementation files were reverted to pre-session state via `git checkout`. Test files created during the session were deleted. No database schema changes, settings keys, or filter registrations were left in place.
 
 ---
 
@@ -231,7 +241,11 @@ cross-origin policy accepted by `P39-CO1`.
 - Same-origin nonce-based deployments remain the default.
 - Coverage exists for login, refresh, expiry, and logout behavior.
 
-### Status: Planned · gated on accepted cross-origin policy decisions
+### Status: Deferred — returned to FUTURE_TASKS (see JWT In-Memory Token Auth entry)
+
+### Deferral rationale
+
+P39-AU1 was gated on P39-CO1. Both tracks are being deferred together. The core reason is that the standalone SPA deployment model — the only context where cross-origin JWT auth is required — is not ready. The app was built around WordPress embedding and would need routing, build, and deployment preparation work before it can optionally operate as a standalone SPA. Implementing the auth layer first, without that foundation, would be building on an undefined surface. Revisit when there is a concrete standalone SPA deployment requirement and the preparatory work is in scope.
 
 ---
 
@@ -302,7 +316,42 @@ delivery visibility.
 - Operators can see enough delivery state to understand success and failure.
 - Coverage exists for payload generation, signing, and retry behavior.
 
-### Status: Planned · requires delivery/signing decisions
+### Status: Complete
+
+### Implementation notes
+
+**Design decisions accepted before implementation:**
+- **Configuration model**: Bounded hybrid — up to 5 endpoints each with URL, HMAC secret, optional per-event-type filter, and enabled toggle. Stored in `wpsg_webhook_endpoints` option (separate from the main settings option).
+- **Retry guarantees**: 3 attempts via WP-Cron — immediate → +5 min → +30 min. Terminal failures logged in the delivery ring buffer. Retry hook clears on plugin deactivation.
+- **Signing**: Auto-generated 64-char hex HMAC-SHA256 secret per endpoint (`random_bytes(32)`). Full secret exposed once on creation/rotation. Signature delivered as `X-WPSG-Signature: sha256=<hex>` per the GitHub convention.
+
+**New files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-webhooks.php` — engine: event hooks, dispatch, delivery, retry scheduling, delivery log, HMAC signing.
+- `wp-plugin/wp-super-gallery/tests/WPSG_P39IN1_Webhook_Test.php` — PHP test coverage for endpoint storage, delivery, filtering, signing, and all REST routes.
+- `src/services/api/webhooksApi.ts` — dedicated API domain module.
+- `src/components/Settings/WebhookSettingsSection.tsx` — standalone React component with endpoint list, add form, enable toggle, event filter, rotate secret, one-time secret modal.
+
+**Modified files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` — added `do_action` hooks at all 9 campaign-mutation callsites (create, update, archive, restore, delete, batch archive/restore, media add, media remove, access grant, access revoke). Added REST routes at `/webhooks`, `/webhooks/{index}`, `/webhooks/{index}/rotate-secret`, `/webhooks/delivery-log` with `require_admin` permission.
+- `wp-plugin/wp-super-gallery/wp-super-gallery.php` — `require_once` + `add_action('init', ['WPSG_Webhooks', 'register'])` + deactivation hook clears the retry cron hook.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-monitoring.php` — `get_health_data()` includes a `webhooks` summary key with endpoint count, delivery totals, success/failure counts, and last 10 deliveries.
+- `src/services/apiClient.ts` — imports `WebhooksApi`, adds `listWebhookEndpoints`, `createWebhookEndpoint`, `updateWebhookEndpoint`, `deleteWebhookEndpoint`, `rotateWebhookSecret`, `listWebhookDeliveries` methods.
+- `src/components/Admin/SettingsPanel.tsx` — new permanent "Integrations" tab (no `advancedSettingsEnabled` gate) renders `WebhookSettingsSection`.
+- `src/components/Admin/SettingsPanel.test.tsx` — added `listWebhookEndpoints` mock and two new tests for the Integrations tab.
+
+**Event catalog (first-pass, 9 events):** `campaign.created`, `campaign.updated`, `campaign.archived`, `campaign.restored`, `campaign.deleted`, `media.added`, `media.removed`, `access.granted`, `access.revoked`.
+
+**Delivery log:** Bounded ring buffer of last 50 entries in `wpsg_webhook_delivery_log` option. Each entry records `deliveryId`, `event`, `url`, `attempt`, `success`, `statusCode`, `timestamp`. Also surfaced in `GET /admin/health` under `webhooks.recentDeliveries`.
+
+**PHP tests:** 36 test cases covering endpoint storage, secret generation, masking, signing, URL sanitization, event filtering, delivery (success, failure, disabled, event-filter, all-events), payload shape, HMAC signature header, WP action hook wiring, log capping, and all 6 REST routes (list, create, update, delete, rotate, delivery log) including admin-only enforcement.
+
+**Manual testing:** End-to-end verified against a live wp-env environment with webhook.site as the receiver. Confirmed: REST route availability, endpoint CRUD, `campaign.created` delivery and HMAC signature, event filter (all-events endpoint receives `campaign.created`; filtered endpoint suppresses it and fires on `campaign.archived` via the dedicated `/campaigns/{id}/archive` route), and secret rotation (new secret verifies the delivered signature; old secret does not). See `docs/testing/WEBHOOK_MANUAL_TEST.md`.
+
+**Testing findings:**
+- Admin routes require Application Password auth. No `X-WP-Nonce` is needed — `verify_admin_auth()` accepts HTTP Basic (Application Password) requests without a nonce. Nonces are only required for cookie-based browser sessions.
+- The `manage_wpsg` capability is granted by the plugin activation hook. Re-run deactivate/activate after a fresh wp-env start.
+- Archiving a campaign fires `campaign.archived` only via the dedicated `POST /campaigns/{id}/archive` route. A `PUT /campaigns/{id}` with `status: archived` fires `campaign.updated` instead.
+- Deleting multiple endpoints in sequence must proceed from highest index to lowest. Each deletion calls `array_values()` internally, which re-indexes the stored array. Deleting index 0 first causes remaining endpoints to shift down, making subsequent index-based deletes target the wrong slot.
 
 ---
 
@@ -370,7 +419,50 @@ URLs remain reachable.
 - Import behavior for packaged exports is defined and testable.
 - Coverage exists for generation, failure, and round-trip cases.
 
-### Status: Planned · requires export-mode and packaging decisions
+### Status: Complete
+
+### Implementation notes
+
+**Design decisions:**
+- **Archive dependency**: `ext-zip` (`ZipArchive`) required. Engine checks availability at export request time and returns a clear 500 if missing.
+- **Size limit**: 100 MB total. HEAD check used to reject early; per-file and cumulative checks during download.
+- **Generation mode**: Background via WP-Cron (REST path) + synchronous for CLI.
+- **Modular engine**: `WPSG_Export_Engine` owns all job plumbing and ZIP packaging. Future export types (audit, media library) hand the engine a manifest + media list; the engine handles the rest.
+
+**New files:**
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-export-engine.php` — reusable background export job manager: `create_job()`, `get_job()`, `delete_job()`, `process_job()` (WP-Cron callback), `cleanup_expired_jobs()`, `get_media_filename()` (deterministic naming shared by manifest builder and ZIP builder), `check_zip_available()`. Job state stored in transients; job IDs tracked in `wpsg_export_job_index` option.
+- `wp-plugin/wp-super-gallery/tests/WPSG_P39CM1_Export_Test.php` — 24 PHP tests covering engine CRUD, ZIP building, size-limit enforcement, cleanup, all 5 REST routes, manifest structure, filename consistency between manifest and ZIP.
+- `src/services/api/exportApi.ts` — `ExportApi` domain module: `startCampaignBinaryExport()`, `getExportJob()`, `deleteExportJob()`, `downloadExportJob()` (fetch with auth headers → blob download).
+- `wp-plugin/wp-super-gallery/tests/stubs/1x1.jpg` — minimal JPEG stub for HTTP-intercepted media fetch tests.
+
+**Modified files:**
+- `wp-plugin/wp-super-gallery/wp-super-gallery.php` — `require_once` + `add_action('init', ['WPSG_Export_Engine', 'register'])` + deactivation cleanup for both `JOB_PROCESS_HOOK` and `JOB_CLEANUP_HOOK`.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` — 5 new REST routes (`POST /campaigns/{id}/export/binary`, `GET /export-jobs/{id}`, `DELETE /export-jobs/{id}`, `GET /export-jobs/{id}/download`, `POST /campaigns/import/binary`) with corresponding callbacks. Binary import is SSRF-safe: reads media from the ZIP archive, never follows URLs from the manifest.
+- `wp-plugin/wp-super-gallery/includes/class-wpsg-cli.php` — extended `campaign_export` with `--format=binary [--output=path]` (synchronous: creates job then processes immediately, no WP-Cron needed in CLI context); extended `campaign_import` to auto-detect `.zip` extension and call `campaign_import_binary()`.
+- `src/services/apiClient.ts` — imports `ExportApi`, exposes `startCampaignBinaryExport`, `getExportJob`, `deleteExportJob`, `downloadExportJob`.
+- `src/hooks/useAdminCampaignActions.ts` — `handleBinaryExportCampaign`: starts job, polls every 3s up to 5 min, then calls `downloadExportJob()` and cleans up the server-side job. `binaryExportingIds` set tracks in-flight exports per campaign.
+
+**ZIP archive format (manifest version 2):**
+```
+campaign-{id}.zip
+├── manifest.json   (version: 2; media_references include "filename" field)
+└── media/
+    ├── media-{id1}.jpg
+    └── media-{id2}.png
+```
+
+**Import flow:** ZIP upload → extract `manifest.json` → validate version 2 → create campaign post → sideload each `media/{filename}` via `media_handle_sideload()` (WP attachment creation) → store attachment IDs + URLs in `media_items` meta.
+
+**PHP test count:** 27 tests in `WPSG_P39CM1_Export_Test.php` (3 added post-implementation). Full suite: 807 tests — clean.
+
+**Future extensions** (planned via FUTURE_TASKS): audit log binary export, media library binary export. Both would reuse `WPSG_Export_Engine` with a different manifest builder.
+
+**Post-implementation fixes (found during manual testing):**
+
+- **`verify_admin_auth()` rejected Application Passwords** — The auth gate checked for Bearer tokens or nonces only. WordPress Application Password auth uses HTTP Basic; WP authenticates it before the permission callback runs, so no CSRF nonce is needed. Added an explicit Basic branch: `if Authorization starts with 'Basic' → return is_user_logged_in()`. (`class-wpsg-rest.php`)
+- **`process_job()` catch too narrow** — `catch (RuntimeException $e)` did not catch PHP `Error` or other `Throwable` subclasses. A crash inside `build_zip()` left jobs permanently stuck in `processing` status. Broadened to `catch (\Throwable $e)` so all failures land in `failed` with an error message. (`class-wpsg-export-engine.php`)
+- **`reset_job()` added** — Public static method to restore a stuck job to `pending` so it can be retried without creating a new export. Used for manual recovery and tested in `WPSG_P39CM1_Export_Test.php`. (`class-wpsg-export-engine.php`)
+- **Manual test guide auth/cron fixes** — `$AUTH` bash string variable (broken expansion) replaced with `AUTH=(-u "admin:$APP_PASS")` array. Nonce requirement removed throughout (Application Passwords authenticate at HTTP level). WP-Cron trigger (`wp cron event run`) replaced with `wp eval WPSG_Export_Engine::process_job(...)` — idempotent and works whether or not the cron event was already consumed by `spawn_cron()`. (`docs/testing/BINARY_EXPORT_MANUAL_TEST.md`)
 
 ---
 
@@ -429,13 +521,72 @@ cache-oriented health surface that helps operators understand their setup.
 
 ### Acceptance criteria
 
-- Operators have first-party guidance for Redis/Memcached and an APCu fallback.
-- The health surface exposes bounded cache-readiness information.
-- A warm-cache utility exists for identified high-read settings paths.
-- Cache guidance for access-sensitive data is explicit.
-- Coverage exists for health-data output and non-persistent-cache fallback.
+- [x] Operators have first-party guidance for Redis/Memcached and an APCu fallback.
+- [x] The health surface exposes bounded cache-readiness information.
+- [x] A warm-cache utility exists for identified high-read settings paths.
+- [x] Cache guidance for access-sensitive data is explicit.
+- [x] Coverage exists for health-data output and non-persistent-cache fallback.
 
-### Status: Planned
+### Implementation notes
+
+**PHP backend (`class-wpsg-monitoring.php`):**
+- Added `get_object_cache_health()` — detects `wp_using_ext_object_cache()` (cast to
+  `bool`), identifies backend from `get_class($GLOBALS['wp_object_cache'])` (normalized to
+  `redis | memcached | apcu | unknown`), and safely probes `stats()` / `get_stats()`
+  guarded by `method_exists()` and `\Throwable` catch. Returns a four-key array:
+  `persistent`, `backend`, `stats_available`, `stats`.
+- Extended `get_health_data()` to include `objectCache` key via
+  `get_object_cache_health()`.
+- Added `warm_settings()` — on miss in the `wpsg_settings` cache group, calls
+  `get_option('wpsg_settings')` and stores the result with `wp_cache_set` at a 1-hour
+  TTL. Hooked to `init` at priority 20 from `register()`.
+
+**PHP constants (`class-wpsg-rest.php`):**
+- Added `CACHE_TTL_SETTINGS = 3600` and `CACHE_TTL_ACCESS = 60` class constants with
+  PHPDoc documenting the access-check bypass rule (≤60 s TTL or bypass for any
+  grant/role check so revocations propagate quickly).
+
+**Documentation (`docs/object-cache-setup.md`):**
+- New file covering Redis (drop-in + wp-config constants), Memcached (Memcached Redux),
+  APCu/ZapCu (single-server only), traffic thresholds, plugin cache groups
+  (`wpsg_settings`, `wpsg_rate_limit`), and the access-control cache policy.
+- Verified against live installs: Redis via redis-cache plugin, APCu via ZapCu, Memcached
+  via Memcached Redux. Key findings from real-world testing:
+  - ZapCu auto-installs the drop-in on activation; no manual file copy needed.
+  - Drop-in plugins (Memcached Redux) must NOT be activated as normal WP plugins —
+    copy the drop-in file directly to `wp-content/` instead.
+  - `$memcached_servers` format for Memcached Redux must use `'host:port'` strings
+    (`['127.0.0.1:11211']`), not the old array-of-arrays format (`[['127.0.0.1', 11211]]`)
+    used by the deprecated `memcache` (no `d`) plugin — the old format throws a
+    `TypeError` on PHP 8 in Memcached Redux's `WP_Object_Cache::__construct()`.
+
+**React (`AdvancedSettingsSection.tsx`, `SettingsPanel.tsx`):**
+- Added "Object Cache" accordion section (value `adv-cache`) to `AdvancedSettingsSection`.
+  Uses `useQuery` (`enabled: mounted.has('adv-cache')`) against the existing
+  `/admin/health` endpoint, lazy-loaded on accordion open.
+- Displays: persistent badge (Active / Not detected), backend label badge (Redis /
+  Memcached / APCu / Unknown), guidance alert for non-persistent deployments, and per-key
+  stats rows when `stats_available` is true.
+- `AdvancedSettingsSection` now receives `apiClient: ApiClient` prop; call site in
+  `SettingsPanel.tsx` updated accordingly.
+- `AdminApi` extended with `getHealthData()` and `ObjectCacheHealth` /
+  `HealthDataResponse` types; both re-exported from `apiClient.ts`.
+
+**Tests:**
+- `WPSG_P39OC1_CacheHealth_Test.php` — 6 assertions covering non-persistent shape,
+  key ordering, inclusion in `get_health_data()`, REST endpoint shape, `warm_settings()`
+  primes cache, and idempotency.
+- `SettingsPanel.test.tsx` — 2 new tests: "Not detected" badge on non-persistent mock,
+  "Active" + "Redis" badge on persistent mock. `getHealthData` added to base mock client.
+
+**Full suite results:** 813/813 PHP tests ✓, 58/58 React tests ✓.
+
+**Rationale on `wp_using_ext_object_cache()` cast:** The function returns the global
+`$wp_using_ext_object_cache` which is `null` when unset (not `false`). Casting to `bool`
+normalises this to `false` in non-persistent environments and keeps the API shape
+strictly typed.
+
+### Status: Complete
 
 ---
 
@@ -497,25 +648,96 @@ reflects the actual disposition of the work.
 - The ownership snapshot and document metadata reflect the completed cleanup.
 - The backlog is narrower and more accurate after the phase than before it.
 
-### Status: Planned · do after other P39 tracks
+### Implementation notes
+
+**Dispositions applied to `docs/FUTURE_TASKS.md`:**
+
+| Track | Originating backlog entry | Disposition |
+|-------|--------------------------|-------------|
+| P39-CO1 | D-1: CORS Origin Allow-List & Admin UI | Retained — deferral note added June 1; entry narrowed to standalone SPA context only |
+| P39-AU1 | JWT In-Memory Token Auth (Standalone SPA) | Retained — deferral note added June 1; gated on P39-CO1 and standalone SPA deployment model |
+| P39-IN1 | Webhook Support for Campaign Events | **Removed** — fully shipped |
+| P39-CM1 | (No stale entry to remove; follow-on items Audit Log Binary Export and Media Library Binary Export added as new backlog entries) | No action needed |
+| P39-OC1 | Redis/Memcached Object Cache | **Removed** — fully shipped; D-12 (rate-limiter object-cache docs) also retired |
+
+**Residual scope policy adopted:** Follow-on items identified during a track's implementation (e.g. audit-log binary export, media library export) are added as new backlog entries and do not block the originating track from being removed. The originating entry is removed once the core scope ships.
+
+**Ownership snapshot updated:** P39-IN1 and P39-OC1 added to the "Recently promoted and now phase-owned" table.
+
+### Status: Complete
 
 ---
 
-## Implementation Notes
+## PR #54 Review — Copilot Comments
 
-_Updated as tracks land._
+Five Copilot threads addressed:
 
-### Open follow-ups
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `sslverify => false` on HEAD (size check) | `class-wpsg-export-engine.php:156` | **Accept — removed** | Disabling cert validation exposes the content-length value to MITM tampering; WP default (`true`) is correct. |
+| `sslverify => false` on GET (media download) | `class-wpsg-export-engine.php:169` | **Accept — removed** | Same security concern: MITM could substitute media content in the ZIP. Removed; WP default applies. |
+| `warm_settings()` false-positive cache miss | `class-wpsg-monitoring.php:282` | **Accept — fixed** | `!== false` cannot distinguish a stored `false` from a miss. Switched to `$found` out-parameter from `wp_cache_get()`. While `wpsg_settings` is unlikely to be `false`, the API contract should be correct. |
+| `create_webhook_endpoint()` `enabled` coercion | `class-wpsg-rest.php:7206` | **Accept — fixed** | `!== false` treats `0`/`'0'` as enabled. Aligned with update endpoint: `null` → default `true`, otherwise `(bool)` cast. |
+| WEBHOOK_MANUAL_TEST.md nonce prerequisite | `docs/testing/WEBHOOK_MANUAL_TEST.md:41` | **Accept — fixed** | Guide incorrectly stated nonce is required alongside Application Password. `verify_admin_auth()` explicitly skips the nonce for HTTP Basic requests. Removed nonce from section 4 and all curl commands; matches binary export guide wording. |
 
-Track-level follow-ups remain in the sections above until the cross-origin,
-export, automation, and cache-readiness decisions are resolved and the cleanup
-track can close the loop in `docs/FUTURE_TASKS.md`.
+**Post-review CI fix — PHP 8.2 stat cache (`class-wpsg-export-engine.php`):**
+
+The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
+
+**Round 9 — 3 threads (invalid events silent broadening, blob URL revocation):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| Invalid events → empty array → "all events" on create | `class-wpsg-rest.php:7196` | **Accept** | If the client sends a non-empty events list but none are recognised, `sanitize_events()` silently returns `[]`, which the dispatcher treats as "deliver all events". Added a 400 guard: reject when raw events are non-empty but sanitized result is empty. |
+| Same issue on update | `class-wpsg-rest.php:7240` | **Accept** | Identical guard added to `update_webhook_endpoint`. Extracted to a local variable `$sanitized_events` to avoid double-call. |
+| Blob URL revocation 100ms too short | `exportApi.ts:58` | **Accept** | 100ms can race the browser's async download read for large ZIPs, especially in Safari. Increased to 30 s — well within any reasonable download-initiation window. The blob is in-memory so holding the reference longer has no meaningful cost. |
+
+**Round 8 — 3 threads (update endpoint bool coercion, doc wording x2):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `update_webhook_endpoint` `(bool)` cast for `enabled` | `class-wpsg-rest.php:7244` | **Accept** | Same issue fixed in `create_webhook_endpoint` last round — `(bool) "false"` is `true`. Applied `is_truthy_param()` for consistent behaviour across both endpoints. |
+| "database-backed cache" in doc intro | `docs/object-cache-setup.md:3` | **Accept** | WP default object cache is non-persistent in-memory, not database-backed. Changed to "default non-persistent object cache". |
+| "database-backed cache" repeated in when-to-add section | `docs/object-cache-setup.md:25` | **Accept** | Same wording issue. Reworded to clarify the persistence property: values cached only for the lifetime of the current request, so every subsequent request is a cold DB read. |
+
+**Round 7 — 5 threads (deactivation hook, SSRF on GET, ZIP leak, boolean coercion, UI copy):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `wp_unschedule_hook()` claimed non-existent | `wp-super-gallery.php:74` | **Partial accept** | Copilot's factual claim is wrong — `wp_unschedule_hook()` has been in WP core since 4.9.0. However, for codebase consistency (all other deactivation hooks use `wp_clear_scheduled_hook()`) and since WP 6.4+ minimum means both are equivalent, switched to `wp_clear_scheduled_hook()`. |
+| `wp_remote_get()` → `wp_safe_remote_get()` | `class-wpsg-export-engine.php:183` | **Accept** | The media-download step uses `wp_remote_get()` against URLs from the manifest; same SSRF surface as the HEAD request fixed in round 6. Changed to `wp_safe_remote_get()`. |
+| Orphaned ZIP files when transient expires | `class-wpsg-export-engine.php:240` | **Accept** | When a transient expires naturally its `zip_path` is lost, so `cleanup_expired_jobs()` and `delete_job()` can't delete the file. Added `expected_zip_path($id)` private helper (path is deterministic from job ID) and used it as a fallback in both methods. |
+| `(bool)` cast for `enabled` → `is_truthy_param()` | `class-wpsg-rest.php:7198` | **Accept** | `(bool) "false"` yields `true`; the existing `is_truthy_param()` helper handles string `"false"/"0"/"no"/"off"` correctly. Applied it; kept `null → true` default unchanged. |
+| "database-backed cache" wording | `AdvancedSettingsSection.tsx:393` | **Accept** | WordPress default object cache is non-persistent in-memory (not database-backed). Reworded to "default in-memory cache, which is discarded on every request". |
+
+**Round 6 — 7 threads (SSRF, silent skip, layout template UUID):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `wp_remote_post()` → `wp_safe_remote_post()` | `class-wpsg-webhooks.php:125` | **Accept** | Webhook URLs are user-configured and triggered server-side; the `wp_remote_post()` variant will call private/loopback IPs. `wp_safe_remote_post()` blocks those by default and allows operators to relax via filter. |
+| Silent skip on failed media fetch | `class-wpsg-export-engine.php:183` | **Accept — partial** | Copilot suggested a hard failure; instead tracked skipped items and appended `skipped_media.json` to the ZIP. Hard failure would block export entirely if any one asset is temporarily unavailable. Recording skipped items is transparent without being brittle, and callers can inspect the file. |
+| `wp_remote_head()` → `wp_safe_remote_head()` | `class-wpsg-export-engine.php:156` | **Accept** | Same SSRF surface as the POST fix; the size-preflight HEAD request against a user-provided media URL also needs to reject private/loopback targets. |
+| Export: `get_post(intval($template_id))` | `class-wpsg-rest.php:2136` | **Accept** | `_wpsg_layout_binding_template_id` stores a UUID, so `intval()` produces `0` and `get_post(0)` returns `null`. Replaced with `WPSG_Layout_Templates::get($template_id)` which looks up by UUID slug and returns the full template array (including `slots`, `overlays`, all background fields). |
+| Import: wrong CPT + post ID stored as UUID | `class-wpsg-rest.php:2341` | **Accept** | Import used `wp_insert_post(['post_type' => 'wpsg_layout_template'])` (wrong CPT, no meta registration) and stored the numeric post ID in `_wpsg_layout_binding_template_id`. Replaced with `WPSG_Layout_Templates::create()` which uses the correct CPT (`wpsg_layout_tpl`), stores data in `_wpsg_template_data`, and returns the UUID. Also rewrites `layoutBinding.templateId` to the new UUID. Legacy manifest support added (`title` → `name` fallback). |
+| CLI export: same `intval()` UUID bug | `class-wpsg-cli.php:266` | **Accept** | Identical fix: `WPSG_Layout_Templates::get($template_id)`. |
+| CLI import: same wrong CPT + post ID | `class-wpsg-cli.php:433 & 550` | **Accept** | Both JSON and binary CLI import paths fixed identically to the REST import path using `WPSG_Layout_Templates::create()`. |
 
 ---
 
 ## Outcome
 
-_To be filled when Phase 39 is marked Complete._
+Phase 39 delivered four of five substantive tracks. P39-CO1 and P39-AU1 were
+rolled back together after implementation revealed the primary deployment model
+(embedded WP shortcode) is same-origin and gains nothing from explicit CORS
+restriction; both are retained in the backlog with deferral notes gating them
+on a concrete standalone SPA deployment requirement.
+
+P39-IN1 shipped webhook automation with HMAC-signed delivery, a retry queue,
+and WP-CLI management commands. P39-CM1 shipped `WPSG_Export_Engine` for
+background ZIP generation and unlocked two new follow-on export types. P39-OC1
+shipped Redis/APCu/Memcached deployment docs, a health surface in the admin
+panel, warm-cache and TTL-policy primitives, and a PHPUnit + React test suite.
+P39-CL1 closed the backlog loop.
 
 ---
 

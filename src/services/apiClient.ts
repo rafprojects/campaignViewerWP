@@ -25,6 +25,8 @@ import { LayoutTemplatesApi } from './api/layoutTemplatesApi';
 import { AnalyticsApi } from './api/analyticsApi';
 import { CampaignsApi } from './api/campaignsApi';
 import { AdminApi } from './api/adminApi';
+import { WebhooksApi } from './api/webhooksApi';
+import { ExportApi } from './api/exportApi';
 
 // ── Type re-exports for backward compatibility ────────────────────────────────
 // All types that callers currently import from '@/services/apiClient' are
@@ -51,7 +53,14 @@ export type {
   AccessSummaryItem,
   AccessSummaryResponse,
 } from './api/campaignsApi';
-export type { WpPageSummary } from './api/adminApi';
+export type { WpPageSummary, ObjectCacheHealth, HealthDataResponse } from './api/adminApi';
+export type {
+  WebhookEndpoint,
+  WebhookEndpointWithSecret,
+  WebhookDelivery,
+  CreateWebhookEndpointRequest,
+  UpdateWebhookEndpointRequest,
+} from './api/webhooksApi';
 
 // ── Convenience re-imports for use in this file ───────────────────────────────
 
@@ -93,6 +102,8 @@ export class ApiClient extends HttpTransportImpl {
   private readonly _analytics: AnalyticsApi;
   private readonly _campaigns: CampaignsApi;
   private readonly _admin: AdminApi;
+  private readonly _webhooks: WebhooksApi;
+  private readonly _export: ExportApi;
 
   constructor(options: ApiClientOptions) {
     super(options);
@@ -101,6 +112,8 @@ export class ApiClient extends HttpTransportImpl {
     this._analytics = new AnalyticsApi(this);
     this._campaigns = new CampaignsApi(this);
     this._admin = new AdminApi(this);
+    this._webhooks = new WebhooksApi(this);
+    this._export = new ExportApi(this);
   }
 
   // ── Settings ──────────────────────────────────────────────────────────────
@@ -310,9 +323,64 @@ export class ApiClient extends HttpTransportImpl {
     return this._admin.listWpPages();
   }
 
+  getHealthData(): Promise<import('./api/adminApi').HealthDataResponse> {
+    return this._admin.getHealthData();
+  }
+
   downloadGlobalAuditCsv(
     params?: { campaignId?: string; from?: string; to?: string; action?: string },
   ): Promise<void> {
     return this._admin.downloadGlobalAuditCsv(params);
+  }
+
+  // ── Webhooks ──────────────────────────────────────────────────────────────
+
+  listWebhookEndpoints(): Promise<import('./api/webhooksApi').WebhookEndpoint[]> {
+    return this._webhooks.listEndpoints();
+  }
+
+  createWebhookEndpoint(
+    data: import('./api/webhooksApi').CreateWebhookEndpointRequest,
+  ): Promise<import('./api/webhooksApi').WebhookEndpointWithSecret> {
+    return this._webhooks.createEndpoint(data);
+  }
+
+  updateWebhookEndpoint(
+    index: number,
+    data: import('./api/webhooksApi').UpdateWebhookEndpointRequest,
+  ): Promise<import('./api/webhooksApi').WebhookEndpoint> {
+    return this._webhooks.updateEndpoint(index, data);
+  }
+
+  deleteWebhookEndpoint(index: number): Promise<{ deleted: boolean }> {
+    return this._webhooks.deleteEndpoint(index);
+  }
+
+  rotateWebhookSecret(index: number): Promise<{ secret: string }> {
+    return this._webhooks.rotateSecret(index);
+  }
+
+  listWebhookDeliveries(limit?: number): Promise<import('./api/webhooksApi').WebhookDelivery[]> {
+    return this._webhooks.listDeliveries(limit);
+  }
+
+  // ── Binary Export ─────────────────────────────────────────────────────────
+
+  startCampaignBinaryExport(
+    campaignId: string,
+  ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
+    return this._export.startCampaignBinaryExport(campaignId);
+  }
+
+  getExportJob(jobId: string): Promise<import('./api/exportApi').ExportJob> {
+    return this._export.getExportJob(jobId);
+  }
+
+  deleteExportJob(jobId: string): Promise<{ deleted: boolean }> {
+    return this._export.deleteExportJob(jobId);
+  }
+
+  downloadExportJob(jobId: string, filename?: string): Promise<void> {
+    return this._export.downloadExportJob(jobId, filename);
   }
 }

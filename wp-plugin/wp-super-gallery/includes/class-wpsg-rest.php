@@ -10,6 +10,21 @@ class WPSG_REST {
     // Populated by rate_limit_check(); read by inject_rate_limit_headers filter.
     private static $rate_limit_headers = [];
 
+    /**
+     * Object-cache TTL (seconds) for general plugin settings.
+     * Use this when caching settings that do not affect access control.
+     */
+    const CACHE_TTL_SETTINGS = 3600;
+
+    /**
+     * Object-cache TTL (seconds) for access-control reads.
+     *
+     * Kept short (60 s) so that grant revocations propagate quickly.
+     * Access-control checks (grant lookups, role checks) MUST use this TTL
+     * or bypass the cache entirely — never use CACHE_TTL_SETTINGS for them.
+     */
+    const CACHE_TTL_ACCESS = 60;
+
     private static function respond_with_etag($request, $payload, $status = 200, $salt = '') {
         $etag = '"' . md5(wp_json_encode($payload) . $salt) . '"';
         $if_none_match = $request ? $request->get_header('if-none-match') : '';
@@ -193,6 +208,41 @@ class WPSG_REST {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'import_campaign'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        // P39-CM1: Binary export / import
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'export_campaign_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/campaigns/import/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'import_campaign_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_export_job'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_export_job'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})/download', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'download_export_job'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -978,6 +1028,49 @@ class WPSG_REST {
                 'permission_callback' => '__return_true',
             ],
         ]);
+
+        // P39-IN1: Webhook endpoint management.
+        register_rest_route('wp-super-gallery/v1', '/webhooks', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_webhook_endpoints'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/delivery-log', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_webhook_deliveries'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_webhook_endpoint'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)/rotate-secret', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'rotate_webhook_secret'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
     }
 
     public static function rate_limit_public($request) {
@@ -1326,9 +1419,28 @@ class WPSG_REST {
     private static function verify_admin_auth() {
         // For token-based auth (e.g., JWT Bearer), WordPress nonce is not required.
         // Nonce verification is only needed for cookie-authenticated REST requests.
-        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION'])) : '';
+        // HTTP_AUTHORIZATION may be absent on some Apache + PHP-FPM setups.
+        // Check REDIRECT_HTTP_AUTHORIZATION (common with AllowOverride) and fall
+        // back to reconstructing from PHP_AUTH_USER/PHP_AUTH_PW (PHP FastCGI).
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth_header = sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION']));
+        } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $auth_header = sanitize_text_field(wp_unslash($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
+        } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
+            $auth_header = 'Basic ' . base64_encode(
+                wp_unslash($_SERVER['PHP_AUTH_USER']) . ':' . wp_unslash($_SERVER['PHP_AUTH_PW'] ?? '')
+            );
+        } else {
+            $auth_header = '';
+        }
         if (!empty($auth_header) && stripos($auth_header, 'Bearer ') === 0) {
             return true;
+        }
+
+        // Application Password auth uses HTTP Basic. WP authenticates it before this
+        // callback runs — no CSRF nonce is needed (nonces protect cookie sessions only).
+        if (!empty($auth_header) && stripos($auth_header, 'Basic ') === 0) {
+            return is_user_logged_in();
         }
 
         // Allow nonce bypass ONLY when the explicit WPSG_ALLOW_NONCE_BYPASS
@@ -1618,6 +1730,7 @@ class WPSG_REST {
             'title' => $title,
         ]);
 
+        do_action('wpsg_campaign_created', $post_id, ['title' => $title]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
@@ -1670,6 +1783,10 @@ class WPSG_REST {
             'status' => $request->get_param('status'),
         ]);
 
+        do_action('wpsg_campaign_updated', $post_id, [
+            'title' => $title,
+            'status' => $request->get_param('status'),
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 200);
     }
@@ -1682,6 +1799,7 @@ class WPSG_REST {
 
         update_post_meta($post_id, 'status', 'archived');
         self::add_audit_entry($post_id, 'campaign.archived', []);
+        do_action('wpsg_campaign_archived', $post_id);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
@@ -1694,6 +1812,7 @@ class WPSG_REST {
 
         update_post_meta($post_id, 'status', 'active');
         self::add_audit_entry($post_id, 'campaign.restored', []);
+        do_action('wpsg_campaign_restored', $post_id);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
     }
@@ -1717,11 +1836,12 @@ class WPSG_REST {
 
         $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
 
-        // Audit BEFORE deletion so the entry is preserved in any external sink
+        // Audit and webhook BEFORE deletion so the entry is preserved in any external sink
         // (post meta entry itself is dropped with the post).
         self::add_audit_entry($post_id, 'campaign.deleted', [
             'purge_analytics' => $purge_analytics,
         ]);
+        do_action('wpsg_campaign_deleted', $post_id);
 
         WPSG_DB::delete_media_refs($post_id);
         WPSG_DB::delete_access_requests_for_campaign($post_id);
@@ -1822,6 +1942,7 @@ class WPSG_REST {
             }
             update_post_meta($post_id, 'status', $new_status);
             self::add_audit_entry($post_id, "campaign.{$action}d", []);
+            do_action("wpsg_campaign_{$action}d", $post_id);
             $success[] = (string) $post_id;
         }
 
@@ -1987,6 +2108,298 @@ class WPSG_REST {
         self::clear_accessible_campaigns_cache();
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // P39-CM1: Binary export / import
+    // ─────────────────────────────────────────────────────────────────────
+
+    // POST /campaigns/{id}/export/binary — enqueue a background ZIP export job.
+    public static function export_campaign_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 500]
+            );
+        }
+
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $post     = get_post($post_id);
+        $campaign = self::format_campaign($post);
+        $media    = get_post_meta($post_id, 'media_items', true) ?: [];
+
+        $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+        $layout_template = $template_id ? WPSG_Layout_Templates::get($template_id) : null;
+
+        // Build v2 manifest — same as v1 but version=2 and each media_reference
+        // carries a `filename` matching the file the engine will write to media/.
+        $media_references = array_values(array_map(function ($item) {
+            return [
+                'id'       => $item['id'] ?? '',
+                'url'      => $item['url'] ?? '',
+                'title'    => $item['title'] ?? '',
+                'filename' => WPSG_Export_Engine::get_media_filename($item),
+            ];
+        }, (array) $media));
+
+        $manifest = wp_json_encode([
+            'version'          => 2,
+            'exported_at'      => gmdate('c'),
+            'campaign'         => $campaign,
+            'layout_template'  => $layout_template,
+            'media_references' => $media_references,
+        ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
+
+        $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
+
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
+    // GET /export-jobs/{job_id} — poll job status.
+    public static function get_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        $payload = [
+            'jobId'      => $job['id'],
+            'type'       => $job['type'],
+            'status'     => $job['status'],
+            'createdAt'  => $job['created_at'],
+            'error'      => $job['error'],
+        ];
+
+        if ($job['status'] === 'complete') {
+            $payload['downloadUrl'] = rest_url('wp-super-gallery/v1/export-jobs/' . $job_id . '/download');
+        }
+
+        return new WP_REST_Response($payload, 200);
+    }
+
+    // DELETE /export-jobs/{job_id} — cancel / discard a job.
+    public static function delete_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        WPSG_Export_Engine::delete_job($job_id);
+        return new WP_REST_Response(['deleted' => true], 200);
+    }
+
+    // GET /export-jobs/{job_id}/download — stream the ZIP file.
+    public static function download_export_job($request) {
+        $job_id = sanitize_key($request->get_param('job_id'));
+        $job    = WPSG_Export_Engine::get_job($job_id);
+
+        if (!$job) {
+            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        if ($job['status'] !== 'complete') {
+            return new WP_Error(
+                'wpsg_not_ready',
+                'Export is not complete (status: ' . esc_html($job['status']) . ')',
+                ['status' => 409]
+            );
+        }
+
+        $zip_path = $job['zip_path'];
+        if (!$zip_path || !file_exists($zip_path)) {
+            return new WP_Error('wpsg_file_missing', 'Export file not found', ['status' => 404]);
+        }
+
+        $filename = basename($zip_path);
+        // phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        header('Content-Type: application/zip');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Content-Length: ' . filesize($zip_path));
+        header('Cache-Control: no-store');
+        readfile($zip_path); // phpcs:ignore WordPress.WP.AlternativeFunctions
+        // phpcs:enable
+        exit;
+    }
+
+    // POST /campaigns/import/binary — accept a ZIP upload and import its campaign.
+    public static function import_campaign_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary import.',
+                ['status' => 500]
+            );
+        }
+
+        $files = $request->get_file_params();
+        if (empty($files['file'])) {
+            return new WP_Error('wpsg_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
+        }
+
+        $file = $files['file'];
+        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
+            return new WP_Error('wpsg_upload_error', 'File upload failed', ['status' => 400]);
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($file['tmp_name']) !== true) {
+            return new WP_Error('wpsg_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
+        }
+
+        $manifest_json = $zip->getFromName('manifest.json');
+        if ($manifest_json === false) {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
+        }
+
+        $body = json_decode($manifest_json, true);
+        if (!$body || !isset($body['campaign'])) {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+        }
+
+        $version = intval($body['version'] ?? 0);
+        if ($version !== 2) {
+            $zip->close();
+            return new WP_Error(
+                'wpsg_unsupported_version',
+                'Binary import requires manifest version 2',
+                ['status' => 400]
+            );
+        }
+
+        // Create the campaign post.
+        $src         = $body['campaign'];
+        $title       = sanitize_text_field($src['title'] ?? 'Imported Campaign');
+        $description = sanitize_textarea_field($src['description'] ?? '');
+
+        $post_id = wp_insert_post([
+            'post_title'   => $title,
+            'post_content' => $description,
+            'post_type'    => 'wpsg_campaign',
+            'post_status'  => 'publish',
+        ], true);
+
+        if (is_wp_error($post_id)) {
+            $zip->close();
+            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+        }
+
+        // Apply scalar campaign meta (same as JSON import).
+        $meta_map = [
+            'visibility'  => 'visibility',
+            'tags'        => 'tags',
+            'coverImage'  => 'cover_image',
+            'publishAt'   => 'publish_at',
+            'unpublishAt' => 'unpublish_at',
+        ];
+        update_post_meta($post_id, 'status', 'draft');
+        foreach ($meta_map as $src_key => $meta_key) {
+            if (!empty($src[$src_key])) {
+                if ($src_key === 'tags' && is_array($src[$src_key])) {
+                    update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } else {
+                    update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
+                }
+            }
+        }
+
+        $gallery_overrides = self::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
+        if (!empty($gallery_overrides)) {
+            update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
+        }
+
+        // Embed layout template if present.
+        $layout_template = $body['layout_template'] ?? null;
+        if ($layout_template && is_array($layout_template)) {
+            // Support legacy manifests that used 'title' instead of 'name'.
+            if (!isset($layout_template['name']) && isset($layout_template['title'])) {
+                $layout_template['name'] = $layout_template['title'];
+            }
+            $created = WPSG_Layout_Templates::create($layout_template);
+            if (!is_wp_error($created)) {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created['id']);
+                if (!empty($src['layoutBinding'])) {
+                    $binding = $src['layoutBinding'];
+                    if (is_array($binding)) {
+                        array_walk_recursive($binding, function (&$v) {
+                            if (is_string($v)) { $v = sanitize_text_field($v); }
+                        });
+                        $binding['templateId'] = $created['id'];
+                    }
+                    update_post_meta($post_id, '_wpsg_layout_binding', $binding);
+                }
+            }
+        }
+
+        // Sideload media from the ZIP — SSRF-safe: we read from the archive,
+        // never from the URLs in the manifest.
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $media_items = [];
+        foreach ((array) ($body['media_references'] ?? []) as $ref) {
+            $filename = sanitize_file_name($ref['filename'] ?? '');
+            if (!$filename) {
+                continue;
+            }
+
+            $file_data = $zip->getFromName('media/' . $filename);
+            if ($file_data === false) {
+                continue;
+            }
+
+            $tmp = wp_tempnam($filename);
+            if ($tmp === false) {
+                continue;
+            }
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            file_put_contents($tmp, $file_data);
+            unset($file_data);
+
+            $file_array = ['name' => $filename, 'tmp_name' => $tmp];
+            $att_id     = media_handle_sideload($file_array, $post_id, sanitize_text_field($ref['title'] ?? ''));
+            @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+
+            if (is_wp_error($att_id)) {
+                continue;
+            }
+
+            $media_items[] = [
+                'id'     => (string) $att_id,
+                'url'    => wp_get_attachment_url($att_id),
+                'title'  => sanitize_text_field($ref['title'] ?? ''),
+                'type'   => 'image',
+                'source' => 'upload',
+                'order'  => 0,
+            ];
+        }
+
+        $zip->close();
+
+        if (!empty($media_items)) {
+            update_post_meta($post_id, 'media_items', $media_items);
+        }
+
+        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title, 'source' => 'binary']);
+        self::clear_accessible_campaigns_cache();
+        return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -2932,6 +3345,7 @@ class WPSG_REST {
             'url' => $media_item['url'] ?? '',
             'attachmentId' => $media_item['attachmentId'] ?? 0,
         ]);
+        do_action('wpsg_media_added', $post_id, ['mediaId' => $media_item['id'], 'count' => 1]);
         self::bump_cache_version();
 
         return new WP_REST_Response($media_item, 201);
@@ -2999,6 +3413,7 @@ class WPSG_REST {
                     return $item['id'];
                 }, $added)),
             ]);
+            do_action('wpsg_media_added', $post_id, ['count' => count($added)]);
             self::bump_cache_version();
         }
 
@@ -3162,6 +3577,9 @@ class WPSG_REST {
             'action' => $action,
         ]);
 
+        if ($action !== 'deny') {
+            do_action('wpsg_access_granted', $post_id, ['userId' => $user_id, 'source' => $source]);
+        }
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
@@ -3200,6 +3618,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'access.revoked', [
             'userId' => $user_id,
         ]);
+        do_action('wpsg_access_revoked', $post_id, ['userId' => $user_id]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
     }
@@ -4413,6 +4832,7 @@ class WPSG_REST {
         self::add_audit_entry($post_id, 'media.deleted', [
             'mediaId' => $media_id,
         ]);
+        do_action('wpsg_media_removed', $post_id, ['mediaId' => $media_id]);
         self::bump_cache_version();
 
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
@@ -6742,5 +7162,133 @@ class WPSG_REST {
         }
 
         return new WP_REST_Response($template, 200);
+    }
+
+    // ── P39-IN1: Webhook endpoint management ─────────────────────────────────
+
+    public static function list_webhook_endpoints($request) {
+        $endpoints = WPSG_Webhooks::get_endpoints();
+        $items = [];
+        foreach ($endpoints as $idx => $endpoint) {
+            $items[] = WPSG_Webhooks::format_endpoint_for_api($idx, $endpoint);
+        }
+        return new WP_REST_Response($items, 200);
+    }
+
+    public static function create_webhook_endpoint($request) {
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (count($endpoints) >= WPSG_Webhooks::MAX_ENDPOINTS) {
+            return new WP_Error(
+                'wpsg_webhook_limit',
+                sprintf('Maximum of %d webhook endpoints allowed.', WPSG_Webhooks::MAX_ENDPOINTS),
+                ['status' => 400]
+            );
+        }
+
+        $raw_url = $request->get_param('url');
+        $url = WPSG_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
+        if (empty($url)) {
+            return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+        }
+
+        $raw_events = $request->get_param('events');
+        $events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+        if (is_array($raw_events) && !empty($raw_events) && empty($events)) {
+            return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+        }
+        $raw_enabled = $request->get_param('enabled');
+        $enabled     = $raw_enabled === null ? true : self::is_truthy_param($raw_enabled);
+        $secret = WPSG_Webhooks::generate_secret();
+
+        $endpoint = [
+            'id'      => wp_generate_uuid4(),
+            'url'     => $url,
+            'secret'  => $secret,
+            'events'  => $events,
+            'enabled' => $enabled,
+        ];
+
+        $endpoints[] = $endpoint;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        $idx = count($endpoints) - 1;
+        $response = WPSG_Webhooks::format_endpoint_for_api($idx, $endpoint);
+        $response['secret'] = $secret; // One-time full secret exposure on creation.
+
+        return new WP_REST_Response($response, 201);
+    }
+
+    public static function update_webhook_endpoint($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        $existing = $endpoints[$idx];
+
+        if ($request->get_param('url') !== null) {
+            $raw_url = $request->get_param('url');
+            $url = WPSG_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
+            if (empty($url)) {
+                return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+            }
+            $existing['url'] = $url;
+        }
+
+        if ($request->get_param('events') !== null) {
+            $raw_events      = $request->get_param('events');
+            $sanitized_events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+            if (is_array($raw_events) && !empty($raw_events) && empty($sanitized_events)) {
+                return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+            }
+            $existing['events'] = $sanitized_events;
+        }
+
+        if ($request->get_param('enabled') !== null) {
+            $existing['enabled'] = self::is_truthy_param($request->get_param('enabled'));
+        }
+
+        $endpoints[$idx] = $existing;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(WPSG_Webhooks::format_endpoint_for_api($idx, $existing), 200);
+    }
+
+    public static function delete_webhook_endpoint($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        array_splice($endpoints, $idx, 1);
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(['deleted' => true], 200);
+    }
+
+    public static function rotate_webhook_secret($request) {
+        $idx       = intval($request->get_param('index'));
+        $endpoints = WPSG_Webhooks::get_endpoints();
+
+        if (!isset($endpoints[$idx])) {
+            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+        }
+
+        $new_secret           = WPSG_Webhooks::generate_secret();
+        $endpoints[$idx]['secret'] = $new_secret;
+        WPSG_Webhooks::save_endpoints($endpoints);
+
+        return new WP_REST_Response(['secret' => $new_secret], 200);
+    }
+
+    public static function list_webhook_deliveries($request) {
+        $log   = WPSG_Webhooks::get_delivery_log();
+        $limit = max(0, min(intval($request->get_param('limit') ?? 50), 50));
+        return new WP_REST_Response(array_slice($log, 0, $limit), 200);
     }
 }

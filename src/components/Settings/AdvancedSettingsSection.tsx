@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react';
 
-import { Accordion, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, Alert, Badge, Divider, Group, Loader, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useQuery } from '@tanstack/react-query';
 
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
 import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
 
@@ -14,10 +16,25 @@ interface AdvancedSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
   tooltipLabel: (label: string, key: string) => ReactNode;
+  apiClient: ApiClient;
 }
 
-export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel }: AdvancedSettingsSectionProps) {
+const BACKEND_LABELS: Record<string, string> = {
+  redis: 'Redis',
+  memcached: 'Memcached',
+  apcu: 'APCu',
+  unknown: 'Unknown',
+};
+
+export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel, apiClient }: AdvancedSettingsSectionProps) {
   const { mounted, onChange } = useLazyAccordion();
+
+  const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery({
+    queryKey: ['wpsgHealth'],
+    queryFn: () => apiClient.getHealthData(),
+    staleTime: 60 * 1000,
+    enabled: mounted.has('adv-cache'),
+  });
 
   return (
     <>
@@ -339,6 +356,65 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel 
                   checked={settings.preserveDataOnUninstall ?? false}
                   onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
                 />
+              </Stack>
+            ) : null}
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value="adv-cache">
+          <Accordion.Control>Object Cache</Accordion.Control>
+          <Accordion.Panel>
+            {mounted.has('adv-cache') ? (
+              <Stack gap="md">
+                {isHealthLoading && <Loader size="sm" />}
+                {isHealthError && (
+                  <Alert color="red" title="Health data unavailable">
+                    Could not load object-cache status from the server.
+                  </Alert>
+                )}
+                {!isHealthLoading && !isHealthError && healthData && (
+                  <>
+                    <Group gap="xs">
+                      <Text size="sm" fw={500}>Persistent cache</Text>
+                      {healthData.objectCache.persistent ? (
+                        <Badge color="green" size="sm">Active</Badge>
+                      ) : (
+                        <Badge color="gray" size="sm">Not detected</Badge>
+                      )}
+                      {healthData.objectCache.backend && (
+                        <Badge color="blue" size="sm" variant="outline">
+                          {BACKEND_LABELS[healthData.objectCache.backend] ?? healthData.objectCache.backend}
+                        </Badge>
+                      )}
+                    </Group>
+
+                    {!healthData.objectCache.persistent && (
+                      <Alert color="yellow" title="No persistent object cache">
+                        WordPress is using its default in-memory cache, which is discarded on every
+                        request. For higher-traffic deployments consider adding a Redis or Memcached
+                        drop-in. See <em>docs/object-cache-setup.md</em> for setup instructions.
+                      </Alert>
+                    )}
+
+                    {healthData.objectCache.persistent && !healthData.objectCache.stats_available && (
+                      <Text size="sm" c="dimmed">
+                        Cache backend detected but no runtime stats are exposed by this drop-in.
+                      </Text>
+                    )}
+
+                    {healthData.objectCache.stats_available && healthData.objectCache.stats && (
+                      <Stack gap="xs">
+                        <Text size="sm" fw={500}>Backend stats</Text>
+                        {Object.entries(healthData.objectCache.stats).map(([key, val]) => (
+                          <Group key={key} justify="space-between" gap="xs">
+                            <Text size="xs" c="dimmed">{key}</Text>
+                            <Text size="xs">{String(val)}</Text>
+                          </Group>
+                        ))}
+                      </Stack>
+                    )}
+                  </>
+                )}
               </Stack>
             ) : null}
           </Accordion.Panel>

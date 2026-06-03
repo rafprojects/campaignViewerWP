@@ -34,6 +34,8 @@ A later cleanup pass also removed detailed backlog entries queued into Phase 38 
 | Structured server-side logging | Monitoring exists, but operators still lack durable structured logs and an admin-visible sink | [PHASE32_REPORT.md](PHASE32_REPORT.md) |
 | Analytics live refresh | Core analytics shipped; the remaining UX gap is stale data during long admin sessions | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
 | Advanced media sort follow-up | Core sorting shipped; file-size and usage-count ordering still have real admin value | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
+| Webhook support for campaign events | P39-IN1 shipped endpoint management, HMAC-signed delivery, retry queue, and WP-CLI commands | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
+| Object-cache guidance and health surface | P39-OC1 shipped Redis/APCu/Memcached docs, health endpoint, warm_settings(), and TTL policy constants | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
 
 These items are intentionally not repeated in the backlog sections below.
 
@@ -92,16 +94,35 @@ Additionally, group-as-entity alignment requires P30-G's group coordinate model,
 
 ## Campaign Management
 
-### Campaign Export — Full Binary Media Export (P18-D Follow-Up)
+### Audit Log Binary Export
 
-**Context:** P18-D exports media by URL reference only. For deployments where source media is on a CDN that the target WP instance cannot access, a full binary export (ZIP of media files + JSON manifest) would be needed.
+**Context:** P39-CM1 shipped `WPSG_Export_Engine`, a reusable background job manager for building ZIP archives with a `manifest.json` + media folder. The engine is not campaign-specific: any caller that builds a manifest + media list can use it. The audit log is the next natural candidate. Operators currently download the audit log only as CSV; a binary ZIP that includes the CSV plus any referenced campaign media snapshots would make it useful for offline analysis, archival, and regulatory compliance handoffs.
 
-**Open questions:**
-- Q1: ZIP generation on the server requires `ext-zip`. Should the feature require this PHP extension, or use `file_get_contents` to stream media (which has SSRF risk if URLs are untrusted)?
-- Q2: What is a reasonable size limit for a single export? (Proposed: 50 MB hard limit, user-configurable up to 250 MB in settings.)
-- Q3: Should the export be generated synchronously (small galleries only) or via a background WP-Cron job with a progress indicator?
+**What it would take:**
+- A manifest builder for audit data (JSON index of log entries, associated campaign IDs and titles, date range).
+- An optional media snapshot pass: for each campaign referenced in the log window, include its cover image and media thumbnails in the `media/` folder.
+- A new REST route (`POST /admin/audit-log/export/binary`) that calls `WPSG_Export_Engine::create_job('audit', $manifest, $media_items)`.
+- A frontend trigger in the audit log admin view (alongside the existing CSV export).
 
-**Effort:** Medium | **Impact:** Medium — primarily needed for multi-instance deployments
+**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required (same constraint as campaign binary export).
+
+**Effort:** Small-Medium | **Impact:** Low-Medium — primarily useful for compliance-heavy deployments
+
+---
+
+### Media Library Binary Export
+
+**Context:** P39-CM1 shipped `WPSG_Export_Engine`. A media library export type would let operators download all or selected WP media attachments as a portable ZIP with a `manifest.json` index. Useful for migrating assets between WordPress instances or archiving a gallery's media before a site migration.
+
+**What it would take:**
+- A manifest builder that queries WP attachments (filtered by campaign, date, MIME type, or a selection) and produces a media reference list.
+- `WPSG_Export_Engine::create_job('media_library', $manifest, $media_items)` does the rest.
+- A new REST route and a frontend trigger in the media admin surface.
+- Import: extend `POST /campaigns/import/binary` or add a separate `POST /media/import/binary` that sideloads the ZIP contents into the WP media library.
+
+**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
+
+**Effort:** Small-Medium | **Impact:** Medium — useful for any multi-instance migration scenario
 
 ---
 
@@ -132,7 +153,9 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 - Q2: What is the refresh-cookie TTL? 7 days (convenience) vs. 24 hours (security) — should it be admin-configurable?
 - Q3: Is a `/wpsg/v1/token/revoke-all` endpoint needed for the "log out everywhere" use case?
 
-**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate).
+**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
+
+**P39-AU1 deferral note (2026-06-01):** P39-AU1 was gated on P39-CO1. Both tracks were deferred together — the CORS restriction work itself was rolled back because the primary deployment model (embedded WordPress shortcode) is same-origin and does not need cross-origin auth. The standalone SPA path requires the app to be prepared for that deployment model first (routing, build config, deployment documentation, CORS policy). Revisit when there is a concrete standalone SPA deployment requirement.
 
 **Effort:** High (2–4 days) | **Impact:** High for cross-origin standalone SPA deployments; Low for standard WordPress shortcode usage
 
@@ -140,23 +163,7 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## Infrastructure & Performance
 
-Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). The remaining backlog item here is deployment-scale object-cache guidance.
-
-### Redis / Memcached Object Cache
-
-**Context:** WP Super Gallery relies on WP's default database-backed object cache. High-traffic gallery embeds with many concurrent anonymous visitors hit the DB on every `get_option()` call. This is adequate for most deployments but becomes a bottleneck above approximately 500 concurrent users.
-
-**What it would take:**
-- Document how to configure WP's object cache drop-in with Redis or Memcached.
-- Add a `WPSG_DB::warm_cache()` utility that pre-loads frequently-read options on `init`.
-- Admin health screen: a "Cache" section showing hit/miss rates via `WP_Object_Cache::stats()`.
-- Eviction guidance: gallery settings suit a long TTL (hours); access grant lists need a short TTL (seconds–minutes) so revocations take effect promptly.
-
-**Open questions:**
-- Q1: Should `WPSG_REST::check_access()` ever bypass the object cache for real-time access control checks? (Yes — access grants must not be stale by more than the cache TTL, which must be configurable.)
-- Q2: Is there a network security constraint preventing some WP hosts from running Redis? (Yes — document APCu as an alternative for single-server setups.)
-
-**Effort:** Medium | **Impact:** Medium — significant only for high-traffic deployments
+Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). Object-cache guidance shipped in P39-OC1 — see [PHASE39_REPORT.md](PHASE39_REPORT.md) and [object-cache-setup.md](object-cache-setup.md).
 
 ---
 
@@ -210,24 +217,6 @@ Phase-owned follow-on in this area: structured server-side logging now lives in 
 
 ---
 
-### Webhook Support for Campaign Events
-
-**Context:** Campaign state changes (created, archived, media added, access granted) could trigger webhooks to external services (Zapier, Slack, CRM systems), enabling automation.
-
-**Proposed events:**
-- `campaign.created`, `campaign.archived`, `campaign.restored`, `campaign.deleted`
-- `media.added`, `media.removed`
-- `access.granted`, `access.revoked`
-- `analytics.milestone` (e.g. N views — configurable threshold)
-
-**Open questions:**
-- Q1: Should webhooks be configured per-event-type or per-URL (one URL receives all events)? Per-URL is simpler to implement; per-event is more useful.
-- Q2: Delivery guarantees: should failed webhook deliveries be retried? If so, what is the retry schedule and max-attempt count?
-- Q3: Security: webhook payloads should be signed (HMAC-SHA256 header) so the receiver can verify origin. How is the signing secret generated and rotated?
-
-**Effort:** Medium-High | **Impact:** Medium — primarily for automation-heavy workflows
-
----
 
 ### GraphQL API Alternative
 
@@ -262,7 +251,10 @@ Follow-up audit on 2026-05-19 found no additional phase-worthy tracks here beyon
 **D-1: CORS Origin Allow-List & Admin UI**
 Files: `wp-super-gallery.php`, `class-wpsg-settings.php`
 Add CORS allowed-origins setting and reject wildcard with credentials. Only affects cross-origin REST API usage. Filter workaround exists.
-LOE: Medium (4-6 hours) | Impact: Low
+
+**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back after implementation because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. WP core's `rest_send_cors_headers()` already reflects any origin unconditionally; overriding it adds complexity without user benefit in standard deployments. This track becomes relevant only if WPSG is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for P39-AU1.
+
+LOE: Medium (4-6 hours) | Impact: Low — standard WP shortcode deployments unaffected; meaningful only for standalone SPA deployments
 
 **D-2: Migrate Overlay Library from wp_options to Custom Table**
 Files: `class-wpsg-overlay-library.php`, `class-wpsg-db.php`, `uninstall.php`
@@ -279,19 +271,14 @@ Files: `class-wpsg-rest.php` → 8+ new files
 Split the still-monolithic `WPSG_REST` class. Current test coverage is strong; this remains a DX/maintainability refactor rather than a user-facing gap.
 LOE: X-Large (16-24 hours) | Impact: Low (DX only)
 
-**D-12: Rate Limiter Transient Bloat Under Load**
-Files: `class-wpsg-rate-limiter.php`
-Document persistent object cache requirement; optionally add APCu fallback. Standard WP practice, only problematic without Redis/Memcached under heavy load.
-LOE: Small (1-2 hours docs, 4-6 hours APCu) | Impact: Low
-
 **D-13: Thumbnail Cache Index — Single wp_options Row Scalability**
 Files: `class-wpsg-thumbnail-cache.php`
 Move thumbnail cache index to per-hash entries or custom table. Cache is self-healing (regenerated on miss).
 LOE: Medium (4-6 hours) | Impact: Low
 
-**D-14: Campaign Export — Stream Large Media Sets**
-Files: `class-wpsg-rest.php`, `class-wpsg-cli.php`
-Add chunked/streamed export for campaigns with large media arrays. Most campaigns have <100 items.
+**D-14: Campaign Binary Export — Stream Large Media Sets**
+Files: `class-wpsg-export-engine.php`
+P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via curl CURLOPT_FILE rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
 LOE: Medium (4-6 hours) | Impact: Low
 
 **D-15: `get_campaigns_for_attachment_id()` N+1 Meta Reads**
@@ -384,4 +371,6 @@ When promoting future tasks to an active phase:
 ---
 
 *Document created: February 1, 2026*
-*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review.*
+*Last updated: June 1, 2026 — Reconciled against current code and Phase 28 completions; removed shipped backlog items in two passes, moved promoted work fully into Phases 32–34, audited the remaining deferred review list, retired stale deferred entries (D-10, D-17, RD-4), removed entries queued into Phase 38, and kept the rest as long-tail reference material. Added D-15 (`get_campaigns_for_attachment_id` N+1 meta reads) from P38 PR review. Updated D-1 and JWT entries with P39-CO1/P39-AU1 deferral rationale after both tracks were rolled back — CORS restriction is unnecessary for the primary same-origin embedded WP use case.*
+
+*Updated: June 3, 2026 (P39-CL1) — Removed "Webhook Support for Campaign Events" (shipped P39-IN1) and "Redis/Memcached Object Cache" (shipped P39-OC1); retired D-12 (rate-limiter object-cache docs, now covered by P39-OC1); added P39-IN1 and P39-OC1 to the ownership snapshot; updated Infrastructure & Performance section intro.*
