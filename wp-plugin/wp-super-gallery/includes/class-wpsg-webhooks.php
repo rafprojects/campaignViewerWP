@@ -142,30 +142,41 @@ class WPSG_Webhooks {
         self::log_delivery($event, $url, $attempt, $success, $status_code, $delivery_id);
 
         if (!$success && $attempt < self::MAX_ATTEMPTS) {
-            self::schedule_retry($idx, $event, $full_payload, $attempt + 1);
+            $endpoint_id = $endpoint['id'] ?? '';
+            if ($endpoint_id) {
+                self::schedule_retry($endpoint_id, $event, $full_payload, $attempt + 1);
+            }
         }
     }
 
-    private static function schedule_retry(int $idx, string $event, array $payload, int $attempt) {
+    private static function schedule_retry(string $endpoint_id, string $event, array $payload, int $attempt) {
         // Attempt 2: +5 min. Attempt 3: +30 min.
-        // Only $idx (not the endpoint array) is persisted in WP-Cron to avoid
-        // storing the HMAC secret in plain-text option storage. The endpoint is
-        // reloaded from the option at retry time.
+        // The stable endpoint UUID is persisted rather than the array index, which
+        // can shift when endpoints are deleted. The endpoint is reloaded from the
+        // option at retry time; neither the secret nor the full config is stored.
         $delays = [0, 300, 1800];
         $delay  = $delays[$attempt - 1] ?? 1800;
         wp_schedule_single_event(
             time() + $delay,
             self::RETRY_HOOK,
-            [$idx, $event, $payload, $attempt]
+            [$endpoint_id, $event, $payload, $attempt]
         );
     }
 
-    public static function retry_delivery(int $idx, string $event, array $payload, int $attempt) {
-        $endpoints = self::get_endpoints();
-        if (!isset($endpoints[$idx])) {
-            return; // Endpoint was removed between schedule and retry — skip silently.
+    public static function retry_delivery(string $endpoint_id, string $event, array $payload, int $attempt) {
+        $found = null;
+        $found_idx = -1;
+        foreach (self::get_endpoints() as $idx => $ep) {
+            if (($ep['id'] ?? '') === $endpoint_id) {
+                $found     = $ep;
+                $found_idx = $idx;
+                break;
+            }
         }
-        self::deliver($idx, $endpoints[$idx], $event, $payload, $attempt);
+        if (!$found || empty($found['enabled'])) {
+            return; // Endpoint removed or disabled between schedule and retry.
+        }
+        self::deliver($found_idx, $found, $event, $payload, $attempt);
     }
 
     // ── Endpoint storage ───────────────────────────────────────────────────────

@@ -166,27 +166,6 @@ class WPSG_Export_Engine {
                 }
             }
 
-            $response = wp_remote_get($url, ['timeout' => 60]);
-            if (is_wp_error($response)) {
-                continue;
-            }
-
-            $body = wp_remote_retrieve_body($response);
-            if (empty($body)) {
-                continue;
-            }
-
-            $file_size = strlen($body);
-            if (($accumulated + $file_size) > $size_limit) {
-                unset($body);
-                $zip->close();
-                foreach ($tmp_files as $f) { @unlink($f); } // phpcs:ignore
-                @unlink($zip_path); // phpcs:ignore
-                throw new RuntimeException(
-                    'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'
-                );
-            }
-
             $safe_name = self::get_media_filename($item);
             $tmp       = wp_tempnam($safe_name);
             if ($tmp === false) {
@@ -196,9 +175,43 @@ class WPSG_Export_Engine {
                 throw new RuntimeException('Could not create a temporary file for media export.');
             }
 
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-            file_put_contents($tmp, $body);
-            unset($body); // Release memory before next iteration.
+            // Stream the download directly to disk to avoid buffering the full
+            // file body in PHP memory (important near the size limit).
+            $response = wp_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp]);
+            if (is_wp_error($response)) {
+                @unlink($tmp); // phpcs:ignore
+                continue;
+            }
+
+            // phpcs:ignore WordPress.PHP.NoSilencedErrors
+            $file_size = @filesize($tmp);
+            if (!$file_size) {
+                // Fallback: a pre_http_request filter (or certain HTTP transports) may
+                // return an in-memory response without writing to the stream file.
+                $body = wp_remote_retrieve_body($response);
+                if (empty($body)) {
+                    @unlink($tmp); // phpcs:ignore
+                    continue;
+                }
+                // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+                file_put_contents($tmp, $body);
+                unset($body);
+                $file_size = @filesize($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                if (!$file_size) {
+                    @unlink($tmp); // phpcs:ignore
+                    continue;
+                }
+            }
+
+            if (($accumulated + $file_size) > $size_limit) {
+                @unlink($tmp); // phpcs:ignore
+                $zip->close();
+                foreach ($tmp_files as $f) { @unlink($f); } // phpcs:ignore
+                @unlink($zip_path); // phpcs:ignore
+                throw new RuntimeException(
+                    'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'
+                );
+            }
 
             $tmp_files[] = $tmp;
             $zip->addFile($tmp, 'media/' . $safe_name);

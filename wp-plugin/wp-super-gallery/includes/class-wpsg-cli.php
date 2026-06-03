@@ -299,6 +299,9 @@ class WPSG_CLI {
                 'layout_template'  => $layout_template,
                 'media_references' => $media_references,
             ] );
+            if ( $manifest === false ) {
+                WP_CLI::error( "Failed to encode export manifest for campaign {$post_id}." );
+            }
 
             // CLI runs synchronously — create job and process it immediately.
             $job_id = WPSG_Export_Engine::create_job( 'campaign', $manifest, (array) $media );

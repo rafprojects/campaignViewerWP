@@ -68,7 +68,7 @@ function SecretReveal({ secret }: { secret: string }) {
         <CopyButton value={secret}>
           {({ copied, copy }) => (
             <Tooltip label={copied ? 'Copied!' : 'Copy secret'}>
-              <ActionIcon size="sm" variant="subtle" onClick={copy}>
+              <ActionIcon size="sm" variant="subtle" onClick={copy} aria-label="Copy secret">
                 <IconCopy size={14} />
               </ActionIcon>
             </Tooltip>
@@ -131,6 +131,7 @@ function EndpointRow({
                 variant="subtle"
                 loading={isRotating}
                 onClick={() => onRotateSecret(endpoint.index)}
+                aria-label={`Rotate secret for ${endpoint.url}`}
               >
                 <IconRefresh size={16} />
               </ActionIcon>
@@ -141,6 +142,7 @@ function EndpointRow({
                 color="red"
                 loading={isDeleting}
                 onClick={() => onDelete(endpoint.index)}
+                aria-label={`Delete endpoint ${endpoint.url}`}
               >
                 <IconTrash size={16} />
               </ActionIcon>

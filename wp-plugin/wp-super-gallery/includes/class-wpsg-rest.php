@@ -1419,7 +1419,20 @@ class WPSG_REST {
     private static function verify_admin_auth() {
         // For token-based auth (e.g., JWT Bearer), WordPress nonce is not required.
         // Nonce verification is only needed for cookie-authenticated REST requests.
-        $auth_header = isset($_SERVER['HTTP_AUTHORIZATION']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION'])) : '';
+        // HTTP_AUTHORIZATION may be absent on some Apache + PHP-FPM setups.
+        // Check REDIRECT_HTTP_AUTHORIZATION (common with AllowOverride) and fall
+        // back to reconstructing from PHP_AUTH_USER/PHP_AUTH_PW (PHP FastCGI).
+        if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+            $auth_header = sanitize_text_field(wp_unslash($_SERVER['HTTP_AUTHORIZATION']));
+        } elseif (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
+            $auth_header = sanitize_text_field(wp_unslash($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
+        } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
+            $auth_header = 'Basic ' . base64_encode(
+                wp_unslash($_SERVER['PHP_AUTH_USER']) . ':' . wp_unslash($_SERVER['PHP_AUTH_PW'] ?? '')
+            );
+        } else {
+            $auth_header = '';
+        }
         if (!empty($auth_header) && stripos($auth_header, 'Bearer ') === 0) {
             return true;
         }
@@ -2153,6 +2166,9 @@ class WPSG_REST {
             'layout_template'  => $layout_template,
             'media_references' => $media_references,
         ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
 
         $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
 
@@ -7211,6 +7227,7 @@ class WPSG_REST {
         $secret = WPSG_Webhooks::generate_secret();
 
         $endpoint = [
+            'id'      => wp_generate_uuid4(),
             'url'     => $url,
             'secret'  => $secret,
             'events'  => $events,
