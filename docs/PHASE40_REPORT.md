@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (P40-CT1 complete)
+**Last updated:** 2026-06-03 (P40-UX1 complete)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P40-BS1 | Campaign audit baseline stabilization and current bug fix | Complete | S |
 | P40-CT1 | Canonical audit event contract, storage, and API evolution | Complete | L |
-| P40-UX1 | Audit surface naming, summaries, and shared event presentation | Planned · depends on P40-CT1 | M |
+| P40-UX1 | Audit surface naming, summaries, and shared event presentation | Complete | M |
 | P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Planned · depends on P40-CT1 | L |
 | P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Planned · depends on P40-CT1 | L |
 | P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Planned · do after the other P40 tracks land or narrow | M |
@@ -365,7 +365,33 @@ from the canonical audit event contract.
 - UI coverage exists for the renamed headings, help text, and summary-based
   rendering.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Changes shipped:**
+
+- `AuditEventRow.tsx` — new shared row component used by both audit surfaces. Renders:
+  primary summary text (`entry.summary` falling back to `entry.action`), an optional secondary
+  resource label line, a colour-coded severity badge (`info`=blue, `warning`=orange, `error`=red),
+  actor, and lineClamp-1 details. Accepts `showCampaignCol` to toggle the Campaign column for the
+  system-audit view.
+- `useAuditRows.tsx` — refactored to use `AuditEventRow`; sorting logic preserved.
+- `AuditTab.tsx` — heading renamed to `Campaign Activity`; help text added (`All activity recorded
+  for the selected campaign.`); column headers updated (When, Summary, Severity, Actor, Details);
+  skeleton rows aligned to 5 columns.
+- `GlobalAuditTab.tsx` — heading renamed to `System Audit`; help text added (`Cross-campaign and
+  plugin-wide admin events.`); row rendering replaced with `AuditEventRow showCampaignCol`; column
+  headers updated (When, Summary, Severity, Campaign, Actor, Details); skeleton rows aligned to 6
+  columns.
+- `AdminPanel.tsx` — mobile select data and `Tabs.Tab` labels updated to `Campaign Activity` and
+  `System Audit`.
+- `AuditTab.test.tsx` — added `'shows Campaign Activity heading'` and `'shows help text explaining
+  scope'` tests.
+- `GlobalAuditTab.test.tsx` — updated heading assertion; added tests for help text, summary-first
+  rendering, severity badge, and resource label visibility.
+
+**Verification:** 32 frontend tests pass, lint clean, build clean.
+
+### Status: Complete
 
 ---
 

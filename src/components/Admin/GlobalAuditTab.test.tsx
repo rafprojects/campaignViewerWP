@@ -29,12 +29,17 @@ describe('GlobalAuditTab', () => {
 
   it('shows heading and filter inputs', () => {
     render(<GlobalAuditTab {...baseProps} />);
-    expect(screen.getByText('Global Audit Log')).toBeInTheDocument();
+    expect(screen.getByText('System Audit')).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /campaign id/i })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /from date/i })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /to date/i })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: /action filter/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /export.*csv/i })).toBeInTheDocument();
+  });
+
+  it('shows help text explaining scope', () => {
+    render(<GlobalAuditTab {...baseProps} />);
+    expect(screen.getByText(/Cross-campaign and plugin-wide admin events/)).toBeInTheDocument();
   });
 
   it('shows empty state message when entries is empty', () => {
@@ -136,6 +141,29 @@ describe('GlobalAuditTab', () => {
     render(<GlobalAuditTab {...baseProps} entries={[baseEntry, second]} />);
     expect(screen.getByText('media.created')).toBeInTheDocument();
     expect(screen.getByText('access.granted')).toBeInTheDocument();
+  });
+
+  it('uses summary as primary row text when present', () => {
+    const entry: AuditEntry = { ...baseEntry, summary: 'Photo uploaded' };
+    render(<GlobalAuditTab {...baseProps} entries={[entry]} />);
+    expect(screen.getByText('Photo uploaded')).toBeInTheDocument();
+  });
+
+  it('falls back to action key when summary is absent', () => {
+    render(<GlobalAuditTab {...baseProps} entries={[baseEntry]} />);
+    expect(screen.getByText('media.created')).toBeInTheDocument();
+  });
+
+  it('shows severity badge when entry has severity', () => {
+    const entry: AuditEntry = { ...baseEntry, severity: 'warning' };
+    render(<GlobalAuditTab {...baseProps} entries={[entry]} />);
+    expect(screen.getByText('warning')).toBeInTheDocument();
+  });
+
+  it('shows resource label in row when present', () => {
+    const entry: AuditEntry = { ...baseEntry, resourceLabel: 'photo.jpg' };
+    render(<GlobalAuditTab {...baseProps} entries={[entry]} />);
+    expect(screen.getByText('photo.jpg')).toBeInTheDocument();
   });
 
   it('shows pre-filled filter values from props', () => {

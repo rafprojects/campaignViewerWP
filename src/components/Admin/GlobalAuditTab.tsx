@@ -2,6 +2,7 @@ import { Button, Group, ScrollArea, Skeleton, Table, Text, TextInput } from '@ma
 import { useMemo, type ReactNode } from 'react';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import type { AuditEntry, AuditFilters } from '@/services/adminQuery';
+import { AuditEventRow } from './AuditEventRow';
 
 type GlobalFilters = AuditFilters & { campaignId?: string };
 
@@ -22,10 +23,11 @@ function AuditSkeletonRows() {
       {Array.from({ length: 4 }).map((_, i) => (
         <Table.Tr key={i}>
           <Table.Td><Skeleton height={14} width={120} /></Table.Td>
-          <Table.Td><Skeleton height={14} width="60%" /></Table.Td>
+          <Table.Td><Skeleton height={14} width="50%" /></Table.Td>
+          <Table.Td><Skeleton height={14} width={50} /></Table.Td>
           <Table.Td><Skeleton height={14} width={80} /></Table.Td>
-          <Table.Td><Skeleton height={14} width={40} /></Table.Td>
-          <Table.Td><Skeleton height={14} width="40%" /></Table.Td>
+          <Table.Td><Skeleton height={14} width={60} /></Table.Td>
+          <Table.Td><Skeleton height={14} width="30%" /></Table.Td>
         </Table.Tr>
       ))}
     </>
@@ -42,32 +44,16 @@ interface GlobalAuditTabProps {
 
 export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onExportCsv }: GlobalAuditTabProps) {
   const rows: ReactNode = useMemo(
-    () =>
-      entries.map((e) => (
-        <Table.Tr key={e.id}>
-          <Table.Td>{new Date(e.createdAt).toLocaleString()}</Table.Td>
-          <Table.Td>
-            <Text size="sm" style={{ wordBreak: 'break-all' }}>{e.action}</Text>
-          </Table.Td>
-          <Table.Td>
-            <Text size="xs">{e.campaignId ?? '—'}</Text>
-          </Table.Td>
-          <Table.Td>{e.actorLogin || e.userId || '—'}</Table.Td>
-          <Table.Td>
-            <Text size="xs" lineClamp={1}>
-              {Object.keys(e.details ?? {}).length > 0 ? JSON.stringify(e.details) : '—'}
-            </Text>
-          </Table.Td>
-        </Table.Tr>
-      )),
+    () => entries.map((e) => <AuditEventRow key={e.id} entry={e} showCampaignCol />),
     [entries],
   );
 
   return (
     <>
-      <Text size="sm" fw={600} id="global-audit-heading" mb="xs">
-        Global Audit Log
+      <Text size="sm" fw={600} id="global-audit-heading" mb={2}>
+        System Audit
       </Text>
+      <Text size="xs" c="dimmed" mb="xs">Cross-campaign and plugin-wide admin events.</Text>
       <Group mb="sm" wrap="wrap" gap="sm">
         <TextInput
           size="xs"
@@ -106,15 +92,16 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
         </Button>
       </Group>
       {loading ? (
-        <Table.ScrollContainer minWidth={720}>
+        <Table.ScrollContainer minWidth={750}>
           <Table verticalSpacing="sm" aria-label="Loading global audit entries">
             <Table.Thead>
               <Table.Tr>
                 <Table.Th miw={140}>When</Table.Th>
-                <Table.Th miw={160}>Action</Table.Th>
+                <Table.Th miw={200}>Summary</Table.Th>
+                <Table.Th miw={70}>Severity</Table.Th>
                 <Table.Th miw={100}>Campaign</Table.Th>
-                <Table.Th miw={80}>User</Table.Th>
-                <Table.Th miw={200}>Details</Table.Th>
+                <Table.Th miw={80}>Actor</Table.Th>
+                <Table.Th miw={160}>Details</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
@@ -124,15 +111,16 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
         <Text c="dimmed" role="status" aria-live="polite">No audit entries found.</Text>
       ) : (
         <ScrollArea offsetScrollbars type="always" scrollbars="y" className="wpsg-scrollarea" h={400}>
-          <Table.ScrollContainer minWidth={720}>
+          <Table.ScrollContainer minWidth={750}>
             <Table verticalSpacing="sm" highlightOnHover aria-label="Global audit entries">
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th miw={140}>When</Table.Th>
-                  <Table.Th miw={160}>Action</Table.Th>
+                  <Table.Th miw={200}>Summary</Table.Th>
+                  <Table.Th miw={70}>Severity</Table.Th>
                   <Table.Th miw={100}>Campaign</Table.Th>
-                  <Table.Th miw={80}>User</Table.Th>
-                  <Table.Th miw={200}>Details</Table.Th>
+                  <Table.Th miw={80}>Actor</Table.Th>
+                  <Table.Th miw={160}>Details</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{rows}</Table.Tbody>

@@ -22,6 +22,16 @@ describe('AuditTab', () => {
         expect(container.firstChild).toBeTruthy();
     });
 
+    it('shows Campaign Activity heading', () => {
+        render(<AuditTab {...baseProps} />);
+        expect(screen.getByText('Campaign Activity')).toBeInTheDocument();
+    });
+
+    it('shows help text explaining scope', () => {
+        render(<AuditTab {...baseProps} />);
+        expect(screen.getByText(/All activity recorded for the selected campaign/)).toBeInTheDocument();
+    });
+
     it('shows skeleton rows while loading', () => {
         render(<AuditTab {...baseProps} auditLoading={true} />);
         expect(screen.getAllByRole('row').length).toBeGreaterThan(0);
