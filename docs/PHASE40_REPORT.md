@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (P40-QA1 complete)
+**Last updated:** 2026-06-03 (PR #55 review fixes)
 
 ### Tracks
 
@@ -724,3 +724,17 @@ All six tracks shipped as planned.
 **P40-QA1 — Regression coverage, docs, QA, and backlog closeout.** 39 PHP regression tests (across 4 new test files) and 37 frontend audit tests cover all Phase 40 changes. "Audit Log Binary Export" in `docs/FUTURE_TASKS.md` confirmed deferred — the engine exists but the compliance use case is not Phase 40 scope.
 
 **Deferred items (not in scope for Phase 40):** Audit retention/archival policy, saved filters and full-text audit search, external shipping of audit events, non-admin activity history, role-based audit redaction, audit log binary export.
+
+---
+
+## Post-Merge Review — PR #55
+
+Four issues identified by Copilot review and addressed in commit `02cc499a`:
+
+**`class-wpsg-db.php` — `summary` column type.** `TEXT NOT NULL DEFAULT ''` is not supported on MariaDB and older MySQL versions (DEFAULT is prohibited on BLOB/TEXT columns). Changed to `VARCHAR(255) NOT NULL DEFAULT ''`, which is safe for `dbDelta` and adequate for a one-line summary string.
+
+**`class-wpsg-rest.php` — `add_audit_entry` source backward-compat.** Legacy WP-CLI callsites pass `source` inside `$details` (e.g. `['source' => 'cli']`). With the new canonical `source` column reading from `$ctx`, those events would have been stored with `source='rest'`. Added a shim at the top of `add_audit_entry`: if `$ctx['source']` is absent and `$details['source']` is a string, it is promoted to `$ctx['source']` and removed from `$details` before the insert.
+
+**CA1 `test_batch_created_with_all_valid_items_has_info_severity`.** The original test used `assertContains([201, 200])` and wrapped the severity assertion in an `if (!empty($batch))` guard that could pass silently if the audit entry was never written. Tightened to assert `201` explicitly, then `assertNotEmpty` on the batch entry, then the `info` severity assertion — all unconditional.
+
+**CA1 `test_batch_created_with_failures_has_warning_severity`.** The original test had a `markTestSkipped` branch that could mask regressions on a payload that deterministically produces one added and one failed item. Replaced with unconditional assertions: `assertEquals(201)`, `assertCount(1, added)`, `assertCount(1, failed)`, then the `media.batch_created` / `warning` severity assertions. Suite total after fix: `OK (10 tests, 32 assertions)` (+4 assertions from the strengthened batch tests).
