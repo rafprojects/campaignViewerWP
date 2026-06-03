@@ -1,8 +1,8 @@
 # Phase 40 — Audit Baseline, Event Clarity, and Coverage Expansion
 
-**Status:** In Progress
+**Status:** Complete
 **Created:** 2026-06-01
-**Last updated:** 2026-06-03 (P40-SA1 complete)
+**Last updated:** 2026-06-03 (P40-QA1 complete)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P40-UX1 | Audit surface naming, summaries, and shared event presentation | Complete | M |
 | P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Complete | L |
 | P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Complete | L |
-| P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Planned · do after the other P40 tracks land or narrow | M |
+| P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Complete | M |
 
 > **Note:** Phase 40 is intentionally a focused audit-domain phase.
 >
@@ -633,7 +633,21 @@ and explicit cleanup of any residual audit-domain backlog items.
 - Remaining audit follow-ups are explicitly closed, deferred, or moved to the
   appropriate backlog surface.
 
-### Status: Planned · do after the other P40 tracks land or narrow
+### Implementation Notes
+
+**Coverage verified:** Regression tests were shipped inline with each track — no gaps at close.
+
+- `WPSG_P40_BS1_Audit_Baseline_Test.php` — 3 tests: full `POST .../archive` → `GET .../audit` round-trip and cross-route agreement.
+- `WPSG_P40_CT1_Event_Contract_Test.php` — 7 tests: schema presence, insert/format round-trip, scope/severity filtering, REST param forwarding, legacy-row defaults.
+- `WPSG_P40_CA1_Campaign_Coverage_Test.php` — 10 tests: duplicate rejection, forced upload, batch severity, JSON export/import audit entries.
+- `WPSG_P40_SA1_System_Coverage_Test.php` — 19 tests: auth login/logout, settings update, layout template CRUD, taxonomy term CRUD.
+- Frontend audit coverage: `AuditTab.test.tsx` (12 tests), `GlobalAuditTab.test.tsx` (20 tests), `adminQuery.test.tsx` (5 tests) — 37 tests covering error surfacing, renamed headings, help text, summary-first rendering, severity badge, and scope/severity query forwarding.
+
+**Suite totals at phase close:** PHP `OK (852 tests, 2702 assertions)`; 37 frontend audit tests; lint clean; build clean.
+
+**Backlog reconciliation:** One audit-domain item remains in `docs/FUTURE_TASKS.md` — "Audit Log Binary Export" (Campaign Management section). It is already correctly deferred: the engine exists (`WPSG_Export_Engine`, shipped P39-CM1) but the compliance-specific use case does not justify Phase 40 scope. Listed in the Follow-On Candidates table above. No promotion or closure action required.
+
+### Status: Complete
 
 ---
 
@@ -695,13 +709,18 @@ unless later implementation work proves they are inseparable.
 
 ## Outcome
 
-Pending. Fill this section as Phase 40 tracks land.
+All six tracks shipped as planned.
 
-- Expected shipped outcome: a working campaign audit baseline, a clearer
-  campaign-vs-system audit UX, and materially broader high-signal audit
-  coverage.
-- Expected deferrals: retention/search/export follow-ons that are not required
-  to make the audit system correct and understandable.
-- Expected next step: begin `P40-BS1` with a deterministic reproduction of the
-  current campaign audit failure using a mutation that already calls
-  `add_audit_entry()` today.
+**P40-BS1 — Campaign audit baseline stabilization.** Root cause was a silent error-swallow in `AdminPanel.tsx`: `auditError` from `useAuditEntries` was never destructured or forwarded to `AuditTab`, so any non-2xx backend response rendered as "No audit entries yet." rather than a visible error message. Fixed and covered by 3 regression tests confirming the full REST mutation → REST audit-retrieval round-trip.
+
+**P40-CT1 — Canonical event contract.** Additive 7-column migration (`severity`, `scope`, `summary`, `resource_type`, `resource_id`, `resource_label`, `source`) on `wpsg_audit_log` via `dbDelta`. Legacy rows remain fully displayable. Scope `system` is the authoritative marker for plugin-level events; `campaign_id = 0` is the storage convention. All new Phase 40 entries authored against the expanded contract.
+
+**P40-UX1 — Audit surface naming and presentation.** `Global Audit` → `System Audit`; `Audit` → `Campaign Activity`. Shared `AuditEventRow` component renders summary-first with a colour-coded severity badge, resource label, actor, and raw details; used by both audit surfaces so they cannot drift. Help text added to both headings.
+
+**P40-CA1 — Campaign-scoped coverage expansion.** Five previously uncovered paths now produce first-class audit entries: exact duplicate rejection (`media.duplicate_rejected`, warning), near-duplicate detection (`media.near_duplicate_detected`, warning), forced-upload bypass (`media.upload_forced`, info), partial-failure batch creation (`media.batch_created`, warning when `failed > 0`), and campaign JSON/binary import/export (`campaign.exported`, `campaign.imported`). Upload endpoint extended with optional `campaign_id` param; `MediaTab.tsx` passes it through `extraFields` so the upload-path audit context is available without a request-body change.
+
+**P40-SA1 — System-scope coverage expansion.** Five previously uncovered admin surfaces now produce `scope=system` audit entries without fake campaign IDs: auth login success/failure and logout (`auth.login_success`, `auth.login_failed`, `auth.logout`); settings saves when values actually changed (`settings.updated`, redacted to changed key names only); layout template create/update/delete/duplicate; taxonomy term create/update/delete across campaign categories, campaign tags, and media tags.
+
+**P40-QA1 — Regression coverage, docs, QA, and backlog closeout.** 39 PHP regression tests (across 4 new test files) and 37 frontend audit tests cover all Phase 40 changes. "Audit Log Binary Export" in `docs/FUTURE_TASKS.md` confirmed deferred — the engine exists but the compliance use case is not Phase 40 scope.
+
+**Deferred items (not in scope for Phase 40):** Audit retention/archival policy, saved filters and full-text audit search, external shipping of audit events, non-admin activity history, role-based audit redaction, audit log binary export.
