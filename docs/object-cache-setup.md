@@ -1,6 +1,6 @@
 # Object-Cache Setup for WP Super Gallery
 
-WP Super Gallery works correctly with WordPress' default database-backed object
+WP Super Gallery works correctly with WordPress' default non-persistent object
 cache. However, on higher-traffic sites or deployments with automation-heavy
 workflows (batch exports, webhook delivery retries, frequent admin operations),
 a persistent external object cache reduces database load and improves
@@ -22,8 +22,9 @@ Consider a persistent object cache when:
 - You notice `wpsg_rest_error_rate` rising in the health dashboard without a
   clear application cause (a saturated database cache is a common hidden factor)
 
-With the default database-backed cache, every cold `get_option()` or
-`wp_cache_get()` miss hits the database. Under load this can cascade.
+With the default non-persistent cache, values are cached only for the lifetime
+of the current request. Every cold `get_option()` or `wp_cache_get()` miss on
+a subsequent request hits the database. Under load this can cascade.
 
 ---
 

@@ -7241,7 +7241,7 @@ class WPSG_REST {
         }
 
         if ($request->get_param('enabled') !== null) {
-            $existing['enabled'] = (bool) $request->get_param('enabled');
+            $existing['enabled'] = self::is_truthy_param($request->get_param('enabled'));
         }
 
         $endpoints[$idx] = $existing;

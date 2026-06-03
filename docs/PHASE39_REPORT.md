@@ -684,6 +684,14 @@ Five Copilot threads addressed:
 
 The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
 
+**Round 8 — 3 threads (update endpoint bool coercion, doc wording x2):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `update_webhook_endpoint` `(bool)` cast for `enabled` | `class-wpsg-rest.php:7244` | **Accept** | Same issue fixed in `create_webhook_endpoint` last round — `(bool) "false"` is `true`. Applied `is_truthy_param()` for consistent behaviour across both endpoints. |
+| "database-backed cache" in doc intro | `docs/object-cache-setup.md:3` | **Accept** | WP default object cache is non-persistent in-memory, not database-backed. Changed to "default non-persistent object cache". |
+| "database-backed cache" repeated in when-to-add section | `docs/object-cache-setup.md:25` | **Accept** | Same wording issue. Reworded to clarify the persistence property: values cached only for the lifetime of the current request, so every subsequent request is a cold DB read. |
+
 **Round 7 — 5 threads (deactivation hook, SSRF on GET, ZIP leak, boolean coercion, UI copy):**
 
 | Thread | File | Decision | Rationale |
