@@ -7194,6 +7194,9 @@ class WPSG_REST {
 
         $raw_events = $request->get_param('events');
         $events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+        if (is_array($raw_events) && !empty($raw_events) && empty($events)) {
+            return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+        }
         $raw_enabled = $request->get_param('enabled');
         $enabled     = $raw_enabled === null ? true : self::is_truthy_param($raw_enabled);
         $secret = WPSG_Webhooks::generate_secret();
@@ -7236,8 +7239,12 @@ class WPSG_REST {
         }
 
         if ($request->get_param('events') !== null) {
-            $raw_events = $request->get_param('events');
-            $existing['events'] = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+            $raw_events      = $request->get_param('events');
+            $sanitized_events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
+            if (is_array($raw_events) && !empty($raw_events) && empty($sanitized_events)) {
+                return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+            }
+            $existing['events'] = $sanitized_events;
         }
 
         if ($request->get_param('enabled') !== null) {

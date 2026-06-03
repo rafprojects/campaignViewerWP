@@ -55,6 +55,6 @@ export class ExportApi {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+    setTimeout(() => URL.revokeObjectURL(link.href), 30_000);
   }
 }

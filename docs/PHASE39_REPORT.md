@@ -684,6 +684,14 @@ Five Copilot threads addressed:
 
 The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
 
+**Round 9 — 3 threads (invalid events silent broadening, blob URL revocation):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| Invalid events → empty array → "all events" on create | `class-wpsg-rest.php:7196` | **Accept** | If the client sends a non-empty events list but none are recognised, `sanitize_events()` silently returns `[]`, which the dispatcher treats as "deliver all events". Added a 400 guard: reject when raw events are non-empty but sanitized result is empty. |
+| Same issue on update | `class-wpsg-rest.php:7240` | **Accept** | Identical guard added to `update_webhook_endpoint`. Extracted to a local variable `$sanitized_events` to avoid double-call. |
+| Blob URL revocation 100ms too short | `exportApi.ts:58` | **Accept** | 100ms can race the browser's async download read for large ZIPs, especially in Safari. Increased to 30 s — well within any reasonable download-initiation window. The blob is in-memory so holding the reference longer has no meaningful cost. |
+
 **Round 8 — 3 threads (update endpoint bool coercion, doc wording x2):**
 
 | Thread | File | Decision | Rationale |
