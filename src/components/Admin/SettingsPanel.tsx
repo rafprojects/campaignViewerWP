@@ -425,6 +425,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
                 settings={settings}
                 updateSetting={updateGallerySetting}
                 tooltipLabel={tooltipLabel}
+                apiClient={apiClient}
               />
             </Stack>
           )}

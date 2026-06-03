@@ -109,6 +109,9 @@ function createMockApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
     }),
     testConnection: vi.fn().mockResolvedValue({ success: true, message: 'ok' }),
     listWebhookEndpoints: vi.fn().mockResolvedValue([]),
+    getHealthData: vi.fn().mockResolvedValue({
+      objectCache: { persistent: false, backend: null, stats_available: false, stats: null },
+    }),
     ...overrides,
   } as unknown as ApiClient;
 }
@@ -2206,5 +2209,61 @@ describe('SettingsPanel', () => {
     await waitFor(() => {
       expect(screen.getByText(/No webhook endpoints configured/i)).toBeDefined();
     });
+  });
+
+  // P39-OC1: Object Cache health surface in System & Admin → Object Cache accordion.
+
+  it('shows "Not detected" badge when no persistent cache is active', async () => {
+    apiClient = createMockApiClient({
+      getHealthData: vi.fn().mockResolvedValue({
+        objectCache: { persistent: false, backend: null, stats_available: false, stats: null },
+      }),
+    });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify}
+        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /System & Admin/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Object Cache/i }));
+
+    await waitFor(() => {
+      expect(apiClient.getHealthData).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Not detected')).toBeDefined();
+    });
+
+    expect(screen.getByText(/No persistent object cache/i)).toBeDefined();
+  });
+
+  it('shows "Active" badge with backend label when persistent cache is detected', async () => {
+    apiClient = createMockApiClient({
+      getHealthData: vi.fn().mockResolvedValue({
+        objectCache: { persistent: true, backend: 'redis', stats_available: false, stats: null },
+      }),
+    });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify}
+        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} />
+    );
+
+    await waitForTabs();
+    fireEvent.click(screen.getByRole('tab', { name: /System & Admin/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Object Cache/i }));
+
+    await waitFor(() => {
+      expect(apiClient.getHealthData).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Active')).toBeDefined();
+    });
+
+    expect(screen.getByText('Redis')).toBeDefined();
   });
 });

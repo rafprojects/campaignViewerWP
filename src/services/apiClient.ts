@@ -53,7 +53,7 @@ export type {
   AccessSummaryItem,
   AccessSummaryResponse,
 } from './api/campaignsApi';
-export type { WpPageSummary } from './api/adminApi';
+export type { WpPageSummary, ObjectCacheHealth, HealthDataResponse } from './api/adminApi';
 export type {
   WebhookEndpoint,
   WebhookEndpointWithSecret,
@@ -321,6 +321,10 @@ export class ApiClient extends HttpTransportImpl {
 
   listWpPages(): Promise<WpPageSummary[]> {
     return this._admin.listWpPages();
+  }
+
+  getHealthData(): Promise<import('./api/adminApi').HealthDataResponse> {
+    return this._admin.getHealthData();
   }
 
   downloadGlobalAuditCsv(

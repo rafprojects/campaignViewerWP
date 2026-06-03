@@ -10,6 +10,21 @@ class WPSG_REST {
     // Populated by rate_limit_check(); read by inject_rate_limit_headers filter.
     private static $rate_limit_headers = [];
 
+    /**
+     * Object-cache TTL (seconds) for general plugin settings.
+     * Use this when caching settings that do not affect access control.
+     */
+    const CACHE_TTL_SETTINGS = 3600;
+
+    /**
+     * Object-cache TTL (seconds) for access-control reads.
+     *
+     * Kept short (60 s) so that grant revocations propagate quickly.
+     * Access-control checks (grant lookups, role checks) MUST use this TTL
+     * or bypass the cache entirely — never use CACHE_TTL_SETTINGS for them.
+     */
+    const CACHE_TTL_ACCESS = 60;
+
     private static function respond_with_etag($request, $payload, $status = 200, $salt = '') {
         $etag = '"' . md5(wp_json_encode($payload) . $salt) . '"';
         $if_none_match = $request ? $request->get_header('if-none-match') : '';

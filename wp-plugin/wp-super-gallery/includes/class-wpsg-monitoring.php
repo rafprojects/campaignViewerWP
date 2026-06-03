@@ -12,6 +12,7 @@ class WPSG_Monitoring {
         add_filter('rest_post_dispatch', [self::class, 'attach_metrics'], 10, 3);
         add_action('shutdown', [self::class, 'log_fatal_error']);
         add_action('wpsg_oembed_failure', [self::class, 'track_oembed_failure'], 10, 2);
+        add_action('init', [self::class, 'warm_settings'], 20);
     }
 
     public static function start_timer($result, $server, $request) {
@@ -167,6 +168,126 @@ class WPSG_Monitoring {
     }
 
     /**
+     * Detect the active object-cache backend and surface a bounded readiness view.
+     *
+     * Safe to call on every request: all introspection is read-only and
+     * exceptions from stats() calls are caught internally.
+     *
+     * @return array{persistent: bool, backend: string|null, stats_available: bool, stats: array|null}
+     */
+    public static function get_object_cache_health() {
+        $persistent = (bool) wp_using_ext_object_cache();
+        $backend    = null;
+        $stats_available = false;
+        $stats      = null;
+
+        if ($persistent && isset($GLOBALS['wp_object_cache'])) {
+            $cache = $GLOBALS['wp_object_cache'];
+            $class = strtolower(get_class($cache));
+
+            if (strpos($class, 'redis') !== false) {
+                $backend = 'redis';
+            } elseif (strpos($class, 'memcached') !== false || strpos($class, 'memcache') !== false) {
+                $backend = 'memcached';
+            } elseif (strpos($class, 'apcu') !== false) {
+                $backend = 'apcu';
+            } else {
+                // Class name gives no hint — probe known drop-in signatures.
+                // redis-cache plugin drop-in: class WP_Object_Cache with $redis property;
+                // also defines WP_REDIS_VERSION or loads Rhubarb\RedisCache\Plugin.
+                if (
+                    property_exists($cache, 'redis')
+                    || defined('WP_REDIS_VERSION')
+                    || class_exists('Rhubarb\RedisCache\Plugin', false)
+                ) {
+                    $backend = 'redis';
+                } elseif (property_exists($cache, 'mc') || property_exists($cache, 'memcached')) {
+                    $backend = 'memcached';
+                } elseif (extension_loaded('apcu')) {
+                    // APCu drop-ins (e.g. ZapCu) typically use non-apcu class names.
+                    // If APCu is loaded and no other backend matched, it is the backend.
+                    $backend = 'apcu';
+                } else {
+                    $backend = 'unknown';
+                }
+            }
+
+            // Some drop-ins (e.g. redis-cache's WP_Object_Cache) implement stats() by
+            // echoing HTML rather than returning a value.  Wrap every probe in an output
+            // buffer so leaked HTML never reaches the REST response body.
+            if (method_exists($cache, 'stats')) {
+                try {
+                    ob_start();
+                    $raw = $cache->stats();
+                    ob_end_clean();
+                    if (is_array($raw) || is_object($raw)) {
+                        $stats = (array) $raw;
+                        $stats_available = true;
+                    }
+                } catch (\Throwable $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+                    if (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                }
+            } elseif (method_exists($cache, 'get_stats')) {
+                try {
+                    ob_start();
+                    $raw = $cache->get_stats();
+                    ob_end_clean();
+                    if (is_array($raw)) {
+                        $stats = $raw;
+                        $stats_available = true;
+                    }
+                } catch (\Throwable $e) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+                    if (ob_get_level()) {
+                        ob_end_clean();
+                    }
+                }
+            }
+
+            // Fallback: read the standard cache_hits / cache_misses public properties
+            // that most drop-ins (including redis-cache) expose directly on the object.
+            if (!$stats_available && property_exists($cache, 'cache_hits')) {
+                $stats = [
+                    'hits'   => (int) ($cache->cache_hits ?? 0),
+                    'misses' => (int) ($cache->cache_misses ?? 0),
+                ];
+                $stats_available = true;
+            }
+        }
+
+        return [
+            'persistent'      => $persistent,
+            'backend'         => $backend,
+            'stats_available' => $stats_available,
+            'stats'           => $stats,
+        ];
+    }
+
+    /**
+     * Prime the object cache for the plugin's most-read settings option.
+     *
+     * WordPress loads autoloaded options into its in-memory option cache on the
+     * first get_option() call, but that cache does not survive across requests
+     * unless a persistent object-cache drop-in is active. This method
+     * explicitly sets the wpsg_settings value in a named cache group so that
+     * persistent-cache deployments benefit from a warmed entry.
+     *
+     * Hooked to init at priority 20 so it runs after CPT/role registration.
+     */
+    public static function warm_settings() {
+        $cache_key   = 'wpsg_settings';
+        $cache_group = 'wpsg_settings';
+
+        if (wp_cache_get($cache_key, $cache_group) !== false) {
+            return;
+        }
+
+        $value = get_option('wpsg_settings', []);
+        wp_cache_set($cache_key, $value, $cache_group, HOUR_IN_SECONDS);
+    }
+
+    /**
      * Get aggregated health data for the admin dashboard.
      *
      * @return array Health metrics.
@@ -234,6 +355,7 @@ class WPSG_Monitoring {
                 'failedCount'    => $webhook_failed,
                 'recentDeliveries' => $webhook_recent,
             ],
+            'objectCache'                  => self::get_object_cache_health(),
         ];
     }
 

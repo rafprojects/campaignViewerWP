@@ -12,7 +12,7 @@
 | P39-AU1 | JWT in-memory token auth for standalone SPA | Deferred — returned to FUTURE_TASKS | L |
 | P39-IN1 | Webhook support for campaign events | Complete | L |
 | P39-CM1 | Campaign export full binary media export | Complete | M |
-| P39-OC1 | Redis/Memcached object-cache guidance and health surface | Planned | M |
+| P39-OC1 | Redis/Memcached object-cache guidance and health surface | Complete | M |
 | P39-CL1 | Phase 39 backlog closure and FUTURE_TASKS cleanup | Planned · do after other P39 tracks | S |
 
 > **Note:** Phase 39 is intentionally framed as a deployment, cross-origin,
@@ -521,13 +521,72 @@ cache-oriented health surface that helps operators understand their setup.
 
 ### Acceptance criteria
 
-- Operators have first-party guidance for Redis/Memcached and an APCu fallback.
-- The health surface exposes bounded cache-readiness information.
-- A warm-cache utility exists for identified high-read settings paths.
-- Cache guidance for access-sensitive data is explicit.
-- Coverage exists for health-data output and non-persistent-cache fallback.
+- [x] Operators have first-party guidance for Redis/Memcached and an APCu fallback.
+- [x] The health surface exposes bounded cache-readiness information.
+- [x] A warm-cache utility exists for identified high-read settings paths.
+- [x] Cache guidance for access-sensitive data is explicit.
+- [x] Coverage exists for health-data output and non-persistent-cache fallback.
 
-### Status: Planned
+### Implementation notes
+
+**PHP backend (`class-wpsg-monitoring.php`):**
+- Added `get_object_cache_health()` — detects `wp_using_ext_object_cache()` (cast to
+  `bool`), identifies backend from `get_class($GLOBALS['wp_object_cache'])` (normalized to
+  `redis | memcached | apcu | unknown`), and safely probes `stats()` / `get_stats()`
+  guarded by `method_exists()` and `\Throwable` catch. Returns a four-key array:
+  `persistent`, `backend`, `stats_available`, `stats`.
+- Extended `get_health_data()` to include `objectCache` key via
+  `get_object_cache_health()`.
+- Added `warm_settings()` — on miss in the `wpsg_settings` cache group, calls
+  `get_option('wpsg_settings')` and stores the result with `wp_cache_set` at a 1-hour
+  TTL. Hooked to `init` at priority 20 from `register()`.
+
+**PHP constants (`class-wpsg-rest.php`):**
+- Added `CACHE_TTL_SETTINGS = 3600` and `CACHE_TTL_ACCESS = 60` class constants with
+  PHPDoc documenting the access-check bypass rule (≤60 s TTL or bypass for any
+  grant/role check so revocations propagate quickly).
+
+**Documentation (`docs/object-cache-setup.md`):**
+- New file covering Redis (drop-in + wp-config constants), Memcached (Memcached Redux),
+  APCu/ZapCu (single-server only), traffic thresholds, plugin cache groups
+  (`wpsg_settings`, `wpsg_rate_limit`), and the access-control cache policy.
+- Verified against live installs: Redis via redis-cache plugin, APCu via ZapCu, Memcached
+  via Memcached Redux. Key findings from real-world testing:
+  - ZapCu auto-installs the drop-in on activation; no manual file copy needed.
+  - Drop-in plugins (Memcached Redux) must NOT be activated as normal WP plugins —
+    copy the drop-in file directly to `wp-content/` instead.
+  - `$memcached_servers` format for Memcached Redux must use `'host:port'` strings
+    (`['127.0.0.1:11211']`), not the old array-of-arrays format (`[['127.0.0.1', 11211]]`)
+    used by the deprecated `memcache` (no `d`) plugin — the old format throws a
+    `TypeError` on PHP 8 in Memcached Redux's `WP_Object_Cache::__construct()`.
+
+**React (`AdvancedSettingsSection.tsx`, `SettingsPanel.tsx`):**
+- Added "Object Cache" accordion section (value `adv-cache`) to `AdvancedSettingsSection`.
+  Uses `useQuery` (`enabled: mounted.has('adv-cache')`) against the existing
+  `/admin/health` endpoint, lazy-loaded on accordion open.
+- Displays: persistent badge (Active / Not detected), backend label badge (Redis /
+  Memcached / APCu / Unknown), guidance alert for non-persistent deployments, and per-key
+  stats rows when `stats_available` is true.
+- `AdvancedSettingsSection` now receives `apiClient: ApiClient` prop; call site in
+  `SettingsPanel.tsx` updated accordingly.
+- `AdminApi` extended with `getHealthData()` and `ObjectCacheHealth` /
+  `HealthDataResponse` types; both re-exported from `apiClient.ts`.
+
+**Tests:**
+- `WPSG_P39OC1_CacheHealth_Test.php` — 6 assertions covering non-persistent shape,
+  key ordering, inclusion in `get_health_data()`, REST endpoint shape, `warm_settings()`
+  primes cache, and idempotency.
+- `SettingsPanel.test.tsx` — 2 new tests: "Not detected" badge on non-persistent mock,
+  "Active" + "Redis" badge on persistent mock. `getHealthData` added to base mock client.
+
+**Full suite results:** 813/813 PHP tests ✓, 58/58 React tests ✓.
+
+**Rationale on `wp_using_ext_object_cache()` cast:** The function returns the global
+`$wp_using_ext_object_cache` which is `null` when unset (not `false`). Casting to `bool`
+normalises this to `false` in non-persistent environments and keeps the API shape
+strictly typed.
+
+### Status: Complete
 
 ---
 
