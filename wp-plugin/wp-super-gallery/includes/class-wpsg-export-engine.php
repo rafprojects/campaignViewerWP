@@ -196,6 +196,7 @@ class WPSG_Export_Engine {
                 // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
                 file_put_contents($tmp, $body);
                 unset($body);
+                clearstatcache(true, $tmp); // Invalidate cached stat so filesize() reflects written bytes.
                 $file_size = @filesize($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
                 if (!$file_size) {
                     @unlink($tmp); // phpcs:ignore
