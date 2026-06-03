@@ -585,6 +585,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
         files: selectedFiles,
         headers: authHeaders,
+        extraFields: { campaign_id: String(campaignId) },
       });
 
       const nextOrder = getNextMediaOrder(media);
@@ -740,7 +741,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
         file: entry.file,
         headers: authHeaders,
-        extraFields: { force: '1' },
+        extraFields: { force: '1', campaign_id: String(campaignId) },
       });
       const nextOrder = getNextMediaOrder(media);
       const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, [{

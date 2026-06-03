@@ -1,19 +1,19 @@
 # Phase 40 — Audit Baseline, Event Clarity, and Coverage Expansion
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-06-01
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-03 (PR #55 r3 review fixes)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P40-BS1 | Campaign audit baseline stabilization and current bug fix | Planned · blocks the rest of Phase 40 | S |
-| P40-CT1 | Canonical audit event contract, storage, and API evolution | Planned · schema and response gate for later tracks | L |
-| P40-UX1 | Audit surface naming, summaries, and shared event presentation | Planned · depends on P40-CT1 | M |
-| P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Planned · depends on P40-CT1 | L |
-| P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Planned · depends on P40-CT1 | L |
-| P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Planned · do after the other P40 tracks land or narrow | M |
+| P40-BS1 | Campaign audit baseline stabilization and current bug fix | Complete | S |
+| P40-CT1 | Canonical audit event contract, storage, and API evolution | Complete | L |
+| P40-UX1 | Audit surface naming, summaries, and shared event presentation | Complete | M |
+| P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Complete | L |
+| P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Complete | L |
+| P40-QA1 | Regression coverage, docs, QA, and backlog closeout | Complete | M |
 
 > **Note:** Phase 40 is intentionally a focused audit-domain phase.
 >
@@ -171,7 +171,19 @@ defect, and keep that failure as a permanent regression check for Phase 40.
   campaign on the same known-audited mutation.
 - Regression coverage exists for the resolved failure mode.
 
-### Status: Planned · blocks the rest of Phase 40
+### Implementation Notes
+
+**Investigation outcome:** The backend write/read path is correct. `add_audit_entry()` stores `campaign_id = intval($post_id)` and `GET /campaigns/{id}/audit` queries `WHERE campaign_id = %d` consistently. The full REST mutation → REST audit retrieval path was untested, but three new regression tests confirm it works end-to-end.
+
+**Root cause of reported silent failure:** `useAuditEntries` in `adminQuery.ts` returns `auditError`, but `AdminPanel.tsx` never destructured or forwarded it to `AuditTab`. If the backend returned any non-2xx response (403 from expired nonce, 404 from missing campaign, etc.) the component silently showed "No audit entries yet." instead of surfacing the error.
+
+**Changes shipped:**
+- `WPSG_P40_BS1_Audit_Baseline_Test.php` — three regression tests covering the full `POST .../archive` → `GET .../audit` and `GET /admin/audit-log?campaign_id` path; both routes confirmed to agree.
+- `AuditTab.tsx` — added optional `auditError` prop; error branch renders a visible `role="alert"` message before the empty-state message so backend failures are not silent.
+- `AdminPanel.tsx` — destructures and forwards `auditError` to `AuditTab`.
+- `AuditTab.test.tsx` — added test covering error state rendering.
+
+### Status: Complete
 
 ---
 
@@ -246,7 +258,50 @@ admin presentation and filtering.
 - The frontend types and queries are updated to the expanded response shape.
 - Test coverage exists for schema compatibility and new contract behavior.
 
-### Status: Planned · schema and response gate for later tracks
+### Implementation Notes
+
+**Root cause and approach:**
+
+The `wpsg_audit_log` table carried only `campaign_id + action + details + actor +
+created_at`. Seven columns needed for the canonical event contract were absent:
+`severity`, `scope`, `summary`, `resource_type`, `resource_id`, `resource_label`,
+and `source`.
+
+**Changes shipped:**
+
+- `class-wpsg-db.php` — `DB_VERSION` bumped to `'9'`; `maybe_create_audit_log_table()`
+  SQL extended with all seven new columns and a `KEY scope (scope)` index;
+  `maybe_upgrade_audit_log_v9()` private method handles the additive column
+  migration via `dbDelta` (INFORMATION_SCHEMA check guards duplicate runs);
+  `insert_audit_entry()` stores all seven new fields with validation;
+  `list_audit_entries()` accepts and applies `scope` and `severity` filter args;
+  `format_audit_entry()` returns all seven new fields with `??` defaults so
+  legacy rows remain fully readable.
+- `class-wpsg-rest.php` — `add_audit_entry()` signature extended to
+  `($post_id, $action, $details, $ctx)` — all seven new fields flow through
+  from `$ctx`; `list_audit()` and `list_global_audit()` now forward `scope`
+  and `severity` query params to `list_audit_entries()`.
+- `src/services/adminQuery.ts` — `AuditEntry` interface extended with seven
+  optional fields (`severity`, `scope`, `summary`, `resourceType`, `resourceId`,
+  `resourceLabel`, `source`); `AuditFilters` extended with `scope` and
+  `severity`; `fetchAuditEntries` and `fetchGlobalAuditEntries` forward both
+  new params when present.
+- `src/components/Admin/AuditTab.tsx` and `GlobalAuditTab.tsx` — `mergeFilter`
+  cast fixed for the narrower union types introduced by `scope`/`severity`.
+- `WPSG_P40_CT1_Event_Contract_Test.php` — 7-test PHP regression suite covering
+  schema presence, insert/format round-trip, `scope` and `severity` DB filtering,
+  REST endpoint param forwarding, and legacy-row default values.
+- `src/services/adminQuery.test.tsx` — new test verifying `scope`/`severity`
+  forwarding in the fetch URL and that new fields are returned on entries.
+
+**Migration decision:** Additive columns via `dbDelta` (no destructive changes).
+`campaign_id` retains `NOT NULL` with `DEFAULT 0`; `scope = 'system'` is the
+authoritative indicator for plugin-level events rather than using NULL.
+
+**Verification:** 7 PHP tests pass (`OK (7 tests, 41 assertions)`), 15 frontend
+tests pass, lint clean, build clean.
+
+### Status: Complete
 
 ---
 
@@ -310,7 +365,33 @@ from the canonical audit event contract.
 - UI coverage exists for the renamed headings, help text, and summary-based
   rendering.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Changes shipped:**
+
+- `AuditEventRow.tsx` — new shared row component used by both audit surfaces. Renders:
+  primary summary text (`entry.summary` falling back to `entry.action`), an optional secondary
+  resource label line, a colour-coded severity badge (`info`=blue, `warning`=orange, `error`=red),
+  actor, and lineClamp-1 details. Accepts `showCampaignCol` to toggle the Campaign column for the
+  system-audit view.
+- `useAuditRows.tsx` — refactored to use `AuditEventRow`; sorting logic preserved.
+- `AuditTab.tsx` — heading renamed to `Campaign Activity`; help text added (`All activity recorded
+  for the selected campaign.`); column headers updated (When, Summary, Severity, Actor, Details);
+  skeleton rows aligned to 5 columns.
+- `GlobalAuditTab.tsx` — heading renamed to `System Audit`; help text added (`Cross-campaign and
+  plugin-wide admin events.`); row rendering replaced with `AuditEventRow showCampaignCol`; column
+  headers updated (When, Summary, Severity, Campaign, Actor, Details); skeleton rows aligned to 6
+  columns.
+- `AdminPanel.tsx` — mobile select data and `Tabs.Tab` labels updated to `Campaign Activity` and
+  `System Audit`.
+- `AuditTab.test.tsx` — added `'shows Campaign Activity heading'` and `'shows help text explaining
+  scope'` tests.
+- `GlobalAuditTab.test.tsx` — updated heading assertion; added tests for help text, summary-first
+  rendering, severity badge, and resource label visibility.
+
+**Verification:** 32 frontend tests pass, lint clean, build clean.
+
+### Status: Complete
 
 ---
 
@@ -388,7 +469,21 @@ keeping the log intentionally selective and reviewable.
 - The added entries use the Phase 40 severity and summary conventions.
 - Automated coverage exists for duplicate and near-duplicate audit behavior.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Investigation outcome:** Five audit gaps confirmed in static analysis: `upload_media` had no campaign context to write duplicate/near-dup entries; `export_campaign` and `export_campaign_binary` had no export audit entries; `create_media_batch` wrote audit entries without severity or summary; `campaign.imported` calls used the pre-CT1 format.
+
+**Changes shipped:**
+
+- `class-wpsg-rest.php` — `upload_media` route accepts optional `campaign_id` integer param. When supplied: `media.duplicate_rejected` (warning) on MD5 duplicate, `media.near_duplicate_detected` (warning) on pHash near-dup, `media.upload_forced` (info) on successful force bypass. Batch upload aggregates per-type counts into a single audit entry each. `create_media_batch` audit entry now carries `severity: 'warning'` and descriptive `summary` when `failed > 0`. `export_campaign` writes `campaign.exported` with format, mediaCount, summary, and resource fields. `export_campaign_binary` writes `campaign.exported` with jobId. Both `campaign.imported` calls (JSON and binary) upgraded with summary, resource_type, resource_id, resource_label, and format/count fields.
+- `src/components/Admin/MediaTab.tsx` — `handleUpload` passes `campaign_id` to `uploadMany` so the upload endpoint can write campaign-scoped duplicate/near-dup audit entries. `handleNearDupUploadAnyway` also passes `campaign_id` in extraFields so forced near-dup bypass is auditable.
+- `WPSG_P40_CA1_Campaign_Coverage_Test.php` — 10 regression tests: duplicate rejection with and without campaign_id, duplicate rejection severity and summary fields, forced upload audit entry and summary, JSON export audit entry and summary, JSON import audit entry with summary, all-success batch severity (info), partial-failure batch severity (warning).
+
+**Noise exclusions applied:** Duplicate/near-dup detection is only audited when `campaign_id` is explicitly provided. Upload-level events without a campaign context produce no audit entries. Read-only operations (list, view) remain excluded.
+
+**Verification:** 10 PHP tests pass (`OK (10 tests, 28 assertions)`); full suite passes (`OK (833 tests, 2640 assertions)`); lint clean; build clean.
+
+### Status: Complete
 
 ---
 
@@ -467,7 +562,22 @@ application as a whole or do not belong to a single campaign.
 - Automated coverage exists for the main settings, auth, template, and taxonomy
   audit paths.
 
-### Status: Planned · depends on P40-CT1
+### Implementation Notes
+
+**Coverage targets shipped vs. deferred:**
+- `auth.login_success` / `auth.login_failed` / `auth.logout` — all implemented. Login failure uses `severity: 'warning'`. Logout captures actor before `wp_logout()` so the session is still valid when the audit entry is written.
+- `settings.updated` — written by both `update_settings` (POST) and `patch_settings` (PATCH) only when keys actually changed vs. current stored values; no-ops produce no entry. Values are redacted; only changed key names are logged.
+- `layout_template.created/updated/deleted/duplicated` — all four mutations audited with template name, resource_type, scope=system.
+- `taxonomy.term_created/updated/deleted` — implemented via `handle_term_insert` and `handle_term_delete` shared helpers + direct call in `update_campaign_category`. Covers campaign categories, campaign tags, and media tags.
+- Layout template import/export — no routes exist in the current codebase; deferred to a future phase if those routes are added.
+
+**Changes shipped:**
+- `class-wpsg-rest.php` — `handle_cookie_login`: `auth.login_failed` (warning) on 401 path; `auth.login_success` after `wp_set_current_user`. `handle_cookie_logout`: audit written before `wp_logout()` to preserve actor context. `update_settings`/`patch_settings`: `settings.updated` with `changedKeys` array; skipped on no-ops. `create/update/delete/duplicate_layout_template`: system-scope audit entries with name, resource_type. `update_campaign_category`: `taxonomy.term_updated` inline. `handle_term_insert`: `taxonomy.term_created` after successful insert. `handle_term_delete`: `taxonomy.term_deleted` before return. `taxonomy_label()` private helper maps taxonomy slugs to human-readable labels.
+- `WPSG_P40_SA1_System_Coverage_Test.php` — 19 tests / 62 assertions covering all new system-scope paths.
+
+**Verification:** 19 SA1 tests pass; full suite `OK (852 tests, 2702 assertions)`; lint clean; build clean.
+
+### Status: Complete
 
 ---
 
@@ -523,7 +633,21 @@ and explicit cleanup of any residual audit-domain backlog items.
 - Remaining audit follow-ups are explicitly closed, deferred, or moved to the
   appropriate backlog surface.
 
-### Status: Planned · do after the other P40 tracks land or narrow
+### Implementation Notes
+
+**Coverage verified:** Regression tests were shipped inline with each track — no gaps at close.
+
+- `WPSG_P40_BS1_Audit_Baseline_Test.php` — 3 tests: full `POST .../archive` → `GET .../audit` round-trip and cross-route agreement.
+- `WPSG_P40_CT1_Event_Contract_Test.php` — 7 tests: schema presence, insert/format round-trip, scope/severity filtering, REST param forwarding, legacy-row defaults.
+- `WPSG_P40_CA1_Campaign_Coverage_Test.php` — 10 tests: duplicate rejection, forced upload, batch severity, JSON export/import audit entries.
+- `WPSG_P40_SA1_System_Coverage_Test.php` — 19 tests: auth login/logout, settings update, layout template CRUD, taxonomy term CRUD.
+- Frontend audit coverage: `AuditTab.test.tsx` (12 tests), `GlobalAuditTab.test.tsx` (20 tests), `adminQuery.test.tsx` (5 tests) — 37 tests covering error surfacing, renamed headings, help text, summary-first rendering, severity badge, and scope/severity query forwarding.
+
+**Suite totals at phase close:** PHP `OK (852 tests, 2702 assertions)`; 37 frontend audit tests; lint clean; build clean.
+
+**Backlog reconciliation:** One audit-domain item remains in `docs/FUTURE_TASKS.md` — "Audit Log Binary Export" (Campaign Management section). It is already correctly deferred: the engine exists (`WPSG_Export_Engine`, shipped P39-CM1) but the compliance-specific use case does not justify Phase 40 scope. Listed in the Follow-On Candidates table above. No promotion or closure action required.
+
+### Status: Complete
 
 ---
 
@@ -585,13 +709,42 @@ unless later implementation work proves they are inseparable.
 
 ## Outcome
 
-Pending. Fill this section as Phase 40 tracks land.
+All six tracks shipped as planned.
 
-- Expected shipped outcome: a working campaign audit baseline, a clearer
-  campaign-vs-system audit UX, and materially broader high-signal audit
-  coverage.
-- Expected deferrals: retention/search/export follow-ons that are not required
-  to make the audit system correct and understandable.
-- Expected next step: begin `P40-BS1` with a deterministic reproduction of the
-  current campaign audit failure using a mutation that already calls
-  `add_audit_entry()` today.
+**P40-BS1 — Campaign audit baseline stabilization.** Root cause was a silent error-swallow in `AdminPanel.tsx`: `auditError` from `useAuditEntries` was never destructured or forwarded to `AuditTab`, so any non-2xx backend response rendered as "No audit entries yet." rather than a visible error message. Fixed and covered by 3 regression tests confirming the full REST mutation → REST audit-retrieval round-trip.
+
+**P40-CT1 — Canonical event contract.** Additive 7-column migration (`severity`, `scope`, `summary`, `resource_type`, `resource_id`, `resource_label`, `source`) on `wpsg_audit_log` via `dbDelta`. Legacy rows remain fully displayable. Scope `system` is the authoritative marker for plugin-level events; `campaign_id = 0` is the storage convention. All new Phase 40 entries authored against the expanded contract.
+
+**P40-UX1 — Audit surface naming and presentation.** `Global Audit` → `System Audit`; `Audit` → `Campaign Activity`. Shared `AuditEventRow` component renders summary-first with a colour-coded severity badge, resource label, actor, and raw details; used by both audit surfaces so they cannot drift. Help text added to both headings.
+
+**P40-CA1 — Campaign-scoped coverage expansion.** Five previously uncovered paths now produce first-class audit entries: exact duplicate rejection (`media.duplicate_rejected`, warning), near-duplicate detection (`media.near_duplicate_detected`, warning), forced-upload bypass (`media.upload_forced`, info), partial-failure batch creation (`media.batch_created`, warning when `failed > 0`), and campaign JSON/binary import/export (`campaign.exported`, `campaign.imported`). Upload endpoint extended with optional `campaign_id` param; `MediaTab.tsx` passes it through `extraFields` so the upload-path audit context is available without a request-body change.
+
+**P40-SA1 — System-scope coverage expansion.** Five previously uncovered admin surfaces now produce `scope=system` audit entries without fake campaign IDs: auth login success/failure and logout (`auth.login_success`, `auth.login_failed`, `auth.logout`); settings saves when values actually changed (`settings.updated`, redacted to changed key names only); layout template create/update/delete/duplicate; taxonomy term create/update/delete across campaign categories, campaign tags, and media tags.
+
+**P40-QA1 — Regression coverage, docs, QA, and backlog closeout.** 39 PHP regression tests (across 4 new test files) and 37 frontend audit tests cover all Phase 40 changes. "Audit Log Binary Export" in `docs/FUTURE_TASKS.md` confirmed deferred — the engine exists but the compliance use case is not Phase 40 scope.
+
+**Deferred items (not in scope for Phase 40):** Audit retention/archival policy, saved filters and full-text audit search, external shipping of audit events, non-admin activity history, role-based audit redaction, audit log binary export.
+
+---
+
+## Post-Merge Review — PR #55
+
+Four issues identified by Copilot review and addressed in commit `02cc499a`:
+
+**`class-wpsg-db.php` — `summary` column type.** `TEXT NOT NULL DEFAULT ''` is not supported on MariaDB and older MySQL versions (DEFAULT is prohibited on BLOB/TEXT columns). Changed to `VARCHAR(255) NOT NULL DEFAULT ''`, which is safe for `dbDelta` and adequate for a one-line summary string.
+
+**`class-wpsg-rest.php` — `add_audit_entry` source backward-compat.** Legacy WP-CLI callsites pass `source` inside `$details` (e.g. `['source' => 'cli']`). With the new canonical `source` column reading from `$ctx`, those events would have been stored with `source='rest'`. Added a shim at the top of `add_audit_entry`: if `$ctx['source']` is absent and `$details['source']` is a string, it is promoted to `$ctx['source']` and removed from `$details` before the insert.
+
+**CA1 `test_batch_created_with_all_valid_items_has_info_severity`.** The original test used `assertContains([201, 200])` and wrapped the severity assertion in an `if (!empty($batch))` guard that could pass silently if the audit entry was never written. Tightened to assert `201` explicitly, then `assertNotEmpty` on the batch entry, then the `info` severity assertion — all unconditional.
+
+**CA1 `test_batch_created_with_failures_has_warning_severity`.** The original test had a `markTestSkipped` branch that could mask regressions on a payload that deterministically produces one added and one failed item. Replaced with unconditional assertions: `assertEquals(201)`, `assertCount(1, added)`, `assertCount(1, failed)`, then the `media.batch_created` / `warning` severity assertions. Suite total after fix: `OK (10 tests, 32 assertions)` (+4 assertions from the strengthened batch tests).
+
+### Round 2
+
+**`class-wpsg-db.php` — `maybe_upgrade_audit_log_v9` docblock.** The docblock claimed to "normalise the campaign_id DEFAULT to 0" but the method only guards on the `severity` column and re-runs `dbDelta`. Corrected the docblock to accurately describe what the method does: adds the seven new P40-CT1 audit columns via `dbDelta`, guarded by presence of `severity` as the first new column.
+
+### Round 3
+
+**`class-wpsg-db.php` — `insert_audit_entry` source default.** The raw insert function defaulted `source` to `''`, diverging from the `'rest'` default established by `WPSG_REST::add_audit_entry`. Changed the fallback to `'rest'`. `backfill_audit_entries` does not pass `source` and its entries predate the REST layer, so it now explicitly passes `'source' => 'legacy'` to avoid being mislabelled.
+
+**`GlobalAuditTab.tsx` — stale aria-labels.** The tab was renamed to "System Audit" in P40-UX1 but the two `Table` aria-labels (`"Loading global audit entries"`, `"Global audit entries"`) were not updated. Changed to `"Loading system audit entries"` and `"System audit entries"` respectively. Corresponding test assertion in `GlobalAuditTab.test.tsx` updated to match.

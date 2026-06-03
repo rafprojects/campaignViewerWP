@@ -138,7 +138,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
-  const { auditEntries, auditLoading } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
+  const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
   const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, activeTab === 'globalAudit' ? globalAuditFilters : {});
 
   const unifiedModal = useUnifiedCampaignModal({
@@ -320,8 +320,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               { value: 'layouts', label: 'Layouts' },
               { value: 'templates', label: 'Templates' },
               { value: 'access', label: 'Access' },
-              { value: 'audit', label: 'Audit' },
-              { value: 'globalAudit', label: 'Global Audit' },
+              { value: 'audit', label: 'Campaign Activity' },
+              { value: 'globalAudit', label: 'System Audit' },
               { value: 'analytics', label: 'Analytics' },
             ]}
             mb="sm"
@@ -334,8 +334,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
             <Tabs.Tab value="templates">Templates</Tabs.Tab>
             <Tabs.Tab value="access">Access</Tabs.Tab>
-            <Tabs.Tab value="audit">Audit</Tabs.Tab>
-            <Tabs.Tab value="globalAudit">Global Audit</Tabs.Tab>
+            <Tabs.Tab value="audit">Campaign Activity</Tabs.Tab>
+            <Tabs.Tab value="globalAudit">System Audit</Tabs.Tab>
             <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
           </Tabs.List>
         )}
@@ -540,6 +540,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             auditRows={auditRows}
             filters={auditFilters}
             onFiltersChange={setAuditFilters}
+            auditError={auditError}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
           />
         </Tabs.Panel>

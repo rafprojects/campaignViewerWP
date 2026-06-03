@@ -664,6 +664,10 @@ class WPSG_REST {
                         'type'    => 'boolean',
                         'default' => false,
                     ],
+                    'campaign_id' => [
+                        'type'    => 'integer',
+                        'default' => 0,
+                    ],
                 ],
             ],
         ]);
@@ -1987,6 +1991,16 @@ class WPSG_REST {
             }, $media)),
         ];
 
+        self::add_audit_entry($post_id, 'campaign.exported', [
+            'format'     => 'json',
+            'mediaCount' => count($media),
+        ], [
+            'summary'        => 'Campaign exported as JSON (' . count($media) . ' media references)',
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $campaign['title'] ?? '',
+        ]);
+
         $response = new WP_REST_Response($payload, 200);
         $response->header('Content-Disposition', 'attachment; filename="campaign-' . $post_id . '.json"');
         return $response;
@@ -2104,7 +2118,16 @@ class WPSG_REST {
             update_post_meta($post_id, 'media_items', $media_items);
         }
 
-        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title]);
+        self::add_audit_entry($post_id, 'campaign.imported', [
+            'source_title'  => $title,
+            'format'        => 'json',
+            'mediaRefCount' => count($media_refs),
+        ], [
+            'summary'        => "Campaign imported from JSON: {$title}",
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $title,
+        ]);
         self::clear_accessible_campaigns_cache();
         $new_post = get_post($post_id);
         return new WP_REST_Response(self::format_campaign($new_post), 201);
@@ -2159,6 +2182,17 @@ class WPSG_REST {
         }
 
         $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
+
+        self::add_audit_entry($post_id, 'campaign.exported', [
+            'format'     => 'binary',
+            'mediaCount' => count($media),
+            'jobId'      => $job_id,
+        ], [
+            'summary'       => 'Binary ZIP export enqueued (' . count($media) . ' media files)',
+            'resource_type' => 'campaign',
+            'resource_id'   => (string) $post_id,
+            'resource_label' => $campaign['title'] ?? '',
+        ]);
 
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
@@ -2397,7 +2431,16 @@ class WPSG_REST {
             update_post_meta($post_id, 'media_items', $media_items);
         }
 
-        self::add_audit_entry($post_id, 'campaign.imported', ['source_title' => $title, 'source' => 'binary']);
+        self::add_audit_entry($post_id, 'campaign.imported', [
+            'source_title' => $title,
+            'format'       => 'binary',
+            'mediaCount'   => count($media_items),
+        ], [
+            'summary'        => "Campaign imported from binary ZIP: {$title}",
+            'resource_type'  => 'campaign',
+            'resource_id'    => (string) $post_id,
+            'resource_label' => $title,
+        ]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
@@ -3406,12 +3449,19 @@ class WPSG_REST {
         if (!empty($added)) {
             $media_items = array_merge($media_items, $added);
             update_post_meta($post_id, 'media_items', $media_items);
+            $batch_failed = count($failed);
             self::add_audit_entry($post_id, 'media.batch_created', [
-                'count' => count($added),
-                'failed' => count($failed),
+                'count'    => count($added),
+                'failed'   => $batch_failed,
                 'mediaIds' => array_values(array_map(function ($item) {
                     return $item['id'];
                 }, $added)),
+            ], [
+                'severity'      => $batch_failed > 0 ? 'warning' : 'info',
+                'summary'       => count($added) . ' item' . (count($added) === 1 ? '' : 's') . ' added to campaign'
+                                   . ($batch_failed > 0 ? " ({$batch_failed} failed)" : ''),
+                'resource_type' => 'campaign',
+                'resource_id'   => (string) $post_id,
             ]);
             do_action('wpsg_media_added', $post_id, ['count' => count($added)]);
             self::bump_cache_version();
@@ -4860,6 +4910,8 @@ class WPSG_REST {
             'from'        => $request->get_param('from') ?: null,
             'to'          => $request->get_param('to') ?: null,
             'action'      => $request->get_param('action') ?: null,
+            'scope'       => $request->get_param('scope') ?: null,
+            'severity'    => $request->get_param('severity') ?: null,
             'page'        => $page,
             'per_page'    => $per_page,
         ]);
@@ -4875,6 +4927,8 @@ class WPSG_REST {
             'from'     => $request->get_param('from') ?: null,
             'to'       => $request->get_param('to') ?: null,
             'action'   => $request->get_param('action') ?: null,
+            'scope'    => $request->get_param('scope') ?: null,
+            'severity' => $request->get_param('severity') ?: null,
             'page'     => $page,
             'per_page' => $per_page,
         ];
@@ -4934,7 +4988,8 @@ class WPSG_REST {
             return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
         }
 
-        $force = (bool) ($request->get_param('force') ?? false);
+        $force       = (bool) ($request->get_param('force') ?? false);
+        $campaign_id = intval($request->get_param('campaign_id') ?? 0);
 
         $is_batch = count($entries) > 1 || isset($files['files']);
         $max_batch_upload_size = self::get_max_batch_upload_size();
@@ -4947,10 +5002,23 @@ class WPSG_REST {
         }
 
         if (!$is_batch) {
-            $upload = self::upload_single_media_file($entries[0], $force);
+            $upload   = self::upload_single_media_file($entries[0], $force);
+            $filename = sanitize_file_name($entries[0]['name'] ?? '');
             if (is_wp_error($upload)) {
                 if ($upload->get_error_code() === 'wpsg_duplicate_file') {
                     $data = $upload->get_error_data();
+                    if ($campaign_id > 0) {
+                        self::add_audit_entry($campaign_id, 'media.duplicate_rejected', [
+                            'filename'    => $filename,
+                            'existingId'  => $data['existing_id'],
+                            'existingName' => $data['existing_name'] ?? '',
+                        ], [
+                            'severity'       => 'warning',
+                            'summary'        => "Duplicate file rejected: {$filename}",
+                            'resource_type'  => 'media',
+                            'resource_label' => $filename,
+                        ]);
+                    }
                     return new WP_REST_Response([
                         'duplicate'          => true,
                         'existing_id'        => $data['existing_id'],
@@ -4961,6 +5029,19 @@ class WPSG_REST {
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
                     $data = $upload->get_error_data();
+                    if ($campaign_id > 0) {
+                        self::add_audit_entry($campaign_id, 'media.near_duplicate_detected', [
+                            'filename'    => $filename,
+                            'similarId'   => $data['similar_id'],
+                            'similarName' => $data['similar_name'] ?? '',
+                            'distance'    => $data['distance'],
+                        ], [
+                            'severity'       => 'warning',
+                            'summary'        => "Near-duplicate detected: {$filename}",
+                            'resource_type'  => 'media',
+                            'resource_label' => $filename,
+                        ]);
+                    }
                     return new WP_REST_Response([
                         'near_duplicate'    => true,
                         'similar_id'        => $data['similar_id'],
@@ -4973,14 +5054,27 @@ class WPSG_REST {
                 return $upload;
             }
 
+            if ($force && $campaign_id > 0) {
+                self::add_audit_entry($campaign_id, 'media.upload_forced', [
+                    'filename' => $filename,
+                ], [
+                    'summary'        => "Duplicate check bypassed for: {$filename}",
+                    'resource_type'  => 'media',
+                    'resource_label' => $filename,
+                ]);
+            }
+
             return new WP_REST_Response($upload, 201);
         }
 
-        $results = [];
+        $results      = [];
         $success_count = 0;
+        $dup_count    = 0;
+        $near_dup_count = 0;
+        $forced_count = 0;
 
         foreach ($entries as $entry) {
-            $upload = self::upload_single_media_file($entry, $force);
+            $upload   = self::upload_single_media_file($entry, $force);
             $filename = sanitize_file_name($entry['name'] ?? '');
 
             if (is_wp_error($upload)) {
@@ -4996,6 +5090,7 @@ class WPSG_REST {
                     $result['existing_url']       = $data['existing_url'];
                     $result['existing_name']      = $data['existing_name'] ?? '';
                     $result['existing_campaigns'] = $data['existing_campaigns'] ?? [];
+                    $dup_count++;
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
                     $data = $upload->get_error_data();
@@ -5005,16 +5100,49 @@ class WPSG_REST {
                     $result['distance']          = $data['distance'];
                     $result['similar_name']      = $data['similar_name'] ?? '';
                     $result['similar_campaigns'] = $data['similar_campaigns'] ?? [];
+                    $near_dup_count++;
                 }
                 $results[] = $result;
                 continue;
             }
 
+            if ($force) {
+                $forced_count++;
+            }
             $results[] = array_merge([
                 'filename' => $filename,
                 'success'  => true,
             ], $upload);
             $success_count++;
+        }
+
+        if ($campaign_id > 0) {
+            if ($dup_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.duplicate_rejected', [
+                    'count' => $dup_count,
+                ], [
+                    'severity'      => 'warning',
+                    'summary'       => "{$dup_count} duplicate file" . ($dup_count === 1 ? '' : 's') . " rejected in batch upload",
+                    'resource_type' => 'media',
+                ]);
+            }
+            if ($near_dup_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.near_duplicate_detected', [
+                    'count' => $near_dup_count,
+                ], [
+                    'severity'      => 'warning',
+                    'summary'       => "{$near_dup_count} near-duplicate" . ($near_dup_count === 1 ? '' : 's') . " detected in batch upload",
+                    'resource_type' => 'media',
+                ]);
+            }
+            if ($force && $forced_count > 0) {
+                self::add_audit_entry($campaign_id, 'media.upload_forced', [
+                    'count' => $forced_count,
+                ], [
+                    'summary'       => "{$forced_count} file" . ($forced_count === 1 ? '' : 's') . " uploaded with duplicate check bypassed",
+                    'resource_type' => 'media',
+                ]);
+            }
         }
 
         return new WP_REST_Response([
@@ -5427,6 +5555,15 @@ class WPSG_REST {
             /** This action is documented in wp-includes/user.php */
             do_action('wp_login_failed', $username, $user);
 
+            self::add_audit_entry(0, 'auth.login_failed', [
+                'login' => sanitize_text_field($username ?? ''),
+            ], [
+                'scope'         => 'system',
+                'severity'      => 'warning',
+                'summary'       => 'Failed login attempt: ' . sanitize_text_field($username ?? '(unknown)'),
+                'resource_type' => 'user',
+            ]);
+
             return new WP_REST_Response([
                 'code'    => 'invalid_credentials',
                 'message' => 'Invalid username or password.',
@@ -5436,6 +5573,17 @@ class WPSG_REST {
         // Explicitly set the current user so subsequent calls
         // (wp_create_nonce, current_user_can, etc.) work in this request.
         wp_set_current_user($user->ID);
+
+        self::add_audit_entry(0, 'auth.login_success', [
+            'userId' => $user->ID,
+            'login'  => $user->user_login,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Login: {$user->user_login}",
+            'resource_type'  => 'user',
+            'resource_id'    => (string) $user->ID,
+            'resource_label' => $user->user_login,
+        ]);
 
         $is_admin = current_user_can('manage_wpsg');
         $campaign_ids = self::get_accessible_campaign_ids($user->ID);
@@ -5460,6 +5608,23 @@ class WPSG_REST {
      * @return WP_REST_Response
      */
     public static function handle_cookie_logout() {
+        $logout_user    = wp_get_current_user();
+        $logout_user_id = $logout_user->ID ?? 0;
+        $logout_login   = $logout_user->user_login ?? '';
+
+        if ($logout_user_id > 0) {
+            self::add_audit_entry(0, 'auth.logout', [
+                'userId' => $logout_user_id,
+                'login'  => $logout_login,
+            ], [
+                'scope'          => 'system',
+                'summary'        => "Logout: {$logout_login}",
+                'resource_type'  => 'user',
+                'resource_id'    => (string) $logout_user_id,
+                'resource_label' => $logout_login,
+            ]);
+        }
+
         wp_logout();
 
         // wp_logout() calls wp_clear_auth_cookie() which sends Set-Cookie
@@ -5728,14 +5893,27 @@ class WPSG_REST {
         if (!class_exists('WPSG_Settings')) {
             return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
-        $body = $request->get_json_params();
-        $input = WPSG_Settings::from_js($body);
+        $body      = $request->get_json_params();
+        $input     = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current = WPSG_Settings::get_settings();
-        $merged = array_merge($current, $sanitized);
+        $current   = WPSG_Settings::get_settings();
+        $merged    = array_merge($current, $sanitized);
+
+        $changed_keys = array_keys(array_filter($sanitized, function ($v, $k) use ($current) {
+            return !array_key_exists($k, $current) || $current[$k] !== $v;
+        }, ARRAY_FILTER_USE_BOTH));
 
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
+
+        if (!empty($changed_keys)) {
+            self::add_audit_entry(0, 'settings.updated', [
+                'changedKeys' => $changed_keys,
+            ], [
+                'scope'   => 'system',
+                'summary' => 'App settings updated: ' . implode(', ', $changed_keys),
+            ]);
+        }
 
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
@@ -5747,14 +5925,30 @@ class WPSG_REST {
         if (!class_exists('WPSG_Settings')) {
             return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
-        $body  = $request->get_json_params() ?: [];
-        $input = WPSG_Settings::from_js($body);
+        $body      = $request->get_json_params() ?: [];
+        $input     = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current = WPSG_Settings::get_settings();
+        $current   = WPSG_Settings::get_settings();
+        $applied   = array_intersect_key($sanitized, $input);
+
+        $changed_keys = array_keys(array_filter($applied, function ($v, $k) use ($current) {
+            return !array_key_exists($k, $current) || $current[$k] !== $v;
+        }, ARRAY_FILTER_USE_BOTH));
+
         // Only merge the keys the caller actually sent.
-        $merged = array_merge($current, array_intersect_key($sanitized, $input));
+        $merged = array_merge($current, $applied);
         update_option(WPSG_Settings::OPTION_NAME, $merged);
         self::bump_cache_version();
+
+        if (!empty($changed_keys)) {
+            self::add_audit_entry(0, 'settings.updated', [
+                'changedKeys' => $changed_keys,
+            ], [
+                'scope'   => 'system',
+                'summary' => 'App settings patched: ' . implode(', ', $changed_keys),
+            ]);
+        }
+
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
             200
@@ -6321,15 +6515,42 @@ class WPSG_REST {
         return array_values($filtered);
     }
 
-    public static function add_audit_entry($post_id, $action, $details = []) {
+    /**
+     * Write a canonical audit entry.
+     *
+     * @param int   $post_id Campaign post ID (0 for system-scope events).
+     * @param string $action  Dot-namespaced event key.
+     * @param array  $details Arbitrary context payload.
+     * @param array  $ctx     P40-CT1 canonical fields:
+     *   severity       string  'info'|'warning'|'error'  (default 'info')
+     *   scope          string  'campaign'|'system'        (default 'campaign')
+     *   summary        string  Human-readable summary     (default '')
+     *   resource_type  string  Resource category          (default '')
+     *   resource_id    string  Resource identifier        (default '')
+     *   resource_label string  Human-readable resource    (default '')
+     *   source         string  Origin layer               (default 'rest')
+     */
+    public static function add_audit_entry($post_id, $action, $details = [], array $ctx = []) {
+        // Back-compat: legacy callers (e.g. WP-CLI) pass source inside $details.
+        if (!isset($ctx['source']) && isset($details['source']) && is_string($details['source'])) {
+            $ctx['source'] = $details['source'];
+            unset($details['source']);
+        }
         $user = wp_get_current_user();
         WPSG_DB::insert_audit_entry([
-            'campaign_id' => intval($post_id),
-            'action'      => $action,
-            'actor_id'    => $user->ID ?? 0,
-            'actor_login' => $user->user_login ?? '',
-            'details'     => self::sanitize_audit_details($details),
-            'created_at'  => gmdate('Y-m-d H:i:s'),
+            'campaign_id'    => intval($post_id),
+            'action'         => $action,
+            'actor_id'       => $user->ID ?? 0,
+            'actor_login'    => $user->user_login ?? '',
+            'details'        => self::sanitize_audit_details($details),
+            'created_at'     => gmdate('Y-m-d H:i:s'),
+            'severity'       => $ctx['severity'] ?? 'info',
+            'scope'          => $ctx['scope'] ?? 'campaign',
+            'summary'        => $ctx['summary'] ?? '',
+            'resource_type'  => $ctx['resource_type'] ?? '',
+            'resource_id'    => $ctx['resource_id'] ?? '',
+            'resource_label' => $ctx['resource_label'] ?? '',
+            'source'         => $ctx['source'] ?? 'rest',
         ]);
     }
 
@@ -6716,6 +6937,15 @@ class WPSG_REST {
         ];
     }
 
+    private static function taxonomy_label(string $taxonomy): string {
+        $labels = [
+            'wpsg_campaign_category' => 'Campaign category',
+            'wpsg_campaign_tag'      => 'Campaign tag',
+            'wpsg_media_tag'         => 'Media tag',
+        ];
+        return $labels[$taxonomy] ?? $taxonomy;
+    }
+
     private static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201, $parent_id = 0) {
         $name = sanitize_text_field($name ?? '');
         if ($name === '') {
@@ -6736,6 +6966,18 @@ class WPSG_REST {
             }
             return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
         }
+        $label = self::taxonomy_label($taxonomy);
+        self::add_audit_entry(0, 'taxonomy.term_created', [
+            'taxonomy' => $taxonomy,
+            'name'     => $name,
+            'termId'   => strval($result['term_id']),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "{$label} created: {$name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($result['term_id']),
+            'resource_label' => $name,
+        ]);
         $term = get_term($result['term_id'], $taxonomy);
         return new WP_REST_Response(self::format_term($term), $created_status);
     }
@@ -6746,10 +6988,23 @@ class WPSG_REST {
         if (!$term || is_wp_error($term)) {
             return new WP_Error('wpsg_not_found', 'Term not found', ['status' => 404]);
         }
+        $term_name = $term->name;
         $result = wp_delete_term($term_id, $taxonomy);
         if (is_wp_error($result) || $result === false) {
             return new WP_Error('wpsg_internal_error', 'Failed to delete term', ['status' => 500]);
         }
+        $label = self::taxonomy_label($taxonomy);
+        self::add_audit_entry(0, 'taxonomy.term_deleted', [
+            'taxonomy' => $taxonomy,
+            'name'     => $term_name,
+            'termId'   => strval($term_id),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "{$label} deleted: {$term_name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($term_id),
+            'resource_label' => $term_name,
+        ]);
         return new WP_REST_Response(['deleted' => true, 'id' => strval($term_id)], 200);
     }
 
@@ -6793,8 +7048,20 @@ class WPSG_REST {
             }
             return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
         }
-        $term = get_term($result['term_id'], 'wpsg_campaign_category');
-        return new WP_REST_Response(self::format_term($term), 200);
+        $updated_term = get_term($result['term_id'], 'wpsg_campaign_category');
+        $updated_name = $updated_term ? $updated_term->name : ($args['name'] ?? '');
+        self::add_audit_entry(0, 'taxonomy.term_updated', [
+            'taxonomy' => 'wpsg_campaign_category',
+            'name'     => $updated_name,
+            'termId'   => strval($term_id),
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Campaign category updated: {$updated_name}",
+            'resource_type'  => 'taxonomy',
+            'resource_id'    => strval($term_id),
+            'resource_label' => $updated_name,
+        ]);
+        return new WP_REST_Response(self::format_term($updated_term), 200);
     }
 
     public static function delete_campaign_category(WP_REST_Request $request) {
@@ -6846,6 +7113,18 @@ class WPSG_REST {
             return $result;
         }
 
+        $tmpl_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.created', [
+            'templateId' => $result['id'] ?? '',
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template created: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $result['id'] ?? '',
+            'resource_label' => $tmpl_name,
+        ]);
+
         return new WP_REST_Response($result, 201);
     }
 
@@ -6876,6 +7155,18 @@ class WPSG_REST {
         }
         self::bump_cache_version();
 
+        $tmpl_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.updated', [
+            'templateId' => $id,
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template updated: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $id,
+            'resource_label' => $tmpl_name,
+        ]);
+
         return new WP_REST_Response($result, 200);
     }
 
@@ -6883,13 +7174,27 @@ class WPSG_REST {
      * Delete a layout template (admin).
      */
     public static function delete_layout_template($request) {
-        $id      = $request->get_param('templateId');
+        $id       = $request->get_param('templateId');
+        $template = WPSG_Layout_Templates::get($id);
+        $tmpl_name = $template ? ($template['name'] ?? $id) : $id;
+
         $deleted = WPSG_Layout_Templates::delete($id);
 
         if (!$deleted) {
             return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
         }
         self::bump_cache_version();
+
+        self::add_audit_entry(0, 'layout_template.deleted', [
+            'templateId' => $id,
+            'name'       => $tmpl_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template deleted: {$tmpl_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $id,
+            'resource_label' => $tmpl_name,
+        ]);
 
         return new WP_REST_Response(['deleted' => true], 200);
     }
@@ -6906,6 +7211,19 @@ class WPSG_REST {
         if (is_wp_error($result)) {
             return $result;
         }
+
+        $dup_name = $result['name'] ?? '';
+        self::add_audit_entry(0, 'layout_template.duplicated', [
+            'sourceId'   => $id,
+            'templateId' => $result['id'] ?? '',
+            'name'       => $dup_name,
+        ], [
+            'scope'          => 'system',
+            'summary'        => "Layout template duplicated: {$dup_name}",
+            'resource_type'  => 'layout_template',
+            'resource_id'    => $result['id'] ?? '',
+            'resource_label' => $dup_name,
+        ]);
 
         return new WP_REST_Response($result, 201);
     }
