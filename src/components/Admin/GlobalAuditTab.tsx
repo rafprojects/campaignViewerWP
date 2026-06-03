@@ -8,7 +8,8 @@ type GlobalFilters = AuditFilters & { campaignId?: string };
 function mergeGlobalFilter(base: GlobalFilters, key: keyof GlobalFilters, value: string): GlobalFilters {
   const next = { ...base };
   if (value) {
-    next[key] = value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (next as any)[key] = value;
   } else {
     delete next[key];
   }

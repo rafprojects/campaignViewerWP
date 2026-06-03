@@ -73,12 +73,28 @@ export interface AuditEntry {
   /** P28-G: campaign ID — present on global audit log responses. */
   campaignId?: string;
   createdAt: string;
+  /** P40-CT1: severity level for the event. */
+  severity?: 'info' | 'warning' | 'error';
+  /** P40-CT1: scope — 'campaign' for campaign-scoped events, 'system' for plugin-level events. */
+  scope?: 'campaign' | 'system';
+  /** P40-CT1: human-readable one-line summary of the event. */
+  summary?: string;
+  /** P40-CT1: type of the affected resource (e.g. 'campaign', 'media', 'access_grant'). */
+  resourceType?: string;
+  /** P40-CT1: opaque ID of the affected resource. */
+  resourceId?: string;
+  /** P40-CT1: display label for the affected resource. */
+  resourceLabel?: string;
+  /** P40-CT1: originating subsystem (e.g. 'rest', 'cli', 'cron'). */
+  source?: string;
 }
 
 export interface AuditFilters {
   from?: string;
   to?: string;
   action?: string;
+  scope?: 'campaign' | 'system';
+  severity?: 'info' | 'warning' | 'error';
 }
 
 export interface CompanyInfo {
@@ -291,6 +307,8 @@ async function fetchAuditEntries(apiClient: ApiClient, campaignId: string, filte
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
   if (filters.action) params.set('action', filters.action);
+  if (filters.scope) params.set('scope', filters.scope);
+  if (filters.severity) params.set('severity', filters.severity);
   const qs = params.toString() ? `?${params}` : '';
   const response = await apiClient.get<ListResponse<AuditEntry>>(
     `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit${qs}`,
@@ -307,6 +325,8 @@ async function fetchGlobalAuditEntries(
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
   if (filters.action) params.set('action', filters.action);
+  if (filters.scope) params.set('scope', filters.scope);
+  if (filters.severity) params.set('severity', filters.severity);
   const qs = params.toString() ? `?${params}` : '';
   const response = await apiClient.get<ListResponse<AuditEntry>>(
     `/wp-json/wp-super-gallery/v1/admin/audit-log${qs}`,

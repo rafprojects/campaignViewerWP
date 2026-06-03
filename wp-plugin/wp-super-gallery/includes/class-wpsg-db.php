@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '8';
+    const DB_VERSION = '9';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -18,6 +18,7 @@ class WPSG_DB {
         self::maybe_create_media_refs_table();
         self::maybe_create_access_requests_table();
         self::maybe_create_audit_log_table();
+        self::maybe_upgrade_audit_log_v9();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -558,21 +559,55 @@ class WPSG_DB {
         $table   = self::get_audit_log_table();
         $charset = $wpdb->get_charset_collate();
 
+        // P40-CT1: expanded canonical event contract. campaign_id=0 denotes
+        // system-scope events (no campaign owner). New columns have safe
+        // defaults so legacy rows are always readable.
         $sql = "CREATE TABLE {$table} (
-            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            campaign_id  BIGINT UNSIGNED NOT NULL,
-            action       VARCHAR(128) NOT NULL,
-            actor_id     BIGINT UNSIGNED NOT NULL DEFAULT 0,
-            actor_login  VARCHAR(60) NOT NULL DEFAULT '',
-            details      LONGTEXT NOT NULL,
-            created_at   DATETIME NOT NULL,
+            id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id    BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            action         VARCHAR(128) NOT NULL,
+            actor_id       BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            actor_login    VARCHAR(60) NOT NULL DEFAULT '',
+            details        LONGTEXT NOT NULL,
+            created_at     DATETIME NOT NULL,
+            severity       VARCHAR(16) NOT NULL DEFAULT 'info',
+            scope          VARCHAR(16) NOT NULL DEFAULT 'campaign',
+            summary        TEXT NOT NULL DEFAULT '',
+            resource_type  VARCHAR(64) NOT NULL DEFAULT '',
+            resource_id    VARCHAR(128) NOT NULL DEFAULT '',
+            resource_label VARCHAR(255) NOT NULL DEFAULT '',
+            source         VARCHAR(64) NOT NULL DEFAULT '',
             PRIMARY KEY  (id),
             KEY campaign_created (campaign_id, created_at),
             KEY action (action),
-            KEY created_at (created_at)
+            KEY created_at (created_at),
+            KEY scope (scope)
         ) {$charset};";
 
         dbDelta($sql);
+    }
+
+    /**
+     * P40-CT1: Idempotent migration — adds new audit columns when upgrading
+     * from a pre-v9 schema. dbDelta handles the ADD COLUMN for most columns,
+     * but we also normalise the campaign_id DEFAULT to 0 for any installs
+     * that still have the old NOT NULL without DEFAULT.
+     */
+    private static function maybe_upgrade_audit_log_v9(): void {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+
+        // Guard: if the severity column is already present the migration ran.
+        $has_severity = $wpdb->get_var(
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = 'severity'"
+        );
+        if (intval($has_severity) > 0) {
+            return;
+        }
+
+        // Re-run dbDelta with the full updated schema; it will ADD missing columns.
+        self::maybe_create_audit_log_table();
     }
 
     public static function get_audit_log_table(): string {
@@ -584,13 +619,20 @@ class WPSG_DB {
         global $wpdb;
         $table = self::get_audit_log_table();
         $wpdb->insert($table, [
-            'campaign_id' => intval($data['campaign_id']),
-            'action'      => sanitize_text_field($data['action']),
-            'actor_id'    => intval($data['actor_id'] ?? 0),
-            'actor_login' => sanitize_text_field($data['actor_login'] ?? ''),
-            'details'     => is_array($data['details']) ? wp_json_encode($data['details']) : '{}',
-            'created_at'  => $data['created_at'] ?? gmdate('Y-m-d H:i:s'),
-        ], ['%d', '%s', '%d', '%s', '%s', '%s']);
+            'campaign_id'    => intval($data['campaign_id']),
+            'action'         => sanitize_text_field($data['action']),
+            'actor_id'       => intval($data['actor_id'] ?? 0),
+            'actor_login'    => sanitize_text_field($data['actor_login'] ?? ''),
+            'details'        => is_array($data['details']) ? wp_json_encode($data['details']) : '{}',
+            'created_at'     => $data['created_at'] ?? gmdate('Y-m-d H:i:s'),
+            'severity'       => in_array($data['severity'] ?? '', ['info', 'warning', 'error'], true) ? $data['severity'] : 'info',
+            'scope'          => in_array($data['scope'] ?? '', ['campaign', 'system'], true) ? $data['scope'] : 'campaign',
+            'summary'        => sanitize_text_field($data['summary'] ?? ''),
+            'resource_type'  => sanitize_text_field($data['resource_type'] ?? ''),
+            'resource_id'    => sanitize_text_field($data['resource_id'] ?? ''),
+            'resource_label' => sanitize_text_field($data['resource_label'] ?? ''),
+            'source'         => sanitize_text_field($data['source'] ?? ''),
+        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']);
     }
 
     /**
@@ -623,6 +665,8 @@ class WPSG_DB {
      *   from?: string  (ISO date string),
      *   to?:   string  (ISO date string),
      *   action?: string,
+     *   scope?: 'campaign'|'system',
+     *   severity?: 'info'|'warning'|'error',
      *   page?: int,
      *   per_page?: int,
      * }
@@ -651,6 +695,14 @@ class WPSG_DB {
             $where[]  = 'action = %s';
             $values[] = $args['action'];
         }
+        if (!empty($args['scope']) && in_array($args['scope'], ['campaign', 'system'], true)) {
+            $where[]  = 'scope = %s';
+            $values[] = $args['scope'];
+        }
+        if (!empty($args['severity']) && in_array($args['severity'], ['info', 'warning', 'error'], true)) {
+            $where[]  = 'severity = %s';
+            $values[] = $args['severity'];
+        }
 
         $where_sql = implode(' AND ', $where);
         $page      = max(1, intval($args['page'] ?? 1));
@@ -676,13 +728,22 @@ class WPSG_DB {
 
     public static function format_audit_entry(array $row): array {
         return [
-            'id'         => strval($row['id']),
-            'campaignId' => strval($row['campaign_id']),
-            'action'     => $row['action'],
-            'userId'     => intval($row['actor_id']),
-            'actorLogin' => $row['actor_login'],
-            'details'    => json_decode($row['details'], true) ?? [],
-            'createdAt'  => str_replace(' ', 'T', $row['created_at']) . 'Z',
+            'id'            => strval($row['id']),
+            'campaignId'    => strval($row['campaign_id']),
+            'action'        => $row['action'],
+            'userId'        => intval($row['actor_id']),
+            'actorLogin'    => $row['actor_login'],
+            'details'       => json_decode($row['details'], true) ?? [],
+            'createdAt'     => str_replace(' ', 'T', $row['created_at']) . 'Z',
+            // P40-CT1: canonical event contract fields. Defaults handle legacy rows
+            // written before the v9 schema migration.
+            'severity'      => $row['severity'] ?? 'info',
+            'scope'         => $row['scope'] ?? 'campaign',
+            'summary'       => $row['summary'] ?? '',
+            'resourceType'  => $row['resource_type'] ?? '',
+            'resourceId'    => $row['resource_id'] ?? '',
+            'resourceLabel' => $row['resource_label'] ?? '',
+            'source'        => $row['source'] ?? '',
         ];
     }
 

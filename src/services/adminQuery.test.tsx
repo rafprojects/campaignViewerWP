@@ -67,6 +67,33 @@ describe('adminQuery', () => {
     expect(result.current.auditEntries).toEqual([]);
   });
 
+  it('forwards scope and severity filters in the audit query URL', async () => {
+    const entry = {
+      id: 'a2', action: 'campaign.archived', details: {}, userId: 1, createdAt: '2026-06-03T00:00:00.000Z',
+      severity: 'info', scope: 'campaign', summary: 'Campaign archived', resourceType: 'campaign',
+      resourceId: '55', resourceLabel: 'Test Campaign', source: 'rest',
+    };
+    const get = vi.fn().mockResolvedValue([entry]);
+    const apiClient = makeApiClient({ get });
+
+    const { result } = renderHook(
+      () => useAuditEntries(apiClient, '55', { scope: 'campaign', severity: 'info' }),
+      { wrapper: makeWrapper() },
+    );
+
+    await waitFor(() => expect(result.current.auditEntries).toHaveLength(1));
+
+    expect(get).toHaveBeenCalledWith(
+      '/wp-json/wp-super-gallery/v1/campaigns/55/audit?scope=campaign&severity=info',
+    );
+    const first = result.current.auditEntries[0]!;
+    expect(first.severity).toBe('info');
+    expect(first.scope).toBe('campaign');
+    expect(first.summary).toBe('Campaign archived');
+    expect(first.resourceType).toBe('campaign');
+    expect(first.source).toBe('rest');
+  });
+
   it('fetches a single page of companies when totalPages is 1', async () => {
     const page1 = [makeCompany('acme', 'Acme Corp'), makeCompany('beta', 'Beta Ltd')];
     const get = vi.fn().mockImplementation((url: string) => {

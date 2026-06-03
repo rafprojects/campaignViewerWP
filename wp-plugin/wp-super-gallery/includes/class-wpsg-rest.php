@@ -4860,6 +4860,8 @@ class WPSG_REST {
             'from'        => $request->get_param('from') ?: null,
             'to'          => $request->get_param('to') ?: null,
             'action'      => $request->get_param('action') ?: null,
+            'scope'       => $request->get_param('scope') ?: null,
+            'severity'    => $request->get_param('severity') ?: null,
             'page'        => $page,
             'per_page'    => $per_page,
         ]);
@@ -4875,6 +4877,8 @@ class WPSG_REST {
             'from'     => $request->get_param('from') ?: null,
             'to'       => $request->get_param('to') ?: null,
             'action'   => $request->get_param('action') ?: null,
+            'scope'    => $request->get_param('scope') ?: null,
+            'severity' => $request->get_param('severity') ?: null,
             'page'     => $page,
             'per_page' => $per_page,
         ];
@@ -6321,15 +6325,37 @@ class WPSG_REST {
         return array_values($filtered);
     }
 
-    public static function add_audit_entry($post_id, $action, $details = []) {
+    /**
+     * Write a canonical audit entry.
+     *
+     * @param int   $post_id Campaign post ID (0 for system-scope events).
+     * @param string $action  Dot-namespaced event key.
+     * @param array  $details Arbitrary context payload.
+     * @param array  $ctx     P40-CT1 canonical fields:
+     *   severity       string  'info'|'warning'|'error'  (default 'info')
+     *   scope          string  'campaign'|'system'        (default 'campaign')
+     *   summary        string  Human-readable summary     (default '')
+     *   resource_type  string  Resource category          (default '')
+     *   resource_id    string  Resource identifier        (default '')
+     *   resource_label string  Human-readable resource    (default '')
+     *   source         string  Origin layer               (default 'rest')
+     */
+    public static function add_audit_entry($post_id, $action, $details = [], array $ctx = []) {
         $user = wp_get_current_user();
         WPSG_DB::insert_audit_entry([
-            'campaign_id' => intval($post_id),
-            'action'      => $action,
-            'actor_id'    => $user->ID ?? 0,
-            'actor_login' => $user->user_login ?? '',
-            'details'     => self::sanitize_audit_details($details),
-            'created_at'  => gmdate('Y-m-d H:i:s'),
+            'campaign_id'    => intval($post_id),
+            'action'         => $action,
+            'actor_id'       => $user->ID ?? 0,
+            'actor_login'    => $user->user_login ?? '',
+            'details'        => self::sanitize_audit_details($details),
+            'created_at'     => gmdate('Y-m-d H:i:s'),
+            'severity'       => $ctx['severity'] ?? 'info',
+            'scope'          => $ctx['scope'] ?? 'campaign',
+            'summary'        => $ctx['summary'] ?? '',
+            'resource_type'  => $ctx['resource_type'] ?? '',
+            'resource_id'    => $ctx['resource_id'] ?? '',
+            'resource_label' => $ctx['resource_label'] ?? '',
+            'source'         => $ctx['source'] ?? 'rest',
         ]);
     }
 

@@ -1,15 +1,15 @@
 # Phase 40 — Audit Baseline, Event Clarity, and Coverage Expansion
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-03 (P40-CT1 complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P40-BS1 | Campaign audit baseline stabilization and current bug fix | Planned · blocks the rest of Phase 40 | S |
-| P40-CT1 | Canonical audit event contract, storage, and API evolution | Planned · schema and response gate for later tracks | L |
+| P40-BS1 | Campaign audit baseline stabilization and current bug fix | Complete | S |
+| P40-CT1 | Canonical audit event contract, storage, and API evolution | Complete | L |
 | P40-UX1 | Audit surface naming, summaries, and shared event presentation | Planned · depends on P40-CT1 | M |
 | P40-CA1 | Campaign-scoped audit coverage expansion for high-signal admin flows | Planned · depends on P40-CT1 | L |
 | P40-SA1 | System-scope audit coverage for settings, auth, templates, and taxonomy | Planned · depends on P40-CT1 | L |
@@ -171,7 +171,19 @@ defect, and keep that failure as a permanent regression check for Phase 40.
   campaign on the same known-audited mutation.
 - Regression coverage exists for the resolved failure mode.
 
-### Status: Planned · blocks the rest of Phase 40
+### Implementation Notes
+
+**Investigation outcome:** The backend write/read path is correct. `add_audit_entry()` stores `campaign_id = intval($post_id)` and `GET /campaigns/{id}/audit` queries `WHERE campaign_id = %d` consistently. The full REST mutation → REST audit retrieval path was untested, but three new regression tests confirm it works end-to-end.
+
+**Root cause of reported silent failure:** `useAuditEntries` in `adminQuery.ts` returns `auditError`, but `AdminPanel.tsx` never destructured or forwarded it to `AuditTab`. If the backend returned any non-2xx response (403 from expired nonce, 404 from missing campaign, etc.) the component silently showed "No audit entries yet." instead of surfacing the error.
+
+**Changes shipped:**
+- `WPSG_P40_BS1_Audit_Baseline_Test.php` — three regression tests covering the full `POST .../archive` → `GET .../audit` and `GET /admin/audit-log?campaign_id` path; both routes confirmed to agree.
+- `AuditTab.tsx` — added optional `auditError` prop; error branch renders a visible `role="alert"` message before the empty-state message so backend failures are not silent.
+- `AdminPanel.tsx` — destructures and forwards `auditError` to `AuditTab`.
+- `AuditTab.test.tsx` — added test covering error state rendering.
+
+### Status: Complete
 
 ---
 
@@ -246,7 +258,50 @@ admin presentation and filtering.
 - The frontend types and queries are updated to the expanded response shape.
 - Test coverage exists for schema compatibility and new contract behavior.
 
-### Status: Planned · schema and response gate for later tracks
+### Implementation Notes
+
+**Root cause and approach:**
+
+The `wpsg_audit_log` table carried only `campaign_id + action + details + actor +
+created_at`. Seven columns needed for the canonical event contract were absent:
+`severity`, `scope`, `summary`, `resource_type`, `resource_id`, `resource_label`,
+and `source`.
+
+**Changes shipped:**
+
+- `class-wpsg-db.php` — `DB_VERSION` bumped to `'9'`; `maybe_create_audit_log_table()`
+  SQL extended with all seven new columns and a `KEY scope (scope)` index;
+  `maybe_upgrade_audit_log_v9()` private method handles the additive column
+  migration via `dbDelta` (INFORMATION_SCHEMA check guards duplicate runs);
+  `insert_audit_entry()` stores all seven new fields with validation;
+  `list_audit_entries()` accepts and applies `scope` and `severity` filter args;
+  `format_audit_entry()` returns all seven new fields with `??` defaults so
+  legacy rows remain fully readable.
+- `class-wpsg-rest.php` — `add_audit_entry()` signature extended to
+  `($post_id, $action, $details, $ctx)` — all seven new fields flow through
+  from `$ctx`; `list_audit()` and `list_global_audit()` now forward `scope`
+  and `severity` query params to `list_audit_entries()`.
+- `src/services/adminQuery.ts` — `AuditEntry` interface extended with seven
+  optional fields (`severity`, `scope`, `summary`, `resourceType`, `resourceId`,
+  `resourceLabel`, `source`); `AuditFilters` extended with `scope` and
+  `severity`; `fetchAuditEntries` and `fetchGlobalAuditEntries` forward both
+  new params when present.
+- `src/components/Admin/AuditTab.tsx` and `GlobalAuditTab.tsx` — `mergeFilter`
+  cast fixed for the narrower union types introduced by `scope`/`severity`.
+- `WPSG_P40_CT1_Event_Contract_Test.php` — 7-test PHP regression suite covering
+  schema presence, insert/format round-trip, `scope` and `severity` DB filtering,
+  REST endpoint param forwarding, and legacy-row default values.
+- `src/services/adminQuery.test.tsx` — new test verifying `scope`/`severity`
+  forwarding in the fetch URL and that new fields are returned on entries.
+
+**Migration decision:** Additive columns via `dbDelta` (no destructive changes).
+`campaign_id` retains `NOT NULL` with `DEFAULT 0`; `scope = 'system'` is the
+authoritative indicator for plugin-level events rather than using NULL.
+
+**Verification:** 7 PHP tests pass (`OK (7 tests, 41 assertions)`), 15 frontend
+tests pass, lint clean, build clean.
+
+### Status: Complete
 
 ---
 
