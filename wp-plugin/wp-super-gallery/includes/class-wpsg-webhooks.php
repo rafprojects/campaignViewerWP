@@ -114,7 +114,11 @@ class WPSG_Webhooks {
             return;
         }
 
-        $body        = wp_json_encode($full_payload);
+        $body = wp_json_encode($full_payload);
+        if ($body === false) {
+            self::log_delivery($event, $url, $attempt, false, 0, wp_generate_uuid4());
+            return;
+        }
         $signature   = 'sha256=' . hash_hmac('sha256', $body, $secret);
         $delivery_id = wp_generate_uuid4();
 

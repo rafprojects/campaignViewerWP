@@ -348,7 +348,7 @@ delivery visibility.
 **Manual testing:** End-to-end verified against a live wp-env environment with webhook.site as the receiver. Confirmed: REST route availability, endpoint CRUD, `campaign.created` delivery and HMAC signature, event filter (all-events endpoint receives `campaign.created`; filtered endpoint suppresses it and fires on `campaign.archived` via the dedicated `/campaigns/{id}/archive` route), and secret rotation (new secret verifies the delivered signature; old secret does not). See `docs/testing/WEBHOOK_MANUAL_TEST.md`.
 
 **Testing findings:**
-- Admin routes require both Application Password auth and `X-WP-Nonce`. Generate the nonce via `wp eval --user=1 'echo wp_create_nonce("wp_rest");'`.
+- Admin routes require Application Password auth. No `X-WP-Nonce` is needed — `verify_admin_auth()` accepts HTTP Basic (Application Password) requests without a nonce. Nonces are only required for cookie-based browser sessions.
 - The `manage_wpsg` capability is granted by the plugin activation hook. Re-run deactivate/activate after a fresh wp-env start.
 - Archiving a campaign fires `campaign.archived` only via the dedicated `POST /campaigns/{id}/archive` route. A `PUT /campaigns/{id}` with `status: archived` fires `campaign.updated` instead.
 - Deleting multiple endpoints in sequence must proceed from highest index to lowest. Each deletion calls `array_values()` internally, which re-indexes the stored array. Deleting index 0 first causes remaining endpoints to shift down, making subsequent index-based deletes target the wrong slot.

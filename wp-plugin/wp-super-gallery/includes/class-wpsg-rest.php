@@ -2379,6 +2379,9 @@ class WPSG_REST {
             }
 
             $tmp = wp_tempnam($filename);
+            if ($tmp === false) {
+                continue;
+            }
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
             file_put_contents($tmp, $file_data);
             unset($file_data);

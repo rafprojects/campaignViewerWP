@@ -189,6 +189,12 @@ class WPSG_Export_Engine {
 
             $safe_name = self::get_media_filename($item);
             $tmp       = wp_tempnam($safe_name);
+            if ($tmp === false) {
+                $zip->close();
+                foreach ($tmp_files as $f) { @unlink($f); } // phpcs:ignore
+                @unlink($zip_path); // phpcs:ignore
+                throw new RuntimeException('Could not create a temporary file for media export.');
+            }
 
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
             file_put_contents($tmp, $body);

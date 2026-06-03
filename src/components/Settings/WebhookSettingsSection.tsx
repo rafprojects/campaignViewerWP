@@ -241,6 +241,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
   const rotateMutation = useMutation({
     mutationFn: (index: number) => apiClient.rotateWebhookSecret(index),
     onSuccess: (data, index) => {
+      invalidate();
       const ep = endpoints.find((e) => e.index === index);
       setRotatedLabel(ep?.url ?? `Endpoint ${index}`);
       setRotatedSecret(data.secret);

@@ -588,6 +588,11 @@ class WPSG_CLI {
             }
 
             $tmp = wp_tempnam( $filename );
+            if ( $tmp === false ) {
+                WP_CLI::warning( "Could not create temporary file for {$filename} — skipping." );
+                ++$sideload_fail;
+                continue;
+            }
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
             file_put_contents( $tmp, $file_data );
             unset( $file_data );
