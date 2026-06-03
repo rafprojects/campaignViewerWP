@@ -572,7 +572,7 @@ class WPSG_DB {
             created_at     DATETIME NOT NULL,
             severity       VARCHAR(16) NOT NULL DEFAULT 'info',
             scope          VARCHAR(16) NOT NULL DEFAULT 'campaign',
-            summary        TEXT NOT NULL DEFAULT '',
+            summary        VARCHAR(255) NOT NULL DEFAULT '',
             resource_type  VARCHAR(64) NOT NULL DEFAULT '',
             resource_id    VARCHAR(128) NOT NULL DEFAULT '',
             resource_label VARCHAR(255) NOT NULL DEFAULT '',

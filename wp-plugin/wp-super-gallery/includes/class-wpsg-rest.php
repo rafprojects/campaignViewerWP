@@ -6531,6 +6531,11 @@ class WPSG_REST {
      *   source         string  Origin layer               (default 'rest')
      */
     public static function add_audit_entry($post_id, $action, $details = [], array $ctx = []) {
+        // Back-compat: legacy callers (e.g. WP-CLI) pass source inside $details.
+        if (!isset($ctx['source']) && isset($details['source']) && is_string($details['source'])) {
+            $ctx['source'] = $details['source'];
+            unset($details['source']);
+        }
         $user = wp_get_current_user();
         WPSG_DB::insert_audit_entry([
             'campaign_id'    => intval($post_id),

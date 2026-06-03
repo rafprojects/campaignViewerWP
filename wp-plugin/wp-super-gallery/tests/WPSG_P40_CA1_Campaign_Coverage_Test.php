@@ -271,14 +271,13 @@ class WPSG_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
             ],
         ]));
         $res = rest_do_request($req);
-        $this->assertContains($res->get_status(), [201, 200]);
+        $this->assertEquals(201, $res->get_status(), 'All-valid batch must return 201.');
 
         $entries = $this->get_audit_entries($campaign_id);
-        $batch = array_values(array_filter($entries, fn($e) => $e['action'] === 'media.batch_created'));
+        $batch   = array_values(array_filter($entries, fn($e) => $e['action'] === 'media.batch_created'));
 
-        if (!empty($batch)) {
-            $this->assertEquals('info', $batch[0]['severity'], 'All-success batch_created must have info severity.');
-        }
+        $this->assertNotEmpty($batch, 'media.batch_created audit entry must be written on successful batch.');
+        $this->assertEquals('info', $batch[0]['severity'], 'All-success batch_created must have info severity.');
     }
 
     public function test_batch_created_with_failures_has_warning_severity() {
@@ -294,17 +293,17 @@ class WPSG_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
                 ['type' => 'invalid_type', 'source' => 'external', 'url' => 'https://example.com/bad.jpg', 'order' => 2],
             ],
         ]));
-        $res = rest_do_request($req);
+        $res  = rest_do_request($req);
         $data = $res->get_data();
 
-        if (($data['added'] ?? null) !== null && count($data['added']) > 0 && count($data['failed']) > 0) {
-            $entries = $this->get_audit_entries($campaign_id);
-            $batch   = array_values(array_filter($entries, fn($e) => $e['action'] === 'media.batch_created'));
+        $this->assertEquals(201, $res->get_status(), 'Partial-success batch must return 201.');
+        $this->assertCount(1, $data['added'], 'Exactly one valid item must be added.');
+        $this->assertCount(1, $data['failed'], 'Exactly one invalid item must be rejected.');
 
-            $this->assertNotEmpty($batch, 'media.batch_created must be written when some items succeeded.');
-            $this->assertEquals('warning', $batch[0]['severity'], 'Partial-failure batch must have warning severity.');
-        } else {
-            $this->markTestSkipped('Batch did not produce a partial success/failure split with this payload.');
-        }
+        $entries = $this->get_audit_entries($campaign_id);
+        $batch   = array_values(array_filter($entries, fn($e) => $e['action'] === 'media.batch_created'));
+
+        $this->assertNotEmpty($batch, 'media.batch_created must be written when some items succeeded.');
+        $this->assertEquals('warning', $batch[0]['severity'], 'Partial-failure batch must have warning severity.');
     }
 }
