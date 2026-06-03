@@ -2134,19 +2134,7 @@ class WPSG_REST {
         $media    = get_post_meta($post_id, 'media_items', true) ?: [];
 
         $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
-        $layout_template = null;
-        if ($template_id) {
-            $tmpl = get_post(intval($template_id));
-            if ($tmpl) {
-                $layout_template = [
-                    'id'             => (string) $tmpl->ID,
-                    'title'          => $tmpl->post_title,
-                    'slots'          => get_post_meta($tmpl->ID, 'slots', true) ?: [],
-                    'background'     => get_post_meta($tmpl->ID, 'background', true) ?: [],
-                    'graphicLayers'  => get_post_meta($tmpl->ID, 'graphic_layers', true) ?: [],
-                ];
-            }
-        }
+        $layout_template = $template_id ? WPSG_Layout_Templates::get($template_id) : null;
 
         // Build v2 manifest — same as v1 but version=2 and each media_reference
         // carries a `filename` matching the file the engine will write to media/.
@@ -2339,37 +2327,20 @@ class WPSG_REST {
         // Embed layout template if present.
         $layout_template = $body['layout_template'] ?? null;
         if ($layout_template && is_array($layout_template)) {
-            $sanitized = WPSG_Layout_Templates::sanitize_template_data($layout_template);
-            $tmpl_id   = wp_insert_post([
-                'post_title'  => sanitize_text_field($layout_template['title'] ?? 'Imported Template'),
-                'post_type'   => 'wpsg_layout_template',
-                'post_status' => 'publish',
-            ]);
-            if (!is_wp_error($tmpl_id)) {
-                update_post_meta($tmpl_id, 'slots', $sanitized['slots']);
-                update_post_meta($tmpl_id, 'background', [
-                    'backgroundMode'             => $sanitized['backgroundMode'],
-                    'backgroundColor'            => $sanitized['backgroundColor'],
-                    'backgroundGradientDirection' => $sanitized['backgroundGradientDirection'],
-                    'backgroundGradientStops'    => $sanitized['backgroundGradientStops'],
-                    'backgroundGradientType'     => $sanitized['backgroundGradientType'],
-                    'backgroundGradientAngle'    => $sanitized['backgroundGradientAngle'],
-                    'backgroundRadialShape'      => $sanitized['backgroundRadialShape'],
-                    'backgroundRadialSize'       => $sanitized['backgroundRadialSize'],
-                    'backgroundGradientCenterX'  => $sanitized['backgroundGradientCenterX'],
-                    'backgroundGradientCenterY'  => $sanitized['backgroundGradientCenterY'],
-                    'backgroundImage'            => $sanitized['backgroundImage'],
-                    'backgroundImageFit'         => $sanitized['backgroundImageFit'],
-                    'backgroundImageOpacity'     => $sanitized['backgroundImageOpacity'],
-                ]);
-                update_post_meta($tmpl_id, 'graphic_layers', $sanitized['overlays']);
-                update_post_meta($post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id);
+            // Support legacy manifests that used 'title' instead of 'name'.
+            if (!isset($layout_template['name']) && isset($layout_template['title'])) {
+                $layout_template['name'] = $layout_template['title'];
+            }
+            $created = WPSG_Layout_Templates::create($layout_template);
+            if (!is_wp_error($created)) {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created['id']);
                 if (!empty($src['layoutBinding'])) {
                     $binding = $src['layoutBinding'];
                     if (is_array($binding)) {
                         array_walk_recursive($binding, function (&$v) {
                             if (is_string($v)) { $v = sanitize_text_field($v); }
                         });
+                        $binding['templateId'] = $created['id'];
                     }
                     update_post_meta($post_id, '_wpsg_layout_binding', $binding);
                 }

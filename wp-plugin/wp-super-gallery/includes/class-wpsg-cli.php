@@ -264,19 +264,7 @@ class WPSG_CLI {
 
         // Embed layout template by value so the export is self-contained.
         $template_id     = get_post_meta( $post_id, '_wpsg_layout_binding_template_id', true );
-        $layout_template = null;
-        if ( $template_id ) {
-            $tmpl = get_post( intval( $template_id ) );
-            if ( $tmpl ) {
-                $layout_template = [
-                    'id'             => (string) $tmpl->ID,
-                    'title'          => $tmpl->post_title,
-                    'slots'          => get_post_meta( $tmpl->ID, 'slots', true ) ?: [],
-                    'background'     => get_post_meta( $tmpl->ID, 'background', true ) ?: [],
-                    'graphicLayers'  => get_post_meta( $tmpl->ID, 'graphic_layers', true ) ?: [],
-                ];
-            }
-        }
+        $layout_template = $template_id ? WPSG_Layout_Templates::get( $template_id ) : null;
 
         if ( $format === 'binary' ) {
             if ( ! WPSG_Export_Engine::check_zip_available() ) {
@@ -431,26 +419,18 @@ class WPSG_CLI {
 
         // Embed layout template by value if provided.
         $layout_template = $body['layout_template'] ?? null;
-        if ( $layout_template ) {
-            $tmpl_id = wp_insert_post(
-                [
-                    'post_title'  => sanitize_text_field( $layout_template['title'] ?? 'Imported Template' ),
-                    'post_type'   => 'wpsg_layout_template',
-                    'post_status' => 'publish',
-                ],
-                true // Return WP_Error on failure instead of 0.
-            );
-            if ( $tmpl_id && ! is_wp_error( $tmpl_id ) ) {
-                update_post_meta( $tmpl_id, 'slots', $layout_template['slots'] ?? [] );
-                update_post_meta( $tmpl_id, 'background', $layout_template['background'] ?? [] );
-                update_post_meta( $tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? [] );
-                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id );
+        if ( $layout_template && is_array( $layout_template ) ) {
+            // Support legacy manifests that used 'title' instead of 'name'.
+            if ( ! isset( $layout_template['name'] ) && isset( $layout_template['title'] ) ) {
+                $layout_template['name'] = $layout_template['title'];
+            }
+            $created = WPSG_Layout_Templates::create( $layout_template );
+            if ( ! is_wp_error( $created ) ) {
+                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', $created['id'] );
                 if ( ! empty( $src['layoutBinding'] ) ) {
                     $binding = $src['layoutBinding'];
-                    // Rewrite templateId to the newly created post ID — the exported value
-                    // points to the source site's template and would be inconsistent here.
                     if ( is_array( $binding ) ) {
-                        $binding['templateId'] = (string) $tmpl_id;
+                        $binding['templateId'] = $created['id'];
                     }
                     update_post_meta( $post_id, '_wpsg_layout_binding', $binding );
                 }
@@ -548,21 +528,18 @@ class WPSG_CLI {
         }
 
         $layout_template = $body['layout_template'] ?? null;
-        if ( $layout_template ) {
-            $tmpl_id = wp_insert_post( [
-                'post_title'  => sanitize_text_field( $layout_template['title'] ?? 'Imported Template' ),
-                'post_type'   => 'wpsg_layout_template',
-                'post_status' => 'publish',
-            ], true );
-            if ( $tmpl_id && ! is_wp_error( $tmpl_id ) ) {
-                update_post_meta( $tmpl_id, 'slots', $layout_template['slots'] ?? [] );
-                update_post_meta( $tmpl_id, 'background', $layout_template['background'] ?? [] );
-                update_post_meta( $tmpl_id, 'graphic_layers', $layout_template['graphicLayers'] ?? [] );
-                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', (string) $tmpl_id );
+        if ( $layout_template && is_array( $layout_template ) ) {
+            // Support legacy manifests that used 'title' instead of 'name'.
+            if ( ! isset( $layout_template['name'] ) && isset( $layout_template['title'] ) ) {
+                $layout_template['name'] = $layout_template['title'];
+            }
+            $created = WPSG_Layout_Templates::create( $layout_template );
+            if ( ! is_wp_error( $created ) ) {
+                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', $created['id'] );
                 if ( ! empty( $src['layoutBinding'] ) ) {
                     $binding = $src['layoutBinding'];
                     if ( is_array( $binding ) ) {
-                        $binding['templateId'] = (string) $tmpl_id;
+                        $binding['templateId'] = $created['id'];
                     }
                     update_post_meta( $post_id, '_wpsg_layout_binding', $binding );
                 }

@@ -122,7 +122,7 @@ class WPSG_Webhooks {
         $signature   = 'sha256=' . hash_hmac('sha256', $body, $secret);
         $delivery_id = wp_generate_uuid4();
 
-        $response = wp_remote_post($url, [
+        $response = wp_safe_remote_post($url, [
             'timeout'   => 10,
             'headers'   => [
                 'Content-Type'     => 'application/json',

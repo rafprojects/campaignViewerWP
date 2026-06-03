@@ -145,6 +145,7 @@ class WPSG_Export_Engine {
         $zip->addFromString('manifest.json', $manifest_json);
         $accumulated = strlen($manifest_json);
         $tmp_files   = [];
+        $skipped     = [];
 
         foreach ($media_items as $item) {
             $url = $item['url'] ?? '';
@@ -153,7 +154,7 @@ class WPSG_Export_Engine {
             }
 
             // HEAD check: bail early if projected size would overflow.
-            $head = wp_remote_head($url, ['timeout' => 10]);
+            $head = wp_safe_remote_head($url, ['timeout' => 10]);
             if (!is_wp_error($head)) {
                 $cl = intval(wp_remote_retrieve_header($head, 'content-length'));
                 if ($cl > 0 && ($accumulated + $cl) > $size_limit) {
@@ -180,6 +181,7 @@ class WPSG_Export_Engine {
             $response = wp_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp]);
             if (is_wp_error($response)) {
                 @unlink($tmp); // phpcs:ignore
+                $skipped[] = ['id' => $item['id'] ?? '', 'url' => $url, 'reason' => $response->get_error_message()];
                 continue;
             }
 
@@ -219,6 +221,9 @@ class WPSG_Export_Engine {
             $accumulated += $file_size;
         }
 
+        if (!empty($skipped)) {
+            $zip->addFromString('skipped_media.json', wp_json_encode($skipped) ?: '[]');
+        }
         $zip->close();
         foreach ($tmp_files as $f) {
             @unlink($f); // phpcs:ignore

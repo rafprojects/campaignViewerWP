@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-01
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-03
 
 ### Tracks
 
@@ -683,6 +683,18 @@ Five Copilot threads addressed:
 **Post-review CI fix — PHP 8.2 stat cache (`class-wpsg-export-engine.php`):**
 
 The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
+
+**Round 6 — 7 threads (SSRF, silent skip, layout template UUID):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `wp_remote_post()` → `wp_safe_remote_post()` | `class-wpsg-webhooks.php:125` | **Accept** | Webhook URLs are user-configured and triggered server-side; the `wp_remote_post()` variant will call private/loopback IPs. `wp_safe_remote_post()` blocks those by default and allows operators to relax via filter. |
+| Silent skip on failed media fetch | `class-wpsg-export-engine.php:183` | **Accept — partial** | Copilot suggested a hard failure; instead tracked skipped items and appended `skipped_media.json` to the ZIP. Hard failure would block export entirely if any one asset is temporarily unavailable. Recording skipped items is transparent without being brittle, and callers can inspect the file. |
+| `wp_remote_head()` → `wp_safe_remote_head()` | `class-wpsg-export-engine.php:156` | **Accept** | Same SSRF surface as the POST fix; the size-preflight HEAD request against a user-provided media URL also needs to reject private/loopback targets. |
+| Export: `get_post(intval($template_id))` | `class-wpsg-rest.php:2136` | **Accept** | `_wpsg_layout_binding_template_id` stores a UUID, so `intval()` produces `0` and `get_post(0)` returns `null`. Replaced with `WPSG_Layout_Templates::get($template_id)` which looks up by UUID slug and returns the full template array (including `slots`, `overlays`, all background fields). |
+| Import: wrong CPT + post ID stored as UUID | `class-wpsg-rest.php:2341` | **Accept** | Import used `wp_insert_post(['post_type' => 'wpsg_layout_template'])` (wrong CPT, no meta registration) and stored the numeric post ID in `_wpsg_layout_binding_template_id`. Replaced with `WPSG_Layout_Templates::create()` which uses the correct CPT (`wpsg_layout_tpl`), stores data in `_wpsg_template_data`, and returns the UUID. Also rewrites `layoutBinding.templateId` to the new UUID. Legacy manifest support added (`title` → `name` fallback). |
+| CLI export: same `intval()` UUID bug | `class-wpsg-cli.php:266` | **Accept** | Identical fix: `WPSG_Layout_Templates::get($template_id)`. |
+| CLI import: same wrong CPT + post ID | `class-wpsg-cli.php:433 & 550` | **Accept** | Both JSON and binary CLI import paths fixed identically to the REST import path using `WPSG_Layout_Templates::create()`. |
 
 ---
 
