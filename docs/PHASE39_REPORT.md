@@ -668,6 +668,20 @@ reflects the actual disposition of the work.
 
 ---
 
+## PR #54 Review — Copilot Comments
+
+Five Copilot threads addressed:
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `sslverify => false` on HEAD (size check) | `class-wpsg-export-engine.php:156` | **Accept — removed** | Disabling cert validation exposes the content-length value to MITM tampering; WP default (`true`) is correct. |
+| `sslverify => false` on GET (media download) | `class-wpsg-export-engine.php:169` | **Accept — removed** | Same security concern: MITM could substitute media content in the ZIP. Removed; WP default applies. |
+| `warm_settings()` false-positive cache miss | `class-wpsg-monitoring.php:282` | **Accept — fixed** | `!== false` cannot distinguish a stored `false` from a miss. Switched to `$found` out-parameter from `wp_cache_get()`. While `wpsg_settings` is unlikely to be `false`, the API contract should be correct. |
+| `create_webhook_endpoint()` `enabled` coercion | `class-wpsg-rest.php:7206` | **Accept — fixed** | `!== false` treats `0`/`'0'` as enabled. Aligned with update endpoint: `null` → default `true`, otherwise `(bool)` cast. |
+| WEBHOOK_MANUAL_TEST.md nonce prerequisite | `docs/testing/WEBHOOK_MANUAL_TEST.md:41` | **Accept — fixed** | Guide incorrectly stated nonce is required alongside Application Password. `verify_admin_auth()` explicitly skips the nonce for HTTP Basic requests. Removed nonce from section 4 and all curl commands; matches binary export guide wording. |
+
+---
+
 ## Outcome
 
 Phase 39 delivered four of five substantive tracks. P39-CO1 and P39-AU1 were

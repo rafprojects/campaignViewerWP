@@ -279,7 +279,8 @@ class WPSG_Monitoring {
         $cache_key   = 'wpsg_settings';
         $cache_group = 'wpsg_settings';
 
-        if (wp_cache_get($cache_key, $cache_group) !== false) {
+        wp_cache_get($cache_key, $cache_group, false, $found);
+        if ($found) {
             return;
         }
 

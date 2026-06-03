@@ -7203,7 +7203,8 @@ class WPSG_REST {
 
         $raw_events = $request->get_param('events');
         $events = WPSG_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
-        $enabled = $request->get_param('enabled') !== false;
+        $raw_enabled = $request->get_param('enabled');
+        $enabled     = $raw_enabled === null ? true : (bool) $raw_enabled;
         $secret = WPSG_Webhooks::generate_secret();
 
         $endpoint = [

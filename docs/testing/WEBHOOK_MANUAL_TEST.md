@@ -38,26 +38,19 @@ npx wp-env run cli wp user application-password create admin test-token --porcel
 
 Save the printed token. Use it as `<APP_PASS>` throughout this guide.
 
-### 4. Nonce
+### 4. Activation check
 
-Admin routes require an `X-WP-Nonce` header in addition to Application Password
-auth. Generate one:
+> **Note:** Application Passwords authenticate at the HTTP transport layer —
+> no `X-WP-Nonce` header is needed for the curl commands in this guide. Nonces
+> are only required for cookie-based (browser) sessions.
+
+Run the plugin activation hook once after a fresh `wp-env start` to ensure the
+`manage_wpsg` capability is assigned to the Administrator role:
 
 ```bash
-NONCE=$(npx wp-env run cli wp eval --user=1 'echo wp_create_nonce("wp_rest");' 2>/dev/null)
-echo "NONCE=[$NONCE]"
+npx wp-env run cli wp plugin deactivate wp-super-gallery
+npx wp-env run cli wp plugin activate wp-super-gallery
 ```
-
-The nonce is valid for ~12 hours. If you open a new terminal session, re-run
-this command to refresh `$NONCE`.
-
-> **Note:** Run the plugin activation hook once after a fresh `wp-env start` to
-> ensure the `manage_wpsg` capability is assigned to the Administrator role:
->
-> ```bash
-> npx wp-env run cli wp plugin deactivate wp-super-gallery
-> npx wp-env run cli wp plugin activate wp-super-gallery
-> ```
 
 ---
 
@@ -67,7 +60,7 @@ All admin curl calls share the same auth flags. Define a shell alias to keep
 commands short:
 
 ```bash
-WP_AUTH='-u "admin:<APP_PASS>" -H "X-WP-Nonce: $NONCE"'
+WP_AUTH='-u "admin:<APP_PASS>"'
 ```
 
 Or just paste the flags directly — they are shown in full in each command below.
@@ -79,7 +72,7 @@ Or just paste the flags directly — they are shown in full in each command belo
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
 ```
 
@@ -92,7 +85,7 @@ Expected: `[]`
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"url":"https://webhook.site/<YOUR-UUID>","events":[],"enabled":true}' \
@@ -111,7 +104,7 @@ Create a campaign:
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"title":"Webhook Test Campaign"}' \
@@ -158,7 +151,7 @@ Create a second endpoint that only receives `campaign.archived`:
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"url":"https://webhook.site/<YOUR-UUID>","events":["campaign.archived"],"enabled":true}' \
@@ -174,7 +167,7 @@ status):
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   -X POST \
   http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/<ID>/archive
 ```
@@ -198,7 +191,7 @@ state:
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
 ```
 
@@ -210,7 +203,7 @@ Rotate the secret:
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   -X POST \
   http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks/0/rotate-secret
 ```
@@ -234,7 +227,7 @@ echo -n '<COMPACT_BODY>' | openssl dgst -sha256 -hmac '<OLD_SECRET>'
 ```bash
 curl -s \
   -u "admin:<APP_PASS>" \
-  -H "X-WP-Nonce: $NONCE" \
+
   http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks/delivery-log
 ```
 
@@ -248,7 +241,7 @@ Returns up to 50 entries: `deliveryId`, `event`, `url`, `attempt`, `success`,
 | Symptom | Cause | Fix |
 |---|---|---|
 | `rest_forbidden` 401 | Plain password used | Generate an Application Password |
-| `rest_forbidden` 403 | `manage_wpsg` cap missing or nonce absent | Re-run plugin activate; regenerate `$NONCE` |
+| `rest_forbidden` 403 | `manage_wpsg` cap missing | Re-run plugin deactivate/activate |
 | `rest_no_route` 404 | Typo in URL (e.g. `/webhook` not `/webhooks`) | Check the URL |
 | Empty response body | `[]` printed before the bash prompt | That *is* the response — success |
 | Database error on `wp-env start` | MySQL container not ready | `npx wp-env stop && npx wp-env start` |

@@ -153,7 +153,7 @@ class WPSG_Export_Engine {
             }
 
             // HEAD check: bail early if projected size would overflow.
-            $head = wp_remote_head($url, ['timeout' => 10, 'sslverify' => false]);
+            $head = wp_remote_head($url, ['timeout' => 10]);
             if (!is_wp_error($head)) {
                 $cl = intval(wp_remote_retrieve_header($head, 'content-length'));
                 if ($cl > 0 && ($accumulated + $cl) > $size_limit) {
@@ -166,7 +166,7 @@ class WPSG_Export_Engine {
                 }
             }
 
-            $response = wp_remote_get($url, ['timeout' => 60, 'sslverify' => false]);
+            $response = wp_remote_get($url, ['timeout' => 60]);
             if (is_wp_error($response)) {
                 continue;
             }
