@@ -390,9 +390,9 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
 
                     {!healthData.objectCache.persistent && (
                       <Alert color="yellow" title="No persistent object cache">
-                        WordPress is using its default database-backed cache. For higher-traffic
-                        deployments consider adding a Redis or Memcached drop-in.
-                        See <em>docs/object-cache-setup.md</em> for setup instructions.
+                        WordPress is using its default in-memory cache, which is discarded on every
+                        request. For higher-traffic deployments consider adding a Redis or Memcached
+                        drop-in. See <em>docs/object-cache-setup.md</em> for setup instructions.
                       </Alert>
                     )}
 

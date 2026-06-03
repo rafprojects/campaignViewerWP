@@ -684,6 +684,16 @@ Five Copilot threads addressed:
 
 The streaming-download refactor (round 4) introduced a fallback path for HTTP transports that intercept `pre_http_request` and return an in-memory response without writing to the stream file. That path called `file_put_contents($tmp, $body)` and then immediately re-read `filesize($tmp)`. On PHP 8.2, PHP's stat cache retains the `0` it recorded when `wp_tempnam()` created the empty file; the subsequent `filesize()` hits the cache and returns `0`, causing every media file to be silently skipped (jobs ended `'complete'` with an empty ZIP instead of `'failed'`). PHP 8.3 and 8.4 evict that cache entry fast enough that the tests passed. Fixed by adding `clearstatcache(true, $tmp)` between the write and the size read.
 
+**Round 7 — 5 threads (deactivation hook, SSRF on GET, ZIP leak, boolean coercion, UI copy):**
+
+| Thread | File | Decision | Rationale |
+|--------|------|----------|-----------|
+| `wp_unschedule_hook()` claimed non-existent | `wp-super-gallery.php:74` | **Partial accept** | Copilot's factual claim is wrong — `wp_unschedule_hook()` has been in WP core since 4.9.0. However, for codebase consistency (all other deactivation hooks use `wp_clear_scheduled_hook()`) and since WP 6.4+ minimum means both are equivalent, switched to `wp_clear_scheduled_hook()`. |
+| `wp_remote_get()` → `wp_safe_remote_get()` | `class-wpsg-export-engine.php:183` | **Accept** | The media-download step uses `wp_remote_get()` against URLs from the manifest; same SSRF surface as the HEAD request fixed in round 6. Changed to `wp_safe_remote_get()`. |
+| Orphaned ZIP files when transient expires | `class-wpsg-export-engine.php:240` | **Accept** | When a transient expires naturally its `zip_path` is lost, so `cleanup_expired_jobs()` and `delete_job()` can't delete the file. Added `expected_zip_path($id)` private helper (path is deterministic from job ID) and used it as a fallback in both methods. |
+| `(bool)` cast for `enabled` → `is_truthy_param()` | `class-wpsg-rest.php:7198` | **Accept** | `(bool) "false"` yields `true`; the existing `is_truthy_param()` helper handles string `"false"/"0"/"no"/"off"` correctly. Applied it; kept `null → true` default unchanged. |
+| "database-backed cache" wording | `AdvancedSettingsSection.tsx:393` | **Accept** | WordPress default object cache is non-persistent in-memory (not database-backed). Reworded to "default in-memory cache, which is discarded on every request". |
+
 **Round 6 — 7 threads (SSRF, silent skip, layout template UUID):**
 
 | Thread | File | Decision | Rationale |

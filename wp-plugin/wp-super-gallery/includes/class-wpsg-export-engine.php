@@ -87,9 +87,10 @@ class WPSG_Export_Engine {
     }
 
     public static function delete_job(string $id): void {
-        $job = self::get_job($id);
-        if ($job && !empty($job['zip_path']) && file_exists($job['zip_path'])) {
-            @unlink($job['zip_path']); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+        $job      = self::get_job($id);
+        $zip_path = ($job && !empty($job['zip_path'])) ? $job['zip_path'] : self::expected_zip_path($id);
+        if (file_exists($zip_path)) {
+            @unlink($zip_path); // phpcs:ignore WordPress.PHP.NoSilencedErrors
         }
         delete_transient('wpsg_export_job_' . $id);
         self::index_remove($id);
@@ -178,7 +179,7 @@ class WPSG_Export_Engine {
 
             // Stream the download directly to disk to avoid buffering the full
             // file body in PHP memory (important near the size limit).
-            $response = wp_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp]);
+            $response = wp_safe_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp]);
             if (is_wp_error($response)) {
                 @unlink($tmp); // phpcs:ignore
                 $skipped[] = ['id' => $item['id'] ?? '', 'url' => $url, 'reason' => $response->get_error_message()];
@@ -238,6 +239,11 @@ class WPSG_Export_Engine {
         foreach (self::index_get() as $id) {
             $job = self::get_job($id);
             if (!$job) {
+                // Transient already expired — clean up any orphaned ZIP file.
+                $zip_path = self::expected_zip_path($id);
+                if (file_exists($zip_path)) {
+                    @unlink($zip_path); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                }
                 self::index_remove($id);
                 continue;
             }
@@ -269,6 +275,11 @@ class WPSG_Export_Engine {
 
     public static function check_zip_available(): bool {
         return class_exists('ZipArchive');
+    }
+
+    private static function expected_zip_path(string $id): string {
+        $upload_dir = wp_upload_dir();
+        return trailingslashit($upload_dir['basedir']) . 'wpsg-exports/wpsg-export-' . $id . '.zip';
     }
 
     // ── Job index ─────────────────────────────────────────────────────────────
