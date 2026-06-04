@@ -214,10 +214,11 @@ export class ApiClient extends HttpTransportImpl {
   }
 
   batchCampaigns(
-    action: 'archive' | 'restore',
+    action: 'archive' | 'restore' | 'delete',
     ids: string[],
+    options?: { purgeAnalytics?: boolean },
   ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
-    return this._campaigns.batchCampaigns(action, ids);
+    return this._campaigns.batchCampaigns(action, ids, options);
   }
 
   addCampaignMediaBatch(

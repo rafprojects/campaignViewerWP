@@ -185,12 +185,17 @@ class WPSG_REST {
                     'action' => [
                         'required' => true,
                         'type'     => 'string',
-                        'enum'     => ['archive', 'restore'],
+                        'enum'     => ['archive', 'restore', 'delete'],
                     ],
                     'ids'    => [
                         'required' => true,
                         'type'     => 'array',
                         'items'    => ['type' => 'integer'],
+                    ],
+                    'purge_analytics' => [
+                        'required' => false,
+                        'type'     => 'boolean',
+                        'default'  => false,
                     ],
                 ],
             ],
@@ -1944,9 +1949,9 @@ class WPSG_REST {
         $action  = sanitize_text_field($request->get_param('action'));
         $ids     = $request->get_param('ids');
 
-        $allowed_actions = ['archive', 'restore'];
+        $allowed_actions = ['archive', 'restore', 'delete'];
         if (!in_array($action, $allowed_actions, true)) {
-            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore', ['status' => 400]);
+            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore, delete', ['status' => 400]);
         }
         if (!is_array($ids) || empty($ids)) {
             return new WP_Error('wpsg_invalid_ids', 'ids must be a non-empty array', ['status' => 400]);
@@ -1954,18 +1959,43 @@ class WPSG_REST {
 
         $success = [];
         $failed  = [];
-        $new_status = $action === 'archive' ? 'archived' : 'active';
 
-        foreach ($ids as $raw_id) {
-            $post_id = intval($raw_id);
-            if (!self::campaign_exists($post_id)) {
-                $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
-                continue;
+        if ($action === 'delete') {
+            global $wpdb;
+            $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
+            foreach ($ids as $raw_id) {
+                $post_id = intval($raw_id);
+                if (!self::campaign_exists($post_id)) {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                    continue;
+                }
+                self::add_audit_entry($post_id, 'campaign.deleted', ['purge_analytics' => $purge_analytics]);
+                do_action('wpsg_campaign_deleted', $post_id);
+                WPSG_DB::delete_media_refs($post_id);
+                WPSG_DB::delete_access_requests_for_campaign($post_id);
+                if ($purge_analytics) {
+                    $wpdb->delete(WPSG_DB::get_analytics_table(), ['campaign_id' => $post_id], ['%d']); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                }
+                $deleted = wp_delete_post($post_id, true);
+                if ($deleted) {
+                    $success[] = (string) $post_id;
+                } else {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'wp_delete_post failed'];
+                }
             }
-            update_post_meta($post_id, 'status', $new_status);
-            self::add_audit_entry($post_id, "campaign.{$action}d", []);
-            do_action("wpsg_campaign_{$action}d", $post_id);
-            $success[] = (string) $post_id;
+        } else {
+            $new_status = $action === 'archive' ? 'archived' : 'active';
+            foreach ($ids as $raw_id) {
+                $post_id = intval($raw_id);
+                if (!self::campaign_exists($post_id)) {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                    continue;
+                }
+                update_post_meta($post_id, 'status', $new_status);
+                self::add_audit_entry($post_id, "campaign.{$action}d", []);
+                do_action("wpsg_campaign_{$action}d", $post_id);
+                $success[] = (string) $post_id;
+            }
         }
 
         self::clear_accessible_campaigns_cache();

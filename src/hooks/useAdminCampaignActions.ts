@@ -34,6 +34,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
 
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -144,6 +146,25 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       onCampaignsUpdated();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk action failed') });
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }, [selectedCampaignIds, apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
+  const handleBulkDelete = useCallback(async (opts: { purgeAnalytics: boolean }) => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkLoading(true);
+    try {
+      const result = await apiClient.batchCampaigns('delete', ids, opts);
+      const msg = result.failed.length > 0
+        ? `${result.success.length} deleted, ${result.failed.length} failed`
+        : `${result.success.length} campaign${result.success.length !== 1 ? 's' : ''} deleted`;
+      onNotify({ type: result.failed.length > 0 ? 'error' : 'success', text: msg });
+      setSelectedCampaignIds(new Set());
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk delete failed') });
     } finally {
       setIsBulkLoading(false);
     }
@@ -350,6 +371,9 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleDeselectAll,
     handleBulkArchive,
     handleBulkRestore,
+    handleBulkDelete,
+    confirmBulkDelete,
+    setConfirmBulkDelete,
     handleDuplicateCampaign,
     handleExportCampaign,
     handleBinaryExportCampaign,

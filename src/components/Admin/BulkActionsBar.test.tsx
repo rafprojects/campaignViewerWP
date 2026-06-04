@@ -11,6 +11,7 @@ const defaults = {
   onArchive: vi.fn(),
   onRestore: vi.fn(),
   onExport: vi.fn(),
+  onDelete: vi.fn(),
   onClearSelection: vi.fn(),
 };
 
@@ -92,5 +93,17 @@ describe('BulkActionsBar', () => {
     render(<BulkActionsBar {...defaults} isExporting={true} />);
     const exportBtn = screen.getByRole('button', { name: /export zip/i });
     expect(exportBtn).toHaveAttribute('data-loading', 'true');
+  });
+
+  it('Delete button is always visible and calls onDelete', () => {
+    const onDelete = vi.fn();
+    render(<BulkActionsBar {...defaults} onDelete={onDelete} />);
+    fireEvent.click(screen.getByRole('button', { name: /^delete$/i }));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('Delete button shows loading state when isLoading', () => {
+    render(<BulkActionsBar {...defaults} isLoading={true} />);
+    expect(screen.getByRole('button', { name: /^delete$/i })).toHaveAttribute('data-loading', 'true');
   });
 });

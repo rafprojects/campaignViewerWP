@@ -46,7 +46,7 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
 
     public function test_batch_campaigns_rejects_invalid_action() {
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
-        $request->set_param('action', 'delete');
+        $request->set_param('action', 'foobar');
         $request->set_param('ids', [1, 2]);
         $response = rest_do_request($request);
         $this->assertEquals(400, $response->get_status());

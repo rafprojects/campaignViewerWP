@@ -1,5 +1,5 @@
 import { Button, Group, Text, Paper, ActionIcon, Tooltip } from '@mantine/core';
-import { IconX, IconArchive, IconArchiveOff, IconFileZip } from '@tabler/icons-react';
+import { IconX, IconArchive, IconArchiveOff, IconFileZip, IconTrash } from '@tabler/icons-react';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface BulkActionsBarProps {
@@ -13,6 +13,7 @@ export interface BulkActionsBarProps {
   onArchive: () => void;
   onRestore: () => void;
   onExport: () => void;
+  onDelete: () => void;
   onClearSelection: () => void;
 }
 
@@ -25,6 +26,7 @@ export function BulkActionsBar({
   onArchive,
   onRestore,
   onExport,
+  onDelete,
   onClearSelection,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) return null;
@@ -95,6 +97,16 @@ export function BulkActionsBar({
               Restore
             </Button>
           )}
+          <Button
+            size="xs"
+            color="red"
+            variant="light"
+            leftSection={<IconTrash size={14} />}
+            loading={isLoading}
+            onClick={onDelete}
+          >
+            Delete
+          </Button>
         </Group>
       </Group>
     </Paper>

@@ -102,13 +102,18 @@ export class CampaignsApi {
   // ── P18-B: Bulk actions ──────────────────────────────────────────────────
 
   batchCampaigns(
-    action: 'archive' | 'restore',
+    action: 'archive' | 'restore' | 'delete',
     ids: string[],
+    options?: { purgeAnalytics?: boolean },
   ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
     return this.transport.post<{
       success: string[];
       failed: Array<{ id: string; reason: string }>;
-    }>('/wp-json/wp-super-gallery/v1/campaigns/batch', { action, ids });
+    }>('/wp-json/wp-super-gallery/v1/campaigns/batch', {
+      action,
+      ids,
+      ...(options?.purgeAnalytics ? { purge_analytics: true } : {}),
+    });
   }
 
   addCampaignMediaBatch(
