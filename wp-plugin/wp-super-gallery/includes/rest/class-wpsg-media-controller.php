@@ -203,39 +203,6 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         return new WP_REST_Response((object)$result, 200);
     }
 
-    /**
-     * P18-H helper: return category names for a campaign post.
-     */
-    public static function list_campaign_categories($request) {
-        [$page, $per_page, $offset] = self::parse_pagination($request);
-
-        $total = (int) wp_count_terms('wpsg_campaign_category', ['hide_empty' => false]);
-
-        $terms = get_terms([
-            'taxonomy'   => 'wpsg_campaign_category',
-            'hide_empty' => false,
-            'orderby'    => 'name',
-            'order'      => 'ASC',
-            'number'     => $per_page,
-            'offset'     => $offset,
-        ]);
-
-        if (is_wp_error($terms)) {
-            return new WP_Error('wpsg_internal_error', 'Failed to retrieve categories', ['status' => 500]);
-        }
-
-        $items = array_map(function ($term) {
-            return [
-                'id'        => strval($term->term_id),
-                'name'      => $term->name,
-                'slug'      => $term->slug,
-                'count'     => (int) $term->count,
-                'parent_id' => (int) $term->parent,
-            ];
-        }, $terms);
-
-        return self::paginated_response($items, $total, $page, $per_page);
-    }
 
     public static function list_media($request) {
         $start = microtime(true);
