@@ -588,14 +588,6 @@ class WPSG_DB {
         dbDelta($sql);
     }
 
-    /**
-     * P40-CT1: Idempotent migration — adds the seven new audit columns
-     * (severity, scope, summary, resource_type, resource_id, resource_label,
-     * source) when upgrading from a pre-v9 schema. dbDelta handles ADD COLUMN
-     * for any missing columns. The presence of `severity` is used as the guard
-     * because it is the first of the new columns; if it exists the full
-     * migration has already run.
-     */
     // ── P41-OL1: Overlay library table ─────────────────────────────────────
 
     public static function maybe_create_overlays_table(): void {
@@ -619,18 +611,21 @@ class WPSG_DB {
         dbDelta($sql);
 
         if ( ! get_option( 'wpsg_overlays_migrated' ) ) {
-            self::migrate_overlays_from_options();
-            update_option( 'wpsg_overlays_migrated', '1' );
+            $migrated = self::migrate_overlays_from_options();
+            if ( $migrated ) {
+                update_option( 'wpsg_overlays_migrated', '1' );
+            }
         }
     }
 
-    private static function migrate_overlays_from_options(): void {
+    private static function migrate_overlays_from_options(): bool {
         global $wpdb;
         $table = self::get_overlays_table();
         $raw   = get_option( 'wpsg_overlay_library', [] );
         if ( ! is_array( $raw ) || empty( $raw ) ) {
-            return;
+            return true;
         }
+        $failed = 0;
         foreach ( $raw as $entry ) {
             if ( ! isset( $entry['id'] ) ) {
                 continue;
@@ -638,7 +633,8 @@ class WPSG_DB {
             $uploaded_at = isset( $entry['uploadedAt'] )
                 ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $entry['uploadedAt'] ) )
                 : gmdate( 'Y-m-d H:i:s' );
-            $wpdb->insert(
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $result = $wpdb->insert(
                 $table,
                 [
                     'overlay_id'  => $entry['id'],
@@ -648,8 +644,15 @@ class WPSG_DB {
                 ],
                 [ '%s', '%s', '%s', '%s' ]
             );
+            if ( $result === false ) {
+                $failed++;
+            }
         }
-        delete_option( 'wpsg_overlay_library' );
+        if ( $failed === 0 ) {
+            delete_option( 'wpsg_overlay_library' );
+            return true;
+        }
+        return false;
     }
 
     public static function get_overlays_table(): string {
@@ -657,6 +660,14 @@ class WPSG_DB {
         return $wpdb->prefix . 'wpsg_overlays';
     }
 
+    /**
+     * P40-CT1: Idempotent migration — adds the seven new audit columns
+     * (severity, scope, summary, resource_type, resource_id, resource_label,
+     * source) when upgrading from a pre-v9 schema. dbDelta handles ADD COLUMN
+     * for any missing columns. The presence of `severity` is used as the guard
+     * because it is the first of the new columns; if it exists the full
+     * migration has already run.
+     */
     private static function maybe_upgrade_audit_log_v9(): void {
         global $wpdb;
         $table = self::get_audit_log_table();

@@ -348,6 +348,18 @@ Five issues identified by Copilot review and addressed:
 
 **`class-wpsg-overlay-library.php` — `add()` ignored `$wpdb->insert()` return value.** On a DB error (missing table, duplicate key, etc.) the insert silently failed but the method still returned a successful-looking record that would never appear in `get_all()`. Added result checking: `$wpdb->insert()` result is now stored and tested; `false` returns `WP_Error('wpsg_db_error', …, 500)`. The REST handler (`upload_overlay`) was updated to check `is_wp_error($entry)` and propagate a 500 response, and `add()`'s return type annotation updated to `array|WP_Error`.
 
+### Round 2
+
+**`class-wpsg-db.php` — orphaned P40-CT1 docblock.** The `maybe_upgrade_audit_log_v9()` docblock was positioned above the `// ── P41-OL1` section separator and `maybe_create_overlays_table()`, making it appear to document the overlay table. Moved it to sit directly above its intended method.
+
+**`class-wpsg-db.php` — `maybe_create_overlays_table()` sets migrated flag unconditionally.** `update_option('wpsg_overlays_migrated', '1')` was called regardless of whether the migration succeeded, permanently suppressing retries on DB failure. Changed to only set the flag when `migrate_overlays_from_options()` returns `true`.
+
+**`class-wpsg-db.php` — `migrate_overlays_from_options()` deletes legacy option even on insert failure.** If any `$wpdb->insert()` call failed, overlays could be permanently lost while the table stayed empty. Changed return type to `bool`; inserts are now counted, the legacy `wpsg_overlay_library` option is only deleted if all inserts succeeded, and the function returns `false` on any failure (allowing the caller to withhold the migrated flag and retry on next boot).
+
+**`class-wpsg-overlay-library.php` — `remove()` ignored `$wpdb->delete()` return.** The method always returned `true`, so the REST delete endpoint reported success even when the row still existed (DB error, missing table). Now stores the delete result and returns `$deleted !== false && $deleted > 0`.
+
+**`class-wpsg-rest.php` — `batch_campaigns` delete had no `confirm=true` gate.** The single-campaign `delete_campaign` endpoint requires `confirm=true` as a safety guard, but the bulk path had no equivalent check, making accidental hard-deletes easier to trigger. Added the same gate: `batch_campaigns` now returns `400 wpsg_delete_unconfirmed` if `confirm` is not truthy. The frontend `batchCampaigns()` in `campaignsApi.ts` was updated to pass `confirm: true` automatically when `action === 'delete'`.
+
 ---
 
 ## Outcome

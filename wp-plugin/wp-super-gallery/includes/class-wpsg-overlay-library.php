@@ -123,8 +123,8 @@ class WPSG_Overlay_Library {
         }
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $wpdb->delete( $table, [ 'overlay_id' => $id ], [ '%s' ] );
-        return true;
+        $deleted = $wpdb->delete( $table, [ 'overlay_id' => $id ], [ '%s' ] );
+        return $deleted !== false && $deleted > 0;
     }
 
     // ── File upload helper ──────────────────────────────────────

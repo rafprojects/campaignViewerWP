@@ -112,6 +112,7 @@ export class CampaignsApi {
     }>('/wp-json/wp-super-gallery/v1/campaigns/batch', {
       action,
       ids,
+      ...(action === 'delete' ? { confirm: true } : {}),
       ...(options?.purgeAnalytics ? { purge_analytics: true } : {}),
     });
   }

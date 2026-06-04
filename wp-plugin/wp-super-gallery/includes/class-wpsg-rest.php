@@ -1961,6 +1961,13 @@ class WPSG_REST {
         $failed  = [];
 
         if ($action === 'delete') {
+            if (!self::is_truthy_param($request->get_param('confirm'))) {
+                return new WP_Error(
+                    'wpsg_delete_unconfirmed',
+                    'Missing confirm=true parameter for bulk delete',
+                    ['status' => 400]
+                );
+            }
             global $wpdb;
             $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
             foreach ($ids as $raw_id) {
