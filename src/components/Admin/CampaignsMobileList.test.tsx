@@ -25,12 +25,13 @@ function makeCampaign(overrides: Partial<AdminCampaign> = {}): AdminCampaign {
 
 function makeCampaignActions(overrides: Partial<CampaignActionsHandle> = {}): CampaignActionsHandle {
   return {
-    selectMode: false,
     selectedCampaignIds: new Set(),
     handleToggleCampaignSelect: vi.fn(),
     handleEdit: vi.fn(),
     setDuplicateSource: vi.fn(),
     handleExportCampaign: vi.fn().mockResolvedValue(undefined),
+    handleBinaryExportCampaign: vi.fn().mockResolvedValue(undefined),
+    binaryExportingIds: new Set(),
     setConfirmRestore: vi.fn(),
     setConfirmArchive: vi.fn(),
     setConfirmDelete: vi.fn(),
@@ -166,8 +167,8 @@ describe('CampaignsMobileList — interactions', () => {
     expect(setConfirmRestore).toHaveBeenCalledWith(expect.objectContaining({ id: '1' }));
   });
 
-  it('shows checkbox in selectMode', () => {
-    render(<CampaignsMobileList {...defaultProps} campaignActions={makeCampaignActions({ selectMode: true })} />);
+  it('always shows checkbox without needing a select mode toggle', () => {
+    render(<CampaignsMobileList {...defaultProps} />);
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
   });
 

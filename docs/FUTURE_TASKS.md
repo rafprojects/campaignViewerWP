@@ -82,11 +82,7 @@ These items are intentionally not repeated in the backlog sections below.
 
 2. **Group-as-entity alignment.** When a persisted group and another slot are both selected and an alignment operation runs, the group's members are currently treated as individual slots rather than as a single bounding box. The expected behavior is that the group's union bounding box is the alignment unit and all member positions move together by the same delta.
 
-**Why deferred:** Both gaps require the Phase 30 alignment spike (P30-K) to be completed first. P30-K defines the full alignment operation set and answers whether these are the right solutions, what the naming/icon conventions are, and whether a reference-frame toggle (align to selection vs. canvas vs. anchor slot) should also be added. Implementing these without the spike risks building the wrong API or icon language.
-
-Additionally, group-as-entity alignment requires P30-G's group coordinate model, which establishes how a group's bounding box is computed and how member positions are updated as a unit.
-
-**Dependency:** P30-K (alignment spike) must be completed; P30-G must ship for group-entity alignment.
+**Status:** Unblocked. P30-K (alignment spike) and P30-G (nested group hierarchy / coordinate model) are both complete as of Phase 30. The alignment naming/icon conventions, reference-frame toggle design, and group bounding-box coordinate model are all resolved. This item can be promoted in a future phase without dependency gates.
 
 **Effort:** Low-Medium (once spike and P30-G are done) | **Impact:** Medium
 
@@ -376,3 +372,5 @@ When promoting future tasks to an active phase:
 *Updated: June 3, 2026 (P39-CL1) — Removed "Webhook Support for Campaign Events" (shipped P39-IN1) and "Redis/Memcached Object Cache" (shipped P39-OC1); retired D-12 (rate-limiter object-cache docs, now covered by P39-OC1); added P39-IN1 and P39-OC1 to the ownership snapshot; updated Infrastructure & Performance section intro.*
 
 *Updated: June 3, 2026 (P40-QA1) — Reconciled audit-domain backlog against Phase 40 outcome. "Audit Log Binary Export" (Campaign Management section) remains correctly deferred — `WPSG_Export_Engine` exists but the compliance use case is not yet active enough to justify promotion. No other audit-domain items require movement or promotion.*
+
+*Updated: June 3, 2026 (P41-FT1) — Updated "Alignment Variants" (Builder section): P30-K (alignment spike) and P30-G (nested group hierarchy) are both complete as of Phase 30; removed the blocking-dependency language and marked the item as unblocked.*

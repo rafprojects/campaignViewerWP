@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconCopy, IconDownload, IconFileZip, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import { useAllCompanies, usePatchCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
@@ -46,9 +46,10 @@ interface Options {
 
 export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient }: Options) {
   const {
-    selectMode, selectedCampaignIds,
+    selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
     setDuplicateSource, handleExportCampaign,
+    handleBinaryExportCampaign, binaryExportingIds,
     setConfirmRestore, setConfirmArchive, setConfirmDelete,
     restoringIds, archivingIds, deletingIds,
   } = campaignActions;
@@ -66,15 +67,13 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
 
       return (
         <Table.Tr key={c.id} data-selected={isSelected || undefined}>
-          {selectMode && (
-            <Table.Td w={36}>
-              <Checkbox
-                checked={isSelected}
-                onChange={() => handleToggleCampaignSelect(cid)}
-                aria-label={`Select ${c.title}`}
-              />
-            </Table.Td>
-          )}
+          <Table.Td w={36}>
+            <Checkbox
+              checked={isSelected}
+              onChange={() => handleToggleCampaignSelect(cid)}
+              aria-label={`Select ${c.title}`}
+            />
+          </Table.Td>
           <Table.Td>
             <Box>
               <Group gap={6}>
@@ -180,6 +179,9 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
               <Tooltip label="Export campaign as JSON">
                 <Button variant="subtle" size="xs" leftSection={<IconDownload size={14} />} onClick={() => void handleExportCampaign(c)} aria-label={`Export ${c.title}`}>Export</Button>
               </Tooltip>
+              <Tooltip label="Export as ZIP (includes media)">
+                <Button variant="subtle" size="xs" leftSection={<IconFileZip size={14} />} loading={binaryExportingIds.has(cid)} onClick={() => void handleBinaryExportCampaign(c)} aria-label={`Export ${c.title} as ZIP`}>Export ZIP</Button>
+              </Tooltip>
               {c.status === 'archived' ? (
                 <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>Restore</Button>
               ) : (
@@ -193,5 +195,5 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
         </Table.Tr>
       );
     });
-  }, [campaigns, selectMode, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }

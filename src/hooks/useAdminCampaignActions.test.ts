@@ -120,15 +120,13 @@ describe('useAdminCampaignActions', () => {
     );
   });
 
-  it('handleToggleSelectMode toggles selectMode and clears selection', () => {
+  it('handleDeselectAll clears all selected campaign IDs', () => {
     const { result } = renderHook(() =>
       useAdminCampaignActions({ apiClient: makeApiClient(), ...baseOptions }),
     );
-    act(() => { result.current.handleToggleCampaignSelect('1'); });
-    act(() => { result.current.handleToggleSelectMode(); });
-    expect(result.current.selectMode).toBe(true);
-    act(() => { result.current.handleToggleSelectMode(); });
-    expect(result.current.selectMode).toBe(false);
+    act(() => { result.current.handleSelectAll(['1', '2']); });
+    expect(result.current.selectedCampaignIds.size).toBe(2);
+    act(() => { result.current.handleDeselectAll(); });
     expect(result.current.selectedCampaignIds.size).toBe(0);
   });
 

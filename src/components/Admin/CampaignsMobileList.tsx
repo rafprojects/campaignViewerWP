@@ -5,7 +5,7 @@ import {
 } from '@mantine/core';
 import {
   IconArchive, IconArchiveOff, IconCopy, IconDownload, IconEdit,
-  IconLayoutGrid, IconTrash,
+  IconFileZip, IconLayoutGrid, IconTrash,
 } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
@@ -47,12 +47,13 @@ export function CampaignsMobileList({
   onPageChange,
 }: Props) {
   const {
-    selectMode,
     selectedCampaignIds,
     handleToggleCampaignSelect,
     handleEdit,
     setDuplicateSource,
     handleExportCampaign,
+    handleBinaryExportCampaign,
+    binaryExportingIds,
     setConfirmRestore,
     setConfirmArchive,
     setConfirmDelete,
@@ -82,14 +83,12 @@ export function CampaignsMobileList({
             {/* Title row */}
             <Group gap={6} justify="space-between" wrap="nowrap">
               <Group gap={6} style={{ flex: 1, minWidth: 0 }}>
-                {selectMode && (
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={() => handleToggleCampaignSelect(cid)}
-                    aria-label={`Select ${c.title}`}
-                    size="xs"
-                  />
-                )}
+                <Checkbox
+                  checked={isSelected}
+                  onChange={() => handleToggleCampaignSelect(cid)}
+                  aria-label={`Select ${c.title}`}
+                  size="xs"
+                />
                 <Text fw={700} size="sm" truncate style={{ flex: 1 }}>{c.title}</Text>
                 {hasCampaignGalleryOverrides(c) && (
                   <Tooltip label={`Custom gallery: ${galleryOverrideSummary.join(', ') || 'Nested overrides'}`} withArrow>
@@ -136,6 +135,11 @@ export function CampaignsMobileList({
                   Export
                 </Button>
               </Tooltip>
+              <Tooltip label="Export as ZIP (includes media)">
+                <Button size="xs" variant="subtle" leftSection={<IconFileZip size={12} />} loading={binaryExportingIds.has(cid)} onClick={() => void handleBinaryExportCampaign(c)} aria-label={`Export ${c.title} as ZIP`}>
+                  Export ZIP
+                </Button>
+              </Tooltip>
               {c.status === 'archived' ? (
                 <Button size="xs" color="teal" leftSection={<IconArchiveOff size={12} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>
                   Restore
@@ -156,9 +160,10 @@ export function CampaignsMobileList({
       );
     });
   }, [
-    campaigns, selectMode, selectedCampaignIds, grantSummary,
+    campaigns, selectedCampaignIds, grantSummary,
     handleToggleCampaignSelect, handleEdit, setDuplicateSource,
-    handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete,
+    handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds,
+    setConfirmRestore, setConfirmArchive, setConfirmDelete,
     restoringIds, archivingIds, deletingIds,
   ]);
 

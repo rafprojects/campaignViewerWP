@@ -424,10 +424,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               isLoading={isLoading}
               error={error}
               campaignsRows={campaignsRows}
-              selectMode={campaignActions.selectMode}
               selectedCount={campaignActions.selectedCampaignIds.size}
               totalCount={campaigns.length}
-              onToggleSelectMode={campaignActions.handleToggleSelectMode}
               onSelectAll={() => campaignActions.handleSelectAll(campaigns.map((c) => String(c.id)))}
               onDeselectAll={campaignActions.handleDeselectAll}
               page={campaignPagination.page}
@@ -436,7 +434,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               onPageChange={setCampaignPage}
             />
           )}
-          {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
+          {campaignActions.selectedCampaignIds.size > 0 && (() => {
             const sel = campaigns.filter((c) => campaignActions.selectedCampaignIds.has(String(c.id)));
             return (
               <BulkActionsBar

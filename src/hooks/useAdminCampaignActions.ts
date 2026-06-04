@@ -28,7 +28,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-  const [selectMode, setSelectMode] = useState(false);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
   const [isBulkLoading, setIsBulkLoading] = useState(false);
 
@@ -96,11 +95,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       setRestoringIds((prev) => { const next = new Set(prev); next.delete(id); return next; });
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
-
-  const handleToggleSelectMode = useCallback(() => {
-    setSelectMode((v) => !v);
-    setSelectedCampaignIds(new Set());
-  }, []);
 
   const handleToggleCampaignSelect = useCallback((id: string) => {
     setSelectedCampaignIds((prev) => {
@@ -247,10 +241,15 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       [effectiveMap.openHelp,    () => setShortcutHelpOpen(true)],
       [effectiveMap.newCampaign, () => { if (!createModalOpen) handleCreate(); }],
       [effectiveMap.importJson,  () => setImportModalOpen(true)],
-      [effectiveMap.bulkSelect,  () => handleToggleSelectMode()],
+      [effectiveMap.bulkSelect,  () => {
+        if (selectedCampaignIds.size > 0) {
+          handleDeselectAll();
+        } else {
+          handleSelectAll(_campaigns.map((c) => String(c.id)));
+        }
+      }],
     ]),
-     
-    [effectiveMap.openHelp, effectiveMap.newCampaign, effectiveMap.importJson, effectiveMap.bulkSelect, createModalOpen, handleCreate, handleToggleSelectMode],
+    [effectiveMap.openHelp, effectiveMap.newCampaign, effectiveMap.importJson, effectiveMap.bulkSelect, createModalOpen, handleCreate, handleSelectAll, handleDeselectAll, selectedCampaignIds, _campaigns],
   );
 
   return {
@@ -269,7 +268,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     restoringIds,
     deletingIds,
     // Bulk selection
-    selectMode,
     selectedCampaignIds,
     isBulkLoading,
     // Duplicate
@@ -291,7 +289,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     archiveCampaign,
     restoreCampaign,
     deleteCampaign,
-    handleToggleSelectMode,
     handleToggleCampaignSelect,
     handleSelectAll,
     handleDeselectAll,
