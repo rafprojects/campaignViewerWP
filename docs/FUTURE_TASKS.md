@@ -2,54 +2,6 @@
 
 This document tracks deferred and exploratory work remaining. Items promoted to active phase execution are moved into dedicated phase reports and removed from this backlog.
 
-## 2026-05-19 Evaluation Matrix
-
-Cross-checked against current code, current phase reports, and archived Phase 28 implementation work. Rows marked `Remove` are intentionally not repeated in the backlog sections below.
-
-The broader second-pass cleanup also removed additional shipped Phase 28 backlog items outside the original estimate, including campaign templates and access audit export, reframed duplicate detection to the remaining near-duplicate work, and retired stale non-backlog entries such as secondary admin code-splitting and deferred review item `D-8`.
-
-A later cleanup pass also removed detailed backlog entries queued into Phase 38 so this document remains a true long-tail and exploratory backlog.
-
-| Estimated item | Current code status | Decision | Phase / note |
-|----------------|---------------------|----------|--------------|
-| Access Totals Summary UI | Shipped in P28-J: REST endpoint and admin query/UI are live | Remove | Historical trace: Phase 28 |
-| Magic-Link Auto-Approval | Shipped in P28-I: single-use expiring approval links are live | Remove | Historical trace: Phase 28 |
-| Media Sorting Controls | P28-M shipped order/title/created sorts; file-size and usage-count remain | Reframe | Promote residual work to Phase 34 |
-| Hierarchical Campaign Categories | Shipped in P28-Q/P28-R: hierarchical taxonomy plus selector UI are live | Remove | Historical trace: Phase 28 |
-| WAF Rules | Deployment hardening guidance only; not product-phase work | Reject | Keep as prune/reference material |
-| Time-Limited Access Grants | Shipped in P28-B: expiry fields, admin UI, and cleanup path are live | Remove | Historical trace: Phase 28 |
-| Campaign Analytics — Extended Scope | P28-H shipped per-media analytics, cross-campaign summary, and hook-based extensibility; live refresh remains | Reframe | Promote residual work to Phase 34 |
-| Role-Based Access Levels | Not started; current auth/access model is still binary | Promote | New Phase 33 |
-| Structured Logging & Metrics Integration | Monitoring and alerting exist; structured operator logs do not | Reframe | Promote logging work to Phase 32 |
-
----
-
-## Current Ownership Snapshot
-
-### Recently promoted and now phase-owned
-
-| Item | Why it was promoted | Owning phase doc |
-|------|---------------------|------------------|
-| Per-campaign RBAC | Largest remaining access-control gap; current grant/auth model is still binary | [PHASE33_REPORT.md](PHASE33_REPORT.md) |
-| Structured server-side logging | Monitoring exists, but operators still lack durable structured logs and an admin-visible sink | [PHASE32_REPORT.md](PHASE32_REPORT.md) |
-| Analytics live refresh | Core analytics shipped; the remaining UX gap is stale data during long admin sessions | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
-| Advanced media sort follow-up | Core sorting shipped; file-size and usage-count ordering still have real admin value | [PHASE34_REPORT.md](PHASE34_REPORT.md) |
-| Webhook support for campaign events | P39-IN1 shipped endpoint management, HMAC-signed delivery, retry queue, and WP-CLI commands | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
-| Object-cache guidance and health surface | P39-OC1 shipped Redis/APCu/Memcached docs, health endpoint, warm_settings(), and TTL policy constants | [PHASE39_REPORT.md](PHASE39_REPORT.md) |
-
-These items are intentionally not repeated in the backlog sections below.
-
-### Prune candidates (retained for reference; not actively pursued)
-
-| Item | Why it is a prune candidate |
-|------|-----------------------------|
-| URL-based image input re-enable | Security-heavy convenience feature; upload-only already covers the core workflow |
-| WAF Rules | Deployment-specific documentation, not a product phase track |
-| Secondary admin code-splitting | The obvious lazy-load wins already shipped; do more only when profiling shows a real cost |
-| Third-party OAuth providers | High maintenance and product ambiguity without a clear deployment demand signal |
-| GraphQL API alternative | High maintenance cost with unclear near-term ROI |
-| Progressive Web App support | Service-worker foundation already exists; revisit only if there is a concrete offline/mobile deployment requirement |
-
 ---
 
 ## Builder
@@ -122,9 +74,33 @@ These items are intentionally not repeated in the backlog sections below.
 
 ---
 
+### Campaign Binary Export — Stream Large Media Sets
+
+**Files:** `class-wpsg-export-engine.php`
+
+P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via `curl CURLOPT_FILE` rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
+
+**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
+
+**Effort:** Medium (4-6 hours) | **Impact:** Low — only relevant for campaigns exceeding the current 100 MB size ceiling
+
+---
+
 ## Access Control
 
-Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](PHASE33_REPORT.md). The remaining backlog item here is standalone cross-origin JWT auth.
+Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
+
+### CORS Origin Allow-List & Admin UI
+
+**Files:** `wp-super-gallery.php`, `class-wpsg-settings.php`
+
+Add a CORS allowed-origins admin setting and enforce it on REST API responses, rejecting wildcard (`*`) when credentials are used. Only affects cross-origin REST API usage; standard same-origin WordPress shortcode deployments are unaffected (WP core already reflects the request origin unconditionally for those).
+
+**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. This track becomes relevant only when WPSG is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for the JWT work below.
+
+**Effort:** Medium (4-6 hours) | **Impact:** Low — meaningful only for standalone SPA deployments
+
+---
 
 ### JWT In-Memory Token Auth (Standalone SPA)
 
@@ -157,9 +133,37 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ---
 
+### JWT Token Refresh (Frontend)
+
+**Files:** `src/services/apiClient.ts`, `src/hooks/useAuth.ts`
+
+Transparent silent refresh of the in-memory JWT access token before expiry via a `useTokenRefresh` hook that posts to `/wpsg/v1/token/refresh`. **Blocked on the JWT In-Memory Token Auth work above** (requires the in-memory token architecture and the `/token/refresh` PHP endpoint to exist first). Standard nonce-auth deployments are unaffected.
+
+**Effort:** Medium | **Impact:** Low — only relevant for standalone SPA JWT deployments
+
+---
+
 ## Infrastructure & Performance
 
 Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). Object-cache guidance shipped in P39-OC1 — see [PHASE39_REPORT.md](PHASE39_REPORT.md) and [object-cache-setup.md](object-cache-setup.md).
+
+### Thumbnail Cache Index — Single wp_options Row Scalability
+
+**Files:** `class-wpsg-thumbnail-cache.php`
+
+Move the thumbnail cache index from a single `wp_options` row to per-hash entries or a custom table. The cache is self-healing (regenerated on miss), so migration risk is low; the concern is `wp_options` autoload bloat as the index grows on larger sites.
+
+**Effort:** Medium (4-6 hours) | **Impact:** Low
+
+---
+
+### `get_campaigns_for_attachment_id()` N+1 Meta Reads
+
+**Files:** `class-wpsg-db.php`
+
+`get_campaigns_for_attachment_id()` (used to enrich duplicate/near-duplicate 409 responses) fetches every campaign ID from `wp_posts`, then calls `get_post_meta()` once per campaign to scan its `media_items` array in PHP. On sites with many campaigns this is O(campaigns) in both queries and memory. The path only fires when an uploaded file matches an existing attachment's MD5 or pHash, so real-world cost is negligible today, but the pattern should be replaced once a dedicated WP-attachment-ID → campaign mapping is available (e.g. extending the `wpsg_media_refs` table). A LIKE-based query against the serialized `media_items` postmeta is not a safe alternative due to PHP serialization format fragility.
+
+**Effort:** Small-Medium (2-4 hours once mapping table exists) | **Impact:** Low (rare code path)
 
 ---
 
@@ -224,84 +228,6 @@ Phase-owned follow-on in this area: structured server-side logging now lives in 
 - Q3: Would a GraphQL API make the REST API redundant, or would both coexist? Coexistence adds documentation and maintenance burden.
 
 **Effort:** High | **Impact:** Low for current users, potentially High for ecosystem adoption
-
----
-
-## Deferred Review Tasks
-
-Items below were triaged from the PHP and React implementation review deferred task lists.
-Easy/ASAP items were handled separately — see ASAP_TASKS.md and the implementation notes in the source review docs.
-
-Follow-up audit on 2026-05-19 found no additional phase-worthy tracks here beyond the work already promoted into Phases 32-34. The remaining deferred items are retained as long-tail reference material only: they are either DX-only cleanups, blocked by missing product demand or dependencies, or tied to scale/deployment scenarios that are not yet active enough to justify promotion.
-
-### Already Addressed (Removed from Active Deferred Review)
-
-| Item | Current code status | Decision |
-|------|---------------------|----------|
-| D-10 | `get_accessible_campaign_ids()` already uses cached accessible-ID lookups with versioned invalidation | Remove from active deferred list |
-| D-17 | Default CSP already ships via `wpsg_add_security_headers()` | Remove from active deferred list |
-| RD-4 | `useLayoutBuilderState` already uses `templateRef` to avoid callback-cascade issues in autosave persistence | Remove from active deferred list |
-
-### PHP — Long-Tail Only (from archived PHP_IMPLEMENTATION_REVIEW.txt)
-
-**D-1: CORS Origin Allow-List & Admin UI**
-Files: `wp-super-gallery.php`, `class-wpsg-settings.php`
-Add CORS allowed-origins setting and reject wildcard with credentials. Only affects cross-origin REST API usage. Filter workaround exists.
-
-**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back after implementation because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. WP core's `rest_send_cors_headers()` already reflects any origin unconditionally; overriding it adds complexity without user benefit in standard deployments. This track becomes relevant only if WPSG is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for P39-AU1.
-
-LOE: Medium (4-6 hours) | Impact: Low — standard WP shortcode deployments unaffected; meaningful only for standalone SPA deployments
-
-~~**D-2: Migrate Overlay Library from wp_options to Custom Table**~~ → **Complete (P41-OL1)**
-Overlay entries now stored in `{prefix}wpsg_overlays` custom table with transparent one-time migration. `DB_VERSION` bumped to `'10'`.
-
-~~**D-5: Pre-Uninstall Confirmation Gate**~~ → **Complete (P41-UN1)**
-`preserveDataOnUninstall` now defaults to `true`. Setting moved to a "Danger Zone" accordion section with a red Alert. UI change only — uninstall.php already gates on the setting.
-
-**D-7: Decompose Monolithic REST Class into Domain Controllers** → *Targeted: Phase 42*
-Files: `class-wpsg-rest.php` → 8+ new files
-Split the still-monolithic `WPSG_REST` class. Current test coverage is strong; this remains a DX/maintainability refactor rather than a user-facing gap.
-LOE: X-Large (16-24 hours) | Impact: Low (DX only)
-
-**D-13: Thumbnail Cache Index — Single wp_options Row Scalability**
-Files: `class-wpsg-thumbnail-cache.php`
-Move thumbnail cache index to per-hash entries or custom table. Cache is self-healing (regenerated on miss).
-LOE: Medium (4-6 hours) | Impact: Low
-
-**D-14: Campaign Binary Export — Stream Large Media Sets**
-Files: `class-wpsg-export-engine.php`
-P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via curl CURLOPT_FILE rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
-LOE: Medium (4-6 hours) | Impact: Low
-
-**D-15: `get_campaigns_for_attachment_id()` N+1 Meta Reads**
-Files: `class-wpsg-db.php`
-`get_campaigns_for_attachment_id()` (used to enrich duplicate/near-duplicate 409 responses) fetches every campaign ID from `wp_posts`, then calls `get_post_meta()` once per campaign to load and scan its `media_items` array in PHP. On sites with many campaigns this is O(campaigns) in both queries and memory. The path only fires when an uploaded file matches an existing attachment's MD5 or pHash, so real-world cost is negligible today, but the pattern should be replaced once a dedicated WP-attachment-ID → campaign mapping is available (e.g. extending the `wpsg_media_refs` table or adding an `attachment_id` column). A LIKE-based query against the serialized `media_items` postmeta is not a safe alternative due to PHP serialization format fragility.
-LOE: Small-Medium (2-4 hours once mapping table exists) | Impact: Low (rare code path)
-
-### React — Long-Tail Only (from archived REACT_IMPLEMENTATION_REVIEW.txt)
-
-**RD-2: SettingsPanel Tab-Level Code Splitting** → *Targeted: Phase 43*
-Files: `src/components/Admin/SettingsPanel.tsx` (~736 lines)
-Split `SettingsPanelTabsContent` into per-tab sub-components with React.memo. Each tab component receives only the props it uses, reducing prop-threading through the 11-prop mega-interface. Heavy section components are already in `src/components/Settings/`; the remaining work is the thin shell split. Admin-only, negligible perf impact.
-LOE: Medium (3-5 hours) | Impact: Low
-
-**RD-9: LayoutBuilderGallery Inline Style → CSS Injection**
-Files: `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx`
-Replace inline `<style>` with useInsertionEffect/adoptedStyleSheets. Works correctly inside Shadow DOM today.
-LOE: Low (1-2 hours) | Impact: Low
-
-~~**RD-15: SlotPropertiesPanel IIFE Extraction**~~ → **Complete (P41-RD15)**
-Four effect section IIFEs extracted into named React sub-components (`FilterEffectsSection`, `ShadowSection`, `OverlayEffectSection`, `TiltEffectSection`).
-
-**RD-17: JWT Token Refresh**
-Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`
-Transparent JWT token refresh before expiry. **Blocked on RD-1**. Most deployments use nonce auth.
-LOE: Medium (blocked on RD-1) | Impact: Low
-
-**RD-21: Standardize Error Handling Patterns**
-Files: Multiple hooks
-Standardize error handling across admin hooks. Inconsistent DX, no user impact.
-LOE: Medium (3-4 hours) | Impact: Low
 
 ---
 
@@ -372,3 +298,7 @@ When promoting future tasks to an active phase:
 *Updated: June 3, 2026 (P41-OL1/UN1/RD15) — D-2 (Overlay Library DB migration), D-5 (Pre-uninstall confirmation gate), and RD-15 (SlotPropertiesPanel IIFE extraction) marked complete; D-7 targeted for Phase 42.*
 
 *Updated: June 3, 2026 (P42/P43 planning) — RD-2 targeted for Phase 43; line-count corrected from ~1822 to ~736 (heavy section components already extracted to `src/components/Settings/`); LOE revised to Medium (3-5 hours).*
+
+*Updated: June 4, 2026 (P43/P44 planning) — D-7, RD-2, RD-9, RD-21 graduated to phase plans (PHASE42_REPORT.md, PHASE43_REPORT.md); Phase 44 audit plan created (PHASE44_REPORT.md).*
+
+*Updated: June 4, 2026 (reorg) — Dissolved "Deferred Review Tasks" section; D-1, D-13, D-14, D-15, RD-17 moved to domain sections (Access Control, Infrastructure & Performance, Campaign Management); completed entries (D-2, D-5, RD-15) and already-addressed entries (D-10, D-17, RD-4) dropped.*
