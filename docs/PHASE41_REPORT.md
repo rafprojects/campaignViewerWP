@@ -360,6 +360,14 @@ Five issues identified by Copilot review and addressed:
 
 **`class-wpsg-rest.php` — `batch_campaigns` delete had no `confirm=true` gate.** The single-campaign `delete_campaign` endpoint requires `confirm=true` as a safety guard, but the bulk path had no equivalent check, making accidental hard-deletes easier to trigger. Added the same gate: `batch_campaigns` now returns `400 wpsg_delete_unconfirmed` if `confirm` is not truthy. The frontend `batchCampaigns()` in `campaignsApi.ts` was updated to pass `confirm: true` automatically when `action === 'delete'`.
 
+### Round 3
+
+**`class-wpsg-db.php` — `migrate_overlays_from_options()` not idempotent on partial success.** Using `$wpdb->insert()` meant that on a retry after partial success, already-migrated rows would hit the UNIQUE constraint on `overlay_id`, increment `$failed`, and prevent the migration from ever completing — permanently stranding remaining option-backed overlays. Changed to `$wpdb->replace()`, which performs a DELETE + INSERT on duplicate key, making retries safe regardless of prior partial progress.
+
+**`class-wpsg-overlay-library.php` — `add()` docblock `$data` type annotation.** The PHPDoc declared `array{url:string, name:string}` but `name` has always been optional (defaults to `''`). Updated to `array{url:string, name?:string}` to match actual supported input.
+
+**`class-wpsg-rest.php` — `confirm` parameter absent from batch route schema.** The `confirm=true` guard added in Round 2 had no corresponding entry in the route's `args` array, making the API contract incomplete and preventing WordPress from validating or sanitizing it like the other parameters. Added `confirm` with `required: false, type: boolean, default: false`.
+
 ---
 
 ## Outcome

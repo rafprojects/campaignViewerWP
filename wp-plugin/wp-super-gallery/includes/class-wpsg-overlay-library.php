@@ -51,7 +51,7 @@ class WPSG_Overlay_Library {
     /**
      * Add a new overlay entry.
      *
-     * @param  array{url:string, name:string} $data
+     * @param  array{url:string, name?:string} $data
      * @return array|WP_Error  The stored overlay record, or WP_Error on DB failure.
      */
     public static function add( array $data ) {

@@ -634,7 +634,7 @@ class WPSG_DB {
                 ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $entry['uploadedAt'] ) )
                 : gmdate( 'Y-m-d H:i:s' );
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $result = $wpdb->insert(
+            $result = $wpdb->replace(
                 $table,
                 [
                     'overlay_id'  => $entry['id'],

@@ -197,6 +197,11 @@ class WPSG_REST {
                         'type'     => 'boolean',
                         'default'  => false,
                     ],
+                    'confirm'         => [
+                        'required' => false,
+                        'type'     => 'boolean',
+                        'default'  => false,
+                    ],
                 ],
             ],
         ]);
