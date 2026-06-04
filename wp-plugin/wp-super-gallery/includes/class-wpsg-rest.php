@@ -2591,6 +2591,24 @@ class WPSG_REST {
                 continue;
             }
 
+            // Reuse an existing attachment when the file bytes are identical.
+            $md5         = md5($file_data);
+            $existing_id = self::find_attachment_by_md5($md5);
+            if ($existing_id > 0) {
+                $existing_url = wp_get_attachment_url($existing_id);
+                if ($existing_url) {
+                    $media_items[] = [
+                        'id'     => (string) $existing_id,
+                        'url'    => $existing_url,
+                        'title'  => sanitize_text_field($ref['title'] ?? ''),
+                        'type'   => 'image',
+                        'source' => 'upload',
+                        'order'  => 0,
+                    ];
+                    continue;
+                }
+            }
+
             $tmp = wp_tempnam($filename);
             if ($tmp === false) {
                 continue;
@@ -2606,6 +2624,8 @@ class WPSG_REST {
             if (is_wp_error($att_id)) {
                 continue;
             }
+
+            update_post_meta($att_id, '_wpsg_file_md5', $md5);
 
             $media_items[] = [
                 'id'     => (string) $att_id,
