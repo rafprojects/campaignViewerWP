@@ -185,12 +185,40 @@ class WPSG_REST {
                     'action' => [
                         'required' => true,
                         'type'     => 'string',
-                        'enum'     => ['archive', 'restore'],
+                        'enum'     => ['archive', 'restore', 'delete'],
                     ],
                     'ids'    => [
                         'required' => true,
                         'type'     => 'array',
                         'items'    => ['type' => 'integer'],
+                    ],
+                    'purge_analytics' => [
+                        'required' => false,
+                        'type'     => 'boolean',
+                        'default'  => false,
+                    ],
+                    'confirm'         => [
+                        'required' => false,
+                        'type'     => 'boolean',
+                        'default'  => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        // P41-EX3: Bulk binary export
+        register_rest_route('wp-super-gallery/v1', '/campaigns/batch/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'batch_export_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'ids' => [
+                        'required'  => true,
+                        'type'      => 'array',
+                        'items'     => ['type' => 'integer'],
+                        'minItems'  => 1,
+                        'maxItems'  => 50,
                     ],
                 ],
             ],
@@ -1926,9 +1954,9 @@ class WPSG_REST {
         $action  = sanitize_text_field($request->get_param('action'));
         $ids     = $request->get_param('ids');
 
-        $allowed_actions = ['archive', 'restore'];
+        $allowed_actions = ['archive', 'restore', 'delete'];
         if (!in_array($action, $allowed_actions, true)) {
-            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore', ['status' => 400]);
+            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore, delete', ['status' => 400]);
         }
         if (!is_array($ids) || empty($ids)) {
             return new WP_Error('wpsg_invalid_ids', 'ids must be a non-empty array', ['status' => 400]);
@@ -1936,18 +1964,50 @@ class WPSG_REST {
 
         $success = [];
         $failed  = [];
-        $new_status = $action === 'archive' ? 'archived' : 'active';
 
-        foreach ($ids as $raw_id) {
-            $post_id = intval($raw_id);
-            if (!self::campaign_exists($post_id)) {
-                $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
-                continue;
+        if ($action === 'delete') {
+            if (!self::is_truthy_param($request->get_param('confirm'))) {
+                return new WP_Error(
+                    'wpsg_delete_unconfirmed',
+                    'Missing confirm=true parameter for bulk delete',
+                    ['status' => 400]
+                );
             }
-            update_post_meta($post_id, 'status', $new_status);
-            self::add_audit_entry($post_id, "campaign.{$action}d", []);
-            do_action("wpsg_campaign_{$action}d", $post_id);
-            $success[] = (string) $post_id;
+            global $wpdb;
+            $purge_analytics = self::is_truthy_param($request->get_param('purge_analytics'));
+            foreach ($ids as $raw_id) {
+                $post_id = intval($raw_id);
+                if (!self::campaign_exists($post_id)) {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                    continue;
+                }
+                self::add_audit_entry($post_id, 'campaign.deleted', ['purge_analytics' => $purge_analytics]);
+                do_action('wpsg_campaign_deleted', $post_id);
+                WPSG_DB::delete_media_refs($post_id);
+                WPSG_DB::delete_access_requests_for_campaign($post_id);
+                if ($purge_analytics) {
+                    $wpdb->delete(WPSG_DB::get_analytics_table(), ['campaign_id' => $post_id], ['%d']); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+                }
+                $deleted = wp_delete_post($post_id, true);
+                if ($deleted) {
+                    $success[] = (string) $post_id;
+                } else {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'wp_delete_post failed'];
+                }
+            }
+        } else {
+            $new_status = $action === 'archive' ? 'archived' : 'active';
+            foreach ($ids as $raw_id) {
+                $post_id = intval($raw_id);
+                if (!self::campaign_exists($post_id)) {
+                    $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
+                    continue;
+                }
+                update_post_meta($post_id, 'status', $new_status);
+                self::add_audit_entry($post_id, "campaign.{$action}d", []);
+                do_action("wpsg_campaign_{$action}d", $post_id);
+                $success[] = (string) $post_id;
+            }
         }
 
         self::clear_accessible_campaigns_cache();
@@ -2197,6 +2257,92 @@ class WPSG_REST {
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
 
+    // POST /campaigns/batch/export/binary — P41-EX3: multi-campaign ZIP.
+    public static function batch_export_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 500]
+            );
+        }
+
+        $ids = array_map('intval', (array) $request->get_param('ids'));
+
+        $campaigns_data  = [];
+        $all_media_items = [];
+        $seen_urls       = [];
+        $skipped_ids     = [];
+
+        foreach ($ids as $post_id) {
+            if (!self::campaign_exists($post_id)) {
+                $skipped_ids[] = $post_id;
+                continue;
+            }
+
+            $post     = get_post($post_id);
+            $campaign = self::format_campaign($post);
+            $media    = (array) (get_post_meta($post_id, 'media_items', true) ?: []);
+
+            $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+            $layout_template = $template_id ? WPSG_Layout_Templates::get($template_id) : null;
+
+            $media_references = array_values(array_map(function ($item) {
+                return [
+                    'id'       => $item['id'] ?? '',
+                    'url'      => $item['url'] ?? '',
+                    'title'    => $item['title'] ?? '',
+                    'filename' => WPSG_Export_Engine::get_media_filename($item),
+                ];
+            }, $media));
+
+            $campaigns_data[] = [
+                'campaign'         => $campaign,
+                'layout_template'  => $layout_template,
+                'media_references' => $media_references,
+            ];
+
+            // Deduplicate media items by URL across campaigns.
+            foreach ($media as $item) {
+                $url = $item['url'] ?? '';
+                if ($url && !isset($seen_urls[$url])) {
+                    $seen_urls[$url]   = true;
+                    $all_media_items[] = $item;
+                }
+            }
+        }
+
+        if (empty($campaigns_data)) {
+            return new WP_Error('wpsg_not_found', 'No valid campaigns found for export.', ['status' => 404]);
+        }
+
+        $manifest = wp_json_encode([
+            'version'      => 3,
+            'type'         => 'multi',
+            'exported_at'  => gmdate('c'),
+            'campaigns'    => $campaigns_data,
+        ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
+
+        $job_id = WPSG_Export_Engine::create_job('multi_campaign', $manifest, $all_media_items);
+
+        self::add_audit_entry(0, 'campaign.batch_exported', [
+            'format'       => 'binary',
+            'campaignIds'  => array_map('intval', $ids),
+            'skippedIds'   => $skipped_ids,
+            'mediaCount'   => count($all_media_items),
+            'jobId'        => $job_id,
+        ], [
+            'scope'         => 'system',
+            'summary'       => 'Bulk ZIP export enqueued (' . count($campaigns_data) . ' campaigns, ' . count($all_media_items) . ' media files)',
+            'resource_type' => 'campaign',
+        ]);
+
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
     // GET /export-jobs/{job_id} — poll job status.
     public static function get_export_job($request) {
         $job_id = sanitize_key($request->get_param('job_id'));
@@ -2302,23 +2448,83 @@ class WPSG_REST {
         }
 
         $body = json_decode($manifest_json, true);
-        if (!$body || !isset($body['campaign'])) {
+        if (!is_array($body)) {
             $zip->close();
             return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
         }
 
         $version = intval($body['version'] ?? 0);
-        if ($version !== 2) {
+
+        if ($version === 2) {
+            if (!isset($body['campaign'])) {
+                $zip->close();
+                return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+            }
+            $entry = [
+                'campaign'         => $body['campaign'],
+                'layout_template'  => $body['layout_template'] ?? null,
+                'media_references' => $body['media_references'] ?? [],
+            ];
+            $result = self::import_single_campaign_from_zip($zip, $entry);
+            $zip->close();
+            if (is_wp_error($result)) {
+                return $result;
+            }
+            return new WP_REST_Response(self::format_campaign(get_post($result['id'])), 201);
+
+        } elseif ($version === 3 && ($body['type'] ?? '') === 'multi') {
+            if (!isset($body['campaigns']) || !is_array($body['campaigns'])) {
+                $zip->close();
+                return new WP_Error('wpsg_invalid_manifest', 'Invalid v3 manifest structure', ['status' => 400]);
+            }
+            $created = [];
+            foreach ($body['campaigns'] as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $result = self::import_single_campaign_from_zip($zip, $entry);
+                if (!is_wp_error($result)) {
+                    $created[] = $result;
+                }
+            }
+            $zip->close();
+            if (empty($created)) {
+                return new WP_Error('wpsg_import_failed', 'No campaigns could be imported from the archive.', ['status' => 422]);
+            }
+            self::add_audit_entry(0, 'campaign.batch_imported', [
+                'format'   => 'binary',
+                'imported' => count($created),
+            ], [
+                'summary'        => count($created) . ' campaigns imported from bulk ZIP',
+                'resource_type'  => 'campaign',
+                'resource_id'    => '0',
+                'resource_label' => 'bulk import',
+            ]);
+            self::clear_accessible_campaigns_cache();
+            return new WP_REST_Response(['imported' => $created], 201);
+
+        } else {
             $zip->close();
             return new WP_Error(
                 'wpsg_unsupported_version',
-                'Binary import requires manifest version 2',
+                'Binary import requires manifest version 2 or a v3 multi-campaign archive.',
                 ['status' => 400]
             );
         }
+    }
 
-        // Create the campaign post.
-        $src         = $body['campaign'];
+    /**
+     * Sideload one campaign entry from an open ZipArchive.
+     *
+     * @param ZipArchive $zip   Open archive to read media from.
+     * @param array      $entry Manifest entry: { campaign, layout_template?, media_references[] }.
+     * @return array|WP_Error   ['id' => int, 'title' => string] on success.
+     */
+    private static function import_single_campaign_from_zip(ZipArchive $zip, array $entry) {
+        if (empty($entry['campaign']) || !is_array($entry['campaign'])) {
+            return new WP_Error('wpsg_invalid_entry', 'Manifest entry is missing a valid "campaign" object.', ['status' => 400]);
+        }
+        $src         = $entry['campaign'];
         $title       = sanitize_text_field($src['title'] ?? 'Imported Campaign');
         $description = sanitize_textarea_field($src['description'] ?? '');
 
@@ -2330,11 +2536,9 @@ class WPSG_REST {
         ], true);
 
         if (is_wp_error($post_id)) {
-            $zip->close();
             return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
-        // Apply scalar campaign meta (same as JSON import).
         $meta_map = [
             'visibility'  => 'visibility',
             'tags'        => 'tags',
@@ -2358,23 +2562,22 @@ class WPSG_REST {
             update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
         }
 
-        // Embed layout template if present.
-        $layout_template = $body['layout_template'] ?? null;
-        if ($layout_template && is_array($layout_template)) {
+        $layout_template = is_array($entry['layout_template'] ?? null) ? $entry['layout_template'] : null;
+        if ($layout_template) {
             // Support legacy manifests that used 'title' instead of 'name'.
             if (!isset($layout_template['name']) && isset($layout_template['title'])) {
                 $layout_template['name'] = $layout_template['title'];
             }
-            $created = WPSG_Layout_Templates::create($layout_template);
-            if (!is_wp_error($created)) {
-                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created['id']);
+            $created_tpl = WPSG_Layout_Templates::create($layout_template);
+            if (!is_wp_error($created_tpl)) {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created_tpl['id']);
                 if (!empty($src['layoutBinding'])) {
                     $binding = $src['layoutBinding'];
                     if (is_array($binding)) {
                         array_walk_recursive($binding, function (&$v) {
                             if (is_string($v)) { $v = sanitize_text_field($v); }
                         });
-                        $binding['templateId'] = $created['id'];
+                        $binding['templateId'] = $created_tpl['id'];
                     }
                     update_post_meta($post_id, '_wpsg_layout_binding', $binding);
                 }
@@ -2388,7 +2591,7 @@ class WPSG_REST {
         require_once ABSPATH . 'wp-admin/includes/image.php';
 
         $media_items = [];
-        foreach ((array) ($body['media_references'] ?? []) as $ref) {
+        foreach ((array) ($entry['media_references'] ?? []) as $ref) {
             $filename = sanitize_file_name($ref['filename'] ?? '');
             if (!$filename) {
                 continue;
@@ -2397,6 +2600,24 @@ class WPSG_REST {
             $file_data = $zip->getFromName('media/' . $filename);
             if ($file_data === false) {
                 continue;
+            }
+
+            // Reuse an existing attachment when the file bytes are identical.
+            $md5         = md5($file_data);
+            $existing_id = self::find_attachment_by_md5($md5);
+            if ($existing_id > 0) {
+                $existing_url = wp_get_attachment_url($existing_id);
+                if ($existing_url) {
+                    $media_items[] = [
+                        'id'     => (string) $existing_id,
+                        'url'    => $existing_url,
+                        'title'  => sanitize_text_field($ref['title'] ?? ''),
+                        'type'   => 'image',
+                        'source' => 'upload',
+                        'order'  => 0,
+                    ];
+                    continue;
+                }
             }
 
             $tmp = wp_tempnam($filename);
@@ -2415,6 +2636,8 @@ class WPSG_REST {
                 continue;
             }
 
+            update_post_meta($att_id, '_wpsg_file_md5', $md5);
+
             $media_items[] = [
                 'id'     => (string) $att_id,
                 'url'    => wp_get_attachment_url($att_id),
@@ -2424,8 +2647,6 @@ class WPSG_REST {
                 'order'  => 0,
             ];
         }
-
-        $zip->close();
 
         if (!empty($media_items)) {
             update_post_meta($post_id, 'media_items', $media_items);
@@ -2442,7 +2663,8 @@ class WPSG_REST {
             'resource_label' => $title,
         ]);
         self::clear_accessible_campaigns_cache();
-        return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
+
+        return ['id' => $post_id, 'title' => $title];
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -7263,6 +7485,9 @@ class WPSG_REST {
         }
 
         $entry = WPSG_Overlay_Library::add( [ 'url' => $url, 'name' => $name ] );
+        if ( is_wp_error( $entry ) ) {
+            return new WP_Error( 'wpsg_overlay_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
+        }
         return new WP_REST_Response( $entry, 201 );
     }
 

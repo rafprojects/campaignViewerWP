@@ -6,6 +6,7 @@ const defaults = {
   opened: true,
   isSaving: false,
   onImport: vi.fn(),
+  onImportBinary: vi.fn(),
   onClose: vi.fn(),
 };
 
@@ -34,7 +35,7 @@ describe('CampaignImportModal', () => {
   it('renders the modal with file picker', () => {
     render(<CampaignImportModal {...defaults} />);
     expect(screen.getByText('Import Campaign')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /select .json file/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /select .json or .zip file/i })).toBeInTheDocument();
   });
 
   it('renders nothing when closed', () => {

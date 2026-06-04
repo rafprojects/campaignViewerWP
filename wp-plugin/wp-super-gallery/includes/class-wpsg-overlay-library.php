@@ -4,8 +4,7 @@
  *
  * Manages a campaign-agnostic library of overlay images that can be
  * used across any layout template.  Entries are stored in the
- * `wpsg_overlay_library` WP option as a flat array:
- *   [ { id, url, name, uploadedAt }, … ]
+ * `{prefix}wpsg_overlays` custom table (migrated from wp_options in P41-OL1).
  *
  * Files are uploaded into wp-content/uploads/wpsg-overlays/.
  *
@@ -19,7 +18,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WPSG_Overlay_Library {
 
-    const OPTION_KEY   = 'wpsg_overlay_library';
     const UPLOAD_SUBDIR = 'wpsg-overlays';
 
     // ── Read ────────────────────────────────────────────────────
@@ -30,14 +28,22 @@ class WPSG_Overlay_Library {
      * @return array<int, array{id:string, url:string, name:string, uploadedAt:string}>
      */
     public static function get_all(): array {
-        $raw = get_option( self::OPTION_KEY, [] );
-        if ( ! is_array( $raw ) ) {
+        global $wpdb;
+        $table = WPSG_DB::get_overlays_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $rows = $wpdb->get_results(
+            "SELECT overlay_id, url, name, uploaded_at FROM {$table} ORDER BY uploaded_at DESC",
+            ARRAY_A
+        );
+        if ( ! is_array( $rows ) ) {
             return [];
         }
-        // Newest first.
-        $items = array_values( $raw );
-        usort( $items, fn( $a, $b ) => strcmp( $b['uploadedAt'] ?? '', $a['uploadedAt'] ?? '' ) );
-        return $items;
+        return array_map( fn( $r ) => [
+            'id'         => $r['overlay_id'],
+            'url'        => $r['url'],
+            'name'       => $r['name'],
+            'uploadedAt' => gmdate( 'c', (int) strtotime( $r['uploaded_at'] . ' UTC' ) ),
+        ], $rows );
     }
 
     // ── Write ───────────────────────────────────────────────────
@@ -45,27 +51,36 @@ class WPSG_Overlay_Library {
     /**
      * Add a new overlay entry.
      *
-     * @param  array{url:string, name:string} $data
-     * @return array  The stored overlay record.
+     * @param  array{url:string, name?:string} $data
+     * @return array|WP_Error  The stored overlay record, or WP_Error on DB failure.
      */
-    public static function add( array $data ): array {
-        $all = get_option( self::OPTION_KEY, [] );
-        if ( ! is_array( $all ) ) {
-            $all = [];
+    public static function add( array $data ) {
+        global $wpdb;
+        $table       = WPSG_DB::get_overlays_table();
+        $id          = wp_generate_uuid4();
+        $uploaded_at = gmdate( 'Y-m-d H:i:s' );
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->insert(
+            $table,
+            [
+                'overlay_id'  => $id,
+                'url'         => esc_url_raw( $data['url'] ),
+                'name'        => sanitize_text_field( $data['name'] ?? '' ),
+                'uploaded_at' => $uploaded_at,
+            ],
+            [ '%s', '%s', '%s', '%s' ]
+        );
+        if ( $result === false ) {
+            return new WP_Error( 'wpsg_db_error', 'Failed to save overlay entry.', [ 'status' => 500 ] );
         }
 
-        $id    = wp_generate_uuid4();
-        $entry = [
+        return [
             'id'         => $id,
             'url'        => esc_url_raw( $data['url'] ),
             'name'       => sanitize_text_field( $data['name'] ?? '' ),
-            'uploadedAt' => gmdate( 'c' ),
+            'uploadedAt' => gmdate( 'c', (int) strtotime( $uploaded_at . ' UTC' ) ),
         ];
-
-        $all[ $id ] = $entry;
-        update_option( self::OPTION_KEY, $all, false );
-
-        return $entry;
     }
 
     /**
@@ -75,13 +90,19 @@ class WPSG_Overlay_Library {
      * @return bool  True if found and removed.
      */
     public static function remove( string $id ): bool {
-        $all = get_option( self::OPTION_KEY, [] );
-        if ( ! is_array( $all ) || ! isset( $all[ $id ] ) ) {
+        global $wpdb;
+        $table = WPSG_DB::get_overlays_table();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $entry = $wpdb->get_row(
+            $wpdb->prepare( "SELECT url FROM {$table} WHERE overlay_id = %s", $id ),
+            ARRAY_A
+        );
+        if ( ! $entry ) {
             return false;
         }
 
         // Attempt to delete the physical file.
-        $entry = $all[ $id ];
         if ( ! empty( $entry['url'] ) ) {
             $upload_dir = wp_upload_dir();
             $base_url   = trailingslashit( $upload_dir['baseurl'] );
@@ -101,9 +122,9 @@ class WPSG_Overlay_Library {
             }
         }
 
-        unset( $all[ $id ] );
-        update_option( self::OPTION_KEY, $all, false );
-        return true;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $deleted = $wpdb->delete( $table, [ 'overlay_id' => $id ], [ '%s' ] );
+        return $deleted !== false && $deleted > 0;
     }
 
     // ── File upload helper ──────────────────────────────────────

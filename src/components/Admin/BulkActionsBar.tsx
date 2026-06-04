@@ -1,23 +1,32 @@
 import { Button, Group, Text, Paper, ActionIcon, Tooltip } from '@mantine/core';
-import { IconX, IconArchive, IconArchiveOff } from '@tabler/icons-react';
+import { IconX, IconArchive, IconArchiveOff, IconFileZip, IconTrash } from '@tabler/icons-react';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface BulkActionsBarProps {
   selectedCount: number;
-  /** True if all currently visible campaigns are archived (affects which action is primary). */
-  allSelectedArchived: boolean;
+  /** True if at least one selected campaign is active (not archived). */
+  hasActiveSelected: boolean;
+  /** True if at least one selected campaign is archived. */
+  hasArchivedSelected: boolean;
   isLoading: boolean;
+  isExporting: boolean;
   onArchive: () => void;
   onRestore: () => void;
+  onExport: () => void;
+  onDelete: () => void;
   onClearSelection: () => void;
 }
 
 export function BulkActionsBar({
   selectedCount,
-  allSelectedArchived,
+  hasActiveSelected,
+  hasArchivedSelected,
   isLoading,
+  isExporting,
   onArchive,
   onRestore,
+  onExport,
+  onDelete,
   onClearSelection,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) return null;
@@ -54,7 +63,17 @@ export function BulkActionsBar({
         </Group>
 
         <Group gap="xs" wrap="nowrap">
-          {!allSelectedArchived && (
+          <Button
+            size="xs"
+            color="blue"
+            variant="light"
+            leftSection={<IconFileZip size={14} />}
+            loading={isExporting}
+            onClick={onExport}
+          >
+            Export ZIP
+          </Button>
+          {hasActiveSelected && (
             <Button
               size="xs"
               color="orange"
@@ -66,11 +85,11 @@ export function BulkActionsBar({
               Archive
             </Button>
           )}
-          {allSelectedArchived && (
+          {hasArchivedSelected && (
             <Button
               size="xs"
               color="teal"
-              variant="light"
+              variant={hasActiveSelected ? 'subtle' : 'light'}
               leftSection={<IconArchiveOff size={14} />}
               loading={isLoading}
               onClick={onRestore}
@@ -78,18 +97,16 @@ export function BulkActionsBar({
               Restore
             </Button>
           )}
-          {!allSelectedArchived && (
-            <Button
-              size="xs"
-              color="teal"
-              variant="subtle"
-              leftSection={<IconArchiveOff size={14} />}
-              loading={isLoading}
-              onClick={onRestore}
-            >
-              Restore
-            </Button>
-          )}
+          <Button
+            size="xs"
+            color="red"
+            variant="light"
+            leftSection={<IconTrash size={14} />}
+            loading={isLoading}
+            onClick={onDelete}
+          >
+            Delete
+          </Button>
         </Group>
       </Group>
     </Paper>

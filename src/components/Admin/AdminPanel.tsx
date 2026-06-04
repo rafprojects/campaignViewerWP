@@ -42,6 +42,7 @@ const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').the
 const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal').then((m) => ({ default: m.AdminCampaignArchiveModal })));
 const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal').then((m) => ({ default: m.AdminCampaignRestoreModal })));
 const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
+const AdminCampaignBulkDeleteModal = lazy(() => import('./AdminCampaignBulkDeleteModal').then((m) => ({ default: m.AdminCampaignBulkDeleteModal })));
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
 const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
@@ -424,10 +425,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               isLoading={isLoading}
               error={error}
               campaignsRows={campaignsRows}
-              selectMode={campaignActions.selectMode}
               selectedCount={campaignActions.selectedCampaignIds.size}
               totalCount={campaigns.length}
-              onToggleSelectMode={campaignActions.handleToggleSelectMode}
               onSelectAll={() => campaignActions.handleSelectAll(campaigns.map((c) => String(c.id)))}
               onDeselectAll={campaignActions.handleDeselectAll}
               page={campaignPagination.page}
@@ -436,15 +435,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               onPageChange={setCampaignPage}
             />
           )}
-          {campaignActions.selectMode && campaignActions.selectedCampaignIds.size > 0 && (() => {
+          {campaignActions.selectedCampaignIds.size > 0 && (() => {
             const sel = campaigns.filter((c) => campaignActions.selectedCampaignIds.has(String(c.id)));
             return (
               <BulkActionsBar
                 selectedCount={campaignActions.selectedCampaignIds.size}
-                allSelectedArchived={sel.every((c) => c.status === 'archived')}
+                hasActiveSelected={sel.some((c) => c.status !== 'archived')}
+                hasArchivedSelected={sel.some((c) => c.status === 'archived')}
                 isLoading={campaignActions.isBulkLoading}
+                isExporting={campaignActions.isBulkExporting}
                 onArchive={campaignActions.handleBulkArchive}
                 onRestore={campaignActions.handleBulkRestore}
+                onExport={campaignActions.handleBulkBinaryExport}
+                onDelete={() => campaignActions.setConfirmBulkDelete(true)}
                 onClearSelection={campaignActions.handleDeselectAll}
               />
             );
@@ -604,6 +607,20 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Suspense>
       )}
+      {campaignActions.confirmBulkDelete && (
+        <Suspense fallback={null}>
+          <AdminCampaignBulkDeleteModal
+            opened={campaignActions.confirmBulkDelete}
+            count={campaignActions.selectedCampaignIds.size}
+            loading={campaignActions.isBulkLoading}
+            onClose={() => campaignActions.setConfirmBulkDelete(false)}
+            onConfirm={async (opts) => {
+              campaignActions.setConfirmBulkDelete(false);
+              await campaignActions.handleBulkDelete(opts);
+            }}
+          />
+        </Suspense>
+      )}
       {!!accessState.confirmArchiveCompany && (
         <Suspense fallback={null}>
           <ArchiveCompanyModal
@@ -656,6 +673,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             opened={campaignActions.importModalOpen}
             isSaving={campaignActions.isImporting}
             onImport={campaignActions.handleImportCampaign}
+            onImportBinary={campaignActions.handleImportCampaignBinary}
             onClose={() => campaignActions.setImportModalOpen(false)}
           />
         </Suspense>

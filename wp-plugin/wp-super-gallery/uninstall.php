@@ -69,6 +69,7 @@ $options = [
 	'wpsg_media_refs_backfill_offset',
 	'wpsg_access_requests_migrated',
 	'wpsg_access_request_index',
+	'wpsg_overlays_migrated',
 	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
 ];
 foreach ( $options as $option ) {
@@ -97,6 +98,7 @@ $tables = [
 	$wpdb->prefix . 'wpsg_analytics_events',
 	$wpdb->prefix . 'wpsg_access_requests',
 	$wpdb->prefix . 'wpsg_media_refs',
+	$wpdb->prefix . 'wpsg_overlays',
 ];
 foreach ( $tables as $table ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange

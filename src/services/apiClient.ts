@@ -214,10 +214,11 @@ export class ApiClient extends HttpTransportImpl {
   }
 
   batchCampaigns(
-    action: 'archive' | 'restore',
+    action: 'archive' | 'restore' | 'delete',
     ids: string[],
+    options?: { purgeAnalytics?: boolean },
   ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
-    return this._campaigns.batchCampaigns(action, ids);
+    return this._campaigns.batchCampaigns(action, ids, options);
   }
 
   addCampaignMediaBatch(
@@ -233,6 +234,12 @@ export class ApiClient extends HttpTransportImpl {
 
   importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
     return this._campaigns.importCampaign(payload);
+  }
+
+  importCampaignBinary(
+    file: File,
+  ): Promise<Record<string, unknown> | { imported: Array<{ id: number; title: string }> }> {
+    return this._campaigns.importCampaignBinary(file);
   }
 
   listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
@@ -370,6 +377,12 @@ export class ApiClient extends HttpTransportImpl {
     campaignId: string,
   ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
     return this._export.startCampaignBinaryExport(campaignId);
+  }
+
+  startBulkBinaryExport(
+    ids: string[],
+  ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
+    return this._export.startBulkBinaryExport(ids);
   }
 
   getExportJob(jobId: string): Promise<import('./api/exportApi').ExportJob> {

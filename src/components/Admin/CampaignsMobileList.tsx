@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import {
-  Badge, Box, Button, Card, Center, Checkbox, Group, Loader,
+  Badge, Box, Button, Card, Center, Checkbox, Group, Loader, Menu,
   Pagination, Stack, Text, Tooltip,
 } from '@mantine/core';
 import {
-  IconArchive, IconArchiveOff, IconCopy, IconDownload, IconEdit,
-  IconLayoutGrid, IconTrash,
+  IconArchive, IconArchiveOff, IconChevronDown, IconCopy, IconDownload, IconEdit,
+  IconFileZip, IconLayoutGrid, IconTrash,
 } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
@@ -47,12 +47,13 @@ export function CampaignsMobileList({
   onPageChange,
 }: Props) {
   const {
-    selectMode,
     selectedCampaignIds,
     handleToggleCampaignSelect,
     handleEdit,
     setDuplicateSource,
     handleExportCampaign,
+    handleBinaryExportCampaign,
+    binaryExportingIds,
     setConfirmRestore,
     setConfirmArchive,
     setConfirmDelete,
@@ -82,14 +83,12 @@ export function CampaignsMobileList({
             {/* Title row */}
             <Group gap={6} justify="space-between" wrap="nowrap">
               <Group gap={6} style={{ flex: 1, minWidth: 0 }}>
-                {selectMode && (
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={() => handleToggleCampaignSelect(cid)}
-                    aria-label={`Select ${c.title}`}
-                    size="xs"
-                  />
-                )}
+                <Checkbox
+                  checked={isSelected}
+                  onChange={() => handleToggleCampaignSelect(cid)}
+                  aria-label={`Select ${c.title}`}
+                  size="xs"
+                />
                 <Text fw={700} size="sm" truncate style={{ flex: 1 }}>{c.title}</Text>
                 {hasCampaignGalleryOverrides(c) && (
                   <Tooltip label={`Custom gallery: ${galleryOverrideSummary.join(', ') || 'Nested overrides'}`} withArrow>
@@ -131,11 +130,28 @@ export function CampaignsMobileList({
                   Clone
                 </Button>
               </Tooltip>
-              <Tooltip label="Export as JSON">
-                <Button size="xs" variant="subtle" leftSection={<IconDownload size={12} />} onClick={() => void handleExportCampaign(c)} aria-label={`Export ${c.title}`}>
-                  Export
-                </Button>
-              </Tooltip>
+              <Menu shadow="md" width={210} position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    leftSection={<IconDownload size={12} />}
+                    rightSection={<IconChevronDown size={11} />}
+                    loading={binaryExportingIds.has(cid)}
+                    aria-label={`Export ${c.title}`}
+                  >
+                    Export
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item leftSection={<IconFileZip size={14} />} onClick={() => void handleBinaryExportCampaign(c)}>
+                    Export as ZIP (includes media)
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconDownload size={14} />} onClick={() => void handleExportCampaign(c)}>
+                    Export as JSON (data only)
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               {c.status === 'archived' ? (
                 <Button size="xs" color="teal" leftSection={<IconArchiveOff size={12} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>
                   Restore
@@ -156,9 +172,10 @@ export function CampaignsMobileList({
       );
     });
   }, [
-    campaigns, selectMode, selectedCampaignIds, grantSummary,
+    campaigns, selectedCampaignIds, grantSummary,
     handleToggleCampaignSelect, handleEdit, setDuplicateSource,
-    handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete,
+    handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds,
+    setConfirmRestore, setConfirmArchive, setConfirmDelete,
     restoringIds, archivingIds, deletingIds,
   ]);
 

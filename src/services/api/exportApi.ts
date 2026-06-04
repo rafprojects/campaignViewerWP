@@ -23,6 +23,14 @@ export class ExportApi {
     );
   }
 
+  /** Enqueue a background multi-campaign ZIP export. Returns a single job ID. */
+  startBulkBinaryExport(ids: string[]): Promise<{ jobId: string; status: ExportJobStatus }> {
+    return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
+      '/wp-json/wp-super-gallery/v1/campaigns/batch/export/binary',
+      { ids: ids.map(Number) },
+    );
+  }
+
   /** Poll the status of an export job. */
   getExportJob(jobId: string): Promise<ExportJob> {
     return this.transport.get<ExportJob>(

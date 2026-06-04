@@ -102,13 +102,19 @@ export class CampaignsApi {
   // ── P18-B: Bulk actions ──────────────────────────────────────────────────
 
   batchCampaigns(
-    action: 'archive' | 'restore',
+    action: 'archive' | 'restore' | 'delete',
     ids: string[],
+    options?: { purgeAnalytics?: boolean },
   ): Promise<{ success: string[]; failed: Array<{ id: string; reason: string }> }> {
     return this.transport.post<{
       success: string[];
       failed: Array<{ id: string; reason: string }>;
-    }>('/wp-json/wp-super-gallery/v1/campaigns/batch', { action, ids });
+    }>('/wp-json/wp-super-gallery/v1/campaigns/batch', {
+      action,
+      ids,
+      ...(action === 'delete' ? { confirm: true } : {}),
+      ...(options?.purgeAnalytics ? { purge_analytics: true } : {}),
+    });
   }
 
   addCampaignMediaBatch(
@@ -134,6 +140,16 @@ export class CampaignsApi {
       '/wp-json/wp-super-gallery/v1/campaigns/import',
       payload,
     );
+  }
+
+  importCampaignBinary(
+    file: File,
+  ): Promise<Record<string, unknown> | { imported: Array<{ id: number; title: string }> }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.transport.postForm<
+      Record<string, unknown> | { imported: Array<{ id: number; title: string }> }
+    >('/wp-json/wp-super-gallery/v1/campaigns/import/binary', fd);
   }
 
   // ── P18-H / P28-C: Categories ────────────────────────────────────────────

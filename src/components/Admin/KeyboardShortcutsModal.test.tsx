@@ -41,7 +41,7 @@ describe('KeyboardShortcutsModal', () => {
     expect(screen.getByText(/open keyboard shortcuts help/i)).toBeInTheDocument();
     expect(screen.getByText(/new campaign/i)).toBeInTheDocument();
     expect(screen.getByText(/import campaign/i)).toBeInTheDocument();
-    expect(screen.getByText(/toggle bulk select/i)).toBeInTheDocument();
+    expect(screen.getByText(/select all \/ deselect all/i)).toBeInTheDocument();
   });
 
   it('renders macOS hint text', () => {

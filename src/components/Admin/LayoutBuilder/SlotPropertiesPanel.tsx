@@ -156,6 +156,167 @@ function SectionHeader({ label }: { label: string }) {
 
 setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SlotPropertiesPanel:SectionHeader');
 
+// ── Effects sub-sections ─────────────────────────────────────
+
+type EffectSectionProps = Pick<SlotPropertiesPanelProps, 'slot' | 'onUpdate'>;
+
+function FilterEffectsSection({ slot, onUpdate }: EffectSectionProps) {
+  const fe: SlotFilterEffects = slot.filterEffects ?? {};
+  const setFe = (patch: Partial<SlotFilterEffects>) =>
+    onUpdate({ filterEffects: { ...fe, ...patch } });
+  return (
+    <Stack gap={4}>
+      <PropRow label="Bright">
+        <Slider value={fe.brightness ?? 100} onChange={(v) => setFe({ brightness: v })}
+          min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+      <PropRow label="Contrast">
+        <Slider value={fe.contrast ?? 100} onChange={(v) => setFe({ contrast: v })}
+          min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+      <PropRow label="Saturate">
+        <Slider value={fe.saturate ?? 100} onChange={(v) => setFe({ saturate: v })}
+          min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+      <PropRow label="Blur">
+        <Slider value={fe.blur ?? 0} onChange={(v) => setFe({ blur: v })}
+          min={0} max={20} step={0.5} size="xs" label={(v) => `${v}px`} />
+      </PropRow>
+      <PropRow label="Gray">
+        <Slider value={fe.grayscale ?? 0} onChange={(v) => setFe({ grayscale: v })}
+          min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+      <PropRow label="Sepia">
+        <Slider value={fe.sepia ?? 0} onChange={(v) => setFe({ sepia: v })}
+          min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+      <PropRow label="Hue">
+        <Slider value={fe.hueRotate ?? 0} onChange={(v) => setFe({ hueRotate: v })}
+          min={0} max={360} step={1} size="xs" label={(v) => `${v}°`} />
+      </PropRow>
+      <PropRow label="Invert">
+        <Slider value={fe.invert ?? 0} onChange={(v) => setFe({ invert: v })}
+          min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
+      </PropRow>
+    </Stack>
+  );
+}
+
+function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
+  const sh: SlotShadow = slot.shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
+  const hasShadow = Boolean(slot.shadow);
+  const setSh = (patch: Partial<SlotShadow>) =>
+    onUpdate({ shadow: { ...sh, ...patch } });
+  return (
+    <Stack gap={4}>
+      <PropRow label="Enable">
+        <SegmentedControl
+          size="xs" fullWidth
+          data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
+          value={hasShadow ? 'on' : 'off'}
+          onChange={(v) =>
+            v === 'on' ? onUpdate({ shadow: sh }) : onUpdate({ shadow: undefined })
+          }
+        />
+      </PropRow>
+      {hasShadow && (
+        <>
+          <Group grow gap={6}>
+            <PropRow label="Off X">
+              <NumberInput value={sh.offsetX} onChange={(v) => setSh({ offsetX: Number(v) || 0 })}
+                min={-50} max={50} size="xs" variant="filled" suffix=" px" />
+            </PropRow>
+            <PropRow label="Off Y">
+              <NumberInput value={sh.offsetY} onChange={(v) => setSh({ offsetY: Number(v) || 0 })}
+                min={-50} max={50} size="xs" variant="filled" suffix=" px" />
+            </PropRow>
+          </Group>
+          <PropRow label="Blur">
+            <Slider value={sh.blur} onChange={(v) => setSh({ blur: v })}
+              min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} />
+          </PropRow>
+          <PropRow label="Color">
+            <ColorInput value={sh.color} onChange={(v) => setSh({ color: v })}
+              size="xs" format="rgba" variant="filled" />
+          </PropRow>
+        </>
+      )}
+    </Stack>
+  );
+}
+
+function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
+  const ov: SlotOverlayEffect = slot.overlayEffect ?? { mode: 'none', intensity: 30, onHoverOnly: false };
+  const setOv = (patch: Partial<SlotOverlayEffect>) =>
+    onUpdate({ overlayEffect: { ...ov, ...patch } });
+  return (
+    <Stack gap={4}>
+      <PropRow label="Mode">
+        <SegmentedControl
+          size="xs" fullWidth
+          data={[
+            { label: 'None', value: 'none' },
+            { label: 'Darken', value: 'darken' },
+            { label: 'Lighten', value: 'lighten' },
+          ]}
+          value={ov.mode}
+          onChange={(v) => setOv({ mode: v as SlotOverlayEffect['mode'] })}
+        />
+      </PropRow>
+      {ov.mode !== 'none' && (
+        <>
+          <PropRow label="Intensity">
+            <Slider value={ov.intensity} onChange={(v) => setOv({ intensity: v })}
+              min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
+          </PropRow>
+          <PropRow label="Hover only">
+            <SegmentedControl
+              size="xs" fullWidth
+              data={[{ label: 'Always', value: 'always' }, { label: 'Hover', value: 'hover' }]}
+              value={ov.onHoverOnly ? 'hover' : 'always'}
+              onChange={(v) => setOv({ onHoverOnly: v === 'hover' })}
+            />
+          </PropRow>
+        </>
+      )}
+    </Stack>
+  );
+}
+
+function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
+  const tilt: SlotTiltEffect = slot.tilt ?? { enabled: false, maxAngle: 15, perspective: 1000, resetSpeed: 300 };
+  const setTilt = (patch: Partial<SlotTiltEffect>) =>
+    onUpdate({ tilt: { ...tilt, ...patch } });
+  return (
+    <Stack gap={4}>
+      <PropRow label="Enable">
+        <SegmentedControl
+          size="xs" fullWidth
+          data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
+          value={tilt.enabled ? 'on' : 'off'}
+          onChange={(v) => setTilt({ enabled: v === 'on' })}
+        />
+      </PropRow>
+      {tilt.enabled && (
+        <>
+          <PropRow label="Max °">
+            <Slider value={tilt.maxAngle} onChange={(v) => setTilt({ maxAngle: v })}
+              min={1} max={45} step={1} size="xs" label={(v) => `${v}°`} />
+          </PropRow>
+          <PropRow label="Persp.">
+            <NumberInput value={tilt.perspective} onChange={(v) => setTilt({ perspective: Number(v) || 1000 })}
+              min={200} max={5000} step={50} size="xs" variant="filled" suffix=" px" />
+          </PropRow>
+          <PropRow label="Reset">
+            <NumberInput value={tilt.resetSpeed} onChange={(v) => setTilt({ resetSpeed: Number(v) || 300 })}
+              min={50} max={2000} step={50} size="xs" variant="filled" suffix=" ms" />
+          </PropRow>
+        </>
+      )}
+    </Stack>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export function SlotPropertiesPanel({
@@ -457,91 +618,10 @@ export function SlotPropertiesPanel({
         <Accordion.Panel>
           <Stack gap={4}>
             <SectionHeader label="Filters" />
-            {(() => {
-              const fe: SlotFilterEffects = slot.filterEffects ?? {};
-              const setFe = (patch: Partial<SlotFilterEffects>) =>
-                onUpdate({ filterEffects: { ...fe, ...patch } });
-              return (
-                <Stack gap={4}>
-                  <PropRow label="Bright">
-                    <Slider value={fe.brightness ?? 100} onChange={(v) => setFe({ brightness: v })}
-                      min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                  <PropRow label="Contrast">
-                    <Slider value={fe.contrast ?? 100} onChange={(v) => setFe({ contrast: v })}
-                      min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                  <PropRow label="Saturate">
-                    <Slider value={fe.saturate ?? 100} onChange={(v) => setFe({ saturate: v })}
-                      min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                  <PropRow label="Blur">
-                    <Slider value={fe.blur ?? 0} onChange={(v) => setFe({ blur: v })}
-                      min={0} max={20} step={0.5} size="xs" label={(v) => `${v}px`} />
-                  </PropRow>
-                  <PropRow label="Gray">
-                    <Slider value={fe.grayscale ?? 0} onChange={(v) => setFe({ grayscale: v })}
-                      min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                  <PropRow label="Sepia">
-                    <Slider value={fe.sepia ?? 0} onChange={(v) => setFe({ sepia: v })}
-                      min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                  <PropRow label="Hue">
-                    <Slider value={fe.hueRotate ?? 0} onChange={(v) => setFe({ hueRotate: v })}
-                      min={0} max={360} step={1} size="xs" label={(v) => `${v}°`} />
-                  </PropRow>
-                  <PropRow label="Invert">
-                    <Slider value={fe.invert ?? 0} onChange={(v) => setFe({ invert: v })}
-                      min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
-                  </PropRow>
-                </Stack>
-              );
-            })()}
+            <FilterEffectsSection slot={slot} onUpdate={onUpdate} />
 
             <SectionHeader label="Shadow" />
-            {(() => {
-              const sh: SlotShadow = slot.shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
-              const hasShadow = Boolean(slot.shadow);
-              const setSh = (patch: Partial<SlotShadow>) =>
-                onUpdate({ shadow: { ...sh, ...patch } });
-              return (
-                <Stack gap={4}>
-                  <PropRow label="Enable">
-                    <SegmentedControl
-                      size="xs" fullWidth
-                      data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
-                      value={hasShadow ? 'on' : 'off'}
-                      onChange={(v) =>
-                        v === 'on' ? onUpdate({ shadow: sh }) : onUpdate({ shadow: undefined })
-                      }
-                    />
-                  </PropRow>
-                  {hasShadow && (
-                    <>
-                      <Group grow gap={6}>
-                        <PropRow label="Off X">
-                          <NumberInput value={sh.offsetX} onChange={(v) => setSh({ offsetX: Number(v) || 0 })}
-                            min={-50} max={50} size="xs" variant="filled" suffix=" px" />
-                        </PropRow>
-                        <PropRow label="Off Y">
-                          <NumberInput value={sh.offsetY} onChange={(v) => setSh({ offsetY: Number(v) || 0 })}
-                            min={-50} max={50} size="xs" variant="filled" suffix=" px" />
-                        </PropRow>
-                      </Group>
-                      <PropRow label="Blur">
-                        <Slider value={sh.blur} onChange={(v) => setSh({ blur: v })}
-                          min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} />
-                      </PropRow>
-                      <PropRow label="Color">
-                        <ColorInput value={sh.color} onChange={(v) => setSh({ color: v })}
-                          size="xs" format="rgba" variant="filled" />
-                      </PropRow>
-                    </>
-                  )}
-                </Stack>
-              );
-            })()}
+            <ShadowSection slot={slot} onUpdate={onUpdate} />
 
             <SectionHeader label="Blend" />
             <PropRow label="Mode">
@@ -554,78 +634,10 @@ export function SlotPropertiesPanel({
             </PropRow>
 
             <SectionHeader label="Overlay" />
-            {(() => {
-              const ov: SlotOverlayEffect = slot.overlayEffect ?? { mode: 'none', intensity: 30, onHoverOnly: false };
-              const setOv = (patch: Partial<SlotOverlayEffect>) =>
-                onUpdate({ overlayEffect: { ...ov, ...patch } });
-              return (
-                <Stack gap={4}>
-                  <PropRow label="Mode">
-                    <SegmentedControl
-                      size="xs" fullWidth
-                      data={[
-                        { label: 'None', value: 'none' },
-                        { label: 'Darken', value: 'darken' },
-                        { label: 'Lighten', value: 'lighten' },
-                      ]}
-                      value={ov.mode}
-                      onChange={(v) => setOv({ mode: v as SlotOverlayEffect['mode'] })}
-                    />
-                  </PropRow>
-                  {ov.mode !== 'none' && (
-                    <>
-                      <PropRow label="Intensity">
-                        <Slider value={ov.intensity} onChange={(v) => setOv({ intensity: v })}
-                          min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
-                      </PropRow>
-                      <PropRow label="Hover only">
-                        <SegmentedControl
-                          size="xs" fullWidth
-                          data={[{ label: 'Always', value: 'always' }, { label: 'Hover', value: 'hover' }]}
-                          value={ov.onHoverOnly ? 'hover' : 'always'}
-                          onChange={(v) => setOv({ onHoverOnly: v === 'hover' })}
-                        />
-                      </PropRow>
-                    </>
-                  )}
-                </Stack>
-              );
-            })()}
+            <OverlayEffectSection slot={slot} onUpdate={onUpdate} />
 
             <SectionHeader label="3D Tilt" />
-            {(() => {
-              const tilt: SlotTiltEffect = slot.tilt ?? { enabled: false, maxAngle: 15, perspective: 1000, resetSpeed: 300 };
-              const setTilt = (patch: Partial<SlotTiltEffect>) =>
-                onUpdate({ tilt: { ...tilt, ...patch } });
-              return (
-                <Stack gap={4}>
-                  <PropRow label="Enable">
-                    <SegmentedControl
-                      size="xs" fullWidth
-                      data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
-                      value={tilt.enabled ? 'on' : 'off'}
-                      onChange={(v) => setTilt({ enabled: v === 'on' })}
-                    />
-                  </PropRow>
-                  {tilt.enabled && (
-                    <>
-                      <PropRow label="Max °">
-                        <Slider value={tilt.maxAngle} onChange={(v) => setTilt({ maxAngle: v })}
-                          min={1} max={45} step={1} size="xs" label={(v) => `${v}°`} />
-                      </PropRow>
-                      <PropRow label="Persp.">
-                        <NumberInput value={tilt.perspective} onChange={(v) => setTilt({ perspective: Number(v) || 1000 })}
-                          min={200} max={5000} step={50} size="xs" variant="filled" suffix=" px" />
-                      </PropRow>
-                      <PropRow label="Reset">
-                        <NumberInput value={tilt.resetSpeed} onChange={(v) => setTilt({ resetSpeed: Number(v) || 300 })}
-                          min={50} max={2000} step={50} size="xs" variant="filled" suffix=" ms" />
-                      </PropRow>
-                    </>
-                  )}
-                </Stack>
-              );
-            })()}
+            <TiltEffectSection slot={slot} onUpdate={onUpdate} />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

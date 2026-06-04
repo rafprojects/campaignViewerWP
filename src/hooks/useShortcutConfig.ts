@@ -21,7 +21,7 @@ export const ACTION_DEFAULTS: Record<ShortcutActionId, ShortcutActionDef> = {
   openHelp:    { defaultKey: '?',           label: 'Open keyboard shortcuts help' },
   newCampaign: { defaultKey: 'mod+n',       label: 'New campaign' },
   importJson:  { defaultKey: 'mod+i',       label: 'Import campaign from JSON' },
-  bulkSelect:  { defaultKey: 'mod+shift+a', label: 'Toggle bulk select mode' },
+  bulkSelect:  { defaultKey: 'mod+shift+a', label: 'Select all / deselect all' },
 };
 
 export const ACTION_IDS = Object.keys(ACTION_DEFAULTS) as ShortcutActionId[];

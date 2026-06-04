@@ -1453,8 +1453,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   sessionIdleTimeoutMinutes: 0,
   layoutBuilderScope: 'full',
   galleryConfig: createDefaultGalleryConfig(),
-  // P20-E: Uninstall data preservation
-  preserveDataOnUninstall: false,
+  // P41-UN1: Uninstall data preservation defaults to safe (true)
+  preserveDataOnUninstall: true,
   // D-4: Archive purge safeguards
   archivePurgeDays: 0,
   archivePurgeGraceDays: 30,

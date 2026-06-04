@@ -17,11 +17,13 @@ interface CampaignImportModalProps {
   opened: boolean;
   isSaving: boolean;
   onImport: (payload: CampaignExportPayload) => void;
+  onImportBinary: (file: File) => void;
   onClose: () => void;
 }
 
 interface CampaignImportModalContentProps {
   parsed: CampaignExportPayload | null;
+  zipFile: File | null;
   parseError: string | null;
   isSaving: boolean;
   resetRef: React.MutableRefObject<(() => void) | null>;
@@ -33,6 +35,7 @@ interface CampaignImportModalContentProps {
 
 function CampaignImportModalContent({
   parsed,
+  zipFile,
   parseError,
   isSaving,
   resetRef,
@@ -41,14 +44,15 @@ function CampaignImportModalContent({
   onHandleClose,
   onHandleImport,
 }: CampaignImportModalContentProps) {
+  const hasFile = parsed !== null || zipFile !== null;
   return (
     <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
       <Text size="sm" c="dimmed">
-        Select a <Code>.json</Code> file exported from WP Super Gallery. The campaign will be
-        created as a draft — media references and layout template are imported by value.
+        Select a <Code>.json</Code> or <Code>.zip</Code> file exported from WP Super Gallery.
+        Campaigns will be created as drafts — media and layout templates are imported by value.
       </Text>
 
-      <FileButton resetRef={resetRef} onChange={onHandleFile} accept="application/json,.json">
+      <FileButton resetRef={resetRef} onChange={onHandleFile} accept="application/json,.json,.zip,application/zip">
         {(props) => (
           <Button
             {...props}
@@ -56,7 +60,7 @@ function CampaignImportModalContent({
             leftSection={<IconUpload size={16} />}
             fullWidth
           >
-            {parsed ? 'Change file' : 'Select .json file'}
+            {hasFile ? 'Change file' : 'Select .json or .zip file'}
           </Button>
         )}
       </FileButton>
@@ -76,12 +80,18 @@ function CampaignImportModalContent({
         </Alert>
       )}
 
+      {zipFile && (
+        <Alert color="teal" icon={<IconInfoCircle size={16} />}>
+          Ready to import: <strong>{zipFile.name}</strong>
+        </Alert>
+      )}
+
       <Group {...getWpsgDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
         <Button variant="subtle" onClick={onHandleClose} disabled={isSaving}>
           Cancel
         </Button>
         <Button
-          disabled={!parsed}
+          disabled={!hasFile}
           loading={isSaving}
           onClick={onHandleImport}
           leftSection={<IconUpload size={16} />}
@@ -99,16 +109,25 @@ export function CampaignImportModal({
   opened,
   isSaving,
   onImport,
+  onImportBinary,
   onClose,
 }: CampaignImportModalProps) {
   const [parsed, setParsed] = useState<CampaignExportPayload | null>(null);
+  const [zipFile, setZipFile] = useState<File | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const resetRef = useRef<() => void>(null);
 
   const handleFile = (file: File | null) => {
     setParseError(null);
     setParsed(null);
+    setZipFile(null);
     if (!file) return;
+
+    if (file.name.toLowerCase().endsWith('.zip')) {
+      setZipFile(file);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -137,13 +156,18 @@ export function CampaignImportModal({
 
   const handleClose = () => {
     setParsed(null);
+    setZipFile(null);
     setParseError(null);
     resetRef.current?.();
     onClose();
   };
 
   const handleImport = () => {
-    if (parsed) onImport(parsed);
+    if (zipFile) {
+      onImportBinary(zipFile);
+    } else if (parsed) {
+      onImport(parsed);
+    }
   };
 
   const campaignTitle = parsed
@@ -163,6 +187,7 @@ export function CampaignImportModal({
     >
       <CampaignImportModalContent
         parsed={parsed}
+        zipFile={zipFile}
         parseError={parseError}
         isSaving={isSaving}
         resetRef={resetRef}

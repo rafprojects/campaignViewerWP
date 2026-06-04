@@ -132,6 +132,12 @@ class WPSG_Export_Engine {
             throw new RuntimeException('ext-zip is required for binary export.');
         }
 
+        // wp_tempnam() lives in wp-admin/includes/file.php, which is not
+        // autoloaded in cron/REST contexts.
+        if (!function_exists('wp_tempnam')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
         $upload_dir = wp_upload_dir();
         $export_dir = trailingslashit($upload_dir['basedir']) . 'wpsg-exports/';
         wp_mkdir_p($export_dir);
@@ -179,7 +185,14 @@ class WPSG_Export_Engine {
 
             // Stream the download directly to disk to avoid buffering the full
             // file body in PHP memory (important near the size limit).
-            $response = wp_safe_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp]);
+            // For same-origin URLs (uploads on this WordPress install), respect the
+            // https_local_ssl_verify filter so dev sites with self-signed certs work.
+            $site_host = wp_parse_url( home_url(), PHP_URL_HOST );
+            $item_host = wp_parse_url( $url, PHP_URL_HOST );
+            $sslverify = ( $item_host !== null && $item_host === $site_host )
+                ? (bool) apply_filters( 'https_local_ssl_verify', true )
+                : true;
+            $response = wp_safe_remote_get($url, ['timeout' => 60, 'stream' => true, 'filename' => $tmp, 'sslverify' => $sslverify]);
             if (is_wp_error($response)) {
                 @unlink($tmp); // phpcs:ignore
                 $skipped[] = ['id' => $item['id'] ?? '', 'url' => $url, 'reason' => $response->get_error_message()];

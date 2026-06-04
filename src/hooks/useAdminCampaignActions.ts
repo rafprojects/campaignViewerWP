@@ -28,17 +28,19 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [restoringIds, setRestoringIds] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
-  const [selectMode, setSelectMode] = useState(false);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<string>>(new Set());
   const [isBulkLoading, setIsBulkLoading] = useState(false);
 
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
 
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   const [binaryExportingIds, setBinaryExportingIds] = useState<Set<string>>(new Set());
+  const [isBulkExporting, setIsBulkExporting] = useState(false);
 
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
@@ -97,11 +99,6 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
-  const handleToggleSelectMode = useCallback(() => {
-    setSelectMode((v) => !v);
-    setSelectedCampaignIds(new Set());
-  }, []);
-
   const handleToggleCampaignSelect = useCallback((id: string) => {
     setSelectedCampaignIds((prev) => {
       const next = new Set(prev);
@@ -149,6 +146,25 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       onCampaignsUpdated();
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk action failed') });
+    } finally {
+      setIsBulkLoading(false);
+    }
+  }, [selectedCampaignIds, apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
+  const handleBulkDelete = useCallback(async (opts: { purgeAnalytics: boolean }) => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkLoading(true);
+    try {
+      const result = await apiClient.batchCampaigns('delete', ids, opts);
+      const msg = result.failed.length > 0
+        ? `${result.success.length} deleted, ${result.failed.length} failed`
+        : `${result.success.length} campaign${result.success.length !== 1 ? 's' : ''} deleted`;
+      onNotify({ type: result.failed.length > 0 ? 'error' : 'success', text: msg });
+      setSelectedCampaignIds(new Set());
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk delete failed') });
     } finally {
       setIsBulkLoading(false);
     }
@@ -225,6 +241,39 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify]);
 
+  const handleBulkBinaryExport = useCallback(async () => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkExporting(true);
+    try {
+      const { jobId } = await apiClient.startBulkBinaryExport(ids);
+      onNotify({ type: 'success', text: `Building bulk ZIP export for ${ids.length} campaign${ids.length !== 1 ? 's' : ''} — this may take a moment.` });
+
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) {
+            throw new Error('Export timed out after 5 minutes.');
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+
+        if (job.status === 'failed') {
+          throw new Error(job.error ?? 'Export failed');
+        }
+
+        await apiClient.downloadExportJob(jobId, `campaigns-export-${Date.now()}.zip`);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => {});
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk export failed') });
+    } finally {
+      setIsBulkExporting(false);
+    }
+  }, [apiClient, onNotify, selectedCampaignIds]);
+
   const handleImportCampaign = useCallback(async (payload: CampaignExportPayload) => {
     setIsImporting(true);
     try {
@@ -241,16 +290,42 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
+  const handleImportCampaignBinary = useCallback(async (file: File) => {
+    setIsImporting(true);
+    try {
+      const result = await apiClient.importCampaignBinary(file);
+      if ('imported' in result && Array.isArray(result.imported)) {
+        const n = result.imported.length;
+        onNotify({ type: 'success', text: `${n} campaign${n !== 1 ? 's' : ''} imported as drafts` });
+      } else {
+        const title = String((result as Record<string, unknown>).title ?? 'Campaign');
+        onNotify({ type: 'success', text: `"${title}" imported as draft` });
+      }
+      setImportModalOpen(false);
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Import failed') });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
   const { effectiveMap } = shortcutConfig;
   const hotkeyHandler = useMemo(
     () => getHotkeyHandler([
       [effectiveMap.openHelp,    () => setShortcutHelpOpen(true)],
       [effectiveMap.newCampaign, () => { if (!createModalOpen) handleCreate(); }],
       [effectiveMap.importJson,  () => setImportModalOpen(true)],
-      [effectiveMap.bulkSelect,  () => handleToggleSelectMode()],
+      [effectiveMap.bulkSelect,  () => {
+        if (selectedCampaignIds.size > 0) {
+          handleDeselectAll();
+        } else {
+          handleSelectAll(_campaigns.map((c) => String(c.id)));
+        }
+      }],
     ]),
-     
-    [effectiveMap.openHelp, effectiveMap.newCampaign, effectiveMap.importJson, effectiveMap.bulkSelect, createModalOpen, handleCreate, handleToggleSelectMode],
+    [effectiveMap.openHelp, effectiveMap.newCampaign, effectiveMap.importJson, effectiveMap.bulkSelect, createModalOpen, handleCreate, handleSelectAll, handleDeselectAll, selectedCampaignIds, _campaigns],
   );
 
   return {
@@ -269,9 +344,9 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     restoringIds,
     deletingIds,
     // Bulk selection
-    selectMode,
     selectedCampaignIds,
     isBulkLoading,
+    isBulkExporting,
     // Duplicate
     duplicateSource,
     setDuplicateSource,
@@ -291,16 +366,20 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     archiveCampaign,
     restoreCampaign,
     deleteCampaign,
-    handleToggleSelectMode,
     handleToggleCampaignSelect,
     handleSelectAll,
     handleDeselectAll,
     handleBulkArchive,
     handleBulkRestore,
+    handleBulkDelete,
+    confirmBulkDelete,
+    setConfirmBulkDelete,
     handleDuplicateCampaign,
     handleExportCampaign,
     handleBinaryExportCampaign,
+    handleBulkBinaryExport,
     handleImportCampaign,
+    handleImportCampaignBinary,
   };
 }
 

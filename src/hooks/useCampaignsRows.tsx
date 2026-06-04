@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select } from '@mantine/core';
+import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select, Menu } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconCopy, IconDownload, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash } from '@tabler/icons-react';
+import { IconEdit, IconCopy, IconDownload, IconFileZip, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash, IconChevronDown } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import { useAllCompanies, usePatchCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
@@ -46,9 +46,10 @@ interface Options {
 
 export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient }: Options) {
   const {
-    selectMode, selectedCampaignIds,
+    selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
     setDuplicateSource, handleExportCampaign,
+    handleBinaryExportCampaign, binaryExportingIds,
     setConfirmRestore, setConfirmArchive, setConfirmDelete,
     restoringIds, archivingIds, deletingIds,
   } = campaignActions;
@@ -66,15 +67,13 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
 
       return (
         <Table.Tr key={c.id} data-selected={isSelected || undefined}>
-          {selectMode && (
-            <Table.Td w={36}>
-              <Checkbox
-                checked={isSelected}
-                onChange={() => handleToggleCampaignSelect(cid)}
-                aria-label={`Select ${c.title}`}
-              />
-            </Table.Td>
-          )}
+          <Table.Td w={36}>
+            <Checkbox
+              checked={isSelected}
+              onChange={() => handleToggleCampaignSelect(cid)}
+              aria-label={`Select ${c.title}`}
+            />
+          </Table.Td>
           <Table.Td>
             <Box>
               <Group gap={6}>
@@ -177,9 +176,28 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
               <Tooltip label="Clone campaign">
                 <Button variant="subtle" size="xs" leftSection={<IconCopy size={14} />} onClick={() => setDuplicateSource(c)} aria-label={`Duplicate ${c.title}`}>Clone</Button>
               </Tooltip>
-              <Tooltip label="Export campaign as JSON">
-                <Button variant="subtle" size="xs" leftSection={<IconDownload size={14} />} onClick={() => void handleExportCampaign(c)} aria-label={`Export ${c.title}`}>Export</Button>
-              </Tooltip>
+              <Menu shadow="md" width={210} position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Button
+                    variant="subtle"
+                    size="xs"
+                    leftSection={<IconDownload size={14} />}
+                    rightSection={<IconChevronDown size={12} />}
+                    loading={binaryExportingIds.has(cid)}
+                    aria-label={`Export ${c.title}`}
+                  >
+                    Export
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item leftSection={<IconFileZip size={14} />} onClick={() => void handleBinaryExportCampaign(c)}>
+                    Export as ZIP (includes media)
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconDownload size={14} />} onClick={() => void handleExportCampaign(c)}>
+                    Export as JSON (data only)
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               {c.status === 'archived' ? (
                 <Button color="teal" size="xs" leftSection={<IconArchiveOff size={14} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>Restore</Button>
               ) : (
@@ -193,5 +211,5 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
         </Table.Tr>
       );
     });
-  }, [campaigns, selectMode, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }
