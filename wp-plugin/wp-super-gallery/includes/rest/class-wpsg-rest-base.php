@@ -790,6 +790,144 @@ abstract class WPSG_REST_Base {
         return implode(':', $groups);
     }
 
+    // ── Campaign formatting ───────────────────────────────────────────────────
+    // Shared by WPSG_Campaign_Controller, WPSG_Export_Controller, and any future
+    // controller that needs to serialise a campaign post into a REST response.
+
+    private static function meta_to_iso8601($post_id, $meta_key) {
+        $value = (string) get_post_meta($post_id, $meta_key, true);
+        if ($value === '') {
+            return '';
+        }
+        $ts = strtotime($value . ' UTC');
+        return $ts !== false ? gmdate('c', $ts) : '';
+    }
+
+    protected static function format_campaign($post) {
+        $company_term = self::get_company_term($post->ID);
+        $company_id = $company_term ? $company_term->slug : '';
+        $thumbnail_id = get_post_thumbnail_id($post->ID);
+        $thumbnail_url = $thumbnail_id ? wp_get_attachment_url($thumbnail_id) : '';
+
+        return [
+            'id' => (string) $post->ID,
+            'companyId' => $company_id,
+            'companyName' => $company_term ? $company_term->name : '',
+            'title' => $post->post_title,
+            'description' => $post->post_content,
+            'thumbnail' => $thumbnail_url,
+            'coverImage' => (string) get_post_meta($post->ID, 'cover_image', true),
+            'status' => (string) get_post_meta($post->ID, 'status', true) ?: 'draft',
+            'visibility' => (string) get_post_meta($post->ID, 'visibility', true) ?: 'private',
+            'tags' => get_post_meta($post->ID, 'tags', true) ?: [],
+            'categories' => self::get_campaign_category_ids($post->ID),
+            'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
+            'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
+            'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
+            'layoutBinding' => get_post_meta($post->ID, '_wpsg_layout_binding', true) ?: null,
+            'galleryOverrides' => self::get_campaign_gallery_overrides($post->ID),
+            'createdAt' => get_post_time('c', true, $post),
+            'updatedAt' => get_post_modified_time('c', true, $post),
+        ];
+    }
+
+    private static function get_campaign_category_names($post_id) {
+        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'names']);
+        return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
+    }
+
+    private static function get_campaign_category_ids($post_id) {
+        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
+        return is_array($terms) && !is_wp_error($terms) ? array_values(array_map('strval', $terms)) : [];
+    }
+
+    private static function get_campaign_gallery_overrides($post_id) {
+        $raw = get_post_meta($post_id, '_wpsg_gallery_overrides', true);
+        $decoded = null;
+
+        if (is_array($raw)) {
+            $decoded = $raw;
+        } elseif (is_string($raw) && $raw !== '') {
+            $candidate = json_decode($raw, true);
+            $decoded = is_array($candidate) ? $candidate : null;
+        }
+
+        return self::promote_campaign_gallery_overrides($decoded);
+    }
+
+    public static function promote_campaign_gallery_overrides($gallery_overrides) {
+        $sanitized = WPSG_Settings_Sanitizer::sanitize_gallery_overrides($gallery_overrides);
+        return !empty($sanitized) ? $sanitized : null;
+    }
+
+    // ── Audit ─────────────────────────────────────────────────────────────────
+    // Shared by all controllers that write audit log entries.
+
+    public static function add_audit_entry($post_id, $action, $details = [], array $ctx = []) {
+        // Back-compat: legacy callers (e.g. WP-CLI) pass source inside $details.
+        if (!isset($ctx['source']) && isset($details['source']) && is_string($details['source'])) {
+            $ctx['source'] = $details['source'];
+            unset($details['source']);
+        }
+        $user = wp_get_current_user();
+        WPSG_DB::insert_audit_entry([
+            'campaign_id'    => intval($post_id),
+            'action'         => $action,
+            'actor_id'       => $user->ID ?? 0,
+            'actor_login'    => $user->user_login ?? '',
+            'details'        => self::sanitize_audit_details($details),
+            'created_at'     => gmdate('Y-m-d H:i:s'),
+            'severity'       => $ctx['severity'] ?? 'info',
+            'scope'          => $ctx['scope'] ?? 'campaign',
+            'summary'        => $ctx['summary'] ?? '',
+            'resource_type'  => $ctx['resource_type'] ?? '',
+            'resource_id'    => $ctx['resource_id'] ?? '',
+            'resource_label' => $ctx['resource_label'] ?? '',
+            'source'         => $ctx['source'] ?? 'rest',
+        ]);
+    }
+
+    private static function sanitize_audit_details($details, int $depth = 0) {
+        if (!is_array($details)) {
+            return [];
+        }
+
+        // Cap nesting depth to prevent stack overflow from crafted payloads.
+        if ($depth > 5) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($details as $key => $value) {
+            $safe_key = sanitize_text_field($key);
+            if (is_array($value)) {
+                $sanitized[$safe_key] = self::sanitize_audit_details($value, $depth + 1);
+            } elseif (is_numeric($value)) {
+                $sanitized[$safe_key] = $value + 0;
+            } elseif (is_bool($value)) {
+                $sanitized[$safe_key] = (bool) $value;
+            } elseif (is_string($value)) {
+                $sanitized[$safe_key] = sanitize_text_field($value);
+            } else {
+                $sanitized[$safe_key] = '';
+            }
+        }
+        return $sanitized;
+    }
+
+    // ── Media deduplication ───────────────────────────────────────────────────
+    // Shared by WPSG_Export_Controller (binary import) and WPSG_Media_Controller
+    // (single-file upload).
+
+    protected static function find_attachment_by_md5(string $md5): int {
+        global $wpdb;
+        $id = $wpdb->get_var($wpdb->prepare(
+            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpsg_file_md5' AND meta_value = %s LIMIT 1",
+            $md5
+        ));
+        return $id ? intval($id) : 0;
+    }
+
     // ── Logging ───────────────────────────────────────────────────────────────
 
     protected static function log_slow_rest($label, $start_time, $context = []) {
