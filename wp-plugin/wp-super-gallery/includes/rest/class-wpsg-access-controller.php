@@ -1084,21 +1084,6 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         return array_values($filtered);
     }
 
-    /**
-     * Write a canonical audit entry.
-     *
-     * @param int   $post_id Campaign post ID (0 for system-scope events).
-     * @param string $action  Dot-namespaced event key.
-     * @param array  $details Arbitrary context payload.
-     * @param array  $ctx     P40-CT1 canonical fields:
-     *   severity       string  'info'|'warning'|'error'  (default 'info')
-     *   scope          string  'campaign'|'system'        (default 'campaign')
-     *   summary        string  Human-readable summary     (default '')
-     *   resource_type  string  Resource category          (default '')
-     *   resource_id    string  Resource identifier        (default '')
-     *   resource_label string  Human-readable resource    (default '')
-     *   source         string  Origin layer               (default 'rest')
-
     public static function access_summary($request) {
         global $wpdb;
 
