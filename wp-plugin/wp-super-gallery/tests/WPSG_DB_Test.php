@@ -16,9 +16,11 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_analytics_events");
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_media_refs");
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_access_requests");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_overlays");
         delete_option('wpsg_db_version');
         delete_option('wpsg_media_refs_backfilled');
         delete_option('wpsg_access_requests_migrated');
+        delete_option('wpsg_overlays_migrated');
         delete_option(WPSG_Settings::OPTION_NAME);
         parent::tearDown();
     }
@@ -42,6 +44,10 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         // Access requests table should exist.
         $ar = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_access_requests'");
         $this->assertNotNull($ar);
+
+        // Overlays table should exist.
+        $ol = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_overlays'");
+        $this->assertNotNull($ol);
     }
 
     public function test_maybe_upgrade_is_idempotent() {

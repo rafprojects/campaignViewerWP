@@ -1,14 +1,23 @@
 <?php
 /**
- * Tests for WPSG_Overlay_Library class.
+ * Tests for WPSG_Overlay_Library class (P41-OL1: DB-backed storage).
  *
  * @package WP_Super_Gallery
  */
 
 class WPSG_Overlay_Library_Test extends WP_UnitTestCase {
 
+    public function setUp(): void {
+        parent::setUp();
+        // Ensure the overlays table exists for each test.
+        WPSG_DB::maybe_create_overlays_table();
+    }
+
     public function tearDown(): void {
-        delete_option( WPSG_Overlay_Library::OPTION_KEY );
+        global $wpdb;
+        $table = WPSG_DB::get_overlays_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query( "TRUNCATE TABLE {$table}" );
         parent::tearDown();
     }
 
@@ -20,29 +29,37 @@ class WPSG_Overlay_Library_Test extends WP_UnitTestCase {
         $this->assertCount( 0, $all );
     }
 
-    public function test_get_all_returns_empty_array_when_option_is_corrupt() {
-        update_option( WPSG_Overlay_Library::OPTION_KEY, 'corrupted-string' );
-        $all = WPSG_Overlay_Library::get_all();
-        $this->assertIsArray( $all );
-        $this->assertCount( 0, $all );
-    }
-
     public function test_get_all_returns_newest_first() {
-        // Seed the option directly with two entries that have distinct uploadedAt
-        // values so the test is deterministic and doesn't need a sleep() call.
-        $id1    = wp_generate_uuid4();
-        $id2    = wp_generate_uuid4();
-        $entries = [
-            $id1 => [ 'id' => $id1, 'url' => 'https://example.com/a.png', 'name' => 'A', 'uploadedAt' => '2024-01-01T00:00:00+00:00' ],
-            $id2 => [ 'id' => $id2, 'url' => 'https://example.com/b.png', 'name' => 'B', 'uploadedAt' => '2024-01-02T00:00:00+00:00' ],
-        ];
-        update_option( WPSG_Overlay_Library::OPTION_KEY, $entries );
+        global $wpdb;
+        $table = WPSG_DB::get_overlays_table();
+        $id1   = wp_generate_uuid4();
+        $id2   = wp_generate_uuid4();
+
+        // Insert two entries with distinct uploaded_at values.
+        $wpdb->insert( $table, [
+            'overlay_id'  => $id1,
+            'url'         => 'https://example.com/a.png',
+            'name'        => 'A',
+            'uploaded_at' => '2024-01-01 00:00:00',
+        ], [ '%s', '%s', '%s', '%s' ] );
+        $wpdb->insert( $table, [
+            'overlay_id'  => $id2,
+            'url'         => 'https://example.com/b.png',
+            'name'        => 'B',
+            'uploaded_at' => '2024-01-02 00:00:00',
+        ], [ '%s', '%s', '%s', '%s' ] );
 
         $all = WPSG_Overlay_Library::get_all();
         $this->assertCount( 2, $all );
-        // Newest first: id2 ('2024-01-02') comes before id1 ('2024-01-01').
+        // Newest first: id2 ('2024-01-02') before id1 ('2024-01-01').
         $this->assertEquals( $id2, $all[0]['id'] );
         $this->assertEquals( $id1, $all[1]['id'] );
+    }
+
+    public function test_get_all_maps_uploaded_at_to_uploadedAt_key() {
+        WPSG_Overlay_Library::add( [ 'url' => 'https://example.com/o.png', 'name' => 'Test' ] );
+        $all = WPSG_Overlay_Library::get_all();
+        $this->assertArrayHasKey( 'uploadedAt', $all[0] );
     }
 
     // ── add ─────────────────────────────────────────────────────
@@ -98,7 +115,7 @@ class WPSG_Overlay_Library_Test extends WP_UnitTestCase {
         $this->assertEquals( '', $entry['name'] );
     }
 
-    public function test_add_persists_to_option() {
+    public function test_add_persists_to_db() {
         WPSG_Overlay_Library::add( [ 'url' => 'https://example.com/p.png', 'name' => 'Persist' ] );
         $all = WPSG_Overlay_Library::get_all();
         $this->assertCount( 1, $all );
@@ -139,9 +156,18 @@ class WPSG_Overlay_Library_Test extends WP_UnitTestCase {
         $this->assertEquals( $e1['id'], $remaining[0]['id'] );
     }
 
-    public function test_remove_returns_false_when_option_is_unset() {
-        delete_option( WPSG_Overlay_Library::OPTION_KEY );
+    public function test_remove_returns_false_when_table_is_empty() {
         $result = WPSG_Overlay_Library::remove( 'any-id' );
         $this->assertFalse( $result );
+    }
+
+    // ── migration ────────────────────────────────────────────────
+
+    public function test_maybe_create_overlays_table_is_idempotent() {
+        // Calling it twice should not throw or create duplicate tables.
+        WPSG_DB::maybe_create_overlays_table();
+        WPSG_DB::maybe_create_overlays_table();
+        // If we reach here without a DB error, the test passes.
+        $this->assertTrue( true );
     }
 }

@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '9';
+    const DB_VERSION = '10';
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -19,6 +19,7 @@ class WPSG_DB {
         self::maybe_create_access_requests_table();
         self::maybe_create_audit_log_table();
         self::maybe_upgrade_audit_log_v9();
+        self::maybe_create_overlays_table();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -595,6 +596,67 @@ class WPSG_DB {
      * because it is the first of the new columns; if it exists the full
      * migration has already run.
      */
+    // ── P41-OL1: Overlay library table ─────────────────────────────────────
+
+    public static function maybe_create_overlays_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_overlays_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            overlay_id  VARCHAR(36)   NOT NULL,
+            url         VARCHAR(2083) NOT NULL DEFAULT '',
+            name        VARCHAR(255)  NOT NULL DEFAULT '',
+            uploaded_at DATETIME      NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY overlay_id (overlay_id),
+            KEY uploaded_at (uploaded_at)
+        ) {$charset};";
+
+        dbDelta($sql);
+
+        if ( ! get_option( 'wpsg_overlays_migrated' ) ) {
+            self::migrate_overlays_from_options();
+            update_option( 'wpsg_overlays_migrated', '1' );
+        }
+    }
+
+    private static function migrate_overlays_from_options(): void {
+        global $wpdb;
+        $table = self::get_overlays_table();
+        $raw   = get_option( 'wpsg_overlay_library', [] );
+        if ( ! is_array( $raw ) || empty( $raw ) ) {
+            return;
+        }
+        foreach ( $raw as $entry ) {
+            if ( ! isset( $entry['id'] ) ) {
+                continue;
+            }
+            $uploaded_at = isset( $entry['uploadedAt'] )
+                ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $entry['uploadedAt'] ) )
+                : gmdate( 'Y-m-d H:i:s' );
+            $wpdb->insert(
+                $table,
+                [
+                    'overlay_id'  => $entry['id'],
+                    'url'         => esc_url_raw( $entry['url'] ?? '' ),
+                    'name'        => sanitize_text_field( $entry['name'] ?? '' ),
+                    'uploaded_at' => $uploaded_at,
+                ],
+                [ '%s', '%s', '%s', '%s' ]
+            );
+        }
+        delete_option( 'wpsg_overlay_library' );
+    }
+
+    public static function get_overlays_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_overlays';
+    }
+
     private static function maybe_upgrade_audit_log_v9(): void {
         global $wpdb;
         $table = self::get_audit_log_table();

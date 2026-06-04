@@ -24,6 +24,9 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
 
         // Ensure CPT is registered.
         WPSG_CPT::register();
+
+        // Ensure overlay library table exists (P41-OL1).
+        WPSG_DB::maybe_create_overlays_table();
     }
 
     private function create_campaign(string $title = 'Test Campaign', string $status = 'active'): int {

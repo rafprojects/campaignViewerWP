@@ -350,12 +350,6 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
                   min={0}
                   max={730}
                 />
-                <Switch
-                  label={tooltipLabel('Preserve data on plugin removal', 'preserveDataOnUninstall')}
-                  description="When enabled, all campaigns, templates, analytics, and uploaded files are kept if you uninstall the plugin."
-                  checked={settings.preserveDataOnUninstall ?? false}
-                  onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
-                />
               </Stack>
             ) : null}
           </Accordion.Panel>
@@ -415,6 +409,29 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
                     )}
                   </>
                 )}
+              </Stack>
+            ) : null}
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value="danger-zone">
+          <Accordion.Control>
+            <Text c="red" size="sm" fw={600}>Danger Zone</Text>
+          </Accordion.Control>
+          <Accordion.Panel>
+            {mounted.has('danger-zone') ? (
+              <Stack gap="md">
+                <Alert color="red" title="Irreversible data deletion">
+                  When preservation is disabled, deleting this plugin permanently removes all
+                  campaigns, layout templates, overlay library, analytics events, access grants,
+                  and uploaded thumbnail files. This cannot be undone.
+                </Alert>
+                <Switch
+                  label={tooltipLabel('Preserve data on plugin removal', 'preserveDataOnUninstall')}
+                  description="When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
+                  checked={settings.preserveDataOnUninstall ?? true}
+                  onChange={(event) => updateSetting('preserveDataOnUninstall', event.currentTarget.checked)}
+                />
               </Stack>
             ) : null}
           </Accordion.Panel>

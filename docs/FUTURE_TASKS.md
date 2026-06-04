@@ -252,17 +252,13 @@ Add CORS allowed-origins setting and reject wildcard with credentials. Only affe
 
 LOE: Medium (4-6 hours) | Impact: Low — standard WP shortcode deployments unaffected; meaningful only for standalone SPA deployments
 
-**D-2: Migrate Overlay Library from wp_options to Custom Table**
-Files: `class-wpsg-overlay-library.php`, `class-wpsg-db.php`, `uninstall.php`
-Move overlay entries out of single serialized wp_options row. Problem at scale (hundreds of overlays). Corrupted update_option could lose entire library.
-LOE: Large (8-12 hours) | Impact: Low-Medium
+~~**D-2: Migrate Overlay Library from wp_options to Custom Table**~~ → **Complete (P41-OL1)**
+Overlay entries now stored in `{prefix}wpsg_overlays` custom table with transparent one-time migration. `DB_VERSION` bumped to `'10'`.
 
-**D-5: Pre-Uninstall Export and Confirmation Gate**
-Files: `uninstall.php`, `class-wpsg-settings.php`
-Add one-click "Export All" and timed confirmation before uninstall data purge. Default preserves data — low risk, severe consequences when disabled.
-LOE: Medium (4-6 hours) | Impact: Low
+~~**D-5: Pre-Uninstall Confirmation Gate**~~ → **Complete (P41-UN1)**
+`preserveDataOnUninstall` now defaults to `true`. Setting moved to a "Danger Zone" accordion section with a red Alert. UI change only — uninstall.php already gates on the setting.
 
-**D-7: Decompose Monolithic REST Class into Domain Controllers**
+**D-7: Decompose Monolithic REST Class into Domain Controllers** → *Targeted: Phase 42*
 Files: `class-wpsg-rest.php` → 8+ new files
 Split the still-monolithic `WPSG_REST` class. Current test coverage is strong; this remains a DX/maintainability refactor rather than a user-facing gap.
 LOE: X-Large (16-24 hours) | Impact: Low (DX only)
@@ -294,10 +290,8 @@ Files: `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx`
 Replace inline `<style>` with useInsertionEffect/adoptedStyleSheets. Works correctly inside Shadow DOM today.
 LOE: Low (1-2 hours) | Impact: Low
 
-**RD-15: SlotPropertiesPanel IIFE Extraction**
-Files: `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx`
-Extract IIFEs into named sub-components. Readability improvement.
-LOE: Low (1-2 hours) | Impact: Low
+~~**RD-15: SlotPropertiesPanel IIFE Extraction**~~ → **Complete (P41-RD15)**
+Four effect section IIFEs extracted into named React sub-components (`FilterEffectsSection`, `ShadowSection`, `OverlayEffectSection`, `TiltEffectSection`).
 
 **RD-17: JWT Token Refresh**
 Files: `src/services/apiClient.ts`, `src/hooks/useAuth.ts`
@@ -374,3 +368,5 @@ When promoting future tasks to an active phase:
 *Updated: June 3, 2026 (P40-QA1) — Reconciled audit-domain backlog against Phase 40 outcome. "Audit Log Binary Export" (Campaign Management section) remains correctly deferred — `WPSG_Export_Engine` exists but the compliance use case is not yet active enough to justify promotion. No other audit-domain items require movement or promotion.*
 
 *Updated: June 3, 2026 (P41-FT1) — Updated "Alignment Variants" (Builder section): P30-K (alignment spike) and P30-G (nested group hierarchy) are both complete as of Phase 30; removed the blocking-dependency language and marked the item as unblocked.*
+
+*Updated: June 3, 2026 (P41-OL1/UN1/RD15) — D-2 (Overlay Library DB migration), D-5 (Pre-uninstall confirmation gate), and RD-15 (SlotPropertiesPanel IIFE extraction) marked complete; D-7 targeted for Phase 42.*

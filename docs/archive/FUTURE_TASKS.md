@@ -162,45 +162,13 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 ## Media Management
 
-Phase-owned follow-on in this area: advanced media sorting now lives in [PHASE34_REPORT.md](../PHASE34_REPORT.md). The remaining backlog item here is near-duplicate detection.
-
-### Near-Duplicate Detection (pHash Follow-Up)
-
-**Context:** Phase 28-N already ships MD5-based exact duplicate detection and duplicate-response handling during upload. The remaining gap is *near*-duplicate detection for visually identical but not byte-identical images.
-
-**What remains:**
-- Compute a perceptual hash (pHash) of uploaded images serverside using GD-compatible tooling.
-- Compare against a pHash index for existing attachments.
-- When the Hamming distance is below a configured threshold, show a side-by-side warning and offer to reuse the existing asset.
-
-**Open questions:**
-- Q1: Is pHash computation feasible in PHP without a native extension? The `jenssegers/imagehash` Composer package is a candidate, but its GD compatibility and performance on large images need validation.
-- Q2: Should near-duplicate detection run synchronously during upload or as a secondary post-upload check?
-- Q3: What Hamming distance threshold should count as a near-duplicate, and should it be configurable?
-
-**Effort:** Medium | **Impact:** Low-Medium
+Nothing yet
 
 ---
 
 ## Infrastructure & Performance
 
-Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](../PHASE32_REPORT.md). The remaining backlog item here is deployment-scale object-cache guidance.
-
-### Redis / Memcached Object Cache
-
-**Context:** WP Super Gallery relies on WP's default database-backed object cache. High-traffic gallery embeds with many concurrent anonymous visitors hit the DB on every `get_option()` call. This is adequate for most deployments but becomes a bottleneck above approximately 500 concurrent users.
-
-**What it would take:**
-- Document how to configure WP's object cache drop-in with Redis or Memcached.
-- Add a `WPSG_DB::warm_cache()` utility that pre-loads frequently-read options on `init`.
-- Admin health screen: a "Cache" section showing hit/miss rates via `WP_Object_Cache::stats()`.
-- Eviction guidance: gallery settings suit a long TTL (hours); access grant lists need a short TTL (seconds–minutes) so revocations take effect promptly.
-
-**Open questions:**
-- Q1: Should `WPSG_REST::check_access()` ever bypass the object cache for real-time access control checks? (Yes — access grants must not be stale by more than the cache TTL, which must be configurable.)
-- Q2: Is there a network security constraint preventing some WP hosts from running Redis? (Yes — document APCu as an alternative for single-server setups.)
-
-**Effort:** Medium | **Impact:** Medium — significant only for high-traffic deployments
+Nothing yet
 
 ---
 
@@ -254,25 +222,6 @@ Phase-owned follow-on in this area: structured server-side logging now lives in 
 
 ---
 
-### Webhook Support for Campaign Events
-
-**Context:** Campaign state changes (created, archived, media added, access granted) could trigger webhooks to external services (Zapier, Slack, CRM systems), enabling automation.
-
-**Proposed events:**
-- `campaign.created`, `campaign.archived`, `campaign.restored`, `campaign.deleted`
-- `media.added`, `media.removed`
-- `access.granted`, `access.revoked`
-- `analytics.milestone` (e.g. N views — configurable threshold)
-
-**Open questions:**
-- Q1: Should webhooks be configured per-event-type or per-URL (one URL receives all events)? Per-URL is simpler to implement; per-event is more useful.
-- Q2: Delivery guarantees: should failed webhook deliveries be retried? If so, what is the retry schedule and max-attempt count?
-- Q3: Security: webhook payloads should be signed (HMAC-SHA256 header) so the receiver can verify origin. How is the signing secret generated and rotated?
-
-**Effort:** Medium-High | **Impact:** Medium — primarily for automation-heavy workflows
-
----
-
 ### GraphQL API Alternative
 
 **Context:** The REST API is adequate for the admin SPA but is verbose for external integrations that need only specific fields. A GraphQL endpoint allows consumers to request exactly the data they need.
@@ -292,14 +241,6 @@ Items below were triaged from the PHP and React implementation review deferred t
 Easy/ASAP items were handled separately — see ASAP_TASKS.md and the implementation notes in the source review docs.
 
 Follow-up audit on 2026-05-19 found no additional phase-worthy tracks here beyond the work already promoted into Phases 32-34. The remaining deferred items are retained as long-tail reference material only: they are either DX-only cleanups, blocked by missing product demand or dependencies, or tied to scale/deployment scenarios that are not yet active enough to justify promotion.
-
-### Already Addressed (Removed from Active Deferred Review)
-
-| Item | Current code status | Decision |
-|------|---------------------|----------|
-| D-10 | `get_accessible_campaign_ids()` already uses cached accessible-ID lookups with versioned invalidation | Remove from active deferred list |
-| D-17 | Default CSP already ships via `wpsg_add_security_headers()` | Remove from active deferred list |
-| RD-4 | `useLayoutBuilderState` already uses `templateRef` to avoid callback-cascade issues in autosave persistence | Remove from active deferred list |
 
 ### PHP — Long-Tail Only (from archived PHP_IMPLEMENTATION_REVIEW.txt)
 

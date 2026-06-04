@@ -210,7 +210,7 @@ class WPSG_Settings_Registry {
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
         'session_idle_timeout_minutes' => 0,
         'layout_builder_scope'           => 'full',
-        'preserve_data_on_uninstall'     => false,
+        'preserve_data_on_uninstall'     => true,
         'archive_purge_days'             => 0,
         'archive_purge_grace_days'       => 30,
         'analytics_retention_days'       => 0,
