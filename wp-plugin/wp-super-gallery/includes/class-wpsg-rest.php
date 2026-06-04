@@ -2410,23 +2410,80 @@ class WPSG_REST {
         }
 
         $body = json_decode($manifest_json, true);
-        if (!$body || !isset($body['campaign'])) {
+        if (!is_array($body)) {
             $zip->close();
             return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
         }
 
         $version = intval($body['version'] ?? 0);
-        if ($version !== 2) {
+
+        if ($version === 2) {
+            if (!isset($body['campaign'])) {
+                $zip->close();
+                return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+            }
+            $entry = [
+                'campaign'         => $body['campaign'],
+                'layout_template'  => $body['layout_template'] ?? null,
+                'media_references' => $body['media_references'] ?? [],
+            ];
+            $result = self::import_single_campaign_from_zip($zip, $entry);
+            $zip->close();
+            if (is_wp_error($result)) {
+                return $result;
+            }
+            return new WP_REST_Response(self::format_campaign(get_post($result['id'])), 201);
+
+        } elseif ($version === 3 && ($body['type'] ?? '') === 'multi') {
+            if (!isset($body['campaigns']) || !is_array($body['campaigns'])) {
+                $zip->close();
+                return new WP_Error('wpsg_invalid_manifest', 'Invalid v3 manifest structure', ['status' => 400]);
+            }
+            $created = [];
+            foreach ($body['campaigns'] as $entry) {
+                if (!is_array($entry)) {
+                    continue;
+                }
+                $result = self::import_single_campaign_from_zip($zip, $entry);
+                if (!is_wp_error($result)) {
+                    $created[] = $result;
+                }
+            }
+            $zip->close();
+            if (empty($created)) {
+                return new WP_Error('wpsg_import_failed', 'No campaigns could be imported from the archive.', ['status' => 422]);
+            }
+            self::add_audit_entry(0, 'campaign.batch_imported', [
+                'format'   => 'binary',
+                'imported' => count($created),
+            ], [
+                'summary'        => count($created) . ' campaigns imported from bulk ZIP',
+                'resource_type'  => 'campaign',
+                'resource_id'    => '0',
+                'resource_label' => 'bulk import',
+            ]);
+            self::clear_accessible_campaigns_cache();
+            return new WP_REST_Response(['imported' => $created], 201);
+
+        } else {
             $zip->close();
             return new WP_Error(
                 'wpsg_unsupported_version',
-                'Binary import requires manifest version 2',
+                'Binary import requires manifest version 2 or a v3 multi-campaign archive.',
                 ['status' => 400]
             );
         }
+    }
 
-        // Create the campaign post.
-        $src         = $body['campaign'];
+    /**
+     * Sideload one campaign entry from an open ZipArchive.
+     *
+     * @param ZipArchive $zip   Open archive to read media from.
+     * @param array      $entry Manifest entry: { campaign, layout_template?, media_references[] }.
+     * @return array|WP_Error   ['id' => int, 'title' => string] on success.
+     */
+    private static function import_single_campaign_from_zip(ZipArchive $zip, array $entry) {
+        $src         = is_array($entry['campaign'] ?? null) ? $entry['campaign'] : [];
         $title       = sanitize_text_field($src['title'] ?? 'Imported Campaign');
         $description = sanitize_textarea_field($src['description'] ?? '');
 
@@ -2438,11 +2495,9 @@ class WPSG_REST {
         ], true);
 
         if (is_wp_error($post_id)) {
-            $zip->close();
             return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
-        // Apply scalar campaign meta (same as JSON import).
         $meta_map = [
             'visibility'  => 'visibility',
             'tags'        => 'tags',
@@ -2466,23 +2521,22 @@ class WPSG_REST {
             update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
         }
 
-        // Embed layout template if present.
-        $layout_template = $body['layout_template'] ?? null;
-        if ($layout_template && is_array($layout_template)) {
+        $layout_template = is_array($entry['layout_template'] ?? null) ? $entry['layout_template'] : null;
+        if ($layout_template) {
             // Support legacy manifests that used 'title' instead of 'name'.
             if (!isset($layout_template['name']) && isset($layout_template['title'])) {
                 $layout_template['name'] = $layout_template['title'];
             }
-            $created = WPSG_Layout_Templates::create($layout_template);
-            if (!is_wp_error($created)) {
-                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created['id']);
+            $created_tpl = WPSG_Layout_Templates::create($layout_template);
+            if (!is_wp_error($created_tpl)) {
+                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created_tpl['id']);
                 if (!empty($src['layoutBinding'])) {
                     $binding = $src['layoutBinding'];
                     if (is_array($binding)) {
                         array_walk_recursive($binding, function (&$v) {
                             if (is_string($v)) { $v = sanitize_text_field($v); }
                         });
-                        $binding['templateId'] = $created['id'];
+                        $binding['templateId'] = $created_tpl['id'];
                     }
                     update_post_meta($post_id, '_wpsg_layout_binding', $binding);
                 }
@@ -2496,7 +2550,7 @@ class WPSG_REST {
         require_once ABSPATH . 'wp-admin/includes/image.php';
 
         $media_items = [];
-        foreach ((array) ($body['media_references'] ?? []) as $ref) {
+        foreach ((array) ($entry['media_references'] ?? []) as $ref) {
             $filename = sanitize_file_name($ref['filename'] ?? '');
             if (!$filename) {
                 continue;
@@ -2533,8 +2587,6 @@ class WPSG_REST {
             ];
         }
 
-        $zip->close();
-
         if (!empty($media_items)) {
             update_post_meta($post_id, 'media_items', $media_items);
         }
@@ -2550,7 +2602,8 @@ class WPSG_REST {
             'resource_label' => $title,
         ]);
         self::clear_accessible_campaigns_cache();
-        return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
+
+        return ['id' => $post_id, 'title' => $title];
     }
 
     // ─────────────────────────────────────────────────────────────────────

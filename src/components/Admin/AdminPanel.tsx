@@ -657,6 +657,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             opened={campaignActions.importModalOpen}
             isSaving={campaignActions.isImporting}
             onImport={campaignActions.handleImportCampaign}
+            onImportBinary={campaignActions.handleImportCampaignBinary}
             onClose={() => campaignActions.setImportModalOpen(false)}
           />
         </Suspense>

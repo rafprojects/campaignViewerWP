@@ -235,6 +235,12 @@ export class ApiClient extends HttpTransportImpl {
     return this._campaigns.importCampaign(payload);
   }
 
+  importCampaignBinary(
+    file: File,
+  ): Promise<Record<string, unknown> | { imported: Array<{ id: number; title: string }> }> {
+    return this._campaigns.importCampaignBinary(file);
+  }
+
   listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
     return this._campaigns.listCampaignCategories();
   }

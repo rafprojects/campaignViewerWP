@@ -269,6 +269,27 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
+  const handleImportCampaignBinary = useCallback(async (file: File) => {
+    setIsImporting(true);
+    try {
+      const result = await apiClient.importCampaignBinary(file);
+      if ('imported' in result && Array.isArray(result.imported)) {
+        const n = result.imported.length;
+        onNotify({ type: 'success', text: `${n} campaign${n !== 1 ? 's' : ''} imported as drafts` });
+      } else {
+        const title = String((result as Record<string, unknown>).title ?? 'Campaign');
+        onNotify({ type: 'success', text: `"${title}" imported as draft` });
+      }
+      setImportModalOpen(false);
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Import failed') });
+    } finally {
+      setIsImporting(false);
+    }
+  }, [apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
   const { effectiveMap } = shortcutConfig;
   const hotkeyHandler = useMemo(
     () => getHotkeyHandler([
@@ -334,6 +355,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleBinaryExportCampaign,
     handleBulkBinaryExport,
     handleImportCampaign,
+    handleImportCampaignBinary,
   };
 }
 

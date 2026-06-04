@@ -17,6 +17,11 @@
 | P41-EX2 | Consolidate per-row JSON + ZIP export into a single dropdown button | Complete | XS |
 | P41-EX3 | Bulk export selected campaigns as a single multi-campaign ZIP | Complete | M |
 | P41-BA1 | Fix BulkActionsBar Archive/Restore trigger logic for mixed selections | Complete | XS |
+| P41-IM1 | ZIP import support — expose binary import endpoint in the UI, add v3 multi-campaign handling | Complete | M |
+
+### Follow-up fixes (no dedicated track)
+
+- **Export SSL fix (P41-SSL1):** `build_zip()` now detects same-origin media URLs and respects the `https_local_ssl_verify` WordPress filter, so self-signed-cert dev environments can export media without entries landing in `skipped_media.json`. Production sites with valid certs are unaffected. Dev workaround: `add_filter('https_local_ssl_verify', '__return_false')` in `wp-config.php`.
 
 ---
 
@@ -298,6 +303,37 @@ hasArchivedSelected={sel.some((c) => c.status === 'archived')}
 
 ---
 
+---
+
+## Track P41-IM1 — ZIP Import Support
+
+### Problem
+
+ZIP exports (v2 single-campaign, v3 multi-campaign) could not be round-tripped back in. The binary import backend endpoint (`POST /campaigns/import/binary`) existed and handled v2 ZIPs, but was never wired to the frontend import modal. The modal only accepted `.json` files and called the JSON `POST /campaigns/import` endpoint. v3 (bulk) ZIPs had no import path at all.
+
+### Changes
+
+**`wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php`**
+- Extracted per-campaign sideload logic from `import_campaign_binary()` into a private `import_single_campaign_from_zip(ZipArchive $zip, array $entry): array` helper.
+- Removed the hard `version !== 2` rejection. Handler now branches:
+  - v2 → existing single-campaign path (unchanged), returns `{ id, title }`.
+  - v3 `type=multi` → loops `manifest.campaigns[]` calling the shared helper for each; returns `{ imported: [{ id, title }, …] }`.
+  - Other versions → `400` error as before.
+
+**`src/services/api/campaignsApi.ts`**
+- Added `importCampaignBinary(file: File)` — sends `FormData` (field `file`) to `POST /wp-json/wp-super-gallery/v1/campaigns/import/binary`. Return type is a union of the v2 and v3 response shapes.
+
+**`src/services/apiClient.ts`** — exposed `importCampaignBinary` on the facade.
+
+**`src/components/Admin/CampaignImportModal.tsx`**
+- `<FileButton>` now accepts `.zip,application/zip` in addition to `.json`.
+- When a `.zip` file is selected, calls `apiClient.importCampaignBinary(file)` and bypasses the JSON parse step.
+  - v2 response: `onCampaignsUpdated()` + success notification "Campaign imported."
+  - v3 response: `onCampaignsUpdated()` + notification "N campaigns imported."
+- JSON path unchanged.
+
+---
+
 ## Outcome
 
-Nine tracks complete. Each campaign row now shows a single "Export" dropdown button (ZIP primary, JSON secondary) instead of two separate buttons. Selecting multiple campaigns surfaces an "Export ZIP" button in the BulkActionsBar that enqueues one multi-campaign ZIP job (manifest v3, flat shared media pool) and downloads the result as a single file. Archive/Restore visibility in BulkActionsBar is now driven by `hasActiveSelected` / `hasArchivedSelected` — Restore no longer appears when all selected campaigns are already active, and Archive no longer appears when all are archived. All 1994 frontend tests and 853 PHP tests pass.
+Ten tracks and one follow-up fix complete. Each campaign row now shows a single "Export" dropdown (ZIP primary, JSON secondary). Selecting multiple campaigns surfaces "Export ZIP" in BulkActionsBar, downloading all selected campaigns as one ZIP (manifest v3, flat media pool). Both v2 single-campaign and v3 multi-campaign ZIPs can now be imported via the Import modal. Archive/Restore visibility in BulkActionsBar is correctly gated on whether the selection actually contains archivable or restorable campaigns. The export engine respects `https_local_ssl_verify` for same-origin media URLs, fixing `skipped_media.json` entries in self-signed-cert dev environments.

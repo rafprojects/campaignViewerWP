@@ -136,6 +136,16 @@ export class CampaignsApi {
     );
   }
 
+  importCampaignBinary(
+    file: File,
+  ): Promise<Record<string, unknown> | { imported: Array<{ id: number; title: string }> }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.transport.postForm<
+      Record<string, unknown> | { imported: Array<{ id: number; title: string }> }
+    >('/wp-json/wp-super-gallery/v1/campaigns/import/binary', fd);
+  }
+
   // ── P18-H / P28-C: Categories ────────────────────────────────────────────
 
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
