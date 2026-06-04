@@ -280,10 +280,10 @@ LOE: Small-Medium (2-4 hours once mapping table exists) | Impact: Low (rare code
 
 ### React — Long-Tail Only (from archived REACT_IMPLEMENTATION_REVIEW.txt)
 
-**RD-2: SettingsPanel Tab-Level Code Splitting**
-Files: `src/components/Admin/SettingsPanel.tsx` (~1822 lines)
-Split into tab-level sub-components with React.memo. Admin-only, negligible perf impact.
-LOE: High (6-8 hours) | Impact: Low
+**RD-2: SettingsPanel Tab-Level Code Splitting** → *Targeted: Phase 43*
+Files: `src/components/Admin/SettingsPanel.tsx` (~736 lines)
+Split `SettingsPanelTabsContent` into per-tab sub-components with React.memo. Each tab component receives only the props it uses, reducing prop-threading through the 11-prop mega-interface. Heavy section components are already in `src/components/Settings/`; the remaining work is the thin shell split. Admin-only, negligible perf impact.
+LOE: Medium (3-5 hours) | Impact: Low
 
 **RD-9: LayoutBuilderGallery Inline Style → CSS Injection**
 Files: `src/gallery-adapters/layout-builder/LayoutBuilderGallery.tsx`
@@ -370,3 +370,5 @@ When promoting future tasks to an active phase:
 *Updated: June 3, 2026 (P41-FT1) — Updated "Alignment Variants" (Builder section): P30-K (alignment spike) and P30-G (nested group hierarchy) are both complete as of Phase 30; removed the blocking-dependency language and marked the item as unblocked.*
 
 *Updated: June 3, 2026 (P41-OL1/UN1/RD15) — D-2 (Overlay Library DB migration), D-5 (Pre-uninstall confirmation gate), and RD-15 (SlotPropertiesPanel IIFE extraction) marked complete; D-7 targeted for Phase 42.*
+
+*Updated: June 3, 2026 (P42/P43 planning) — RD-2 targeted for Phase 43; line-count corrected from ~1822 to ~736 (heavy section components already extracted to `src/components/Settings/`); LOE revised to Medium (3-5 hours).*

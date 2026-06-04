@@ -42,7 +42,7 @@ class WPSG_Overlay_Library {
             'id'         => $r['overlay_id'],
             'url'        => $r['url'],
             'name'       => $r['name'],
-            'uploadedAt' => $r['uploaded_at'],
+            'uploadedAt' => gmdate( 'c', (int) strtotime( $r['uploaded_at'] . ' UTC' ) ),
         ], $rows );
     }
 
@@ -52,15 +52,16 @@ class WPSG_Overlay_Library {
      * Add a new overlay entry.
      *
      * @param  array{url:string, name:string} $data
-     * @return array  The stored overlay record.
+     * @return array|WP_Error  The stored overlay record, or WP_Error on DB failure.
      */
-    public static function add( array $data ): array {
+    public static function add( array $data ) {
         global $wpdb;
         $table       = WPSG_DB::get_overlays_table();
         $id          = wp_generate_uuid4();
         $uploaded_at = gmdate( 'Y-m-d H:i:s' );
 
-        $wpdb->insert(
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->insert(
             $table,
             [
                 'overlay_id'  => $id,
@@ -70,12 +71,15 @@ class WPSG_Overlay_Library {
             ],
             [ '%s', '%s', '%s', '%s' ]
         );
+        if ( $result === false ) {
+            return new WP_Error( 'wpsg_db_error', 'Failed to save overlay entry.', [ 'status' => 500 ] );
+        }
 
         return [
             'id'         => $id,
             'url'        => esc_url_raw( $data['url'] ),
             'name'       => sanitize_text_field( $data['name'] ?? '' ),
-            'uploadedAt' => $uploaded_at,
+            'uploadedAt' => gmdate( 'c', (int) strtotime( $uploaded_at . ' UTC' ) ),
         ];
     }
 

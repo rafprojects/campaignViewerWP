@@ -2316,10 +2316,6 @@ class WPSG_REST {
 
         $job_id = WPSG_Export_Engine::create_job('multi_campaign', $manifest, $all_media_items);
 
-        $exported_ids = array_column(
-            array_filter($campaigns_data, fn($c) => !empty($c['campaign']['id'])),
-            null
-        );
         self::add_audit_entry(0, 'campaign.batch_exported', [
             'format'       => 'binary',
             'campaignIds'  => array_map('intval', $ids),
@@ -2513,7 +2509,10 @@ class WPSG_REST {
      * @return array|WP_Error   ['id' => int, 'title' => string] on success.
      */
     private static function import_single_campaign_from_zip(ZipArchive $zip, array $entry) {
-        $src         = is_array($entry['campaign'] ?? null) ? $entry['campaign'] : [];
+        if (empty($entry['campaign']) || !is_array($entry['campaign'])) {
+            return new WP_Error('wpsg_invalid_entry', 'Manifest entry is missing a valid "campaign" object.', ['status' => 400]);
+        }
+        $src         = $entry['campaign'];
         $title       = sanitize_text_field($src['title'] ?? 'Imported Campaign');
         $description = sanitize_textarea_field($src['description'] ?? '');
 
@@ -7474,6 +7473,9 @@ class WPSG_REST {
         }
 
         $entry = WPSG_Overlay_Library::add( [ 'url' => $url, 'name' => $name ] );
+        if ( is_wp_error( $entry ) ) {
+            return new WP_Error( 'wpsg_overlay_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
+        }
         return new WP_REST_Response( $entry, 201 );
     }
 

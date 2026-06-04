@@ -334,6 +334,22 @@ ZIP exports (v2 single-campaign, v3 multi-campaign) could not be round-tripped b
 
 ---
 
+## Post-Merge Review — PR #56
+
+Five issues identified by Copilot review and addressed:
+
+**`class-wpsg-rest.php` — `import_single_campaign_from_zip` missing campaign validation.** A v3 manifest entry whose `campaign` key was absent or non-array fell back to `$src = []`, silently creating an empty post titled "Imported Campaign". Added an early guard: if `$entry['campaign']` is missing or not an array, the function returns a `WP_Error('wpsg_invalid_entry', …, 400)` so the entry is skipped cleanly rather than imported as phantom data.
+
+**`class-wpsg-rest.php` — dead `$exported_ids` variable in bulk export.** `$exported_ids` was computed immediately after `WPSG_Export_Engine::create_job()` but never referenced again; `array_column(…, null)` also returned full row objects rather than IDs. Removed the three dead lines.
+
+**`class-wpsg-overlay-library.php` — `get_all()` returning SQL DATETIME for `uploadedAt`.** The query result column `uploaded_at` was surfaced verbatim as `YYYY-MM-DD HH:MM:SS`, diverging from the ISO-8601 format (`gmdate('c')`) used by the rest of the API and by `WPSG_Font_Library`. Changed to `gmdate( 'c', (int) strtotime( $r['uploaded_at'] . ' UTC' ) )` so the API consistently returns RFC 3339 timestamps and JS `Date` parsing is reliable.
+
+**`class-wpsg-overlay-library.php` — `add()` returning SQL DATETIME for `uploadedAt`.** The freshly-generated `$uploaded_at` string (stored in the DB as SQL DATETIME) was also used as the return value's `uploadedAt`. Changed the return to derive the ISO-8601 string via the same `gmdate('c', strtotime(…))` pattern, keeping DB storage and API output independent.
+
+**`class-wpsg-overlay-library.php` — `add()` ignored `$wpdb->insert()` return value.** On a DB error (missing table, duplicate key, etc.) the insert silently failed but the method still returned a successful-looking record that would never appear in `get_all()`. Added result checking: `$wpdb->insert()` result is now stored and tested; `false` returns `WP_Error('wpsg_db_error', …, 500)`. The REST handler (`upload_overlay`) was updated to check `is_wp_error($entry)` and propagate a 500 response, and `add()`'s return type annotation updated to `array|WP_Error`.
+
+---
+
 ## Outcome
 
 Ten tracks and one follow-up fix complete. Each campaign row now shows a single "Export" dropdown (ZIP primary, JSON secondary). Selecting multiple campaigns surfaces "Export ZIP" in BulkActionsBar, downloading all selected campaigns as one ZIP (manifest v3, flat media pool). Both v2 single-campaign and v3 multi-campaign ZIPs can now be imported via the Import modal. Archive/Restore visibility in BulkActionsBar is correctly gated on whether the selection actually contains archivable or restorable campaigns. The export engine respects `https_local_ssl_verify` for same-origin media URLs, fixing `skipped_media.json` entries in self-signed-cert dev environments.
