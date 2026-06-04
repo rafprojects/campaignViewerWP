@@ -947,4 +947,147 @@ abstract class WPSG_REST_Base {
         WPSG_Logger::warning('rest', 'Slow REST request detected', $payload);
         do_action('wpsg_slow_rest', $payload);
     }
+
+    // -------------------------------------------------------------------------
+    // Media helpers — shared by Campaign and Media controllers
+    // -------------------------------------------------------------------------
+
+    protected static function infer_media_type_from_url($url) {
+        $image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff', 'ico'];
+        $video_extensions = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'mkv', 'wmv', 'flv'];
+
+        $parsed = wp_parse_url($url);
+        $path = isset($parsed['path']) ? strtolower($parsed['path']) : '';
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+
+        if (in_array($extension, $image_extensions, true)) {
+            return 'image';
+        }
+        if (in_array($extension, $video_extensions, true)) {
+            return 'video';
+        }
+
+        $video_providers = ['youtube.com', 'youtu.be', 'vimeo.com', 'rumble.com', 'bitchute.com', 'odysee.com', 'dailymotion.com'];
+        $host = isset($parsed['host']) ? strtolower($parsed['host']) : '';
+        foreach ($video_providers as $provider) {
+            if (strpos($host, $provider) !== false) {
+                return 'video';
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalize media item types, including legacy records missing/incorrect type fields.
+     *
+     * @param array $media_items
+     * @return array{items: array, updated: int}
+     */
+    protected static function normalize_media_items_types(array $media_items) {
+        $updated_count = 0;
+
+        foreach ($media_items as &$media_item) {
+            $url = $media_item['url'] ?? '';
+            $current_type = $media_item['type'] ?? '';
+            $inferred_type = self::infer_media_type_from_url($url);
+
+            if (!empty($media_item['embedUrl'])) {
+                $inferred_type = 'video';
+            }
+
+            if ($inferred_type && $inferred_type !== $current_type) {
+                $media_item['type'] = $inferred_type;
+                $updated_count++;
+            }
+        }
+        unset($media_item);
+
+        return [
+            'items' => $media_items,
+            'updated' => $updated_count,
+        ];
+    }
+
+    /**
+     * Enrich media items with server-derived metadata: pixel dimensions,
+     * upload date, filesize, and taxonomy tags.
+     *
+     * @param array $items          Raw media-item arrays from post_meta.
+     * @param bool  $dimensions_only When true, skip date/filesize/tag enrichment.
+     * @return array                 Same items with additional fields populated.
+     */
+    protected static function enrich_media_with_metadata(array $items, bool $dimensions_only = false): array {
+        $terms_by_attachment = [];
+        if (!$dimensions_only) {
+            $attachment_ids = [];
+            foreach ($items as $item) {
+                $aid = intval($item['attachmentId'] ?? 0);
+                if ($aid > 0 && ($item['source'] ?? '') === 'upload') {
+                    $attachment_ids[$aid] = $aid;
+                }
+            }
+            $attachment_ids = array_values($attachment_ids);
+
+            if (!empty($attachment_ids)) {
+                update_meta_cache('post', $attachment_ids);
+
+                $all_terms = wp_get_object_terms(
+                    $attachment_ids,
+                    'wpsg_media_tag',
+                    ['fields' => 'all_with_object_id'],
+                );
+                if (!is_wp_error($all_terms)) {
+                    foreach ($all_terms as $t) {
+                        $terms_by_attachment[(int) $t->object_id][] = [
+                            'id'   => (int) $t->term_id,
+                            'name' => (string) $t->name,
+                            'slug' => (string) $t->slug,
+                        ];
+                    }
+                }
+            }
+        }
+
+        foreach ($items as &$item) {
+            $source = $item['source'] ?? '';
+            $aid    = intval($item['attachmentId'] ?? 0);
+
+            if (empty($item['width']) || empty($item['height'])) {
+                if ($aid > 0 && ($item['type'] ?? '') === 'image') {
+                    $meta = wp_get_attachment_metadata($aid);
+                    if (!empty($meta['width']) && !empty($meta['height'])) {
+                        $item['width']  = intval($meta['width']);
+                        $item['height'] = intval($meta['height']);
+                    }
+                }
+            }
+
+            if ($dimensions_only || $source !== 'upload' || $aid <= 0) {
+                continue;
+            }
+
+            $post = get_post($aid);
+            if ($post instanceof WP_Post) {
+                $item['dateUploaded'] = $post->post_date;
+            }
+
+            $meta = wp_get_attachment_metadata($aid) ?: [];
+            if (!empty($meta['filesize'])) {
+                $item['filesize'] = intval($meta['filesize']);
+            } else {
+                $file = get_attached_file($aid);
+                if ($file && file_exists($file)) {
+                    $item['filesize'] = (int) filesize($file);
+                }
+            }
+
+            if (isset($terms_by_attachment[$aid])) {
+                $item['tags'] = $terms_by_attachment[$aid];
+            }
+        }
+        unset($item);
+
+        return $items;
+    }
 }

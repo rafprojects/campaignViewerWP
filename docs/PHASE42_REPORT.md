@@ -2,7 +2,7 @@
 
 **Status:** Complete ✅
 **Created:** 2026-06-03
-**Last updated:** 2026-06-04
+**Last updated:** 2026-06-05
 
 ### Tracks
 
@@ -88,6 +88,7 @@ class WPSG_REST extends WPSG_REST_Base {
 | B | `list_campaign_categories` in DC3 | Found accidentally included in `WPSG_Media_Controller` during DC3. Removed from media controller in DC8 and placed in `WPSG_Content_Controller` where it belongs. |
 | C | `WPSG_REST::check_private_ip` reference in `proxy_oembed` | Changed to `self::check_private_ip` in `WPSG_System_Controller` since `check_private_ip` is `public static` on the base class. |
 | D | Test direct-call updates | Three test files updated: `WPSG_REST_Routes_Test.php` (DC3), `ProxyOEmbedTest.php` and `ProxyOEmbedSSRFTest.php` (DC9). All other tests use `rest_do_request()` and needed no changes. |
+| E | `normalize_media_items_types` / `enrich_media_with_metadata` in DC1 | Post-launch runtime error: `WPSG_Campaign_Controller::list_campaigns` called `self::normalize_media_items_types()` and `self::enrich_media_with_metadata()`, both of which were only in `WPSG_Media_Controller` (a sibling, not a parent). Fixed by moving all three methods (`infer_media_type_from_url`, `normalize_media_items_types`, `enrich_media_with_metadata`) from `WPSG_Media_Controller` to `WPSG_REST_Base` as `protected static`, so all controllers inherit them via `self::`. |
 
 ---
 
