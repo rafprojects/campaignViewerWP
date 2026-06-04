@@ -132,6 +132,12 @@ class WPSG_Export_Engine {
             throw new RuntimeException('ext-zip is required for binary export.');
         }
 
+        // wp_tempnam() lives in wp-admin/includes/file.php, which is not
+        // autoloaded in cron/REST contexts.
+        if (!function_exists('wp_tempnam')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
         $upload_dir = wp_upload_dir();
         $export_dir = trailingslashit($upload_dir['basedir']) . 'wpsg-exports/';
         wp_mkdir_p($export_dir);
