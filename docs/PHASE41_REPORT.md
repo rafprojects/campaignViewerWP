@@ -1,4 +1,4 @@
-# Phase 41 — ZIP Export UI, Multi-Select Simplification, Backlog Cleanup
+# Phase 41 — Export UX, Multi-Select, Bulk Actions, Backlog Cleanup
 
 **Status:** Complete
 **Created:** 2026-06-03
@@ -14,6 +14,9 @@
 | P41-UN1 | Pre-uninstall confirmation gate (Danger Zone section, default flip) | Complete | S |
 | P41-RD15 | SlotPropertiesPanel IIFE extraction into named sub-components | Complete | S |
 | P41-OL1 | Migrate Overlay Library from wp_options to custom DB table | Complete | M |
+| P41-EX2 | Consolidate per-row JSON + ZIP export into a single dropdown button | Complete | XS |
+| P41-EX3 | Bulk export selected campaigns as a single multi-campaign ZIP | Complete | M |
+| P41-BA1 | Fix BulkActionsBar Archive/Restore trigger logic for mixed selections | Complete | XS |
 
 ---
 
@@ -197,11 +200,104 @@ table is created on all existing installs via the standard `maybe_upgrade()` pat
 
 ---
 
+---
+
+## Track P41-EX2 — Per-Row Export Dropdown
+
+### Problem
+
+P41-EX1 added a second "Export ZIP" button alongside the existing "Export" (JSON) button.
+Two side-by-side export buttons consume horizontal space and will grow unwieldy if more formats
+are added. A single dropdown consolidates them without losing either option.
+
+### Changes
+
+**`src/hooks/useCampaignsRows.tsx`** and **`src/components/Admin/CampaignsMobileList.tsx`**
+- Replaced both separate export buttons with a single Mantine `Menu`-based trigger.
+- Main button: "Export" + `IconDownload` chevron; `loading={binaryExportingIds.has(cid)}` while a ZIP job is running for that row.
+- Dropdown items: "Export as ZIP (includes media)" and "Export as JSON (data only)".
+
+---
+
+## Track P41-EX3 — Bulk Export Selected Campaigns as ZIP
+
+### Problem
+
+`BulkActionsBar` had Archive + Restore but no export capability. There was also no backend
+endpoint for multi-campaign ZIP export — the single-campaign handler
+(`handleBinaryExportCampaign`) only accepts one `AdminCampaign` at a time, and triggering N
+parallel browser downloads is unreliable.
+
+### Design
+
+One download for the full selection: a single ZIP built from a v3 multi-campaign manifest, reusing
+`WPSG_Export_Engine` unchanged. Media goes into a flat shared `media/` pool (deduped by URL);
+the manifest records which files belong to which campaign.
+
+**ZIP structure:**
+```
+campaigns-export-{jobId}.zip
+├── manifest.json    ← version=3, type="multi", campaigns=[…]
+└── media/
+    ├── photo1.jpg
+    └── photo2.png
+```
+
+**Manifest v3 shape:**
+```json
+{
+  "version": 3,
+  "type": "multi",
+  "exported_at": "…",
+  "campaigns": [
+    { "campaign": {…}, "layout_template": {…}|null, "media_references": [{…}] }
+  ]
+}
+```
+
+### Changes
+
+**`wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php`**
+- New route: `POST /campaigns/batch/export/binary` with `{ ids: integer[], minItems: 1, maxItems: 50 }`.
+- Handler `batch_export_binary()`: loops IDs, builds v3 manifest, calls `WPSG_Export_Engine::create_job('multi_campaign', …)`, adds one audit entry, returns `202 { jobId, status: 'pending' }`.
+- No changes to `WPSG_Export_Engine` itself.
+
+**`src/services/api/exportApi.ts`** — `startBulkBinaryExport(ids: string[])`
+
+**`src/services/apiClient.ts`** — expose on facade
+
+**`src/hooks/useAdminCampaignActions.ts`**
+- New `isBulkExporting: boolean` state (separate from `isBulkLoading` so Archive/Restore buttons don't show as loading during an export).
+- New `handleBulkBinaryExport()`: polls + downloads with the same 3 s / 5 min pattern as `handleBinaryExportCampaign`.
+
+**`src/components/Admin/BulkActionsBar.tsx`** — `onExport` + `isExporting` props; "Export ZIP" button before Archive.
+
+**`src/components/Admin/AdminPanel.tsx`** — pass `onExport` + `isExporting` to `BulkActionsBar`.
+
+---
+
+## Track P41-BA1 — BulkActionsBar Archive/Restore Logic Fix
+
+### Problem
+
+`allSelectedArchived = sel.every((c) => c.status === 'archived')` is `false` for any non-all-archived selection, including all-active selections. This caused Restore to render even when no selected campaign was archived — meaningless and confusing. The batch restore backend is correct and idempotent (sets `status = 'active'` for all); the issue is purely presentational.
+
+### Changes
+
+**`src/components/Admin/AdminPanel.tsx`** — replace `allSelectedArchived` with:
+```tsx
+hasActiveSelected={sel.some((c) => c.status !== 'archived')}
+hasArchivedSelected={sel.some((c) => c.status === 'archived')}
+```
+
+**`src/components/Admin/BulkActionsBar.tsx`**
+- Props: remove `allSelectedArchived`; add `hasActiveSelected: boolean` and `hasArchivedSelected: boolean`.
+- Archive renders when `hasActiveSelected`; Restore renders when `hasArchivedSelected`.
+- Mixed selection: both buttons show (Archive primary orange/light, Restore secondary teal/subtle).
+- All active: Archive only. All archived: Restore only.
+
+---
+
 ## Outcome
 
-Six tracks complete. The campaigns tab always shows checkboxes with both JSON and ZIP export
-buttons per row; `mod+shift+a` selects/deselects all. The uninstall setting defaults to data
-preservation and is visually isolated in a Danger Zone section. SlotPropertiesPanel Effects
-sub-panels are named React components. The overlay library now reads and writes individual rows
-from a dedicated DB table with a transparent one-time migration from wp_options. All 1991 frontend
-tests and 853 PHP tests pass.
+Nine tracks complete. Each campaign row now shows a single "Export" dropdown button (ZIP primary, JSON secondary) instead of two separate buttons. Selecting multiple campaigns surfaces an "Export ZIP" button in the BulkActionsBar that enqueues one multi-campaign ZIP job (manifest v3, flat shared media pool) and downloads the result as a single file. Archive/Restore visibility in BulkActionsBar is now driven by `hasActiveSelected` / `hasArchivedSelected` — Restore no longer appears when all selected campaigns are already active, and Archive no longer appears when all are archived. All 1994 frontend tests and 853 PHP tests pass.

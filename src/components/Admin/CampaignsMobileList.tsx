@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import {
-  Badge, Box, Button, Card, Center, Checkbox, Group, Loader,
+  Badge, Box, Button, Card, Center, Checkbox, Group, Loader, Menu,
   Pagination, Stack, Text, Tooltip,
 } from '@mantine/core';
 import {
-  IconArchive, IconArchiveOff, IconCopy, IconDownload, IconEdit,
+  IconArchive, IconArchiveOff, IconChevronDown, IconCopy, IconDownload, IconEdit,
   IconFileZip, IconLayoutGrid, IconTrash,
 } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
@@ -130,16 +130,28 @@ export function CampaignsMobileList({
                   Clone
                 </Button>
               </Tooltip>
-              <Tooltip label="Export as JSON">
-                <Button size="xs" variant="subtle" leftSection={<IconDownload size={12} />} onClick={() => void handleExportCampaign(c)} aria-label={`Export ${c.title}`}>
-                  Export
-                </Button>
-              </Tooltip>
-              <Tooltip label="Export as ZIP (includes media)">
-                <Button size="xs" variant="subtle" leftSection={<IconFileZip size={12} />} loading={binaryExportingIds.has(cid)} onClick={() => void handleBinaryExportCampaign(c)} aria-label={`Export ${c.title} as ZIP`}>
-                  Export ZIP
-                </Button>
-              </Tooltip>
+              <Menu shadow="md" width={210} position="bottom-end" withinPortal>
+                <Menu.Target>
+                  <Button
+                    size="xs"
+                    variant="subtle"
+                    leftSection={<IconDownload size={12} />}
+                    rightSection={<IconChevronDown size={11} />}
+                    loading={binaryExportingIds.has(cid)}
+                    aria-label={`Export ${c.title}`}
+                  >
+                    Export
+                  </Button>
+                </Menu.Target>
+                <Menu.Dropdown>
+                  <Menu.Item leftSection={<IconFileZip size={14} />} onClick={() => void handleBinaryExportCampaign(c)}>
+                    Export as ZIP (includes media)
+                  </Menu.Item>
+                  <Menu.Item leftSection={<IconDownload size={14} />} onClick={() => void handleExportCampaign(c)}>
+                    Export as JSON (data only)
+                  </Menu.Item>
+                </Menu.Dropdown>
+              </Menu>
               {c.status === 'archived' ? (
                 <Button size="xs" color="teal" leftSection={<IconArchiveOff size={12} />} loading={restoringIds.has(cid)} onClick={() => setConfirmRestore(c)}>
                   Restore

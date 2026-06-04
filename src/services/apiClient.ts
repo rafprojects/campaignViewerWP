@@ -372,6 +372,12 @@ export class ApiClient extends HttpTransportImpl {
     return this._export.startCampaignBinaryExport(campaignId);
   }
 
+  startBulkBinaryExport(
+    ids: string[],
+  ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
+    return this._export.startBulkBinaryExport(ids);
+  }
+
   getExportJob(jobId: string): Promise<import('./api/exportApi').ExportJob> {
     return this._export.getExportJob(jobId);
   }

@@ -196,6 +196,24 @@ class WPSG_REST {
             ],
         ]);
 
+        // P41-EX3: Bulk binary export
+        register_rest_route('wp-super-gallery/v1', '/campaigns/batch/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'batch_export_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'ids' => [
+                        'required'  => true,
+                        'type'      => 'array',
+                        'items'     => ['type' => 'integer'],
+                        'minItems'  => 1,
+                        'maxItems'  => 50,
+                    ],
+                ],
+            ],
+        ]);
+
         // P18-D: Export / Import
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export', [
             [
@@ -2192,6 +2210,96 @@ class WPSG_REST {
             'resource_type' => 'campaign',
             'resource_id'   => (string) $post_id,
             'resource_label' => $campaign['title'] ?? '',
+        ]);
+
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
+    // POST /campaigns/batch/export/binary — P41-EX3: multi-campaign ZIP.
+    public static function batch_export_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 500]
+            );
+        }
+
+        $ids = array_map('intval', (array) $request->get_param('ids'));
+
+        $campaigns_data  = [];
+        $all_media_items = [];
+        $seen_urls       = [];
+        $skipped_ids     = [];
+
+        foreach ($ids as $post_id) {
+            if (!self::campaign_exists($post_id)) {
+                $skipped_ids[] = $post_id;
+                continue;
+            }
+
+            $post     = get_post($post_id);
+            $campaign = self::format_campaign($post);
+            $media    = (array) (get_post_meta($post_id, 'media_items', true) ?: []);
+
+            $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+            $layout_template = $template_id ? WPSG_Layout_Templates::get($template_id) : null;
+
+            $media_references = array_values(array_map(function ($item) {
+                return [
+                    'id'       => $item['id'] ?? '',
+                    'url'      => $item['url'] ?? '',
+                    'title'    => $item['title'] ?? '',
+                    'filename' => WPSG_Export_Engine::get_media_filename($item),
+                ];
+            }, $media));
+
+            $campaigns_data[] = [
+                'campaign'         => $campaign,
+                'layout_template'  => $layout_template,
+                'media_references' => $media_references,
+            ];
+
+            // Deduplicate media items by URL across campaigns.
+            foreach ($media as $item) {
+                $url = $item['url'] ?? '';
+                if ($url && !isset($seen_urls[$url])) {
+                    $seen_urls[$url]   = true;
+                    $all_media_items[] = $item;
+                }
+            }
+        }
+
+        if (empty($campaigns_data)) {
+            return new WP_Error('wpsg_not_found', 'No valid campaigns found for export.', ['status' => 404]);
+        }
+
+        $manifest = wp_json_encode([
+            'version'      => 3,
+            'type'         => 'multi',
+            'exported_at'  => gmdate('c'),
+            'campaigns'    => $campaigns_data,
+        ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
+
+        $job_id = WPSG_Export_Engine::create_job('multi_campaign', $manifest, $all_media_items);
+
+        $exported_ids = array_column(
+            array_filter($campaigns_data, fn($c) => !empty($c['campaign']['id'])),
+            null
+        );
+        self::add_audit_entry(0, 'campaign.batch_exported', [
+            'format'       => 'binary',
+            'campaignIds'  => array_map('intval', $ids),
+            'skippedIds'   => $skipped_ids,
+            'mediaCount'   => count($all_media_items),
+            'jobId'        => $job_id,
+        ], [
+            'scope'         => 'system',
+            'summary'       => 'Bulk ZIP export enqueued (' . count($campaigns_data) . ' campaigns, ' . count($all_media_items) . ' media files)',
+            'resource_type' => 'campaign',
         ]);
 
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);

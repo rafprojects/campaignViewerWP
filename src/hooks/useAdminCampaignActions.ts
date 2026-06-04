@@ -38,6 +38,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [isImporting, setIsImporting] = useState(false);
 
   const [binaryExportingIds, setBinaryExportingIds] = useState<Set<string>>(new Set());
+  const [isBulkExporting, setIsBulkExporting] = useState(false);
 
   const [shortcutHelpOpen, setShortcutHelpOpen] = useState(false);
 
@@ -219,6 +220,39 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     }
   }, [apiClient, onNotify]);
 
+  const handleBulkBinaryExport = useCallback(async () => {
+    const ids = Array.from(selectedCampaignIds);
+    setIsBulkExporting(true);
+    try {
+      const { jobId } = await apiClient.startBulkBinaryExport(ids);
+      onNotify({ type: 'success', text: `Building bulk ZIP export for ${ids.length} campaign${ids.length !== 1 ? 's' : ''} — this may take a moment.` });
+
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) {
+            throw new Error('Export timed out after 5 minutes.');
+          }
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+
+        if (job.status === 'failed') {
+          throw new Error(job.error ?? 'Export failed');
+        }
+
+        await apiClient.downloadExportJob(jobId, `campaigns-export-${Date.now()}.zip`);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => {});
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk export failed') });
+    } finally {
+      setIsBulkExporting(false);
+    }
+  }, [apiClient, onNotify, selectedCampaignIds]);
+
   const handleImportCampaign = useCallback(async (payload: CampaignExportPayload) => {
     setIsImporting(true);
     try {
@@ -270,6 +304,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     // Bulk selection
     selectedCampaignIds,
     isBulkLoading,
+    isBulkExporting,
     // Duplicate
     duplicateSource,
     setDuplicateSource,
@@ -297,6 +332,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleDuplicateCampaign,
     handleExportCampaign,
     handleBinaryExportCampaign,
+    handleBulkBinaryExport,
     handleImportCampaign,
   };
 }

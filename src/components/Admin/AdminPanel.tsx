@@ -439,10 +439,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             return (
               <BulkActionsBar
                 selectedCount={campaignActions.selectedCampaignIds.size}
-                allSelectedArchived={sel.every((c) => c.status === 'archived')}
+                hasActiveSelected={sel.some((c) => c.status !== 'archived')}
+                hasArchivedSelected={sel.some((c) => c.status === 'archived')}
                 isLoading={campaignActions.isBulkLoading}
+                isExporting={campaignActions.isBulkExporting}
                 onArchive={campaignActions.handleBulkArchive}
                 onRestore={campaignActions.handleBulkRestore}
+                onExport={campaignActions.handleBulkBinaryExport}
                 onClearSelection={campaignActions.handleDeselectAll}
               />
             );
