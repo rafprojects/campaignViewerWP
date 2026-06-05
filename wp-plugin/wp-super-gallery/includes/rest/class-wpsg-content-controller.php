@@ -353,7 +353,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
 
         $items = array_map(function ($term) {
             return [
-                'id'    => $term->term_id,
+                'id'    => strval($term->term_id),
                 'name'  => $term->name,
                 'slug'  => $term->slug,
                 'count' => $term->count,

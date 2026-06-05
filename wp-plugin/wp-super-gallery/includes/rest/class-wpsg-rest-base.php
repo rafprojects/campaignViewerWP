@@ -199,6 +199,7 @@ abstract class WPSG_REST_Base {
             foreach (self::$rate_limit_headers as $header => $value) {
                 $response->header($header, $value);
             }
+            self::$rate_limit_headers = [];
         }
         return $response;
     }

@@ -172,8 +172,8 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $is_admin = current_user_can('manage_options') || current_user_can('manage_wpsg');
         $search_key = $search ? md5($search) : 'none';
         $cv = self::get_cache_version();
-        $cache_key = sprintf(
-            'wpsg_campaigns_v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s',
+        $cache_key = 'wpsg_campaigns_' . md5(sprintf(
+            'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
             $status ?: 'all',
@@ -189,7 +189,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             $sort,
             $include_archived ? 'incl' : 'excl',
             $template_id_filter ? md5($template_id_filter) : 'none'
-        );
+        ));
 
         // Try to get cached data
         $cached = get_transient($cache_key);
