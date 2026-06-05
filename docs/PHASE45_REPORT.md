@@ -21,6 +21,10 @@
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Planned | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Planned | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
+| P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
+| P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
+| P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Planned | M      |
+| P45-A17 | Keyboard shortcut for adding a new canvas slot          | Planned | S      |
 
 ---
 

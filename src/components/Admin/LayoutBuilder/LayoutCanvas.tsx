@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
@@ -489,6 +490,29 @@ export function LayoutCanvas({
             />
           </div>
         )}
+        {/* Empty-canvas affordance — only shown in edit mode with no slots */}
+        {!isPreview && template.slots.length === 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+              gap: 6,
+            }}
+          >
+            <Text size="sm" c="dimmed" ta="center" style={{ opacity: 0.55 }}>
+              Double-click to add a slot
+            </Text>
+            <Text size="xs" c="dimmed" ta="center" style={{ opacity: 0.35 }}>
+              or drag media from the panel
+            </Text>
+          </div>
+        )}
+
         {template.slots.map((slot, index) => {
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);

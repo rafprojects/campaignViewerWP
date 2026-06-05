@@ -8,7 +8,7 @@
 
 | Track   | Area                        | Status      | Effort |
 |---------|-----------------------------|-------------|--------|
-| P44-A1  | Layout Builder              | Not started | L      |
+| P44-A1  | Layout Builder              | Complete    | L      |
 | P44-A2  | Gallery Adapters            | Complete    | L      |
 | P44-A3  | Admin Panel + Media Tab     | Complete    | M      |
 | P44-A4  | Settings System             | Not started | M      |
@@ -436,6 +436,53 @@ broken `aria-labelledby` references; fixed `alt=""` on DragOverlay image.
 
 ---
 
+## Track P44-A1 Rationale
+
+**Code quality:** `LayoutBuilderModal.tsx` (1152 LOC) manages 10+ distinct concerns: draft
+restore, cross-tab stale detection, workspace preferences (localStorage), overlay library,
+campaign media picker, group/z-order actions, JSON export/import, dockview layout
+persistence, save, and keyboard shortcuts. Each responsibility is clearly separated within
+the file (labeled sections), but the total complexity argues for extraction into focused
+hooks/sub-components. Deferred to Phase 45.
+
+`LayoutSlotComponent.tsx` (945 LOC) is similarly over-large — it handles slot rendering,
+drag/resize, mask drag overlay, hover state, media assignment drop, and slot border/label
+rendering. Deferred to Phase 45.
+
+**Error handling:** `LayoutBuilderModal.tsx` uses the safe
+`err instanceof Error ? err.message : fallback` pattern throughout all async handlers
+(save, overlay upload, background upload, mask upload, overlay delete). This is functionally
+equivalent to `getErrorMessage` — no inline fix needed.
+
+**Accessibility:** Comprehensive.
+- `aria-live="polite"` + `aria-atomic="true"` region for screen reader announcements,
+  wired to every user action (slot added, grouped, moved, z-index changed, etc.) ✅
+- `role="application"` on canvas with `aria-label="Layout canvas"` ✅
+- Slot components use `role="img"` with dynamic `aria-label` describing slot content ✅
+- Keyboard shortcuts: nudge (arrow keys), undo/redo (Ctrl+Z/Y), duplicate (Ctrl+D),
+  group (Ctrl+G), z-order (]/[), save (Ctrl+S), deselect (Escape) ✅
+- Unsaved-changes guard ("Discard changes?" modal on close) ✅
+
+**Empty canvas empty state (inline fix):** When `template.slots.length === 0` in edit mode,
+the canvas rendered as a featureless empty box. New users have no visual affordance to
+discover that double-clicking adds a slot or that media can be dragged from the panel.
+Added a centered instructional text ("Double-click to add a slot / or drag media from the
+panel") visible only in edit mode with no slots. `pointerEvents: 'none'` ensures it does
+not interfere with the canvas drag/click handlers.
+
+**Performance:** `computeGuides` in `smartGuides.ts` is called on every drag frame against
+all other slots. With 20+ slots this becomes O(n) per frame. The current implementation
+is acceptable for typical layout counts (5–15 slots) but could become sluggish with
+dense layouts. Deferred to Phase 45.
+
+**Keyboard path for mouse-free users:** Arrow-key nudge is present. Double-click affordance
+is mouse-only — no keyboard equivalent for adding a slot (only the "Add slot" button in the
+layers panel). Adding a keyboard shortcut (e.g. N = new slot) is a Phase 45 candidate.
+
+**Inline fixes:** Added empty-canvas instructional text to `LayoutCanvas.tsx`.
+
+---
+
 ## Track P44-A2 Rationale
 
 **Cross-adapter consistency:** All 11 adapters share `LazyImage` (skeleton → fade-in →
@@ -512,3 +559,7 @@ inline. Appended here as each track completes.
 | P45-13 | Gallery | Full ARIA focus trap in `Lightbox`: Tab/Shift+Tab cycle through close/prev/next buttons only (current fix moves focus on open but does not trap) | M | P44-A2 |
 | P45-14 | Gallery | Remove `@deprecated ImageCarousel` shim once all consumers are migrated to `MediaCarouselAdapter` directly | S | P44-A2 |
 | P45-15 | Gallery | Extract `Lightbox` component to shared library: decouple `--wpsg-color-surface` CSS variable dependency and `MediaItem` type | M | P44-A2 |
+| P45-16 | Builder | Split `LayoutBuilderModal.tsx` (1152 LOC): extract overlay library, campaign media picker, workspace preference, and keyboard handler concerns into focused hooks | L | P44-A1 |
+| P45-17 | Builder | Split `LayoutSlotComponent.tsx` (945 LOC): extract mask-drag overlay, slot-media drop handler, and border/label rendering into sub-components | M | P44-A1 |
+| P45-18 | Builder | `smartGuides.ts` performance: memoize guide computation per-slot to avoid O(n) recalculation on every drag frame | M | P44-A1 |
+| P45-19 | Builder | Add keyboard shortcut to add a new slot (e.g. N key) — current affordance is mouse-only (double-click or "Add slot" button) | S | P44-A1 |
