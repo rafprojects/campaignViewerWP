@@ -1,6 +1,6 @@
 # Phase 44 — Codebase Audit: Code Quality, Security & UX Review
 
-**Status:** In progress
+**Status:** Complete
 **Created:** 2026-06-04
 **Last updated:** 2026-06-05
 
@@ -14,7 +14,7 @@
 | P44-A4  | Settings System             | Complete    | M      |
 | P44-A5  | Auth + API Layer            | Complete    | M      |
 | P44-A6  | Hooks + State               | Complete    | M      |
-| P44-A7  | PHP Backend                 | Not started | L      |
+| P44-A7  | PHP Backend                 | Complete    | L      |
 | P44-A8  | Types + Utils               | Complete    | S      |
 
 ---
@@ -293,6 +293,58 @@ files), `class-wpsg-settings-sanitizer.php` (1377 LOC), `class-wpsg-db.php` (855
   appropriate severity? Any PII (IP addresses, user emails) logged without scrubbing?
 - **Error response UX**: WP REST errors returned to the frontend — are `message` strings
   human-readable and actionable, or raw PHP exception strings?
+
+---
+
+## Track P44-A7 Rationale
+
+**SQL injection:** All custom queries in `class-wpsg-db.php` use `$wpdb->prepare()`,
+`$wpdb->insert()`, `$wpdb->update()`, or `$wpdb->delete()`. The `ensure_index()` DDL helper
+validates index/column name identifiers with regex before interpolating them — correct
+approach since `prepare()` cannot parameterise DDL identifiers. No raw query construction
+with user input found. ✅
+
+**Input sanitization:** Every REST route declares `sanitize_callback` or type/enum validation
+on its `args`. `build_media_item_from_payload()` validates media type (enum), source (enum),
+external URL scheme (HTTPS-only), and custom media ID (regex). Auth endpoints pass credentials
+through `wp_signon()` without reflection; emails are sanitised with `sanitize_email()`. Magic
+link tokens are constrained by the route regex `[a-f0-9\-]{36}` before reaching handler code.
+✅
+
+**File upload security:** `upload_single_media_file()` uses `wp_check_filetype_and_ext()`
+(byte-sniffing, not extension only) and cross-validates against the filename MIME — prevents
+extension/content mismatch. `is_uploaded_file()` guards against path injection. MIME allowlist
+covers only images and videos. Duplicate detection (MD5 + pHash) runs pre-sideload.
+`wp_handle_sideload()` is used, which bypasses the `test_form` check without weakening
+security. ✅
+
+**SSRF:** oEmbed proxy in `class-wpsg-system-controller.php` applies two-layer SSRF
+protection: pre-flight DNS check against private IP ranges (IPv4 + IPv6) plus a
+`pre_http_request` filter that re-validates the resolved IP at connection time to close the
+DNS-rebinding TOCTOU window. HTTPS-only requirement enforced before DNS. Allowlisted well-known
+provider domains bypass the DNS check (deliberate: known safe hosts). ✅
+
+**SSRF — inline fixes (two):**
+- `class-wpsg-settings-service.php::ajax_test_auth()` — used `wp_remote_get` with an
+  admin-configurable `api_base` URL. Replaced with `wp_safe_remote_get` to apply WordPress's
+  built-in private-IP blocklist even for admin-configured URLs.
+- `class-wpsg-thumbnail-cache.php::cache_thumbnail()` — used `wp_remote_get` to download
+  external thumbnails. Replaced with `wp_safe_remote_get` for the same reason.
+
+**Capability checks:** `require_admin()` checks `manage_wpsg`; `require_campaign_editor()` and
+`require_campaign_owner()` first verify auth integrity (nonce or Bearer token) then check the
+effective access level (owner > editor > viewer, with explicit-deny override). Magic approve is
+public but rate-limited (10/min) and one-time-use with 48-hour expiry. ✅
+
+**Rate limiting:** Applied to all mutation endpoints via `permission_callback`. Public endpoints:
+60 req/min per IP. Authenticated: 120 req/min. Magic approve: 10 req/min. ✅
+
+**Error responses:** All REST error messages are human-readable. Login failure returns a generic
+"Invalid username or password." (prevents username enumeration). Magic link expiry returns a
+clear `link_expired` response. No raw PHP exceptions reach the client. ✅
+
+**PII in logs:** Audit log records `actor_login` (username) and user IDs, not email addresses.
+IP addresses are not stored in the audit log. ✅
 
 ---
 

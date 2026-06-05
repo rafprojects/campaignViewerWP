@@ -51,7 +51,7 @@ class WPSG_Settings_Service {
         $api_base = !empty($settings['api_base']) ? $settings['api_base'] : home_url();
         $test_url = trailingslashit($api_base) . 'wp-json/wp-super-gallery/v1/campaigns';
 
-        $response = wp_remote_get($test_url, [
+        $response = wp_safe_remote_get($test_url, [
             'timeout'   => 10,
             'sslverify' => apply_filters('https_local_ssl_verify', false),
         ]);

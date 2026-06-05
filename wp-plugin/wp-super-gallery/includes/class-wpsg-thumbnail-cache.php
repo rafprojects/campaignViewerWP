@@ -93,7 +93,7 @@ class WPSG_Thumbnail_Cache {
         $filepath = trailingslashit($cache_dir) . $filename;
 
         // Download the thumbnail.
-        $response = wp_remote_get($url, [
+        $response = wp_safe_remote_get($url, [
             'timeout'   => 15,
             'sslverify' => true,
             'headers'   => ['Accept' => 'image/*'],
