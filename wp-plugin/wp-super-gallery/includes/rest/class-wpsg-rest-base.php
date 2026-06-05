@@ -500,7 +500,7 @@ abstract class WPSG_REST_Base {
     }
 
     protected static function can_view_campaign($post_id, $user_id) {
-        if ($user_id && current_user_can('manage_options')) {
+        if ($user_id && (current_user_can('manage_wpsg') || current_user_can('manage_options'))) {
             return true;
         }
 

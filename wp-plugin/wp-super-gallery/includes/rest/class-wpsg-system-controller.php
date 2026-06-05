@@ -115,7 +115,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
     public static function proxy_oembed($request) {
 
         // P14-D: Rate limiting — exempt authenticated admins.
-        if (!current_user_can('manage_options')) {
+        if (!current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
             $ip = WPSG_Rate_Limiter::get_client_ip();
             $rate_check = WPSG_Rate_Limiter::check($ip, 'oembed');
             if (!$rate_check['allowed']) {
@@ -136,7 +136,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
         }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
-        $host = isset($parsed['host']) ? $parsed['host'] : '';
+        $host = strtolower(isset($parsed['host']) ? $parsed['host'] : '');
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
         if (empty($host)) {
             return self::error_response('Invalid oEmbed URL host', 400, 'wpsg_invalid_oembed_host');

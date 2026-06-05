@@ -647,13 +647,14 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
      * with { url, name } to register an external URL.
      */
     public static function upload_overlay( $request ) {
+        $files = $request->get_file_params();
         // File upload path.
-        if ( ! empty( $_FILES['file'] ) ) {
-            $url = WPSG_Overlay_Library::handle_upload( $_FILES['file'] );
+        if ( ! empty( $files['file'] ) ) {
+            $url = WPSG_Overlay_Library::handle_upload( $files['file'] );
             if ( is_wp_error( $url ) ) {
                 return new WP_Error( 'wpsg_upload_failed', $url->get_error_message(), [ 'status' => 400 ] );
             }
-            $name = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $_FILES['file']['name'] ) );
+            $name = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $files['file']['name'] ) );
         } else {
             // URL-only path.
             $data = $request->get_json_params() ?? [];
