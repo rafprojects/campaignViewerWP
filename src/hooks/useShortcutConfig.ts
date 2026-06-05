@@ -49,6 +49,7 @@ function loadOverrides(): Partial<ShortcutEffectiveMap> {
     }
     return result;
   } catch {
+    // non-fatal: localStorage unavailable or JSON parse error — use empty overrides
     return {};
   }
 }

@@ -15,7 +15,7 @@
  *
  * Adapter ID: `'layout-builder'`
  */
-import React, { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import React, { useId, useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { ListingItem } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { useRecordAnalyticsEvent } from '@/hooks/useRecordAnalyticsEvent';
@@ -101,6 +101,12 @@ function TiltWrapper({
   );
 }
 
+// ── Slot CSS class helpers ────────────────────────────────────────────────────
+
+function slotCssClass(instanceId: string, slotId: string): string {
+  return `wpsg-lb-slot-${instanceId}-${slotId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+}
+
 // ── GallerySlotView: renders one slot (a function component so hooks work) ───
 
 interface GallerySlotViewProps {
@@ -113,6 +119,8 @@ interface GallerySlotViewProps {
   /** Glow settings from campaign-level GalleryBehaviorSettings. */
   glowColor: string;
   glowSpread: number;
+  /** CSS class name carrying position/size rules (injected via <style> in parent). */
+  positionClassName: string;
 }
 
 function GallerySlotView({
@@ -124,10 +132,9 @@ function GallerySlotView({
   mediaIndexMap,
   glowColor,
   glowSpread,
+  positionClassName,
 }: GallerySlotViewProps) {
-  // Px positions from percentages
-  const pxX = (slot.x / 100) * effectiveWidth;
-  const pxY = (slot.y / 100) * canvasHeight;
+  // Px dimensions (used for mask position computation)
   const pxW = (slot.width / 100) * effectiveWidth;
   const pxH = (slot.height / 100) * canvasHeight;
   const clipPath = getClipPath(slot);
@@ -169,13 +176,8 @@ function GallerySlotView({
     // E.4: Empty slot — gray dashed placeholder, non-interactive
     return (
       <div
+        className={positionClassName}
         style={{
-          position: 'absolute',
-          left: pxX,
-          top: pxY,
-          width: pxW,
-          height: pxH,
-          zIndex: slot.zIndex,
           clipPath,
           ...maskStyle,
           borderRadius: slot.shape === 'rectangle' ? slot.borderRadius : undefined,
@@ -295,17 +297,12 @@ function GallerySlotView({
   if (clipPath) {
     const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
     const outerStyle: React.CSSProperties = {
-      position: 'absolute',
-      left: pxX,
-      top: pxY,
-      width: pxW,
-      height: pxH,
-      zIndex: slot.zIndex,
       cursor: isClickable ? 'pointer' : 'default',
       filter: mergedFilter,
       transition: needsInlineGlow ? 'filter 0.25s ease' : undefined,
       mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
     };
+    const outerClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
     const clipContent = (
       <>
         {/* Border fill layer */}
@@ -350,11 +347,11 @@ function GallerySlotView({
     );
 
     return slot.tilt?.enabled ? (
-      <TiltWrapper tilt={slot.tilt} className={hoverClass} style={outerStyle} {...interactionProps} {...glowHandlers}>
+      <TiltWrapper tilt={slot.tilt} className={outerClassName} style={outerStyle} {...interactionProps} {...glowHandlers}>
         {clipContent}
       </TiltWrapper>
     ) : (
-      <div className={hoverClass} style={outerStyle} {...interactionProps} {...glowHandlers}>
+      <div className={outerClassName} style={outerStyle} {...interactionProps} {...glowHandlers}>
         {clipContent}
       </div>
     );
@@ -362,12 +359,6 @@ function GallerySlotView({
 
   // Rectangle slots
   const rectStyle: React.CSSProperties = {
-    position: 'absolute',
-    left: pxX,
-    top: pxY,
-    width: pxW,
-    height: pxH,
-    zIndex: slot.zIndex,
     borderRadius: slot.borderRadius,
     ...maskStyle,
     border:
@@ -379,6 +370,7 @@ function GallerySlotView({
     filter: mergedFilter,
     mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
   };
+  const rectClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
   const rectContent = (
     <>
       {slotMedia}
@@ -398,11 +390,11 @@ function GallerySlotView({
   );
 
   return slot.tilt?.enabled ? (
-    <TiltWrapper tilt={slot.tilt} className={hoverClass} style={rectStyle} {...interactionProps}>
+    <TiltWrapper tilt={slot.tilt} className={rectClassName} style={rectStyle} {...interactionProps}>
       {rectContent}
     </TiltWrapper>
   ) : (
-    <div className={hoverClass} style={rectStyle} {...interactionProps}>
+    <div className={rectClassName} style={rectStyle} {...interactionProps}>
       {rectContent}
     </div>
   );
@@ -558,6 +550,10 @@ function LayoutBuilderGalleryInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
+  // Stable per-instance ID for scoping slot position CSS (prevents collisions when
+  // the same template is mounted more than once on a page).
+  const rawInstanceId = useId();
+  const instanceId = rawInstanceId.replace(/[^a-zA-Z0-9]/g, '');
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   // ── Responsive container width via ResizeObserver ──────────────────────────
@@ -608,6 +604,19 @@ function LayoutBuilderGalleryInner({
     return dropShadow + '\n' + boxShadow;
   }, [settings]);
 
+  // ── Slot position CSS ─────────────────────────────────────────────────────
+  // Extracts position/size from per-element inline styles into a single injected
+  // <style> block, improving DevTools inspectability.
+  const slotPositionCss = useMemo(() => {
+    return template.slots.map((slot) => {
+      const pxX = (slot.x / 100) * finalCanvasWidth;
+      const pxY = (slot.y / 100) * canvasHeight;
+      const pxW = (slot.width / 100) * finalCanvasWidth;
+      const pxH = (slot.height / 100) * canvasHeight;
+      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}}`;
+    }).join('\n');
+  }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
+
   // ── Slot-count mismatch warning ───────────────────────────────────────────
   const slotCount = template.slots.length;
   const mediaCount = media.length;
@@ -620,8 +629,9 @@ function LayoutBuilderGalleryInner({
 
   return (
     <Stack {...getWpsgDebugProps('LayoutBuilderGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {/* Hover styles injected into DOM */}
+      {/* Hover and slot position styles injected into DOM */}
       <style>{hoverStylesCss}</style>
+      <style>{slotPositionCss}</style>
 
       {/* Header */}
       {heading.visible && (
@@ -752,17 +762,8 @@ function LayoutBuilderGalleryInner({
                 if (slotIndex >= (items?.length ?? 0)) return null;
                 const item = items![slotIndex];
                 if (!item) return null;
-                const pxX = (rawSlot.x / 100) * finalCanvasWidth;
-                const pxY = (rawSlot.y / 100) * canvasHeight;
-                const pxW = (rawSlot.width / 100) * finalCanvasWidth;
-                const pxH = (rawSlot.height / 100) * canvasHeight;
+                const listingSlotClass = slotCssClass(instanceId, rawSlot.id);
                 const containerStyle: React.CSSProperties = {
-                  position: 'absolute',
-                  left: pxX,
-                  top: pxY,
-                  width: pxW,
-                  height: pxH,
-                  zIndex: rawSlot.zIndex,
                   borderRadius: rawSlot.borderRadius || undefined,
                   border: rawSlot.borderWidth > 0
                     ? `${rawSlot.borderWidth}px solid ${rawSlot.borderColor}`
@@ -773,13 +774,13 @@ function LayoutBuilderGalleryInner({
                 };
                 if (rawSlot.tilt?.enabled) {
                   return (
-                    <TiltWrapper key={rawSlot.id} tilt={rawSlot.tilt} style={containerStyle}>
+                    <TiltWrapper key={rawSlot.id} className={listingSlotClass} tilt={rawSlot.tilt} style={containerStyle}>
                       {renderItem!(item, slotIndex)}
                     </TiltWrapper>
                   );
                 }
                 return (
-                  <div key={rawSlot.id} style={containerStyle}>
+                  <div key={rawSlot.id} className={listingSlotClass} style={containerStyle}>
                     {renderItem!(item, slotIndex)}
                   </div>
                 );
@@ -799,6 +800,7 @@ function LayoutBuilderGalleryInner({
                   mediaIndexMap={mediaIndexMap}
                   glowColor={slot.glowColor || settings.tileGlowColor || '#7c9ef8'}
                   glowSpread={slot.glowSpread ?? settings.tileGlowSpread ?? 12}
+                  positionClassName={slotCssClass(instanceId, slot.id)}
                 />
               );
             })}

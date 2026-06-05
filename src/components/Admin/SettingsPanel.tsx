@@ -1,16 +1,11 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
-import { useQuery } from '@tanstack/react-query';
 import { useStore } from 'zustand';
 import {
-  Accordion,
   Box,
   Button,
   Drawer,
   Group,
-  Paper,
-  SegmentedControl,
-  Select,
   Stack,
   Loader,
   Center,
@@ -46,17 +41,17 @@ import {
 import { SettingTooltip } from './SettingTooltip';
 import type { CustomFontEntry } from '../Common/TypographyEditor';
 import type { UpdateGallerySetting } from '../Settings/GalleryAdapterSettingsSection';
-import { GeneralSettingsSection } from '../Settings/GeneralSettingsSection';
-import { GalleryStyleAccordion, GalleryNavigationAccordion } from '../Settings/MediaDisplaySettingsSection';
-import { GalleryLayoutSettingsSection } from '../Settings/GalleryLayoutSettingsSection';
-import { CampaignViewerSettingsSection } from '../Settings/CampaignViewerSettingsSection';
-import { CampaignCardSettingsSection } from '../Settings/CampaignCardSettingsSection';
-import { AdvancedSettingsSection } from '../Settings/AdvancedSettingsSection';
-import { WebhookSettingsSection } from '../Settings/WebhookSettingsSection';
-import { TypographySettingsSection } from '../Settings/TypographySettingsSection';
+import { SettingsAppearanceTab } from '../Settings/tabs/SettingsAppearanceTab';
+import { SettingsCardsTab } from '../Settings/tabs/SettingsCardsTab';
+import { SettingsGalleryLayoutTab } from '../Settings/tabs/SettingsGalleryLayoutTab';
+import { SettingsGalleryStyleTab } from '../Settings/tabs/SettingsGalleryStyleTab';
+import { SettingsGalleryNavigationTab } from '../Settings/tabs/SettingsGalleryNavigationTab';
+import { SettingsViewerTab } from '../Settings/tabs/SettingsViewerTab';
+import { SettingsTypographyTab } from '../Settings/tabs/SettingsTypographyTab';
+import { SettingsIntegrationsTab } from '../Settings/tabs/SettingsIntegrationsTab';
+import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab';
 import { useTheme } from '@/hooks/useTheme';
 import { useRootId } from '@/contexts/RootIdContext';
-import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
@@ -131,12 +126,6 @@ function buildGalleryConfigEditorSeed(settings: SettingsData): GalleryConfig {
   return resolveGalleryConfig(settings);
 }
 
-const CARD_SETTINGS_BREAKPOINT_OPTIONS: Array<{ value: CardConfigBreakpoint; label: string }> = [
-  { value: 'desktop', label: 'Desktop' },
-  { value: 'tablet', label: 'Tablet' },
-  { value: 'mobile', label: 'Mobile' },
-];
-
 interface SettingsPanelProps {
   opened: boolean;
   apiClient: ApiClient;
@@ -174,54 +163,6 @@ function mergeCachedAndFetchedSettings(
     enableLightbox: preferred.enableLightbox ?? fallback.enableLightbox,
     enableAnimations: preferred.enableAnimations ?? fallback.enableAnimations,
   };
-}
-
-function MagicLinkPageSelector({
-  apiClient,
-  value,
-  onChange,
-}: {
-  apiClient: ApiClient;
-  value: number;
-  onChange: (id: number) => void;
-}) {
-  const { data: pages, isLoading } = useQuery({
-    queryKey: ['wpPages'],
-    queryFn: () => apiClient.listWpPages(),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const selectData = [
-    { value: '0', label: '— None (use inline HTML fallback) —' },
-    ...(pages ?? []).map((p) => ({
-      value: String(p.id),
-      label: p.title.rendered || `Page #${p.id}`,
-    })),
-  ];
-
-  return (
-    <Paper withBorder p="md" radius="md">
-      <Stack gap="xs">
-        <Text size="sm" fw={600}>Access Request Magic-Link</Text>
-        <Text size="xs" c="dimmed">
-          When an admin clicks a one-click approval link, the result is shown on this page
-          (via <code>?wpsg_result=approved|expired|used|invalid</code>). If no page is selected,
-          a minimal inline HTML page is returned instead.
-        </Text>
-        <Select
-          label="Magic-link landing page"
-          placeholder={isLoading ? 'Loading pages…' : 'Select a page'}
-          data={selectData}
-          value={String(value)}
-          onChange={(v) => onChange(v ? parseInt(v, 10) : 0)}
-          disabled={isLoading}
-          searchable
-          clearable={false}
-          size="sm"
-        />
-      </Stack>
-    </Paper>
-  );
 }
 
 const SettingsPanelTitle: NamedComponent = () => (
@@ -264,9 +205,6 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   updateTypoOverride,
   tooltipLabel,
 }) => {
-  // P36-A2: Persist the Cards tab accordion expansion.
-  const { value: cardAccordionValue, onChange: cardAccordionOnChange } = usePersistentAccordion('cards', 'appearance');
-
   return <Stack gap="md">
     <Tabs
       value={activeTab}
@@ -317,118 +255,63 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
       </Tabs.List>
 
       <Tabs.Panel value="appearance" pt="md">
-        {activeTab === 'appearance' && (
-          <GeneralSettingsSection
-            settings={settings}
-            updateSetting={updateSetting}
-            onThemeChange={(id) => updateSetting('theme', id)}
-          />
-        )}
+        <SettingsAppearanceTab settings={settings} updateSetting={updateSetting} />
       </Tabs.Panel>
 
       <Tabs.Panel value="cards" pt="md">
-        {activeTab === 'cards' && (
-          <Stack gap="md">
-            <Box>
-              <Text size="sm" c="dimmed" mb="xs">
-                Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.
-              </Text>
-              <SegmentedControl
-                data={CARD_SETTINGS_BREAKPOINT_OPTIONS}
-                value={cardSettingsBreakpoint}
-                onChange={(value) => setCardSettingsBreakpoint(value as CardConfigBreakpoint)}
-                aria-label="Card settings breakpoint"
-                size="xs"
-                fullWidth
-              />
-            </Box>
-            <Accordion variant="separated" value={cardAccordionValue} onChange={cardAccordionOnChange}>
-              <CampaignCardSettingsSection
-                settings={settings}
-                updateSetting={updateGallerySetting}
-                activeBreakpoint={cardSettingsBreakpoint}
-                apiClient={apiClient}
-              />
-            </Accordion>
-          </Stack>
-        )}
+        <SettingsCardsTab
+          settings={settings}
+          updateSetting={updateGallerySetting}
+          apiClient={apiClient}
+          cardSettingsBreakpoint={cardSettingsBreakpoint}
+          setCardSettingsBreakpoint={setCardSettingsBreakpoint}
+        />
       </Tabs.Panel>
 
       <Tabs.Panel value="gallery-layout" pt="md">
-        {activeTab === 'gallery-layout' && (
-          <GalleryLayoutSettingsSection
-            settings={settings}
-            updateSetting={updateGallerySetting}
-            onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
-          />
-        )}
+        <SettingsGalleryLayoutTab
+          settings={settings}
+          updateSetting={updateGallerySetting}
+          onOpenResponsiveConfig={() => setGalleryConfigEditorOpen(true)}
+        />
       </Tabs.Panel>
 
       <Tabs.Panel value="gallery-style" pt="md">
-        {activeTab === 'gallery-style' && (
-          <GalleryStyleAccordion
-            settings={settings}
-            updateSetting={updateSetting}
-            tooltipLabel={tooltipLabel}
-          />
-        )}
+        <SettingsGalleryStyleTab settings={settings} updateSetting={updateSetting} tooltipLabel={tooltipLabel} />
       </Tabs.Panel>
 
       <Tabs.Panel value="gallery-navigation" pt="md">
-        {activeTab === 'gallery-navigation' && (
-          <GalleryNavigationAccordion
-            settings={settings}
-            updateSetting={updateSetting}
-            tooltipLabel={tooltipLabel}
-          />
-        )}
+        <SettingsGalleryNavigationTab settings={settings} updateSetting={updateSetting} tooltipLabel={tooltipLabel} />
       </Tabs.Panel>
 
       <Tabs.Panel value="viewer" pt="md">
-        {activeTab === 'viewer' && (
-          <CampaignViewerSettingsSection
-            settings={settings}
-            updateSetting={updateGallerySetting}
-          />
-        )}
+        <SettingsViewerTab settings={settings} updateSetting={updateGallerySetting} />
       </Tabs.Panel>
 
       <Tabs.Panel value="typography" pt="md">
-        {activeTab === 'typography' && (
-          <TypographySettingsSection
-            apiClient={apiClient}
-            customFonts={customFonts}
-            typographyOverrides={settings.typographyOverrides}
-            onFontsChange={(fonts) => setCustomFonts(fonts)}
-            onResetAll={() => updateSetting('typographyOverrides', {})}
-            onOverrideChange={updateTypoOverride}
-          />
-        )}
+        <SettingsTypographyTab
+          apiClient={apiClient}
+          customFonts={customFonts}
+          setCustomFonts={setCustomFonts}
+          typographyOverrides={settings.typographyOverrides}
+          updateSetting={updateSetting}
+          updateTypoOverride={updateTypoOverride}
+        />
       </Tabs.Panel>
 
       <Tabs.Panel value="integrations" pt="md">
-        {activeTab === 'integrations' && (
-          <WebhookSettingsSection apiClient={apiClient} />
-        )}
+        <SettingsIntegrationsTab apiClient={apiClient} />
       </Tabs.Panel>
 
       {settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
-          {activeTab === 'system-admin' && (
-            <Stack gap="xl">
-              <MagicLinkPageSelector
-                apiClient={apiClient}
-                value={settings.magicLinkLandingPageId ?? 0}
-                onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
-              />
-              <AdvancedSettingsSection
-                settings={settings}
-                updateSetting={updateGallerySetting}
-                tooltipLabel={tooltipLabel}
-                apiClient={apiClient}
-              />
-            </Stack>
-          )}
+          <SettingsSystemAdminTab
+            settings={settings}
+            updateSetting={updateSetting}
+            updateGallerySetting={updateGallerySetting}
+            apiClient={apiClient}
+            tooltipLabel={tooltipLabel}
+          />
         </Tabs.Panel>
       )}
     </Tabs>

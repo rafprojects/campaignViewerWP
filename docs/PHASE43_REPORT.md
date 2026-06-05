@@ -1,17 +1,17 @@
 # Phase 43 — SettingsPanel Splitting, CSS Injection & Error Handling Standardization
 
-**Status:** Not started
+**Status:** Complete
 **Created:** 2026-06-03
 **Last updated:** 2026-06-04
 
 ### Tracks
 
-| Track    | Description                                                          | Status      | Effort |
-|----------|----------------------------------------------------------------------|-------------|--------|
-| P43-SP1  | Extract tab panel contents into named, memoized tab components       | Not started | M      |
-| P43-SP2  | Remove redundant activeTab guards; add tab component tests           | Not started | S      |
-| P43-SP3  | RD-9: LayoutBuilderGallery inline style → CSS injection              | Not started | S      |
-| P43-SP4  | RD-21: Standardize error handling patterns                           | Not started | M      |
+| Track    | Description                                                          | Status   | Effort |
+|----------|----------------------------------------------------------------------|----------|--------|
+| P43-SP1  | Extract tab panel contents into named, memoized tab components       | Complete | M      |
+| P43-SP2  | Remove redundant activeTab guards; add tab component tests           | Complete | S      |
+| P43-SP3  | RD-9: LayoutBuilderGallery inline style → CSS injection              | Complete | S      |
+| P43-SP4  | RD-21: Standardize error handling patterns                           | Complete | M      |
 
 ---
 
@@ -107,27 +107,30 @@ its content actually uses. Update `SettingsPanelTabsContent` to render the new c
 
 **`src/components/Settings/tabs/Settings*.tsx`** (9 new files)
 - Each file exports one `React.memo`-wrapped functional component.
-- Body is the JSX currently inside the matching `{activeTab === '...' && (...)}` block.
-- Inner `activeTab` guard is kept for now (removed in P43-SP2).
+- Body is the JSX previously inside the matching `{activeTab === '...' && (...)}` block.
 - `setWpsgDebugDisplayName` applied to each, e.g.
   `setWpsgDebugDisplayName(SettingsCardsTab, 'SettingsPanel:CardsTab')`.
 
 **`src/components/Admin/SettingsPanel.tsx`**
-- `SettingsPanelTabsContentProps` interface shrinks: remove tab-specific props that are now handled
-  directly by each tab component's own interface.
+- `SettingsPanelTabsContentProps` interface is unchanged at this level — still passes all props
+  down to the tab shell. The narrowing happens inside each tab component.
 - Each `Tabs.Panel` body replaced with a single `<SettingsXxxTab .../>` call.
 - Import all 9 tab components at the top.
+- Removed: `CARD_SETTINGS_BREAKPOINT_OPTIONS` (moved to `SettingsCardsTab.tsx`),
+  `MagicLinkPageSelector` (moved to `SettingsSystemAdminTab.tsx`),
+  `usePersistentAccordion` import and call (moved to `SettingsCardsTab.tsx`).
+- Removed Mantine imports that were only used in moved code: `Accordion`, `SegmentedControl`, `Paper`, `Select`.
+- Removed `useQuery` import (was only used in the moved `MagicLinkPageSelector`).
+
+### Decisions (M43-A)
+
+**Types not shared via a common file.** `SettingsPanelUpdateSetting` and `SettingsPanelTooltipRenderer` are local types in `SettingsPanel.tsx`. Rather than creating a shared types file, tab components declare equivalent types inline (`<K extends keyof SettingsData>(key: K, value: SettingsData[K]) => void` and `ReactNode`) — they're trivially simple one-liners and don't benefit from a shared declaration.
+
+**`SettingsTypographyTab` needs `updateSetting`.** The phase doc's per-tab interface omitted it, but `TypographySettingsSection` receives `onResetAll={() => updateSetting('typographyOverrides', {})}`. Added `updateSetting` to the tab's props.
 
 ### Result
 
-`SettingsPanelTabsContent` drops from 11 props to the minimum needed to thread the right sub-set
-to each tab: `activeTab`, `setActiveTab`, `settings`, `updateSetting`, `updateGallerySetting`,
-`apiClient`, `customFonts`, `setCustomFonts`, `updateTypoOverride`, `tooltipLabel`,
-`cardSettingsBreakpoint`, `setCardSettingsBreakpoint`, `setGalleryConfigEditorOpen`.
-
-> Note: the prop count does not shrink dramatically at this level because SettingsPanelTabsContent
-> is just a passthrough shell. The win is inside each tab: a `SettingsTypographyTab` that takes
-> 5 props is far more readable than a monolith that takes 13.
+`SettingsPanelTabsContent` retains its current prop count (it is a passthrough shell). The win is inside each tab: `SettingsTypographyTab` takes 6 focused props instead of 13, `SettingsIntegrationsTab` takes 1.
 
 ---
 
@@ -142,21 +145,27 @@ the extracted tab components.
 
 ### Changes
 
-**`src/components/Settings/tabs/Settings*.tsx`**
-- Remove the `activeTab ===` conditional wrapping from each component's body.
+**`src/components/Admin/SettingsPanel.tsx`**
+- Removed the `{activeTab === '...' && (...)}` guard wrappers from all 9 `Tabs.Panel` bodies.
+- `activeTab` prop remains — it is still used for `<Tabs value={activeTab}>`.
 
-**`src/components/Settings/tabs/SettingsAppearanceTab.test.tsx`** (and 1–2 more, prioritise the complex tabs)
-- Smoke-test: renders without errors given valid settings + update mock.
-- Spot-check a key prop: e.g. `SettingsCardsTab` renders the breakpoint `SegmentedControl`.
+**`src/components/Settings/tabs/SettingsAppearanceTab.test.tsx`** (new)
+- Smoke-test: renders without errors; asserts "Theme & Layout" accordion control is present.
+
+**`src/components/Settings/tabs/SettingsCardsTab.test.tsx`** (new)
+- Smoke-test: renders without errors.
+- Asserts the breakpoint `SegmentedControl` is present with all three options.
+
+### Decisions (M43-B)
+
+**Guards moved from `SettingsPanelTabsContent`, not from inside tab components.** The original plan was ambiguous about _where_ the `activeTab` guards lived after SP1. In practice, SP1 extracted the JSX _inside_ the conditional; the guards remained in `SettingsPanelTabsContent`. SP2 removes them there, not from inside tab components (which had no guards to remove). The result is cleaner: tab components are now purely props-in → JSX-out with no knowledge of tab routing.
 
 ### Verification
 
 ```bash
 npx vitest run src/components/Settings/tabs/
+# 2 test files, 3 tests — all pass
 ```
-
-Full Vitest suite passes. No snapshot churn expected (these components produce the same DOM
-as the inline JSX they replaced).
 
 ---
 
@@ -172,26 +181,61 @@ apply per-slot dimensions and positions. Convert these to injected CSS class nam
 
 ### Why
 
-Inline styles require `style-src 'unsafe-inline'` in the Content Security Policy. The rest of
-the app uses CSS injection patterns; LayoutBuilderGallery is the outlier. Aligning it also makes
-slot styling easier to inspect and override via DevTools.
+Inline `style` props clutter the Elements panel — slot positions appear as per-element inline
+rules instead of named classes, making DevTools inspection harder. Extracting to CSS classes
+improves inspectability. The rest of the gallery adapters already inject a `<style>` block for
+hover effects; this brings slot positions into the same pattern.
 
 ### Changes
 
 **`src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`**
-- Generate a stable CSS class name per slot (e.g. `wpsg-slot-${slotId}`) and inject
-  `.[class] { width: ...; height: ...; top: ...; left: ...; }` via `useInsertionEffect`.
-- Remove the `style={...}` attribute from the slot element.
-- Verify the Shadow DOM host already has an `adoptedStyleSheets`-compatible path; fall back
-  to a `<style>` tag appended to the shadow root if not.
+- Added `slotCssClass(instanceId, slotId)` helper: produces `wpsg-lb-slot-<instanceId>-<slotId>`
+  with CSS-safe char substitution. The `instanceId` parameter scopes CSS to a single gallery
+  instance (see decision M43-D below).
+- In `LayoutBuilderGalleryInner`: derives `instanceId` via `useId()` (React 18), strips non-alphanumeric
+  chars to produce a CSS-safe token.
+- Added `slotPositionCss` `useMemo`: iterates `template.slots` and generates one scoped CSS rule per
+  slot. `instanceId` included in memo deps.
+- Renders `<style>{slotPositionCss}</style>` alongside the existing `<style>{hoverStylesCss}</style>`.
+- `GallerySlotView`: receives `positionClassName` prop; applies it to the outer wrapper div;
+  removes `position`, `left`, `top`, `width`, `height`, `zIndex` from all three inline style objects
+  (empty slot, clip-path `outerStyle`, rectangle `rectStyle`). Mask, filter, clip-path, and
+  blend-mode styles stay inline (they contain dynamic/URL-based values).
+- Listing mode (in parent): removes the same 5 properties from `containerStyle`; applies
+  `className={slotCssClass(instanceId, rawSlot.id)}` to the container div / `TiltWrapper`.
+- `pxX` and `pxY` removed from `GallerySlotView` (no longer used there; `pxW`/`pxH` stay for
+  mask position computation).
+
+### Decisions (M43-C)
+
+**`<style>` tag, not `useInsertionEffect`.** No `useInsertionEffect` usage exists anywhere in
+this codebase; all gallery adapters use `<style>{css}</style>` as a React element. Using the
+same pattern keeps the codebase consistent.
+
+**CSP note.** The phase doc claimed inline `style` props require `style-src 'unsafe-inline'` while
+`<style>` injection does not. This is incorrect — both require `'unsafe-inline'`. The real benefit
+is DevTools inspectability only.
+
+**M43-E (PR review r2): Scope `useQuery` key in `MagicLinkPageSelector` to `apiClient.getBaseUrl()`.** Copilot identified that `queryKey: ['wpPages']` is too generic — if multiple gallery roots with different API base URLs are mounted in the same app, React Query would serve the stale pages list from one root to another. Fix: changed to `queryKey: ['wpPages', apiClient.getBaseUrl()]`, matching the pattern used elsewhere (e.g. `src/services/settingsQuery.ts`).
+
+**M43-D (PR review r1): Per-instance CSS scoping via `useId()`.** Copilot identified that the
+original `slotCssClass(slotId)` generated global selectors. Two `LayoutBuilderGallery` instances
+on the same page sharing the same template but different container widths would collide — the last
+`<style>` block wins, breaking positioning in earlier instances. Fix: `slotCssClass` now takes
+`instanceId` as its first parameter. `LayoutBuilderGalleryInner` derives a stable per-mount ID
+via `useId()` (React 18), strips non-alphanumeric chars, and passes it to every `slotCssClass`
+call and the `slotPositionCss` memo deps array.
+
+**Scope: position/size only.** Mask URL styles, filter expressions, clip-path values, and blend
+modes all contain dynamic or sanitized values and stay as inline styles. Converting only the
+position/size rectangle is sufficient to achieve the inspectability goal without adding complexity.
 
 ### Verification
 
 ```bash
 npx vitest run src/components/Galleries/Adapters/layout-builder/
+# 22 tests — all pass
 ```
-
-Visual: Layout Builder preview still renders slots at their correct positions.
 
 ---
 
@@ -212,15 +256,33 @@ human-readable form.
 | Form layer | Validation errors | Inline field-level feedback via Mantine form `error` props |
 | Unexpected errors | Unhandled exceptions | Sentry capture (existing `src/services/monitoring/`) + graceful fallback UI |
 
+### Audit findings
+
+The existing error handling was mostly solid. All React Query `useMutation` calls in components
+had `onError` handlers or were called via `mutateAsync` inside a `try/catch` with `onNotify`.
+Silent catch patterns were mostly intentional (localStorage, URL parsing, history API).
+
 ### Changes
 
-**`src/hooks/`** (multiple files)
-- Find `try/catch` blocks that silently swallow errors (no `console.error`, no user feedback).
-- Replace with either a `notifications.show` call or a rethrow to the nearest error boundary.
+**`src/hooks/useUnifiedCampaignModal.ts`** — User-visible fix:
+- Campaign media fetch on modal open silently set an empty list on failure. Added
+  `onNotify({ type: 'error', text: 'Failed to load campaign media.' })` in the catch block.
 
-**`src/components/`** (targeted files)
-- React Query `useMutation` callbacks with missing `onError` — add consistent handlers.
-- Components that render `null` or nothing on error — add a minimal fallback message.
+**`src/hooks/useAdminCampaignActions.ts`** — Annotation:
+- Two `.catch(() => {})` on `deleteExportJob` (post-download cleanup). Added
+  `/* non-fatal: cleanup failure doesn't affect the export result */` comment.
+
+**`src/hooks/useRecentFonts.ts`** — Annotation:
+- Unannotated `catch { return cachedSnapshot; }` in localStorage snapshot reader.
+  Added `// non-fatal: localStorage unavailable or JSON parse error — fall back to in-memory cache`.
+
+**`src/hooks/useReloadSafeView.ts`** — Annotation:
+- Unannotated `catch { return defaultValue; }` in init read.
+  Added `// non-fatal: localStorage unavailable or stale JSON — use default`.
+
+**`src/hooks/useShortcutConfig.ts`** — Annotation:
+- Unannotated `catch { return {}; }` in `loadOverrides` parse path.
+  Added `// non-fatal: localStorage unavailable or JSON parse error — use empty overrides`.
 
 **`src/services/monitoring/`** — no changes needed; Sentry wrapper already in place.
 
@@ -230,10 +292,8 @@ No new dependencies. No infrastructure changes.
 
 ```bash
 npx vitest run
+# 146 test files, 2006 tests — all pass
 ```
-
-Manual: trigger an API error (disconnect network or hit an invalid endpoint); verify a Mantine
-notification appears with a human-readable message rather than a blank state or console-only log.
 
 ---
 
