@@ -273,7 +273,7 @@ class WPSG_REST_Routes_Test extends WP_UnitTestCase {
             $request->set_param('id', $media_id);
 
             // This should work since we're calling the handler directly
-            $response = WPSG_REST::create_media($request);
+            $response = WPSG_Media_Controller::create_media($request);
 
             // Should not be an error about invalid mediaId format
             $this->assertInstanceOf('WP_REST_Response', $response);

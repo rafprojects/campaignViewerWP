@@ -7,7 +7,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
     public function test_missing_url_returns_400() {
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
         // no url param
-        $response = WPSG_REST::proxy_oembed($request);
+        $response = WPSG_System_Controller::proxy_oembed($request);
         $this->assertInstanceOf('WP_REST_Response', $response);
         $this->assertEquals(400, $response->get_status());
         $data = $response->get_data();
@@ -20,7 +20,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         // we assert status = 400 and that a message key is present.
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
         $request->set_param('url', 'https://');
-        $response = WPSG_REST::proxy_oembed($request);
+        $response = WPSG_System_Controller::proxy_oembed($request);
         $this->assertInstanceOf('WP_REST_Response', $response);
         $this->assertEquals(400, $response->get_status());
         $data = $response->get_data();
@@ -40,7 +40,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
 
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
         $request->set_param('url', $url);
-        $response = WPSG_REST::proxy_oembed($request);
+        $response = WPSG_System_Controller::proxy_oembed($request);
 
         $this->assertInstanceOf('WP_REST_Response', $response);
         $this->assertEquals(200, $response->get_status());
@@ -60,7 +60,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
 
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
         $request->set_param('url', $url);
-        $response = WPSG_REST::proxy_oembed($request);
+        $response = WPSG_System_Controller::proxy_oembed($request);
 
         $this->assertInstanceOf('WP_REST_Response', $response);
         $this->assertEquals(502, $response->get_status());
@@ -76,7 +76,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
         $request->set_param('url', 'https://non-allowlisted-site.com/watch?v=123');
 
-        $response = WPSG_REST::proxy_oembed($request);
+        $response = WPSG_System_Controller::proxy_oembed($request);
         $this->assertInstanceOf('WP_REST_Response', $response);
 
         // Should fail with DNS resolution error, not IP blocking error

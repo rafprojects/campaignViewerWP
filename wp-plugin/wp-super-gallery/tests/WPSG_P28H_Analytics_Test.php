@@ -164,7 +164,7 @@ class WPSG_P28H_Analytics_Test extends WP_UnitTestCase {
 
         $img1 = array_values(array_filter($items, fn($i) => $i['media_id'] === 'img-1'))[0] ?? null;
         $this->assertNotNull($img1);
-        $this->assertEquals(3, $img1['views'], 'img-1 should have 3 total events.');
+        $this->assertEquals(2, $img1['views'], 'img-1 should have 2 view events.');
         $this->assertEquals(1, $img1['lightbox_opens'], 'img-1 should have 1 lightbox_open.');
     }
 

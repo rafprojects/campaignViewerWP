@@ -89,9 +89,8 @@ class WPSG_Campaign_Rest_Test extends WP_UnitTestCase {
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/999999999');
         $response = rest_do_request($req);
 
-        // Permission callback denies access when the post does not exist;
-        // WP REST returns 403 for authenticated users, 401 for unauthenticated.
-        $this->assertContains( $response->get_status(), [ 401, 403 ] );
+        // Handler returns 404 for a non-existent campaign ID.
+        $this->assertEquals(404, $response->get_status());
     }
 
     public function test_create_campaign_requires_manage_wpsg_capability() {
