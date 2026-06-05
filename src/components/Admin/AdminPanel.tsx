@@ -43,6 +43,7 @@ const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal
 const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal').then((m) => ({ default: m.AdminCampaignRestoreModal })));
 const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
 const AdminCampaignBulkDeleteModal = lazy(() => import('./AdminCampaignBulkDeleteModal').then((m) => ({ default: m.AdminCampaignBulkDeleteModal })));
+const AdminCampaignBulkConfirmModal = lazy(() => import('./AdminCampaignBulkConfirmModal').then((m) => ({ default: m.AdminCampaignBulkConfirmModal })));
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
 const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
@@ -444,8 +445,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                 hasArchivedSelected={sel.some((c) => c.status === 'archived')}
                 isLoading={campaignActions.isBulkLoading}
                 isExporting={campaignActions.isBulkExporting}
-                onArchive={campaignActions.handleBulkArchive}
-                onRestore={campaignActions.handleBulkRestore}
+                onArchive={() => campaignActions.setConfirmBulkArchive(true)}
+                onRestore={() => campaignActions.setConfirmBulkRestore(true)}
                 onExport={campaignActions.handleBulkBinaryExport}
                 onDelete={() => campaignActions.setConfirmBulkDelete(true)}
                 onClearSelection={campaignActions.handleDeselectAll}
@@ -617,6 +618,36 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             onConfirm={async (opts) => {
               campaignActions.setConfirmBulkDelete(false);
               await campaignActions.handleBulkDelete(opts);
+            }}
+          />
+        </Suspense>
+      )}
+      {campaignActions.confirmBulkArchive && (
+        <Suspense fallback={null}>
+          <AdminCampaignBulkConfirmModal
+            opened={campaignActions.confirmBulkArchive}
+            action="archive"
+            count={campaignActions.selectedCampaignIds.size}
+            loading={campaignActions.isBulkLoading}
+            onClose={() => campaignActions.setConfirmBulkArchive(false)}
+            onConfirm={async () => {
+              campaignActions.setConfirmBulkArchive(false);
+              await campaignActions.handleBulkArchive();
+            }}
+          />
+        </Suspense>
+      )}
+      {campaignActions.confirmBulkRestore && (
+        <Suspense fallback={null}>
+          <AdminCampaignBulkConfirmModal
+            opened={campaignActions.confirmBulkRestore}
+            action="restore"
+            count={campaignActions.selectedCampaignIds.size}
+            loading={campaignActions.isBulkLoading}
+            onClose={() => campaignActions.setConfirmBulkRestore(false)}
+            onConfirm={async () => {
+              campaignActions.setConfirmBulkRestore(false);
+              await campaignActions.handleBulkRestore();
             }}
           />
         </Suspense>

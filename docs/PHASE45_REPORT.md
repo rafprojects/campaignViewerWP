@@ -17,7 +17,7 @@
 | P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Planned | M      |
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Done     | S      |
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
-| P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Planned | S      |
+| P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Planned | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Planned | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
@@ -337,6 +337,29 @@ imports via path alias or package reference. Confirm no circular dependencies.
 - All existing tests for `sanitizeCss` and `cssUnits` continue to pass from the new location
 - No WPSG-specific types or imports remain in the extracted files
 - Import paths in consuming files updated
+
+---
+
+## Track P45-A10 — Bulk Delete/Archive/Restore Confirmation Dialogs
+
+### Problem
+
+`BulkActionsBar`'s Archive and Restore buttons fired `handleBulkArchive` and `handleBulkRestore` immediately — no confirmation gate. Bulk Delete already had `AdminCampaignBulkDeleteModal` and `confirmBulkDelete` state. Archive and restore had no equivalent.
+
+### Fix
+
+Added `confirmBulkArchive` and `confirmBulkRestore` boolean state fields to `useAdminCampaignActions`. Changed `BulkActionsBar`'s `onArchive` and `onRestore` props in `AdminPanel.tsx` from direct action handlers to setters. Added two lazy `AdminCampaignBulkConfirmModal` instances for archive and restore.
+
+### Rationale
+
+Rather than creating two near-identical `AdminCampaignBulkArchiveModal` and `AdminCampaignBulkRestoreModal` files, a single `AdminCampaignBulkConfirmModal` component accepts `action: 'archive' | 'restore'` and derives all text and color from an internal `ACTION_CONFIG` map. `AdminCampaignBulkDeleteModal` stays separate since it has custom UI (the `purgeAnalytics` checkbox). 10 tests added in `AdminCampaignBulkConfirmModal.test.tsx` covering both actions, singular/plural labels, confirm/cancel callbacks.
+
+### Acceptance criteria
+
+- Clicking Archive in `BulkActionsBar` opens a confirmation modal before any server call
+- Clicking Restore in `BulkActionsBar` opens a confirmation modal before any server call
+- Cancelling either confirmation makes no server call
+- `AdminCampaignBulkConfirmModal` test coverage for both actions
 
 ---
 

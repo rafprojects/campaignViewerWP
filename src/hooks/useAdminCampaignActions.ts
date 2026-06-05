@@ -35,6 +35,8 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [isDuplicating, setIsDuplicating] = useState(false);
 
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+  const [confirmBulkArchive, setConfirmBulkArchive] = useState(false);
+  const [confirmBulkRestore, setConfirmBulkRestore] = useState(false);
 
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -374,6 +376,10 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     handleBulkDelete,
     confirmBulkDelete,
     setConfirmBulkDelete,
+    confirmBulkArchive,
+    setConfirmBulkArchive,
+    confirmBulkRestore,
+    setConfirmBulkRestore,
     handleDuplicateCampaign,
     handleExportCampaign,
     handleBinaryExportCampaign,
