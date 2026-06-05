@@ -8,12 +8,13 @@
  * The Portal inherits getRootElement() from the nearest MantineProvider, so
  * it correctly targets the shadow DOM mount point in WP plugin mode.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { toCss } from '@/utils/cssUnits';
 import { useSwipe } from '@/hooks/useSwipe';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -67,6 +68,29 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
       return () => clearTimeout(timer);
     }
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  // Body-scroll lock: active whenever the lightbox is not fully closed.
+  // Shared reference counter in scrollLock.ts coordinates with useLightbox
+  // consumers that also call acquire/release for the same isOpen transition.
+  useEffect(() => {
+    if (!isOpen) return;
+    acquireBodyScrollLock();
+    return () => releaseBodyScrollLock();
+  }, [isOpen]);
+
+  // Focus management: move focus into the dialog on open; restore it on close.
+  useEffect(() => {
+    if (phase === 'entering') {
+      previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+      closeButtonRef.current?.focus();
+    } else if (phase === 'closed' && previouslyFocusedRef.current) {
+      previouslyFocusedRef.current.focus();
+      previouslyFocusedRef.current = null;
+    }
+  }, [phase]);
 
   const swipeHandlers = useSwipe({
     onSwipeLeft: onNext,
@@ -123,6 +147,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
       >
         {/* Close button */}
         <ActionIcon
+          ref={closeButtonRef}
           pos="absolute"
           top={16}
           right={16}

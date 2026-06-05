@@ -19,6 +19,8 @@
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Planned | S      |
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Planned | S      |
+| P45-A12 | Full ARIA focus trap in `Lightbox`                      | Planned | M      |
+| P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
 
 ---
 

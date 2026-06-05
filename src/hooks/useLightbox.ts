@@ -1,36 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-
-// ── Module-level body-scroll lock manager ────────────────────────────────────
-//
-// A single reference counter coordinates body-scroll locking across multiple
-// concurrent lightbox hook instances. This prevents one closing consumer from
-// unlocking the body while another is still open, and avoids the "double-lock"
-// that occurred when each instance managed its own overflow write.
-//
-// Invariants:
-//   lockCount ≥ 0 at all times (releaseScrollLock clamps at zero)
-//   previousOverflow is snapshotted only on the 0 → 1 transition
-//   overflow is restored only on the 1 → 0 transition
-
-let lockCount = 0;
-let previousOverflow = '';
-
-function acquireScrollLock(): void {
-  if (lockCount === 0) {
-    previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  }
-  lockCount++;
-}
-
-function releaseScrollLock(): void {
-  if (lockCount <= 0) return; // clamp: prevent going negative
-  lockCount--;
-  if (lockCount === 0) {
-    document.body.style.overflow = previousOverflow;
-    previousOverflow = '';
-  }
-}
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -77,9 +46,9 @@ export function useLightbox(options: UseLightboxOptions = {}): UseLightboxResult
   // consumers regardless of close or unmount order.
   useEffect(() => {
     if (!isOpen) return;
-    acquireScrollLock();
+    acquireBodyScrollLock();
     return () => {
-      releaseScrollLock();
+      releaseBodyScrollLock();
     };
   }, [isOpen]);
 

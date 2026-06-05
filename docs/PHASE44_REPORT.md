@@ -9,7 +9,7 @@
 | Track   | Area                        | Status      | Effort |
 |---------|-----------------------------|-------------|--------|
 | P44-A1  | Layout Builder              | Not started | L      |
-| P44-A2  | Gallery Adapters            | Not started | L      |
+| P44-A2  | Gallery Adapters            | Complete    | L      |
 | P44-A3  | Admin Panel + Media Tab     | Complete    | M      |
 | P44-A4  | Settings System             | Not started | M      |
 | P44-A5  | Auth + API Layer            | Complete    | M      |
@@ -436,6 +436,60 @@ broken `aria-labelledby` references; fixed `alt=""` on DragOverlay image.
 
 ---
 
+## Track P44-A2 Rationale
+
+**Cross-adapter consistency:** All 11 adapters share `LazyImage` (skeleton → fade-in →
+fallback on error), `useCarousel` for navigation index, and `Lightbox` for full-screen
+viewing. Alt text, hover overlays, and video badges are uniform across adapters. Code
+quality is high; no naming or complexity issues found.
+
+**Lightbox accessibility — focus management (inline fix):** `Lightbox` rendered a
+`role="dialog" aria-modal="true"` container but never moved keyboard focus into the dialog
+when it opened, nor restored focus to the trigger element on close. WCAG 2.4.3 (Focus
+Order) requires programmatic focus management for modal dialogs. Fixed by:
+- Adding `closeButtonRef` + `previouslyFocusedRef` to `Lightbox.tsx`
+- Moving focus to the close button when phase transitions to `'entering'`
+- Restoring the previously focused element when phase reaches `'closed'`
+- Adding `ref={closeButtonRef}` to the close ActionIcon
+
+**Body-scroll lock inconsistency (inline fix):** `useLightbox` manages a module-level
+reference-counted body-scroll lock (`overflow: hidden`). However, most adapters
+(`CompactGridGallery`, `JustifiedGallery`, `MasonryGallery`, `HexagonalGallery`,
+`DiamondGallery`, `CircularGallery`, `ScrollSnapGallery`) manage `lightboxOpen` with plain
+`useState`, not `useLightbox`. Consequently, when those adapters open the lightbox, the
+body-scroll lock never fires — the page scrolls freely behind the open overlay.
+
+Fixed by:
+1. Extracting the reference-counter logic from `useLightbox.ts` to a new shared utility
+   `src/utils/scrollLock.ts` (exports `acquireBodyScrollLock` / `releaseBodyScrollLock`).
+2. Updating `useLightbox.ts` to import from the shared utility instead of duplicating it.
+3. Adding a `useEffect` in `Lightbox.tsx` keyed on `isOpen` that calls
+   `acquireBodyScrollLock` / `releaseBodyScrollLock`. This activates for every consumer
+   regardless of whether they use `useLightbox`. The shared reference counter prevents
+   double-unlock when both the hook and the component participate (e.g. `SpotlightGallery`).
+
+All existing `useLightbox.test.ts` and `Lightbox.test.tsx` tests continue to pass.
+
+**Full focus trap:** A complete ARIA focus trap (Tab cycling between close/prev/next
+buttons only) is not implemented inline — it adds complexity and has no pre-existing test
+coverage for the new behavior. Deferred to Phase 45.
+
+**`@deprecated ImageCarousel`:** Thin shim wrapping `MediaCarouselInner`; deprecation
+notice is in place; no callers found in the codebase. Safe to remove once confirmed. Noted.
+
+**XSS / security:** `iframe.src` in Lightbox uses `current.embedUrl` from server-supplied
+`MediaItem` data. No client-side URL construction from user input. No XSS surface in
+adapters.
+
+**Component library flag:** `Lightbox` is the strongest extraction candidate — only
+`--wpsg-color-surface` CSS variable coupling and the `MediaItem` type dependency prevent
+immediate extraction.
+
+**Inline fixes:** Extracted scroll lock to shared utility; added body-scroll lock to
+Lightbox; added focus management to Lightbox.
+
+---
+
 ## Phase 45 Candidates
 
 Issues and refactoring opportunities discovered during the audit that are too large to fix
@@ -455,3 +509,6 @@ inline. Appended here as each track completes.
 | P45-10 | Admin | Split `MediaTab.tsx` (1401 LOC, 10+ concerns) into focused sub-components/hooks: upload, ordering, metadata editing, bulk actions, filter/search | L | P44-A3 |
 | P45-11 | Admin | Bulk delete/archive/restore confirmation dialogs in `MediaTab.tsx` — current bulk actions fire immediately with no scope confirmation | S | P44-A3 |
 | P45-12 | Admin | `MediaAddModal` file drop zone: add drag-over visual feedback (border highlight / background shift) when files are being dragged over the drop area | S | P44-A3 |
+| P45-13 | Gallery | Full ARIA focus trap in `Lightbox`: Tab/Shift+Tab cycle through close/prev/next buttons only (current fix moves focus on open but does not trap) | M | P44-A2 |
+| P45-14 | Gallery | Remove `@deprecated ImageCarousel` shim once all consumers are migrated to `MediaCarouselAdapter` directly | S | P44-A2 |
+| P45-15 | Gallery | Extract `Lightbox` component to shared library: decouple `--wpsg-color-surface` CSS variable dependency and `MediaItem` type | M | P44-A2 |
