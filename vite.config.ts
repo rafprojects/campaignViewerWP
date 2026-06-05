@@ -171,8 +171,6 @@ export default defineConfig({
         'src/components/Admin/AdminPanel.tsx',
         // FontLibraryManager: REST-API-driven, 0% function coverage
         'src/components/Admin/FontLibraryManager.tsx',
-        // useExternalMediaModal: complex hook with drag/upload/oembed handlers
-        'src/hooks/useExternalMediaModal.ts',
         // 0% function coverage - complex form editors
         'src/components/Common/TypographyEditor.tsx',
         'src/components/Common/InContextEditor.tsx',

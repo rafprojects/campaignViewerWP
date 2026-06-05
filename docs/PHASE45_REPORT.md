@@ -1,17 +1,17 @@
 # Phase 45 — Post-Audit Follow-Through: Tests, Auth UX & Library Extraction
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-05
 **Last updated:** 2026-06-05
 
 ### Tracks
 
-| Track   | Description                                              | Status  | Effort |
-|---------|----------------------------------------------------------|---------|--------|
-| P45-A1  | Test coverage for `useXhrUpload`                         | Planned | M      |
-| P45-A2  | Test coverage for `useExternalMediaModal`                | Planned | M      |
-| P45-A3  | Test coverage for `useInContextSave`                     | Planned | S      |
-| P45-A4  | `useInContextSave` failure UX — surface save errors      | Planned | S      |
+| Track   | Description                                              | Status   | Effort |
+|---------|----------------------------------------------------------|----------|--------|
+| P45-A1  | Test coverage for `useXhrUpload`                         | Done     | M      |
+| P45-A2  | Test coverage for `useExternalMediaModal`                | Done     | M      |
+| P45-A3  | Test coverage for `useInContextSave`                     | Done     | S      |
+| P45-A4  | `useInContextSave` failure UX — surface save errors      | Done     | S      |
 | P45-A5  | Idle timeout countdown warning (`useIdleTimeout`)        | Planned | M      |
 | P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Planned | L      |
 | P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Planned | M      |
@@ -65,6 +65,17 @@ fix inline. This phase acts on the highest-value items:
 
 ## Track P45-A1 — Tests: `useXhrUpload`
 
+### Rationale
+
+`new XMLHttpRequest()` required a global stub rather than a module mock because the hook
+constructs it inline. Used `vi.stubGlobal('XMLHttpRequest', vi.fn(() => mockXhr))` with a
+hand-rolled mock that captures upload/load/error listeners and exposes `_fireUploadProgress`,
+`_fireLoad`, and `_fireError` helpers. The cumulative-size interpolation test (the highest-risk
+path) confirms the two-file `[100, 200]` byte case yields `[100, 25]` at `loaded=150`.
+Coverage exclusion was not needed — the file was never in the exclusion list.
+
+11 tests added in `src/hooks/useXhrUpload.test.ts`.
+
 ### Problem
 
 `useXhrUpload` manages complex XHR-based file uploads with:
@@ -93,6 +104,17 @@ progress events, success/error responses, and the abort path.
 ---
 
 ## Track P45-A2 — Tests: `useExternalMediaModal`
+
+### Rationale
+
+Mocked `useXhrUpload` at the module level (`vi.mock('./useXhrUpload', ...)`) to decouple
+the XHR layer and control `uploadMany` return values per-test. Mocked `useGetSettings` at
+the module level so no `QueryClientProvider` wrapper was needed (the hook doesn't use
+`useQuery` itself — only its internal `useXhrUpload` and `useGetSettings` calls need
+mocking). Removed `'src/hooks/useExternalMediaModal.ts'` from the coverage exclusion array
+in `vite.config.ts` since it now has coverage.
+
+7 tests added in `src/hooks/useExternalMediaModal.test.ts`.
 
 ### Problem
 
@@ -123,6 +145,18 @@ through the key flows.
 
 ## Track P45-A3 — Tests: `useInContextSave`
 
+### Rationale
+
+Used `vi.useFakeTimers()` + `vi.runAllTimersAsync()` for debounce control. Wrapped each
+test in a `QueryClientProvider` with `createTestQueryClient()`. Discovered that with
+`gcTime: 0` in the test client, `vi.runAllTimersAsync()` fires the React Query GC timer
+(scheduled with `setTimeout(fn, 0)` on `setQueryData` when no observers exist), clearing
+the cache before assertions. Fixed the "both fail → keep optimistic" test by using a custom
+`QueryClient` with `gcTime: Infinity` for that case alone. All other tests are unaffected
+since they check call counts (not cache data) after running timers.
+
+6 tests added in `src/hooks/useInContextSave.test.ts` (3 more added under P45-A4).
+
 ### Problem
 
 `useInContextSave` is the optimistic in-context save primitive used by live-preview
@@ -151,6 +185,17 @@ Use `renderHook` with a mock QueryClient; spy on `apiClient.updateSettings` and
 ---
 
 ## Track P45-A4 — `useInContextSave` Failure UX
+
+### Rationale
+
+Added optional `onError?: (err: unknown) => void` as the 4th parameter to `useInContextSave`.
+Called `onError?.(err)` in the catch block after `console.error` and before the revert attempt.
+Both call sites (`CardGallery.tsx:80` and `CampaignViewer.tsx:391`) were updated to wire
+`onError` to `notifications.show({ color: 'red', message: getErrorMessage(err, ...) })`.
+`CampaignViewer.tsx` already imported `getErrorMessage`; both files needed the
+`notifications` import from `@mantine/notifications`. The returned `save` function signature
+is unchanged so all downstream consumers (like `CampaignViewer.tsx` prop types) are
+automatically correct. 3 additional tests cover the `onError` path.
 
 ### Problem
 
