@@ -151,4 +151,121 @@ describe('useIdleTimeout', () => {
     vi.advanceTimersByTime(0.5 * 60_000);
     expect(onTimeout).toHaveBeenCalledTimes(1);
   });
+
+  describe('onWarning', () => {
+    it('fires onWarning with secondsRemaining before onTimeout', () => {
+      const onTimeout = vi.fn();
+      const onWarning = vi.fn();
+      renderHook(() =>
+        useIdleTimeout({
+          timeoutMinutes: 5,
+          isAuthenticated: true,
+          onTimeout,
+          warningThresholdMs: 60_000, // 1 minute warning
+          onWarning,
+        }),
+      );
+
+      // 4 minutes elapsed — warning threshold reached (1 min remaining)
+      vi.advanceTimersByTime(4 * 60_000);
+      expect(onWarning).toHaveBeenCalledTimes(1);
+      expect(onWarning).toHaveBeenCalledWith(60);
+      expect(onTimeout).not.toHaveBeenCalled();
+
+      // 1 more minute → timeout fires
+      vi.advanceTimersByTime(60_000);
+      expect(onTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    it('reset() cancels both warning and timeout timers', () => {
+      const onTimeout = vi.fn();
+      const onWarning = vi.fn();
+      const { result } = renderHook(() =>
+        useIdleTimeout({
+          timeoutMinutes: 5,
+          isAuthenticated: true,
+          onTimeout,
+          warningThresholdMs: 60_000,
+          onWarning,
+        }),
+      );
+
+      // Advance to just before warning
+      vi.advanceTimersByTime(3 * 60_000);
+
+      // Programmatic reset — restarts both timers from now
+      act(() => {
+        result.current.reset();
+      });
+
+      // Full 5 minutes past the reset — warning fires again and then timeout
+      vi.advanceTimersByTime(4 * 60_000);
+      expect(onWarning).toHaveBeenCalledTimes(1); // once after reset, not twice
+
+      vi.advanceTimersByTime(60_000);
+      expect(onTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    it('activity after warning resets both timers preventing original timeout', () => {
+      const onTimeout = vi.fn();
+      const onWarning = vi.fn();
+      renderHook(() =>
+        useIdleTimeout({
+          timeoutMinutes: 5,
+          isAuthenticated: true,
+          onTimeout,
+          warningThresholdMs: 60_000,
+          onWarning,
+        }),
+      );
+
+      // Advance to warning point
+      vi.advanceTimersByTime(4 * 60_000);
+      expect(onWarning).toHaveBeenCalledTimes(1);
+
+      // User becomes active — resets both timers
+      act(() => {
+        window.dispatchEvent(new Event('mousemove'));
+      });
+
+      // Original timeout would have fired 1 min after warning, but timer reset
+      vi.advanceTimersByTime(60_000);
+      expect(onTimeout).not.toHaveBeenCalled();
+
+      // Full new cycle: warning fires again at 4 min, timeout at 5 min
+      vi.advanceTimersByTime(3 * 60_000);
+      expect(onWarning).toHaveBeenCalledTimes(2);
+      vi.advanceTimersByTime(60_000);
+      expect(onTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    it('no warning when warningThresholdMs is 0', () => {
+      const onTimeout = vi.fn();
+      const onWarning = vi.fn();
+      renderHook(() =>
+        useIdleTimeout({
+          timeoutMinutes: 5,
+          isAuthenticated: true,
+          onTimeout,
+          warningThresholdMs: 0,
+          onWarning,
+        }),
+      );
+
+      vi.advanceTimersByTime(5 * 60_000);
+      expect(onWarning).not.toHaveBeenCalled();
+      expect(onTimeout).toHaveBeenCalledTimes(1);
+    });
+
+    it('no warning when onWarning is not provided (backward-compatible)', () => {
+      const onTimeout = vi.fn();
+      renderHook(() =>
+        useIdleTimeout({ timeoutMinutes: 5, isAuthenticated: true, onTimeout }),
+      );
+
+      // Should not throw, warning path is simply skipped
+      vi.advanceTimersByTime(5 * 60_000);
+      expect(onTimeout).toHaveBeenCalledTimes(1);
+    });
+  });
 });

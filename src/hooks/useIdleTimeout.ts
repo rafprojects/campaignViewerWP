@@ -21,6 +21,16 @@ interface UseIdleTimeoutOptions {
   isAuthenticated: boolean;
   /** Callback fired when the idle timer expires. Typically calls logout(). */
   onTimeout: () => void;
+  /**
+   * Milliseconds before timeout to fire `onWarning`.
+   * Set to 0 to disable the warning. Default: 120_000 (2 minutes).
+   */
+  warningThresholdMs?: number;
+  /**
+   * Called `warningThresholdMs` before the timeout fires.
+   * Receives the number of seconds remaining until logout.
+   */
+  onWarning?: (secondsRemaining: number) => void;
 }
 
 /**
@@ -29,40 +39,58 @@ interface UseIdleTimeoutOptions {
  *
  * - Disabled when `timeoutMinutes <= 0` or `isAuthenticated` is false.
  * - Resets the timer on any user interaction.
+ * - Optionally fires `onWarning` with seconds-remaining before logout.
  * - Cleans up all listeners on unmount.
- *
- * @example
- * useIdleTimeout({
- *   timeoutMinutes: settings.sessionIdleTimeoutMinutes,
- *   isAuthenticated,
- *   onTimeout: () => void logout(),
- * });
+ * - Returns `{ reset }` so callers can programmatically reset the timer
+ *   (e.g. from a "Stay signed in" button).
  */
-export function useIdleTimeout({ timeoutMinutes, isAuthenticated, onTimeout }: UseIdleTimeoutOptions): void {
+export function useIdleTimeout({
+  timeoutMinutes,
+  isAuthenticated,
+  onTimeout,
+  warningThresholdMs = 120_000,
+  onWarning,
+}: UseIdleTimeoutOptions): { reset: () => void } {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onTimeoutRef = useRef(onTimeout);
+  const onWarningRef = useRef(onWarning);
 
-  // Keep callback ref fresh without re-running the effect.
   useEffect(() => {
     onTimeoutRef.current = onTimeout;
   }, [onTimeout]);
+
+  useEffect(() => {
+    onWarningRef.current = onWarning;
+  }, [onWarning]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
     }
+    if (warningTimerRef.current !== null) {
+      clearTimeout(warningTimerRef.current);
+      warningTimerRef.current = null;
+    }
+
+    const totalMs = timeoutMinutes * 60_000;
+
+    if (warningThresholdMs > 0 && warningThresholdMs < totalMs && onWarningRef.current) {
+      warningTimerRef.current = setTimeout(() => {
+        onWarningRef.current?.(Math.round(warningThresholdMs / 1000));
+      }, totalMs - warningThresholdMs);
+    }
+
     timerRef.current = setTimeout(() => {
       onTimeoutRef.current();
-    }, timeoutMinutes * 60_000);
-  }, [timeoutMinutes]);
+    }, totalMs);
+  }, [timeoutMinutes, warningThresholdMs]);
 
   useEffect(() => {
-    // Disabled when timeout is 0 / negative or user is not logged in.
     if (timeoutMinutes <= 0 || !isAuthenticated) {
       return;
     }
 
-    // Start the initial timer.
     resetTimer();
 
     const handleActivity = () => {
@@ -78,9 +106,15 @@ export function useIdleTimeout({ timeoutMinutes, isAuthenticated, onTimeout }: U
         clearTimeout(timerRef.current);
         timerRef.current = null;
       }
+      if (warningTimerRef.current !== null) {
+        clearTimeout(warningTimerRef.current);
+        warningTimerRef.current = null;
+      }
       for (const event of ACTIVITY_EVENTS) {
         window.removeEventListener(event, handleActivity, { capture: true });
       }
     };
   }, [timeoutMinutes, isAuthenticated, resetTimer]);
+
+  return { reset: resetTimer };
 }
