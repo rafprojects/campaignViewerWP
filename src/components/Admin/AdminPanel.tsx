@@ -533,7 +533,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Tabs.Panel>
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section" aria-labelledby="audit-heading">
+        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section">
           <AuditTab
             campaignSelectData={campaignSelectData}
             auditCampaignId={auditCampaignId}
@@ -548,7 +548,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Tabs.Panel>
 
-        <Tabs.Panel value="globalAudit" pt="md" component="section" aria-labelledby="global-audit-heading">
+        <Tabs.Panel value="globalAudit" pt="md" component="section">
           <GlobalAuditTab
             entries={globalAuditEntries}
             loading={globalAuditLoading}

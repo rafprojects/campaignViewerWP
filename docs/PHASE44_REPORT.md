@@ -10,7 +10,7 @@
 |---------|-----------------------------|-------------|--------|
 | P44-A1  | Layout Builder              | Not started | L      |
 | P44-A2  | Gallery Adapters            | Not started | L      |
-| P44-A3  | Admin Panel + Media Tab     | Not started | M      |
+| P44-A3  | Admin Panel + Media Tab     | Complete    | M      |
 | P44-A4  | Settings System             | Not started | M      |
 | P44-A5  | Auth + API Layer            | Complete    | M      |
 | P44-A6  | Hooks + State               | Complete    | M      |
@@ -395,6 +395,47 @@ user has no indication that their in-context change was not persisted. Flagged a
 
 ---
 
+## Track P44-A3 Rationale
+
+**Code quality:** `MediaTab.tsx` (1401 LOC) is a severe single-responsibility violation —
+it owns upload handling, media ordering (dnd-kit), media metadata editing, bulk selection
+and actions, search/filter, rescan, usage summary, and three separate inline modals. No
+single extraction is safe to make inline (each concern is entangled with shared state);
+split deferred to Phase 45.
+
+**Error handling:** Seven `catch` blocks in `MediaTab.tsx` used `(err as Error).message`
+directly — if the caught value is not an `Error` instance (e.g. a string, a rejected
+promise with an object payload, or an `ApiError` subclass), this silently produces
+`undefined` as the notification message. Fixed in place by replacing all seven occurrences
+with `getErrorMessage(err, '<contextual fallback>')`. The utility (`src/utils/getErrorMessage.ts`)
+was already imported in the file.
+
+**Accessibility:** Two `Tabs.Panel` components in `AdminPanel.tsx` carried
+`aria-labelledby="audit-heading"` and `aria-labelledby="global-audit-heading"` but no
+corresponding `id` attributes exist on any element in the file — the ARIA references were
+broken, pointing to nothing. Removed both broken attributes. The panels are visually
+identified by their tab label; the correct fix (adding matching `id` elements inside each
+panel's heading) is a larger UX change and is deferred. Also: `DragOverlay` image in
+`MediaTab.tsx` had `alt=""`, which is appropriate for a drag ghost only if the image is
+purely decorative. In this context it is a representation of the dragged item — changed
+to `alt={activeMediaItem.caption || 'media item'}`.
+
+**Drag-over visual feedback:** The `MediaAddModal` file drop zone (`<Paper ref={dropRef}>`)
+has no visual feedback when files are dragged over it. The `dragover` event handler sets
+`dropEffect = 'copy'` but does not signal any UI change. Adding visual feedback requires
+lifting drag state to the parent and passing a prop to `MediaAddModal`. Deferred to
+Phase 45 as a UX enhancement.
+
+**Destructive action safety:** Single-item delete uses a confirmation modal with an
+explicit "Delete" button — correct. Bulk-delete has no confirmation; items are permanently
+removed immediately. Bulk archive and bulk restore also lack confirmation dialogs. The
+inconsistency creates a usability hazard for users who mis-click. Deferred to Phase 45.
+
+**Inline fixes:** Fixed 7 `(err as Error).message` usages → `getErrorMessage`; fixed 2
+broken `aria-labelledby` references; fixed `alt=""` on DragOverlay image.
+
+---
+
 ## Phase 45 Candidates
 
 Issues and refactoring opportunities discovered during the audit that are too large to fix
@@ -411,3 +452,6 @@ inline. Appended here as each track completes.
 | P45-07 | Hooks | Add test coverage for `useExternalMediaModal` (file-type filter, URL validation, partial-failure state) | M | P44-A6 |
 | P45-08 | Hooks | Add test coverage for `useInContextSave` (optimistic update, debounce, server rollback) | S | P44-A6 |
 | P45-09 | Hooks | `useInContextSave` failure UX: surface a user-visible error notification when the debounced save fails (currently silent console.error + revert) | S | P44-A6 |
+| P45-10 | Admin | Split `MediaTab.tsx` (1401 LOC, 10+ concerns) into focused sub-components/hooks: upload, ordering, metadata editing, bulk actions, filter/search | L | P44-A3 |
+| P45-11 | Admin | Bulk delete/archive/restore confirmation dialogs in `MediaTab.tsx` — current bulk actions fire immediately with no scope confirmation | S | P44-A3 |
+| P45-12 | Admin | `MediaAddModal` file drop zone: add drag-over visual feedback (border highlight / background shift) when files are being dragged over the drop area | S | P44-A3 |

@@ -801,7 +801,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Add failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Add failed', message: getErrorMessage(err, 'Failed to add external media.'), color: 'red' });
     }
   }
 
@@ -826,8 +826,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       }
     } catch (err) {
       console.error(err);
-      setExternalError((err as Error).message);
-      showNotification({ title: 'Preview failed', message: (err as Error).message, color: 'red' });
+      setExternalError(getErrorMessage(err, 'Failed to load preview.'));
+      showNotification({ title: 'Preview failed', message: getErrorMessage(err, 'Failed to load preview.'), color: 'red' });
     } finally {
       setExternalLoading(false);
     }
@@ -885,7 +885,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Delete failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Delete failed', message: getErrorMessage(err, 'Failed to delete media.'), color: 'red' });
     } finally {
       setDeleteItem(null);
     }
@@ -912,7 +912,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       setEditOpen(false);
       showNotification({ title: 'Saved', message: 'Media updated.' });
     } catch (err) {
-      showNotification({ title: 'Save failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Save failed', message: getErrorMessage(err, 'Failed to save media.'), color: 'red' });
     }
   }
 
@@ -930,7 +930,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         showNotification({ title: 'Rescan Complete', message: 'All media types are correct.' });
       }
     } catch (err) {
-      showNotification({ title: 'Rescan failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Rescan failed', message: getErrorMessage(err, 'Failed to rescan media types.'), color: 'red' });
     } finally {
       setRescanning(false);
     }
@@ -954,7 +954,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     } catch (err) {
       // Roll back local state to previous order
       setMedia(prev);
-      showNotification({ title: 'Reorder failed', message: (err as Error).message, color: 'red' });
+      showNotification({ title: 'Reorder failed', message: getErrorMessage(err, 'Failed to reorder media.'), color: 'red' });
     } finally {
       reorderingRef.current = false;
     }
@@ -1305,7 +1305,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               }}>
                 <img
                   src={activeMediaItem.thumbnail ?? activeMediaItem.url ?? FALLBACK_IMAGE_SRC}
-                  alt=""
+                  alt={activeMediaItem.caption || 'media item'}
                   style={{ display: 'block', width: '100%', height: 96, objectFit: 'cover' }}
                 />
                 {activeMediaItem.caption && (

@@ -16,6 +16,9 @@
 | P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Planned | L      |
 | P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Planned | M      |
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Planned | S      |
+| P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
+| P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Planned | S      |
+| P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Planned | S      |
 
 ---
 
