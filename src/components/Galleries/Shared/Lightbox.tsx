@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
-import { toCss } from '@/utils/cssUnits';
+import { toCss } from '@/lib/cssUnits';
 import { useSwipe } from '@/hooks/useSwipe';
 import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';

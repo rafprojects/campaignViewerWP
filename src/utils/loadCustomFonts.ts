@@ -1,4 +1,4 @@
-import { sanitizeCssUrl } from './sanitizeCss';
+import { sanitizeCssUrl } from '@/lib/sanitizeCss';
 
 /**
  * Inject @font-face CSS for custom uploaded fonts into document.head.

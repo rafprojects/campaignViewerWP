@@ -2,7 +2,7 @@
  * Pure grid-layout math shared between CardGallery and CompactGridGallery.
  * React-free and fully testable without hooks.
  */
-import { toCss, type CssWidthUnit } from './cssUnits';
+import { toCss, type CssWidthUnit } from '@/lib/cssUnits';
 import type { GalleryBehaviorSettings } from '@/types';
 import { resolveColumnsFromWidth } from './resolveColumnsFromWidth';
 

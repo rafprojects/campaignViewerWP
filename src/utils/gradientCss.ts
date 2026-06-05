@@ -5,7 +5,7 @@ import type {
   RadialShape,
   RadialSize,
 } from '@/types';
-import { sanitizeCssColor } from '@/utils/sanitizeCss';
+import { sanitizeCssColor } from '@/lib/sanitizeCss';
 
 /** Options bag for fine-grained gradient control. */
 export interface GradientOptions {

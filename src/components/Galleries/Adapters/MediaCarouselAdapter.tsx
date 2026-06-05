@@ -13,7 +13,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import type { GalleryAdapterProps, ListingItem } from './GalleryAdapter';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type MediaItem } from '@/types';
-import { toCss } from '@/utils/cssUnits';
+import { toCss } from '@/lib/cssUnits';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { useLightbox } from '@/hooks/useLightbox';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';

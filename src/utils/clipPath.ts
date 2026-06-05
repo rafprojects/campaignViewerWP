@@ -5,7 +5,7 @@
  * LayoutBuilderGallery (public adapter) to ensure consistent rendering.
  */
 import type { LayoutSlot } from '@/types';
-import { sanitizeClipPath } from '@/utils/sanitizeCss';
+import { sanitizeClipPath } from '@/lib/sanitizeCss';
 
 /**
  * Returns the CSS `clip-path` value for a given slot shape,

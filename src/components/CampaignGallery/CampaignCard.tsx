@@ -5,7 +5,7 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
@@ -18,7 +18,7 @@ interface CampaignCardProps {
   settings?: GalleryBehaviorSettings | undefined;
   apiClient?: ApiClient | undefined;
   maxWidth?: number | undefined;
-  maxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
+  maxWidthUnit?: import('@/lib/cssUnits').CssWidthUnit | undefined;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(

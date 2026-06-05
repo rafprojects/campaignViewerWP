@@ -42,8 +42,8 @@ import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
-import { sanitizeCssUrl } from '@/utils/sanitizeCss';
-import { toCssOrNumber } from '@/utils/cssUnits';
+import { sanitizeCssUrl } from '@/lib/sanitizeCss';
+import { toCssOrNumber } from '@/lib/cssUnits';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 

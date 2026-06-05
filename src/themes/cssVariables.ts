@@ -12,7 +12,7 @@
 
 import type { ResolvedColors } from './types';
 import type { ThemeDefinition } from './types';
-import { sanitizeCssValue } from '@/utils/sanitizeCss';
+import { sanitizeCssValue } from '@/lib/sanitizeCss';
 
 // ---------------------------------------------------------------------------
 // CSS variable namespace prefix

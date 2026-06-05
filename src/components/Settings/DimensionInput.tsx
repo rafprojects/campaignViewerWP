@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { Group, NumberInput, Select, type NumberInputProps } from '@mantine/core';
-import { UNIT_MAX_DEFAULTS } from '@/utils/cssUnits';
+import { UNIT_MAX_DEFAULTS } from '@/lib/cssUnits';
 
 export interface DimensionInputProps {
   /** Current numeric value */

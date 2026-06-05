@@ -13,8 +13,8 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { clampDimension } from '@/utils/clampDimension';
-import { toCss } from '@/utils/cssUnits';
-import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { toCss } from '@/lib/cssUnits';
+import { sanitizeCssUrl } from '@/lib/sanitizeCss';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
+import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
 
 import { DimensionInput } from './DimensionInput';
 

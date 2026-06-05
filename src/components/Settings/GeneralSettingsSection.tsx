@@ -6,7 +6,7 @@ import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { type GalleryBehaviorSettings } from '@/types';
-import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
+import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/lib/cssUnits';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
 
