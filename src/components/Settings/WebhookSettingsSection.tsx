@@ -219,7 +219,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       invalidate();
     },
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'An error occurred.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to create webhook endpoint.') });
     },
   });
 
@@ -227,7 +227,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
     mutationFn: (index: number) => apiClient.deleteWebhookEndpoint(index),
     onSuccess: invalidate,
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'An error occurred.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to delete webhook endpoint.') });
     },
   });
 
@@ -236,7 +236,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       apiClient.updateWebhookEndpoint(index, data),
     onSuccess: invalidate,
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'An error occurred.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to update webhook endpoint.') });
     },
   });
 
@@ -249,7 +249,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       setRotatedSecret(data.secret);
     },
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'An error occurred.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to rotate webhook secret.') });
     },
   });
 

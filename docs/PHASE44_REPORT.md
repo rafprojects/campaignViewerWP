@@ -11,7 +11,7 @@
 | P44-A1  | Layout Builder              | Complete    | L      |
 | P44-A2  | Gallery Adapters            | Complete    | L      |
 | P44-A3  | Admin Panel + Media Tab     | Complete    | M      |
-| P44-A4  | Settings System             | Not started | M      |
+| P44-A4  | Settings System             | Complete    | M      |
 | P44-A5  | Auth + API Layer            | Complete    | M      |
 | P44-A6  | Hooks + State               | Complete    | M      |
 | P44-A7  | PHP Backend                 | Not started | L      |
@@ -436,6 +436,49 @@ broken `aria-labelledby` references; fixed `alt=""` on DragOverlay image.
 
 ---
 
+## Track P44-A4 Rationale
+
+**Code quality:** `GalleryConfigEditorModal.tsx` (1386 LOC) manages the entire responsive
+gallery configuration UI: per-breakpoint adapter selection, adapter settings groups,
+common section settings, and scope (unified/image/video) switching. The logic is coherent
+but at 1386 LOC the file is a strong split candidate — the breakpoint tab bar, adapter
+selector, and settings group renderer are each distinct concerns. Deferred to Phase 45.
+
+**Error handling:** `SettingsPanel.tsx` uses `getErrorMessage` for the save path ✅.
+`WebhookSettingsSection.tsx` used the safe `getErrorMessage` call but with the generic
+fallback `'An error occurred.'` in all four mutation error handlers. Fixed: replaced with
+operation-specific fallback strings (create / delete / update / rotate secret).
+
+**Settings UX:**
+- Tooltip infrastructure present and well-structured (`SETTING_TOOLTIPS` catalog +
+  `SettingTooltip` component + `showSettingsTooltips` toggle). Tooltip coverage is
+  comprehensive: 85+ entries covering all advanced settings. ✅
+- Tabs used for progressive disclosure (Appearance / Cards / Gallery Layout / etc.) ✅
+- `closeOnClickOutside={!hasChanges}` and `closeOnEscape={!hasChanges}` prevent
+  accidental close with unsaved changes ✅
+- "Reset" button appears only when there are changes; Save button disabled when clean ✅
+- Draft persistence (P36-A) with cross-session restore prompt ✅
+
+**Validation feedback:** Settings use bulk save — no inline per-field validation. Invalid
+values (out-of-range numbers, empty required strings) are not surfaced until save is clicked.
+Mantine's `NumberInput` with `min`/`max` props provides implicit range guidance. Full
+inline validation would require per-field error state, which is a notable UX improvement
+but not a simple fix. Deferred to Phase 45.
+
+**Responsive config editor UX:** The `GalleryConfigEditorModal` is opened from a button in
+the Gallery Layout tab. The entry point could be more discoverable (the button label and
+its position are not prominent). Noted; no inline fix.
+
+**Accessibility:** Mantine's `NumberInput`/`TextInput`/`Switch` components auto-associate
+labels with inputs via Mantine's internal `useId()`. `SettingTooltip` adds
+`aria-label={tooltip}` to the info icon for screen readers. Form label associations are
+correct throughout. ✅
+
+**Inline fixes:** Improved four generic `'An error occurred.'` fallbacks to
+operation-specific strings in `WebhookSettingsSection.tsx`.
+
+---
+
 ## Track P44-A1 Rationale
 
 **Code quality:** `LayoutBuilderModal.tsx` (1152 LOC) manages 10+ distinct concerns: draft
@@ -563,3 +606,4 @@ inline. Appended here as each track completes.
 | P45-17 | Builder | Split `LayoutSlotComponent.tsx` (945 LOC): extract mask-drag overlay, slot-media drop handler, and border/label rendering into sub-components | M | P44-A1 |
 | P45-18 | Builder | `smartGuides.ts` performance: memoize guide computation per-slot to avoid O(n) recalculation on every drag frame | M | P44-A1 |
 | P45-19 | Builder | Add keyboard shortcut to add a new slot (e.g. N key) — current affordance is mouse-only (double-click or "Add slot" button) | S | P44-A1 |
+| P45-20 | Settings | Split `GalleryConfigEditorModal.tsx` (1386 LOC): extract breakpoint tab bar, adapter selector, and settings group renderer into focused sub-components | L | P44-A4 |

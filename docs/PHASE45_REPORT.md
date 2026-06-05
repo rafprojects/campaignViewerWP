@@ -25,6 +25,7 @@
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Planned | M      |
 | P45-A17 | Keyboard shortcut for adding a new canvas slot          | Planned | S      |
+| P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Planned | L      |
 
 ---
 
