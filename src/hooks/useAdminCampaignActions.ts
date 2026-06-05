@@ -232,7 +232,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
         await apiClient.downloadExportJob(jobId, `campaign-${id}.zip`);
       } finally {
-        await apiClient.deleteExportJob(jobId).catch(() => {});
+        await apiClient.deleteExportJob(jobId).catch(() => { /* non-fatal: cleanup failure doesn't affect the export result */ });
       }
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Binary export failed') });
@@ -265,7 +265,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
 
         await apiClient.downloadExportJob(jobId, `campaigns-export-${Date.now()}.zip`);
       } finally {
-        await apiClient.deleteExportJob(jobId).catch(() => {});
+        await apiClient.deleteExportJob(jobId).catch(() => { /* non-fatal: cleanup failure doesn't affect the export result */ });
       }
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Bulk export failed') });

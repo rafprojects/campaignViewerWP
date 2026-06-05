@@ -183,6 +183,7 @@ export function useUnifiedCampaignModal({
       setMediaItems(sortByOrder(items));
     } catch {
       setMediaItems([]);
+      onNotify({ type: 'error', text: 'Failed to load campaign media.' });
     } finally {
       setMediaLoading(false);
     }

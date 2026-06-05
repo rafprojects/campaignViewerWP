@@ -21,6 +21,7 @@ function getSnapshot(): string[] {
     }
     return cachedSnapshot;
   } catch {
+    // non-fatal: localStorage unavailable or JSON parse error — fall back to in-memory cache
     return cachedSnapshot;
   }
 }

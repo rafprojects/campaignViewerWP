@@ -21,6 +21,7 @@ export function useReloadSafeView<T>(feature: string, defaultValue: T): [T, (nex
       if (stored === null) return defaultValue;
       return JSON.parse(stored) as T;
     } catch {
+      // non-fatal: localStorage unavailable or stale JSON — use default
       return defaultValue;
     }
   });
