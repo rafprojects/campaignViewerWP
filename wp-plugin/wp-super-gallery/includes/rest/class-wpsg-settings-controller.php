@@ -58,7 +58,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
         if (!class_exists('WPSG_Settings')) {
             return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
         }
-        $body      = $request->get_json_params();
+        $body      = $request->get_json_params() ?: [];
         $input     = WPSG_Settings::from_js($body);
         $sanitized = WPSG_Settings::sanitize_settings($input);
         $current   = WPSG_Settings::get_settings();

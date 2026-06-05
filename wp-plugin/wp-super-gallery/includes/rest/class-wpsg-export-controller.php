@@ -167,6 +167,11 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             if (!empty($src[$src_key])) {
                 if ($src_key === 'tags' && is_array($src[$src_key])) {
                     update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } elseif (in_array($src_key, ['publishAt', 'unpublishAt'], true)) {
+                    $ts = strtotime(sanitize_text_field($src[$src_key]));
+                    if ($ts !== false) {
+                        update_post_meta($post_id, $meta_key, gmdate('Y-m-d H:i:s', $ts));
+                    }
                 } else {
                     update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
                 }
@@ -613,6 +618,11 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             if (!empty($src[$src_key])) {
                 if ($src_key === 'tags' && is_array($src[$src_key])) {
                     update_post_meta($post_id, $meta_key, array_values(array_map('sanitize_text_field', $src[$src_key])));
+                } elseif (in_array($src_key, ['publishAt', 'unpublishAt'], true)) {
+                    $ts = strtotime(sanitize_text_field($src[$src_key]));
+                    if ($ts !== false) {
+                        update_post_meta($post_id, $meta_key, gmdate('Y-m-d H:i:s', $ts));
+                    }
                 } else {
                     update_post_meta($post_id, $meta_key, sanitize_text_field($src[$src_key]));
                 }
