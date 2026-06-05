@@ -17,7 +17,7 @@ function MagicLinkPageSelector({
   onChange: (id: number) => void;
 }) {
   const { data: pages, isLoading } = useQuery({
-    queryKey: ['wpPages'],
+    queryKey: ['wpPages', apiClient.getBaseUrl()],
     queryFn: () => apiClient.listWpPages(),
     staleTime: 5 * 60 * 1000,
   });

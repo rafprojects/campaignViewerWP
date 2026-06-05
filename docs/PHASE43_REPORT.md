@@ -216,6 +216,8 @@ same pattern keeps the codebase consistent.
 `<style>` injection does not. This is incorrect — both require `'unsafe-inline'`. The real benefit
 is DevTools inspectability only.
 
+**M43-E (PR review r2): Scope `useQuery` key in `MagicLinkPageSelector` to `apiClient.getBaseUrl()`.** Copilot identified that `queryKey: ['wpPages']` is too generic — if multiple gallery roots with different API base URLs are mounted in the same app, React Query would serve the stale pages list from one root to another. Fix: changed to `queryKey: ['wpPages', apiClient.getBaseUrl()]`, matching the pattern used elsewhere (e.g. `src/services/settingsQuery.ts`).
+
 **M43-D (PR review r1): Per-instance CSS scoping via `useId()`.** Copilot identified that the
 original `slotCssClass(slotId)` generated global selectors. Two `LayoutBuilderGallery` instances
 on the same page sharing the same template but different container widths would collide — the last
