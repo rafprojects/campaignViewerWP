@@ -20,7 +20,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'proxy_oembed'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => '__return_true',
             ],
         ]);
 

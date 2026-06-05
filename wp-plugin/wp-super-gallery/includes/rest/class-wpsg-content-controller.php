@@ -822,7 +822,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         if (!empty($all_campaigns)) {
             $campaign_ids = wp_list_pluck($all_campaigns, 'ID');
             update_meta_cache('post', $campaign_ids);
-            update_object_term_cache($campaign_ids, 'wpsg_company');
+            update_object_term_cache($campaign_ids, 'wpsg_campaign');
         }
 
         // Index campaigns by company term_id for O(1) lookup per company.

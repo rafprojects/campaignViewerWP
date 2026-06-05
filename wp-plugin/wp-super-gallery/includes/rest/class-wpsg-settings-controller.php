@@ -37,13 +37,11 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
      * @return WP_REST_Response Settings data.
      */
     public static function get_public_settings($request = null) {
-        if (class_exists('WPSG_Settings')) {
-            $settings = WPSG_Settings::get_settings();
-        } else {
-            $settings = [];
+        if (!class_exists('WPSG_Settings')) {
+            return self::respond_with_etag($request, []);
         }
-
-        $is_admin = current_user_can('manage_options');
+        $settings = WPSG_Settings::get_settings();
+        $is_admin = current_user_can('manage_wpsg');
         $payload  = WPSG_Settings::to_js($settings, $is_admin);
         return self::respond_with_etag($request, $payload);
     }

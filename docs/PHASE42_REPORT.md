@@ -2,7 +2,7 @@
 
 **Status:** Complete ✅
 **Created:** 2026-06-03
-**Last updated:** 2026-06-05
+**Last updated:** 2026-06-06
 
 ### Tracks
 
@@ -89,6 +89,7 @@ class WPSG_REST extends WPSG_REST_Base {
 | C | `WPSG_REST::check_private_ip` reference in `proxy_oembed` | Changed to `self::check_private_ip` in `WPSG_System_Controller` since `check_private_ip` is `public static` on the base class. |
 | D | Test direct-call updates | Three test files updated: `WPSG_REST_Routes_Test.php` (DC3), `ProxyOEmbedTest.php` and `ProxyOEmbedSSRFTest.php` (DC9). All other tests use `rest_do_request()` and needed no changes. |
 | E | `normalize_media_items_types` / `enrich_media_with_metadata` in DC1 | Post-launch runtime error: `WPSG_Campaign_Controller::list_campaigns` called `self::normalize_media_items_types()` and `self::enrich_media_with_metadata()`, both of which were only in `WPSG_Media_Controller` (a sibling, not a parent). Fixed by moving all three methods (`infer_media_type_from_url`, `normalize_media_items_types`, `enrich_media_with_metadata`) from `WPSG_Media_Controller` to `WPSG_REST_Base` as `protected static`, so all controllers inherit them via `self::`. |
+| F | PR review fixes (6 threads) | (1) `get_public_settings`: guarded `to_js()` inside the `class_exists` check and changed `manage_options` → `manage_wpsg` to match the rest of the auth layer. (2–3) `apply_campaign_meta` returns `WP_Error`, not `WP_REST_Response`; fixed both create and update call sites to use `is_wp_error()`. (4) `update_object_term_cache` in `list_company_access` passed taxonomy name `'wpsg_company'` instead of object type `'wpsg_campaign'`, defeating N+1 cache priming. (5) Removed orphaned "P18-F: Analytics" stub from `WPSG_Export_Controller`. (6) oEmbed route `permission_callback` reverted from `rate_limit_public` to `'__return_true'` — `proxy_oembed` already does its own rate limiting via `WPSG_Rate_Limiter` with admin exemption; the permission callback was double-applying a separate rate limiter and contradicted the security comment. |
 
 ---
 

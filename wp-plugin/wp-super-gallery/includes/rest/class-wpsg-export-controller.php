@@ -729,13 +729,4 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
         return ['id' => $post_id, 'title' => $title];
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // P18-F: Analytics
-    // ─────────────────────────────────────────────────────────────────────
-
-    /**
-     * POST /analytics/event
-     * Public endpoint (rate-limited). Accepts { campaign_id, event_type }.
-     * Requires `enable_analytics` setting to be truthy.
-     */
 }

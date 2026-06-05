@@ -425,7 +425,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         $meta_result = self::apply_campaign_meta($post_id, $request);
-        if ($meta_result instanceof WP_REST_Response) {
+        if (is_wp_error($meta_result)) {
             wp_delete_post($post_id, true);
             return $meta_result;
         }
@@ -476,7 +476,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         wp_update_post($update);
 
         $meta_result = self::apply_campaign_meta($post_id, $request);
-        if ($meta_result instanceof WP_REST_Response) {
+        if (is_wp_error($meta_result)) {
             return $meta_result;
         }
         self::assign_company($post_id, $request->get_param('company'));
