@@ -189,16 +189,20 @@ hover effects; this brings slot positions into the same pattern.
 ### Changes
 
 **`src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`**
-- Added `slotCssClass(slotId)` helper: produces `wpsg-lb-slot-<id>` with CSS-safe char substitution.
-- Added `slotPositionCss` `useMemo`: iterates `template.slots` and generates one CSS rule per slot:
-  `.wpsg-lb-slot-{id} { position: absolute; left: …px; top: …px; width: …px; height: …px; z-index: … }`.
+- Added `slotCssClass(instanceId, slotId)` helper: produces `wpsg-lb-slot-<instanceId>-<slotId>`
+  with CSS-safe char substitution. The `instanceId` parameter scopes CSS to a single gallery
+  instance (see decision M43-D below).
+- In `LayoutBuilderGalleryInner`: derives `instanceId` via `useId()` (React 18), strips non-alphanumeric
+  chars to produce a CSS-safe token.
+- Added `slotPositionCss` `useMemo`: iterates `template.slots` and generates one scoped CSS rule per
+  slot. `instanceId` included in memo deps.
 - Renders `<style>{slotPositionCss}</style>` alongside the existing `<style>{hoverStylesCss}</style>`.
 - `GallerySlotView`: receives `positionClassName` prop; applies it to the outer wrapper div;
   removes `position`, `left`, `top`, `width`, `height`, `zIndex` from all three inline style objects
   (empty slot, clip-path `outerStyle`, rectangle `rectStyle`). Mask, filter, clip-path, and
   blend-mode styles stay inline (they contain dynamic/URL-based values).
 - Listing mode (in parent): removes the same 5 properties from `containerStyle`; applies
-  `className={slotCssClass(rawSlot.id)}` to the container div / `TiltWrapper`.
+  `className={slotCssClass(instanceId, rawSlot.id)}` to the container div / `TiltWrapper`.
 - `pxX` and `pxY` removed from `GallerySlotView` (no longer used there; `pxW`/`pxH` stay for
   mask position computation).
 
@@ -211,6 +215,14 @@ same pattern keeps the codebase consistent.
 **CSP note.** The phase doc claimed inline `style` props require `style-src 'unsafe-inline'` while
 `<style>` injection does not. This is incorrect — both require `'unsafe-inline'`. The real benefit
 is DevTools inspectability only.
+
+**M43-D (PR review r1): Per-instance CSS scoping via `useId()`.** Copilot identified that the
+original `slotCssClass(slotId)` generated global selectors. Two `LayoutBuilderGallery` instances
+on the same page sharing the same template but different container widths would collide — the last
+`<style>` block wins, breaking positioning in earlier instances. Fix: `slotCssClass` now takes
+`instanceId` as its first parameter. `LayoutBuilderGalleryInner` derives a stable per-mount ID
+via `useId()` (React 18), strips non-alphanumeric chars, and passes it to every `slotCssClass`
+call and the `slotPositionCss` memo deps array.
 
 **Scope: position/size only.** Mask URL styles, filter expressions, clip-path values, and blend
 modes all contain dynamic or sanitized values and stay as inline styles. Converting only the

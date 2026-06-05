@@ -15,7 +15,7 @@
  *
  * Adapter ID: `'layout-builder'`
  */
-import React, { useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import React, { useId, useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { ListingItem } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { useRecordAnalyticsEvent } from '@/hooks/useRecordAnalyticsEvent';
@@ -103,8 +103,8 @@ function TiltWrapper({
 
 // ── Slot CSS class helpers ────────────────────────────────────────────────────
 
-function slotCssClass(slotId: string): string {
-  return `wpsg-lb-slot-${slotId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+function slotCssClass(instanceId: string, slotId: string): string {
+  return `wpsg-lb-slot-${instanceId}-${slotId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 }
 
 // ── GallerySlotView: renders one slot (a function component so hooks work) ───
@@ -550,6 +550,10 @@ function LayoutBuilderGalleryInner({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
+  // Stable per-instance ID for scoping slot position CSS (prevents collisions when
+  // the same template is mounted more than once on a page).
+  const rawInstanceId = useId();
+  const instanceId = rawInstanceId.replace(/[^a-zA-Z0-9]/g, '');
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
 
   // ── Responsive container width via ResizeObserver ──────────────────────────
@@ -609,9 +613,9 @@ function LayoutBuilderGalleryInner({
       const pxY = (slot.y / 100) * canvasHeight;
       const pxW = (slot.width / 100) * finalCanvasWidth;
       const pxH = (slot.height / 100) * canvasHeight;
-      return `.${slotCssClass(slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}}`;
+      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}}`;
     }).join('\n');
-  }, [template.slots, finalCanvasWidth, canvasHeight]);
+  }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
 
   // ── Slot-count mismatch warning ───────────────────────────────────────────
   const slotCount = template.slots.length;
@@ -758,7 +762,7 @@ function LayoutBuilderGalleryInner({
                 if (slotIndex >= (items?.length ?? 0)) return null;
                 const item = items![slotIndex];
                 if (!item) return null;
-                const listingSlotClass = slotCssClass(rawSlot.id);
+                const listingSlotClass = slotCssClass(instanceId, rawSlot.id);
                 const containerStyle: React.CSSProperties = {
                   borderRadius: rawSlot.borderRadius || undefined,
                   border: rawSlot.borderWidth > 0
@@ -796,7 +800,7 @@ function LayoutBuilderGalleryInner({
                   mediaIndexMap={mediaIndexMap}
                   glowColor={slot.glowColor || settings.tileGlowColor || '#7c9ef8'}
                   glowSpread={slot.glowSpread ?? settings.tileGlowSpread ?? 12}
-                  positionClassName={slotCssClass(slot.id)}
+                  positionClassName={slotCssClass(instanceId, slot.id)}
                 />
               );
             })}
