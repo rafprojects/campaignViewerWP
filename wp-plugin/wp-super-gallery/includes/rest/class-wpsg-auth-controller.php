@@ -166,10 +166,13 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
         // CSRF protection: verify Origin or Referer header matches the site URL.
         // Without this, an attacker could craft a cross-origin form POST that
         // logs a victim into an attacker-controlled account (login CSRF).
-        $site_host = wp_parse_url(home_url(), PHP_URL_HOST);
-        $origin    = isset($_SERVER['HTTP_ORIGIN']) ? wp_parse_url($_SERVER['HTTP_ORIGIN'], PHP_URL_HOST) : '';
-        $referer   = isset($_SERVER['HTTP_REFERER']) ? wp_parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST) : '';
-        if ( $origin !== $site_host && $referer !== $site_host ) {
+        // Only reject when a header is present and mismatches — absent headers
+        // are normal for same-origin requests under strict referrer policies.
+        $site_host    = wp_parse_url(home_url(), PHP_URL_HOST);
+        $origin_host  = isset($_SERVER['HTTP_ORIGIN'])  ? wp_parse_url($_SERVER['HTTP_ORIGIN'],  PHP_URL_HOST) : null;
+        $referer_host = isset($_SERVER['HTTP_REFERER']) ? wp_parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST) : null;
+        if ( ( $origin_host !== null && $origin_host !== $site_host ) ||
+             ( $origin_host === null && $referer_host !== null && $referer_host !== $site_host ) ) {
             return new WP_REST_Response([
                 'code'    => 'csrf_failed',
                 'message' => 'Cross-origin login requests are not allowed.',
