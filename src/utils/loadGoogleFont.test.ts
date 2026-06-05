@@ -10,8 +10,9 @@ import {
 // (which persist across tests within a single module instance) don't cross-contaminate.
 
 afterEach(() => {
-  // Clean up any link tags injected during tests
-  document.querySelectorAll('link[data-test-font]').forEach((el) => el.remove());
+  // Remove all stylesheet links injected during tests (loadGoogleFont doesn't
+  // set a data attribute, so we remove all <link rel="stylesheet"> elements).
+  document.querySelectorAll('link[rel="stylesheet"]').forEach((el) => el.remove());
 });
 
 function getInjectedLink(family: string): HTMLLinkElement | null {

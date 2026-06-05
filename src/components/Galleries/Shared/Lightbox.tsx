@@ -73,13 +73,14 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
   const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
   // Body-scroll lock: active whenever the lightbox is not fully closed.
-  // Shared reference counter in scrollLock.ts coordinates with useLightbox
-  // consumers that also call acquire/release for the same isOpen transition.
+  // Keyed on phase (not isOpen) so the lock is held through the exit animation.
+  // useLightbox consumers release on isOpen=false; this effect releases on
+  // phase='closed', keeping lockCount > 0 for the full TRANSITION_MS duration.
   useEffect(() => {
-    if (!isOpen) return;
+    if (phase === 'closed') return;
     acquireBodyScrollLock();
     return () => releaseBodyScrollLock();
-  }, [isOpen]);
+  }, [phase]);
 
   // Focus management: move focus into the dialog on open; restore it on close.
   useEffect(() => {

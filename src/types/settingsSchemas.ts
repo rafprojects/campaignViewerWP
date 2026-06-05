@@ -205,7 +205,7 @@ export const GalleryAdapterSettingsSchema = z.object({
   videoShadowPreset: optionalEnum(SHADOW_PRESETS),
   videoShadowCustom: optionalString,
   // Forward-compat: adapter-specific settings not listed above pass through unchanged.
-  // Adapters are open-ended by design; unknown keys are pruned by the transform below.
+  // Adapters are open-ended by design; unknown keys are preserved as-is.
 }).catchall(z.unknown()).transform(pruneUndefinedKeys);
 
 export const GalleryScopeConfigSchema = z.object({

@@ -76,7 +76,7 @@ describe('applyGalleryTransition', () => {
     expect(enter.style.transition).toContain('transform');
   });
 
-  it('does not set transform on fade-only transition', () => {
+  it('resets transform to translateX(0) on fade-only transition', () => {
     const enter = makeEl();
     applyGalleryTransition(enter, null, { ...BASE_OPTS, transitionType: 'fade' });
 
