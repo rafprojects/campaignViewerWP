@@ -1,21 +1,21 @@
 # Phase 44 — Codebase Audit: Code Quality, Security & UX Review
 
-**Status:** Not started
+**Status:** Complete
 **Created:** 2026-06-04
-**Last updated:** 2026-06-04
+**Last updated:** 2026-06-05
 
 ### Tracks
 
 | Track   | Area                        | Status      | Effort |
 |---------|-----------------------------|-------------|--------|
-| P44-A1  | Layout Builder              | Not started | L      |
-| P44-A2  | Gallery Adapters            | Not started | L      |
-| P44-A3  | Admin Panel + Media Tab     | Not started | M      |
-| P44-A4  | Settings System             | Not started | M      |
-| P44-A5  | Auth + API Layer            | Not started | M      |
-| P44-A6  | Hooks + State               | Not started | M      |
-| P44-A7  | PHP Backend                 | Not started | L      |
-| P44-A8  | Types + Utils               | Not started | S      |
+| P44-A1  | Layout Builder              | Complete    | L      |
+| P44-A2  | Gallery Adapters            | Complete    | L      |
+| P44-A3  | Admin Panel + Media Tab     | Complete    | M      |
+| P44-A4  | Settings System             | Complete    | M      |
+| P44-A5  | Auth + API Layer            | Complete    | M      |
+| P44-A6  | Hooks + State               | Complete    | M      |
+| P44-A7  | PHP Backend                 | Complete    | L      |
+| P44-A8  | Types + Utils               | Complete    | S      |
 
 ---
 
@@ -296,6 +296,342 @@ files), `class-wpsg-settings-sanitizer.php` (1377 LOC), `class-wpsg-db.php` (855
 
 ---
 
+## Track P44-A7 Rationale
+
+**SQL injection:** All custom queries in `class-wpsg-db.php` use `$wpdb->prepare()`,
+`$wpdb->insert()`, `$wpdb->update()`, or `$wpdb->delete()`. The `ensure_index()` DDL helper
+validates index/column name identifiers with regex before interpolating them — correct
+approach since `prepare()` cannot parameterise DDL identifiers. No raw query construction
+with user input found. ✅
+
+**Input sanitization:** Every REST route declares `sanitize_callback` or type/enum validation
+on its `args`. `build_media_item_from_payload()` validates media type (enum), source (enum),
+external URL scheme (HTTPS-only), and custom media ID (regex). Auth endpoints pass credentials
+through `wp_signon()` without reflection; emails are sanitised with `sanitize_email()`. Magic
+link tokens are constrained by the route regex `[a-f0-9\-]{36}` before reaching handler code.
+✅
+
+**File upload security:** `upload_single_media_file()` uses `wp_check_filetype_and_ext()`
+(byte-sniffing, not extension only) and cross-validates against the filename MIME — prevents
+extension/content mismatch. `is_uploaded_file()` guards against path injection. MIME allowlist
+covers only images and videos. Duplicate detection (MD5 + pHash) runs pre-sideload.
+`wp_handle_sideload()` is used, which bypasses the `test_form` check without weakening
+security. ✅
+
+**SSRF:** oEmbed proxy in `class-wpsg-system-controller.php` applies two-layer SSRF
+protection: pre-flight DNS check against private IP ranges (IPv4 + IPv6) plus a
+`pre_http_request` filter that re-validates the resolved IP at connection time to close the
+DNS-rebinding TOCTOU window. HTTPS-only requirement enforced before DNS. Allowlisted well-known
+provider domains bypass the DNS check (deliberate: known safe hosts). ✅
+
+**SSRF — inline fixes (two):**
+- `class-wpsg-settings-service.php::ajax_test_auth()` — used `wp_remote_get` with an
+  admin-configurable `api_base` URL. Replaced with `wp_safe_remote_get` to apply WordPress's
+  built-in private-IP blocklist even for admin-configured URLs.
+- `class-wpsg-thumbnail-cache.php::cache_thumbnail()` — used `wp_remote_get` to download
+  external thumbnails. Replaced with `wp_safe_remote_get` for the same reason.
+
+**Capability checks:** `require_admin()` checks `manage_wpsg`; `require_campaign_editor()` and
+`require_campaign_owner()` first verify auth integrity (nonce or Bearer token) then check the
+effective access level (owner > editor > viewer, with explicit-deny override). Magic approve is
+public but rate-limited (10/min) and one-time-use with 48-hour expiry. ✅
+
+**Rate limiting:** Applied to all mutation endpoints via `permission_callback`. Public endpoints:
+60 req/min per IP. Authenticated: 120 req/min. Magic approve: 10 req/min. ✅
+
+**Error responses:** All REST error messages are human-readable. Login failure returns a generic
+"Invalid username or password." (prevents username enumeration). Magic link expiry returns a
+clear `link_expired` response. No raw PHP exceptions reach the client. ✅
+
+**PII in logs:** Audit log records `actor_login` (username) and user IDs, not email addresses.
+IP addresses are not stored in the audit log. ✅
+
+---
+
+## Track P44-A8 Rationale
+
+**Code quality:** No dead exports. The two `any`/`unknown` uses in `types/index.ts` are
+intentional (adapter settings are open-ended by design). The `.catchall(z.unknown())` in
+`settingsSchemas.ts` is similarly deliberate — added a comment explaining forward-compat
+intent on both occurrences.
+
+**Test coverage:** 9 utils lacked test files. Three were risk-bearing:
+- `mergeSettingsWithDefaults.ts` — already covered by `defaultsAndMerge.test.ts`
+  (filename mismatch caused false negative in scan).
+- `galleryAnimations.ts` — DOM-manipulating transition utility; new tests added in
+  `galleryAnimations.test.ts` covering all transition types, null-element handling,
+  reflow-force verification, and direction variants.
+- `loadGoogleFont.ts` — side-effecting font injector; new tests added in
+  `loadGoogleFont.test.ts` covering inject, idempotency, error-event failure tracking,
+  unknown fonts, spaces-in-family-name, and `loadGoogleFontsFromOverrides`.
+
+**UX:** No direct UX surface. Zod error messages use Zod defaults — acceptable for
+machine API; no user-visible validation strings reach the UI directly.
+
+**Inline fixes:** Added `catchall` intent comments to `settingsSchemas.ts`;
+created `galleryAnimations.test.ts` and `loadGoogleFont.test.ts`.
+
+---
+
+## Track P44-A5 Rationale
+
+**JWT token storage:** Nonce path (default) stores tokens in memory only via WordPress
+globals — secure. JWT opt-in path stores tokens in `localStorage` — known, intentionally
+deferred as P20-K future work, documented in `FUTURE_TASKS.md`.
+
+**Dead-code removal:** `expiryWarningThresholdMs` was defined in `GalleryBehaviorSettings`
+with a default of 300,000 ms, a tooltip, and a UI NumberInput in
+`AdvancedSettingsSection.tsx`, but no code anywhere read or acted on it. The tooltip
+stated it would show a JWT token-expiry warning — a feature that was never implemented.
+Removed from all four locations: interface, defaults object, tooltip map, and the
+`AdvancedSettingsSection` control.
+
+**Auth error handling:** 401 → "Session expired. Please sign in again." surfaced with
+ARIA live region. 403 → automatic nonce refresh + retry, user-transparent. All error
+messages are human-readable; no raw exception traces shown to users.
+
+**Nonce heartbeat:** 20-minute interval, dual-layer refresh (proactive heartbeat +
+reactive 403 retry in HttpTransportImpl). Silent failure is appropriate.
+
+**Idle timeout UX:** `useIdleTimeout` fires logout with no advance warning or countdown.
+The setting `sessionIdleTimeoutMinutes` is wired and functional — the gap is purely UX
+(no "stay logged in" modal or countdown banner). Deferred to Phase 45.
+
+**SSRF:** Correctly delegated to PHP backend. Frontend does not need client-side SSRF
+validation — it trusts the backend proxy.
+
+**Component library:** `LoginForm`, `AuthBar`, `AuthBarFloating`, `AuthBarMinimal` are
+strong reuse candidates. `AuthBarFloatingMenuContent` is tightly coupled to
+`CampaignContext` and would need decoupling first.
+
+**Inline fixes:** Removed dead `expiryWarningThresholdMs` setting from all sites.
+
+---
+
+## Track P44-A6 Rationale
+
+**Corrected scope:** The phase document stated "59 files, 0 tests currently" — this was
+outdated. Actual count as audited: **38 hook files, 21 with test coverage, 17 untested.**
+
+**Untested hooks risk triage:**
+
+| Hook | Risk | Finding |
+|------|------|---------|
+| `useXhrUpload` | High | Complex XHR progress math, batch-upload per-file progress interpolation, abort-on-unmount. No test coverage. |
+| `useExternalMediaModal` | High | File-type filtering, `https:`-only URL guard, oEmbed preview, batch-upload + batch-add flow, partial-failure state. No test coverage. |
+| `useInContextSave` | Medium-High | Optimistic cache update → debounced server save → rollback path. Silent failure (console.error only). No test coverage. |
+| `useCarousel` | Low-Medium | Index clamping, wrap-around modulo nav, length-change effect. Logic is correct; low surface area. |
+| `useAuditRows` | Low | 12-LOC memoized sort + map. Trivial. |
+| `useCampaignsRows` | Low-Medium | Renders ~7 action controls per row using mutations. The mutations carry inline `onError` callbacks — consistent. No issues. |
+| `useTypographyStyle` | Low | Pure CSS derivation from settings. Clean `useMemo`. |
+| `useScrollRestore` | Low | localStorage persist/restore with storageKeyRef pattern to avoid stale closure. Clean. |
+| `useArchiveModal` | Low | Simple state gate + API call. **Inline fix applied**: general-error catch was using a hardcoded string instead of `getErrorMessage(err, ...)`, losing the server message. |
+
+**React Query patterns:** Mutations in this codebase use manual try/catch rather than
+React Query `onError` option for most operations — consistent across all examined hooks.
+The `usePatchCampaign` mutation in `useCampaignsRows` is the one place where `onError` is
+used inline (via the per-call options), which is correct. No silent error swallowing found
+in the top-risk hooks.
+
+**Stale closures:** No problematic dep arrays found. `useScrollRestore`, `useInContextSave`,
+and `useCarousel` all use refs correctly to avoid stale closure issues.
+
+**Context over-subscription:** `SettingsStore` is Zustand-based (not React Context), so
+subscriptions are already selector-based. `AuthContext` and `RootIdContext` are consumed
+at the right level. No obvious over-subscription.
+
+**UX:** `useInContextSave` failure path silently reverts with only a console.error. The
+user has no indication that their in-context change was not persisted. Flagged as Phase 45.
+
+**Inline fixes:** Added `getErrorMessage` import and usage to `useArchiveModal.ts`.
+
+---
+
+## Track P44-A3 Rationale
+
+**Code quality:** `MediaTab.tsx` (1401 LOC) is a severe single-responsibility violation —
+it owns upload handling, media ordering (dnd-kit), media metadata editing, bulk selection
+and actions, search/filter, rescan, usage summary, and three separate inline modals. No
+single extraction is safe to make inline (each concern is entangled with shared state);
+split deferred to Phase 45.
+
+**Error handling:** Seven `catch` blocks in `MediaTab.tsx` used `(err as Error).message`
+directly — if the caught value is not an `Error` instance (e.g. a string, a rejected
+promise with an object payload, or an `ApiError` subclass), this silently produces
+`undefined` as the notification message. Fixed in place by replacing all seven occurrences
+with `getErrorMessage(err, '<contextual fallback>')`. The utility (`src/utils/getErrorMessage.ts`)
+was already imported in the file.
+
+**Accessibility:** Two `Tabs.Panel` components in `AdminPanel.tsx` carried
+`aria-labelledby="audit-heading"` and `aria-labelledby="global-audit-heading"` but no
+corresponding `id` attributes exist on any element in the file — the ARIA references were
+broken, pointing to nothing. Removed both broken attributes. The panels are visually
+identified by their tab label; the correct fix (adding matching `id` elements inside each
+panel's heading) is a larger UX change and is deferred. Also: `DragOverlay` image in
+`MediaTab.tsx` had `alt=""`, which is appropriate for a drag ghost only if the image is
+purely decorative. In this context it is a representation of the dragged item — changed
+to `alt={activeMediaItem.caption || 'media item'}`.
+
+**Drag-over visual feedback:** The `MediaAddModal` file drop zone (`<Paper ref={dropRef}>`)
+has no visual feedback when files are dragged over it. The `dragover` event handler sets
+`dropEffect = 'copy'` but does not signal any UI change. Adding visual feedback requires
+lifting drag state to the parent and passing a prop to `MediaAddModal`. Deferred to
+Phase 45 as a UX enhancement.
+
+**Destructive action safety:** Single-item delete uses a confirmation modal with an
+explicit "Delete" button — correct. Bulk-delete has no confirmation; items are permanently
+removed immediately. Bulk archive and bulk restore also lack confirmation dialogs. The
+inconsistency creates a usability hazard for users who mis-click. Deferred to Phase 45.
+
+**Inline fixes:** Fixed 7 `(err as Error).message` usages → `getErrorMessage`; fixed 2
+broken `aria-labelledby` references; fixed `alt=""` on DragOverlay image.
+
+---
+
+## Track P44-A4 Rationale
+
+**Code quality:** `GalleryConfigEditorModal.tsx` (1386 LOC) manages the entire responsive
+gallery configuration UI: per-breakpoint adapter selection, adapter settings groups,
+common section settings, and scope (unified/image/video) switching. The logic is coherent
+but at 1386 LOC the file is a strong split candidate — the breakpoint tab bar, adapter
+selector, and settings group renderer are each distinct concerns. Deferred to Phase 45.
+
+**Error handling:** `SettingsPanel.tsx` uses `getErrorMessage` for the save path ✅.
+`WebhookSettingsSection.tsx` used the safe `getErrorMessage` call but with the generic
+fallback `'An error occurred.'` in all four mutation error handlers. Fixed: replaced with
+operation-specific fallback strings (create / delete / update / rotate secret).
+
+**Settings UX:**
+- Tooltip infrastructure present and well-structured (`SETTING_TOOLTIPS` catalog +
+  `SettingTooltip` component + `showSettingsTooltips` toggle). Tooltip coverage is
+  comprehensive: 85+ entries covering all advanced settings. ✅
+- Tabs used for progressive disclosure (Appearance / Cards / Gallery Layout / etc.) ✅
+- `closeOnClickOutside={!hasChanges}` and `closeOnEscape={!hasChanges}` prevent
+  accidental close with unsaved changes ✅
+- "Reset" button appears only when there are changes; Save button disabled when clean ✅
+- Draft persistence (P36-A) with cross-session restore prompt ✅
+
+**Validation feedback:** Settings use bulk save — no inline per-field validation. Invalid
+values (out-of-range numbers, empty required strings) are not surfaced until save is clicked.
+Mantine's `NumberInput` with `min`/`max` props provides implicit range guidance. Full
+inline validation would require per-field error state, which is a notable UX improvement
+but not a simple fix. Deferred to Phase 45.
+
+**Responsive config editor UX:** The `GalleryConfigEditorModal` is opened from a button in
+the Gallery Layout tab. The entry point could be more discoverable (the button label and
+its position are not prominent). Noted; no inline fix.
+
+**Accessibility:** Mantine's `NumberInput`/`TextInput`/`Switch` components auto-associate
+labels with inputs via Mantine's internal `useId()`. `SettingTooltip` adds
+`aria-label={tooltip}` to the info icon for screen readers. Form label associations are
+correct throughout. ✅
+
+**Inline fixes:** Improved four generic `'An error occurred.'` fallbacks to
+operation-specific strings in `WebhookSettingsSection.tsx`.
+
+---
+
+## Track P44-A1 Rationale
+
+**Code quality:** `LayoutBuilderModal.tsx` (1152 LOC) manages 10+ distinct concerns: draft
+restore, cross-tab stale detection, workspace preferences (localStorage), overlay library,
+campaign media picker, group/z-order actions, JSON export/import, dockview layout
+persistence, save, and keyboard shortcuts. Each responsibility is clearly separated within
+the file (labeled sections), but the total complexity argues for extraction into focused
+hooks/sub-components. Deferred to Phase 45.
+
+`LayoutSlotComponent.tsx` (945 LOC) is similarly over-large — it handles slot rendering,
+drag/resize, mask drag overlay, hover state, media assignment drop, and slot border/label
+rendering. Deferred to Phase 45.
+
+**Error handling:** `LayoutBuilderModal.tsx` uses the safe
+`err instanceof Error ? err.message : fallback` pattern throughout all async handlers
+(save, overlay upload, background upload, mask upload, overlay delete). This is functionally
+equivalent to `getErrorMessage` — no inline fix needed.
+
+**Accessibility:** Comprehensive.
+- `aria-live="polite"` + `aria-atomic="true"` region for screen reader announcements,
+  wired to every user action (slot added, grouped, moved, z-index changed, etc.) ✅
+- `role="application"` on canvas with `aria-label="Layout canvas"` ✅
+- Slot components use `role="img"` with dynamic `aria-label` describing slot content ✅
+- Keyboard shortcuts: nudge (arrow keys), undo/redo (Ctrl+Z/Y), duplicate (Ctrl+D),
+  group (Ctrl+G), z-order (]/[), save (Ctrl+S), deselect (Escape) ✅
+- Unsaved-changes guard ("Discard changes?" modal on close) ✅
+
+**Empty canvas empty state (inline fix):** When `template.slots.length === 0` in edit mode,
+the canvas rendered as a featureless empty box. New users have no visual affordance to
+discover that double-clicking adds a slot or that media can be dragged from the panel.
+Added a centered instructional text ("Double-click to add a slot / or drag media from the
+panel") visible only in edit mode with no slots. `pointerEvents: 'none'` ensures it does
+not interfere with the canvas drag/click handlers.
+
+**Performance:** `computeGuides` in `smartGuides.ts` is called on every drag frame against
+all other slots. With 20+ slots this becomes O(n) per frame. The current implementation
+is acceptable for typical layout counts (5–15 slots) but could become sluggish with
+dense layouts. Deferred to Phase 45.
+
+**Keyboard path for mouse-free users:** Arrow-key nudge is present. Double-click affordance
+is mouse-only — no keyboard equivalent for adding a slot (only the "Add slot" button in the
+layers panel). Adding a keyboard shortcut (e.g. N = new slot) is a Phase 45 candidate.
+
+**Inline fixes:** Added empty-canvas instructional text to `LayoutCanvas.tsx`.
+
+---
+
+## Track P44-A2 Rationale
+
+**Cross-adapter consistency:** All 11 adapters share `LazyImage` (skeleton → fade-in →
+fallback on error), `useCarousel` for navigation index, and `Lightbox` for full-screen
+viewing. Alt text, hover overlays, and video badges are uniform across adapters. Code
+quality is high; no naming or complexity issues found.
+
+**Lightbox accessibility — focus management (inline fix):** `Lightbox` rendered a
+`role="dialog" aria-modal="true"` container but never moved keyboard focus into the dialog
+when it opened, nor restored focus to the trigger element on close. WCAG 2.4.3 (Focus
+Order) requires programmatic focus management for modal dialogs. Fixed by:
+- Adding `closeButtonRef` + `previouslyFocusedRef` to `Lightbox.tsx`
+- Moving focus to the close button when phase transitions to `'entering'`
+- Restoring the previously focused element when phase reaches `'closed'`
+- Adding `ref={closeButtonRef}` to the close ActionIcon
+
+**Body-scroll lock inconsistency (inline fix):** `useLightbox` manages a module-level
+reference-counted body-scroll lock (`overflow: hidden`). However, most adapters
+(`CompactGridGallery`, `JustifiedGallery`, `MasonryGallery`, `HexagonalGallery`,
+`DiamondGallery`, `CircularGallery`, `ScrollSnapGallery`) manage `lightboxOpen` with plain
+`useState`, not `useLightbox`. Consequently, when those adapters open the lightbox, the
+body-scroll lock never fires — the page scrolls freely behind the open overlay.
+
+Fixed by:
+1. Extracting the reference-counter logic from `useLightbox.ts` to a new shared utility
+   `src/utils/scrollLock.ts` (exports `acquireBodyScrollLock` / `releaseBodyScrollLock`).
+2. Updating `useLightbox.ts` to import from the shared utility instead of duplicating it.
+3. Adding a `useEffect` in `Lightbox.tsx` keyed on `isOpen` that calls
+   `acquireBodyScrollLock` / `releaseBodyScrollLock`. This activates for every consumer
+   regardless of whether they use `useLightbox`. The shared reference counter prevents
+   double-unlock when both the hook and the component participate (e.g. `SpotlightGallery`).
+
+All existing `useLightbox.test.ts` and `Lightbox.test.tsx` tests continue to pass.
+
+**Full focus trap:** A complete ARIA focus trap (Tab cycling between close/prev/next
+buttons only) is not implemented inline — it adds complexity and has no pre-existing test
+coverage for the new behavior. Deferred to Phase 45.
+
+**`@deprecated ImageCarousel`:** Thin shim wrapping `MediaCarouselInner`; deprecation
+notice is in place; no callers found in the codebase. Safe to remove once confirmed. Noted.
+
+**XSS / security:** `iframe.src` in Lightbox uses `current.embedUrl` from server-supplied
+`MediaItem` data. No client-side URL construction from user input. No XSS surface in
+adapters.
+
+**Component library flag:** `Lightbox` is the strongest extraction candidate — only
+`--wpsg-color-surface` CSS variable coupling and the `MediaItem` type dependency prevent
+immediate extraction.
+
+**Inline fixes:** Extracted scroll lock to shared utility; added body-scroll lock to
+Lightbox; added focus management to Lightbox.
+
+---
+
 ## Phase 45 Candidates
 
 Issues and refactoring opportunities discovered during the audit that are too large to fix
@@ -303,4 +639,23 @@ inline. Appended here as each track completes.
 
 | ID | Area | Issue / Opportunity | Effort estimate | Discovered in |
 |----|------|---------------------|-----------------|---------------|
-| — | — | *(populated during audit execution)* | — | — |
+| P45-01 | Utils | Extract `sanitizeCss.ts` to shared library package | S | P44-A8 |
+| P45-02 | Utils | Extract `cssUnits.ts` + `toCss*` helpers to shared library package | S | P44-A8 |
+| P45-03 | Auth | Idle timeout countdown warning: enhance `useIdleTimeout` with `onWarning(secondsRemaining)` callback; show dismissible "stay logged in" banner | M | P44-A5 |
+| P45-04 | Auth | JWT in-memory + httpOnly cookie upgrade (P20-K): replace `localStorage` token storage in `WpJwtProvider.ts` | L | P44-A5 |
+| P45-05 | Auth | Extract `LoginForm` + `AuthBar*` as generic auth-UI library components (decouple `AuthBarFloatingMenuContent` from `CampaignContext` first) | M | P44-A5 |
+| P45-06 | Hooks | Add test coverage for `useXhrUpload` (batch progress math, abort-on-unmount, status-code error mapping) | M | P44-A6 |
+| P45-07 | Hooks | Add test coverage for `useExternalMediaModal` (file-type filter, URL validation, partial-failure state) | M | P44-A6 |
+| P45-08 | Hooks | Add test coverage for `useInContextSave` (optimistic update, debounce, server rollback) | S | P44-A6 |
+| P45-09 | Hooks | `useInContextSave` failure UX: surface a user-visible error notification when the debounced save fails (currently silent console.error + revert) | S | P44-A6 |
+| P45-10 | Admin | Split `MediaTab.tsx` (1401 LOC, 10+ concerns) into focused sub-components/hooks: upload, ordering, metadata editing, bulk actions, filter/search | L | P44-A3 |
+| P45-11 | Admin | Bulk delete/archive/restore confirmation dialogs in `MediaTab.tsx` — current bulk actions fire immediately with no scope confirmation | S | P44-A3 |
+| P45-12 | Admin | `MediaAddModal` file drop zone: add drag-over visual feedback (border highlight / background shift) when files are being dragged over the drop area | S | P44-A3 |
+| P45-13 | Gallery | Full ARIA focus trap in `Lightbox`: Tab/Shift+Tab cycle through close/prev/next buttons only (current fix moves focus on open but does not trap) | M | P44-A2 |
+| P45-14 | Gallery | Remove `@deprecated ImageCarousel` shim once all consumers are migrated to `MediaCarouselAdapter` directly | S | P44-A2 |
+| P45-15 | Gallery | Extract `Lightbox` component to shared library: decouple `--wpsg-color-surface` CSS variable dependency and `MediaItem` type | M | P44-A2 |
+| P45-16 | Builder | Split `LayoutBuilderModal.tsx` (1152 LOC): extract overlay library, campaign media picker, workspace preference, and keyboard handler concerns into focused hooks | L | P44-A1 |
+| P45-17 | Builder | Split `LayoutSlotComponent.tsx` (945 LOC): extract mask-drag overlay, slot-media drop handler, and border/label rendering into sub-components | M | P44-A1 |
+| P45-18 | Builder | `smartGuides.ts` performance: memoize guide computation per-slot to avoid O(n) recalculation on every drag frame | M | P44-A1 |
+| P45-19 | Builder | Add keyboard shortcut to add a new slot (e.g. N key) — current affordance is mouse-only (double-click or "Add slot" button) | S | P44-A1 |
+| P45-20 | Settings | Split `GalleryConfigEditorModal.tsx` (1386 LOC): extract breakpoint tab bar, adapter selector, and settings group renderer into focused sub-components | L | P44-A4 |

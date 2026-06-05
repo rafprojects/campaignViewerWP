@@ -7,6 +7,7 @@ import { useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign } from '@/types';
 import { ApiError } from '@/services/apiClient';
+import { getErrorMessage } from '@/utils/getErrorMessage';
 
 interface UseArchiveModalOptions {
   apiClient: ApiClient;
@@ -45,7 +46,7 @@ export function useArchiveModal({
       if (err instanceof ApiError && err.status === 403) {
         onNotify({ type: 'error', text: 'Admin permissions required.' });
       } else {
-        onNotify({ type: 'error', text: 'Failed to archive campaign.' });
+        onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to archive campaign.') });
       }
     }
   };

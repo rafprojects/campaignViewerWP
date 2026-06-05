@@ -106,6 +106,8 @@ export const GalleryCommonSettingsSchema = z.object({
   galleryLabelJustification: z.enum(GALLERY_LABEL_JUSTIFICATIONS).optional(),
   showGalleryLabelIcon: z.boolean().optional(),
   showCampaignGalleryLabels: z.boolean().optional(),
+  // Forward-compat: future common settings added server-side pass through without
+  // breaking validation. Known keys above are strictly typed.
 }).catchall(z.unknown());
 
 export const GalleryAdapterSettingsSchema = z.object({
@@ -202,6 +204,8 @@ export const GalleryAdapterSettingsSchema = z.object({
   imageShadowCustom: optionalString,
   videoShadowPreset: optionalEnum(SHADOW_PRESETS),
   videoShadowCustom: optionalString,
+  // Forward-compat: adapter-specific settings not listed above pass through unchanged.
+  // Adapters are open-ended by design; unknown keys are preserved as-is.
 }).catchall(z.unknown()).transform(pruneUndefinedKeys);
 
 export const GalleryScopeConfigSchema = z.object({

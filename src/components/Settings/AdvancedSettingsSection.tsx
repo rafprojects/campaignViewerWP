@@ -295,7 +295,6 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
           <Accordion.Panel>
             {mounted.has('adv-system') ? (
               <Stack gap="md">
-                <NumberInput label={tooltipLabel('Expiry Warning Threshold (ms)', 'expiryWarningThresholdMs')} description="How early to show token-expiry warnings." value={settings.expiryWarningThresholdMs} onChange={(value) => updateSetting('expiryWarningThresholdMs', typeof value === 'number' ? value : 300000)} min={0} max={600000} />
                 <NumberInput label={tooltipLabel('Admin Search Debounce (ms)', 'adminSearchDebounceMs')} value={settings.adminSearchDebounceMs} onChange={(value) => updateSetting('adminSearchDebounceMs', typeof value === 'number' ? value : 300)} min={0} max={2000} />
                 <NumberInput label={tooltipLabel('Min Password Length', 'loginMinPasswordLength')} value={settings.loginMinPasswordLength} onChange={(value) => updateSetting('loginMinPasswordLength', typeof value === 'number' ? value : 1)} min={1} max={32} />
                 <NumberInput label={tooltipLabel('Login Form Max Width (px)', 'loginFormMaxWidth')} value={settings.loginFormMaxWidth} onChange={(value) => updateSetting('loginFormMaxWidth', typeof value === 'number' ? value : 400)} min={200} max={800} />

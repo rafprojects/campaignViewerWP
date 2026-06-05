@@ -948,7 +948,6 @@ export interface GalleryBehaviorSettings {
   searchInputMinWidth: number;
   searchInputMaxWidth: number;
   // P14-B: System (advanced)
-  expiryWarningThresholdMs: number;
   adminSearchDebounceMs: number;
   loginMinPasswordLength: number;
   loginFormMaxWidth: number;
@@ -1442,7 +1441,6 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   searchInputMinWidth: 200,
   searchInputMaxWidth: 280,
   // P14-B: System (advanced)
-  expiryWarningThresholdMs: 300000,
   adminSearchDebounceMs: 300,
   loginMinPasswordLength: 1,
   loginFormMaxWidth: 400,

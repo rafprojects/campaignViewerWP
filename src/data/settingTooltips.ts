@@ -93,7 +93,6 @@ export const SETTING_TOOLTIPS: Record<string, string> = {
   searchInputMaxWidth: 'Maximum width (px) of the campaign search input field.',
 
   // ── System (advanced) ──
-  expiryWarningThresholdMs: 'Show a "session expiring" warning this many milliseconds before the token expires.',
   adminSearchDebounceMs: 'Delay (ms) after the last keystroke before firing a search query.',
   loginMinPasswordLength: 'Minimum password length enforced on the login form.',
   loginFormMaxWidth: 'Maximum width (px) of the login form container.',
