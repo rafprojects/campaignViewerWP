@@ -276,7 +276,7 @@ function AppContent({
     timeoutMinutes: resolvedSettings.sessionIdleTimeoutMinutes,
     isAuthenticated,
     onTimeout: () => void logout(),
-    warningThresholdMs: 120_000,
+    warningThresholdMs: resolvedSettings.sessionIdleWarningSeconds * 1000,
     onWarning: (secondsRemaining) => {
       notifications.show({
         id: 'idle-timeout-warning',

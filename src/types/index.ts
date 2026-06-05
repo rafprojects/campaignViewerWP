@@ -956,6 +956,8 @@ export interface GalleryBehaviorSettings {
   cardAutoColumnsBreakpoints: string;
   // P20-K: Session idle timeout (minutes). 0 = disabled.
   sessionIdleTimeoutMinutes: number;
+  // P45-A5: Warning shown N seconds before idle logout. 0 = no warning.
+  sessionIdleWarningSeconds: number;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
   // P23-D: Canonical responsive gallery configuration surface.
@@ -1449,6 +1451,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
+  sessionIdleWarningSeconds: 120,
   layoutBuilderScope: 'full',
   galleryConfig: createDefaultGalleryConfig(),
   // P41-UN1: Uninstall data preservation defaults to safe (true)

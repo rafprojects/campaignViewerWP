@@ -278,6 +278,17 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
                 step={5}
                 placeholder="0 = disabled"
               />
+              <NumberInput
+                label="Idle Timeout Warning (seconds before)"
+                description="Show a 'Stay signed in' prompt this many seconds before signing out. Set to 0 to sign out without warning."
+                value={settings.sessionIdleWarningSeconds}
+                onChange={(value) => updateSetting('sessionIdleWarningSeconds', typeof value === 'number' ? value : 120)}
+                min={0}
+                max={300}
+                step={30}
+                placeholder="0 = no warning"
+                disabled={settings.sessionIdleTimeoutMinutes === 0}
+              />
               <Switch
                 label="Enable Advanced Settings"
                 description="Unlock the Advanced tab with granular control over card opacities, tile dimensions, lightbox behavior, breakpoints, and more."
