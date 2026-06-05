@@ -216,7 +216,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             $wpdb->prepare(
                 "SELECT
                     media_id,
-                    COUNT(*) AS views,
+                    SUM(CASE WHEN event_type = 'view' THEN 1 ELSE 0 END) AS views,
                     SUM(CASE WHEN event_type = 'lightbox_open' THEN 1 ELSE 0 END) AS lightbox_opens
                 FROM {$table}
                 WHERE campaign_id = %d

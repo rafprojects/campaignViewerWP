@@ -41,34 +41,9 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
 
         register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)', [
             [
-                'methods' => 'GET',
-                'callback' => [self::class, 'get_campaign'],
-                'permission_callback' => function ( $request ) {
-                    $campaign_id = isset( $request['id'] ) ? intval( $request['id'] ) : 0;
-
-                    if ( ! $campaign_id ) {
-                        return false;
-                    }
-
-                    $campaign = get_post( $campaign_id );
-
-                    // Deny access if the campaign does not exist.
-                    if ( ! $campaign ) {
-                        return false;
-                    }
-
-                    // Allow public (published) campaigns to be accessed by anyone.
-                    if ( isset( $campaign->post_status ) && 'publish' === $campaign->post_status ) {
-                        return true;
-                    }
-
-                    // For non-public campaigns, require appropriate capabilities.
-                    if ( current_user_can( 'read_post', $campaign_id ) || current_user_can( 'manage_options' ) ) {
-                        return true;
-                    }
-
-                    return false;
-                },
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_campaign'],
+                'permission_callback' => [self::class, 'rate_limit_public'],
             ],
             [
                 'methods'             => 'PUT',
