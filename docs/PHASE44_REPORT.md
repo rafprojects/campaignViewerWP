@@ -1,8 +1,8 @@
 # Phase 44 — Codebase Audit: Code Quality, Security & UX Review
 
-**Status:** Not started
+**Status:** In progress
 **Created:** 2026-06-04
-**Last updated:** 2026-06-04
+**Last updated:** 2026-06-05
 
 ### Tracks
 
@@ -12,10 +12,10 @@
 | P44-A2  | Gallery Adapters            | Not started | L      |
 | P44-A3  | Admin Panel + Media Tab     | Not started | M      |
 | P44-A4  | Settings System             | Not started | M      |
-| P44-A5  | Auth + API Layer            | Not started | M      |
-| P44-A6  | Hooks + State               | Not started | M      |
+| P44-A5  | Auth + API Layer            | Complete    | M      |
+| P44-A6  | Hooks + State               | Complete    | M      |
 | P44-A7  | PHP Backend                 | Not started | L      |
-| P44-A8  | Types + Utils               | Not started | S      |
+| P44-A8  | Types + Utils               | Complete    | S      |
 
 ---
 
@@ -296,6 +296,105 @@ files), `class-wpsg-settings-sanitizer.php` (1377 LOC), `class-wpsg-db.php` (855
 
 ---
 
+## Track P44-A8 Rationale
+
+**Code quality:** No dead exports. The two `any`/`unknown` uses in `types/index.ts` are
+intentional (adapter settings are open-ended by design). The `.catchall(z.unknown())` in
+`settingsSchemas.ts` is similarly deliberate — added a comment explaining forward-compat
+intent on both occurrences.
+
+**Test coverage:** 9 utils lacked test files. Three were risk-bearing:
+- `mergeSettingsWithDefaults.ts` — already covered by `defaultsAndMerge.test.ts`
+  (filename mismatch caused false negative in scan).
+- `galleryAnimations.ts` — DOM-manipulating transition utility; new tests added in
+  `galleryAnimations.test.ts` covering all transition types, null-element handling,
+  reflow-force verification, and direction variants.
+- `loadGoogleFont.ts` — side-effecting font injector; new tests added in
+  `loadGoogleFont.test.ts` covering inject, idempotency, error-event failure tracking,
+  unknown fonts, spaces-in-family-name, and `loadGoogleFontsFromOverrides`.
+
+**UX:** No direct UX surface. Zod error messages use Zod defaults — acceptable for
+machine API; no user-visible validation strings reach the UI directly.
+
+**Inline fixes:** Added `catchall` intent comments to `settingsSchemas.ts`;
+created `galleryAnimations.test.ts` and `loadGoogleFont.test.ts`.
+
+---
+
+## Track P44-A5 Rationale
+
+**JWT token storage:** Nonce path (default) stores tokens in memory only via WordPress
+globals — secure. JWT opt-in path stores tokens in `localStorage` — known, intentionally
+deferred as P20-K future work, documented in `FUTURE_TASKS.md`.
+
+**Dead-code removal:** `expiryWarningThresholdMs` was defined in `GalleryBehaviorSettings`
+with a default of 300,000 ms, a tooltip, and a UI NumberInput in
+`AdvancedSettingsSection.tsx`, but no code anywhere read or acted on it. The tooltip
+stated it would show a JWT token-expiry warning — a feature that was never implemented.
+Removed from all four locations: interface, defaults object, tooltip map, and the
+`AdvancedSettingsSection` control.
+
+**Auth error handling:** 401 → "Session expired. Please sign in again." surfaced with
+ARIA live region. 403 → automatic nonce refresh + retry, user-transparent. All error
+messages are human-readable; no raw exception traces shown to users.
+
+**Nonce heartbeat:** 20-minute interval, dual-layer refresh (proactive heartbeat +
+reactive 403 retry in HttpTransportImpl). Silent failure is appropriate.
+
+**Idle timeout UX:** `useIdleTimeout` fires logout with no advance warning or countdown.
+The setting `sessionIdleTimeoutMinutes` is wired and functional — the gap is purely UX
+(no "stay logged in" modal or countdown banner). Deferred to Phase 45.
+
+**SSRF:** Correctly delegated to PHP backend. Frontend does not need client-side SSRF
+validation — it trusts the backend proxy.
+
+**Component library:** `LoginForm`, `AuthBar`, `AuthBarFloating`, `AuthBarMinimal` are
+strong reuse candidates. `AuthBarFloatingMenuContent` is tightly coupled to
+`CampaignContext` and would need decoupling first.
+
+**Inline fixes:** Removed dead `expiryWarningThresholdMs` setting from all sites.
+
+---
+
+## Track P44-A6 Rationale
+
+**Corrected scope:** The phase document stated "59 files, 0 tests currently" — this was
+outdated. Actual count as audited: **38 hook files, 21 with test coverage, 17 untested.**
+
+**Untested hooks risk triage:**
+
+| Hook | Risk | Finding |
+|------|------|---------|
+| `useXhrUpload` | High | Complex XHR progress math, batch-upload per-file progress interpolation, abort-on-unmount. No test coverage. |
+| `useExternalMediaModal` | High | File-type filtering, `https:`-only URL guard, oEmbed preview, batch-upload + batch-add flow, partial-failure state. No test coverage. |
+| `useInContextSave` | Medium-High | Optimistic cache update → debounced server save → rollback path. Silent failure (console.error only). No test coverage. |
+| `useCarousel` | Low-Medium | Index clamping, wrap-around modulo nav, length-change effect. Logic is correct; low surface area. |
+| `useAuditRows` | Low | 12-LOC memoized sort + map. Trivial. |
+| `useCampaignsRows` | Low-Medium | Renders ~7 action controls per row using mutations. The mutations carry inline `onError` callbacks — consistent. No issues. |
+| `useTypographyStyle` | Low | Pure CSS derivation from settings. Clean `useMemo`. |
+| `useScrollRestore` | Low | localStorage persist/restore with storageKeyRef pattern to avoid stale closure. Clean. |
+| `useArchiveModal` | Low | Simple state gate + API call. **Inline fix applied**: general-error catch was using a hardcoded string instead of `getErrorMessage(err, ...)`, losing the server message. |
+
+**React Query patterns:** Mutations in this codebase use manual try/catch rather than
+React Query `onError` option for most operations — consistent across all examined hooks.
+The `usePatchCampaign` mutation in `useCampaignsRows` is the one place where `onError` is
+used inline (via the per-call options), which is correct. No silent error swallowing found
+in the top-risk hooks.
+
+**Stale closures:** No problematic dep arrays found. `useScrollRestore`, `useInContextSave`,
+and `useCarousel` all use refs correctly to avoid stale closure issues.
+
+**Context over-subscription:** `SettingsStore` is Zustand-based (not React Context), so
+subscriptions are already selector-based. `AuthContext` and `RootIdContext` are consumed
+at the right level. No obvious over-subscription.
+
+**UX:** `useInContextSave` failure path silently reverts with only a console.error. The
+user has no indication that their in-context change was not persisted. Flagged as Phase 45.
+
+**Inline fixes:** Added `getErrorMessage` import and usage to `useArchiveModal.ts`.
+
+---
+
 ## Phase 45 Candidates
 
 Issues and refactoring opportunities discovered during the audit that are too large to fix
@@ -303,4 +402,12 @@ inline. Appended here as each track completes.
 
 | ID | Area | Issue / Opportunity | Effort estimate | Discovered in |
 |----|------|---------------------|-----------------|---------------|
-| — | — | *(populated during audit execution)* | — | — |
+| P45-01 | Utils | Extract `sanitizeCss.ts` to shared library package | S | P44-A8 |
+| P45-02 | Utils | Extract `cssUnits.ts` + `toCss*` helpers to shared library package | S | P44-A8 |
+| P45-03 | Auth | Idle timeout countdown warning: enhance `useIdleTimeout` with `onWarning(secondsRemaining)` callback; show dismissible "stay logged in" banner | M | P44-A5 |
+| P45-04 | Auth | JWT in-memory + httpOnly cookie upgrade (P20-K): replace `localStorage` token storage in `WpJwtProvider.ts` | L | P44-A5 |
+| P45-05 | Auth | Extract `LoginForm` + `AuthBar*` as generic auth-UI library components (decouple `AuthBarFloatingMenuContent` from `CampaignContext` first) | M | P44-A5 |
+| P45-06 | Hooks | Add test coverage for `useXhrUpload` (batch progress math, abort-on-unmount, status-code error mapping) | M | P44-A6 |
+| P45-07 | Hooks | Add test coverage for `useExternalMediaModal` (file-type filter, URL validation, partial-failure state) | M | P44-A6 |
+| P45-08 | Hooks | Add test coverage for `useInContextSave` (optimistic update, debounce, server rollback) | S | P44-A6 |
+| P45-09 | Hooks | `useInContextSave` failure UX: surface a user-visible error notification when the debounced save fails (currently silent console.error + revert) | S | P44-A6 |
