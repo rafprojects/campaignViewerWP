@@ -24,7 +24,7 @@
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Planned | M      |
-| P45-A17 | Keyboard shortcut for adding a new canvas slot          | Planned | S      |
+| P45-A17 | Keyboard shortcut for adding a new canvas slot          | Done     | S      |
 | P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Planned | L      |
 
 ---
@@ -387,6 +387,38 @@ Rather than creating two near-identical `AdminCampaignBulkArchiveModal` and `Adm
 - Clicking Restore in `BulkActionsBar` opens a confirmation modal before any server call
 - Cancelling either confirmation makes no server call
 - `AdminCampaignBulkConfirmModal` test coverage for both actions
+
+---
+
+## Track P45-A17 — Keyboard Shortcut for Adding a New Canvas Slot
+
+### Problem
+
+The Layout Builder had no keyboard shortcut for adding a new slot. Users had to reach for the "Add Slot" button in the canvas panel toolbar every time they wanted a new slot, which interrupted the keyboard-driven workflow.
+
+### Fix
+
+Added `N` as the keyboard shortcut for adding a new slot. The handler:
+- Calls `builder.addSlot()` to create the slot and obtain its ID
+- Calls `builder.selectSlot(id)` to immediately select it
+- Clears overlay and background selection (`setSelectedOverlayId(null)`, `setIsBackgroundSelected(false)`)
+- Announces "New slot added" for screen readers
+- Is a no-op when the builder is in preview mode (`builder.isPreview`)
+
+Added the entry to the Canvas section of `BuilderKeyboardShortcutsModal.tsx` so it appears in the `?` reference sheet.
+
+### Rationale
+
+`N` follows the same bare-key pattern as `H` (hand tool), `V` (select tool), `F` (fit canvas), and `?` (help). It is not taken by any existing shortcut. Modifier-free keeps it fast and mirrors the "create new thing" convention common in design tools. The `isPreview` guard prevents accidental slot creation when reviewing the layout.
+
+2 new tests added to `BuilderKeyboardShortcuts.test.tsx`: one verifies `addSlot`/`selectSlot` are called with the returned ID; one verifies the "Add new slot" entry appears in the shortcuts reference modal. All 29 tests pass.
+
+### Acceptance criteria
+
+- Pressing `N` in the Layout Builder adds a new slot and selects it immediately
+- `N` is a no-op when the builder is in preview mode
+- "Add new slot" appears in the `?` keyboard shortcuts reference under Canvas
+- Existing keyboard shortcut tests continue to pass
 
 ---
 

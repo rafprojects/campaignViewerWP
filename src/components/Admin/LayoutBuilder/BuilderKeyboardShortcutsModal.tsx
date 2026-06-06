@@ -54,6 +54,7 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
   {
     heading: 'Canvas',
     rows: [
+      { keys: ['N'], description: 'Add new slot' },
       { keys: ['H'], description: 'Toggle hand / pan tool' },
       { keys: ['V'], description: 'Return to select tool' },
       { keys: ['F'], description: 'Fit canvas to viewport' },

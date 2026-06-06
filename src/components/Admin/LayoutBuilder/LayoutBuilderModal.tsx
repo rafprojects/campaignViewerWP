@@ -820,6 +820,15 @@ export function LayoutBuilderModal({
         setBuilderShortcutsOpen(true);
       }
 
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !builder.isPreview) {
+        const id = builder.addSlot();
+        builder.selectSlot(id);
+        setSelectedOverlayId(null);
+        setIsBackgroundSelected(false);
+        announce('New slot added');
+        e.preventDefault();
+      }
+
       // Z-index shortcuts (P15-G): ] = forward, [ = backward, Shift+] = front, Shift+[ = back
       const ids = Array.from(builder.selectedSlotIds);
       if (ids.length > 0) {
@@ -863,7 +872,7 @@ export function LayoutBuilderModal({
         }
       }
     },
-    [announce, builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave],
+    [announce, builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave, setSelectedOverlayId, setIsBackgroundSelected],
   );
 
   // Attach/detach the document-level listener whenever the modal opens/closes.
