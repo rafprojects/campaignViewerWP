@@ -843,25 +843,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }
 
   useEffect(() => {
-    const el = dropRef.current;
-    if (!el) return;
-    const onDragOver = (e: globalThis.DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
-    const onDrop = (e: globalThis.DragEvent) => {
-      e.preventDefault();
-      const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-      if (files.length > 0) {
-        handleSelectFiles(files);
-      }
-    };
-    el.addEventListener('dragover', onDragOver);
-    el.addEventListener('drop', onDrop);
-    return () => {
-      el.removeEventListener('dragover', onDragOver);
-      el.removeEventListener('drop', onDrop);
-    };
-  }, [handleSelectFiles]);
-
-  useEffect(() => {
     if (selectedFiles.length !== 1) {
       setPreviewUrl(null);
       return;
