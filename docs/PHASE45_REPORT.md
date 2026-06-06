@@ -18,7 +18,7 @@
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Done     | S      |
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
-| P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Planned | S      |
+| P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Done     | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Planned | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
@@ -337,6 +337,33 @@ imports via path alias or package reference. Confirm no circular dependencies.
 - All existing tests for `sanitizeCss` and `cssUnits` continue to pass from the new location
 - No WPSG-specific types or imports remain in the extracted files
 - Import paths in consuming files updated
+
+---
+
+## Track P45-A11 — `MediaAddModal` Drop Zone Drag-Over Visual Feedback
+
+### Problem
+
+The `MediaAddModal` drop zone showed no visual response when files were dragged over it. The existing `dragover`/`drop` `useEffect` in `MediaTab.tsx` ran once at component mount with `dropRef.current = null` (modal closed at that point), returning early without registering any listeners. Drag-drop had never worked in production: files dropped on the zone opened in a new browser tab (no `preventDefault()` on `dragover`).
+
+### Fix
+
+Moved all drag handling into `MediaAddModal` itself using React JSX event props (`onDragEnter`, `onDragLeave`, `onDragOver`, `onDrop`) directly on the `Paper` drop zone. This eliminates the `useEffect` timing dependency entirely — the handlers are live as soon as the Paper renders. Removed the now-dead `useEffect` from `MediaTab.tsx`.
+
+Visual feedback: blue border + light blue background tint on the `Paper`; hint text changes from "or drag & drop files here" to "Drop files here" during drag-over.
+
+### Rationale
+
+Using React JSX event props rather than `addEventListener` in a `useEffect` avoids the modal-open/closed lifecycle timing issue entirely. The `enterCountRef` counter handles `dragenter`/`dragleave` pairs from child elements without false positives. A future task was added to `docs/FUTURE_TASKS.md` for accumulative multi-file selection with per-file preview and remove buttons.
+
+7 tests added in `MediaAddModal.test.tsx` covering: default hint text, drag-over hint on `dragenter`, restoration on `dragleave` and `drop`, `onSelectFiles` called with dropped files, no listeners when closed.
+
+### Acceptance criteria
+
+- Blue border + background highlight on drag-over
+- "Drop files here" hint text replaces the default during drag-over
+- Dropping files calls `onSelectFiles` with the dropped `File[]`
+- `dragover` calls `e.preventDefault()` so the browser doesn't open the file in a new tab
 
 ---
 
