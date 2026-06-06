@@ -19,7 +19,7 @@
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Done     | S      |
-| P45-A12 | Full ARIA focus trap in `Lightbox`                      | Planned | M      |
+| P45-A12 | Full ARIA focus trap in `Lightbox`                      | Done     | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
@@ -387,6 +387,37 @@ Rather than creating two near-identical `AdminCampaignBulkArchiveModal` and `Adm
 - Clicking Restore in `BulkActionsBar` opens a confirmation modal before any server call
 - Cancelling either confirmation makes no server call
 - `AdminCampaignBulkConfirmModal` test coverage for both actions
+
+---
+
+## Track P45-A12 — Full ARIA Focus Trap in Lightbox
+
+### Problem
+
+The Lightbox moved focus to the close button on open and restored it on close, but had no focus trap. Pressing Tab while the lightbox was open would cycle through elements on the page behind the overlay, violating ARIA modal dialog semantics (a modal must confine Tab within itself).
+
+### Fix
+
+Wrapped the `Box` backdrop/dialog element in Mantine's `FocusTrap` component (`@mantine/core`). `FocusTrap` uses its child's `ref` (via `cloneElement`) to attach a `document` keydown listener that intercepts Tab and Shift+Tab events and cycles focus only among tabbable descendants (close button, prev/next arrows, video controls if present). No extra DOM wrapper is introduced — Mantine's `FocusTrap` merges the ref directly onto the `Box` element.
+
+The existing focus management `useEffect` (save previous focus on entering, restore on closed) is unchanged — `FocusTrap` handles Tab cycling but not open/close focus handoff.
+
+### Rationale
+
+Mantine's `FocusTrap` was the natural fit: it's the same component used by Mantine's own `Modal`, `Popover`, and `Drawer`. The implementation is a single wrapper and an import change. No custom `useEffect` or `querySelectorAll` logic needed.
+
+2 new tests added to `Lightbox.test.tsx`:
+- "moves focus to the close button when opened" — verifies `document.activeElement` is the close button after open
+- "Shift+Tab from close button wraps focus within dialog" — verifies `event.defaultPrevented` when Shift+Tab from the first tabbable element (the boundary case where FocusTrap's `scopeTab` calls `preventDefault()`)
+
+Full Tab-cycling behavior requires a real browser and is covered by e2e testing.
+
+### Acceptance criteria
+
+- Tab and Shift+Tab cycle only among focusable elements within the Lightbox dialog
+- Close button receives focus when the lightbox opens
+- Focus restores to the previously focused element when the lightbox closes
+- All existing Lightbox tests continue to pass; 2 new focus-management tests added
 
 ---
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '../../../test/test-utils';
+import { render, screen, fireEvent, waitFor, createEvent } from '../../../test/test-utils';
 import { Lightbox } from './Lightbox';
 import type { MediaItem } from '@/types';
 
@@ -251,6 +251,24 @@ describe('Lightbox', () => {
       expect(img).toBeInTheDocument();
       expect(img.style.maxHeight).toBe('75vh');
     });
+  });
+
+  // ── Focus management (P45-A12) ─────────────────────────────────────────────
+
+  it('moves focus to the close button when opened', async () => {
+    open();
+    const closeBtn = await screen.findByLabelText('Close lightbox');
+    expect(document.activeElement).toBe(closeBtn);
+  });
+
+  it('Shift+Tab from the close button wraps focus within the dialog (FocusTrap active)', async () => {
+    // Close button is the first tabbable element. Shift+Tab from it would normally
+    // escape the dialog; FocusTrap's scopeTab intercepts and calls preventDefault().
+    open();
+    const closeBtn = await screen.findByLabelText('Close lightbox');
+    const event = createEvent.keyDown(closeBtn, { key: 'Tab', shiftKey: true });
+    fireEvent(closeBtn, event);
+    expect(event.defaultPrevented).toBe(true);
   });
 
   it('uses hardcoded defaults when no sizing props provided', async () => {

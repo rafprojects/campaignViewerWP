@@ -9,7 +9,7 @@
  * it correctly targets the shadow DOM mount point in WP plugin mode.
  */
 import { useEffect, useRef, useState } from 'react';
-import { Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
+import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import type { MediaItem } from '@/types';
 import { toCss } from '@/lib/cssUnits';
@@ -129,162 +129,164 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
 
   return (
     <Portal>
-      {/* Full-screen backdrop — clicking outside the image closes */}
-      <Box
-        {...swipeHandlers}
-        onClick={onClose}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Media lightbox"
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-          background: 'rgba(0,0,0,0.93)',
-          touchAction: 'pan-y',
-          opacity: visible ? 1 : 0,
-          transition: `opacity ${TRANSITION_MS}ms ease`,
-        }}
-      >
-        {/* Close button */}
-        <ActionIcon
-          ref={closeButtonRef}
-          pos="absolute"
-          top={16}
-          right={16}
-          size="lg"
-          variant="light"
-          aria-label="Close lightbox"
-          style={{ zIndex: 1 }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-        >
-          <IconX size={24} />
-        </ActionIcon>
-
-        {/* Centred image — stopPropagation prevents accidental close on img click */}
+      <FocusTrap>
+        {/* Full-screen backdrop — clicking outside the image closes */}
         <Box
+          {...swipeHandlers}
+          onClick={onClose}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Media lightbox"
           style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transform: visible ? 'scale(1)' : 'scale(0.92)',
-            transition: `transform ${TRANSITION_MS}ms ease`,
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            background: 'rgba(0,0,0,0.93)',
+            touchAction: 'pan-y',
+            opacity: visible ? 1 : 0,
+            transition: `opacity ${TRANSITION_MS}ms ease`,
           }}
         >
-          {current.type === 'video' ? (
-            current.embedUrl ? (
-              <iframe
-                key={current.id}
-                src={current.embedUrl}
-                title={current.caption || 'Campaign video'}
-                allowFullScreen
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                  width: '90vw',
-                  maxWidth: resolvedVideoMaxWidth,
-                  height: resolvedVideoHeight,
-                  border: 'none',
-                  borderRadius: 4,
-                  display: 'block',
-                }}
-              />
+          {/* Close button */}
+          <ActionIcon
+            ref={closeButtonRef}
+            pos="absolute"
+            top={16}
+            right={16}
+            size="lg"
+            variant="light"
+            aria-label="Close lightbox"
+            style={{ zIndex: 1 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+          >
+            <IconX size={24} />
+          </ActionIcon>
+
+          {/* Centred image — stopPropagation prevents accidental close on img click */}
+          <Box
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transform: visible ? 'scale(1)' : 'scale(0.92)',
+              transition: `transform ${TRANSITION_MS}ms ease`,
+            }}
+          >
+            {current.type === 'video' ? (
+              current.embedUrl ? (
+                <iframe
+                  key={current.id}
+                  src={current.embedUrl}
+                  title={current.caption || 'Campaign video'}
+                  allowFullScreen
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    width: '90vw',
+                    maxWidth: resolvedVideoMaxWidth,
+                    height: resolvedVideoHeight,
+                    border: 'none',
+                    borderRadius: 4,
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                <video
+                  key={current.id}
+                  src={current.url}
+                  controls
+                  autoPlay
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    maxWidth: resolvedVideoMaxWidth,
+                    maxHeight: resolvedMediaMaxHeight,
+                    borderRadius: 4,
+                    display: 'block',
+                  }}
+                />
+              )
             ) : (
-              <video
+              <img
                 key={current.id}
                 src={current.url}
-                controls
-                autoPlay
+                alt={current.caption || 'Campaign image'}
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                  maxWidth: resolvedVideoMaxWidth,
+                  maxWidth: '90vw',
                   maxHeight: resolvedMediaMaxHeight,
+                  objectFit: 'contain',
                   borderRadius: 4,
                   display: 'block',
                 }}
               />
-            )
-          ) : (
-            <img
-              key={current.id}
-              src={current.url}
-              alt={current.caption || 'Campaign image'}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                maxWidth: '90vw',
-                maxHeight: resolvedMediaMaxHeight,
-                objectFit: 'contain',
-                borderRadius: 4,
-                display: 'block',
-              }}
-            />
-          )}
-        </Box>
-
-        {/* Navigation arrows */}
-        {media.length > 1 && (
-          <>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              left={16}
-              size="xl"
-              variant="light"
-              aria-label="Previous image (lightbox)"
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrev();
-              }}
-            >
-              <IconChevronLeft size={32} />
-            </ActionIcon>
-            <ActionIcon
-              pos="absolute"
-              top="50%"
-              right={16}
-              size="xl"
-              variant="light"
-              aria-label="Next image (lightbox)"
-              style={{ transform: 'translateY(-50%)' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                onNext();
-              }}
-            >
-              <IconChevronRight size={32} />
-            </ActionIcon>
-          </>
-        )}
-
-        {/* Caption & counter */}
-        <Box
-          pos="absolute"
-          bottom={0}
-          left={0}
-          right={0}
-          p="lg"
-          style={{ pointerEvents: 'none', paddingBottom: 'calc(var(--mantine-spacing-lg) + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <Stack gap="xs">
-            {current.caption && (
-              <Text size="lg" fw={600} c="white">
-                {current.caption}
-              </Text>
             )}
-            <Text size="sm" c="gray.4">
-              {currentIndex + 1} / {media.length}
-            </Text>
-          </Stack>
-        </Box>
+          </Box>
 
-        {/* Keyboard hint (shown once per session) */}
-        <KeyboardHintOverlay visible={isOpen} />
-      </Box>
+          {/* Navigation arrows */}
+          {media.length > 1 && (
+            <>
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                left={16}
+                size="xl"
+                variant="light"
+                aria-label="Previous image (lightbox)"
+                style={{ transform: 'translateY(-50%)' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrev();
+                }}
+              >
+                <IconChevronLeft size={32} />
+              </ActionIcon>
+              <ActionIcon
+                pos="absolute"
+                top="50%"
+                right={16}
+                size="xl"
+                variant="light"
+                aria-label="Next image (lightbox)"
+                style={{ transform: 'translateY(-50%)' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNext();
+                }}
+              >
+                <IconChevronRight size={32} />
+              </ActionIcon>
+            </>
+          )}
+
+          {/* Caption & counter */}
+          <Box
+            pos="absolute"
+            bottom={0}
+            left={0}
+            right={0}
+            p="lg"
+            style={{ pointerEvents: 'none', paddingBottom: 'calc(var(--mantine-spacing-lg) + env(safe-area-inset-bottom, 0px))' }}
+          >
+            <Stack gap="xs">
+              {current.caption && (
+                <Text size="lg" fw={600} c="white">
+                  {current.caption}
+                </Text>
+              )}
+              <Text size="sm" c="gray.4">
+                {currentIndex + 1} / {media.length}
+              </Text>
+            </Stack>
+          </Box>
+
+          {/* Keyboard hint (shown once per session) */}
+          <KeyboardHintOverlay visible={isOpen} />
+        </Box>
+      </FocusTrap>
     </Portal>
   );
 }
