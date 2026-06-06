@@ -23,7 +23,7 @@
 | P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
-| P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Planned | M      |
+| P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Done     | M      |
 | P45-A17 | Keyboard shortcut for adding a new canvas slot          | Done     | S      |
 | P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Planned | L      |
 
@@ -387,6 +387,32 @@ Rather than creating two near-identical `AdminCampaignBulkArchiveModal` and `Adm
 - Clicking Restore in `BulkActionsBar` opens a confirmation modal before any server call
 - Cancelling either confirmation makes no server call
 - `AdminCampaignBulkConfirmModal` test coverage for both actions
+
+---
+
+## Track P45-A16 — smartGuides Per-Slot Memoization
+
+### Problem
+
+`handleDragFrame` in `LayoutCanvas.tsx` rebuilt the `others: SlotRect[]` array from scratch on every drag event (~60 fps). For `n` slots, this created `n - 1` new object literals plus one array allocation per frame. During a sustained drag with 15 slots: ~14 objects × 60 fps = ~840 allocations/second with no benefit, since the other slots' positions are stable throughout the drag (committed only on drag stop).
+
+### Fix
+
+Pre-computed a `Map<string, SlotRect[]>` (per-slot "others" map) using `useMemo` keyed on `template.slots`. The map rebuilds only when the slot collection changes (add/remove/move commit) — not during drag frames. A stable `slotOthersMapRef` (the `ref.current = value` pattern already established in the file) gives the drag handler read access without listing the map as a `useCallback` dependency.
+
+In `handleDragFrame`, the three-line `filter`+`map` was replaced with a single `slotOthersMapRef.current.get(slotId) ?? []` lookup.
+
+### Rationale
+
+The `useMemo` pre-computation is O(n²) in slot count (n arrays of n−1 elements), but it runs only on committed slot changes — rare, deliberate user actions. During drag, the lookup is O(1). For a typical layout of 10–20 slots, the total pre-computed allocation is 90–380 `SlotRect` objects done once, versus 9–19 allocations per frame at 60 fps (540–1140/sec) with the old code. GC pressure on the drag-move hot path is eliminated.
+
+No changes to `smartGuides.ts` or the `computeGuides` API — the optimization is entirely at the call site in `LayoutCanvas.tsx`.
+
+### Acceptance criteria
+
+- Smart guides continue to snap correctly during slot drag
+- No new allocations per drag frame in the guides path (the `others` array is pre-computed)
+- All existing `LayoutCanvas` and `smartGuides` tests pass without modification
 
 ---
 
