@@ -1,4 +1,5 @@
-import { Accordion, Button, Drawer, Group, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { Accordion, Button, Drawer, Group, Menu, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
+import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type ReactElement } from 'react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 
@@ -17,7 +18,7 @@ import {
 } from '@/types';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+;
 import {
   GALLERY_BREAKPOINTS,
   getScopeAdapterId,
@@ -72,6 +73,10 @@ interface GalleryConfigEditorIntroProps {
   unifiedAdapterEnabled: boolean;
   unifiedAdapterHelpText: string;
   updateDraft: GalleryConfigDraftUpdater;
+  clearMode?: 'external' | 'draft' | undefined;
+  clearLabel?: string | undefined;
+  onClear?: (() => void) | undefined;
+  onClearDraft?: (() => void) | undefined;
 }
 
 const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = ({
@@ -80,6 +85,10 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
   unifiedAdapterEnabled,
   unifiedAdapterHelpText,
   updateDraft,
+  clearMode,
+  clearLabel,
+  onClear,
+  onClearDraft,
 }) => (
   <>
     <Text size="sm" c="dimmed">
@@ -118,10 +127,27 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
         </Text>
       )
     ) : null}
+
+    {(clearMode === 'draft' || onClear) && clearLabel && (
+      <Button
+        variant="subtle"
+        color="red"
+        size="sm"
+        onClick={() => {
+          if (clearMode === 'draft') {
+            onClearDraft?.();
+            return;
+          }
+          onClear?.();
+        }}
+      >
+        {clearLabel}
+      </Button>
+    )}
   </>
 );
 
-setWpsgDebugDisplayName(GalleryConfigEditorIntro, 'GalleryConfigEditorIntro');
+GalleryConfigEditorIntro.displayName = 'GalleryConfigEditorIntro';
 
 interface GalleryConfigBreakpointAdaptersSectionProps {
   resolvedDraft: GalleryConfig;
@@ -143,12 +169,11 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
     <Accordion.Panel>
       <Stack gap="md">
         <Tabs
-          {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tabs')}
           value={activeBreakpoint}
           onChange={(value) => value && setActiveBreakpoint(value as GalleryConfigBreakpoint)}
           keepMounted={false}
         >
-          <Tabs.List {...getWpsgDebugProps('GalleryConfigEditorModal', 'breakpoint-tab-list')} grow>
+          <Tabs.List grow>
             {GALLERY_BREAKPOINTS.map((breakpoint) => (
               <Tabs.Tab key={breakpoint} value={breakpoint}>
                 {breakpoint.charAt(0).toUpperCase() + breakpoint.slice(1)}
@@ -226,84 +251,8 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
   </Accordion.Item>
 );
 
-setWpsgDebugDisplayName(GalleryConfigBreakpointAdaptersSection, 'GalleryConfigBreakpointAdaptersSection');
+GalleryConfigBreakpointAdaptersSection.displayName = 'GalleryConfigBreakpointAdaptersSection';
 
-interface GalleryConfigEditorFooterActionsProps {
-  resolvedDraft: GalleryConfig;
-  resolvedBaseline: GalleryConfig;
-  activeBreakpoint: GalleryConfigBreakpoint;
-  clearMode: 'external' | 'draft';
-  clearLabel: string;
-  onClear?: (() => void) | undefined;
-  onClearDraft: () => void;
-  updateDraft: GalleryConfigDraftUpdater;
-  onResetAllChanges: () => void;
-  onClose: () => void;
-  onSave: () => void;
-  saveLabel: string;
-}
-
-const GalleryConfigEditorFooterActions: NamedComponent<GalleryConfigEditorFooterActionsProps> = ({
-  resolvedDraft,
-  resolvedBaseline,
-  activeBreakpoint,
-  clearMode,
-  clearLabel,
-  onClear,
-  onClearDraft,
-  updateDraft,
-  onResetAllChanges,
-  onClose,
-  onSave,
-  saveLabel,
-}) => (
-  <Group justify="space-between" align="center" wrap="wrap" gap="sm">
-    <Group gap="sm">
-      {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => (
-        <Button
-          key={scope}
-          variant="subtle"
-          color="gray"
-          onClick={() => updateDraft((current) => resetScopeToBaseline(current, resolvedBaseline, scope))}
-        >
-          Reset {formatScopeLabel(scope)}
-        </Button>
-      ))}
-      <Button
-        variant="subtle"
-        color="gray"
-        onClick={() => updateDraft((current) => resetBreakpointToBaseline(current, resolvedBaseline, activeBreakpoint))}
-      >
-        Reset {activeBreakpoint}
-      </Button>
-      <Button variant="subtle" color="gray" onClick={onResetAllChanges}>
-        Reset All Changes
-      </Button>
-      {(clearMode === 'draft' || onClear) && (
-        <Button
-          variant="subtle"
-          color="red"
-          onClick={() => {
-            if (clearMode === 'draft') {
-              onClearDraft();
-              return;
-            }
-
-            onClear?.();
-          }}
-        >
-          {clearLabel}
-        </Button>
-      )}
-    </Group>
-    <Group gap="sm">
-      <Button variant="default" onClick={onClose}>Cancel</Button>
-      <Button onClick={onSave}>{saveLabel}</Button>
-    </Group>
-  </Group>
-);
-
-setWpsgDebugDisplayName(GalleryConfigEditorFooterActions, 'GalleryConfigEditorFooterActions');
 
 export function GalleryConfigEditorModal({
   opened,
@@ -373,34 +322,65 @@ export function GalleryConfigEditorModal({
     onChange(draft ? pruneConfig(draft) : undefined);
   }, [draft, onChange, opened]);
 
+  const activeBreakpointLabel = activeBreakpoint.charAt(0).toUpperCase() + activeBreakpoint.slice(1);
+
   return (
     <Drawer
-      {...getWpsgDebugProps('GalleryConfigEditorModal')}
       opened={opened}
       onClose={onClose}
       withinPortal={false}
-      title={<span {...getWpsgDebugProps('GalleryConfigEditorModal', 'title')}>{title}</span>}
+      title={
+        <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
+          <Text fw={600} size="sm" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</Text>
+          <Group gap="xs" wrap="nowrap" style={{ flexShrink: 0 }}>
+            <Menu shadow="md" position="bottom-end">
+              <Menu.Target>
+                <Button variant="subtle" size="sm" rightSection={<IconChevronDown size={14} />}>
+                  Reset
+                </Button>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item onClick={() => updateDraft((c) => resetBreakpointToBaseline(c, resolvedBaseline, activeBreakpoint))}>
+                  Reset {activeBreakpointLabel}
+                </Menu.Item>
+                {getEditableScopes(resolvedDraft.mode ?? 'per-type').map((scope) => (
+                  <Menu.Item key={scope} onClick={() => updateDraft((c) => resetScopeToBaseline(c, resolvedBaseline, scope))}>
+                    Reset {formatScopeLabel(scope)}
+                  </Menu.Item>
+                ))}
+                <Menu.Divider />
+                <Menu.Item color="red" onClick={handleResetAllChanges}>
+                  Reset All Changes
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+            <Button variant="default" size="sm" onClick={onClose}>Cancel</Button>
+            <Button size="sm" onClick={handleSaveDraft}>{saveLabel}</Button>
+          </Group>
+        </Group>
+      }
       position="right"
       size="lg"
       {...(zIndex !== undefined ? { zIndex } : {})}
-      closeButtonProps={getWpsgDebugProps('GalleryConfigEditorModal', 'close')}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
       overlayProps={{
-        ...getWpsgDebugProps('GalleryConfigEditorModal', 'overlay'),
         backgroundOpacity: 0.6,
         blur: blurEnabled !== false ? 4 : 0,
       }}
     >
-      <Stack {...getWpsgDebugProps('GalleryConfigEditorModal', 'content-stack')} gap="md">
+      <Stack gap="md">
         <GalleryConfigEditorIntro
           contextSummary={contextSummary}
           resolvedDraft={resolvedDraft}
           unifiedAdapterEnabled={unifiedAdapterEnabled}
           unifiedAdapterHelpText={unifiedAdapterHelpText}
           updateDraft={updateDraft}
+          clearMode={clearMode}
+          clearLabel={clearLabel}
+          onClear={onClear}
+          onClearDraft={handleClearDraft}
         />
         <Accordion
-          {...getWpsgDebugProps('GalleryConfigEditorModal', 'sections')}
           variant="separated"
           multiple
           defaultValue={defaultAccordionSections}
@@ -916,23 +896,9 @@ export function GalleryConfigEditorModal({
           </Accordion.Item>
         </Accordion>
 
-        <GalleryConfigEditorFooterActions
-          resolvedDraft={resolvedDraft}
-          resolvedBaseline={resolvedBaseline}
-          activeBreakpoint={activeBreakpoint}
-          clearMode={clearMode}
-          clearLabel={clearLabel}
-          onClear={onClear}
-          onClearDraft={handleClearDraft}
-          updateDraft={updateDraft}
-          onResetAllChanges={handleResetAllChanges}
-          onClose={onClose}
-          onSave={handleSaveDraft}
-          saveLabel={saveLabel}
-        />
       </Stack>
     </Drawer>
   );
 }
 
-setWpsgDebugDisplayName(GalleryConfigEditorModal, 'GalleryConfigEditorModal');
+GalleryConfigEditorModal.displayName = 'GalleryConfigEditorModal';
