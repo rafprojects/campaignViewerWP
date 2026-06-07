@@ -13,7 +13,7 @@
 | P45-A3  | Test coverage for `useInContextSave`                     | Done     | S      |
 | P45-A4  | `useInContextSave` failure UX — surface save errors      | Done     | S      |
 | P45-A5  | Idle timeout countdown warning (`useIdleTimeout`)        | Done     | M      |
-| P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Planned | L      |
+| P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Deferred | L      |
 | P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Done     | M      |
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Done     | S      |
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Done     | L      |
@@ -645,6 +645,11 @@ Each extracted hook is independently testable and addresses a distinct concern:
 **`useMediaUsageSummary`**: The stable-ID-key pattern (`sorted ids → string → split`) and the cancellable fetch effect are entirely self-contained. Accepts `media: MediaItem[]`; the mediaIdKey derivation moved inside the hook.
 
 **`useMediaDnd`**: Accepts `media: MediaItem[]` and `onReorder: (nextMedia: MediaItem[]) => Promise<void>`. The `onReorder` callback (`reorderMediaItems`) stays in MediaTab because it mutates `setMedia`, `queryClient`, and calls `onCampaignsUpdated`. This clean interface keeps DnD machinery (sensors, drag state, `arrayMove`, insertion styles) fully encapsulated while the commit operation remains in the mutation layer.
+
+### PR review fixes (Copilot)
+
+- **`usageSummary[item.id] ?? 1` → `?? 0`** in both `SortableListRow` and `SortableGridItem`: the `?? 1` fallback was pre-existing code moved during extraction. It incorrectly labels items absent from the summary as "1 campaign", hiding the "Unused" (count = 0) red badge. `?? 0` is the correct fallback — items not returned by the summary API are unknown, but defaulting to "no known associations" is safer than falsely claiming 1, and the API is expected to explicitly return 0 for genuinely unused items.
+- **`enterCountRef.current--` → `Math.max(0, enterCountRef.current - 1)`** in `MediaAddModal.tsx`: clamping to 0 prevents the counter going negative if `dragleave` fires more times than `dragenter` (common with nested elements), which would leave `isDragOver` stuck true on a subsequent drag.
 
 ### Acceptance criteria
 

@@ -81,7 +81,7 @@ export function MediaAddModal({
   }, []);
 
   const handleDragLeave = useCallback(() => {
-    enterCountRef.current--;
+    enterCountRef.current = Math.max(0, enterCountRef.current - 1);
     if (enterCountRef.current === 0) setIsDragOver(false);
   }, []);
 

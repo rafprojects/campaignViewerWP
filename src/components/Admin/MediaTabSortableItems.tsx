@@ -93,7 +93,7 @@ export function SortableListRow({
       <Table.Td>
         {usageSummaryLoading
           ? <Skeleton width={64} height={20} radius="xl" />
-          : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
+          : <MediaUsageBadge count={usageSummary[item.id] ?? 0} mediaId={item.id} apiClient={apiClient} />}
       </Table.Td>
       <Table.Td>
         <Group gap={4}>
@@ -161,7 +161,7 @@ export function SortableGridItem({
             showUrl={showUrl}
             overlayBadge={usageSummaryLoading
               ? <Skeleton width={64} height={20} radius="xl" />
-              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} size="xs" />}
+              : <MediaUsageBadge count={usageSummary[item.id] ?? 0} mediaId={item.id} apiClient={apiClient} size="xs" />}
             onEdit={() => openEdit(item)}
             onDelete={() => handleDelete(item)}
             onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
