@@ -57,7 +57,7 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+;
 import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
@@ -165,14 +165,6 @@ function mergeCachedAndFetchedSettings(
   };
 }
 
-const SettingsPanelTitle: NamedComponent = () => (
-  <Group {...getWpsgDebugProps('SettingsPanel', 'title')} gap="sm">
-    <IconSettings size={22} />
-    <Title order={3}>Display Settings</Title>
-  </Group>
-);
-
-setWpsgDebugDisplayName(SettingsPanelTitle, 'SettingsPanel:Title');
 
 interface SettingsPanelTabsContentProps {
   activeTab: string | null;
@@ -318,43 +310,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   </Stack>;
 };
 
-setWpsgDebugDisplayName(SettingsPanelTabsContent, 'SettingsPanel:TabsContent');
-
-interface SettingsPanelFooterProps {
-  hasChanges: boolean;
-  isSaving: boolean;
-  onReset: () => void;
-  onSave: () => void;
-}
-
-const SettingsPanelFooter: NamedComponent<SettingsPanelFooterProps> = ({
-  hasChanges,
-  isSaving,
-  onReset,
-  onSave,
-}) => (
-  <Box
-    style={{
-      flexShrink: 0,
-      borderTop: '1px solid var(--mantine-color-default-border)',
-      boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
-      padding: 'var(--mantine-spacing-sm) var(--mantine-spacing-md)',
-    }}
-  >
-    <Group justify="flex-end" gap="sm">
-      {hasChanges && (
-        <Button variant="subtle" onClick={onReset} disabled={isSaving}>
-          Reset
-        </Button>
-      )}
-      <Button onClick={onSave} loading={isSaving} disabled={!hasChanges}>
-        Save Changes
-      </Button>
-    </Group>
-  </Box>
-);
-
-setWpsgDebugDisplayName(SettingsPanelFooter, 'SettingsPanel:Footer');
+SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
@@ -537,22 +493,37 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setGalleryConfigEditorOpen(false);
   };
 
+  const handleClose = () => { revertThemePreview(); onClose(); };
+
   return (
     <Drawer
-      {...getWpsgDebugProps('SettingsPanel')}
       opened={opened}
-      onClose={() => { revertThemePreview(); onClose(); }}
-      title={<SettingsPanelTitle />}
+      onClose={handleClose}
+      title={
+        <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
+          <Group gap="sm">
+            <IconSettings size={22} />
+            <Title order={3}>Display Settings</Title>
+          </Group>
+          <Group gap="xs" wrap="nowrap">
+            <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>
+            {hasChanges && (
+              <Button variant="subtle" size="sm" onClick={handleReset} disabled={isSaving}>Reset</Button>
+            )}
+            <Button size="sm" onClick={() => { void handleSave(); }} loading={isSaving} disabled={!hasChanges}>
+              Save Changes
+            </Button>
+          </Group>
+        </Group>
+      }
       position="right"
       size={isSmallScreen ? '100%' : toCss(settings.settingsPanelWidth ?? 600, settings.settingsPanelWidthUnit ?? 'px')}
       zIndex={450}
       withinPortal={false}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
-      closeButtonProps={getWpsgDebugProps('SettingsPanel', 'close')}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
       overlayProps={{
-        ...getWpsgDebugProps('SettingsPanel', 'overlay'),
         backgroundOpacity: 0.6,
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
       }}
@@ -605,16 +576,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
             </Suspense>
           )}
 
-          <SettingsPanelFooter
-            hasChanges={hasChanges}
-            isSaving={isSaving}
-            onReset={handleReset}
-            onSave={handleSave}
-          />
         </>
       )}
     </Drawer>
   );
 }
 
-setWpsgDebugDisplayName(SettingsPanel, 'SettingsPanel');
+SettingsPanel.displayName = 'SettingsPanel';
