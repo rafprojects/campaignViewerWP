@@ -21,7 +21,7 @@
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Done     | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Done     | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Done     | M      |
-| P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
+| P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Done     | L      |
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Done     | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Done     | M      |
 | P45-A17 | Keyboard shortcut for adding a new canvas slot          | Done     | S      |
@@ -576,6 +576,41 @@ The three existing sub-components (`GalleryConfigEditorIntro`, `GalleryConfigBre
 
 - `GalleryConfigEditorModal.tsx` contains no utility function definitions
 - All 24 utility functions are exported from `galleryConfigUtils.ts`
+- `npm run build:wp` TypeScript clean
+- 2088/2088 tests pass
+
+---
+
+## Track P45-A14 — Split `LayoutBuilderModal.tsx` into Focused Hooks
+
+`LayoutBuilderModal.tsx` was 1161 lines. The bulk of the non-JSX body broke into four clear logical units with well-defined inputs/outputs — each suitable for a standalone hook.
+
+### What changed
+
+Four new hooks extracted to `src/hooks/`:
+
+| Hook | Lines | Responsibility |
+|------|-------|----------------|
+| `useBuilderWorkspacePrefs` | 87 | P30-B snap/grid/ruler prefs, localStorage persistence, P37-KS1 migration |
+| `useBuilderCampaignMedia` | 66 | Campaign list fetch, media fetch, selection persistence per-template |
+| `useBroadcastStaleness` | 54 | P30-D cross-tab stale detection + `postSaved()` for the save handler |
+| `useBuilderDraftRestore` | 119 | P36-A draft restore/discard modal prompt |
+
+`LayoutBuilderModal.tsx` reduced from 1161 → 966 lines. Module-level `BUILDER_BC_CHANNEL` constant and `BuilderBroadcastMessage` type moved into `useBroadcastStaleness`. Removed `safeLocalStorage`, `useAllCampaignOptions`, `useMediaItems`, and `LayoutDraftPayload` imports from the modal.
+
+### Rationale
+
+Each extracted hook is independently testable and addresses a distinct concern:
+- `useBuilderWorkspacePrefs` — pure preference state; no coupling to builder domain logic
+- `useBuilderCampaignMedia` — data-fetching layer; decoupled from the builder state machine
+- `useBroadcastStaleness` — encapsulates the BroadcastChannel lifecycle; exposes only `postSaved` to the caller, hiding all channel management
+- `useBuilderDraftRestore` — side-effect-only hook using the ref-callback pattern (`onRestoreDraftRef`, `onDiscardDraftRef`) so the effect never re-runs due to prop identity changes
+
+`useBuilderDraftRestore` is `.tsx` because it renders a Mantine `<Text>` node for the confirm modal body. The remaining action handlers (handleSave, handleClose, group handlers, keyboard handler) were NOT extracted — they have 10+ interdependencies and share `announce`, `builder`, and the UI state setters. Extracting them would move complexity without reducing coupling.
+
+### Acceptance criteria
+
+- `LayoutBuilderModal.tsx` contains no workspace preference state, no campaign/media fetch logic, no BroadcastChannel wiring, and no draft restore logic
 - `npm run build:wp` TypeScript clean
 - 2088/2088 tests pass
 

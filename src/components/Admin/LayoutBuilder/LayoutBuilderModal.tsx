@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { safeLocalStorage } from '../../../utils/safeLocalStorage';
 import {
   Modal,
   Group,
@@ -27,7 +26,6 @@ import type { ApiClient } from '@/services/apiClient';
 import {
   useLayoutBuilderState,
   createEmptyTemplate,
-  type LayoutDraftPayload,
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
@@ -45,20 +43,14 @@ import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
-import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
-import type { SnapMode } from '@/utils/canvasMeasurement';
 import { useRootId } from '@/contexts/RootIdContext';
-
-// ── P30-D: Cross-tab stale detection ─────────────────────────────────────────
-const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
-
-interface BuilderBroadcastMessage {
-  type: 'template-saved';
-  templateId: string;
-}
+import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
+import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
+import { useBroadcastStaleness } from '@/hooks/useBroadcastStaleness';
+import { useBuilderDraftRestore } from '@/hooks/useBuilderDraftRestore';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -132,46 +124,12 @@ export function LayoutBuilderModal({
     [colorScheme],
   );
 
-  // ── Fetch campaign list for the media picker ──
-  const campaignOptions = useAllCampaignOptions(apiClient, opened);
-  const campaigns = useMemo(
-    () => campaignOptions.map((campaign) => ({ id: Number(campaign.id), title: campaign.title })),
-    [campaignOptions],
+  // ── Campaign list + media for the media picker ──
+  const { campaigns, media, selectedCampaignId, setSelectedCampaignId } = useBuilderCampaignMedia(
+    apiClient,
+    opened,
+    initialTemplate?.id,
   );
-
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
-  const campaignSelectionStorageKey = useMemo(
-    () => `wpsg_layout_builder_campaign_${initialTemplate?.id ?? 'new'}`,
-    [initialTemplate?.id],
-  );
-
-  // Restore campaign selection when editor opens.
-  useEffect(() => {
-    if (!opened || !campaigns || campaigns.length === 0) return;
-
-    const saved = safeLocalStorage.getItem(campaignSelectionStorageKey);
-    const hasSaved = saved && campaigns.some((c) => String(c.id) === saved);
-
-    if (hasSaved) {
-      setSelectedCampaignId(saved);
-      return;
-    }
-
-    setSelectedCampaignId((curr) => {
-      if (curr && campaigns.some((c) => String(c.id) === curr)) return curr;
-      return String(campaigns[0]!.id);
-    });
-  }, [opened, campaigns, campaignSelectionStorageKey]);
-
-  // Persist campaign selection per-layout while editing.
-  useEffect(() => {
-    if (!selectedCampaignId) return;
-    safeLocalStorage.setItem(campaignSelectionStorageKey, selectedCampaignId);
-  }, [selectedCampaignId, campaignSelectionStorageKey]);
-
-  // ── Fetch media for the selected campaign ──
-  const { mediaItems: campaignMedia } = useMediaItems(apiClient, opened ? (selectedCampaignId ?? '') : '');
-  const media = useMemo(() => campaignMedia ?? [], [campaignMedia]);
 
   // ── Overlay library (P15-H) ──
   const { data: overlayLibrary, refetch: refetchOverlayLibrary } = useOverlayLibrary(apiClient, opened);
@@ -180,188 +138,37 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
 
-  // ── P30-B workspace preferences (persisted in localStorage, root-scoped per P37-KS1) ──
-  const [snapMode, setSnapMode] = useState<SnapMode>(() => {
-    try { return (safeLocalStorage.getItem(`wpsg_builder_${rootId}_snap_mode`) as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
-  });
-  const [snapThreshold, setSnapThreshold] = useState(5);
-  const [showGrid, setShowGrid] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_grid`) === 'true'; } catch { return false; }
-  });
-  const [gridSizePx, setGridSizePx] = useState(() => {
-    try { return Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_grid_size`)) || 20; } catch { return 20; }
-  });
-  const [showRulers, setShowRulers] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_rulers`) === 'true'; } catch { return false; }
-  });
-  const [showMeasurements, setShowMeasurements] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_measurements`) === 'true'; } catch { return false; }
-  });
+  // ── P30-B workspace preferences ──
+  const {
+    snapMode, setSnapMode,
+    snapThreshold, setSnapThreshold,
+    showGrid, setShowGrid,
+    gridSizePx, setGridSizePx,
+    showRulers, setShowRulers,
+    showMeasurements, setShowMeasurements,
+    designAssetsOpen, setDesignAssetsOpen,
+  } = useBuilderWorkspacePrefs(rootId);
 
-  // Persist P30-B workspace preferences.
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_rulers`, String(showRulers)); }, [rootId, showRulers]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_measurements`, String(showMeasurements)); }, [rootId, showMeasurements]);
-
-  // P37-KS1: one-time migration of legacy global builder workspace keys to root-scoped keys.
-  useEffect(() => {
-    const migrations: [string, string][] = [
-      ['wpsg_builder_snap_mode', `wpsg_builder_${rootId}_snap_mode`],
-      ['wpsg_builder_show_grid', `wpsg_builder_${rootId}_show_grid`],
-      ['wpsg_builder_grid_size', `wpsg_builder_${rootId}_grid_size`],
-      ['wpsg_builder_show_rulers', `wpsg_builder_${rootId}_show_rulers`],
-      ['wpsg_builder_show_measurements', `wpsg_builder_${rootId}_show_measurements`],
-      ['wpsg_builder_design_assets_open', `wpsg_builder_${rootId}_design_assets_open`],
-      ['wpsg_builder_layout', `wpsg_builder_${rootId}_layout`],
-    ];
-    for (const [oldKey, newKey] of migrations) {
-      try {
-        const v = localStorage.getItem(oldKey);
-        if (v !== null) {
-          safeLocalStorage.setItem(newKey, v);
-          localStorage.removeItem(oldKey);
-        }
-      } catch { /* ignore */ }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
-    try {
-      const stored = localStorage.getItem(`wpsg_builder_${rootId}_design_assets_open`);
-      return stored === null ? true : stored === 'true';
-    } catch {
-      return true;
-    }
-  });
   const bgSectionRef = useRef<HTMLDivElement>(null);
   // ── Layer panel selection (overlay + background tracked locally; slot uses builder state) ──
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
   const [selectedMaskSlotId, setSelectedMaskSlotId] = useState<string | null>(null);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
-  // Track whether we've already checked for a draft this open session
-  const draftCheckedRef = useRef(false);
 
-  // ── P30-D: Cross-tab stale detection via BroadcastChannel ─────────────────
-  const bcRef = useRef<BroadcastChannel | null>(null);
-  useEffect(() => {
-    if (typeof BroadcastChannel === 'undefined') return;
-    const channel = new BroadcastChannel(BUILDER_BC_CHANNEL);
-    bcRef.current = channel;
-    channel.onmessage = (event: MessageEvent<BuilderBroadcastMessage>) => {
-      const data = event.data;
-      if (
-        data?.type === 'template-saved' &&
-        data.templateId &&
-        initialTemplate?.id &&
-        data.templateId === initialTemplate.id
-      ) {
-        notifications.show({
-          title: 'Template updated in another tab',
-          message: 'This template was saved elsewhere. Close and reopen to load the latest version.',
-          color: 'yellow',
-          autoClose: 0, // Persistent — user must dismiss
-        });
-      }
-    };
-    return () => {
-      channel.close();
-      bcRef.current = null;
-    };
-
-  }, [initialTemplate?.id]);
+  // ── P30-D: Cross-tab stale detection ──
+  const { postSaved } = useBroadcastStaleness(initialTemplate);
 
   // ── P36-A: Draft restore/discard prompt ──
-  // Uses the LayoutDraftPayload wrapper (savedAt + serverUpdatedAt + template).
-  // Old raw-template drafts (pre-P36-A) lack savedAt and are silently discarded.
-  useEffect(() => {
-    if (!opened) {
-      draftCheckedRef.current = false;
-      return;
-    }
-    if (draftCheckedRef.current) return;
-
-    const templateId = initialTemplate?.id;
-    if (!templateId) return;
-
-    draftCheckedRef.current = true;
-
-    const stored = (() => {
-      try { return localStorage.getItem(`wpsg_layout_draft_${templateId}`); } catch { return null; }
-    })();
-    if (!stored) return;
-
-    let payload: LayoutDraftPayload | null = null;
-    try {
-      const parsed: unknown = JSON.parse(stored);
-      // New payload format: must have savedAt + template fields
-      if (
-        parsed &&
-        typeof parsed === 'object' &&
-        'savedAt' in parsed &&
-        'template' in parsed &&
-        typeof (parsed as Record<string, unknown>).savedAt === 'number'
-      ) {
-        payload = parsed as LayoutDraftPayload;
-      }
-    } catch { return; }
-
-    if (!payload) {
-      // Old format (raw LayoutTemplate) — discard silently; can't determine age
-      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
-      return;
-    }
-
-    // The draft is valid if it was autosaved after the template was last server-saved.
-    const serverSavedAt = initialTemplate?.updatedAt
-      ? new Date(initialTemplate.updatedAt).getTime()
-      : 0;
-    if (payload.savedAt <= serverSavedAt) {
-      // Draft predates the current server version — silently discard
-      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
-      return;
-    }
-
-    const isConflict = payload.serverUpdatedAt !== (initialTemplate?.updatedAt ?? '');
-    const draftAge = Math.round((Date.now() - payload.savedAt) / 60_000);
-    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
-
-    const draftSnapshot = payload.template;
-    modals.openConfirmModal({
-      title: isConflict ? 'Draft conflict detected' : 'Unsaved draft found',
-      children: (
-        <Text size="sm">
-          {isConflict
-            ? `This template was saved in another session after your draft was created (${ageLabel}). Restoring your draft will overwrite those changes.`
-            : `An autosaved draft from ${ageLabel} was found. Would you like to restore it?`}
-        </Text>
-      ),
-      labels: { confirm: 'Restore draft', cancel: 'Discard' },
-      confirmProps: { color: isConflict ? 'orange' : 'blue' },
-      onConfirm: () => {
-        builder.setTemplate(draftSnapshot, { preserveSelection: false });
-        builder.clearDraft();
-        notifications.show({
-          title: 'Draft restored',
-          message: 'Your previous session has been restored.',
-          color: 'blue',
-          autoClose: 4000,
-        });
-      },
-      onCancel: () => {
-        builder.clearDraft();
-        notifications.show({
-          message: 'Draft discarded.',
-          color: 'gray',
-          autoClose: 3000,
-        });
-      },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opened, initialTemplate?.id]);
+  useBuilderDraftRestore({
+    opened,
+    initialTemplate,
+    onRestoreDraft: (t) => {
+      builder.setTemplate(t, { preserveSelection: false });
+      builder.clearDraft();
+    },
+    onDiscardDraft: builder.clearDraft,
+  });
 
   // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
   // The ref keeps a stable pointer to the latest `migrateGroupsIfNeeded` so
@@ -427,9 +234,7 @@ export function LayoutBuilderModal({
       onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
       notifications.show({ message: `Layout "${saved.name}" saved`, color: 'green', autoClose: 3000 });
       // P30-D: Notify other tabs that this template was saved
-      try {
-        bcRef.current?.postMessage({ type: 'template-saved', templateId: saved.id } satisfies BuilderBroadcastMessage);
-      } catch { /* BroadcastChannel may be unavailable in some environments */ }
+      postSaved(saved.id);
       return true;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save layout';
@@ -439,7 +244,7 @@ export function LayoutBuilderModal({
     } finally {
       setIsSaving(false);
     }
-  }, [builder, apiClient, onSaved, onNotify]);
+  }, [builder, apiClient, onSaved, onNotify, postSaved]);
 
   // ── Delete selected slots ──
   const handleDeleteSelected = useCallback(() => {
