@@ -20,7 +20,7 @@
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Done     | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Done     | M      |
-| P45-A13 | Extract `Lightbox` as shared library component          | Planned | M      |
+| P45-A13 | Extract `Lightbox` as shared library component          | Done     | M      |
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Done     | M      |
@@ -486,6 +486,40 @@ Added the entry to the Canvas section of `BuilderKeyboardShortcutsModal.tsx` so 
 - `N` is a no-op when the builder is in preview mode
 - "Add new slot" appears in the `?` keyboard shortcuts reference under Canvas
 - Existing keyboard shortcut tests continue to pass
+
+---
+
+## Track P45-A13 — Extract `Lightbox` as Shared Library Component
+
+### Problem
+
+`Lightbox.tsx` and its sibling `KeyboardHintOverlay.tsx` have generic functionality with no WPSG business logic, but were coupled to WPSG-specific types and CSS variables:
+- `LightboxProps.media: MediaItem[]` imported `MediaItem` from `@/types`, pulling in a type with many WPSG-specific fields
+- `KeyboardHintOverlay.tsx` used `--wpsg-color-background` and `--wpsg-color-border` CSS variables
+
+### Fix
+
+Defined a minimal `LightboxMediaItem` interface directly in `Lightbox.tsx` containing only the fields the component reads (`id`, `url`, `type: string`, `caption?: string | undefined`, `embedUrl?: string | undefined`). Removed the `MediaItem` import from `@/types`. `LightboxMediaItem` is exported so consumers can use it for type-annotating their media data.
+
+Replaced the two WPSG CSS variables in `KeyboardHintOverlay.tsx` with Mantine v7 palette tokens: `--mantine-color-dark-7` (background, always near-black regardless of color scheme) and `--mantine-color-dark-4` (border). These are appropriate since the Lightbox always renders on a near-black backdrop.
+
+Updated `docs/FUTURE_TASKS.md` to reflect that both Auth components (P45-A7) and Lightbox/KeyboardHintOverlay (P45-A13) are now decoupled and ready for extraction once monorepo infrastructure is established.
+
+### Rationale
+
+`type: string` (rather than `'image' | 'video'`) was chosen for `LightboxMediaItem.type` because `MediaItem.type` is `"video" | "image" | "other"` — a wider union that would not satisfy the narrower type with `exactOptionalPropertyTypes: true`. Using `string` keeps the interface a structural subtype of `MediaItem` (so existing `MediaItem[]` values pass without casting) and is correct since the component only branches on `=== 'video'` at runtime.
+
+`?: string | undefined` (explicit union) was used for optional fields because `exactOptionalPropertyTypes: true` is enabled in the project's TypeScript config, which distinguishes between `?: string` (absent | string) and `?: string | undefined` (absent | string | undefined). `MediaItem` uses the explicit union form, so the local interface must match to be structurally compatible.
+
+No test changes were required: `Lightbox.test.tsx` fixtures are typed as `MediaItem` which remains a structural superset of `LightboxMediaItem`. 2088/2088 tests pass; build clean.
+
+### Acceptance criteria
+
+- `Lightbox.tsx` no longer imports from `@/types`
+- `LightboxMediaItem` is exported for consumer use
+- `KeyboardHintOverlay.tsx` uses no `--wpsg-*` CSS variables
+- All existing Lightbox tests continue to pass
+- `docs/FUTURE_TASKS.md` reflects completed decoupling work
 
 ---
 

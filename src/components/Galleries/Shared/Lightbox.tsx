@@ -11,7 +11,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import type { MediaItem } from '@/types';
 import { toCss } from '@/lib/cssUnits';
 import { useSwipe } from '@/hooks/useSwipe';
 import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
@@ -20,9 +19,19 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const TRANSITION_MS = 250;
 
+/** Minimal media shape required by Lightbox — a structural subset of the app's MediaItem type. */
+export interface LightboxMediaItem {
+  id: string;
+  url: string;
+  /** 'video' renders a video element or iframe; anything else renders an image. */
+  type: string;
+  caption?: string | undefined;
+  embedUrl?: string | undefined;
+}
+
 export interface LightboxProps {
   isOpen: boolean;
-  media: MediaItem[];
+  media: LightboxMediaItem[];
   currentIndex: number;
   onPrev: () => void;
   onNext: () => void;

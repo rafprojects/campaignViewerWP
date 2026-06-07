@@ -14,14 +14,14 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 - `src/lib/sanitizeCss.ts` — CSS injection prevention (sanitizeCssUrl, sanitizeCssColor, sanitizeCssValue, sanitizeClipPath)
 - `src/lib/cssUnits.ts` — multi-unit dimension types, constants, and toCss helpers
 
-**Candidates requiring decoupling work before extraction:**
-- `src/components/Auth/LoginForm.tsx`, `AuthBar.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — generic auth UI; main coupling point is `AuthBarFloatingMenuContent`'s dependency on `CampaignContext`. Decouple by accepting campaign actions as props.
-- `src/components/Galleries/Shared/Lightbox.tsx` — generic lightbox; depends on WPSG-specific media types.
+**Decoupled (ready for extraction):**
+- `src/components/Auth/LoginForm.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — WPSG CSS vars replaced with Mantine tokens; `AuthBarFloating` no longer calls `useCampaignContext()` (P45-A7).
+- `src/components/Galleries/Shared/Lightbox.tsx` — `MediaItem` dependency replaced with local `LightboxMediaItem` interface; `KeyboardHintOverlay` WPSG CSS vars replaced with Mantine tokens (P45-A13).
 
-**What's needed:**
+**What's needed for actual package extraction:**
 1. Monorepo infrastructure: configure npm/pnpm workspaces in the root `package.json`; create `packages/shared-utils/` and `packages/shared-ui/` with their own `package.json` + `tsconfig.json`
 2. Move `src/lib/` utilities to `packages/shared-utils/src/`; publish as `@wp-super-gallery/shared-utils`
-3. Decouple Auth and Lightbox components, move to `packages/shared-ui/`
+3. Move decoupled Auth and Lightbox components to `packages/shared-ui/`; remove remaining `wpsgDebug` import
 4. Update all intra-repo imports to use the package names; configure path aliases or direct package references
 
 **Effort:** L | **Impact:** High — enables cross-project reuse without copy-paste
