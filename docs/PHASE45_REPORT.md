@@ -1,8 +1,8 @@
 # Phase 45 — Post-Audit Follow-Through: Tests, Auth UX & Library Extraction
 
-**Status:** In Progress
+**Status:** Complete (P45-A6 deferred — see `docs/FUTURE_TASKS.md` § "JWT In-Memory Token Auth")
 **Created:** 2026-06-05
-**Last updated:** 2026-06-05
+**Last updated:** 2026-06-06
 
 ### Tracks
 
