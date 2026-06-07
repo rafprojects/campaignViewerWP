@@ -27,7 +27,7 @@ import {
   setCampaignBreakpointScopeAdapterOverride,
   syncCampaignGalleryOverrideMode,
 } from '@/utils/campaignGalleryOverrides';
-;
+
 
 const LazyGalleryConfigEditorModal = lazy(() =>
   import('@/components/Common/GalleryConfigEditorModal').then((module) => ({

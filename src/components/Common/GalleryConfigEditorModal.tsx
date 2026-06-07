@@ -18,7 +18,7 @@ import {
 } from '@/types';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
-;
+
 import {
   GALLERY_BREAKPOINTS,
   getScopeAdapterId,

@@ -57,7 +57,7 @@ import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
-;
+
 import {
   LEGACY_GALLERY_SETTING_KEYS,
   resolveGalleryConfig,
