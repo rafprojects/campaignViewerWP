@@ -22,7 +22,7 @@
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Done     | M      |
 | P45-A13 | Extract `Lightbox` as shared library component          | Done     | M      |
 | P45-A14 | Split `LayoutBuilderModal.tsx` into focused hooks       | Planned | L      |
-| P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Planned | M      |
+| P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Done     | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Done     | M      |
 | P45-A17 | Keyboard shortcut for adding a new canvas slot          | Done     | S      |
 | P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Planned | L      |
@@ -486,6 +486,39 @@ Added the entry to the Canvas section of `BuilderKeyboardShortcutsModal.tsx` so 
 - `N` is a no-op when the builder is in preview mode
 - "Add new slot" appears in the `?` keyboard shortcuts reference under Canvas
 - Existing keyboard shortcut tests continue to pass
+
+---
+
+## Track P45-A15 — Split `LayoutSlotComponent.tsx` into Sub-Components
+
+### Problem
+
+`LayoutSlotComponent.tsx` was 945 lines with significant JSX duplication across its three render paths (preview clip-path, edit clip-path, edit rectangle). Four patterns appeared 2–4 times each with no meaningful variation: the index number badge, the lock icon badge, the overlay effect layer, and the drag/resize dimensions tooltip.
+
+### Fix
+
+Extracted four private sub-components immediately after the existing `MaskDragOverlay` definition:
+
+- **`SlotIndexBadge({ index, isSelected, badgeBg })`** — the top-left numbered badge, called in both edit mode branches (clip-path and rectangle)
+- **`SlotLockBadge({ lockBg })`** — the top-right lock icon badge, called in both edit mode branches
+- **`SlotOverlayLayer({ overlayBg, clipPath?, maskCssProps?, borderRadius? })`** — the colored overlay effect div; accepts optional clip-path/mask props for shaped slots and optional `borderRadius` for rectangle slots; called in all 4 overlay-bearing render paths (preview + edit × clip-path + rectangle)
+- **`SlotLiveInfoOverlay({ liveInfo, bg })`** — the drag/resize dimensions tooltip (bottom-center); extracted `SlotLiveInfo` interface for the `liveInfo` state type
+
+Also typed the `liveInfo` state as `SlotLiveInfo | null` instead of the inline anonymous object union.
+
+### Rationale
+
+All 4 extracted components are purely presentational (no state, no hooks). They accept only the data they render. The inline style props are passed as-is, so behavior is unchanged. `SlotOverlayLayer` unifies 4 near-identical divs by accepting optional `clipPath`/`maskCssProps`/`borderRadius` — when undefined, these are spread/assigned as `undefined` in the style object, which the browser ignores.
+
+The file reduced from 945 to 909 lines despite adding ~90 lines of new component definitions — the eliminated duplication was ~126 lines.
+
+No test changes were needed. All 32 existing `LayoutSlotComponent` tests pass, covering both preview and edit modes.
+
+### Acceptance criteria
+
+- Duplicated badge, overlay, and live-info JSX consolidated into named sub-components
+- No behavior change — all existing tests pass without modification
+- TypeScript build clean
 
 ---
 
