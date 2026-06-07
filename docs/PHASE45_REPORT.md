@@ -16,7 +16,7 @@
 | P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Planned | L      |
 | P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Done     | M      |
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Done     | S      |
-| P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
+| P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Done     | L      |
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
 | P45-A11 | `MediaAddModal` drop zone drag-over visual feedback     | Done     | S      |
 | P45-A12 | Full ARIA focus trap in `Lightbox`                      | Done     | M      |
@@ -611,6 +611,44 @@ Each extracted hook is independently testable and addresses a distinct concern:
 ### Acceptance criteria
 
 - `LayoutBuilderModal.tsx` contains no workspace preference state, no campaign/media fetch logic, no BroadcastChannel wiring, and no draft restore logic
+- `npm run build:wp` TypeScript clean
+- 2088/2088 tests pass
+
+---
+
+---
+
+## Track P45-A9 — Split `MediaTab.tsx` into Focused Sub-Components / Hooks
+
+`MediaTab.tsx` was 1382 lines. Five extraction boundaries were identified with minimal coupling.
+
+### What changed
+
+| Unit | Lines | Responsibility |
+|------|-------|----------------|
+| `MediaTabSortableItems.tsx` | 185 | `SortableListRow`, `SortableGridItem`, and `SharedSortableProps` type |
+| `useMediaViewPrefs` | 63 | Per-campaign view/sort preferences (viewMode, cardSize, sortMode, orphanFilter, listPage) + P37-KS1 migration |
+| `useMediaLightbox` | 52 | Lightbox open/index state, `openLightbox`, `navigateLightbox`, keyboard navigation |
+| `useMediaUsageSummary` | 49 | P18-G usage-count fetch; cancellable effect keyed on sorted media IDs |
+| `useMediaDnd` | 106 | dnd-kit sensors, drag state, insertion-indicator styles, `handleDndEnd`, `moveByKeyboard` |
+
+`MediaTab.tsx` reduced from 1382 → 998 lines. The mutation-heavy handlers (upload, near-duplicate resolution, external media, edit, delete, oEmbed enrichment) were deliberately left in the main component — they share 10+ interdependencies (`setMedia`, `queryClient`, `campaignId`, `apiClient`, `onCampaignsUpdated`) and extracting them would create a large "mutations bag" without meaningfully reducing coupling.
+
+### Rationale
+
+**`MediaTabSortableItems.tsx`**: Both `SortableListRow` and `SortableGridItem` call `useSortable` and compose Mantine table/grid primitives — they have zero coupling to MediaTab state and are the clearest extraction target.
+
+**`useMediaViewPrefs`**: All five preferences are `useLocalStorage` calls keyed to `campaignId` or `rootId`, plus a one-time P37-KS1 migration effect. The hook exports `ViewMode`, `CardSize`, and `MediaSortMode` so MediaTab can type-cast onChange callbacks cleanly.
+
+**`useMediaLightbox`**: Pure lightbox concern — index state, `openLightbox` finder, `navigateLightbox` wrap-around, keyboard effect. Accepts `imageItems: MediaItem[]`; `imageItems` stays as a `useMemo` in MediaTab because it's derived from `media`, which is the optimistic mutation state.
+
+**`useMediaUsageSummary`**: The stable-ID-key pattern (`sorted ids → string → split`) and the cancellable fetch effect are entirely self-contained. Accepts `media: MediaItem[]`; the mediaIdKey derivation moved inside the hook.
+
+**`useMediaDnd`**: Accepts `media: MediaItem[]` and `onReorder: (nextMedia: MediaItem[]) => Promise<void>`. The `onReorder` callback (`reorderMediaItems`) stays in MediaTab because it mutates `setMedia`, `queryClient`, and calls `onCampaignsUpdated`. This clean interface keeps DnD machinery (sensors, drag state, `arrayMove`, insertion styles) fully encapsulated while the commit operation remains in the mutation layer.
+
+### Acceptance criteria
+
+- `MediaTab.tsx` no longer contains SortableListRow/SortableGridItem, lightbox state, usage-summary fetch, view/sort preference localStorage, or dnd-kit sensor/state setup
 - `npm run build:wp` TypeScript clean
 - 2088/2088 tests pass
 
