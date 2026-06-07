@@ -27,7 +27,7 @@ import {
   setCampaignBreakpointScopeAdapterOverride,
   syncCampaignGalleryOverrideMode,
 } from '@/utils/campaignGalleryOverrides';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+;
 
 const LazyGalleryConfigEditorModal = lazy(() =>
   import('@/components/Common/GalleryConfigEditorModal').then((module) => ({
@@ -116,7 +116,7 @@ interface UnifiedCampaignModalTabListProps {
 }
 
 const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListProps> = ({ isEdit, mediaCount }) => (
-  <Tabs.List {...getWpsgDebugProps('UnifiedCampaignModal', 'tab-list')}>
+  <Tabs.List>
     <Tabs.Tab value="details">Details</Tabs.Tab>
     {isEdit && (
       <Tabs.Tab value="media">
@@ -127,7 +127,7 @@ const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListPro
   </Tabs.List>
 );
 
-setWpsgDebugDisplayName(UnifiedCampaignModalTabList, 'UnifiedCampaignModalTabList');
+UnifiedCampaignModalTabList.displayName = 'UnifiedCampaignModalTabList';
 
 interface UnifiedCampaignDetailsPanelProps {
   isEdit: boolean;
@@ -137,9 +137,6 @@ interface UnifiedCampaignDetailsPanelProps {
   onSelectCoverImage: (value: string) => void;
   onUploadCoverImage: (file: File) => Promise<void> | void;
   coverImageUploading: boolean;
-  onClose: () => void;
-  onSave: () => void;
-  isSaving: boolean;
   companies: CompanyInfo[];
   companiesLoading: boolean;
 }
@@ -152,14 +149,11 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
   onSelectCoverImage,
   onUploadCoverImage,
   coverImageUploading,
-  onClose,
-  onSave,
-  isSaving,
   companies,
   companiesLoading,
 }) => (
-  <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'details-panel')} value="details" pt="md">
-    <Stack {...getWpsgDebugProps('UnifiedCampaignModal', 'details-stack')} gap="md">
+  <Tabs.Panel value="details" pt="md">
+    <Stack gap="md">
       <TextInput
         label="Title"
         placeholder="Campaign title"
@@ -225,17 +219,11 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
         </Stack>
       </Card>
 
-      <Group justify="flex-end" mt="md">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
-        <Button onClick={onSave} loading={isSaving}>
-          {isEdit ? 'Save Changes' : 'Create Campaign'}
-        </Button>
-      </Group>
     </Stack>
   </Tabs.Panel>
 );
 
-setWpsgDebugDisplayName(UnifiedCampaignDetailsPanel, 'UnifiedCampaignDetailsPanel');
+UnifiedCampaignDetailsPanel.displayName = 'UnifiedCampaignDetailsPanel';
 
 interface UnifiedCampaignSettingsPanelProps {
   isEdit: boolean;
@@ -243,9 +231,6 @@ interface UnifiedCampaignSettingsPanelProps {
   formState: UnifiedCampaignFormState;
   updateForm: UnifiedCampaignUpdateForm;
   categoryItems: CampaignCategoryEntry[];
-  onClose: () => void;
-  onSave: () => void;
-  isSaving: boolean;
   campaignGalleryOverrideMode: 'unified' | 'per-type' | '' | null;
   effectiveCampaignGalleryMode: 'unified' | 'per-type';
   resolvedCampaignQuickOverrides: UnifiedCampaignGalleryOverrides;
@@ -267,9 +252,6 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   formState,
   updateForm,
   categoryItems,
-  onClose,
-  onSave,
-  isSaving,
   campaignGalleryOverrideMode,
   effectiveCampaignGalleryMode,
   resolvedCampaignQuickOverrides,
@@ -280,8 +262,8 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   layoutTemplates,
   onEditLayout,
 }) => (
-  <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'settings-panel')} value="settings" pt="md">
-    <Stack {...getWpsgDebugProps('UnifiedCampaignModal', 'settings-stack')} gap="md">
+  <Tabs.Panel value="settings" pt="md">
+    <Stack gap="md">
       <Group grow wrap="wrap" gap="sm">
         <Select
           label="Status"
@@ -496,17 +478,11 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
         </Group>
       )}
 
-      <Group justify="flex-end" mt="md" wrap="wrap" gap="sm">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
-        <Button onClick={onSave} loading={isSaving}>
-          {isEdit ? 'Save Changes' : 'Create Campaign'}
-        </Button>
-      </Group>
     </Stack>
   </Tabs.Panel>
 );
 
-setWpsgDebugDisplayName(UnifiedCampaignSettingsPanel, 'UnifiedCampaignSettingsPanel');
+UnifiedCampaignSettingsPanel.displayName = 'UnifiedCampaignSettingsPanel';
 
 export function UnifiedCampaignModal({
   modal,
@@ -572,18 +548,25 @@ export function UnifiedCampaignModal({
   return (
     <>
       <Modal
-        {...getWpsgDebugProps('UnifiedCampaignModal')}
         opened={opened}
         onClose={guardedClose}
         withinPortal={false}
-        title={<span {...getWpsgDebugProps('UnifiedCampaignModal', 'title')}>{isEdit ? 'Edit Campaign' : 'New Campaign'}</span>}
+        title={
+          <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
+            <span>{isEdit ? 'Edit Campaign' : 'New Campaign'}</span>
+            <Group gap="xs" wrap="nowrap">
+              <Button variant="default" size="sm" onClick={guardedClose}>Cancel</Button>
+              <Button size="sm" onClick={handleSave} loading={isSaving}>
+                {isEdit ? 'Save Changes' : 'Create Campaign'}
+              </Button>
+            </Group>
+          </Group>
+        }
         size={isExtraSmall ? '100%' : 'xl'}
         fullScreen={!!isExtraSmall}
         zIndex={300}
-        closeButtonProps={getWpsgDebugProps('UnifiedCampaignModal', 'close')}
-        overlayProps={getWpsgDebugProps('UnifiedCampaignModal', 'overlay')}
       >
-        <Tabs {...getWpsgDebugProps('UnifiedCampaignModal', 'tabs')} value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
+        <Tabs value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
           <UnifiedCampaignModalTabList isEdit={isEdit} mediaCount={mediaItems.length} />
 
           <UnifiedCampaignDetailsPanel
@@ -594,16 +577,13 @@ export function UnifiedCampaignModal({
             onSelectCoverImage={handleSelectCoverImage}
             onUploadCoverImage={handleUploadCoverImage}
             coverImageUploading={coverImageUploading}
-            onClose={guardedClose}
-            onSave={handleSave}
-            isSaving={isSaving}
             companies={companies}
             companiesLoading={companiesLoading}
           />
 
           {/* ── Media Tab (edit only) ──────────────────────────────── */}
           {isEdit && (
-            <Tabs.Panel {...getWpsgDebugProps('UnifiedCampaignModal', 'media-panel')} value="media" pt="md">
+            <Tabs.Panel value="media" pt="md">
               {mediaLoading ? (
                 <Center py="xl"><Loader /></Center>
               ) : (
@@ -641,9 +621,6 @@ export function UnifiedCampaignModal({
             formState={formState}
             updateForm={updateForm}
             categoryItems={categoryItems}
-            onClose={guardedClose}
-            onSave={handleSave}
-            isSaving={isSaving}
             campaignGalleryOverrideMode={campaignGalleryOverrideMode}
             effectiveCampaignGalleryMode={effectiveCampaignGalleryMode}
             resolvedCampaignQuickOverrides={resolvedCampaignQuickOverrides}
@@ -859,4 +836,4 @@ function MediaTabContent({
   );
 }
 
-setWpsgDebugDisplayName(MediaTabContent, 'UnifiedCampaignMediaTabContent');
+MediaTabContent.displayName = 'UnifiedCampaignMediaTabContent';
