@@ -25,7 +25,7 @@
 | P45-A15 | Split `LayoutSlotComponent.tsx` into sub-components     | Done     | M      |
 | P45-A16 | `smartGuides.ts` per-slot memoization for drag perf     | Done     | M      |
 | P45-A17 | Keyboard shortcut for adding a new canvas slot          | Done     | S      |
-| P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Planned | L      |
+| P45-A18 | Split `GalleryConfigEditorModal.tsx` into sub-components | Done     | L      |
 
 ---
 
@@ -553,6 +553,31 @@ No test changes were required: `Lightbox.test.tsx` fixtures are typed as `MediaI
 - `KeyboardHintOverlay.tsx` uses no `--wpsg-*` CSS variables
 - All existing Lightbox tests continue to pass
 - `docs/FUTURE_TASKS.md` reflects completed decoupling work
+
+---
+
+## Track P45-A18 — Split `GalleryConfigEditorModal.tsx` into Sub-Components
+
+`GalleryConfigEditorModal.tsx` was 1386 lines. The top ~480 lines were pure TypeScript utility functions with no React dependencies — config mutation helpers, representative-value getters, scope/adapter utilities. These were entirely separable from the React layer.
+
+### What changed
+
+- **New file**: `src/components/Common/galleryConfigUtils.ts` (480 lines) — all 24 pure utility functions, 3 type aliases, 1 constant, and 2 private helpers (`getApplicableScopes`, `hasVisibleAdapterSettingField`, `CONDITIONAL_ADAPTER_FIELD_CONTROLLERS`) extracted here and exported
+- **`GalleryConfigEditorModal.tsx`**: reduced from 1386 → 937 lines; imports replaced with a single block from `./galleryConfigUtils`; three existing internal React sub-components (`GalleryConfigEditorIntro`, `GalleryConfigBreakpointAdaptersSection`, `GalleryConfigEditorFooterActions`) were already present and remain in the main file
+- Removed `adapterUsesSettingGroup`, `AdapterSettingGroupDefinition`, `AdapterSettingGroupScopeMode`, `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`, `GalleryCommonSettings`, `GalleryConfigMode`, `GalleryConfigScope`, `getLegacyViewportBackgroundFieldMap` from the modal's imports (all moved to utils)
+
+### Rationale
+
+The pure-function block in the modal file was the natural extraction boundary — no React imports, no hooks, no JSX. Extracting to `galleryConfigUtils.ts` makes these functions independently testable and importable by any future breakpoint/adapter editor without dragging in the full Drawer/Accordion tree. `getApplicableScopes`, `hasVisibleAdapterSettingField`, and `CONDITIONAL_ADAPTER_FIELD_CONTROLLERS` were left unexported since they are internal coordination helpers not needed by consumers.
+
+The three existing sub-components (`GalleryConfigEditorIntro`, `GalleryConfigBreakpointAdaptersSection`, `GalleryConfigEditorFooterActions`) remain in the modal file — they share the `GalleryConfigDraftUpdater` type and are tightly coupled to the modal's draft state flow; extracting them to separate files would add import complexity without meaningfully reducing coupling.
+
+### Acceptance criteria
+
+- `GalleryConfigEditorModal.tsx` contains no utility function definitions
+- All 24 utility functions are exported from `galleryConfigUtils.ts`
+- `npm run build:wp` TypeScript clean
+- 2088/2088 tests pass
 
 ---
 
