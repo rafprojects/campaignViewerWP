@@ -4,6 +4,7 @@ import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings } from '@/types';
 import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { useCampaignContext } from '@/contexts/CampaignContext';
 import { AuthBarFloating } from './AuthBarFloating';
 import { AuthBarMinimal } from './AuthBarMinimal';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -51,6 +52,8 @@ export function AuthBar({
   onOpenSignIn,
   onLogout,
 }: AuthBarProps) {
+  const { activeCampaign, onEditCampaign, onEditGalleryConfig, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
+
   // Route to the appropriate sub-component based on mode
   if (displayMode === 'floating') {
     return (
@@ -62,6 +65,11 @@ export function AuthBar({
         onOpenSettings={onOpenSettings}
         onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
+        activeCampaign={activeCampaign}
+        onEditCampaign={onEditCampaign}
+        onEditGalleryConfig={onEditGalleryConfig}
+        onArchiveCampaign={onArchiveCampaign}
+        onAddExternalMedia={onAddExternalMedia}
       />
     );
   }
@@ -78,6 +86,11 @@ export function AuthBar({
         onOpenSettings={onOpenSettings}
         onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
+        activeCampaign={activeCampaign}
+        onEditCampaign={onEditCampaign}
+        onEditGalleryConfig={onEditGalleryConfig}
+        onArchiveCampaign={onArchiveCampaign}
+        onAddExternalMedia={onAddExternalMedia}
       />
     );
   }
@@ -146,9 +159,9 @@ function AuthBarFull({
         position: 'sticky',
         top: 'var(--wp-admin--admin-bar--height, 0px)',
         zIndex: 'var(--z-header, 100)',
-        background: 'color-mix(in srgb, var(--wpsg-color-surface) 92%, transparent)',
+        background: 'color-mix(in srgb, var(--mantine-color-body) 92%, transparent)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--wpsg-color-border)',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
         transform: shouldHide ? 'translateY(-100%)' : 'translateY(0)',
         transition: 'transform 0.3s ease',
       }}

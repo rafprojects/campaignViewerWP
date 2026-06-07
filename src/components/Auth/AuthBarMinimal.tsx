@@ -38,9 +38,9 @@ export function AuthBarMinimal({
         position: 'sticky',
         top: 'var(--wp-admin--admin-bar--height, 0px)',
         zIndex: 'var(--z-header, 100)',
-        background: 'color-mix(in srgb, var(--wpsg-color-surface) 92%, transparent)',
+        background: 'color-mix(in srgb, var(--mantine-color-body) 92%, transparent)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid var(--wpsg-color-border)',
+        borderBottom: '1px solid var(--mantine-color-default-border)',
         maxHeight: 32,
       }}
     >

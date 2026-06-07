@@ -14,7 +14,7 @@
 | P45-A4  | `useInContextSave` failure UX — surface save errors      | Done     | S      |
 | P45-A5  | Idle timeout countdown warning (`useIdleTimeout`)        | Done     | M      |
 | P45-A6  | JWT in-memory + httpOnly cookie upgrade (P20-K)          | Planned | L      |
-| P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Planned | M      |
+| P45-A7  | Extract `LoginForm` + `AuthBar*` as library components   | Done     | M      |
 | P45-A8  | Extract `sanitizeCss.ts` + `cssUnits.ts` to shared lib  | Done     | S      |
 | P45-A9  | Split `MediaTab.tsx` into focused sub-components/hooks  | Planned | L      |
 | P45-A10 | Bulk delete/archive/restore confirmation dialogs        | Done     | S      |
@@ -310,6 +310,16 @@ projects), WPSG CSS variables (`--wpsg-color-surface`, etc.), and
 2. Replace WPSG CSS variable references in Auth components with Mantine theme tokens or
    prop-passed overrides.
 3. Move the Auth components to a separate package entry point suitable for extraction.
+
+### Rationale
+
+Removed the `useCampaignContext` import from `AuthBarFloating.tsx` entirely. The five campaign-related fields (`activeCampaign`, `onEditCampaign`, `onEditGalleryConfig`, `onArchiveCampaign`, `onAddExternalMedia`) are now accepted as optional props on `AuthBarFloatingProps`. The internal `AuthBarFloatingMenuContentProps` interface now uses explicit types (`Campaign | null`, `((campaign: Campaign) => void) | undefined`) instead of `ReturnType<typeof useCampaignContext>[...]`.
+
+The `useCampaignContext()` call was moved to `AuthBar.tsx` — the orchestrator component which was already WPSG-coupled via `GalleryBehaviorSettings`. `AuthBar.tsx` reads the campaign context once and forwards the values to whichever `AuthBarFloating` render branch is active (floating or draggable; minimal and full-bar modes don't show campaign actions). The hook is called unconditionally before the `if`-chain of early returns, satisfying React's rules-of-hooks.
+
+CSS vars replaced: `--wpsg-color-surface` → `--mantine-color-body`, `--wpsg-color-border` → `--mantine-color-default-border` in both `AuthBarFull` and `AuthBarMinimal`. These are standard Mantine v7 CSS variables that resolve in any `MantineProvider` tree.
+
+Both `AuthBarFloating.test.tsx` and `AuthBarFloating.portal.test.tsx` were updated: the `CampaignContextProvider` wrapper and `ActivateCampaign` helper component were removed; campaign props are now passed directly to `AuthBarFloating`. All 10 Auth component tests pass; full suite 2088/2088 pass; build clean.
 
 ### Acceptance criteria
 
