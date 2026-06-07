@@ -446,7 +446,14 @@ describe('CardGallery pagination', () => {
     );
     const container = screen.getByLabelText(/Card gallery page 1/);
     fireEvent.keyDown(container, { key: 'ArrowRight' });
-    await waitFor(() => expect(screen.getByText('Page 2 of 2')).toBeInTheDocument());
+    // Wait for pagination indicator to show "Page 2 of 2" — use function matcher
+    // because the text is split across JSX expressions
+    await waitFor(() => {
+      const elements = screen.queryAllByText((_, element) => (element?.textContent ?? '').includes('Page 2 of 2'));
+      // Filter to the actual pagination Text element (typically a small div), not containers
+      const paginationElement = elements.find((el) => el.childNodes.length <= 5 && el.className.includes('mantine'));
+      expect(paginationElement || elements[0]).toBeInTheDocument();
+    });
   });
 
   it('ArrowLeft keyboard navigates to previous page', async () => {
@@ -460,10 +467,17 @@ describe('CardGallery pagination', () => {
     );
     const container = screen.getByLabelText(/Card gallery page 1/);
     fireEvent.keyDown(container, { key: 'ArrowRight' });
-    await waitFor(() => screen.getByText('Page 2 of 2'));
+    // Wait for navigation to complete
+    await waitFor(() => screen.getByLabelText(/Card gallery page 2/));
     const container2 = screen.getByLabelText(/Card gallery page 2/);
     fireEvent.keyDown(container2, { key: 'ArrowLeft' });
-    await waitFor(() => expect(screen.getByText('Page 1 of 2')).toBeInTheDocument());
+    // Wait for pagination indicator to show "Page 1 of 2"
+    await waitFor(() => {
+      const elements = screen.queryAllByText((_, element) => (element?.textContent ?? '').includes('Page 1 of 2'));
+      // Filter to the actual pagination Text element (typically a small div), not containers
+      const paginationElement = elements.find((el) => el.childNodes.length <= 5 && el.className.includes('mantine'));
+      expect(paginationElement || elements[0]).toBeInTheDocument();
+    });
   });
 });
 

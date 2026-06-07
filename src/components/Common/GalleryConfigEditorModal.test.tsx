@@ -444,7 +444,8 @@ describe('GalleryConfigEditorModal', () => {
     expect(await screen.findByLabelText('Image Gallery Background Color')).toHaveValue('#112233');
 
     fireEvent.change(screen.getByLabelText('Image Gallery Background Color'), { target: { value: '#445566' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Reset Image Gallery' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Reset Image Gallery' }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
 
     expect(onSave).toHaveBeenCalledWith(
@@ -805,7 +806,8 @@ describe('GalleryConfigEditorModal', () => {
 
     const input = await screen.findByDisplayValue('3');
     fireEvent.change(input, { target: { value: '5' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Reset All Changes' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Reset All Changes' }));
     fireEvent.click(screen.getByRole('button', { name: 'Apply Gallery Config' }));
 
     expect(onSave).toHaveBeenCalledWith(

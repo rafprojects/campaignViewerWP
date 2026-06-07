@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import { safeLocalStorage } from '@/lib/safeLocalStorage';
 import type { MediaSortMode } from '@/components/Admin/applySortMode';
 
 export type ViewMode = 'grid' | 'list' | 'compact';

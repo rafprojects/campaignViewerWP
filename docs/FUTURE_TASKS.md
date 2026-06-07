@@ -13,10 +13,13 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 **Files ready for extraction (no WPSG deps):**
 - `src/lib/sanitizeCss.ts` — CSS injection prevention (sanitizeCssUrl, sanitizeCssColor, sanitizeCssValue, sanitizeClipPath)
 - `src/lib/cssUnits.ts` — multi-unit dimension types, constants, and toCss helpers
+- `src/lib/safeLocalStorage.ts` — safe localStorage wrapper (quota/disabled-storage resilient)
+- `src/lib/useSwipe.ts` — lightweight pointer-event swipe detection hook
+- `src/lib/scrollLock.ts` — reference-counted body-scroll lock manager
 
 **Decoupled (ready for extraction):**
-- `src/components/Auth/LoginForm.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — WPSG CSS vars replaced with Mantine tokens; `AuthBarFloating` no longer calls `useCampaignContext()` (P45-A7).
-- `src/components/Galleries/Shared/Lightbox.tsx` — `MediaItem` dependency replaced with local `LightboxMediaItem` interface; `KeyboardHintOverlay` WPSG CSS vars replaced with Mantine tokens (P45-A13).
+- `src/components/Auth/LoginForm.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — WPSG CSS vars replaced with Mantine tokens; `AuthBarFloating` no longer calls `useCampaignContext()` (P45-A7); all `wpsgDebug` imports removed, `Campaign` type replaced with local generic `AuthBarCampaignItem` (P46-D).
+- `src/components/Galleries/Shared/Lightbox.tsx`, `KeyboardHintOverlay.tsx` — `MediaItem` dependency replaced with local `LightboxMediaItem` interface; WPSG CSS vars replaced with Mantine tokens (P45-A13); all `wpsgDebug` imports removed, `useSwipe`/`scrollLock` imports repointed to `src/lib/` (P46-E).
 
 **What's needed for actual package extraction:**
 1. Monorepo infrastructure: configure npm/pnpm workspaces in the root `package.json`; create `packages/shared-utils/` and `packages/shared-ui/` with their own `package.json` + `tsconfig.json`
@@ -132,6 +135,72 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 **Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
 
 **Effort:** Medium (4-6 hours) | **Impact:** Low — only relevant for campaigns exceeding the current 100 MB size ceiling
+
+---
+
+## Gallery Spaces
+
+> **Origin:** Phase 47 follow-on candidates — items that were identified during planning but intentionally excluded from the initial delivery to keep scope manageable. All items below depend on the core Gallery Spaces infrastructure shipping in Phase 47.
+
+### Cross-Space Campaign Move
+
+**Context:** Phase 47 v1 creates campaigns directly in their target space and does not allow moving an existing campaign between spaces post-hoc. Moving a campaign requires atomically re-stamping `space_id` across all campaign-scoped custom tables (`wpsg_analytics_events`, `wpsg_audit_log`, `wpsg_media_refs`, `wpsg_access_requests`) and bumping the cache version — a partial move would corrupt isolation guarantees.
+
+**What it would take:**
+- A new owner-only `PUT /campaigns/{id}` parameter `spaceId` (or a dedicated `POST /campaigns/{id}/move`).
+- Server-side: wrap all `UPDATE ... SET space_id = %d WHERE campaign_id = %d` statements across the four tables in a transaction (or a best-effort batch with a compensating rollback log), then update the campaign's `_wpsg_space_id` post meta and call `bump_cache_version()`.
+- Guard: the request must be authorized as owner on both the source space and the target space.
+- Frontend: a "Move to space" action in the Campaigns tab (owner-only), with a confirmation dialog listing which data will move.
+
+**Dependencies:** P47-A (space_id columns), P47-B (space permission layer), P47-C (space CRUD REST).
+
+**Effort:** Medium | **Impact:** Medium — useful when reorganizing an existing site but not needed for fresh multi-space setups
+
+---
+
+### Per-Instance Full-Bleed CSS Scoping
+
+**Context:** The shortcode emits a server-rendered `<style>` block targeting `.wpsg-full-bleed` globally. When two shortcodes on the same page reference spaces with different full-bleed settings, the last shortcode's CSS wins for both instances — a known v1 limitation called out in the Phase 47 report.
+
+**What it would take:**
+- Stamp each `.wpsg-full-bleed` wrapper with a `data-space` attribute (or a generated instance class) on the PHP side.
+- Scope the emitted media-query rules to that selector, e.g. `.wpsg-full-bleed[data-space="slug"]` instead of `.wpsg-full-bleed`.
+- Verify that `alignfull` (the WP Full Bleed escape mechanism) still takes effect with the scoped selector — may require wrapping both the `alignfull` and the scoped div.
+
+**Dependencies:** P47-E (shortcode + bootstrap).
+
+**Effort:** Small | **Impact:** Low — only observable when two shortcodes with different full-bleed settings appear on the same page
+
+---
+
+### Per-Space Library Isolation (Overlays / Fonts)
+
+**Context:** Phase 47 ships overlays and fonts as a **global shared library** — all spaces see the same assets. For fully delegated tenants (spaces in `delegated` isolation mode) this may be undesirable: tenant A should not see tenant B's custom overlays or uploaded fonts.
+
+**What it would take:**
+- Rather than adding a `space_id` column to `wp_wpsg_overlays` or the font library (which would break sharing), introduce a `wpsg_space_library_assoc(space_id, asset_type, asset_id)` join table.
+- An overlay or font is visible to a space only if an association row exists (or if the space is `open` mode, where all global assets are visible).
+- Admin UX: a "Shared assets" section in the space-management modal, letting owners associate/dissociate library items from their delegated space.
+- REST: filter overlay/font list endpoints by space when in delegated mode.
+
+**Dependencies:** P47-A, P47-B, P47-G (shared-vs-per-space libraries decision finalized).
+
+**Effort:** Medium | **Impact:** Low-Medium — primarily relevant for multi-tenant SaaS-style deployments with true tenant isolation requirements
+
+---
+
+### Space-Scoped Rate-Limit Buckets
+
+**Context:** Phase 47 relaxes `rate_limit_authenticated()` to accept `manage_wpsg OR space-grant` so delegated-space editors are not locked out. However, the rate-limit counter remains site-global — a heavy-traffic space can exhaust the shared quota and throttle other spaces.
+
+**What it would take:**
+- Add a `space_id` dimension to the rate-limit key in `WPSG_Rate_Limiter` (e.g. `wpsg_rl_<space>_<scope>_<uid>_<route_md5>`).
+- Expose a per-space quota setting (requests/minute) in `settings_overrides` with the global value as the default.
+- The public `rate_limit_public()` callback does not require space-scoping unless per-space public quotas are desired.
+
+**Dependencies:** P47-A (space_id available), P47-D (per-space settings).
+
+**Effort:** Small-Medium | **Impact:** Low — only relevant when spaces have meaningfully different traffic volumes
 
 ---
 
@@ -351,3 +420,7 @@ When promoting future tasks to an active phase:
 *Updated: June 4, 2026 (P43/P44 planning) — D-7, RD-2, RD-9, RD-21 graduated to phase plans (PHASE42_REPORT.md, PHASE43_REPORT.md); Phase 44 audit plan created (PHASE44_REPORT.md).*
 
 *Updated: June 4, 2026 (reorg) — Dissolved "Deferred Review Tasks" section; D-1, D-13, D-14, D-15, RD-17 moved to domain sections (Access Control, Infrastructure & Performance, Campaign Management); completed entries (D-2, D-5, RD-15) and already-addressed entries (D-10, D-17, RD-4) dropped.*
+
+*Updated: June 7, 2026 (P47 planning) — Added "Gallery Spaces" section with four Phase 47 follow-on candidates: Cross-Space Campaign Move, Per-Instance Full-Bleed CSS Scoping, Per-Space Library Isolation (Overlays/Fonts), and Space-Scoped Rate-Limit Buckets.*
+
+*Updated: June 7, 2026 (P46-D/E) — Auth components and Lightbox are now genuinely decoupled from all WPSG-internal imports. `safeLocalStorage`, `useSwipe`, and `scrollLock` moved from `@/utils/`/`@/hooks/` to `src/lib/`. `AuthBarFloating` Campaign type replaced with local generic `AuthBarCampaignItem`. The monorepo infrastructure step (npm workspaces, `packages/shared-utils/`, `packages/shared-ui/`) remains the open follow-on before actual npm package publication.*

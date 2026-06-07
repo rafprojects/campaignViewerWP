@@ -140,7 +140,7 @@ describe('AdminPanel', () => {
     // Pick "Start Blank" to open the campaign form with no template.
     fireEvent.click(startBlank);
     await waitFor(
-      () => expect(screen.getByRole('heading', { name: 'New Campaign' })).toBeInTheDocument(),
+      () => expect(screen.getByRole('heading', { name: /New Campaign/ })).toBeInTheDocument(),
       { timeout: 15000 },
     );
 

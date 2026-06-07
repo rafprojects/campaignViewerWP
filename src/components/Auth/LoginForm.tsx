@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
 import { useForm } from '@mantine/form';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => Promise<void>;
@@ -82,7 +81,7 @@ export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: 
 
   if (compact) {
     return (
-      <form {...getWpsgDebugProps('LoginForm')} onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}>
         {content}
       </form>
     );
@@ -90,7 +89,6 @@ export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: 
 
   return (
     <Paper
-      {...getWpsgDebugProps('LoginForm')}
       p="xl"
       radius="md"
       withBorder
@@ -105,4 +103,4 @@ export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: 
   );
 }
 
-setWpsgDebugDisplayName(LoginForm, 'LoginForm');
+LoginForm.displayName = 'LoginForm';

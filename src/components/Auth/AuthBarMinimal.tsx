@@ -1,6 +1,5 @@
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarMinimalProps {
   email: string;
@@ -31,7 +30,6 @@ export function AuthBarMinimal({
 
   return (
     <Box
-      {...getWpsgDebugProps('AuthBarMinimal')}
       component="nav"
       aria-label="User navigation"
       style={{
@@ -44,30 +42,30 @@ export function AuthBarMinimal({
         maxHeight: 32,
       }}
     >
-      <Container {...getWpsgDebugProps('AuthBarMinimal', 'container')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={4} style={containerPaddingStyle}>
-        <Group {...getWpsgDebugProps('AuthBarMinimal', 'content')} justify="space-between" wrap="nowrap" gap={4}>
+      <Container {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={4} style={containerPaddingStyle}>
+        <Group justify="space-between" wrap="nowrap" gap={4}>
           {!isAuthenticated ? (
             <>
               <Text size="xs" c="dimmed" truncate style={{ minWidth: 0, lineHeight: 1 }}>Sign in</Text>
-              <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'sign-in')} size={22} variant="subtle" onClick={onOpenSignIn} aria-label="Sign in">
+              <ActionIcon size={22} variant="subtle" onClick={onOpenSignIn} aria-label="Sign in">
                 <IconLogin size={14} />
               </ActionIcon>
             </>
           ) : (
             <>
               <Group gap={6} wrap="nowrap" style={{ minWidth: 0 }}>
-                <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'user-icon')} size={22} variant="transparent" aria-hidden>
+                <ActionIcon size={22} variant="transparent" aria-hidden>
                   <IconUser size={14} />
                 </ActionIcon>
                 <Text size="xs" truncate style={{ minWidth: 0, lineHeight: 1 }}>{email}</Text>
               </Group>
               <Menu shadow="md" width={200} position="bottom-end" withArrow>
                 <Menu.Target>
-                  <ActionIcon {...getWpsgDebugProps('AuthBarMinimal', 'menu-trigger')} variant="subtle" size="sm" aria-label="User menu">
+                  <ActionIcon variant="subtle" size="sm" aria-label="User menu">
                     <IconChevronDown size={14} />
                   </ActionIcon>
                 </Menu.Target>
-                <Menu.Dropdown {...getWpsgDebugProps('AuthBarMinimal', 'menu-dropdown')}>
+                <Menu.Dropdown>
                   {isAdmin && (
                     <>
                       <Menu.Item leftSection={<IconDashboard size={14} />} onClick={onOpenAdminPanel}>
@@ -91,4 +89,4 @@ export function AuthBarMinimal({
   );
 }
 
-setWpsgDebugDisplayName(AuthBarMinimal, 'AuthBarMinimal');
+AuthBarMinimal.displayName = 'AuthBarMinimal';

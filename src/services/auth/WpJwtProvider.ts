@@ -1,5 +1,5 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
-import { safeLocalStorage } from '../../utils/safeLocalStorage';
+import { safeLocalStorage } from '@/lib/safeLocalStorage';
 
 interface WpJwtProviderOptions {
   apiBaseUrl: string;
