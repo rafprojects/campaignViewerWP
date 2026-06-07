@@ -12,10 +12,9 @@ import { useEffect, useRef, useState } from 'react';
 import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { toCss } from '@/lib/cssUnits';
-import { useSwipe } from '@/hooks/useSwipe';
-import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
+import { useSwipe } from '@/lib/useSwipe';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/lib/scrollLock';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const TRANSITION_MS = 250;
 
@@ -300,4 +299,4 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
   );
 }
 
-setWpsgDebugDisplayName(Lightbox, 'Lightbox');
+Lightbox.displayName = 'Lightbox';

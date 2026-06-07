@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { safeLocalStorage } from '@/utils/safeLocalStorage';
+import { safeLocalStorage } from '@/lib/safeLocalStorage';
 import type { SnapMode } from '@/utils/canvasMeasurement';
 
 export interface BuilderWorkspacePrefs {

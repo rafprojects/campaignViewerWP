@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Group, Kbd, Text, Transition } from '@mantine/core';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
-const SESSION_KEY = 'wpsg-lightbox-hint-shown';
+const SESSION_KEY = 'lightbox-hint-shown';
 const DISMISS_DELAY = 3500;
 
 interface KeyboardHintOverlayProps {
@@ -93,4 +92,4 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
   );
 }
 
-setWpsgDebugDisplayName(KeyboardHintOverlay, 'KeyboardHintOverlay');
+KeyboardHintOverlay.displayName = 'KeyboardHintOverlay';

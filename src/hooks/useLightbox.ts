@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/utils/scrollLock';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/lib/scrollLock';
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 

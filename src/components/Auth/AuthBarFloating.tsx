@@ -1,14 +1,21 @@
 import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
-import { safeLocalStorage } from '@/utils/safeLocalStorage';
-import type { Campaign } from '@/types';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { safeLocalStorage } from '@/lib/safeLocalStorage';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
 
-interface AuthBarFloatingProps {
+/**
+ * Minimal campaign shape required by AuthBarFloating.
+ * A structural subset of the app's Campaign type — callers may pass the full
+ * Campaign object; the component only reads `title`.
+ */
+export interface AuthBarCampaignItem {
+  title: string;
+}
+
+interface AuthBarFloatingProps<TCampaign extends AuthBarCampaignItem = AuthBarCampaignItem> {
   email: string;
   isAdmin: boolean;
   isAuthenticated?: boolean | undefined;
@@ -18,11 +25,11 @@ interface AuthBarFloatingProps {
   onOpenSettings: () => void;
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
-  activeCampaign?: Campaign | null | undefined;
-  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
-  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
-  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
-  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
+  activeCampaign?: TCampaign | null | undefined;
+  onEditCampaign?: ((campaign: TCampaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: TCampaign) => void) | undefined;
+  onArchiveCampaign?: ((campaign: TCampaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: TCampaign) => void) | undefined;
 }
 
 interface AuthBarFloatingTriggerProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -43,7 +50,6 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
     ...actionIconProps
   }, ref) => (
     <ActionIcon
-      {...getWpsgDebugProps('AuthBarFloating', 'trigger')}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(actionIconProps as any)}
       ref={ref}
@@ -66,21 +72,21 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
   ),
 );
 
-setWpsgDebugDisplayName(AuthBarFloatingTrigger, 'AuthBarFloatingTrigger');
+AuthBarFloatingTrigger.displayName = 'AuthBarFloatingTrigger';
 
 function scheduleCloseMenu(closeMenu: () => void) {
   requestAnimationFrame(() => closeMenu());
 }
 
-interface AuthBarFloatingMenuContentProps {
+interface AuthBarFloatingMenuContentProps<TCampaign extends AuthBarCampaignItem> {
   email: string;
   isAdmin: boolean;
   isAuthenticated: boolean;
-  activeCampaign: Campaign | null;
-  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
-  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
-  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
-  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
+  activeCampaign: TCampaign | null;
+  onEditCampaign?: ((campaign: TCampaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: TCampaign) => void) | undefined;
+  onArchiveCampaign?: ((campaign: TCampaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: TCampaign) => void) | undefined;
   closeMenu: () => void;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
@@ -88,7 +94,7 @@ interface AuthBarFloatingMenuContentProps {
   onLogout: () => void;
 }
 
-function AuthBarFloatingMenuContent({
+function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
   email,
   isAdmin,
   isAuthenticated,
@@ -102,9 +108,9 @@ function AuthBarFloatingMenuContent({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
-}: AuthBarFloatingMenuContentProps) {
+}: AuthBarFloatingMenuContentProps<TCampaign>) {
   return (
-    <Stack {...getWpsgDebugProps('AuthBarFloating', 'menu')} gap="xs">
+    <Stack gap="xs">
       {isAuthenticated ? (
         <>
           <Text size="xs" c="dimmed" truncate>Signed in as {email}</Text>
@@ -209,8 +215,6 @@ function AuthBarFloatingMenuContent({
   );
 }
 
-setWpsgDebugDisplayName(AuthBarFloatingMenuContent, 'AuthBarFloatingMenuContent');
-
 function readSavedPos(): { x: number; y: number } | null {
   const raw = safeLocalStorage.getItem(STORAGE_KEY);
   if (!raw) return null;
@@ -224,7 +228,7 @@ function readSavedPos(): { x: number; y: number } | null {
   return null;
 }
 
-export function AuthBarFloating({
+export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarCampaignItem>({
   email,
   isAdmin,
   isAuthenticated = true,
@@ -239,7 +243,7 @@ export function AuthBarFloating({
   onEditGalleryConfig,
   onArchiveCampaign,
   onAddExternalMedia,
-}: AuthBarFloatingProps) {
+}: AuthBarFloatingProps<TCampaign>) {
   const margin = dragMargin;
 
   // Read saved position (works in SSR — just returns null)
@@ -349,7 +353,7 @@ export function AuthBarFloating({
   if (draggable && pos === null) return null;
 
   return (
-    <Popover {...getWpsgDebugProps('AuthBarFloating')} opened={popoverOpen} onChange={setPopoverOpen} withinPortal={false} position="top-end" withArrow shadow="md" width={220}
+    <Popover opened={popoverOpen} onChange={setPopoverOpen} withinPortal={false} position="top-end" withArrow shadow="md" width={220}
       styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
     >
       <Popover.Target>
@@ -362,7 +366,7 @@ export function AuthBarFloating({
           onPointerUp={draggable ? onPointerUp : undefined}
         />
       </Popover.Target>
-      <Popover.Dropdown {...getWpsgDebugProps('AuthBarFloating', 'dropdown')}>
+      <Popover.Dropdown>
         <AuthBarFloatingMenuContent
           email={email}
           isAdmin={isAdmin}
@@ -383,4 +387,4 @@ export function AuthBarFloating({
   );
 }
 
-setWpsgDebugDisplayName(AuthBarFloating, 'AuthBarFloating');
+AuthBarFloating.displayName = 'AuthBarFloating';
