@@ -17,23 +17,23 @@ export type GalleryConfigMode = 'unified' | 'per-type';
 
 export interface GalleryCommonSettings {
   sectionMaxWidth?: number | undefined;
-  sectionMaxWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
+  sectionMaxWidthUnit?: import('@/lib/cssUnits').CssWidthUnit | undefined;
   sectionMaxHeight?: number | undefined;
-  sectionMaxHeightUnit?: import('@/utils/cssUnits').CssHeightUnit | undefined;
+  sectionMaxHeightUnit?: import('@/lib/cssUnits').CssHeightUnit | undefined;
   sectionMinWidth?: number | undefined;
-  sectionMinWidthUnit?: import('@/utils/cssUnits').CssWidthUnit | undefined;
+  sectionMinWidthUnit?: import('@/lib/cssUnits').CssWidthUnit | undefined;
   sectionMinHeight?: number | undefined;
-  sectionMinHeightUnit?: import('@/utils/cssUnits').CssHeightUnit | undefined;
+  sectionMinHeightUnit?: import('@/lib/cssUnits').CssHeightUnit | undefined;
   sectionHeightMode?: 'auto' | 'manual' | 'viewport' | undefined;
   sectionPadding?: number | undefined;
-  sectionPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  sectionPaddingUnit?: import('@/lib/cssUnits').CssSpacingUnit | undefined;
   adapterContentPadding?: number | undefined;
-  adapterContentPaddingUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  adapterContentPaddingUnit?: import('@/lib/cssUnits').CssSpacingUnit | undefined;
   adapterSizingMode?: 'fill' | 'manual' | undefined;
   adapterMaxWidthPct?: number | undefined;
   adapterMaxHeightPct?: number | undefined;
   adapterItemGap?: number | undefined;
-  adapterItemGapUnit?: import('@/utils/cssUnits').CssSpacingUnit | undefined;
+  adapterItemGapUnit?: import('@/lib/cssUnits').CssSpacingUnit | undefined;
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch' | undefined;
   gallerySizingMode?: 'auto' | 'viewport' | 'manual' | undefined;
   galleryManualHeight?: string | undefined;
@@ -703,18 +703,18 @@ export interface TypographyOverride {
 
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
-  videoViewportHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  videoViewportHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   imageViewportHeight: number;
-  imageViewportHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  imageViewportHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   thumbnailScrollSpeed: number;
   scrollAnimationStyle: ScrollAnimationStyle;
   scrollAnimationDurationMs: number;
   scrollAnimationEasing: ScrollAnimationEasing;
   scrollTransitionType: ScrollTransitionType;
   imageBorderRadius: number;
-  imageBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
+  imageBorderRadiusUnit: import('@/lib/cssUnits').CssBorderRadiusUnit;
   videoBorderRadius: number;
-  videoBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
+  videoBorderRadiusUnit: import('@/lib/cssUnits').CssBorderRadiusUnit;
   transitionFadeEnabled: boolean;
   // P12-A/B: Advanced thumbnail strip controls
   videoThumbnailWidth: number;
@@ -726,22 +726,22 @@ export interface GalleryBehaviorSettings {
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
   gridCardWidth: number;
-  gridCardWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  gridCardWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   gridCardAspectRatio: GridCardAspectRatio;
   gridCardMaxColumns: number;
   gridCardMinHeight: number;
   /** Legacy fallback when gridCardAspectRatio remains on 'auto'. */
   gridCardHeight: number;
-  gridCardHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  gridCardHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   mosaicTargetRowHeight: number;
-  mosaicTargetRowHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  mosaicTargetRowHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   // Tile appearance — shared by masonry, justified, hexagonal, circular, diamond
   tileSize: number;          // px: fixed tile size for shape adapters
-  tileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  tileSizeUnit: import('@/lib/cssUnits').CssWidthUnit;
   tileGapX: number;          // px: horizontal gap between tiles
-  tileGapXUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  tileGapXUnit: import('@/lib/cssUnits').CssSpacingUnit;
   tileGapY: number;          // px: vertical gap between tiles
-  tileGapYUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  tileGapYUnit: import('@/lib/cssUnits').CssSpacingUnit;
   tileBorderWidth: number;   // px: 0 = no border
   tileBorderColor: string;   // CSS color
   tileGlowEnabled: boolean;  // hover glow via drop-shadow
@@ -756,15 +756,15 @@ export interface GalleryBehaviorSettings {
   scrollSnapAlignment: string;        // 'start' | 'center' | 'end'
   scrollSnapPageIndicator: boolean;   // show slide counter (n / total)
   scrollSnapMaxWidth: number;         // 0 = no max-width (full container)
-  scrollSnapMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  scrollSnapMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
   spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
-  spotlightThumbnailSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  spotlightThumbnailSizeUnit: import('@/lib/cssUnits').CssWidthUnit;
   spotlightTransitionDuration: number;                                       // ms: hero swap / border transition
   spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
   spotlightHeroMaxWidth: number;      // 0 = no max-width (full container)
-  spotlightHeroMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  spotlightHeroMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -802,22 +802,22 @@ export interface GalleryBehaviorSettings {
   unifiedBgImageUrl: string;
   // P13-A: Campaign Card settings
   cardBorderRadius: number;
-  cardBorderRadiusUnit: import('@/utils/cssUnits').CssBorderRadiusUnit;
+  cardBorderRadiusUnit: import('@/lib/cssUnits').CssBorderRadiusUnit;
   cardBorderWidth: number;
   cardBorderMode: 'single' | 'auto' | 'individual';
   cardBorderColor: string;
   cardShadowPreset: string;
   cardThumbnailHeight: number;
-  cardThumbnailHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  cardThumbnailHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   cardThumbnailFit: string;
   cardGridColumns: number;
   cardGapH: number;
-  cardGapHUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  cardGapHUnit: import('@/lib/cssUnits').CssSpacingUnit;
   cardGapV: number;
-  cardGapVUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  cardGapVUnit: import('@/lib/cssUnits').CssSpacingUnit;
   cardMaxWidth: number;
   modalCoverHeight: number;
-  modalCoverHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  modalCoverHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   modalTransition: string;
   modalTransitionDuration: number;
   modalMaxHeight: number;
@@ -834,17 +834,17 @@ export interface GalleryBehaviorSettings {
   showSearchBox: boolean;
   // P13-E: App width control (0 = full width / edge-to-edge)
   appMaxWidth: number;
-  appMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  appMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P13-E: Container padding (px). Controls horizontal padding on all containers.
   // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
   appPadding: number;
-  appPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  appPaddingUnit: import('@/lib/cssUnits').CssSpacingUnit;
   // P36-D: Settings Panel (right-side drawer) width on non-small screens.
   settingsPanelWidth: number;
-  settingsPanelWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  settingsPanelWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P36-D: Admin Panel (main container) max-width. 0 = no constraint (full width).
   adminPanelMaxWidth: number;
-  adminPanelMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  adminPanelMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   /**
    * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
    *
@@ -861,9 +861,9 @@ export interface GalleryBehaviorSettings {
   wpFullBleedMobile: boolean;  // < 768px
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: number;
-  imageTileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  imageTileSizeUnit: import('@/lib/cssUnits').CssWidthUnit;
   videoTileSize: number;
-  videoTileSizeUnit: import('@/utils/cssUnits').CssWidthUnit;
+  videoTileSizeUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P14-C: Thumbnail cache TTL
   thumbnailCacheTtl: number;
   // P14-F: Image optimization on upload
@@ -893,7 +893,7 @@ export interface GalleryBehaviorSettings {
   modalCloseButtonSize: number;
   modalCloseButtonBgColor: string;
   modalContentMaxWidth: number;
-  modalContentMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  modalContentMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   campaignDescriptionLineHeight: number;
   modalMobileBreakpoint: number;
   cardPageTransitionOpacity: number;
@@ -921,7 +921,7 @@ export interface GalleryBehaviorSettings {
   diamondClipPath: string;
   tileDefaultPerRow: number;
   photoNormalizeHeight: number;
-  photoNormalizeHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  photoNormalizeHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   masonryAutoColumnBreakpoints: string;
   gridCardHoverShadow: string;
   gridCardDefaultShadow: string;
@@ -932,9 +932,9 @@ export interface GalleryBehaviorSettings {
   lightboxBackdropColor: string;
   lightboxEntryScale: number;
   lightboxVideoMaxWidth: number;
-  lightboxVideoMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  lightboxVideoMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   lightboxVideoHeight: number;
-  lightboxVideoHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  lightboxVideoHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   lightboxMediaMaxHeight: string;
   lightboxZIndex: number;
   // P14-B: Navigation (advanced)
@@ -956,6 +956,8 @@ export interface GalleryBehaviorSettings {
   cardAutoColumnsBreakpoints: string;
   // P20-K: Session idle timeout (minutes). 0 = disabled.
   sessionIdleTimeoutMinutes: number;
+  // P45-A5: Warning shown N seconds before idle logout. 0 = no warning.
+  sessionIdleWarningSeconds: number;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
   // P23-D: Canonical responsive gallery configuration surface.
@@ -984,7 +986,7 @@ export interface GalleryBehaviorSettings {
   cardMaxColumns: number;
   cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9';
   cardMinHeight: number;
-  cardMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  cardMinHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   // P21-G: Gallery label editing & justification
   galleryImageLabel: string;
   galleryVideoLabel: string;
@@ -1016,77 +1018,77 @@ export interface GalleryBehaviorSettings {
   showCampaignAdminActions: boolean;
   showCampaignGalleryLabels: boolean;
   fullscreenContentMaxWidth: number;
-  fullscreenContentMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  fullscreenContentMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   // P22-K: Modal max width & background
   modalMaxWidth: number;
-  modalMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  modalMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   modalBgColor: string;
   modalBgGradient: import('@/utils/gradientCss').GradientOptions;
   // P22-M: Modal gallery width/gap/margin
   modalGalleryMaxWidth: number;
-  modalGalleryMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  modalGalleryMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   modalGalleryGap: number;
-  modalGalleryGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  modalGalleryGapUnit: import('@/lib/cssUnits').CssSpacingUnit;
   modalGalleryMargin: number;
-  modalGalleryMarginUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  modalGalleryMarginUnit: import('@/lib/cssUnits').CssSpacingUnit;
   // P22-P8: Vertical alignment of modal content
   modalContentVerticalAlign: 'top' | 'center' | 'bottom';
   // P25-T: Gallery shell vertical alignment + offset
   modalGalleryVerticalAlign: 'start' | 'center' | 'end';
   modalGalleryOffsetY: number;
-  modalGalleryOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  modalGalleryOffsetYUnit: import('@/lib/cssUnits').CssOffsetUnit;
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
   // P22-P2: Dimension propagation — gallery section sizing
   gallerySectionMaxWidth: number;
-  gallerySectionMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  gallerySectionMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   gallerySectionMaxHeight: number;
-  gallerySectionMaxHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  gallerySectionMaxHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
   gallerySectionMinWidth: number;
-  gallerySectionMinWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  gallerySectionMinWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   gallerySectionMinHeight: number;
-  gallerySectionMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  gallerySectionMinHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   // P25-T: Section content alignment + offset
   gallerySectionContentAlignX: 'start' | 'center' | 'end';
   gallerySectionContentAlignY: 'start' | 'center' | 'end';
   gallerySectionContentOffsetX: number;
-  gallerySectionContentOffsetXUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  gallerySectionContentOffsetXUnit: import('@/lib/cssUnits').CssOffsetUnit;
   gallerySectionContentOffsetY: number;
-  gallerySectionContentOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  gallerySectionContentOffsetYUnit: import('@/lib/cssUnits').CssOffsetUnit;
   // P25-S: Primary gallery section scale multiplier
   sectionScale: number;
   perTypeSectionEqualHeight: boolean;
   modalInnerPadding: number;
-  modalInnerPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  modalInnerPaddingUnit: import('@/lib/cssUnits').CssSpacingUnit;
   gallerySectionPadding: number;
-  gallerySectionPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  gallerySectionPaddingUnit: import('@/lib/cssUnits').CssSpacingUnit;
   adapterContentPadding: number;
-  adapterContentPaddingUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  adapterContentPaddingUnit: import('@/lib/cssUnits').CssSpacingUnit;
   adapterSizingMode: 'fill' | 'manual';
   adapterMaxWidthPct: number;
   adapterMaxHeightPct: number;
   // P22-P7: Card width responsive unit & last-row justification
-  cardMaxWidthUnit: import('@/utils/cssUnits').CssWidthUnit;
+  cardMaxWidthUnit: import('@/lib/cssUnits').CssWidthUnit;
   cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
   // P25-S: Primary card scale multiplier
   cardScale: number;
   // P25-Q: Card gallery vertical justification
   cardGalleryVerticalAlign: 'start' | 'center' | 'end';
   cardGalleryMinHeight: number;
-  cardGalleryMinHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  cardGalleryMinHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   cardGalleryMaxHeight: number;
-  cardGalleryMaxHeightUnit: import('@/utils/cssUnits').CssHeightUnit;
+  cardGalleryMaxHeightUnit: import('@/lib/cssUnits').CssHeightUnit;
   // P25-T: Card gallery offset nudges
   cardGalleryOffsetX: number;
-  cardGalleryOffsetXUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  cardGalleryOffsetXUnit: import('@/lib/cssUnits').CssOffsetUnit;
   cardGalleryOffsetY: number;
-  cardGalleryOffsetYUnit: import('@/utils/cssUnits').CssOffsetUnit;
+  cardGalleryOffsetYUnit: import('@/lib/cssUnits').CssOffsetUnit;
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
-  adapterItemGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  adapterItemGapUnit: import('@/lib/cssUnits').CssSpacingUnit;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
   // P25-S: Primary gallery item scale multiplier (applies to adapter sizing)
   itemScale: number;
@@ -1102,7 +1104,7 @@ export interface GalleryBehaviorSettings {
   carouselEdgeFade: boolean;
   carouselLoop: boolean;
   carouselGap: number;
-  carouselGapUnit: import('@/utils/cssUnits').CssSpacingUnit;
+  carouselGapUnit: import('@/lib/cssUnits').CssSpacingUnit;
   // P25-U Phase 1b: Drawer backdrop blur toggle
   settingsDrawerBlurEnabled: boolean;
   // P25-X Phase 5: Card breakpoint overrides
@@ -1449,6 +1451,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
+  sessionIdleWarningSeconds: 120,
   layoutBuilderScope: 'full',
   galleryConfig: createDefaultGalleryConfig(),
   // P41-UN1: Uninstall data preservation defaults to safe (true)

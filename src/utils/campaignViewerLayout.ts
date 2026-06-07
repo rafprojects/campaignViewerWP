@@ -1,5 +1,5 @@
 import type { GalleryBehaviorSettings, GalleryConfig } from '@/types';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 
 import { resolveGalleryMode } from './resolveAdapterId';
 

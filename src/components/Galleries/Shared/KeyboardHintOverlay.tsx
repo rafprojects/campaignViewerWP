@@ -72,10 +72,10 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
             px="lg"
             py="sm"
             style={{
-              background: 'color-mix(in srgb, var(--wpsg-color-background) 85%, transparent)',
+              background: 'color-mix(in srgb, var(--mantine-color-dark-7) 85%, transparent)',
               backdropFilter: 'blur(8px)',
               borderRadius: 'var(--mantine-radius-md)',
-              border: '1px solid var(--wpsg-color-border)',
+              border: '1px solid var(--mantine-color-dark-4)',
             }}
           >
             <Group gap="xs" wrap="nowrap">

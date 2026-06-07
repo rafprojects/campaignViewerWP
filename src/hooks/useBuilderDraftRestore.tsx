@@ -1,0 +1,119 @@
+import { useEffect, useRef } from 'react';
+import { notifications } from '@mantine/notifications';
+import { modals } from '@mantine/modals';
+import { Text } from '@mantine/core';
+import type { LayoutTemplate } from '@/types';
+import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
+
+interface UseBuilderDraftRestoreOptions {
+  opened: boolean;
+  initialTemplate: LayoutTemplate | undefined;
+  /** Called with the restored draft template. Typically: setTemplate + clearDraft. */
+  onRestoreDraft: (template: LayoutTemplate) => void;
+  /** Called when the user discards the draft. Typically: clearDraft. */
+  onDiscardDraft: () => void;
+}
+
+/**
+ * P36-A: On each open session, checks localStorage for a saved draft newer than the
+ * server copy and prompts the user to restore or discard it.
+ */
+export function useBuilderDraftRestore({
+  opened,
+  initialTemplate,
+  onRestoreDraft,
+  onDiscardDraft,
+}: UseBuilderDraftRestoreOptions): void {
+  // Kept as refs so the effect always calls the latest version without re-running.
+  const onRestoreDraftRef = useRef(onRestoreDraft);
+  onRestoreDraftRef.current = onRestoreDraft;
+  const onDiscardDraftRef = useRef(onDiscardDraft);
+  onDiscardDraftRef.current = onDiscardDraft;
+
+  const draftCheckedRef = useRef(false);
+
+  useEffect(() => {
+    if (!opened) {
+      draftCheckedRef.current = false;
+      return;
+    }
+    if (draftCheckedRef.current) return;
+
+    const templateId = initialTemplate?.id;
+    if (!templateId) return;
+
+    draftCheckedRef.current = true;
+
+    const stored = (() => {
+      try { return localStorage.getItem(`wpsg_layout_draft_${templateId}`); } catch { return null; }
+    })();
+    if (!stored) return;
+
+    let payload: LayoutDraftPayload | null = null;
+    try {
+      const parsed: unknown = JSON.parse(stored);
+      // New payload format: must have savedAt + template fields
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        'savedAt' in parsed &&
+        'template' in parsed &&
+        typeof (parsed as Record<string, unknown>).savedAt === 'number'
+      ) {
+        payload = parsed as LayoutDraftPayload;
+      }
+    } catch { return; }
+
+    if (!payload) {
+      // Old format (raw LayoutTemplate) — discard silently; can't determine age
+      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      return;
+    }
+
+    // The draft is valid if it was autosaved after the template was last server-saved.
+    const serverSavedAt = initialTemplate?.updatedAt
+      ? new Date(initialTemplate.updatedAt).getTime()
+      : 0;
+    if (payload.savedAt <= serverSavedAt) {
+      // Draft predates the current server version — silently discard
+      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      return;
+    }
+
+    const isConflict = payload.serverUpdatedAt !== (initialTemplate?.updatedAt ?? '');
+    const draftAge = Math.round((Date.now() - payload.savedAt) / 60_000);
+    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+
+    const draftSnapshot = payload.template;
+    modals.openConfirmModal({
+      title: isConflict ? 'Draft conflict detected' : 'Unsaved draft found',
+      children: (
+        <Text size="sm">
+          {isConflict
+            ? `This template was saved in another session after your draft was created (${ageLabel}). Restoring your draft will overwrite those changes.`
+            : `An autosaved draft from ${ageLabel} was found. Would you like to restore it?`}
+        </Text>
+      ),
+      labels: { confirm: 'Restore draft', cancel: 'Discard' },
+      confirmProps: { color: isConflict ? 'orange' : 'blue' },
+      onConfirm: () => {
+        onRestoreDraftRef.current(draftSnapshot);
+        notifications.show({
+          title: 'Draft restored',
+          message: 'Your previous session has been restored.',
+          color: 'blue',
+          autoClose: 4000,
+        });
+      },
+      onCancel: () => {
+        onDiscardDraftRef.current();
+        notifications.show({
+          message: 'Draft discarded.',
+          color: 'gray',
+          autoClose: 3000,
+        });
+      },
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opened, initialTemplate?.id]);
+}

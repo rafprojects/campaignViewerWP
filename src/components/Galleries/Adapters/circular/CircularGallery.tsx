@@ -16,7 +16,7 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';

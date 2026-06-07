@@ -18,7 +18,7 @@ import {
   type ShadowPreset,
 } from '@/types';
 import { ModalSelect } from '@/components/Common/ModalSelect';
-import { CSS_BORDER_RADIUS_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
+import { CSS_BORDER_RADIUS_UNITS, CSS_SPACING_UNITS } from '@/lib/cssUnits';
 import {
   collectGalleryAdapterSettingValues,
   getRepresentativeGalleryCommonSetting,

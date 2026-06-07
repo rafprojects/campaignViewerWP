@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useState, useCallback, useRef, type RefObject } from 'react';
 import DOMPurify from 'dompurify';
 import {
   Button,
@@ -72,10 +72,52 @@ export function MediaAddModal({
   const hasFiles = selectedFiles.length > 0;
   const isBatchSelection = selectedFiles.length > 1;
 
+  const [isDragOver, setIsDragOver] = useState(false);
+  const enterCountRef = useRef(0);
+
+  const handleDragEnter = useCallback(() => {
+    enterCountRef.current++;
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    enterCountRef.current = Math.max(0, enterCountRef.current - 1);
+    if (enterCountRef.current === 0) setIsDragOver(false);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    enterCountRef.current = 0;
+    setIsDragOver(false);
+    const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
+    if (files.length > 0) onSelectFiles(files);
+  }, [onSelectFiles]);
+
   return (
     <Modal opened={opened} onClose={onClose} title={title} padding="md" {...(zIndex !== undefined ? { zIndex } : {})} withinPortal={false}>
       <Stack gap="md">
-        <Paper ref={dropRef} p="md" withBorder style={{ cursor: 'pointer' }}>
+        <Paper
+          ref={dropRef}
+          p="md"
+          withBorder
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          style={{
+            cursor: 'pointer',
+            transition: 'border-color 0.15s ease, background-color 0.15s ease',
+            ...(isDragOver && {
+              borderColor: 'var(--mantine-color-blue-5)',
+              backgroundColor: 'var(--mantine-color-blue-light)',
+            }),
+          }}
+        >
           <Stack gap="sm">
             <Group justify="space-between" wrap="wrap" gap="sm">
               <Group>
@@ -92,7 +134,9 @@ export function MediaAddModal({
                 >
                   {(props) => <Button leftSection={<IconUpload />} {...props}>Choose files</Button>}
                 </FileButton>
-                <Text size="sm" c="dimmed">or drag & drop files here</Text>
+                <Text size="sm" c={isDragOver ? 'blue' : 'dimmed'} fw={isDragOver ? 600 : undefined}>
+                  {isDragOver ? 'Drop files here' : 'or drag & drop files here'}
+                </Text>
               </Group>
               {hasFiles && (
                 <Text size="sm" c="dimmed">

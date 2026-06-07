@@ -26,9 +26,11 @@ import { useInContextSave } from '@/hooks/useInContextSave';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
+import { notifications } from '@mantine/notifications';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
-import { toCssOrNumber, type CssWidthUnit } from '@/utils/cssUnits';
+import { getErrorMessage } from '@/utils/getErrorMessage';
+import { toCssOrNumber, type CssWidthUnit } from '@/lib/cssUnits';
 import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveListingAdapterId } from '@/utils/resolveListingAdapterId';
@@ -77,7 +79,9 @@ export function CardGallery({
   // ── Typography ────────────────────────────────────────────────────────────
   const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
   const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
-  const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings);
+  const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings, 500, (err) => {
+    notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to save settings.') });
+  });
 
   // Load Google Fonts referenced in typography overrides.
   useEffect(() => {

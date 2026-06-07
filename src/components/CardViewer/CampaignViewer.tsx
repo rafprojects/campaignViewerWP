@@ -11,11 +11,12 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { buildGradientCss } from '@/utils/gradientCss';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { notifications } from '@mantine/notifications';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
 import {
@@ -388,7 +389,9 @@ export function CampaignViewer({
   useEffect(() => {
     loadGoogleFontsFromOverrides(s.typographyOverrides, GOOGLE_FONT_NAMES);
   }, [s.typographyOverrides]);
-  const inContextSave = useInContextSave(apiClient, s);
+  const inContextSave = useInContextSave(apiClient, s, 500, (err) => {
+    notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to save settings.') });
+  });
   const campaignTitleStyle = useTypographyStyle('campaignTitle', s);
   const campaignDateStyle = useTypographyStyle('campaignDate', s);
   const campaignAboutHeadingStyle = useTypographyStyle('campaignAboutHeading', s);

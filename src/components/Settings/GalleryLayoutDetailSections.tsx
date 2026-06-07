@@ -2,7 +2,7 @@ import { Accordion, Divider, NumberInput, Stack, Switch } from '@mantine/core';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type GalleryCommonSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
+import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import {
   collectGalleryAdapterSettingValues,

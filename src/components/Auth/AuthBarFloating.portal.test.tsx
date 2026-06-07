@@ -1,22 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { CampaignContextProvider } from '@/contexts/CampaignContext';
 import { AuthBarFloating } from './AuthBarFloating';
 
 describe('AuthBarFloating portal safety', () => {
     it('keeps the floating admin menu inside the active render tree', async () => {
         const { container } = render(
-            <CampaignContextProvider>
-                <AuthBarFloating
-                    email="admin@example.com"
-                    isAdmin
-                    isAuthenticated
-                    onOpenAdminPanel={vi.fn()}
-                    onOpenSettings={vi.fn()}
-                    onLogout={vi.fn()}
-                />
-            </CampaignContextProvider>,
+            <AuthBarFloating
+                email="admin@example.com"
+                isAdmin
+                isAuthenticated
+                onOpenAdminPanel={vi.fn()}
+                onOpenSettings={vi.fn()}
+                onLogout={vi.fn()}
+            />,
         );
 
         await userEvent.click(screen.getByRole('button', { name: 'Admin menu' }));

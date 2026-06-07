@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, useRef, memo, type CSSProperties, type KeyboardEventHandler } from 'react';
-import { useLocalStorage } from '@mantine/hooks';
-import { Button, Grid, Image, Text, Group, SegmentedControl, Select, Table, Box, ActionIcon, Tooltip, Badge, Pagination, Skeleton, Switch, type Primitive } from '@mantine/core';
+import { useCallback, useEffect, useMemo, useState, useRef, memo } from 'react';
+import { Button, Grid, Text, Group, Select, Table, Box, Tooltip, Pagination, Skeleton, Switch, type Primitive } from '@mantine/core';
+import { SegmentedControl } from '@mantine/core';
 
 // Mantine's SegmentedControl calls setState inside its ref callbacks, which triggers
 // React's "maximum update depth" error when the component re-renders rapidly.
@@ -9,34 +9,22 @@ const StableSegmentedControl = memo(SegmentedControl);
 import {
   DndContext,
   DragOverlay,
-  KeyboardSensor,
-  PointerSensor,
   closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragOverEvent,
-  type DragStartEvent,
   type Modifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   rectSortingStrategy,
-  sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { CSS, getEventCoordinates } from '@dnd-kit/utilities';
-import { MediaCard } from './MediaCard';
+import { getEventCoordinates } from '@dnd-kit/utilities';
 import { MediaLightboxModal } from './MediaLightboxModal';
 import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
 import { NearDuplicateWarning } from '@/components/Common/NearDuplicateWarning';
-import { MediaUsageBadge } from './MediaUsageBadge';
 import { showNotification } from '@mantine/notifications';
-import { IconPlus, IconTrash, IconRefresh, IconLayoutGrid, IconList, IconGridDots, IconPhoto, IconGripVertical } from '@tabler/icons-react';
+import { IconPlus, IconRefresh, IconLayoutGrid, IconList, IconGridDots } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import { useMediaItems, getMediaItemsQueryKey } from '@/services/adminQuery';
@@ -54,7 +42,6 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@/contexts/RootIdContext';
-import { safeLocalStorage } from '@/utils/safeLocalStorage';
 import {
   buildMediaGridShellVars,
   mapToMediaGridBreakpoint,
@@ -63,6 +50,12 @@ import {
   resolveMediaGridPresetKey,
   resolveResponsiveMediaGridSpan,
 } from './mediaTabLayout';
+import { SortableListRow, SortableGridItem, type SharedSortableProps } from './MediaTabSortableItems';
+import { useMediaViewPrefs, type ViewMode, type CardSize } from '@/hooks/useMediaViewPrefs';
+import { useMediaLightbox } from '@/hooks/useMediaLightbox';
+import { useMediaUsageSummary } from '@/hooks/useMediaUsageSummary';
+import { useMediaDnd } from '@/hooks/useMediaDnd';
+import { applySortMode, type MediaSortMode } from './applySortMode';
 import styles from './MediaTab.module.scss';
 
 // Position the DragOverlay so its top-center sits just below the cursor.
@@ -84,14 +77,6 @@ const snapThumbnailToCursor: Modifier = ({ activatorEvent, draggingNodeRect, tra
   };
 };
 
-type ViewMode = 'grid' | 'list' | 'compact';
-type CardSize = 'small' | 'medium' | 'large';
-type DropPosition = 'before' | 'after';
-
-// P34-B: sort mode type + pure helper live in their own module so this file
-// stays components-only (react-refresh/only-export-components requirement).
-import { applySortMode, type MediaSortMode } from './applySortMode';
-
 const LIST_MIN_WIDTH = 720;
 const LIST_PAGE_SIZE = 50;
 
@@ -99,187 +84,11 @@ function normalizeSelectedFiles(value: File | File[] | null): File[] {
   if (!value) {
     return [];
   }
-
   return Array.isArray(value) ? value : [value];
 }
 
 function getNextMediaOrder(items: MediaItem[]): number {
   return items.reduce((maxOrder, item) => Math.max(maxOrder, item.order ?? 0), 0) + 1;
-}
-
-type SharedSortableProps = {
-  item: MediaItem;
-  getInsertionStyle: (itemId: string, axis: 'horizontal' | 'vertical') => CSSProperties | undefined;
-  moveByKeyboard: (itemId: string, direction: 'forward' | 'backward') => Promise<void>;
-  openLightbox: (item: MediaItem) => void;
-  openEdit: (item: MediaItem) => void;
-  handleDelete: (item: MediaItem) => void;
-  usageSummaryLoading: boolean;
-  usageSummary: Record<string, number>;
-  apiClient: ApiClient;
-  /** P34-B: when true, drag-handle is hidden (active when not in 'order' sort mode). */
-  dragDisabled?: boolean;
-};
-
-function SortableListRow({
-  item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
-  usageSummaryLoading, usageSummary, apiClient, dragDisabled,
-}: SharedSortableProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-  const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
-    listeners?.onKeyDown?.(event);
-    if (event.defaultPrevented) return;
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
-      event.preventDefault();
-      void moveByKeyboard(item.id, 'forward');
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
-      event.preventDefault();
-      void moveByKeyboard(item.id, 'backward');
-    }
-  };
-  const rowStyle: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.2 : 1,
-    ...getInsertionStyle(item.id, 'vertical'),
-  };
-  const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
-  const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
-  const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
-  const sourceColor = item.source === 'external' ? 'grape' : 'teal';
-
-  return (
-    <Table.Tr ref={setNodeRef} data-testid={`media-draggable-${item.id}`} style={rowStyle}>
-      <Table.Td>
-        <Image
-          src={item.thumbnail ?? item.url}
-          alt={item.caption || 'Media thumbnail'}
-          w={50}
-          h={50}
-          fit="cover"
-          radius="sm"
-          loading="lazy"
-          style={{ cursor: item.type === 'image' ? 'pointer' : 'default' }}
-          onClick={() => item.type === 'image' && openLightbox(item)}
-          role={item.type === 'image' ? 'button' : undefined}
-          tabIndex={item.type === 'image' ? 0 : -1}
-          aria-label={
-            item.type === 'image'
-              ? `Open image preview for ${item.caption || item.url}`
-              : undefined
-          }
-          onKeyDown={(event) => {
-            if (item.type !== 'image') return;
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              openLightbox(item);
-            }
-          }}
-          fallbackSrc={FALLBACK_IMAGE_SRC}
-        />
-      </Table.Td>
-      <Table.Td>
-        <Text size="sm" lineClamp={1}>{item.caption || '—'}</Text>
-        <Group gap={4} mt={4}>
-          <Badge size="xs" variant="filled" color={mediaTypeColor}>{mediaTypeLabel}</Badge>
-          <Badge size="xs" variant="light" color={sourceColor}>{sourceLabel}</Badge>
-        </Group>
-        <Text size="xs" c="dimmed" lineClamp={1}>{item.url}</Text>
-      </Table.Td>
-      <Table.Td><Text size="sm">{item.type}</Text></Table.Td>
-      <Table.Td><Text size="sm">{item.source}</Text></Table.Td>
-      <Table.Td>
-        {usageSummaryLoading
-          ? <Skeleton width={64} height={20} radius="xl" />
-          : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} />}
-      </Table.Td>
-      <Table.Td>
-        <Group gap={4}>
-          {!dragDisabled && (
-            <ActionIcon
-              variant="subtle"
-              aria-label="Drag media to reorder"
-              style={{ cursor: 'grab' }}
-              {...attributes}
-              {...listeners}
-              onKeyDown={onHandleKeyDown}
-            >
-              <IconGripVertical size={16} />
-            </ActionIcon>
-          )}
-          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
-        </Group>
-      </Table.Td>
-    </Table.Tr>
-  );
-}
-
-type SortableGridItemProps = SharedSortableProps & {
-  viewMode: ViewMode;
-  cardSize: CardSize;
-  mediaHeight: number;
-  gridSpan: number;
-  showUrl: boolean;
-};
-
-function SortableGridItem({
-  item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
-  usageSummaryLoading, usageSummary, apiClient, dragDisabled,
-  viewMode, cardSize, mediaHeight, gridSpan, showUrl,
-}: SortableGridItemProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
-  const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
-    listeners?.onKeyDown?.(event);
-    if (event.defaultPrevented) return;
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      event.preventDefault();
-      void moveByKeyboard(item.id, 'forward');
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      void moveByKeyboard(item.id, 'backward');
-    }
-  };
-  const isCompact = viewMode === 'compact' || cardSize === 'small';
-
-  return (
-    <Grid.Col
-      ref={setNodeRef}
-      data-testid={`media-draggable-${item.id}`}
-      style={{ transform: CSS.Transform.toString(transform) ?? undefined, transition: transition ?? undefined } as CSSProperties}
-      span={gridSpan!}
-    >
-      <Box style={{ position: 'relative' }}>
-        {/* Keep card in DOM so it holds the slot height; hide it while dragging */}
-        <div style={{ opacity: isDragging ? 0 : 1, pointerEvents: isDragging ? 'none' : undefined }}>
-          <MediaCard
-            item={item}
-            height={mediaHeight}
-            compact={isCompact}
-            showUrl={showUrl}
-            overlayBadge={usageSummaryLoading
-              ? <Skeleton width={64} height={20} radius="xl" />
-              : <MediaUsageBadge count={usageSummary[item.id] ?? 1} mediaId={item.id} apiClient={apiClient} size="xs" />}
-            onEdit={() => openEdit(item)}
-            onDelete={() => handleDelete(item)}
-            onImageClick={item.type === 'image' ? () => openLightbox(item) : undefined}
-            cardStyle={getInsertionStyle(item.id, 'horizontal')}
-            dragHandleProps={dragDisabled ? undefined : { ...attributes, ...listeners, onKeyDown: onHandleKeyDown }}
-          />
-        </div>
-        {isDragging && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: 8,
-            border: '2px dashed color-mix(in srgb, var(--mantine-color-blue-5) 55%, transparent)',
-            background: 'color-mix(in srgb, var(--mantine-color-blue-5) 5%, transparent)',
-            pointerEvents: 'none',
-          }} />
-        )}
-      </Box>
-    </Grid.Col>
-  );
 }
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
@@ -323,64 +132,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
   const [rescanning, setRescanning] = useState(false);
   const reorderingRef = useRef(false);
-  const [activeMediaId, setActiveMediaId] = useState<string | null>(null);
-  const [overMediaId, setOverMediaId] = useState<string | null>(null);
-
-  // View options — persisted per-campaign so tab switches / refreshes preserve user preference
-  const [viewMode, setViewMode] = useLocalStorage<ViewMode>({
-    key: `wpsg_media_viewMode_${campaignId}`,
-    defaultValue: 'grid',
-    getInitialValueInEffect: false,
-  });
-  const [cardSize, setCardSize] = useLocalStorage<CardSize>({
-    key: `wpsg_media_cardSize_${campaignId}`,
-    defaultValue: 'medium',
-    getInitialValueInEffect: false,
-  });
-  const [listPage, setListPage] = useLocalStorage<number>({
-    key: `wpsg_media_listPage_${campaignId}`,
-    defaultValue: 1,
-    getInitialValueInEffect: false,
-  });
-
-  // P18-G: Media usage tracking
-  const [usageSummary, setUsageSummary] = useState<Record<string, number>>({});
-  const [usageSummaryLoading, setUsageSummaryLoading] = useState(false);
-  const [orphanFilter, setOrphanFilter] = useLocalStorage<boolean>({
-    key: `wpsg_media_orphanFilter_${campaignId}`,
-    defaultValue: false,
-    getInitialValueInEffect: false,
-  });
-
-  // P34-B / P37-KS1: sort mode — shared across campaigns within a root so the
-  // user's preferred sort style persists regardless of which campaign they switch
-  // to, while separate gallery instances on the same page remain independent.
-  const sortModeKey = useMemo(() => `wpsg_media_sortMode_${rootId}`, [rootId]);
-  const [sortMode, setSortMode] = useLocalStorage<MediaSortMode>({
-    key: sortModeKey,
-    defaultValue: 'order',
-    getInitialValueInEffect: false,
-  });
-  useEffect(() => {
-    try {
-      const legacy = localStorage.getItem('wpsg_media_sortMode');
-      if (legacy !== null) {
-        safeLocalStorage.setItem(sortModeKey, legacy);
-        localStorage.removeItem('wpsg_media_sortMode');
-      }
-    } catch { /* ignore */ }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  // Lightbox state
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // P38-MD1: Near-duplicate warning queue — one entry per file that triggered a near-duplicate 409.
   const [pendingNearDuplicates, setPendingNearDuplicates] = useState<NearDuplicateEntry[]>([]);
@@ -389,6 +140,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Scroll position preservation across tab switches (sessionStorage, per-campaign)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
+
+  const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
+
+  const { viewMode, setViewMode, cardSize, setCardSize, listPage, setListPage,
+    sortMode, setSortMode, orphanFilter, setOrphanFilter } = useMediaViewPrefs(campaignId, rootId);
+  const { usageSummary, usageSummaryLoading } = useMediaUsageSummary(apiClient, media);
 
   const hasMedia = media.length > 0;
 
@@ -418,43 +175,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
   // Get image items for lightbox navigation
   const imageItems = useMemo(() => media.filter((m) => m.type === 'image'), [media]);
-
-  const openLightbox = (item: MediaItem) => {
-    const idx = imageItems.findIndex((m) => m.id === item.id);
-    if (idx !== -1) {
-      setLightboxIndex(idx);
-      setLightboxOpen(true);
-    }
-  };
-
-  const navigateLightbox = useCallback((direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setLightboxIndex((i) => (i > 0 ? i - 1 : imageItems.length - 1));
-    } else {
-      setLightboxIndex((i) => (i < imageItems.length - 1 ? i + 1 : 0));
-    }
-  }, [imageItems.length]);
-
-  // Keyboard navigation for lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        navigateLightbox('prev');
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        navigateLightbox('next');
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setLightboxOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lightboxOpen, navigateLightbox]);
+  const { lightboxOpen, setLightboxOpen, lightboxIndex, openLightbox, navigateLightbox } = useMediaLightbox(imageItems);
 
   // Card size configurations
   const sizeConfig = useMemo(() => ({
@@ -843,25 +564,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }
 
   useEffect(() => {
-    const el = dropRef.current;
-    if (!el) return;
-    const onDragOver = (e: globalThis.DragEvent) => { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'; };
-    const onDrop = (e: globalThis.DragEvent) => {
-      e.preventDefault();
-      const files = e.dataTransfer?.files ? Array.from(e.dataTransfer.files) : [];
-      if (files.length > 0) {
-        handleSelectFiles(files);
-      }
-    };
-    el.addEventListener('dragover', onDragOver);
-    el.addEventListener('drop', onDrop);
-    return () => {
-      el.removeEventListener('dragover', onDragOver);
-      el.removeEventListener('drop', onDrop);
-    };
-  }, [handleSelectFiles]);
-
-  useEffect(() => {
     if (selectedFiles.length !== 1) {
       setPreviewUrl(null);
       return;
@@ -960,41 +662,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }
 
-  // P18-G: Stable key derived from the sorted media IDs — reorder and
-  // caption edits change `media` but not the set of IDs, so we avoid
-  // unnecessary network round-trips by keying the effect off this string.
-  const mediaIdKey = useMemo(
-    () => media.map((m) => m.id).sort().join(','),
-    [media],
-  );
-  const usageSummaryIds = useMemo(
-    () => (mediaIdKey ? mediaIdKey.split(',') : []),
-    [mediaIdKey],
-  );
-
-  // P18-G: Fetch usage summary whenever the rendered media list changes (use
-  // `media`, not the query seed `mediaItems`, so mutations stay in sync)
-  useEffect(() => {
-    if (usageSummaryIds.length === 0) {
-      setUsageSummary({});
-      setUsageSummaryLoading(false);
-      return;
-    }
-    let canceled = false;
-    setUsageSummaryLoading(true);
-    void apiClient.getMediaUsageSummary(usageSummaryIds)
-      .then((data) => {
-        if (canceled) return;
-        setUsageSummary(data);
-        setUsageSummaryLoading(false);
-      })
-      .catch(() => {
-        if (canceled) return;
-        setUsageSummary({});
-        setUsageSummaryLoading(false);
-      });
-    return () => { canceled = true; };
-  }, [usageSummaryIds, apiClient]);
+  const { sensors, activeMediaItem,
+    getInsertionStyle, handleDndStart, handleDndOver, handleDndEnd, moveByKeyboard } = useMediaDnd(media, reorderMediaItems);
 
   // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
   // P34-B: then apply the selected sort mode.
@@ -1039,79 +708,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       setListPage(1);
     }
   }, [viewMode, setListPage]);
-
-  const getDropPosition = (activeId: string, overId: string): DropPosition => {
-    const sourceIndex = media.findIndex((item) => item.id === activeId);
-    const targetIndex = media.findIndex((item) => item.id === overId);
-    return sourceIndex < targetIndex ? 'after' : 'before';
-  };
-
-  const getInsertionStyle = (itemId: string, axis: 'horizontal' | 'vertical'): CSSProperties | undefined => {
-    if (!activeMediaId || !overMediaId || activeMediaId === overMediaId || itemId !== overMediaId) {
-      return undefined;
-    }
-
-    const position = getDropPosition(activeMediaId, overMediaId);
-    // --wpsg-color-primary is a gallery-side token; fall back to Mantine blue in the admin context.
-    const c = 'var(--wpsg-color-primary, var(--mantine-color-blue-5))';
-    const glow = `color-mix(in srgb, var(--wpsg-color-primary, var(--mantine-color-blue-5)) 40%, transparent)`;
-
-    if (axis === 'horizontal') {
-      return {
-        boxShadow: position === 'before'
-          ? `inset 4px 0 0 0 ${c}, 0 0 10px 2px ${glow}`
-          : `inset -4px 0 0 0 ${c}, 0 0 10px 2px ${glow}`,
-      };
-    }
-
-    return {
-      boxShadow: position === 'before'
-        ? `inset 0 4px 0 0 ${c}, 0 0 10px 2px ${glow}`
-        : `inset 0 -4px 0 0 ${c}, 0 0 10px 2px ${glow}`,
-    };
-  };
-
-  const handleDndStart = ({ active }: DragStartEvent) => {
-    setActiveMediaId(String(active.id));
-    setOverMediaId(String(active.id));
-  };
-
-  const handleDndOver = ({ over }: DragOverEvent) => {
-    setOverMediaId(over ? String(over.id) : null);
-  };
-
-  const handleDndEnd = async ({ active, over }: DragEndEvent) => {
-    const activeId = String(active.id);
-    const overId = over ? String(over.id) : null;
-
-    setActiveMediaId(null);
-    setOverMediaId(null);
-
-    if (!overId || activeId === overId) return;
-
-    const sourceIndex = media.findIndex((item) => item.id === activeId);
-    const targetIndex = media.findIndex((item) => item.id === overId);
-    if (sourceIndex === -1 || targetIndex === -1) return;
-
-    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
-    await reorderMediaItems(nextMedia);
-  };
-
-  const moveByKeyboard = async (itemId: string, direction: 'forward' | 'backward') => {
-    const sourceIndex = media.findIndex((item) => item.id === itemId);
-    if (sourceIndex === -1) return;
-
-    const targetIndex = direction === 'forward' ? sourceIndex + 1 : sourceIndex - 1;
-    if (targetIndex < 0 || targetIndex >= media.length) return;
-
-    const nextMedia = arrayMove(media, sourceIndex, targetIndex);
-    await reorderMediaItems(nextMedia);
-  };
-
-  const activeMediaItem = useMemo(
-    () => (activeMediaId ? media.find((item) => item.id === activeMediaId) ?? null : null),
-    [activeMediaId, media],
-  );
 
   // Stable data arrays for SegmentedControl — new array references on every render can trigger
   // Mantine's internal ref-measurement loop and cause infinite setState cycles under rapid updates.

@@ -35,7 +35,7 @@ import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 import { resolveListingColumns } from '@/utils/gridLayout';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';

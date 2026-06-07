@@ -2,7 +2,7 @@
  * Build CSS filter, shadow, blend-mode, and overlay strings from slot effect types.
  */
 import type { SlotFilterEffects, SlotShadow, SlotOverlayEffect, SlotBlendMode } from '@/types';
-import { sanitizeCssColor } from '@/utils/sanitizeCss';
+import { sanitizeCssColor } from '@/lib/sanitizeCss';
 
 /**
  * Build a CSS `filter` string from slot filter effects and optional shadow.

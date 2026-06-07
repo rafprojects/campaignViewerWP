@@ -6,7 +6,7 @@ import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { useLazyAccordion } from '@/hooks/useLazyAccordion';
 import { type GalleryBehaviorSettings } from '@/types';
-import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/utils/cssUnits';
+import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@/lib/cssUnits';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
 
@@ -277,6 +277,17 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
                 max={480}
                 step={5}
                 placeholder="0 = disabled"
+              />
+              <NumberInput
+                label="Idle Timeout Warning (seconds before)"
+                description="Show a 'Stay signed in' prompt this many seconds before signing out. Set to 0 to sign out without warning."
+                value={settings.sessionIdleWarningSeconds}
+                onChange={(value) => updateSetting('sessionIdleWarningSeconds', typeof value === 'number' ? value : 120)}
+                min={0}
+                max={300}
+                step={30}
+                placeholder="0 = no warning"
+                disabled={settings.sessionIdleTimeoutMinutes === 0}
               />
               <Switch
                 label="Enable Advanced Settings"

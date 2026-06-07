@@ -20,7 +20,7 @@ import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
-import { sanitizeCssUrl } from '@/utils/sanitizeCss';
+import { sanitizeCssUrl } from '@/lib/sanitizeCss';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -207,6 +207,20 @@ export function LayoutCanvas({
   const templateSlotsRef = useRef(template.slots);
   templateSlotsRef.current = template.slots;
 
+  // Pre-compute per-slot "others" arrays so every drag frame avoids O(n) allocations.
+  // Rebuilds only when template.slots changes (on committed moves/adds/removes, not drag frames).
+  const slotOthersMap = useMemo(() => {
+    const allRects = template.slots.map((s): SlotRect => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+    const map = new Map<string, SlotRect[]>();
+    for (const { id } of template.slots) {
+      map.set(id, allRects.filter((r) => r.id !== id));
+    }
+    return map;
+  }, [template.slots]);
+  // Stable ref so handleDragFrame reads the latest map without listing it as a dependency.
+  const slotOthersMapRef = useRef(slotOthersMap);
+  slotOthersMapRef.current = slotOthersMap;
+
   /** Called on every drag frame from a slot. */
   const handleDragFrame = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
@@ -242,9 +256,7 @@ export function LayoutCanvas({
           width: slot.width,
           height: slot.height,
         };
-        const others: SlotRect[] = templateSlotsRef.current
-          .filter((s) => s.id !== slotId)
-          .map((s) => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+        const others = slotOthersMapRef.current.get(slotId) ?? [];
 
         const result = computeGuides(dragging, others, { width: canvasWidth, height: canvasHeight }, snapThresholdPx);
         snapX = result.snapX;

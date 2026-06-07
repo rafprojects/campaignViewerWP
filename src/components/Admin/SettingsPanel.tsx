@@ -65,7 +65,7 @@ import {
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
-import { toCss } from '@/utils/cssUnits';
+import { toCss } from '@/lib/cssUnits';
 
 /**
  * P36-A: Settings draft persistence.

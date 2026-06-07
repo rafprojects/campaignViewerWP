@@ -6,7 +6,7 @@ import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import type { GalleryBehaviorSettings, GalleryCommonSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/utils/cssUnits';
+import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
 import {
   getRepresentativeGalleryCommonSetting,
   resolveGalleryConfig,

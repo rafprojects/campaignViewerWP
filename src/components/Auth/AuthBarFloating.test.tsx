@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import { AuthBarFloating } from './AuthBarFloating';
-import { CampaignContextProvider, useCampaignContext } from '@/contexts/CampaignContext';
 import type { Campaign, Company, MediaItem } from '@/types';
 
 const company: Company = {
@@ -37,31 +35,20 @@ const activeCampaign: Campaign = {
   updatedAt: '2026-01-02T00:00:00.000Z',
 };
 
-function ActivateCampaign({ campaign }: { campaign: Campaign }) {
-  const { setActiveCampaign } = useCampaignContext();
-
-  useEffect(() => {
-    setActiveCampaign(campaign);
-  }, [campaign, setActiveCampaign]);
-
-  return null;
-}
-
 describe('AuthBarFloating', () => {
   it('shows the Edit Gallery Config action for an active admin campaign and calls the handler', async () => {
     const onEditGalleryConfig = vi.fn();
 
     render(
-      <CampaignContextProvider onEditGalleryConfig={onEditGalleryConfig}>
-        <ActivateCampaign campaign={activeCampaign} />
-        <AuthBarFloating
-          email="admin@example.com"
-          isAdmin
-          onOpenAdminPanel={() => undefined}
-          onOpenSettings={() => undefined}
-          onLogout={() => undefined}
-        />
-      </CampaignContextProvider>,
+      <AuthBarFloating
+        email="admin@example.com"
+        isAdmin
+        activeCampaign={activeCampaign}
+        onEditGalleryConfig={onEditGalleryConfig}
+        onOpenAdminPanel={() => undefined}
+        onOpenSettings={() => undefined}
+        onLogout={() => undefined}
+      />,
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Admin menu' }));

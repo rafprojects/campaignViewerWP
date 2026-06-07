@@ -411,6 +411,21 @@ describe('LayoutBuilderModal — keyboard shortcuts (P19-A)', () => {
     });
   });
 
+  it('N calls builder.addSlot and builder.selectSlot', () => {
+    const slotId = 'new-slot-id';
+    mockBuilderReturn.addSlot = vi.fn().mockReturnValue(slotId);
+    mockBuilderReturn.selectSlot = vi.fn();
+    renderModal();
+    pressKey('n');
+    expect(mockBuilderReturn.addSlot).toHaveBeenCalledOnce();
+    expect(mockBuilderReturn.selectSlot).toHaveBeenCalledWith(slotId);
+  });
+
+  it('N shows Add new slot entry in shortcuts modal', () => {
+    render(<BuilderKeyboardShortcutsModal opened onClose={vi.fn()} />, { wrapper: Wrapper });
+    expect(screen.getByText('Add new slot')).toBeDefined();
+  });
+
   it('keyboard shortcuts are not triggered when focus is in an input', () => {
     renderModal();
     const input = document.createElement('input');

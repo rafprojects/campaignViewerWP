@@ -195,6 +195,123 @@ function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }
 
 setWpsgDebugDisplayName(MaskDragOverlay, 'LayoutBuilder:MaskDragOverlay');
 
+// ── SlotIndexBadge ────────────────────────────────────────────
+
+function SlotIndexBadge({ index, isSelected, badgeBg }: { index: number; isSelected: boolean; badgeBg: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 4,
+        left: 4,
+        background: isSelected ? 'var(--mantine-color-blue-6)' : badgeBg,
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 700,
+        width: 18,
+        height: 18,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        zIndex: 3,
+      }}
+    >
+      {index + 1}
+    </div>
+  );
+}
+
+// ── SlotLockBadge ────────────────────────────────────────────
+
+function SlotLockBadge({ lockBg }: { lockBg: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        background: lockBg,
+        color: '#fff',
+        width: 16,
+        height: 16,
+        borderRadius: '50%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'none',
+        zIndex: 3,
+      }}
+    >
+      <IconLock size={10} />
+    </div>
+  );
+}
+
+// ── SlotOverlayLayer ──────────────────────────────────────────
+
+function SlotOverlayLayer({ overlayBg, clipPath, maskCssProps, borderRadius }: {
+  overlayBg: string;
+  clipPath?: string | undefined;
+  maskCssProps?: React.CSSProperties | undefined;
+  borderRadius?: number | undefined;
+}) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        clipPath,
+        ...maskCssProps,
+        borderRadius,
+        background: overlayBg,
+        pointerEvents: 'none',
+        zIndex: 2,
+      }}
+    />
+  );
+}
+
+// ── SlotLiveInfoOverlay ───────────────────────────────────────
+
+interface SlotLiveInfo {
+  kind: 'drag' | 'resize';
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+function SlotLiveInfoOverlay({ liveInfo, bg }: { liveInfo: SlotLiveInfo; bg: string }) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: -22,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        background: bg,
+        color: '#fff',
+        fontSize: 10,
+        fontWeight: 600,
+        padding: '2px 6px',
+        borderRadius: 3,
+        whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        zIndex: 9999,
+        letterSpacing: 0.3,
+      }}
+    >
+      {liveInfo.kind === 'resize'
+        ? `${liveInfo.w.toFixed(1)}% × ${liveInfo.h.toFixed(1)}%`
+        : `X ${liveInfo.x.toFixed(1)}%  Y ${liveInfo.y.toFixed(1)}%`}
+    </div>
+  );
+}
+
 // ── Props ────────────────────────────────────────────────────
 
 export interface LayoutSlotComponentProps {
@@ -267,10 +384,7 @@ export function LayoutSlotComponent({
   const overlayColors = useBuilderOverlayColors();
 
   // ── Live info overlay during drag / resize ──
-  const [liveInfo, setLiveInfo] = useState<{
-    kind: 'drag' | 'resize';
-    x: number; y: number; w: number; h: number;
-  } | null>(null);
+  const [liveInfo, setLiveInfo] = useState<SlotLiveInfo | null>(null);
 
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
@@ -489,19 +603,7 @@ export function LayoutSlotComponent({
           >
             {imageEl}
           </div>
-          {overlayBg && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                clipPath,
-                ...maskCssProps,
-                background: overlayBg,
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            />
-          )}
+          {overlayBg && <SlotOverlayLayer overlayBg={overlayBg} clipPath={clipPath} maskCssProps={maskCssProps} />}
         </div>
       );
     }
@@ -529,17 +631,7 @@ export function LayoutSlotComponent({
         aria-label={ariaLabel}
       >
         {imageEl}
-        {overlayBg && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: overlayBg,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-        )}
+        {overlayBg && <SlotOverlayLayer overlayBg={overlayBg} />}
       </div>
     );
   }
@@ -709,19 +801,7 @@ export function LayoutSlotComponent({
           </div>
 
           {/* 3. Overlay layer */}
-          {overlayBg && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                clipPath,
-                ...maskCssProps,
-                background: overlayBg,
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            />
-          )}
+          {overlayBg && <SlotOverlayLayer overlayBg={overlayBg} clipPath={clipPath} maskCssProps={maskCssProps} />}
 
           {/* 3b. Mask drag overlay (canvas-draggable mask positioning) */}
           {showMaskOverlay && rawMaskUrl && (
@@ -736,52 +816,11 @@ export function LayoutSlotComponent({
 
           {/* 4. Index badge – at bounding-box level so always visible */}
           {showSlotIndices && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 4,
-                left: 4,
-                background: isSelected ? 'var(--mantine-color-blue-6)' : overlayColors.slotBadgeBg,
-                color: '#fff',
-                fontSize: 10,
-                fontWeight: 700,
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                zIndex: 3,
-              }}
-            >
-              {index + 1}
-            </div>
+            <SlotIndexBadge index={index} isSelected={isSelected} badgeBg={overlayColors.slotBadgeBg} />
           )}
 
           {/* Lock badge */}
-          {(slot.locked ?? false) && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 4,
-                right: 4,
-                background: overlayColors.slotLockBg,
-                color: '#fff',
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                zIndex: 3,
-              }}
-            >
-              <IconLock size={10} />
-            </div>
-          )}
+          {(slot.locked ?? false) && <SlotLockBadge lockBg={overlayColors.slotLockBg} />}
         </div>
       ) : (
         /* ── Rectangle: CSS border + overflow ────────────────────────────── */
@@ -839,18 +878,7 @@ export function LayoutSlotComponent({
           )}
 
           {/* Overlay layer */}
-          {overlayBg && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                borderRadius: slot.borderRadius,
-                background: overlayBg,
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            />
-          )}
+          {overlayBg && <SlotOverlayLayer overlayBg={overlayBg} borderRadius={slot.borderRadius} />}
 
           {/* Mask drag overlay (canvas-draggable mask positioning) */}
           {showMaskOverlay && rawMaskUrl && (
@@ -865,78 +893,14 @@ export function LayoutSlotComponent({
 
           {/* Index badge */}
           {showSlotIndices && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 4,
-                left: 4,
-                background: isSelected ? 'var(--mantine-color-blue-6)' : overlayColors.slotBadgeBg,
-                color: '#fff',
-                fontSize: 10,
-                fontWeight: 700,
-                width: 18,
-                height: 18,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                userSelect: 'none',
-              }}
-            >
-              {index + 1}
-            </div>
+            <SlotIndexBadge index={index} isSelected={isSelected} badgeBg={overlayColors.slotBadgeBg} />
           )}
 
           {/* Lock badge */}
-          {(slot.locked ?? false) && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 4,
-                right: 4,
-                background: overlayColors.slotLockBg,
-                color: '#fff',
-                width: 16,
-                height: 16,
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                zIndex: 3,
-              }}
-            >
-              <IconLock size={10} />
-            </div>
-          )}
+          {(slot.locked ?? false) && <SlotLockBadge lockBg={overlayColors.slotLockBg} />}
 
           {/* Live dimensions overlay during drag / resize */}
-          {liveInfo && (
-            <div
-              style={{
-                position: 'absolute',
-                bottom: -22,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: overlayColors.slotLiveInfoBg,
-                color: '#fff',
-                fontSize: 10,
-                fontWeight: 600,
-                padding: '2px 6px',
-                borderRadius: 3,
-                whiteSpace: 'nowrap',
-                pointerEvents: 'none',
-                userSelect: 'none',
-                zIndex: 9999,
-                letterSpacing: 0.3,
-              }}
-            >
-              {liveInfo.kind === 'resize'
-                ? `${liveInfo.w.toFixed(1)}% × ${liveInfo.h.toFixed(1)}%`
-                : `X ${liveInfo.x.toFixed(1)}%  Y ${liveInfo.y.toFixed(1)}%`}
-            </div>
-          )}
+          {liveInfo && <SlotLiveInfoOverlay liveInfo={liveInfo} bg={overlayColors.slotLiveInfoBg} />}
         </div>
       )}
     </Rnd>

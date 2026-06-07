@@ -1,6 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Container, Alert, Loader, Center, Stack, Modal } from '@mantine/core';
+import { Container, Alert, Loader, Center, Stack, Modal, Button } from '@mantine/core';
+import { notifications } from '@mantine/notifications';
 import { useDisclosure, useLocalStorage } from '@mantine/hooks';
 import { CardGallery } from './components/CampaignGallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -34,7 +35,7 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-import { toCss } from '@/utils/cssUnits';
+import { toCss } from '@/lib/cssUnits';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -269,11 +270,39 @@ function AppContent({
       : undefined;
 
   // [P20-K] Auto-logout after configurable period of inactivity.
-  useIdleTimeout({
+  // The ref breaks the circular dependency between the returned reset fn and the onWarning callback.
+  const idleResetRef = useRef<() => void>(() => {});
+  const { reset: resetIdleTimer } = useIdleTimeout({
     timeoutMinutes: resolvedSettings.sessionIdleTimeoutMinutes,
     isAuthenticated,
     onTimeout: () => void logout(),
+    warningThresholdMs: resolvedSettings.sessionIdleWarningSeconds * 1000,
+    onWarning: (secondsRemaining) => {
+      notifications.show({
+        id: 'idle-timeout-warning',
+        title: 'Session expiring soon',
+        message: (
+          <Stack gap="xs">
+            <span>You will be signed out in {secondsRemaining} seconds due to inactivity.</span>
+            <Button
+              size="xs"
+              variant="light"
+              onClick={() => {
+                idleResetRef.current();
+                notifications.hide('idle-timeout-warning');
+              }}
+            >
+              Stay signed in
+            </Button>
+          </Stack>
+        ),
+        color: 'orange',
+        autoClose: false,
+        withCloseButton: true,
+      });
+    },
   });
+  idleResetRef.current = resetIdleTimer;
 
   return (
     <CampaignContextProvider

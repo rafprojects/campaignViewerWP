@@ -4,6 +4,30 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+## Reusable Component / Utility Library
+
+### Full Audit and Extraction to Shared Package
+
+**Context:** Several utilities and components in this repo have no WPSG-specific dependencies and are candidates for extraction to a standalone npm package for cross-project reuse. As of Phase 45, `sanitizeCss.ts` and `cssUnits.ts` were moved to `src/lib/` (signalling "no app-specific deps") as a first step toward true extraction.
+
+**Files ready for extraction (no WPSG deps):**
+- `src/lib/sanitizeCss.ts` — CSS injection prevention (sanitizeCssUrl, sanitizeCssColor, sanitizeCssValue, sanitizeClipPath)
+- `src/lib/cssUnits.ts` — multi-unit dimension types, constants, and toCss helpers
+
+**Decoupled (ready for extraction):**
+- `src/components/Auth/LoginForm.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — WPSG CSS vars replaced with Mantine tokens; `AuthBarFloating` no longer calls `useCampaignContext()` (P45-A7).
+- `src/components/Galleries/Shared/Lightbox.tsx` — `MediaItem` dependency replaced with local `LightboxMediaItem` interface; `KeyboardHintOverlay` WPSG CSS vars replaced with Mantine tokens (P45-A13).
+
+**What's needed for actual package extraction:**
+1. Monorepo infrastructure: configure npm/pnpm workspaces in the root `package.json`; create `packages/shared-utils/` and `packages/shared-ui/` with their own `package.json` + `tsconfig.json`
+2. Move `src/lib/` utilities to `packages/shared-utils/src/`; publish as `@wp-super-gallery/shared-utils`
+3. Move decoupled Auth and Lightbox components to `packages/shared-ui/`; remove remaining `wpsgDebug` import
+4. Update all intra-repo imports to use the package names; configure path aliases or direct package references
+
+**Effort:** L | **Impact:** High — enables cross-project reuse without copy-paste
+
+---
+
 ## Builder
 
 ### URL-Based Image Inputs (Mask, Overlay, Background)
@@ -41,6 +65,31 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 ---
 
 ## Campaign Management
+
+### Media Upload — Accumulative Multi-File Selection with Per-File Preview
+
+**Context:** `MediaAddModal`'s drop zone now correctly handles file drops via React JSX event props (shipped P45-A11). However, each drag or "Choose files" operation **replaces** the pending file list — `handleSelectFiles` in `MediaTab.tsx` calls `setSelectedFiles(limitedFiles)`, discarding previously queued files. A better UX would let users build up a batch incrementally — either by dragging multiple times or by making multiple "Choose files" picker selections — and review the full queued set before uploading.
+
+**What it would take:**
+
+_Selection accumulation (both drag-drop and file picker):_
+- In `MediaTab.tsx`'s `handleSelectFiles`: when files are already pending (non-empty `selectedFiles`), **merge** incoming files with the existing list rather than replacing it. De-duplicate by `name + size + lastModified` fingerprint to prevent accidental doubles.
+- Respect the existing `maxBatchUploadSize` cap across the merged list; show a notification when it's trimmed.
+- Apply the same accumulation logic to `FileButton`'s `onChange` in `MediaAddModal` — the picker should add to the queue, not replace it.
+
+_Per-file preview and removal UI:_
+- Replace the current plain filename list with a thumbnail grid (or a compact list with mini-thumbnails for images, file-type icon for video). Each entry has an ✕ remove button to dequeue that file individually.
+- Image previews use `URL.createObjectURL` (same as the existing single-file preview); revoke on removal or modal close.
+- A "Clear all" action for convenience when the queue is long.
+
+_Layout:_
+- The modal likely needs a wider default (e.g. `size="lg"` or `size="xl"` on Mantine `Modal`) to display a thumbnail grid without wrapping awkwardly. Consider making the width responsive to queue size, or always using a wider fixed size when files are present.
+
+**Files:** `src/components/Admin/MediaTab.tsx` (`handleSelectFiles`), `src/components/Admin/MediaAddModal.tsx`
+
+**Effort:** Small-Medium | **Impact:** Medium-High — significantly better UX for bulk upload workflows; removes the main friction point for uploading many files at once
+
+---
 
 ### Audit Log Binary Export
 

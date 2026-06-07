@@ -27,7 +27,7 @@ import type {
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
-import { toCss, toCssOrNumber } from '@/utils/cssUnits';
+import { toCss, toCssOrNumber } from '@/lib/cssUnits';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
 import { Lightbox } from '@/components/Galleries/Shared/Lightbox';

@@ -2,7 +2,7 @@ import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/utils/safeLocalStorage';
-import { useCampaignContext } from '@/contexts/CampaignContext';
+import type { Campaign } from '@/types';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
@@ -18,6 +18,11 @@ interface AuthBarFloatingProps {
   onOpenSettings: () => void;
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
+  activeCampaign?: Campaign | null | undefined;
+  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
+  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
 }
 
 interface AuthBarFloatingTriggerProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -71,11 +76,11 @@ interface AuthBarFloatingMenuContentProps {
   email: string;
   isAdmin: boolean;
   isAuthenticated: boolean;
-  activeCampaign: ReturnType<typeof useCampaignContext>['activeCampaign'];
-  onEditCampaign: ReturnType<typeof useCampaignContext>['onEditCampaign'];
-  onEditGalleryConfig: ReturnType<typeof useCampaignContext>['onEditGalleryConfig'];
-  onArchiveCampaign: ReturnType<typeof useCampaignContext>['onArchiveCampaign'];
-  onAddExternalMedia: ReturnType<typeof useCampaignContext>['onAddExternalMedia'];
+  activeCampaign: Campaign | null;
+  onEditCampaign?: ((campaign: Campaign) => void) | undefined;
+  onEditGalleryConfig?: ((campaign: Campaign) => void) | undefined;
+  onArchiveCampaign?: ((campaign: Campaign) => void) | undefined;
+  onAddExternalMedia?: ((campaign: Campaign) => void) | undefined;
   closeMenu: () => void;
   onOpenAdminPanel: () => void;
   onOpenSettings: () => void;
@@ -229,9 +234,13 @@ export function AuthBarFloating({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
+  activeCampaign = null,
+  onEditCampaign,
+  onEditGalleryConfig,
+  onArchiveCampaign,
+  onAddExternalMedia,
 }: AuthBarFloatingProps) {
   const margin = dragMargin;
-  const { activeCampaign, onEditCampaign, onEditGalleryConfig, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
 
   // Read saved position (works in SSR — just returns null)
   const saved = readSavedPos();

@@ -17,13 +17,16 @@ export function useInContextSave(
   apiClient: ApiClient | undefined,
   settings: GalleryBehaviorSettings,
   delay = 500,
+  onError?: (err: unknown) => void,
 ) {
   const queryClient = useQueryClient();
   const pendingRef = useRef<Record<string, unknown>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  // Ref to latest settings avoids stale closure in debounced callback
+  // Refs to latest values avoid stale closures in the debounced callback
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
 
   const save = useCallback(
     (key: string, value: unknown) => {
@@ -47,6 +50,7 @@ export function useInContextSave(
           queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
         } catch (err) {
           console.error('[WPSG] In-context save failed:', err);
+          onErrorRef.current?.(err);
           // Revert to server state on failure
           try {
             const fresh = await apiClient.getSettings();
