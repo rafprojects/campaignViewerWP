@@ -980,6 +980,15 @@ class WPSG_DB {
         return $row;
     }
 
+    public static function get_space_by_slug(string $slug): ?object {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE slug = %s',
+            $slug
+        )) ?: null;
+    }
+
     public static function list_spaces(array $args = []): array {
         global $wpdb;
         $table    = self::get_spaces_table();

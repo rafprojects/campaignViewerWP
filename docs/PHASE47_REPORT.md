@@ -12,7 +12,7 @@
 | P47-B | Resolution + enforcement core — space-aware permission choke points, dual isolation mode | **Done** | Large |
 | P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | **Done** | Medium |
 | P47-D | Settings inheritance — per-space overrides over global defaults | **Done** | Medium |
-| P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | Planned | Medium |
+| P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | **Done** | Medium |
 | P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | Planned | Large |
 | P47-G | Migration hardening + libraries + uninstall | Planned | Medium |
 | P47-H | Tests + docs | Planned | Medium |
@@ -234,6 +234,21 @@ The shortcode has no `space` attribute, builds config from global settings only,
 - PHP: `space=` resolution; legacy attribute fallthrough; effective-theme-in-config test.
 - JS: `parseProps` accepts `space` + per-instance config, rejects unknown keys.
 - Manual: two-shortcode page renders distinct themes.
+
+---
+
+### Implementation Notes
+
+- `WPSG_DB::get_space_by_slug(string $slug): ?object` added to support slug-based `space=` resolution in the shortcode.
+- `render_shortcode` now accepts `space=` attribute. Resolution priority: numeric/slug space attr → campaign `_wpsg_space_id` post meta → company `_wpsg_space_id` term meta → Default Space (`wpsg_default_space_id` option). All resolution falls back gracefully to the Default Space.
+- `WPSG_Settings::get_effective_settings($space_id)` replaces `get_settings()` in the embed — fonts, full-bleed breakpoints, and theme all reflect the space's effective settings.
+- `window.__WPSG_CONFIG__` is now emitted only once per page (guarded by `$GLOBALS['wpsg_config_emitted']`) and contains only page-global values: `authProvider`, `apiBase`, `sentryDsn`, `enableJwt`, `debugComponentMarkers`, `allowUserThemeOverride`, `restNonce`. Two shortcodes on one page no longer clobber each other's config.
+- `window.__wpsgThemeId` page-global removed; theme is now per-node in `data-wpsg-config`.
+- Each mount div carries `data-wpsg-config` with `{ spaceId, theme, galleryLayout, enableLightbox, enableAnimations }` and `data-wpsg-props` with `{ campaign, company, space }`.
+- JS: `ALLOWED_PROPS` extended with `'space'`; `parseNodeConfig()` reads `data-wpsg-config`; `renderApp`, `mountWithShadow`, `mountDefault`, and `mountSharedRoot` all accept and forward `NodeConfig`.
+- `ThemeProvider` gained `defaultThemeId` (space's admin theme, yields to localStorage) and `instanceId` (scopes `wpsg-theme-id-{id}` localStorage key so each space tracks user preference independently).
+- `App` accepts `spaceId?: number` prop (unused until P47-F threads it into query prefixes).
+- Known v1 limitation: full-bleed CSS class `.wpsg-full-bleed` is global; two shortcodes with different bleed settings on one page will conflict. Scoped per-instance bleed is a Follow-On.
 
 ---
 

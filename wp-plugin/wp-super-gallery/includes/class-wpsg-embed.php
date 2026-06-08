@@ -83,9 +83,12 @@ class WPSG_Embed {
         $GLOBALS['wpsg_has_shortcode'] = true;
         $atts = shortcode_atts([
             'campaign' => '',
-            'company' => '',
-            'compact' => 'false',
+            'company'  => '',
+            'compact'  => 'false',
+            'space'    => '',
         ], $atts, 'super-gallery');
+
+        $space_id = self::resolve_space_id($atts);
 
         $classes = ['wp-super-gallery'];
         if ($atts['compact'] === 'true') {
@@ -98,8 +101,8 @@ class WPSG_Embed {
         $api_base = apply_filters('wpsg_api_base', home_url());
         $sentry_dsn = apply_filters('wpsg_sentry_dsn', '');
 
-        // Get display settings from WPSG_Settings if available.
-        $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
+        // Get effective settings for this space (falls back to global defaults).
+        $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_effective_settings($space_id) : [];
         $theme = isset($settings['theme']) ? $settings['theme'] : 'default-dark';
         $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
         $debug_component_markers = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : true;
@@ -148,35 +151,44 @@ class WPSG_Embed {
 
         $props = esc_attr(wp_json_encode([
             'campaign' => $atts['campaign'],
-            'company' => $atts['company'],
+            'company'  => $atts['company'],
+            'space'    => $atts['space'],
         ]));
 
-        // Build config object with all settings.
-        $config = [
-            'authProvider'            => $auth_provider,
-            'apiBase'                 => $api_base,
-            'theme'                   => $theme,
-            'allowUserThemeOverride'  => $allow_user_theme_override,
-            'galleryLayout'           => $gallery_layout,
-            'enableLightbox'          => $enable_lightbox,
-            'enableAnimations'        => $enable_animations,
-            'sentryDsn'               => $sentry_dsn,
-            'restNonce'               => wp_create_nonce('wp_rest'),
-            // P20-K: Gate JWT auth behind server-side constant.
-            'enableJwt'               => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
-            // Admin setting controls whether DOM component markers are emitted
-            // in deployed builds; sites can still override with a filter.
-            'debugComponentMarkers'   => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
-        ];
+        // Per-node config: space-specific display settings read by main.tsx per mount point.
+        $node_config = esc_attr(wp_json_encode([
+            'spaceId'          => $space_id,
+            'theme'            => $theme,
+            'galleryLayout'    => $gallery_layout,
+            'enableLightbox'   => $enable_lightbox,
+            'enableAnimations' => $enable_animations,
+        ]));
 
-        $config_script = '<script>' .
-            'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';' .
-            // Set theme ID global for ThemeContext resolution.
-            'window.__wpsgThemeId = ' . wp_json_encode($theme) . ';' .
-            // Keep legacy globals for backward compatibility.
-            'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';' .
-            'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
-            '</script>';
+        // Global page config: emitted once per page load (page-global values only).
+        // Space-specific settings live in data-wpsg-config on each mount node.
+        if (empty($GLOBALS['wpsg_config_emitted'])) {
+            $GLOBALS['wpsg_config_emitted'] = true;
+            $config = [
+                'authProvider'           => $auth_provider,
+                'apiBase'                => $api_base,
+                'sentryDsn'              => $sentry_dsn,
+                'restNonce'              => wp_create_nonce('wp_rest'),
+                // P20-K: Gate JWT auth behind server-side constant.
+                'enableJwt'              => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
+                // Admin setting controls whether DOM component markers are emitted
+                // in deployed builds; sites can still override with a filter.
+                'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
+                'allowUserThemeOverride' => $allow_user_theme_override,
+            ];
+            $config_script = '<script>' .
+                'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';' .
+                // Keep legacy globals for backward compatibility.
+                'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';' .
+                'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
+                '</script>';
+        } else {
+            $config_script = '';
+        }
 
         /**
          * P13-E: WP Full Bleed — per-breakpoint edge-to-edge layout.
@@ -265,7 +277,59 @@ class WPSG_Embed {
             $bleed_close = '</div>';
         }
 
-        return $config_script . $bleed_style . $bleed_open . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '"></div>' . $bleed_close;
+        return $config_script . $bleed_style . $bleed_open . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
+    }
+
+    /**
+     * Resolve the space ID for a shortcode call.
+     *
+     * Priority: explicit space= attr (ID or slug) → campaign's _wpsg_space_id →
+     * company's _wpsg_space_id → Default Space.
+     *
+     * @param array $atts Shortcode attributes.
+     * @return int Resolved space ID (always ≥ 1).
+     */
+    private static function resolve_space_id(array $atts): int {
+        if (!empty($atts['space'])) {
+            $s = $atts['space'];
+            if (is_numeric($s) && class_exists('WPSG_DB')) {
+                $space = WPSG_DB::get_space((int) $s);
+                if ($space) {
+                    return (int) $space->id;
+                }
+            }
+            if (class_exists('WPSG_DB')) {
+                $space = WPSG_DB::get_space_by_slug($s);
+                if ($space) {
+                    return (int) $space->id;
+                }
+            }
+        }
+
+        if (!empty($atts['campaign'])) {
+            $post = get_page_by_path($atts['campaign'], OBJECT, 'wpsg_campaign');
+            if (!$post && is_numeric($atts['campaign'])) {
+                $post = get_post((int) $atts['campaign']);
+            }
+            if ($post) {
+                $sid = (int) get_post_meta($post->ID, '_wpsg_space_id', true);
+                if ($sid > 0) {
+                    return $sid;
+                }
+            }
+        }
+
+        if (!empty($atts['company'])) {
+            $term = get_term_by('slug', $atts['company'], 'wpsg_company');
+            if ($term && !is_wp_error($term)) {
+                $sid = (int) get_term_meta($term->term_id, '_wpsg_space_id', true);
+                if ($sid > 0) {
+                    return $sid;
+                }
+            }
+        }
+
+        return (int) get_option('wpsg_default_space_id', 1);
     }
 
     private static function get_manifest() {

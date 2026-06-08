@@ -448,9 +448,10 @@ function AppContent({
 
 interface AppProps {
   accessMode?: 'lock' | 'hide';
+  spaceId?: number;
 }
 
-function App({ accessMode }: AppProps) {
+function App({ accessMode, spaceId: _spaceId }: AppProps) {
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
   const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
