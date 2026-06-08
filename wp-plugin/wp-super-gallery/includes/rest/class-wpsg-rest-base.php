@@ -427,6 +427,47 @@ abstract class WPSG_REST_Base {
         return $level === 'owner';
     }
 
+    // ── P47-C: Space permission callbacks ────────────────────────────────────
+
+    /**
+     * Permission callback — requires 'owner' level within the space identified
+     * by the request's `id` parameter. manage_wpsg satisfies this in open mode
+     * (via get_effective_space_level); manage_options always satisfies it.
+     */
+    public static function require_space_owner(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::get_effective_space_level($user_id, $space_id) === 'owner';
+    }
+
+    /**
+     * Permission callback — requires any access level (viewer or above) within
+     * the space identified by the request's `id` parameter.
+     */
+    public static function require_space_member(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::can_access_space($space_id, $user_id);
+    }
+
     /**
      * @since 0.18.0 P20-A
      */

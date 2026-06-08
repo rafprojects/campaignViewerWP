@@ -166,6 +166,8 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $sort               = sanitize_text_field($request->get_param('sort') ?: 'created_desc');
         $include_archived   = in_array(strtolower((string) $request->get_param('include_archived')), ['1', 'true', 'yes'], true);
         $template_id_filter = sanitize_text_field($request->get_param('template_id') ?? '');
+        // P47-C: optional space filter — numeric id scopes to that space; omitted/all = no filter.
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
 
         // Generate cache key based on user ID, query parameters, and cache version
         $user_id = get_current_user_id();
@@ -173,7 +175,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $search_key = $search ? md5($search) : 'none';
         $cv = self::get_cache_version();
         $cache_key = 'wpsg_campaigns_' . md5(sprintf(
-            'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s',
+            'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
             $status ?: 'all',
@@ -188,7 +190,8 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             $tag ?: 'none',
             $sort,
             $include_archived ? 'incl' : 'excl',
-            $template_id_filter ? md5($template_id_filter) : 'none'
+            $template_id_filter ? md5($template_id_filter) : 'none',
+            is_numeric($space_param) ? $space_param : 'all'
         ));
 
         // Try to get cached data
@@ -229,6 +232,14 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         $meta_query = [];
+        // P47-C: space scoping — filter by _wpsg_space_id when a numeric space id is given.
+        if (is_numeric($space_param) && intval($space_param) > 0) {
+            $meta_query[] = [
+                'key'   => '_wpsg_space_id',
+                'value' => intval($space_param),
+                'type'  => 'NUMERIC',
+            ];
+        }
         if (!empty($status)) {
             $meta_query[] = [
                 'key'   => 'status',

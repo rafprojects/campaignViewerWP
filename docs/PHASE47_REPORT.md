@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P47-A | Data foundation — `wp_wpsg_spaces` table, `space_id` columns, migration/backfill (ships dark) | **Done** | Large |
 | P47-B | Resolution + enforcement core — space-aware permission choke points, dual isolation mode | **Done** | Large |
-| P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | Planned | Medium |
+| P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | **Done** | Medium |
 | P47-D | Settings inheritance — per-space overrides over global defaults | Planned | Medium |
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | Planned | Medium |
 | P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | Planned | Large |
@@ -156,6 +156,18 @@ There is no API to create, edit, archive, or grant access to spaces, and existin
 
 - PHP: CRUD + grant + cache-key tests; cross-space write rejection (cannot create a campaign in a space you lack owner/editor on).
 - Manual: exercise endpoints via the REST client / browser network panel.
+
+### Implementation Notes
+
+- New `class-wpsg-space-controller.php` registered first in `class-wpsg-rest.php` (before campaign controller to avoid route-name collisions).
+- Routes: `GET/POST /spaces`, `GET/PUT/DELETE /spaces/{id}`, `GET/POST /spaces/{id}/access`, `DELETE /spaces/{id}/access/{userId}`.
+- `require_space_owner` and `require_space_member` permission callbacks added to `class-wpsg-rest-base.php`; both call `verify_admin_auth()` (not `rate_limit_authenticated`) so delegated-space owners can reach them without `manage_wpsg`.
+- `DELETE /spaces/{id}` defaults to archive (soft); `force=true` hard-deletes only if the space has no campaigns. The Default Space cannot be deleted.
+- Access grants stored as JSON in `wp_wpsg_spaces.access_grants` and read/written via `WPSG_DB::update_space()`. Response shape mirrors the campaign access endpoint (paginated, user-enriched, `is_expired` computed).
+- `list_spaces` response cached per user+cache_version+archived-flag; all mutations call `bump_cache_version()`.
+- Campaign `list_campaigns` endpoint now accepts `space=<id>` param: adds a `_wpsg_space_id` meta_query filter and includes the space value in the cache key. Omitting or `space=all` preserves backward-compatible behavior (no filter).
+- Deviation from spec: `rate_limit_authenticated()` relaxation deferred; access to space endpoints is gated by the new `require_space_owner`/`require_space_member` callbacks which bypass that rate limit.
+- Deviation from spec: global audit, analytics summary, and access-summary `space` params deferred to P47-F (admin UX) where those endpoints' consumers are built.
 
 ---
 
