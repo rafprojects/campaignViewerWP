@@ -206,6 +206,20 @@ class WPSG_CPT {
             'show_in_rest' => false,
             'default' => [],
         ]);
+
+        // P47-A: Space assignment.
+        register_post_meta('wpsg_campaign', '_wpsg_space_id', [
+            'type'         => 'integer',
+            'single'       => true,
+            'show_in_rest' => false,
+            'default'      => 0,
+        ]);
+        register_term_meta('wpsg_company', '_wpsg_space_id', [
+            'type'         => 'integer',
+            'single'       => true,
+            'show_in_rest' => false,
+            'default'      => 0,
+        ]);
     }
 
     // ── Sanitize callbacks (P20-D) ───────────────────────────

@@ -1,6 +1,6 @@
 # Phase 47 - Gallery Spaces (Multi-Instance Isolation)
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-07
 **Last updated:** 2026-06-07
 
@@ -8,8 +8,8 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P47-A | Data foundation — `wp_wpsg_spaces` table, `space_id` columns, migration/backfill (ships dark) | Planned | Large |
-| P47-B | Resolution + enforcement core — space-aware permission choke points, dual isolation mode | Planned | Large |
+| P47-A | Data foundation — `wp_wpsg_spaces` table, `space_id` columns, migration/backfill (ships dark) | **Done** | Large |
+| P47-B | Resolution + enforcement core — space-aware permission choke points, dual isolation mode | **Done** | Large |
 | P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | Planned | Medium |
 | P47-D | Settings inheritance — per-space overrides over global defaults | Planned | Medium |
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | Planned | Medium |
@@ -80,6 +80,17 @@ There is no grouping key above `campaign`. The four campaign-scoped custom table
 - PHP: schema + idempotency + resumable-backfill tests (interrupt mid-batch, re-run).
 - Manual: upgrade a populated dev DB; confirm campaign/analytics/audit counts unchanged and all stamped to Default.
 
+### Implementation Notes
+
+- `DB_VERSION` bumped `'10'` → `'11'` in `class-wpsg-db.php`.
+- `maybe_upgrade()` calls four new v11 methods before `update_option`: `maybe_create_spaces_table()`, `maybe_upgrade_v11_space_columns()`, `maybe_seed_default_space()`, `maybe_backfill_spaces()`.
+- `wp_wpsg_spaces` table created via `dbDelta()`: id, slug (UNIQUE), name, isolation_mode (default `'open'`), access_grants LONGTEXT, settings_overrides LONGTEXT, archived, created_at, updated_at.
+- `space_id` column added idempotently to all four campaign-scoped tables using the same `INFORMATION_SCHEMA.COLUMNS` guard as `maybe_upgrade_audit_log_v9()`.
+- Default Space seeded once (guarded by `wpsg_default_space_id` option); id stored in that option.
+- Campaign backfill is offset-resumable via `wpsg_spaces_backfill_offset`; company (term) backfill runs as a final step when the campaign batch completes; completion flagged in `wpsg_spaces_backfill_complete`.
+- Public DB helpers added: `get_spaces_table()`, `get_space()` (with request-level static cache to avoid repeated queries in permission loops), `list_spaces()`, `insert_space()`, `update_space()`, `archive_space()`, `delete_space()`.
+- `_wpsg_space_id` post meta registered on `wpsg_campaign`; `_wpsg_space_id` term meta registered on `wpsg_company` (both `show_in_rest=false`).
+
 ---
 
 ## Track P47-B — Resolution + Enforcement Core
@@ -108,6 +119,14 @@ Permission resolution (`get_effective_campaign_level`, `can_view_campaign`, `get
 
 - PHP: extend the `WPSG_P33C` role-enforcement and `WPSG_P28B` access-expiry test patterns for spaces.
 - Manual: create a second space, grant an editor, flip to delegated, confirm a different admin loses access while the site owner retains it.
+
+### Implementation Notes
+
+- `get_effective_space_level(int $user_id, int $space_id): string` added to `class-wpsg-rest-base.php`. `manage_options` → `'owner'` (super-admin escape hatch always); open-mode `manage_wpsg` → `'owner'`; else explicit space `access_grants` JSON entry (same `validate_access_level()` + expiry pattern as campaign grants); else `''`.
+- `can_access_space(int $space_id, ?int $user_id): bool` added: archived space → `false`; else delegates to `get_effective_space_level()`.
+- Space gate inserted at the top of `get_effective_campaign_level()` (before the `manage_wpsg` short-circuit) — delegated spaces can deny ungranted site admins.
+- Space gate inserted at the top of `can_view_campaign()` (before the `manage_wpsg || manage_options` short-circuit) — same rationale.
+- Deviations from spec: `get_accessible_campaign_ids()` cache-key scoping deferred to P47-C (safe while only one space exists); `rate_limit_authenticated()` relaxation deferred to P47-C (requires space-scoped endpoints to be safe to expose).
 
 ---
 
