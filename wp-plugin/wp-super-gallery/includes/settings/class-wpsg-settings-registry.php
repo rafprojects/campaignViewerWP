@@ -401,6 +401,44 @@ class WPSG_Settings_Registry {
     ];
 
     /**
+     * Settings that space owners may override (subset of non-admin-only fields).
+     *
+     * @var string[]
+     */
+    private static $space_overridable_fields = [
+        'theme',
+        'gallery_layout',
+        'items_per_page',
+        'enable_lightbox',
+        'enable_animations',
+        'wp_full_bleed_desktop',
+        'wp_full_bleed_tablet',
+        'wp_full_bleed_mobile',
+        'typography_overrides',
+        'gallery_title_text',
+        'gallery_subtitle_text',
+        'show_gallery_title',
+        'show_gallery_subtitle',
+        'show_access_mode',
+        'show_filter_tabs',
+        'show_search_box',
+        'show_card_company_name',
+        'show_card_media_counts',
+        'show_card_title',
+        'show_card_description',
+        'show_card_border',
+        'show_card_access_badge',
+        'show_card_thumbnail_fade',
+        'show_card_info_panel',
+        'show_campaign_company_name',
+        'show_campaign_date',
+        'show_campaign_about',
+        'show_campaign_description',
+        'show_campaign_stats',
+        'default_visibility',
+    ];
+
+    /**
      * Valid options for select fields.
      *
      * @var array
@@ -749,5 +787,12 @@ class WPSG_Settings_Registry {
      */
     public static function get_field_ranges() {
         return self::$field_ranges;
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function get_space_overridable_fields(): array {
+        return self::$space_overridable_fields;
     }
 }

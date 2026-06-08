@@ -11,7 +11,7 @@
 | P47-A | Data foundation — `wp_wpsg_spaces` table, `space_id` columns, migration/backfill (ships dark) | **Done** | Large |
 | P47-B | Resolution + enforcement core — space-aware permission choke points, dual isolation mode | **Done** | Large |
 | P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | **Done** | Medium |
-| P47-D | Settings inheritance — per-space overrides over global defaults | Planned | Medium |
+| P47-D | Settings inheritance — per-space overrides over global defaults | **Done** | Medium |
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | Planned | Medium |
 | P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | Planned | Large |
 | P47-G | Migration hardening + libraries + uninstall | Planned | Medium |
@@ -195,6 +195,16 @@ Settings are a single global option; a space cannot have its own theme/branding/
 
 - PHP: inheritance, allowlist enforcement, sanitizer-range tests.
 - Manual: set a per-space theme; confirm it applies only to that space.
+
+### Implementation Notes
+
+- `WPSG_Settings_Registry::$space_overridable_fields` defines the allowlist (32 fields): theme, gallery_layout, items_per_page, enable_lightbox, enable_animations, full-bleed trio, typography_overrides, branding text, viewer/card/campaign display toggles, default_visibility. Getter `get_space_overridable_fields()` added alongside `get_admin_only_fields()`.
+- `WPSG_Settings::get_overridable_keys()` delegates to the registry. `get_effective_settings(int $space_id = 0)` uses `array_merge($global, $filtered_overrides)` — flat merge only (nested configs excluded from allowlist). Falls back to global if space is 0, not found, or has no overrides.
+- `GET /spaces/{id}/settings` (require_space_member): returns `{ settings: camelCase effective, overrides: raw snake_case stored }`.
+- `PUT /spaces/{id}/settings` (require_space_owner): `from_js()` → allowlist filter → split nulls (clear) from values (set) → `sanitize_settings()` + `array_intersect_key` extract → merge with existing overrides → `WPSG_DB::update_space()` → audit `space.settings.updated` → bump cache → return updated effective settings.
+- Deviation from spec: `wp_parse_args` mentioned in spec replaced by `array_merge($global, $filtered)` — identical semantics for flat keys, more explicit intent.
+- Non-overridable keys sent in PUT are silently dropped (no error), consistent with global settings controller behavior.
+- `null` value for a key clears the override, restoring global fallback.
 
 ---
 

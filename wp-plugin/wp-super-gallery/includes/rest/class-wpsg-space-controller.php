@@ -106,6 +106,19 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
                 'permission_callback' => [self::class, 'require_space_owner'],
             ],
         ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/settings', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_space_settings'],
+                'permission_callback' => [self::class, 'require_space_member'],
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_space_settings'],
+                'permission_callback' => [self::class, 'require_space_owner'],
+            ],
+        ]);
     }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -376,6 +389,75 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         self::clear_accessible_campaigns_cache();
 
         return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    // ── Space settings ────────────────────────────────────────────────────────
+
+    public static function get_space_settings($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $effective = WPSG_Settings::get_effective_settings($space_id);
+        $overrides = json_decode($space->settings_overrides, true);
+
+        return new WP_REST_Response([
+            'settings'  => WPSG_Settings::to_js($effective, true),
+            'overrides' => is_array($overrides) ? $overrides : [],
+        ], 200);
+    }
+
+    public static function update_space_settings($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $body        = $request->get_json_params() ?? [];
+        $snake_input = WPSG_Settings::from_js($body);
+        $allowed     = array_flip(WPSG_Settings::get_overridable_keys());
+        $to_set      = array_intersect_key($snake_input, $allowed);
+
+        $to_clear  = array_keys(array_filter($to_set, fn($v) => $v === null));
+        $to_update = array_filter($to_set, fn($v) => $v !== null);
+
+        $override_patch = [];
+        if (!empty($to_update)) {
+            $sanitized_all  = WPSG_Settings::sanitize_settings($to_update);
+            $override_patch = array_intersect_key($sanitized_all, $to_update);
+        }
+
+        $existing      = json_decode($space->settings_overrides, true);
+        $existing      = is_array($existing) ? $existing : [];
+        $new_overrides = array_merge($existing, $override_patch);
+        foreach ($to_clear as $key) {
+            unset($new_overrides[$key]);
+        }
+
+        WPSG_DB::update_space($space_id, ['settings_overrides' => $new_overrides]);
+        self::add_audit_entry(0, 'space.settings.updated',
+            ['keys' => array_keys($override_patch), 'cleared' => $to_clear],
+            [
+                'scope'          => 'system',
+                'summary'        => "Space settings updated: {$space->name}",
+                'resource_type'  => 'space',
+                'resource_id'    => (string) $space_id,
+                'resource_label' => $space->name,
+            ]
+        );
+        self::bump_cache_version();
+
+        $updated_space = WPSG_DB::get_space($space_id);
+        $effective     = WPSG_Settings::get_effective_settings($space_id);
+        $raw_overrides = json_decode($updated_space->settings_overrides, true);
+
+        return new WP_REST_Response([
+            'settings'  => WPSG_Settings::to_js($effective, true),
+            'overrides' => is_array($raw_overrides) ? $raw_overrides : [],
+        ], 200);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

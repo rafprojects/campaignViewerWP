@@ -196,4 +196,38 @@ class WPSG_Settings {
         self::load_registry();
         return WPSG_Settings_Utils::from_js($body, self::$defaults);
     }
+
+    /**
+     * Keys that space owners may override via /spaces/{id}/settings.
+     *
+     * @return string[]
+     */
+    public static function get_overridable_keys(): array {
+        return WPSG_Settings_Registry::get_space_overridable_fields();
+    }
+
+    /**
+     * Effective settings for a space: space overrides merged over global defaults.
+     * Falls back to global settings when $space_id is 0 or space is not found.
+     *
+     * @param int $space_id Space ID (0 = global only).
+     * @return array
+     */
+    public static function get_effective_settings(int $space_id = 0): array {
+        $global = self::get_settings();
+        if ($space_id <= 0) {
+            return $global;
+        }
+        $space = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return $global;
+        }
+        $overrides = json_decode($space->settings_overrides, true);
+        if (!is_array($overrides) || empty($overrides)) {
+            return $global;
+        }
+        $allowed  = array_flip(self::get_overridable_keys());
+        $filtered = array_intersect_key($overrides, $allowed);
+        return array_merge($global, $filtered);
+    }
 }
