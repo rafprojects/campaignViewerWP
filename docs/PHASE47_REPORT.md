@@ -832,3 +832,17 @@ Six additional issues addressed:
 | 4 | `class-wpsg-space-controller.php` | `get_space_settings()` used `to_js($effective, true)` unconditionally, exposing admin-only fields to non-admin space members | **Fixed** — gated on `current_user_can('manage_wpsg')` |
 | 5 | `class-wpsg-space-controller.php` | `update_space_settings()` same admin-only field leak | **Fixed** — same gate as #4 |
 | 6 | `class-wpsg-cpt.php` | `handle_create_space()` (admin-post handler) skipped `bump_cache_version()`, leaving REST space list caches stale | **Fixed** — `WPSG_REST_Base::bump_cache_version()` called after successful insert |
+
+---
+
+### PR #62 Copilot review — round 3 (2026-06-09)
+
+Commit: `82364625`
+
+| # | File | Issue | Decision |
+|---|------|-------|----------|
+| 1 | `src/components/Admin/SettingsPanel.tsx` | Space-mode PUT response was discarded; `markSaved(settings)` used the pre-save local state as the "saved" baseline, causing desync if the server clamped or dropped values | **Fixed** — capture `put<{ settings? }>()` response, derive saved state via `mapResponseToSettings(normalizeSettingsResponse(response.settings))` — same pattern as the non-space path |
+| 2 | `wp-plugin/…/class-wpsg-db.php` | `update_space()` sanitized `slug` with `sanitize_text_field()` while `insert_space()` uses `sanitize_title()`; mismatched normalization could produce invalid slugs on update | **Fixed** — added dedicated `$key === 'slug'` branch in `update_space()` that calls `sanitize_title()` |
+| 3 | `src/components/Admin/SpaceManagementView.tsx` | Grants query key `['space-grants', selectedSpaceId]` omitted the ApiClient base URL, risking cache collisions when multiple ApiClient instances are mounted (tests, multi-site) | **Fixed** — key is now `['space-grants', apiClient.getBaseUrl(), selectedSpaceId]` |
+| 4 | `src/components/Admin/SpaceManagementView.tsx` | `handleGrantAccess` resolved userId via `/wp/v2/users?search=...` which requires `list_users`; delegated-mode space owners who are not site admins would get a 403 and be unable to grant access | **Fixed** — added `GET /spaces/{id}/resolve-user?search=` plugin endpoint (requires `require_space_owner`) backed by `get_users()` which runs under the plugin's own auth; React now calls this endpoint |
+| 5 | `wp-plugin/…/class-wpsg-cpt.php` | `handle_create_space()` used `wp_redirect()` for all four admin-URL redirects; WP recommends `wp_safe_redirect()` as defense-in-depth against open redirect | **Fixed** — all four calls changed to `wp_safe_redirect()` |
