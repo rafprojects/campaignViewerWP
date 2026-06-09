@@ -1089,7 +1089,7 @@ class WPSG_Settings_Sanitizer {
      * @param mixed $raw Raw typography payload.
      * @return string JSON encoded sanitized typography overrides.
      */
-    private static function sanitize_typography_overrides($raw) {
+    public static function sanitize_typography_overrides($raw) {
         $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
         if (!is_array($decoded)) {
             $decoded = [];

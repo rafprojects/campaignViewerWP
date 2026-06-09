@@ -605,7 +605,7 @@ abstract class WPSG_REST_Base {
             return false;
         }
 
-        if ($user_id && (current_user_can('manage_wpsg') || current_user_can('manage_options'))) {
+        if ($user_id && (user_can($user_id, 'manage_wpsg') || user_can($user_id, 'manage_options'))) {
             return true;
         }
 

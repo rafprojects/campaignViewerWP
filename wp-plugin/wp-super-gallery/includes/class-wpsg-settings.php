@@ -255,9 +255,14 @@ class WPSG_Settings {
                     );
                 }
             } else {
-                $sanitized[$key] = str_ends_with($key, '_url') || str_ends_with($key, '_image_url')
-                    ? esc_url_raw((string) $value)
-                    : sanitize_text_field((string) $value);
+                if ($key === 'typography_overrides') {
+                    // JS submits this as an object/array; the sanitizer accepts both and returns a JSON string.
+                    $sanitized[$key] = WPSG_Settings_Sanitizer::sanitize_typography_overrides($value);
+                } elseif (str_ends_with($key, '_url') || str_ends_with($key, '_image_url')) {
+                    $sanitized[$key] = esc_url_raw((string) $value);
+                } else {
+                    $sanitized[$key] = sanitize_text_field((string) $value);
+                }
             }
         }
         return $sanitized;

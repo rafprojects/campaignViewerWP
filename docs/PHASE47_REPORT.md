@@ -880,3 +880,12 @@ Commit: `703b9d01`
 | 3 | `wp-plugin/…/class-wpsg-space-controller.php:488` | `resolve-user` returned `email` in the response body; space owners in delegated mode can be non-admin grantees, enabling user/email enumeration beyond typical WP capabilities | **Fixed** — `email` field removed from the response; client only consumes `found` and `id`, so no behaviour change. `display_name` retained for UX confirmation and is less sensitive (visible on public WP posts) |
 | 4 | `wp-plugin/…/class-wpsg-db.php:963` | `delete_option('wpsg_spaces_backfill_offset')` called in `maybe_backfill_spaces()` but the option is never written, making the code falsely imply offset-based resumability exists | **Fixed** — dead `delete_option` call removed |
 | 5 | `docs/PHASE47_REPORT.md:97` | Report claimed backfill is "offset-resumable via `wpsg_spaces_backfill_offset`"; actual implementation always fetches the first N unassigned campaigns and never writes that option | **Fixed** — description updated to accurately say "non-resumable; no offset option is written or read" |
+
+---
+
+### PR #62 Copilot review — round 7 (2026-06-09)
+
+| # | File | Issue | Decision |
+|---|------|-------|----------|
+| 1 | `wp-plugin/…/class-wpsg-settings.php:257` + `class-wpsg-settings-sanitizer.php` | `sanitize_overrides()` fell into the generic string `else` branch for `typography_overrides` (default is `'{}'`); when JS submits it as an object/array, `(string)$value` produced `'Array'`, corrupting per-space typography overrides | **Fixed** — added explicit `$key === 'typography_overrides'` branch dispatching through `WPSG_Settings_Sanitizer::sanitize_typography_overrides()` (promoted to `public static`), which accepts both array and JSON-string input and returns a sanitized JSON string |
+| 2 | `wp-plugin/…/class-wpsg-rest-base.php:608` | `can_view_campaign()` used `current_user_can('manage_wpsg'\|'manage_options')` instead of `user_can($user_id, …)`, making the admin short-circuit depend on the session user rather than the `$user_id` parameter — same class of bug as the earlier `get_effective_space_level()` fix (round 4) | **Fixed** — `current_user_can()` → `user_can($user_id, …)` on both capability checks |
