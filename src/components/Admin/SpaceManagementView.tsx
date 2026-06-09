@@ -56,8 +56,11 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   const { data: grants, isLoading: grantsLoading, refetch: refetchGrants } = useQuery({
     queryKey: ['space-grants', apiClient.getBaseUrl(), selectedSpaceId],
     queryFn: async () => {
-      const res = await apiClient.get<SpaceGrant[]>(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`);
-      return Array.isArray(res) ? res : [];
+      const res = await apiClient.get<{ items?: SpaceGrant[] } | SpaceGrant[]>(
+        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`
+      );
+      if (Array.isArray(res)) return res;
+      return (res as { items?: SpaceGrant[] }).items ?? [];
     },
     enabled: selectedSpaceId !== null && activeTab === 'access',
     staleTime: 30_000,

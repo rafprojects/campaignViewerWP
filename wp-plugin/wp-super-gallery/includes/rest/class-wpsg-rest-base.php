@@ -247,11 +247,11 @@ abstract class WPSG_REST_Base {
             return '';
         }
 
-        if (current_user_can('manage_options')) {
+        if (user_can($user_id, 'manage_options')) {
             return 'owner';
         }
 
-        if ($space->isolation_mode === 'open' && current_user_can('manage_wpsg')) {
+        if ($space->isolation_mode === 'open' && user_can($user_id, 'manage_wpsg')) {
             return 'owner';
         }
 
