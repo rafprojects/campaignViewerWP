@@ -846,3 +846,14 @@ Commit: `82364625`
 | 3 | `src/components/Admin/SpaceManagementView.tsx` | Grants query key `['space-grants', selectedSpaceId]` omitted the ApiClient base URL, risking cache collisions when multiple ApiClient instances are mounted (tests, multi-site) | **Fixed** — key is now `['space-grants', apiClient.getBaseUrl(), selectedSpaceId]` |
 | 4 | `src/components/Admin/SpaceManagementView.tsx` | `handleGrantAccess` resolved userId via `/wp/v2/users?search=...` which requires `list_users`; delegated-mode space owners who are not site admins would get a 403 and be unable to grant access | **Fixed** — added `GET /spaces/{id}/resolve-user?search=` plugin endpoint (requires `require_space_owner`) backed by `get_users()` which runs under the plugin's own auth; React now calls this endpoint |
 | 5 | `wp-plugin/…/class-wpsg-cpt.php` | `handle_create_space()` used `wp_redirect()` for all four admin-URL redirects; WP recommends `wp_safe_redirect()` as defense-in-depth against open redirect | **Fixed** — all four calls changed to `wp_safe_redirect()` |
+
+---
+
+### PR #62 Copilot review — round 4 (2026-06-09)
+
+Commit: `303f9db3`
+
+| # | File | Issue | Decision |
+|---|------|-------|----------|
+| 1 | `wp-plugin/…/class-wpsg-rest-base.php` | `get_effective_space_level($user_id, …)` called `current_user_can()` which evaluates capabilities for the *current session user*, ignoring the `$user_id` argument; any caller evaluating a different user would get the wrong result | **Fixed** — replaced both checks with `user_can($user_id, 'manage_options')` and `user_can($user_id, 'manage_wpsg')` so the function honours its contract |
+| 2 | `src/components/Admin/SpaceManagementView.tsx` | `GET /spaces/{id}/access` returns `{ items, total, page, … }` via `paginated_response()`; queryFn treated the response as a raw array, so `Array.isArray(res)` was always `false` and grants were always `[]` | **Fixed** — queryFn now reads `res.items` when the response is a paginated object, falling back to the raw array for forward-compatibility |
