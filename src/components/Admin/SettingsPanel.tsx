@@ -65,7 +65,7 @@ import {
   resolveGalleryConfig,
 } from '@/utils/galleryConfig';
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
-import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey } from '@/services/settingsQuery';
+import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey, normalizeSettingsResponse } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 import { toCss } from '@/lib/cssUnits';
 
@@ -458,12 +458,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       if (spaceId != null) {
         setIsSpaceSaving(true);
         try {
-          await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${spaceId}/settings`, payload);
+          const spaceResponse = await apiClient.put<{ settings?: Record<string, unknown> }>(
+            `/wp-json/wp-super-gallery/v1/spaces/${spaceId}/settings`, payload
+          );
+          const saved = mapResponseToSettings(
+            normalizeSettingsResponse(spaceResponse?.settings as Parameters<typeof normalizeSettingsResponse>[0])
+          );
           void queryClient.invalidateQueries({ queryKey: getSettingsQueryKey(apiClient, spaceId) });
           void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
-          markSaved(settings);
+          markSaved(saved);
           clearSettingsDraft(rootId);
-          const persistedTheme = typeof settings.theme === 'string' ? settings.theme : undefined;
+          const persistedTheme = typeof saved.theme === 'string' ? saved.theme : undefined;
           if (persistedTheme) setTheme(persistedTheme);
           setPreviewTheme(null);
           onNotify({ type: 'success', text: 'Space settings saved.' });

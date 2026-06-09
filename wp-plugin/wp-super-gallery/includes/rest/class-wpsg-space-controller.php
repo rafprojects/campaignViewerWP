@@ -107,6 +107,21 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             ],
         ]);
 
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/resolve-user', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'resolve_user'],
+                'permission_callback' => [self::class, 'require_space_owner'],
+                'args'                => [
+                    'search' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ]);
+
         register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/settings', [
             [
                 'methods'             => 'GET',
@@ -460,6 +475,26 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         return new WP_REST_Response([
             'settings'  => WPSG_Settings::to_js($effective, $is_admin),
             'overrides' => is_array($raw_overrides) ? $raw_overrides : [],
+        ], 200);
+    }
+
+    public static function resolve_user(WP_REST_Request $request): WP_REST_Response {
+        $search = $request->get_param('search');
+        $users  = get_users([
+            'search'         => '*' . $search . '*',
+            'search_columns' => ['user_email', 'user_login', 'display_name'],
+            'number'         => 1,
+            'fields'         => ['ID', 'display_name', 'user_email'],
+        ]);
+        if (empty($users)) {
+            return new WP_REST_Response(['found' => false], 200);
+        }
+        $user = $users[0];
+        return new WP_REST_Response([
+            'found'        => true,
+            'id'           => intval($user->ID),
+            'display_name' => $user->display_name,
+            'email'        => $user->user_email,
         ], 200);
     }
 

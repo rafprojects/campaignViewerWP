@@ -1046,6 +1046,8 @@ class WPSG_DB {
                 $payload[$key] = wp_json_encode((array) $data[$key]);
             } elseif ($key === 'isolation_mode') {
                 $payload[$key] = in_array($data[$key], ['open', 'delegated'], true) ? $data[$key] : 'open';
+            } elseif ($key === 'slug') {
+                $payload[$key] = sanitize_title($data[$key]);
             } else {
                 $payload[$key] = sanitize_text_field($data[$key]);
             }

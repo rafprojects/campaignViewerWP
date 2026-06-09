@@ -54,7 +54,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   useEffect(() => { setSettingsPanelOpen(false); }, [selectedSpaceId]);
 
   const { data: grants, isLoading: grantsLoading, refetch: refetchGrants } = useQuery({
-    queryKey: ['space-grants', selectedSpaceId],
+    queryKey: ['space-grants', apiClient.getBaseUrl(), selectedSpaceId],
     queryFn: async () => {
       const res = await apiClient.get<SpaceGrant[]>(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`);
       return Array.isArray(res) ? res : [];
@@ -118,16 +118,16 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
     if (!grantEmail.trim() || !selectedSpaceId) return;
     setGrantSaving(true);
     try {
-      const usersRes = await apiClient.get<{ id: number }[]>(
-        `/wp-json/wp/v2/users?search=${encodeURIComponent(grantEmail.trim())}&per_page=1`,
+      const resolveRes = await apiClient.get<{ found: boolean; id?: number }>(
+        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/resolve-user?search=${encodeURIComponent(grantEmail.trim())}`,
       );
-      if (!usersRes || usersRes.length === 0) {
+      if (!resolveRes?.found || !resolveRes.id) {
         onNotify({ type: 'error', text: 'No WordPress user found with that email' });
         setGrantSaving(false);
         return;
       }
       await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`, {
-        userId: usersRes[0]!.id,
+        userId: resolveRes.id,
         access_level: grantRole,
       });
       setGrantEmail('');

@@ -456,20 +456,20 @@ class WPSG_CPT {
         $slug     = sanitize_title($raw_slug ?: $name);
         $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
         if (empty($name) || empty($slug)) {
-            wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
             exit;
         }
         if (!class_exists('WPSG_DB')) {
-            wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
             exit;
         }
         $new_id = WPSG_DB::insert_space(['name' => $name, 'slug' => $slug]);
         if (!$new_id) {
-            wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
             exit;
         }
         WPSG_REST_Base::bump_cache_version();
-        wp_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
+        wp_safe_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
         exit;
     }
 }
