@@ -406,6 +406,7 @@ class WPSG_Settings_Registry {
      * @var string[]
      */
     private static $space_overridable_fields = [
+        // ── Core display ─────────────────────────────────────────────────────
         'theme',
         'gallery_layout',
         'items_per_page',
@@ -415,10 +416,12 @@ class WPSG_Settings_Registry {
         'wp_full_bleed_tablet',
         'wp_full_bleed_mobile',
         'typography_overrides',
+        // ── Gallery text / labels ─────────────────────────────────────────────
         'gallery_title_text',
         'gallery_subtitle_text',
         'show_gallery_title',
         'show_gallery_subtitle',
+        // ── Card + campaign UI toggles ────────────────────────────────────────
         'show_access_mode',
         'show_filter_tabs',
         'show_search_box',
@@ -436,10 +439,63 @@ class WPSG_Settings_Registry {
         'show_campaign_description',
         'show_campaign_stats',
         'default_visibility',
+        // ── Campaign listing ──────────────────────────────────────────────────
         'campaign_listing_adapter_id',
         'campaign_listing_adapter_id_mobile',
         'campaign_listing_adapter_id_tablet',
         'campaign_listing_layout_template_id',
+        // ── P47-M: Branding text & labels ─────────────────────────────────────
+        'campaign_about_heading_text',
+        'gallery_image_label',
+        'gallery_video_label',
+        'gallery_label_justification',
+        'show_gallery_label_icon',
+        // ── P47-M: Backgrounds ────────────────────────────────────────────────
+        'image_bg_type',
+        'image_bg_color',
+        'image_bg_gradient',
+        'image_bg_image_url',
+        'video_bg_type',
+        'video_bg_color',
+        'video_bg_gradient',
+        'video_bg_image_url',
+        'unified_bg_type',
+        'unified_bg_color',
+        'unified_bg_gradient',
+        'unified_bg_image_url',
+        'viewer_bg_type',
+        'viewer_bg_color',
+        'viewer_bg_gradient',
+        'modal_bg_type',
+        'modal_bg_color',
+        'modal_bg_gradient',
+        // ── P47-M: Nav arrows + dot nav ───────────────────────────────────────
+        'nav_arrow_position',
+        'nav_arrow_size',
+        'nav_arrow_color',
+        'nav_arrow_bg_color',
+        'dot_nav_enabled',
+        'dot_nav_position',
+        'dot_nav_size',
+        'dot_nav_active_color',
+        'dot_nav_inactive_color',
+        'dot_nav_shape',
+        // ── P47-M: Shadows & borders ──────────────────────────────────────────
+        'image_shadow_preset',
+        'video_shadow_preset',
+        'card_shadow_preset',
+        'card_border_radius',
+        'card_border_width',
+        'card_border_color',
+        'tile_border_width',
+        'tile_border_color',
+        // ── P47-M: Display toggles ────────────────────────────────────────────
+        'show_viewer_border',
+        'show_campaign_cover_image',
+        'show_campaign_tags',
+        'show_campaign_gallery_labels',
+        'transition_fade_enabled',
+        'campaign_open_mode',
     ];
 
     /**

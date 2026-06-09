@@ -211,4 +211,122 @@ class WPSG_P47_Spaces_Settings_Test extends WP_UnitTestCase {
             'Response settings.theme must reflect the new override.'
         );
     }
+
+    // -------------------------------------------------------------------------
+    // P47-M: representative per-group assertions — one field per group confirms
+    // the key is allowlisted and survives the PUT → effective-settings pipeline.
+    // -------------------------------------------------------------------------
+
+    public function test_p47m_branding_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'campaignAboutHeadingText' => 'About This Space',
+            'galleryImageLabel'        => 'Photos',
+            'galleryVideoLabel'        => 'Clips',
+            'galleryLabelJustification' => 'center',
+            'showGalleryLabelIcon'     => true,
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('About This Space', $overrides['campaign_about_heading_text']);
+        $this->assertSame('Photos', $overrides['gallery_image_label']);
+        $this->assertSame('Clips', $overrides['gallery_video_label']);
+        $this->assertSame('center', $overrides['gallery_label_justification']);
+        $this->assertTrue($overrides['show_gallery_label_icon']);
+    }
+
+    public function test_p47m_background_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'imageBgType'    => 'solid',
+            'imageBgColor'   => '#ff0000',
+            'videoBgType'    => 'gradient',
+            'unifiedBgType'  => 'none',
+            'viewerBgType'   => 'transparent',
+            'modalBgType'    => 'theme',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('solid', $overrides['image_bg_type']);
+        $this->assertSame('#ff0000', $overrides['image_bg_color']);
+        $this->assertSame('gradient', $overrides['video_bg_type']);
+        $this->assertSame('none', $overrides['unified_bg_type']);
+        $this->assertSame('transparent', $overrides['viewer_bg_type']);
+        $this->assertSame('theme', $overrides['modal_bg_type']);
+    }
+
+    public function test_p47m_nav_dot_nav_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'navArrowPosition'   => 'bottom',
+            'navArrowColor'      => '#aabbcc',
+            'dotNavEnabled'      => false,
+            'dotNavShape'        => 'pill',
+            'dotNavActiveColor'  => '#ff0000',
+            'dotNavInactiveColor' => 'rgba(0,0,0,0.2)',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('bottom', $overrides['nav_arrow_position']);
+        $this->assertSame('#aabbcc', $overrides['nav_arrow_color']);
+        $this->assertFalse($overrides['dot_nav_enabled']);
+        $this->assertSame('pill', $overrides['dot_nav_shape']);
+        $this->assertSame('#ff0000', $overrides['dot_nav_active_color']);
+        $this->assertSame('rgba(0,0,0,0.2)', $overrides['dot_nav_inactive_color']);
+    }
+
+    public function test_p47m_shadows_and_borders_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'imageShadowPreset' => 'strong',
+            'cardShadowPreset'  => 'dramatic',
+            'cardBorderRadius'  => 16,
+            'cardBorderColor'   => '#123456',
+            'tileBorderWidth'   => 2,
+            'tileBorderColor'   => '#ffffff',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('strong', $overrides['image_shadow_preset']);
+        $this->assertSame('dramatic', $overrides['card_shadow_preset']);
+        $this->assertSame(16, $overrides['card_border_radius']);
+        $this->assertSame('#123456', $overrides['card_border_color']);
+        $this->assertSame(2, $overrides['tile_border_width']);
+        $this->assertSame('#ffffff', $overrides['tile_border_color']);
+    }
+
+    public function test_p47m_display_toggles_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'showViewerBorder'          => false,
+            'showCampaignCoverImage'    => false,
+            'showCampaignTags'          => false,
+            'showCampaignGalleryLabels' => false,
+            'transitionFadeEnabled'     => false,
+            'campaignOpenMode'          => 'galleries-only',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertFalse($overrides['show_viewer_border']);
+        $this->assertFalse($overrides['show_campaign_cover_image']);
+        $this->assertFalse($overrides['show_campaign_tags']);
+        $this->assertFalse($overrides['show_campaign_gallery_labels']);
+        $this->assertFalse($overrides['transition_fade_enabled']);
+        $this->assertSame('galleries-only', $overrides['campaign_open_mode']);
+    }
 }

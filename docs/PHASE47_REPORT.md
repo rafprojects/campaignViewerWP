@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-08 (P47-L done; M/N/O planned)
+**Last updated:** 2026-06-08 (P47-L/M done; N/O planned)
 
 ### Tracks
 
@@ -20,7 +20,7 @@
 | P47-J | Campaign space assignment on create + settings space-scoping + create-space UX | **Done** | Small |
 | P47-K | Settings space-scoping audit — read-path verification + field categorization | **Done** | Medium |
 | P47-L | Bug: bust `get_space()` static cache on write so PUT responses are not stale | **Done** | Small |
-| P47-M | Promote tier-1 visual/branding fields (~90 keys) to space-overridable | Planned | Medium |
+| P47-M | Promote tier-1 visual/branding fields (~90 keys) to space-overridable | **Done** | Medium |
 | P47-N | Promote tier-2 layout/composition fields (~190 keys + unit companions) | Planned | Large |
 | P47-O | Space settings UI — wire full `SettingsPanel` into `SpaceManagementView` | Planned | Medium |
 
@@ -627,6 +627,19 @@ Add the following groups to `$space_overridable_fields` in [class-wpsg-settings-
 - Extend `WPSG_P47_Spaces_Settings_Test`: for one representative from each group (e.g. `nav_arrow_color`, `card_border_radius`, `image_bg_type`, `campaign_about_heading_text`), assert that PUT stores the override and that a second space without an override returns the global default.
 - Verify the sanitizer accepts the new fields (they already pass through `sanitize_settings()` — confirm no `$valid_options` or `$field_ranges` constraint blocks them).
 - `composer test` + `npm test` green.
+
+### Implementation notes
+
+**Actual count: 47 fields** (not ~90). Several candidates listed in the plan don't exist in the registry:
+- `viewer_bg_image_url`, `modal_bg_image_url` — no such keys in `$defaults`.
+- `nav_arrow_bg_opacity` — opacity is embedded in `nav_arrow_bg_color`'s rgba value; no separate field.
+- `nav_arrow_border_radius`, `nav_arrow_visible_on_hover` — don't exist; `nav_arrow_border_width` and `nav_arrow_auto_hide_ms` are the closest real fields (not promoted as they weren't in scope).
+- `dot_nav_color` — doesn't exist; promoted `dot_nav_active_color` + `dot_nav_inactive_color` instead.
+- `tile_border_radius`, `tile_border_opacity` — don't exist in the registry.
+
+**Sanitizer discovery**: the `sanitize_settings()` path was wrong for per-space overrides because it has a "nested-only gallery setting" exclusion list — fields like `gallery_image_label`, `image_bg_type`, and all nav/dot-nav fields are in `$nested_common_field_map` and are skipped by the global settings sanitizer. Added `WPSG_Settings::sanitize_overrides(array $input): array` as a focused per-space sanitizer that applies the same type-based rules (valid_options → enum; bool → cast; int/float → clamp; string → sanitize_text_field/esc_url_raw) without the nested-only exclusion. The space controller's `update_space_settings()` now calls `sanitize_overrides()` instead of `sanitize_settings()`.
+
+Added 5 PHPUnit tests (one per group) to `WPSG_P47_Spaces_Settings_Test`. Full suite: 874 tests, 2787 assertions, green.
 
 ---
 

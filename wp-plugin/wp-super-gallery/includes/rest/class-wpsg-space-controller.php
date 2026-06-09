@@ -426,8 +426,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
 
         $override_patch = [];
         if (!empty($to_update)) {
-            $sanitized_all  = WPSG_Settings::sanitize_settings($to_update);
-            $override_patch = array_intersect_key($sanitized_all, $to_update);
+            $override_patch = WPSG_Settings::sanitize_overrides($to_update);
         }
 
         $existing      = json_decode($space->settings_overrides, true);
