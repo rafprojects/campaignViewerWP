@@ -857,3 +857,14 @@ Commit: `303f9db3`
 |---|------|-------|----------|
 | 1 | `wp-plugin/…/class-wpsg-rest-base.php` | `get_effective_space_level($user_id, …)` called `current_user_can()` which evaluates capabilities for the *current session user*, ignoring the `$user_id` argument; any caller evaluating a different user would get the wrong result | **Fixed** — replaced both checks with `user_can($user_id, 'manage_options')` and `user_can($user_id, 'manage_wpsg')` so the function honours its contract |
 | 2 | `src/components/Admin/SpaceManagementView.tsx` | `GET /spaces/{id}/access` returns `{ items, total, page, … }` via `paginated_response()`; queryFn treated the response as a raw array, so `Array.isArray(res)` was always `false` and grants were always `[]` | **Fixed** — queryFn now reads `res.items` when the response is a paginated object, falling back to the raw array for forward-compatibility |
+
+---
+
+### PR #62 Copilot review — round 5 (2026-06-09)
+
+Commit: `703b9d01`
+
+| # | File | Issue | Decision |
+|---|------|-------|----------|
+| 1 | `wp-plugin/…/class-wpsg-settings.php` + `class-wpsg-settings-sanitizer.php` | `sanitize_overrides()` used `array_map('sanitize_text_field', $value)` for array-typed fields; this re-indexes the array and casts nested structures to `"Array"`, corrupting `viewer_bg_gradient`'s `type`/`direction`/`stops` payload | **Fixed** — `sanitize_viewer_bg_gradient()` promoted to `public static`; `sanitize_overrides()` now dispatches the `viewer_bg_gradient` key through it, with a scalar-safe fallback for any future array-typed fields |
+| 2 | `wp-plugin/…/class-wpsg-db.php` | `maybe_seed_default_space()` unconditionally called `update_option('wpsg_default_space_id', $wpdb->insert_id, …)` after the INSERT; if the INSERT failed (locked table, duplicate slug), `insert_id` would be 0, corrupting the option | **Fixed** — `$wpdb->insert()` return value and `insert_id > 0` are checked before calling `update_option` |
