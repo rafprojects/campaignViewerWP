@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-09 (P47-G/L/M/N/O done; H planned)
+**Last updated:** 2026-06-09 (all tracks done)
 
 ### Tracks
 
@@ -15,7 +15,7 @@
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | **Done** | Medium |
 | P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | **Done** | Large |
 | P47-G | Migration hardening + libraries + uninstall | **Done** | Medium |
-| P47-H | Tests + docs | Planned | Medium |
+| P47-H | Tests + docs | **Done** | Medium |
 | P47-I | Frontend space filtering + WP admin Campaigns column | **Done** | Small |
 | P47-J | Campaign space assignment on create + settings space-scoping + create-space UX | **Done** | Small |
 | P47-K | Settings space-scoping audit — read-path verification + field categorization | **Done** | Medium |
@@ -366,6 +366,25 @@ Isolation is a security-shaped boundary; it needs dedicated coverage, and the ph
 ### Validation
 
 - Run the full PHP/JS/e2e suites; manual end-to-end per the Testing Strategy below.
+
+### Implementation notes (done 2026-06-09)
+
+Test coverage was grown incrementally across tracks and consolidated here. All three PHP test classes and both JS describe blocks were in place by the end of P47-N/P47-O; P47-H closes the loop by running the full suites and recording the final numbers.
+
+**PHP — three test classes, 36 tests total:**
+
+| Class | Tests | What it locks in |
+|-------|------:|-----------------|
+| `WPSG_P47_Spaces_Migration_Test` | 8 | Schema (`wp_wpsg_spaces` table, `space_id` columns on 4 tables); default space seeding; backfill assignment, non-overwrite, idempotency, completion flag (created P47-G) |
+| `WPSG_P47_Spaces_Settings_Test` | 22 | Inheritance (`get_effective_settings` override wins, unset falls back, space_id 0 returns global); allowlist enforcement (non-overridable keys silently dropped at merge and at PUT); sanitizer clamping; P47-L cache-bust; P47-M branding group (5 representative-per-group tests); P47-N layout group (7 tests + unit-parity assertion) |
+| `WPSG_P47_Spaces_Isolation_Test` | 6 | Campaign read isolation; public settings isolation (`GET /settings?space=A` ≠ `?space=B`); open mode admits `manage_wpsg`; delegated mode denies `manage_wpsg`-only; `manage_options` escape hatch; explicit grantee admitted |
+
+**JS (vitest) — 5 tests in 2 describe blocks:**
+
+- `settingsQuery space scoping (P47)` — `getSettingsQueryKey` returns distinct keys for global/spaceA/spaceB; `useGetSettings(client, spaceId)` forwards `spaceId` to the API and caches under the space-scoped key, leaving the global cache empty.
+- `adminQuery space scoping (P47)` — `getAdminCampaignsQueryKey` keys distinctly per space; type identifier `'campaigns'` appears before `spaceId` so prefix invalidation (`['admin', base, 'campaigns']`) still matches every space-scoped key; `getAdminCampaignOptionsQueryKey` is also scoped per space.
+
+**Full suite results:** PHP 889 tests / 2950 assertions (green); JS 2093 tests / 152 files (green).
 
 ---
 
