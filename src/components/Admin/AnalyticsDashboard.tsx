@@ -132,6 +132,7 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
     refetch: refetchSummary,
   } = useAnalyticsSummary(
     apiClient,
+    'all',
     dateRange.from,
     dateRange.to,
     true,

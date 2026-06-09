@@ -51,6 +51,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-space-admin-renderer.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -378,6 +379,7 @@ function wpsg_should_add_security_headers() {
 // Initialize settings (admin only).
 if (is_admin()) {
     WPSG_Settings::init();
+    WPSG_Space_Admin_Renderer::init();
 }
 
 // P14-C/D/E/F: Register infrastructure.

@@ -87,3 +87,36 @@ describe('settingsQuery', () => {
     });
   });
 });
+
+describe('settingsQuery space scoping (P47)', () => {
+  it('keys global vs per-space distinctly so caches never collide', () => {
+    const { client } = createMockApiClient();
+    const globalKey = getSettingsQueryKey(client);
+    const spaceA = getSettingsQueryKey(client, 1);
+    const spaceB = getSettingsQueryKey(client, 2);
+
+    expect(globalKey).not.toEqual(spaceA);
+    expect(spaceA).not.toEqual(spaceB);
+    expect(globalKey[globalKey.length - 1]).toBeNull();
+    expect(spaceA[spaceA.length - 1]).toBe(1);
+  });
+
+  it('forwards spaceId to the API and caches under the space-scoped key only', async () => {
+    const { client, getSettings } = createMockApiClient();
+    const queryClient = createTestQueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      createElement(QueryClientProvider, { client: queryClient }, children)
+    );
+
+    const { result } = renderHook(() => useGetSettings(client, 7), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.data?.theme).toBe('nord');
+    });
+
+    expect(getSettings).toHaveBeenCalledWith(7);
+    expect(queryClient.getQueryData(getSettingsQueryKey(client, 7))).toEqual(result.current.data);
+    // The global cache entry must stay empty — space instances don't share it.
+    expect(queryClient.getQueryData(getSettingsQueryKey(client))).toBeUndefined();
+  });
+});

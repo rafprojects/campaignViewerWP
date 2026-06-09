@@ -14,6 +14,13 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_public_settings'],
                 'permission_callback' => [self::class, 'rate_limit_public'],
+                'args' => [
+                    // P47-J: optional space scoping — returns effective settings (global merged with space overrides).
+                    'space' => [
+                        'type'    => 'string',
+                        'default' => '',
+                    ],
+                ],
             ],
             [
                 'methods' => 'POST',
@@ -40,7 +47,12 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
         if (!class_exists('WPSG_Settings')) {
             return self::respond_with_etag($request, []);
         }
-        $settings = WPSG_Settings::get_settings();
+        // P47-J: when a space ID is provided, merge space overrides over global defaults.
+        $space_param = $request ? sanitize_text_field($request->get_param('space') ?? '') : '';
+        $space_id    = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
+        $settings    = $space_id > 0
+            ? WPSG_Settings::get_effective_settings($space_id)
+            : WPSG_Settings::get_settings();
         $is_admin = current_user_can('manage_wpsg');
         $payload  = WPSG_Settings::to_js($settings, $is_admin);
         return self::respond_with_etag($request, $payload);

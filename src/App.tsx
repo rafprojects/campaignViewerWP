@@ -82,10 +82,12 @@ function AppContent({
   apiBaseUrl,
   authProvider,
   accessMode,
+  spaceId,
 }: {
   apiBaseUrl: string;
   authProvider?: AuthProviderInterface | undefined;
   accessMode: 'lock' | 'hide';
+  spaceId?: number;
 }) {
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
   const isOnline = useOnlineStatus();
@@ -202,7 +204,8 @@ function AppContent({
 
   const fetchCampaigns = useCallback(async () => {
     setCampaignLoadProgress({ total: 0, completed: 0 });
-    const response = await apiClient.get<ApiCampaignResponse>('/wp-json/wp-super-gallery/v1/campaigns?include_media=1');
+    const spaceParam = spaceId != null ? `&space=${spaceId}` : '';
+    const response = await apiClient.get<ApiCampaignResponse>(`/wp-json/wp-super-gallery/v1/campaigns?include_media=1${spaceParam}`);
     const items = response.items ?? [];
     const mediaByCampaign = response.mediaByCampaign ?? {};
     setCampaignLoadProgress({ total: items.length, completed: 0 });
@@ -225,7 +228,7 @@ function AppContent({
     });
     setCampaignLoadProgress({ total: items.length, completed: items.length });
     return mapped;
-  }, [apiClient, isAdmin, permissions]);
+  }, [apiClient, isAdmin, permissions, spaceId]);
 
   const campaignsKey = [
     'campaigns',
@@ -233,6 +236,7 @@ function AppContent({
     user?.id ?? 'anon',
     isAuthenticated,
     isAdmin ? 'admin' : 'user',
+    spaceId ?? null,
   ] as const;
   const {
     data: campaigns,
@@ -250,13 +254,13 @@ function AppContent({
   });
   const error = campaignsError ? (campaignsError instanceof Error ? campaignsError.message : 'Failed to load campaigns') : null;
 
-  const { data: settingsResponse } = useGetSettings(apiClient);
+  const { data: settingsResponse } = useGetSettings(apiClient, spaceId);
 
   useEffect(() => { if (isOnline && isReady) void mutateCampaigns(); }, [isOnline, isReady, mutateCampaigns]);
 
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
-  const editModal = useUnifiedCampaignModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
+  const editModal = useUnifiedCampaignModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify, ...(spaceId !== undefined && { spaceId }) });
   const archiveModal = useArchiveModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
   const externalMediaModal = useExternalMediaModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
 
@@ -363,6 +367,7 @@ function AppContent({
                 onNotify={handleAdminNotify}
                 initialSettings={settingsResponse}
                 onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved as unknown as Parameters<typeof setSettingsQueryData>[2])}
+                {...(spaceId !== undefined && { spaceId })}
               />
             </Suspense>
           </ErrorBoundary>
@@ -406,6 +411,7 @@ function AppContent({
             onCampaignsUpdated={campaignsMutator}
             onNotify={handleAdminNotify}
             apiClient={apiClient}
+            {...(spaceId !== undefined && { spaceId })}
           />
         )}
 
@@ -448,9 +454,10 @@ function AppContent({
 
 interface AppProps {
   accessMode?: 'lock' | 'hide';
+  spaceId?: number;
 }
 
-function App({ accessMode }: AppProps) {
+function App({ accessMode, spaceId }: AppProps) {
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
   const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
@@ -460,7 +467,7 @@ function App({ accessMode }: AppProps) {
 
   return (
     <AuthProvider provider={provider} fallbackPermissions={[]}>
-      <AppContent apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} />
+      <AppContent apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} {...(spaceId !== undefined && { spaceId })} />
     </AuthProvider>
   );
 }

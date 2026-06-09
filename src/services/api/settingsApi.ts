@@ -31,8 +31,11 @@ export type SettingsUpdateRequest = Partial<SettingsResponse>;
 export class SettingsApi {
   constructor(private readonly transport: HttpTransport) {}
 
-  getSettings(): Promise<SettingsResponse> {
-    return this.transport.get<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings');
+  getSettings(spaceId?: number): Promise<SettingsResponse> {
+    const url = spaceId != null
+      ? `/wp-json/wp-super-gallery/v1/settings?space=${spaceId}`
+      : '/wp-json/wp-super-gallery/v1/settings';
+    return this.transport.get<SettingsResponse>(url);
   }
 
   updateSettings(settings: SettingsUpdateRequest): Promise<SettingsResponse> {

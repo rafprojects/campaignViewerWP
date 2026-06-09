@@ -26,8 +26,8 @@ export interface ResolvedSettingsResponse extends GalleryBehaviorSettings {
 export const SETTINGS_QUERY_KEY = ['settings'] as const;
 export const SETTINGS_QUERY_STALE_TIME = 5 * 60 * 1000;
 
-export function getSettingsQueryKey(apiClient: ApiClient) {
-  return [...SETTINGS_QUERY_KEY, apiClient.getBaseUrl()] as const;
+export function getSettingsQueryKey(apiClient: ApiClient, spaceId?: number) {
+  return [...SETTINGS_QUERY_KEY, apiClient.getBaseUrl(), spaceId ?? null] as const;
 }
 
 export function normalizeSettingsResponse(
@@ -47,17 +47,18 @@ export function setSettingsQueryData(
   queryClient: QueryClient,
   apiClient: ApiClient,
   response?: Partial<ResolvedSettingsResponse> | SettingsResponse,
+  spaceId?: number,
 ) {
   queryClient.setQueryData(
-    getSettingsQueryKey(apiClient),
+    getSettingsQueryKey(apiClient, spaceId),
     normalizeSettingsResponse(response),
   );
 }
 
-export function useGetSettings(apiClient: ApiClient) {
+export function useGetSettings(apiClient: ApiClient, spaceId?: number) {
   return useQuery({
-    queryKey: getSettingsQueryKey(apiClient),
-    queryFn: async () => normalizeSettingsResponse(await apiClient.getSettings()),
+    queryKey: getSettingsQueryKey(apiClient, spaceId),
+    queryFn: async () => normalizeSettingsResponse(await apiClient.getSettings(spaceId)),
     staleTime: SETTINGS_QUERY_STALE_TIME,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
@@ -74,6 +75,7 @@ export function useUpdateSettings(apiClient: ApiClient) {
     ),
     onSuccess: (data) => {
       setSettingsQueryData(queryClient, apiClient, data);
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     },
   });
 }

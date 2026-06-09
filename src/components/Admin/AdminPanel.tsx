@@ -4,7 +4,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
 import { useReloadSafeView } from '@/hooks/useReloadSafeView';
-import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments } from '@tabler/icons-react';
+import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments, IconStack2 } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
 import { CampaignsMobileList } from './CampaignsMobileList';
@@ -16,9 +16,11 @@ import { LayoutTemplateList } from './LayoutTemplateList';
 import { TemplatePickerModal } from './TemplatePickerModal';
 import { TemplatesTab } from './TemplatesTab';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
+import { SpaceSelector } from '@/components/Common/SpaceSelector';
+import type { SpaceSelectItem } from '@/components/Common/SpaceSelector';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
-  useGlobalAuditEntries,
+  useGlobalAuditEntries, useSpaces,
   useCampaignCategories, useCampaignTags,
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
   getAdminCampaignOptionsQueryKey,
@@ -47,6 +49,7 @@ const AdminCampaignBulkConfirmModal = lazy(() => import('./AdminCampaignBulkConf
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
 const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
+const SpaceManagementModal = lazy(() => import('./SpaceManagementModal').then((m) => ({ default: m.SpaceManagementModal })));
 
 interface AdminPanelProps {
   apiClient: ApiClient;
@@ -92,6 +95,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', 'all');
+  const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
+
   const [mediaCampaignId, setMediaCampaignId] = useState('');
   // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
@@ -122,13 +128,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     includeArchived,
   }), [categoryFilter, tagFilter, sortOrder, includeArchived]);
 
-  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, campaignPage, CAMPAIGNS_PER_PAGE, campaignFilters);
+  const { spaces, spacesLoading } = useSpaces(apiClient);
+  const isAllSpaces = selectedSpaceId === 'all';
+
+  const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, selectedSpaceId, campaignPage, CAMPAIGNS_PER_PAGE, campaignFilters);
   const { data: accessSummaryData } = useAccessSummary(apiClient);
-  const allCampaigns = useAllCampaignOptions(apiClient);
+  const allCampaigns = useAllCampaignOptions(apiClient, selectedSpaceId);
   const campaignsMutator = useCallback(async () => {
     await mutateCampaigns();
-    void queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient) });
-  }, [mutateCampaigns, queryClient, apiClient]);
+    void queryClient.invalidateQueries({ queryKey: getAdminCampaignOptionsQueryKey(apiClient, selectedSpaceId) });
+  }, [mutateCampaigns, queryClient, apiClient, selectedSpaceId]);
 
   const { data: layoutTemplates } = useLayoutTemplates(apiClient);
   const { campaignCategories } = useCampaignCategories(apiClient);
@@ -139,12 +148,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     apiClient, accessViewMode, activeTab === 'access' ? accessTargetId : '', showExpiredGrants,
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
-  const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, companiesEnabled);
+  const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, selectedSpaceId, companiesEnabled);
   const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
-  const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, activeTab === 'globalAudit' ? globalAuditFilters : {});
+  const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {});
 
+  // P47-J: pass the active space to the campaign modal so new campaigns get space_id set.
+  const activeSpaceId = selectedSpaceId !== 'all' ? parseInt(selectedSpaceId, 10) : undefined;
   const unifiedModal = useUnifiedCampaignModal({
     apiClient, isAdmin: true, onMutate: campaignsMutator, onNotify,
+    ...(activeSpaceId !== undefined && { spaceId: activeSpaceId }),
   });
 
   const handleTemplateSelected = useCallback((template: CampaignTemplate | null) => {
@@ -178,6 +190,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     mutateCampaigns: campaignsMutator,
     onNotify,
   });
+
+  useEffect(() => {
+    setMediaCampaignId('');
+    setAccessCampaignId('');
+    setAuditCampaignId('');
+    setSelectedCompanyId('');
+  }, [selectedSpaceId]);
 
   useEffect(() => {
     if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
@@ -217,6 +236,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     }
   }, [activeTab, allCampaigns, apiClient, queryClient]);
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
+
+  const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
+    { value: 'all', label: 'All spaces' },
+    ...spaces
+      .filter((s) => !s.archived)
+      .map((s) => ({ value: String(s.id), label: s.isDefault ? `${s.name} (default)` : s.name })),
+  ], [spaces]);
 
   const campaignSelectData = useMemo(
     () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
@@ -273,41 +299,66 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           </ActionIcon>
           <Title order={2} size="h3">Admin Panel</Title>
         </Group>
-        {isMobile ? (
-          <Menu shadow="md" width={200} position="bottom-end">
-            <Menu.Target>
-              <ActionIcon variant="light" size="lg" aria-label="Actions menu">
-                <IconDotsVertical size={18} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item leftSection={<IconPlus size={14} />} onClick={campaignActions.handleCreate}>
-                New Campaign
-              </Menu.Item>
-              <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)}>
-                Import
-              </Menu.Item>
-              <Menu.Divider />
-              <Menu.Item leftSection={<IconKeyboard size={14} />} onClick={() => campaignActions.setShortcutHelpOpen(true)}>
-                Keyboard shortcuts
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        ) : (
-          <Group gap="xs">
-            <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label="Create new campaign">
-              New Campaign
-            </Button>
-            <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm">
-              Import
-            </Button>
-            <Tooltip label="Keyboard shortcuts (?)">
-              <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label="Keyboard shortcuts">
-                <IconKeyboard size={18} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        )}
+        <Group gap="xs" wrap="wrap">
+          {spaces.length > 0 && (
+            <SpaceSelector
+              data={spaceSelectData}
+              value={selectedSpaceId}
+              onChange={setSelectedSpaceId}
+              size="xs"
+              w={160}
+              disabled={spacesLoading}
+            />
+          )}
+          {isMobile ? (
+            <Menu shadow="md" width={200} position="bottom-end">
+              <Menu.Target>
+                <ActionIcon variant="light" size="lg" aria-label="Actions menu">
+                  <IconDotsVertical size={18} />
+                </ActionIcon>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item leftSection={<IconPlus size={14} />} onClick={campaignActions.handleCreate} disabled={isAllSpaces}>
+                  New Campaign
+                </Menu.Item>
+                <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)} disabled={isAllSpaces}>
+                  Import
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item leftSection={<IconStack2 size={14} />} onClick={() => setSpaceManagementOpen(true)}>
+                  Manage spaces
+                </Menu.Item>
+                <Menu.Divider />
+                <Menu.Item leftSection={<IconKeyboard size={14} />} onClick={() => campaignActions.setShortcutHelpOpen(true)}>
+                  Keyboard shortcuts
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          ) : (
+            <>
+              <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Create new campaign'}>
+                <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label="Create new campaign" disabled={isAllSpaces}>
+                  New Campaign
+                </Button>
+              </Tooltip>
+              <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Import campaigns'}>
+                <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm" disabled={isAllSpaces}>
+                  Import
+                </Button>
+              </Tooltip>
+              <Tooltip label="Manage spaces">
+                <ActionIcon variant="subtle" size="lg" onClick={() => setSpaceManagementOpen(true)} aria-label="Manage spaces">
+                  <IconStack2 size={18} />
+                </ActionIcon>
+              </Tooltip>
+              <Tooltip label="Keyboard shortcuts (?)">
+                <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label="Keyboard shortcuts">
+                  <IconKeyboard size={18} />
+                </ActionIcon>
+              </Tooltip>
+            </>
+          )}
+        </Group>
       </Group>
 
       <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
@@ -725,6 +776,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             apiClient={apiClient}
             onClose={() => setTaxonomyManagerOpen(false)}
             onNotify={onNotify}
+          />
+        </Suspense>
+      )}
+      {spaceManagementOpen && (
+        <Suspense fallback={null}>
+          <SpaceManagementModal
+            opened={spaceManagementOpen}
+            apiClient={apiClient}
+            onClose={() => setSpaceManagementOpen(false)}
+            onNotify={onNotify}
+            onSpacesChanged={() => void queryClient.invalidateQueries({ queryKey: ['spaces'] })}
           />
         </Suspense>
       )}

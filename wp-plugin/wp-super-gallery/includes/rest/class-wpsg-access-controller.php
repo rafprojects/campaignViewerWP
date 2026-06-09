@@ -1091,23 +1091,51 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         $page     = max(1, intval($request->get_param('page') ?: 1));
         $offset   = ($page - 1) * $per_page;
 
+        $space_param  = sanitize_text_field($request->get_param('space') ?? '');
+        $space_id     = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
+        $space_join   = $space_id > 0
+            ? $wpdb->prepare(
+                " INNER JOIN {$wpdb->postmeta} pm_space ON (pm_space.post_id = p.ID AND pm_space.meta_key = '_wpsg_space_id' AND pm_space.meta_value = %d)",
+                $space_id
+            )
+            : '';
         // Count all campaigns (any post_status that "exists").
-        $total = intval($wpdb->get_var(
-            "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash','auto-draft')"
-        ));
+        if ($space_id > 0) {
+            $total = intval($wpdb->get_var(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p{$space_join} WHERE p.post_type = 'wpsg_campaign' AND p.post_status NOT IN ('trash','auto-draft')"
+            ));
+        } else {
+            $total = intval($wpdb->get_var(
+                "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash','auto-draft')"
+            ));
+        }
 
         $total_pages = max(1, (int) ceil($total / $per_page));
 
         // Fetch this page of campaigns.
-        $ids = $wpdb->get_col($wpdb->prepare(
-            "SELECT ID FROM {$wpdb->posts}
-             WHERE post_type = 'wpsg_campaign'
-               AND post_status NOT IN ('trash','auto-draft')
-             ORDER BY post_title ASC
-             LIMIT %d OFFSET %d",
-            $per_page,
-            $offset
-        ));
+        if ($space_id > 0) {
+            $ids = $wpdb->get_col($wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                "SELECT DISTINCT p.ID FROM {$wpdb->posts} p{$space_join}
+                 WHERE p.post_type = 'wpsg_campaign'
+                   AND p.post_status NOT IN ('trash','auto-draft')
+                 ORDER BY p.post_title ASC
+                 LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ));
+        } else {
+            $ids = $wpdb->get_col($wpdb->prepare(
+                "SELECT ID FROM {$wpdb->posts}
+                 WHERE post_type = 'wpsg_campaign'
+                   AND post_status NOT IN ('trash','auto-draft')
+                 ORDER BY post_title ASC
+                 LIMIT %d OFFSET %d",
+                $per_page,
+                $offset
+            ));
+        }
 
         if (empty($ids)) {
             return new WP_REST_Response([

@@ -71,6 +71,10 @@ $options = [
 	'wpsg_access_request_index',
 	'wpsg_overlays_migrated',
 	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
+	// P47-A: Gallery Spaces
+	'wpsg_default_space_id',
+	'wpsg_spaces_backfill_complete',
+	'wpsg_spaces_backfill_offset',
 ];
 foreach ( $options as $option ) {
 	delete_option( $option );
@@ -99,6 +103,8 @@ $tables = [
 	$wpdb->prefix . 'wpsg_access_requests',
 	$wpdb->prefix . 'wpsg_media_refs',
 	$wpdb->prefix . 'wpsg_overlays',
+	$wpdb->prefix . 'wpsg_audit_log',   // P40
+	$wpdb->prefix . 'wpsg_spaces',      // P47-A
 ];
 foreach ( $tables as $table ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange

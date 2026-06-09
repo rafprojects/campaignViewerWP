@@ -55,12 +55,16 @@ const STORAGE_KEY = 'wpsg-theme-id';
  * When persistence is disabled (admin locked theme), localStorage is
  * skipped and the WP-injected theme takes precedence.
  */
-function resolveInitialThemeId(allowPersistence: boolean): string {
+function resolveInitialThemeId(
+  allowPersistence: boolean,
+  storageKey: string,
+  defaultThemeId?: string,
+): string {
   // 1. User's localStorage preference (when persistence is allowed)
   // Checked first so user's explicit choice overrides admin defaults
   if (allowPersistence && typeof window !== 'undefined') {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       if (stored && hasTheme(stored)) {
         return stored;
       }
@@ -69,7 +73,12 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     }
   }
 
-  // 2. WP injected config (set by PHP on the embed container)
+  // 2. Per-instance admin-configured theme (e.g., space's theme setting)
+  if (defaultThemeId && hasTheme(defaultThemeId)) {
+    return defaultThemeId;
+  }
+
+  // 3. WP injected config (set by PHP on the embed container)
   const wpConfigId: string | null | undefined =
     (typeof window !== 'undefined'
       ? window.__wpsgThemeId
@@ -82,7 +91,7 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     return wpConfigId;
   }
 
-  // 3. __WPSG_CONFIG__.theme (set by WP embed shortcode)
+  // 4. __WPSG_CONFIG__.theme (set by WP embed shortcode)
   if (typeof window !== 'undefined') {
     const configTheme = window.__WPSG_CONFIG__?.theme;
     if (configTheme && hasTheme(configTheme)) {
@@ -90,16 +99,16 @@ function resolveInitialThemeId(allowPersistence: boolean): string {
     }
   }
 
-  // 4. Default fallback
+  // 5. Default fallback
   return DEFAULT_THEME_ID;
 }
 
 /**
  * Persist theme ID to localStorage (best-effort, never throws).
  */
-function persistThemeId(id: string): void {
+function persistThemeId(id: string, storageKey = STORAGE_KEY): void {
   try {
-    localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(storageKey, id);
   } catch {
     // Storage full or blocked — silently ignore
   }
@@ -126,6 +135,20 @@ export interface ThemeProviderProps {
   forcedThemeId?: string | undefined;
 
   /**
+   * Per-instance admin-configured theme (e.g., a space's theme setting).
+   * Used as the initial theme when no localStorage preference exists,
+   * but user can still override it (unlike forcedThemeId).
+   */
+  defaultThemeId?: string | undefined;
+
+  /**
+   * Scopes the localStorage key to `wpsg-theme-id-{instanceId}` so that
+   * each space on a multi-space page maintains independent user theme
+   * preferences.
+   */
+  instanceId?: string | undefined;
+
+  /**
    * Shadow DOM root reference. When provided, the CSS variables will
    * be injected into this element via a <style> tag for Shadow DOM
    * isolation.
@@ -149,12 +172,14 @@ export function ThemeProvider({
   children,
   allowPersistence = true,
   forcedThemeId,
+  defaultThemeId,
+  instanceId,
   shadowRoot,
   hostElement,
   themeScopeSelector,
 }: ThemeProviderProps) {
-  // Resolve initial theme
-  const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence);
+  const storageKey = instanceId ? `${STORAGE_KEY}-${instanceId}` : STORAGE_KEY;
+  const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence, storageKey, defaultThemeId);
 
   const [themeId, setThemeIdState] = useState<string>(initialId);
   const [previewThemeId, setPreviewThemeIdState] = useState<string | null>(null);
@@ -182,10 +207,10 @@ export function ThemeProvider({
       setPreviewThemeIdState(null);
 
       if (allowPersistence && !forcedThemeId) {
-        persistThemeId(resolvedId);
+        persistThemeId(resolvedId, storageKey);
       }
     },
-    [allowPersistence, forcedThemeId],
+    [allowPersistence, forcedThemeId, storageKey],
   );
 
   // setPreviewTheme — instant visual switch without persisting

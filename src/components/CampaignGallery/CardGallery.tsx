@@ -51,6 +51,7 @@ interface CardGalleryProps {
   onCampaignsUpdated?: () => Promise<unknown> | void;
   onNotify?: (message: { type: 'error' | 'success'; text: string }) => void;
   apiClient?: ApiClient;
+  spaceId?: number;
 }
 
 export function CardGallery({
@@ -64,6 +65,7 @@ export function CardGallery({
   onCampaignsUpdated,
   onNotify,
   apiClient,
+  spaceId,
 }: CardGalleryProps) {
   // ── Modal state ───────────────────────────────────────────────────────────
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
@@ -81,7 +83,7 @@ export function CardGallery({
   const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
   const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings, 500, (err) => {
     notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to save settings.') });
-  });
+  }, spaceId);
 
   // Load Google Fonts referenced in typography overrides.
   useEffect(() => {
@@ -429,6 +431,7 @@ export function CardGallery({
             onCampaignsUpdated={onCampaignsUpdated}
             onNotify={onNotify}
             onClose={() => setSelectedCampaign(null)}
+            {...(spaceId !== undefined && { spaceId })}
           />
         </Suspense>
       )}

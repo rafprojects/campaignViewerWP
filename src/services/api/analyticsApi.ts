@@ -94,10 +94,11 @@ export class AnalyticsApi {
     );
   }
 
-  getAnalyticsSummary(from?: string, to?: string): Promise<AnalyticsSummaryResponse> {
+  getAnalyticsSummary(from?: string, to?: string, spaceId?: string): Promise<AnalyticsSummaryResponse> {
     const params = new URLSearchParams();
     if (from) params.set('from', from);
     if (to) params.set('to', to);
+    if (spaceId && spaceId !== 'all') params.set('space', spaceId);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.transport.get<AnalyticsSummaryResponse>(
       `/wp-json/wp-super-gallery/v1/analytics/summary${qs}`,

@@ -22,7 +22,7 @@ export function useBuilderCampaignMedia(
   opened: boolean,
   initialTemplateId: string | undefined,
 ): UseBuilderCampaignMediaResult {
-  const campaignOptions = useAllCampaignOptions(apiClient, opened);
+  const campaignOptions = useAllCampaignOptions(apiClient, 'all', opened);
   const campaigns = useMemo(
     () => campaignOptions.map((campaign) => ({ id: Number(campaign.id), title: campaign.title })),
     [campaignOptions],

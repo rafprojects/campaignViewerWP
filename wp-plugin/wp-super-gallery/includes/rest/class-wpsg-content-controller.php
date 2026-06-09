@@ -775,25 +775,36 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         $per_page = max(1, min(100, intval($request->get_param('per_page') ?? 50)));
         $offset = ($page - 1) * $per_page;
 
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
+        $space_id    = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
+
         // Transient cache (same invalidation strategy as list_campaigns).
         $cache_version = get_option('wpsg_cache_version', 0);
-        $cache_key = "wpsg_companies_{$page}_{$per_page}_{$cache_version}";
+        $cache_key = "wpsg_companies_{$page}_{$per_page}_{$space_id}_{$cache_version}";
         $cached = get_transient($cache_key);
         if ($cached !== false) {
             $response = new WP_REST_Response($cached, 200);
-            $total = wp_count_terms('wpsg_company', ['hide_empty' => false]);
+            $count_args = ['hide_empty' => false];
+            if ($space_id > 0) {
+                $count_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+            }
+            $total = wp_count_terms('wpsg_company', $count_args);
             $response->header('X-WPSG-Total', (string) $total);
             $response->header('X-WPSG-Page', (string) $page);
             $response->header('X-WPSG-Per-Page', (string) $per_page);
             return $response;
         }
 
-        $terms = get_terms([
+        $terms_args = [
             'taxonomy' => 'wpsg_company',
             'hide_empty' => false,
             'number' => $per_page,
             'offset' => $offset,
-        ]);
+        ];
+        if ($space_id > 0) {
+            $terms_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+        }
+        $terms = get_terms($terms_args);
 
         if (is_wp_error($terms)) {
             return new WP_Error('wpsg_internal_error', 'Failed to fetch companies', ['status' => 500]);
@@ -872,7 +883,11 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             ];
         }
 
-        $total       = (int) wp_count_terms('wpsg_company', ['hide_empty' => false]);
+        $total_args  = ['hide_empty' => false];
+        if ($space_id > 0) {
+            $total_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+        }
+        $total       = (int) wp_count_terms('wpsg_company', $total_args);
         $total_pages = $per_page > 0 ? max(1, (int) ceil($total / $per_page)) : 1;
         $response_data = [
             'items'       => $companies,

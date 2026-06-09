@@ -196,4 +196,109 @@ class WPSG_Settings {
         self::load_registry();
         return WPSG_Settings_Utils::from_js($body, self::$defaults);
     }
+
+    /**
+     * Sanitize a flat key→value map of per-space override values.
+     *
+     * Differs from sanitize_settings() in two ways:
+     *  1. Does not call wp_parse_args() over the stored global option, so it
+     *     only processes the keys that were explicitly submitted.
+     *  2. Does not skip keys that are in the "nested-only gallery setting"
+     *     exclusion list — those fields are perfectly valid as flat override
+     *     values even though the global settings form can't write them directly.
+     *
+     * @param array $input Snake-case key→value map to sanitize.
+     * @return array Sanitized subset (unknown or invalid keys are dropped).
+     */
+    public static function sanitize_overrides(array $input): array {
+        self::load_registry();
+        $sanitized = [];
+        foreach ($input as $key => $value) {
+            if (!array_key_exists($key, self::$defaults)) {
+                continue;
+            }
+            if (isset(self::$valid_options[$key])) {
+                if (in_array($value, self::$valid_options[$key], true)) {
+                    $sanitized[$key] = $value;
+                }
+                continue;
+            }
+            $default = self::$defaults[$key];
+            if (is_bool($default)) {
+                $sanitized[$key] = (bool) $value;
+            } elseif (is_int($default)) {
+                $val = intval($value);
+                if (isset(self::$field_ranges[$key])) {
+                    $val = max((int) self::$field_ranges[$key][0], min((int) self::$field_ranges[$key][1], $val));
+                }
+                $sanitized[$key] = $val;
+            } elseif (is_float($default)) {
+                $val = floatval($value);
+                if (isset(self::$field_ranges[$key])) {
+                    $val = max((float) self::$field_ranges[$key][0], min((float) self::$field_ranges[$key][1], $val));
+                }
+                $sanitized[$key] = $val;
+            } elseif (is_array($default)) {
+                // Array-typed fields (e.g. viewer_bg_gradient): must go through the
+                // field-specific sanitizer so structured payloads (type/direction/stops)
+                // are not flattened by array_map('sanitize_text_field').
+                if (!is_array($value)) {
+                    continue;
+                }
+                if ($key === 'viewer_bg_gradient') {
+                    $sanitized[$key] = WPSG_Settings_Sanitizer::sanitize_viewer_bg_gradient($value);
+                } else {
+                    // Fallback for future array-typed fields: sanitize scalar leaves only.
+                    $sanitized[$key] = array_map(
+                        fn($v) => is_scalar($v) ? sanitize_text_field((string) $v) : null,
+                        $value
+                    );
+                }
+            } else {
+                if ($key === 'typography_overrides') {
+                    // JS submits this as an object/array; the sanitizer accepts both and returns a JSON string.
+                    $sanitized[$key] = WPSG_Settings_Sanitizer::sanitize_typography_overrides($value);
+                } elseif (str_ends_with($key, '_url') || str_ends_with($key, '_image_url')) {
+                    $sanitized[$key] = esc_url_raw((string) $value);
+                } else {
+                    $sanitized[$key] = sanitize_text_field((string) $value);
+                }
+            }
+        }
+        return $sanitized;
+    }
+
+    /**
+     * Keys that space owners may override via /spaces/{id}/settings.
+     *
+     * @return string[]
+     */
+    public static function get_overridable_keys(): array {
+        return WPSG_Settings_Registry::get_space_overridable_fields();
+    }
+
+    /**
+     * Effective settings for a space: space overrides merged over global defaults.
+     * Falls back to global settings when $space_id is 0 or space is not found.
+     *
+     * @param int $space_id Space ID (0 = global only).
+     * @return array
+     */
+    public static function get_effective_settings(int $space_id = 0): array {
+        $global = self::get_settings();
+        if ($space_id <= 0) {
+            return $global;
+        }
+        $space = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return $global;
+        }
+        $overrides = json_decode($space->settings_overrides, true);
+        if (!is_array($overrides) || empty($overrides)) {
+            return $global;
+        }
+        $allowed  = array_flip(self::get_overridable_keys());
+        $filtered = array_intersect_key($overrides, $allowed);
+        return array_merge($global, $filtered);
+    }
 }

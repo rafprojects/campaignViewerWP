@@ -5,7 +5,10 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '10';
+    const DB_VERSION = '11';
+
+    /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
+    private static array $space_cache = [];
 
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
@@ -20,6 +23,10 @@ class WPSG_DB {
         self::maybe_create_audit_log_table();
         self::maybe_upgrade_audit_log_v9();
         self::maybe_create_overlays_table();
+        self::maybe_create_spaces_table();
+        self::maybe_upgrade_v11_space_columns();
+        self::maybe_seed_default_space();
+        self::maybe_backfill_spaces();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -759,6 +766,10 @@ class WPSG_DB {
             $where[]  = 'campaign_id = %d';
             $values[] = intval($args['campaign_id']);
         }
+        if (!empty($args['space_id']) && intval($args['space_id']) > 0) {
+            $where[]  = 'space_id = %d';
+            $values[] = intval($args['space_id']);
+        }
         if (!empty($args['from'])) {
             $where[]  = 'created_at >= %s';
             $values[] = gmdate('Y-m-d H:i:s', strtotime($args['from']));
@@ -837,6 +848,236 @@ class WPSG_DB {
             'wpsg_termmeta_termid_key',
             '(term_id, meta_key(191))'
         );
+    }
+
+    // ── P47-A: Gallery Spaces ─────────────────────────────────────────────────
+
+    private static function maybe_create_spaces_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        $table   = $wpdb->prefix . 'wpsg_spaces';
+        $charset = $wpdb->get_charset_collate();
+        $sql     = "CREATE TABLE {$table} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            slug varchar(100) NOT NULL,
+            name varchar(255) NOT NULL,
+            isolation_mode varchar(20) NOT NULL DEFAULT 'open',
+            access_grants longtext NOT NULL,
+            settings_overrides longtext NOT NULL,
+            archived tinyint(1) NOT NULL DEFAULT 0,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY slug (slug)
+        ) {$charset};";
+        dbDelta($sql);
+    }
+
+    private static function maybe_upgrade_v11_space_columns(): void {
+        global $wpdb;
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $has_col = $wpdb->get_var(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = '{$table}'
+                   AND COLUMN_NAME = 'space_id'"
+            );
+            if (intval($has_col) > 0) {
+                continue;
+            }
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN space_id bigint(20) UNSIGNED NOT NULL DEFAULT 0");
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query("ALTER TABLE {$table} ADD INDEX idx_space_id (space_id)");
+        }
+    }
+
+    private static function maybe_seed_default_space(): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'wpsg_spaces';
+
+        // Recover from a broken state: row exists but option is missing/zero.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $existing_id = (int) $wpdb->get_var(
+            "SELECT id FROM {$table} WHERE slug = 'default' LIMIT 1"
+        );
+        if ($existing_id > 0) {
+            if (!get_option('wpsg_default_space_id')) {
+                update_option('wpsg_default_space_id', $existing_id, false);
+            }
+            return;
+        }
+
+        $inserted = $wpdb->insert($table, [
+            'slug'               => 'default',
+            'name'               => 'Default',
+            'isolation_mode'     => 'open',
+            'access_grants'      => '[]',
+            'settings_overrides' => '{}',
+            'archived'           => 0,
+        ]);
+        if ($inserted && $wpdb->insert_id > 0) {
+            update_option('wpsg_default_space_id', $wpdb->insert_id, false);
+        }
+    }
+
+    private static function maybe_backfill_spaces(): void {
+        $default_id = intval(get_option('wpsg_default_space_id'));
+        if (!$default_id) {
+            return;
+        }
+        if (get_option('wpsg_spaces_backfill_complete')) {
+            return;
+        }
+
+        $batch = 50;
+
+        // Do NOT use an offset with NOT EXISTS: as each batch assigns the meta,
+        // those posts leave the result set, so incrementing offset would skip
+        // still-unassigned campaigns. Always fetch the first N unassigned posts.
+        $posts = get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => $batch,
+            'fields'         => 'ids',
+            'meta_query'     => [[
+                'key'     => '_wpsg_space_id',
+                'compare' => 'NOT EXISTS',
+            ]],
+        ]);
+
+        foreach ($posts as $post_id) {
+            add_post_meta($post_id, '_wpsg_space_id', $default_id, true);
+        }
+
+        if (count($posts) < $batch) {
+            self::backfill_company_spaces($default_id);
+            update_option('wpsg_spaces_backfill_complete', '1', false);
+        }
+    }
+
+    private static function backfill_company_spaces(int $default_id): void {
+        $terms = get_terms(['taxonomy' => 'wpsg_company', 'hide_empty' => false, 'fields' => 'ids']);
+        if (is_wp_error($terms)) {
+            return;
+        }
+        foreach ($terms as $term_id) {
+            if (!get_term_meta($term_id, '_wpsg_space_id', true)) {
+                add_term_meta($term_id, '_wpsg_space_id', $default_id, true);
+            }
+        }
+    }
+
+    // ── P47-A: Space table helpers ────────────────────────────────────────────
+
+    public static function get_spaces_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_spaces';
+    }
+
+    public static function get_space(int $id): ?object {
+        if (array_key_exists($id, self::$space_cache)) {
+            return self::$space_cache[$id];
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $row                    = $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE id = %d',
+            $id
+        )) ?: null;
+        self::$space_cache[$id] = $row;
+        return $row;
+    }
+
+    public static function get_space_by_slug(string $slug): ?object {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE slug = %s',
+            $slug
+        )) ?: null;
+    }
+
+    public static function list_spaces(array $args = []): array {
+        global $wpdb;
+        $table = self::get_spaces_table();
+        // When 'archived' key is absent, return all spaces (no filter).
+        // Pass ['archived' => 0] to restrict to active, ['archived' => 1] for archived only.
+        if (array_key_exists('archived', $args)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$table} WHERE archived = %d ORDER BY id ASC",
+                intval($args['archived'])
+            ));
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_results("SELECT * FROM {$table} ORDER BY id ASC");
+    }
+
+    public static function insert_space(array $data): int {
+        global $wpdb;
+        $wpdb->insert(self::get_spaces_table(), [
+            'slug'               => sanitize_title($data['slug'] ?? ''),
+            'name'               => sanitize_text_field($data['name'] ?? ''),
+            'isolation_mode'     => in_array($data['isolation_mode'] ?? '', ['open', 'delegated'], true)
+                                        ? $data['isolation_mode'] : 'open',
+            'access_grants'      => wp_json_encode(array_values((array) ($data['access_grants'] ?? []))),
+            'settings_overrides' => wp_json_encode((array) ($data['settings_overrides'] ?? [])),
+            'archived'           => 0,
+        ]);
+        return intval($wpdb->insert_id);
+    }
+
+    public static function update_space(int $id, array $data): bool {
+        global $wpdb;
+        $allowed = ['slug', 'name', 'isolation_mode', 'access_grants', 'settings_overrides'];
+        $payload = [];
+        foreach ($allowed as $key) {
+            if (!array_key_exists($key, $data)) {
+                continue;
+            }
+            if (in_array($key, ['access_grants', 'settings_overrides'], true)) {
+                $payload[$key] = wp_json_encode((array) $data[$key]);
+            } elseif ($key === 'isolation_mode') {
+                $payload[$key] = in_array($data[$key], ['open', 'delegated'], true) ? $data[$key] : 'open';
+            } elseif ($key === 'slug') {
+                $payload[$key] = sanitize_title($data[$key]);
+            } else {
+                $payload[$key] = sanitize_text_field($data[$key]);
+            }
+        }
+        if (empty($payload)) {
+            return false;
+        }
+        $payload['updated_at'] = gmdate('Y-m-d H:i:s');
+        $result                = (bool) $wpdb->update(self::get_spaces_table(), $payload, ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
+    }
+
+    public static function archive_space(int $id): bool {
+        global $wpdb;
+        $result = (bool) $wpdb->update(
+            self::get_spaces_table(),
+            ['archived' => 1, 'updated_at' => gmdate('Y-m-d H:i:s')],
+            ['id' => $id]
+        );
+        unset(self::$space_cache[$id]);
+        return $result;
+    }
+
+    public static function delete_space(int $id): bool {
+        global $wpdb;
+        $result = (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

@@ -54,7 +54,7 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
  * Allowed shortcode prop keys. Prevents external shortcode consumers from
  * injecting unexpected keys into the React component tree (P20-H-1).
  */
-const ALLOWED_PROPS = new Set(['campaign', 'company'])
+const ALLOWED_PROPS = new Set(['campaign', 'company', 'space'])
 
 const parseProps = (node: Element): MountProps => {
   const raw = node.getAttribute('data-wpsg-props')
@@ -65,6 +65,26 @@ const parseProps = (node: Element): MountProps => {
     return Object.fromEntries(
       Object.entries(parsed as Record<string, unknown>).filter(([k]) => ALLOWED_PROPS.has(k)),
     )
+  } catch {
+    return {}
+  }
+}
+
+interface NodeConfig {
+  spaceId?: number
+  theme?: string
+  galleryLayout?: string
+  enableLightbox?: boolean
+  enableAnimations?: boolean
+}
+
+const parseNodeConfig = (node: Element): NodeConfig => {
+  const raw = node.getAttribute('data-wpsg-config')
+  if (!raw) return {}
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    return parsed as NodeConfig
   } catch {
     return {}
   }
@@ -137,10 +157,12 @@ const renderApp = (
   props: MountProps,
   rootId: string,
   shadowRootEl?: ShadowRoot,
+  nodeConfig: NodeConfig = {},
 ) => {
   const isShadow = !!shadowRootEl
   const themeScopeSelector = shadowRootEl ? undefined : ensureThemeScopeSelector(hostElement)
   const queryClient = createAppQueryClient()
+  const instanceId = nodeConfig.spaceId != null ? String(nodeConfig.spaceId) : undefined
 
   createRoot(mountNode).render(
     <StrictMode>
@@ -151,6 +173,8 @@ const renderApp = (
             hostElement={hostElement}
             themeScopeSelector={themeScopeSelector}
             allowPersistence={allowThemePersistence}
+            defaultThemeId={nodeConfig.theme}
+            instanceId={instanceId}
           >
             <ThemedApp
               props={props}
@@ -164,7 +188,7 @@ const renderApp = (
   )
 }
 
-const mountWithShadow = (host: HTMLElement, props: MountProps, rootId: string) => {
+const mountWithShadow = (host: HTMLElement, props: MountProps, rootId: string, nodeConfig: NodeConfig = {}) => {
   // Prevent double mounting - check host element first
   if (host.hasAttribute('data-wpsg-mounted')) {
     return
@@ -183,16 +207,16 @@ const mountWithShadow = (host: HTMLElement, props: MountProps, rootId: string) =
   const mountPoint = document.createElement('div')
   mountPoint.setAttribute('data-wpsg-mount', 'true')
   shadowRoot.appendChild(mountPoint)
-  renderApp(mountPoint, host, props, rootId, shadowRoot)
+  renderApp(mountPoint, host, props, rootId, shadowRoot, nodeConfig)
 }
 
-const mountDefault = (host: HTMLElement, props: MountProps, rootId: string) => {
+const mountDefault = (host: HTMLElement, props: MountProps, rootId: string, nodeConfig: NodeConfig = {}) => {
   // Prevent double mounting
   if (host.hasAttribute('data-wpsg-mounted')) {
     return
   }
   host.setAttribute('data-wpsg-mounted', 'true')
-  renderApp(host, host, props, rootId)
+  renderApp(host, host, props, rootId, undefined, nodeConfig)
 }
 
 /**
@@ -214,6 +238,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     props: MountProps
     portalKey: string
     themeScopeSelector?: string
+    nodeConfig: NodeConfig
   }
 
   const instances: MountInstance[] = []
@@ -221,6 +246,9 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   nodes.forEach((host, index) => {
     if (host.hasAttribute('data-wpsg-mounted')) return
     host.setAttribute('data-wpsg-mounted', 'true')
+
+    const nodeConfig = parseNodeConfig(host)
+    const props = { ...parseProps(host), spaceId: nodeConfig.spaceId }
 
     if (useShadowDom) {
       const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
@@ -236,15 +264,16 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
       mountPoint.setAttribute('data-wpsg-mount', 'true')
       shadowRoot.appendChild(mountPoint)
       const portalKey = getRootId(host, index)
-      instances.push({ mountPoint, hostElement: host, shadowRoot, props: parseProps(host), portalKey })
+      instances.push({ mountPoint, hostElement: host, shadowRoot, props, portalKey, nodeConfig })
     } else {
       const portalKey = getRootId(host, index)
       instances.push({
         mountPoint: host,
         hostElement: host,
-        props: parseProps(host),
+        props,
         portalKey,
         themeScopeSelector: ensureThemeScopeSelector(host),
+        nodeConfig,
       })
     }
   })
@@ -281,14 +310,17 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   root.render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        {instances.map((inst, i) =>
-          createPortal(
+        {instances.map((inst, i) => {
+          const instanceId = inst.nodeConfig.spaceId != null ? String(inst.nodeConfig.spaceId) : undefined
+          return createPortal(
             <RootIdProvider value={inst.portalKey}>
               <ThemeProvider
                 shadowRoot={inst.shadowRoot ?? null}
                 hostElement={inst.hostElement}
                 themeScopeSelector={inst.themeScopeSelector}
                 allowPersistence={i === 0 && allowThemePersistence}
+                defaultThemeId={inst.nodeConfig.theme}
+                instanceId={instanceId}
               >
                 <ThemedApp
                   props={inst.props}
@@ -299,28 +331,36 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
             </RootIdProvider>,
             inst.mountPoint,
             inst.portalKey,
-          ),
-        )}
+          )
+        })}
       </QueryClientProvider>
     </StrictMode>,
   )
 }
 
+const spacesAdminHost = document.getElementById('wpsg-spaces-admin')
 const rootHost = document.getElementById('root')
 if (import.meta.env.DEV) {
   console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
   console.log('[WPSG] All .wp-super-gallery elements:', document.querySelectorAll('.wp-super-gallery').length)
 }
 
-if (rootHost) {
+// P47-K: the WP-admin "Gallery Spaces" page mounts only the space-management UI
+// (lazy-loaded so the admin chunk stays out of the public gallery path).
+if (spacesAdminHost) {
+  void import('./components/Admin/SpacesAdminApp').then(({ mountSpacesAdmin }) => {
+    mountSpacesAdmin(spacesAdminHost)
+  })
+} else if (rootHost) {
   if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')
-  const props = parseProps(rootHost)
+  const nodeConfig = parseNodeConfig(rootHost)
+  const props = { ...parseProps(rootHost), spaceId: nodeConfig.spaceId }
   const rootId = getRootId(rootHost)
   if (useShadowDom) {
-    mountWithShadow(rootHost, props, rootId)
+    mountWithShadow(rootHost, props, rootId, nodeConfig)
   } else {
     import('./styles/global.scss')
-    mountDefault(rootHost, props, rootId)
+    mountDefault(rootHost, props, rootId, nodeConfig)
   }
 } else {
   // Only search for .wp-super-gallery if #root doesn't exist
@@ -335,13 +375,14 @@ if (rootHost) {
   } else {
     nodes.forEach((node, index) => {
       if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
-      const props = parseProps(node)
+      const nodeConfig = parseNodeConfig(node)
+      const props = { ...parseProps(node), spaceId: nodeConfig.spaceId }
       const rootId = getRootId(node, index)
       if (useShadowDom) {
-        mountWithShadow(node, props, rootId)
+        mountWithShadow(node, props, rootId, nodeConfig)
       } else {
         import('./styles/global.scss')
-        mountDefault(node, props, rootId)
+        mountDefault(node, props, rootId, nodeConfig)
       }
     })
   }

@@ -43,6 +43,17 @@ class WPSG_CPT {
     ];
 
     public static function register() {
+        // P47-I: Space column + filter in WP admin campaign list.
+        // P47-J: Inline "Create Space" form + handler.
+        if (is_admin()) {
+            add_filter('manage_wpsg_campaign_posts_columns', [self::class, 'add_space_column']);
+            add_action('manage_wpsg_campaign_posts_custom_column', [self::class, 'render_space_column'], 10, 2);
+            add_action('restrict_manage_posts', [self::class, 'render_space_filter_dropdown']);
+            add_action('pre_get_posts', [self::class, 'apply_space_filter']);
+            add_action('manage_posts_extra_tablenav', [self::class, 'render_create_space_ui']);
+            add_action('admin_post_wpsg_create_space', [self::class, 'handle_create_space']);
+        }
+
         register_post_type(self::POST_TYPE, [
             'label' => __('Campaigns', 'wp-super-gallery'),
             'public' => false,
@@ -206,6 +217,20 @@ class WPSG_CPT {
             'show_in_rest' => false,
             'default' => [],
         ]);
+
+        // P47-A: Space assignment.
+        register_post_meta('wpsg_campaign', '_wpsg_space_id', [
+            'type'         => 'integer',
+            'single'       => true,
+            'show_in_rest' => false,
+            'default'      => 0,
+        ]);
+        register_term_meta('wpsg_company', '_wpsg_space_id', [
+            'type'         => 'integer',
+            'single'       => true,
+            'show_in_rest' => false,
+            'default'      => 0,
+        ]);
     }
 
     // ── Sanitize callbacks (P20-D) ───────────────────────────
@@ -326,5 +351,125 @@ class WPSG_CPT {
             }
         }
         return '';
+    }
+
+    // ── P47-I: Space column + filter ──────────────────────────────────────────
+
+    public static function add_space_column(array $columns): array {
+        $new = [];
+        foreach ($columns as $key => $label) {
+            $new[$key] = $label;
+            if ($key === 'title') {
+                $new['wpsg_space'] = __('Space', 'wp-super-gallery');
+            }
+        }
+        return $new;
+    }
+
+    public static function render_space_column(string $column, int $post_id): void {
+        if ($column !== 'wpsg_space') {
+            return;
+        }
+        $space_id = (int) get_post_meta($post_id, '_wpsg_space_id', true);
+        if ($space_id <= 0) {
+            echo '&mdash;';
+            return;
+        }
+        $space = class_exists('WPSG_DB') ? WPSG_DB::get_space($space_id) : null;
+        echo $space ? esc_html($space->name) : esc_html("Space #{$space_id}");
+    }
+
+    public static function render_space_filter_dropdown(string $post_type): void {
+        if ($post_type !== self::POST_TYPE) {
+            return;
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $spaces = $wpdb->get_results(
+            "SELECT id, name FROM {$wpdb->prefix}wpsg_spaces WHERE archived = 0 ORDER BY name ASC"
+        );
+        if (empty($spaces)) {
+            return;
+        }
+        $selected = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;
+        echo '<select name="wpsg_space_filter">';
+        echo '<option value="">' . esc_html__('All spaces', 'wp-super-gallery') . '</option>';
+        foreach ($spaces as $s) {
+            printf(
+                '<option value="%d"%s>%s</option>',
+                (int) $s->id,
+                selected($selected, (int) $s->id, false),
+                esc_html($s->name)
+            );
+        }
+        echo '</select>';
+    }
+
+    public static function apply_space_filter(\WP_Query $query): void {
+        if (!is_admin() || !$query->is_main_query()) {
+            return;
+        }
+        if ($query->get('post_type') !== self::POST_TYPE) {
+            return;
+        }
+        $space_id = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;
+        if ($space_id <= 0) {
+            return;
+        }
+        $meta = $query->get('meta_query') ?: [];
+        $meta[] = ['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC'];
+        $query->set('meta_query', $meta);
+    }
+
+    // ── P47-J: Inline space creation from Campaigns list ─────────────────────
+
+    public static function render_create_space_ui(string $which): void {
+        global $typenow;
+        if ($typenow !== self::POST_TYPE || $which !== 'top') {
+            return;
+        }
+        ?>
+        <div class="wpsg-create-space" style="display:inline-block;margin-left:4px;vertical-align:middle;">
+            <details>
+                <summary class="button" style="cursor:pointer;"><?php esc_html_e('+ New Space', 'wp-super-gallery'); ?></summary>
+                <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
+                      style="margin-top:6px;padding:8px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;">
+                    <input type="hidden" name="action" value="wpsg_create_space">
+                    <?php wp_nonce_field('wpsg_create_space', '_wpsg_nonce'); ?>
+                    <input type="text" name="wpsg_space_name" placeholder="<?php esc_attr_e('Space name', 'wp-super-gallery'); ?>"
+                           required style="margin-right:4px;vertical-align:middle;">
+                    <input type="text" name="wpsg_space_slug" placeholder="<?php esc_attr_e('Slug (auto)', 'wp-super-gallery'); ?>"
+                           style="margin-right:4px;vertical-align:middle;">
+                    <button type="submit" class="button button-primary"><?php esc_html_e('Create', 'wp-super-gallery'); ?></button>
+                </form>
+            </details>
+        </div>
+        <?php
+    }
+
+    public static function handle_create_space(): void {
+        if (!current_user_can('manage_wpsg') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
+            wp_die(esc_html__('Forbidden', 'wp-super-gallery'));
+        }
+        $name     = sanitize_text_field($_POST['wpsg_space_name'] ?? '');
+        $raw_slug = sanitize_text_field($_POST['wpsg_space_slug'] ?? '');
+        $slug     = sanitize_title($raw_slug ?: $name);
+        $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
+        if (empty($name) || empty($slug)) {
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            exit;
+        }
+        if (!class_exists('WPSG_DB')) {
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            exit;
+        }
+        $new_id = WPSG_DB::insert_space(['name' => $name, 'slug' => $slug]);
+        if (!$new_id) {
+            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            exit;
+        }
+        WPSG_REST_Base::bump_cache_version();
+        wp_safe_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
+        exit;
     }
 }

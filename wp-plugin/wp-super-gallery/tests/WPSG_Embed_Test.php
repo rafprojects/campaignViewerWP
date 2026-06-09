@@ -14,11 +14,15 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $ref->setAccessible( true );
         $ref->setValue( null, null );
         unset( $GLOBALS['wpsg_has_shortcode'] );
+        // P47-E emits window.__WPSG_CONFIG__ once per page, guarded by this global.
+        // Reset it so each test's render_shortcode() re-emits the config script.
+        unset( $GLOBALS['wpsg_config_emitted'] );
         delete_option( WPSG_Settings::OPTION_NAME );
     }
 
     public function tearDown(): void {
         unset( $GLOBALS['wpsg_has_shortcode'] );
+        unset( $GLOBALS['wpsg_config_emitted'] );
         delete_option( WPSG_Settings::OPTION_NAME );
         // Reset manifest cache.
         $ref = new ReflectionProperty( WPSG_Embed::class, 'manifest_cache' );
@@ -99,7 +103,13 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
 
         $output = WPSG_Embed::render_shortcode();
 
-        $this->assertStringContainsString( '"nord"', $output );
+        // P47-E: theme is emitted per-node in the (HTML-encoded) data-wpsg-config.
+        $decoded_config = null;
+        if ( preg_match( '/data-wpsg-config="([^"]+)"/', $output, $m ) ) {
+            $decoded_config = json_decode( html_entity_decode( $m[1] ), true );
+        }
+        $this->assertNotNull( $decoded_config, 'data-wpsg-config should be valid JSON' );
+        $this->assertEquals( 'nord', $decoded_config['theme'] );
     }
 
     public function test_render_shortcode_reflects_debug_component_markers_setting() {

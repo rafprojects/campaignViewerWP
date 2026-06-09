@@ -231,6 +231,58 @@ abstract class WPSG_REST_Base {
             : 'viewer';
     }
 
+    // ── P47-B: Space-level permission helpers ────────────────────────────────
+
+    /**
+     * Resolves the user's access level within a space.
+     *
+     * In open mode, manage_wpsg is treated as 'owner'. In delegated mode only
+     * manage_options (super-admin) and explicit space grants confer access.
+     *
+     * @return string 'owner'|'editor'|'viewer'|'' (empty = no access)
+     */
+    protected static function get_effective_space_level(int $user_id, int $space_id): string {
+        $space = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return '';
+        }
+
+        if (user_can($user_id, 'manage_options')) {
+            return 'owner';
+        }
+
+        if ($space->isolation_mode === 'open' && user_can($user_id, 'manage_wpsg')) {
+            return 'owner';
+        }
+
+        $grants = json_decode($space->access_grants, true);
+        if (is_array($grants)) {
+            foreach ($grants as $grant) {
+                if (intval($grant['userId'] ?? 0) !== $user_id) {
+                    continue;
+                }
+                $expires_at = $grant['expires_at'] ?? null;
+                if ($expires_at !== null && strtotime($expires_at) < time()) {
+                    continue; // expired grant confers no access
+                }
+                return self::validate_access_level($grant['access_level'] ?? 'viewer');
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Returns true if the user has any access level inside the given space.
+     */
+    protected static function can_access_space(int $space_id, ?int $user_id): bool {
+        $space = WPSG_DB::get_space($space_id);
+        if (!$space || $space->archived) {
+            return false;
+        }
+        return self::get_effective_space_level(intval($user_id), $space_id) !== '';
+    }
+
     // ── P33-C: Role-Aware Permission Helpers ─────────────────────────────────
 
     /**
@@ -251,6 +303,12 @@ abstract class WPSG_REST_Base {
      */
     private static function get_effective_campaign_level(int $user_id, int $campaign_id): string {
         if ($user_id <= 0 || $campaign_id <= 0) {
+            return '';
+        }
+
+        // P47-B: Delegated spaces can deny manage_wpsg users; must check before the admin short-circuit.
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($space_id > 0 && !self::can_access_space($space_id, $user_id)) {
             return '';
         }
 
@@ -372,6 +430,47 @@ abstract class WPSG_REST_Base {
 
         $level = self::get_effective_campaign_level($user_id, $campaign_id);
         return $level === 'owner';
+    }
+
+    // ── P47-C: Space permission callbacks ────────────────────────────────────
+
+    /**
+     * Permission callback — requires 'owner' level within the space identified
+     * by the request's `id` parameter. manage_wpsg satisfies this in open mode
+     * (via get_effective_space_level); manage_options always satisfies it.
+     */
+    public static function require_space_owner(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::get_effective_space_level($user_id, $space_id) === 'owner';
+    }
+
+    /**
+     * Permission callback — requires any access level (viewer or above) within
+     * the space identified by the request's `id` parameter.
+     */
+    public static function require_space_member(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::can_access_space($space_id, $user_id);
     }
 
     /**
@@ -500,7 +599,13 @@ abstract class WPSG_REST_Base {
     }
 
     protected static function can_view_campaign($post_id, $user_id) {
-        if ($user_id && (current_user_can('manage_wpsg') || current_user_can('manage_options'))) {
+        // P47-B: Space gate — delegated spaces deny ungranted admins before the admin short-circuit below.
+        $space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
+        if ($space_id > 0 && !self::can_access_space($space_id, intval($user_id))) {
+            return false;
+        }
+
+        if ($user_id && (user_can($user_id, 'manage_wpsg') || user_can($user_id, 'manage_options'))) {
             return true;
         }
 

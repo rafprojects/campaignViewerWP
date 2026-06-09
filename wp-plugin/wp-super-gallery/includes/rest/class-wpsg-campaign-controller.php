@@ -35,6 +35,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                         'type' => 'string',
                         'enum' => ['draft', 'active', 'archived'],
                     ],
+                    // P47-J: space assignment on creation.
+                    'space_id'    => [
+                        'type'              => 'integer',
+                        'default'           => 0,
+                        'sanitize_callback' => 'absint',
+                    ],
                 ],
             ],
         ]);
@@ -166,6 +172,8 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $sort               = sanitize_text_field($request->get_param('sort') ?: 'created_desc');
         $include_archived   = in_array(strtolower((string) $request->get_param('include_archived')), ['1', 'true', 'yes'], true);
         $template_id_filter = sanitize_text_field($request->get_param('template_id') ?? '');
+        // P47-C: optional space filter — numeric id scopes to that space; omitted/all = no filter.
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
 
         // Generate cache key based on user ID, query parameters, and cache version
         $user_id = get_current_user_id();
@@ -173,7 +181,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $search_key = $search ? md5($search) : 'none';
         $cv = self::get_cache_version();
         $cache_key = 'wpsg_campaigns_' . md5(sprintf(
-            'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s',
+            'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
             $status ?: 'all',
@@ -188,7 +196,8 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             $tag ?: 'none',
             $sort,
             $include_archived ? 'incl' : 'excl',
-            $template_id_filter ? md5($template_id_filter) : 'none'
+            $template_id_filter ? md5($template_id_filter) : 'none',
+            is_numeric($space_param) ? $space_param : 'all'
         ));
 
         // Try to get cached data
@@ -229,6 +238,14 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         $meta_query = [];
+        // P47-C: space scoping — filter by _wpsg_space_id when a numeric space id is given.
+        if (is_numeric($space_param) && intval($space_param) > 0) {
+            $meta_query[] = [
+                'key'   => '_wpsg_space_id',
+                'value' => intval($space_param),
+                'type'  => 'NUMERIC',
+            ];
+        }
         if (!empty($status)) {
             $meta_query[] = [
                 'key'   => 'status',
@@ -403,6 +420,18 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         if (is_wp_error($meta_result)) {
             wp_delete_post($post_id, true);
             return $meta_result;
+        }
+        // P47-J: persist space assignment if the caller supplied a valid space_id.
+        // Guard access: in delegated-isolation mode a manage_wpsg-only user must be
+        // an explicit grantee; without this check they could assign campaigns to any
+        // space including ones they were denied from.
+        $space_id = (int) $request->get_param('space_id');
+        if ($space_id > 0) {
+            if (!self::can_access_space($space_id, get_current_user_id())) {
+                wp_delete_post($post_id, true);
+                return new WP_Error('wpsg_forbidden', 'You do not have access to that space.', ['status' => 403]);
+            }
+            update_post_meta($post_id, '_wpsg_space_id', $space_id);
         }
         self::assign_company($post_id, $request->get_param('company'));
         self::add_audit_entry($post_id, 'campaign.created', [
@@ -698,6 +727,11 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $campaign_id_param = $request->get_param('campaign_id');
         if ($campaign_id_param) {
             $args['campaign_id'] = intval($campaign_id_param);
+        }
+
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
+        if (is_numeric($space_param) && intval($space_param) > 0) {
+            $args['space_id'] = intval($space_param);
         }
 
         $result = WPSG_DB::list_audit_entries($args);
