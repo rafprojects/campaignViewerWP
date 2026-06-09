@@ -184,8 +184,10 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         if (!$space) {
             return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
         }
-        $default_id = intval(get_option('wpsg_default_space_id', 0));
-        return new WP_REST_Response(self::format_space($space, $default_id, true), 200);
+        $default_id     = intval(get_option('wpsg_default_space_id', 0));
+        $include_grants = current_user_can('manage_options') ||
+                          self::get_effective_space_level(get_current_user_id(), $space_id) === 'owner';
+        return new WP_REST_Response(self::format_space($space, $default_id, $include_grants), 200);
     }
 
     public static function update_space($request) {
@@ -400,11 +402,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
         }
 
-        $effective = WPSG_Settings::get_effective_settings($space_id);
-        $overrides = json_decode($space->settings_overrides, true);
+        $effective  = WPSG_Settings::get_effective_settings($space_id);
+        $overrides  = json_decode($space->settings_overrides, true);
+        $is_admin   = current_user_can('manage_wpsg');
 
         return new WP_REST_Response([
-            'settings'  => WPSG_Settings::to_js($effective, true),
+            'settings'  => WPSG_Settings::to_js($effective, $is_admin),
             'overrides' => is_array($overrides) ? $overrides : [],
         ], 200);
     }
@@ -452,9 +455,10 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         $updated_space = WPSG_DB::get_space($space_id);
         $effective     = WPSG_Settings::get_effective_settings($space_id);
         $raw_overrides = json_decode($updated_space->settings_overrides, true);
+        $is_admin      = current_user_can('manage_wpsg');
 
         return new WP_REST_Response([
-            'settings'  => WPSG_Settings::to_js($effective, true),
+            'settings'  => WPSG_Settings::to_js($effective, $is_admin),
             'overrides' => is_array($raw_overrides) ? $raw_overrides : [],
         ], 200);
     }

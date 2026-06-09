@@ -258,9 +258,14 @@ abstract class WPSG_REST_Base {
         $grants = json_decode($space->access_grants, true);
         if (is_array($grants)) {
             foreach ($grants as $grant) {
-                if (intval($grant['userId'] ?? 0) === $user_id) {
-                    return self::validate_access_level($grant['access_level'] ?? 'viewer');
+                if (intval($grant['userId'] ?? 0) !== $user_id) {
+                    continue;
                 }
+                $expires_at = $grant['expires_at'] ?? null;
+                if ($expires_at !== null && strtotime($expires_at) < time()) {
+                    continue; // expired grant confers no access
+                }
+                return self::validate_access_level($grant['access_level'] ?? 'viewer');
             }
         }
 

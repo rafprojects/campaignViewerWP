@@ -468,6 +468,7 @@ class WPSG_CPT {
             wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
             exit;
         }
+        WPSG_REST_Base::bump_cache_version();
         wp_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
         exit;
     }

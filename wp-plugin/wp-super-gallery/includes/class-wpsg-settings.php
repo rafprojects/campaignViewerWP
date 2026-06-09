@@ -238,6 +238,13 @@ class WPSG_Settings {
                     $val = max((float) self::$field_ranges[$key][0], min((float) self::$field_ranges[$key][1], $val));
                 }
                 $sanitized[$key] = $val;
+            } elseif (is_array($default)) {
+                // Array-typed fields (e.g. viewer_bg_gradient): accept only arrays;
+                // casting to string would store "Array" and corrupt the payload.
+                if (!is_array($value)) {
+                    continue;
+                }
+                $sanitized[$key] = array_map('sanitize_text_field', $value);
             } else {
                 $sanitized[$key] = str_ends_with($key, '_url') || str_ends_with($key, '_image_url')
                     ? esc_url_raw((string) $value)

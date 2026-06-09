@@ -817,3 +817,18 @@ Add the following groups to `$space_overridable_fields`. Fields marked `(+ unit)
 **`exactOptionalPropertyTypes` compat:** `spaceId` is spread conditionally (`...(spaceId != null ? { spaceId } : {})`) when passed to `SettingsPanelTabsContent`, satisfying the strict optional-property type check.
 
 **Build:** `npm run build` green (11.2 s), `tsc --noEmit` clean.
+
+---
+
+## PR #62 Copilot review — round 2 (2026-06-09)
+
+Six additional issues addressed:
+
+| # | Location | Issue | Decision |
+|---|----------|-------|----------|
+| 1 | `class-wpsg-rest-base.php` | `get_effective_space_level()` ignored `expires_at` on grants — expired grants continued to confer access | **Fixed** — skip any grant where `strtotime(expires_at) < time()` |
+| 2 | `class-wpsg-settings.php` | `sanitize_overrides()` cast array-typed values to string ("Array"), corrupting `viewer_bg_gradient` | **Fixed** — added `is_array($default)` branch that accepts only arrays and sanitizes each element with `sanitize_text_field` |
+| 3 | `class-wpsg-space-controller.php` | `GET /spaces/{id}` always included full `access_grants` payload, leaking other users' grant metadata to any space member | **Fixed** — `format_space(..., $include_grants)` now only passes `true` when requester is `manage_options` or has `owner` level |
+| 4 | `class-wpsg-space-controller.php` | `get_space_settings()` used `to_js($effective, true)` unconditionally, exposing admin-only fields to non-admin space members | **Fixed** — gated on `current_user_can('manage_wpsg')` |
+| 5 | `class-wpsg-space-controller.php` | `update_space_settings()` same admin-only field leak | **Fixed** — same gate as #4 |
+| 6 | `class-wpsg-cpt.php` | `handle_create_space()` (admin-post handler) skipped `bump_cache_version()`, leaving REST space list caches stale | **Fixed** — `WPSG_REST_Base::bump_cache_version()` called after successful insert |
