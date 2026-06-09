@@ -114,6 +114,10 @@ describe('AdminPanel', () => {
   });
 
   it('creates a new campaign and notifies', async () => {
+    // P47-F: campaign creation is gated to a concrete space — "New campaign" is
+    // disabled in the default "All spaces" view. Pre-select a space (persisted
+    // via useReloadSafeView under the default 'root' rootId) so the button is enabled.
+    localStorage.setItem('wpsg_view_root_admin_space', JSON.stringify('1'));
     const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue({ items: [] }),
       post: vi.fn().mockResolvedValue({ id: '200' }),

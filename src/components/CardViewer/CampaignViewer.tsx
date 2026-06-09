@@ -34,6 +34,7 @@ const LazyGalleryConfigEditorModal = lazy(() =>
 );
 
 interface CampaignViewerProps {
+  spaceId?: number;
   campaign: Campaign;
   opened: boolean;
   hasAccess: boolean;
@@ -277,6 +278,7 @@ export function CampaignViewer({
   onCampaignsUpdated,
   onNotify,
   onClose,
+  spaceId,
 }: CampaignViewerProps) {
   const s = galleryBehaviorSettings;
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
@@ -391,7 +393,7 @@ export function CampaignViewer({
   }, [s.typographyOverrides]);
   const inContextSave = useInContextSave(apiClient, s, 500, (err) => {
     notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to save settings.') });
-  });
+  }, spaceId);
   const campaignTitleStyle = useTypographyStyle('campaignTitle', s);
   const campaignDateStyle = useTypographyStyle('campaignDate', s);
   const campaignAboutHeadingStyle = useTypographyStyle('campaignAboutHeading', s);

@@ -1,7 +1,9 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { useMediaQuery } from '@mantine/hooks';
 import { useStore } from 'zustand';
+import { useQueryClient } from '@tanstack/react-query';
 import {
+  Badge,
   Box,
   Button,
   Drawer,
@@ -63,7 +65,7 @@ import {
   resolveGalleryConfig,
 } from '@/utils/galleryConfig';
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
-import { useGetSettings, useUpdateSettings } from '@/services/settingsQuery';
+import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 import { toCss } from '@/lib/cssUnits';
 
@@ -134,6 +136,8 @@ interface SettingsPanelProps {
   onSettingsSaved?: ((settings: SettingsData) => void) | undefined;
   /** Pre-cached settings from the root settings query. */
   initialSettings?: SettingsDataInput | undefined;
+  /** When set, saves route to this space's overrides instead of global settings. */
+  spaceId?: number;
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -312,10 +316,11 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings }: SettingsPanelProps) {
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
-  const { data: fetchedSettings } = useGetSettings(apiClient);
+  const queryClient = useQueryClient();
+  const { data: fetchedSettings } = useGetSettings(apiClient, spaceId);
   const updateSettingsMutation = useUpdateSettings(apiClient);
 
   const persistedDraft = useMemo(() => readSettingsDraft(rootId), [rootId]);
@@ -356,7 +361,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const markSaved = useStore(settingsStore, (state) => state.markSaved);
   const resetToOriginal = useStore(settingsStore, (state) => state.resetToOriginal);
   const isLoading = opened && !sourceSettings;
-  const isSaving = updateSettingsMutation.isPending;
+  const [isSpaceSaving, setIsSpaceSaving] = useState(false);
+  const isSaving = updateSettingsMutation.isPending || isSpaceSaving;
 
   // P36-A: Show the restore/discard prompt once on mount when a persisted draft exists.
   const draftPromptShownRef = useRef(false);
@@ -439,17 +445,32 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         delete payload[key];
       }
 
-      const response = await updateSettingsMutation.mutateAsync(payload as unknown as import('@/services/apiClient').SettingsUpdateRequest);
-      const saved = mapResponseToSettings(response);
-      markSaved(saved);
-      clearSettingsDraft(rootId);
-      onSettingsSaved?.(saved);
-      const persistedTheme = typeof saved.theme === 'string' ? saved.theme : settings.theme;
-      if (typeof persistedTheme === 'string') {
-        setTheme(persistedTheme);
+      if (spaceId != null) {
+        setIsSpaceSaving(true);
+        try {
+          await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${spaceId}/settings`, payload);
+          void queryClient.invalidateQueries({ queryKey: ['space-settings', spaceId] });
+          void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
+          markSaved(settings);
+          clearSettingsDraft(rootId);
+          const persistedTheme = typeof settings.theme === 'string' ? settings.theme : undefined;
+          if (persistedTheme) setTheme(persistedTheme);
+          setPreviewTheme(null);
+          onNotify({ type: 'success', text: 'Space settings saved.' });
+        } finally {
+          setIsSpaceSaving(false);
+        }
+      } else {
+        const response = await updateSettingsMutation.mutateAsync(payload as unknown as import('@/services/apiClient').SettingsUpdateRequest);
+        const saved = mapResponseToSettings(response);
+        markSaved(saved);
+        clearSettingsDraft(rootId);
+        onSettingsSaved?.(saved);
+        const persistedTheme = typeof saved.theme === 'string' ? saved.theme : settings.theme;
+        if (typeof persistedTheme === 'string') setTheme(persistedTheme);
+        setPreviewTheme(null);
+        onNotify({ type: 'success', text: 'Settings saved successfully.' });
       }
-      setPreviewTheme(null);
-      onNotify({ type: 'success', text: 'Settings saved successfully.' });
     } catch (err) {
       onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to save settings.') });
     }
@@ -504,6 +525,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           <Group gap="sm">
             <IconSettings size={22} />
             <Title order={3}>Display Settings</Title>
+            {spaceId != null && <Badge size="sm" color="blue" variant="light">Space</Badge>}
           </Group>
           <Group gap="xs" wrap="nowrap">
             <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>

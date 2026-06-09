@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-07
+**Last updated:** 2026-06-08 (P47-J)
 
 ### Tracks
 
@@ -13,9 +13,11 @@
 | P47-C | Space CRUD + access REST — `/spaces` endpoints, space grants, cache-key threading | **Done** | Medium |
 | P47-D | Settings inheritance — per-space overrides over global defaults | **Done** | Medium |
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | **Done** | Medium |
-| P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | Planned | Large |
+| P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | **Done** | Large |
 | P47-G | Migration hardening + libraries + uninstall | Planned | Medium |
 | P47-H | Tests + docs | Planned | Medium |
+| P47-I | Frontend space filtering + WP admin Campaigns column | **Done** | Small |
+| P47-J | Campaign space assignment on create + settings space-scoping + create-space UX | **Done** | Small |
 
 ---
 
@@ -274,6 +276,17 @@ The AdminPanel manages all campaigns/media/metrics/logs globally with no notion 
 - Spaces can be created/edited, isolation toggled, per-space settings edited, and grants managed from the modal.
 - Switching space resets dependent per-tab selections.
 
+### Implementation notes
+
+- `SpaceInfo` type added to `adminQuery.ts`; `useSpaces()` hook fetches `GET /spaces`.
+- `getAdminQueryPrefix` unchanged; `spaceId` inserted **after** the type identifier in each key factory (e.g., `['admin', base, 'campaigns', spaceId, ...]`) so `usePatchCampaign`'s prefix invalidation `['admin', base, 'campaigns']` still matches all space-scoped keys.
+- `selectedSpaceId` defaults to `'all'` via `useReloadSafeView('admin_space', 'all')` — survives page reload.
+- `space=all` passed as query param; endpoints skip the space filter when the value is not a positive integer.
+- Mutations disabled (`disabled={isAllSpaces}`) on "New campaign", "Import", and "New company" buttons.
+- New components: `SpaceSelector` (Common), `SpaceManagementModal` (Admin), `SpaceSettingsPanel` (Admin).
+- `SpaceSettingsPanel` sends camelCase field names; PHP `WPSG_Settings::from_js()` iterates defaults mapping camelCase → snake_case, so no PHP-side changes needed for the settings endpoint.
+- PHP: `space` query param added (optional) to analytics summary, global audit log, companies list, and access summary endpoints. Audit log and analytics filter by `space_id` column; companies filter via `meta_query` on `_wpsg_space_id` term meta; access summary via `INNER JOIN` on `_wpsg_space_id` post meta.
+
 ### Validation
 
 - JS: `adminQuery` keys include spaceId (distinct per space); switcher resets dependent selections.
@@ -334,6 +347,98 @@ Isolation is a security-shaped boundary; it needs dedicated coverage, and the ph
 
 ---
 
+## Track P47-I — Frontend Space Filtering + WP Admin Campaigns Column
+
+### Problem
+
+Two gaps left the space system non-functional end-to-end:
+
+1. **Shortcode `space="test2"` showed the default gallery.** The PHP shortcode correctly resolved the slug to a numeric `spaceId` and embedded it in `data-wpsg-config`, but `App.tsx` was discarding it (`spaceId: _spaceId`). `AppContent.fetchCampaigns` always called `/campaigns?include_media=1` with no space param — every shortcode instance returned all campaigns regardless of `space=` attribute.
+
+2. **WP admin Campaigns list had no space context.** The standard WordPress CPT list table showed all campaigns across all spaces with no Space column and no space filter. Admins had no way to see or filter by space assignment.
+
+### Fix
+
+**React (`src/App.tsx`):**
+- Activated the `spaceId` prop (removed the `_` discard alias).
+- Extended `AppContent` to accept `spaceId?: number` and forwarded it from `App` via conditional spread.
+- `fetchCampaigns` now appends `&space=${spaceId}` when the prop is set; `spaceId` added to `useCallback` dependencies and the `campaignsKey` query key (ensures separate TanStack Query cache per space instance on the same page).
+
+**PHP (`includes/class-wpsg-cpt.php`):**
+- Registered four admin hooks inside `register()` under an `is_admin()` guard.
+- `add_space_column`: inserts a "Space" column header after "Title".
+- `render_space_column`: reads `_wpsg_space_id` post meta, looks up the space name via `WPSG_DB::get_space()`.
+- `render_space_filter_dropdown`: renders a `<select name="wpsg_space_filter">` dropdown of non-archived spaces above the list table.
+- `apply_space_filter`: when `wpsg_space_filter` is present in the request, adds a `meta_query` on `_wpsg_space_id` to the main admin query.
+
+No new PHP endpoints required — the campaign REST endpoint already supported `?space=ID` from P47-C.
+
+### Root cause note
+
+The "test2" slug didn't exist in the DB (`SELECT slug FROM wp_wpsg_spaces` confirmed only `"default"`). Even once a space is created, the React fix was required — the slug lookup succeeding on the PHP side was irrelevant while the React app discarded the resolved `spaceId`.
+
+### Acceptance criteria
+
+- `[super-gallery space="<slug>"]` fetches `/campaigns?include_media=1&space=<id>` — confirmed in browser DevTools network tab.
+- A plain `[super-gallery]` shortcode fetches without a `space` param.
+- Two shortcodes for different spaces on the same page maintain independent caches.
+- WP admin `/wp-admin/edit.php?post_type=wpsg_campaign` shows a "Space" column with the space name per row.
+- The space dropdown filter narrows the list to campaigns in the selected space.
+
+### Validation
+
+- `tsc --noEmit` passes.
+- `php -l includes/class-wpsg-cpt.php` passes.
+- Create a "test2" space via Manage Spaces modal; assign a campaign to it; visit `[super-gallery space="test2"]` page — only that campaign appears.
+
+---
+
+## Track P47-J — Campaign Space Assignment + Settings Space-Scoping
+
+### Problem
+
+Three bugs found during first live testing with a real "test-2" space:
+
+1. **Space filter showed no campaigns for a real space.** Campaigns created through the React admin panel never received `_wpsg_space_id` post meta — the only thing that ever wrote it was the P47-A backfill migration (for campaigns that pre-existed the migration). The `create_campaign()` REST endpoint and the frontend POST payload both omitted `space_id` entirely. Every new campaign had `_wpsg_space_id = 0`, so the WP admin space filter (added in P47-I) correctly found nothing.
+
+2. **Theme settings bled across spaces.** The public `GET /settings` endpoint returned the global `wp_options` value regardless of which space was rendering. Per-space `settings_overrides` infrastructure existed (added in P47-D) and was reachable via `/spaces/{id}/settings` for the admin panel, but the public endpoint never called `get_effective_settings($space_id)`. A theme set in the admin for any space applied globally to all gallery instances.
+
+3. **No way to create a space from the WP Campaigns list table.** The WP admin Campaigns page had a space filter dropdown (P47-I) but no affordance for creating new spaces without navigating away to the React front-end gallery.
+
+### Fix
+
+**Campaign space assignment (`class-wpsg-campaign-controller.php` + `src/hooks/useUnifiedCampaignModal.ts` + `src/App.tsx` + `src/components/Admin/AdminPanel.tsx`):**
+- Added optional `space_id` integer arg to the POST `/campaigns` REST route.
+- In `create_campaign()`, after `wp_insert_post()`, writes `_wpsg_space_id` post meta when `space_id > 0`.
+- Extended `UseUnifiedCampaignModalOptions` with `spaceId?: number`; injects `space_id` into the POST payload on create (not PUT).
+- `App.tsx`: forwards `spaceId` from `AppContent` to `useUnifiedCampaignModal` via conditional spread (required by `exactOptionalPropertyTypes`).
+- `AdminPanel.tsx`: converts `selectedSpaceId` string (`'all'` or numeric) to `activeSpaceId?: number` and passes to `useUnifiedCampaignModal`.
+
+**Settings space-scoping (`class-wpsg-settings-controller.php` + `src/services/api/settingsApi.ts` + `src/services/apiClient.ts` + `src/services/settingsQuery.ts` + `src/App.tsx`):**
+- `GET /settings` now accepts optional `?space=ID`; calls `WPSG_Settings::get_effective_settings($space_id)` when ID > 0, otherwise unchanged.
+- `SettingsApi.getSettings(spaceId?)` builds `?space=ID` when provided.
+- `ApiClient.getSettings(spaceId?)` passes through.
+- `getSettingsQueryKey` includes `spaceId ?? null` — different space instances get separate TanStack Query cache entries.
+- `useGetSettings(apiClient, spaceId?)` threads `spaceId` into key and fetch URL.
+- `App.tsx`: passes `spaceId` to `useGetSettings(apiClient, spaceId)`.
+
+**Inline "Create Space" form (`class-wpsg-cpt.php`):**
+- Added `manage_posts_extra_tablenav` hook → `render_create_space_ui()`: renders a `<details>`/`<summary>` collapsible form ("+ New Space") above the Campaigns table — name + optional slug, submits via `admin-post.php`.
+- Added `admin_post_wpsg_create_space` hook → `handle_create_space()`: validates nonce + capability, calls `WPSG_DB::insert_space()`, redirects back to the campaigns list.
+
+### Acceptance criteria
+
+- Create a campaign in the React admin panel while "test-2" space is selected → WP Admin space filter for "test-2" shows the new campaign; "default" space filter does not.
+- `[super-gallery space="test-2"]` shortcode fetches `/settings?space=<id>` and applies test-2's theme overrides. `[super-gallery]` still uses global settings.
+- WP Admin Campaigns list shows a "+ New Space" collapsible form above the table; submitting it creates the space and redirects back.
+
+### Validation
+
+- `tsc --noEmit` passes.
+- `php -l` passes on `class-wpsg-cpt.php`, `class-wpsg-campaign-controller.php`, `class-wpsg-settings-controller.php`.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -356,3 +461,74 @@ Isolation is a security-shaped boundary; it needs dedicated coverage, and the ph
 - Build and sync: `npm run build` → `./update_dev_plugin.sh`.
 - On a dev WP site: create two spaces, place two shortcodes on one page referencing different spaces, confirm public + admin isolation and per-space theming; flip one space to delegated and verify delegation behavior with a second admin account.
 - Automated: `composer test` (PHP), `npm test` (vitest), `npm run test:e2e` (playwright) — the isolation suite is the gate.
+
+---
+
+## Settings Space-Scoping Audit (P47-K)
+
+**Date:** 2026-06-08. **Scope:** verify that settings which *should* be space-specific are space-scoped in code, and identify which are not. **This is a report — no settings behavior was changed.**
+
+### Verdict
+
+The **mechanism is sound**: every settings *read path* that has a space context already routes through `WPSG_Settings::get_effective_settings($space_id)`, and the merge is a correct allowlist-filtered flat merge. **No read path leaks one space's settings into another, and no path drops a known space context back to global.** The open question is *breadth*, not correctness: only **34 of ~334** settings are eligible for per-space override, and the ~271 that aren't are overwhelmingly public-facing *visual/branding* knobs that a space owner would plausibly expect to control. Promotion of those is a deliberate, grouped decision left to the maintainer (see candidates below).
+
+### 1. Read-path verification
+
+`get_effective_settings()` lives at [class-wpsg-settings.php:216-231](../wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php#L216-L231) — `array_merge($global, $filtered_overrides)`, where `$filtered_overrides` is the space's `settings_overrides` intersected with the overridable allowlist.
+
+| Consumer | Source | Scope | Correct? |
+|----------|--------|-------|----------|
+| Public `GET /settings?space=ID` | [class-wpsg-settings-controller.php:50-55](../wp-plugin/wp-super-gallery/includes/rest/class-wpsg-settings-controller.php#L50-L55) | `get_effective_settings($id)` when `id>0`, else global | ✅ space-aware |
+| Public `POST /settings` (save) | class-wpsg-settings-controller.php | global `get_settings()` — admin save of defaults | ✅ intentionally global |
+| `GET /spaces/{id}/settings` | class-wpsg-space-controller.php | `get_effective_settings($id)` | ✅ space-aware |
+| `PUT /spaces/{id}/settings` | class-wpsg-space-controller.php | allowlist-filtered write to `settings_overrides` | ✅ space-aware |
+| Shortcode / embed | class-wpsg-embed.php | `get_effective_settings($space_id)` (theme, fonts, full-bleed) | ✅ space-aware |
+| Thumbnail cache TTL | class-wpsg-thumbnail-cache.php | global `thumbnail_cache_ttl` (admin-only) | ✅ correctly global |
+| Image optimizer sizes | class-wpsg-image-optimizer.php | global `optimize_*` (admin-only) | ✅ correctly global |
+| Auth provider filter | settings service | global `auth_provider` (admin-only) | ✅ correctly global |
+| Analytics toggle | class-wpsg-analytics-controller.php | global `enable_analytics` | ✅ reasonably global |
+
+No `get_settings()` call was found where a space id was in scope but discarded.
+
+### 2. Field categorization (all ~334 keys)
+
+| Bucket | Count | Defined in |
+|--------|------:|-----------|
+| Admin-only (global) | 29 | `$admin_only_fields` ([registry:371-401](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L371-L401)) |
+| Space-overridable | 34 | `$space_overridable_fields` ([registry:408-443](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443)) |
+| Uncategorized → **forced global** | ~271 | (neither list; fall through `get_effective_settings`) |
+
+The **29 admin-only** (auth, API base, cache TTLs, image-optimization, upload limits, debounce/timeout, uninstall/purge, magic-link page) are correctly global. The **34 space-overridable** match Decision C's stated scope (theme, layout, items-per-page, lightbox/animations, full-bleed trio, typography, gallery title/subtitle, the `show_*` card/campaign/gallery toggles, `default_visibility`, the campaign-listing adapter trio + template).
+
+### 3. The ~271 forced-global fields — promotion candidates
+
+These are grouped so promotion can be done in coherent sets (most fields are paired with a `*_unit` companion or compose the runtime `gallery_config`/`card_config`, so piecemeal promotion would be incoherent).
+
+| Group | Representative fields | Recommendation |
+|-------|----------------------|----------------|
+| **Branding text & labels** | `campaign_about_heading_text`, `gallery_image_label`, `gallery_video_label`, `gallery_label_justification`, `show_gallery_label_icon` | **Strong promote** — user-facing text; surprising to be global when `gallery_title_text`/`gallery_subtitle_text` are per-space |
+| **Backgrounds** | `image_bg_*`, `video_bg_*`, `unified_bg_*`, `viewer_bg_*`, `modal_bg_*` (type/color/gradient/image_url) | Promote — core per-space branding |
+| **Nav arrows & dot-nav** | `nav_arrow_*` (position/size/color/bg), `dot_nav_*` (position/size/colors/shape) | Promote — visual identity |
+| **Shadows & borders** | `image/video/card_shadow_preset` (+custom), `*_border_radius/width`, `card_border_color`, `tile_border_*` | Promote |
+| **Card layout & styling** | `card_thumbnail_*`, `card_gap_h/v`, `card_max_*`, `card_aspect_ratio`, `card_grid_columns`, `card_scale`, `grid_card_*`, `card_gradient_*`, `card_*_icon_size` | Promote (with their `*_unit` pairs) |
+| **Tiles / mosaic / hex** | `tile_*`, `masonry_*`, `mosaic_target_row_height`, `hex_*`, `diamond_*`, `photo_normalize_height` | Promote |
+| **Carousel** | `carousel_*` (visible/autoplay/gap/loop/darken) | Promote |
+| **Modal & lightbox** | `modal_cover_*`, `modal_transition*`, `modal_max_*`, `modal_gallery_*`, `modal_close_button_*`, `lightbox_*` | Promote |
+| **Gallery section / adapter layout** | `gallery_section_*`, `adapter_*`, `app_max_width`, `app_padding`, `gallery_sizing_mode`, `section_scale`, `item_scale` | Promote |
+| **Viewport & responsive** | `video/image_viewport_height`, `viewport_height_*_ratio`, `modal_mobile_breakpoint`, `*_breakpoints` | Promote (mostly) |
+| **CSS unit companions** | ~48 `*_unit` fields ([registry:310-357](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L310-L357)) | Promote **only paired** with their value field |
+| **Extra display toggles** | `show_viewer_border`, `show_campaign_cover_image`, `show_campaign_tags`, `show_campaign_gallery_labels`, `transition_fade_enabled`, `dot_nav_enabled`, `campaign_open_mode` | Promote — siblings of already-overridable `show_*` toggles |
+| **Admin-panel / operational** | `settings_panel_width`, `admin_panel_max_width`, `library_page_size`, `media_list_page_size`, `media_*_card_height`, `show_settings_tooltips`, `show_in_context_editors`, `show_campaign_admin_actions`, `settings_drawer_blur_enabled`, `campaign_stats_admin_only`, `enable_analytics` | **Leave global** — govern the editing surface / site-wide ops, not the public per-space look |
+
+So: of the ~271, roughly **~250 are public visual/presentation knobs** (promotion candidates) and **~15-20 are genuinely admin/operational** (correctly global).
+
+### 4. Known nuances & a bug found
+
+- **⚠️ Stale read-back after save (`get_space()` cache).** `WPSG_DB::get_space()` keeps a **request-level static cache** ([class-wpsg-db.php:972-985](../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) that `update_space()` does **not** invalidate. `PUT /spaces/{id}/settings` does `get_space()` (caches) → `update_space()` (writes DB) → `get_space()` (returns the **stale** cached row), so the endpoint's **response** returns the pre-save `settings_overrides` / effective settings even though the save itself persisted correctly. The admin panel reads that response after saving, so per-space settings can appear to "revert" until a fresh refetch — a strong candidate for the save-time settings glitches seen in P47-J. Same get→update→get pattern likely affects the space access-grant endpoints. Suggested fix (deferred — audit-only): bust the static cache in `update_space()`/`archive_space()`/`delete_space()`/`insert_space()`. Regression tests assert on the persisted DB row, which is correct.
+- **Whole-unit JSON merge.** `typography_overrides` (and `*_bg_gradient`) are allowlisted but stored as JSON; the flat `array_merge` replaces them wholesale — a space cannot inherit some sub-keys and override others. Acceptable as a whole-unit override; note it if granular typography inheritance is ever wanted.
+- **`gallery_config` / `card_config` are not settings keys.** They are composed at runtime from individual layout fields. Per-space layout therefore depends on promoting those individual fields (above), not on overriding a single config blob.
+- **Per-space UI is narrower than the allowlist.** The dedicated `SpaceSettingsPanel` ([SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) edits only **9 of the 34** overridable fields. A fuller path exists — `SettingsPanel` accepts a `spaceId` prop and saves to `/spaces/{id}/settings` ([SettingsPanel.tsx:140](../src/components/Admin/SettingsPanel.tsx#L140), [448-452](../src/components/Admin/SettingsPanel.tsx#L448-L452)) — but it is not the panel wired into the management modal. Any allowlist expansion should also pick a single coherent per-space settings UI.
+
+### 5. Regression coverage added
+
+PHP `WPSG_P47_Spaces_Settings_Test` (inheritance + allowlist enforcement) and `WPSG_P47_Spaces_Isolation_Test` (cross-space read/settings denial, open vs delegated, escape hatch) lock in the current behavior so a future change cannot silently widen or leak the boundary. Vitest covers `spaceId` query-key scoping.

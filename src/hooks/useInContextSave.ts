@@ -18,6 +18,7 @@ export function useInContextSave(
   settings: GalleryBehaviorSettings,
   delay = 500,
   onError?: (err: unknown) => void,
+  spaceId?: number,
 ) {
   const queryClient = useQueryClient();
   const pendingRef = useRef<Record<string, unknown>>({});
@@ -27,12 +28,15 @@ export function useInContextSave(
   settingsRef.current = settings;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const spaceIdRef = useRef(spaceId);
+  spaceIdRef.current = spaceId;
 
   const save = useCallback(
     (key: string, value: unknown) => {
       if (!apiClient) return;
+      const sid = spaceIdRef.current;
       pendingRef.current[key] = value;
-      const queryKey = getSettingsQueryKey(apiClient);
+      const queryKey = getSettingsQueryKey(apiClient, sid);
 
       queryClient.setQueryData(queryKey, (current: unknown) => normalizeSettingsResponse({
         ...(current as Record<string, unknown> | undefined),
@@ -46,14 +50,18 @@ export function useInContextSave(
         const batch = { ...pendingRef.current };
         pendingRef.current = {};
         try {
-          const response = await apiClient.updateSettings(batch);
-          queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
+          if (sid != null) {
+            await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${sid}/settings`, batch);
+          } else {
+            const response = await apiClient.updateSettings(batch);
+            queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
+          }
         } catch (err) {
           console.error('[WPSG] In-context save failed:', err);
           onErrorRef.current?.(err);
           // Revert to server state on failure
           try {
-            const fresh = await apiClient.getSettings();
+            const fresh = await apiClient.getSettings(sid);
             queryClient.setQueryData(queryKey, normalizeSettingsResponse(fresh));
           } catch { /* keep optimistic state if refetch also fails */ }
         }

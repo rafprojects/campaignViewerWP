@@ -35,6 +35,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                         'type' => 'string',
                         'enum' => ['draft', 'active', 'archived'],
                     ],
+                    // P47-J: space assignment on creation.
+                    'space_id'    => [
+                        'type'              => 'integer',
+                        'default'           => 0,
+                        'sanitize_callback' => 'absint',
+                    ],
                 ],
             ],
         ]);
@@ -415,6 +421,11 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             wp_delete_post($post_id, true);
             return $meta_result;
         }
+        // P47-J: persist space assignment if the caller supplied a valid space_id.
+        $space_id = (int) $request->get_param('space_id');
+        if ($space_id > 0) {
+            update_post_meta($post_id, '_wpsg_space_id', $space_id);
+        }
         self::assign_company($post_id, $request->get_param('company'));
         self::add_audit_entry($post_id, 'campaign.created', [
             'title' => $title,
@@ -709,6 +720,11 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $campaign_id_param = $request->get_param('campaign_id');
         if ($campaign_id_param) {
             $args['campaign_id'] = intval($campaign_id_param);
+        }
+
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
+        if (is_numeric($space_param) && intval($space_param) > 0) {
+            $args['space_id'] = intval($space_param);
         }
 
         $result = WPSG_DB::list_audit_entries($args);

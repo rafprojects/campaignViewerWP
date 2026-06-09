@@ -256,10 +256,15 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
         global $wpdb;
         $table = WPSG_DB::get_analytics_table();
 
+        $space_param    = sanitize_text_field($request->get_param('space') ?? '');
+        $space_id       = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
+        $space_clause   = $space_id > 0 ? $wpdb->prepare(' AND space_id = %d', $space_id) : '';
+
         $total_views = (int) $wpdb->get_var(
             $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 "SELECT COUNT(*) FROM {$table}
-                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s",
+                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s{$space_clause}",
                 $from_str,
                 $to_str,
             )
@@ -267,8 +272,9 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
 
         $unique_visitors = (int) $wpdb->get_var(
             $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 "SELECT COUNT(DISTINCT visitor_hash) FROM {$table}
-                 WHERE occurred_at BETWEEN %s AND %s",
+                 WHERE occurred_at BETWEEN %s AND %s{$space_clause}",
                 $from_str,
                 $to_str,
             )
@@ -276,9 +282,10 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
 
         $top_rows = $wpdb->get_results(
             $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 "SELECT campaign_id, COUNT(*) AS views
                  FROM {$table}
-                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s
+                 WHERE event_type = 'view' AND occurred_at BETWEEN %s AND %s{$space_clause}
                  GROUP BY campaign_id
                  ORDER BY views DESC
                  LIMIT 10",

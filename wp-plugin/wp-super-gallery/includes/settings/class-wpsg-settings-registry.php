@@ -436,6 +436,10 @@ class WPSG_Settings_Registry {
         'show_campaign_description',
         'show_campaign_stats',
         'default_visibility',
+        'campaign_listing_adapter_id',
+        'campaign_listing_adapter_id_mobile',
+        'campaign_listing_adapter_id_tablet',
+        'campaign_listing_layout_template_id',
     ];
 
     /**

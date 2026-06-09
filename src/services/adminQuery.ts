@@ -124,6 +124,18 @@ export interface CompanyAccessGrant {
   access_level?: import('@/types').CampaignAccessLevel | undefined;
 }
 
+export interface SpaceInfo {
+  id: number;
+  slug: string;
+  name: string;
+  isolationMode: 'open' | 'delegated';
+  isDefault: boolean;
+  archived: boolean;
+  grantCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const ADMIN_QUERY_STALE_TIME = 30_000;
 const SELECTOR_QUERY_STALE_TIME = 30_000;
 const CATEGORY_QUERY_STALE_TIME = 60_000;
@@ -162,6 +174,28 @@ function getAdminQueryPrefix(apiClient: ApiClient) {
   return ['admin', getApiClientCacheBase(apiClient)] as const;
 }
 
+export function getSpacesQueryKey(apiClient: ApiClient) {
+  return ['spaces', getApiClientCacheBase(apiClient)] as const;
+}
+
+export function useSpaces(apiClient: ApiClient) {
+  const query = useQuery({
+    queryKey: getSpacesQueryKey(apiClient),
+    queryFn: async () => {
+      const res = await apiClient.get<SpaceInfo[]>('/wp-json/wp-super-gallery/v1/spaces');
+      return Array.isArray(res) ? res : [];
+    },
+    staleTime: ADMIN_QUERY_STALE_TIME,
+    ...ADMIN_QUERY_OPTIONS,
+  });
+  return {
+    spaces: query.data ?? [],
+    spacesLoading: query.isLoading,
+    spacesError: query.error,
+    mutateSpaces: query.refetch,
+  };
+}
+
 // P28-E: Server-side campaign filter params.
 export interface CampaignFilters {
   category?: string | undefined;
@@ -171,12 +205,12 @@ export interface CampaignFilters {
   templateId?: string | undefined;
 }
 
-export function getAdminCampaignsQueryKey(apiClient: ApiClient, page = 1, perPage = 20, filters?: CampaignFilters) {
-  return [...getAdminQueryPrefix(apiClient), 'campaigns', page, perPage, filters ?? {}] as const;
+export function getAdminCampaignsQueryKey(apiClient: ApiClient, spaceId = 'all', page = 1, perPage = 20, filters?: CampaignFilters) {
+  return [...getAdminQueryPrefix(apiClient), 'campaigns', spaceId, page, perPage, filters ?? {}] as const;
 }
 
-export function getAdminCampaignOptionsQueryKey(apiClient: ApiClient) {
-  return [...getAdminQueryPrefix(apiClient), 'campaign-options'] as const;
+export function getAdminCampaignOptionsQueryKey(apiClient: ApiClient, spaceId = 'all') {
+  return [...getAdminQueryPrefix(apiClient), 'campaign-options', spaceId] as const;
 }
 
 export function getAccessGrantsQueryKey(
@@ -188,16 +222,16 @@ export function getAccessGrantsQueryKey(
   return [...getAdminQueryPrefix(apiClient), 'access', mode, targetId, includeExpired] as const;
 }
 
-export function getCompaniesQueryKey(apiClient: ApiClient) {
-  return [...getAdminQueryPrefix(apiClient), 'companies'] as const;
+export function getCompaniesQueryKey(apiClient: ApiClient, spaceId = 'all') {
+  return [...getAdminQueryPrefix(apiClient), 'companies', spaceId] as const;
 }
 
 export function getAuditEntriesQueryKey(apiClient: ApiClient, campaignId: string, filters?: AuditFilters) {
   return [...getAdminQueryPrefix(apiClient), 'audit', campaignId, filters ?? {}] as const;
 }
 
-export function getGlobalAuditQueryKey(apiClient: ApiClient, filters?: AuditFilters & { campaignId?: string }) {
-  return [...getAdminQueryPrefix(apiClient), 'globalAudit', filters ?? {}] as const;
+export function getGlobalAuditQueryKey(apiClient: ApiClient, spaceId = 'all', filters?: AuditFilters & { campaignId?: string }) {
+  return [...getAdminQueryPrefix(apiClient), 'globalAudit', spaceId, filters ?? {}] as const;
 }
 
 export function getMediaItemsQueryKey(apiClient: ApiClient, campaignId: string) {
@@ -227,11 +261,13 @@ export function getAccessRequestsQueryKey(
 
 async function fetchAdminCampaigns(
   apiClient: ApiClient,
+  spaceId: string,
   page: number,
   perPage: number,
   filters?: CampaignFilters,
 ): Promise<{ campaigns: AdminCampaign[]; pagination: CampaignPagination }> {
   const params = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+  if (spaceId !== 'all') params.set('space', spaceId);
   if (filters?.category) params.set('category', filters.category);
   if (filters?.tag) params.set('tag', filters.tag);
   if (filters?.sort) params.set('sort', filters.sort);
@@ -253,14 +289,15 @@ async function fetchAdminCampaigns(
   };
 }
 
-async function fetchAllCampaignOptions(apiClient: ApiClient): Promise<AdminCampaign[]> {
+async function fetchAllCampaignOptions(apiClient: ApiClient, spaceId = 'all'): Promise<AdminCampaign[]> {
   const all: AdminCampaign[] = [];
   let page = 1;
   let totalPages = 1;
+  const spaceParam = spaceId !== 'all' ? `&space=${encodeURIComponent(spaceId)}` : '';
 
   do {
     const response = await apiClient.get<ApiCampaignResponse>(
-      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true`,
+      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true${spaceParam}`,
     );
     all.push(...(response.items ?? []));
     totalPages = response.totalPages ?? 1;
@@ -295,9 +332,10 @@ async function fetchAccessGrants(
   return normalizeListResponse(response);
 }
 
-async function fetchCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
+async function fetchCompanies(apiClient: ApiClient, spaceId = 'all'): Promise<CompanyInfo[]> {
+  const spaceParam = spaceId !== 'all' ? `?space=${encodeURIComponent(spaceId)}` : '';
   const response = await apiClient.get<ListResponse<CompanyInfo>>(
-    '/wp-json/wp-super-gallery/v1/companies',
+    `/wp-json/wp-super-gallery/v1/companies${spaceParam}`,
   );
   return normalizeListResponse(response);
 }
@@ -318,9 +356,11 @@ async function fetchAuditEntries(apiClient: ApiClient, campaignId: string, filte
 
 async function fetchGlobalAuditEntries(
   apiClient: ApiClient,
+  spaceId = 'all',
   filters: AuditFilters & { campaignId?: string } = {},
 ): Promise<AuditEntry[]> {
   const params = new URLSearchParams();
+  if (spaceId !== 'all') params.set('space', spaceId);
   if (filters.campaignId) params.set('campaign_id', filters.campaignId);
   if (filters.from) params.set('from', filters.from);
   if (filters.to) params.set('to', filters.to);
@@ -379,10 +419,10 @@ function staggeredPrefetch(
   };
 }
 
-export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20, filters?: CampaignFilters) {
+export function useAdminCampaigns(apiClient: ApiClient, spaceId = 'all', page = 1, perPage = 20, filters?: CampaignFilters) {
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getAdminCampaignsQueryKey(apiClient, page, perPage, filters),
-    queryFn: () => fetchAdminCampaigns(apiClient, page, perPage, filters),
+    queryKey: getAdminCampaignsQueryKey(apiClient, spaceId, page, perPage, filters),
+    queryFn: () => fetchAdminCampaigns(apiClient, spaceId, page, perPage, filters),
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
   });
@@ -396,10 +436,10 @@ export function useAdminCampaigns(apiClient: ApiClient, page = 1, perPage = 20, 
   };
 }
 
-export function useAllCampaignOptions(apiClient: ApiClient, enabled = true) {
+export function useAllCampaignOptions(apiClient: ApiClient, spaceId = 'all', enabled = true) {
   const { data } = useQuery({
-    queryKey: getAdminCampaignOptionsQueryKey(apiClient),
-    queryFn: () => fetchAllCampaignOptions(apiClient),
+    queryKey: getAdminCampaignOptionsQueryKey(apiClient, spaceId),
+    queryFn: () => fetchAllCampaignOptions(apiClient, spaceId),
     staleTime: SELECTOR_QUERY_STALE_TIME,
     enabled,
     ...ADMIN_QUERY_OPTIONS,
@@ -431,10 +471,10 @@ export function useAccessGrants(
   };
 }
 
-export function useCompanies(apiClient: ApiClient, enabled: boolean) {
+export function useCompanies(apiClient: ApiClient, spaceId = 'all', enabled: boolean = true) {
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getCompaniesQueryKey(apiClient),
-    queryFn: () => fetchCompanies(apiClient),
+    queryKey: getCompaniesQueryKey(apiClient, spaceId),
+    queryFn: () => fetchCompanies(apiClient, spaceId),
     enabled,
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
@@ -448,13 +488,14 @@ export function useCompanies(apiClient: ApiClient, enabled: boolean) {
   };
 }
 
-export function getAllCompaniesQueryKey(apiClient: ApiClient) {
-  return [...getAdminQueryPrefix(apiClient), 'companies-all'] as const;
+export function getAllCompaniesQueryKey(apiClient: ApiClient, spaceId = 'all') {
+  return [...getAdminQueryPrefix(apiClient), 'companies-all', spaceId] as const;
 }
 
-async function fetchAllCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
+async function fetchAllCompanies(apiClient: ApiClient, spaceId = 'all'): Promise<CompanyInfo[]> {
+  const spaceParam = spaceId !== 'all' ? `&space=${encodeURIComponent(spaceId)}` : '';
   const first = await apiClient.get<{ items: CompanyInfo[]; totalPages: number }>(
-    '/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1',
+    `/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1${spaceParam}`,
   );
   const items = first.items ?? [];
   const totalPages = first.totalPages ?? 1;
@@ -462,17 +503,17 @@ async function fetchAllCompanies(apiClient: ApiClient): Promise<CompanyInfo[]> {
   const rest = await Promise.all(
     Array.from({ length: totalPages - 1 }, (_, i) =>
       apiClient
-        .get<{ items: CompanyInfo[] }>(`/wp-json/wp-super-gallery/v1/companies?per_page=100&page=${i + 2}`)
+        .get<{ items: CompanyInfo[] }>(`/wp-json/wp-super-gallery/v1/companies?per_page=100&page=${i + 2}${spaceParam}`)
         .then((r) => r.items ?? []),
     ),
   );
   return items.concat(...rest);
 }
 
-export function useAllCompanies(apiClient: ApiClient, enabled = true) {
+export function useAllCompanies(apiClient: ApiClient, spaceId = 'all', enabled = true) {
   const { data, isLoading } = useQuery({
-    queryKey: getAllCompaniesQueryKey(apiClient),
-    queryFn: () => fetchAllCompanies(apiClient),
+    queryKey: getAllCompaniesQueryKey(apiClient, spaceId),
+    queryFn: () => fetchAllCompanies(apiClient, spaceId),
     enabled,
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
@@ -514,7 +555,8 @@ export function usePatchCampaign(apiClient: ApiClient) {
     onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({ queryKey: campaignsPrefix });
       if ('company' in vars.apiPatch) {
-        void queryClient.invalidateQueries({ queryKey: getAllCompaniesQueryKey(apiClient) });
+        // Invalidate all company caches across spaces, not just the 'all' space bucket.
+        void queryClient.invalidateQueries({ queryKey: [...getAdminQueryPrefix(apiClient), 'companies-all'] });
       }
     },
   });
@@ -538,10 +580,10 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string, filter
   };
 }
 
-export function useGlobalAuditEntries(apiClient: ApiClient, filters: AuditFilters & { campaignId?: string } = {}) {
+export function useGlobalAuditEntries(apiClient: ApiClient, spaceId = 'all', filters: AuditFilters & { campaignId?: string } = {}) {
   const { data, error, isLoading, refetch } = useQuery({
-    queryKey: getGlobalAuditQueryKey(apiClient, filters),
-    queryFn: () => fetchGlobalAuditEntries(apiClient, filters),
+    queryKey: getGlobalAuditQueryKey(apiClient, spaceId, filters),
+    queryFn: () => fetchGlobalAuditEntries(apiClient, spaceId, filters),
     staleTime: ADMIN_QUERY_STALE_TIME,
     ...ADMIN_QUERY_OPTIONS,
   });
@@ -725,8 +767,8 @@ export function getCampaignMediaAnalyticsQueryKey(
   return [...getAdminQueryPrefix(apiClient), 'campaign-media-analytics', campaignId, from, to] as const;
 }
 
-export function getAnalyticsSummaryQueryKey(apiClient: ApiClient, from: string, to: string) {
-  return [...getAdminQueryPrefix(apiClient), 'analytics-summary', from, to] as const;
+export function getAnalyticsSummaryQueryKey(apiClient: ApiClient, spaceId = 'all', from: string, to: string) {
+  return [...getAdminQueryPrefix(apiClient), 'analytics-summary', spaceId, from, to] as const;
 }
 
 export function useCampaignMediaAnalytics(
@@ -751,6 +793,7 @@ export function useCampaignMediaAnalytics(
 
 export function useAnalyticsSummary(
   apiClient: ApiClient,
+  spaceId = 'all',
   from: string,
   to: string,
   enabled = true,
@@ -758,8 +801,8 @@ export function useAnalyticsSummary(
 ) {
   const pollingActive = Boolean(polling?.enabled && enabled);
   return useQuery<AnalyticsSummaryResponse>({
-    queryKey: getAnalyticsSummaryQueryKey(apiClient, from, to),
-    queryFn: () => apiClient.getAnalyticsSummary(from, to),
+    queryKey: getAnalyticsSummaryQueryKey(apiClient, spaceId, from, to),
+    queryFn: () => apiClient.getAnalyticsSummary(from, to, spaceId),
     enabled,
     staleTime: ANALYTICS_QUERY_STALE_TIME,
     retry: false,

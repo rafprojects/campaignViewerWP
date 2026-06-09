@@ -43,6 +43,42 @@ class WPSG_Embed {
         wp_register_script($handle, $script_url, [], WPSG_VERSION, true);
     }
 
+    /**
+     * Page-global JS config consumed by main.tsx / App.tsx.
+     *
+     * Returns the inline JS (no <script> wrapper) that sets window.__WPSG_CONFIG__
+     * plus the legacy __WPSG_AUTH_PROVIDER__ / __WPSG_API_BASE__ globals. All values
+     * are page-global (auth/api/nonce); the only settings-derived fields
+     * (debug_component_markers, allow_user_theme_override) are admin-only, so the
+     * global settings are authoritative regardless of space context.
+     *
+     * Shared by the front-end shortcode and the wp-admin Spaces page so both mount
+     * the React app with an identical, nonce-authenticated config.
+     */
+    public static function page_config_js(): string {
+        $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
+        $api_base      = apply_filters('wpsg_api_base', home_url());
+        $sentry_dsn    = apply_filters('wpsg_sentry_dsn', '');
+
+        $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
+        $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
+        $debug_component_markers   = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : true;
+
+        $config = [
+            'authProvider'           => $auth_provider,
+            'apiBase'                => $api_base,
+            'sentryDsn'              => $sentry_dsn,
+            'restNonce'              => wp_create_nonce('wp_rest'),
+            'enableJwt'              => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
+            'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
+            'allowUserThemeOverride' => $allow_user_theme_override,
+        ];
+
+        return 'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';'
+            . 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
+            . 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';';
+    }
+
     public static function add_asset_cache_headers() {
         if (headers_sent()) {
             return;
@@ -97,15 +133,10 @@ class WPSG_Embed {
 
         wp_enqueue_script('wp-super-gallery-app');
 
-        $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
-        $api_base = apply_filters('wpsg_api_base', home_url());
-        $sentry_dsn = apply_filters('wpsg_sentry_dsn', '');
-
         // Get effective settings for this space (falls back to global defaults).
+        // Page-global config (auth/api/nonce) is emitted via self::page_config_js().
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_effective_settings($space_id) : [];
         $theme = isset($settings['theme']) ? $settings['theme'] : 'default-dark';
-        $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
-        $debug_component_markers = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : true;
         $gallery_layout = isset($settings['gallery_layout']) ? $settings['gallery_layout'] : 'grid';
         $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
         $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
@@ -168,24 +199,7 @@ class WPSG_Embed {
         // Space-specific settings live in data-wpsg-config on each mount node.
         if (empty($GLOBALS['wpsg_config_emitted'])) {
             $GLOBALS['wpsg_config_emitted'] = true;
-            $config = [
-                'authProvider'           => $auth_provider,
-                'apiBase'                => $api_base,
-                'sentryDsn'              => $sentry_dsn,
-                'restNonce'              => wp_create_nonce('wp_rest'),
-                // P20-K: Gate JWT auth behind server-side constant.
-                'enableJwt'              => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
-                // Admin setting controls whether DOM component markers are emitted
-                // in deployed builds; sites can still override with a filter.
-                'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
-                'allowUserThemeOverride' => $allow_user_theme_override,
-            ];
-            $config_script = '<script>' .
-                'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';' .
-                // Keep legacy globals for backward compatibility.
-                'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';' .
-                'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';' .
-                '</script>';
+            $config_script = '<script>' . self::page_config_js() . '</script>';
         } else {
             $config_script = '';
         }

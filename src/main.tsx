@@ -338,13 +338,20 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
   )
 }
 
+const spacesAdminHost = document.getElementById('wpsg-spaces-admin')
 const rootHost = document.getElementById('root')
 if (import.meta.env.DEV) {
   console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
   console.log('[WPSG] All .wp-super-gallery elements:', document.querySelectorAll('.wp-super-gallery').length)
 }
 
-if (rootHost) {
+// P47-K: the WP-admin "Gallery Spaces" page mounts only the space-management UI
+// (lazy-loaded so the admin chunk stays out of the public gallery path).
+if (spacesAdminHost) {
+  void import('./components/Admin/SpacesAdminApp').then(({ mountSpacesAdmin }) => {
+    mountSpacesAdmin(spacesAdminHost)
+  })
+} else if (rootHost) {
   if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')
   const nodeConfig = parseNodeConfig(rootHost)
   const props = { ...parseProps(rootHost), spaceId: nodeConfig.spaceId }

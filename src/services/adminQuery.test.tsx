@@ -6,7 +6,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ApiClient } from '@/services/apiClient';
 import { createTestQueryClient } from '@/services/queryClient';
 
-import { useAuditEntries, useAllCompanies } from './adminQuery';
+import {
+  useAuditEntries,
+  useAllCompanies,
+  getAdminCampaignsQueryKey,
+  getAdminCampaignOptionsQueryKey,
+} from './adminQuery';
 import type { CompanyInfo } from './adminQuery';
 
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
@@ -130,5 +135,33 @@ describe('adminQuery', () => {
     await waitFor(() => expect(result.current.companies).toHaveLength(3));
     expect(get).toHaveBeenCalledTimes(3);
     expect(result.current.companies.map((c) => c.slug)).toEqual(['acme', 'beta', 'gamma']);
+  });
+});
+
+describe('adminQuery space scoping (P47)', () => {
+  const client = { getBaseUrl: () => 'https://example.test' } as unknown as ApiClient;
+
+  it('keys campaign queries distinctly per space', () => {
+    const all = getAdminCampaignsQueryKey(client, 'all');
+    const spaceA = getAdminCampaignsQueryKey(client, 1);
+    const spaceB = getAdminCampaignsQueryKey(client, 2);
+
+    expect(all).not.toEqual(spaceA);
+    expect(spaceA).not.toEqual(spaceB);
+  });
+
+  it('places the type identifier before spaceId so prefix invalidation still matches', () => {
+    // Implementation note (P47-F): keys are ['admin', base, 'campaigns', spaceId, ...]
+    // so usePatchCampaign's prefix invalidation ['admin', base, 'campaigns'] matches
+    // every space-scoped key.
+    const key = getAdminCampaignsQueryKey(client, 5);
+    expect(key[2]).toBe('campaigns');
+    expect(key[3]).toBe(5);
+  });
+
+  it('scopes campaign-options keys per space too', () => {
+    expect(getAdminCampaignOptionsQueryKey(client, 1)).not.toEqual(
+      getAdminCampaignOptionsQueryKey(client, 2),
+    );
   });
 });

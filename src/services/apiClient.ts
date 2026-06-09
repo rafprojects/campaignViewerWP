@@ -118,8 +118,8 @@ export class ApiClient extends HttpTransportImpl {
 
   // ── Settings ──────────────────────────────────────────────────────────────
 
-  getSettings(): Promise<SettingsResponse> {
-    return this._settings.getSettings();
+  getSettings(spaceId?: number): Promise<SettingsResponse> {
+    return this._settings.getSettings(spaceId);
   }
 
   updateSettings(settings: SettingsUpdateRequest): Promise<SettingsResponse> {
@@ -185,8 +185,8 @@ export class ApiClient extends HttpTransportImpl {
     return this._analytics.getCampaignMediaAnalytics(campaignId, from, to);
   }
 
-  getAnalyticsSummary(from?: string, to?: string): Promise<AnalyticsSummaryResponse> {
-    return this._analytics.getAnalyticsSummary(from, to);
+  getAnalyticsSummary(from?: string, to?: string, spaceId?: string): Promise<AnalyticsSummaryResponse> {
+    return this._analytics.getAnalyticsSummary(from, to, spaceId);
   }
 
   getMediaUsage(mediaId: string): Promise<MediaUsageResponse> {

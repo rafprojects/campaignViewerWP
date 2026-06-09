@@ -90,6 +90,7 @@ interface UseUnifiedCampaignModalOptions {
   isAdmin: boolean;
   onMutate: () => Promise<unknown>;
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
+  spaceId?: number;
 }
 
 export function useUnifiedCampaignModal({
@@ -97,6 +98,7 @@ export function useUnifiedCampaignModal({
   isAdmin,
   onMutate,
   onNotify,
+  spaceId,
 }: UseUnifiedCampaignModalOptions) {
   const queryClient = useQueryClient();
   const [opened, setOpened] = useState(false);
@@ -105,7 +107,7 @@ export function useUnifiedCampaignModal({
   const [formState, setFormState] = useState<UnifiedCampaignFormState>({ ...emptyForm });
   const [isSaving, setIsSaving] = useState(false);
 
-  const { companies, companiesLoading } = useAllCompanies(apiClient, opened);
+  const { companies, companiesLoading } = useAllCompanies(apiClient, 'all', opened);
 
   // Thumbnail / cover image
   const [coverImageChanged, setCoverImageChanged] = useState(false);
@@ -279,6 +281,8 @@ export function useUnifiedCampaignModal({
         await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}`, payload);
         onNotify({ type: 'success', text: 'Campaign updated.' });
       } else {
+        // P47-J: assign to the active space on creation.
+        if (spaceId != null) payload.space_id = spaceId;
         await apiClient.post('/wp-json/wp-super-gallery/v1/campaigns', payload);
         onNotify({ type: 'success', text: 'Campaign created.' });
       }
@@ -293,7 +297,7 @@ export function useUnifiedCampaignModal({
       savingRef.current = false;
       setIsSaving(false);
     }
-  }, [formState, companies, editingCampaignId, coverImageChanged, apiClient, queryClient, onNotify, close, onMutate]);
+  }, [formState, companies, editingCampaignId, coverImageChanged, apiClient, queryClient, onNotify, close, onMutate, spaceId]);
 
   // ── Media management ──────────────────────────────────────
 

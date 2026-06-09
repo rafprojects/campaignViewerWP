@@ -763,6 +763,10 @@ class WPSG_DB {
             $where[]  = 'campaign_id = %d';
             $values[] = intval($args['campaign_id']);
         }
+        if (!empty($args['space_id']) && intval($args['space_id']) > 0) {
+            $where[]  = 'space_id = %d';
+            $values[] = intval($args['space_id']);
+        }
         if (!empty($args['from'])) {
             $where[]  = 'created_at >= %s';
             $values[] = gmdate('Y-m-d H:i:s', strtotime($args['from']));
