@@ -138,6 +138,8 @@ interface SettingsPanelProps {
   initialSettings?: SettingsDataInput | undefined;
   /** When set, saves route to this space's overrides instead of global settings. */
   spaceId?: number;
+  /** Render the Drawer via a React portal (to document.body). Default false. Set true when rendering inside a Modal. */
+  withinPortal?: boolean;
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -184,6 +186,8 @@ interface SettingsPanelTabsContentProps {
   setCustomFonts: (fonts: CustomFontEntry[]) => void;
   updateTypoOverride: (elementId: string, override: TypographyOverride) => void;
   tooltipLabel: SettingsPanelTooltipRenderer;
+  /** When set, global-only tabs (Integrations, System & Admin) are hidden. */
+  spaceId?: number;
 }
 
 const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = ({
@@ -200,7 +204,9 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   setCustomFonts,
   updateTypoOverride,
   tooltipLabel,
+  spaceId,
 }) => {
+  const isSpaceMode = spaceId != null;
   return <Stack gap="md">
     <Tabs
       value={activeTab}
@@ -240,10 +246,12 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
           Typography
         </Tabs.Tab>
-        <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
-          Integrations
-        </Tabs.Tab>
-        {settings.advancedSettingsEnabled && (
+        {!isSpaceMode && (
+          <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
+            Integrations
+          </Tabs.Tab>
+        )}
+        {!isSpaceMode && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
           </Tabs.Tab>
@@ -295,11 +303,13 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         />
       </Tabs.Panel>
 
-      <Tabs.Panel value="integrations" pt="md">
-        <SettingsIntegrationsTab apiClient={apiClient} />
-      </Tabs.Panel>
+      {!isSpaceMode && (
+        <Tabs.Panel value="integrations" pt="md">
+          <SettingsIntegrationsTab apiClient={apiClient} />
+        </Tabs.Panel>
+      )}
 
-      {settings.advancedSettingsEnabled && (
+      {!isSpaceMode && settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           <SettingsSystemAdminTab
             settings={settings}
@@ -316,7 +326,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId }: SettingsPanelProps) {
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, withinPortal = false }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -541,7 +551,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       position="right"
       size={isSmallScreen ? '100%' : toCss(settings.settingsPanelWidth ?? 600, settings.settingsPanelWidthUnit ?? 'px')}
       zIndex={450}
-      withinPortal={false}
+      withinPortal={withinPortal}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={{ transition: 'slide-left', duration: 200 }}
@@ -575,6 +585,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               setCustomFonts={setCustomFonts}
               updateTypoOverride={updateTypoOverride}
               tooltipLabel={tt}
+              {...(spaceId != null ? { spaceId } : {})}
             />
           </Box>
 

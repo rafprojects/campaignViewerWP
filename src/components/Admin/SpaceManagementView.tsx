@@ -1,15 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Tabs, Stack, Group, Text, Badge, Button, TextInput, Switch,
   Alert, Loader, Center, Table, ActionIcon, Tooltip, Select, Divider,
 } from '@mantine/core';
 import {
-  IconPlus, IconTrash, IconAlertCircle, IconUserPlus,
+  IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import { useSpaces } from '@/services/adminQuery';
-import { SpaceSettingsPanel } from './SpaceSettingsPanel';
+import { SettingsPanel } from './SettingsPanel';
 
 interface SpaceGrant {
   userId: number;
@@ -47,7 +47,11 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   const [grantRole, setGrantRole] = useState<string>('editor');
   const [grantSaving, setGrantSaving] = useState(false);
 
+  const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const selectedSpace = spaces.find((s) => s.id === selectedSpaceId) ?? null;
+
+  // Close the settings drawer whenever the selected space changes.
+  useEffect(() => { setSettingsPanelOpen(false); }, [selectedSpaceId]);
 
   const { data: grants, isLoading: grantsLoading, refetch: refetchGrants } = useQuery({
     queryKey: ['space-grants', selectedSpaceId],
@@ -148,6 +152,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   }, [apiClient, selectedSpaceId, refetchGrants, onNotify]);
 
   return (
+    <>
     <Tabs value={activeTab} onChange={setActiveTab}>
       <Tabs.List>
         <Tabs.Tab value="spaces">Spaces</Tabs.Tab>
@@ -260,12 +265,20 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
 
       <Tabs.Panel value="settings" pt="md">
         {selectedSpace ? (
-          <SpaceSettingsPanel
-            apiClient={apiClient}
-            spaceId={selectedSpace.id}
-            spaceName={selectedSpace.name}
-            onNotify={onNotify}
-          />
+          <Stack gap="sm">
+            <Text size="sm" c="dimmed">
+              Configure display settings for <Text span fw={500}>{selectedSpace.name}</Text>.
+              Unset fields inherit the global defaults.
+            </Text>
+            <Button
+              leftSection={<IconSettings size={14} />}
+              variant="light"
+              size="sm"
+              onClick={() => setSettingsPanelOpen(true)}
+            >
+              Configure display settings
+            </Button>
+          </Stack>
         ) : (
           <Text c="dimmed" size="sm">Select a space from the Spaces tab to edit its settings.</Text>
         )}
@@ -366,5 +379,17 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
         )}
       </Tabs.Panel>
     </Tabs>
+
+    {selectedSpace && (
+      <SettingsPanel
+        opened={settingsPanelOpen}
+        apiClient={apiClient}
+        onClose={() => setSettingsPanelOpen(false)}
+        onNotify={onNotify}
+        spaceId={selectedSpace.id}
+        withinPortal
+      />
+    )}
+    </>
   );
 }

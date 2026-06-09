@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-08 (P47-L/M/N done; O planned)
+**Last updated:** 2026-06-09 (P47-L/M/N/O done; G/H planned)
 
 ### Tracks
 
@@ -22,7 +22,7 @@
 | P47-L | Bug: bust `get_space()` static cache on write so PUT responses are not stale | **Done** | Small |
 | P47-M | Promote tier-1 visual/branding fields (~90 keys) to space-overridable | **Done** | Medium |
 | P47-N | Promote tier-2 layout/composition fields (~190 keys + unit companions) | **Done** | Large |
-| P47-O | Space settings UI — wire full `SettingsPanel` into `SpaceManagementView` | Planned | Medium |
+| P47-O | Space settings UI — wire full `SettingsPanel` into `SpaceManagementView` | **Done** | Medium |
 
 ---
 
@@ -758,3 +758,26 @@ Add the following groups to `$space_overridable_fields`. Fields marked `(+ unit)
 - Manual: in the WP-admin "Gallery Spaces" page, edit a space's theme, a background color (P47-M), and a card gap (P47-N). Reload the page and confirm all three persist. Switch to a different space and confirm it shows global defaults for those fields.
 - `npm test` green (update or remove `SpaceSettingsPanel` tests if the component is deleted).
 - `composer test` green.
+
+---
+
+### Implementation notes (done 2026-06-09)
+
+**What shipped:**
+
+1. **`SettingsPanel.tsx`** — Two additions:
+   - `withinPortal?: boolean` prop (default `false`, preserving existing shadow-DOM behavior). When `true`, Mantine renders the Drawer via a React portal to `document.body`, placing it above any hosting Modal (z-index 450 > Modal's 200).
+   - `spaceId?: number` threaded into `SettingsPanelTabsContent`. When set, the **Integrations** tab (webhook settings — global) and **System & Admin** tab (admin-only fields — already gated by `advancedSettingsEnabled`) are hidden. All other 7 tabs render normally; the PHP allowlist already silently drops any non-overridable keys on PUT.
+
+2. **`SpaceManagementView.tsx`** — Settings tab replaced:
+   - `<SpaceSettingsPanel>` removed; the tab now shows a brief description + "Configure display settings" button.
+   - `<SettingsPanel opened={settingsPanelOpen} spaceId={selectedSpace.id} withinPortal>` rendered at the component root (outside the `<Tabs>` tree). State `settingsPanelOpen` starts `false` and resets whenever `selectedSpaceId` changes.
+   - Import updated: `SpaceSettingsPanel` → `SettingsPanel`.
+
+3. **`SpaceSettingsPanel.tsx` deleted** — its only caller was `SpaceManagementView`.
+
+**Scope of "admin-only" hiding:** Only tabs that are exclusively non-overridable in practice (Integrations = webhooks; System & Admin = magic-link page selector and advanced flags) are hidden. All other tabs expose their full field set; any non-allowlisted keys the user edits are silently dropped by `array_intersect_key` in `update_space_settings()`. This is the correct behavior — no frontend field enumeration needed.
+
+**`exactOptionalPropertyTypes` compat:** `spaceId` is spread conditionally (`...(spaceId != null ? { spaceId } : {})`) when passed to `SettingsPanelTabsContent`, satisfying the strict optional-property type check.
+
+**Build:** `npm run build` green (11.2 s), `tsc --noEmit` clean.
