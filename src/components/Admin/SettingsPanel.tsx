@@ -65,7 +65,7 @@ import {
   resolveGalleryConfig,
 } from '@/utils/galleryConfig';
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
-import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY } from '@/services/settingsQuery';
+import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 import { toCss } from '@/lib/cssUnits';
 
@@ -459,7 +459,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         setIsSpaceSaving(true);
         try {
           await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${spaceId}/settings`, payload);
-          void queryClient.invalidateQueries({ queryKey: ['space-settings', spaceId] });
+          void queryClient.invalidateQueries({ queryKey: getSettingsQueryKey(apiClient, spaceId) });
           void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
           markSaved(settings);
           clearSettingsDraft(rootId);

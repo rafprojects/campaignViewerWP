@@ -448,19 +448,25 @@ class WPSG_CPT {
     }
 
     public static function handle_create_space(): void {
-        if (!current_user_can('manage_options') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
+        if (!current_user_can('manage_wpsg') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
             wp_die(esc_html__('Forbidden', 'wp-super-gallery'));
         }
-        $name = sanitize_text_field($_POST['wpsg_space_name'] ?? '');
+        $name     = sanitize_text_field($_POST['wpsg_space_name'] ?? '');
         $raw_slug = sanitize_text_field($_POST['wpsg_space_slug'] ?? '');
-        $slug = sanitize_title($raw_slug ?: $name);
+        $slug     = sanitize_title($raw_slug ?: $name);
         $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
         if (empty($name) || empty($slug)) {
             wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
             exit;
         }
-        if (class_exists('WPSG_DB')) {
-            WPSG_DB::insert_space(['name' => $name, 'slug' => $slug]);
+        if (!class_exists('WPSG_DB')) {
+            wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            exit;
+        }
+        $new_id = WPSG_DB::insert_space(['name' => $name, 'slug' => $slug]);
+        if (!$new_id) {
+            wp_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            exit;
         }
         wp_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
         exit;

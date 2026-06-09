@@ -422,8 +422,15 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             return $meta_result;
         }
         // P47-J: persist space assignment if the caller supplied a valid space_id.
+        // Guard access: in delegated-isolation mode a manage_wpsg-only user must be
+        // an explicit grantee; without this check they could assign campaigns to any
+        // space including ones they were denied from.
         $space_id = (int) $request->get_param('space_id');
         if ($space_id > 0) {
+            if (!self::can_access_space($space_id, get_current_user_id())) {
+                wp_delete_post($post_id, true);
+                return new WP_Error('wpsg_forbidden', 'You do not have access to that space.', ['status' => 403]);
+            }
             update_post_meta($post_id, '_wpsg_space_id', $space_id);
         }
         self::assign_company($post_id, $request->get_param('company'));

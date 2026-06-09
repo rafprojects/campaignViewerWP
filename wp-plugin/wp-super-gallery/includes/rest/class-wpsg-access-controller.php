@@ -1099,8 +1099,6 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 $space_id
             )
             : '';
-        $posts_alias  = $space_id > 0 ? 'p' : $wpdb->posts;
-
         // Count all campaigns (any post_status that "exists").
         if ($space_id > 0) {
             $total = intval($wpdb->get_var(

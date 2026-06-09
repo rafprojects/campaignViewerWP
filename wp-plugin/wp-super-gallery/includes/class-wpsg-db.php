@@ -935,14 +935,15 @@ class WPSG_DB {
             return;
         }
 
-        $batch  = 50;
-        $offset = intval(get_option('wpsg_spaces_backfill_offset', 0));
+        $batch = 50;
 
+        // Do NOT use an offset with NOT EXISTS: as each batch assigns the meta,
+        // those posts leave the result set, so incrementing offset would skip
+        // still-unassigned campaigns. Always fetch the first N unassigned posts.
         $posts = get_posts([
             'post_type'      => 'wpsg_campaign',
             'post_status'    => 'any',
             'posts_per_page' => $batch,
-            'offset'         => $offset,
             'fields'         => 'ids',
             'meta_query'     => [[
                 'key'     => '_wpsg_space_id',
@@ -958,8 +959,6 @@ class WPSG_DB {
             self::backfill_company_spaces($default_id);
             delete_option('wpsg_spaces_backfill_offset');
             update_option('wpsg_spaces_backfill_complete', '1', false);
-        } else {
-            update_option('wpsg_spaces_backfill_offset', $offset + $batch, false);
         }
     }
 
@@ -1007,13 +1006,18 @@ class WPSG_DB {
 
     public static function list_spaces(array $args = []): array {
         global $wpdb;
-        $table    = self::get_spaces_table();
-        $archived = isset($args['archived']) ? intval($args['archived']) : 0;
+        $table = self::get_spaces_table();
+        // When 'archived' key is absent, return all spaces (no filter).
+        // Pass ['archived' => 0] to restrict to active, ['archived' => 1] for archived only.
+        if (array_key_exists('archived', $args)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$table} WHERE archived = %d ORDER BY id ASC",
+                intval($args['archived'])
+            ));
+        }
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        return $wpdb->get_results($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE archived = %d ORDER BY id ASC",
-            $archived
-        ));
+        return $wpdb->get_results("SELECT * FROM {$table} ORDER BY id ASC");
     }
 
     public static function insert_space(array $data): int {
