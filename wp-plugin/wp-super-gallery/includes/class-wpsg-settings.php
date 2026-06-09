@@ -239,12 +239,21 @@ class WPSG_Settings {
                 }
                 $sanitized[$key] = $val;
             } elseif (is_array($default)) {
-                // Array-typed fields (e.g. viewer_bg_gradient): accept only arrays;
-                // casting to string would store "Array" and corrupt the payload.
+                // Array-typed fields (e.g. viewer_bg_gradient): must go through the
+                // field-specific sanitizer so structured payloads (type/direction/stops)
+                // are not flattened by array_map('sanitize_text_field').
                 if (!is_array($value)) {
                     continue;
                 }
-                $sanitized[$key] = array_map('sanitize_text_field', $value);
+                if ($key === 'viewer_bg_gradient') {
+                    $sanitized[$key] = WPSG_Settings_Sanitizer::sanitize_viewer_bg_gradient($value);
+                } else {
+                    // Fallback for future array-typed fields: sanitize scalar leaves only.
+                    $sanitized[$key] = array_map(
+                        fn($v) => is_scalar($v) ? sanitize_text_field((string) $v) : null,
+                        $value
+                    );
+                }
             } else {
                 $sanitized[$key] = str_ends_with($key, '_url') || str_ends_with($key, '_image_url')
                     ? esc_url_raw((string) $value)

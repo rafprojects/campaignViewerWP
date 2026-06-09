@@ -915,7 +915,7 @@ class WPSG_DB {
             return;
         }
 
-        $wpdb->insert($table, [
+        $inserted = $wpdb->insert($table, [
             'slug'               => 'default',
             'name'               => 'Default',
             'isolation_mode'     => 'open',
@@ -923,7 +923,9 @@ class WPSG_DB {
             'settings_overrides' => '{}',
             'archived'           => 0,
         ]);
-        update_option('wpsg_default_space_id', $wpdb->insert_id, false);
+        if ($inserted && $wpdb->insert_id > 0) {
+            update_option('wpsg_default_space_id', $wpdb->insert_id, false);
+        }
     }
 
     private static function maybe_backfill_spaces(): void {

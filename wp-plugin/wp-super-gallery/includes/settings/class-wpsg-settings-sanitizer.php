@@ -1152,7 +1152,7 @@ class WPSG_Settings_Sanitizer {
      * @param mixed $raw Raw gradient payload.
      * @return array|object Sanitized gradient payload.
      */
-    private static function sanitize_viewer_bg_gradient($raw) {
+    public static function sanitize_viewer_bg_gradient($raw) {
         $decoded = is_string($raw) ? json_decode($raw, true) : (is_array($raw) ? $raw : null);
         if (!is_array($decoded)) {
             $decoded = [];
