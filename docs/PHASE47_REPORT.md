@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-08 (P47-J)
+**Last updated:** 2026-06-08 (P47-L done; M/N/O planned)
 
 ### Tracks
 
@@ -18,6 +18,11 @@
 | P47-H | Tests + docs | Planned | Medium |
 | P47-I | Frontend space filtering + WP admin Campaigns column | **Done** | Small |
 | P47-J | Campaign space assignment on create + settings space-scoping + create-space UX | **Done** | Small |
+| P47-K | Settings space-scoping audit — read-path verification + field categorization | **Done** | Medium |
+| P47-L | Bug: bust `get_space()` static cache on write so PUT responses are not stale | **Done** | Small |
+| P47-M | Promote tier-1 visual/branding fields (~90 keys) to space-overridable | Planned | Medium |
+| P47-N | Promote tier-2 layout/composition fields (~190 keys + unit companions) | Planned | Large |
+| P47-O | Space settings UI — wire full `SettingsPanel` into `SpaceManagementView` | Planned | Medium |
 
 ---
 
@@ -532,3 +537,193 @@ So: of the ~271, roughly **~250 are public visual/presentation knobs** (promotio
 ### 5. Regression coverage added
 
 PHP `WPSG_P47_Spaces_Settings_Test` (inheritance + allowlist enforcement) and `WPSG_P47_Spaces_Isolation_Test` (cross-space read/settings denial, open vs delegated, escape hatch) lock in the current behavior so a future change cannot silently widen or leak the boundary. Vitest covers `spaceId` query-key scoping.
+
+---
+
+## Track P47-L — Bug: `get_space()` Static Cache Invalidation
+
+### Problem
+
+`WPSG_DB::get_space()` keeps a request-level `static $cache = []` ([class-wpsg-db.php:972-985](../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) to avoid repeated DB reads inside hot permission loops. However `update_space()`, `archive_space()`, `delete_space()`, and `insert_space()` never bust this cache. The concrete symptom:
+
+`PUT /spaces/{id}/settings` executes `get_space()` (populates cache) → `update_space()` (writes DB) → `get_space()` (returns the **stale** cached row). The endpoint's response therefore contains the pre-save `settings_overrides`, so the React admin panel sees the old values after saving — the root of the "settings appear to revert" reports in P47-J. The same get→write→get pattern affects the access-grant endpoints (`GET/POST/DELETE /spaces/{id}/access`).
+
+### Fix
+
+After each write in `update_space()`, `archive_space()`, `delete_space()`, and `insert_space()`, unset the corresponding entry from the static cache:
+
+```php
+unset( $cache[ $space_id ] );
+```
+
+For `insert_space()` there is no prior cache entry to clear, but the returned id should not be seeded either (the next `get_space()` will hydrate correctly from DB).
+
+**File:** `wp-plugin/wp-super-gallery/includes/class-wpsg-db.php`
+
+### Acceptance criteria
+
+- `PUT /spaces/{id}/settings` response body reflects the values that were just saved, not the pre-save values.
+- `POST/DELETE /spaces/{id}/access` response reflects the updated grant list.
+- Running `get_space($id)` twice within the same request still uses the cache when no write occurred (cache is not disabled — just invalidated on write).
+
+### Validation
+
+- Extend `WPSG_P47_Spaces_Settings_Test`: after a PUT, assert the endpoint's response `settings.theme` (or any overridden field) equals the submitted value (not the prior value). The existing test already asserts the DB row; add a parallel assertion on the decoded response body.
+- `composer test` full suite green.
+
+### Implementation notes
+
+The method-local `static $cache` inside `get_space()` was inaccessible from sibling write methods. Promoted it to a class-level `private static array $space_cache = []` and replaced all `$cache` references in `get_space()` with `self::$space_cache`. Added `unset(self::$space_cache[$id])` as the last statement in `update_space()`, `archive_space()`, and `delete_space()` — after the `$wpdb` call so the DB write always runs first. `insert_space()` needs no bust: a freshly-inserted ID was never cached. Cache hit behaviour is unchanged for read-only requests.
+
+Added `test_put_settings_response_reflects_saved_values_not_stale_cache` to `WPSG_P47_Spaces_Settings_Test`: warms the cache with an explicit `WPSG_DB::get_space()` call before the PUT, then asserts both `response.overrides.theme` and `response.settings.theme` equal the submitted value. The stale-cache note in the existing test class header was updated to reflect the fix. Full suite: 869 tests, 2753 assertions, green.
+
+---
+
+## Track P47-M — Promote Tier-1 Visual / Branding Fields
+
+### Problem
+
+~90 public-facing visual fields remain forced-global despite being the kind of knob a space owner expects to control independently. These are fields that define *identity* — who the space looks like — not structural layout (which is larger/more complex and handled in P47-N). The most jarring gap: `gallery_title_text` and `gallery_subtitle_text` are already space-overridable (P47-D), but `campaign_about_heading_text`, `gallery_image_label`, and `gallery_video_label` are not — so two spaces can have different headings but identical image labels.
+
+### Fix
+
+Add the following groups to `$space_overridable_fields` in [class-wpsg-settings-registry.php:408-443](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443). No behavior change for existing sites — the Default Space has no overrides so effective settings are unchanged; the fields merely become eligible for per-space override via `PUT /spaces/{id}/settings`.
+
+**Branding text & labels (~5 fields)**
+`campaign_about_heading_text`, `gallery_image_label`, `gallery_video_label`, `gallery_label_justification`, `show_gallery_label_icon`
+
+**Backgrounds (~20 fields)**
+`image_bg_type`, `image_bg_color`, `image_bg_gradient`, `image_bg_image_url`,
+`video_bg_type`, `video_bg_color`, `video_bg_gradient`, `video_bg_image_url`,
+`unified_bg_type`, `unified_bg_color`, `unified_bg_gradient`, `unified_bg_image_url`,
+`viewer_bg_type`, `viewer_bg_color`, `viewer_bg_gradient`, `viewer_bg_image_url`,
+`modal_bg_type`, `modal_bg_color`, `modal_bg_gradient`, `modal_bg_image_url`
+
+**Nav arrows (~12 fields)**
+`nav_arrow_position`, `nav_arrow_size`, `nav_arrow_color`, `nav_arrow_bg_color`,
+`nav_arrow_bg_opacity`, `nav_arrow_border_radius`, `nav_arrow_visible_on_hover`,
+`dot_nav_position`, `dot_nav_size`, `dot_nav_color`, `dot_nav_active_color`, `dot_nav_shape`
+
+**Shadows & borders (~10 fields)**
+`image_shadow_preset`, `video_shadow_preset`, `card_shadow_preset`,
+`card_border_radius`, `card_border_width`, `card_border_color`,
+`tile_border_radius`, `tile_border_width`, `tile_border_color`, `tile_border_opacity`
+
+**Extra display toggles (~8 fields)**
+`show_viewer_border`, `show_campaign_cover_image`, `show_campaign_tags`,
+`show_campaign_gallery_labels`, `transition_fade_enabled`, `dot_nav_enabled`,
+`campaign_open_mode`, `show_gallery_label_icon`
+
+**Files:** `wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php`
+
+### Acceptance criteria
+
+- `PUT /spaces/{id}/settings` with any promoted field stores the override; `GET /settings?space={id}` returns the overridden value; a different space returns the global default.
+- Admin-only fields and uncategorized-global fields are unaffected.
+- No new fields appear in the SpaceSettingsPanel UI until P47-O wires them in (allowlist expansion and UI expansion are intentionally separate tracks).
+
+### Validation
+
+- Extend `WPSG_P47_Spaces_Settings_Test`: for one representative from each group (e.g. `nav_arrow_color`, `card_border_radius`, `image_bg_type`, `campaign_about_heading_text`), assert that PUT stores the override and that a second space without an override returns the global default.
+- Verify the sanitizer accepts the new fields (they already pass through `sanitize_settings()` — confirm no `$valid_options` or `$field_ranges` constraint blocks them).
+- `composer test` + `npm test` green.
+
+---
+
+## Track P47-N — Promote Tier-2 Layout / Composition Fields
+
+### Problem
+
+~190 layout, sizing, and composition fields are forced-global. Because layout is the primary visual differentiator between gallery styles, keeping them global means two spaces on the same site must share the same card grid, carousel behavior, modal size, and responsive breakpoints — making true multi-tenant differentiation impractical.
+
+Two subtleties unique to this group:
+
+1. **Unit companions.** Almost every numeric layout value has a `*_unit` companion (px/%, vw, etc.). Promoting a value field without its unit would silently break the CSS calculation. Every promoted numeric field in this track must have its `*_unit` companion promoted in the same commit, and vice versa.
+2. **`gallery_config` / `card_config` are not settings keys.** They are runtime-composed objects. Per-space layout depends on promoting the individual primitive fields below — not on any config blob.
+
+### Fix
+
+Add the following groups to `$space_overridable_fields`. Fields marked `(+ unit)` must be promoted together with their `*_unit` companion.
+
+**Card layout & styling (~30 fields + ~14 unit companions)**
+`card_thumbnail_position`, `card_thumbnail_size` (+ unit), `card_gap_h` (+ unit), `card_gap_v` (+ unit),
+`card_max_width` (+ unit), `card_max_height` (+ unit), `card_aspect_ratio`,
+`card_grid_columns`, `card_scale`, `grid_card_width` (+ unit), `grid_card_height` (+ unit),
+`card_gradient_enabled`, `card_gradient_direction`, `card_gradient_start_opacity`, `card_gradient_end_opacity`,
+`card_title_icon_size` (+ unit), `card_subtitle_icon_size` (+ unit), `card_tag_icon_size` (+ unit)
+
+**Tile / mosaic / hex / diamond (~20 fields + unit companions)**
+`tile_width` (+ unit), `tile_height` (+ unit), `tile_gap` (+ unit),
+`masonry_column_width` (+ unit), `masonry_gap` (+ unit),
+`mosaic_target_row_height` (+ unit),
+`hex_size` (+ unit), `hex_gap` (+ unit),
+`diamond_size` (+ unit), `diamond_gap` (+ unit),
+`photo_normalize_height`
+
+**Carousel (~6 fields + unit companions)**
+`carousel_visible_items`, `carousel_autoplay`, `carousel_autoplay_interval`,
+`carousel_gap` (+ unit), `carousel_loop`, `carousel_darken_inactive`
+
+**Modal & lightbox (~15 fields + unit companions)**
+`modal_cover_enabled`, `modal_cover_opacity`,
+`modal_transition_type`, `modal_transition_duration`,
+`modal_max_width` (+ unit), `modal_max_height` (+ unit),
+`modal_gallery_enabled`, `modal_gallery_layout`,
+`modal_close_button_position`, `modal_close_button_size` (+ unit),
+`lightbox_zoom_enabled`, `lightbox_zoom_max`, `lightbox_pan_enabled`, `lightbox_keyboard_nav`
+
+**Gallery section / adapter layout (~10 fields + unit companions)**
+`gallery_section_gap` (+ unit), `gallery_section_padding` (+ unit),
+`adapter_column_count`, `adapter_row_count`,
+`app_max_width` (+ unit), `app_padding` (+ unit),
+`gallery_sizing_mode`, `section_scale`, `item_scale`
+
+**Viewport & responsive (~8 fields)**
+`video_viewport_height`, `image_viewport_height`,
+`viewport_height_desktop_ratio`, `viewport_height_tablet_ratio`, `viewport_height_mobile_ratio`,
+`modal_mobile_breakpoint`, `tablet_breakpoint`, `mobile_breakpoint`
+
+**Files:** `wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php`
+
+### Acceptance criteria
+
+- Every promoted numeric field has its `*_unit` companion in the allowlist (and vice versa — no orphaned unit).
+- `PUT /spaces/{id}/settings` with any promoted field stores the override correctly; effective settings for that space reflect the override; another space without overrides returns the global value.
+- No `$field_ranges` constraint silently clamps a submitted value to the global default (confirm each promoted field's range accepts the submitted test value).
+- Unit-companion parity: write a PHP assertion that lists all promoted fields ending in `_unit` and confirms the corresponding base field is also promoted, and vice versa.
+
+### Validation
+
+- PHP: representative test per group (e.g. `card_gap_h` + `card_gap_h_unit`, `carousel_gap` + unit, `modal_max_width` + unit).
+- Unit-parity assertion runs as part of the test class `setUp` or as its own test method.
+- `composer test` + `npm test` green.
+
+---
+
+## Track P47-O — Space Settings UI: Wire Full `SettingsPanel` into `SpaceManagementView`
+
+### Problem
+
+`SpaceSettingsPanel` ([src/components/Admin/SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) currently exposes only 9 of the 34 (and growing, post P47-M/N) space-overridable fields. A fuller per-space settings path already exists: `SettingsPanel` ([src/components/Admin/SettingsPanel.tsx:140](../src/components/Admin/SettingsPanel.tsx#L140)) accepts a `spaceId` prop and routes its saves to `PUT /spaces/{id}/settings`, but it is not wired into `SpaceManagementView` or the "Campaigns → Spaces" admin page. After P47-M and P47-N promote ~280 additional fields, the editing surface gap becomes the practical barrier to using per-space settings at all.
+
+### Fix
+
+1. In `SpaceManagementView`'s "Settings" tab, replace `<SpaceSettingsPanel>` with `<SettingsPanel spaceId={selectedSpaceId}>` (already saves to the correct endpoint). Keep `SpaceSettingsPanel` only if there is a remaining compact-embedded context that genuinely cannot use the full panel; otherwise delete it.
+2. Audit `SettingsPanel` for any sections that hard-filter to admin-only fields and would expose a global-only field in the per-space context — those sections should either be hidden when `spaceId` is set or render a "revert to global" affordance instead of a save.
+3. Confirm the "revert to global" pattern: a `null` value submitted via `PUT /spaces/{id}/settings` clears the override and restores the global fallback (this is already the PHP behavior per P47-D; verify the UI sends `null` for cleared fields rather than the global value).
+
+**Files:** `src/components/Admin/SpaceManagementView.tsx`, `src/components/Admin/SettingsPanel.tsx`, `src/components/Admin/SpaceSettingsPanel.tsx`
+
+### Acceptance criteria
+
+- All space-overridable fields (34 base + P47-M + P47-N additions) are editable from the "Campaigns → Spaces" admin page.
+- Admin-only fields (auth, API base, cache TTLs, etc.) do not appear in the per-space settings UI.
+- Saving a field writes to `/spaces/{id}/settings`; a subsequent `GET /settings?space={id}` returns the overridden value.
+- Clearing a field (sending `null`) writes a null entry; effective settings fall back to the global default.
+- `SpaceSettingsPanel` is either repurposed or deleted — no dead component left in the tree.
+
+### Validation
+
+- Manual: in the WP-admin "Gallery Spaces" page, edit a space's theme, a background color (P47-M), and a card gap (P47-N). Reload the page and confirm all three persist. Switch to a different space and confirm it shows global defaults for those fields.
+- `npm test` green (update or remove `SpaceSettingsPanel` tests if the component is deleted).
+- `composer test` green.

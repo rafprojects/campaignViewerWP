@@ -7,6 +7,9 @@ if (!defined('ABSPATH')) {
 class WPSG_DB {
     const DB_VERSION = '11';
 
+    /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
+    private static array $space_cache = [];
+
     public static function maybe_upgrade() {
         $current = get_option('wpsg_db_version', '0');
         if (version_compare($current, self::DB_VERSION, '>=')) {
@@ -970,17 +973,16 @@ class WPSG_DB {
     }
 
     public static function get_space(int $id): ?object {
-        static $cache = [];
-        if (array_key_exists($id, $cache)) {
-            return $cache[$id];
+        if (array_key_exists($id, self::$space_cache)) {
+            return self::$space_cache[$id];
         }
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-        $row        = $wpdb->get_row($wpdb->prepare(
+        $row                    = $wpdb->get_row($wpdb->prepare(
             'SELECT * FROM ' . self::get_spaces_table() . ' WHERE id = %d',
             $id
         )) ?: null;
-        $cache[$id] = $row;
+        self::$space_cache[$id] = $row;
         return $row;
     }
 
@@ -1038,21 +1040,27 @@ class WPSG_DB {
             return false;
         }
         $payload['updated_at'] = gmdate('Y-m-d H:i:s');
-        return (bool) $wpdb->update(self::get_spaces_table(), $payload, ['id' => $id]);
+        $result                = (bool) $wpdb->update(self::get_spaces_table(), $payload, ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
     }
 
     public static function archive_space(int $id): bool {
         global $wpdb;
-        return (bool) $wpdb->update(
+        $result = (bool) $wpdb->update(
             self::get_spaces_table(),
             ['archived' => 1, 'updated_at' => gmdate('Y-m-d H:i:s')],
             ['id' => $id]
         );
+        unset(self::$space_cache[$id]);
+        return $result;
     }
 
     public static function delete_space(int $id): bool {
         global $wpdb;
-        return (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
+        $result = (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

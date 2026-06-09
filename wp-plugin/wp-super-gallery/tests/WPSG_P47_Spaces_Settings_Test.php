@@ -15,11 +15,9 @@
  *  - PUT with a null value clears an existing override (restores global).
  *  - Out-of-range numeric overrides are clamped by the sanitizer.
  *
- * Note: PUT assertions read the persisted DB row directly rather than the PUT
- * response, because WPSG_DB::get_space() keeps a request-level static cache that
- * update_space() does not invalidate — so within one request the endpoint's
- * read-back (and its response) is stale. See PHASE47_REPORT.md "Settings
- * Space-Scoping Audit" for that finding. The save itself persists correctly.
+ * PUT assertions read both the persisted DB row and the endpoint response body.
+ * P47-L promoted get_space()'s static cache to a class property busted by every
+ * write, so the endpoint response now reflects the just-saved values.
  */
 class WPSG_P47_Spaces_Settings_Test extends WP_UnitTestCase {
 
@@ -178,5 +176,39 @@ class WPSG_P47_Spaces_Settings_Test extends WP_UnitTestCase {
         $overrides = $this->persisted_overrides($space_id);
         $this->assertArrayHasKey('items_per_page', $overrides);
         $this->assertLessThanOrEqual(100, $overrides['items_per_page'], 'Stored override must be clamped.');
+    }
+
+    // -------------------------------------------------------------------------
+    // P47-L: cache-bust — PUT response must reflect the saved value, not the
+    // stale row that was in the request-level get_space() cache before the write.
+    // -------------------------------------------------------------------------
+
+    public function test_put_settings_response_reflects_saved_values_not_stale_cache() {
+        $this->set_admin_user();
+        // Space starts with theme=nord. Warm the cache before the write so the
+        // stale-cache bug would have returned 'nord' from the response.
+        $space_id = $this->make_space([ 'theme' => 'nord' ]);
+        WPSG_DB::get_space($space_id);
+
+        $response = $this->put_space_settings($space_id, [ 'theme' => 'github-light' ]);
+        $this->assertSame(200, $response->get_status());
+
+        $data = $response->get_data();
+
+        // 'overrides' → snake_case persisted overrides.
+        $this->assertArrayHasKey('overrides', $data);
+        $this->assertSame(
+            'github-light',
+            $data['overrides']['theme'] ?? null,
+            'Response overrides.theme must be the saved value, not the pre-PUT cached row.'
+        );
+
+        // 'settings' → camelCase effective settings (includes the override).
+        $this->assertArrayHasKey('settings', $data);
+        $this->assertSame(
+            'github-light',
+            $data['settings']['theme'] ?? null,
+            'Response settings.theme must reflect the new override.'
+        );
     }
 }
