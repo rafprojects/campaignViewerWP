@@ -900,11 +900,21 @@ class WPSG_DB {
     }
 
     private static function maybe_seed_default_space(): void {
-        if (get_option('wpsg_default_space_id')) {
-            return;
-        }
         global $wpdb;
         $table = $wpdb->prefix . 'wpsg_spaces';
+
+        // Recover from a broken state: row exists but option is missing/zero.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $existing_id = (int) $wpdb->get_var(
+            "SELECT id FROM {$table} WHERE slug = 'default' LIMIT 1"
+        );
+        if ($existing_id > 0) {
+            if (!get_option('wpsg_default_space_id')) {
+                update_option('wpsg_default_space_id', $existing_id, false);
+            }
+            return;
+        }
+
         $wpdb->insert($table, [
             'slug'               => 'default',
             'name'               => 'Default',

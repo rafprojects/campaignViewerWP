@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-09 (P47-L/M/N/O done; G/H planned)
+**Last updated:** 2026-06-09 (P47-G/L/M/N/O done; H planned)
 
 ### Tracks
 
@@ -14,7 +14,7 @@
 | P47-D | Settings inheritance — per-space overrides over global defaults | **Done** | Medium |
 | P47-E | Shortcode + bootstrap — `space` attribute, effective settings, per-instance config | **Done** | Medium |
 | P47-F | Admin UX — space switcher, "All spaces" mode, space-management modal | **Done** | Large |
-| P47-G | Migration hardening + libraries + uninstall | Planned | Medium |
+| P47-G | Migration hardening + libraries + uninstall | **Done** | Medium |
 | P47-H | Tests + docs | Planned | Medium |
 | P47-I | Frontend space filtering + WP admin Campaigns column | **Done** | Small |
 | P47-J | Campaign space assignment on create + settings space-scoping + create-space UX | **Done** | Small |
@@ -323,6 +323,23 @@ The migration must be airtight on real data, the shared-vs-per-space library pol
 
 - PHP: uninstall cleanup test; large-dataset backfill test.
 - Manual: full uninstall on a dev site; confirm no orphan table/options.
+
+### Implementation notes (done 2026-06-09)
+
+**`uninstall.php` additions:**
+- `wp_wpsg_spaces` table added to the DROP TABLE list (section 6).
+- `wpsg_audit_log` table also added to section 6 — it was missing since P40 (pre-existing gap, fixed opportunistically as part of this hardening track).
+- Three space options added to the delete list (section 4): `wpsg_default_space_id`, `wpsg_spaces_backfill_complete`, `wpsg_spaces_backfill_offset`. Post meta and term meta are already cleaned by `wp_delete_post`/`wp_delete_term` in sections 1 and 3.
+
+**`maybe_seed_default_space()` hardening bug fix:**
+The original guard `if (get_option('wpsg_default_space_id')) { return; }` uses a PHP truthy check. If the option is stored as `'0'` (e.g., because a previous `$wpdb->insert()` on a UNIQUE-constraint violation returned `insert_id = 0`), the guard evaluates false and the function attempts a re-INSERT, hitting the duplicate-slug error again. Root cause in the test environment: `WPSG_DB_Test.tearDown()` issues `DROP TABLE` DDL which causes an implicit MySQL commit, permanently persisting the broken `wpsg_default_space_id = 0` state across test runs.
+
+Fix: query the table by `slug = 'default'` first. If the row exists and the option is falsy, repair the option from the row's ID. Only INSERT when no row exists. This makes seeding idempotent regardless of prior partial failures.
+
+**`WPSG_P47_Spaces_Migration_Test.php` (new, 8 tests, 16 assertions):**
+Covers: spaces table exists after upgrade; `space_id` column on all four campaign-scoped tables; default space row has correct slug/name/mode; `wpsg_default_space_id` option is a positive integer; backfill assigns default space to campaigns without `_wpsg_space_id`; backfill does NOT overwrite a campaign already assigned to a different space; running backfill twice never creates duplicate meta; `wpsg_spaces_backfill_complete` is set `'1'` after completion.
+
+Full suite: 889 tests, 2950 assertions, green.
 
 ---
 
