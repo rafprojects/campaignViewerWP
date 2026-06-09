@@ -494,7 +494,6 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             'found'        => true,
             'id'           => intval($user->ID),
             'display_name' => $user->display_name,
-            'email'        => $user->user_email,
         ], 200);
     }
 

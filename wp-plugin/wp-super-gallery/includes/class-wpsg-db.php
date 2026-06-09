@@ -959,7 +959,6 @@ class WPSG_DB {
 
         if (count($posts) < $batch) {
             self::backfill_company_spaces($default_id);
-            delete_option('wpsg_spaces_backfill_offset');
             update_option('wpsg_spaces_backfill_complete', '1', false);
         }
     }

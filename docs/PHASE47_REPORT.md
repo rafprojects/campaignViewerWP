@@ -94,7 +94,7 @@ There is no grouping key above `campaign`. The four campaign-scoped custom table
 - `wp_wpsg_spaces` table created via `dbDelta()`: id, slug (UNIQUE), name, isolation_mode (default `'open'`), access_grants LONGTEXT, settings_overrides LONGTEXT, archived, created_at, updated_at.
 - `space_id` column added idempotently to all four campaign-scoped tables using the same `INFORMATION_SCHEMA.COLUMNS` guard as `maybe_upgrade_audit_log_v9()`.
 - Default Space seeded once (guarded by `wpsg_default_space_id` option); id stored in that option.
-- Campaign backfill is offset-resumable via `wpsg_spaces_backfill_offset`; company (term) backfill runs as a final step when the campaign batch completes; completion flagged in `wpsg_spaces_backfill_complete`.
+- Campaign backfill processes the first N unassigned campaigns per call (non-resumable; no offset option is written or read); company (term) backfill runs as a final step when the campaign batch completes; completion flagged in `wpsg_spaces_backfill_complete`.
 - Public DB helpers added: `get_spaces_table()`, `get_space()` (with request-level static cache to avoid repeated queries in permission loops), `list_spaces()`, `insert_space()`, `update_space()`, `archive_space()`, `delete_space()`.
 - `_wpsg_space_id` post meta registered on `wpsg_campaign`; `_wpsg_space_id` term meta registered on `wpsg_company` (both `show_in_rest=false`).
 
@@ -868,3 +868,15 @@ Commit: `703b9d01`
 |---|------|-------|----------|
 | 1 | `wp-plugin/…/class-wpsg-settings.php` + `class-wpsg-settings-sanitizer.php` | `sanitize_overrides()` used `array_map('sanitize_text_field', $value)` for array-typed fields; this re-indexes the array and casts nested structures to `"Array"`, corrupting `viewer_bg_gradient`'s `type`/`direction`/`stops` payload | **Fixed** — `sanitize_viewer_bg_gradient()` promoted to `public static`; `sanitize_overrides()` now dispatches the `viewer_bg_gradient` key through it, with a scalar-safe fallback for any future array-typed fields |
 | 2 | `wp-plugin/…/class-wpsg-db.php` | `maybe_seed_default_space()` unconditionally called `update_option('wpsg_default_space_id', $wpdb->insert_id, …)` after the INSERT; if the INSERT failed (locked table, duplicate slug), `insert_id` would be 0, corrupting the option | **Fixed** — `$wpdb->insert()` return value and `insert_id > 0` are checked before calling `update_option` |
+
+---
+
+### PR #62 Copilot review — round 6 (2026-06-09)
+
+| # | File | Issue | Decision |
+|---|------|-------|----------|
+| 1 | `wp-plugin/…/class-wpsg-access-controller.php:1107` | `SELECT COUNT(*) … INNER JOIN postmeta` over-counts campaigns when a post has duplicate `_wpsg_space_id` postmeta rows (WP has no uniqueness constraint on postmeta) | **Fixed** — `COUNT(DISTINCT p.ID)` eliminates duplicate counting from joined meta rows |
+| 2 | `wp-plugin/…/class-wpsg-access-controller.php:1122` | `SELECT p.ID … INNER JOIN postmeta` returns duplicate IDs for campaigns with duplicate `_wpsg_space_id` meta, producing duplicate items in the paginated response | **Fixed** — `SELECT DISTINCT p.ID` deduplicated before LIMIT/OFFSET is applied |
+| 3 | `wp-plugin/…/class-wpsg-space-controller.php:488` | `resolve-user` returned `email` in the response body; space owners in delegated mode can be non-admin grantees, enabling user/email enumeration beyond typical WP capabilities | **Fixed** — `email` field removed from the response; client only consumes `found` and `id`, so no behaviour change. `display_name` retained for UX confirmation and is less sensitive (visible on public WP posts) |
+| 4 | `wp-plugin/…/class-wpsg-db.php:963` | `delete_option('wpsg_spaces_backfill_offset')` called in `maybe_backfill_spaces()` but the option is never written, making the code falsely imply offset-based resumability exists | **Fixed** — dead `delete_option` call removed |
+| 5 | `docs/PHASE47_REPORT.md:97` | Report claimed backfill is "offset-resumable via `wpsg_spaces_backfill_offset`"; actual implementation always fetches the first N unassigned campaigns and never writes that option | **Fixed** — description updated to accurately say "non-resumable; no offset option is written or read" |

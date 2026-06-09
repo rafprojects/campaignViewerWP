@@ -1103,7 +1103,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         if ($space_id > 0) {
             $total = intval($wpdb->get_var(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT COUNT(*) FROM {$wpdb->posts} p{$space_join} WHERE p.post_type = 'wpsg_campaign' AND p.post_status NOT IN ('trash','auto-draft')"
+                "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p{$space_join} WHERE p.post_type = 'wpsg_campaign' AND p.post_status NOT IN ('trash','auto-draft')"
             ));
         } else {
             $total = intval($wpdb->get_var(
@@ -1117,7 +1117,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         if ($space_id > 0) {
             $ids = $wpdb->get_col($wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT p.ID FROM {$wpdb->posts} p{$space_join}
+                "SELECT DISTINCT p.ID FROM {$wpdb->posts} p{$space_join}
                  WHERE p.post_type = 'wpsg_campaign'
                    AND p.post_status NOT IN ('trash','auto-draft')
                  ORDER BY p.post_title ASC
