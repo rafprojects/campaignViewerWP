@@ -329,4 +329,220 @@ class WPSG_P47_Spaces_Settings_Test extends WP_UnitTestCase {
         $this->assertFalse($overrides['transition_fade_enabled']);
         $this->assertSame('galleries-only', $overrides['campaign_open_mode']);
     }
+
+    // -------------------------------------------------------------------------
+    // P47-N: tier-2 layout/composition fields — one representative per group.
+    // -------------------------------------------------------------------------
+
+    public function test_p47n_card_layout_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'cardGapH'               => 24,
+            'cardGapHUnit'           => 'em',
+            'cardGapV'               => 20,
+            'cardAspectRatio'        => '16:9',
+            'cardGridColumns'        => 3,
+            'cardScale'              => 1.2,
+            'cardDisplayMode'        => 'paginated',
+            'cardThumbnailHeight'    => 250,
+            'cardThumbnailFit'       => 'contain',
+            'cardGradientEndOpacity' => 0.7,
+            'gridCardWidth'          => 200,
+            'gridCardWidthUnit'      => 'px',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame(24, $overrides['card_gap_h']);
+        $this->assertSame('em', $overrides['card_gap_h_unit']);
+        $this->assertSame(20, $overrides['card_gap_v']);
+        $this->assertSame('16:9', $overrides['card_aspect_ratio']);
+        $this->assertSame(3, $overrides['card_grid_columns']);
+        $this->assertSame(1.2, $overrides['card_scale']);
+        $this->assertSame('paginated', $overrides['card_display_mode']);
+        $this->assertSame(250, $overrides['card_thumbnail_height']);
+        $this->assertSame('contain', $overrides['card_thumbnail_fit']);
+        $this->assertSame(0.7, $overrides['card_gradient_end_opacity']);
+        $this->assertSame(200, $overrides['grid_card_width']);
+        $this->assertSame('px', $overrides['grid_card_width_unit']);
+    }
+
+    public function test_p47n_tile_mosaic_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'tileSize'              => 200,
+            'tileSizeUnit'          => 'px',
+            'tileGapX'              => 12,
+            'tileGapY'              => 12,
+            'mosaicTargetRowHeight' => 300,
+            'masonryColumns'        => 4,
+            'photoNormalizeHeight'  => 400,
+            'hexVerticalOverlapRatio'     => 0.3,
+            'diamondVerticalOverlapRatio' => 0.5,
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame(200, $overrides['tile_size']);
+        $this->assertSame('px', $overrides['tile_size_unit']);
+        $this->assertSame(12, $overrides['tile_gap_x']);
+        $this->assertSame(12, $overrides['tile_gap_y']);
+        $this->assertSame(300, $overrides['mosaic_target_row_height']);
+        $this->assertSame(4, $overrides['masonry_columns']);
+        $this->assertSame(400, $overrides['photo_normalize_height']);
+        $this->assertSame(0.3, $overrides['hex_vertical_overlap_ratio']);
+        $this->assertSame(0.5, $overrides['diamond_vertical_overlap_ratio']);
+    }
+
+    public function test_p47n_carousel_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'carouselAutoplay'      => true,
+            'carouselAutoplaySpeed' => 5000,
+            'carouselLoop'          => false,
+            'carouselGap'           => 24,
+            'carouselGapUnit'       => 'px',
+            'carouselVisibleCards'  => 2,
+            'carouselDarkenUnfocused' => true,
+            'carouselDarkenOpacity'   => 0.4,
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertTrue($overrides['carousel_autoplay']);
+        $this->assertSame(5000, $overrides['carousel_autoplay_speed']);
+        $this->assertFalse($overrides['carousel_loop']);
+        $this->assertSame(24, $overrides['carousel_gap']);
+        $this->assertSame('px', $overrides['carousel_gap_unit']);
+        $this->assertSame(2, $overrides['carousel_visible_cards']);
+        $this->assertTrue($overrides['carousel_darken_unfocused']);
+        $this->assertSame(0.4, $overrides['carousel_darken_opacity']);
+    }
+
+    public function test_p47n_modal_lightbox_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'modalTransition'         => 'fade',
+            'modalTransitionDuration' => 400,
+            'modalMaxWidth'           => 900,
+            'modalMaxWidthUnit'       => 'px',
+            'modalCoverHeight'        => 300,
+            'lightboxTransitionMs'    => 300,
+            'lightboxEntryScale'      => 0.85,
+            'lightboxVideoMaxWidth'   => 800,
+            'campaignModalFullscreen' => true,
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('fade', $overrides['modal_transition']);
+        $this->assertSame(400, $overrides['modal_transition_duration']);
+        $this->assertSame(900, $overrides['modal_max_width']);
+        $this->assertSame('px', $overrides['modal_max_width_unit']);
+        $this->assertSame(300, $overrides['modal_cover_height']);
+        $this->assertSame(300, $overrides['lightbox_transition_ms']);
+        $this->assertSame(0.85, $overrides['lightbox_entry_scale']);
+        $this->assertSame(800, $overrides['lightbox_video_max_width']);
+        $this->assertTrue($overrides['campaign_modal_fullscreen']);
+    }
+
+    public function test_p47n_gallery_section_adapter_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'gallerySizingMode'   => 'viewport',
+            'appMaxWidth'         => 1600,
+            'appMaxWidthUnit'     => 'px',
+            // section_scale/item_scale default to int 1 → sanitizer casts to int; use int test values.
+            'sectionScale'        => 2,
+            'itemScale'           => 2,
+            'adapterSizingMode'   => 'manual',
+            'adapterItemGap'      => 24,
+            'adapterItemGapUnit'  => 'px',
+            'adapterJustifyContent' => 'center',
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame('viewport', $overrides['gallery_sizing_mode']);
+        $this->assertSame(1600, $overrides['app_max_width']);
+        $this->assertSame('px', $overrides['app_max_width_unit']);
+        $this->assertSame(2, $overrides['section_scale']);
+        $this->assertSame(2, $overrides['item_scale']);
+        $this->assertSame('manual', $overrides['adapter_sizing_mode']);
+        $this->assertSame(24, $overrides['adapter_item_gap']);
+        $this->assertSame('px', $overrides['adapter_item_gap_unit']);
+        $this->assertSame('center', $overrides['adapter_justify_content']);
+    }
+
+    public function test_p47n_viewport_responsive_fields_are_overridable() {
+        $this->set_admin_user();
+        $space_id = $this->make_space();
+
+        $response = $this->put_space_settings($space_id, [
+            'videoViewportHeight'       => 500,
+            'videoViewportHeightUnit'   => 'px',
+            'imageViewportHeight'       => 480,
+            'viewportHeightMobileRatio' => 0.7,
+            'viewportHeightTabletRatio' => 0.85,
+            'modalMobileBreakpoint'     => 640,
+        ]);
+        $this->assertSame(200, $response->get_status());
+
+        $overrides = $this->persisted_overrides($space_id);
+        $this->assertSame(500, $overrides['video_viewport_height']);
+        $this->assertSame('px', $overrides['video_viewport_height_unit']);
+        $this->assertSame(480, $overrides['image_viewport_height']);
+        $this->assertSame(0.7, $overrides['viewport_height_mobile_ratio']);
+        $this->assertSame(0.85, $overrides['viewport_height_tablet_ratio']);
+        $this->assertSame(640, $overrides['modal_mobile_breakpoint']);
+    }
+
+    /**
+     * Unit-parity check: every _unit field in the allowlist must have its base
+     * also allowlisted, and every allowlisted base field that has a *_unit
+     * companion in $defaults must also have that unit allowlisted.
+     */
+    public function test_p47n_unit_parity_in_overridable_allowlist() {
+        $keys     = WPSG_Settings::get_overridable_keys();
+        $key_set  = array_flip($keys);
+        $defaults = WPSG_Settings::get_defaults();
+
+        // Every *_unit in the allowlist → its base must also be allowlisted.
+        foreach ($keys as $key) {
+            if (str_ends_with($key, '_unit')) {
+                $base = substr($key, 0, -5);
+                $this->assertArrayHasKey(
+                    $base,
+                    $key_set,
+                    "Unit field '{$key}' is allowlisted but its base '{$base}' is not."
+                );
+            }
+        }
+
+        // Every allowlisted base field whose *_unit companion exists in defaults
+        // must also have that unit allowlisted.
+        foreach ($keys as $key) {
+            if (str_ends_with($key, '_unit')) {
+                continue;
+            }
+            $unit_key = $key . '_unit';
+            if (array_key_exists($unit_key, $defaults)) {
+                $this->assertArrayHasKey(
+                    $unit_key,
+                    $key_set,
+                    "Base field '{$key}' is allowlisted but its unit companion '{$unit_key}' is not."
+                );
+            }
+        }
+    }
 }

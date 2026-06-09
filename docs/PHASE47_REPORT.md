@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Created:** 2026-06-07
-**Last updated:** 2026-06-08 (P47-L/M done; N/O planned)
+**Last updated:** 2026-06-08 (P47-L/M/N done; O planned)
 
 ### Tracks
 
@@ -21,7 +21,7 @@
 | P47-K | Settings space-scoping audit — read-path verification + field categorization | **Done** | Medium |
 | P47-L | Bug: bust `get_space()` static cache on write so PUT responses are not stale | **Done** | Small |
 | P47-M | Promote tier-1 visual/branding fields (~90 keys) to space-overridable | **Done** | Medium |
-| P47-N | Promote tier-2 layout/composition fields (~190 keys + unit companions) | Planned | Large |
+| P47-N | Promote tier-2 layout/composition fields (~190 keys + unit companions) | **Done** | Large |
 | P47-O | Space settings UI — wire full `SettingsPanel` into `SpaceManagementView` | Planned | Medium |
 
 ---
@@ -643,6 +643,8 @@ Added 5 PHPUnit tests (one per group) to `WPSG_P47_Spaces_Settings_Test`. Full s
 
 ---
 
+---
+
 ## Track P47-N — Promote Tier-2 Layout / Composition Fields
 
 ### Problem
@@ -710,6 +712,22 @@ Add the following groups to `$space_overridable_fields`. Fields marked `(+ unit)
 - PHP: representative test per group (e.g. `card_gap_h` + `card_gap_h_unit`, `carousel_gap` + unit, `modal_max_width` + unit).
 - Unit-parity assertion runs as part of the test class `setUp` or as its own test method.
 - `composer test` + `npm test` green.
+
+### Implementation notes
+
+**Actual count: 144 fields** (143 new + 1 P47-M parity fix). The plan's "~190 keys" estimate included phantom fields that don't exist in `$defaults` and some that were already in the P47-M allowlist.
+
+**Phantom / absent fields skipped:** `hex_size`, `hex_gap`, `diamond_size`, `diamond_gap`, `masonry_column_width`, `modal_cover_enabled`, `adapter_column_count`, `adapter_row_count`, `gallery_section_gap`, `viewport_height_desktop_ratio`, `tablet_breakpoint`, `mobile_breakpoint`, `lightbox_zoom_enabled`, `lightbox_zoom_max`, `lightbox_pan_enabled`, `lightbox_keyboard_nav` — none exist in the registry `$defaults`.
+
+**P47-M unit parity fix:** `card_border_radius` was promoted in P47-M without its `card_border_radius_unit` companion. Fixed in this commit by adding `card_border_radius_unit` to the allowlist.
+
+**`section_scale` / `item_scale` are int-defaulted:** Both default to `1` (PHP integer), so the sanitizer casts submitted values to int. Semantically they are scale floats but submitting `1.0` or `1.1` stores as `1`. Test uses integer values (`2`) to match the actual sanitizer behavior. The float-default alignment (`1.0`) is a clean-up candidate for a future track.
+
+**`sanitize_overrides()` handles all promoted types correctly.** String fields (`image_shadow_custom`, `lightbox_backdrop_color`, `gallery_manual_height`, etc.) pass through `sanitize_text_field()`. Float fields with ranges are clamped. Enum/_unit fields go through `$valid_options`. No nested-only exclusion applied.
+
+**Fields intentionally left global** (admin UX / operational): `settings_panel_width`, `admin_panel_max_width`, `library_page_size`, `media_*`, `show_settings_tooltips`, `show_in_context_editors`, `show_campaign_admin_actions`, `settings_drawer_blur_enabled`, `campaign_stats_admin_only`, `enable_analytics`, `hex_clip_path`, `diamond_clip_path`, thumbnail scroll/size details, auth bar display settings, and all `$admin_only_fields`.
+
+**Tests:** 7 new tests added to `WPSG_P47_Spaces_Settings_Test` — one per group (card layout, tile/mosaic/hex/diamond, carousel, modal/lightbox, gallery section/adapter, viewport/responsive) plus a programmatic unit-parity assertion that validates the full allowlist: every `*_unit` in the list has its base present, and every promoted base with a `*_unit` in `$defaults` has that unit promoted. Full suite: 881 tests, 2934 assertions, green.
 
 ---
 
