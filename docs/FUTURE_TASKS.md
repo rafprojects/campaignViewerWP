@@ -97,6 +97,28 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
+## Settings & Admin UI
+
+### Settings Panel Open/Close Animation Variants
+
+**Origin:** P48-J follow-on (SpaceSwitcher / multi-space auth bar polish, 2026-06-10).
+
+**Context:** The Settings panel Drawer currently uses a hardcoded `slide-left` transition (200 ms). Admins may want to match their site's motion style or disable animation entirely for accessibility/performance reasons.
+
+**What to implement:**
+- Add a `settingsPanelAnimation` field to `GalleryBehaviorSettings` (enum: `slide-left` | `fade` | `scale` | `none`; default `slide-left`).
+- Expose it in the Settings panel's Appearance accordion (or a dedicated Motion/Animation sub-section).
+- Pass the resolved value to the `transitionProps` of the `Drawer` in `SettingsPanel.tsx` (currently hardcoded at line 564).
+- Map `none` to `{ duration: 0 }` so the Drawer opens instantly without a jarring flash.
+
+**Files:** `src/components/Admin/SettingsPanel.tsx`, `src/types/settingsSchemas.ts`, relevant settings tab component.
+
+**Dependencies:** None — self-contained settings field addition.
+
+**Effort:** Small (1–2 hours) | **Impact:** Low — polish/accessibility; slide-left default is acceptable for most sites.
+
+---
+
 ## Integration
 
 ### Third-Party OAuth Providers
