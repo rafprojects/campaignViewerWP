@@ -45,15 +45,15 @@ class WPSG_P48E_Audit_Export_Test extends WP_UnitTestCase {
 
     // ── Tests ─────────────────────────────────────────────────────────────────
 
-    /** Route returns 503 when ZipArchive is unavailable (simulated via filter). */
+    /** Route returns 503 when ZipArchive is unavailable. */
     public function test_returns_503_when_zip_unavailable(): void {
-        if (!WPSG_Export_Engine::check_zip_available()) {
-            $this->markTestSkipped('ext-zip not available — behaviour already tested by the 503 path.');
+        if (WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ZipArchive is available; 503 path not reachable in this environment.');
         }
 
-        // Patch check_zip_available by checking the filter the engine uses.
-        // We can't easily disable ZipArchive; skip the negative test when ext-zip is present.
-        $this->markTestSkipped('Cannot disable ZipArchive at runtime; skipped in environments with ext-zip.');
+        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $res = rest_do_request($req);
+        $this->assertSame(503, $res->get_status());
     }
 
     /** POST /admin/audit-log/export/binary returns 202 with a jobId. */

@@ -174,7 +174,7 @@ export function MediaAddModal({
                     {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} queued
                   </Text>
                   {onClearFiles && (
-                    <Button variant="subtle" color="red" size="xs" onClick={onClearFiles}>
+                    <Button variant="subtle" color="red" size="xs" onClick={onClearFiles} disabled={uploading}>
                       Clear all
                     </Button>
                   )}
@@ -216,6 +216,7 @@ export function MediaAddModal({
                             color="red"
                             style={{ position: 'absolute', top: 2, right: 2 }}
                             onClick={() => onRemoveFile(index)}
+                            disabled={uploading}
                             aria-label={`Remove ${file.name}`}
                           >
                             <IconX size={10} />

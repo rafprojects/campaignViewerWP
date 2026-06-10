@@ -151,6 +151,22 @@ Two gaps remain in the P29-G-C alignment/distribution delivery:
 
 ---
 
+## PR #63 Review — Copilot Round 1
+
+### Thread 1 — `WPSG_P48E_Audit_Export_Test::test_returns_503_when_zip_unavailable` always skips
+
+**Accept.** The original test had the skip condition inverted: both branches called `markTestSkipped`. When `check_zip_available()` is false the intent was to assert 503, but the code immediately skipped instead. Fixed by inverting the guard: skip when ZIP is present (can't reach the 503 path), assert 503 when ZIP is absent (matches the P48F pattern exactly).
+
+### Thread 2 — "Clear all" enabled during active upload
+
+**Accept.** `handleUpload()` captures `selectedFiles` at call time via closure; clearing the queue mid-upload doesn't cancel the in-flight XHRs but does wipe the progress/error arrays that the upload completion path writes into, causing a desync. Fixed by adding `disabled={uploading}` to the "Clear all" Button.
+
+### Thread 3 — Per-file ✕ remove enabled during active upload
+
+**Accept.** Same root cause as Thread 2: removing a file by index mid-upload shifts all subsequent indices, breaking the progress/error mapping for those files. The XHR for the removed file is also not cancelled, so its completion fires with no matching UI entry. Fixed by adding `disabled={uploading}` to the remove ActionIcon.
+
+---
+
 ## Track P48-C — Per-Instance Full-Bleed CSS Scoping
 
 ### Problem
