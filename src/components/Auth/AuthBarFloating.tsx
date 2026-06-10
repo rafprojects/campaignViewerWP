@@ -2,6 +2,8 @@ import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { SpaceSwitcher } from './SpaceSwitcher';
+import { spaceColor } from '@/utils/spaceColor';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
@@ -30,17 +32,20 @@ interface AuthBarFloatingProps<TCampaign extends AuthBarCampaignItem = AuthBarCa
   onEditGalleryConfig?: ((campaign: TCampaign) => void) | undefined;
   onArchiveCampaign?: ((campaign: TCampaign) => void) | undefined;
   onAddExternalMedia?: ((campaign: TCampaign) => void) | undefined;
+  instanceId?: string | undefined;
 }
 
 interface AuthBarFloatingTriggerProps extends React.ComponentPropsWithoutRef<'button'> {
   draggable: boolean;
   buttonStyle: React.CSSProperties;
+  extraShadow?: string | undefined;
 }
 
 const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTriggerProps>(
   ({
     draggable,
     buttonStyle,
+    extraShadow = '',
     style,
     children,
     onClick,
@@ -64,7 +69,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
       style={{
         ...buttonStyle,
         ...style,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.3), 0 0 0 2px rgba(255,255,255,0.3)',
+        boxShadow: `0 2px 8px rgba(0,0,0,0.3), 0 0 0 3px rgba(255,255,255,0.35)${extraShadow}`,
       }}
     >
       {children ?? (draggable ? <IconGripVertical size={22} /> : <IconMenu2 size={22} />)}
@@ -92,6 +97,14 @@ interface AuthBarFloatingMenuContentProps<TCampaign extends AuthBarCampaignItem>
   onOpenSettings: () => void;
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
+  instanceId?: string | undefined;
+  activeInstanceId?: string | undefined;
+  onSpaceSelect?: ((instanceId: string) => void) | undefined;
+}
+
+function callOpener(instanceId: string, panel: 'settings' | 'admin') {
+  const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${instanceId}`];
+  if (typeof opener === 'function') (opener as (p: string) => void)(panel);
 }
 
 function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
@@ -108,7 +121,28 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
+  instanceId,
+  activeInstanceId,
+  onSpaceSelect,
 }: AuthBarFloatingMenuContentProps<TCampaign>) {
+  const handleOpenAdmin = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) {
+      callOpener(activeInstanceId, 'admin');
+    } else {
+      onOpenAdminPanel();
+    }
+    scheduleCloseMenu(closeMenu);
+  }, [activeInstanceId, instanceId, onOpenAdminPanel, closeMenu]);
+
+  const handleOpenSettings = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) {
+      callOpener(activeInstanceId, 'settings');
+    } else {
+      onOpenSettings();
+    }
+    scheduleCloseMenu(closeMenu);
+  }, [activeInstanceId, instanceId, onOpenSettings, closeMenu]);
+
   return (
     <Stack gap="xs">
       {isAuthenticated ? (
@@ -122,7 +156,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                 size="xs"
                 leftSection={<IconDashboard size={14} />}
                 justify="start"
-                onClick={() => { onOpenAdminPanel(); scheduleCloseMenu(closeMenu); }}
+                onClick={handleOpenAdmin}
               >
                 Admin Panel
               </Button>
@@ -131,10 +165,16 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                 size="xs"
                 leftSection={<IconSettings size={14} />}
                 justify="start"
-                onClick={() => { onOpenSettings(); scheduleCloseMenu(closeMenu); }}
+                onClick={handleOpenSettings}
               >
                 Settings
               </Button>
+              {instanceId && (
+                <SpaceSwitcher
+                  activeInstanceId={activeInstanceId ?? instanceId}
+                  onSelect={onSpaceSelect ?? (() => {})}
+                />
+              )}
               {activeCampaign && (
                 <>
                   <Divider label="Campaign" labelPosition="center" />
@@ -243,6 +283,7 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
   onEditGalleryConfig,
   onArchiveCampaign,
   onAddExternalMedia,
+  instanceId,
 }: AuthBarFloatingProps<TCampaign>) {
   const margin = dragMargin;
 
@@ -255,6 +296,7 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
   );
 
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const [dragging, setDragging] = useState(false);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const didDragRef = useRef(false);
@@ -333,6 +375,9 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
     ? undefined
     : () => setPopoverOpen((o) => !o);
 
+  const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
+  const colorRing = color ? `, 0 0 0 4px var(--mantine-color-${color}-5)` : '';
+
   const buttonStyle: React.CSSProperties = draggable
     ? {
       position: 'fixed',
@@ -354,12 +399,18 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
 
   return (
     <Popover opened={popoverOpen} onChange={setPopoverOpen} withinPortal={false} position="top-end" withArrow shadow="md" width={220}
-      styles={{ dropdown: { backdropFilter: 'blur(8px)' } }}
+      styles={{
+        dropdown: {
+          backdropFilter: 'blur(8px)',
+          ...(color ? { borderColor: `var(--mantine-color-${color}-5)`, borderWidth: '2px' } : {}),
+        },
+      }}
     >
       <Popover.Target>
         <AuthBarFloatingTrigger
           draggable={draggable}
           buttonStyle={buttonStyle}
+          extraShadow={colorRing}
           onClick={handleClick}
           onPointerDown={draggable ? onPointerDown : undefined}
           onPointerMove={draggable ? onPointerMove : undefined}
@@ -381,6 +432,9 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
           onOpenSettings={onOpenSettings}
           onOpenSignIn={onOpenSignIn}
           onLogout={onLogout}
+          instanceId={instanceId}
+          activeInstanceId={activeInstanceId}
+          onSpaceSelect={setActiveInstanceId}
         />
       </Popover.Dropdown>
     </Popover>

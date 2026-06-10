@@ -138,7 +138,9 @@ interface SettingsPanelProps {
   initialSettings?: SettingsDataInput | undefined;
   /** When set, saves route to this space's overrides instead of global settings. */
   spaceId?: number;
-  /** Render the Drawer via a React portal (to document.body). Default false. Set true when rendering inside a Modal. */
+  /** P48-I: display name for the space (shown in the drawer header badge). */
+  spaceName?: string;
+  /** Render the Drawer via a React portal (to document.body). Defaults true so the Drawer escapes any CSS transform/contain stacking context on the shortcode host. */
   withinPortal?: boolean;
 }
 
@@ -326,7 +328,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, withinPortal = false }: SettingsPanelProps) {
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, withinPortal = true }: SettingsPanelProps) {
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -540,7 +542,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           <Group gap="sm">
             <IconSettings size={22} />
             <Title order={3}>Display Settings</Title>
-            {spaceId != null && <Badge size="sm" color="blue" variant="light">Space</Badge>}
+            {spaceId != null && <Badge size="sm" color="blue" variant="light">{spaceName ?? `Space ${spaceId}`}</Badge>}
           </Group>
           <Group gap="xs" wrap="nowrap">
             <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>

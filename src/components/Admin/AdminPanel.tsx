@@ -62,9 +62,13 @@ interface AdminPanelProps {
    * Used when the user arrives via a shareable builder URL (?builder=<id>).
    */
   initialBuilderTemplateId?: string | undefined;
+  /** P48-I: space ID string to pre-select in the space dropdown. */
+  initialSpaceId?: string;
+  /** P48-I: display name for the space (shown in header when a specific space is targeted). */
+  spaceName?: string;
 }
 
-export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId }: AdminPanelProps) {
+export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId, initialSpaceId, spaceName }: AdminPanelProps) {
   const queryClient = useQueryClient();
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
@@ -95,7 +99,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', 'all');
+  const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', initialSpaceId ?? 'all');
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState('');
@@ -370,6 +374,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <IconArrowLeft />
           </ActionIcon>
           <Title order={2} size="h3">Admin Panel</Title>
+          {spaceName && <Badge color="blue" variant="light" size="sm">{spaceName}</Badge>}
         </Group>
         <Group gap="xs" wrap="wrap">
           {spaces.length > 0 && (

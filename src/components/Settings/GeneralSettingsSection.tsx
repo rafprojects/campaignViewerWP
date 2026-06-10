@@ -219,29 +219,6 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
         <Accordion.Panel>
           {mounted.has('gen-authbar') ? (
             <Stack gap="md">
-              <ModalSelect
-                label="Auth Bar Display Mode"
-                description="How the authentication bar appears on the page."
-                data={[
-                  { value: 'bar', label: 'Bar (full-width sticky bar)' },
-                  { value: 'floating', label: 'Floating (circular icon, bottom-right)' },
-                  { value: 'draggable', label: 'Draggable (movable floating icon)' },
-                  { value: 'minimal', label: 'Minimal (thin strip, ≤32px)' },
-                  { value: 'auto-hide', label: 'Auto-hide (bar hides on scroll)' },
-                ]}
-                value={settings.authBarDisplayMode ?? 'floating'}
-                onChange={(value) => updateSetting('authBarDisplayMode', (value ?? 'floating') as GalleryBehaviorSettings['authBarDisplayMode'])}
-              />
-              {settings.authBarDisplayMode === 'draggable' && (
-                <NumberInput
-                  label="Drag Margin (px)"
-                  description="Minimum distance from viewport edges when dragging."
-                  value={settings.authBarDragMargin ?? 16}
-                  onChange={(value) => updateSetting('authBarDragMargin', Number(value) || 16)}
-                  min={0}
-                  max={64}
-                />
-              )}
               <NumberInput
                 label="Auth Bar Backdrop Blur (px)"
                 description="Blur intensity for the auth bar backdrop."

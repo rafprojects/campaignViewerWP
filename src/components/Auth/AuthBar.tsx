@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Container, Group, Button, Tooltip, ActionIcon, Text, Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
@@ -7,6 +7,8 @@ import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { AuthBarFloating } from './AuthBarFloating';
 import { AuthBarMinimal } from './AuthBarMinimal';
+import { SpaceSwitcher } from './SpaceSwitcher';
+import { spaceColor } from '@/utils/spaceColor';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarProps {
@@ -21,6 +23,8 @@ interface AuthBarProps {
   onOpenSettings: () => void;
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
+  /** P48-I: stable instance ID used by SpaceSwitcher to identify this gallery. */
+  instanceId?: string | undefined;
 }
 
 /** Detect scroll direction for auto-hide mode. */
@@ -51,6 +55,7 @@ export function AuthBar({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
+  instanceId,
 }: AuthBarProps) {
   const { activeCampaign, onEditCampaign, onEditGalleryConfig, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
 
@@ -70,6 +75,7 @@ export function AuthBar({
         onEditGalleryConfig={onEditGalleryConfig}
         onArchiveCampaign={onArchiveCampaign}
         onAddExternalMedia={onAddExternalMedia}
+        instanceId={instanceId}
       />
     );
   }
@@ -91,6 +97,7 @@ export function AuthBar({
         onEditGalleryConfig={onEditGalleryConfig}
         onArchiveCampaign={onArchiveCampaign}
         onAddExternalMedia={onAddExternalMedia}
+        instanceId={instanceId}
       />
     );
   }
@@ -107,6 +114,7 @@ export function AuthBar({
         onOpenSettings={onOpenSettings}
         onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
+        instanceId={instanceId}
       />
     );
   }
@@ -124,6 +132,7 @@ export function AuthBar({
       onOpenSettings={onOpenSettings}
       onOpenSignIn={onOpenSignIn}
       onLogout={onLogout}
+      instanceId={instanceId}
     />
   );
 }
@@ -142,7 +151,26 @@ function AuthBarFull({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
+  instanceId,
 }: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean }) {
+  const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
+  const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
+
+  const callOpener = useCallback((id: string, panel: 'settings' | 'admin') => {
+    const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${id}`];
+    if (typeof opener === 'function') (opener as (p: string) => void)(panel);
+  }, []);
+
+  const handleOpenAdmin = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) callOpener(activeInstanceId, 'admin');
+    else onOpenAdminPanel();
+  }, [activeInstanceId, instanceId, onOpenAdminPanel, callOpener]);
+
+  const handleOpenSettings = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) callOpener(activeInstanceId, 'settings');
+    else onOpenSettings();
+  }, [activeInstanceId, instanceId, onOpenSettings, callOpener]);
+
   const hidden = useScrollDirection();
   const shouldHide = autoHide && hidden;
   const isMobile = useMediaQuery('(max-width: 36em)'); // ≤ 576px
@@ -181,7 +209,9 @@ function AuthBarFull({
 
               {isMobile ? (
                 /* ── Mobile: single overflow menu ── */
-                <Menu shadow="md" width={200} position="bottom-end" withArrow>
+                <Menu shadow="md" width={200} position="bottom-end" withArrow
+                  styles={{ dropdown: color ? { borderColor: `var(--mantine-color-${color}-5)` } : {} }}
+                >
                   <Menu.Target>
                     <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label="User menu">
                       <IconDotsVertical size={18} />
@@ -190,12 +220,20 @@ function AuthBarFull({
                   <Menu.Dropdown {...getWpsgDebugProps('AuthBar', 'menu-dropdown')}>
                     {isAdmin && (
                       <>
-                        <Menu.Item leftSection={<IconDashboard size={16} />} onClick={onOpenAdminPanel}>
+                        <Menu.Item leftSection={<IconDashboard size={16} />} onClick={handleOpenAdmin}>
                           Admin Panel
                         </Menu.Item>
-                        <Menu.Item leftSection={<IconSettings size={16} />} onClick={onOpenSettings}>
+                        <Menu.Item leftSection={<IconSettings size={16} />} onClick={handleOpenSettings}>
                           Settings
                         </Menu.Item>
+                        {instanceId && (
+                          <Menu.Item component="div" style={{ padding: '4px 8px' }}>
+                            <SpaceSwitcher
+                              activeInstanceId={activeInstanceId ?? instanceId}
+                              onSelect={setActiveInstanceId}
+                            />
+                          </Menu.Item>
+                        )}
                         <Menu.Divider />
                       </>
                     )}
@@ -211,7 +249,7 @@ function AuthBarFull({
                     <>
                       <Button
                         variant="default"
-                        onClick={onOpenAdminPanel}
+                        onClick={handleOpenAdmin}
                         className="wpsg-admin-btn"
                         size="sm"
                       >
@@ -222,12 +260,18 @@ function AuthBarFull({
                           variant="default"
                           size="lg"
                           className="wpsg-admin-btn"
-                          onClick={onOpenSettings}
+                          onClick={handleOpenSettings}
                           aria-label="Settings"
                         >
                           <IconSettings size={20} />
                         </ActionIcon>
                       </Tooltip>
+                      {instanceId && (
+                        <SpaceSwitcher
+                          activeInstanceId={activeInstanceId ?? instanceId}
+                          onSelect={setActiveInstanceId}
+                        />
+                      )}
                     </>
                   )}
                   <Button
