@@ -227,12 +227,12 @@ function AuthBarFull({
                           Settings
                         </Menu.Item>
                         {instanceId && (
-                          <Menu.Item component="div" style={{ padding: '4px 8px' }}>
+                          <Box px={8} py={4}>
                             <SpaceSwitcher
                               activeInstanceId={activeInstanceId ?? instanceId}
                               onSelect={setActiveInstanceId}
                             />
-                          </Menu.Item>
+                          </Box>
                         )}
                         <Menu.Divider />
                       </>
