@@ -361,6 +361,8 @@ class WPSG_Settings_Registry {
         'campaign_listing_adapter_id_tablet' => '',
         // P37-LB: Layout template used when campaign_listing_adapter_id is 'layout-builder'
         'campaign_listing_layout_template_id' => '',
+        // P48-D: Per-space authenticated rate-limit quota (requests per minute). 0 = use global filter default.
+        'rate_limit_requests_per_minute'      => 0,
     ];
 
     /**
@@ -605,6 +607,8 @@ class WPSG_Settings_Registry {
         'viewport_height_tablet_ratio',
         'viewport_height_mobile_ratio',
         'modal_mobile_breakpoint',
+        // ── P48-D: Per-space rate limiting ────────────────────────────────────
+        'rate_limit_requests_per_minute',
     ];
 
     /**

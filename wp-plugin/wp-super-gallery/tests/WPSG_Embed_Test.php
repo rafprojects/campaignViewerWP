@@ -133,6 +133,23 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( '<style>', $output );
     }
 
+    public function test_render_shortcode_full_bleed_css_is_space_scoped() {
+        update_option( WPSG_Settings::OPTION_NAME, [
+            'wp_full_bleed_desktop' => true,
+            'wp_full_bleed_tablet'  => false,
+            'wp_full_bleed_mobile'  => false,
+        ] );
+
+        $output = WPSG_Embed::render_shortcode();
+
+        // Wrapper div must carry a data-space attribute.
+        $this->assertMatchesRegularExpression( '/wpsg-full-bleed[^"]*"\s+data-space="[^"]+"/', $output );
+        // Emitted CSS selector must be scoped — not the bare class alone.
+        $this->assertStringContainsString( '.wpsg-full-bleed[data-space=', $output );
+        // The bare unscoped selector must NOT appear.
+        $this->assertStringNotContainsString( '{.wpsg-full-bleed{', $output );
+    }
+
     public function test_render_shortcode_no_bleed_when_all_disabled() {
         update_option( WPSG_Settings::OPTION_NAME, [
             'wp_full_bleed_desktop' => false,

@@ -66,8 +66,9 @@ abstract class WPSG_REST_Base {
     /**
      * Rate-limit authenticated endpoints (admin actions).
      *
-     * Default: 120 requests per minute per IP. Override via
-     * `wpsg_rate_limit_authenticated` filter.
+     * Default: 120 requests per minute per IP. Per-space override via
+     * `rate_limit_requests_per_minute` in settings_overrides (P48-D).
+     * Global floor override via `wpsg_rate_limit_authenticated` filter.
      *
      * @since 0.18.0 P20-A
      */
@@ -76,9 +77,21 @@ abstract class WPSG_REST_Base {
             return false;
         }
 
-        $limit = intval(apply_filters('wpsg_rate_limit_authenticated', 120));
+        $global_limit = intval(apply_filters('wpsg_rate_limit_authenticated', 120));
+
+        // Resolve per-space quota when the request targets a known space.
+        $space_id = intval($request->get_param('id') ?: $request->get_param('space_id'));
+        $limit = $global_limit;
+        if ($space_id > 0 && class_exists('WPSG_Settings')) {
+            $space_settings = WPSG_Settings::get_effective_settings($space_id);
+            $space_rpm = intval($space_settings['rate_limit_requests_per_minute'] ?? 0);
+            if ($space_rpm > 0) {
+                $limit = $space_rpm;
+            }
+        }
+
         $window = intval(apply_filters('wpsg_rate_limit_window', 60));
-        $result = self::rate_limit_check($request, 'authenticated', $limit, $window);
+        $result = self::rate_limit_check($request, 'authenticated', $limit, $window, $space_id);
 
         if (is_wp_error($result)) {
             return $result;
@@ -100,7 +113,7 @@ abstract class WPSG_REST_Base {
         return self::rate_limit_check($request, 'magic_approve', $limit, $window);
     }
 
-    private static function rate_limit_check($request, $scope, $limit, $window) {
+    private static function rate_limit_check($request, $scope, $limit, $window, $space_id = 0) {
         if ($limit <= 0) {
             return true;
         }
@@ -108,7 +121,9 @@ abstract class WPSG_REST_Base {
         $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
         $user_id = get_current_user_id();
         $route = $request->get_route();
-        $key = sprintf('wpsg_rl_%s_%s_%s', $scope, $user_id ?: 'anon', md5($ip . '|' . $route));
+        // Include space_id in the key when set so each space has its own bucket (P48-D).
+        $space_seg = $space_id > 0 ? '_s' . $space_id : '';
+        $key = sprintf('wpsg_rl_%s%s_%s_%s', $scope, $space_seg, $user_id ?: 'anon', md5($ip . '|' . $route));
 
         if (function_exists('wp_cache_incr')) {
             $cache_key = $key . '_count';

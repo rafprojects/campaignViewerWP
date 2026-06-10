@@ -545,6 +545,11 @@ class WPSG_Settings_Sanitizer {
             $sanitized['cache_ttl'] = max(0, min(604800, $ttl));
         }
 
+        if (isset($input['rate_limit_requests_per_minute'])) {
+            $rpm = intval($input['rate_limit_requests_per_minute']);
+            $sanitized['rate_limit_requests_per_minute'] = max(0, min(6000, $rpm));
+        }
+
         if (isset($input['typography_overrides'])) {
             $sanitized['typography_overrides'] = self::sanitize_typography_overrides($input['typography_overrides']);
         }

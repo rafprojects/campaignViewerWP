@@ -125,6 +125,8 @@ class WPSG_Embed {
         ], $atts, 'super-gallery');
 
         $space_id = self::resolve_space_id($atts);
+        $space_obj  = class_exists('WPSG_DB') ? WPSG_DB::get_space($space_id) : null;
+        $space_slug = ($space_obj && !empty($space_obj->slug)) ? $space_obj->slug : (string) $space_id;
 
         $classes = ['wp-super-gallery'];
         if ($atts['compact'] === 'true') {
@@ -269,25 +271,28 @@ class WPSG_Embed {
                 . 'margin-left:auto !important;margin-right:auto !important;';
             $rules = [];
             // Each breakpoint always gets a rule — either bleed or re-constrain.
+            // Scope selector to this instance's space slug so two shortcodes on the
+            // same page with different bleed settings don't stomp each other (P48-C).
+            $sel = '.wpsg-full-bleed[data-space="' . esc_attr($space_slug) . '"]';
             if ($bleed_desktop) {
-                $rules[] = '@media(min-width:1024px){.wpsg-full-bleed{' . $neg_margins . '}}';
+                $rules[] = '@media(min-width:1024px){' . $sel . '{' . $neg_margins . '}}';
             } else {
-                $rules[] = '@media(min-width:1024px){.wpsg-full-bleed{' . $constrain . '}}';
+                $rules[] = '@media(min-width:1024px){' . $sel . '{' . $constrain . '}}';
             }
             if ($bleed_tablet) {
-                $rules[] = '@media(min-width:768px) and (max-width:1023px){.wpsg-full-bleed{' . $neg_margins . '}}';
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){' . $sel . '{' . $neg_margins . '}}';
             } else {
-                $rules[] = '@media(min-width:768px) and (max-width:1023px){.wpsg-full-bleed{' . $constrain . '}}';
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){' . $sel . '{' . $constrain . '}}';
             }
             if ($bleed_mobile) {
-                $rules[] = '@media(max-width:767px){.wpsg-full-bleed{' . $neg_margins . '}}';
+                $rules[] = '@media(max-width:767px){' . $sel . '{' . $neg_margins . '}}';
             } else {
-                $rules[] = '@media(max-width:767px){.wpsg-full-bleed{' . $constrain . '}}';
+                $rules[] = '@media(max-width:767px){' . $sel . '{' . $constrain . '}}';
             }
             $bleed_style = '<style>' . implode('', $rules) . '</style>';
             // alignfull is required to escape is-layout-constrained (see docblock above).
             // wpsg-full-bleed is our own class targeted by the media-query rules.
-            $bleed_open = '<div class="alignfull wpsg-full-bleed">';
+            $bleed_open = '<div class="alignfull wpsg-full-bleed" data-space="' . esc_attr($space_slug) . '">';
             $bleed_close = '</div>';
         }
 
