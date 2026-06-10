@@ -35,7 +35,8 @@ export type GalleryAdapterId =
   | 'layout-builder'
   | 'spotlight'
   | 'scroll-snap'
-  | 'coverflow';
+  | 'coverflow'
+  | 'pinterest';
 
 /** Declared capabilities a gallery adapter can support. */
 export type AdapterCapability =

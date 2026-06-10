@@ -8,14 +8,14 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P48-A | Campaign Mgmt — accumulative multi-file selection with per-file preview | To do | Small-Medium |
+| P48-A | Campaign Mgmt — accumulative multi-file selection with per-file preview | Done | Small-Medium |
 | P48-B | Builder — alignment variants: distribute-by-gap & group-entity alignment | To do | Low-Medium |
 | P48-C | Gallery Spaces — per-instance full-bleed CSS scoping (P47 follow-on) | Done | Small |
 | P48-D | Gallery Spaces — space-scoped rate-limit buckets (P47 follow-on) | Done | Small-Medium |
 | P48-E | Exports — audit log binary export (reuses Export Engine) | To do | Small-Medium |
 | P48-F | Exports — media library binary export (reuses Export Engine) | To do | Small-Medium |
 | P48-G | Adapters — Coverflow / 3D adapter | Done | Medium |
-| P48-H | Adapters — Mosaic / Pinterest adapter | To do | Medium-High |
+| P48-H | Adapters — Mosaic / Pinterest adapter | Done | Medium-High |
 
 ---
 
@@ -90,6 +90,18 @@
 
 - Manual: open `MediaAddModal`, drag two separate batches, verify merge; use the picker twice, verify merge; confirm ✕ and "Clear all"; trigger the size cap and verify the notification.
 - Unit: `handleSelectFiles` merge and dedup logic in isolation.
+
+### Rationale
+
+**Merge vs. replace in `handleSelectFiles`:** Added `selectedFiles` to the `useCallback` dependency array so the current queue is accessible via closure. The merge reads `existingKeys` as a `Set<string>` (O(1) lookup), filters incoming files against it, then concatenates. This keeps the operation O(n) and avoids a Map or sort.
+
+**`onClearFiles` separate from `onSelectFiles`:** After switching `handleSelectFiles` to the merge pattern, calling `onSelectFiles([])` would produce `merged = [...selectedFiles]` (an empty incoming adds nothing), so a "Clear all" action cannot go through that path. A dedicated `onClearFiles` callback lets MediaTab reset all related state (`selectedFiles`, `uploadErrors`, `uploadTitle`, `uploadCaption`) in one atomic call.
+
+**`FileButton`'s `onChange` returns early on `null`:** Previously `if (!value) { onSelectFiles([]); }` cleared the queue when the native file picker was dismissed without a selection. With accumulative behaviour, that would silently wipe existing queued files. The handler now returns early on null — only an explicit "Clear all" clears the queue.
+
+**Object URL management inside `MediaAddModal`:** `useEffect` keyed on `selectedFiles` creates fresh `URL.createObjectURL` URLs on each file-list change and returns a cleanup function that revokes them. This follows the standard React effect/cleanup pattern: the previous cleanup runs before the new URLs are created, so removed files are revoked immediately and there is no leak window. Unmount also triggers cleanup, covering the modal-close case without an extra `opened`-watch effect.
+
+**`size="lg"` when files queued:** The thumbnail grid wraps badly at the default modal width (`"md"`) once more than 4–5 files are queued. Widening to `"lg"` only when `hasFiles` is true avoids an oversized empty modal on first open.
 
 ---
 
@@ -323,6 +335,18 @@ The adapter registry has no irregular-tile-size layout. A mosaic layout (large h
 ### Validation
 
 - Manual: add the adapter to a gallery with a mix of landscape, portrait, and square media; confirm varied tile sizes; confirm lightbox opens; check narrow viewport.
+
+### Rationale
+
+**Adapter ID:** `'pinterest'` — the phase doc names the adapter "mosaic" but `'mosaic'` is already a registered alias for the `'justified'` adapter (adapterRegistry.ts line 91). Using `'pinterest'` avoids a collision and accurately describes the layout style.
+
+**Algorithm:** Used CSS Grid with `grid-auto-flow: row dense` rather than a custom JS bin-packing algorithm. The browser's dense auto-placement fills gaps greedily at zero runtime cost. Each item's `grid-column: span X` and `grid-row: span Y` are assigned from aspect ratio buckets: ratio ≥ 1.6 → 2×2 (hero), ≥ 1.2 → 2×1 (wide), ≥ 0.7 → 1×1 (square), < 0.7 → 1×2 (portrait). Unknown dimensions default to 1×1.
+
+**Grid geometry:** 4 physical columns at ≥ 500px container width — chosen because it accommodates all four span combinations without overflow. Row unit = `⌊containerWidth / cols / 1.2⌋px` keeps rows approximately square so 2-row tall tiles look proportional rather than excessively stretched. `useMediaDimensions` (already used by MasonryGallery) asynchronously resolves width/height from image probing; items initially render as 1×1 and reflow when dimensions arrive.
+
+**Responsive collapse:** Below 500px all tiles are capped to 1×1 (2 columns); below 360px single column. This avoids the case where a 2-column span in a narrow viewport produces an oversized tile next to a tiny gap.
+
+**Hover state:** Managed with local `useState<number | null>` rather than CSS-only `:hover` because the zoom icon opacity and scale transform are applied inline (pattern matches CompactGridGallery's GridCard approach). No CSS class injection needed.
 
 ---
 
