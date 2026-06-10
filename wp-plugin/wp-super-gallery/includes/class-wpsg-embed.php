@@ -117,16 +117,54 @@ class WPSG_Embed {
 
     public static function render_shortcode($atts = []) {
         $GLOBALS['wpsg_has_shortcode'] = true;
+        $valid_auth_bar_modes = ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'];
         $atts = shortcode_atts([
-            'campaign' => '',
-            'company'  => '',
-            'compact'  => 'false',
-            'space'    => '',
+            'campaign'      => '',
+            'company'       => '',
+            'compact'       => 'false',
+            'space'         => '',
+            'auth_bar_mode' => '',
         ], $atts, 'super-gallery');
 
         $space_id = self::resolve_space_id($atts);
         $space_obj  = class_exists('WPSG_DB') ? WPSG_DB::get_space($space_id) : null;
         $space_slug = ($space_obj && !empty($space_obj->slug)) ? $space_obj->slug : (string) $space_id;
+        $space_name = ($space_obj && !empty($space_obj->name)) ? $space_obj->name : $space_slug;
+
+        // P48-I: Generate a stable, unique instance ID for this shortcode mount point.
+        // getRootId() in main.tsx uses host.id as highest priority, making the rootId
+        // space-slug-based and collision-free instead of index-based.
+        if (!isset($GLOBALS['wpsg_instance_ids'])) {
+            $GLOBALS['wpsg_instance_ids'] = [];
+        }
+        $base_id = 'wpsg-' . $space_slug;
+        if (in_array($base_id, $GLOBALS['wpsg_instance_ids'], true)) {
+            $counter = 2;
+            while (in_array($base_id . '-' . $counter, $GLOBALS['wpsg_instance_ids'], true)) {
+                $counter++;
+            }
+            $instance_id = $base_id . '-' . $counter;
+        } else {
+            $instance_id = $base_id;
+        }
+        $GLOBALS['wpsg_instance_ids'][] = $instance_id;
+
+        // Accumulate space instances for the WP admin bar (P48-I Layer 4).
+        if (!isset($GLOBALS['wpsg_spaces_on_page'])) {
+            $GLOBALS['wpsg_spaces_on_page'] = [];
+        }
+        $GLOBALS['wpsg_spaces_on_page'][$instance_id] = [
+            'id'   => $space_id,
+            'slug' => $space_slug,
+            'name' => $space_name,
+        ];
+        if (!has_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'])) {
+            add_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'], 90);
+            // Emit __WPSG_PAGE_SPACES__ after all shortcodes have accumulated their entries.
+            // Priority 1 fires before wp_print_footer_scripts (priority 10+) so the global
+            // is set before the React bundle loads.
+            add_action('wp_footer', [self::class, 'emit_page_spaces_js'], 1);
+        }
 
         $classes = ['wp-super-gallery'];
         if ($atts['compact'] === 'true') {
@@ -189,19 +227,30 @@ class WPSG_Embed {
         ]));
 
         // Per-node config: space-specific display settings read by main.tsx per mount point.
-        $node_config = esc_attr(wp_json_encode([
+        $raw_auth_bar_mode = trim((string) $atts['auth_bar_mode']);
+        $auth_bar_mode     = in_array($raw_auth_bar_mode, $valid_auth_bar_modes, true) ? $raw_auth_bar_mode : null;
+
+        $node_config_data = [
             'spaceId'          => $space_id,
+            'spaceName'        => $space_name,
+            'instanceId'       => $instance_id,
             'theme'            => $theme,
             'galleryLayout'    => $gallery_layout,
             'enableLightbox'   => $enable_lightbox,
             'enableAnimations' => $enable_animations,
-        ]));
+        ];
+        if ($auth_bar_mode !== null) {
+            $node_config_data['authBarMode'] = $auth_bar_mode;
+        }
+        $node_config = esc_attr(wp_json_encode($node_config_data));
 
         // Global page config: emitted once per page load (page-global values only).
         // Space-specific settings live in data-wpsg-config on each mount node.
         if (empty($GLOBALS['wpsg_config_emitted'])) {
             $GLOBALS['wpsg_config_emitted'] = true;
-            $config_script = '<script>' . self::page_config_js() . '</script>';
+            // admin_bar_delegation_js() is emitted once here alongside page config.
+            // It listens for WP admin bar clicks and routes them to per-instance openers.
+            $config_script = '<script>' . self::page_config_js() . self::admin_bar_delegation_js() . '</script>';
         } else {
             $config_script = '';
         }
@@ -296,7 +345,7 @@ class WPSG_Embed {
             $bleed_close = '</div>';
         }
 
-        return $config_script . $bleed_style . $bleed_open . '<div class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
+        return $config_script . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
     }
 
     /**
@@ -349,6 +398,100 @@ class WPSG_Embed {
         }
 
         return (int) get_option('wpsg_default_space_id', 1);
+    }
+
+    /**
+     * JS snippet emitted once per page. Listens for WP admin bar clicks that
+     * carry [data-wpsg-open] and routes them to the per-instance opener
+     * registered by each React root (window.__wpsgOpen_<instanceId>).
+     */
+    private static function admin_bar_delegation_js(): string {
+        return <<<'JS'
+(function(){
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-wpsg-open]');
+    if(!btn)return;
+    var a=btn.closest('a');
+    var href=a?a.getAttribute('href'):'';
+    var instanceId=href?href.replace(/^#/,''):'';
+    var panel=btn.getAttribute('data-wpsg-open');
+    var opener=instanceId&&window['__wpsgOpen_'+instanceId];
+    if(opener){e.preventDefault();opener(panel);}
+  });
+})();
+JS;
+    }
+
+    /**
+     * Emits window.__WPSG_PAGE_SPACES__ into the footer after all shortcodes have
+     * rendered so the React SpaceSwitcher can read the full list on mount.
+     * Only emitted for users with manage_wpsg capability.
+     */
+    public static function emit_page_spaces_js(): void {
+        if (empty($GLOBALS['wpsg_spaces_on_page']) || !is_array($GLOBALS['wpsg_spaces_on_page'])) {
+            return;
+        }
+        if (!current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+            return;
+        }
+        // Reshape to indexed array with instanceId included in each entry.
+        $spaces = [];
+        foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
+            $spaces[] = [
+                'instanceId' => $instance_id,
+                'id'         => $info['id'],
+                'slug'       => $info['slug'],
+                'name'       => $info['name'],
+            ];
+        }
+        echo '<script>window.__WPSG_PAGE_SPACES__ = ' . wp_json_encode($spaces) . ';</script>' . "\n";
+    }
+
+    /**
+     * Registers per-space WP admin bar nodes from $GLOBALS['wpsg_spaces_on_page'].
+     * Hooked at priority 90 (after WP core nodes).
+     *
+     * @param \WP_Admin_Bar $wp_admin_bar
+     */
+    public static function register_admin_bar_nodes(\WP_Admin_Bar $wp_admin_bar): void {
+        if (empty($GLOBALS['wpsg_spaces_on_page']) || !is_array($GLOBALS['wpsg_spaces_on_page'])) {
+            return;
+        }
+        if (!current_user_can('manage_wpsg')) {
+            return;
+        }
+
+        $wp_admin_bar->add_node([
+            'id'    => 'wpsg-root',
+            'title' => 'WP Super Gallery',
+            'href'  => false,
+        ]);
+
+        foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
+            $slug  = esc_attr($instance_id);
+            $label = esc_html($info['name']);
+
+            $wp_admin_bar->add_node([
+                'id'     => 'wpsg-space-' . $slug,
+                'parent' => 'wpsg-root',
+                'title'  => $label,
+                'href'   => '#' . $slug,
+            ]);
+            $wp_admin_bar->add_node([
+                'id'     => 'wpsg-space-' . $slug . '-settings',
+                'parent' => 'wpsg-space-' . $slug,
+                'title'  => '<span data-wpsg-open="settings">Settings</span>',
+                'href'   => '#' . $slug,
+                'meta'   => ['html' => true],
+            ]);
+            $wp_admin_bar->add_node([
+                'id'     => 'wpsg-space-' . $slug . '-admin',
+                'parent' => 'wpsg-space-' . $slug,
+                'title'  => '<span data-wpsg-open="admin">Admin Panel</span>',
+                'href'   => '#' . $slug,
+                'meta'   => ['html' => true],
+            ]);
+        }
     }
 
     private static function get_manifest() {
