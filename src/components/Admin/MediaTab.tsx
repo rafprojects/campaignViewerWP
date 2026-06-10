@@ -115,7 +115,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const [addOpen, setAddOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadErrors, setUploadErrors] = useState<Array<string | null>>([]);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const { upload, uploadMany, batchProgress, isUploading: uploading, resetProgress } = useXhrUpload();
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadCaption, setUploadCaption] = useState('');
@@ -266,9 +265,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   }, [mediaItems, mediaQueryLoading, campaignId, enrichOEmbedMetadata]);
 
   const handleSelectFiles = useCallback((value: File | File[] | null) => {
-    const nextFiles = normalizeSelectedFiles(value);
-    const mediaFiles = nextFiles.filter((file) => file.type.startsWith('image/') || file.type.startsWith('video/'));
-    const skippedCount = nextFiles.length - mediaFiles.length;
+    if (value === null) return;
+    const incoming = normalizeSelectedFiles(value);
+    const mediaFiles = incoming.filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'));
+    const skippedCount = incoming.length - mediaFiles.length;
 
     if (skippedCount > 0) {
       showNotification({
@@ -278,7 +278,13 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       });
     }
 
-    if (mediaFiles.length > maxBatchUploadSize) {
+    const existingKeys = new Set(selectedFiles.map((f) => `${f.name}-${f.size}-${f.lastModified}`));
+    const merged = [
+      ...selectedFiles,
+      ...mediaFiles.filter((f) => !existingKeys.has(`${f.name}-${f.size}-${f.lastModified}`)),
+    ];
+
+    if (merged.length > maxBatchUploadSize) {
       showNotification({
         title: 'Batch limit reached',
         message: `Only the first ${maxBatchUploadSize} files were kept.`,
@@ -286,14 +292,26 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       });
     }
 
-    const limitedFiles = mediaFiles.slice(0, maxBatchUploadSize);
-    setSelectedFiles(limitedFiles);
-    setUploadErrors(Array(limitedFiles.length).fill(null));
-    if (limitedFiles.length !== 1) {
+    const limited = merged.slice(0, maxBatchUploadSize);
+    setSelectedFiles(limited);
+    setUploadErrors(Array(limited.length).fill(null));
+    if (limited.length !== 1) {
       setUploadTitle('');
       setUploadCaption('');
     }
-  }, [maxBatchUploadSize]);
+  }, [maxBatchUploadSize, selectedFiles]);
+
+  const handleRemoveFile = useCallback((index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setUploadErrors((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleClearFiles = useCallback(() => {
+    setSelectedFiles([]);
+    setUploadErrors([]);
+    setUploadTitle('');
+    setUploadCaption('');
+  }, []);
 
   async function handleUpload() {
     if (selectedFiles.length === 0) return;
@@ -562,16 +580,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
       return false;
     }
   }
-
-  useEffect(() => {
-    if (selectedFiles.length !== 1) {
-      setPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(selectedFiles[0]!);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFiles]);
 
   async function handleDelete(item: MediaItem) {
     setDeleteItem(item);
@@ -938,7 +946,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         dropRef={dropRef}
         selectedFiles={selectedFiles}
         onSelectFiles={handleSelectFiles}
-        previewUrl={previewUrl}
+        onRemoveFile={handleRemoveFile}
+        onClearFiles={handleClearFiles}
         uploadTitle={uploadTitle}
         onUploadTitleChange={setUploadTitle}
         uploadCaption={uploadCaption}
