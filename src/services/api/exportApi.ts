@@ -23,6 +23,24 @@ export class ExportApi {
     );
   }
 
+  /** Enqueue a background audit-log ZIP export. Returns the job ID. */
+  startAuditLogBinaryExport(
+    params: { from?: string; to?: string; action?: string; campaignId?: string; scope?: string; severity?: string; space?: string } = {},
+  ): Promise<{ jobId: string; status: ExportJobStatus }> {
+    const body: Record<string, unknown> = {};
+    if (params.from)       body['from']        = params.from;
+    if (params.to)         body['to']          = params.to;
+    if (params.action)     body['action']      = params.action;
+    if (params.campaignId) body['campaign_id'] = Number(params.campaignId);
+    if (params.scope)      body['scope']       = params.scope;
+    if (params.severity)   body['severity']    = params.severity;
+    if (params.space)      body['space']       = Number(params.space);
+    return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
+      '/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary',
+      body,
+    );
+  }
+
   /** Enqueue a background multi-campaign ZIP export. Returns a single job ID. */
   startBulkBinaryExport(ids: string[]): Promise<{ jobId: string; status: ExportJobStatus }> {
     return this.transport.post<{ jobId: string; status: ExportJobStatus }>(

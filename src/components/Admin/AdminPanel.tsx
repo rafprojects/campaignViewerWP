@@ -109,6 +109,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [auditCampaignId, setAuditCampaignId] = useState('');
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
+  const [auditZipExporting, setAuditZipExporting] = useState(false);
+  const [globalAuditZipExporting, setGlobalAuditZipExporting] = useState(false);
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -210,6 +212,35 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   useEffect(() => {
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
+
+  const handleAuditZipExport = useCallback(async (
+    params: Parameters<typeof apiClient.startAuditLogBinaryExport>[0],
+    setExporting: (v: boolean) => void,
+    filename: string,
+  ) => {
+    setExporting(true);
+    try {
+      const { jobId } = await apiClient.startAuditLogBinaryExport(params);
+      onNotify({ type: 'success', text: 'Building audit log ZIP — this may take a moment.' });
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        await apiClient.downloadExportJob(jobId, filename);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => undefined);
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Audit ZIP export failed') });
+    } finally {
+      setExporting(false);
+    }
+  }, [apiClient, onNotify]);
 
   const mediaPrefetchedRef = useRef(false);
   const accessPrefetchedRef = useRef(false);
@@ -597,6 +628,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             onFiltersChange={setAuditFilters}
             auditError={auditError}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
+            onExportZip={() => handleAuditZipExport({
+              ...(auditCampaignId ? { campaignId: auditCampaignId } : {}),
+              ...(auditFilters.from ? { from: auditFilters.from } : {}),
+              ...(auditFilters.to ? { to: auditFilters.to } : {}),
+              ...(auditFilters.action ? { action: auditFilters.action } : {}),
+              ...(auditFilters.scope ? { scope: auditFilters.scope } : {}),
+              ...(auditFilters.severity ? { severity: auditFilters.severity } : {}),
+            }, setAuditZipExporting, `audit-log-${Date.now()}.zip`)}
+            exportingZip={auditZipExporting}
           />
         </Tabs.Panel>
 
@@ -607,6 +647,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             filters={globalAuditFilters}
             onFiltersChange={setGlobalAuditFilters}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv(globalAuditFilters)}
+            onExportZip={() => handleAuditZipExport({
+              ...(globalAuditFilters.campaignId ? { campaignId: globalAuditFilters.campaignId } : {}),
+              ...(globalAuditFilters.from ? { from: globalAuditFilters.from } : {}),
+              ...(globalAuditFilters.to ? { to: globalAuditFilters.to } : {}),
+              ...(globalAuditFilters.action ? { action: globalAuditFilters.action } : {}),
+              ...(globalAuditFilters.scope ? { scope: globalAuditFilters.scope } : {}),
+              ...(globalAuditFilters.severity ? { severity: globalAuditFilters.severity } : {}),
+            }, setGlobalAuditZipExporting, `global-audit-log-${Date.now()}.zip`)}
+            exportingZip={globalAuditZipExporting}
           />
         </Tabs.Panel>
 

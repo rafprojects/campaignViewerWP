@@ -40,9 +40,11 @@ interface GlobalAuditTabProps {
   filters: AuditFilters & { campaignId?: string };
   onFiltersChange: (f: AuditFilters & { campaignId?: string }) => void;
   onExportCsv: () => void;
+  onExportZip?: () => void;
+  exportingZip?: boolean;
 }
 
-export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onExportCsv }: GlobalAuditTabProps) {
+export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onExportCsv, onExportZip, exportingZip }: GlobalAuditTabProps) {
   const rows: ReactNode = useMemo(
     () => entries.map((e) => <AuditEventRow key={e.id} entry={e} showCampaignCol />),
     [entries],
@@ -90,6 +92,17 @@ export function GlobalAuditTab({ entries, loading, filters, onFiltersChange, onE
         <Button size="xs" variant="default" onClick={onExportCsv} aria-label="Export global audit log as CSV">
           Export CSV
         </Button>
+        {onExportZip && (
+          <Button
+            size="xs"
+            variant="light"
+            onClick={onExportZip}
+            loading={exportingZip ?? false}
+            aria-label="Export global audit log as ZIP"
+          >
+            Download ZIP
+          </Button>
+        )}
       </Group>
       {loading ? (
         <Table.ScrollContainer minWidth={750}>

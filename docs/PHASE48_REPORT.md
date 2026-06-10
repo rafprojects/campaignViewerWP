@@ -9,10 +9,10 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P48-A | Campaign Mgmt — accumulative multi-file selection with per-file preview | Done | Small-Medium |
-| P48-B | Builder — alignment variants: distribute-by-gap & group-entity alignment | To do | Low-Medium |
+| P48-B | Builder — alignment variants: distribute-by-gap & group-entity alignment | Done | Low-Medium |
 | P48-C | Gallery Spaces — per-instance full-bleed CSS scoping (P47 follow-on) | Done | Small |
 | P48-D | Gallery Spaces — space-scoped rate-limit buckets (P47 follow-on) | Done | Small-Medium |
-| P48-E | Exports — audit log binary export (reuses Export Engine) | To do | Small-Medium |
+| P48-E | Exports — audit log binary export (reuses Export Engine) | Done | Small-Medium |
 | P48-F | Exports — media library binary export (reuses Export Engine) | To do | Small-Medium |
 | P48-G | Adapters — Coverflow / 3D adapter | Done | Medium |
 | P48-H | Adapters — Mosaic / Pinterest adapter | Done | Medium-High |
@@ -139,6 +139,16 @@ Two gaps remain in the P29-G-C alignment/distribution delivery:
 - Manual: create a persisted group + a free slot; align left — confirm group moves as a unit.
 - Unit: gap-distribute calculation with known inputs.
 
+### Rationale
+
+**Gap-distribute algorithm:** Sort by leading edge (not center), compute `totalGap = totalSpan − totalSlotWidth`, divide by `(n − 1)`. Walk the sorted list with a `cursor` — each slot's `x` (or `y`) is the cursor value; cursor advances by `slot.width + gap`. This produces identical inter-slot whitespace by construction and the outermost slots are unchanged since `cursor` starts at `sorted[0].x` and the final cursor value equals `right(sorted[n-1])`.
+
+**Center-distribute preserved:** The two new functions (`distributeSlotsHorizontallyByGap`, `distributeSlotsVerticallyByGap`) are additive — the existing center-distribute functions are untouched and their toolbar buttons remain. The gap variants appear immediately adjacent, distinguished by the filled icon variants (`IconLayoutDistributeHorizontalFilled`, `IconLayoutDistributeVerticalFilled`) and tooltip text.
+
+**Group-as-entity via virtual slots (`applyAlignmentGroupAware`):** Rather than baking group logic into each `alignSlots.ts` function, a wrapper in `LayoutBuilderLayersPanel` intercepts the call. It detects groups where ALL `memberIds` are in `selectedSlotIds` (partial-group selections continue to treat members individually). For each fully-selected group it synthesises a temporary `LayoutSlot` with the group's computed bounding box and the ID `__group__<id>`. After the alignment function returns, the wrapper computes `dx/dy` from the virtual slot's update and applies the same delta to every member's current position. Free (ungrouped) slot updates pass through unchanged. All alignment and distribute operations share this wrapper, so group-as-entity works for alignment, center-distribute, and gap-distribute alike.
+
+**Scope:** `LayoutGroup.childGroupIds` / nested groups are intentionally out of scope — the fix handles flat groups (the common case from P29-G-C); hierarchical group alignment can be addressed if a concrete use case arises.
+
 ---
 
 ## Track P48-C — Per-Instance Full-Bleed CSS Scoping
@@ -241,6 +251,22 @@ Operators can only download the audit log as CSV. A binary ZIP containing the CS
 
 - Manual: trigger the export for a date range with known campaigns; download and unzip; confirm `manifest.json` structure and media files.
 - Confirm the existing CSV export is unaffected.
+
+### Rationale
+
+**Route placement:** Added `POST /admin/audit-log/export/binary` alongside the existing `GET /admin/audit-log` in `class-wpsg-campaign-controller.php` — same controller since it already owns the audit-log query logic.
+
+**Manifest structure:** `{ version: 1, type: 'audit', exported_at, filters, entry_count, entries[] }` where each entry carries the fields most useful for offline analysis: action, actor, campaignId, summary, severity, scope, resourceType, resourceId, resourceLabel, createdAt. Details (JSON blob) is omitted from the manifest to keep the file compact; the CSV export includes it for full fidelity.
+
+**Media snapshot:** For each unique campaign referenced in the log window, the handler collects the campaign's `cover_image` meta URL and hands it to the Export Engine as a media item. This gives operators a quick visual reference for each involved campaign without pulling all gallery media (which could be very large).
+
+**Per-page cap:** The manifest query uses `per_page = 5000` — high enough for any realistic audit window while preventing a runaway DB query. If audit log volume grows, a streaming/pagination approach can be added later.
+
+**Frontend polling:** Reused the same inline poll-and-download pattern from `useAdminCampaignActions` (3-second interval, 5-minute timeout) rather than extracting a shared hook — the use is infrequent and the inline form is self-contained.
+
+**"Download ZIP" button:** Added to both `AuditTab` (per-campaign audit) and `GlobalAuditTab` (cross-campaign) as an optional `onExportZip` prop with an associated `exportingZip` loading flag. Both pass the active filter state into the export request so the ZIP reflects exactly what the operator is looking at.
+
+**Tests:** 4 new PHP tests (`WPSG_P48E_Audit_Export_Test`) — 202 with job ID, date-range filter accepted, job retrievable after enqueue, 403 for non-admin. Full 898-test suite green.
 
 ---
 
