@@ -390,6 +390,7 @@ function AppContent({
                 onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved as unknown as Parameters<typeof setSettingsQueryData>[2])}
                 {...(spaceId !== undefined && { spaceId })}
                 {...(spaceName !== undefined && { spaceName })}
+                {...(instanceId !== undefined && { instanceId })}
               />
             </Suspense>
           </ErrorBoundary>
@@ -406,6 +407,7 @@ function AppContent({
                   initialBuilderTemplateId={initialBuilderTemplateId ?? undefined}
                   {...(spaceId !== undefined && { initialSpaceId: String(spaceId) })}
                   {...(spaceName !== undefined && { spaceName })}
+                  {...(instanceId !== undefined && { instanceId })}
                 />
               </Suspense>
             </ErrorBoundary>

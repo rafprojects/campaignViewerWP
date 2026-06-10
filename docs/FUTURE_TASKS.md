@@ -119,6 +119,28 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
+### SettingsPanel Space Badge — Exact Color Parity with SpaceSwitcher/AdminPanel in Dark Mode
+
+**Origin:** P48-I follow-on (unified space badge color, 2026-06-10).
+
+**Context:** The SpaceSwitcher (AuthBar) and AdminPanel space badges use Mantine's `variant="light"` directly — they render inside the shadow DOM where `cssVariablesSelector=":host"` makes Mantine CSS variables available, so color adapts correctly in both light and dark themes.
+
+The SettingsPanel Drawer renders via `withinPortal={true}` to `document.body`, outside the shadow DOM. Mantine CSS variables (`--mantine-color-{color}-light`, etc.) are not inherited by portal elements. The workaround (`useMantineTheme` + `useComputedColorScheme` with hardcoded shade indices) produces a close but not identical shade in dark mode because Mantine's `variant="light"` uses alpha-blended colors, not solid palette shades.
+
+**What to implement (two viable approaches):**
+
+1. **Portal target inside shadow DOM** — Pass `portalProps={{ target: shadowHostElement }}` to the Drawer so it renders as a child of the shadow host (inside shadow DOM). Obtain the element via `useRootId()` + `document.getElementById`. CSS variables become available; remove the `useMantineTheme`/`useComputedColorScheme` workaround entirely.
+
+2. **CSS variable bridge** — At the `MantineProvider` level, also emit a subset of color CSS variables to `:root` (in addition to `:host`). This makes them globally available to portals. Requires a custom `cssVariablesResolver` override and must be done carefully to avoid polluting the host page's `:root`.
+
+**Files:** `src/components/Admin/SettingsPanel.tsx`, possibly `src/main.tsx` (for approach 2).
+
+**Dependencies:** Approach 1 requires a stable reference to the shadow host element from within `SettingsPanel`. Approach 2 affects the entire Mantine CSS variable strategy.
+
+**Effort:** Small–Medium (1–3 hours) | **Impact:** Low — cosmetic; the badge is already correctly colored, just a slightly different shade in dark mode.
+
+---
+
 ## Integration
 
 ### Third-Party OAuth Providers

@@ -35,6 +35,7 @@ import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { spaceColor } from '@/utils/spaceColor';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
@@ -66,9 +67,12 @@ interface AdminPanelProps {
   initialSpaceId?: string;
   /** P48-I: display name for the space (shown in header when a specific space is targeted). */
   spaceName?: string;
+  /** P48-I: stable instance ID used to derive the per-space accent color. */
+  instanceId?: string | undefined;
 }
 
-export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId, initialSpaceId, spaceName }: AdminPanelProps) {
+export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId, initialSpaceId, spaceName, instanceId }: AdminPanelProps) {
+  const color = instanceId ? spaceColor(instanceId) : undefined;
   const queryClient = useQueryClient();
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
@@ -374,7 +378,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <IconArrowLeft />
           </ActionIcon>
           <Title order={2} size="h3">Admin Panel</Title>
-          {spaceName && <Badge color="blue" variant="light" size="sm">{spaceName}</Badge>}
+          {spaceName && <Badge color={color ?? 'blue'} variant="light" size="sm">{spaceName}</Badge>}
         </Group>
         <Group gap="xs" wrap="wrap">
           {spaces.length > 0 && (
