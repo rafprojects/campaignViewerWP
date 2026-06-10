@@ -49,6 +49,39 @@ export class ExportApi {
     );
   }
 
+  /** Enqueue a background media-library ZIP export. Returns the job ID. */
+  startMediaLibraryBinaryExport(
+    params: { campaignId?: string; mimeType?: 'image' | 'video' | 'all'; search?: string } = {},
+  ): Promise<{ jobId: string; status: ExportJobStatus }> {
+    const body: Record<string, unknown> = {};
+    if (params.campaignId) body['campaign_id'] = Number(params.campaignId);
+    if (params.mimeType && params.mimeType !== 'all') body['mime_type'] = params.mimeType;
+    if (params.search) body['search'] = params.search;
+    return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
+      '/wp-json/wp-super-gallery/v1/admin/media/export/binary',
+      body,
+    );
+  }
+
+  /**
+   * Upload a media library ZIP for import. Returns counts of imported / skipped items.
+   * Uses fetch() directly because the payload is multipart/form-data.
+   */
+  async importMediaLibraryBinary(
+    file: File,
+  ): Promise<{ imported: Array<{ id: number; url: string }>; skipped: string[] }> {
+    const url = `${this.transport.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/import/binary`;
+    const headers = await this.transport.getAuthHeaders();
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch(url, { method: 'POST', headers, body });
+    if (!res.ok) {
+      const text = await res.text().catch(() => String(res.status));
+      throw new Error(`Media library import failed: ${text}`);
+    }
+    return res.json() as Promise<{ imported: Array<{ id: number; url: string }>; skipped: string[] }>;
+  }
+
   /** Poll the status of an export job. */
   getExportJob(jobId: string): Promise<ExportJob> {
     return this.transport.get<ExportJob>(

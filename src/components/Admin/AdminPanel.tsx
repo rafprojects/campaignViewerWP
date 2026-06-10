@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box, FileButton } from '@mantine/core';
 import { useReloadSafeView } from '@/hooks/useReloadSafeView';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments, IconStack2 } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -111,6 +111,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const [auditZipExporting, setAuditZipExporting] = useState(false);
   const [globalAuditZipExporting, setGlobalAuditZipExporting] = useState(false);
+  const [mediaZipExporting, setMediaZipExporting] = useState(false);
+  const [mediaZipImporting, setMediaZipImporting] = useState(false);
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -239,6 +241,45 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
       onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Audit ZIP export failed') });
     } finally {
       setExporting(false);
+    }
+  }, [apiClient, onNotify]);
+
+  const handleMediaZipExport = useCallback(async () => {
+    setMediaZipExporting(true);
+    try {
+      const params = mediaCampaignId ? { campaignId: mediaCampaignId } : {};
+      const { jobId } = await apiClient.startMediaLibraryBinaryExport(params);
+      onNotify({ type: 'success', text: 'Building media library ZIP — this may take a moment.' });
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        await apiClient.downloadExportJob(jobId, `media-library-${Date.now()}.zip`);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => undefined);
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP export failed') });
+    } finally {
+      setMediaZipExporting(false);
+    }
+  }, [apiClient, mediaCampaignId, onNotify]);
+
+  const handleMediaZipImport = useCallback(async (file: File) => {
+    setMediaZipImporting(true);
+    try {
+      const result = await apiClient.importMediaLibraryBinary(file);
+      const msg = `Imported ${result.imported.length} media item${result.imported.length !== 1 ? 's' : ''}${result.skipped.length > 0 ? ` (${result.skipped.length} skipped)` : ''}.`;
+      onNotify({ type: 'success', text: msg });
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP import failed') });
+    } finally {
+      setMediaZipImporting(false);
     }
   }, [apiClient, onNotify]);
 
@@ -554,6 +595,33 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
+            <Button
+              size="sm"
+              variant="light"
+              loading={mediaZipExporting}
+              style={{ flex: '0 0 auto' }}
+              onClick={handleMediaZipExport}
+              aria-label="Export media library as ZIP"
+            >
+              Export ZIP
+            </Button>
+            <FileButton
+              onChange={(file) => { if (file) handleMediaZipImport(file); }}
+              accept=".zip,application/zip"
+            >
+              {(props) => (
+                <Button
+                  {...props}
+                  size="sm"
+                  variant="light"
+                  loading={mediaZipImporting}
+                  style={{ flex: '0 0 auto' }}
+                  aria-label="Import media library from ZIP"
+                >
+                  Import ZIP
+                </Button>
+              )}
+            </FileButton>
             <Button
               variant="outline"
               loading={rescanAllLoading}

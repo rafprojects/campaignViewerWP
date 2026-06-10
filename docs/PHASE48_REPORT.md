@@ -13,7 +13,7 @@
 | P48-C | Gallery Spaces — per-instance full-bleed CSS scoping (P47 follow-on) | Done | Small |
 | P48-D | Gallery Spaces — space-scoped rate-limit buckets (P47 follow-on) | Done | Small-Medium |
 | P48-E | Exports — audit log binary export (reuses Export Engine) | Done | Small-Medium |
-| P48-F | Exports — media library binary export (reuses Export Engine) | To do | Small-Medium |
+| P48-F | Exports — media library binary export (reuses Export Engine) | Done | Small-Medium |
 | P48-G | Adapters — Coverflow / 3D adapter | Done | Medium |
 | P48-H | Adapters — Mosaic / Pinterest adapter | Done | Medium-High |
 
@@ -295,6 +295,20 @@ There is no way for operators to download all or selected WP media attachments a
 ### Validation
 
 - Manual: export a selection of media; download and inspect ZIP; re-import to a clean WP instance; confirm attachments are present in the Media Library.
+
+### Rationale
+
+**Route placement:** `POST /admin/media/export/binary` and `POST /media/import/binary` added to `class-wpsg-media-controller.php` — same controller that already owns `GET /media/library` and the campaign-media CRUD routes.
+
+**Manifest structure:** `{ version: 1, type: 'media_library', exported_at, filters, item_count, items[] }` where each item carries id, filename, url, title, mimeType. The `filename` field uses `WPSG_Export_Engine::get_media_filename()` so the manifest and the ZIP `media/` paths agree — same contract established by the campaign binary export.
+
+**Attachment query:** Uses `WP_Query` with `post_type: attachment, post_status: inherit` and `post_mime_type: ['image', 'video']` (same as `list_media_library`), capped at 500 items per export to stay well within the 100 MB size guard in the engine. Optional `campaign_id` filter restricts the query to attachment IDs referenced by that campaign's `media_items` meta.
+
+**Import sideload:** Reads each `media/{filename}` entry from the ZIP, writes it to a temp file, and calls `media_handle_sideload()` with post parent 0 (unattached to any post). Items missing from the archive are collected into `skipped[]` and returned alongside `imported[]` so the frontend can report partial success accurately.
+
+**Frontend surface:** Export ZIP and Import ZIP buttons placed in the media panel header group alongside the existing "Rescan All" button. Export scopes to the currently selected campaign when one is active; otherwise exports all accessible image/video attachments. Import uses Mantine `FileButton` to avoid an uncontrolled `<input>` and keeps the loading state isolated to `mediaZipImporting`.
+
+**Tests:** 7 PHP tests (`WPSG_P48F_Media_Export_Test`) — 202 with job ID, mime filter, campaign filter, job type assertion, 403 for non-admin (export + import), 400 for import without file. Full 906-test suite green.
 
 ---
 

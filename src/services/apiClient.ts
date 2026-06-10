@@ -391,6 +391,16 @@ export class ApiClient extends HttpTransportImpl {
     return this._export.startAuditLogBinaryExport(params);
   }
 
+  startMediaLibraryBinaryExport(
+    params?: Parameters<import('./api/exportApi').ExportApi['startMediaLibraryBinaryExport']>[0],
+  ): Promise<{ jobId: string; status: import('./api/exportApi').ExportJobStatus }> {
+    return this._export.startMediaLibraryBinaryExport(params);
+  }
+
+  importMediaLibraryBinary(file: File): Promise<{ imported: Array<{ id: number; url: string }>; skipped: string[] }> {
+    return this._export.importMediaLibraryBinary(file);
+  }
+
   getExportJob(jobId: string): Promise<import('./api/exportApi').ExportJob> {
     return this._export.getExportJob(jobId);
   }
