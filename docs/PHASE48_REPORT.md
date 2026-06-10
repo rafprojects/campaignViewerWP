@@ -16,6 +16,8 @@
 | P48-F | Exports — media library binary export (reuses Export Engine) | Done | Small-Medium |
 | P48-G | Adapters — Coverflow / 3D adapter | Done | Medium |
 | P48-H | Adapters — Mosaic / Pinterest adapter | Done | Medium-High |
+| P48-I | Spaces — multi-shortcode admin isolation & UX clarity | Done | Medium |
+| P48-J | Auth bar — global display mode setting + SpaceSwitcher polish | Done | Small |
 
 ---
 
@@ -406,7 +408,138 @@ The adapter registry has no irregular-tile-size layout. A mosaic layout (large h
 
 ---
 
+---
+
+## Track P48-I — Multi-Shortcode Admin Panel Isolation & UX Clarity
+
+### Problem
+
+Two related bugs surfaced during Phase 48 manual testing:
+
+1. **Admin panel/settings does not open for non-default spaces.** Even with a single `[super-gallery space="test-2"]` shortcode on a page, clicking the settings or admin panel button in the AuthBar produced no visible result.
+2. **Multi-shortcode "last wins".** When two shortcodes share a page (`[super-gallery space="test-2"]` + `[super-gallery space="test-3"]`), the admin can only reach test-3's settings/admin panel via the floating AuthBar button. test-2's controls are inaccessible without scrolling to that specific gallery.
+3. **No space identity in UI.** `SettingsPanel` showed a generic "Space" badge with no space name. `AdminPanel` had no awareness of which space it was launched from (`initialSpaceId` was never wired). The admin had no contextual signal for which space they were managing.
+
+### Root-cause investigation
+
+- **"Doesn't open" root cause:** The scroll-restoration effect in `AppContent` (lines 137–156, `requestAnimationFrame(() => window.scrollTo(...))`) runs independently in each React root on mount. The last-mounted root's scroll override pushes the first root's gallery (and its AuthBar button) out of viewport, so the button is present but not visible.
+- **"Last wins" root cause:** Mount divs had no `id` attribute. `getRootId()` fell back to index-based IDs (`wpsg-<page-slug>-0`, `...-1`). No per-instance localStorage scoping → both roots compete for the same view-state keys. Additionally, the WP admin bar provided no per-space navigation, leaving the AuthBar floating button as the only entrypoint.
+- **`AdminPanel` wiring gap:** `App.tsx` was passing `spaceId` to `CardGallery` and `SettingsPanel` but NOT to `AdminPanel`. AdminPanel always defaulted to `selectedSpaceId = 'all'`.
+
+### Fix — implemented in 4 layers
+
+**Layer 1 — PHP: stable per-instance IDs** (`class-wpsg-embed.php`)
+
+- Added `$space_name` from the resolved space object (or slug as fallback).
+- Generated a stable, deduped `$instance_id` (`wpsg-<slug>`, `wpsg-<slug>-2` if collision) tracked in `$GLOBALS['wpsg_instance_ids']`.
+- Accumulated `$GLOBALS['wpsg_spaces_on_page'][$instance_id]` (id, slug, name) for admin bar use.
+- Added `id="<?= esc_attr($instance_id) ?>"` to the mount div — `getRootId()` now uses `host.id` (highest priority path) making rootIds space-scoped and stable across page loads.
+- Included `spaceName` and `instanceId` in `data-wpsg-config` so React receives them without an extra API call.
+- Added `admin_bar_delegation_js()`: a once-emitted JS snippet that listens for `[data-wpsg-open]` clicks from the WP admin bar and calls the per-instance opener (`window.__wpsgOpen_<instanceId>`).
+- Added `register_admin_bar_nodes()`: hooks into `admin_bar_menu` at priority 90, adds a "WP Super Gallery" parent node and per-space children (Settings / Admin Panel) with `data-wpsg-open` attributes. Gated on `manage_wpsg` capability.
+
+**Layer 2 — React: per-instance window opener** (`src/App.tsx`, `src/main.tsx`)
+
+- Added `spaceName` and `instanceId` to `NodeConfig` and all mount-prop construction sites.
+- Threaded `spaceName` and `instanceId` through `AppProps` → `App` → `AppContent`.
+- Added `useEffect` in `AppContent` to register `window.__wpsgOpen_<instanceId>` (opens admin or settings drawer); cleaned up on unmount.
+- Added `{...(spaceId !== undefined && { initialSpaceId: String(spaceId) })}` and `spaceName` props to `<AdminPanel>`.
+- Added `spaceName` prop to `<AuthBar>` and `<SettingsPanel>`.
+
+**Layer 3 — UX: space identity visibility** (`AdminPanel.tsx`, `SettingsPanel.tsx`, `AuthBar.tsx`)
+
+- `AdminPanel`: Added `initialSpaceId?: string` prop; seeds `useReloadSafeView('admin_space', initialSpaceId ?? 'all')` so the space dropdown pre-selects the gallery's space on open. Added `spaceName` badge next to the "Admin Panel" title when a specific space is targeted.
+- `SettingsPanel`: Added `spaceName?: string` prop; changed the drawer badge from the static "Space" label to `{spaceName ?? \`Space ${spaceId}\`}`.
+- `AuthBar` / `AuthBarFull`: Added `spaceName?: string` prop; the Settings tooltip now shows `"<spaceName> — Settings"` when set.
+
+**Layer 4 — WP Admin Bar: cross-instance navigation** (PHP side above; React opener above)
+
+The WP admin bar now lists all gallery instances on the current page. Each space gets a sub-menu with "Settings" and "Admin Panel" links. Clicking either calls the per-instance window opener, scrolls to the correct gallery, and opens the correct panel — without the admin needing to find the AuthBar button manually.
+
+### Acceptance criteria
+
+- `.wp-super-gallery` divs have `id="wpsg-test-2"` (etc.) in page source.
+- Admin panel opened from test-2's gallery pre-selects test-2 in the space dropdown.
+- Settings drawer header shows space name ("test-2") not just "Space".
+- Admin panel header shows the space name badge when a specific space is targeted.
+- AuthBar Settings tooltip shows the space name.
+- WP admin bar shows "WP Super Gallery → test-2 → Settings / Admin Panel" nodes.
+- Clicking a WP admin bar node opens the correct space's panel.
+
+### Validation
+
+- Built with `npm run build:wp`, deployed via `update_dev_plugin.sh`.
+- Manual test: page with two shortcodes (`test-2` and `test-3`); confirmed both AuthBars are visible; confirmed each opens its own space's panel; confirmed WP admin bar navigation; confirmed TypeScript clean (`npx tsc --noEmit`).
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` | Stable instance IDs; spaceName/instanceId in node config; mount div `id`; delegation JS; admin bar nodes |
+| `src/main.tsx` | Added `spaceName`, `instanceId` to `NodeConfig`; threaded through all mount sites |
+| `src/App.tsx` | Window opener `useEffect`; `initialSpaceId`/`spaceName` to AdminPanel; `spaceName` to AuthBar/SettingsPanel |
+| `src/components/Admin/AdminPanel.tsx` | `initialSpaceId` seeds space dropdown; `spaceName` badge in header |
+| `src/components/Admin/SettingsPanel.tsx` | Space name in drawer header badge |
+| `src/components/Auth/AuthBar.tsx` | Space name in Settings tooltip |
+
+**Revision (P48-J follow-on):** The tooltip-label approach was replaced with the `SpaceSwitcher` component (see P48-J). `AuthBar` was updated to pass `instanceId` (not `spaceName`) down to all three sub-components.
+
+---
+
+## Track P48-J — Auth Bar Global Display Mode + SpaceSwitcher Polish
+
+### Problem
+
+Two issues found during P48-I manual testing:
+
+1. **`auth_bar_display_mode` could not be changed** — the setting existed in the front-end `SettingsPanel` but was never in `$space_overridable_fields`, so saving it from the space-level drawer was silently a no-op. The setting has no meaning per-space (the auth bar is a page-level element), so per-space overrides are the wrong model entirely.
+2. **SpaceSwitcher badge did not appear** — `emit_page_spaces_js` gated on `manage_wpsg` only; in fresh wp-env installs where the plugin activation hook hadn't run, administrators had `manage_options` but not `manage_wpsg`. Also, the badge was suppressed entirely on single-space pages, breaking visual uniformity.
+
+### Fix
+
+**Global auth bar display mode** (`class-wpsg-settings-renderer.php`, `class-wpsg-settings-core-fields.php`)
+
+- Added a new "Auth Bar" settings section to the WP Admin → Super Gallery → Settings page.
+- Fields: `auth_bar_display_mode` (select) and `auth_bar_drag_margin` (number). Both were already stored globally — this just exposes them in the admin UI.
+- Removed `Auth Bar Display Mode` and `Drag Margin` controls from the front-end `SettingsPanel` drawer (`GeneralSettingsSection.tsx`). Backdrop Blur and Mobile Breakpoint remain there as visual/responsive preferences.
+
+**Per-page shortcode override** (`class-wpsg-embed.php`, `src/main.tsx`, `src/App.tsx`)
+
+- Added `auth_bar_mode` shortcode attribute: `[super-gallery space="foo" auth_bar_mode="draggable"]`.
+- Validated against the allowed enum; emitted as `authBarMode` in `data-wpsg-config` only when present.
+- `NodeConfig` in `main.tsx` extended with `authBarMode?: string`; threaded through all mount paths.
+- `AppContent` in `App.tsx` computes `effectiveAuthBarMode = authBarMode ?? resolvedSettings.authBarDisplayMode` and passes it to `<AuthBar displayMode={...}>`.
+
+**SpaceSwitcher polish** (`src/components/Auth/SpaceSwitcher.tsx`, `class-wpsg-embed.php`)
+
+- `emit_page_spaces_js`: added `current_user_can('manage_options')` as fallback capability check.
+- `SpaceSwitcher`: always renders a space identity badge (non-interactive on single-space pages, dropdown on multi-space pages). Removed the `pageSpaces.length <= 1` early return. Badge shows `ChevronDown` icon only when dropdown is available.
+
+### Acceptance criteria
+
+- WP Admin → Super Gallery → Settings shows an "Auth Bar" section with Display Mode and Drag Margin fields.
+- Changing the mode there takes effect on all pages without a shortcode override.
+- `[super-gallery space="foo" auth_bar_mode="bar"]` overrides the global for that page.
+- SpaceSwitcher badge is always visible in the floating AuthBar (and all other modes) for admin users — non-interactive on single-space pages, dropdown on multi-space pages.
+- `auth_bar_display_mode` / `authBarDragMargin` selectors are gone from the front-end Settings drawer.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-embed.php` | `auth_bar_mode` shortcode attr; `authBarMode` in node config; `manage_options` fallback in `emit_page_spaces_js` |
+| `wp-plugin/.../class-wpsg-settings-renderer.php` | Auth Bar section + 2 fields registered |
+| `wp-plugin/.../class-wpsg-settings-core-fields.php` | `render_authbar_section`, `render_auth_bar_display_mode_field`, `render_auth_bar_drag_margin_field` |
+| `src/main.tsx` | `authBarMode` added to `NodeConfig`; threaded through all 3 mount paths |
+| `src/App.tsx` | `authBarMode` prop; `effectiveAuthBarMode` override; `GalleryBehaviorSettings` import |
+| `src/components/Auth/SpaceSwitcher.tsx` | Always-visible badge; dropdown conditional on 2+ spaces |
+| `src/components/Settings/GeneralSettingsSection.tsx` | Removed Display Mode + Drag Margin controls |
+
+---
+
 ## Follow-on candidates (not in scope for Phase 48)
+
+- Settings panel open/close animation variants — the Drawer currently uses `slide-left` (200 ms). A future track should expose a `settingsPanelAnimation` setting in SettingsPanel (e.g. slide-left, fade, scale, none) so admins can match their site's motion style.
 
 - Cross-Space Campaign Move (P47 follow-on) — medium complexity, deferred.
 - Per-Space Library Isolation (Overlays / Fonts) — requires `wpsg_space_library_assoc` join table, deferred.
