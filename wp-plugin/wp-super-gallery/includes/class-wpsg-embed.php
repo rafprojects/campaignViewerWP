@@ -74,9 +74,28 @@ class WPSG_Embed {
             'allowUserThemeOverride' => $allow_user_theme_override,
         ];
 
+        // P49-C: i18n payload — locale + PHP-side translated strings for the React app.
+        $i18n = [
+            'locale'  => get_locale(),
+            'strings' => apply_filters('wpsg_i18n_strings', [
+                'close'         => __('Close', 'wp-super-gallery'),
+                'loading'       => __('Loading…', 'wp-super-gallery'),
+                'error'         => __('An error occurred. Please try again.', 'wp-super-gallery'),
+                'noMedia'       => __('No media found.', 'wp-super-gallery'),
+                'uploadFiles'   => __('Upload files', 'wp-super-gallery'),
+                'chooseFiles'   => __('Choose files', 'wp-super-gallery'),
+                'dragDropFiles' => __('or drag & drop files here', 'wp-super-gallery'),
+                'cancel'        => __('Cancel', 'wp-super-gallery'),
+                'save'          => __('Save', 'wp-super-gallery'),
+                'delete'        => __('Delete', 'wp-super-gallery'),
+                'confirm'       => __('Confirm', 'wp-super-gallery'),
+            ]),
+        ];
+
         return 'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';'
             . 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
-            . 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';';
+            . 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';'
+            . 'window.__WPSG_I18N__ = ' . wp_json_encode($i18n) . ';';
     }
 
     public static function add_asset_cache_headers() {
