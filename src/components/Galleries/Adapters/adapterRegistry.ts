@@ -57,6 +57,9 @@ const CoverflowAdapter = lazy(() =>
 const PinterestAdapter = lazy(() =>
   import('@/components/Galleries/Adapters/pinterest/PinterestAdapter').then((m) => ({ default: m.PinterestAdapter })),
 );
+const StackedDeckAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/stacked/StackedDeckAdapter').then((m) => ({ default: m.StackedDeckAdapter })),
+);
 const LazyLayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
 );
@@ -171,6 +174,20 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     capabilities: ['grid-layout', 'lightbox'],
     settingGroups: ['media-frame', 'photo-grid', 'tile-appearance'],
     component: PinterestAdapter as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'stacked',
+    label: 'Stacked',
+    optionLabels: {
+      'unified-gallery': 'Stacked (Deck of Cards)',
+      'per-type-gallery': 'Stacked (Deck of Cards)',
+      'campaign-override': 'Stacked',
+    },
+    // P50-C: card-deck layout; adapter owns its own cycle state.
+    capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
+    settingGroups: ['media-frame'],
+    component: StackedDeckAdapter as ComponentType<GalleryAdapterProps>,
+    paginationOwnership: 'adapter',
   },
   {
     id: 'spotlight',

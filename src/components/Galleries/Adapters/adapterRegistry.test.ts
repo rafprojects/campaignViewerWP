@@ -224,6 +224,30 @@ describe('adapterRegistry', () => {
     expect(snap?.disabled).toBeFalsy();
   });
 
+  // P50-C: Stacked/Deck adapter registry coverage
+  it('registers the stacked adapter with correct option labels', () => {
+    const options = getAdapterSelectOptions({ context: 'unified-gallery' });
+    const stacked = options.find((o) => o.value === 'stacked');
+    expect(stacked).toBeDefined();
+    expect(stacked?.label).toBe('Stacked (Deck of Cards)');
+  });
+
+  it('stacked adapter declares deck capabilities and owns pagination', () => {
+    const registration = getAdapterRegistration('stacked');
+    expect(registration?.capabilities).toEqual(
+      expect.arrayContaining(['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe']),
+    );
+    expect(registration?.capabilities).not.toContain('listing-compatible');
+    expect(registration?.settingGroups).toEqual(['media-frame']);
+    expect(adapterOwnsPagination('stacked')).toBe(true);
+  });
+
+  it('stacked adapter is not disabled at mobile breakpoint', () => {
+    const mobileOptions = getAdapterSelectOptions({ context: 'per-breakpoint-gallery', breakpoint: 'mobile' });
+    const stacked = mobileOptions.find((o) => o.value === 'stacked');
+    expect(stacked?.disabled).toBeFalsy();
+  });
+
   // P35-A: listing-compatible capability and pagination ownership
   describe('P35-A listing-compatible capability', () => {
     const LISTING_ADAPTER_IDS = ['compact-grid', 'masonry', 'justified', 'classic', 'layout-builder'] as const;

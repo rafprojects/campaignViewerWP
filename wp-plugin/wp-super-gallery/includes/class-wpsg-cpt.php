@@ -40,6 +40,9 @@ class WPSG_CPT {
         'layout-builder',
         'spotlight',      // P31-E: Spotlight / Hero adapter
         'scroll-snap',    // P31-F: Vertical Scroll Snap adapter
+        'coverflow',      // P48-G: Coverflow / 3D adapter (backfilled in P50-C)
+        'pinterest',      // P48: Pinterest mosaic adapter (backfilled in P50-C)
+        'stacked',        // P50-C: Stacked / Deck adapter
     ];
 
     public static function register() {

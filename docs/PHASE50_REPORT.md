@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-09
+**Last updated:** 2026-06-11
 
 ### Tracks
 
@@ -10,9 +10,9 @@
 |-------|-------------|--------|--------|
 | P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | To do | Medium |
 | P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | To do | Medium |
-| P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | To do | Medium |
+| P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
 | P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | To do | Medium-High |
-| P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | To do | Low |
+| P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
 | P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | To do | Medium |
 | P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
 
@@ -139,6 +139,15 @@ No card-stack adapter exists in the registry. This layout is well-suited for cam
 
 - Manual: open a gallery in stacked mode; swipe and click; confirm all interactions; test on a mobile viewport.
 
+### Implementation rationale (2026-06-11)
+
+- **Claims re-verified before building:** `useSwipe` exists at `src/lib/useSwipe.ts` with the `onSwipeLeft`/`onSwipeRight` API the track assumes; no stack-style adapter exists in the registry. `CoverflowAdapter` (P48-G) was used as the structural template (`useCarousel` + `useLightbox` + `LazyImage` + `_shared/runtimeCommon` helpers, lazy registry entry).
+- **Implementation:** `StackedDeckAdapter` (id `stacked`). Top card is `media[currentIndex]`; each card's depth is `(idx − currentIndex) mod N`. Peek transforms follow the spec exactly — alternating sign per depth level, ±4 px translateX and ±1.5° rotate per level — with z-index descending by depth. Cards deeper than 4 stay mounted but hidden so transforms transition smoothly when the stack rotates. Dismissal (swipe in either direction, or ArrowRight) flies the top card out (`translateX(±130%)`, 320 ms, elevated z-index) before it settles at the back; ArrowLeft cycles backward; Enter/Space on the stage opens the lightbox; click semantics per spec (top → lightbox, peeking → promote). Transitions are class-based (`wpsg-stacked-card`) with a `prefers-reduced-motion` override.
+- **Registration:** capabilities `carousel-layout`/`lightbox`/`keyboard-nav`/`touch-swipe`, settingGroups `['media-frame']` (no new setting keys, so no PHP field-map changes), `paginationOwnership: 'adapter'`, lazy-loaded (own Vite chunk confirmed in the build output).
+- **Deviation from the track's file list — PHP allowlist:** the doc omitted that `WPSG_CPT::VALID_ADAPTERS` allowlists `adapterId` values in the settings sanitizer; without an entry, a saved `stacked` adapterId is silently dropped. Re-evaluation also surfaced a **live P48 bug**: `coverflow` and `pinterest` were registered in the TS registry but never added to `VALID_ADAPTERS`, so neither could actually be persisted in gallery configs. Backfilled both alongside `stacked` (in `class-wpsg-cpt.php` and the sanitizer's no-CPT fallback list) and added a TS↔PHP adapter-id parity test to `adapterSettingsParity.test.ts` so a future adapter cannot repeat this.
+- **Known nit (out of scope, recorded for a future slice):** `CoverflowAdapter`'s hover CSS targets `[data-wpsg="…"][data-wpsg-role="…"]` attributes, but `getWpsgDebugProps` emits `data-wpsg-component`/`data-wpsg-slot` and only in debug mode — so Coverflow's zoom-on-hover affordance never activates in production. The stacked adapter uses stable class names instead.
+- **Validation done:** 12-test colocated suite using the real `useCarousel`/`useSwipe` (deck order, peek offsets, fly-out + settle, promotion, keyboard nav, lightbox, empty/single/video states); registry coverage block; added to the shared adapter smoke suite; `tsc --noEmit` clean; full frontend suite 2220/2220 green; `php -l` clean on both edited PHP files; production build passes. **Remaining:** the manual WordPress/mobile-viewport pass listed above.
+
 ---
 
 ## Track P50-D — Isotope / Filterable Grid Adapter
@@ -196,6 +205,12 @@ No masonry-with-entrance-animation adapter exists. The existing `MasonryGallery`
 ### Validation
 
 - Manual: render a gallery in waterfall mode; confirm staggered fade-in; resize window; confirm no re-animation.
+
+### Re-evaluation & closure (2026-06-11)
+
+The track's premise is stale: **P31-G already shipped this feature** as a Masonry adapter setting rather than a separate adapter. `masonryEntranceAnimation: 'none' | 'waterfall'` plus `masonryEntranceStagger` (default 60 ms) live in the masonry setting group, implemented in `MasonryGallery.tsx` with per-tile `animation-delay: index × stagger`, an `opacity 0→1` / `translateY → 0` keyframe, and a `prefers-reduced-motion` guard. That covers every acceptance criterion here: identical packing (it *is* MasonryGallery), staggered first-render entrance by index, and no re-animation on subsequent renders (the CSS animation runs once per mounted tile).
+
+**Decision:** no separate `waterfall` adapter id. A standalone adapter would duplicate MasonryGallery behind a second registry entry whose only difference is defaulting an existing setting on — adding registry noise, an extra settings-parity surface, and a redundant entry in every adapter selector. Track closed as already satisfied; the Phase 22 deferred-adapter backlog accounting in this doc's Rationale §2 should count Waterfall as previously delivered.
 
 ---
 

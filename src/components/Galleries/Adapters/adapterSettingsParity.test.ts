@@ -116,6 +116,35 @@ describe('adapter settings parity (P31-D)', () => {
     ].join('\n')).toHaveLength(0);
   });
 
+  // P50-C: adapter-id allowlist parity. P48 registered coverflow/pinterest in
+  // the TS registry without adding them to WPSG_CPT::VALID_ADAPTERS, so the
+  // PHP sanitizer silently dropped those adapterId values on save. This guard
+  // keeps the two lists in sync for every future adapter.
+  it('every canonical registry adapter id is present in WPSG_CPT::VALID_ADAPTERS', () => {
+    const cptSource = readSource('wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php');
+
+    const adaptersBlockStart = registrySource.indexOf('const BUILTIN_ADAPTERS');
+    const adaptersBlockEnd   = registrySource.indexOf('\n];', adaptersBlockStart);
+    const adaptersBlock      = registrySource.slice(adaptersBlockStart, adaptersBlockEnd);
+    const registryIds        = [...adaptersBlock.matchAll(/^\s*id:\s*'([^']+)'/gm)].map((m) => m[1]);
+
+    const validStart = cptSource.indexOf('const VALID_ADAPTERS = [');
+    const validEnd   = cptSource.indexOf('];', validStart);
+    const validBlock = cptSource.slice(validStart, validEnd);
+    const phpIds     = [...validBlock.matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
+
+    expect(registryIds.length).toBeGreaterThan(10);
+    expect(phpIds.length).toBeGreaterThan(10);
+
+    const missing = registryIds.filter((id) => !phpIds.includes(id));
+    expect(missing, [
+      'One or more adapter ids are registered in the TS adapter registry but',
+      'missing from WPSG_CPT::VALID_ADAPTERS, so the PHP sanitizer will drop',
+      'them from saved gallery configs. Add to class-wpsg-cpt.php:',
+      ...missing.map((id) => `  '${id}',`),
+    ].join('\n')).toHaveLength(0);
+  });
+
   it('identifies legacy PHP map entries that have no registry counterpart', () => {
     // These are known orphan entries from formerly-dimension fields whose *Unit
     // companions were left in the PHP map when the control type changed to number.
