@@ -7,11 +7,11 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
         delete_option('wpsg_thumbnail_cache_index');
+        $this->delete_all_thumb_options();
         $this->cache_dir = WPSG_Thumbnail_Cache::get_cache_dir();
     }
 
     public function tearDown(): void {
-        // Clean up cache files.
         if ($this->cache_dir && is_dir($this->cache_dir)) {
             $files = glob($this->cache_dir . '/*');
             if (is_array($files)) {
@@ -23,10 +23,29 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
             }
         }
         delete_option('wpsg_thumbnail_cache_index');
+        $this->delete_all_thumb_options();
         parent::tearDown();
     }
 
-    // ── get_cache_dir ──────────────────────────────────────────────────────
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    /**
+     * Seed a cache entry in the new per-hash option format.
+     */
+    private function write_thumb_entry(string $hash, array $meta): void {
+        update_option('wpsg_thumb_' . $hash, $meta, false);
+    }
+
+    /**
+     * Delete all wpsg_thumb_* options (P49-F per-hash entries).
+     */
+    private function delete_all_thumb_options(): void {
+        global $wpdb;
+        $like = $wpdb->esc_like('wpsg_thumb_') . '%';
+        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like));
+    }
+
+    // ── get_cache_dir ──────────────────────────────────────────────────────────
 
     public function test_get_cache_dir_returns_path_under_uploads() {
         $dir = WPSG_Thumbnail_Cache::get_cache_dir();
@@ -44,7 +63,7 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertFileExists($dir . '/index.php');
     }
 
-    // ── get_cache_url ──────────────────────────────────────────────────────
+    // ── get_cache_url ──────────────────────────────────────────────────────────
 
     public function test_get_cache_url_returns_url_string() {
         $url = WPSG_Thumbnail_Cache::get_cache_url();
@@ -52,7 +71,7 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertStringContainsString(WPSG_Thumbnail_Cache::UPLOAD_DIR, $url);
     }
 
-    // ── cache_thumbnail ────────────────────────────────────────────────────
+    // ── cache_thumbnail ────────────────────────────────────────────────────────
 
     public function test_cache_thumbnail_rejects_empty_url() {
         $result = WPSG_Thumbnail_Cache::cache_thumbnail('', 'https://example.com/media/1');
@@ -66,7 +85,6 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
     }
 
     public function test_cache_thumbnail_stores_metadata_on_success() {
-        // Use pre_http_request filter to mock the download.
         add_filter('pre_http_request', function ($preempt, $args, $url) {
             return [
                 'response' => ['code' => 200, 'message' => 'OK'],
@@ -85,29 +103,33 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertTrue($result['cached']);
         $this->assertArrayHasKey('local_url', $result);
 
-        // Check index was updated.
-        $index = get_option('wpsg_thumbnail_cache_index', []);
-        $hash = hash('sha256', 'https://example.com/media/1');
-        $this->assertArrayHasKey($hash, $index);
-        $this->assertEquals('https://example.com/media/1', $index[$hash]['source_url']);
+        // P49-F: metadata is stored in a per-hash option, not the old index.
+        $hash  = hash('sha256', 'https://example.com/media/1');
+        $entry = get_option('wpsg_thumb_' . $hash, false);
+        $this->assertIsArray($entry);
+        $this->assertEquals('https://example.com/media/1', $entry['source_url']);
     }
 
-    // ── get_cached_url ─────────────────────────────────────────────────────
+    // ── get_cached_url ─────────────────────────────────────────────────────────
 
     public function test_get_cached_url_returns_null_for_uncached() {
         $result = WPSG_Thumbnail_Cache::get_cached_url('https://example.com/never-cached');
         $this->assertNull($result);
     }
 
-    public function test_get_cached_url_returns_null_for_expired() {
+    /**
+     * Legacy fallback: entries seeded in the old wpsg_thumbnail_cache_index array
+     * should still be readable via get_legacy_entry().
+     */
+    public function test_get_cached_url_returns_null_for_expired_legacy() {
         $hash = md5('https://example.com/expired');
         update_option('wpsg_thumbnail_cache_index', [
             $hash => [
-                'source_url'    => 'https://example.com/expired',
-                'local_url'     => 'https://example.com/uploads/wpsg-thumbnails/test.jpg',
-                'local_path'    => '/nonexistent/path.jpg',
-                'cached_at'     => time() - 999999, // Very old
-                'file_size'     => 100,
+                'source_url' => 'https://example.com/expired',
+                'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/test.jpg',
+                'local_path' => '/nonexistent/path.jpg',
+                'cached_at'  => time() - 999999,
+                'file_size'  => 100,
             ],
         ]);
 
@@ -115,15 +137,18 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertNull($result);
     }
 
-    public function test_get_cached_url_returns_null_if_file_missing() {
+    /**
+     * Legacy fallback: missing-file entry returns null.
+     */
+    public function test_get_cached_url_returns_null_if_file_missing_legacy() {
         $hash = md5('https://example.com/missing-file');
         update_option('wpsg_thumbnail_cache_index', [
             $hash => [
-                'source_url'    => 'https://example.com/missing-file',
-                'local_url'     => 'https://example.com/uploads/wpsg-thumbnails/missing.jpg',
-                'local_path'    => '/tmp/nonexistent-file-wpsg-test.jpg',
-                'cached_at'     => time(),
-                'file_size'     => 100,
+                'source_url' => 'https://example.com/missing-file',
+                'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/missing.jpg',
+                'local_path' => '/tmp/nonexistent-file-wpsg-test.jpg',
+                'cached_at'  => time(),
+                'file_size'  => 100,
             ],
         ]);
 
@@ -131,19 +156,22 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertNull($result);
     }
 
-    public function test_get_cached_url_returns_url_for_valid_entry() {
-        $dir = WPSG_Thumbnail_Cache::get_cache_dir();
+    /**
+     * Legacy fallback: valid entry in old index is promoted and returned.
+     */
+    public function test_get_cached_url_returns_url_for_valid_legacy_entry() {
+        $dir  = WPSG_Thumbnail_Cache::get_cache_dir();
         $hash = md5('https://example.com/valid');
         $path = $dir . '/' . $hash . '.jpg';
         file_put_contents($path, 'fake-image-data');
 
         update_option('wpsg_thumbnail_cache_index', [
             $hash => [
-                'source_url'    => 'https://example.com/valid',
-                'local_url'     => WPSG_Thumbnail_Cache::get_cache_url() . '/' . $hash . '.jpg',
-                'local_path'    => $path,
-                'cached_at'     => time(),
-                'file_size'     => 15,
+                'source_url' => 'https://example.com/valid',
+                'local_url'  => WPSG_Thumbnail_Cache::get_cache_url() . '/' . $hash . '.jpg',
+                'local_path' => $path,
+                'cached_at'  => time(),
+                'file_size'  => 15,
             ],
         ]);
 
@@ -152,16 +180,39 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertStringContainsString($hash, $result);
     }
 
-    // ── cache_oembed_thumbnail ─────────────────────────────────────────────
+    /**
+     * New format: entry stored directly in per-hash option is returned correctly.
+     */
+    public function test_get_cached_url_returns_url_for_new_format_entry() {
+        $dir      = WPSG_Thumbnail_Cache::get_cache_dir();
+        $source   = 'https://example.com/new-format';
+        $hash     = hash('sha256', $source);
+        $path     = $dir . '/' . $hash . '.jpg';
+        $expected = WPSG_Thumbnail_Cache::get_cache_url() . '/' . $hash . '.jpg';
+        file_put_contents($path, 'new-format-data');
 
-    public function test_cache_oembed_thumbnail_skips_empty_thumbnail() {
-        // Should not crash or create cache entries.
-        WPSG_Thumbnail_Cache::cache_oembed_thumbnail('https://example.com/video', []);
-        $index = get_option('wpsg_thumbnail_cache_index', []);
-        $this->assertEmpty($index);
+        $this->write_thumb_entry($hash, [
+            'source_url' => $source,
+            'local_url'  => $expected,
+            'local_path' => $path,
+            'cached_at'  => time(),
+            'file_size'  => 15,
+        ]);
+
+        $result = WPSG_Thumbnail_Cache::get_cached_url($source);
+        $this->assertEquals($expected, $result);
     }
 
-    // ── cache_campaign_thumbnails ──────────────────────────────────────────
+    // ── cache_oembed_thumbnail ─────────────────────────────────────────────────
+
+    public function test_cache_oembed_thumbnail_skips_empty_thumbnail() {
+        WPSG_Thumbnail_Cache::cache_oembed_thumbnail('https://example.com/video', []);
+        // No per-hash option should have been created.
+        $hash = hash('sha256', 'https://example.com/video');
+        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
+    }
+
+    // ── cache_campaign_thumbnails ──────────────────────────────────────────────
 
     public function test_cache_campaign_thumbnails_returns_zero_for_no_media() {
         $cid = wp_insert_post([
@@ -210,7 +261,7 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertEquals(1, $result['skipped']);
     }
 
-    // ── get_stats ──────────────────────────────────────────────────────────
+    // ── get_stats ──────────────────────────────────────────────────────────────
 
     public function test_get_stats_returns_expected_keys() {
         $stats = WPSG_Thumbnail_Cache::get_stats();
@@ -222,96 +273,116 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
     }
 
     public function test_get_stats_counts_valid_files() {
-        $dir = WPSG_Thumbnail_Cache::get_cache_dir();
-        $hash1 = md5('s1');
-        $hash2 = md5('s2');
+        $dir   = WPSG_Thumbnail_Cache::get_cache_dir();
+        $hash1 = hash('sha256', 's1');
+        $hash2 = hash('sha256', 's2');
         $path1 = $dir . '/' . $hash1 . '.jpg';
         $path2 = $dir . '/' . $hash2 . '.jpg';
         file_put_contents($path1, 'data1');
         file_put_contents($path2, 'data2data2');
 
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash1 => ['local_path' => $path1, 'cached_at' => time() - 100, 'file_size' => 5],
-            $hash2 => ['local_path' => $path2, 'cached_at' => time(), 'file_size' => 10],
-        ]);
+        $this->write_thumb_entry($hash1, ['local_path' => $path1, 'cached_at' => time() - 100, 'file_size' => 5]);
+        $this->write_thumb_entry($hash2, ['local_path' => $path2, 'cached_at' => time(), 'file_size' => 10]);
 
         $stats = WPSG_Thumbnail_Cache::get_stats();
         $this->assertEquals(2, $stats['totalFiles']);
         $this->assertEquals(15, $stats['totalSize']);
     }
 
-    // ── cleanup_expired ────────────────────────────────────────────────────
+    // ── cleanup_expired ────────────────────────────────────────────────────────
 
     public function test_cleanup_expired_removes_old_entries() {
-        $dir = WPSG_Thumbnail_Cache::get_cache_dir();
-        $hash = md5('cleanup-test');
+        $dir  = WPSG_Thumbnail_Cache::get_cache_dir();
+        $hash = hash('sha256', 'cleanup-test');
         $path = $dir . '/' . $hash . '.jpg';
         file_put_contents($path, 'old-data');
 
-        // Cached very long ago (well beyond 2× TTL).
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'local_path' => $path,
-                'cached_at'  => time() - (WPSG_Thumbnail_Cache::DEFAULT_TTL * 3),
-                'file_size'  => 8,
-            ],
+        $this->write_thumb_entry($hash, [
+            'local_path' => $path,
+            'cached_at'  => time() - (WPSG_Thumbnail_Cache::DEFAULT_TTL * 3),
+            'file_size'  => 8,
         ]);
 
         WPSG_Thumbnail_Cache::cleanup_expired();
 
         $this->assertFileDoesNotExist($path);
-        $index = get_option('wpsg_thumbnail_cache_index', []);
-        $this->assertArrayNotHasKey($hash, $index);
+        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
     }
 
     public function test_cleanup_expired_keeps_fresh_entries() {
-        $dir = WPSG_Thumbnail_Cache::get_cache_dir();
-        $hash = md5('fresh-test');
+        $dir  = WPSG_Thumbnail_Cache::get_cache_dir();
+        $hash = hash('sha256', 'fresh-test');
         $path = $dir . '/' . $hash . '.jpg';
         file_put_contents($path, 'fresh-data');
 
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'local_path' => $path,
-                'cached_at'  => time(),
-                'file_size'  => 10,
-            ],
+        $this->write_thumb_entry($hash, [
+            'local_path' => $path,
+            'cached_at'  => time(),
+            'file_size'  => 10,
         ]);
 
         WPSG_Thumbnail_Cache::cleanup_expired();
 
         $this->assertFileExists($path);
-        $index = get_option('wpsg_thumbnail_cache_index', []);
-        $this->assertArrayHasKey($hash, $index);
+        $this->assertIsArray(get_option('wpsg_thumb_' . $hash, false));
     }
 
-    // ── clear_all ──────────────────────────────────────────────────────────
+    // ── clear_all ──────────────────────────────────────────────────────────────
 
     public function test_clear_all_removes_files_and_resets_index() {
-        $dir = WPSG_Thumbnail_Cache::get_cache_dir();
-        $hash = md5('clear-test');
+        $dir  = WPSG_Thumbnail_Cache::get_cache_dir();
+        $hash = hash('sha256', 'clear-test');
         $path = $dir . '/' . $hash . '.jpg';
         file_put_contents($path, 'to-delete');
 
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'local_path' => $path,
-                'cached_at'  => time(),
-                'file_size'  => 9,
-            ],
+        $this->write_thumb_entry($hash, [
+            'local_path' => $path,
+            'cached_at'  => time(),
+            'file_size'  => 9,
         ]);
 
         $removed = WPSG_Thumbnail_Cache::clear_all();
         $this->assertEquals(1, $removed);
         $this->assertFileDoesNotExist($path);
-
-        $index = get_option('wpsg_thumbnail_cache_index', []);
-        $this->assertEmpty($index);
+        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
     }
 
     public function test_clear_all_returns_zero_when_empty() {
-        delete_option('wpsg_thumbnail_cache_index');
         $removed = WPSG_Thumbnail_Cache::clear_all();
         $this->assertEquals(0, $removed);
+    }
+
+    // ── maybe_migrate_legacy_index ─────────────────────────────────────────────
+
+    public function test_migration_moves_entries_to_per_hash_options() {
+        $hash1 = hash('sha256', 'migrate-url-1');
+        $hash2 = hash('sha256', 'migrate-url-2');
+        update_option('wpsg_thumbnail_cache_index', [
+            $hash1 => ['source_url' => 'migrate-url-1', 'cached_at' => time(), 'file_size' => 1],
+            $hash2 => ['source_url' => 'migrate-url-2', 'cached_at' => time(), 'file_size' => 2],
+        ]);
+
+        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
+
+        $this->assertIsArray(get_option('wpsg_thumb_' . $hash1, false));
+        $this->assertIsArray(get_option('wpsg_thumb_' . $hash2, false));
+        $this->assertFalse(get_option('wpsg_thumbnail_cache_index', false));
+    }
+
+    public function test_migration_is_idempotent() {
+        $hash = hash('sha256', 'idempotent-url');
+        update_option('wpsg_thumbnail_cache_index', [
+            $hash => ['source_url' => 'idempotent-url', 'cached_at' => time(), 'file_size' => 1],
+        ]);
+
+        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
+        $entry_after_first = get_option('wpsg_thumb_' . $hash, false);
+
+        // Second call: legacy option is gone, should be a no-op.
+        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
+        $entry_after_second = get_option('wpsg_thumb_' . $hash, false);
+
+        $this->assertEquals($entry_after_first, $entry_after_second);
+        $this->assertFalse(get_option('wpsg_thumbnail_cache_index', false));
     }
 }
