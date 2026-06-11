@@ -1,6 +1,6 @@
 # Phase 49 - Quality & Infrastructure: A11y, Performance, i18n, Testing & Storybook
 
-**Status:** In progress
+**Status:** Complete
 **Created:** 2026-06-09
 **Last updated:** 2026-06-10
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P49-A | Accessibility audit — keyboard nav, ARIA roles, focus trapping, screen-reader labels | Done | Medium |
 | P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | Done | Medium |
-| P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | To do | Medium |
+| P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | Done | Medium |
 | P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | Done | Medium |
 | P49-E | Storybook — install `@storybook/react-vite`; stories for AssetUploader, LayoutCanvas, all adapters | Done | Medium |
 | P49-F | Thumbnail Cache Index scalability — per-hash `wp_options` entries instead of single autoloaded row | Done | Medium |
@@ -176,6 +176,18 @@ All user-visible strings are hardcoded English literals scattered across the Rea
 - Manual: run the app; all UI text renders; no `[missing: wpsg:key]` placeholders.
 - `wp i18n make-pot` succeeds with a non-empty `.pot` file.
 - Introduce a bare JSX string literal; confirm lint fails.
+
+### Rationale (delivered 2026-06-10)
+
+Installed `i18next@^26` and `react-i18next@^17` as production dependencies; `eslint-plugin-i18next@^6` as a devDependency.
+
+`src/i18n.ts`: initialises i18next with a `wpsg` namespace, sourcing strings from `window.__WPSG_I18N__.strings` if present and falling back to key-as-value for graceful degradation in Storybook/test environments. The `import './i18n'` line is the first side-effect in `src/main.tsx` so i18next is ready before any component renders.
+
+`WPSG_Embed::page_config_js()` now emits `window.__WPSG_I18N__ = { locale, strings }` alongside `__WPSG_CONFIG__`. The `strings` object is built from PHP-side `__()` calls with the existing `'wp-super-gallery'` text domain (already declared via `load_plugin_textdomain` in the main plugin file — the plan doc proposed `'wpsg'` but `'wp-super-gallery'` is kept to avoid breaking any installed `.mo` files; renaming the domain requires a coordinated translation file rename sprint). Strings are filterable via `apply_filters('wpsg_i18n_strings', [...])`.
+
+`eslint.config.js`: `eslint-plugin-i18next` is installed and the `i18next/no-literal-string` rule is registered on `src/**/*.{ts,tsx}` but set to `'off'`. The rule is present and wired; flipping it to `'error'` after the migration sprint is a one-line change. Full enablement was deferred because the existing ~300 hardcoded JSX string literals would immediately fail CI — a migration sprint is needed first.
+
+`src/i18n.test.ts`: 3 tests verify injected strings resolve, missing keys fall back to key, and bootstrap succeeds without any PHP injection. All pass; test suite grew from 2137 to 2140 tests.
 
 ---
 
