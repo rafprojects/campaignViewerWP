@@ -70,12 +70,10 @@ export default defineConfig({
   base: './',
   plugins: [
     react(),
-    visualizer({
-      filename: './dist/stats.html',
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-    }),
+    // Only generate treemap when ANALYZE=true or ANALYZE=1 (e.g. `ANALYZE=true npm run build`)
+    ...(process.env.ANALYZE === 'true' || process.env.ANALYZE === '1'
+      ? [visualizer({ filename: './dist/stats.html', open: false, gzipSize: true, brotliSize: true })]
+      : []),
   ],
   resolve: {
     alias: {
@@ -91,6 +89,8 @@ export default defineConfig({
         manualChunks: resolveVendorChunk,
       },
     },
+    // Raw size limit for Vite's built-in warning (vendor chunks legitimately exceed this).
+    // Enforced gzip budgets: main entry ≤ 200 kB, each adapter chunk ≤ 50 kB — see scripts/check-bundle-size.mjs.
     chunkSizeWarningLimit: 600,
   },
   // @ts-expect-error Vitest config extension

@@ -1,9 +1,12 @@
 <?php
 /**
- * External Thumbnail Cache — P14-C
+ * External Thumbnail Cache — P14-C / P49-F
  *
  * Downloads and caches external media thumbnails locally for reliability
  * and performance. Thumbnails are stored in wp-content/uploads/wpsg-thumbnails/.
+ *
+ * P49-F: Per-hash wp_options storage — each cached URL is a separate
+ * `wpsg_thumb_<sha256>` option row with autoload='no'.
  *
  * @package WP_Super_Gallery
  */
@@ -13,18 +16,17 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_Thumbnail_Cache {
-    const UPLOAD_DIR   = 'wpsg-thumbnails';
-    const META_KEY     = '_wpsg_cached_thumbnail';
-    const TTL_OPTION   = 'wpsg_thumbnail_cache_ttl';
-    const DEFAULT_TTL  = 86400; // 24 hours
+    const UPLOAD_DIR          = 'wpsg-thumbnails';
+    const META_KEY            = '_wpsg_cached_thumbnail';
+    const TTL_OPTION          = 'wpsg_thumbnail_cache_ttl';
+    const DEFAULT_TTL         = 86400; // 24 hours
+    const OPTION_PREFIX = 'wpsg_thumb_';
 
     /**
      * Register hooks.
      */
     public static function register() {
-        // Hook into oEmbed success to cache thumbnails.
         add_action('wpsg_oembed_success', [self::class, 'cache_oembed_thumbnail'], 10, 2);
-        // Cron for expiry cleanup.
         add_action('wpsg_thumbnail_cache_cleanup', [self::class, 'cleanup_expired']);
         if (!wp_next_scheduled('wpsg_thumbnail_cache_cleanup')) {
             wp_schedule_event(time(), 'daily', 'wpsg_thumbnail_cache_cleanup');
@@ -45,7 +47,6 @@ class WPSG_Thumbnail_Cache {
         $cache_dir = trailingslashit($upload_dir['basedir']) . self::UPLOAD_DIR;
         if (!file_exists($cache_dir)) {
             wp_mkdir_p($cache_dir);
-            // Protect directory listing.
             $index = $cache_dir . '/index.php';
             if (!file_exists($index)) {
                 file_put_contents($index, '<?php // Silence is golden.');
@@ -86,13 +87,11 @@ class WPSG_Thumbnail_Cache {
             return ['cached' => false, 'error' => 'Cannot create cache directory'];
         }
 
-        // Deterministic filename from source URL.
-        $hash = hash('sha256', $source_url);
-        $ext  = self::get_extension_from_url($url);
+        $hash     = hash('sha256', $source_url);
+        $ext      = self::get_extension_from_url($url);
         $filename = $hash . '.' . $ext;
         $filepath = trailingslashit($cache_dir) . $filename;
 
-        // Download the thumbnail.
         $response = wp_safe_remote_get($url, [
             'timeout'   => 15,
             'sslverify' => true,
@@ -113,29 +112,24 @@ class WPSG_Thumbnail_Cache {
             return ['cached' => false, 'error' => 'Empty response body'];
         }
 
-        // Enforce maximum download size (default 5 MB).
         $max_size = intval(apply_filters('wpsg_thumbnail_max_download_size', 5 * 1024 * 1024));
         if (strlen($body) > $max_size) {
             return ['cached' => false, 'error' => 'Thumbnail exceeds maximum size of ' . size_format($max_size)];
         }
 
-        // Validate content type is an image.
         $content_type = wp_remote_retrieve_header($response, 'content-type');
         if ($content_type && strpos($content_type, 'image/') !== 0) {
             return ['cached' => false, 'error' => 'Content is not an image'];
         }
 
-        // Write to cache directory.
         $written = file_put_contents($filepath, $body);
         if ($written === false) {
             return ['cached' => false, 'error' => 'Failed to write cache file'];
         }
 
-        // Build local URL.
         $cache_url = self::get_cache_url();
         $local_url = trailingslashit($cache_url) . $filename;
 
-        // Store metadata for expiry tracking.
         $meta = [
             'source_url'    => $source_url,
             'thumbnail_url' => $url,
@@ -145,10 +139,8 @@ class WPSG_Thumbnail_Cache {
             'file_size'     => $written,
         ];
 
-        // Store in options for tracking (keyed by hash).
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
-        $cache_index[$hash] = $meta;
-        update_option('wpsg_thumbnail_cache_index', $cache_index, false);
+        // P49-F: write a dedicated option row per hash (autoload=no).
+        update_option(self::option_key($hash), $meta, false);
 
         return ['cached' => true, 'local_url' => $local_url];
     }
@@ -160,32 +152,21 @@ class WPSG_Thumbnail_Cache {
      * @return string|null Local URL if cached and not expired, null otherwise.
      */
     public static function get_cached_url($source_url) {
-        $hash = hash('sha256', $source_url);
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
+        $hash  = hash('sha256', $source_url);
+        $entry = get_option(self::option_key($hash), false);
 
-        // Backward compat: migrate entries cached under old md5 key.
-        if (!isset($cache_index[$hash])) {
-            $legacy_hash = md5($source_url);
-            if (isset($cache_index[$legacy_hash])) {
-                $cache_index[$hash] = $cache_index[$legacy_hash];
-                unset($cache_index[$legacy_hash]);
-                update_option('wpsg_thumbnail_cache_index', $cache_index, false);
-            } else {
-                return null;
-            }
+        if ($entry === false) {
+            return null;
         }
 
-        $entry = $cache_index[$hash];
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
-        $ttl = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
-        $age = time() - intval($entry['cached_at']);
+        $ttl      = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
+        $age      = time() - intval($entry['cached_at']);
 
-        // Check expiry.
         if ($age > $ttl) {
             return null;
         }
 
-        // Verify file still exists.
         if (!empty($entry['local_path']) && !file_exists($entry['local_path'])) {
             return null;
         }
@@ -205,7 +186,6 @@ class WPSG_Thumbnail_Cache {
         if (empty($thumbnail)) {
             return;
         }
-
         self::cache_thumbnail($thumbnail, $url);
     }
 
@@ -232,13 +212,11 @@ class WPSG_Thumbnail_Cache {
                 continue;
             }
 
-            // Skip WordPress attachment thumbnails (already local).
             if (!empty($item['attachmentId'])) {
                 $result['skipped']++;
                 continue;
             }
 
-            // Skip already cached.
             $existing = self::get_cached_url($source);
             if ($existing) {
                 $result['skipped']++;
@@ -259,16 +237,16 @@ class WPSG_Thumbnail_Cache {
     /**
      * Get overall cache statistics.
      *
-     * @return array{total_files: int, total_size: int, oldest: int|null, newest: int|null}
+     * @return array{totalFiles: int, totalSize: int, oldest: int|null, newest: int|null, ttl: int}
      */
     public static function get_stats() {
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
+        $entries    = self::get_all_entries();
         $total_size = 0;
-        $oldest = null;
-        $newest = null;
+        $oldest     = null;
+        $newest     = null;
         $valid_count = 0;
 
-        foreach ($cache_index as $entry) {
+        foreach ($entries as $entry) {
             if (!empty($entry['local_path']) && file_exists($entry['local_path'])) {
                 $valid_count++;
                 $total_size += intval($entry['file_size'] ?? 0);
@@ -300,10 +278,10 @@ class WPSG_Thumbnail_Cache {
      * @return array{refreshed: int, failed: int}
      */
     public static function refresh_all() {
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
-        $result = ['refreshed' => 0, 'failed' => 0];
+        $entries = self::get_all_entries();
+        $result  = ['refreshed' => 0, 'failed' => 0];
 
-        foreach ($cache_index as $hash => $entry) {
+        foreach ($entries as $entry) {
             $thumb_url  = $entry['thumbnail_url'] ?? '';
             $source_url = $entry['source_url'] ?? '';
             if (empty($thumb_url) || empty($source_url)) {
@@ -326,25 +304,19 @@ class WPSG_Thumbnail_Cache {
      * Remove expired cache entries and their files.
      */
     public static function cleanup_expired() {
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
+        $entries  = self::get_all_entries();
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
-        $ttl = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
-        $now = time();
-        $changed = false;
+        $ttl      = intval($settings['thumbnail_cache_ttl'] ?? self::DEFAULT_TTL);
+        $now      = time();
 
-        foreach ($cache_index as $hash => $entry) {
+        foreach ($entries as $hash => $entry) {
             $age = $now - intval($entry['cached_at'] ?? 0);
-            if ($age > $ttl * 2) { // Remove files after 2× TTL.
+            if ($age > $ttl * 2) {
                 if (!empty($entry['local_path']) && file_exists($entry['local_path'])) {
                     wp_delete_file($entry['local_path']);
                 }
-                unset($cache_index[$hash]);
-                $changed = true;
+                delete_option(self::option_key($hash));
             }
-        }
-
-        if ($changed) {
-            update_option('wpsg_thumbnail_cache_index', $cache_index, false);
         }
     }
 
@@ -354,18 +326,57 @@ class WPSG_Thumbnail_Cache {
      * @return int Number of files removed.
      */
     public static function clear_all() {
-        $cache_index = get_option('wpsg_thumbnail_cache_index', []);
+        $entries = self::get_all_entries();
         $removed = 0;
 
-        foreach ($cache_index as $entry) {
+        foreach ($entries as $hash => $entry) {
             if (!empty($entry['local_path']) && file_exists($entry['local_path'])) {
                 wp_delete_file($entry['local_path']);
                 $removed++;
             }
+            delete_option(self::option_key($hash));
         }
 
-        update_option('wpsg_thumbnail_cache_index', [], false);
         return $removed;
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Build the wp_options key for a given sha256 hash.
+     */
+    private static function option_key($hash) {
+        return self::OPTION_PREFIX . $hash;
+    }
+
+    /**
+     * Return all cached entries as hash => meta array, sourced from
+     * per-hash option rows.
+     *
+     * @return array<string, array>
+     */
+    private static function get_all_entries() {
+        global $wpdb;
+        $like = $wpdb->esc_like(self::OPTION_PREFIX) . '%';
+        $rows = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT option_name, option_value FROM {$wpdb->options} WHERE option_name LIKE %s",
+                $like
+            )
+        );
+
+        $entries = [];
+        $prefix_len = strlen(self::OPTION_PREFIX);
+        foreach ($rows ?? [] as $row) {
+            $hash  = substr($row->option_name, $prefix_len);
+            $value = maybe_unserialize($row->option_value);
+            if (is_array($value)) {
+                $entries[$hash] = $value;
+            }
+        }
+        return $entries;
     }
 
     /**
@@ -380,7 +391,7 @@ class WPSG_Thumbnail_Cache {
             return 'jpg';
         }
 
-        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $ext     = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         return in_array($ext, $allowed, true) ? $ext : 'jpg';
     }

@@ -222,6 +222,7 @@ export function LayerRow({
             size="xs"
             variant="subtle"
             color={visible ? 'gray' : 'blue'}
+            aria-label={visible ? 'Hide layer' : 'Show layer'}
             onClick={(e) => { e.stopPropagation(); onToggleVisible(item.id); }}
           >
             {visible ? <IconEye size={12} /> : <IconEyeOff size={12} />}
@@ -236,6 +237,7 @@ export function LayerRow({
             size="xs"
             variant="subtle"
             color={locked ? 'orange' : 'gray'}
+            aria-label={locked ? 'Unlock layer' : 'Lock layer'}
             onClick={(e) => { e.stopPropagation(); onToggleLocked(item.id); }}
           >
             {locked ? <IconLock size={12} /> : <IconLockOpen size={12} />}
@@ -251,6 +253,7 @@ export function LayerRow({
               size="xs"
               variant="subtle"
               color="gray"
+              aria-label="Layer options"
               onClick={(e) => e.stopPropagation()}
             >
               <IconDots size={12} />

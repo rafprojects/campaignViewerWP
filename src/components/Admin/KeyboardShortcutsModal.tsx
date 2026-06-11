@@ -131,11 +131,11 @@ function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
               onBlur={cancelRecording}
               rightSection={
                 pendingKey ? (
-                  <ActionIcon size="xs" variant="subtle" color="green" onMouseDown={(e) => { e.preventDefault(); commitKey(pendingKey); }}>
+                  <ActionIcon size="xs" variant="subtle" color="green" aria-label="Confirm key binding" onMouseDown={(e) => { e.preventDefault(); commitKey(pendingKey); }}>
                     <IconCheck size={12} />
                   </ActionIcon>
                 ) : (
-                  <ActionIcon size="xs" variant="subtle" color="gray" onMouseDown={(e) => { e.preventDefault(); cancelRecording(); }}>
+                  <ActionIcon size="xs" variant="subtle" color="gray" aria-label="Cancel key recording" onMouseDown={(e) => { e.preventDefault(); cancelRecording(); }}>
                     <IconX size={12} />
                   </ActionIcon>
                 )

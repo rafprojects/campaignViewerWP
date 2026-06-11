@@ -98,6 +98,7 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
                 size="sm"
                 onClick={() => handleDelete(f.id)}
                 title={`Delete ${f.name}`}
+                aria-label={`Delete ${f.name}`}
               >
                 <IconTrash size={14} />
               </ActionIcon>

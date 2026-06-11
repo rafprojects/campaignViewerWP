@@ -17,8 +17,6 @@ import type {
   GalleryAdapterProps,
 } from './GalleryAdapter';
 import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
-import { MediaCarouselAdapter } from './MediaCarouselAdapter';
-import { CompactGridGallery } from './compact-grid/CompactGridGallery';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;
@@ -26,6 +24,12 @@ export interface AdapterSelectOption {
   disabled?: boolean;
 }
 
+const MediaCarouselAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/MediaCarouselAdapter').then((m) => ({ default: m.MediaCarouselAdapter })),
+);
+const CompactGridGallery = lazy(() =>
+  import('@/components/Galleries/Adapters/compact-grid/CompactGridGallery').then((m) => ({ default: m.CompactGridGallery })),
+);
 const JustifiedGallery = lazy(() =>
   import('@/components/Galleries/Adapters/justified/JustifiedGallery').then((m) => ({ default: m.JustifiedGallery })),
 );
@@ -77,7 +81,7 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     // P35-A: listing-compatible; carousel owns its own slide/pagination state.
     capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe', 'listing-compatible'],
     settingGroups: ['media-frame', 'carousel'],
-    component: MediaCarouselAdapter,
+    component: MediaCarouselAdapter as ComponentType<GalleryAdapterProps>,
     paginationOwnership: 'adapter',
   },
   {
