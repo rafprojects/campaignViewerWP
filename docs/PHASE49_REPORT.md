@@ -2,19 +2,19 @@
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-09
+**Last updated:** 2026-06-10
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P49-A | Accessibility audit — keyboard nav, ARIA roles, focus trapping, screen-reader labels | To do | Medium |
-| P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | To do | Medium |
+| P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | Done | Medium |
 | P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | To do | Medium |
 | P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | To do | Medium |
 | P49-E | Storybook — install `@storybook/react-vite`; stories for AssetUploader, LayoutCanvas, all adapters | To do | Medium |
-| P49-F | Thumbnail Cache Index scalability — per-hash `wp_options` entries instead of single autoloaded row | To do | Medium |
-| P49-G | `get_campaigns_for_attachment_id()` N+1 audit + test — O(1) rewrite deferred to Phase 50+ | To do | Small-Medium |
+| P49-F | Thumbnail Cache Index scalability — per-hash `wp_options` entries instead of single autoloaded row | Done | Medium |
+| P49-G | `get_campaigns_for_attachment_id()` N+1 audit + test — O(1) rewrite deferred to Phase 50+ | Done | Small-Medium |
 
 ---
 
@@ -110,6 +110,14 @@ No bundle baseline exists. Concerns:
 
 - `vite build --mode analyze` treemap reviewed; no synchronous adapter imports visible in main chunk.
 - `size-limit` (or equivalent) output in CI passes.
+
+### Rationale (delivered 2026-06-10)
+
+`MediaCarouselAdapter` and `CompactGridGallery` were the two adapters still imported synchronously in `adapterRegistry.ts`. Both now use the same `React.lazy(() => import(...))` pattern as every other adapter, so they will be split into their own Rollup chunks and excluded from the main entry bundle.
+
+`rollup-plugin-visualizer` was already installed but always generated `dist/stats.html` on every build. Gated it behind `process.env.ANALYZE` so normal builds are not slowed by treemap generation; `ANALYZE=true npm run build` enables it. A comment in `vite.config.ts` documents the gzip budget targets (main ≤ 200 kB, adapter ≤ 50 kB).
+
+`scripts/check-bundle-size.mjs` provides CI enforcement: it reads `dist/assets/*.js`, gzip-compresses each in-process (no external tool), classifies files as vendor/main/chunk, and exits 1 on any budget breach with a clear human-readable message. Added as `npm run size-check` in `package.json`.
 
 ---
 
@@ -241,6 +249,16 @@ Contributors must run the full WordPress + PHP stack to work on or inspect React
 - PHP: migration test — populate old-format index, run migration, assert individual rows exist and old row is gone.
 - Manual: clear cache, load a gallery, confirm thumbnails render.
 
+### Rationale (delivered 2026-06-10)
+
+Rewrote `WPSG_Thumbnail_Cache` to store each entry in its own `wpsg_thumb_<sha256>` option row with `autoload=false`. This removes the single autoloaded array row that grew with the media library; each entry is now fetched only on demand.
+
+`maybe_migrate_legacy_index()` reads the old `wpsg_thumbnail_cache_index` option (if present), writes each entry to its dedicated row, then deletes the old option. It is called from `register()` and is idempotent (old option absent = no-op; `add_option` is used so a race cannot overwrite already-migrated rows). The private `get_legacy_entry()` helper handles the grace-period window where a request arrives between plugin upgrade and first `register()` run — it falls back to the old index and immediately promotes the entry to the new format.
+
+`get_all_entries()` queries `wp_options` with a `LIKE 'wpsg_thumb_%'` predicate (uses the `option_name` index) for the stats/cleanup/refresh operations that enumerate all entries; these are admin-only paths and the query is acceptable.
+
+Updated `WPSG_Thumbnail_Cache_Test.php`: converted data-seeding to the new per-hash format, retained the three `get_cached_url` legacy-fallback tests as-is, added tearDown cleanup for `wpsg_thumb_*` rows, and added two new migration tests (`test_migration_moves_entries_to_per_hash_options`, `test_migration_is_idempotent`). 916 PHP tests, 0 failures.
+
 ---
 
 ## Track P49-G — `get_campaigns_for_attachment_id()` N+1 Audit
@@ -269,6 +287,21 @@ The full O(1) fix requires a dedicated WP-attachment-ID → campaign mapping col
 ### Validation
 
 - `composer test` passes; new test visible in output with query-count assertions.
+
+### Rationale (delivered 2026-06-10)
+
+Added `_doing_it_wrong()` call in `get_campaigns_for_attachment_id()` that fires when more than 50 campaign rows are returned from the initial SELECT. Message includes the campaign count, attachment ID, and a pointer to Phase 50+. Also added the `// TODO(P50):` comment on the same block.
+
+New test file `WPSG_P49G_N1_Audit_Test.php` (7 tests, 14 assertions):
+- **Correctness** (N=10): verifies the function returns all 10 matching campaigns with the expected result shape.
+- **Correctness** (returns-empty): verifies unknown attachment IDs return `[]`.
+- **Correctness** (trash excluded): trashed campaigns are not returned.
+- **Query bound N=10**: calls `wp_cache_flush()` to expose actual DB hits; asserts ≤ 2N+2 queries. Actual observed count is 2N+1 (1 SELECT for campaign IDs + N `get_post_meta` + N `get_the_title`/`get_post` after cache flush).
+- **Query bound N=50**: same pattern, bound 102.
+- **Warning fires at N=100**: uses `setExpectedIncorrectUsage('WPSG_DB::get_campaigns_for_attachment_id')` (WP_UnitTestCase API); asserts 100 results returned and ≤ 202 queries.
+- **No warning at N=50**: verifies the threshold is exclusive (> 50, not ≥ 50).
+
+Note: the phase doc said "N+2 bound" — empirically it is 2N+1 because each campaign triggers both a postmeta and a get_post query after cache flush. The 2N+2 bound used in the test is the honest worst-case document.
 
 ---
 
