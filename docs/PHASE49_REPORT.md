@@ -260,7 +260,7 @@ Contributors must run the full WordPress + PHP stack to work on or inspect React
 
 ### Rationale (delivered 2026-06-10)
 
-Installed `@storybook/react-vite@^8` + `@storybook/addon-essentials@^8` + `@storybook/test@^8` as devDependencies. Pinned to v8 to match the rest of the storybook ecosystem (v10 of `@storybook/react` was the latest in npm `@*` resolution and conflicts with the v8 peer of `storybook`).
+Installed `storybook@^10`, `@storybook/react@^10`, `@storybook/react-vite@^10`, and `@storybook/addon-docs@^10` as devDependencies. Storybook v10 is the current `latest` on npm. `@storybook/blocks` and `@storybook/test` have no v10 release and are not imported anywhere in the codebase; they are not listed as direct dependencies.
 
 `.storybook/main.ts` reuses the Vite `@/` alias via `viteFinal` / `mergeConfig`; telemetry disabled. `.storybook/preview.tsx` wraps every story in `MantineProvider` (light scheme) so Mantine components render correctly without any WordPress or WP-API context.
 
@@ -302,7 +302,7 @@ Stories delivered:
 
 ### Validation
 
-- PHP: migration test — populate old-format index, run migration, assert individual rows exist and old row is gone.
+- PHP: per-hash option storage tests — seed entries via `write_thumb_entry()`, assert `get_cached_url()` resolves them; verify expiry and missing-file paths return null; verify `cleanup_expired()` removes stale entries and keeps fresh ones; verify `clear_all()` removes all entries and files.
 - Manual: clear cache, load a gallery, confirm thumbnails render.
 
 ### Rationale (delivered 2026-06-10)
@@ -410,3 +410,37 @@ Also bumped `@playwright/test` from `^1.51.1` → `^1.60.0` (current npm `latest
 **Decision: Flag — not addressed in this PR.**
 
 The concern is valid: visual regression baselines are sensitive to network availability and any upstream content change from picsum.photos, making `playwright test:visual` potentially flaky in offline or rate-limited environments. Replacing the fixtures with local version-controlled images (or inline data URIs) would make tests fully deterministic. This is non-trivial work (creating, sizing, and committing representative image assets for all 9 fixture items), and the tests currently pass with the picsum seeds. Deferred to a dedicated fixture-hardening task in Phase 50+.
+
+---
+
+## PR #64 Review Comments — Round 2 (addressed 2026-06-11)
+
+### Thread 1 — ANALYZE env gate truthy-string bug (vite.config.ts)
+
+**Decision: Accept.**
+
+`process.env.ANALYZE` is a string at runtime; `ANALYZE=false npm run build` would evaluate as truthy (non-empty string) and unexpectedly generate the treemap. Changed the gate to `=== 'true' || === '1'` to match the inline comment and the documented invocation pattern.
+
+### Thread 2 — `$wpdb->get_results()` nullable return (class-wpsg-thumbnail-cache.php)
+
+**Decision: Accept.**
+
+`get_results()` returns `null` on a DB error rather than an empty array. Added a `?? []` null-coercion on the `foreach` so `get_all_entries()` — and by extension `get_stats()`, `cleanup_expired()`, `refresh_all()`, and `clear_all()` — degrade gracefully instead of raising PHP 8+ warnings on a failed query.
+
+### Thread 3 — Missing expiry + missing-file test coverage for new format (WPSG_Thumbnail_Cache_Test.php)
+
+**Decision: Accept.**
+
+The previous round removed the legacy-format coverage for these paths but didn't add equivalent new-format tests, leaving the TTL check and file-existence guard in `get_cached_url()` untested. Added `test_get_cached_url_returns_null_for_expired_entry` and `test_get_cached_url_returns_null_if_file_missing` using the per-hash `write_thumb_entry()` helper.
+
+### Thread 4 — Stale P49-E Storybook rationale (docs/PHASE49_REPORT.md)
+
+**Decision: Accept.**
+
+The original rationale described pinning to v8 to avoid a conflict with v10; that reasoning became stale once the packages were upgraded to v10 in this PR. Updated to describe the current state: storybook@10, with `@storybook/blocks` and `@storybook/test` removed as direct dependencies (not imported, no v10 release, removed to avoid peer-dep conflict).
+
+### Thread 5 — Stale P49-F migration validation bullet (docs/PHASE49_REPORT.md)
+
+**Decision: Accept.**
+
+The validation section still referenced the migration test that was removed in Round 1. Replaced with an accurate description of the actual PHP test coverage: per-hash option seeding, `get_cached_url()` expiry/missing-file paths, `cleanup_expired()`, and `clear_all()`.

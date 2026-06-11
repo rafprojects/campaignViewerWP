@@ -144,6 +144,36 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertEquals($expected, $result);
     }
 
+    public function test_get_cached_url_returns_null_for_expired_entry() {
+        $source = 'https://example.com/expired-new';
+        $hash   = hash('sha256', $source);
+
+        $this->write_thumb_entry($hash, [
+            'source_url' => $source,
+            'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/expired.jpg',
+            'local_path' => '/nonexistent/path.jpg',
+            'cached_at'  => time() - 999999,
+            'file_size'  => 100,
+        ]);
+
+        $this->assertNull(WPSG_Thumbnail_Cache::get_cached_url($source));
+    }
+
+    public function test_get_cached_url_returns_null_if_file_missing() {
+        $source = 'https://example.com/missing-file-new';
+        $hash   = hash('sha256', $source);
+
+        $this->write_thumb_entry($hash, [
+            'source_url' => $source,
+            'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/missing.jpg',
+            'local_path' => '/tmp/nonexistent-wpsg-test.jpg',
+            'cached_at'  => time(),
+            'file_size'  => 100,
+        ]);
+
+        $this->assertNull(WPSG_Thumbnail_Cache::get_cached_url($source));
+    }
+
     // ── cache_oembed_thumbnail ─────────────────────────────────────────────────
 
     public function test_cache_oembed_thumbnail_skips_empty_thumbnail() {

@@ -369,7 +369,7 @@ class WPSG_Thumbnail_Cache {
 
         $entries = [];
         $prefix_len = strlen(self::OPTION_PREFIX);
-        foreach ($rows as $row) {
+        foreach ($rows ?? [] as $row) {
             $hash  = substr($row->option_name, $prefix_len);
             $value = maybe_unserialize($row->option_value);
             if (is_array($value)) {

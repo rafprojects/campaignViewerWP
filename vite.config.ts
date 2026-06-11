@@ -70,8 +70,8 @@ export default defineConfig({
   base: './',
   plugins: [
     react(),
-    // Only generate treemap when ANALYZE=true (e.g. `ANALYZE=true npm run build`)
-    ...(process.env.ANALYZE
+    // Only generate treemap when ANALYZE=true or ANALYZE=1 (e.g. `ANALYZE=true npm run build`)
+    ...(process.env.ANALYZE === 'true' || process.env.ANALYZE === '1'
       ? [visualizer({ filename: './dist/stats.html', open: false, gzipSize: true, brotliSize: true })]
       : []),
   ],
