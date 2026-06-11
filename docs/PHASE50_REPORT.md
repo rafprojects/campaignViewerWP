@@ -85,7 +85,50 @@ Phase 47 v1 assigns campaigns to a space at creation time only; there is no post
 - **Transaction:** `WPSG_DB::move_campaign_to_space()` wraps the four table UPDATEs plus a direct-SQL `_wpsg_space_id` postmeta write in one transaction; postmeta is written with raw SQL (not `update_post_meta`) so it participates in the transaction without mutating the object cache pre-COMMIT, and the meta cache is flushed on every exit path. On failure it rolls back and returns the failing table name, surfaced in the 500 response. A filter (`wpsg_move_campaign_simulate_failure`) provides the test seam for the mid-transaction rollback test.
 - **Authorization:** `require_campaign_space_move` (rest-base) requires `owner` via `get_effective_space_level` on both the campaign's source space (falling back to the default space for pre-backfill campaigns) and the target. The `manage_options` bypass and the "manage_wpsg-only user gets 403 on delegated targets" criterion both fall out of P47-B's existing level resolution — no special-casing needed.
 - **Frontend:** `format_space` now exposes `effectiveLevel` (safe: the spaces-list transient is already keyed per user), which gates the row-level "Move" button — shown only when a specific owned space is selected and at least one other active owned space exists. `CampaignMoveSpaceModal` mirrors the duplicate modal: owner-only target Select (source and archived spaces excluded) plus a note that analytics, audit history, media refs, and access requests move with the campaign.
-- **Validation done:** new `WPSG_P50A_Campaign_Move_Test` (5 tests: full re-stamp + list flip, mid-transaction rollback, delegated-target 403 for manage_wpsg-only user, same-space no-op, archived-target rejection); full PHP suite 918 tests OK; 9-test modal suite; full frontend suite 2229/2229; `tsc --noEmit` and production build clean. The PHP rollback test documents (and contains, via explicit cleanup + COMMIT) the WP-test-framework interaction where a real transaction implicitly commits the per-test wrapper. **Remaining:** the manual two-space move pass on a live WordPress site.
+- **Validation done:** new `WPSG_P50A_Campaign_Move_Test` (5 tests: full re-stamp + list flip, mid-transaction rollback, delegated-target 403 for manage_wpsg-only user, same-space no-op, archived-target rejection); full PHP suite 918 tests OK; 9-test modal suite; full frontend suite 2229/2229; `tsc --noEmit` and production build clean. The PHP rollback test documents (and contains, via explicit cleanup + COMMIT) the WP-test-framework interaction where a real transaction implicitly commits the per-test wrapper. **Remaining:** the manual test plan below.
+
+### Manual test plan (P50-A)
+
+**Deploy to the local dev site**
+
+1. `npm run build:wp` (build + copy assets into `wp-plugin/wp-super-gallery/assets/`).
+2. `./update_dev_plugin.sh` (deploy the plugin to the live dev site).
+3. Open `https://wordpress.lan`, log in as the admin user, and open the gallery admin panel.
+
+**Fixtures**
+
+- Two active spaces you own (as an administrator with `manage_options` you own every space): Actions menu → "Manage spaces" → create "Space A" and "Space B" (open mode) if they don't exist.
+- One campaign in Space A with a few media items (select Space A in the space selector before creating it).
+- Optional, for the analytics check: view the campaign's public gallery a few times first so it has analytics events.
+
+**Happy path**
+
+- [ ] With the space selector on "All spaces", campaign rows show **no** Move button (move requires an explicit source space).
+- [ ] Select Space A — rows now show a "Move" button (between Clone and Export).
+- [ ] Click Move on the campaign. The dialog shows the campaign title, "From space: Space A", and a target select that offers Space B but **not** Space A itself.
+- [ ] Pick Space B and confirm. A success notification appears and the campaign immediately disappears from Space A's list.
+- [ ] Switch the space selector to Space B — the campaign is listed.
+- [ ] Audit tab: a `campaign.moved_space` entry exists with the from/to space ids in its details.
+- [ ] Analytics scoped to Space B include the campaign's pre-move events (the move re-stamps them).
+
+**DB spot-check (optional)**
+
+Run against the dev site's database, with `<ID>` = campaign post id; every value should equal Space B's id:
+
+```sql
+SELECT space_id FROM wp_wpsg_analytics_events  WHERE campaign_id = <ID>;
+SELECT space_id FROM wp_wpsg_audit_log         WHERE campaign_id = <ID>;
+SELECT space_id FROM wp_wpsg_media_refs        WHERE campaign_id = <ID>;
+SELECT space_id FROM wp_wpsg_access_requests   WHERE campaign_id = <ID>;
+SELECT meta_value FROM wp_postmeta WHERE post_id = <ID> AND meta_key = '_wpsg_space_id';
+```
+
+**Authorization gating**
+
+- [ ] Create a delegated space "Tenant C" with no grant for a `manage_wpsg`-only user (editor role + `manage_wpsg` cap, not administrator). Log in as that user: Tenant C is not offered as a move target, and inside Tenant C's campaign list (if reachable at all) no Move button renders. The direct-API 403 for this case is covered by `WPSG_P50A_Campaign_Move_Test::test_manage_wpsg_only_user_denied_for_delegated_target`.
+- [ ] Archive Space B (Manage spaces) — it disappears from the move target options.
+
+**Not manually testable:** the mid-transaction rollback path needs failure injection; it is covered by the automated `wpsg_move_campaign_simulate_failure` test.
 
 ---
 
