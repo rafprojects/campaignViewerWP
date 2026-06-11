@@ -135,7 +135,7 @@ const defaultResponsiveConfig = DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig;
 /**
  * Wait until the SettingsPanel loading spinner has cleared and the tab bar
  * is visible in the DOM. This is the correct gate — the modal header title
- * ('Display Settings') renders immediately on open regardless of load state,
+ * ('Settings') renders immediately on open regardless of load state,
  * so waiting for it resolves too early and races against getSettings().
  */
 async function waitForTabs() {
@@ -779,7 +779,7 @@ describe('SettingsPanel', () => {
       <SettingsPanel opened={false} apiClient={apiClient} onClose={onClose} onNotify={onNotify} />
     );
 
-    expect(screen.queryByText('Display Settings')).toBeNull();
+    expect(screen.queryByText('Settings')).toBeNull();
   });
 
   it('renders instantly without spinner when initialSettings are provided', () => {
@@ -804,7 +804,7 @@ describe('SettingsPanel', () => {
     );
 
     // Should render immediately — no loader, tabs visible synchronously
-    expect(screen.getByText('Display Settings')).toBeDefined();
+    expect(screen.getByText('Settings')).toBeDefined();
     expect(screen.getByRole('tab', { name: /Appearance/i })).toBeDefined();
     expect(screen.queryByRole('status')).toBeNull(); // no loader spinner
   });
