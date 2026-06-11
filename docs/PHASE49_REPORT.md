@@ -374,3 +374,39 @@ Phase 50 will be a feature phase drawing from:
 - Isotope / Filterable Grid — FLIP-animated filter/sort transitions; extends adapter interface to accept filter/sort props.
 
 **Remaining deferred adapters** (Waterfall, Timeline, Grid with Variable Aspect-Ratio Tiles) are candidates for Phase 50 or a later adapter-focused phase depending on scope.
+
+---
+
+## PR #64 Review Comments (addressed 2026-06-11)
+
+### Thread 1 — Legacy index migration: md5 key normalization gap (class-wpsg-thumbnail-cache.php)
+
+**Decision: Eliminate legacy code entirely rather than fix the migration.**
+
+Copilot correctly identified that `maybe_migrate_legacy_index()` stored legacy md5-keyed entries verbatim, creating `wpsg_thumb_<md5>` option rows that are permanently unreachable because `get_cached_url()` keys only by sha256. Fixing the migration would require normalising each entry's key during migration (compute sha256 from `source_url`, skip entries missing it). However, the simpler and safer choice is full removal:
+
+- This is a private internal plugin; P14-C (which introduced the single-row index) and P49-F (which replaced it) both landed within active development — no production deployments exist with the old format.
+- Worst case after dropping: any site that somehow had the old `wpsg_thumbnail_cache_index` row would silently lose its cache on the next request. Impact is a one-time cache re-warm (thumbnails re-fetched). No data loss; thumbnails regenerate on demand.
+- Removing the migration eliminates the bug entirely instead of working around it, and reduces the class surface area.
+
+Removed: `LEGACY_INDEX_OPTION` constant, `maybe_migrate_legacy_index()` method, its call site in `register()`, the backward-compat fallback path in `get_cached_url()`, and the `get_legacy_entry()` helper. `get_cached_url()` now returns `null` immediately on a cache miss.
+
+### Thread 2 — Test teardown bypasses WP options cache (WPSG_Thumbnail_Cache_Test.php)
+
+**Decision: Accept — switch to `delete_option()` loop.**
+
+`delete_all_thumb_options()` used a direct `$wpdb->query(DELETE …)` which bypasses WordPress's in-memory options cache. In `WP_UnitTestCase` the DB is reset via transaction rollback between tests but the PHP-layer options cache is not flushed, so a subsequent `get_option()` call could return a stale hit from the previous test. Fixed by fetching matching option names then calling `delete_option()` per name, which both deletes from the DB and evicts from the cache. Also removed the now-redundant `delete_option('wpsg_thumbnail_cache_index')` calls in setUp/tearDown, and removed the five legacy-behaviour tests that tested code no longer present.
+
+### Thread 3 — Storybook mixed major versions (package.json)
+
+**Decision: Accept with scope adjustment — update within v8, keep v8 range.**
+
+Copilot flagged `@storybook/blocks` and `@storybook/test` pinned at v8.x while the main `storybook`/`@storybook/react(-vite)` packages were at v10. Investigation of the npm registry confirms that `@storybook/blocks` and `@storybook/test` have **no v10 release** — `latest` for both is 8.6.x, and storybook@10 itself lists 8.6.18 of those packages as its own bundled deps. The v8 range in `package.json` is therefore correct and intentional. Updated `@storybook/blocks` from `^8.6.14` → `^8.6.18` to align with the v8 tag and with what storybook@10 pulls in internally; `@storybook/test` was already at `^8.6.18`.
+
+Also bumped `@playwright/test` from `^1.51.1` → `^1.60.0` (current npm `latest`) per project requirement to keep Playwright at the latest release.
+
+### Thread 4 — Storybook fixtures use external picsum.photos URLs (src/stories/adapterFixtures.ts)
+
+**Decision: Flag — not addressed in this PR.**
+
+The concern is valid: visual regression baselines are sensitive to network availability and any upstream content change from picsum.photos, making `playwright test:visual` potentially flaky in offline or rate-limited environments. Replacing the fixtures with local version-controlled images (or inline data URIs) would make tests fully deterministic. This is non-trivial work (creating, sizing, and committing representative image assets for all 9 fixture items), and the tests currently pass with the picsum seeds. Deferred to a dedicated fixture-hardening task in Phase 50+.

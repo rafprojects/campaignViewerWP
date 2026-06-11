@@ -6,7 +6,6 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        delete_option('wpsg_thumbnail_cache_index');
         $this->delete_all_thumb_options();
         $this->cache_dir = WPSG_Thumbnail_Cache::get_cache_dir();
     }
@@ -22,7 +21,6 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
                 }
             }
         }
-        delete_option('wpsg_thumbnail_cache_index');
         $this->delete_all_thumb_options();
         parent::tearDown();
     }
@@ -37,12 +35,18 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
     }
 
     /**
-     * Delete all wpsg_thumb_* options (P49-F per-hash entries).
+     * Delete all wpsg_thumb_* options via delete_option() so the WP options cache is invalidated.
      */
     private function delete_all_thumb_options(): void {
         global $wpdb;
-        $like = $wpdb->esc_like('wpsg_thumb_') . '%';
-        $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", $like));
+        $like  = $wpdb->esc_like('wpsg_thumb_') . '%';
+        $names = $wpdb->get_col($wpdb->prepare(
+            "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
+            $like
+        ));
+        foreach ($names as $name) {
+            delete_option($name);
+        }
     }
 
     // ── get_cache_dir ──────────────────────────────────────────────────────────
@@ -115,69 +119,6 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
     public function test_get_cached_url_returns_null_for_uncached() {
         $result = WPSG_Thumbnail_Cache::get_cached_url('https://example.com/never-cached');
         $this->assertNull($result);
-    }
-
-    /**
-     * Legacy fallback: entries seeded in the old wpsg_thumbnail_cache_index array
-     * should still be readable via get_legacy_entry().
-     */
-    public function test_get_cached_url_returns_null_for_expired_legacy() {
-        $hash = md5('https://example.com/expired');
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'source_url' => 'https://example.com/expired',
-                'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/test.jpg',
-                'local_path' => '/nonexistent/path.jpg',
-                'cached_at'  => time() - 999999,
-                'file_size'  => 100,
-            ],
-        ]);
-
-        $result = WPSG_Thumbnail_Cache::get_cached_url('https://example.com/expired');
-        $this->assertNull($result);
-    }
-
-    /**
-     * Legacy fallback: missing-file entry returns null.
-     */
-    public function test_get_cached_url_returns_null_if_file_missing_legacy() {
-        $hash = md5('https://example.com/missing-file');
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'source_url' => 'https://example.com/missing-file',
-                'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/missing.jpg',
-                'local_path' => '/tmp/nonexistent-file-wpsg-test.jpg',
-                'cached_at'  => time(),
-                'file_size'  => 100,
-            ],
-        ]);
-
-        $result = WPSG_Thumbnail_Cache::get_cached_url('https://example.com/missing-file');
-        $this->assertNull($result);
-    }
-
-    /**
-     * Legacy fallback: valid entry in old index is promoted and returned.
-     */
-    public function test_get_cached_url_returns_url_for_valid_legacy_entry() {
-        $dir  = WPSG_Thumbnail_Cache::get_cache_dir();
-        $hash = md5('https://example.com/valid');
-        $path = $dir . '/' . $hash . '.jpg';
-        file_put_contents($path, 'fake-image-data');
-
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => [
-                'source_url' => 'https://example.com/valid',
-                'local_url'  => WPSG_Thumbnail_Cache::get_cache_url() . '/' . $hash . '.jpg',
-                'local_path' => $path,
-                'cached_at'  => time(),
-                'file_size'  => 15,
-            ],
-        ]);
-
-        $result = WPSG_Thumbnail_Cache::get_cached_url('https://example.com/valid');
-        $this->assertNotNull($result);
-        $this->assertStringContainsString($hash, $result);
     }
 
     /**
@@ -352,37 +293,4 @@ class WPSG_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $this->assertEquals(0, $removed);
     }
 
-    // ── maybe_migrate_legacy_index ─────────────────────────────────────────────
-
-    public function test_migration_moves_entries_to_per_hash_options() {
-        $hash1 = hash('sha256', 'migrate-url-1');
-        $hash2 = hash('sha256', 'migrate-url-2');
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash1 => ['source_url' => 'migrate-url-1', 'cached_at' => time(), 'file_size' => 1],
-            $hash2 => ['source_url' => 'migrate-url-2', 'cached_at' => time(), 'file_size' => 2],
-        ]);
-
-        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
-
-        $this->assertIsArray(get_option('wpsg_thumb_' . $hash1, false));
-        $this->assertIsArray(get_option('wpsg_thumb_' . $hash2, false));
-        $this->assertFalse(get_option('wpsg_thumbnail_cache_index', false));
-    }
-
-    public function test_migration_is_idempotent() {
-        $hash = hash('sha256', 'idempotent-url');
-        update_option('wpsg_thumbnail_cache_index', [
-            $hash => ['source_url' => 'idempotent-url', 'cached_at' => time(), 'file_size' => 1],
-        ]);
-
-        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
-        $entry_after_first = get_option('wpsg_thumb_' . $hash, false);
-
-        // Second call: legacy option is gone, should be a no-op.
-        WPSG_Thumbnail_Cache::maybe_migrate_legacy_index();
-        $entry_after_second = get_option('wpsg_thumb_' . $hash, false);
-
-        $this->assertEquals($entry_after_first, $entry_after_second);
-        $this->assertFalse(get_option('wpsg_thumbnail_cache_index', false));
-    }
 }

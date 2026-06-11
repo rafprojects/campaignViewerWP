@@ -6,8 +6,7 @@
  * and performance. Thumbnails are stored in wp-content/uploads/wpsg-thumbnails/.
  *
  * P49-F: Per-hash wp_options storage — each cached URL is a separate
- * `wpsg_thumb_<sha256>` option row with autoload='no', replacing the former
- * single-row `wpsg_thumbnail_cache_index` array that grew without bound.
+ * `wpsg_thumb_<sha256>` option row with autoload='no'.
  *
  * @package WP_Super_Gallery
  */
@@ -21,11 +20,10 @@ class WPSG_Thumbnail_Cache {
     const META_KEY            = '_wpsg_cached_thumbnail';
     const TTL_OPTION          = 'wpsg_thumbnail_cache_ttl';
     const DEFAULT_TTL         = 86400; // 24 hours
-    const OPTION_PREFIX       = 'wpsg_thumb_';
-    const LEGACY_INDEX_OPTION = 'wpsg_thumbnail_cache_index';
+    const OPTION_PREFIX = 'wpsg_thumb_';
 
     /**
-     * Register hooks and run one-time migration from legacy single-row index.
+     * Register hooks.
      */
     public static function register() {
         add_action('wpsg_oembed_success', [self::class, 'cache_oembed_thumbnail'], 10, 2);
@@ -33,33 +31,6 @@ class WPSG_Thumbnail_Cache {
         if (!wp_next_scheduled('wpsg_thumbnail_cache_cleanup')) {
             wp_schedule_event(time(), 'daily', 'wpsg_thumbnail_cache_cleanup');
         }
-        self::maybe_migrate_legacy_index();
-    }
-
-    /**
-     * Migrate the old single-row index to individual per-hash option rows.
-     * Idempotent: deletes the legacy row on completion so subsequent calls
-     * are no-ops.
-     */
-    public static function maybe_migrate_legacy_index() {
-        $legacy = get_option(self::LEGACY_INDEX_OPTION, null);
-        if ($legacy === null || !is_array($legacy) || empty($legacy)) {
-            if ($legacy !== null) {
-                // Option exists but is empty/invalid — clean it up.
-                delete_option(self::LEGACY_INDEX_OPTION);
-            }
-            return;
-        }
-
-        foreach ($legacy as $hash => $meta) {
-            if (!is_string($hash) || !is_array($meta)) {
-                continue;
-            }
-            // add_option is a no-op if the key already exists (idempotent).
-            add_option(self::option_key($hash), $meta, '', false);
-        }
-
-        delete_option(self::LEGACY_INDEX_OPTION);
     }
 
     /**
@@ -184,13 +155,8 @@ class WPSG_Thumbnail_Cache {
         $hash  = hash('sha256', $source_url);
         $entry = get_option(self::option_key($hash), false);
 
-        // Backward compat: check the old single-row index in case migration has
-        // not yet run (e.g. on the very first request after upgrading).
         if ($entry === false) {
-            $entry = self::get_legacy_entry($hash, $source_url);
-            if ($entry === null) {
-                return null;
-            }
+            return null;
         }
 
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
@@ -411,37 +377,6 @@ class WPSG_Thumbnail_Cache {
             }
         }
         return $entries;
-    }
-
-    /**
-     * Look up an entry in the legacy single-row index (fallback for the
-     * window between upgrade and first migration run).
-     * Promotes the entry to a dedicated option row if found.
-     *
-     * @param string $hash       sha256 of source_url.
-     * @param string $source_url The original media URL.
-     * @return array|null
-     */
-    private static function get_legacy_entry($hash, $source_url) {
-        $cache_index = get_option(self::LEGACY_INDEX_OPTION, null);
-        if (!is_array($cache_index)) {
-            return null;
-        }
-
-        // Try sha256 key first, then legacy md5 key.
-        if (isset($cache_index[$hash])) {
-            $entry = $cache_index[$hash];
-        } else {
-            $legacy_hash = md5($source_url);
-            if (!isset($cache_index[$legacy_hash])) {
-                return null;
-            }
-            $entry = $cache_index[$legacy_hash];
-        }
-
-        // Promote to dedicated option row.
-        add_option(self::option_key($hash), $entry, '', false);
-        return $entry;
     }
 
     /**
