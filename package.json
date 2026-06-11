@@ -19,6 +19,7 @@
     "test:quieter-triage": "vitest run --reporter=hanging-process --no-file-parallelism --silent",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "size-check": "node scripts/check-bundle-size.mjs",
     "prepare": "husky"
   },
   "dependencies": {
