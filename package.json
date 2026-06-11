@@ -20,6 +20,8 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "size-check": "node scripts/check-bundle-size.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
     "prepare": "husky"
   },
   "dependencies": {
@@ -56,6 +58,11 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.17.0",
     "@playwright/test": "^1.51.1",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/blocks": "^8.6.14",
+    "@storybook/react": "^8.6.18",
+    "@storybook/react-vite": "^8.6.18",
+    "@storybook/test": "^8.6.18",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
@@ -75,6 +82,7 @@
     "rollup-plugin-visualizer": "^6.0.5",
     "sass": "^1.77.8",
     "sass-embedded": "^1.77.8",
+    "storybook": "^8.6.18",
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.4.1",
