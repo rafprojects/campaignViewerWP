@@ -213,6 +213,13 @@ export class ApiClient extends HttpTransportImpl {
     return this._campaigns.deleteCampaign(id, options);
   }
 
+  moveCampaign(
+    id: string,
+    targetSpaceId: number,
+  ): Promise<{ message: string; spaceId: number; moved: boolean }> {
+    return this._campaigns.moveCampaign(id, targetSpaceId);
+  }
+
   batchCampaigns(
     action: 'archive' | 'restore' | 'delete',
     ids: string[],

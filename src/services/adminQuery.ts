@@ -132,6 +132,8 @@ export interface SpaceInfo {
   isDefault: boolean;
   archived: boolean;
   grantCount: number;
+  /** P50-A: requesting user's level in this space ('' = no access). */
+  effectiveLevel?: 'owner' | 'editor' | 'viewer' | '';
   createdAt: string;
   updatedAt: string;
 }

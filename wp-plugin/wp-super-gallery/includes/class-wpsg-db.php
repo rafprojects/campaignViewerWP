@@ -713,8 +713,18 @@ class WPSG_DB {
     public static function insert_audit_entry(array $data): void {
         global $wpdb;
         $table = self::get_audit_log_table();
+
+        // P50-A: stamp new audit rows with the campaign's current space so
+        // space-filtered audit queries see them (the P47 column was previously
+        // never written, leaving every row at the 0 default).
+        $campaign_id = intval($data['campaign_id']);
+        $space_id    = intval($data['space_id'] ?? 0);
+        if ($space_id <= 0 && $campaign_id > 0) {
+            $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        }
+
         $wpdb->insert($table, [
-            'campaign_id'    => intval($data['campaign_id']),
+            'campaign_id'    => $campaign_id,
             'action'         => sanitize_text_field($data['action']),
             'actor_id'       => intval($data['actor_id'] ?? 0),
             'actor_login'    => sanitize_text_field($data['actor_login'] ?? ''),
@@ -727,7 +737,8 @@ class WPSG_DB {
             'resource_id'    => sanitize_text_field($data['resource_id'] ?? ''),
             'resource_label' => sanitize_text_field($data['resource_label'] ?? ''),
             'source'         => sanitize_text_field($data['source'] ?? 'rest'),
-        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']);
+            'space_id'       => $space_id,
+        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']);
     }
 
     /**
@@ -1091,6 +1102,96 @@ class WPSG_DB {
         $result = (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
         unset(self::$space_cache[$id]);
         return $result;
+    }
+
+    // ── P50-A: Cross-space campaign move ─────────────────────────────────────
+
+    /**
+     * Atomically re-stamp a campaign's space across all campaign-scoped custom
+     * tables and the _wpsg_space_id post meta.
+     *
+     * All five writes run inside a single transaction; on any failure the
+     * transaction is rolled back and the failing table name is returned so the
+     * caller can surface it. The post meta row is written with direct SQL (not
+     * update_post_meta) so it participates in the transaction without mutating
+     * the object cache before COMMIT; the meta cache is flushed on every exit
+     * path instead.
+     *
+     * @param int $campaign_id     Campaign post ID.
+     * @param int $target_space_id Destination space id.
+     * @return true|string True on success, the failing table name on failure.
+     */
+    public static function move_campaign_to_space(int $campaign_id, int $target_space_id) {
+        global $wpdb;
+
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query('START TRANSACTION');
+
+        $finish = static function (string $statement) use ($wpdb, $campaign_id) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->query($statement);
+            wp_cache_delete($campaign_id, 'post_meta');
+        };
+
+        foreach ($tables as $table) {
+            /**
+             * Test seam: simulate a mid-transaction failure on a specific table
+             * so rollback behavior can be exercised without DB-level mocking.
+             *
+             * @param bool   $fail        Whether to treat this table as failed.
+             * @param string $table       Table about to be updated.
+             * @param int    $campaign_id Campaign being moved.
+             */
+            if (apply_filters('wpsg_move_campaign_simulate_failure', false, $table, $campaign_id)) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+            $result = $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET space_id = %d WHERE campaign_id = %d",
+                $target_space_id,
+                $campaign_id
+            ));
+            if ($result === false) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $meta_updated = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE post_id = %d AND meta_key = '_wpsg_space_id'",
+            (string) $target_space_id,
+            $campaign_id
+        ));
+        if ($meta_updated === false) {
+            $finish('ROLLBACK');
+            return $wpdb->postmeta;
+        }
+        if ($meta_updated === 0 && !metadata_exists('post', $campaign_id, '_wpsg_space_id')) {
+            // Campaign predates the spaces backfill: create the meta row.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $inserted = $wpdb->insert($wpdb->postmeta, [
+                'post_id'    => $campaign_id,
+                'meta_key'   => '_wpsg_space_id',
+                'meta_value' => (string) $target_space_id,
+            ]);
+            if ($inserted === false) {
+                $finish('ROLLBACK');
+                return $wpdb->postmeta;
+            }
+        }
+
+        $finish('COMMIT');
+        return true;
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

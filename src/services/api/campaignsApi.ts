@@ -84,6 +84,18 @@ export class CampaignsApi {
     );
   }
 
+  // ── P50-A: Cross-space move ──────────────────────────────────────────────
+
+  moveCampaign(
+    id: string,
+    targetSpaceId: number,
+  ): Promise<{ message: string; spaceId: number; moved: boolean }> {
+    return this.transport.post<{ message: string; spaceId: number; moved: boolean }>(
+      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/move`,
+      { target_space_id: targetSpaceId },
+    );
+  }
+
   // ── P28-A: Hard-delete ───────────────────────────────────────────────────
 
   deleteCampaign(

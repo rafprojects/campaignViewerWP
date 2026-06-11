@@ -510,6 +510,9 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             'isDefault'     => intval($space->id) === $default_id,
             'archived'      => (bool) $space->archived,
             'grantCount'    => count($grants),
+            // P50-A: requesting user's level in this space ('' = no access).
+            // Safe to cache: the spaces list transient is keyed per user.
+            'effectiveLevel' => self::get_effective_space_level(get_current_user_id(), intval($space->id)),
             'createdAt'     => $space->created_at,
             'updatedAt'     => $space->updated_at,
         ];

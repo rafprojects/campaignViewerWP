@@ -40,6 +40,7 @@ import { spaceColor } from '@/utils/spaceColor';
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
 const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
+const CampaignMoveSpaceModal = lazy(() => import('./CampaignMoveSpaceModal').then((m) => ({ default: m.CampaignMoveSpaceModal })));
 const CampaignImportModal = lazy(() => import('./CampaignImportModal').then((m) => ({ default: m.CampaignImportModal })));
 const KeyboardShortcutsModal = lazy(() => import('./KeyboardShortcutsModal').then((m) => ({ default: m.KeyboardShortcutsModal })));
 const AdminCampaignArchiveModal = lazy(() => import('./AdminCampaignArchiveModal').then((m) => ({ default: m.AdminCampaignArchiveModal })));
@@ -366,7 +367,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     includeArchived,
   ].filter(Boolean).length;
 
-  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient });
+  // P50-A: move is offered only when a specific owned space is selected and
+  // another owned, active space exists as a destination.
+  const activeSpace = activeSpaceId !== undefined ? spaces.find((s) => s.id === activeSpaceId) ?? null : null;
+  const canMoveCampaigns = !!activeSpace
+    && activeSpace.effectiveLevel === 'owner'
+    && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
+
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 
@@ -872,6 +880,18 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             isSaving={campaignActions.isDuplicating}
             onConfirm={campaignActions.handleDuplicateCampaign}
             onClose={() => campaignActions.setDuplicateSource(null)}
+          />
+        </Suspense>
+      )}
+      {!!campaignActions.moveSource && (
+        <Suspense fallback={null}>
+          <CampaignMoveSpaceModal
+            source={campaignActions.moveSource}
+            sourceSpace={activeSpace}
+            spaces={spaces}
+            isSaving={campaignActions.isMoving}
+            onConfirm={(id, name) => void campaignActions.handleMoveCampaign(id, name)}
+            onClose={() => campaignActions.setMoveSource(null)}
           />
         </Suspense>
       )}

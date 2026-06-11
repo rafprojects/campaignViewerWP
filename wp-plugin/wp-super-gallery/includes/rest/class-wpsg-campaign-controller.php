@@ -107,6 +107,22 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             ],
         ]);
 
+        // P50-A: Cross-space campaign move
+        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/move', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'move_campaign'],
+                // P50-A: requires owner on both the source and target space.
+                'permission_callback' => [self::class, 'require_campaign_space_move'],
+                'args'                => [
+                    'target_space_id' => [
+                        'required' => true,
+                        'type'     => 'integer',
+                    ],
+                ],
+            ],
+        ]);
+
         // P18-B: Bulk campaign actions (archive/restore)
         register_rest_route('wp-super-gallery/v1', '/campaigns/batch', [
             [
@@ -541,6 +557,55 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         do_action('wpsg_campaign_restored', $post_id);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
+    }
+
+    // ── P50-A: Cross-space campaign move ──────────────────────────────────────
+
+    public static function move_campaign($request) {
+        $post_id = intval($request->get_param('id'));
+        if (!self::campaign_exists($post_id)) {
+            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+        }
+
+        $target_space_id = intval($request->get_param('target_space_id'));
+        $target_space    = WPSG_DB::get_space($target_space_id);
+        if (!$target_space || $target_space->archived) {
+            return new WP_Error('wpsg_space_not_found', 'Target space not found or archived', ['status' => 404]);
+        }
+
+        $source_space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
+        if ($source_space_id === $target_space_id) {
+            // No-op: already in the target space; no DB writes.
+            return new WP_REST_Response([
+                'message' => 'Campaign is already in the target space',
+                'spaceId' => $target_space_id,
+                'moved'   => false,
+            ], 200);
+        }
+
+        $result = WPSG_DB::move_campaign_to_space($post_id, $target_space_id);
+        if ($result !== true) {
+            return new WP_Error(
+                'wpsg_move_failed',
+                sprintf('Campaign move failed while updating %s; all changes were rolled back.', $result),
+                ['status' => 500]
+            );
+        }
+
+        self::add_audit_entry($post_id, 'campaign.moved_space', [
+            'from_space_id' => $source_space_id,
+            'to_space_id'   => $target_space_id,
+        ]);
+        do_action('wpsg_campaign_space_moved', $post_id, $source_space_id, $target_space_id);
+        self::clear_accessible_campaigns_cache();
+        // Space-filtered campaign/space list caches key off the cache version.
+        self::bump_cache_version();
+
+        return new WP_REST_Response([
+            'message' => 'Campaign moved',
+            'spaceId' => $target_space_id,
+            'moved'   => true,
+        ], 200);
     }
 
     // ── P28-A: Campaign hard-delete ───────────────────────────────────────────

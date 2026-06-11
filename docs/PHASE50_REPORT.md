@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | To do | Medium |
+| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11) | Medium |
 | P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | To do | Medium |
 | P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
 | P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | To do | Medium-High |
@@ -77,6 +77,15 @@ Phase 47 v1 assigns campaigns to a space at creation time only; there is no post
 
 - PHP: transaction test with a mock failure injected after the second table update; confirm rollback.
 - Manual: move a campaign between two spaces; verify it appears only in the target space's Campaigns tab; verify analytics are present under the target space.
+
+### Implementation rationale (2026-06-11)
+
+- **Claims re-verified, with corrections:** the REST namespace is `wp-super-gallery/v1` (the doc's `wpsg/v1` does not exist); the endpoint went into the existing `rest/class-wpsg-campaign-controller.php` rather than a new file, following the archive/restore/duplicate precedent; `bump_cache_version()` lives in `class-wpsg-rest-base.php`, not `class-wpsg-db.php`. All four custom tables have both `campaign_id` and `space_id` columns as claimed.
+- **Discovered P47 debt:** the `space_id` columns added by the P47 v11 migration are *never written on insert* — every row in all four tables sat at the `0` default, even though the analytics controller already filters on `space_id`. This track fixed the audit path (`WPSG_DB::insert_audit_entry` now stamps new rows with the campaign's current space, with an optional `space_id` override), because the move's own `campaign.moved_space` audit entry must land in the target space. Insert-time stamping for analytics events, media refs, and access requests remains open P47 debt — a natural companion slice for P50-B.
+- **Transaction:** `WPSG_DB::move_campaign_to_space()` wraps the four table UPDATEs plus a direct-SQL `_wpsg_space_id` postmeta write in one transaction; postmeta is written with raw SQL (not `update_post_meta`) so it participates in the transaction without mutating the object cache pre-COMMIT, and the meta cache is flushed on every exit path. On failure it rolls back and returns the failing table name, surfaced in the 500 response. A filter (`wpsg_move_campaign_simulate_failure`) provides the test seam for the mid-transaction rollback test.
+- **Authorization:** `require_campaign_space_move` (rest-base) requires `owner` via `get_effective_space_level` on both the campaign's source space (falling back to the default space for pre-backfill campaigns) and the target. The `manage_options` bypass and the "manage_wpsg-only user gets 403 on delegated targets" criterion both fall out of P47-B's existing level resolution — no special-casing needed.
+- **Frontend:** `format_space` now exposes `effectiveLevel` (safe: the spaces-list transient is already keyed per user), which gates the row-level "Move" button — shown only when a specific owned space is selected and at least one other active owned space exists. `CampaignMoveSpaceModal` mirrors the duplicate modal: owner-only target Select (source and archived spaces excluded) plus a note that analytics, audit history, media refs, and access requests move with the campaign.
+- **Validation done:** new `WPSG_P50A_Campaign_Move_Test` (5 tests: full re-stamp + list flip, mid-transaction rollback, delegated-target 403 for manage_wpsg-only user, same-space no-op, archived-target rejection); full PHP suite 918 tests OK; 9-test modal suite; full frontend suite 2229/2229; `tsc --noEmit` and production build clean. The PHP rollback test documents (and contains, via explicit cleanup + COMMIT) the WP-test-framework interaction where a real transaction implicitly commits the per-test wrapper. **Remaining:** the manual two-space move pass on a live WordPress site.
 
 ---
 
