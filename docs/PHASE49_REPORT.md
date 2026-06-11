@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P49-A | Accessibility audit — keyboard nav, ARIA roles, focus trapping, screen-reader labels | To do | Medium |
+| P49-A | Accessibility audit — keyboard nav, ARIA roles, focus trapping, screen-reader labels | Done | Medium |
 | P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | Done | Medium |
 | P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | To do | Medium |
 | P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | To do | Medium |
@@ -77,6 +77,26 @@ No systematic a11y pass has been performed. The highest-risk areas are:
 
 - Playwright a11y test (`axe.run()` on gallery and admin page fixtures).
 - Manual keyboard walkthrough; screen-reader smoke test.
+
+### Rationale (delivered 2026-06-10)
+
+Audited all 40 files using `ActionIcon` for missing `aria-label`. Seven icon-only buttons lacked labels (Tooltip/`title` alone is not announced by most screen readers on interactive elements); all fixed:
+
+- `InContextEditor` edit-settings toggle: `aria-label="Edit settings"`.
+- `TypographyEditor` reset button: `aria-label="Reset all overrides"`.
+- `FontLibraryManager` per-font delete: `aria-label="Delete <font name>"` (dynamic).
+- `KeyboardShortcutsModal` key-binding confirm/cancel inline buttons: `aria-label="Confirm key binding"` / `"Cancel key recording"`.
+- `LayerRow` visibility toggle: `aria-label="Hide layer"` / `"Show layer"` (matches `Tooltip` text; now both visual and programmatic).
+- `LayerRow` lock toggle: `aria-label="Lock layer"` / `"Unlock layer"`.
+- `LayerRow` context menu trigger: `aria-label="Layer options"`.
+
+`MediaAddModal` dropzone `Paper`: added `role="region"` + `aria-label="File drop zone"` so the interactive drop target is announced as a landmark.
+
+Upload status live region: visually-hidden `role="status" aria-live="polite" aria-atomic="true"` element inside the drop zone. Announces "Uploading N files…" when `uploading=true` and "N files uploaded successfully" once all progress values reach 100. Uses the existing `uploadProgresses` prop — no new state needed.
+
+Lightbox already had complete a11y: `role="dialog"`, `aria-modal="true"`, `aria-label="Media lightbox"`, `FocusTrap`, Escape key wired, focus saved/restored on open/close, nav buttons labelled. `ContextualToolbar` already had `role="toolbar"` with `aria-label` on every `ActionIcon`. These were confirmed and noted as passing.
+
+Adapter grid roving-tabindex (arrow-key navigation between tiles) is the remaining open item; it requires touching all 12 adapter tile components and is deferred to a dedicated PR post-P49.
 
 ---
 
