@@ -235,6 +235,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
             color="red"
             size="sm"
             title="Reset all overrides"
+            aria-label="Reset all overrides"
             onClick={() => onChange({})}
           >
             <IconTrash size={14} />

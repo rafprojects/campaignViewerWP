@@ -38,6 +38,7 @@ const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggl
         radius="xl"
         onClick={handleClick}
         title="Edit settings"
+        aria-label="Edit settings"
         style={{ opacity: 0.85, ...style }}
       >
         {children ?? <IconSettings size={14} />}

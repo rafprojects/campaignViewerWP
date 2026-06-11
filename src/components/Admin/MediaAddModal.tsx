@@ -131,6 +131,8 @@ export function MediaAddModal({
           ref={dropRef}
           p="md"
           withBorder
+          role="region"
+          aria-label="File drop zone"
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -272,6 +274,18 @@ export function MediaAddModal({
                 {isBatchSelection ? `Upload ${selectedFiles.length} files` : 'Upload'}
               </Button>
             </Group>
+            <div
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
+            >
+              {uploading && uploadProgresses && uploadProgresses.every((p) => p >= 100)
+                ? `${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''} uploaded successfully`
+                : uploading
+                  ? `Uploading ${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''}…`
+                  : null}
+            </div>
           </Stack>
         </Paper>
 
