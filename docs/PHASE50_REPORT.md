@@ -8,8 +8,8 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11) | Medium |
-| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | To do | Medium |
+| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11, manual test passed) | Medium |
+| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | Done (2026-06-11) | Medium |
 | P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
 | P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | To do | Medium-High |
 | P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
@@ -161,6 +161,47 @@ Phase 47 ships overlays and fonts as a global shared library — all spaces see 
 
 - PHP: create a delegated space; assert overlay list is empty; associate one overlay; assert list has one entry.
 - Manual: log in as a space-grantee of a delegated space; open the overlay library; confirm only associated overlays are visible.
+
+### Implementation rationale (2026-06-11)
+
+- **Claims re-verified, with corrections:** the track doc described `asset_id BIGINT` — both `WPSG_Overlay_Library` and `WPSG_Font_Library` use UUID strings (`wp_generate_uuid4()`), so the schema was corrected to `asset_id VARCHAR(36)`. `WPSG_Font_Library` uses a WP option for storage, not a DB table; `get_all()` still returns `{ id: string, ... }` records, so the asset-id assumption in the backfill holds. The actual REST endpoints are `/admin/overlay-library` and `/admin/font-library` (the track doc listed `/wpsg/v1/overlays`).
+- **DB table:** `wpsg_space_library_assoc(id BIGINT UNSIGNED AUTO_INCREMENT PK, space_id BIGINT UNSIGNED NOT NULL, asset_type VARCHAR(10) NOT NULL, asset_id VARCHAR(36) NOT NULL, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)` with UNIQUE `(space_id, asset_type, asset_id)`. `DB_VERSION` bumped `'11'` → `'12'`.
+- **REST filtering:** `filter_library_for_space(array $items, $request, string $asset_type)` in `class-wpsg-content-controller.php` — reads the optional `?space=` query param; if the named space exists and is `delegated`, filters items by `get_space_library_assets()`; open-mode / unscoped requests pass through unchanged. Applied to both `list_overlay_library()` and `list_font_library()`.
+- **Association endpoints:** `GET/POST/DELETE /spaces/{id}/library` in `class-wpsg-space-controller.php`. GET returns `{ overlay: string[], font: string[] }`. POST/DELETE require `owner` level on the space (checked via `get_effective_space_level()`), validated through the same `require_space_owner()` middleware already used for access-grant writes. `dissociate_library_asset()` reads `assetType`/`assetId` from query string because `ApiClient.delete()` does not accept a body.
+- **Migration:** `maybe_backfill_space_library_assoc()` iterates all delegated spaces × all existing overlays × all existing fonts, calling `associate_asset()` for each combo. Guarded by `wpsg_space_library_assoc_backfilled` option so it runs exactly once.
+- **Admin UX:** new "Library" tab in `SpaceManagementView.tsx`, enabled only when a delegated space is selected (`isolationMode === 'delegated'`). Two sections — Overlays and Fonts — each renders all global assets as `Checkbox` rows. Checked state comes from `GET /spaces/{id}/library`; toggles fire `POST` (associate) or `DELETE ?assetType=…&assetId=…` (dissociate). Queries enabled only when the Library tab is active to avoid unnecessary fetches.
+- **Test isolation bug fixed:** `test_migration_backfills_existing_assets_into_delegated_spaces` calls `WPSG_DB::maybe_upgrade()`, which internally calls `maybe_create_space_library_assoc_table()` → `dbDelta()` (DDL). MySQL's implicit COMMIT on any DDL statement commits all in-flight InnoDB data — including overlay rows inserted earlier in the same test — before WP's per-test ROLLBACK has a chance to undo them. The rows persisted across the full suite run, causing `WPSG_Overlay_Library_Test::test_get_all_returns_empty_array_when_no_entries` to fail on the next suite run. Fixed by adding `tearDownAfterClass()` to `WPSG_P50B_Space_Library_Test` that TRUNCATEs the overlays table after all tests in the class finish (TRUNCATE is itself DDL, so it commits and clears atomically, independent of any transaction state).
+- **Validation done:** 6-test `WPSG_P50B_Space_Library_Test` (delegated overlay isolation + associate/dissociate round-trip, delegated font isolation, open-mode bypass, GET /library both lists, 403 for non-owner, migration backfill); 8-test `SpaceManagementView.test.tsx` (Library tab enabled/disabled states for open vs. delegated, checkbox rendering, association state reflects API response, POST called on check, DELETE+query-params called on uncheck, empty-state message); full PHP suite 924/924 (0 failures, 2 skips — stable on consecutive runs); full frontend suite 2237/2237; `tsc --noEmit` clean; production build clean.
+
+### Manual test plan (P50-B)
+
+**Deploy to the local dev site**
+
+1. `npm run build:wp` + `./update_dev_plugin.sh`.
+2. Open `https://wordpress.lan`, log in as admin.
+
+**Fixtures**
+
+- Upload at least 2 overlays via Layout Builder → Overlays section (global library).
+- One `delegated` space ("Tenant A") and one `open` space. For a fresh install, run once to trigger the backfill (which auto-associates all existing assets into existing delegated spaces).
+
+**Library tab behaviour**
+
+- [ ] Open Space Management → select the `open` space — "Library" tab is greyed out (disabled).
+- [ ] Select "Tenant A" (delegated) — "Library" tab is enabled.
+- [ ] Switch to Library tab — all globally uploaded overlays appear as checkboxes; if the backfill ran, they are all checked.
+- [ ] Uncheck one overlay — it is immediately dissociated.
+- [ ] Open Layout Builder while scoped to Tenant A — that overlay is no longer offered in the overlay picker.
+- [ ] Re-check it — it reappears in the picker.
+
+**Isolation cross-check**
+
+- [ ] As an `open`-mode space user (or admin with no space scope), all overlays are visible regardless of Tenant A's association state.
+
+**Migration (fresh delegated space)**
+
+- [ ] Create a new delegated space "Tenant B" after overlays already exist globally — the Library tab initially shows all overlays **unchecked** (no auto-backfill for spaces created post-P50-B; the backfill only ran once for pre-existing spaces).
+- [ ] Manually associate an overlay — it appears in Tenant B's overlay picker.
 
 ---
 

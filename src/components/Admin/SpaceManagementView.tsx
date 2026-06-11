@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   Tabs, Stack, Group, Text, Badge, Button, TextInput, Switch,
-  Alert, Loader, Center, Table, ActionIcon, Tooltip, Select, Divider,
+  Alert, Loader, Center, Table, ActionIcon, Tooltip, Select, Divider, Checkbox,
 } from '@mantine/core';
 import {
   IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings,
@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import { useSpaces } from '@/services/adminQuery';
 import { SettingsPanel } from './SettingsPanel';
+import type { OverlayLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
+import type { FontLibraryEntry } from '@/utils/loadCustomFonts';
 
 interface SpaceGrant {
   userId: number;
@@ -67,6 +69,65 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  const libraryTabActive = activeTab === 'library';
+  const isDelegated = selectedSpace?.isolationMode === 'delegated';
+
+  const { data: allOverlays, isLoading: overlaysLoading } = useQuery({
+    queryKey: ['overlay-library', apiClient.getBaseUrl()],
+    queryFn: async () =>
+      (await apiClient.get<OverlayLibraryItem[]>('/wp-json/wp-super-gallery/v1/admin/overlay-library')) ?? [],
+    enabled: libraryTabActive && isDelegated,
+    staleTime: 30_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: allFonts, isLoading: fontsLoading } = useQuery({
+    queryKey: ['font-library', apiClient.getBaseUrl()],
+    queryFn: async () =>
+      (await apiClient.get<FontLibraryEntry[]>('/wp-json/wp-super-gallery/v1/admin/font-library')) ?? [],
+    enabled: libraryTabActive && isDelegated,
+    staleTime: 30_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: spaceLibrary, isLoading: libraryLoading, refetch: refetchLibrary } = useQuery({
+    queryKey: ['space-library', apiClient.getBaseUrl(), selectedSpaceId],
+    queryFn: async () =>
+      apiClient.get<{ overlay: string[]; font: string[] }>(
+        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`
+      ),
+    enabled: libraryTabActive && isDelegated && selectedSpaceId !== null,
+    staleTime: 30_000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const handleLibraryToggle = useCallback(async (
+    assetType: 'overlay' | 'font',
+    assetId: string,
+    checked: boolean,
+  ) => {
+    if (!selectedSpaceId) return;
+    try {
+      if (checked) {
+        await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`, {
+          assetType,
+          assetId,
+        });
+      } else {
+        const params = new URLSearchParams({ assetType, assetId });
+        await apiClient.delete(
+          `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library?${params.toString()}`
+        );
+      }
+      await refetchLibrary();
+    } catch (err) {
+      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update library' });
+    }
+  }, [apiClient, selectedSpaceId, refetchLibrary, onNotify]);
 
   const autoSlug = (name: string) =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -161,6 +222,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
         <Tabs.Tab value="spaces">Spaces</Tabs.Tab>
         <Tabs.Tab value="settings" disabled={!selectedSpaceId}>Settings</Tabs.Tab>
         <Tabs.Tab value="access" disabled={!selectedSpaceId}>Access</Tabs.Tab>
+        <Tabs.Tab value="library" disabled={!selectedSpaceId || !isDelegated}>Library</Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="spaces" pt="md">
@@ -379,6 +441,58 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
           </Stack>
         ) : (
           <Text c="dimmed" size="sm">Select a space from the Spaces tab to manage access.</Text>
+        )}
+      </Tabs.Panel>
+
+      <Tabs.Panel value="library" pt="md">
+        {selectedSpace && isDelegated ? (
+          <Stack gap="lg">
+            <Text size="sm" c="dimmed">
+              Control which overlays and fonts are available in{' '}
+              <Text span fw={500}>{selectedSpace.name}</Text>.
+              Only associated assets will appear when creating campaigns in this space.
+            </Text>
+
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Overlays</Text>
+              {overlaysLoading || libraryLoading ? (
+                <Center py="xs"><Loader size="sm" /></Center>
+              ) : !allOverlays?.length ? (
+                <Text size="xs" c="dimmed">No overlays in the global library.</Text>
+              ) : (
+                allOverlays.map((overlay) => (
+                  <Checkbox
+                    key={overlay.id}
+                    label={overlay.name}
+                    checked={spaceLibrary?.overlay?.includes(overlay.id) ?? false}
+                    onChange={(e) => void handleLibraryToggle('overlay', overlay.id, e.currentTarget.checked)}
+                    size="sm"
+                  />
+                ))
+              )}
+            </Stack>
+
+            <Stack gap="xs">
+              <Text size="sm" fw={500}>Fonts</Text>
+              {fontsLoading || libraryLoading ? (
+                <Center py="xs"><Loader size="sm" /></Center>
+              ) : !allFonts?.length ? (
+                <Text size="xs" c="dimmed">No fonts in the global library.</Text>
+              ) : (
+                allFonts.map((font) => (
+                  <Checkbox
+                    key={font.id}
+                    label={font.name}
+                    checked={spaceLibrary?.font?.includes(font.id) ?? false}
+                    onChange={(e) => void handleLibraryToggle('font', font.id, e.currentTarget.checked)}
+                    size="sm"
+                  />
+                ))
+              )}
+            </Stack>
+          </Stack>
+        ) : (
+          <Text c="dimmed" size="sm">Select a delegated space to manage its shared library.</Text>
         )}
       </Tabs.Panel>
     </Tabs>

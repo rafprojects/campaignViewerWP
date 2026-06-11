@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '11';
+    const DB_VERSION = '12';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -27,6 +27,8 @@ class WPSG_DB {
         self::maybe_upgrade_v11_space_columns();
         self::maybe_seed_default_space();
         self::maybe_backfill_spaces();
+        self::maybe_create_space_library_assoc_table();
+        self::maybe_backfill_space_library_assoc();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -1192,6 +1194,127 @@ class WPSG_DB {
 
         $finish('COMMIT');
         return true;
+    }
+
+    // ── P50-B: Per-space shared-asset library associations ───────────────────
+
+    /** Asset types supported by the per-space library association table. */
+    private const LIBRARY_ASSET_TYPES = ['overlay', 'font'];
+
+    public static function get_space_library_assoc_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_space_library_assoc';
+    }
+
+    /**
+     * An overlay/font is visible to a `delegated` space only when an
+     * association row exists; `open` spaces bypass this table entirely.
+     * Asset ids are the library UUIDs (overlay_id / font option id).
+     */
+    private static function maybe_create_space_library_assoc_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_space_library_assoc_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            space_id   BIGINT UNSIGNED NOT NULL,
+            asset_type VARCHAR(10) NOT NULL,
+            asset_id   VARCHAR(36) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY space_asset (space_id, asset_type, asset_id),
+            KEY space_type (space_id, asset_type)
+        ) {$charset};";
+        dbDelta($sql);
+    }
+
+    /**
+     * Asset ids associated with a space for one asset type.
+     *
+     * @return string[] Library asset UUIDs.
+     */
+    public static function get_space_library_assets(int $space_id, string $asset_type): array {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true)) {
+            return [];
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        return $wpdb->get_col($wpdb->prepare(
+            "SELECT asset_id FROM {$table} WHERE space_id = %d AND asset_type = %s ORDER BY id ASC",
+            $space_id,
+            $asset_type
+        ));
+    }
+
+    public static function associate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // INSERT IGNORE: associating an already-associated asset is a no-op.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$table} (space_id, asset_type, asset_id) VALUES (%d, %s, %s)",
+            $space_id,
+            $asset_type,
+            sanitize_text_field($asset_id)
+        ));
+        return $result !== false;
+    }
+
+    public static function dissociate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->delete(self::get_space_library_assoc_table(), [
+            'space_id'   => $space_id,
+            'asset_type' => $asset_type,
+            'asset_id'   => sanitize_text_field($asset_id),
+        ], ['%d', '%s', '%s']);
+        return $result !== false;
+    }
+
+    /**
+     * One-time migration: associate every existing overlay/font with every
+     * existing delegated space so no delegated tenant loses access to assets
+     * that were globally visible before P50-B. New delegated spaces created
+     * after this migration start with an empty library by design.
+     */
+    private static function maybe_backfill_space_library_assoc(): void {
+        if (get_option('wpsg_space_library_assoc_backfilled')) {
+            return;
+        }
+
+        $delegated = array_filter(
+            self::list_spaces(),
+            fn($space) => ($space->isolation_mode ?? '') === 'delegated'
+        );
+        if (!empty($delegated)) {
+            $overlay_ids = class_exists('WPSG_Overlay_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Overlay_Library::get_all())
+                : [];
+            $font_ids = class_exists('WPSG_Font_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Font_Library::get_all())
+                : [];
+
+            foreach ($delegated as $space) {
+                foreach ($overlay_ids as $overlay_id) {
+                    self::associate_asset(intval($space->id), 'overlay', $overlay_id);
+                }
+                foreach ($font_ids as $font_id) {
+                    self::associate_asset(intval($space->id), 'font', $font_id);
+                }
+            }
+        }
+
+        update_option('wpsg_space_library_assoc_backfilled', '1', false);
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

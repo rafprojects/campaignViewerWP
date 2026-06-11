@@ -134,6 +134,33 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
                 'permission_callback' => [self::class, 'require_space_owner'],
             ],
         ]);
+
+        // P50-B: per-space shared-asset (overlay/font) library associations.
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/library', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_space_library'],
+                'permission_callback' => [self::class, 'require_space_member'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'associate_library_asset'],
+                'permission_callback' => [self::class, 'require_space_owner'],
+                'args'                => [
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['overlay', 'font']],
+                    'assetId'   => ['required' => true, 'type' => 'string'],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'dissociate_library_asset'],
+                'permission_callback' => [self::class, 'require_space_owner'],
+                'args'                => [
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['overlay', 'font']],
+                    'assetId'   => ['required' => true, 'type' => 'string'],
+                ],
+            ],
+        ]);
     }
 
     // ── Handlers ──────────────────────────────────────────────────────────────
@@ -498,6 +525,48 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // ── P50-B: Shared-asset library associations ──────────────────────────────
+
+    public static function get_space_library($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        return new WP_REST_Response([
+            'overlay' => WPSG_DB::get_space_library_assets($space_id, 'overlay'),
+            'font'    => WPSG_DB::get_space_library_assets($space_id, 'font'),
+        ], 200);
+    }
+
+    public static function associate_library_asset($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        $asset_type = sanitize_text_field($request->get_param('assetType'));
+        $asset_id   = sanitize_text_field($request->get_param('assetId'));
+        if (!WPSG_DB::associate_asset($space_id, $asset_type, $asset_id)) {
+            return new WP_Error('wpsg_library_assoc_failed', 'Failed to associate asset', ['status' => 400]);
+        }
+        return new WP_REST_Response(['associated' => true], 200);
+    }
+
+    public static function dissociate_library_asset($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = WPSG_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        $asset_type = sanitize_text_field($request->get_param('assetType'));
+        $asset_id   = sanitize_text_field($request->get_param('assetId'));
+        if (!WPSG_DB::dissociate_asset($space_id, $asset_type, $asset_id)) {
+            return new WP_Error('wpsg_library_assoc_failed', 'Failed to dissociate asset', ['status' => 400]);
+        }
+        return new WP_REST_Response(['dissociated' => true], 200);
+    }
 
     private static function format_space(object $space, int $default_id, bool $include_grants = false): array {
         $grants = json_decode($space->access_grants, true);

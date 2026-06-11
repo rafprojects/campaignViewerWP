@@ -633,10 +633,29 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
     // ── Overlay Library (P15-H) ──────────────────────────────
 
     /**
+     * P50-B: When a `space` param names a delegated space, restrict library
+     * items to assets associated with that space. Open-mode spaces (and
+     * requests with no space param) see the full global library.
+     */
+    private static function filter_library_for_space( array $items, $request, string $asset_type ): array {
+        $space_id = intval( $request->get_param( 'space' ) );
+        if ( $space_id <= 0 ) {
+            return $items;
+        }
+        $space = WPSG_DB::get_space( $space_id );
+        if ( ! $space || $space->isolation_mode !== 'delegated' ) {
+            return $items;
+        }
+        $allowed = array_flip( WPSG_DB::get_space_library_assets( $space_id, $asset_type ) );
+        return array_values( array_filter( $items, fn( $item ) => isset( $allowed[ $item['id'] ?? '' ] ) ) );
+    }
+
+    /**
      * List all overlay library items.
      */
     public static function list_overlay_library( $request ) {
         $items = WPSG_Overlay_Library::get_all();
+        $items = self::filter_library_for_space( $items, $request, 'overlay' );
         return new WP_REST_Response( $items, 200 );
     }
 
@@ -691,6 +710,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
      */
     public static function list_font_library( $request ) {
         $items = WPSG_Font_Library::get_all();
+        $items = self::filter_library_for_space( $items, $request, 'font' );
         return new WP_REST_Response( $items, 200 );
     }
 
