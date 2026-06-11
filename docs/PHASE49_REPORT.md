@@ -12,7 +12,7 @@
 | P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | Done | Medium |
 | P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | To do | Medium |
 | P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | To do | Medium |
-| P49-E | Storybook — install `@storybook/react-vite`; stories for AssetUploader, LayoutCanvas, all adapters | To do | Medium |
+| P49-E | Storybook — install `@storybook/react-vite`; stories for AssetUploader, LayoutCanvas, all adapters | Done | Medium |
 | P49-F | Thumbnail Cache Index scalability — per-hash `wp_options` entries instead of single autoloaded row | Done | Medium |
 | P49-G | `get_campaigns_for_attachment_id()` N+1 audit + test — O(1) rewrite deferred to Phase 50+ | Done | Small-Medium |
 
@@ -237,6 +237,22 @@ Contributors must run the full WordPress + PHP stack to work on or inspect React
 
 - `npm run storybook`; browse all stories; no console errors.
 - `npm run build-storybook`; static build succeeds.
+
+### Rationale (delivered 2026-06-10)
+
+Installed `@storybook/react-vite@^8` + `@storybook/addon-essentials@^8` + `@storybook/test@^8` as devDependencies. Pinned to v8 to match the rest of the storybook ecosystem (v10 of `@storybook/react` was the latest in npm `@*` resolution and conflicts with the v8 peer of `storybook`).
+
+`.storybook/main.ts` reuses the Vite `@/` alias via `viteFinal` / `mergeConfig`; telemetry disabled. `.storybook/preview.tsx` wraps every story in `MantineProvider` (light scheme) so Mantine components render correctly without any WordPress or WP-API context.
+
+`src/stories/adapterFixtures.ts` provides the shared stable 9-item media fixture (landscape × 4, portrait × 3, square × 2) with deterministic picsum seeds, `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`, and a minimal `ResolvedGallerySectionRuntime`. This file doubles as the fixture source for P49-D visual regression tests.
+
+Stories delivered:
+- `AssetUploader`: Default, UploadOnly (render prop strips the optional `onUrlSubmit`), Uploading, Disabled.
+- `GraphicLayerPropertiesPanel`: Default, Locked, Hidden, LowOpacity.
+- `LayoutCanvas`: Preview (read-only), WithGrid (rulers + grid overlay), SlotSelected. `CanvasTransformContext` has safe context defaults (`scale=1, isHandTool=false`) so no provider is needed in stories.
+- 11 media adapters (MediaCarousel, CompactGrid, Justified, Masonry, Hexagonal, Circular, Diamond, ScrollSnap, Coverflow, Pinterest, Spotlight): one `Default` story each using the shared fixture.
+
+`npm run build-storybook` produces a clean static build; `storybook-static/` added to `.gitignore`.
 
 ---
 
