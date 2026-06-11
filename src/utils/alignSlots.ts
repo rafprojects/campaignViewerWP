@@ -75,3 +75,40 @@ export function distributeSlotsVertically(slots: LayoutSlot[]): SlotUpdate {
     sorted.map((s, i) => [s.id, { y: cy(first) + i * step - s.height / 2 }]),
   );
 }
+
+// ── Distribute by gap ─────────────────────────────────────────────────────────
+// Equalizes the whitespace between slot edges (leading edge of next minus
+// trailing edge of previous). The outermost slots anchor in place; only the
+// interior slots move. Falls back to alignSlotsLeft/Top when < 3 slots.
+
+export function distributeSlotsHorizontallyByGap(slots: LayoutSlot[]): SlotUpdate {
+  if (slots.length < 3) return alignSlotsLeft(slots);
+  const sorted = [...slots].sort((a, b) => a.x - b.x);
+  const totalSpan = right(sorted[sorted.length - 1]!) - sorted[0]!.x;
+  const totalSlotWidth = sorted.reduce((sum, s) => sum + s.width, 0);
+  const gap = (totalSpan - totalSlotWidth) / (sorted.length - 1);
+  let cursor = sorted[0]!.x;
+  return Object.fromEntries(
+    sorted.map((s) => {
+      const x = cursor;
+      cursor += s.width + gap;
+      return [s.id, { x }];
+    }),
+  );
+}
+
+export function distributeSlotsVerticallyByGap(slots: LayoutSlot[]): SlotUpdate {
+  if (slots.length < 3) return alignSlotsTop(slots);
+  const sorted = [...slots].sort((a, b) => a.y - b.y);
+  const totalSpan = bottom(sorted[sorted.length - 1]!) - sorted[0]!.y;
+  const totalSlotHeight = sorted.reduce((sum, s) => sum + s.height, 0);
+  const gap = (totalSpan - totalSlotHeight) / (sorted.length - 1);
+  let cursor = sorted[0]!.y;
+  return Object.fromEntries(
+    sorted.map((s) => {
+      const y = cursor;
+      cursor += s.height + gap;
+      return [s.id, { y }];
+    }),
+  );
+}

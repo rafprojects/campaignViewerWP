@@ -1,5 +1,8 @@
+import { useState, useCallback } from 'react';
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
+import { SpaceSwitcher } from './SpaceSwitcher';
+import { spaceColor } from '@/utils/spaceColor';
 
 interface AuthBarMinimalProps {
   email: string;
@@ -11,6 +14,12 @@ interface AuthBarMinimalProps {
   onOpenSettings: () => void;
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
+  instanceId?: string | undefined;
+}
+
+function callOpener(instanceId: string, panel: 'settings' | 'admin') {
+  const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${instanceId}`];
+  if (typeof opener === 'function') (opener as (p: string) => void)(panel);
 }
 
 export function AuthBarMinimal({
@@ -23,7 +32,21 @@ export function AuthBarMinimal({
   onOpenSettings,
   onOpenSignIn,
   onLogout,
+  instanceId,
 }: AuthBarMinimalProps) {
+  const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
+  const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
+
+  const handleOpenAdmin = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) callOpener(activeInstanceId, 'admin');
+    else onOpenAdminPanel();
+  }, [activeInstanceId, instanceId, onOpenAdminPanel]);
+
+  const handleOpenSettings = useCallback(() => {
+    if (activeInstanceId && activeInstanceId !== instanceId) callOpener(activeInstanceId, 'settings');
+    else onOpenSettings();
+  }, [activeInstanceId, instanceId, onOpenSettings]);
+
   const containerSize = appMaxWidth && appMaxWidth > 0 ? appMaxWidth : undefined;
   const containerFluid = !appMaxWidth || appMaxWidth === 0;
   const containerPaddingStyle = appPadding != null ? { paddingInline: appPadding } : undefined;
@@ -59,7 +82,9 @@ export function AuthBarMinimal({
                 </ActionIcon>
                 <Text size="xs" truncate style={{ minWidth: 0, lineHeight: 1 }}>{email}</Text>
               </Group>
-              <Menu shadow="md" width={200} position="bottom-end" withArrow>
+              <Menu shadow="md" width={200} position="bottom-end" withArrow
+                styles={{ dropdown: color ? { borderColor: `var(--mantine-color-${color}-5)` } : {} }}
+              >
                 <Menu.Target>
                   <ActionIcon variant="subtle" size="sm" aria-label="User menu">
                     <IconChevronDown size={14} />
@@ -68,12 +93,20 @@ export function AuthBarMinimal({
                 <Menu.Dropdown>
                   {isAdmin && (
                     <>
-                      <Menu.Item leftSection={<IconDashboard size={14} />} onClick={onOpenAdminPanel}>
+                      <Menu.Item leftSection={<IconDashboard size={14} />} onClick={handleOpenAdmin}>
                         Admin Panel
                       </Menu.Item>
-                      <Menu.Item leftSection={<IconSettings size={14} />} onClick={onOpenSettings}>
+                      <Menu.Item leftSection={<IconSettings size={14} />} onClick={handleOpenSettings}>
                         Settings
                       </Menu.Item>
+                      {instanceId && (
+                        <Box px={8} py={4}>
+                          <SpaceSwitcher
+                            activeInstanceId={activeInstanceId ?? instanceId}
+                            onSelect={setActiveInstanceId}
+                          />
+                        </Box>
+                      )}
                       <Menu.Divider />
                     </>
                   )}

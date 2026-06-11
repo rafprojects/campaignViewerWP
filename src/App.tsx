@@ -15,7 +15,7 @@ import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
-import type { Campaign, Company, MediaItem } from './types';
+import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
@@ -83,11 +83,17 @@ function AppContent({
   authProvider,
   accessMode,
   spaceId,
+  spaceName,
+  instanceId,
+  authBarMode,
 }: {
   apiBaseUrl: string;
   authProvider?: AuthProviderInterface | undefined;
   accessMode: 'lock' | 'hide';
   spaceId?: number;
+  spaceName?: string;
+  instanceId?: string;
+  authBarMode?: string | undefined;
 }) {
   const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
   const isOnline = useOnlineStatus();
@@ -134,6 +140,19 @@ function AppContent({
   // auth resolves. Combined in one effect so scroll restores to the right view.
   const viewRestoredRef = useRef(false);
   const rootId = useRootId();
+
+  // P48-I: Register a per-instance opener so the WP admin bar delegation script
+  // can open the correct space's panel without global event listeners.
+  useEffect(() => {
+    if (!instanceId) return;
+    const key = `__wpsgOpen_${instanceId}` as keyof Window;
+    (window as unknown as Record<string, unknown>)[key] = (panel: 'admin' | 'settings') => {
+      if (panel === 'admin') openAdminPanel();
+      else openSettings();
+    };
+    return () => { delete (window as unknown as Record<string, unknown>)[key]; };
+  }, [instanceId, openAdminPanel, openSettings]);
+
   useEffect(() => {
     if (!isReady || viewRestoredRef.current) return;
     viewRestoredRef.current = true;
@@ -265,6 +284,7 @@ function AppContent({
   const externalMediaModal = useExternalMediaModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
 
   const resolvedSettings = settingsResponse ?? DEFAULT_RESOLVED_SETTINGS;
+  const effectiveAuthBarMode = (authBarMode as GalleryBehaviorSettings['authBarDisplayMode'] | undefined) ?? resolvedSettings.authBarDisplayMode;
   const appContainerSize = resolvedSettings.appMaxWidth > 0 ? resolvedSettings.appMaxWidth : undefined;
   const appContainerFluid = resolvedSettings.appMaxWidth === 0;
   const appContainerPaddingStyle = { paddingInline: resolvedSettings.appPadding };
@@ -330,12 +350,13 @@ function AppContent({
             isAuthenticated={isAuthenticated}
             appMaxWidth={resolvedSettings.appMaxWidth}
             appPadding={resolvedSettings.appPadding}
-            displayMode={resolvedSettings.authBarDisplayMode}
+            displayMode={effectiveAuthBarMode}
             dragMargin={resolvedSettings.authBarDragMargin}
             onOpenAdminPanel={openAdminPanel}
             onOpenSettings={openSettings}
             onOpenSignIn={openSignIn}
             onLogout={() => void logout()}
+            {...(instanceId !== undefined && { instanceId })}
           />
         )}
         {actionMessage && (
@@ -368,6 +389,8 @@ function AppContent({
                 initialSettings={settingsResponse}
                 onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved as unknown as Parameters<typeof setSettingsQueryData>[2])}
                 {...(spaceId !== undefined && { spaceId })}
+                {...(spaceName !== undefined && { spaceName })}
+                {...(instanceId !== undefined && { instanceId })}
               />
             </Suspense>
           </ErrorBoundary>
@@ -382,6 +405,9 @@ function AppContent({
                   onCampaignsUpdated={() => void mutateCampaigns()}
                   onNotify={handleAdminNotify}
                   initialBuilderTemplateId={initialBuilderTemplateId ?? undefined}
+                  {...(spaceId !== undefined && { initialSpaceId: String(spaceId) })}
+                  {...(spaceName !== undefined && { spaceName })}
+                  {...(instanceId !== undefined && { instanceId })}
                 />
               </Suspense>
             </ErrorBoundary>
@@ -455,9 +481,12 @@ function AppContent({
 interface AppProps {
   accessMode?: 'lock' | 'hide';
   spaceId?: number;
+  spaceName?: string;
+  instanceId?: string;
+  authBarMode?: string | undefined;
 }
 
-function App({ accessMode, spaceId }: AppProps) {
+function App({ accessMode, spaceId, spaceName, instanceId, authBarMode }: AppProps) {
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
   const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
@@ -467,7 +496,7 @@ function App({ accessMode, spaceId }: AppProps) {
 
   return (
     <AuthProvider provider={provider} fallbackPermissions={[]}>
-      <AppContent apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} {...(spaceId !== undefined && { spaceId })} />
+      <AppContent apiBaseUrl={apiBaseUrl} authProvider={provider} accessMode={resolvedAccessMode} {...(spaceId !== undefined && { spaceId })} {...(spaceName !== undefined && { spaceName })} {...(instanceId !== undefined && { instanceId })} {...(authBarMode !== undefined && { authBarMode })} />
     </AuthProvider>
   );
 }

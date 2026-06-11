@@ -46,6 +46,8 @@ interface AuditTabProps {
   filters: AuditFilters;
   onFiltersChange: (filters: AuditFilters) => void;
   onExportCsv: () => void;
+  onExportZip?: () => void;
+  exportingZip?: boolean;
   auditError?: Error | null;
 }
 
@@ -59,6 +61,8 @@ export function AuditTab({
   filters,
   onFiltersChange,
   onExportCsv,
+  onExportZip,
+  exportingZip,
   auditError,
 }: AuditTabProps) {
   return (
@@ -102,6 +106,17 @@ export function AuditTab({
         <Button size="xs" variant="default" onClick={onExportCsv} aria-label="Export audit log as CSV">
           Export CSV
         </Button>
+        {onExportZip && (
+          <Button
+            size="xs"
+            variant="light"
+            onClick={onExportZip}
+            loading={exportingZip ?? false}
+            aria-label="Export audit log as ZIP"
+          >
+            Download ZIP
+          </Button>
+        )}
       </Group>
       {auditLoading ? (
         <Table.ScrollContainer minWidth={680}>

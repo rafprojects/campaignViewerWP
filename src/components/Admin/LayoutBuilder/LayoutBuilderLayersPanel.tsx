@@ -5,12 +5,14 @@ import {
   IconAlignBoxLeftMiddle, IconAlignBoxCenterMiddle, IconAlignBoxRightMiddle,
   IconAlignBoxTopCenter, IconAlignBoxBottomCenter,
   IconLayoutDistributeHorizontal, IconLayoutDistributeVertical,
+  IconLayoutDistributeHorizontalFilled, IconLayoutDistributeVerticalFilled,
   IconAlignBoxCenterTop,
 } from '@tabler/icons-react';
 import {
   alignSlotsLeft, alignSlotsRight, alignSlotsTop, alignSlotsBottom,
   centerSlotsHorizontally, centerSlotsVertically,
   distributeSlotsHorizontally, distributeSlotsVertically,
+  distributeSlotsHorizontallyByGap, distributeSlotsVerticallyByGap,
 } from '@/utils/alignSlots';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
@@ -96,6 +98,70 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
       builder.updateSlots(updates, 'Align slots');
     },
     [builder],
+  );
+
+  // Group-aware alignment: groups where ALL members are selected move as a unit.
+  // A virtual LayoutSlot is created for each such group using its computed bounding
+  // box; free (ungrouped) selected slots are passed through unchanged. After
+  // alignment, the delta of each virtual slot is applied to all its member slots.
+  const applyAlignmentGroupAware = useCallback(
+    (fn: (slots: import('@/types').LayoutSlot[]) => Record<string, Partial<import('@/types').LayoutSlot>>) => {
+      const groups = builder.template.groups ?? [];
+      const fullySelectedGroups = groups.filter(
+        (g) => g.memberIds.length > 0 && g.memberIds.every((id) => builder.selectedSlotIds.has(id)),
+      );
+
+      if (fullySelectedGroups.length === 0) {
+        applyAlignment(fn(selectedSlots));
+        return;
+      }
+
+      const groupMemberIds = new Set(fullySelectedGroups.flatMap((g) => g.memberIds));
+      const freeSlots = selectedSlots.filter((s) => !groupMemberIds.has(s.id));
+
+      const virtualSlots: import('@/types').LayoutSlot[] = fullySelectedGroups.map((g) => {
+        const members = builder.template.slots.filter((s) => g.memberIds.includes(s.id));
+        const minX = Math.min(...members.map((s) => s.x));
+        const minY = Math.min(...members.map((s) => s.y));
+        const maxRight = Math.max(...members.map((s) => s.x + s.width));
+        const maxBottom = Math.max(...members.map((s) => s.y + s.height));
+        return {
+          ...members[0]!,
+          id: `__group__${g.id}`,
+          x: minX, y: minY,
+          width: maxRight - minX,
+          height: maxBottom - minY,
+        };
+      });
+
+      const rawUpdates = fn([...freeSlots, ...virtualSlots]);
+      const finalUpdates: Record<string, Partial<import('@/types').LayoutSlot>> = {};
+
+      for (const s of freeSlots) {
+        if (rawUpdates[s.id]) finalUpdates[s.id] = rawUpdates[s.id]!;
+      }
+
+      for (const vSlot of virtualSlots) {
+        const update = rawUpdates[vSlot.id];
+        if (!update) continue;
+        const dx = (update.x ?? vSlot.x) - vSlot.x;
+        const dy = (update.y ?? vSlot.y) - vSlot.y;
+        const groupId = vSlot.id.slice('__group__'.length);
+        const group = fullySelectedGroups.find((g) => g.id === groupId)!;
+        for (const memberId of group.memberIds) {
+          const member = builder.template.slots.find((s) => s.id === memberId);
+          if (member) {
+            finalUpdates[memberId] = {
+              ...(dx !== 0 ? { x: member.x + dx } : {}),
+              ...(dy !== 0 ? { y: member.y + dy } : {}),
+            };
+          }
+        }
+      }
+
+      builder.updateSlots(finalUpdates, 'Align slots');
+    },
+    [builder, selectedSlots, applyAlignment],
   );
 
   /** Add an empty mask sublayer to an arbitrary slot by ID — used from the layer row context menu. */
@@ -192,44 +258,54 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           }}
         >
           <Tooltip label="Align left edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsLeft(selectedSlots))} aria-label="Align left edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsLeft)} aria-label="Align left edges">
               <IconAlignBoxLeftMiddle size={13} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Center horizontally">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(centerSlotsHorizontally(selectedSlots))} aria-label="Center horizontally">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsHorizontally)} aria-label="Center horizontally">
               <IconAlignBoxCenterMiddle size={13} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Align right edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsRight(selectedSlots))} aria-label="Align right edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsRight)} aria-label="Align right edges">
               <IconAlignBoxRightMiddle size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute horizontally">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(distributeSlotsHorizontally(selectedSlots))} aria-label="Distribute horizontally">
+          <Tooltip label="Distribute by center (horizontal)">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontally)} aria-label="Distribute horizontally by center">
               <IconLayoutDistributeHorizontal size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Distribute by gap (horizontal)">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontallyByGap)} aria-label="Distribute horizontally by gap">
+              <IconLayoutDistributeHorizontalFilled size={13} />
             </ActionIcon>
           </Tooltip>
           <Divider orientation="vertical" />
           <Tooltip label="Align top edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsTop(selectedSlots))} aria-label="Align top edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsTop)} aria-label="Align top edges">
               <IconAlignBoxTopCenter size={13} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Center vertically">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(centerSlotsVertically(selectedSlots))} aria-label="Center vertically">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsVertically)} aria-label="Center vertically">
               <IconAlignBoxCenterTop size={13} />
             </ActionIcon>
           </Tooltip>
           <Tooltip label="Align bottom edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(alignSlotsBottom(selectedSlots))} aria-label="Align bottom edges">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsBottom)} aria-label="Align bottom edges">
               <IconAlignBoxBottomCenter size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute vertically">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignment(distributeSlotsVertically(selectedSlots))} aria-label="Distribute vertically">
+          <Tooltip label="Distribute by center (vertical)">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVertically)} aria-label="Distribute vertically by center">
               <IconLayoutDistributeVertical size={13} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip label="Distribute by gap (vertical)">
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVerticallyByGap)} aria-label="Distribute vertically by gap">
+              <IconLayoutDistributeVerticalFilled size={13} />
             </ActionIcon>
           </Tooltip>
         </Group>

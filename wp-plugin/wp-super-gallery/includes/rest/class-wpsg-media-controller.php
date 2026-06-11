@@ -169,6 +169,27 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
+
+        // P48-F: media library binary export / import.
+        register_rest_route('wp-super-gallery/v1', '/admin/media/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'export_media_library_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'campaign_id' => ['type' => 'integer', 'required' => false],
+                    'mime_type'   => ['type' => 'string',  'required' => false, 'enum' => ['image', 'video', 'all']],
+                    'search'      => ['type' => 'string',  'required' => false],
+                ],
+            ],
+        ]);
+        register_rest_route('wp-super-gallery/v1', '/media/import/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'import_media_library_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+        ]);
     }
 
     public static function get_media_usage($request) {
@@ -1528,6 +1549,202 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
 
     public static function delete_media_tag(WP_REST_Request $request) {
         return self::handle_term_delete($request->get_param('id'), 'wpsg_media_tag');
+    }
+
+    // ── P48-F: Media Library Binary Export / Import ────────────────────────────
+
+    public static function export_media_library_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 503]
+            );
+        }
+
+        $campaign_id = intval($request->get_param('campaign_id') ?? 0);
+        $mime_filter = sanitize_text_field($request->get_param('mime_type') ?? 'all');
+        $search      = sanitize_text_field($request->get_param('search') ?? '');
+
+        // Build WP_Query args for WP attachments.
+        $query_args = [
+            'post_type'      => 'attachment',
+            'post_status'    => 'inherit',
+            'posts_per_page' => 500,
+            'paged'          => 1,
+            'orderby'        => 'date',
+            'order'          => 'DESC',
+        ];
+
+        if ($mime_filter === 'image') {
+            $query_args['post_mime_type'] = 'image';
+        } elseif ($mime_filter === 'video') {
+            $query_args['post_mime_type'] = 'video';
+        } else {
+            $query_args['post_mime_type'] = ['image', 'video'];
+        }
+
+        if (!empty($search)) {
+            $query_args['s'] = $search;
+        }
+
+        // When filtering by campaign, restrict to attachment IDs referenced by that campaign.
+        if ($campaign_id > 0) {
+            $media = get_post_meta($campaign_id, 'media_items', true) ?: [];
+            $att_ids = array_values(array_filter(array_map(function ($item) {
+                $id = intval($item['id'] ?? 0);
+                return $id > 0 ? $id : null;
+            }, (array) $media)));
+
+            if (empty($att_ids)) {
+                // Campaign exists but has no WP-attachment media — return empty export.
+                $att_ids = [0]; // Forces WP_Query to return nothing.
+            }
+            $query_args['post__in'] = $att_ids;
+        }
+
+        $query = new WP_Query($query_args);
+        $manifest_items = [];
+        $media_items    = [];
+
+        foreach ((array) $query->posts as $post) {
+            $att_id   = $post->ID;
+            $url      = wp_get_attachment_url($att_id);
+            $mime     = get_post_mime_type($att_id) ?: '';
+            $filename = basename(get_attached_file($att_id) ?: '');
+            if (!$url || !$filename) {
+                continue;
+            }
+
+            $engine_item = [
+                'id'    => (string) $att_id,
+                'url'   => $url,
+                'title' => $post->post_title,
+            ];
+
+            $manifest_items[] = [
+                'id'       => (string) $att_id,
+                'filename' => WPSG_Export_Engine::get_media_filename($engine_item),
+                'url'      => $url,
+                'title'    => $post->post_title,
+                'mimeType' => $mime,
+            ];
+
+            $media_items[] = $engine_item;
+        }
+
+        $filters_used = array_filter([
+            'campaign_id' => $campaign_id > 0 ? $campaign_id : null,
+            'mime_type'   => $mime_filter !== 'all' ? $mime_filter : null,
+            'search'      => $search ?: null,
+        ]);
+
+        $manifest = wp_json_encode([
+            'version'    => 1,
+            'type'       => 'media_library',
+            'exported_at' => gmdate('c'),
+            'filters'    => $filters_used,
+            'item_count' => count($manifest_items),
+            'items'      => $manifest_items,
+        ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
+
+        $job_id = WPSG_Export_Engine::create_job('media_library', $manifest, $media_items);
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
+    public static function import_media_library_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary import.',
+                ['status' => 503]
+            );
+        }
+
+        $files = $request->get_file_params();
+        if (empty($files['file'])) {
+            return new WP_Error('wpsg_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
+        }
+
+        $file = $files['file'];
+        if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
+            return new WP_Error('wpsg_upload_error', 'File upload failed', ['status' => 400]);
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($file['tmp_name']) !== true) {
+            return new WP_Error('wpsg_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
+        }
+
+        $manifest_json = $zip->getFromName('manifest.json');
+        if ($manifest_json === false) {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
+        }
+
+        $manifest = json_decode($manifest_json, true);
+        if (!is_array($manifest) || ($manifest['type'] ?? '') !== 'media_library') {
+            $zip->close();
+            return new WP_Error('wpsg_invalid_manifest', 'Invalid or incompatible manifest', ['status' => 400]);
+        }
+
+        require_once ABSPATH . 'wp-admin/includes/media.php';
+        require_once ABSPATH . 'wp-admin/includes/file.php';
+        require_once ABSPATH . 'wp-admin/includes/image.php';
+
+        $imported = [];
+        $skipped  = [];
+
+        foreach ((array) ($manifest['items'] ?? []) as $item) {
+            $filename = sanitize_file_name($item['filename'] ?? '');
+            if (!$filename) {
+                continue;
+            }
+
+            $file_data = $zip->getFromName('media/' . $filename);
+            if ($file_data === false) {
+                $skipped[] = $filename;
+                continue;
+            }
+
+            $tmp = wp_tempnam($filename);
+            if ($tmp === false) {
+                $skipped[] = $filename;
+                continue;
+            }
+            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+            $written = file_put_contents($tmp, $file_data);
+            unset($file_data);
+            if ($written === false) {
+                @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                $skipped[] = $filename;
+                continue;
+            }
+
+            $file_array = ['name' => $filename, 'tmp_name' => $tmp];
+            $att_id     = media_handle_sideload($file_array, 0, sanitize_text_field($item['title'] ?? ''));
+            @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+
+            if (is_wp_error($att_id)) {
+                $skipped[] = $filename;
+                continue;
+            }
+
+            $imported[] = [
+                'id'  => $att_id,
+                'url' => wp_get_attachment_url($att_id),
+            ];
+        }
+
+        $zip->close();
+
+        return new WP_REST_Response([
+            'imported' => $imported,
+            'skipped'  => $skipped,
+        ], 201);
     }
 
     // ── P15-B: Layout Template Handlers ──────────────────────

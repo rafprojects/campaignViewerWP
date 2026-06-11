@@ -1,11 +1,11 @@
-import { useState, useCallback, useRef, type RefObject } from 'react';
+import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
 import DOMPurify from 'dompurify';
 import {
+  ActionIcon,
   Button,
   Card,
   FileButton,
   Group,
-  Image,
   Modal,
   Paper,
   Progress,
@@ -14,7 +14,7 @@ import {
   TextInput,
   Textarea,
 } from '@mantine/core';
-import { IconUpload } from '@tabler/icons-react';
+import { IconUpload, IconX, IconFile, IconVideo } from '@tabler/icons-react';
 import type { OEmbedResponse } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -26,7 +26,8 @@ interface MediaAddModalProps {
   dropRef: RefObject<HTMLDivElement | null>;
   selectedFiles: File[];
   onSelectFiles: (files: File[]) => void;
-  previewUrl: string | null;
+  onRemoveFile?: (index: number) => void;
+  onClearFiles?: () => void;
   uploadTitle: string;
   onUploadTitleChange: (value: string) => void;
   uploadCaption: string;
@@ -52,7 +53,8 @@ export function MediaAddModal({
   dropRef,
   selectedFiles,
   onSelectFiles,
-  previewUrl,
+  onRemoveFile,
+  onClearFiles,
   uploadTitle,
   onUploadTitleChange,
   uploadCaption,
@@ -74,6 +76,22 @@ export function MediaAddModal({
 
   const [isDragOver, setIsDragOver] = useState(false);
   const enterCountRef = useRef(0);
+
+  // Per-file object URLs for thumbnail previews. Created/revoked as selectedFiles changes.
+  const [thumbUrls, setThumbUrls] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    const urls = new Map<string, string>();
+    for (const file of selectedFiles) {
+      if (!file.type.startsWith('image/')) continue;
+      const key = `${file.name}-${file.size}-${file.lastModified}`;
+      urls.set(key, URL.createObjectURL(file));
+    }
+    setThumbUrls(urls);
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [selectedFiles]);
 
   const handleDragEnter = useCallback(() => {
     enterCountRef.current++;
@@ -99,7 +117,15 @@ export function MediaAddModal({
   }, [onSelectFiles]);
 
   return (
-    <Modal opened={opened} onClose={onClose} title={title} padding="md" {...(zIndex !== undefined ? { zIndex } : {})} withinPortal={false}>
+    <Modal
+      opened={opened}
+      onClose={onClose}
+      title={title}
+      padding="md"
+      size={hasFiles ? 'lg' : 'md'}
+      {...(zIndex !== undefined ? { zIndex } : {})}
+      withinPortal={false}
+    >
       <Stack gap="md">
         <Paper
           ref={dropRef}
@@ -123,10 +149,7 @@ export function MediaAddModal({
               <Group>
                 <FileButton
                   onChange={(value) => {
-                    if (!value) {
-                      onSelectFiles([]);
-                      return;
-                    }
+                    if (!value) return;
                     onSelectFiles(Array.isArray(value) ? value : [value]);
                   }}
                   accept="image/*,video/*"
@@ -140,36 +163,75 @@ export function MediaAddModal({
               </Group>
               {hasFiles && (
                 <Text size="sm" c="dimmed">
-                  {isBatchSelection ? `${selectedFiles.length} files selected` : selectedFiles[0]?.name}
+                  {isBatchSelection ? `${selectedFiles.length} files queued` : selectedFiles[0]?.name}
                 </Text>
               )}
             </Group>
 
-            {previewUrl && selectedFiles.length === 1 && selectedFiles[0]?.type.startsWith('image') && (
-              <Image src={previewUrl} alt="Upload preview" mah={140} fit="contain" radius="sm" />
-            )}
-
             {hasFiles && (
               <Stack gap="xs">
-                {selectedFiles.map((file, index) => {
-                  const progress = uploadProgresses?.[index] ?? null;
-                  const error = uploadErrors[index] ?? null;
-                  const identity = `${file.name}-${file.size}-${file.lastModified}`;
+                <Group justify="space-between">
+                  <Text size="sm" fw={500}>
+                    {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} queued
+                  </Text>
+                  {onClearFiles && (
+                    <Button variant="subtle" color="red" size="xs" onClick={onClearFiles} disabled={uploading}>
+                      Clear all
+                    </Button>
+                  )}
+                </Group>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {selectedFiles.map((file, index) => {
+                    const key = `${file.name}-${file.size}-${file.lastModified}`;
+                    const url = thumbUrls.get(key);
+                    const isImage = file.type.startsWith('image/');
+                    const isVideo = file.type.startsWith('video/');
+                    const progress = uploadProgresses?.[index] ?? null;
+                    const error = uploadErrors[index] ?? null;
 
-                  return (
-                    <Stack key={identity} gap={4}>
-                      <Group justify="space-between" wrap="nowrap" gap="sm">
-                        <Text size="sm" lineClamp={1}>{file.name}</Text>
-                        <Text size="xs" c={error ? 'red' : 'dimmed'}>
-                          {error ?? (progress !== null ? `${progress}%` : '')}
-                        </Text>
-                      </Group>
-                      {progress !== null && (
-                        <Progress value={progress} size="sm" striped animated={uploading && progress < 100} color={error ? 'red' : 'blue'} />
-                      )}
-                    </Stack>
-                  );
-                })}
+                    return (
+                      <div key={key} style={{ position: 'relative', width: 80 }}>
+                        <div style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 6,
+                          overflow: 'hidden',
+                          border: `1px solid ${error ? 'var(--mantine-color-red-5)' : 'var(--mantine-color-default-border)'}`,
+                          background: 'var(--mantine-color-default)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          {isImage && url ? (
+                            <img src={url} alt={file.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : isVideo ? (
+                            <IconVideo size={32} color="var(--mantine-color-dimmed)" />
+                          ) : (
+                            <IconFile size={32} color="var(--mantine-color-dimmed)" />
+                          )}
+                        </div>
+                        {onRemoveFile && (
+                          <ActionIcon
+                            size="xs"
+                            variant="filled"
+                            color="red"
+                            style={{ position: 'absolute', top: 2, right: 2 }}
+                            onClick={() => onRemoveFile(index)}
+                            disabled={uploading}
+                            aria-label={`Remove ${file.name}`}
+                          >
+                            <IconX size={10} />
+                          </ActionIcon>
+                        )}
+                        <Text size="xs" lineClamp={1} title={file.name} mt={2}>{file.name}</Text>
+                        {error && <Text size="xs" c="red" lineClamp={2}>{error}</Text>}
+                        {progress !== null && (
+                          <Progress value={progress} size="xs" color={error ? 'red' : 'blue'} mt={2} striped animated={uploading && progress < 100} />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </Stack>
             )}
 
@@ -248,11 +310,9 @@ export function MediaAddModal({
               ) : (
                 <Group>
                   {externalPreview.thumbnail_url && (
-                    <Image
+                    <img
                       src={externalPreview.thumbnail_url}
-                      h={100}
-                      fit="cover"
-                      radius="sm"
+                      style={{ height: 100, objectFit: 'cover', borderRadius: 4 }}
                       alt={externalPreview.title || 'External media preview'}
                     />
                   )}

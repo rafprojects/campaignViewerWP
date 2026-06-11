@@ -4,33 +4,6 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-## Reusable Component / Utility Library
-
-### Full Audit and Extraction to Shared Package
-
-**Context:** Several utilities and components in this repo have no WPSG-specific dependencies and are candidates for extraction to a standalone npm package for cross-project reuse. As of Phase 45, `sanitizeCss.ts` and `cssUnits.ts` were moved to `src/lib/` (signalling "no app-specific deps") as a first step toward true extraction.
-
-**Files ready for extraction (no WPSG deps):**
-- `src/lib/sanitizeCss.ts` — CSS injection prevention (sanitizeCssUrl, sanitizeCssColor, sanitizeCssValue, sanitizeClipPath)
-- `src/lib/cssUnits.ts` — multi-unit dimension types, constants, and toCss helpers
-- `src/lib/safeLocalStorage.ts` — safe localStorage wrapper (quota/disabled-storage resilient)
-- `src/lib/useSwipe.ts` — lightweight pointer-event swipe detection hook
-- `src/lib/scrollLock.ts` — reference-counted body-scroll lock manager
-
-**Decoupled (ready for extraction):**
-- `src/components/Auth/LoginForm.tsx`, `AuthBarFloating.tsx`, `AuthBarMinimal.tsx` — WPSG CSS vars replaced with Mantine tokens; `AuthBarFloating` no longer calls `useCampaignContext()` (P45-A7); all `wpsgDebug` imports removed, `Campaign` type replaced with local generic `AuthBarCampaignItem` (P46-D).
-- `src/components/Galleries/Shared/Lightbox.tsx`, `KeyboardHintOverlay.tsx` — `MediaItem` dependency replaced with local `LightboxMediaItem` interface; WPSG CSS vars replaced with Mantine tokens (P45-A13); all `wpsgDebug` imports removed, `useSwipe`/`scrollLock` imports repointed to `src/lib/` (P46-E).
-
-**What's needed for actual package extraction:**
-1. Monorepo infrastructure: configure npm/pnpm workspaces in the root `package.json`; create `packages/shared-utils/` and `packages/shared-ui/` with their own `package.json` + `tsconfig.json`
-2. Move `src/lib/` utilities to `packages/shared-utils/src/`; publish as `@wp-super-gallery/shared-utils`
-3. Move decoupled Auth and Lightbox components to `packages/shared-ui/`; remove remaining `wpsgDebug` import
-4. Update all intra-repo imports to use the package names; configure path aliases or direct package references
-
-**Effort:** L | **Impact:** High — enables cross-project reuse without copy-paste
-
----
-
 ## Builder
 
 ### URL-Based Image Inputs (Mask, Overlay, Background)
@@ -53,78 +26,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### Alignment Variants — Distribute-by-Gap & Group-Entity Alignment
-
-**Context:** P29-G-C shipped 8 alignment/distribution operations. Two gaps were identified immediately after delivery:
-
-1. **Distribute-by-gap.** The current "distribute horizontally/vertically" functions equalize slot *centers*, which can produce overlap when slots have mixed sizes. The expected behavior in professional tools (Figma's "space evenly", Canva's "tidy up") is to equalize the *gaps between slot edges*, never producing overlap regardless of size differences. This is a distinct operation that should be offered alongside the existing center-distribute.
-
-2. **Group-as-entity alignment.** When a persisted group and another slot are both selected and an alignment operation runs, the group's members are currently treated as individual slots rather than as a single bounding box. The expected behavior is that the group's union bounding box is the alignment unit and all member positions move together by the same delta.
-
-**Status:** Unblocked. P30-K (alignment spike) and P30-G (nested group hierarchy / coordinate model) are both complete as of Phase 30. The alignment naming/icon conventions, reference-frame toggle design, and group bounding-box coordinate model are all resolved. This item can be promoted in a future phase without dependency gates.
-
-**Effort:** Low-Medium (once spike and P30-G are done) | **Impact:** Medium
-
----
-
 ## Campaign Management
-
-### Media Upload — Accumulative Multi-File Selection with Per-File Preview
-
-**Context:** `MediaAddModal`'s drop zone now correctly handles file drops via React JSX event props (shipped P45-A11). However, each drag or "Choose files" operation **replaces** the pending file list — `handleSelectFiles` in `MediaTab.tsx` calls `setSelectedFiles(limitedFiles)`, discarding previously queued files. A better UX would let users build up a batch incrementally — either by dragging multiple times or by making multiple "Choose files" picker selections — and review the full queued set before uploading.
-
-**What it would take:**
-
-_Selection accumulation (both drag-drop and file picker):_
-- In `MediaTab.tsx`'s `handleSelectFiles`: when files are already pending (non-empty `selectedFiles`), **merge** incoming files with the existing list rather than replacing it. De-duplicate by `name + size + lastModified` fingerprint to prevent accidental doubles.
-- Respect the existing `maxBatchUploadSize` cap across the merged list; show a notification when it's trimmed.
-- Apply the same accumulation logic to `FileButton`'s `onChange` in `MediaAddModal` — the picker should add to the queue, not replace it.
-
-_Per-file preview and removal UI:_
-- Replace the current plain filename list with a thumbnail grid (or a compact list with mini-thumbnails for images, file-type icon for video). Each entry has an ✕ remove button to dequeue that file individually.
-- Image previews use `URL.createObjectURL` (same as the existing single-file preview); revoke on removal or modal close.
-- A "Clear all" action for convenience when the queue is long.
-
-_Layout:_
-- The modal likely needs a wider default (e.g. `size="lg"` or `size="xl"` on Mantine `Modal`) to display a thumbnail grid without wrapping awkwardly. Consider making the width responsive to queue size, or always using a wider fixed size when files are present.
-
-**Files:** `src/components/Admin/MediaTab.tsx` (`handleSelectFiles`), `src/components/Admin/MediaAddModal.tsx`
-
-**Effort:** Small-Medium | **Impact:** Medium-High — significantly better UX for bulk upload workflows; removes the main friction point for uploading many files at once
-
----
-
-### Audit Log Binary Export
-
-**Context:** P39-CM1 shipped `WPSG_Export_Engine`, a reusable background job manager for building ZIP archives with a `manifest.json` + media folder. The engine is not campaign-specific: any caller that builds a manifest + media list can use it. The audit log is the next natural candidate. Operators currently download the audit log only as CSV; a binary ZIP that includes the CSV plus any referenced campaign media snapshots would make it useful for offline analysis, archival, and regulatory compliance handoffs.
-
-**What it would take:**
-- A manifest builder for audit data (JSON index of log entries, associated campaign IDs and titles, date range).
-- An optional media snapshot pass: for each campaign referenced in the log window, include its cover image and media thumbnails in the `media/` folder.
-- A new REST route (`POST /admin/audit-log/export/binary`) that calls `WPSG_Export_Engine::create_job('audit', $manifest, $media_items)`.
-- A frontend trigger in the audit log admin view (alongside the existing CSV export).
-
-**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required (same constraint as campaign binary export).
-
-**Effort:** Small-Medium | **Impact:** Low-Medium — primarily useful for compliance-heavy deployments
-
----
-
-### Media Library Binary Export
-
-**Context:** P39-CM1 shipped `WPSG_Export_Engine`. A media library export type would let operators download all or selected WP media attachments as a portable ZIP with a `manifest.json` index. Useful for migrating assets between WordPress instances or archiving a gallery's media before a site migration.
-
-**What it would take:**
-- A manifest builder that queries WP attachments (filtered by campaign, date, MIME type, or a selection) and produces a media reference list.
-- `WPSG_Export_Engine::create_job('media_library', $manifest, $media_items)` does the rest.
-- A new REST route and a frontend trigger in the media admin surface.
-- Import: extend `POST /campaigns/import/binary` or add a separate `POST /media/import/binary` that sideloads the ZIP contents into the WP media library.
-
-**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
-
-**Effort:** Small-Medium | **Impact:** Medium — useful for any multi-instance migration scenario
-
----
 
 ### Campaign Binary Export — Stream Large Media Sets
 
@@ -135,72 +37,6 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 **Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
 
 **Effort:** Medium (4-6 hours) | **Impact:** Low — only relevant for campaigns exceeding the current 100 MB size ceiling
-
----
-
-## Gallery Spaces
-
-> **Origin:** Phase 47 follow-on candidates — items that were identified during planning but intentionally excluded from the initial delivery to keep scope manageable. All items below depend on the core Gallery Spaces infrastructure shipping in Phase 47.
-
-### Cross-Space Campaign Move
-
-**Context:** Phase 47 v1 creates campaigns directly in their target space and does not allow moving an existing campaign between spaces post-hoc. Moving a campaign requires atomically re-stamping `space_id` across all campaign-scoped custom tables (`wpsg_analytics_events`, `wpsg_audit_log`, `wpsg_media_refs`, `wpsg_access_requests`) and bumping the cache version — a partial move would corrupt isolation guarantees.
-
-**What it would take:**
-- A new owner-only `PUT /campaigns/{id}` parameter `spaceId` (or a dedicated `POST /campaigns/{id}/move`).
-- Server-side: wrap all `UPDATE ... SET space_id = %d WHERE campaign_id = %d` statements across the four tables in a transaction (or a best-effort batch with a compensating rollback log), then update the campaign's `_wpsg_space_id` post meta and call `bump_cache_version()`.
-- Guard: the request must be authorized as owner on both the source space and the target space.
-- Frontend: a "Move to space" action in the Campaigns tab (owner-only), with a confirmation dialog listing which data will move.
-
-**Dependencies:** P47-A (space_id columns), P47-B (space permission layer), P47-C (space CRUD REST).
-
-**Effort:** Medium | **Impact:** Medium — useful when reorganizing an existing site but not needed for fresh multi-space setups
-
----
-
-### Per-Instance Full-Bleed CSS Scoping
-
-**Context:** The shortcode emits a server-rendered `<style>` block targeting `.wpsg-full-bleed` globally. When two shortcodes on the same page reference spaces with different full-bleed settings, the last shortcode's CSS wins for both instances — a known v1 limitation called out in the Phase 47 report.
-
-**What it would take:**
-- Stamp each `.wpsg-full-bleed` wrapper with a `data-space` attribute (or a generated instance class) on the PHP side.
-- Scope the emitted media-query rules to that selector, e.g. `.wpsg-full-bleed[data-space="slug"]` instead of `.wpsg-full-bleed`.
-- Verify that `alignfull` (the WP Full Bleed escape mechanism) still takes effect with the scoped selector — may require wrapping both the `alignfull` and the scoped div.
-
-**Dependencies:** P47-E (shortcode + bootstrap).
-
-**Effort:** Small | **Impact:** Low — only observable when two shortcodes with different full-bleed settings appear on the same page
-
----
-
-### Per-Space Library Isolation (Overlays / Fonts)
-
-**Context:** Phase 47 ships overlays and fonts as a **global shared library** — all spaces see the same assets. For fully delegated tenants (spaces in `delegated` isolation mode) this may be undesirable: tenant A should not see tenant B's custom overlays or uploaded fonts.
-
-**What it would take:**
-- Rather than adding a `space_id` column to `wp_wpsg_overlays` or the font library (which would break sharing), introduce a `wpsg_space_library_assoc(space_id, asset_type, asset_id)` join table.
-- An overlay or font is visible to a space only if an association row exists (or if the space is `open` mode, where all global assets are visible).
-- Admin UX: a "Shared assets" section in the space-management modal, letting owners associate/dissociate library items from their delegated space.
-- REST: filter overlay/font list endpoints by space when in delegated mode.
-
-**Dependencies:** P47-A, P47-B, P47-G (shared-vs-per-space libraries decision finalized).
-
-**Effort:** Medium | **Impact:** Low-Medium — primarily relevant for multi-tenant SaaS-style deployments with true tenant isolation requirements
-
----
-
-### Space-Scoped Rate-Limit Buckets
-
-**Context:** Phase 47 relaxes `rate_limit_authenticated()` to accept `manage_wpsg OR space-grant` so delegated-space editors are not locked out. However, the rate-limit counter remains site-global — a heavy-traffic space can exhaust the shared quota and throttle other spaces.
-
-**What it would take:**
-- Add a `space_id` dimension to the rate-limit key in `WPSG_Rate_Limiter` (e.g. `wpsg_rl_<space>_<scope>_<uid>_<route_md5>`).
-- Expose a per-space quota setting (requests/minute) in `settings_overrides` with the global value as the default.
-- The public `rate_limit_public()` callback does not require space-scoping unless per-space public quotas are desired.
-
-**Dependencies:** P47-A (space_id available), P47-D (per-space settings).
-
-**Effort:** Small-Medium | **Impact:** Low — only relevant when spaces have meaningfully different traffic volumes
 
 ---
 
@@ -261,62 +97,47 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
-## Infrastructure & Performance
+## Settings & Admin UI
 
-Phase-owned follow-on in this area: structured server-side logging now lives in [PHASE32_REPORT.md](PHASE32_REPORT.md). Object-cache guidance shipped in P39-OC1 — see [PHASE39_REPORT.md](PHASE39_REPORT.md) and [object-cache-setup.md](object-cache-setup.md).
+### Settings Panel Open/Close Animation Variants
 
-### Thumbnail Cache Index — Single wp_options Row Scalability
+**Origin:** P48-J follow-on (SpaceSwitcher / multi-space auth bar polish, 2026-06-10).
 
-**Files:** `class-wpsg-thumbnail-cache.php`
+**Context:** The Settings panel Drawer currently uses a hardcoded `slide-left` transition (200 ms). Admins may want to match their site's motion style or disable animation entirely for accessibility/performance reasons.
 
-Move the thumbnail cache index from a single `wp_options` row to per-hash entries or a custom table. The cache is self-healing (regenerated on miss), so migration risk is low; the concern is `wp_options` autoload bloat as the index grows on larger sites.
+**What to implement:**
+- Add a `settingsPanelAnimation` field to `GalleryBehaviorSettings` (enum: `slide-left` | `fade` | `scale` | `none`; default `slide-left`).
+- Expose it in the Settings panel's Appearance accordion (or a dedicated Motion/Animation sub-section).
+- Pass the resolved value to the `transitionProps` of the `Drawer` in `SettingsPanel.tsx` (currently hardcoded at line 564).
+- Map `none` to `{ duration: 0 }` so the Drawer opens instantly without a jarring flash.
 
-**Effort:** Medium (4-6 hours) | **Impact:** Low
+**Files:** `src/components/Admin/SettingsPanel.tsx`, `src/types/settingsSchemas.ts`, relevant settings tab component.
 
----
+**Dependencies:** None — self-contained settings field addition.
 
-### `get_campaigns_for_attachment_id()` N+1 Meta Reads
-
-**Files:** `class-wpsg-db.php`
-
-`get_campaigns_for_attachment_id()` (used to enrich duplicate/near-duplicate 409 responses) fetches every campaign ID from `wp_posts`, then calls `get_post_meta()` once per campaign to scan its `media_items` array in PHP. On sites with many campaigns this is O(campaigns) in both queries and memory. The path only fires when an uploaded file matches an existing attachment's MD5 or pHash, so real-world cost is negligible today, but the pattern should be replaced once a dedicated WP-attachment-ID → campaign mapping is available (e.g. extending the `wpsg_media_refs` table). A LIKE-based query against the serialized `media_items` postmeta is not a safe alternative due to PHP serialization format fragility.
-
-**Effort:** Small-Medium (2-4 hours once mapping table exists) | **Impact:** Low (rare code path)
+**Effort:** Small (1–2 hours) | **Impact:** Low — polish/accessibility; slide-left default is acceptable for most sites.
 
 ---
 
-## Developer Experience
+### SettingsPanel Space Badge — Exact Color Parity with SpaceSwitcher/AdminPanel in Dark Mode
 
-### Contributor Tooling & Documentation
+**Origin:** P48-I follow-on (unified space badge color, 2026-06-10).
 
-**Context:** The codebase has grown significantly but lacks tooling expected by external contributors. These sub-tasks are independent and can be done in any order.
+**Context:** The SpaceSwitcher (AuthBar) and AdminPanel space badges use Mantine's `variant="light"` directly — they render inside the shadow DOM where `cssVariablesSelector=":host"` makes Mantine CSS variables available, so color adapts correctly in both light and dark themes.
 
-**Storybook for component development:**
-- Install `@storybook/react-vite`. Write stories for `AssetUploader`, `GraphicLayerPropertiesPanel`, `LayoutCanvas` (with mock slots), and all six gallery adapters.
-- Gallery adapter stories double as visual regression test snapshots.
-- Open question: Storybook adds ~200 MB to `node_modules` as a dev dependency — acceptable? (Yes, dev-only.)
+The SettingsPanel Drawer renders via `withinPortal={true}` to `document.body`, outside the shadow DOM. Mantine CSS variables (`--mantine-color-{color}-light`, etc.) are not inherited by portal elements. The workaround (`useMantineTheme` + `useComputedColorScheme` with hardcoded shade indices) produces a close but not identical shade in dark mode because Mantine's `variant="light"` uses alpha-blended colors, not solid palette shades.
 
-**Effort:** Medium per sub-task | **Impact:** Medium — primarily affects project health and contributor on-ramp
+**What to implement (two viable approaches):**
 
----
+1. **Portal target inside shadow DOM** — Pass `portalProps={{ target: shadowHostElement }}` to the Drawer so it renders as a child of the shadow host (inside shadow DOM). Obtain the element via `useRootId()` + `document.getElementById`. CSS variables become available; remove the `useMantineTheme`/`useComputedColorScheme` workaround entirely.
 
-## Build & Bundle
+2. **CSS variable bridge** — At the `MantineProvider` level, also emit a subset of color CSS variables to `:root` (in addition to `:host`). This makes them globally available to portals. Requires a custom `cssVariablesResolver` override and must be done carefully to avoid polluting the host page's `:root`.
 
-### Service Worker Metadata Caching Enhancements
+**Files:** `src/components/Admin/SettingsPanel.tsx`, possibly `src/main.tsx` (for approach 2).
 
-**Context:** WPSG already registers a production service worker and caches same-origin runtime assets while intentionally excluding admin routes, HTML navigations, and Vite-hashed bundles. The remaining offline work is metadata caching, not basic Service Worker bootstrapping.
+**Dependencies:** Approach 1 requires a stable reference to the shadow host element from within `SettingsPanel`. Approach 2 affects the entire Mantine CSS variable strategy.
 
-**Scope if revived:**
-- Add stale-while-revalidate handling for read-only gallery metadata with a bounded TTL.
-- Keep admin SPA and mutation endpoints network-first.
-- Define cache-budget and eviction rules for thumbnail-heavy galleries before broadening offline scope.
-
-**Open questions:**
-- Q1: Does the product requirement include full lightbox/video playback offline, or only the gallery grid and metadata shell?
-- Q2: If the host site already installs a Service Worker, what scope/isolation guarantees are required for coexistence?
-- Q3: What cache budget is acceptable for thumbnail-heavy galleries?
-
-**Effort:** Medium | **Impact:** Low for most deployments, High for explicitly offline/mobile deployments
+**Effort:** Small–Medium (1–3 hours) | **Impact:** Low — cosmetic; the badge is already correctly colored, just a slightly different shade in dark mode.
 
 ---
 
@@ -353,41 +174,13 @@ Move the thumbnail cache index from a single `wp_options` row to per-hash entrie
 
 > **Origin:** Phase 8 brainstorm (P22). These gallery adapter concepts were identified as valuable additions but deferred from the active Phase 8 scope. They follow the existing `GalleryAdapterProps` contract and register via `registerAdapter` like all current adapters.
 
-### Mosaic / Pinterest Adapter
-Irregular tile sizes (large hero + small surrounding grid) based on aspect ratios or media importance. Similar to Google Photos' auto-layout algorithm. Tiles are assigned sizes dynamically (e.g., 2×2, 1×1, 2×1) to maximize area coverage while respecting aspect ratios.
-LOE: Medium-High | Impact: Medium
-
-### Coverflow / 3D Adapter
-CSS 3D perspective carousel where side items are rotated and scaled down. Classic Apple-style cover flow effect. Uses `transform: perspective() rotateY()` and z-index layering. Navigation via click, keyboard, or drag.
-LOE: Medium | Impact: Medium
-
-### Spotlight / Hero Adapter
-Large featured item (hero) with a row/grid of smaller thumbnails below or beside it. Clicking a thumbnail promotes it to the hero position with a crossfade transition. Good for campaign highlights.
-LOE: Low-Medium | Impact: Medium
-
-### Stacked / Deck Adapter
-Cards stacked on top of each other with slight offset/rotation. Swipe or click to move the top card to the back (Tinder-like). Touch-optimized for mobile previews.
-LOE: Medium | Impact: Low-Medium
-
-### Waterfall Adapter
-Vertical masonry variant where items drop in sequence with staggered CSS animation (`@keyframes` with incremental `animation-delay`). Content-driven heights. Essentially masonry with entrance animations.
-LOE: Low (masonry variant) | Impact: Low
-
 ### Timeline Adapter
 Chronological layout with items on alternating sides of a vertical center line. Date/caption labels at each node. Good for event-based or campaign-chronology galleries.
 LOE: Medium | Impact: Low-Medium
 
-### Isotope / Filterable Grid Adapter
-Grid layout with animated filtering, sorting, and category transitions. Items shuffle positions with smooth FLIP animations when filter criteria change. Requires extending the adapter interface to accept filter/sort props.
-LOE: Medium-High | Impact: Medium
-
 ### Grid with Variable Aspect-Ratio Tiles Adapter
 Auto-assigns tile sizes (1×1, 2×1, 1×2, 2×2) based on media metadata (aspect ratio, resolution). Creates a densely packed, visually varied grid without manual configuration. Similar to Google Photos or Flickr's justified grid but with explicit CSS Grid tracks.
 LOE: Medium-High | Impact: Medium
-
-### Vertical Scroll Snap Adapter
-Mobile-first full-screen vertical carousel using CSS `scroll-snap-type: y mandatory`. Each media item occupies the full viewport height. Swiping vertically snaps to the next item. Ideal for story-style or Instagram-reel-like campaign presentations.
-LOE: Medium | Impact: Medium
 
 ---
 
@@ -424,3 +217,9 @@ When promoting future tasks to an active phase:
 *Updated: June 7, 2026 (P47 planning) — Added "Gallery Spaces" section with four Phase 47 follow-on candidates: Cross-Space Campaign Move, Per-Instance Full-Bleed CSS Scoping, Per-Space Library Isolation (Overlays/Fonts), and Space-Scoped Rate-Limit Buckets.*
 
 *Updated: June 7, 2026 (P46-D/E) — Auth components and Lightbox are now genuinely decoupled from all WPSG-internal imports. `safeLocalStorage`, `useSwipe`, and `scrollLock` moved from `@/utils/`/`@/hooks/` to `src/lib/`. `AuthBarFloating` Campaign type replaced with local generic `AuthBarCampaignItem`. The monorepo infrastructure step (npm workspaces, `packages/shared-utils/`, `packages/shared-ui/`) remains the open follow-on before actual npm package publication.*
+
+*Updated: June 9, 2026 (P48 planning) — Promoted to Phase 48: "Accumulative Multi-File Selection with Per-File Preview" (P48-A), "Alignment Variants" (P48-B), "Per-Instance Full-Bleed CSS Scoping" (P48-C), "Space-Scoped Rate-Limit Buckets" (P48-D), "Audit Log Binary Export" (P48-E), "Media Library Binary Export" (P48-F), "Coverflow / 3D Adapter" (P48-G), "Mosaic / Pinterest Adapter" (P48-H). Retired as already shipped: "Spotlight / Hero Adapter" (`spotlight/SpotlightGallery.tsx`) and "Vertical Scroll Snap Adapter" (`scroll-snap/ScrollSnapGallery.tsx`) — both fully registered in `adapterRegistry.ts`.*
+
+*Updated: June 9, 2026 (P49 planning) — Promoted to Phase 49: "Contributor Tooling & Documentation / Storybook" (P49-E), "Thumbnail Cache Index Scalability" (P49-F), "`get_campaigns_for_attachment_id()` N+1 Meta Reads" (P49-G). Developer Experience and Infrastructure & Performance sections removed as all entries are now promoted. Four new tracks promoted directly from planning suggestions (not previously in this doc): a11y audit (P49-A), bundle/perf audit (P49-B), i18n groundwork (P49-C), automated visual regression (P49-D).*
+
+*Updated: June 9, 2026 (P50 planning) — Promoted to Phase 50: "Full Audit and Extraction to Shared Package" (P50-G), "Cross-Space Campaign Move" (P50-A), "Per-Space Library Isolation" (P50-B), "Service Worker Metadata Caching Enhancements" (P50-F), "Stacked / Deck Adapter" (P50-C), "Waterfall Adapter" (P50-E), "Isotope / Filterable Grid Adapter" (P50-D). Removed now-empty sections: Reusable Component / Utility Library, Gallery Spaces, Build & Bundle.*

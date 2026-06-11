@@ -1,0 +1,573 @@
+# Phase 48 - Mixed Improvements: Media UX, Builder, Spaces, Exports & Adapters
+
+**Status:** In progress
+**Created:** 2026-06-09
+**Last updated:** 2026-06-09
+
+### Tracks
+
+| Track | Description | Status | Effort |
+|-------|-------------|--------|--------|
+| P48-A | Campaign Mgmt — accumulative multi-file selection with per-file preview | Done | Small-Medium |
+| P48-B | Builder — alignment variants: distribute-by-gap & group-entity alignment | Done | Low-Medium |
+| P48-C | Gallery Spaces — per-instance full-bleed CSS scoping (P47 follow-on) | Done | Small |
+| P48-D | Gallery Spaces — space-scoped rate-limit buckets (P47 follow-on) | Done | Small-Medium |
+| P48-E | Exports — audit log binary export (reuses Export Engine) | Done | Small-Medium |
+| P48-F | Exports — media library binary export (reuses Export Engine) | Done | Small-Medium |
+| P48-G | Adapters — Coverflow / 3D adapter | Done | Medium |
+| P48-H | Adapters — Mosaic / Pinterest adapter | Done | Medium-High |
+| P48-I | Spaces — multi-shortcode admin isolation & UX clarity | Done | Medium |
+| P48-J | Auth bar — global display mode setting + SpaceSwitcher polish | Done | Small |
+
+---
+
+## Rationale
+
+1. Phase 47 closed the Gallery Spaces core but left two small well-scoped follow-ons (per-instance full-bleed CSS scoping and space-scoped rate-limit buckets) that are cheap to clear now before they age further.
+2. The accumulative file-selection UX (`handleSelectFiles` replacing rather than merging the queue) was flagged as the primary friction point for bulk media upload; it is a self-contained frontend change with no backend dependency.
+3. The two alignment gaps — distribute-by-gap and group-as-entity alignment — have been explicitly unblocked since Phase 30 (P30-K spike and P30-G group coordinate model both complete); the naming/icon conventions and reference-frame toggle design are settled.
+4. The Export Engine (shipped P39-CM1) has two natural extension points (audit log, media library) that share nearly all infrastructure with the existing campaign export; deferring further adds no value and the pattern is already proven.
+5. The gallery adapter backlog has been static since Phase 22; Coverflow/3D and Mosaic/Pinterest are the two highest visual-impact entries and both fit the existing `GalleryAdapterProps` contract without interface changes.
+
+## Key Decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Adapter interface | Both new adapters register via the existing `registerAdapter` call and implement `GalleryAdapterProps` — no interface changes needed. |
+| B | Export Engine reuse | P48-E and P48-F call `WPSG_Export_Engine::create_job()` directly; no new engine infrastructure. |
+| C | File accumulation dedup key | `name + size + lastModified` fingerprint — cheap, deterministic, and matches the existing `File` object API without hashing. |
+| D | Modal width for file queue | Always `size="lg"` when files are queued in `MediaAddModal`; revert to default when queue is empty. Prevents awkward thumbnail-grid wrapping. |
+| E | Full-bleed scoping attribute | Stamp `.wpsg-full-bleed` wrapper with `data-space="<slug>"` (PHP side) rather than a generated class, to keep the PHP side readable and the selector debuggable in DevTools. |
+
+## Execution Priority
+
+1. **P48-C** — Smallest track, pure PHP + CSS, no JS dependency, closes a known P47 v1 limitation.
+2. **P48-D** — Small PHP-only change, closes the other P47 rate-limit gap.
+3. **P48-A** — Frontend-only, no backend change required, highest day-to-day user impact.
+4. **P48-B** — Frontend-only, unblocked, design settled.
+5. **P48-E** — Backend, reuses Export Engine; establishes the pattern for P48-F.
+6. **P48-F** — Backend, follows the P48-E pattern exactly.
+7. **P48-G** — Coverflow adapter: self-contained, medium complexity.
+8. **P48-H** — Mosaic adapter: self-contained, most complex layout algorithm; goes last.
+
+---
+
+## Track P48-A — Accumulative Multi-File Selection with Per-File Preview
+
+### Problem
+
+`handleSelectFiles` in `MediaTab.tsx` calls `setSelectedFiles(limitedFiles)` — each new drag-drop or "Choose files" picker invocation **replaces** the pending list. A user who drags five files, then drags five more, ends up with only the second batch. The current pending-file display is also a plain filename list with no visual feedback and no way to remove a single file before uploading.
+
+### Fix
+
+**Selection accumulation:**
+- In `MediaTab.tsx` `handleSelectFiles`: when `selectedFiles` is non-empty, **merge** incoming files with the existing list rather than replacing it. De-duplicate by `name + size + lastModified` fingerprint to prevent accidental doubles.
+- Enforce the existing `maxBatchUploadSize` cap across the merged list; show a Mantine notification when incoming files are trimmed to fit.
+- Apply the same merge logic to `FileButton`'s `onChange` handler in `MediaAddModal` so the picker adds to the queue rather than replacing it.
+
+**Per-file preview and removal UI:**
+- Replace the current plain filename list with a thumbnail grid. Each entry shows:
+  - Image files: `URL.createObjectURL` preview thumbnail.
+  - Video / other files: file-type icon.
+  - ✕ remove button to dequeue that file individually.
+- Add a "Clear all" action for convenience when the queue is long.
+- Revoke object URLs on individual removal and on modal close to avoid memory leaks.
+
+**Modal width:**
+- Set `size="lg"` on the Mantine `Modal` whenever `selectedFiles.length > 0`; revert to the default size when the queue is empty.
+
+**Files:** `src/components/Admin/MediaTab.tsx` (`handleSelectFiles`), `src/components/Admin/MediaAddModal.tsx`
+
+### Acceptance criteria
+
+- Dragging two separate batches of files produces a merged queue; no files from the first drag are lost.
+- Opening the file picker twice merges both selections; de-duplication prevents the same file appearing twice.
+- Removing a single file via ✕ removes only that file; the rest of the queue is intact.
+- "Clear all" empties the queue.
+- `maxBatchUploadSize` trim fires a visible notification and keeps the combined list within the limit.
+- Object URLs are revoked on individual removal and on modal close (no memory leak in DevTools).
+- Modal widens to `size="lg"` when files are present.
+
+### Validation
+
+- Manual: open `MediaAddModal`, drag two separate batches, verify merge; use the picker twice, verify merge; confirm ✕ and "Clear all"; trigger the size cap and verify the notification.
+- Unit: `handleSelectFiles` merge and dedup logic in isolation.
+
+### Rationale
+
+**Merge vs. replace in `handleSelectFiles`:** Added `selectedFiles` to the `useCallback` dependency array so the current queue is accessible via closure. The merge reads `existingKeys` as a `Set<string>` (O(1) lookup), filters incoming files against it, then concatenates. This keeps the operation O(n) and avoids a Map or sort.
+
+**`onClearFiles` separate from `onSelectFiles`:** After switching `handleSelectFiles` to the merge pattern, calling `onSelectFiles([])` would produce `merged = [...selectedFiles]` (an empty incoming adds nothing), so a "Clear all" action cannot go through that path. A dedicated `onClearFiles` callback lets MediaTab reset all related state (`selectedFiles`, `uploadErrors`, `uploadTitle`, `uploadCaption`) in one atomic call.
+
+**`FileButton`'s `onChange` returns early on `null`:** Previously `if (!value) { onSelectFiles([]); }` cleared the queue when the native file picker was dismissed without a selection. With accumulative behaviour, that would silently wipe existing queued files. The handler now returns early on null — only an explicit "Clear all" clears the queue.
+
+**Object URL management inside `MediaAddModal`:** `useEffect` keyed on `selectedFiles` creates fresh `URL.createObjectURL` URLs on each file-list change and returns a cleanup function that revokes them. This follows the standard React effect/cleanup pattern: the previous cleanup runs before the new URLs are created, so removed files are revoked immediately and there is no leak window. Unmount also triggers cleanup, covering the modal-close case without an extra `opened`-watch effect.
+
+**`size="lg"` when files queued:** The thumbnail grid wraps badly at the default modal width (`"md"`) once more than 4–5 files are queued. Widening to `"lg"` only when `hasFiles` is true avoids an oversized empty modal on first open.
+
+---
+
+## Track P48-B — Alignment Variants: Distribute-by-Gap & Group-Entity Alignment
+
+### Problem
+
+Two gaps remain in the P29-G-C alignment/distribution delivery:
+
+1. **Distribute-by-gap.** The existing distribute-horizontal/vertical functions equalize slot *centers*, which produces overlap when slots have mixed sizes. Professional tools (Figma "space evenly", Canva "tidy up") equalize the *gaps between slot edges*, never producing overlap.
+
+2. **Group-as-entity alignment.** When a persisted group and another slot are both selected and an alignment operation runs, the group's members are treated as individual slots. The expected behavior is that the group's union bounding box is the alignment unit and all member positions shift by the same delta.
+
+### Fix
+
+**Distribute-by-gap:**
+- Add a distribute-by-gap variant for both axes. Algorithm: sort slots by leading edge; compute total gap = container span − sum of slot sizes; divide by (n − 1); assign positions such that gaps between trailing edge of slot[i] and leading edge of slot[i+1] are equal.
+- Offer alongside the existing center-distribute (icon + label distinguishes the two).
+
+**Group-as-entity alignment:**
+- Before running any alignment operation, detect persisted groups in the selection. For each group, compute the union bounding box of its members and treat that box as a single virtual slot for the alignment calculation.
+- After computing each slot's target position, apply the same delta to every member of that group.
+
+**Files:** Locate existing P29-G-C distribute functions (search for `distributeHorizontal` / `distributeVertical` or equivalent in `src/components/Builder/`); add the gap variant alongside; update the alignment toolbar to expose it.
+
+### Acceptance criteria
+
+- Distributing mixed-size slots horizontally/vertically with the gap variant produces equal inter-slot gaps with no overlap.
+- Center-distribute behavior is unchanged.
+- Selecting a persisted group + one other slot and running any alignment operation moves the group as a unit; individual member relative positions are preserved.
+
+### Validation
+
+- Manual: create 3 slots of different widths; distribute with gap variant; confirm equal gaps, no overlap; confirm center-distribute still works.
+- Manual: create a persisted group + a free slot; align left — confirm group moves as a unit.
+- Unit: gap-distribute calculation with known inputs.
+
+### Rationale
+
+**Gap-distribute algorithm:** Sort by leading edge (not center), compute `totalGap = totalSpan − totalSlotWidth`, divide by `(n − 1)`. Walk the sorted list with a `cursor` — each slot's `x` (or `y`) is the cursor value; cursor advances by `slot.width + gap`. This produces identical inter-slot whitespace by construction and the outermost slots are unchanged since `cursor` starts at `sorted[0].x` and the final cursor value equals `right(sorted[n-1])`.
+
+**Center-distribute preserved:** The two new functions (`distributeSlotsHorizontallyByGap`, `distributeSlotsVerticallyByGap`) are additive — the existing center-distribute functions are untouched and their toolbar buttons remain. The gap variants appear immediately adjacent, distinguished by the filled icon variants (`IconLayoutDistributeHorizontalFilled`, `IconLayoutDistributeVerticalFilled`) and tooltip text.
+
+**Group-as-entity via virtual slots (`applyAlignmentGroupAware`):** Rather than baking group logic into each `alignSlots.ts` function, a wrapper in `LayoutBuilderLayersPanel` intercepts the call. It detects groups where ALL `memberIds` are in `selectedSlotIds` (partial-group selections continue to treat members individually). For each fully-selected group it synthesises a temporary `LayoutSlot` with the group's computed bounding box and the ID `__group__<id>`. After the alignment function returns, the wrapper computes `dx/dy` from the virtual slot's update and applies the same delta to every member's current position. Free (ungrouped) slot updates pass through unchanged. All alignment and distribute operations share this wrapper, so group-as-entity works for alignment, center-distribute, and gap-distribute alike.
+
+**Scope:** `LayoutGroup.childGroupIds` / nested groups are intentionally out of scope — the fix handles flat groups (the common case from P29-G-C); hierarchical group alignment can be addressed if a concrete use case arises.
+
+---
+
+## PR #63 Review — Copilot Round 1
+
+### Thread 1 — `WPSG_P48E_Audit_Export_Test::test_returns_503_when_zip_unavailable` always skips
+
+**Accept.** The original test had the skip condition inverted: both branches called `markTestSkipped`. When `check_zip_available()` is false the intent was to assert 503, but the code immediately skipped instead. Fixed by inverting the guard: skip when ZIP is present (can't reach the 503 path), assert 503 when ZIP is absent (matches the P48F pattern exactly).
+
+### Thread 2 — "Clear all" enabled during active upload
+
+**Accept.** `handleUpload()` captures `selectedFiles` at call time via closure; clearing the queue mid-upload doesn't cancel the in-flight XHRs but does wipe the progress/error arrays that the upload completion path writes into, causing a desync. Fixed by adding `disabled={uploading}` to the "Clear all" Button.
+
+### Thread 3 — Per-file ✕ remove enabled during active upload
+
+**Accept.** Same root cause as Thread 2: removing a file by index mid-upload shifts all subsequent indices, breaking the progress/error mapping for those files. The XHR for the removed file is also not cancelled, so its completion fires with no matching UI entry. Fixed by adding `disabled={uploading}` to the remove ActionIcon.
+
+---
+
+## Track P48-C — Per-Instance Full-Bleed CSS Scoping
+
+### Problem
+
+The shortcode emits a server-rendered `<style>` block targeting `.wpsg-full-bleed` globally. When two shortcodes on the same page reference spaces with different full-bleed settings, the last shortcode's `<style>` block wins for both instances — a v1 limitation noted in the Phase 47 report.
+
+### Fix
+
+- On the PHP shortcode render path (P47-E file), stamp the `.wpsg-full-bleed` wrapper with `data-space="<slug>"`.
+- Scope the emitted `<style>` rules to `.wpsg-full-bleed[data-space="<slug>"]` instead of `.wpsg-full-bleed`.
+- Verify that the `alignfull` class (WP Full Bleed escape mechanism) still takes effect with the scoped wrapper — may require the scoped div to also carry `alignfull` or be its direct child.
+
+**Files:** Shortcode render function (P47-E — `wp-plugin/wp-super-gallery/` shortcode PHP), inline `<style>` output.
+
+### Acceptance criteria
+
+- Two shortcodes on the same page with different full-bleed settings each apply their own CSS correctly.
+- A single shortcode page is unaffected (behavior identical to v1).
+- `alignfull` breakout still works when full-bleed is enabled.
+
+### Validation
+
+- Manual: add two shortcodes to a WP test page with different `full_bleed` settings; confirm each respects its own setting independently.
+
+### Rationale
+
+**Approach:** Added `$space_slug` resolution immediately after `resolve_space_id()` in `render_shortcode()`. Used `WPSG_DB::get_space($space_id)->slug` with a fallback to the numeric ID string for robustness when the DB class is unavailable or the space row doesn't exist. The `data-space` attribute is stamped on the wrapper `<div>` and the CSS selector is changed from `.wpsg-full-bleed{…}` to `.wpsg-full-bleed[data-space="<slug>"]{…}` in all six media-query rules. `esc_attr()` is applied to the slug in both the HTML attribute and the CSS selector string.
+
+**Why attribute over class:** A `data-*` attribute is readable in DevTools without the noise of auto-generated class suffixes, and is easier to target in future JS if needed.
+
+**Test added:** `test_render_shortcode_full_bleed_css_is_space_scoped` — asserts the `data-space` attribute exists on the wrapper and that the CSS selector is scoped (not bare `.wpsg-full-bleed{`). All 16 embed tests pass.
+
+---
+
+## Track P48-D — Space-Scoped Rate-Limit Buckets
+
+### Problem
+
+`WPSG_Rate_Limiter` keys its counters site-globally. A heavy-traffic space can exhaust the shared quota and throttle requests from unrelated spaces. Phase 47 relaxed `rate_limit_authenticated()` to accept `manage_wpsg OR space-grant`, but did not add per-space quota isolation.
+
+### Fix
+
+- Add a `space_id` dimension to the rate-limit transient/option key in `WPSG_Rate_Limiter`, e.g. `wpsg_rl_<space_slug>_<scope>_<uid>_<route_md5>`.
+- Expose a per-space `rate_limit_requests_per_minute` key in `settings_overrides` with the global value as the default (resolved via the existing settings inheritance from P47-D).
+- The public `rate_limit_public()` path does not require space-scoping unless per-space public quotas are explicitly desired — leave it global for now.
+
+**Files:** `class-wpsg-rate-limiter.php` (or wherever `rate_limit_authenticated` lives), settings schema / `settings_overrides` field list.
+
+### Acceptance criteria
+
+- Authenticated requests to space A do not consume quota from space B's bucket.
+- A space with no explicit `rate_limit_requests_per_minute` override falls back to the global setting.
+- Existing behavior on single-space (Default Space) installations is unchanged.
+
+### Validation
+
+- Unit: confirm transient key contains the space identifier.
+- Manual: saturate one space's limit via repeated requests; confirm a second space is unaffected.
+
+### Rationale
+
+**Approach:** Three-file change: settings registry, sanitizer, and REST base.
+
+- `class-wpsg-settings-registry.php`: Added `rate_limit_requests_per_minute => 0` to `$defaults` (0 = use global filter fallback) and appended the field to `$space_overridable_fields`. Default of 0 means existing single-space installs are completely unaffected.
+- `class-wpsg-settings-sanitizer.php`: Added sanitization: `intval`, clamped to `[0, 6000]` (6000 req/min = 100 req/s, a reasonable ceiling).
+- `class-wpsg-rest-base.php` — `rate_limit_authenticated()`: After resolving the global limit via the filter, reads `space_id` from `id` or `space_id` request params (covers both space-primary and space-secondary routes). If a space-level override is set, it replaces the global limit. Passes `$space_id` through to `rate_limit_check()`.
+- `rate_limit_check()`: Added optional `$space_id = 0` param. When > 0, the transient/cache key gains a `_s{space_id}` segment: `wpsg_rl_{scope}_s{id}_{user}_{route_md5}`. This isolates each space's quota bucket from all others without touching the public path.
+
+**Why `id` and `space_id` params:** REST routes use `id` for space-primary routes (e.g., `/spaces/{id}`) and `space_id` for nested routes. Both are tried; first non-zero wins. Requests with no space param (site-wide admin ops) get no space segment and share the global bucket, which is the safe default.
+
+**Tests added:** 3 new assertions in `WPSG_Rate_Limiter_Test` — default value, field in space-overridable list, and sanitizer clamping. Full 893-test suite green.
+
+---
+
+## Track P48-E — Audit Log Binary Export
+
+### Problem
+
+Operators can only download the audit log as CSV. A binary ZIP containing the CSV plus referenced campaign media snapshots would be more useful for offline analysis, archival, and regulatory compliance handoffs. `WPSG_Export_Engine` (shipped P39-CM1) already handles background ZIP generation — this track adds the audit-log manifest on top of it.
+
+### Fix
+
+- **Manifest builder:** produce a JSON index of log entries (action, actor, campaign_id, campaign_title, occurred_at), associated campaign IDs and titles, and the requested date range.
+- **Optional media snapshot pass:** for each unique campaign referenced in the log window, include its cover image and media thumbnails in the `media/` folder (same pattern as campaign binary export).
+- **New REST route:** `POST /admin/audit-log/export/binary` — validates the request (date range, optional campaign filter), builds the manifest, calls `WPSG_Export_Engine::create_job('audit', $manifest, $media_items)`, returns the job ID.
+- **Frontend:** add a "Download ZIP" button to the audit log admin view alongside the existing CSV export button.
+
+**Files:** `class-wpsg-export-engine.php` (existing — no changes needed beyond confirming the `create_job` signature), new REST route controller, audit log admin React component.
+
+### Acceptance criteria
+
+- Triggering the export creates a background job; polling returns progress; completed ZIP is downloadable.
+- ZIP contains `manifest.json` (log entries index) + `media/` folder with referenced campaign thumbnails.
+- Requesting an export with no matching log entries returns a valid ZIP with an empty entries array and no `media/` folder.
+- `ext-zip` unavailable: returns a 503 with a clear error message (same guard as campaign export).
+
+### Validation
+
+- Manual: trigger the export for a date range with known campaigns; download and unzip; confirm `manifest.json` structure and media files.
+- Confirm the existing CSV export is unaffected.
+
+### Rationale
+
+**Route placement:** Added `POST /admin/audit-log/export/binary` alongside the existing `GET /admin/audit-log` in `class-wpsg-campaign-controller.php` — same controller since it already owns the audit-log query logic.
+
+**Manifest structure:** `{ version: 1, type: 'audit', exported_at, filters, entry_count, entries[] }` where each entry carries the fields most useful for offline analysis: action, actor, campaignId, summary, severity, scope, resourceType, resourceId, resourceLabel, createdAt. Details (JSON blob) is omitted from the manifest to keep the file compact; the CSV export includes it for full fidelity.
+
+**Media snapshot:** For each unique campaign referenced in the log window, the handler collects the campaign's `cover_image` meta URL and hands it to the Export Engine as a media item. This gives operators a quick visual reference for each involved campaign without pulling all gallery media (which could be very large).
+
+**Per-page cap:** The manifest query uses `per_page = 5000` — high enough for any realistic audit window while preventing a runaway DB query. If audit log volume grows, a streaming/pagination approach can be added later.
+
+**Frontend polling:** Reused the same inline poll-and-download pattern from `useAdminCampaignActions` (3-second interval, 5-minute timeout) rather than extracting a shared hook — the use is infrequent and the inline form is self-contained.
+
+**"Download ZIP" button:** Added to both `AuditTab` (per-campaign audit) and `GlobalAuditTab` (cross-campaign) as an optional `onExportZip` prop with an associated `exportingZip` loading flag. Both pass the active filter state into the export request so the ZIP reflects exactly what the operator is looking at.
+
+**Tests:** 4 new PHP tests (`WPSG_P48E_Audit_Export_Test`) — 202 with job ID, date-range filter accepted, job retrievable after enqueue, 403 for non-admin. Full 898-test suite green.
+
+---
+
+## Track P48-F — Media Library Binary Export
+
+### Problem
+
+There is no way for operators to download all or selected WP media attachments as a portable ZIP, making asset migration between WordPress instances or pre-migration archival cumbersome.
+
+### Fix
+
+- **Manifest builder:** query WP attachments filtered by campaign, date range, and/or MIME type; produce a media reference list (attachment ID, filename, URL, MIME type, associated campaign IDs).
+- Call `WPSG_Export_Engine::create_job('media_library', $manifest, $media_items)`.
+- **New REST route:** `POST /admin/media/export/binary` — accepts filter params, builds the manifest, kicks off the job.
+- **Import path:** extend `POST /campaigns/import/binary` or add a separate `POST /media/import/binary` that sideloads the ZIP contents into the WP media library via `media_handle_sideload`.
+- **Frontend:** trigger button in the media admin surface.
+
+**Files:** `class-wpsg-export-engine.php` (existing), new REST route controller, media admin React component.
+
+### Acceptance criteria
+
+- Export of a filtered selection produces a ZIP with `manifest.json` and all selected attachments in `media/`.
+- Import from a media ZIP sideloads all attachments into the WP media library.
+- Large sets respect the existing 100 MB size cap; a notification is shown when the cap is hit.
+
+### Validation
+
+- Manual: export a selection of media; download and inspect ZIP; re-import to a clean WP instance; confirm attachments are present in the Media Library.
+
+### Rationale
+
+**Route placement:** `POST /admin/media/export/binary` and `POST /media/import/binary` added to `class-wpsg-media-controller.php` — same controller that already owns `GET /media/library` and the campaign-media CRUD routes.
+
+**Manifest structure:** `{ version: 1, type: 'media_library', exported_at, filters, item_count, items[] }` where each item carries id, filename, url, title, mimeType. The `filename` field uses `WPSG_Export_Engine::get_media_filename()` so the manifest and the ZIP `media/` paths agree — same contract established by the campaign binary export.
+
+**Attachment query:** Uses `WP_Query` with `post_type: attachment, post_status: inherit` and `post_mime_type: ['image', 'video']` (same as `list_media_library`), capped at 500 items per export to stay well within the 100 MB size guard in the engine. Optional `campaign_id` filter restricts the query to attachment IDs referenced by that campaign's `media_items` meta.
+
+**Import sideload:** Reads each `media/{filename}` entry from the ZIP, writes it to a temp file, and calls `media_handle_sideload()` with post parent 0 (unattached to any post). Items missing from the archive are collected into `skipped[]` and returned alongside `imported[]` so the frontend can report partial success accurately.
+
+**Frontend surface:** Export ZIP and Import ZIP buttons placed in the media panel header group alongside the existing "Rescan All" button. Export scopes to the currently selected campaign when one is active; otherwise exports all accessible image/video attachments. Import uses Mantine `FileButton` to avoid an uncontrolled `<input>` and keeps the loading state isolated to `mediaZipImporting`.
+
+**Tests:** 7 PHP tests (`WPSG_P48F_Media_Export_Test`) — 202 with job ID, mime filter, campaign filter, job type assertion, 403 for non-admin (export + import), 400 for import without file. Full 906-test suite green.
+
+---
+
+## Track P48-G — Coverflow / 3D Adapter
+
+### Problem
+
+The adapter registry has no CSS 3D perspective carousel. This is a classic high-visual-impact layout pattern useful for campaign highlight presentations.
+
+### Fix
+
+- New `CoverflowAdapter` implementing `GalleryAdapterProps`.
+- Layout: active item is centered and full-size; adjacent items are rotated on the Y axis (`transform: perspective(800px) rotateY(±45deg)`) and scaled down; items further out have higher `rotateY` and lower `scale`.
+- Navigation: click on a side item to bring it to the front; keyboard left/right arrows; drag/swipe (reuse `useSwipe` from `src/lib/useSwipe.ts`).
+- Register via `registerAdapter('coverflow', CoverflowAdapter)`.
+
+**Files:** New `src/components/Galleries/Adapters/CoverflowAdapter.tsx`, adapter registry entry.
+
+### Acceptance criteria
+
+- Active item is centered and full-size; flanking items are visually recessed with correct perspective rotation.
+- Clicking a flanking item promotes it to center with a smooth CSS transition.
+- Keyboard left/right and swipe gestures work.
+- No layout breakage at narrow viewport widths (items stack or clip gracefully).
+
+### Validation
+
+- Manual: add the adapter to a test gallery; navigate via click, keyboard, and swipe; confirm transitions; check mobile viewport.
+
+### Rationale
+
+**Approach:** New `src/components/Galleries/Adapters/coverflow/CoverflowAdapter.tsx` implementing `GalleryAdapterProps`. Items are absolutely positioned within a `perspective: 1000px` container. Each item's transform is computed from its offset relative to `currentIndex`: active item gets `rotateY(0deg) scale(1)`; ±1 flanking items get `rotateY(±45deg) scale(0.825)`; ±2 items get `rotateY(±75deg) scale(0.65)`; items beyond ±2 are hidden (`opacity: 0; pointer-events: none`). `transformOrigin` is set to the far edge of each flanking item (right for left items, left for right items) so the rotation appears anchored naturally. Horizontal stride is 28% of container width, item width is 60% — chosen to keep ±1 items clearly visible at typical gallery widths without overlap with the active item.
+
+**Navigation reuse:** `useCarousel` manages index/direction state; `useLightbox` handles the lightbox (opened only when clicking the active item — flanking item clicks advance the index instead); `useSwipe` provides pointer-event swipe detection; keyboard ArrowLeft/ArrowRight on the focus-receiving container wrapper.
+
+**Registry wiring:** Lazy-imported (code-split) following the existing pattern; registered in `BUILTIN_ADAPTERS` with `paginationOwnership: 'adapter'` and `settingGroups: ['media-frame', 'carousel']` (reuses the existing carousel settings group with no new schema needed).
+
+**Why stride/ratio over fixed px:** Using container-width fractions means the layout adapts gracefully at any measured width without media-query breakpoints. At narrow viewports (< ~400px) the ±2 items are hidden automatically by the `MAX_VISIBLE_SIDE` opacity guard, leaving only the active item and its immediate neighbours visible with no horizontal overflow.
+
+---
+
+## Track P48-H — Mosaic / Pinterest Adapter
+
+### Problem
+
+The adapter registry has no irregular-tile-size layout. A mosaic layout (large hero tiles mixed with small tiles based on aspect ratio) produces visually rich, densely packed galleries without manual configuration.
+
+### Fix
+
+- New `MosaicAdapter` implementing `GalleryAdapterProps`.
+- Algorithm: inspect each media item's aspect ratio; classify into tile-size buckets (2×2 for landscape/hero, 1×2 for portrait, 2×1 for wide, 1×1 for square/fallback); pack into a CSS Grid with 2-column base tracks; fill remaining gaps greedily.
+- Graceful degradation: if grid packing produces an unfillable gap, insert a 1×1 placeholder or promote a nearby item.
+- Register via `registerAdapter('mosaic', MosaicAdapter)`.
+
+**Files:** New `src/components/Galleries/Adapters/MosaicAdapter.tsx`, adapter registry entry.
+
+### Acceptance criteria
+
+- Gallery renders with a mix of tile sizes derived from item aspect ratios.
+- No visible unfilled gaps in the layout for typical mixed-aspect-ratio sets.
+- Clicking any tile opens the lightbox on that item.
+- Layout is responsive: at narrow widths the grid collapses to a single-column stack.
+
+### Validation
+
+- Manual: add the adapter to a gallery with a mix of landscape, portrait, and square media; confirm varied tile sizes; confirm lightbox opens; check narrow viewport.
+
+### Rationale
+
+**Adapter ID:** `'pinterest'` — the phase doc names the adapter "mosaic" but `'mosaic'` is already a registered alias for the `'justified'` adapter (adapterRegistry.ts line 91). Using `'pinterest'` avoids a collision and accurately describes the layout style.
+
+**Algorithm:** Used CSS Grid with `grid-auto-flow: row dense` rather than a custom JS bin-packing algorithm. The browser's dense auto-placement fills gaps greedily at zero runtime cost. Each item's `grid-column: span X` and `grid-row: span Y` are assigned from aspect ratio buckets: ratio ≥ 1.6 → 2×2 (hero), ≥ 1.2 → 2×1 (wide), ≥ 0.7 → 1×1 (square), < 0.7 → 1×2 (portrait). Unknown dimensions default to 1×1.
+
+**Grid geometry:** 4 physical columns at ≥ 500px container width — chosen because it accommodates all four span combinations without overflow. Row unit = `⌊containerWidth / cols / 1.2⌋px` keeps rows approximately square so 2-row tall tiles look proportional rather than excessively stretched. `useMediaDimensions` (already used by MasonryGallery) asynchronously resolves width/height from image probing; items initially render as 1×1 and reflow when dimensions arrive.
+
+**Responsive collapse:** Below 500px all tiles are capped to 1×1 (2 columns); below 360px single column. This avoids the case where a 2-column span in a narrow viewport produces an oversized tile next to a tiny gap.
+
+**Hover state:** Managed with local `useState<number | null>` rather than CSS-only `:hover` because the zoom icon opacity and scale transform are applied inline (pattern matches CompactGridGallery's GridCard approach). No CSS class injection needed.
+
+---
+
+---
+
+## Track P48-I — Multi-Shortcode Admin Panel Isolation & UX Clarity
+
+### Problem
+
+Two related bugs surfaced during Phase 48 manual testing:
+
+1. **Admin panel/settings does not open for non-default spaces.** Even with a single `[super-gallery space="test-2"]` shortcode on a page, clicking the settings or admin panel button in the AuthBar produced no visible result.
+2. **Multi-shortcode "last wins".** When two shortcodes share a page (`[super-gallery space="test-2"]` + `[super-gallery space="test-3"]`), the admin can only reach test-3's settings/admin panel via the floating AuthBar button. test-2's controls are inaccessible without scrolling to that specific gallery.
+3. **No space identity in UI.** `SettingsPanel` showed a generic "Space" badge with no space name. `AdminPanel` had no awareness of which space it was launched from (`initialSpaceId` was never wired). The admin had no contextual signal for which space they were managing.
+
+### Root-cause investigation
+
+- **"Doesn't open" root cause:** The scroll-restoration effect in `AppContent` (lines 137–156, `requestAnimationFrame(() => window.scrollTo(...))`) runs independently in each React root on mount. The last-mounted root's scroll override pushes the first root's gallery (and its AuthBar button) out of viewport, so the button is present but not visible.
+- **"Last wins" root cause:** Mount divs had no `id` attribute. `getRootId()` fell back to index-based IDs (`wpsg-<page-slug>-0`, `...-1`). No per-instance localStorage scoping → both roots compete for the same view-state keys. Additionally, the WP admin bar provided no per-space navigation, leaving the AuthBar floating button as the only entrypoint.
+- **`AdminPanel` wiring gap:** `App.tsx` was passing `spaceId` to `CardGallery` and `SettingsPanel` but NOT to `AdminPanel`. AdminPanel always defaulted to `selectedSpaceId = 'all'`.
+
+### Fix — implemented in 4 layers
+
+**Layer 1 — PHP: stable per-instance IDs** (`class-wpsg-embed.php`)
+
+- Added `$space_name` from the resolved space object (or slug as fallback).
+- Generated a stable, deduped `$instance_id` (`wpsg-<slug>`, `wpsg-<slug>-2` if collision) tracked in `$GLOBALS['wpsg_instance_ids']`.
+- Accumulated `$GLOBALS['wpsg_spaces_on_page'][$instance_id]` (id, slug, name) for admin bar use.
+- Added `id="<?= esc_attr($instance_id) ?>"` to the mount div — `getRootId()` now uses `host.id` (highest priority path) making rootIds space-scoped and stable across page loads.
+- Included `spaceName` and `instanceId` in `data-wpsg-config` so React receives them without an extra API call.
+- Added `admin_bar_delegation_js()`: a once-emitted JS snippet that listens for `[data-wpsg-open]` clicks from the WP admin bar and calls the per-instance opener (`window.__wpsgOpen_<instanceId>`).
+- Added `register_admin_bar_nodes()`: hooks into `admin_bar_menu` at priority 90, adds a "WP Super Gallery" parent node and per-space children (Settings / Admin Panel) with `data-wpsg-open` attributes. Gated on `manage_wpsg` capability.
+
+**Layer 2 — React: per-instance window opener** (`src/App.tsx`, `src/main.tsx`)
+
+- Added `spaceName` and `instanceId` to `NodeConfig` and all mount-prop construction sites.
+- Threaded `spaceName` and `instanceId` through `AppProps` → `App` → `AppContent`.
+- Added `useEffect` in `AppContent` to register `window.__wpsgOpen_<instanceId>` (opens admin or settings drawer); cleaned up on unmount.
+- Added `{...(spaceId !== undefined && { initialSpaceId: String(spaceId) })}` and `spaceName` props to `<AdminPanel>`.
+- Added `spaceName` prop to `<AuthBar>` and `<SettingsPanel>`.
+
+**Layer 3 — UX: space identity visibility** (`AdminPanel.tsx`, `SettingsPanel.tsx`, `AuthBar.tsx`)
+
+- `AdminPanel`: Added `initialSpaceId?: string` prop; seeds `useReloadSafeView('admin_space', initialSpaceId ?? 'all')` so the space dropdown pre-selects the gallery's space on open. Added `spaceName` badge next to the "Admin Panel" title when a specific space is targeted.
+- `SettingsPanel`: Added `spaceName?: string` prop; changed the drawer badge from the static "Space" label to `{spaceName ?? \`Space ${spaceId}\`}`.
+- `AuthBar` / `AuthBarFull`: Added `spaceName?: string` prop; the Settings tooltip now shows `"<spaceName> — Settings"` when set.
+
+**Layer 4 — WP Admin Bar: cross-instance navigation** (PHP side above; React opener above)
+
+The WP admin bar now lists all gallery instances on the current page. Each space gets a sub-menu with "Settings" and "Admin Panel" links. Clicking either calls the per-instance window opener, scrolls to the correct gallery, and opens the correct panel — without the admin needing to find the AuthBar button manually.
+
+### Acceptance criteria
+
+- `.wp-super-gallery` divs have `id="wpsg-test-2"` (etc.) in page source.
+- Admin panel opened from test-2's gallery pre-selects test-2 in the space dropdown.
+- Settings drawer header shows space name ("test-2") not just "Space".
+- Admin panel header shows the space name badge when a specific space is targeted.
+- AuthBar Settings tooltip shows the space name.
+- WP admin bar shows "WP Super Gallery → test-2 → Settings / Admin Panel" nodes.
+- Clicking a WP admin bar node opens the correct space's panel.
+
+### Validation
+
+- Built with `npm run build:wp`, deployed via `update_dev_plugin.sh`.
+- Manual test: page with two shortcodes (`test-2` and `test-3`); confirmed both AuthBars are visible; confirmed each opens its own space's panel; confirmed WP admin bar navigation; confirmed TypeScript clean (`npx tsc --noEmit`).
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` | Stable instance IDs; spaceName/instanceId in node config; mount div `id`; delegation JS; admin bar nodes |
+| `src/main.tsx` | Added `spaceName`, `instanceId` to `NodeConfig`; threaded through all mount sites |
+| `src/App.tsx` | Window opener `useEffect`; `initialSpaceId`/`spaceName` to AdminPanel; `spaceName` to AuthBar/SettingsPanel |
+| `src/components/Admin/AdminPanel.tsx` | `initialSpaceId` seeds space dropdown; `spaceName` badge in header |
+| `src/components/Admin/SettingsPanel.tsx` | Space name in drawer header badge |
+| `src/components/Auth/AuthBar.tsx` | Space name in Settings tooltip |
+
+**Revision (P48-J follow-on):** The tooltip-label approach was replaced with the `SpaceSwitcher` component (see P48-J). `AuthBar` was updated to pass `instanceId` (not `spaceName`) down to all three sub-components.
+
+---
+
+## Track P48-J — Auth Bar Global Display Mode + SpaceSwitcher Polish
+
+### Problem
+
+Two issues found during P48-I manual testing:
+
+1. **`auth_bar_display_mode` could not be changed** — the setting existed in the front-end `SettingsPanel` but was never in `$space_overridable_fields`, so saving it from the space-level drawer was silently a no-op. The setting has no meaning per-space (the auth bar is a page-level element), so per-space overrides are the wrong model entirely.
+2. **SpaceSwitcher badge did not appear** — `emit_page_spaces_js` gated on `manage_wpsg` only; in fresh wp-env installs where the plugin activation hook hadn't run, administrators had `manage_options` but not `manage_wpsg`. Also, the badge was suppressed entirely on single-space pages, breaking visual uniformity.
+
+### Fix
+
+**Global auth bar display mode** (`class-wpsg-settings-renderer.php`, `class-wpsg-settings-core-fields.php`)
+
+- Added a new "Auth Bar" settings section to the WP Admin → Super Gallery → Settings page.
+- Fields: `auth_bar_display_mode` (select) and `auth_bar_drag_margin` (number). Both were already stored globally — this just exposes them in the admin UI.
+- Removed `Auth Bar Display Mode` and `Drag Margin` controls from the front-end `SettingsPanel` drawer (`GeneralSettingsSection.tsx`). Backdrop Blur and Mobile Breakpoint remain there as visual/responsive preferences.
+
+**Per-page shortcode override** (`class-wpsg-embed.php`, `src/main.tsx`, `src/App.tsx`)
+
+- Added `auth_bar_mode` shortcode attribute: `[super-gallery space="foo" auth_bar_mode="draggable"]`.
+- Validated against the allowed enum; emitted as `authBarMode` in `data-wpsg-config` only when present.
+- `NodeConfig` in `main.tsx` extended with `authBarMode?: string`; threaded through all mount paths.
+- `AppContent` in `App.tsx` computes `effectiveAuthBarMode = authBarMode ?? resolvedSettings.authBarDisplayMode` and passes it to `<AuthBar displayMode={...}>`.
+
+**SpaceSwitcher polish** (`src/components/Auth/SpaceSwitcher.tsx`, `class-wpsg-embed.php`)
+
+- `emit_page_spaces_js`: added `current_user_can('manage_options')` as fallback capability check.
+- `SpaceSwitcher`: always renders a space identity badge (non-interactive on single-space pages, dropdown on multi-space pages). Removed the `pageSpaces.length <= 1` early return. Badge shows `ChevronDown` icon only when dropdown is available.
+
+### Acceptance criteria
+
+- WP Admin → Super Gallery → Settings shows an "Auth Bar" section with Display Mode and Drag Margin fields.
+- Changing the mode there takes effect on all pages without a shortcode override.
+- `[super-gallery space="foo" auth_bar_mode="bar"]` overrides the global for that page.
+- SpaceSwitcher badge is always visible in the floating AuthBar (and all other modes) for admin users — non-interactive on single-space pages, dropdown on multi-space pages.
+- `auth_bar_display_mode` / `authBarDragMargin` selectors are gone from the front-end Settings drawer.
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `wp-plugin/.../class-wpsg-embed.php` | `auth_bar_mode` shortcode attr; `authBarMode` in node config; `manage_options` fallback in `emit_page_spaces_js` |
+| `wp-plugin/.../class-wpsg-settings-renderer.php` | Auth Bar section + 2 fields registered |
+| `wp-plugin/.../class-wpsg-settings-core-fields.php` | `render_authbar_section`, `render_auth_bar_display_mode_field`, `render_auth_bar_drag_margin_field` |
+| `src/main.tsx` | `authBarMode` added to `NodeConfig`; threaded through all 3 mount paths |
+| `src/App.tsx` | `authBarMode` prop; `effectiveAuthBarMode` override; `GalleryBehaviorSettings` import |
+| `src/components/Auth/SpaceSwitcher.tsx` | Always-visible badge; dropdown conditional on 2+ spaces |
+| `src/components/Settings/GeneralSettingsSection.tsx` | Removed Display Mode + Drag Margin controls |
+
+---
+
+## PR #63 Copilot Review — Round 1
+
+### Thread 1 — `import_media_library_binary()`: unchecked `file_put_contents()` return value
+
+**File:** `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-media-controller.php` line 1718
+
+**Decision: Accept.** `file_put_contents()` returns `false` on failure (disk full, permissions). Without the check, `media_handle_sideload()` would be called on an empty/partial temp file, producing a confusing WP_Error downstream. Fix: capture return value, and if `false`, delete the temp file and add the entry to `$skipped[]` before continuing to the next item.
+
+---
+
+### Thread 2 — `CoverflowAdapter`: auto-focus on mount steals focus
+
+**File:** `src/components/Galleries/Adapters/coverflow/CoverflowAdapter.tsx` line 87–89
+
+**Decision: Accept.** The `useEffect(() => containerRef.current?.focus(), [])` was added so keyboard arrow-key navigation worked immediately. However, auto-focusing on mount violates WCAG 2.4.3 (focus order) and is confusing for page visitors who haven't interacted with the gallery. The container already has `tabIndex={0}` and `onKeyDown`, so keyboard navigation is fully available once the user tabs into or clicks the gallery. Removed the `useEffect` and the now-unused `useEffect` import.
+
+---
+
+### Thread 3 — `MediaAddModal`: `URL.createObjectURL()` created for non-image files
+
+**File:** `src/components/Admin/MediaAddModal.tsx` line 83–93
+
+**Decision: Accept.** The object URL is only consumed at render time when `isImage && url` is true (line 204) — video files show `<IconVideo>` and never use `url`. Creating blob URLs for potentially large video files is unnecessary memory allocation. Fix: skip `URL.createObjectURL()` for any file whose `type` does not start with `image/`.
+
+---
+
+## Follow-on candidates (not in scope for Phase 48)
+
+- Settings panel open/close animation variants — the Drawer currently uses `slide-left` (200 ms). A future track should expose a `settingsPanelAnimation` setting in SettingsPanel (e.g. slide-left, fade, scale, none) so admins can match their site's motion style.
+
+- Cross-Space Campaign Move (P47 follow-on) — medium complexity, deferred.
+- Per-Space Library Isolation (Overlays / Fonts) — requires `wpsg_space_library_assoc` join table, deferred.
+- Spotlight / Hero and Vertical Scroll Snap adapters — deferred to a future adapter-focused phase.
+- Campaign Binary Export streaming for large media sets — deferred (100 MB cap covers most cases today).

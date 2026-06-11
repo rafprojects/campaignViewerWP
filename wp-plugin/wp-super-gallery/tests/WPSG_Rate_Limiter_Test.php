@@ -261,4 +261,30 @@ class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {
         $window = intval( apply_filters( 'wpsg_rate_limit_window', 60 ) );
         $this->assertEquals( 60, $window, 'Rate limit window default should be 60 seconds' );
     }
+
+    // ──────────────────────────────────────────── P48-D: space-scoped rate limits
+
+    public function test_rate_limit_requests_per_minute_in_settings_defaults() {
+        $defaults = WPSG_Settings_Registry::get_defaults();
+        $this->assertArrayHasKey( 'rate_limit_requests_per_minute', $defaults );
+        $this->assertSame( 0, $defaults['rate_limit_requests_per_minute'] );
+    }
+
+    public function test_rate_limit_requests_per_minute_is_space_overridable() {
+        $fields = WPSG_Settings_Registry::get_space_overridable_fields();
+        $this->assertContains( 'rate_limit_requests_per_minute', $fields );
+    }
+
+    public function test_rate_limit_requests_per_minute_sanitization() {
+        $sanitized = WPSG_Settings::sanitize_settings( [ 'rate_limit_requests_per_minute' => '300' ] );
+        $this->assertSame( 300, $sanitized['rate_limit_requests_per_minute'] );
+
+        // Clamps at 6000.
+        $sanitized = WPSG_Settings::sanitize_settings( [ 'rate_limit_requests_per_minute' => 99999 ] );
+        $this->assertSame( 6000, $sanitized['rate_limit_requests_per_minute'] );
+
+        // Negative clamps to 0.
+        $sanitized = WPSG_Settings::sanitize_settings( [ 'rate_limit_requests_per_minute' => -5 ] );
+        $this->assertSame( 0, $sanitized['rate_limit_requests_per_minute'] );
+    }
 }

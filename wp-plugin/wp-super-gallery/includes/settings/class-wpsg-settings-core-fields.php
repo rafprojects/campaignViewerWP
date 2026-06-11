@@ -33,6 +33,64 @@ class WPSG_Settings_Core_Fields {
     }
 
     /**
+     * Render auth bar section description.
+     *
+     * @return void
+     */
+    public static function render_authbar_section() {
+        echo '<p>' . esc_html__('Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute.', 'wp-super-gallery') . '</p>';
+    }
+
+    /**
+     * Render auth bar display mode select field.
+     *
+     * @return void
+     */
+    public static function render_auth_bar_display_mode_field() {
+        $value   = WPSG_Settings::get_setting('auth_bar_display_mode') ?: 'floating';
+        $options = [
+            'floating'  => __('Floating (circular icon, bottom-right)', 'wp-super-gallery'),
+            'draggable' => __('Draggable (movable floating icon)', 'wp-super-gallery'),
+            'bar'       => __('Bar (full-width sticky bar)', 'wp-super-gallery'),
+            'auto-hide' => __('Auto-hide (bar hides on scroll)', 'wp-super-gallery'),
+            'minimal'   => __('Minimal (thin strip, ≤32px)', 'wp-super-gallery'),
+        ];
+        ?>
+        <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[auth_bar_display_mode]" id="wpsg_auth_bar_display_mode">
+            <?php foreach ($options as $key => $label) : ?>
+                <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description">
+            <?php esc_html_e('How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page.', 'wp-super-gallery'); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render auth bar drag margin field (only relevant for draggable mode).
+     *
+     * @return void
+     */
+    public static function render_auth_bar_drag_margin_field() {
+        $value = (int) (WPSG_Settings::get_setting('auth_bar_drag_margin') ?? 16);
+        ?>
+        <input type="number"
+               name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[auth_bar_drag_margin]"
+               id="wpsg_auth_bar_drag_margin"
+               value="<?php echo esc_attr($value); ?>"
+               class="small-text"
+               min="0"
+               max="64">
+        <p class="description">
+            <?php esc_html_e('Minimum distance from viewport edges when dragging (draggable mode only).', 'wp-super-gallery'); ?>
+        </p>
+        <?php
+    }
+
+    /**
      * Render performance section description.
      *
      * @return void

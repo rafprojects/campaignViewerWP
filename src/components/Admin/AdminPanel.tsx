@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box, FileButton } from '@mantine/core';
 import { useReloadSafeView } from '@/hooks/useReloadSafeView';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments, IconStack2 } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -35,6 +35,7 @@ import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { spaceColor } from '@/utils/spaceColor';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
@@ -62,9 +63,16 @@ interface AdminPanelProps {
    * Used when the user arrives via a shareable builder URL (?builder=<id>).
    */
   initialBuilderTemplateId?: string | undefined;
+  /** P48-I: space ID string to pre-select in the space dropdown. */
+  initialSpaceId?: string;
+  /** P48-I: display name for the space (shown in header when a specific space is targeted). */
+  spaceName?: string;
+  /** P48-I: stable instance ID used to derive the per-space accent color. */
+  instanceId?: string | undefined;
 }
 
-export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId }: AdminPanelProps) {
+export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId, initialSpaceId, spaceName, instanceId }: AdminPanelProps) {
+  const color = instanceId ? spaceColor(instanceId) : undefined;
   const queryClient = useQueryClient();
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
@@ -95,7 +103,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', 'all');
+  const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', initialSpaceId ?? 'all');
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState('');
@@ -109,6 +117,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [auditCampaignId, setAuditCampaignId] = useState('');
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
+  const [auditZipExporting, setAuditZipExporting] = useState(false);
+  const [globalAuditZipExporting, setGlobalAuditZipExporting] = useState(false);
+  const [mediaZipExporting, setMediaZipExporting] = useState(false);
+  const [mediaZipImporting, setMediaZipImporting] = useState(false);
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
@@ -211,6 +223,74 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
+  const handleAuditZipExport = useCallback(async (
+    params: Parameters<typeof apiClient.startAuditLogBinaryExport>[0],
+    setExporting: (v: boolean) => void,
+    filename: string,
+  ) => {
+    setExporting(true);
+    try {
+      const { jobId } = await apiClient.startAuditLogBinaryExport(params);
+      onNotify({ type: 'success', text: 'Building audit log ZIP — this may take a moment.' });
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        await apiClient.downloadExportJob(jobId, filename);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => undefined);
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Audit ZIP export failed') });
+    } finally {
+      setExporting(false);
+    }
+  }, [apiClient, onNotify]);
+
+  const handleMediaZipExport = useCallback(async () => {
+    setMediaZipExporting(true);
+    try {
+      const params = mediaCampaignId ? { campaignId: mediaCampaignId } : {};
+      const { jobId } = await apiClient.startMediaLibraryBinaryExport(params);
+      onNotify({ type: 'success', text: 'Building media library ZIP — this may take a moment.' });
+      try {
+        const deadline = Date.now() + 300_000;
+        let job = await apiClient.getExportJob(jobId);
+        while (job.status === 'pending' || job.status === 'processing') {
+          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+          job = await apiClient.getExportJob(jobId);
+        }
+        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        await apiClient.downloadExportJob(jobId, `media-library-${Date.now()}.zip`);
+      } finally {
+        await apiClient.deleteExportJob(jobId).catch(() => undefined);
+      }
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP export failed') });
+    } finally {
+      setMediaZipExporting(false);
+    }
+  }, [apiClient, mediaCampaignId, onNotify]);
+
+  const handleMediaZipImport = useCallback(async (file: File) => {
+    setMediaZipImporting(true);
+    try {
+      const result = await apiClient.importMediaLibraryBinary(file);
+      const msg = `Imported ${result.imported.length} media item${result.imported.length !== 1 ? 's' : ''}${result.skipped.length > 0 ? ` (${result.skipped.length} skipped)` : ''}.`;
+      onNotify({ type: 'success', text: msg });
+    } catch (err) {
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP import failed') });
+    } finally {
+      setMediaZipImporting(false);
+    }
+  }, [apiClient, onNotify]);
+
   const mediaPrefetchedRef = useRef(false);
   const accessPrefetchedRef = useRef(false);
   const auditPrefetchedRef = useRef(false);
@@ -298,6 +378,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <IconArrowLeft />
           </ActionIcon>
           <Title order={2} size="h3">Admin Panel</Title>
+          {spaceName && <Badge color={color ?? 'blue'} variant="light" size="sm">{spaceName}</Badge>}
         </Group>
         <Group gap="xs" wrap="wrap">
           {spaces.length > 0 && (
@@ -524,6 +605,33 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
             <Button
+              size="sm"
+              variant="light"
+              loading={mediaZipExporting}
+              style={{ flex: '0 0 auto' }}
+              onClick={handleMediaZipExport}
+              aria-label="Export media library as ZIP"
+            >
+              Export ZIP
+            </Button>
+            <FileButton
+              onChange={(file) => { if (file) handleMediaZipImport(file); }}
+              accept=".zip,application/zip"
+            >
+              {(props) => (
+                <Button
+                  {...props}
+                  size="sm"
+                  variant="light"
+                  loading={mediaZipImporting}
+                  style={{ flex: '0 0 auto' }}
+                  aria-label="Import media library from ZIP"
+                >
+                  Import ZIP
+                </Button>
+              )}
+            </FileButton>
+            <Button
               variant="outline"
               loading={rescanAllLoading}
               style={{ flex: '0 0 auto' }}
@@ -597,6 +705,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             onFiltersChange={setAuditFilters}
             auditError={auditError}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
+            onExportZip={() => handleAuditZipExport({
+              ...(auditCampaignId ? { campaignId: auditCampaignId } : {}),
+              ...(auditFilters.from ? { from: auditFilters.from } : {}),
+              ...(auditFilters.to ? { to: auditFilters.to } : {}),
+              ...(auditFilters.action ? { action: auditFilters.action } : {}),
+              ...(auditFilters.scope ? { scope: auditFilters.scope } : {}),
+              ...(auditFilters.severity ? { severity: auditFilters.severity } : {}),
+            }, setAuditZipExporting, `audit-log-${Date.now()}.zip`)}
+            exportingZip={auditZipExporting}
           />
         </Tabs.Panel>
 
@@ -607,6 +724,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             filters={globalAuditFilters}
             onFiltersChange={setGlobalAuditFilters}
             onExportCsv={() => apiClient.downloadGlobalAuditCsv(globalAuditFilters)}
+            onExportZip={() => handleAuditZipExport({
+              ...(globalAuditFilters.campaignId ? { campaignId: globalAuditFilters.campaignId } : {}),
+              ...(globalAuditFilters.from ? { from: globalAuditFilters.from } : {}),
+              ...(globalAuditFilters.to ? { to: globalAuditFilters.to } : {}),
+              ...(globalAuditFilters.action ? { action: globalAuditFilters.action } : {}),
+              ...(globalAuditFilters.scope ? { scope: globalAuditFilters.scope } : {}),
+              ...(globalAuditFilters.severity ? { severity: globalAuditFilters.severity } : {}),
+            }, setGlobalAuditZipExporting, `global-audit-log-${Date.now()}.zip`)}
+            exportingZip={globalAuditZipExporting}
           />
         </Tabs.Panel>
 

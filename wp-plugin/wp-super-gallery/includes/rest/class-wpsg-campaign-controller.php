@@ -154,6 +154,24 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
+
+        // P48-E: audit log binary export.
+        register_rest_route('wp-super-gallery/v1', '/admin/audit-log/export/binary', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'export_audit_log_binary'],
+                'permission_callback' => [self::class, 'require_admin'],
+                'args'                => [
+                    'from'        => ['type' => 'string', 'required' => false],
+                    'to'          => ['type' => 'string', 'required' => false],
+                    'action'      => ['type' => 'string', 'required' => false],
+                    'campaign_id' => ['type' => 'integer', 'required' => false],
+                    'scope'       => ['type' => 'string', 'required' => false, 'enum' => ['campaign', 'system']],
+                    'severity'    => ['type' => 'string', 'required' => false, 'enum' => ['info', 'warning', 'error']],
+                    'space'       => ['type' => 'integer', 'required' => false],
+                ],
+            ],
+        ]);
     }
 
     public static function list_campaigns($request) {
@@ -743,6 +761,101 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         return self::paginated_response($result['items'], $result['total'], $page, $per_page);
+    }
+
+    // P48-E: POST /admin/audit-log/export/binary
+    public static function export_audit_log_binary($request) {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            return new WP_Error(
+                'wpsg_missing_dependency',
+                'ext-zip is required for binary export.',
+                ['status' => 503]
+            );
+        }
+
+        $args = [
+            'per_page' => 5000,
+            'page'     => 1,
+        ];
+        $from        = $request->get_param('from') ?: null;
+        $to          = $request->get_param('to') ?: null;
+        $action      = $request->get_param('action') ?: null;
+        $campaign_id = $request->get_param('campaign_id') ?: null;
+        $scope       = $request->get_param('scope') ?: null;
+        $severity    = $request->get_param('severity') ?: null;
+        $space       = $request->get_param('space') ?: null;
+
+        if ($from)        { $args['from']        = sanitize_text_field($from); }
+        if ($to)          { $args['to']          = sanitize_text_field($to); }
+        if ($action)      { $args['action']      = sanitize_text_field($action); }
+        if ($campaign_id) { $args['campaign_id'] = intval($campaign_id); }
+        if ($scope)       { $args['scope']       = $scope; }
+        if ($severity)    { $args['severity']    = $severity; }
+        if ($space)       { $args['space_id']    = intval($space); }
+
+        $result = WPSG_DB::list_audit_entries($args);
+        $entries = $result['items'];
+
+        $manifest_entries = array_map(function ($e) {
+            return [
+                'id'            => $e['id'],
+                'action'        => $e['action'],
+                'actorLogin'    => $e['actorLogin'],
+                'campaignId'    => $e['campaignId'],
+                'summary'       => $e['summary'],
+                'severity'      => $e['severity'],
+                'scope'         => $e['scope'],
+                'resourceType'  => $e['resourceType'],
+                'resourceId'    => $e['resourceId'],
+                'resourceLabel' => $e['resourceLabel'],
+                'createdAt'     => $e['createdAt'],
+            ];
+        }, $entries);
+
+        $filters_used = array_filter([
+            'from'        => $from,
+            'to'          => $to,
+            'action'      => $action,
+            'campaign_id' => $campaign_id ? intval($campaign_id) : null,
+            'scope'       => $scope,
+            'severity'    => $severity,
+            'space'       => $space ? intval($space) : null,
+        ]);
+
+        $manifest = wp_json_encode([
+            'version'     => 1,
+            'type'        => 'audit',
+            'exported_at' => gmdate('c'),
+            'filters'     => $filters_used,
+            'entry_count' => count($manifest_entries),
+            'entries'     => $manifest_entries,
+        ]);
+        if ($manifest === false) {
+            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+        }
+
+        // Collect cover images for each unique campaign referenced in the log.
+        $campaign_ids = array_values(array_unique(array_filter(array_column($entries, 'campaignId'))));
+        $media_items  = [];
+        foreach ($campaign_ids as $cid) {
+            $cid = intval($cid);
+            if ($cid <= 0) {
+                continue;
+            }
+            $cover_image = get_post_meta($cid, 'cover_image', true);
+            if (!$cover_image || !is_string($cover_image)) {
+                continue;
+            }
+            $media_items[] = [
+                'id'    => 'campaign-' . $cid . '-cover',
+                'url'   => esc_url_raw($cover_image),
+                'title' => get_the_title($cid) . ' (cover)',
+            ];
+        }
+
+        $job_id = WPSG_Export_Engine::create_job('audit', $manifest, $media_items);
+
+        return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
 
     private static function audit_csv_response(array $items): WP_REST_Response {

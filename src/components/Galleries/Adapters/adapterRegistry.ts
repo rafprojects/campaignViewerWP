@@ -47,6 +47,12 @@ const SpotlightGallery = lazy(() =>
 const ScrollSnapGallery = lazy(() =>
   import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery').then((m) => ({ default: m.ScrollSnapGallery })),
 );
+const CoverflowAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/coverflow/CoverflowAdapter').then((m) => ({ default: m.CoverflowAdapter })),
+);
+const PinterestAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/pinterest/PinterestAdapter').then((m) => ({ default: m.PinterestAdapter })),
+);
 const LazyLayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
 );
@@ -136,6 +142,31 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     capabilities: ['lightbox', 'keyboard-nav'],
     settingGroups: ['media-frame', 'scroll-snap'],
     component: ScrollSnapGallery as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'coverflow',
+    label: 'Coverflow',
+    optionLabels: {
+      'unified-gallery': 'Coverflow (3D Carousel)',
+      'per-type-gallery': 'Coverflow (3D Carousel)',
+      'campaign-override': 'Coverflow',
+    },
+    capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
+    settingGroups: ['media-frame', 'carousel'],
+    component: CoverflowAdapter as ComponentType<GalleryAdapterProps>,
+    paginationOwnership: 'adapter',
+  },
+  {
+    id: 'pinterest',
+    label: 'Pinterest',
+    optionLabels: {
+      'unified-gallery': 'Pinterest (Mosaic Grid)',
+      'per-type-gallery': 'Pinterest (Mosaic Grid)',
+      'campaign-override': 'Pinterest',
+    },
+    capabilities: ['grid-layout', 'lightbox'],
+    settingGroups: ['media-frame', 'photo-grid', 'tile-appearance'],
+    component: PinterestAdapter as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'spotlight',

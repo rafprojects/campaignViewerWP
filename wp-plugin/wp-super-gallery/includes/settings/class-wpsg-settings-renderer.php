@@ -189,6 +189,29 @@ class WPSG_Settings_Renderer {
         );
 
         add_settings_section(
+            'wpsg_authbar_section',
+            __('Auth Bar', 'wp-super-gallery'),
+            ['WPSG_Settings_Core_Fields', 'render_authbar_section'],
+            WPSG_Settings::PAGE_SLUG
+        );
+
+        add_settings_field(
+            'auth_bar_display_mode',
+            __('Display Mode', 'wp-super-gallery'),
+            ['WPSG_Settings_Core_Fields', 'render_auth_bar_display_mode_field'],
+            WPSG_Settings::PAGE_SLUG,
+            'wpsg_authbar_section'
+        );
+
+        add_settings_field(
+            'auth_bar_drag_margin',
+            __('Drag Margin (px)', 'wp-super-gallery'),
+            ['WPSG_Settings_Core_Fields', 'render_auth_bar_drag_margin_field'],
+            WPSG_Settings::PAGE_SLUG,
+            'wpsg_authbar_section'
+        );
+
+        add_settings_section(
             'wpsg_performance_section',
             __('Performance', 'wp-super-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_performance_section'],

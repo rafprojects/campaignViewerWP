@@ -72,10 +72,13 @@ const parseProps = (node: Element): MountProps => {
 
 interface NodeConfig {
   spaceId?: number
+  spaceName?: string
+  instanceId?: string
   theme?: string
   galleryLayout?: string
   enableLightbox?: boolean
   enableAnimations?: boolean
+  authBarMode?: string
 }
 
 const parseNodeConfig = (node: Element): NodeConfig => {
@@ -248,7 +251,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
     host.setAttribute('data-wpsg-mounted', 'true')
 
     const nodeConfig = parseNodeConfig(host)
-    const props = { ...parseProps(host), spaceId: nodeConfig.spaceId }
+    const props = { ...parseProps(host), spaceId: nodeConfig.spaceId, spaceName: nodeConfig.spaceName, instanceId: nodeConfig.instanceId, ...(nodeConfig.authBarMode !== undefined && { authBarMode: nodeConfig.authBarMode }) }
 
     if (useShadowDom) {
       const shadowRoot = host.shadowRoot ?? host.attachShadow({ mode: 'open' })
@@ -354,7 +357,7 @@ if (spacesAdminHost) {
 } else if (rootHost) {
   if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')
   const nodeConfig = parseNodeConfig(rootHost)
-  const props = { ...parseProps(rootHost), spaceId: nodeConfig.spaceId }
+  const props = { ...parseProps(rootHost), spaceId: nodeConfig.spaceId, ...(nodeConfig.spaceName !== undefined && { spaceName: nodeConfig.spaceName }), ...(nodeConfig.instanceId !== undefined && { instanceId: nodeConfig.instanceId }), ...(nodeConfig.authBarMode !== undefined && { authBarMode: nodeConfig.authBarMode }) }
   const rootId = getRootId(rootHost)
   if (useShadowDom) {
     mountWithShadow(rootHost, props, rootId, nodeConfig)
@@ -376,7 +379,7 @@ if (spacesAdminHost) {
     nodes.forEach((node, index) => {
       if (import.meta.env.DEV) console.log('[WPSG] Processing node', index, '- already mounted:', node.hasAttribute('data-wpsg-mounted'))
       const nodeConfig = parseNodeConfig(node)
-      const props = { ...parseProps(node), spaceId: nodeConfig.spaceId }
+      const props = { ...parseProps(node), spaceId: nodeConfig.spaceId, ...(nodeConfig.spaceName !== undefined && { spaceName: nodeConfig.spaceName }), ...(nodeConfig.instanceId !== undefined && { instanceId: nodeConfig.instanceId }), ...(nodeConfig.authBarMode !== undefined && { authBarMode: nodeConfig.authBarMode }) }
       const rootId = getRootId(node, index)
       if (useShadowDom) {
         mountWithShadow(node, props, rootId, nodeConfig)

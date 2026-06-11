@@ -15,7 +15,10 @@ import {
   Title,
   NativeScrollArea,
   Tabs,
+  useMantineTheme,
+  useComputedColorScheme,
 } from '@mantine/core';
+import type { MantineColor } from '@mantine/core';
 import {
   IconSettings,
   IconPhoto,
@@ -58,6 +61,7 @@ import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
 import { getErrorMessage } from '@/utils/getErrorMessage';
+import { spaceColor } from '@/utils/spaceColor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 
 import {
@@ -138,7 +142,11 @@ interface SettingsPanelProps {
   initialSettings?: SettingsDataInput | undefined;
   /** When set, saves route to this space's overrides instead of global settings. */
   spaceId?: number;
-  /** Render the Drawer via a React portal (to document.body). Default false. Set true when rendering inside a Modal. */
+  /** P48-I: display name for the space (shown in the drawer header badge). */
+  spaceName?: string;
+  /** P48-I: stable instance ID used to derive the per-space accent color. */
+  instanceId?: string | undefined;
+  /** Render the Drawer via a React portal (to document.body). Defaults true so the Drawer escapes any CSS transform/contain stacking context on the shortcode host. */
   withinPortal?: boolean;
 }
 
@@ -326,7 +334,15 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, withinPortal = false }: SettingsPanelProps) {
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true }: SettingsPanelProps) {
+  const color = instanceId ? spaceColor(instanceId) : undefined;
+  const theme = useMantineTheme();
+  const isDark = useComputedColorScheme('light') === 'dark';
+  // Resolve actual hex values: CSS variables from :host are unavailable in the portal (withinPortal=true).
+  // Shade indices mirror Mantine's variant="light" behavior so all 3 badge locations stay in sync.
+  const colorHex = color ? (theme.colors[color as MantineColor]?.[isDark ? 4 : 5] ?? undefined) : undefined;
+  const badgeBg = color ? (theme.colors[color as MantineColor]?.[isDark ? 8 : 1] ?? undefined) : undefined;
+  const badgeText = color ? (theme.colors[color as MantineColor]?.[isDark ? 2 : 7] ?? undefined) : undefined;
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -539,8 +555,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">
             <IconSettings size={22} />
-            <Title order={3}>Display Settings</Title>
-            {spaceId != null && <Badge size="sm" color="blue" variant="light">Space</Badge>}
+            <Title order={3}>Settings</Title>
+            {spaceId != null && (
+              <Badge
+                size="sm"
+                color={color ?? 'blue'}
+                variant="light"
+                {...(badgeBg ? { style: { backgroundColor: badgeBg, color: badgeText } } : {})}
+              >
+                {spaceName ?? `Space ${spaceId}`}
+              </Badge>
+            )}
           </Group>
           <Group gap="xs" wrap="nowrap">
             <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>
@@ -567,6 +592,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       scrollAreaComponent={NativeScrollArea}
       styles={{
         body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
+        ...(colorHex ? { content: { borderLeft: `2px solid ${colorHex}` } } : {}),
       }}
     >
       {isLoading ? (
