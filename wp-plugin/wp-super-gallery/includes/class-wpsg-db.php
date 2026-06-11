@@ -255,6 +255,19 @@ class WPSG_DB {
             "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
         );
 
+        // TODO(P50): replace with wpsg_media_refs attachment-ID index once the mapping table is extended — see Track P49-G.
+        if (count($campaign_ids) > 50) {
+            _doing_it_wrong(
+                __METHOD__,
+                sprintf(
+                    'Performance cliff: scanning %d campaigns for attachment ID %d. This method is O(campaigns) in queries. The O(1) fix requires a wpsg_media_refs attachment-ID index (Phase 50+).',
+                    count($campaign_ids),
+                    $attachment_id
+                ),
+                '0.26.0'
+            );
+        }
+
         $result = [];
         foreach ($campaign_ids as $campaign_id) {
             $items = get_post_meta((int) $campaign_id, 'media_items', true);
