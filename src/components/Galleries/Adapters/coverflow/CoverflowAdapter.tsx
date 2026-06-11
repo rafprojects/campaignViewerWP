@@ -5,7 +5,7 @@
  * flanking items are rotated on the Y axis and scaled down to give a 3D coverflow
  * effect. Navigation via click, keyboard arrows, and swipe gestures.
  */
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Box, Stack, Text, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
@@ -83,10 +83,6 @@ export function CoverflowAdapter({
   const swipeHandlers = useSwipe({ onSwipeLeft: next, onSwipeRight: prev });
 
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    containerRef.current?.focus();
-  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

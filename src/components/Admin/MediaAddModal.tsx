@@ -83,6 +83,7 @@ export function MediaAddModal({
   useEffect(() => {
     const urls = new Map<string, string>();
     for (const file of selectedFiles) {
+      if (!file.type.startsWith('image/')) continue;
       const key = `${file.name}-${file.size}-${file.lastModified}`;
       urls.set(key, URL.createObjectURL(file));
     }

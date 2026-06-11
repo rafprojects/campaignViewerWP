@@ -537,6 +537,32 @@ Two issues found during P48-I manual testing:
 
 ---
 
+## PR #63 Copilot Review — Round 1
+
+### Thread 1 — `import_media_library_binary()`: unchecked `file_put_contents()` return value
+
+**File:** `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-media-controller.php` line 1718
+
+**Decision: Accept.** `file_put_contents()` returns `false` on failure (disk full, permissions). Without the check, `media_handle_sideload()` would be called on an empty/partial temp file, producing a confusing WP_Error downstream. Fix: capture return value, and if `false`, delete the temp file and add the entry to `$skipped[]` before continuing to the next item.
+
+---
+
+### Thread 2 — `CoverflowAdapter`: auto-focus on mount steals focus
+
+**File:** `src/components/Galleries/Adapters/coverflow/CoverflowAdapter.tsx` line 87–89
+
+**Decision: Accept.** The `useEffect(() => containerRef.current?.focus(), [])` was added so keyboard arrow-key navigation worked immediately. However, auto-focusing on mount violates WCAG 2.4.3 (focus order) and is confusing for page visitors who haven't interacted with the gallery. The container already has `tabIndex={0}` and `onKeyDown`, so keyboard navigation is fully available once the user tabs into or clicks the gallery. Removed the `useEffect` and the now-unused `useEffect` import.
+
+---
+
+### Thread 3 — `MediaAddModal`: `URL.createObjectURL()` created for non-image files
+
+**File:** `src/components/Admin/MediaAddModal.tsx` line 83–93
+
+**Decision: Accept.** The object URL is only consumed at render time when `isImage && url` is true (line 204) — video files show `<IconVideo>` and never use `url`. Creating blob URLs for potentially large video files is unnecessary memory allocation. Fix: skip `URL.createObjectURL()` for any file whose `type` does not start with `image/`.
+
+---
+
 ## Follow-on candidates (not in scope for Phase 48)
 
 - Settings panel open/close animation variants — the Drawer currently uses `slide-left` (200 ms). A future track should expose a `settingsPanelAnimation` setting in SettingsPanel (e.g. slide-left, fade, scale, none) so admins can match their site's motion style.

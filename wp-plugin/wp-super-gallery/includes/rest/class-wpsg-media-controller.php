@@ -1716,8 +1716,13 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 continue;
             }
             // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-            file_put_contents($tmp, $file_data);
+            $written = file_put_contents($tmp, $file_data);
             unset($file_data);
+            if ($written === false) {
+                @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                $skipped[] = $filename;
+                continue;
+            }
 
             $file_array = ['name' => $filename, 'tmp_name' => $tmp];
             $att_id     = media_handle_sideload($file_array, 0, sanitize_text_field($item['title'] ?? ''));
