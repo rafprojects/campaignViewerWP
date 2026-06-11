@@ -1,7 +1,7 @@
 import React from 'react';
 import { MantineProvider } from '@mantine/core';
 import '@mantine/core/styles.css';
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 
 const preview: Preview = {
   decorators: [

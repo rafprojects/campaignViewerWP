@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { fn } from 'storybook/test';
 import type { LayoutTemplate } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { FIXTURE_MEDIA } from '@/stories/adapterFixtures';
