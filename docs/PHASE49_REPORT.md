@@ -11,7 +11,7 @@
 | P49-A | Accessibility audit — keyboard nav, ARIA roles, focus trapping, screen-reader labels | Done | Medium |
 | P49-B | Bundle size / perf audit — profile bundle, fix heavy imports, chunk-split unlazy adapters | Done | Medium |
 | P49-C | i18n groundwork — `wp_localize_script` + `i18next`; English strings become default namespace | To do | Medium |
-| P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | To do | Medium |
+| P49-D | Automated visual regression — Playwright screenshot tests per adapter at 3 viewport widths | Done | Medium |
 | P49-E | Storybook — install `@storybook/react-vite`; stories for AssetUploader, LayoutCanvas, all adapters | Done | Medium |
 | P49-F | Thumbnail Cache Index scalability — per-hash `wp_options` entries instead of single autoloaded row | Done | Medium |
 | P49-G | `get_campaigns_for_attachment_id()` N+1 audit + test — O(1) rewrite deferred to Phase 50+ | Done | Small-Medium |
@@ -205,6 +205,14 @@ Layout regressions in gallery adapters go undetected until manual review. Each a
 
 - `playwright test e2e/visual` passes on a clean checkout.
 - Introduce a deliberate CSS change to one adapter; confirm the test fails with a diff image.
+
+### Rationale (delivered 2026-06-10)
+
+Created `playwright.visual.config.ts` as a separate Playwright project targeting Storybook static output served on `:6007` via `npx serve`. This isolates visual regression from the main E2E suite (which targets the Vite dev server + WordPress). `maxDiffPixelRatio: 0.001` (0.1%) catches meaningful layout/color regressions while tolerating sub-pixel antialiasing noise.
+
+`e2e/visual/adapters.spec.ts`: 33 tests (11 media adapters × 3 viewports: 375/768/1280 px). Each test loads the adapter's Storybook iframe, waits for the first image to finish loading (8 s timeout, soft — renders even if images timeout), adds 400 ms settle for CSS transitions, then captures a full-viewport screenshot via `toHaveScreenshot()`. Story IDs were confirmed from `storybook-static/index.json` to avoid URL typos.
+
+33 Linux/Chromium baseline PNGs committed to `e2e/visual/__snapshots__/`. Baselines are platform-sensitive (font metrics and antialiasing differ across OS); they are generated on the Linux CI image. `npm run test:visual` runs comparisons; `npm run test:visual:update` regenerates baselines after intentional visual changes.
 
 ---
 
