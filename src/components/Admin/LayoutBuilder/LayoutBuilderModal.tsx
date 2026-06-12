@@ -719,10 +719,10 @@ export function LayoutBuilderModal({
     const LAYOUT_KEY = layoutScope === 'per-template' && templateId
       ? `wpsg_builder_${rootId}_template_${templateId}_layout`
       : `wpsg_builder_${rootId}_layout`;
-    // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
-    // that is now surfaced in the header; they are cleared so users get the
-    // clean default layout without the redundant History tab.
-    const LAYOUT_VERSION = 2;
+    // P30-E: bumped 1 → 2 (removed History dock tab).
+    // P50-H: bumped 2 → 3 (canvas panel carries tabComponent:'canvas' for hideClose;
+    // old saves without that field must be cleared so the close button disappears).
+    const LAYOUT_VERSION = 3;
     const persistLayout = () => {
       try {
         localStorage.setItem(LAYOUT_KEY, JSON.stringify({ version: LAYOUT_VERSION, layout: event.api.toJSON() }));
@@ -753,11 +753,10 @@ export function LayoutBuilderModal({
         // fall through to default layout
       }
     }
-    // Default layout (P30-E): Layers+Media tabs left | Canvas centre | Properties right
-    // History is now in the header dropdown — no History dock tab in the default.
+    // Default layout: Layers+Media tabs left | Canvas centre | Properties right
     const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
+    const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', tabComponent: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
   }, [rootId, layoutScope, initialTemplate?.id]);

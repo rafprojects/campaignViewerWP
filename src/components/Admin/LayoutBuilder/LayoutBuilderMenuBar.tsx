@@ -192,7 +192,7 @@ export function LayoutBuilderMenuBar({
     try { api.getPanel('canvas')?.api.close(); } catch { /* ignore */ }
     const layersPanel = api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
     api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    const canvasPanel = api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
+    const canvasPanel = api.addPanel({ id: 'canvas', component: 'canvas', tabComponent: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     setOpenPanels(new Set(SIDE_PANELS));
   }, [dockApiRef, layoutScope, rootId, templateId]);
