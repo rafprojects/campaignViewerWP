@@ -1,8 +1,8 @@
-# Phase 50 - Gallery Spaces Completion, Adapters & Shared Package Extraction
+# Phase 50 - Gallery Spaces Completion, Adapters, Shared Package Extraction & Layout Builder enhancements
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-11 (P50-H added)
+**Last updated:** 2026-06-11 (P50-D done; P50-I implemented)
 
 ### Tracks
 
@@ -11,11 +11,13 @@
 | P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11, manual test passed) | Medium |
 | P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | Done (2026-06-11) | Medium |
 | P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
-| P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | To do | Medium-High |
+| P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | Done (2026-06-11, manual test pending) | Medium-High |
 | P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
 | P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | To do | Medium |
 | P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
 | P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | Done (2026-06-11) | Medium |
+| P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | Implemented (2026-06-11, pending manual verification) | Medium |
+| P50-J | Layout Builder Media — Asset-layer parity & polish: bring a curated subset of slot properties to graphic layers (shape/clip-path/mask, border, shadow, blend, filters, rotation); fonts universal parity; deeper upload UX polish | To do | Medium-High |
 
 ---
 
@@ -25,6 +27,7 @@
 2. The three adapters (Stacked/Deck, Isotope/Filterable Grid, Waterfall) clear the bulk of the Phase 22 deferred adapter backlog; only Timeline and Grid with Variable Aspect-Ratio Tiles remain after Phase 50.
 3. Service Worker metadata caching unblocks offline/mobile use cases that have been gated since Phase 49 surfaced the open questions — scope, cache budget, and SW coexistence are all resolved here.
 4. The shared-package extraction is the highest-leverage infrastructure item remaining: `src/lib/` utilities and the decoupled Auth/Lightbox components have been ready since Phase 46; the only remaining step is the monorepo scaffolding. Deferring further adds copy-paste maintenance cost on each new project.
+5. Layout Builder had some broken functionality and a bunch of UX issues which made certain things non-intuitive.  It also had no way to upload media even though it supported overlays and had a global library already created for this.  
 
 ## Key Decisions
 
@@ -37,6 +40,9 @@
 | E | Monorepo tooling | npm workspaces (already present in the project) — no new tool required. `packages/shared-utils/` for `src/lib/` utilities; `packages/shared-ui/` for Auth and Lightbox components. |
 | F | Layout Builder menu bar structure | File / Edit / View / Options — four menus rather than a single hamburger or a flat toolbar extension. Toolbar retains Undo/Redo as always-visible icon buttons (one-click frequency warrants it); all other secondary actions move into menus. Canvas panel is made non-closeable independently of the menu bar work. |
 | G | Layout persistence default | Shared across all templates remains the default (current behaviour, zero migration cost). The Options menu exposes a toggle; per-template mode is backed by including `templateId` in the localStorage key — no new persistence layer required. |
+| H | General media = the overlay library | Rather than build a parallel "general media" store, reuse the existing `wpsg_overlays` table as the general/decorative asset bucket. It is already global, campaign-agnostic, placed on the canvas as free layers, and per-space isolated by P50-B. Campaign media stays hard-bound to campaigns (`media_items` post meta; `wpsg_media_refs` requires `campaign_id`) and is *not* eligible to be "general". |
+| I | Universal asset visibility | A new `is_universal` flag on overlays makes an asset visible to **all** spaces site-wide, bypassing the P50-B per-space association filter. Defaults to off (space-specific). Scoped to overlays/images in P50-I; fonts (WP-option storage) get the same treatment in P50-J. |
+| J | Slot media stays campaign-scoped | Layout slots continue to accept only the selected campaign's media (preserves single-campaign focus, avoids cross-campaign leakage in multi-tenant spaces). The "decorative / general" need is met by the asset library (free-floating canvas layers), not by broadening slot media. |
 
 ## Execution Priority
 
@@ -45,9 +51,11 @@
 3. **P50-A** — Cross-Space Campaign Move: PHP backend; depends on P47 tables.
 4. **P50-B** — Per-Space Library Isolation: PHP backend; depends on P47 tables.
 5. **P50-H** — Layout Builder menu bar: unblocks UX (closed-panel bug) and declutters the toolbar before any further Layout Builder feature work adds to the toolbar debt.
-6. **P50-D** — Isotope/Filterable Grid: extends the adapter interface; done after simpler adapters to avoid any interface churn.
-7. **P50-F** — Service Worker: careful not to break the existing SW registration; done late to avoid disrupting local dev builds.
-8. **P50-G** — Shared Package: largest track; monorepo restructure touches all `src/lib/` and Auth/Lightbox imports; done last to avoid blocking other tracks.
+6. **P50-I** — General Asset Library + unified upload: unblocks P50-B manual testing (overlay discoverability) and delivers the media-handling MVP; reuses existing overlay backend + `MediaAddModal`.
+7. **P50-J** — Asset-layer parity & polish: builds on P50-I; bring slot-grade properties to graphic layers and finish fonts/universal parity.
+8. **P50-D** — Isotope/Filterable Grid: extends the adapter interface; done after simpler adapters to avoid any interface churn.
+9. **P50-F** — Service Worker: careful not to break the existing SW registration; done late to avoid disrupting local dev builds.
+10. **P50-G** — Shared Package: largest track; monorepo restructure touches all `src/lib/` and Auth/Lightbox imports; done last to avoid blocking other tracks.
 
 ---
 
@@ -276,6 +284,48 @@ No adapter supports animated filter/sort transitions. Filtering by media type or
 - Manual: render a gallery with mixed MIME types; filter by image; filter by video; sort by date ascending/descending; confirm FLIP animations play.
 - TypeScript: `tsc --noEmit` passes with no errors on the extended interface.
 
+### Implementation rationale (2026-06-11)
+
+- **Interface extension claim re-evaluated:** The track doc proposed adding `filterKey`/`sortKey` props to `GalleryAdapterProps` behind a discriminated union. On review this is unnecessary — every other adapter manages its own interaction state internally (`useCarousel`, `useSwipe`, etc.) and the host never needs to know an adapter's filter field. The only TypeScript change is adding `'isotope'` to `GalleryAdapterId`. Filter values derive from `[...new Set(media.map(m => m.type))]`; sort uses `dateUploaded` (falling back to `order`), both always-present fields on `MediaItem`. The `tags` field already reserved for "future filterable-gallery work" on `MediaItem` is a natural next step but out of scope here.
+- **Filter chips:** Rendered via Mantine `Chip.Group` + `Chip`; only appear when the media set contains more than one type (`filterValues.length > 1`). With a uniform-type gallery (all images, the smoke-test case), no chips render and the first button in the DOM is a tile — the shared smoke suite's "clicking first button opens lightbox" assertion passes without special-casing.
+- **Sort controls:** Mantine `Select` with three options (`default`, `asc` by date/order, `desc`). Always shown regardless of media types.
+- **FLIP animation:** Item positions are snapshotted via `getBoundingClientRect()` in the filter/sort change handlers (before `setState`), stored in `prevRectsRef`. After each render `useLayoutEffect` computes deltas, applies inverse transforms with `transition: none`, then clears them in a `requestAnimationFrame` so a CSS `transition` carries the movement. `dx === 0 && dy === 0` guard skips animation in jsdom (all rects are zero) — no crash, no false positive.
+- **PHP allowlist:** Added `'isotope'` to both `WPSG_CPT::VALID_ADAPTERS` (`class-wpsg-cpt.php`) and the no-CPT fallback list in `class-wpsg-settings-sanitizer.php`, following the P50-C pattern. The existing `adapterSettingsParity.test.ts` guard confirmed the roundtrip immediately.
+- **Validation done:** `adapterSettingsParity` (6/6); 14-test colocated suite (`IsotopeAdapter.test.tsx`); full smoke suite 150/150 (IsotopeAdapter added to the ADAPTERS array); full frontend suite 2273/2273; `tsc --noEmit` clean; production build clean (`IsotopeAdapter-BaxdTbHp.js` 5.57 kB gzip 2.47 kB); `php -l` clean on both PHP files. **Remaining:** the manual test plan below.
+
+### Manual test plan (P50-D)
+
+**Deploy to the local dev site**
+
+1. `npm run build:wp` + `./update_dev_plugin.sh`.
+2. Open `https://wordpress.lan`, log in as admin, open the gallery admin panel.
+
+**Setup**
+
+- Select an existing campaign with at least 3 images and 1 video (or add a video).
+- In Gallery Settings → Layout, choose "Filterable Grid (Isotope)" as the adapter.
+
+**Filter chips (mixed-type media)**
+
+- [ ] Filter chips "All", "Images", "Videos" appear above the grid.
+- [ ] Clicking "Images" hides the video tile; remaining tiles rearrange with a smooth FLIP animation.
+- [ ] Clicking "Videos" shows only video tiles.
+- [ ] Clicking "All" restores all tiles with another smooth transition.
+
+**Sort controls**
+
+- [ ] The sort Select shows "Default order" initially.
+- [ ] Selecting "Newest first" reorders tiles (upload date descending); tiles animate to new positions.
+- [ ] Selecting "Oldest first" reverses the order again.
+
+**Uniform-type media (all images)**
+
+- [ ] Gallery with only images shows NO filter chips — only the sort Select renders above the grid.
+
+**Lightbox**
+
+- [ ] Clicking any tile opens the lightbox on that item; prev/next arrows work; Esc closes.
+
 ---
 
 ## Track P50-E — Waterfall Adapter
@@ -481,3 +531,105 @@ Add a compact menu bar row inside `LayoutBuilderModal` between the History butto
 - **Layout scope preference:** `useBuilderWorkspacePrefs` extended with `layoutScope: 'global' | 'per-template'` and `setLayoutScope`, persisted under `wpsg_builder_${rootId}_layout_scope`. `handleDockReady` derives `LAYOUT_KEY` from `layoutScope` and `initialTemplate?.id` — per-template mode uses `wpsg_builder_${rootId}_template_${templateId}_layout`; global mode uses the original shared key. `handleDockReady` re-runs when either `rootId` or `layoutScope` changes.
 - **Toolbar cleanup:** Export (download) and Import (upload) `ActionIcon` buttons removed from the right-side header toolbar group. Both actions now live exclusively in the File menu. The right-side group is now: preview toggle → Save button → Close button — three items vs the previous six.
 - **Validation done:** `tsc --noEmit` clean; full frontend suite 2237/2237; production build clean. Manual test: open Layout Builder, close Layers panel via the × on its tab — it closes. Reopen via View → Layers — it re-appears on the left side. Canvas tab has no close button. File / Edit / View / Options all open with correct items. Export and Import work via File menu.
+
+---
+
+## Track P50-I — General Asset Library + Unified Upload (MVP)
+
+### Problem
+
+While testing P50-B, the "Overlay section" appeared to be missing from the Layout Builder's Media & Assets panel. It actually exists — buried inside the collapsed **Design Assets** accordion → **Graphic Layers** sub-section ([LayoutBuilderMediaPanel.tsx:65-98](src/components/Admin/LayoutBuilder/LayoutBuilderMediaPanel.tsx#L65-L98)) — and is mislabeled. Three related gaps compound the discoverability problem:
+
+1. **No general / decorative media bucket (apparently).** Users want to add non-campaign, decorative images to a layout. In fact the overlay library *is* exactly that bucket (global, campaign-agnostic, placed as free-floating canvas layers via `builder.addOverlay`, per-space isolated by P50-B) — it is just hidden and named "overlay".
+2. **No transparency / file-type cues.** A user can't tell a transparent PNG from an opaque JPG in the grid, nor differentiate formats.
+3. **Awkward upload path.** Adding campaign media means leaving the builder for the Admin Media tab; there is no way to add general/decorative media at all from the builder, and the overlay uploader is the bare `AssetUploader` (no drag-drop, narrow file types).
+
+Hard constraint discovered: campaign media is hard-bound to a campaign (`media_items` post meta; `wpsg_media_refs` requires a `campaign_id`) — it genuinely cannot be "general". The general bucket therefore *has* to be the overlay/library store (Key Decision H).
+
+### Fix
+
+**Backend (PHP)**
+
+- **`is_universal` column on `wpsg_overlays`** (`class-wpsg-db.php`): bump `DB_VERSION` `'12'` → `'13'`; add `maybe_upgrade_overlays_v13_is_universal()` following the v11 `space_id` column pattern (INFORMATION_SCHEMA guard, then `ALTER TABLE … ADD COLUMN is_universal TINYINT(1) NOT NULL DEFAULT 0`); add the column to the fresh-install `CREATE TABLE`.
+- **`WPSG_Overlay_Library`**: `get_all()` returns `isUniversal`; `add()` accepts/stores optional `is_universal`; new `set_universal(string $overlay_id, bool $universal): bool`.
+- **Filter bypass** (`class-wpsg-content-controller.php` → `filter_library_for_space()`): for delegated spaces, include an item when `!empty($item['isUniversal'])` **OR** it is in the association allow-list. Open-mode / unscoped behaviour unchanged.
+- **REST**: extend `POST /admin/overlay-library` to read optional `is_universal`; add `PATCH /admin/overlay-library/{id}` (calls `set_universal()`, `require_admin`).
+- **Fonts:** universal-for-fonts is **deferred to P50-J** (fonts live in a WP option, a different storage mechanism — keep this track to one).
+
+**Frontend (TS/React)**
+
+- **Type + queries**: add `isUniversal: boolean` to `OverlayLibraryItem` (`BuilderDockContext.tsx`); add a "set universal" PATCH mutation + refetch (`layoutTemplateQuery.ts` / `apiClient.ts`), paralleling `handleDeleteLibraryOverlay`.
+- **Grid indicators** (`DesignAssetsGrid.tsx`): per-item **file-type badge** (PNG / SVG / JPG / WEBP / GIF, derived from URL extension); **checkered background** behind each thumbnail so transparency reads visually at zero cost; per-item **universal toggle** (globe/star ActionIcon, tooltip "Available to all spaces", badge when on, default off).
+- **Re-surface the bucket** (`LayoutBuilderMediaPanel.tsx`): rename "Graphic Layers" → **"Asset Library"** (drop "overlay" wording); default the section expanded; add an **"Upload / Add media"** button opening the unified modal.
+- **Unified upload modal** (`MediaAddModal.tsx` + new `MediaUploadController.tsx`): add an **optional "Add to" target `Select`** (campaigns + "General library") — when the prop is omitted the modal behaves exactly as today, so MediaTab is unaffected; restyle the drop area with a **dashed outline** + clearer drag-active state (no `@mantine/dropzone` dependency). The new container owns `useXhrUpload` and routes by target: campaign → existing `POST /media/upload` flow; general library → `postForm('/admin/overlay-library', …)` then refetch.
+- **Entry points**: builder Media panel "Upload" button (`defaultTarget` = general library); **Admin Panel → Campaigns** per-row "Add media" action (`CampaignsTab.tsx`, `defaultTarget` = that campaign), reusing the same modal.
+
+**Dependencies:** P50-B (per-space association + filter), the existing overlay library, `MediaAddModal` / `useXhrUpload`.
+
+### Acceptance criteria
+
+- The Media panel shows a clearly-labeled **Asset Library** section, expanded by default, with file-type badges and a checkered transparency cue.
+- Uploading supports broadened image types (incl. JPEG); a transparent PNG visibly shows the checkered backing, an opaque JPG does not.
+- Marking an asset **universal** makes it appear in a delegated space that has **no** association row for it; a non-universal unassociated asset stays hidden; open-mode spaces see everything (unchanged).
+- The "Upload" button (builder) and "Add media" action (Campaigns) both open the unified modal; the "Add to" selector routes uploads to the general library or the chosen campaign correctly; drag-drop works on the dashed dropzone.
+- `MediaTab`'s existing upload flow is unchanged (the "Add to" selector is opt-in).
+
+### Validation
+
+- **PHP**: universal overlay visible in a delegated space without an association row; non-universal still hidden; open-mode unchanged; `set_universal` round-trip; idempotent v13 migration. Guard against the P50-B `dbDelta` implicit-commit cross-run contamination (add `tearDownAfterClass` TRUNCATE if fixtures insert overlays).
+- **Frontend**: `DesignAssetsGrid` renders badge + universal toggle and fires the mutation; `MediaAddModal` shows the "Add to" selector only when `campaigns` is provided; `MediaUploadController` routes to the correct endpoint per target; CampaignsTab "Add media" opens the modal with the campaign preset.
+- `tsc --noEmit` clean; full frontend suite green; `npm run build` clean; full PHP suite green on consecutive runs.
+
+### Implementation rationale (2026-06-11)
+
+Re-verified every claim in this track against the live code before building — DB version, the v11 migration pattern, `filter_library_for_space()`, the overlay-library class, and the frontend wiring all matched the plan, so no course-correction was needed.
+
+**Backend.** `is_universal` was added as a `TINYINT(1) NOT NULL DEFAULT 0` column on `wpsg_overlays` two ways for safety: in the fresh-install `CREATE TABLE` *and* via an idempotent `maybe_upgrade_overlays_v13_is_universal()` (INFORMATION_SCHEMA guard + `ALTER TABLE … ADD COLUMN`), `DB_VERSION` `'12'` → `'13'`. The migration is belt-and-suspenders: `maybe_create_overlays_table()`'s `dbDelta` would also add the column, but the explicit guarded `ALTER` is the reliable path (dbDelta is formatting-sensitive) and both are no-ops once the column exists. `WPSG_Overlay_Library::get_all()`/`add()` now read/write the flag (returning camelCase `isUniversal`); new `set_universal()` returns `true` when the row exists even if the value was unchanged (uses an existence check, since `$wpdb->update` returns `0` for a no-op write). The filter bypass is a one-line `OR` in `filter_library_for_space()`: an item passes when `!empty($item['isUniversal'])` **or** it is in the association allow-list, so open-mode/unscoped behaviour is untouched. REST: `upload_overlay()` reads an optional `is_universal` (via a shared `to_bool()` helper that accepts native bools and `"1"/"true"/"on"/"yes"`), and a new **`POST`** route on `/admin/overlay-library/{id}` → `update_overlay()` toggles the flag (chose POST over PATCH because the HTTP transport has no `patch` verb; the plan explicitly allowed either).
+
+**Frontend.** `OverlayLibraryItem` gained `isUniversal`; the modal exposes a `handleSetOverlayUniversal` handler (POSTs the id, refetches the library) and now also passes `apiClient` through `BuilderDockContext` so the Media panel can drive the unified uploader. `DesignAssetsGrid` renders a per-item **file-type badge** (`getAssetFileType`, extracted to `src/utils/assetFileType.ts` to keep the component file fast-refresh clean), a **checkered backing** behind every thumbnail (pure CSS, transparency reads for free), and an opt-in **universal toggle** (globe icon) shown only when `onSetUniversal` is supplied — so the mask/background pickers that reuse the grid are unaffected. The buried "Design Assets → Graphic Layers" accordion is renamed **Asset Library** (already default-expanded via the persisted `designAssetsOpen`), and the bare `AssetUploader` is replaced by an **"Upload / Add media"** button opening the new unified modal.
+
+**Unified upload.** `MediaAddModal` stayed presentational; it gained opt-in `targetOptions`/`targetValue`/`onTargetChange`/`targetExtra` props (the "Add to" Select renders only when `targetOptions` is non-empty, so `MediaTab` is untouched) and a **dashed dropzone** with a clearer drag-active state. A new self-contained `MediaUploadController` owns the upload state and routes by target: **general library** → per-file `postForm('/admin/overlay-library', …)` (with the universal checkbox) then invalidate the overlay-library query; **campaign** → `uploadMany('/media/upload', { campaign_id })` then `addCampaignMediaBatch` then invalidate that campaign's media query. Query-key invalidation (not callback plumbing) keeps the builder grid and campaign media lists fresh automatically. The controller deliberately omits the heavy oEmbed/video flow (that remains MediaTab's richer path); its external-URL field does a simple direct image-URL registration, which is the builder's real need. Entry points: the builder Media panel (`defaultTarget` = general library) and a per-row **"Add media"** action on Admin → Campaigns (`useCampaignsRows` fires a callback; `AdminPanel` owns the modal with `defaultTarget` = that campaign).
+
+**Tests & verification.** New PHP suite `WPSG_P50I_Universal_Assets_Test` (8 tests, 23 assertions) covers universal visibility in a delegated space, the open-mode bypass, the `set_universal` round-trip + unknown-id, the REST toggle (+404), upload persistence, and idempotent v13 migration — with a `tearDownAfterClass` TRUNCATE to avoid the P50-B dbDelta implicit-commit contamination. Frontend: `DesignAssetsGrid` (badge + universal toggle + `getAssetFileType`), `MediaAddModal` ("Add to" selector visibility), and `MediaUploadController` (per-target routing) tests added. Green across the board: full PHP suite **932 tests OK on two consecutive runs**, frontend **2246/2247** (the lone failure is a pre-existing flaky `CardGallery` pagination test, unrelated and green in isolation), `tsc --noEmit` clean, `npm run build` clean, `eslint --max-warnings 0` clean. Remaining: manual verification on `wordpress.lan` (build/deploy + the P50-B delegated-space walkthrough), which also unblocks the original P50-B manual testing.
+
+---
+
+## Track P50-J — Asset-Layer Parity, Fonts Universal & Deeper Polish
+
+### Problem
+
+After P50-I, graphic-layer ("asset") layers are discoverable and uploadable, but they remain second-class compared to slots: `LayoutGraphicLayer` exposes ~11 adjustable properties (position, size, z-index, opacity, pointer-events, name, visibility, locked) while `LayoutSlot` exposes ~48 (shape, mask, border, fit, filters, shadow, blend, tilt, interaction, …). A creative user placing a decorative asset cannot reshape, mask, border, or apply effects to it the way they can to a slot. Additionally, the universal flag from P50-I covers overlays but not fonts.
+
+### Fix
+
+**A. Asset-layer property parity** — `GraphicLayerPropertiesPanel.tsx` + `updateOverlay` (already accepts `Partial<LayoutGraphicLayer>`, so most work is new type fields + UI controls + renderer support). Curated parity set:
+
+- **Transform:** rotation, flip H/V (opacity already present).
+- **Shape & geometry:** shape presets, custom clip-path, mask layers (position/scale/feather) — reuse the slot `shape` / `clipPath` / `maskLayer` types and existing mask rendering. **High value for decorative assets** (user-requested inclusion).
+- **Border:** radius, width, color.
+- **Effects:** drop shadow, blend mode, filter effects (brightness/contrast/saturate/blur/grayscale/sepia/hue/invert) — reuse `SlotFilterEffects` / `SlotShadow` / `SlotBlendMode` and existing effect-rendering helpers.
+- **Fit:** object-fit / object-position (only if a layer can crop to a box).
+- **Excluded** (N/A for a static graphic, or slot-interaction-specific): media binding (the asset *is* the image), click action / hover / glow / 3D tilt — revisit case-by-case.
+- **Renderer parity:** apply the new properties wherever overlays are drawn (builder canvas + public gallery layout renderer) so they actually display.
+
+**B. Fonts universal parity** — add `isUniversal` to each entry in the `wpsg_font_library` WP option; extend `filter_library_for_space()` to honour it for the `font` asset type (mirrors the overlay bypass, different storage).
+
+**C. Deeper polish** — optionally migrate `MediaTab` onto `MediaUploadController` for a single upload path; best-practice upload refinements (accepted-type hints, per-file validation messaging, duplicate handling in the general library); reconsider any cross-campaign media affordance if still wanted after the MVP.
+
+**Dependencies:** P50-I.
+
+### Acceptance criteria
+
+- A graphic-layer asset can be reshaped (preset/clip-path/mask), bordered, and given shadow/blend/filter/rotation effects from its properties panel, and renders identically in the builder canvas and the public gallery.
+- A font marked universal is visible to all spaces (delegated included), defaulting to space-specific.
+- (If included) `MediaTab` upload behaviour is unchanged after migrating to the shared container.
+
+### Validation
+
+- **Frontend**: property-panel controls mutate the layer and the canvas reflects each change; a saved template round-trips the new fields; renderer parity verified against the public gallery.
+- **PHP**: universal-font filter bypass test (delegated space sees a universal font with no association row).
+- `tsc --noEmit` clean; full frontend suite green; full PHP suite green.
+
+### Open item to confirm at track start
+
+The parity set above is the proposed scope (now including shape/clip-path/mask per the user). Confirm before building, and finalize whether object-fit/position and flip are in the first pass.

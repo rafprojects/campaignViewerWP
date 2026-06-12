@@ -60,6 +60,9 @@ const PinterestAdapter = lazy(() =>
 const StackedDeckAdapter = lazy(() =>
   import('@/components/Galleries/Adapters/stacked/StackedDeckAdapter').then((m) => ({ default: m.StackedDeckAdapter })),
 );
+const IsotopeAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/isotope/IsotopeAdapter').then((m) => ({ default: m.IsotopeAdapter })),
+);
 const LazyLayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
 );
@@ -188,6 +191,19 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     settingGroups: ['media-frame'],
     component: StackedDeckAdapter as ComponentType<GalleryAdapterProps>,
     paginationOwnership: 'adapter',
+  },
+  {
+    id: 'isotope',
+    label: 'Filterable Grid',
+    optionLabels: {
+      'unified-gallery': 'Filterable Grid (Isotope)',
+      'per-type-gallery': 'Filterable Grid',
+      'campaign-override': 'Filterable Grid',
+    },
+    // P50-D: grid with client-side filter/sort and FLIP animations.
+    capabilities: ['grid-layout', 'lightbox', 'keyboard-nav'],
+    settingGroups: ['media-frame'],
+    component: IsotopeAdapter as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'spotlight',

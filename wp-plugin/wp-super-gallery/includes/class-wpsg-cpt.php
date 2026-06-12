@@ -43,6 +43,7 @@ class WPSG_CPT {
         'coverflow',      // P48-G: Coverflow / 3D adapter (backfilled in P50-C)
         'pinterest',      // P48: Pinterest mosaic adapter (backfilled in P50-C)
         'stacked',        // P50-C: Stacked / Deck adapter
+        'isotope',        // P50-D: Isotope / Filterable Grid adapter
     ];
 
     public static function register() {

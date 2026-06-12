@@ -156,6 +156,7 @@ const { MasonryGallery } = await import('@/components/Galleries/Adapters/masonry
 const { SpotlightGallery } = await import('@/components/Galleries/Adapters/spotlight/SpotlightGallery');
 const { ScrollSnapGallery } = await import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery');
 const { StackedDeckAdapter } = await import('@/components/Galleries/Adapters/stacked/StackedDeckAdapter');
+const { IsotopeAdapter } = await import('@/components/Galleries/Adapters/isotope/IsotopeAdapter');
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
@@ -190,6 +191,7 @@ const ADAPTERS: [string, AdapterComponent][] = [
   ['SpotlightGallery', SpotlightGallery],
   ['ScrollSnapGallery', ScrollSnapGallery],
   ['StackedDeckAdapter', StackedDeckAdapter],
+  ['IsotopeAdapter', IsotopeAdapter],
 ];
 
 // ─── Shared test suite ────────────────────────────────────────────────────────
