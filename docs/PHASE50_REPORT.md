@@ -2,22 +2,23 @@
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-11 (P50-D done; P50-I implemented)
+**Last updated:** 2026-06-11 (P50-K implemented: overlay→asset rename, visual library, tags, builder scoping)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11, manual test passed) | Medium |
-| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | Done (2026-06-11) | Medium |
+| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | Done (2026-06-12, manual test passed — verified via the P50-K space-scoped builder) | Medium |
 | P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
 | P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | Done (2026-06-11, manual test pending) | Medium-High |
 | P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
 | P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | To do | Medium |
 | P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
 | P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | Done (2026-06-11) | Medium |
-| P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | Implemented (2026-06-11, pending manual verification) | Medium |
+| P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | Done (2026-06-12, manual test passed) | Medium |
 | P50-J | Layout Builder Media — Asset-layer parity & polish: bring a curated subset of slot properties to graphic layers (shape/clip-path/mask, border, shadow, blend, filters, rotation); fonts universal parity; deeper upload UX polish | To do | Medium-High |
+| P50-K | Asset Library terminology sweep + per-space visual library, tags & builder scoping: rename `overlay`→`asset` end-to-end (table/REST/class/TS, no aliases); replace the Space-Library checkbox lists with a visual grid (search + tag filter + bulk select); image-asset tags; WP-admin checkbox bleed fix; scope the builder's asset library by active space (closes the P50-B gap) | Done (2026-06-12, manual test passed) | Medium-High |
 
 ---
 
@@ -43,6 +44,8 @@
 | H | General media = the overlay library | Rather than build a parallel "general media" store, reuse the existing `wpsg_overlays` table as the general/decorative asset bucket. It is already global, campaign-agnostic, placed on the canvas as free layers, and per-space isolated by P50-B. Campaign media stays hard-bound to campaigns (`media_items` post meta; `wpsg_media_refs` requires `campaign_id`) and is *not* eligible to be "general". |
 | I | Universal asset visibility | A new `is_universal` flag on overlays makes an asset visible to **all** spaces site-wide, bypassing the P50-B per-space association filter. Defaults to off (space-specific). Scoped to overlays/images in P50-I; fonts (WP-option storage) get the same treatment in P50-J. |
 | J | Slot media stays campaign-scoped | Layout slots continue to accept only the selected campaign's media (preserves single-campaign focus, avoids cross-campaign leakage in multi-tenant spaces). The "decorative / general" need is met by the asset library (free-floating canvas layers), not by broadening slot media. |
+| K | "Overlay" library → "asset" (clean rename, no aliases) | The reusable visual-asset library was named "overlay" everywhere, but an overlay is one *use* of an asset (a layer placed on the canvas), not the asset itself. Renamed the library/source `overlay`→`asset` end-to-end **including the DB table (`wpsg_overlays`→`wpsg_assets` via one-time `RENAME TABLE`) and REST route (`/admin/asset-library`)**, with **no back-compat aliases** — in a co-deployed repo with full test coverage, aliases would only leave confusing legacy names. The *placed canvas layer* keeps "overlay" (`LayoutGraphicLayer`, `template.overlays`, `addOverlay`), as do unrelated uses (`OverlayArrows`, `SlotOverlayEffect`). Legacy carve-outs kept (commented): the physical upload subdir `wpsg-overlays` and the internal `overlay_id` PK column. |
+| L | Per-space library UX = visual grid, not checkboxes | The Space-Management Library tab's flat checkbox lists don't scale and were ambiguous. Replaced with a visual, WordPress-media-style inline grid (thumbnails + search + tag filter + bulk select) reusing the builder's asset-grid primitives; **image-asset tags** (overlays only this round; fonts later) provide scalable filtering. Open-mode spaces show an explanatory Alert (was a silent disabled tab). |
 
 ## Execution Priority
 
@@ -187,33 +190,60 @@ Phase 47 ships overlays and fonts as a global shared library — all spaces see 
 
 ### Manual test plan (P50-B)
 
+**Concepts (read first)**
+
+- A **space** is an isolated area of the site — think of it as a tenant or a sub-site. Every campaign lives in exactly one space.
+- A space has an **isolation mode**, chosen by the "Delegated isolation mode" switch when you create it:
+  - **Open** (switch off) — any WordPress admin can access it, and it can use **every** asset in the global overlay/font library. No per-space restriction.
+  - **Delegated** (switch on) — locked down: only users you explicitly grant access can enter, and it can only use the overlays/fonts you explicitly **associate** with it. This is the mode P50-B governs.
+- The **global library** is the single, site-wide set of overlays/fonts (the "Asset Library" in the Layout Builder, stored in `wpsg_overlays`). P50-B does not split it up — it just decides, per delegated space, which of those global assets that space is *allowed* to use.
+- You choose those allowed assets in **Space Management → Library tab** (checkbox per asset). That tab is only enabled for delegated spaces (open spaces see everything, so there's nothing to pick).
+- **Where the filter actually applies:** the per-space allow-list is enforced on the library *list* endpoints when a request is scoped to a space (`GET …/admin/asset-library?space=<id>` and the font equivalent). As of **P50-K** the admin Layout Builder *does* pass the active space, so a delegated space's Asset Library shows only its associated + universal assets (the earlier "Known gap" is now closed — see the note below). You can still verify the filter directly against the endpoint.
+
 **Deploy to the local dev site**
 
 1. `npm run build:wp` + `./update_dev_plugin.sh`.
-2. Open `https://wordpress.lan`, log in as admin.
+2. Open `https://wordpress.lan`, log in as admin (`admin@example.com` / `admin!`).
 
 **Fixtures**
 
-- Upload at least 2 overlays via Layout Builder → Overlays section (global library).
-- One `delegated` space ("Tenant A") and one `open` space. For a fresh install, run once to trigger the backfill (which auto-associates all existing assets into existing delegated spaces).
+- Upload at least 2 overlays to the global library: open any layout template in the **Layout Builder → Media & Assets** tab → **Add media** → leave "Add to" on **General library (all campaigns)** → upload two images. They now appear in the **Asset Library** section.
+- Create two spaces via **Admin → Manage spaces** → the **"Create new space"** form at the bottom (fill name/slug, then **Create space**):
+  - "Tenant A" — turn the **Delegated isolation mode** switch **on** (and add yourself as owner, per the in-form warning).
+  - "Open Space" — leave the switch **off**.
+- On an already-populated install, the one-time backfill auto-associates every pre-existing overlay/font with every pre-existing delegated space, so a delegated space created *before* this build starts with everything allowed.
 
-**Library tab behaviour**
+**Library tab — association management (UI-observable)**
 
-- [ ] Open Space Management → select the `open` space — "Library" tab is greyed out (disabled).
-- [ ] Select "Tenant A" (delegated) — "Library" tab is enabled.
-- [ ] Switch to Library tab — all globally uploaded overlays appear as checkboxes; if the backfill ran, they are all checked.
-- [ ] Uncheck one overlay — it is immediately dissociated.
-- [ ] Open Layout Builder while scoped to Tenant A — that overlay is no longer offered in the overlay picker.
-- [ ] Re-check it — it reappears in the picker.
+- [ ] Open **Manage spaces** → select **Open Space** → the **Library** tab is disabled (greyed out), because open spaces aren't restricted.
+- [ ] Select **Tenant A** (delegated) → the **Library** tab is enabled.
+- [ ] Open the **Library** tab → both global overlays are listed as checkboxes (all checked if the backfill ran; see Migration note for a fresh space).
+- [ ] Uncheck one overlay → it is dissociated immediately (no save button). Reload the view → it stays unchecked (persisted).
+- [ ] Re-check it → it is associated again and persists on reload.
 
-**Isolation cross-check**
+**Verify the filter directly (endpoint-level)**
 
-- [ ] As an `open`-mode space user (or admin with no space scope), all overlays are visible regardless of Tenant A's association state.
+The admin builder won't show the difference (it's unscoped), so confirm the filter via the REST API. With Tenant A's id = `<A>` and one overlay dissociated:
+
+- [ ] In the browser devtools console (while logged in as admin), run:
+  `fetch('/wp-json/wp-super-gallery/v1/admin/asset-library?space=<A>', { headers: { 'X-WP-Nonce': wpApiSettings?.nonce ?? '' } }).then(r => r.json()).then(console.log)`
+  → the dissociated overlay is **absent**; the associated one is present. (If `wpApiSettings` is undefined on this screen, grab the nonce from any other authenticated request, or use the universal-flag check below instead.)
+- [ ] Call the same endpoint **without** `?space=` → the full library returns (unscoped requests bypass the filter).
+
+**Open-mode bypass**
+
+- [ ] Call `…/admin/asset-library?space=<Open Space id>` → the full library returns even though it's scoped, because open spaces aren't filtered.
+
+**Universal flag (P50-I) interaction**
+
+- [ ] In the Layout Builder Asset Library, toggle the globe icon on the dissociated overlay to make it **universal**, then re-run the `?space=<A>` fetch → it now appears for Tenant A **without** an association row (universal bypasses the per-space filter). Toggle it back off → it disappears again.
 
 **Migration (fresh delegated space)**
 
-- [ ] Create a new delegated space "Tenant B" after overlays already exist globally — the Library tab initially shows all overlays **unchecked** (no auto-backfill for spaces created post-P50-B; the backfill only ran once for pre-existing spaces).
-- [ ] Manually associate an overlay — it appears in Tenant B's overlay picker.
+- [ ] Create a new delegated space "Tenant B" *after* overlays already exist globally → its Library tab starts with all overlays **unchecked** (the one-time backfill only ran for spaces that existed at upgrade; new spaces start empty by design).
+- [ ] Check one overlay → `…/admin/asset-library?space=<B>` now returns exactly that overlay.
+
+**Known gap — CLOSED by P50-K (2026-06-11):** previously no admin UI surface passed `?space=` to the asset *list* endpoint, so a delegated space's restriction wasn't reflected inside the Layout Builder's Asset Library picker. P50-K threads the active admin space (`AdminPanel.selectedSpaceId` → `LayoutTemplateList` → `LayoutBuilderModal` → `useAssetLibrary(apiClient, opened, spaceId)`), so the builder now shows only the space's associated + universal assets when a delegated space is active. (Fonts in the builder remain a parallel follow-up.) Note the endpoint is now `/admin/asset-library` after the P50-K rename.
 
 ---
 
@@ -590,7 +620,11 @@ Re-verified every claim in this track against the live code before building — 
 
 **Unified upload.** `MediaAddModal` stayed presentational; it gained opt-in `targetOptions`/`targetValue`/`onTargetChange`/`targetExtra` props (the "Add to" Select renders only when `targetOptions` is non-empty, so `MediaTab` is untouched) and a **dashed dropzone** with a clearer drag-active state. A new self-contained `MediaUploadController` owns the upload state and routes by target: **general library** → per-file `postForm('/admin/overlay-library', …)` (with the universal checkbox) then invalidate the overlay-library query; **campaign** → `uploadMany('/media/upload', { campaign_id })` then `addCampaignMediaBatch` then invalidate that campaign's media query. Query-key invalidation (not callback plumbing) keeps the builder grid and campaign media lists fresh automatically. The controller deliberately omits the heavy oEmbed/video flow (that remains MediaTab's richer path); its external-URL field does a simple direct image-URL registration, which is the builder's real need. Entry points: the builder Media panel (`defaultTarget` = general library) and a per-row **"Add media"** action on Admin → Campaigns (`useCampaignsRows` fires a callback; `AdminPanel` owns the modal with `defaultTarget` = that campaign).
 
-**Tests & verification.** New PHP suite `WPSG_P50I_Universal_Assets_Test` (8 tests, 23 assertions) covers universal visibility in a delegated space, the open-mode bypass, the `set_universal` round-trip + unknown-id, the REST toggle (+404), upload persistence, and idempotent v13 migration — with a `tearDownAfterClass` TRUNCATE to avoid the P50-B dbDelta implicit-commit contamination. Frontend: `DesignAssetsGrid` (badge + universal toggle + `getAssetFileType`), `MediaAddModal` ("Add to" selector visibility), and `MediaUploadController` (per-target routing) tests added. Green across the board: full PHP suite **932 tests OK on two consecutive runs**, frontend **2246/2247** (the lone failure is a pre-existing flaky `CardGallery` pagination test, unrelated and green in isolation), `tsc --noEmit` clean, `npm run build` clean, `eslint --max-warnings 0` clean. Remaining: manual verification on `wordpress.lan` (build/deploy + the P50-B delegated-space walkthrough), which also unblocks the original P50-B manual testing.
+**Discoverability follow-up (2026-06-11).** First manual check found the upload entry point too easy to miss: the only "Add media" button lived *inside* the Asset Library accordion, so a collapsed accordion (a stale `designAssetsOpen=false` carried over from the old "Design Assets" section) hid it entirely. Fixed by surfacing an **always-visible primary "Add media" button at the top of the Media & Assets panel** (directly under the campaign selector), independent of accordion state and of whether the library has any items; the in-accordion button is retained as a contextual "Upload to library". (Note: the dev site also serves the SPA through a service worker, so a hard refresh / SW-unregister is required after deploy to pick up a new bundle.)
+
+**Second manual round (2026-06-11).** The Asset Library section appeared entirely missing. Root cause: `MediaPickerSidebar` is `h="100%"`, so the campaign media list consumed the whole panel and pushed the Asset Library accordion off-screen (it was rendering, just below the fold). Fixed by making the Media panel a flex column — the campaign media list now flexes/scrolls internally and the Asset Library accordion is pinned below it (`flexShrink: 0`), always visible. Two adjacent asks were handled at the same time: (1) **GIFs** were already supported end-to-end (the unified modal accepts `image/*`, the overlay endpoint allows `image/gif`, and the optimizer already skips GIFs so animation is preserved) — the earlier failure was the old narrow `AssetUploader`, now replaced. (2) **Larger images**: overlay uploads were being downscaled to 1920×1920 by the shared image optimizer; added a `WPSG_Image_Optimizer::$wpsg_skip_resize` flag set during overlay/asset-library uploads so decorative assets keep full resolution (WebP generation, if enabled, still runs); campaign media is unaffected (flag defaults off). Also renamed the background picker's "Design Assets" section header → "Asset Library" for consistency. **Setting an asset as the background** is via the existing flow: select the canvas background → Properties → Background → mode **Image** → the Asset Library grid appears, click an asset (`setBackgroundImage(url)`), then adjust Fit/Alpha. New optimizer tests cover skip-resize (full-res preserved) vs. the default constrained path (19 optimizer tests green).
+
+**Tests & verification.** New PHP suite `WPSG_P50I_Universal_Assets_Test` (8 tests, 23 assertions) covers universal visibility in a delegated space, the open-mode bypass, the `set_universal` round-trip + unknown-id, the REST toggle (+404), upload persistence, and idempotent v13 migration — with a `tearDownAfterClass` TRUNCATE to avoid the P50-B dbDelta implicit-commit contamination. Frontend: `DesignAssetsGrid` (badge + universal toggle + `getAssetFileType`), `MediaAddModal` ("Add to" selector visibility), and `MediaUploadController` (per-target routing) tests added. Green across the board: full PHP suite **932 tests OK on two consecutive runs**, frontend **2246/2247** (the lone failure is a pre-existing flaky `CardGallery` pagination test, unrelated and green in isolation), `tsc --noEmit` clean, `npm run build` clean, `eslint --max-warnings 0` clean. **Manual test passed (2026-06-12)** on `wordpress.lan` — asset library discoverable, uploads (incl. GIF/large) work, universal toggle behaves; this also unblocked the original P50-B verification.
 
 ---
 
@@ -633,3 +667,50 @@ After P50-I, graphic-layer ("asset") layers are discoverable and uploadable, but
 ### Open item to confirm at track start
 
 The parity set above is the proposed scope (now including shape/clip-path/mask per the user). Confirm before building, and finalize whether object-fit/position and flip are in the first pass.
+
+---
+
+## Track P50-K — Asset Library Terminology Sweep + Per-Space Visual Library, Tags & Builder Scoping
+
+### Problem
+
+Manual testing of the P50-B per-space library surfaced five issues, plus an overarching naming problem:
+
+1. **Silent grey-out** — the Space-Management **Library** tab was `disabled` for `open` spaces with no explanation.
+2. **Double checkmark** — that view also mounts on the WP-admin Spaces page (`#wpsg-spaces-admin`, light DOM), so WordPress admin's native `input[type=checkbox]:checked` dashicon rendered *under* Mantine's SVG check. No WP-admin CSS reset existed; it affected every Mantine checkbox in the admin.
+3. **Ambiguous wording + poor scale** — "Control which… are available" + a flat checkbox list reads either way and collapses as a deployment accumulates many decorative assets.
+4. **Known gap** — the per-space restriction never applied in the Layout Builder (the asset fetch was unscoped).
+5. **Overloaded "overlay" terminology** — the reusable visual-asset library was called "overlay" throughout, but an overlay is one *use* of an asset (a canvas layer), not the asset itself.
+
+### Fix
+
+**Terminology sweep (`overlay` → `asset`, library/source only; clean rename, no aliases — Key Decision K).**
+- **DB** (`class-wpsg-db.php`): `DB_VERSION` 13→14; idempotent `maybe_rename_overlays_to_assets_v14()` (`RENAME TABLE wpsg_overlays → wpsg_assets` when old exists and new doesn't); `get_overlays_table()` → `get_assets_table()`; `maybe_migrate_assoc_overlay_type_v14()` re-labels association rows `asset_type 'overlay' → 'asset'`; `LIBRARY_ASSET_TYPES` = `['asset','font']`.
+- **Class**: `WPSG_Overlay_Library` → `WPSG_Asset_Library` (file renamed; all refs updated; **no `class_alias`**). Legacy carve-outs kept with comments: the physical upload subdir `wpsg-overlays` and the internal `overlay_id` PK column.
+- **REST** (`class-wpsg-content-controller.php`): route renamed outright to `/admin/asset-library` (+ `/{id}`); handlers `upload_asset`/`update_asset`/`delete_asset`/`list_asset_library`; **no deprecated alias**. Space controller association handlers use `assetType:'asset'`; `GET /spaces/{id}/library` returns `{ asset, font }`.
+- **Frontend** (~15 files, library-meaning only): `AssetLibraryItem`, `useAssetLibrary`, `getAssetLibraryQueryKey`, context `assetLibrary`/`handleUploadAsset`/`handleDeleteLibraryAsset`/`handleSetAssetUniversal`, endpoint strings. The placed canvas layer keeps "overlay" (`LayoutGraphicLayer`, `template.overlays`, `addOverlay`, `selectedOverlayId`); `OverlayArrows` / `SlotOverlayEffect` untouched.
+
+**Image-asset tags.** `wpsg_assets.tags` (JSON-array TEXT column, v14 migration); `WPSG_Asset_Library::get_all/add/set_tags`; REST `update_asset` accepts `tags` **alongside** `is_universal` as a partial update (only provided fields change); `AssetLibraryItem.tags`; a per-item tag editor (`TagsInput` popover) in `DesignAssetsGrid` and a `tags` input in the unified upload modal. Filtering is client-side.
+
+**Per-space visual library.** New `SpaceAssetLibrary` component replaces the asset checkbox list in `SpaceManagementView`: a thumbnail grid (checkered backing + file-type badge, reusing `getAssetFileType` + the shared `CHECKERED_BG`) with an association toggle per tile, **search**, **tag-filter chips**, and **Select all / Clear all** over the filtered set. Fonts stay checkboxes this round. Wording clarified ("Select the assets this space is allowed to use…"); open-mode spaces show an explanatory `Alert` and the tab is always enabled.
+
+**Close the gap.** `useAssetLibrary(apiClient, enabled, spaceId?)` appends `?space=<id>` (and keys on it) when scoped; `selectedSpaceId` is threaded `AdminPanel → LayoutTemplateList → LayoutBuilderModal`. The backend filter already honored `?space=` + the universal bypass, so this was frontend-only.
+
+**WP-admin checkbox bleed.** New `src/styles/wpAdminFormReset.css` (imported in `main.tsx`) neutralizes WP admin's native `input[type=checkbox|radio]` appearance + `::before` dashicon on Mantine controls — no-op outside wp-admin, never crosses the shadow boundary. Fixes every admin checkbox.
+
+### Acceptance criteria
+
+- No `overlay`-named library symbols remain (table/REST/class/TS); the canvas-layer "overlay" concept is untouched; both meanings are unambiguous.
+- Library tab: open spaces show the explanatory Alert; delegated spaces show the visual grid; checkboxes render a single check; associate/dissociate + select-all/clear-all + search/tag-filter work.
+- Tagging an asset (builder grid or on upload) makes it appear in the tag filter.
+- With a delegated space active, the builder Asset Library shows only associated + universal assets; open/all scope shows everything.
+
+### Validation
+
+- **PHP**: clean rename with no aliases — all `WPSG_Overlay_Library`/`get_overlays_table`/`maybe_create_overlays_table`/`overlay-library`/`asset_type 'overlay'` references updated across source **and tests**. New `WPSG_P50K_Asset_Tags_Test` (8 tests): tags round-trip (`set_tags`/`add`/`get_all`, de-dupe/sanitize), REST upload persists tags, `update_asset` updates tags without clobbering `is_universal` (and vice-versa), no-field update → 400, and the v14 `tags` column + idempotency. The rename-from-legacy *precondition* is not reproducible under WP's per-test transaction (`DROP TABLE` doesn't take effect in-transaction — same DDL fragility as P50-B), so that test verifies the canonical table + tags column + idempotency rather than dropping the live table. Full PHP suite **942 tests OK on two consecutive runs**.
+- **Frontend**: `SpaceManagementView.test` rewritten for the visual grid (association toggles, open-space Alert, `assetType:'asset'`); `DesignAssetsGrid.test` gains tag-editor coverage; fixtures carry `tags`; `useAssetLibrary` scope. `tsc --noEmit` clean, full `vitest` **2275/2275**, `npm run build` clean, `eslint .` clean (added `storybook-static` to ignores).
+- **Manual test passed (2026-06-12)**: on `wordpress.lan`, an asset dissociated from a delegated space in the WP admin no longer appears in that space's Layout Builder Asset Library (builder scoping confirmed); the visual library, tags, and open-space Alert all behave.
+
+### Implementation rationale (2026-06-11)
+
+Scoped the rename surgically: of ~870 TS "overlay" hits, only the ~15 *library* files were touched via symbol-specific renames, leaving the canvas-layer and unrelated meanings (`OverlayArrows`, `SlotOverlayEffect`) intact — a blanket replace would have conflated three distinct concepts. Chose a **clean rename with no back-compat shims** after weighing it with the user: aliases earn their keep only with external API consumers you can't update; here the repo is co-deployed with full test coverage, so aliases would just leave confusing legacy names. The DB `RENAME TABLE` is the one necessary migration (data, not an alias). The double-checkmark root cause was WP-admin CSS bleed in the light-DOM admin mounts — fixed globally at the Mantine-input level rather than per-component. The visual grid reuses the P50-I asset-grid primitives (`CHECKERED_BG` extracted to `src/utils/checkeredBg.ts`, `getAssetFileType`) to avoid a parallel implementation.

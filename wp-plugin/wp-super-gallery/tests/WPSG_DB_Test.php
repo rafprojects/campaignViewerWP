@@ -17,6 +17,7 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_media_refs");
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_access_requests");
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_overlays");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_assets");
         delete_option('wpsg_db_version');
         delete_option('wpsg_media_refs_backfilled');
         delete_option('wpsg_access_requests_migrated');
@@ -45,8 +46,8 @@ class WPSG_DB_Test extends WP_UnitTestCase {
         $ar = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_access_requests'");
         $this->assertNotNull($ar);
 
-        // Overlays table should exist.
-        $ol = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_overlays'");
+        // Assets table should exist (formerly wpsg_overlays; renamed in v14).
+        $ol = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_assets'");
         $this->assertNotNull($ol);
     }
 

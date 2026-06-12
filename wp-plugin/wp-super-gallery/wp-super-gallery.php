@@ -47,7 +47,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-phash.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-duplicator.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-overlay-library.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';

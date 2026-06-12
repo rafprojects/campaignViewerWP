@@ -25,7 +25,7 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
      */
     public static function tearDownAfterClass(): void {
         global $wpdb;
-        $table = WPSG_DB::get_overlays_table();
+        $table = WPSG_DB::get_assets_table();
         if ($table) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             $wpdb->query( "TRUNCATE TABLE {$table}" );
@@ -61,7 +61,7 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
     }
 
     private function add_overlay(string $name): string {
-        $entry = WPSG_Overlay_Library::add([
+        $entry = WPSG_Asset_Library::add([
             'url'  => 'https://example.com/' . sanitize_title($name) . '.png',
             'name' => $name,
         ]);
@@ -97,27 +97,27 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
         $overlay_b  = $this->add_overlay('P50B Overlay B');
 
         // No associations: scoped list is empty, unscoped list has both.
-        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/overlay-library', $space));
-        $unscoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/overlay-library');
+        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space));
+        $unscoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library');
         $this->assertContains($overlay_a, $unscoped);
         $this->assertContains($overlay_b, $unscoped);
 
         // Associate one overlay via REST.
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/library");
-        $request->set_param('assetType', 'overlay');
+        $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay_a);
         $this->assertSame(200, rest_do_request($request)->get_status());
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/overlay-library', $space);
+        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
         $this->assertSame([$overlay_a], $scoped, 'Scoped list must contain exactly the associated overlay.');
 
         // Dissociate it again.
         $request = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/spaces/{$space}/library");
-        $request->set_param('assetType', 'overlay');
+        $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay_a);
         $this->assertSame(200, rest_do_request($request)->get_status());
 
-        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/overlay-library', $space));
+        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space));
     }
 
     public function test_delegated_space_sees_only_associated_fonts() {
@@ -142,7 +142,7 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
         $space   = $this->make_space('open');
         $overlay = $this->add_overlay('P50B Open Overlay');
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/overlay-library', $space);
+        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
         $this->assertContains($overlay, $scoped, 'Open-mode spaces must see the full global library.');
     }
 
@@ -155,13 +155,13 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
         $space   = $this->make_space('delegated');
         $overlay = $this->add_overlay('P50B Lib Overlay');
         $font    = $this->add_font('P50B Lib Font');
-        WPSG_DB::associate_asset($space, 'overlay', $overlay);
+        WPSG_DB::associate_asset($space, 'asset', $overlay);
         WPSG_DB::associate_asset($space, 'font', $font);
 
         $response = rest_do_request(new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/library"));
         $this->assertSame(200, $response->get_status());
         $data = $response->get_data();
-        $this->assertSame([$overlay], $data['overlay']);
+        $this->assertSame([$overlay], $data['asset']);
         $this->assertSame([$font], $data['font']);
     }
 
@@ -176,11 +176,11 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
 
         wp_set_current_user($this->make_wpsg_only_admin());
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/library");
-        $request->set_param('assetType', 'overlay');
+        $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay);
 
         $this->assertSame(403, rest_do_request($request)->get_status());
-        $this->assertSame([], WPSG_DB::get_space_library_assets($space, 'overlay'));
+        $this->assertSame([], WPSG_DB::get_space_library_assets($space, 'asset'));
     }
 
     // -------------------------------------------------------------------------
@@ -199,8 +199,8 @@ class WPSG_P50B_Space_Library_Test extends WP_UnitTestCase {
         delete_option('wpsg_db_version');
         WPSG_DB::maybe_upgrade();
 
-        $this->assertContains($overlay, WPSG_DB::get_space_library_assets($delegated, 'overlay'));
+        $this->assertContains($overlay, WPSG_DB::get_space_library_assets($delegated, 'asset'));
         $this->assertContains($font, WPSG_DB::get_space_library_assets($delegated, 'font'));
-        $this->assertSame([], WPSG_DB::get_space_library_assets($open, 'overlay'), 'Open spaces need no association rows.');
+        $this->assertSame([], WPSG_DB::get_space_library_assets($open, 'asset'), 'Open spaces need no association rows.');
     }
 }

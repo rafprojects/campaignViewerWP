@@ -1,12 +1,16 @@
 <?php
 /**
- * WP Super Gallery — Overlay Image Library
+ * WP Super Gallery — Asset Library (visual assets)
  *
- * Manages a campaign-agnostic library of overlay images that can be
- * used across any layout template.  Entries are stored in the
- * `{prefix}wpsg_overlays` custom table (migrated from wp_options in P41-OL1).
+ * Manages a campaign-agnostic library of reusable visual assets (images used
+ * as canvas overlays, backgrounds, masks, etc.) shared across layout templates.
+ * Entries are stored in the `{prefix}wpsg_assets` custom table.
  *
- * Files are uploaded into wp-content/uploads/wpsg-overlays/.
+ * P50-K renamed this from "Overlay Library" — an overlay is one *use* of an
+ * asset (a layer placed on the canvas), not the asset itself.
+ *
+ * Files are uploaded into wp-content/uploads/wpsg-overlays/ (legacy path kept
+ * so existing stored URLs continue to resolve).
  *
  * @package WP_Super_Gallery
  * @since   0.13.0
@@ -16,71 +20,187 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-class WPSG_Overlay_Library {
+class WPSG_Asset_Library {
 
+    // Legacy upload subdir — kept so existing stored asset URLs keep resolving.
     const UPLOAD_SUBDIR = 'wpsg-overlays';
 
     // ── Read ────────────────────────────────────────────────────
 
     /**
-     * Return all stored overlays, newest first.
+     * Return all stored assets, newest first.
      *
-     * @return array<int, array{id:string, url:string, name:string, uploadedAt:string}>
+     * @return array<int, array{id:string, url:string, name:string, isUniversal:bool, tags:string[], uploadedAt:string}>
      */
     public static function get_all(): array {
         global $wpdb;
-        $table = WPSG_DB::get_overlays_table();
+        $table = WPSG_DB::get_assets_table();
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $rows = $wpdb->get_results(
-            "SELECT overlay_id, url, name, uploaded_at FROM {$table} ORDER BY uploaded_at DESC",
+            "SELECT overlay_id, url, name, is_universal, tags, uploaded_at FROM {$table} ORDER BY uploaded_at DESC",
             ARRAY_A
         );
         if ( ! is_array( $rows ) ) {
             return [];
         }
         return array_map( fn( $r ) => [
-            'id'         => $r['overlay_id'],
-            'url'        => $r['url'],
-            'name'       => $r['name'],
-            'uploadedAt' => gmdate( 'c', (int) strtotime( $r['uploaded_at'] . ' UTC' ) ),
+            'id'          => $r['overlay_id'],
+            'url'         => $r['url'],
+            'name'        => $r['name'],
+            'isUniversal' => ! empty( $r['is_universal'] ),
+            'tags'        => self::decode_tags( $r['tags'] ?? '' ),
+            'uploadedAt'  => gmdate( 'c', (int) strtotime( $r['uploaded_at'] . ' UTC' ) ),
         ], $rows );
+    }
+
+    /**
+     * Decode the stored JSON tags column into a clean string[] (always an array).
+     *
+     * @param  mixed $raw
+     * @return string[]
+     */
+    private static function decode_tags( $raw ): array {
+        if ( empty( $raw ) ) {
+            return [];
+        }
+        $decoded = json_decode( (string) $raw, true );
+        if ( ! is_array( $decoded ) ) {
+            return [];
+        }
+        return array_values( array_filter( array_map( 'strval', $decoded ), fn( $t ) => $t !== '' ) );
+    }
+
+    /**
+     * Sanitize and JSON-encode a list of tag strings for storage.
+     *
+     * @param  mixed $tags
+     * @return string  JSON array, or '' when empty.
+     */
+    private static function encode_tags( $tags ): string {
+        if ( ! is_array( $tags ) ) {
+            return '';
+        }
+        $clean = [];
+        foreach ( $tags as $tag ) {
+            $t = sanitize_text_field( (string) $tag );
+            if ( $t !== '' && ! in_array( $t, $clean, true ) ) {
+                $clean[] = $t;
+            }
+        }
+        return empty( $clean ) ? '' : (string) wp_json_encode( $clean );
     }
 
     // ── Write ───────────────────────────────────────────────────
 
     /**
-     * Add a new overlay entry.
+     * Add a new asset entry.
      *
-     * @param  array{url:string, name?:string} $data
-     * @return array|WP_Error  The stored overlay record, or WP_Error on DB failure.
+     * @param  array{url:string, name?:string, is_universal?:bool, tags?:string[]} $data
+     * @return array|WP_Error  The stored asset record, or WP_Error on DB failure.
      */
     public static function add( array $data ) {
         global $wpdb;
-        $table       = WPSG_DB::get_overlays_table();
-        $id          = wp_generate_uuid4();
-        $uploaded_at = gmdate( 'Y-m-d H:i:s' );
+        $table        = WPSG_DB::get_assets_table();
+        $id           = wp_generate_uuid4();
+        $uploaded_at  = gmdate( 'Y-m-d H:i:s' );
+        $is_universal = ! empty( $data['is_universal'] ) ? 1 : 0;
+        $tags_json    = self::encode_tags( $data['tags'] ?? [] );
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $result = $wpdb->insert(
             $table,
             [
-                'overlay_id'  => $id,
-                'url'         => esc_url_raw( $data['url'] ),
-                'name'        => sanitize_text_field( $data['name'] ?? '' ),
-                'uploaded_at' => $uploaded_at,
+                'overlay_id'   => $id,
+                'url'          => esc_url_raw( $data['url'] ),
+                'name'         => sanitize_text_field( $data['name'] ?? '' ),
+                'is_universal' => $is_universal,
+                'tags'         => $tags_json,
+                'uploaded_at'  => $uploaded_at,
             ],
-            [ '%s', '%s', '%s', '%s' ]
+            [ '%s', '%s', '%s', '%d', '%s', '%s' ]
         );
         if ( $result === false ) {
-            return new WP_Error( 'wpsg_db_error', 'Failed to save overlay entry.', [ 'status' => 500 ] );
+            return new WP_Error( 'wpsg_db_error', 'Failed to save asset entry.', [ 'status' => 500 ] );
         }
 
         return [
-            'id'         => $id,
-            'url'        => esc_url_raw( $data['url'] ),
-            'name'       => sanitize_text_field( $data['name'] ?? '' ),
-            'uploadedAt' => gmdate( 'c', (int) strtotime( $uploaded_at . ' UTC' ) ),
+            'id'          => $id,
+            'url'         => esc_url_raw( $data['url'] ),
+            'name'        => sanitize_text_field( $data['name'] ?? '' ),
+            'isUniversal' => (bool) $is_universal,
+            'tags'        => self::decode_tags( $tags_json ),
+            'uploadedAt'  => gmdate( 'c', (int) strtotime( $uploaded_at . ' UTC' ) ),
         ];
+    }
+
+    /**
+     * Update the `is_universal` flag on a single asset.
+     *
+     * A universal asset bypasses the P50-B per-space association filter and
+     * is visible to every space site-wide.
+     *
+     * @param  string $id         Asset UUID.
+     * @param  bool   $universal  Whether the asset should be universal.
+     * @return bool   True when a row was found and updated.
+     */
+    public static function set_universal( string $id, bool $universal ): bool {
+        global $wpdb;
+        $table = WPSG_DB::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $updated = $wpdb->update(
+            $table,
+            [ 'is_universal' => $universal ? 1 : 0 ],
+            [ 'overlay_id' => $id ],
+            [ '%d' ],
+            [ '%s' ]
+        );
+        // $wpdb->update returns 0 when the value is unchanged; treat the row's
+        // existence (not the change count) as success.
+        if ( $updated === false ) {
+            return false;
+        }
+        if ( $updated > 0 ) {
+            return true;
+        }
+        // No rows affected — confirm the asset exists before reporting success.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $exists = $wpdb->get_var(
+            $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE overlay_id = %s", $id )
+        );
+        return intval( $exists ) > 0;
+    }
+
+    /**
+     * Replace the tag list on a single asset (P50-K).
+     *
+     * @param  string   $id    Asset UUID.
+     * @param  string[] $tags  Tags to store (sanitized + de-duped).
+     * @return bool      True when the asset exists (updated, or unchanged).
+     */
+    public static function set_tags( string $id, array $tags ): bool {
+        global $wpdb;
+        $table = WPSG_DB::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $updated = $wpdb->update(
+            $table,
+            [ 'tags' => self::encode_tags( $tags ) ],
+            [ 'overlay_id' => $id ],
+            [ '%s' ],
+            [ '%s' ]
+        );
+        if ( $updated === false ) {
+            return false;
+        }
+        if ( $updated > 0 ) {
+            return true;
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $exists = $wpdb->get_var(
+            $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE overlay_id = %s", $id )
+        );
+        return intval( $exists ) > 0;
     }
 
     /**
@@ -91,7 +211,7 @@ class WPSG_Overlay_Library {
      */
     public static function remove( string $id ): bool {
         global $wpdb;
-        $table = WPSG_DB::get_overlays_table();
+        $table = WPSG_DB::get_assets_table();
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $entry = $wpdb->get_row(
@@ -221,9 +341,12 @@ class WPSG_Overlay_Library {
         };
         add_filter( 'upload_dir', $upload_dir_filter );
 
-        // Signal the image optimizer to process this upload.
+        // Signal the image optimizer to process this upload, but keep the full
+        // resolution — decorative asset-library images may exceed the gallery
+        // max dimensions (P50-I).
         if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
             WPSG_Image_Optimizer::$wpsg_upload_context = true;
+            WPSG_Image_Optimizer::$wpsg_skip_resize    = true;
         }
 
         try {
@@ -231,6 +354,7 @@ class WPSG_Overlay_Library {
         } finally {
             if ( class_exists( 'WPSG_Image_Optimizer' ) ) {
                 WPSG_Image_Optimizer::$wpsg_upload_context = false;
+                WPSG_Image_Optimizer::$wpsg_skip_resize    = false;
             }
         }
 

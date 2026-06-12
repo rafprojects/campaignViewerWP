@@ -32,7 +32,7 @@ import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
   BuilderDockContext,
   type BuilderDockContextValue,
-  type OverlayLibraryItem,
+  type AssetLibraryItem,
 } from './BuilderDockContext';
 import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
 import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
@@ -42,7 +42,7 @@ import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { LayoutBuilderMenuBar } from './LayoutBuilderMenuBar';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
-import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
+import { useAssetLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
 import { useRootId } from '@/contexts/RootIdContext';
@@ -81,6 +81,8 @@ export interface LayoutBuilderModalProps {
   onNotify?: ((msg: { type: 'error' | 'success'; text: string }) => void) | undefined;
   /** P37-LB: true when editing a template used in campaign listing mode; activates builder guardrails. */
   listingMode?: boolean;
+  /** P50-K: active admin space scope ('all' or a space id). Scopes the asset library to that space. */
+  spaceId?: string | undefined;
 }
 
 // ── Component ────────────────────────────────────────────────
@@ -93,6 +95,7 @@ export function LayoutBuilderModal({
   onSaved,
   onNotify,
   listingMode = false,
+  spaceId,
 }: LayoutBuilderModalProps) {
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
@@ -138,8 +141,8 @@ export function LayoutBuilderModal({
   );
 
   // ── Overlay library (P15-H) ──
-  const { data: overlayLibrary, refetch: refetchOverlayLibrary } = useOverlayLibrary(apiClient, opened);
-  const [isUploadingOverlay, setIsUploadingOverlay] = useState(false);
+  const { data: assetLibrary, refetch: refetchAssetLibrary } = useAssetLibrary(apiClient, opened, spaceId);
+  const [isUploadingAsset, setIsUploadingOverlay] = useState(false);
   const [isUploadingBg, setIsUploadingBg] = useState(false);
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
@@ -356,7 +359,7 @@ export function LayoutBuilderModal({
   );
 
   // ── Overlay library handlers ──
-  const handleUploadOverlay = useCallback(
+  const handleUploadAsset = useCallback(
     async (file: File | null) => {
       if (!file) return;
       setIsUploadingOverlay(true);
@@ -364,11 +367,11 @@ export function LayoutBuilderModal({
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<OverlayLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
+        const entry = await apiClient.postForm<AssetLibraryItem>(
+          '/wp-json/wp-super-gallery/v1/admin/asset-library',
           formData,
         );
-        await refetchOverlayLibrary();
+        await refetchAssetLibrary();
         builder.addOverlay(entry.url);
         announce('Overlay uploaded and added to canvas');
         notifications.show({ message: 'Overlay added to canvas', color: 'blue', autoClose: 3000 });
@@ -380,14 +383,14 @@ export function LayoutBuilderModal({
         setIsUploadingOverlay(false);
       }
     },
-    [apiClient, refetchOverlayLibrary, builder, announce, onNotify],
+    [apiClient, refetchAssetLibrary, builder, announce, onNotify],
   );
 
-  const handleDeleteLibraryOverlay = useCallback(
+  const handleDeleteLibraryAsset = useCallback(
     async (id: string) => {
       try {
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/overlay-library/${id}`);
-        await refetchOverlayLibrary();
+        await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`);
+        await refetchAssetLibrary();
       } catch (err) {
         onNotify?.({
           type: 'error',
@@ -395,7 +398,43 @@ export function LayoutBuilderModal({
         });
       }
     },
-    [apiClient, refetchOverlayLibrary, onNotify],
+    [apiClient, refetchAssetLibrary, onNotify],
+  );
+
+  const handleSetAssetUniversal = useCallback(
+    async (id: string, universal: boolean) => {
+      try {
+        await apiClient.post(
+          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
+          { is_universal: universal },
+        );
+        await refetchAssetLibrary();
+      } catch (err) {
+        onNotify?.({
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Failed to update asset visibility',
+        });
+      }
+    },
+    [apiClient, refetchAssetLibrary, onNotify],
+  );
+
+  const handleSetAssetTags = useCallback(
+    async (id: string, tags: string[]) => {
+      try {
+        await apiClient.post(
+          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
+          { tags },
+        );
+        await refetchAssetLibrary();
+      } catch (err) {
+        onNotify?.({
+          type: 'error',
+          text: err instanceof Error ? err.message : 'Failed to update asset tags',
+        });
+      }
+    },
+    [apiClient, refetchAssetLibrary, onNotify],
   );
 
   // ── Background image upload ──
@@ -407,8 +446,8 @@ export function LayoutBuilderModal({
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<OverlayLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
+        const entry = await apiClient.postForm<AssetLibraryItem>(
+          '/wp-json/wp-super-gallery/v1/admin/asset-library',
           formData,
         );
         builder.setBackgroundImage(entry.url);
@@ -425,15 +464,15 @@ export function LayoutBuilderModal({
     [apiClient, builder, announce, onNotify],
   );
 
-  // ── Mask image upload (reuses overlay-library endpoint) ──
+  // ── Mask image upload (reuses asset-library endpoint) ──
   const handleUploadMask = useCallback(
     async (file: File): Promise<string | null> => {
       try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<OverlayLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/overlay-library',
+        const entry = await apiClient.postForm<AssetLibraryItem>(
+          '/wp-json/wp-super-gallery/v1/admin/asset-library',
           formData,
         );
         announce('Mask image uploaded');
@@ -763,8 +802,8 @@ export function LayoutBuilderModal({
 
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {
-    builder, isSaving, media, campaigns, selectedCampaignId, setSelectedCampaignId,
-    overlayLibrary, isUploadingOverlay, isUploadingBg,
+    builder, isSaving, apiClient, media, campaigns, selectedCampaignId, setSelectedCampaignId,
+    assetLibrary, isUploadingAsset, isUploadingBg,
     selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
     selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
     selectedMaskSlotId, setSelectedMaskSlotId,
@@ -773,8 +812,8 @@ export function LayoutBuilderModal({
     showRulers, setShowRulers, showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
     announce,
-    handleSave, handleClose, handleAutoAssign, handleUploadOverlay,
-    handleDeleteLibraryOverlay, handleUploadBgImage,
+    handleSave, handleClose, handleAutoAssign, handleUploadAsset,
+    handleDeleteLibraryAsset, handleSetAssetUniversal, handleSetAssetTags, handleUploadBgImage,
     handleDeleteSelected, handleDuplicateSelected, handleUploadMask,
     handleCreateGroup, handleUngroupSelected,
     handleGroupLockToggle, handleGroupVisibilityToggle, handleGroupRename,

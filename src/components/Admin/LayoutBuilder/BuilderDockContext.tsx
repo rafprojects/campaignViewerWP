@@ -3,13 +3,18 @@ import type { DockviewApi } from 'dockview';
 import type { LayoutGraphicLayer, LayoutSlot, MediaItem } from '@/types';
 import type { UseLayoutBuilderReturn } from '@/hooks/useLayoutBuilderState';
 import type { SnapMode } from '@/utils/canvasMeasurement';
+import type { ApiClient } from '@/services/apiClient';
 
 // ── Shared library type ───────────────────────────────────────
 
-export interface OverlayLibraryItem {
+export interface AssetLibraryItem {
   id: string;
   url: string;
   name: string;
+  /** P50-I: when true the asset bypasses per-space filtering (visible to all spaces). */
+  isUniversal: boolean;
+  /** P50-K: free-form tags for filtering the asset library. */
+  tags: string[];
   uploadedAt: string;
 }
 
@@ -20,6 +25,9 @@ export interface BuilderDockContextValue {
   builder: UseLayoutBuilderReturn;
   isSaving: boolean;
 
+  // API client (P50-I: enables the Media panel's unified upload controller)
+  apiClient: ApiClient;
+
   // Media
   media: MediaItem[];
   campaigns: Array<{ id: number; title: string }> | undefined;
@@ -27,8 +35,8 @@ export interface BuilderDockContextValue {
   setSelectedCampaignId: Dispatch<SetStateAction<string | null>>;
 
   // Overlay library
-  overlayLibrary: OverlayLibraryItem[] | undefined;
-  isUploadingOverlay: boolean;
+  assetLibrary: AssetLibraryItem[] | undefined;
+  isUploadingAsset: boolean;
   isUploadingBg: boolean;
 
   // Selection
@@ -77,8 +85,12 @@ export interface BuilderDockContextValue {
   handleSave: () => Promise<boolean | void>;
   handleClose: () => void;
   handleAutoAssign: () => void;
-  handleUploadOverlay: (file: File | null) => Promise<void>;
-  handleDeleteLibraryOverlay: (id: string) => Promise<void>;
+  handleUploadAsset: (file: File | null) => Promise<void>;
+  handleDeleteLibraryAsset: (id: string) => Promise<void>;
+  /** P50-I: toggle the `is_universal` flag on a library asset. */
+  handleSetAssetUniversal: (id: string, universal: boolean) => Promise<void>;
+  /** P50-K: replace the tag list on a library asset. */
+  handleSetAssetTags: (id: string, tags: string[]) => Promise<void>;
   handleUploadBgImage: (file: File | null) => Promise<void>;
   handleDeleteSelected: () => void;
   handleDuplicateSelected: () => void;

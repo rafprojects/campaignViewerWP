@@ -1,0 +1,26 @@
+/*
+ * P50-K — WordPress admin form-control reset.
+ *
+ * The admin panel and the "Gallery Spaces" page mount in light DOM inside
+ * wp-admin, where WordPress's own `.wp-core-ui input[type=checkbox|radio]`
+ * styles (including a dashicon checkmark drawn via `::before`) bleed onto
+ * Mantine's controls — producing a doubled / mismatched checkmark.
+ *
+ * These rules neutralize that native styling on Mantine inputs only, so
+ * Mantine renders its own check cleanly. They are no-ops outside wp-admin
+ * (nothing adds the `::before` there) and never reach shadow-DOM gallery
+ * mounts (document-head CSS does not cross the shadow boundary).
+ */
+input.mantine-Checkbox-input,
+input.mantine-Radio-input,
+input.mantine-Switch-input {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+input.mantine-Checkbox-input::before,
+input.mantine-Radio-input::before,
+input.mantine-Switch-input::before {
+  content: none !important;
+  display: none !important;
+}

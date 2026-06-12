@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import type { ApiClient } from '@/services/apiClient';
 import type { LayoutTemplate } from '@/types';
-import type { OverlayLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
+import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
 
 const LAYOUT_TEMPLATE_QUERY_OPTIONS = {
   retry: false,
@@ -12,7 +12,7 @@ const LAYOUT_TEMPLATE_QUERY_OPTIONS = {
 
 export const LAYOUT_TEMPLATES_QUERY_STALE_TIME = 30_000;
 export const PUBLIC_LAYOUT_TEMPLATE_QUERY_STALE_TIME = 10_000;
-export const OVERLAY_LIBRARY_QUERY_STALE_TIME = 60_000;
+export const ASSET_LIBRARY_QUERY_STALE_TIME = 60_000;
 
 function getApiClientCacheBase(apiClient: ApiClient) {
   return typeof apiClient.getBaseUrl === 'function' ? apiClient.getBaseUrl() : 'default';
@@ -26,8 +26,11 @@ export function getLayoutTemplatesQueryKey(apiClient: ApiClient) {
   return [...getLayoutTemplateQueryPrefix(apiClient), 'admin-list'] as const;
 }
 
-export function getOverlayLibraryQueryKey(apiClient: ApiClient) {
-  return [...getLayoutTemplateQueryPrefix(apiClient), 'overlay-library'] as const;
+export function getAssetLibraryQueryKey(apiClient: ApiClient, spaceId?: string | number) {
+  const scope = spaceId !== undefined && spaceId !== null && String(spaceId) !== 'all'
+    ? String(spaceId)
+    : 'all';
+  return [...getLayoutTemplateQueryPrefix(apiClient), 'asset-library', scope] as const;
 }
 
 function getApiBase(): string {
@@ -62,14 +65,21 @@ export function useLayoutTemplates(apiClient: ApiClient, enabled = true) {
   });
 }
 
-export function useOverlayLibrary(apiClient: ApiClient, enabled = true) {
-  return useQuery<OverlayLibraryItem[]>({
-    queryKey: getOverlayLibraryQueryKey(apiClient),
+export function useAssetLibrary(apiClient: ApiClient, enabled = true, spaceId?: string | number) {
+  // P50-K: when scoped to a real space, pass ?space=<id> so the backend applies
+  // the per-space asset filter (delegated spaces see only associated + universal
+  // assets). 'all' / undefined fetches the full library unscoped.
+  const scoped = spaceId !== undefined && spaceId !== null && String(spaceId) !== 'all';
+  const path = scoped
+    ? `/wp-json/wp-super-gallery/v1/admin/asset-library?space=${encodeURIComponent(String(spaceId))}`
+    : '/wp-json/wp-super-gallery/v1/admin/asset-library';
+  return useQuery<AssetLibraryItem[]>({
+    queryKey: getAssetLibraryQueryKey(apiClient, spaceId),
     queryFn: async () => (
-      await apiClient.get<OverlayLibraryItem[] | undefined>('/wp-json/wp-super-gallery/v1/admin/overlay-library')
+      await apiClient.get<AssetLibraryItem[] | undefined>(path)
     ) ?? [],
     enabled,
-    staleTime: OVERLAY_LIBRARY_QUERY_STALE_TIME,
+    staleTime: ASSET_LIBRARY_QUERY_STALE_TIME,
     ...LAYOUT_TEMPLATE_QUERY_OPTIONS,
   });
 }

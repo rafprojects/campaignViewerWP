@@ -61,7 +61,7 @@ describe('MaskPropertiesPanel', () => {
 		expect(btn).toBeDefined();
 	});
 
-	it('renders Design Assets library when overlayLibrary provided', () => {
+	it('renders Design Assets library when assetLibrary provided', () => {
 		const library = [
 			{ id: 'lib1', name: 'Soft Circle', url: 'https://example.com/soft.png' },
 		];
@@ -70,7 +70,7 @@ describe('MaskPropertiesPanel', () => {
 			<MaskPropertiesPanel
 				slot={slotWithMask}
 				onUpdate={vi.fn()}
-				overlayLibrary={library}
+				assetLibrary={library}
 			/>,
 		);
 

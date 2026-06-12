@@ -147,7 +147,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
                 'callback'            => [self::class, 'associate_library_asset'],
                 'permission_callback' => [self::class, 'require_space_owner'],
                 'args'                => [
-                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['overlay', 'font']],
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
                     'assetId'   => ['required' => true, 'type' => 'string'],
                 ],
             ],
@@ -156,7 +156,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
                 'callback'            => [self::class, 'dissociate_library_asset'],
                 'permission_callback' => [self::class, 'require_space_owner'],
                 'args'                => [
-                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['overlay', 'font']],
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
                     'assetId'   => ['required' => true, 'type' => 'string'],
                 ],
             ],
@@ -535,8 +535,8 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
         }
         return new WP_REST_Response([
-            'overlay' => WPSG_DB::get_space_library_assets($space_id, 'overlay'),
-            'font'    => WPSG_DB::get_space_library_assets($space_id, 'font'),
+            'asset' => WPSG_DB::get_space_library_assets($space_id, 'asset'),
+            'font'  => WPSG_DB::get_space_library_assets($space_id, 'font'),
         ], 200);
     }
 

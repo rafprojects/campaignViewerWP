@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '12';
+    const DB_VERSION = '14';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -22,12 +22,16 @@ class WPSG_DB {
         self::maybe_create_access_requests_table();
         self::maybe_create_audit_log_table();
         self::maybe_upgrade_audit_log_v9();
-        self::maybe_create_overlays_table();
+        self::maybe_rename_overlays_to_assets_v14();
+        self::maybe_create_assets_table();
+        self::maybe_upgrade_assets_is_universal();
+        self::maybe_upgrade_assets_tags_v14();
         self::maybe_create_spaces_table();
         self::maybe_upgrade_v11_space_columns();
         self::maybe_seed_default_space();
         self::maybe_backfill_spaces();
         self::maybe_create_space_library_assoc_table();
+        self::maybe_migrate_assoc_overlay_type_v14();
         self::maybe_backfill_space_library_assoc();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
@@ -610,21 +614,43 @@ class WPSG_DB {
         dbDelta($sql);
     }
 
-    // ── P41-OL1: Overlay library table ─────────────────────────────────────
+    // ── P41-OL1 / P50-K: Asset library table (formerly "overlays") ──────────
 
-    public static function maybe_create_overlays_table(): void {
+    /**
+     * P50-K: Idempotent rename of the legacy `wpsg_overlays` table to
+     * `wpsg_assets`. Only renames when the old table exists and the new one
+     * does not, so it is safe to run repeatedly and on fresh installs.
+     */
+    private static function maybe_rename_overlays_to_assets_v14(): void {
+        global $wpdb;
+        $old = $wpdb->prefix . 'wpsg_overlays';
+        $new = $wpdb->prefix . 'wpsg_assets';
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $old_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$old}'" ) === $old;
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $new_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$new}'" ) === $new;
+        if ( $old_exists && ! $new_exists ) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query( "RENAME TABLE {$old} TO {$new}" );
+        }
+    }
+
+    public static function maybe_create_assets_table(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table   = self::get_overlays_table();
+        $table   = self::get_assets_table();
         $charset = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table} (
-            id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            overlay_id  VARCHAR(36)   NOT NULL,
-            url         VARCHAR(2083) NOT NULL DEFAULT '',
-            name        VARCHAR(255)  NOT NULL DEFAULT '',
-            uploaded_at DATETIME      NOT NULL,
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            overlay_id   VARCHAR(36)   NOT NULL,
+            url          VARCHAR(2083) NOT NULL DEFAULT '',
+            name         VARCHAR(255)  NOT NULL DEFAULT '',
+            is_universal TINYINT(1)    NOT NULL DEFAULT 0,
+            tags         TEXT          NULL,
+            uploaded_at  DATETIME      NOT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY overlay_id (overlay_id),
             KEY uploaded_at (uploaded_at)
@@ -633,16 +659,16 @@ class WPSG_DB {
         dbDelta($sql);
 
         if ( ! get_option( 'wpsg_overlays_migrated' ) ) {
-            $migrated = self::migrate_overlays_from_options();
+            $migrated = self::migrate_assets_from_options();
             if ( $migrated ) {
                 update_option( 'wpsg_overlays_migrated', '1' );
             }
         }
     }
 
-    private static function migrate_overlays_from_options(): bool {
+    private static function migrate_assets_from_options(): bool {
         global $wpdb;
-        $table = self::get_overlays_table();
+        $table = self::get_assets_table();
         $raw   = get_option( 'wpsg_overlay_library', [] );
         if ( ! is_array( $raw ) || empty( $raw ) ) {
             return true;
@@ -677,9 +703,67 @@ class WPSG_DB {
         return false;
     }
 
-    public static function get_overlays_table(): string {
+    public static function get_assets_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_overlays';
+        return $wpdb->prefix . 'wpsg_assets';
+    }
+
+    /**
+     * P50-I: Idempotent migration — adds the `is_universal` column to the
+     * assets table when upgrading from a pre-v13 schema. A universal asset
+     * bypasses the P50-B per-space association filter and is visible to every
+     * space site-wide. Guard on column presence mirrors the v11 pattern.
+     */
+    private static function maybe_upgrade_assets_is_universal(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'is_universal'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN is_universal TINYINT(1) NOT NULL DEFAULT 0 AFTER name" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — adds the `tags` column (JSON array) to the
+     * assets table for tag-based filtering.
+     */
+    private static function maybe_upgrade_assets_tags_v14(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'tags'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN tags TEXT NULL AFTER is_universal" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — re-labels legacy `asset_type = 'overlay'`
+     * association rows to the canonical `'asset'` type after the overlay→asset
+     * rename. Safe to run repeatedly.
+     */
+    private static function maybe_migrate_assoc_overlay_type_v14(): void {
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "UPDATE {$table} SET asset_type = 'asset' WHERE asset_type = 'overlay'" );
     }
 
     /**
@@ -1199,7 +1283,7 @@ class WPSG_DB {
     // ── P50-B: Per-space shared-asset library associations ───────────────────
 
     /** Asset types supported by the per-space library association table. */
-    private const LIBRARY_ASSET_TYPES = ['overlay', 'font'];
+    private const LIBRARY_ASSET_TYPES = ['asset', 'font'];
 
     public static function get_space_library_assoc_table(): string {
         global $wpdb;
@@ -1297,16 +1381,16 @@ class WPSG_DB {
             fn($space) => ($space->isolation_mode ?? '') === 'delegated'
         );
         if (!empty($delegated)) {
-            $overlay_ids = class_exists('WPSG_Overlay_Library')
-                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Overlay_Library::get_all())
+            $asset_ids = class_exists('WPSG_Asset_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Asset_Library::get_all())
                 : [];
             $font_ids = class_exists('WPSG_Font_Library')
                 ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Font_Library::get_all())
                 : [];
 
             foreach ($delegated as $space) {
-                foreach ($overlay_ids as $overlay_id) {
-                    self::associate_asset(intval($space->id), 'overlay', $overlay_id);
+                foreach ($asset_ids as $asset_id) {
+                    self::associate_asset(intval($space->id), 'asset', $asset_id);
                 }
                 foreach ($font_ids as $font_id) {
                     self::associate_asset(intval($space->id), 'font', $font_id);

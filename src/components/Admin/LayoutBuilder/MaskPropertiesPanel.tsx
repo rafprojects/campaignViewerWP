@@ -21,7 +21,7 @@ import {
 } from '@tabler/icons-react';
 import type { LayoutSlot, MaskLayer } from '@/types';
 import { DEFAULT_MASK_LAYER } from '@/types';
-import type { OverlayLibraryItem } from './BuilderDockContext';
+import type { AssetLibraryItem } from './BuilderDockContext';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -33,7 +33,7 @@ export interface MaskPropertiesPanelProps {
   /** Upload a mask image and return the URL (or null on failure). */
   onUploadMask?: ((file: File) => Promise<string | null>) | undefined;
   /** Available Design Assets for mask image selection. */
-  overlayLibrary?: OverlayLibraryItem[] | undefined;
+  assetLibrary?: AssetLibraryItem[] | undefined;
 }
 
 // ── Inline helpers (shared with SlotPropertiesPanel) ─────────
@@ -81,7 +81,7 @@ export function MaskPropertiesPanel({
   slot,
   onUpdate,
   onUploadMask,
-  overlayLibrary,
+  assetLibrary,
 }: MaskPropertiesPanelProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -258,11 +258,11 @@ export function MaskPropertiesPanel({
       )}
 
       {/* ── Pick from Design Assets ── */}
-      {(overlayLibrary ?? []).length > 0 && (
+      {(assetLibrary ?? []).length > 0 && (
         <>
           <SectionHeader label="Design Assets" />
           <DesignAssetsGrid
-            items={overlayLibrary ?? []}
+            items={assetLibrary ?? []}
             onSelect={(url) => setMask({ url })}
             activeUrl={ml.url}
             maxHeight={140}

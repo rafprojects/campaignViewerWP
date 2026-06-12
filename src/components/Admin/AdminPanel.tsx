@@ -25,7 +25,8 @@ import {
   prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
-import type { AccessSummaryItem, AuditFilters, CampaignFilters } from '@/services/adminQuery';
+import type { AccessSummaryItem, AuditFilters, CampaignFilters, AdminCampaign } from '@/services/adminQuery';
+import { MediaUploadController } from './MediaUploadController';
 import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
@@ -108,6 +109,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
   const [mediaCampaignId, setMediaCampaignId] = useState('');
+  // P50-I: campaign targeted by the per-row "Add media" unified upload modal.
+  const [addMediaCampaign, setAddMediaCampaign] = useState<AdminCampaign | null>(null);
   // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
     () => initialBuilderTemplateId ?? null,
@@ -374,7 +377,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     && activeSpace.effectiveLevel === 'owner'
     && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
 
-  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns });
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
   const auditRows = useAuditRows(auditEntries);
 
@@ -670,7 +673,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
-          <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} />
+          <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} spaceId={selectedSpaceId} />
         </Tabs.Panel>
 
         <Tabs.Panel value="templates" pt="md">
@@ -836,6 +839,17 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             }}
           />
         </Suspense>
+      )}
+      {addMediaCampaign && (
+        <MediaUploadController
+          opened={!!addMediaCampaign}
+          onClose={() => setAddMediaCampaign(null)}
+          apiClient={apiClient}
+          campaigns={allCampaigns}
+          defaultTarget={String(addMediaCampaign.id)}
+          onUploaded={onCampaignsUpdated}
+          title={`Add media — ${addMediaCampaign.title}`}
+        />
       )}
       {!!accessState.confirmArchiveCompany && (
         <Suspense fallback={null}>

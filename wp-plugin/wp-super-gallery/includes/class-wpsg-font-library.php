@@ -6,7 +6,7 @@
  * Files are stored in wp-content/uploads/wpsg-fonts/.
  * Metadata is stored in the `wpsg_font_library` WP option.
  *
- * Modeled on class-wpsg-overlay-library.php.
+ * Modeled on class-wpsg-asset-library.php.
  *
  * @package WP_Super_Gallery
  * @since   0.21.0

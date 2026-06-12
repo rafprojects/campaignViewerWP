@@ -4,13 +4,14 @@ import {
   Alert, Loader, Center, Table, ActionIcon, Tooltip, Select, Divider, Checkbox,
 } from '@mantine/core';
 import {
-  IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings,
+  IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings, IconInfoCircle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import { useSpaces } from '@/services/adminQuery';
 import { SettingsPanel } from './SettingsPanel';
-import type { OverlayLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
+import { SpaceAssetLibrary } from './SpaceAssetLibrary';
+import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
 import type { FontLibraryEntry } from '@/utils/loadCustomFonts';
 
 interface SpaceGrant {
@@ -73,10 +74,10 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   const libraryTabActive = activeTab === 'library';
   const isDelegated = selectedSpace?.isolationMode === 'delegated';
 
-  const { data: allOverlays, isLoading: overlaysLoading } = useQuery({
-    queryKey: ['overlay-library', apiClient.getBaseUrl()],
+  const { data: allAssets, isLoading: assetsLoading } = useQuery({
+    queryKey: ['asset-library', apiClient.getBaseUrl()],
     queryFn: async () =>
-      (await apiClient.get<OverlayLibraryItem[]>('/wp-json/wp-super-gallery/v1/admin/overlay-library')) ?? [],
+      (await apiClient.get<AssetLibraryItem[]>('/wp-json/wp-super-gallery/v1/admin/asset-library')) ?? [],
     enabled: libraryTabActive && isDelegated,
     staleTime: 30_000,
     retry: false,
@@ -96,7 +97,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   const { data: spaceLibrary, isLoading: libraryLoading, refetch: refetchLibrary } = useQuery({
     queryKey: ['space-library', apiClient.getBaseUrl(), selectedSpaceId],
     queryFn: async () =>
-      apiClient.get<{ overlay: string[]; font: string[] }>(
+      apiClient.get<{ asset: string[]; font: string[] }>(
         `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`
       ),
     enabled: libraryTabActive && isDelegated && selectedSpaceId !== null,
@@ -105,29 +106,52 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
     refetchOnWindowFocus: false,
   });
 
+  const toggleLibraryAsset = useCallback(async (
+    assetType: 'asset' | 'font',
+    assetId: string,
+    checked: boolean,
+  ): Promise<void> => {
+    if (!selectedSpaceId) return;
+    if (checked) {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`, {
+        assetType,
+        assetId,
+      });
+    } else {
+      const params = new URLSearchParams({ assetType, assetId });
+      await apiClient.delete(
+        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library?${params.toString()}`
+      );
+    }
+  }, [apiClient, selectedSpaceId]);
+
   const handleLibraryToggle = useCallback(async (
-    assetType: 'overlay' | 'font',
+    assetType: 'asset' | 'font',
     assetId: string,
     checked: boolean,
   ) => {
-    if (!selectedSpaceId) return;
     try {
-      if (checked) {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`, {
-          assetType,
-          assetId,
-        });
-      } else {
-        const params = new URLSearchParams({ assetType, assetId });
-        await apiClient.delete(
-          `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library?${params.toString()}`
-        );
+      await toggleLibraryAsset(assetType, assetId, checked);
+      await refetchLibrary();
+    } catch (err) {
+      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update library' });
+    }
+  }, [toggleLibraryAsset, refetchLibrary, onNotify]);
+
+  const handleBulkLibraryToggle = useCallback(async (assetIds: string[], associated: boolean) => {
+    const current = new Set(spaceLibrary?.asset ?? []);
+    // Only act on assets that actually need changing.
+    const targets = assetIds.filter((id) => associated ? !current.has(id) : current.has(id));
+    if (targets.length === 0) return;
+    try {
+      for (const id of targets) {
+        await toggleLibraryAsset('asset', id, associated);
       }
       await refetchLibrary();
     } catch (err) {
       onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update library' });
     }
-  }, [apiClient, selectedSpaceId, refetchLibrary, onNotify]);
+  }, [spaceLibrary, toggleLibraryAsset, refetchLibrary, onNotify]);
 
   const autoSlug = (name: string) =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -222,7 +246,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
         <Tabs.Tab value="spaces">Spaces</Tabs.Tab>
         <Tabs.Tab value="settings" disabled={!selectedSpaceId}>Settings</Tabs.Tab>
         <Tabs.Tab value="access" disabled={!selectedSpaceId}>Access</Tabs.Tab>
-        <Tabs.Tab value="library" disabled={!selectedSpaceId || !isDelegated}>Library</Tabs.Tab>
+        <Tabs.Tab value="library" disabled={!selectedSpaceId}>Library</Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="spaces" pt="md">
@@ -445,31 +469,32 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
       </Tabs.Panel>
 
       <Tabs.Panel value="library" pt="md">
-        {selectedSpace && isDelegated ? (
+        {!selectedSpace ? (
+          <Text c="dimmed" size="sm">Select a space from the Spaces tab to manage its shared library.</Text>
+        ) : !isDelegated ? (
+          <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
+            <Text size="sm" fw={500} mb={2}>{selectedSpace.name} is an open space.</Text>
+            <Text size="sm">
+              Open spaces can use every asset in the library — per-space selection only applies to
+              delegated spaces. Switch this space to delegated isolation mode to restrict its assets.
+            </Text>
+          </Alert>
+        ) : (
           <Stack gap="lg">
             <Text size="sm" c="dimmed">
-              Control which overlays and fonts are available in{' '}
-              <Text span fw={500}>{selectedSpace.name}</Text>.
-              Only associated assets will appear when creating campaigns in this space.
+              Select the assets <Text span fw={500}>{selectedSpace.name}</Text> is allowed to use.
+              Unselected assets are hidden in this space.
             </Text>
 
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Overlays</Text>
-              {overlaysLoading || libraryLoading ? (
-                <Center py="xs"><Loader size="sm" /></Center>
-              ) : !allOverlays?.length ? (
-                <Text size="xs" c="dimmed">No overlays in the global library.</Text>
-              ) : (
-                allOverlays.map((overlay) => (
-                  <Checkbox
-                    key={overlay.id}
-                    label={overlay.name}
-                    checked={spaceLibrary?.overlay?.includes(overlay.id) ?? false}
-                    onChange={(e) => void handleLibraryToggle('overlay', overlay.id, e.currentTarget.checked)}
-                    size="sm"
-                  />
-                ))
-              )}
+              <Text size="sm" fw={500}>Assets</Text>
+              <SpaceAssetLibrary
+                assets={allAssets ?? []}
+                associatedIds={spaceLibrary?.asset ?? []}
+                onToggle={(id, on) => void handleLibraryToggle('asset', id, on)}
+                onBulkToggle={(ids, on) => void handleBulkLibraryToggle(ids, on)}
+                loading={assetsLoading || libraryLoading}
+              />
             </Stack>
 
             <Stack gap="xs">
@@ -491,8 +516,6 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
               )}
             </Stack>
           </Stack>
-        ) : (
-          <Text c="dimmed" size="sm">Select a delegated space to manage its shared library.</Text>
         )}
       </Tabs.Panel>
     </Tabs>

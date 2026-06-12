@@ -26,7 +26,7 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
         WPSG_CPT::register();
 
         // Ensure overlay library table exists (P41-OL1).
-        WPSG_DB::maybe_create_overlays_table();
+        WPSG_DB::maybe_create_assets_table();
     }
 
     private function create_campaign(string $title = 'Test Campaign', string $status = 'active'): int {
@@ -600,7 +600,7 @@ class WPSG_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_overlay_library_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/overlay-library');
+        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/asset-library');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
