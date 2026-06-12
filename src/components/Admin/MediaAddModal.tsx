@@ -9,6 +9,7 @@ import {
   Modal,
   Paper,
   Progress,
+  Select,
   Stack,
   Text,
   TextInput,
@@ -43,6 +44,17 @@ interface MediaAddModalProps {
   externalLoading: boolean;
   onAddExternal: () => void;
   externalPreview: OEmbedResponse | null;
+  /**
+   * P50-I: optional "Add to" target selector. When `targetOptions` is provided
+   * (and non-empty) an "Add to" Select is rendered above the dropzone. When
+   * omitted the modal behaves exactly as before (MediaTab is unaffected).
+   */
+  targetOptions?: Array<{ value: string; label: string }>;
+  targetValue?: string | null;
+  onTargetChange?: (value: string | null) => void;
+  targetLabel?: string;
+  /** Optional node rendered directly under the "Add to" Select (e.g. a universal toggle). */
+  targetExtra?: React.ReactNode;
 }
 
 export function MediaAddModal({
@@ -70,8 +82,14 @@ export function MediaAddModal({
   externalLoading,
   onAddExternal,
   externalPreview,
+  targetOptions,
+  targetValue,
+  onTargetChange,
+  targetLabel = 'Add to',
+  targetExtra,
 }: MediaAddModalProps) {
   const hasFiles = selectedFiles.length > 0;
+  const showTargetSelect = Array.isArray(targetOptions) && targetOptions.length > 0;
   const isBatchSelection = selectedFiles.length > 1;
 
   const [isDragOver, setIsDragOver] = useState(false);
@@ -127,10 +145,21 @@ export function MediaAddModal({
       withinPortal={false}
     >
       <Stack gap="md">
+        {showTargetSelect && (
+          <Stack gap={6}>
+            <Select
+              label={targetLabel}
+              data={targetOptions}
+              value={targetValue ?? null}
+              onChange={(value) => onTargetChange?.(value)}
+              allowDeselect={false}
+            />
+            {targetExtra}
+          </Stack>
+        )}
         <Paper
           ref={dropRef}
           p="md"
-          withBorder
           role="region"
           aria-label="File drop zone"
           onDragEnter={handleDragEnter}
@@ -139,9 +168,10 @@ export function MediaAddModal({
           onDrop={handleDrop}
           style={{
             cursor: 'pointer',
+            border: `2px dashed ${isDragOver ? 'var(--mantine-color-blue-5)' : 'var(--mantine-color-default-border)'}`,
+            borderRadius: 'var(--mantine-radius-md)',
             transition: 'border-color 0.15s ease, background-color 0.15s ease',
             ...(isDragOver && {
-              borderColor: 'var(--mantine-color-blue-5)',
               backgroundColor: 'var(--mantine-color-blue-light)',
             }),
           }}

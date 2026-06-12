@@ -26,6 +26,14 @@ class WPSG_Image_Optimizer {
     public static bool $wpsg_upload_context = false;
 
     /**
+     * P50-I: When true, the dimension constraint is skipped so the upload keeps
+     * its full resolution (WebP generation, if enabled, still runs). Set by the
+     * overlay/asset-library upload handler — decorative assets are intentionally
+     * allowed to exceed the gallery max dimensions.
+     */
+    public static bool $wpsg_skip_resize = false;
+
+    /**
      * Register optimization hooks.
      */
     public static function register() {
@@ -90,12 +98,15 @@ class WPSG_Image_Optimizer {
         $max_height = intval($settings['optimize_max_height'] ?? self::MAX_HEIGHT_DEFAULT);
         $quality    = intval($settings['optimize_quality'] ?? self::QUALITY_DEFAULT);
 
-        // Constrain dimensions.
-        $result = self::constrain_image($file, $max_width, $max_height, $quality);
-        if (is_wp_error($result)) {
-            // Log but don't fail the upload.
-            WPSG_Logger::warning('image-optimizer', 'Image optimization failed', ['error' => $result->get_error_message()]);
-            return $upload;
+        // Constrain dimensions (skipped for asset-library uploads, which keep
+        // their full resolution per P50-I).
+        if (!self::$wpsg_skip_resize) {
+            $result = self::constrain_image($file, $max_width, $max_height, $quality);
+            if (is_wp_error($result)) {
+                // Log but don't fail the upload.
+                WPSG_Logger::warning('image-optimizer', 'Image optimization failed', ['error' => $result->get_error_message()]);
+                return $upload;
+            }
         }
 
         // Generate WebP variant if enabled.
