@@ -1,6 +1,8 @@
-import { useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { safeLocalStorage } from '@/lib/safeLocalStorage';
 import type { SnapMode } from '@/utils/canvasMeasurement';
+
+export type LayoutScope = 'global' | 'per-template';
 
 export interface BuilderWorkspacePrefs {
   snapMode: SnapMode;
@@ -17,6 +19,8 @@ export interface BuilderWorkspacePrefs {
   setShowMeasurements: Dispatch<SetStateAction<boolean>>;
   designAssetsOpen: boolean;
   setDesignAssetsOpen: (open: boolean) => void;
+  layoutScope: LayoutScope;
+  setLayoutScope: (scope: LayoutScope) => void;
 }
 
 /** P30-B workspace preferences, persisted in localStorage and root-scoped per P37-KS1. */
@@ -45,6 +49,20 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
       return true;
     }
   });
+  const [layoutScope, setLayoutScopeState] = useState<LayoutScope>(() => {
+    try {
+      return (localStorage.getItem(`wpsg_builder_${rootId}_layout_scope`) as LayoutScope | null) ?? 'global';
+    } catch {
+      return 'global';
+    }
+  });
+  const setLayoutScope = useCallback(
+    (scope: LayoutScope) => {
+      setLayoutScopeState(scope);
+      try { localStorage.setItem(`wpsg_builder_${rootId}_layout_scope`, scope); } catch { /* ignore */ }
+    },
+    [rootId],
+  );
 
   useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
   useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
@@ -83,5 +101,6 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
     showRulers, setShowRulers,
     showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen,
+    layoutScope, setLayoutScope,
   };
 }

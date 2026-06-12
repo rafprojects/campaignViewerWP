@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-11
+**Last updated:** 2026-06-11 (P50-H added)
 
 ### Tracks
 
@@ -15,6 +15,7 @@
 | P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
 | P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | To do | Medium |
 | P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
+| P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | Done (2026-06-11) | Medium |
 
 ---
 
@@ -34,6 +35,8 @@
 | C | Adapter interface extension (Isotope) | Add optional `filterKey?: string` and `sortKey?: string` to `GalleryAdapterProps` behind a discriminated union so non-filterable adapters are unaffected and no breaking change is introduced. |
 | D | SW metadata caching scope | Stale-while-revalidate for gallery public metadata only (campaign list, media items); admin SPA routes and all mutation endpoints remain network-first. Cache budget: 5 MB per space, LRU eviction. |
 | E | Monorepo tooling | npm workspaces (already present in the project) — no new tool required. `packages/shared-utils/` for `src/lib/` utilities; `packages/shared-ui/` for Auth and Lightbox components. |
+| F | Layout Builder menu bar structure | File / Edit / View / Options — four menus rather than a single hamburger or a flat toolbar extension. Toolbar retains Undo/Redo as always-visible icon buttons (one-click frequency warrants it); all other secondary actions move into menus. Canvas panel is made non-closeable independently of the menu bar work. |
+| G | Layout persistence default | Shared across all templates remains the default (current behaviour, zero migration cost). The Options menu exposes a toggle; per-template mode is backed by including `templateId` in the localStorage key — no new persistence layer required. |
 
 ## Execution Priority
 
@@ -41,9 +44,10 @@
 2. **P50-C** — Stacked/Deck adapter: self-contained, reuses `useSwipe`.
 3. **P50-A** — Cross-Space Campaign Move: PHP backend; depends on P47 tables.
 4. **P50-B** — Per-Space Library Isolation: PHP backend; depends on P47 tables.
-5. **P50-D** — Isotope/Filterable Grid: extends the adapter interface; done after simpler adapters to avoid any interface churn.
-6. **P50-F** — Service Worker: careful not to break the existing SW registration; done late to avoid disrupting local dev builds.
-7. **P50-G** — Shared Package: largest track; monorepo restructure touches all `src/lib/` and Auth/Lightbox imports; done last to avoid blocking other tracks.
+5. **P50-H** — Layout Builder menu bar: unblocks UX (closed-panel bug) and declutters the toolbar before any further Layout Builder feature work adds to the toolbar debt.
+6. **P50-D** — Isotope/Filterable Grid: extends the adapter interface; done after simpler adapters to avoid any interface churn.
+7. **P50-F** — Service Worker: careful not to break the existing SW registration; done late to avoid disrupting local dev builds.
+8. **P50-G** — Shared Package: largest track; monorepo restructure touches all `src/lib/` and Auth/Lightbox imports; done last to avoid blocking other tracks.
 
 ---
 
@@ -395,3 +399,85 @@ Five utility modules in `src/lib/` and five Auth/Lightbox components have been f
 - `tsc --noEmit` in root, `packages/shared-utils/`, and `packages/shared-ui/` all pass.
 - `npm test` full suite passes.
 - `grep -r "from '@/lib/"` returns no results in `src/`.
+
+---
+
+## Track P50-H — Layout Builder OS-style Menu Bar
+
+### Problem
+
+The Layout Builder header toolbar is growing beyond what a flat row of buttons can sustain. Three distinct problems share the same root cause — there is no structured command surface:
+
+1. **Closed-panel bug:** closing a Dockview panel (Layers, Media & Assets, Properties) provides no affordance to reopen it. The Layout Builder must be reopened and the state still persists because panel layout is saved to `localStorage` under `wpsg_builder_${rootId}_layout`, keyed by the mount-point ID — the same key for every layout template. Closing and reopening the modal does not reset the state, and closing a tab in one template closes it in all others.
+2. **Toolbar crowding:** Export and Import are secondary actions that currently sit in the primary toolbar alongside Save and Preview — the toolbar real estate those occupy would be better used for actions that change per editing session.
+3. **No preferences surface:** there is no place to put builder-level user preferences (such as whether panel layout is saved globally or per template). Every future preference would have nowhere logical to live, pushing them either into toolbar overflow or into a completely separate settings page.
+
+These are not three separate bugs. They are three symptoms of a single missing architectural layer: a menu bar that provides a scalable, discoverable command surface analogous to what every mature creative tool (Figma, Sketch, Inkscape) provides.
+
+### Fix
+
+Add a compact menu bar row inside `LayoutBuilderModal` between the History button and the Preview button, containing four Mantine `Menu` components:
+
+**File**
+- Save (Ctrl+S) — mirrors the existing Save button; keeping Save visible in the toolbar for prominence is acceptable; the menu entry gives keyboard-shortcut discoverability
+- ─
+- Export template…
+- Import from file…
+- ─
+- Close editor
+
+**Edit**
+- Undo (Ctrl+Z)
+- Redo (Ctrl+Shift+Z)
+- ─
+- Duplicate selection
+- Delete selection
+- ─
+- History… (opens the existing history drawer)
+
+**View**
+- *Panels:* Layers (toggle), Media & Assets (toggle), Properties (toggle) — checked when open. Canvas is always-on and does not appear here.
+- ─
+- Show grid
+- Show rulers
+- Show measurements
+- ─
+- Reset layout
+
+**Options**
+- *Layout workspace:* Save globally (all templates) · Save per template
+- *(future preferences live here)*
+
+**Canvas non-closeable (independent fix):** remove or disable the close affordance on the Dockview `canvas` panel tab regardless of menu bar progress, since a canvas-less Layout Builder is always a broken state. This is a one-line change to the panel configuration in `LayoutBuilderModal.tsx` and should be delivered as part of this track.
+
+**Layout persistence toggle:** the Options menu "Save per template" mode changes the localStorage key from `wpsg_builder_${rootId}_layout` to `wpsg_builder_${rootId}_template_${templateId}_layout`. The `templateId` is already available in `LayoutBuilderModal` as a prop. The user's preference (global vs per-template) is itself stored in localStorage under a separate stable key (`wpsg_builder_${rootId}_layout_scope`), defaulting to `'global'`.
+
+**Dependencies:** none — this is a pure frontend change within `src/components/Admin/LayoutBuilder/`.
+
+**Files:** `LayoutBuilderModal.tsx` (menu bar insertion, canvas non-closeable, layout scope logic), `LayoutBuilderHeader.tsx` (if the header is extracted into its own component — preferred), new `LayoutBuilderMenuBar.tsx` (the four menus), Dockview panel config for canvas close-prevention.
+
+### Acceptance criteria
+
+- All four menus open on click; keyboard navigation works.
+- Canvas tab has no close button; attempting to close it programmatically is a no-op.
+- View → Layers/Media & Assets/Properties toggles re-open or close the corresponding Dockview panel.
+- View → Reset layout restores the default 4-panel arrangement and clears the persisted layout from localStorage.
+- File → Export and File → Import trigger the same logic as the existing Export/Import toolbar buttons.
+- Options → "Save per template" changes the localStorage key; switching between templates no longer shares panel state when this is selected.
+- Options → "Save globally" reverts to the shared key; panel state is once again shared across templates.
+- Toolbar is visibly less crowded: Export and Import are removed from the primary toolbar.
+
+### Validation
+
+- Unit: menu bar renders all four menus; View panel toggles add/remove panels from the Dockview instance; Reset layout clears localStorage and calls Dockview's layout reset API; Options toggle writes the correct `layout_scope` key to localStorage.
+- Manual: open the Layout Builder; close the Layers panel; reopen it via View → Layers; confirm the canvas tab has no close affordance; toggle per-template mode, switch templates, confirm each has independent panel state; reset layout, confirm default 4-panel arrangement.
+- `tsc --noEmit` clean; full frontend suite passes.
+
+### Implementation rationale (2026-06-11)
+
+- **Canvas non-closeable:** Dockview's `tabComponents` prop accepts a map of `panelId → React.FunctionComponent<IDockviewPanelHeaderProps>`. Registering `canvas: CanvasTabNoClose` — a thin wrapper around `DockviewDefaultTab` with `hideClose={true}` — removes the close affordance from the canvas tab without any CSS hacks. `DockviewDefaultTab` is exported from the `dockview` package and accepts `hideClose` as a documented prop. This is a stable-reference component defined outside `LayoutBuilderModal` so it does not trigger dockview re-renders.
+- **Menu bar component:** `LayoutBuilderMenuBar.tsx` — a self-contained component that accepts callbacks and state as props, keeping all the heavy logic in `LayoutBuilderModal`. The View menu calls `dockApiRef.current?.getPanel(id)` on open (`onOpen={refreshPanelState}`) to sync its checked state with actual dockview panel state rather than maintaining a separate shadow state. Panel re-open placement logic: Properties → right of canvas; Layers/Media → left side with `within` direction when the other tab-group peer already exists, falling back gracefully if the target reference panel is gone.
+- **History dropdown controlled mode:** `BuilderHistoryDropdown` gained optional `opened` + `onOpenedChange` props; when provided, the component is fully controlled; when omitted it remains self-managed (zero behaviour change for existing callers). This lets Edit → History… in the menu bar set `historyDropdownOpen` state, which is threaded back to the dropdown via props.
+- **Layout scope preference:** `useBuilderWorkspacePrefs` extended with `layoutScope: 'global' | 'per-template'` and `setLayoutScope`, persisted under `wpsg_builder_${rootId}_layout_scope`. `handleDockReady` derives `LAYOUT_KEY` from `layoutScope` and `initialTemplate?.id` — per-template mode uses `wpsg_builder_${rootId}_template_${templateId}_layout`; global mode uses the original shared key. `handleDockReady` re-runs when either `rootId` or `layoutScope` changes.
+- **Toolbar cleanup:** Export (download) and Import (upload) `ActionIcon` buttons removed from the right-side header toolbar group. Both actions now live exclusively in the File menu. The right-side group is now: preview toggle → Save button → Close button — three items vs the previous six.
+- **Validation done:** `tsc --noEmit` clean; full frontend suite 2237/2237; production build clean. Manual test: open Layout Builder, close Layers panel via the × on its tab — it closes. Reopen via View → Layers — it re-appears on the left side. Canvas tab has no close button. File / Edit / View / Options all open with correct items. Export and Import work via File menu.

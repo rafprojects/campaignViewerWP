@@ -17,8 +17,6 @@ import {
   IconArrowForwardUp,
   IconEye,
   IconEyeOff,
-  IconDownload,
-  IconUpload,
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import type { LayoutTemplate } from '@/types';
@@ -29,7 +27,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
-import { DockviewReact, type DockviewReadyEvent, type DockviewApi } from 'dockview';
+import { DockviewReact, DockviewDefaultTab, type DockviewReadyEvent, type DockviewApi } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
   BuilderDockContext,
@@ -41,6 +39,7 @@ import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
 import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
+import { LayoutBuilderMenuBar } from './LayoutBuilderMenuBar';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useOverlayLibrary } from '@/services/layoutTemplateQuery';
@@ -61,6 +60,13 @@ const dockComponents = {
   properties: LayoutBuilderPropertiesPanel,
   history: BuilderHistoryPanel,
 };
+
+// Canvas must always be visible — the builder is non-functional without it.
+function CanvasTabNoClose(props: React.ComponentProps<typeof DockviewDefaultTab>) {
+  return <DockviewDefaultTab {...props} hideClose />;
+}
+
+const dockTabComponents = { canvas: CanvasTabNoClose };
 
 
 // ── Props ────────────────────────────────────────────────────
@@ -137,6 +143,7 @@ export function LayoutBuilderModal({
   const [isUploadingBg, setIsUploadingBg] = useState(false);
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
+  const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
 
   // ── P30-B workspace preferences ──
   const {
@@ -147,6 +154,7 @@ export function LayoutBuilderModal({
     showRulers, setShowRulers,
     showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen,
+    layoutScope, setLayoutScope,
   } = useBuilderWorkspacePrefs(rootId);
 
   const bgSectionRef = useRef<HTMLDivElement>(null);
@@ -707,7 +715,10 @@ export function LayoutBuilderModal({
   // ── Dockview ready handler (P17-E) ──
   const handleDockReady = useCallback((event: DockviewReadyEvent) => {
     dockApiRef.current = event.api;
-    const LAYOUT_KEY = `wpsg_builder_${rootId}_layout`;
+    const templateId = initialTemplate?.id ?? '';
+    const LAYOUT_KEY = layoutScope === 'per-template' && templateId
+      ? `wpsg_builder_${rootId}_template_${templateId}_layout`
+      : `wpsg_builder_${rootId}_layout`;
     // P30-E: bumped from 1 → 2. Version 1 layouts include a History dock tab
     // that is now surfaced in the header; they are cleared so users get the
     // clean default layout without the redundant History tab.
@@ -749,7 +760,7 @@ export function LayoutBuilderModal({
     const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
     event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
     event.api.onDidLayoutChange(persistLayout);
-  }, [rootId]);
+  }, [rootId, layoutScope, initialTemplate?.id]);
 
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {
@@ -866,26 +877,40 @@ export function LayoutBuilderModal({
                 historyCurrentIndex={builder.historyCurrentIndex}
                 isHistoryTrimmed={builder.isHistoryTrimmed}
                 onJump={builder.jumpToHistoryIndex}
+                opened={historyDropdownOpen}
+                onOpenedChange={setHistoryDropdownOpen}
               />
             </Group>
 
-            {/* Right: import/export + preview + save + close */}
+            {/* Centre: menu bar */}
+            <LayoutBuilderMenuBar
+              canUndo={builder.canUndo}
+              canRedo={builder.canRedo}
+              hasSelection={builder.selectedSlotIds.size > 0}
+              onUndo={builder.undo}
+              onRedo={builder.redo}
+              onDuplicate={handleDuplicateSelected}
+              onDelete={handleDeleteSelected}
+              onOpenHistory={() => setHistoryDropdownOpen(true)}
+              onExport={handleExportJson}
+              onImport={() => importFileRef.current?.click()}
+              onSave={handleSave}
+              onClose={handleClose}
+              showGrid={showGrid}
+              setShowGrid={setShowGrid}
+              showRulers={showRulers}
+              setShowRulers={setShowRulers}
+              showMeasurements={showMeasurements}
+              setShowMeasurements={setShowMeasurements}
+              dockApiRef={dockApiRef}
+              templateId={initialTemplate?.id ?? ''}
+              rootId={rootId}
+              layoutScope={layoutScope}
+              setLayoutScope={setLayoutScope}
+            />
+
+            {/* Right: preview + save + close */}
             <Group gap="sm" wrap="nowrap">
-              <Tooltip label="Export layout as JSON">
-                <ActionIcon variant="subtle" onClick={handleExportJson} aria-label="Export JSON">
-                  <IconDownload size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Tooltip label="Import layout from JSON">
-                <ActionIcon
-                  variant="subtle"
-                  onClick={() => importFileRef.current?.click()}
-                  aria-label="Import JSON"
-                >
-                  <IconUpload size={18} />
-                </ActionIcon>
-              </Tooltip>
-              <Divider orientation="vertical" />
               <Tooltip label={builder.isPreview ? 'Edit mode' : 'Preview mode'}>
                 <ActionIcon
                   variant={builder.isPreview ? 'filled' : 'subtle'}
@@ -920,6 +945,7 @@ export function LayoutBuilderModal({
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             <DockviewReact
               components={dockComponents}
+              tabComponents={dockTabComponents}
               onReady={handleDockReady}
               theme={dockTheme}
             />

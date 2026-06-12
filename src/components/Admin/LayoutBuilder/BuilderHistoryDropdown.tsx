@@ -32,6 +32,9 @@ export interface BuilderHistoryDropdownProps {
   historyCurrentIndex: number;
   isHistoryTrimmed: boolean;
   onJump: (index: number) => void;
+  /** Optional controlled open state — lets the menu bar open the dropdown imperatively. */
+  opened?: boolean;
+  onOpenedChange?: (open: boolean) => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -41,15 +44,26 @@ export function BuilderHistoryDropdown({
   historyCurrentIndex,
   isHistoryTrimmed,
   onJump,
+  opened: openedProp,
+  onOpenedChange,
 }: BuilderHistoryDropdownProps) {
-  const [opened, setOpened] = useState(false);
+  const [openedLocal, setOpenedLocal] = useState(false);
+  const isControlled = openedProp !== undefined;
+  const opened = isControlled ? openedProp : openedLocal;
+  const setOpened = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      const resolved = typeof next === 'function' ? next(opened) : next;
+      if (isControlled) { onOpenedChange?.(resolved); } else { setOpenedLocal(resolved); }
+    },
+    [isControlled, onOpenedChange, opened],
+  );
 
   const handleJump = useCallback(
     (index: number) => {
       onJump(index);
       setOpened(false);
     },
-    [onJump],
+    [onJump, setOpened],
   );
 
   const count = historyEntries.length;
