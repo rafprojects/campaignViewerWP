@@ -44,8 +44,12 @@ const useSharedRoot = wpsgConfig?.sharedRoot === true
 
 if ('serviceWorker' in navigator && !import.meta.env.DEV) {
   window.addEventListener('load', () => {
+    // P50-F: prefer the PHP-injected absolute URL (served with Service-Worker-Allowed: /
+    // so the SW can claim root scope). Falls back to the Vite BASE_URL relative path
+    // for non-WordPress or local dev builds where the PHP endpoint isn't available.
+    const swUrl = window.__WPSG_CONFIG__?.swUrl ?? `${import.meta.env.BASE_URL}sw.js`;
     void navigator.serviceWorker
-      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .register(swUrl)
       .catch((error) => {
         console.error('Service worker registration failed:', error);
       });

@@ -32,6 +32,8 @@ interface Window {
     sharedRoot?: boolean;
     /** When true, explicit React displayName labels and data-wpsg-component/slot DOM markers are enabled for debugging. */
     debugComponentMarkers?: boolean;
+    /** P50-F: Absolute URL of sw.js served by the plugin PHP endpoint (with Service-Worker-Allowed: / header). */
+    swUrl?: string;
   };
   __WPSG_REST_NONCE__?: string;
   __WPSG_SENTRY_DSN__?: string;

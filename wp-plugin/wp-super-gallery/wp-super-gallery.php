@@ -124,6 +124,8 @@ add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
 // _restore_hooks() does not strip it after the first REST request initialises the server.
 add_filter('rest_request_after_callbacks', ['WPSG_REST', 'inject_rate_limit_headers'], 10, 3);
 add_action('init', ['WPSG_Embed', 'register_shortcode']);
+// P50-F: serve sw.js at home_url('/sw.js') with Service-Worker-Allowed: / header.
+add_action('init', ['WPSG_Embed', 'maybe_serve_service_worker'], 1);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
 add_action('init', ['WPSG_DB', 'maybe_upgrade']);
 add_action('init', ['WPSG_Maintenance', 'register']);
