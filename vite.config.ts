@@ -126,6 +126,10 @@ export default defineConfig({
       exclude: [
         'src/test/**',
         '**/*.test.{ts,tsx}',
+        // Storybook stories + fixtures are dev-only artifacts, never shipped to
+        // runtime and not unit-tested — exclude them from coverage accounting.
+        '**/*.stories.{ts,tsx}',
+        'src/stories/**',
         'src/**/*.d.ts',
         'src/services/auth/AuthProvider.ts',
         'src/services/monitoring/**',
