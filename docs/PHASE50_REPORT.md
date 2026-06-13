@@ -14,7 +14,7 @@
 | P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | ✅ Done (2026-06-11, manual test pending) | Medium-High |
 | P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | ✅ Closed — already shipped via P31-G | Low |
 | P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | ✅ Done (2026-06-12) | Medium |
-| P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
+| P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | ✅ Done (2026-06-12) | Large |
 | P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | ✅ Done (2026-06-11) | Medium |
 | P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | ✅ Done (2026-06-12, manual test passed) | Medium |
 | P50-J | Layout Builder Media — Asset-layer parity & polish: bring a curated subset of slot properties to graphic layers (shape/clip-path/mask, border, shadow, blend, filters, rotation/flip); fonts universal parity | ✅ Done (2026-06-12) | Medium-High |
@@ -527,6 +527,14 @@ Five utility modules in `src/lib/` and five Auth/Lightbox components have been f
 - `tsc --noEmit` in root, `packages/shared-utils/`, and `packages/shared-ui/` all pass.
 - `npm test` full suite passes.
 - `grep -r "from '@/lib/"` returns no results in `src/`.
+
+### Implementation rationale (2026-06-12)
+
+- **Auth component scope adjustment:** The plan assumed `AuthBarFloating` and `AuthBarMinimal` were clean for `shared-ui`. A pre-implementation check revealed both import `SpaceSwitcher`, which uses `usePageSpaces` — a WPSG-specific hook. Only `LoginForm` (Mantine-only) is truly decoupled. `AuthBarFloating` and `AuthBarMinimal` remain in `src/components/Auth/`; this is the correct call and aligns with the P51-A spike scope for further audit.
+- **Vite alias over npm workspace resolution:** Rather than relying on npm workspace `node_modules/.bin` symlinks for bundling, both packages are wired as Vite aliases (`@wp-super-gallery/shared-utils` → `packages/shared-utils/src/index.ts`) and tsconfig paths. This is the correct approach for a co-deployed monorepo using `"noEmit": true` — the packages are always bundled by Vite, never independently compiled or published, and alias resolution is faster and avoids Node ESM resolution edge cases.
+- **Inline `import()` type syntax missed by sed:** `src/types/index.ts` and `src/components/CampaignGallery/CampaignCard.tsx` use `import('@/lib/cssUnits').TypeName` syntax for inline type references. Bulk `sed` on `from '@/lib/'` patterns misses these. Fixed by a targeted `sed -i "s|import('@/lib/cssUnits')|import('@wp-super-gallery/shared-utils')|g"` pass.
+- **Test file mock paths:** Seven test files used `vi.mock('@/components/Galleries/Shared/Lightbox', ...)` or `vi.mock('...Lightbox', ...)` + one dynamic `await import('@/components/Galleries/Shared/Lightbox')`. All updated to `@wp-super-gallery/shared-ui`. `Lightbox.test.tsx` updated its direct `'./Lightbox'` relative import to use the package.
+- **Validation:** `tsc --noEmit --skipLibCheck` clean; `npm test` 167 files / 2309 tests passing; `grep -rn "from '@/lib/" src/` returns 0 results; `grep -rn "Galleries/Shared/Lightbox" src/` returns 0 results.
 
 ---
 
