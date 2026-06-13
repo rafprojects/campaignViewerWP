@@ -36,7 +36,7 @@ vi.mock('@/hooks/useCarousel', () => ({
   }),
 }));
 
-vi.mock('@/components/Galleries/Shared/Lightbox', () => ({
+vi.mock('@wp-super-gallery/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));

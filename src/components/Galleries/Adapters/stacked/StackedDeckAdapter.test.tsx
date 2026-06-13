@@ -12,7 +12,7 @@ import '@testing-library/jest-dom/vitest';
 import type { MediaItem, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
-vi.mock('@/components/Galleries/Shared/Lightbox', () => ({
+vi.mock('@wp-super-gallery/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));
