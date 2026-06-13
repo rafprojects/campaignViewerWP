@@ -137,6 +137,78 @@ describe('GraphicLayerPropertiesPanel', () => {
   });
 });
 
+describe('GraphicLayerPropertiesPanel — P50-J parity controls', () => {
+  it('flip H button toggles flipH via onUpdate', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    fireEvent.click(screen.getByRole('button', { name: /flip horizontal/i }));
+    expect(onUpdate).toHaveBeenCalledWith('g1', { flipH: true });
+  });
+
+  it('flip V button toggles flipV via onUpdate', () => {
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    fireEvent.click(screen.getByRole('button', { name: /flip vertical/i }));
+    expect(onUpdate).toHaveBeenCalledWith('g1', { flipV: true });
+  });
+
+  it('rotation slider is present', () => {
+    render(<GraphicLayerPropertiesPanel {...makeProps()} />);
+    expect(screen.getByLabelText('Rotation')).toBeInTheDocument();
+  });
+
+  it('shows the Shape & Border / Mask / Effects accordion sections', () => {
+    render(<GraphicLayerPropertiesPanel {...makeProps()} />);
+    expect(screen.getByRole('button', { name: /shape & border/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^mask$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^effects$/i })).toBeInTheDocument();
+  });
+
+  it('shows the shape selector bound to the current shape and a custom clip-path field', async () => {
+    const user = userEvent.setup();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ overlay: { ...baseOverlay, shape: 'custom', clipPath: 'polygon(0 0, 100% 0, 50% 100%)' } })} />);
+    // Expand the Shape & Border section.
+    await user.click(screen.getByRole('button', { name: /shape & border/i }));
+    // The custom clip-path input appears (and is editable) when shape === 'custom'.
+    const clip = screen.getByLabelText('Custom clip-path');
+    expect(clip).toHaveValue('polygon(0 0, 100% 0, 50% 100%)');
+  });
+
+  it('editing the custom clip-path calls onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate, overlay: { ...baseOverlay, shape: 'custom' } })} />);
+    await user.click(screen.getByRole('button', { name: /shape & border/i }));
+    const clip = screen.getByLabelText('Custom clip-path');
+    await user.type(clip, 'c');
+    expect(onUpdate).toHaveBeenCalledWith('g1', { clipPath: 'c' });
+  });
+
+  it('border width input calls onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    await user.click(screen.getByRole('button', { name: /shape & border/i }));
+    const border = screen.getByLabelText('Border');
+    await user.clear(border);
+    await user.type(border, '3');
+    expect(onUpdate).toHaveBeenCalledWith('g1', expect.objectContaining({ borderWidth: 3 }));
+  });
+
+  it('entering a mask URL sets a maskLayer via onUpdate', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<GraphicLayerPropertiesPanel {...makeProps({ onUpdate })} />);
+    await user.click(screen.getByRole('button', { name: /^mask$/i }));
+    const url = screen.getByLabelText('Mask image URL');
+    await user.type(url, 'h');
+    expect(onUpdate).toHaveBeenCalledWith(
+      'g1',
+      expect.objectContaining({ maskLayer: expect.objectContaining({ url: 'h' }) }),
+    );
+  });
+});
+
 describe('GraphicLayerPropertiesPanel — name editing', () => {
   it('updates local state as user types in the name input', async () => {
     const user = userEvent.setup();

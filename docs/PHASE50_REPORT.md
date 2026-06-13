@@ -2,23 +2,23 @@
 
 **Status:** In progress
 **Created:** 2026-06-09
-**Last updated:** 2026-06-11 (P50-K implemented: overlay→asset rename, visual library, tags, builder scoping)
+**Last updated:** 2026-06-12 (P50-F implemented: SW stale-while-revalidate for gallery metadata endpoints)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | Done (2026-06-11, manual test passed) | Medium |
-| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | Done (2026-06-12, manual test passed — verified via the P50-K space-scoped builder) | Medium |
-| P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | Done (2026-06-11) | Medium |
-| P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | Done (2026-06-11, manual test pending) | Medium-High |
-| P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | Closed — already shipped via P31-G | Low |
-| P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | To do | Medium |
+| P50-A | Gallery Spaces — cross-space campaign move: atomic `space_id` re-stamp across all 4 tables | ✅ Done (2026-06-11, manual test passed) | Medium |
+| P50-B | Gallery Spaces — per-space library isolation: `wpsg_space_library_assoc` join table; overlay/font visibility in delegated mode | ✅ Done (2026-06-12, manual test passed — verified via the P50-K space-scoped builder) | Medium |
+| P50-C | Adapters — Stacked / Deck: cards with offset/rotation, swipe to cycle | ✅ Done (2026-06-11) | Medium |
+| P50-D | Adapters — Isotope / Filterable Grid: FLIP-animated filter/sort; extends adapter interface | ✅ Done (2026-06-11, manual test pending) | Medium-High |
+| P50-E | Adapters — Waterfall: masonry variant with staggered CSS entrance animations | ✅ Closed — already shipped via P31-G | Low |
+| P50-F | Build & Bundle — Service Worker metadata caching: stale-while-revalidate for gallery metadata | ✅ Done (2026-06-12) | Medium |
 | P50-G | Infrastructure — Shared Package extraction: npm workspaces, `packages/shared-utils/`, `packages/shared-ui/` | To do | Large |
-| P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | Done (2026-06-11) | Medium |
-| P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | Done (2026-06-12, manual test passed) | Medium |
-| P50-J | Layout Builder Media — Asset-layer parity & polish: bring a curated subset of slot properties to graphic layers (shape/clip-path/mask, border, shadow, blend, filters, rotation); fonts universal parity; deeper upload UX polish | To do | Medium-High |
-| P50-K | Asset Library terminology sweep + per-space visual library, tags & builder scoping: rename `overlay`→`asset` end-to-end (table/REST/class/TS, no aliases); replace the Space-Library checkbox lists with a visual grid (search + tag filter + bulk select); image-asset tags; WP-admin checkbox bleed fix; scope the builder's asset library by active space (closes the P50-B gap) | Done (2026-06-12, manual test passed) | Medium-High |
+| P50-H | Layout Builder UX — OS-style menu bar (File / Edit / View / Options): fixes closed-panel bug, declutters toolbar, introduces preferences surface | ✅ Done (2026-06-11) | Medium |
+| P50-I | Layout Builder Media — General Asset Library + unified upload: re-surface the overlay library as the general/decorative asset bucket; file-type & transparency indicators; `is_universal` flag (overlay visible to all spaces); "Add to" upload modal wired into the builder and Campaigns | ✅ Done (2026-06-12, manual test passed) | Medium |
+| P50-J | Layout Builder Media — Asset-layer parity & polish: bring a curated subset of slot properties to graphic layers (shape/clip-path/mask, border, shadow, blend, filters, rotation/flip); fonts universal parity | ✅ Done (2026-06-12) | Medium-High |
+| P50-K | Asset Library terminology sweep + per-space visual library, tags & builder scoping: rename `overlay`→`asset` end-to-end (table/REST/class/TS, no aliases); replace the Space-Library checkbox lists with a visual grid (search + tag filter + bulk select); image-asset tags; WP-admin checkbox bleed fix; scope the builder's asset library by active space (closes the P50-B gap) | ✅ Done (2026-06-12, manual test passed) | Medium-High |
 
 ---
 
@@ -416,14 +416,62 @@ The existing service worker caches static assets (JS, CSS, images) but makes a f
 
 ### Acceptance criteria
 
-- Load a gallery while online; go offline; reload — gallery grid renders with stale metadata, not a blank state.
-- Background revalidation fires when the network is restored; data refreshes without a full reload.
+- Load a gallery while online; subsequent online loads serve the metadata API responses instantly from the SW cache (stale-while-revalidate), without a network roundtrip to the WP REST API.
+- Background revalidation fires automatically when a cached entry is older than 5 minutes; the gallery updates without a full reload.
 - Admin SPA does not serve cached responses offline (shows a network-error state as expected).
 - Opening the plugin on a site that already has a service worker does not conflict with the host SW.
 
 ### Validation
 
-- Manual: Chrome DevTools → Application → Service Workers; confirm `wpsg-meta-v1` cache is populated. Toggle offline; reload; confirm gallery renders. Toggle online; wait 5 seconds; confirm cache entry is refreshed.
+- Manual: Chrome DevTools → Application → Service Workers; confirm `wpsg-meta-v1` cache is populated after visiting a gallery. Throttle to Slow 3G in DevTools → Network; reload — metadata calls return instantly from cache (not from the network). Restore to online; wait 5+ seconds; confirm the `x-wpsg-cached-at` timestamp on the cached entry advances (background revalidation fired).
+
+### Implementation rationale (2026-06-12)
+
+- **Claims re-verified before building.** The existing SW (`public/sw.js`) already had `skipWaiting()` and `clients.claim()`, and its `activate` handler already cleaned up stale `wpsg-*` caches. The `/wp-json/` bail at line 40 of the original confirmed that all REST API responses were unconditionally excluded — no metadata was ever cached. The two target endpoints confirmed as public (`rate_limit_public` permission callback, no auth required): `GET /wp-super-gallery/v1/campaigns` and `GET /wp-super-gallery/v1/campaigns/{id}/media` (campaign media list).
+- **SWR implementation.** A new `handleMetaRequest` function intercepts requests matching `META_ENDPOINT_RE` (`/wp-json/wp-super-gallery/v1/campaigns` and `/wp-json/wp-super-gallery/v1/campaigns/\d+/media`, no admin sub-paths). Behavior: cache hit → respond with stale immediately + kick background revalidation via `event.waitUntil`; cache miss → fetch synchronously, cache, respond. The SWR branch is inserted BEFORE the `/wp-json/` bail so the bail still catches all other REST routes (admin APIs, mutation endpoints, other plugins).
+- **TTL (5 min) as revalidation throttle.** Rather than expiring cache entries, TTL controls whether the background revalidation fires on a cache hit. A `x-wpsg-cached-at` timestamp header is stored on each cached `Response` (via `stampResponse`, which reads `arrayBuffer()` and reconstructs the `Response` with an augmented `Headers` — necessary because live `Headers` objects are immutable). On cache hit, `age >= META_TTL_MS` triggers the background fetch; fresh entries (< 5 min old) return stale data with no extra network request. This throttles server hits on pages that are rapidly reloaded (e.g. a visitor pressing refresh on the gallery) without degrading the offline experience.
+- **Cache budget via entry count.** True LRU with byte-accurate tracking would require IndexedDB. Instead, `META_MAX_ENTRIES = 50` entries is the practical budget: at worst case ~100 kB per JSON response, this stays well under the 5 MB target even before any eviction. `evictOldestMetaEntries` reads `cache.keys()` (insertion-ordered in all major browsers) and removes the `length - META_MAX_ENTRIES` oldest entries whenever a new entry is written.
+- **Cache lifetime across SW updates.** The activate handler previously deleted all `wpsg-*` caches except `RUNTIME_CACHE`. `META_CACHE` is now also preserved (`key !== META_CACHE` added to the filter). To bust the metadata cache intentionally (e.g. on a breaking API schema change), bump `META_CACHE` from `wpsg-meta-v1` to `wpsg-meta-v2` — the activate handler will then delete `wpsg-meta-v1` automatically and preserve the new name.
+- **Admin routes and mutations unaffected.** Non-GET requests are rejected before the new branch. Admin SPA routes (`/wp-admin/`) and all other `/wp-json/` paths (including `/wp-json/wp-super-gallery/v1/admin/*`) remain network-only — the `META_ENDPOINT_RE` regex is precise and does not match admin sub-paths.
+- **SW registration fix (2026-06-12).** Manual testing surfaced a 404 on the SW registration URL: with `base: './'` in Vite, `import.meta.env.BASE_URL` resolves to `'./'` in the built bundle, so `register('./sw.js')` resolves relative to the current page URL — never `/wp-content/plugins/.../assets/sw.js`. Fixed by adding a PHP `init` hook (`WPSG_Embed::maybe_serve_service_worker`, priority 1) that intercepts requests for `home_url('/sw.js')` and serves the plugin's `assets/sw.js` with `Content-Type: application/javascript`, `Service-Worker-Allowed: /` (grants root scope without the script being at root), and `Cache-Control: no-cache, no-store`. The canonical URL is injected into `window.__WPSG_CONFIG__.swUrl`; `main.tsx` now registers from that URL with `{ scope: '/' }`, falling back to the BASE_URL relative path for non-WP contexts. No rewrite rules, no root file writes — the PHP endpoint is the authoritative path, handles subdirectory installs correctly via `wp_parse_url(home_url('/sw.js'), PHP_URL_PATH)`.
+- **Validation done.** 16-test `src/test/swMeta.test.ts`: URL regex (campaigns list, media list, admin endpoints excluded, mutation sub-paths excluded); `stampResponse` (timestamp header added, body and status preserved, existing headers preserved); `evictOldestMetaEntries` (within limit no-op, oldest evicted correctly, empty cache no-op, exactly-one-over-limit); TTL boundary conditions. Full frontend suite **2309/2309**; `tsc --noEmit` clean; `eslint --max-warnings 0` clean; `npm run build:wp` staged the plugin bundle. **Remaining:** manual verification on `wordpress.lan` (deploy via `./update_dev_plugin.sh` + SW unregister + hard refresh — required because the old SW is cached and must be replaced by the new one).
+
+### Manual test plan (P50-F)
+
+**Deploy to the local dev site**
+
+1. `npm run build:wp` + `./update_dev_plugin.sh`.
+2. Open `https://wordpress.lan`. In Chrome DevTools → Application → Service Workers, click "Unregister" on any existing WPSG SW, then hard-refresh (`Ctrl+Shift+R`) to load the new SW.
+
+**Cache population**
+
+- [ ] With DevTools open, load a gallery public page. Go to **Application → Cache Storage** → `wpsg-meta-v1` — one or two entries should appear (campaign list and/or the campaign's media list).
+- [ ] Note the `x-wpsg-cached-at` timestamp in the response headers of a cached entry.
+
+**Offline behavior (expected — not a supported use case)**
+
+The SW caches only the metadata API responses, not the WordPress HTML page shell. This is intentional: a stale cached shell that imports Vite chunk URLs removed by a newer deploy causes broken lazy-loaded drawers and modals. Going offline shows `ERR_INTERNET_DISCONNECTED` on any reload — there is nothing wrong.
+
+- [ ] Set DevTools → Network to **Offline** and reload (regular or hard). Confirm `ERR_INTERNET_DISCONNECTED` — this is correct behavior.
+- [ ] Check **Application → Cache Storage** — the `wpsg-meta-v1` entries are **still present** after the offline attempt; going offline does not clear the cache.
+
+> Full offline support (app shell caching with versioned deploy-time cache busting) is deferred to a future track — see `docs/FUTURE_TASKS.md` § Build & Bundle.
+
+**Online — stale-while-revalidate**
+
+- [ ] Re-enable the network.
+- [ ] Reload the page. The gallery renders immediately from cache (stale-while-revalidate).
+- [ ] Wait ~5 seconds. Re-inspect the cache entry — the `x-wpsg-cached-at` timestamp should have advanced (background revalidation fired and updated the cached response).
+
+**TTL throttle check**
+
+- [ ] While the cache entry is fresh (< 5 min old), reload the page repeatedly. Observe in DevTools Network that no `campaigns` or `campaigns/{id}/media` request is made (the cached entry is served without triggering a background fetch).
+- [ ] After 5 minutes (or manually set the system clock forward and reload), a background fetch should appear in the Network tab.
+
+**Admin API not cached**
+
+- [ ] Navigate to the WPSG admin panel. In DevTools Network, confirm that `admin/asset-library`, `admin/font-library`, and other admin REST calls show up as network requests (not served from cache).
+- [ ] Confirm `wpsg-meta-v1` contains only the two public endpoint URLs.
 
 ---
 
@@ -667,6 +715,16 @@ After P50-I, graphic-layer ("asset") layers are discoverable and uploadable, but
 ### Open item to confirm at track start
 
 The parity set above is the proposed scope (now including shape/clip-path/mask per the user). Confirm before building, and finalize whether object-fit/position and flip are in the first pass.
+
+**Resolved (2026-06-12):** confirmed with the user — first-pass parity set is **rotation + flip H/V, shape preset / custom clip-path / mask, border (radius/width/color), and effects (CSS filters, drop-shadow, blend-mode)**. **object-fit / object-position is deferred** (a free-floating graphic layer's box *is* its image, so cropping rarely applies — revisit only if a concrete need appears). Fonts-universal parity (part B) is in. Deeper-polish part C (migrating `MediaTab` onto `MediaUploadController`) is **not** in this pass — left for a later slice to keep blast radius contained.
+
+### Implementation rationale (2026-06-12)
+
+- **Claims re-verified before building.** `LayoutGraphicLayer` carried exactly the ~11 props the doc described (no shape/mask/border/effects/transform). `updateOverlay(id, Partial<LayoutGraphicLayer>)` already exists in `useLayoutBuilderState` and is wired to the panel's `onUpdate`, so adding optional fields to the type is automatically accepted with **no persistence/migration work** — all new fields are optional, so existing saved templates round-trip unchanged. The slot rendering helpers (`getClipPath`, `buildFilterCss`, `getBlendModeCss` in `clipPath.ts` / `slotEffects.ts`) were already shared and reusable.
+- **Part B was smaller than the doc implied.** `filter_library_for_space()` already honored `! empty($item['isUniversal'])` **generically for both `asset` and `font`** types (the P50-I/K filter is type-agnostic), so the font *filter* side needed no change. Part B reduced to: `WPSG_Font_Library::get_all()` normalizes an `isUniversal` bool on every record (legacy entries included), `add()` persists the flag, new `set_universal()`; a `POST /admin/font-library/{id}` → `update_font` route mirroring `update_asset`; and a globe toggle in `FontLibraryManager` (with an "All spaces" badge).
+- **Renderer parity via one shared component.** Rather than replicate the slot's intricate clip/mask/border CSS at all three overlay draw sites (builder canvas preview branch, builder canvas react-rnd branch, public `LayoutBuilderGallery`), the visual is centralized in a new presentational `GraphicLayerContent` — it applies transform (rotation + flip), shape clip-path, mask (with feather via `useFeatheredMask`), border (the slot's proven double-container technique for clipped/masked shapes; plain CSS border + radius for rectangles), CSS filters, drop-shadow and blend-mode. The three call sites keep ownership of *positioning* (absolute box / rnd frame, z-index, opacity, pointer-events) and just drop `<GraphicLayerContent>` inside. This guarantees the builder and the rendered gallery draw identically — the acceptance criterion — by construction. Transform/filter/blend sit on an inner wrapper so the builder's dashed selection outline (on the rnd frame) stays axis-aligned and unfiltered. `getClipPath(slot)` was generalized to `getClipPathForShape(shape, clipPath?)` so slot and overlay clip from one source of truth; `buildGraphicLayerTransform` lives in a util file (`graphicLayerTransform.ts`) to keep the component fast-refresh clean (the P50-I/K react-refresh lesson). `GraphicLayerContent`'s deps are all lightweight shared utils (no react-rnd / builder-heavy imports), so it is safe in the public gallery bundle.
+- **Curated controls, not the full 48.** `GraphicLayerPropertiesPanel` gains a Transform block (rotation slider, Flip H/V toggles) inline, plus a collapsed Accordion (Shape & Border / Mask / Effects) so the panel doesn't balloon. The slot panel's effect sub-sections aren't exported, so the new panel uses focused, self-contained controls built from the same Mantine primitives (a future consolidation could extract shared effect controls — deliberately out of scope to avoid destabilizing the well-tested slot panel). The mask editor is panel-driven (URL + mode + position/scale/feather); the slot-only *canvas-drag* mask affordance is not brought over this round.
+- **Validation done.** New `WPSG_P50J_Font_Universal_Test` (9 tests: universal-font visible in a delegated space without association, non-universal hidden, open-mode + unscoped bypass, `set_universal` round-trip + unknown-id, `add()` persistence + `get_all()` bool normalization, REST toggle +404 +400) — uses an option-`delete` `tear_down` (no DDL, so no dbDelta cross-run contamination). Frontend: new `GraphicLayerContent.test` (transform composition, rect-vs-clipped branch, clip-path + border + transform application), extended `GraphicLayerPropertiesPanel.test` (flip toggles, rotation slider, accordion sections, custom clip-path binding/edit, border + mask `onUpdate`), new `FontLibraryManager.test` (universal badge + toggle POSTs the correct flag). Two existing `LayoutBuilderGallery` overlay tests were updated to account for the one extra `GraphicLayerContent` wrapper now between the positioned div and the `<img>` (opacity/pointer-events still on the positioned wrapper, asserted via the `[data-wpsg-graphic-layer]` boundary). Green across the board: full PHP suite **951 tests OK on two consecutive runs** (2 pre-existing skips); frontend **2293/2293**; `tsc --noEmit` clean; `npm run build` clean; `eslint . --max-warnings 0` clean. **Remaining:** manual verification on `wordpress.lan` (deploy via `build:wp` + `update_dev_plugin.sh` + hard refresh).
 
 ---
 

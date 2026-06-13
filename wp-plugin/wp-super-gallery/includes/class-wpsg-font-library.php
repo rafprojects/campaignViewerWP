@@ -46,7 +46,15 @@ class WPSG_Font_Library {
         }
         $items = array_values( $raw );
         usort( $items, fn( $a, $b ) => strcmp( $b['uploadedAt'] ?? '', $a['uploadedAt'] ?? '' ) );
-        return $items;
+        // P50-J: normalize the universal flag so every record carries a bool,
+        // even legacy entries written before the flag existed.
+        return array_map(
+            function ( $item ) {
+                $item['isUniversal'] = ! empty( $item['isUniversal'] );
+                return $item;
+            },
+            $items
+        );
     }
 
     // ── Write ───────────────────────────────────────────────────
@@ -65,18 +73,41 @@ class WPSG_Font_Library {
 
         $id    = wp_generate_uuid4();
         $entry = [
-            'id'         => $id,
-            'url'        => esc_url_raw( $data['url'] ),
-            'name'       => sanitize_text_field( $data['name'] ?? '' ),
-            'filename'   => sanitize_file_name( $data['filename'] ?? '' ),
-            'format'     => sanitize_text_field( $data['format'] ?? '' ),
-            'uploadedAt' => gmdate( 'c' ),
+            'id'          => $id,
+            'url'         => esc_url_raw( $data['url'] ),
+            'name'        => sanitize_text_field( $data['name'] ?? '' ),
+            'filename'    => sanitize_file_name( $data['filename'] ?? '' ),
+            'format'      => sanitize_text_field( $data['format'] ?? '' ),
+            // P50-J: universal fonts bypass the P50-B per-space association filter.
+            'isUniversal' => ! empty( $data['is_universal'] ),
+            'uploadedAt'  => gmdate( 'c' ),
         ];
 
         $all[ $id ] = $entry;
         update_option( self::OPTION_KEY, $all, false );
 
         return $entry;
+    }
+
+    /**
+     * P50-J: Update the `isUniversal` flag on a single font.
+     *
+     * A universal font bypasses the P50-B per-space association filter and is
+     * visible to every space site-wide (mirrors WPSG_Asset_Library::set_universal,
+     * adapted for the WP-option storage fonts use).
+     *
+     * @param  string $id         Font UUID.
+     * @param  bool   $universal  Whether the font should be universal.
+     * @return bool   True when the font exists and the flag was written.
+     */
+    public static function set_universal( string $id, bool $universal ): bool {
+        $all = get_option( self::OPTION_KEY, [] );
+        if ( ! is_array( $all ) || ! isset( $all[ $id ] ) ) {
+            return false;
+        }
+        $all[ $id ]['isUniversal'] = $universal;
+        update_option( self::OPTION_KEY, $all, false );
+        return true;
     }
 
     /**

@@ -409,6 +409,34 @@ export interface LayoutGraphicLayer {
   visible?: boolean | undefined;
   /** Prevents drag/resize in the builder. No effect on gallery rendering. */
   locked?: boolean | undefined;
+  // ── Transform (P50-J asset-layer parity) ──
+  /** Rotation in degrees applied to the visual content (the bounding box stays axis-aligned). */
+  rotation?: number | undefined;
+  /** Mirror the image horizontally. */
+  flipH?: boolean | undefined;
+  /** Mirror the image vertically. */
+  flipV?: boolean | undefined;
+  // ── Shape & geometry (P50-J) — reuses the slot shape/clip/mask sub-systems ──
+  /** Shape preset; absent or 'rectangle' = no clipping. */
+  shape?: LayoutSlotShape | undefined;
+  /** Custom CSS clip-path (used when shape === 'custom'). */
+  clipPath?: string | undefined;
+  /** Mask layer with position/scale/feather controls (CSS mask-image). */
+  maskLayer?: MaskLayer | undefined;
+  // ── Border (P50-J) ──
+  /** Corner rounding in px (rectangle shapes). */
+  borderRadius?: number | undefined;
+  /** Border thickness in px (0 / absent = none). */
+  borderWidth?: number | undefined;
+  /** Border CSS color. */
+  borderColor?: string | undefined;
+  // ── Effects (P50-J) — reuses the slot effect helpers ──
+  /** CSS filter chain (brightness, contrast, blur, …). */
+  filterEffects?: SlotFilterEffects | undefined;
+  /** Drop-shadow applied via CSS filter. */
+  shadow?: SlotShadow | undefined;
+  /** CSS mix-blend-mode. Default: 'normal'. */
+  blendMode?: SlotBlendMode | undefined;
 }
 
 export type BackgroundMode = 'none' | 'color' | 'gradient' | 'image';

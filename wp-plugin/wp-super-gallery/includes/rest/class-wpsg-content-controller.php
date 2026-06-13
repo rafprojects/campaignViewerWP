@@ -231,6 +231,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
 
         register_rest_route('wp-super-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
             [
+                // P50-J: partial update of a font's `is_universal` flag.
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'update_font'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
+            [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_font'],
                 'permission_callback' => [self::class, 'require_admin'],
@@ -848,13 +854,32 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         }
 
         $entry = WPSG_Font_Library::add( [
-            'url'      => $result['url'],
-            'name'     => $name,
-            'filename' => sanitize_file_name( $file['name'] ),
-            'format'   => $result['format'],
+            'url'          => $result['url'],
+            'name'         => $name,
+            'filename'     => sanitize_file_name( $file['name'] ),
+            'format'       => $result['format'],
+            'is_universal' => self::to_bool( $request->get_param( 'is_universal' ) ),
         ] );
 
         return new WP_REST_Response( $entry, 201 );
+    }
+
+    /**
+     * P50-J: Partial update of a font's `is_universal` flag.
+     */
+    public static function update_font( $request ) {
+        $id   = $request->get_param( 'id' );
+        $data = $request->get_json_params() ?? [];
+
+        if ( ! array_key_exists( 'is_universal', $data ) ) {
+            return new WP_Error( 'wpsg_missing_field', 'is_universal is required.', [ 'status' => 400 ] );
+        }
+
+        $universal = self::to_bool( $data['is_universal'] );
+        if ( ! WPSG_Font_Library::set_universal( $id, $universal ) ) {
+            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
+        }
+        return new WP_REST_Response( [ 'id' => $id, 'isUniversal' => $universal ], 200 );
     }
 
     /**

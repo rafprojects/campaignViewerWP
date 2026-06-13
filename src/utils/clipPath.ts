@@ -4,15 +4,22 @@
  * Used by both LayoutSlotComponent (admin builder) and
  * LayoutBuilderGallery (public adapter) to ensure consistent rendering.
  */
-import type { LayoutSlot } from '@/types';
+import type { LayoutSlot, LayoutSlotShape } from '@/types';
 import { sanitizeClipPath } from '@/lib/sanitizeCss';
 
 /**
- * Returns the CSS `clip-path` value for a given slot shape,
- * or `undefined` for `rectangle` (no clipping).
+ * Returns the CSS `clip-path` value for a given shape preset (and optional
+ * custom clip-path when `shape === 'custom'`), or `undefined` for `rectangle`
+ * / absent shape (no clipping).
+ *
+ * Shared by slots (LayoutSlotComponent) and graphic layers (GraphicLayerContent)
+ * so both clip identically.
  */
-export function getClipPath(slot: LayoutSlot): string | undefined {
-  switch (slot.shape) {
+export function getClipPathForShape(
+  shape: LayoutSlotShape | undefined,
+  customClipPath?: string | undefined,
+): string | undefined {
+  switch (shape) {
     case 'circle':
       return 'ellipse(50% 50% at 50% 50%)';
     case 'ellipse':
@@ -32,11 +39,19 @@ export function getClipPath(slot: LayoutSlot): string | undefined {
     case 'trapezoid':
       return 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)';
     case 'custom':
-      return sanitizeClipPath(slot.clipPath) || undefined;
+      return sanitizeClipPath(customClipPath) || undefined;
     case 'rectangle':
     default:
       return undefined;
   }
+}
+
+/**
+ * Returns the CSS `clip-path` value for a given slot shape,
+ * or `undefined` for `rectangle` (no clipping).
+ */
+export function getClipPath(slot: LayoutSlot): string | undefined {
+  return getClipPathForShape(slot.shape, slot.clipPath);
 }
 
 /**

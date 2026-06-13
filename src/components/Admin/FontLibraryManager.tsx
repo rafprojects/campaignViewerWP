@@ -9,7 +9,7 @@ import {
   Stack,
   Text,
 } from '@mantine/core';
-import { IconTrash, IconUpload } from '@tabler/icons-react';
+import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
 import { type FontLibraryEntry, loadCustomFonts } from '@/utils/loadCustomFonts';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -73,6 +73,17 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
     }
   }, [apiClient, fetchFonts]);
 
+  const handleToggleUniversal = useCallback(async (id: string, universal: boolean) => {
+    try {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/admin/font-library/${id}`, {
+        is_universal: universal,
+      });
+      await fetchFonts();
+    } catch {
+      // Toggle failed
+    }
+  }, [apiClient, fetchFonts]);
+
   if (isLoading) {
     return <Loader size="sm" />;
   }
@@ -89,19 +100,34 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
           {fonts.map((f) => (
             <Group key={f.id} justify="space-between" wrap="nowrap" gap="xs">
               <Group gap="xs" wrap="nowrap" style={{ minWidth: 0 }}>
-                <Text size="xs" truncate style={{ maxWidth: 180 }}>{f.name}</Text>
+                <Text size="xs" truncate style={{ maxWidth: 150 }}>{f.name}</Text>
                 <Badge size="xs" variant="light" color="gray">{f.format}</Badge>
+                {f.isUniversal && (
+                  <Badge size="xs" variant="light" color="blue">All spaces</Badge>
+                )}
               </Group>
-              <ActionIcon
-                variant="subtle"
-                color="red"
-                size="sm"
-                onClick={() => handleDelete(f.id)}
-                title={`Delete ${f.name}`}
-                aria-label={`Delete ${f.name}`}
-              >
-                <IconTrash size={14} />
-              </ActionIcon>
+              <Group gap={2} wrap="nowrap">
+                <ActionIcon
+                  variant="subtle"
+                  color={f.isUniversal ? 'blue' : 'gray'}
+                  size="sm"
+                  onClick={() => handleToggleUniversal(f.id, !f.isUniversal)}
+                  title={f.isUniversal ? `Make ${f.name} space-specific` : `Make ${f.name} available to all spaces`}
+                  aria-label={f.isUniversal ? `Make ${f.name} space-specific` : `Make ${f.name} available to all spaces`}
+                >
+                  {f.isUniversal ? <IconWorld size={14} /> : <IconWorldOff size={14} />}
+                </ActionIcon>
+                <ActionIcon
+                  variant="subtle"
+                  color="red"
+                  size="sm"
+                  onClick={() => handleDelete(f.id)}
+                  title={`Delete ${f.name}`}
+                  aria-label={`Delete ${f.name}`}
+                >
+                  <IconTrash size={14} />
+                </ActionIcon>
+              </Group>
             </Group>
           ))}
         </Stack>

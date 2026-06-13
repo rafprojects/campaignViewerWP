@@ -41,6 +41,7 @@ import { getClipPath, usesClipPath } from '@/utils/clipPath';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
+import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { sanitizeCssUrl } from '@/lib/sanitizeCss';
 import { toCssOrNumber } from '@/lib/cssUnits';
@@ -833,16 +834,10 @@ function LayoutBuilderGalleryInner({
                   }}
                   aria-hidden="true"
                 >
-                  <img
-                    src={overlay.imageUrl}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'fill',
-                      display: 'block',
-                    }}
-                    draggable={false}
+                  <GraphicLayerContent
+                    layer={overlay}
+                    pixelWidth={oPxW}
+                    pixelHeight={oPxH}
                   />
                 </div>
               );

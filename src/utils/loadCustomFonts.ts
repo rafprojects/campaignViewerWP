@@ -13,6 +13,8 @@ export interface FontLibraryEntry {
   filename: string;
   format: string;
   uploadedAt: string;
+  /** P50-J: when true the font bypasses the per-space association filter (visible to all spaces). */
+  isUniversal?: boolean;
 }
 
 const STYLE_ID = 'wpsg-custom-fonts';
