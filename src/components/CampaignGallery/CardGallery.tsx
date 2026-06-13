@@ -30,7 +30,7 @@ import { notifications } from '@mantine/notifications';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
 import { getErrorMessage } from '@/utils/getErrorMessage';
-import { toCssOrNumber, type CssWidthUnit } from '@/lib/cssUnits';
+import { toCssOrNumber, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
 import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveListingAdapterId } from '@/utils/resolveListingAdapterId';

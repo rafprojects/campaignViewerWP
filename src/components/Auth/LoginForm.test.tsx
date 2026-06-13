@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '../../test/test-utils';
-import { LoginForm } from './LoginForm';
+import { LoginForm } from '@wp-super-gallery/shared-ui';
 
 describe('LoginForm', () => {
   it('shows provider error message on failed submit', async () => {

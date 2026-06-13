@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeCssUrl, sanitizeClipPath, sanitizeCssValue, sanitizeCssColor } from './sanitizeCss';
+import { sanitizeCssUrl, sanitizeClipPath, sanitizeCssValue, sanitizeCssColor } from '@wp-super-gallery/shared-utils';
 
 describe('sanitizeCssUrl', () => {
   it('returns undefined for falsy input', () => {

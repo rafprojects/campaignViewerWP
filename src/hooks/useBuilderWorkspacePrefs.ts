@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 import type { SnapMode } from '@/utils/canvasMeasurement';
 
 export type LayoutScope = 'global' | 'per-template';

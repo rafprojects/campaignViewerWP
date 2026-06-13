@@ -71,7 +71,7 @@ import {
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey, normalizeSettingsResponse } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
-import { toCss } from '@/lib/cssUnits';
+import { toCss } from '@wp-super-gallery/shared-utils';
 
 /**
  * P36-A: Settings draft persistence.

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem } from '@/types';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';

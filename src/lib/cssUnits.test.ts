@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toCss, toCssOrUndefined, toCssOrNumber, UNIT_MAX_DEFAULTS } from './cssUnits';
+import { toCss, toCssOrUndefined, toCssOrNumber, UNIT_MAX_DEFAULTS } from '@wp-super-gallery/shared-utils';
 
 describe('toCss', () => {
   it('joins value and unit', () => {

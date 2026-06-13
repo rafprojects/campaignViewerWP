@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/lib/scrollLock';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@wp-super-gallery/shared-utils';
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
 

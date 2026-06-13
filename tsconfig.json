@@ -20,10 +20,12 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@wp-super-gallery/shared-utils": ["./packages/shared-utils/src/index.ts"],
+      "@wp-super-gallery/shared-ui": ["./packages/shared-ui/src/index.ts"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "packages/shared-utils/src", "packages/shared-ui/src"],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",

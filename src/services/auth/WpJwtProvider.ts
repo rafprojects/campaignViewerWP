@@ -1,5 +1,5 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
-import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 
 interface WpJwtProviderOptions {
   apiBaseUrl: string;

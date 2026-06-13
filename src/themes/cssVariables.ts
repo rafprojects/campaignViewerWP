@@ -12,7 +12,7 @@
 
 import type { ResolvedColors } from './types';
 import type { ThemeDefinition } from './types';
-import { sanitizeCssValue } from '@/lib/sanitizeCss';
+import { sanitizeCssValue } from '@wp-super-gallery/shared-utils';
 
 // ---------------------------------------------------------------------------
 // CSS variable namespace prefix

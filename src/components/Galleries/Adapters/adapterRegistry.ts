@@ -16,7 +16,7 @@ import type {
   GalleryAdapterId,
   GalleryAdapterProps,
 } from './GalleryAdapter';
-import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;

@@ -6,7 +6,7 @@
  * multiple different adapters on the same page don't collide.
  */
 import type { GalleryBehaviorSettings } from '@/types';
-import { sanitizeCssColor } from '@/lib/sanitizeCss';
+import { sanitizeCssColor } from '@wp-super-gallery/shared-utils';
 
 /** Expand 3-digit hex (#abc) to 6-digit (#aabbcc); pass others through unchanged. */
 function expandHex(hex: string): string {

@@ -23,11 +23,11 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCssOrNumber } from '@/lib/cssUnits';
+import { toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
-import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import {

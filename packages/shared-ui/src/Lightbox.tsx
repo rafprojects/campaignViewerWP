@@ -11,9 +11,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { toCss } from '@/lib/cssUnits';
-import { useSwipe } from '@/lib/useSwipe';
-import { acquireBodyScrollLock, releaseBodyScrollLock } from '@/lib/scrollLock';
+import { toCss } from '@wp-super-gallery/shared-utils';
+import { useSwipe } from '@wp-super-gallery/shared-utils';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@wp-super-gallery/shared-utils';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
 const TRANSITION_MS = 250;

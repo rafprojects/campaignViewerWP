@@ -78,6 +78,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': new URL('./src', import.meta.url).pathname,
+      '@wp-super-gallery/shared-utils': new URL('./packages/shared-utils/src/index.ts', import.meta.url).pathname,
+      '@wp-super-gallery/shared-ui': new URL('./packages/shared-ui/src/index.ts', import.meta.url).pathname,
     },
   },
   build: {

@@ -47,7 +47,7 @@ vi.mock('@/hooks/useMediaDimensions', () => ({
   useMediaDimensions: (media: MediaItem[]) => media,
 }));
 
-vi.mock('@/components/Galleries/Shared/Lightbox', () => ({
+vi.mock('@wp-super-gallery/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));

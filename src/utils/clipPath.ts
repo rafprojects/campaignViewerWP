@@ -5,7 +5,7 @@
  * LayoutBuilderGallery (public adapter) to ensure consistent rendering.
  */
 import type { LayoutSlot, LayoutSlotShape } from '@/types';
-import { sanitizeClipPath } from '@/lib/sanitizeCss';
+import { sanitizeClipPath } from '@wp-super-gallery/shared-utils';
 
 /**
  * Returns the CSS `clip-path` value for a given shape preset (and optional

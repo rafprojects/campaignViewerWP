@@ -30,10 +30,10 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@/lib/cssUnits';
+import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@/hooks/useCarousel';
 import { useLightbox } from '@/hooks/useLightbox';
-import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import {
