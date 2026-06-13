@@ -1,7 +1,7 @@
 import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
-import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 import { SpaceSwitcher } from './SpaceSwitcher';
 import { spaceColor } from '@/utils/spaceColor';
 

@@ -1015,7 +1015,7 @@ class WPSG_Settings_Sanitizer {
      */
     private static function get_valid_gallery_adapters() {
         return class_exists('WPSG_CPT') ? WPSG_CPT::VALID_ADAPTERS
-            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder', 'spotlight', 'scroll-snap'];
+            : ['classic', 'compact-grid', 'mosaic', 'justified', 'masonry', 'hexagonal', 'circular', 'diamond', 'layout-builder', 'spotlight', 'scroll-snap', 'coverflow', 'pinterest', 'stacked', 'isotope'];
     }
 
     /**

@@ -726,8 +726,10 @@ describe('LayoutBuilderGallery overlay rendering', () => {
     await waitFor(() => {
       const overlayImg = document.querySelector('img[src="https://example.com/overlay.png"]') as HTMLElement;
       expect(overlayImg).toBeTruthy();
-      // Opacity is on the parent wrapper div, not the img
-      const wrapper = overlayImg.parentElement!;
+      // Opacity is on the positioned wrapper — the parent of the shared
+      // GraphicLayerContent element (P50-J inserts one content wrapper).
+      const content = overlayImg.closest('[data-wpsg-graphic-layer]')!;
+      const wrapper = content.parentElement as HTMLElement;
       expect(wrapper.style.opacity).toBe('0.7');
     });
   });
@@ -762,8 +764,10 @@ describe('LayoutBuilderGallery overlay rendering', () => {
     await waitFor(() => {
       const overlayImg = document.querySelector('img[src="https://example.com/overlay.png"]') as HTMLElement;
       expect(overlayImg).toBeTruthy();
-      // pointer-events is on the parent wrapper div, not the img
-      const wrapper = overlayImg.parentElement!;
+      // pointer-events is on the positioned wrapper — the parent of the shared
+      // GraphicLayerContent element (P50-J inserts one content wrapper).
+      const content = overlayImg.closest('[data-wpsg-graphic-layer]')!;
+      const wrapper = content.parentElement as HTMLElement;
       expect(wrapper.style.pointerEvents).toBe('none');
     });
   });

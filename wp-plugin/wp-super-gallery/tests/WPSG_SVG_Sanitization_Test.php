@@ -2,7 +2,7 @@
 /**
  * P20-L — SVG upload sanitization tests.
  *
- * Verifies that WPSG_Overlay_Library::sanitize_svg_string() strips
+ * Verifies that WPSG_Asset_Library::sanitize_svg_string() strips
  * dangerous content (scripts, event handlers, foreignObject, javascript:
  * URIs, CSS exfiltration) while preserving legitimate SVG features
  * (gradients, filters, clip-paths, embedded raster images).
@@ -16,7 +16,7 @@ class WPSG_SVG_Sanitization_Test extends WP_UnitTestCase {
      * Helper: sanitize an SVG string and return the result.
      */
     private function sanitize( string $svg ): ?string {
-        return WPSG_Overlay_Library::sanitize_svg_string( $svg );
+        return WPSG_Asset_Library::sanitize_svg_string( $svg );
     }
 
     // ── Attack vectors ─────────────────────────────────────────
@@ -231,7 +231,7 @@ class WPSG_SVG_Sanitization_Test extends WP_UnitTestCase {
         $dirty = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="100" height="100"/></svg>';
         file_put_contents( $tmp, $dirty );
 
-        $result = WPSG_Overlay_Library::sanitize_svg_file( $tmp );
+        $result = WPSG_Asset_Library::sanitize_svg_file( $tmp );
 
         $this->assertTrue( $result );
         $clean = file_get_contents( $tmp );
@@ -242,7 +242,7 @@ class WPSG_SVG_Sanitization_Test extends WP_UnitTestCase {
     }
 
     public function test_sanitize_svg_file_rejects_missing_file(): void {
-        $result = WPSG_Overlay_Library::sanitize_svg_file( '/nonexistent/path.svg' );
+        $result = WPSG_Asset_Library::sanitize_svg_file( '/nonexistent/path.svg' );
 
         $this->assertInstanceOf( WP_Error::class, $result );
         $this->assertSame( 'wpsg_svg_missing', $result->get_error_code() );

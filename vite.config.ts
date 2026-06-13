@@ -78,6 +78,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': new URL('./src', import.meta.url).pathname,
+      '@wp-super-gallery/shared-utils': new URL('./packages/shared-utils/src/index.ts', import.meta.url).pathname,
+      '@wp-super-gallery/shared-ui': new URL('./packages/shared-ui/src/index.ts', import.meta.url).pathname,
     },
   },
   build: {
@@ -97,7 +99,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'packages/**/*.test.{ts,tsx}'],
     exclude: ['e2e/**', 'node_modules/**'],
     testTimeout: 60000,
     hookTimeout: 60000,
@@ -124,6 +126,10 @@ export default defineConfig({
       exclude: [
         'src/test/**',
         '**/*.test.{ts,tsx}',
+        // Storybook stories + fixtures are dev-only artifacts, never shipped to
+        // runtime and not unit-tested — exclude them from coverage accounting.
+        '**/*.stories.{ts,tsx}',
+        'src/stories/**',
         'src/**/*.d.ts',
         'src/services/auth/AuthProvider.ts',
         'src/services/monitoring/**',

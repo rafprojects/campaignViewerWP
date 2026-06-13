@@ -489,6 +489,41 @@ abstract class WPSG_REST_Base {
     }
 
     /**
+     * P50-A: Permission callback for cross-space campaign moves — requires
+     * 'owner' level on BOTH the campaign's current space and the target space.
+     *
+     * manage_options users resolve to 'owner' everywhere (the super-admin
+     * bypass); manage_wpsg users resolve to 'owner' only in open-mode spaces,
+     * so a manage_wpsg-only user cannot move campaigns into or out of a
+     * delegated space they are not explicitly granted owner on.
+     */
+    public static function require_campaign_space_move(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0) {
+            return false;
+        }
+        $campaign_id     = intval($request->get_param('id'));
+        $target_space_id = intval($request->get_param('target_space_id'));
+        if ($campaign_id <= 0 || $target_space_id <= 0) {
+            return false;
+        }
+
+        $source_space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($source_space_id <= 0) {
+            // Campaign predates the spaces backfill — treat the default space as its source.
+            $source_space_id = intval(get_option('wpsg_default_space_id'));
+        }
+        if ($source_space_id > 0 && self::get_effective_space_level($user_id, $source_space_id) !== 'owner') {
+            return false;
+        }
+
+        return self::get_effective_space_level($user_id, $target_space_id) === 'owner';
+    }
+
+    /**
      * @since 0.18.0 P20-A
      */
     private static function verify_admin_auth() {

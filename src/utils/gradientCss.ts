@@ -5,7 +5,7 @@ import type {
   RadialShape,
   RadialSize,
 } from '@/types';
-import { sanitizeCssColor } from '@/lib/sanitizeCss';
+import { sanitizeCssColor } from '@wp-super-gallery/shared-utils';
 
 /** Options bag for fine-grained gradient control. */
 export interface GradientOptions {

@@ -72,7 +72,7 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // WPSG_Overlay_Library — ensure_htaccess, sanitize_svg_uris
+    // WPSG_Asset_Library — ensure_htaccess, sanitize_svg_uris
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_ensure_htaccess_creates_file() {
@@ -83,7 +83,7 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
         $htaccess = trailingslashit($test_dir) . '.htaccess';
         $this->assertFileDoesNotExist($htaccess);
 
-        WPSG_Overlay_Library::ensure_htaccess($test_dir);
+        WPSG_Asset_Library::ensure_htaccess($test_dir);
         $this->assertFileExists($htaccess);
 
         $content = file_get_contents($htaccess);
@@ -91,7 +91,7 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
         $this->assertStringContainsString('php_flag engine off', $content);
 
         // Second call should not error (file already exists).
-        WPSG_Overlay_Library::ensure_htaccess($test_dir);
+        WPSG_Asset_Library::ensure_htaccess($test_dir);
 
         // Cleanup.
         @unlink($htaccess);
@@ -100,28 +100,28 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
 
     public function test_sanitize_svg_uris_blocks_javascript() {
         $svg = '<svg><image href="javascript:alert(1)" /></svg>';
-        $result = WPSG_Overlay_Library::sanitize_svg_uris($svg);
+        $result = WPSG_Asset_Library::sanitize_svg_uris($svg);
 
         $this->assertStringNotContainsString('javascript:', $result);
     }
 
     public function test_sanitize_svg_uris_allows_fragment_refs() {
         $svg = '<svg><use href="#my-icon" /></svg>';
-        $result = WPSG_Overlay_Library::sanitize_svg_uris($svg);
+        $result = WPSG_Asset_Library::sanitize_svg_uris($svg);
 
         $this->assertStringContainsString('#my-icon', $result);
     }
 
     public function test_sanitize_svg_uris_blocks_external_urls() {
         $svg = '<svg><image href="https://evil.example/payload.svg" /></svg>';
-        $result = WPSG_Overlay_Library::sanitize_svg_uris($svg);
+        $result = WPSG_Asset_Library::sanitize_svg_uris($svg);
 
         $this->assertStringNotContainsString('evil.example', $result);
     }
 
     public function test_sanitize_svg_uris_blocks_vbscript() {
         $svg = '<svg><a href="vbscript:run">Click</a></svg>';
-        $result = WPSG_Overlay_Library::sanitize_svg_uris($svg);
+        $result = WPSG_Asset_Library::sanitize_svg_uris($svg);
 
         $this->assertStringNotContainsString('vbscript:', $result);
     }
@@ -129,7 +129,7 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
     public function test_sanitize_svg_uris_allows_data_image() {
         $data_uri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVQI12NgAAIABQABNjN9GQAAAAlwSFlz';
         $svg = '<svg><image href="' . $data_uri . '" /></svg>';
-        $result = WPSG_Overlay_Library::sanitize_svg_uris($svg);
+        $result = WPSG_Asset_Library::sanitize_svg_uris($svg);
 
         $this->assertStringContainsString('data:image/png', $result);
     }

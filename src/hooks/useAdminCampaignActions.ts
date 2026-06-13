@@ -34,6 +34,10 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
   const [duplicateSource, setDuplicateSource] = useState<AdminCampaign | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
 
+  // P50-A: cross-space move
+  const [moveSource, setMoveSource] = useState<AdminCampaign | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
   const [confirmBulkArchive, setConfirmBulkArchive] = useState(false);
   const [confirmBulkRestore, setConfirmBulkRestore] = useState(false);
@@ -191,6 +195,23 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
       setIsDuplicating(false);
     }
   }, [duplicateSource, apiClient, onNotify, onMutate, onCampaignsUpdated]);
+
+  // P50-A: move the staged campaign to another space.
+  const handleMoveCampaign = useCallback(async (targetSpaceId: number, targetSpaceName: string) => {
+    if (!moveSource) return;
+    setIsMoving(true);
+    try {
+      await apiClient.moveCampaign(String(moveSource.id), targetSpaceId);
+      onNotify({ type: 'success', text: `"${moveSource.title}" moved to ${targetSpaceName}` });
+      setMoveSource(null);
+      await onMutate();
+      onCampaignsUpdated();
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Move failed') });
+    } finally {
+      setIsMoving(false);
+    }
+  }, [moveSource, apiClient, onNotify, onMutate, onCampaignsUpdated]);
 
   const handleExportCampaign = useCallback(async (campaign: AdminCampaign) => {
     try {
@@ -353,6 +374,10 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     duplicateSource,
     setDuplicateSource,
     isDuplicating,
+    // P50-A: cross-space move
+    moveSource,
+    setMoveSource,
+    isMoving,
     // Import
     importModalOpen,
     setImportModalOpen,
@@ -381,6 +406,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     confirmBulkRestore,
     setConfirmBulkRestore,
     handleDuplicateCampaign,
+    handleMoveCampaign,
     handleExportCampaign,
     handleBinaryExportCampaign,
     handleBulkBinaryExport,

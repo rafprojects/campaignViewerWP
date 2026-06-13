@@ -1,6 +1,31 @@
 const CACHE_VERSION = 'wpsg-v3';
 const RUNTIME_CACHE = `wpsg-runtime-${CACHE_VERSION}`;
 
+// Stale-while-revalidate cache for public gallery metadata.
+// Versioned independently from RUNTIME_CACHE: bump META_CACHE to clear stale
+// metadata for all users on a breaking API change.
+const META_CACHE = 'wpsg-meta-v1';
+
+// Revalidate in background only when the cached entry is older than this.
+// Serves stale data immediately regardless; TTL just throttles server hits.
+const META_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Global cap on metadata cache entries before the oldest are evicted. This is a
+// flat 50-entry count (not a per-space byte budget) — each JSON response is well
+// under 100 kB, so 50 entries stays comfortably small.
+const META_MAX_ENTRIES = 50;
+
+// Matches the two public gallery metadata endpoints (pathname only):
+//   /wp-json/wp-super-gallery/v1/campaigns              (campaign list)
+//   /wp-json/wp-super-gallery/v1/campaigns/{id}/media   (per-campaign media list)
+// Does NOT match /wp-json/wp-super-gallery/v1/admin/* or any other route.
+//
+// NOTE: this tests url.pathname (query string excluded), so the admin campaign
+// list — same pathname plus ?include_archived=… — also matches. The auth-header
+// bypass in the fetch handler keeps those (and every authenticated/mutation
+// flow) network-first per Key Decision D; only anonymous public reads get SWR.
+const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/media)?$/;
+
 // Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
 // These should NOT be SW-cached because the hash already busts browser cache,
 // and SW cache-first would serve stale bundles after a deploy.
@@ -17,7 +42,10 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.all(
         keys
-          .filter((key) => key.startsWith('wpsg-') && key !== RUNTIME_CACHE)
+          .filter(
+            (key) =>
+              key.startsWith('wpsg-') && key !== RUNTIME_CACHE && key !== META_CACHE,
+          )
           .map((key) => caches.delete(key)),
       );
       await self.clients.claim();
@@ -37,8 +65,23 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/wp-admin/') || url.pathname.startsWith('/wp-json/')) return;
   if (url.pathname.includes('/wp-login.php')) return;
+
+  // ── Stale-while-revalidate for public gallery metadata ─────────────────────
+  // Must be checked BEFORE the /wp-json/ bail below.
+  // Authenticated requests (admin SPA — cookie nonce or JWT bearer) must stay
+  // network-first so post-mutation refetches (create/archive/move) never read a
+  // stale cached list. Only anonymous public reads fall through to SWR.
+  const isAuthenticated =
+    request.headers.has('X-WP-Nonce') || request.headers.has('Authorization');
+  if (!isAuthenticated && META_ENDPOINT_RE.test(url.pathname)) {
+    event.respondWith(handleMetaRequest(event, request));
+    return;
+  }
+
+  // Admin SPA routes and all remaining /wp-json/ endpoints remain network-only.
+  // Mutations are excluded by the request.method !== 'GET' guard above.
+  if (url.pathname.startsWith('/wp-admin/') || url.pathname.startsWith('/wp-json/')) return;
 
   // Never cache Vite hashed assets — the content hash in the filename
   // already provides perfect cache busting. SW caching these causes
@@ -70,3 +113,84 @@ self.addEventListener('fetch', (event) => {
     })(),
   );
 });
+
+/**
+ * Stale-while-revalidate handler for the two public metadata endpoints.
+ *
+ * - Cache hit: respond immediately with stale data; trigger a background
+ *   revalidation if the entry is older than META_TTL_MS.
+ * - Cache miss: fetch synchronously, cache the result, respond.
+ *
+ * Timestamps are stored as a custom `x-wpsg-cached-at` header on each cached
+ * Response so they survive SW restarts without needing IndexedDB.
+ */
+async function handleMetaRequest(event, request) {
+  const cache = await caches.open(META_CACHE);
+  const cached = await cache.match(request);
+
+  const revalidate = async () => {
+    try {
+      const fresh = await fetch(request.clone());
+      if (fresh && fresh.status === 200) {
+        const stamped = await stampResponse(fresh);
+        await cache.put(request, stamped);
+        await evictOldestMetaEntries(cache);
+      }
+    } catch {
+      // Network failure — keep serving stale until connectivity returns.
+    }
+  };
+
+  if (cached) {
+    // Serve stale immediately. Only revalidate in the background when the
+    // entry has aged past META_TTL_MS (throttles server hits on hot pages).
+    const cachedAt = parseInt(cached.headers.get('x-wpsg-cached-at') || '0', 10);
+    const age = Date.now() - cachedAt;
+    if (age >= META_TTL_MS) {
+      event.waitUntil(revalidate());
+    }
+    return cached;
+  }
+
+  // Cache miss — fetch synchronously so the first load is not degraded.
+  try {
+    const fresh = await fetch(request.clone());
+    if (fresh && fresh.status === 200) {
+      const stamped = await stampResponse(fresh.clone());
+      await cache.put(request, stamped);
+      await evictOldestMetaEntries(cache);
+    }
+    return fresh;
+  } catch {
+    return Response.error();
+  }
+}
+
+/**
+ * Clones a Response and adds an `x-wpsg-cached-at` timestamp header.
+ * Reading the body via arrayBuffer is necessary to reconstruct the Response
+ * with modified headers (Headers are immutable on live Response objects).
+ */
+async function stampResponse(response) {
+  const body = await response.arrayBuffer();
+  const headers = new Headers(response.headers);
+  headers.set('x-wpsg-cached-at', Date.now().toString());
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+/**
+ * Evicts the oldest cache entries when META_MAX_ENTRIES is exceeded.
+ * Cache.keys() returns entries in insertion order (oldest first) in all major
+ * browsers, so this is plain FIFO eviction by first-insertion — re-fetching an
+ * existing key does not move it to the tail, so it is not LRU.
+ */
+async function evictOldestMetaEntries(cache) {
+  const keys = await cache.keys();
+  if (keys.length <= META_MAX_ENTRIES) return;
+  const toDelete = keys.slice(0, keys.length - META_MAX_ENTRIES);
+  await Promise.all(toDelete.map((req) => cache.delete(req)));
+}

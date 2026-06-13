@@ -8,7 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { useAuth } from './hooks/useAuth';
-import { LoginForm } from './components/Auth/LoginForm';
+import { LoginForm } from '@wp-super-gallery/shared-ui';
 import { AuthBar } from './components/Auth/AuthBar';
 import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
@@ -35,7 +35,7 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-import { toCss } from '@/lib/cssUnits';
+import { toCss } from '@wp-super-gallery/shared-utils';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));

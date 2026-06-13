@@ -33,7 +33,7 @@ import type {
 } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@/hooks/useCarousel';
-import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
@@ -41,9 +41,9 @@ import { getClipPath, usesClipPath } from '@/utils/clipPath';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
+import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
-import { sanitizeCssUrl } from '@/lib/sanitizeCss';
-import { toCssOrNumber } from '@/lib/cssUnits';
+import { sanitizeCssUrl, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
@@ -833,16 +833,10 @@ function LayoutBuilderGalleryInner({
                   }}
                   aria-hidden="true"
                 >
-                  <img
-                    src={overlay.imageUrl}
-                    alt=""
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'fill',
-                      display: 'block',
-                    }}
-                    draggable={false}
+                  <GraphicLayerContent
+                    layer={overlay}
+                    pixelWidth={oPxW}
+                    pixelHeight={oPxH}
                   />
                 </div>
               );

@@ -1,5 +1,5 @@
 import type { GalleryBehaviorSettings, GalleryConfig } from '@/types';
-import { toCss, toCssOrNumber } from '@/lib/cssUnits';
+import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 
 import { resolveGalleryMode } from './resolveAdapterId';
 

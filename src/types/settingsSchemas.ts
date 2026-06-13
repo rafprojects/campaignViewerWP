@@ -5,7 +5,7 @@ import {
   CSS_HEIGHT_UNITS,
   CSS_SPACING_UNITS,
   CSS_WIDTH_UNITS,
-} from '@/lib/cssUnits';
+} from '@wp-super-gallery/shared-utils';
 
 const GALLERY_CONFIG_BREAKPOINTS = ['desktop', 'tablet', 'mobile'] as const;
 const GALLERY_CONFIG_SCOPES = ['unified', 'image', 'video'] as const;

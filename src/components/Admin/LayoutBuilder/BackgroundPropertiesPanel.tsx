@@ -68,7 +68,7 @@ const RADIAL_SIZES: Array<{ value: RadialSize; label: string }> = [
 export function BackgroundPropertiesPanel() {
   const {
     builder,
-    overlayLibrary,
+    assetLibrary,
     isUploadingBg,
     handleUploadBgImage,
   } = useBuilderDock();
@@ -103,12 +103,12 @@ export function BackgroundPropertiesPanel() {
         isUploadingBg={isUploadingBg}
       />
 
-      {/* ── Design Assets for background image ── */}
-      {mode === 'image' && (overlayLibrary ?? []).length > 0 && (
+      {/* ── Asset Library for background image ── */}
+      {mode === 'image' && (assetLibrary ?? []).length > 0 && (
         <>
-          <SectionHeader label="Design Assets" />
+          <SectionHeader label="Asset Library" />
           <DesignAssetsGrid
-            items={overlayLibrary ?? []}
+            items={assetLibrary ?? []}
             onSelect={(url) => builder.setBackgroundImage(url)}
             activeUrl={builder.template.backgroundImage ?? undefined}
             maxHeight={160}

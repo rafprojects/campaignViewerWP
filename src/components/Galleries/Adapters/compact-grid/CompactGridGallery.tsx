@@ -27,10 +27,10 @@ import type {
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
-import { toCss, toCssOrNumber } from '@/lib/cssUnits';
+import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
 import { useCarousel } from '@/hooks/useCarousel';
-import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';

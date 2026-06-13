@@ -72,6 +72,9 @@ class WPSG_Embed {
             'enableJwt'              => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
             'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
             'allowUserThemeOverride' => $allow_user_theme_override,
+            // P50-F: absolute URL at which the SW is served (via maybe_serve_service_worker).
+            // Injected so main.tsx uses the correct URL regardless of which page the SPA loads on.
+            'swUrl'                  => home_url('/sw.js'),
         ];
 
         // P49-C: i18n payload — locale + PHP-side translated strings for the React app.
@@ -96,6 +99,49 @@ class WPSG_Embed {
             . 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
             . 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';'
             . 'window.__WPSG_I18N__ = ' . wp_json_encode($i18n) . ';';
+    }
+
+    /**
+     * P50-F: Serve the service worker script at /sw.js (relative to home_url) with the
+     * headers required for a root-scope registration:
+     *   Content-Type: application/javascript
+     *   Service-Worker-Allowed: /          — allows the browser to accept scope:'/' even
+     *                                        though the script isn't at the root path
+     *   Cache-Control: no-cache, no-store  — browser must re-fetch on every navigation so
+     *                                        SW updates are detected promptly
+     *
+     * Hooked on 'init' at priority 1 so it fires before WordPress's own template routing.
+     */
+    public static function maybe_serve_service_worker(): void {
+        if (headers_sent()) {
+            return;
+        }
+
+        // Strip the query string to get the bare request path.
+        $raw_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $request_path = strtok((string) $raw_uri, '?');
+
+        // The SW is served at the path component of home_url('/sw.js'), e.g. '/sw.js'
+        // or '/wordpress/sw.js' for subdirectory installs.
+        $sw_path = wp_parse_url(home_url('/sw.js'), PHP_URL_PATH);
+
+        if ($request_path !== $sw_path) {
+            return;
+        }
+
+        $sw_file = WPSG_PLUGIN_DIR . 'assets/sw.js';
+        if (!file_exists($sw_file)) {
+            status_header(404);
+            exit;
+        }
+
+        header('Content-Type: application/javascript; charset=utf-8');
+        header('Service-Worker-Allowed: /');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('X-Content-Type-Options: nosniff');
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+        readfile($sw_file);
+        exit;
     }
 
     public static function add_asset_cache_headers() {

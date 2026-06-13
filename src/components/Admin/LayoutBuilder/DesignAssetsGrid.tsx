@@ -1,17 +1,23 @@
-import { Box, Text, ActionIcon, Tooltip } from '@mantine/core';
-import { IconX } from '@tabler/icons-react';
-import type { OverlayLibraryItem } from './BuilderDockContext';
+import { Box, Text, ActionIcon, Tooltip, Badge, Popover, TagsInput } from '@mantine/core';
+import { IconX, IconWorld, IconWorldOff, IconTag } from '@tabler/icons-react';
+import type { AssetLibraryItem } from './BuilderDockContext';
+import { getAssetFileType } from '@/utils/assetFileType';
+import { CHECKERED_BG } from '@/utils/checkeredBg';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /** Custom MIME type for Design Asset drag-and-drop. */
 export const ASSET_MIME = 'application/x-wpsg-asset-url';
 
 export interface DesignAssetsGridProps {
-  items: OverlayLibraryItem[];
+  items: AssetLibraryItem[];
   /** Called when user clicks an asset (e.g. pick as mask or background). */
   onSelect?: ((url: string) => void) | undefined;
   /** Called to delete an asset from the library. */
   onDelete?: ((id: string) => void) | undefined;
+  /** P50-I: toggle an asset's universal (all-spaces) visibility. */
+  onSetUniversal?: ((id: string, universal: boolean) => void) | undefined;
+  /** P50-K: replace an asset's tag list. */
+  onSetTags?: ((id: string, tags: string[]) => void) | undefined;
   /** Highlight the currently-active URL (e.g. current mask image). */
   activeUrl?: string | undefined;
   /** Max height of the scrollable container (default: 180). */
@@ -24,6 +30,8 @@ export function DesignAssetsGrid({
   items,
   onSelect,
   onDelete,
+  onSetUniversal,
+  onSetTags,
   activeUrl,
   maxHeight = 180,
   columns = 2,
@@ -43,6 +51,7 @@ export function DesignAssetsGrid({
       >
         {items.map((item) => {
           const isActive = !!activeUrl && item.url === activeUrl;
+          const fileType = getAssetFileType(item.url);
           return (
             <Box
               key={item.id}
@@ -65,7 +74,7 @@ export function DesignAssetsGrid({
             >
               <div
                 style={{
-                  background: 'var(--mantine-color-default)',
+                  ...CHECKERED_BG,
                   height: 52,
                   display: 'flex',
                   alignItems: 'center',
@@ -83,6 +92,91 @@ export function DesignAssetsGrid({
                   draggable={false}
                 />
               </div>
+
+              {/* File-type badge (bottom-left) */}
+              <Badge
+                size="xs"
+                variant="filled"
+                color="dark"
+                radius="sm"
+                style={{
+                  position: 'absolute',
+                  bottom: 2,
+                  left: 2,
+                  zIndex: 1,
+                  opacity: 0.78,
+                  pointerEvents: 'none',
+                }}
+                aria-label={`File type: ${fileType}`}
+              >
+                {fileType}
+              </Badge>
+
+              {/* Universal (all-spaces) toggle — bottom-right */}
+              {onSetUniversal && (
+                <Tooltip
+                  label={item.isUniversal ? 'Available to all spaces — click to make space-specific' : 'Make available to all spaces'}
+                  withArrow
+                  position="top"
+                >
+                  <ActionIcon
+                    size={16}
+                    variant={item.isUniversal ? 'filled' : 'light'}
+                    color={item.isUniversal ? 'blue' : 'gray'}
+                    radius="xl"
+                    style={{
+                      position: 'absolute',
+                      bottom: 2,
+                      right: 2,
+                      zIndex: 1,
+                      opacity: item.isUniversal ? 1 : 0.7,
+                    }}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      onSetUniversal(item.id, !item.isUniversal);
+                    }}
+                    aria-label={
+                      item.isUniversal
+                        ? `Make ${item.name} space-specific`
+                        : `Make ${item.name} available to all spaces`
+                    }
+                    aria-pressed={item.isUniversal}
+                  >
+                    {item.isUniversal ? <IconWorld size={10} /> : <IconWorldOff size={10} />}
+                  </ActionIcon>
+                </Tooltip>
+              )}
+
+              {/* P50-K: tag editor — top-left */}
+              {onSetTags && (
+                <Popover position="bottom-start" withArrow shadow="md" width={220} withinPortal>
+                  <Popover.Target>
+                    <Tooltip label={item.tags?.length ? `Tags: ${item.tags.join(', ')}` : 'Add tags'} withArrow position="top">
+                      <ActionIcon
+                        size={16}
+                        variant={item.tags?.length ? 'filled' : 'light'}
+                        color={item.tags?.length ? 'grape' : 'gray'}
+                        radius="xl"
+                        style={{ position: 'absolute', top: 2, left: 2, zIndex: 1, opacity: item.tags?.length ? 1 : 0.7 }}
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        aria-label={`Edit tags for ${item.name}`}
+                      >
+                        <IconTag size={10} />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Popover.Target>
+                  <Popover.Dropdown onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                    <TagsInput
+                      size="xs"
+                      label="Tags"
+                      placeholder="Add a tag…"
+                      value={item.tags ?? []}
+                      onChange={(tags) => onSetTags(item.id, tags)}
+                      clearable
+                    />
+                  </Popover.Dropdown>
+                </Popover>
+              )}
 
               {/* X delete overlay */}
               {onDelete && (

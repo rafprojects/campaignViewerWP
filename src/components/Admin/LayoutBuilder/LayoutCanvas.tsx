@@ -19,8 +19,9 @@ import { ContextualToolbar, type ContextualToolbarCallbacks } from './Contextual
 import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
+import { GraphicLayerContent } from './GraphicLayerContent';
 import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
-import { sanitizeCssUrl } from '@/lib/sanitizeCss';
+import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -587,16 +588,10 @@ export function LayoutCanvas({
                   pointerEvents: overlay.pointerEvents ? 'auto' : 'none',
                 }}
               >
-                <img
-                  src={overlay.imageUrl}
-                  alt=""
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'fill',
-                    display: 'block',
-                  }}
-                  draggable={false}
+                <GraphicLayerContent
+                  layer={overlay}
+                  pixelWidth={oPos.width}
+                  pixelHeight={oPos.height}
                 />
               </div>
             );
@@ -642,19 +637,10 @@ export function LayoutCanvas({
               enableResizing={!(overlay.locked ?? false) && !isHandTool}
               disableDragging={(overlay.locked ?? false) || isHandTool}
             >
-              <img
-                src={overlay.imageUrl}
-                alt=""
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  // 'fill' ensures the image covers its bounding box exactly,
-                  // so the dashed outline matches the visual content area.
-                  objectFit: 'fill',
-                  display: 'block',
-                  pointerEvents: 'none',
-                }}
-                draggable={false}
+              <GraphicLayerContent
+                layer={overlay}
+                pixelWidth={oPos.width}
+                pixelHeight={oPos.height}
               />
             </Rnd>
           );

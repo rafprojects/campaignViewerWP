@@ -19,6 +19,7 @@ export default tseslint.config({
     'wp-plugin/wp-super-gallery/admin/build/**',
     'wp-plugin/wp-super-gallery/assets',
     'wp-plugin/wp-super-gallery/vendor',
+    'storybook-static',
   ],
 }, {
   extends: [js.configs.recommended, ...tseslint.configs.recommended],

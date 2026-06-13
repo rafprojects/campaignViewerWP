@@ -170,6 +170,30 @@ The SettingsPanel Drawer renders via `withinPortal={true}` to `document.body`, o
 
 ---
 
+## Build & Bundle
+
+### Service Worker — Offline Support (App Shell Pattern)
+
+**Origin:** P50-F follow-on (2026-06-12). Identified during manual testing — going offline and reloading produces `ERR_INTERNET_DISCONNECTED` because the HTML page shell is not cached.
+
+**Context:** P50-F's SW intentionally skips navigation/HTML caching (the `request.mode === 'navigate'` bail in `public/sw.js`) to avoid a known failure mode: a stale cached shell that references Vite chunk URLs removed by a newer deploy causes broken lazy-loaded drawers and modals until the user manually clears site data. The metadata SWR cache (`wpsg-meta-v1`) is intact when offline, but it has no page to serve into.
+
+**What to implement:**
+- A **versioned app-shell cache** for the gallery entry-point HTML, tied to the deployed bundle (e.g. a version hash injected into the SW source at build time, or `workbox-window` + `injectManifest`).
+- **Deploy-time cache busting:** the shell HTML must be invalidated on every deploy so the new shell imports the correct Vite chunk URLs. Without this, caching the shell causes the exact stale-chunk failures that the current bail prevents.
+- **Offline fallback** — if the shell is absent or too stale, serve a minimal branded offline fallback page rather than Chrome's error screen.
+
+**Open questions:**
+- Q1: How is the deploy version communicated to the SW? Options: (a) inject a version hash into the SW script at build time; (b) a `/__wpsg_version` PHP endpoint returning a build hash; (c) `workbox-window` + `injectManifest`.
+- Q2: Does the SW need to handle multiple WordPress page URLs (any page embedding the WPSG shortcode), or only the site root?
+- Q3: Should the offline fallback be a static HTML string embedded in the SW, or a separately cached `offline.html` asset?
+
+**Prerequisites:** P50-F (SW metadata caching) must be complete (shipped).
+
+**Effort:** Medium (4–8 hours) | **Impact:** Medium — meaningful for mobile gallery viewers on intermittent connections.
+
+---
+
 ## Deferred Gallery Adapters
 
 > **Origin:** Phase 8 brainstorm (P22). These gallery adapter concepts were identified as valuable additions but deferred from the active Phase 8 scope. They follow the existing `GalleryAdapterProps` contract and register via `registerAdapter` like all current adapters.
@@ -223,3 +247,5 @@ When promoting future tasks to an active phase:
 *Updated: June 9, 2026 (P49 planning) — Promoted to Phase 49: "Contributor Tooling & Documentation / Storybook" (P49-E), "Thumbnail Cache Index Scalability" (P49-F), "`get_campaigns_for_attachment_id()` N+1 Meta Reads" (P49-G). Developer Experience and Infrastructure & Performance sections removed as all entries are now promoted. Four new tracks promoted directly from planning suggestions (not previously in this doc): a11y audit (P49-A), bundle/perf audit (P49-B), i18n groundwork (P49-C), automated visual regression (P49-D).*
 
 *Updated: June 9, 2026 (P50 planning) — Promoted to Phase 50: "Full Audit and Extraction to Shared Package" (P50-G), "Cross-Space Campaign Move" (P50-A), "Per-Space Library Isolation" (P50-B), "Service Worker Metadata Caching Enhancements" (P50-F), "Stacked / Deck Adapter" (P50-C), "Waterfall Adapter" (P50-E), "Isotope / Filterable Grid Adapter" (P50-D). Removed now-empty sections: Reusable Component / Utility Library, Gallery Spaces, Build & Bundle.*
+
+*Updated: June 12, 2026 (P50-F follow-on) — Re-added Build & Bundle section with "Service Worker — Offline Support (App Shell Pattern)": deferred from P50-F after manual testing confirmed offline mode is unsupported by design (SW intentionally skips navigation/HTML caching to avoid stale-chunk failures after deploys). Full offline support requires a versioned app-shell cache with deploy-time busting.*

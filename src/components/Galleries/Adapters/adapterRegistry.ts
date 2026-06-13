@@ -16,7 +16,7 @@ import type {
   GalleryAdapterId,
   GalleryAdapterProps,
 } from './GalleryAdapter';
-import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@/lib/cssUnits';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;
@@ -56,6 +56,12 @@ const CoverflowAdapter = lazy(() =>
 );
 const PinterestAdapter = lazy(() =>
   import('@/components/Galleries/Adapters/pinterest/PinterestAdapter').then((m) => ({ default: m.PinterestAdapter })),
+);
+const StackedDeckAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/stacked/StackedDeckAdapter').then((m) => ({ default: m.StackedDeckAdapter })),
+);
+const IsotopeAdapter = lazy(() =>
+  import('@/components/Galleries/Adapters/isotope/IsotopeAdapter').then((m) => ({ default: m.IsotopeAdapter })),
 );
 const LazyLayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((m) => ({ default: m.LayoutBuilderGallery })),
@@ -171,6 +177,33 @@ const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     capabilities: ['grid-layout', 'lightbox'],
     settingGroups: ['media-frame', 'photo-grid', 'tile-appearance'],
     component: PinterestAdapter as ComponentType<GalleryAdapterProps>,
+  },
+  {
+    id: 'stacked',
+    label: 'Stacked',
+    optionLabels: {
+      'unified-gallery': 'Stacked (Deck of Cards)',
+      'per-type-gallery': 'Stacked (Deck of Cards)',
+      'campaign-override': 'Stacked',
+    },
+    // P50-C: card-deck layout; adapter owns its own cycle state.
+    capabilities: ['carousel-layout', 'lightbox', 'keyboard-nav', 'touch-swipe'],
+    settingGroups: ['media-frame'],
+    component: StackedDeckAdapter as ComponentType<GalleryAdapterProps>,
+    paginationOwnership: 'adapter',
+  },
+  {
+    id: 'isotope',
+    label: 'Filterable Grid',
+    optionLabels: {
+      'unified-gallery': 'Filterable Grid (Isotope)',
+      'per-type-gallery': 'Filterable Grid',
+      'campaign-override': 'Filterable Grid',
+    },
+    // P50-D: grid with client-side filter/sort and FLIP animations.
+    capabilities: ['grid-layout', 'lightbox', 'keyboard-nav'],
+    settingGroups: ['media-frame'],
+    component: IsotopeAdapter as ComponentType<GalleryAdapterProps>,
   },
   {
     id: 'spotlight',

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, createEvent } from '../../../test/test-utils';
-import { Lightbox } from './Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import type { MediaItem } from '@/types';
 
 const image = (id: string, caption?: string): MediaItem => ({

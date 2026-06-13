@@ -107,11 +107,13 @@ interface LayoutTemplateListProps {
   onNotify: (msg: { type: 'error' | 'success'; text: string }) => void;
   /** If set, open the builder for this template ID as soon as data loads. */
   initialTemplateId?: string | undefined;
+  /** P50-K: active admin space scope ('all' or a space id); scopes the builder's asset library. */
+  spaceId?: string | undefined;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: LayoutTemplateListProps) {
+export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spaceId }: LayoutTemplateListProps) {
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -473,6 +475,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId }: L
             onSaved={handleBuilderSaved}
             onClose={handleBuilderClose}
             onNotify={onNotify}
+            spaceId={spaceId}
           />
         )}
       </Suspense>

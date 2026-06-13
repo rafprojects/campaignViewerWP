@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { DimensionInput } from './DimensionInput';
-import { CSS_WIDTH_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS } from '@/lib/cssUnits';
+import { CSS_WIDTH_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS } from '@wp-super-gallery/shared-utils';
 
 describe('DimensionInput', () => {
 	it('renders label and value', () => {

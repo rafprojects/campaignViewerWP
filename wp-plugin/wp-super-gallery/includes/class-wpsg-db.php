@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '11';
+    const DB_VERSION = '15';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -22,11 +22,18 @@ class WPSG_DB {
         self::maybe_create_access_requests_table();
         self::maybe_create_audit_log_table();
         self::maybe_upgrade_audit_log_v9();
-        self::maybe_create_overlays_table();
+        self::maybe_rename_overlays_to_assets_v14();
+        self::maybe_create_assets_table();
+        self::maybe_upgrade_assets_is_universal();
+        self::maybe_upgrade_assets_tags_v14();
         self::maybe_create_spaces_table();
         self::maybe_upgrade_v11_space_columns();
         self::maybe_seed_default_space();
         self::maybe_backfill_spaces();
+        self::maybe_create_space_library_assoc_table();
+        self::maybe_migrate_assoc_overlay_type_v14();
+        self::maybe_backfill_space_library_assoc();
+        self::maybe_convert_campaign_tables_to_innodb_v15();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -48,7 +55,7 @@ class WPSG_DB {
             PRIMARY KEY  (id),
             KEY campaign_occurred (campaign_id, occurred_at),
             KEY media_id (media_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
     }
@@ -81,7 +88,7 @@ class WPSG_DB {
             PRIMARY KEY  (id),
             UNIQUE KEY media_campaign (media_id, campaign_id),
             KEY campaign_id (campaign_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
 
@@ -355,7 +362,7 @@ class WPSG_DB {
             UNIQUE KEY token (token),
             KEY campaign_status (campaign_id, status),
             KEY email_campaign (email, campaign_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
 
@@ -603,26 +610,88 @@ class WPSG_DB {
             KEY action (action),
             KEY created_at (created_at),
             KEY scope (scope)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
     }
 
-    // ── P41-OL1: Overlay library table ─────────────────────────────────────
+    /**
+     * P50 (review #2): convert the four campaign-scoped tables to InnoDB.
+     *
+     * move_campaign_to_space() wraps five writes in START TRANSACTION/ROLLBACK,
+     * which is only atomic on a transactional engine. These tables were
+     * historically created without an explicit ENGINE, so a server defaulting
+     * to MyISAM would silently no-op the ROLLBACK and leave a partial move.
+     * New installs now pin ENGINE=InnoDB in their CREATE statements; this
+     * one-time, option-guarded migration converts any pre-existing non-InnoDB
+     * tables on already-installed sites. Idempotent and safe to re-run.
+     */
+    private static function maybe_convert_campaign_tables_to_innodb_v15(): void {
+        if (get_option('wpsg_campaign_tables_innodb_v15')) {
+            return;
+        }
+        global $wpdb;
 
-    public static function maybe_create_overlays_table(): void {
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $engine = $wpdb->get_var($wpdb->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
+                DB_NAME,
+                $table
+            ));
+            if ($engine && strtoupper($engine) !== 'INNODB') {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+                $wpdb->query("ALTER TABLE {$table} ENGINE=InnoDB");
+            }
+        }
+
+        update_option('wpsg_campaign_tables_innodb_v15', '1');
+    }
+
+    // ── P41-OL1 / P50-K: Asset library table (formerly "overlays") ──────────
+
+    /**
+     * P50-K: Idempotent rename of the legacy `wpsg_overlays` table to
+     * `wpsg_assets`. Only renames when the old table exists and the new one
+     * does not, so it is safe to run repeatedly and on fresh installs.
+     */
+    private static function maybe_rename_overlays_to_assets_v14(): void {
+        global $wpdb;
+        $old = $wpdb->prefix . 'wpsg_overlays';
+        $new = $wpdb->prefix . 'wpsg_assets';
+
+        // esc_like() escapes the `_` in the WP table prefix so it isn't treated
+        // as a LIKE single-char wildcard.
+        $old_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) === $old;
+        $new_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $new ) ) ) === $new;
+        if ( $old_exists && ! $new_exists ) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query( "RENAME TABLE {$old} TO {$new}" );
+        }
+    }
+
+    public static function maybe_create_assets_table(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table   = self::get_overlays_table();
+        $table   = self::get_assets_table();
         $charset = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table} (
-            id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            overlay_id  VARCHAR(36)   NOT NULL,
-            url         VARCHAR(2083) NOT NULL DEFAULT '',
-            name        VARCHAR(255)  NOT NULL DEFAULT '',
-            uploaded_at DATETIME      NOT NULL,
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            overlay_id   VARCHAR(36)   NOT NULL,
+            url          VARCHAR(2083) NOT NULL DEFAULT '',
+            name         VARCHAR(255)  NOT NULL DEFAULT '',
+            is_universal TINYINT(1)    NOT NULL DEFAULT 0,
+            tags         TEXT          NULL,
+            uploaded_at  DATETIME      NOT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY overlay_id (overlay_id),
             KEY uploaded_at (uploaded_at)
@@ -631,16 +700,16 @@ class WPSG_DB {
         dbDelta($sql);
 
         if ( ! get_option( 'wpsg_overlays_migrated' ) ) {
-            $migrated = self::migrate_overlays_from_options();
+            $migrated = self::migrate_assets_from_options();
             if ( $migrated ) {
                 update_option( 'wpsg_overlays_migrated', '1' );
             }
         }
     }
 
-    private static function migrate_overlays_from_options(): bool {
+    private static function migrate_assets_from_options(): bool {
         global $wpdb;
-        $table = self::get_overlays_table();
+        $table = self::get_assets_table();
         $raw   = get_option( 'wpsg_overlay_library', [] );
         if ( ! is_array( $raw ) || empty( $raw ) ) {
             return true;
@@ -675,9 +744,67 @@ class WPSG_DB {
         return false;
     }
 
-    public static function get_overlays_table(): string {
+    public static function get_assets_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_overlays';
+        return $wpdb->prefix . 'wpsg_assets';
+    }
+
+    /**
+     * P50-I: Idempotent migration — adds the `is_universal` column to the
+     * assets table when upgrading from a pre-v13 schema. A universal asset
+     * bypasses the P50-B per-space association filter and is visible to every
+     * space site-wide. Guard on column presence mirrors the v11 pattern.
+     */
+    private static function maybe_upgrade_assets_is_universal(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'is_universal'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN is_universal TINYINT(1) NOT NULL DEFAULT 0 AFTER name" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — adds the `tags` column (JSON array) to the
+     * assets table for tag-based filtering.
+     */
+    private static function maybe_upgrade_assets_tags_v14(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'tags'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN tags TEXT NULL AFTER is_universal" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — re-labels legacy `asset_type = 'overlay'`
+     * association rows to the canonical `'asset'` type after the overlay→asset
+     * rename. Safe to run repeatedly.
+     */
+    private static function maybe_migrate_assoc_overlay_type_v14(): void {
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "UPDATE {$table} SET asset_type = 'asset' WHERE asset_type = 'overlay'" );
     }
 
     /**
@@ -713,8 +840,18 @@ class WPSG_DB {
     public static function insert_audit_entry(array $data): void {
         global $wpdb;
         $table = self::get_audit_log_table();
+
+        // P50-A: stamp new audit rows with the campaign's current space so
+        // space-filtered audit queries see them (the P47 column was previously
+        // never written, leaving every row at the 0 default).
+        $campaign_id = intval($data['campaign_id']);
+        $space_id    = intval($data['space_id'] ?? 0);
+        if ($space_id <= 0 && $campaign_id > 0) {
+            $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        }
+
         $wpdb->insert($table, [
-            'campaign_id'    => intval($data['campaign_id']),
+            'campaign_id'    => $campaign_id,
             'action'         => sanitize_text_field($data['action']),
             'actor_id'       => intval($data['actor_id'] ?? 0),
             'actor_login'    => sanitize_text_field($data['actor_login'] ?? ''),
@@ -727,7 +864,8 @@ class WPSG_DB {
             'resource_id'    => sanitize_text_field($data['resource_id'] ?? ''),
             'resource_label' => sanitize_text_field($data['resource_label'] ?? ''),
             'source'         => sanitize_text_field($data['source'] ?? 'rest'),
-        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']);
+            'space_id'       => $space_id,
+        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']);
     }
 
     /**
@@ -1091,6 +1229,224 @@ class WPSG_DB {
         $result = (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
         unset(self::$space_cache[$id]);
         return $result;
+    }
+
+    // ── P50-A: Cross-space campaign move ─────────────────────────────────────
+
+    /**
+     * Atomically re-stamp a campaign's space across all campaign-scoped custom
+     * tables and the _wpsg_space_id post meta.
+     *
+     * All five writes run inside a single transaction; on any failure the
+     * transaction is rolled back and the failing table name is returned so the
+     * caller can surface it. The post meta row is written with direct SQL (not
+     * update_post_meta) so it participates in the transaction without mutating
+     * the object cache before COMMIT; the meta cache is flushed on every exit
+     * path instead.
+     *
+     * Atomicity requires a transactional storage engine: the four campaign
+     * tables are pinned to InnoDB at creation and converted on upgrade (see
+     * maybe_convert_campaign_tables_to_innodb_v15). $wpdb->postmeta uses the
+     * WordPress core default, which is InnoDB on all supported MySQL/MariaDB
+     * versions. On a non-transactional engine START TRANSACTION/ROLLBACK are
+     * silent no-ops and a mid-move failure would leave a partial move.
+     *
+     * @param int $campaign_id     Campaign post ID.
+     * @param int $target_space_id Destination space id.
+     * @return true|string True on success, the failing table name on failure.
+     */
+    public static function move_campaign_to_space(int $campaign_id, int $target_space_id) {
+        global $wpdb;
+
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query('START TRANSACTION');
+
+        $finish = static function (string $statement) use ($wpdb, $campaign_id) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->query($statement);
+            wp_cache_delete($campaign_id, 'post_meta');
+        };
+
+        foreach ($tables as $table) {
+            /**
+             * Test seam: simulate a mid-transaction failure on a specific table
+             * so rollback behavior can be exercised without DB-level mocking.
+             *
+             * @param bool   $fail        Whether to treat this table as failed.
+             * @param string $table       Table about to be updated.
+             * @param int    $campaign_id Campaign being moved.
+             */
+            if (apply_filters('wpsg_move_campaign_simulate_failure', false, $table, $campaign_id)) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+            $result = $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET space_id = %d WHERE campaign_id = %d",
+                $target_space_id,
+                $campaign_id
+            ));
+            if ($result === false) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $meta_updated = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE post_id = %d AND meta_key = '_wpsg_space_id'",
+            (string) $target_space_id,
+            $campaign_id
+        ));
+        if ($meta_updated === false) {
+            $finish('ROLLBACK');
+            return $wpdb->postmeta;
+        }
+        if ($meta_updated === 0 && !metadata_exists('post', $campaign_id, '_wpsg_space_id')) {
+            // Campaign predates the spaces backfill: create the meta row.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $inserted = $wpdb->insert($wpdb->postmeta, [
+                'post_id'    => $campaign_id,
+                'meta_key'   => '_wpsg_space_id',
+                'meta_value' => (string) $target_space_id,
+            ]);
+            if ($inserted === false) {
+                $finish('ROLLBACK');
+                return $wpdb->postmeta;
+            }
+        }
+
+        $finish('COMMIT');
+        return true;
+    }
+
+    // ── P50-B: Per-space shared-asset library associations ───────────────────
+
+    /** Asset types supported by the per-space library association table. */
+    private const LIBRARY_ASSET_TYPES = ['asset', 'font'];
+
+    public static function get_space_library_assoc_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'wpsg_space_library_assoc';
+    }
+
+    /**
+     * An overlay/font is visible to a `delegated` space only when an
+     * association row exists; `open` spaces bypass this table entirely.
+     * Asset ids are the library UUIDs (overlay_id / font option id).
+     */
+    private static function maybe_create_space_library_assoc_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_space_library_assoc_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            space_id   BIGINT UNSIGNED NOT NULL,
+            asset_type VARCHAR(10) NOT NULL,
+            asset_id   VARCHAR(36) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY space_asset (space_id, asset_type, asset_id),
+            KEY space_type (space_id, asset_type)
+        ) {$charset};";
+        dbDelta($sql);
+    }
+
+    /**
+     * Asset ids associated with a space for one asset type.
+     *
+     * @return string[] Library asset UUIDs.
+     */
+    public static function get_space_library_assets(int $space_id, string $asset_type): array {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true)) {
+            return [];
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        return $wpdb->get_col($wpdb->prepare(
+            "SELECT asset_id FROM {$table} WHERE space_id = %d AND asset_type = %s ORDER BY id ASC",
+            $space_id,
+            $asset_type
+        ));
+    }
+
+    public static function associate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // INSERT IGNORE: associating an already-associated asset is a no-op.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$table} (space_id, asset_type, asset_id) VALUES (%d, %s, %s)",
+            $space_id,
+            $asset_type,
+            sanitize_text_field($asset_id)
+        ));
+        return $result !== false;
+    }
+
+    public static function dissociate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->delete(self::get_space_library_assoc_table(), [
+            'space_id'   => $space_id,
+            'asset_type' => $asset_type,
+            'asset_id'   => sanitize_text_field($asset_id),
+        ], ['%d', '%s', '%s']);
+        return $result !== false;
+    }
+
+    /**
+     * One-time migration: associate every existing overlay/font with every
+     * existing delegated space so no delegated tenant loses access to assets
+     * that were globally visible before P50-B. New delegated spaces created
+     * after this migration start with an empty library by design.
+     */
+    private static function maybe_backfill_space_library_assoc(): void {
+        if (get_option('wpsg_space_library_assoc_backfilled')) {
+            return;
+        }
+
+        $delegated = array_filter(
+            self::list_spaces(),
+            fn($space) => ($space->isolation_mode ?? '') === 'delegated'
+        );
+        if (!empty($delegated)) {
+            $asset_ids = class_exists('WPSG_Asset_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Asset_Library::get_all())
+                : [];
+            $font_ids = class_exists('WPSG_Font_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), WPSG_Font_Library::get_all())
+                : [];
+
+            foreach ($delegated as $space) {
+                foreach ($asset_ids as $asset_id) {
+                    self::associate_asset(intval($space->id), 'asset', $asset_id);
+                }
+                foreach ($font_ids as $font_id) {
+                    self::associate_asset(intval($space->id), 'font', $font_id);
+                }
+            }
+        }
+
+        update_option('wpsg_space_library_assoc_backfilled', '1', false);
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

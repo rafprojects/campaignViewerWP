@@ -1,0 +1,12 @@
+{
+  "name": "@wp-super-gallery/shared-ui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "peerDependencies": {
+    "@mantine/core": ">=9",
+    "@tabler/icons-react": ">=3",
+    "react": ">=18"
+  }
+}

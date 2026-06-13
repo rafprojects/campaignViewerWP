@@ -1,4 +1,4 @@
-import { sanitizeCssUrl } from '@/lib/sanitizeCss';
+import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
 
 /**
  * Inject @font-face CSS for custom uploaded fonts into document.head.
@@ -13,6 +13,8 @@ export interface FontLibraryEntry {
   filename: string;
   format: string;
   uploadedAt: string;
+  /** P50-J: when true the font bypasses the per-space association filter (visible to all spaces). */
+  isUniversal?: boolean;
 }
 
 const STYLE_ID = 'wpsg-custom-fonts';

@@ -188,24 +188,29 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             ],
         ]);
 
-        // P15-H: Overlay image library (admin, campaign-agnostic).
-        register_rest_route('wp-super-gallery/v1', '/admin/overlay-library', [
+        // P15-H / P50-K: Visual asset library (admin, campaign-agnostic).
+        register_rest_route('wp-super-gallery/v1', '/admin/asset-library', [
             [
                 'methods'             => 'GET',
-                'callback'            => [self::class, 'list_overlay_library'],
+                'callback'            => [self::class, 'list_asset_library'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
             [
                 'methods'             => 'POST',
-                'callback'            => [self::class, 'upload_overlay'],
+                'callback'            => [self::class, 'upload_asset'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/overlay-library/(?P<id>[a-f0-9\-]{36})', [
+        register_rest_route('wp-super-gallery/v1', '/admin/asset-library/(?P<id>[a-f0-9\-]{36})', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'update_asset'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
             [
                 'methods'             => 'DELETE',
-                'callback'            => [self::class, 'delete_overlay'],
+                'callback'            => [self::class, 'delete_asset'],
                 'permission_callback' => [self::class, 'require_admin'],
             ],
         ]);
@@ -225,6 +230,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         ]);
 
         register_rest_route('wp-super-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
+            [
+                // P50-J: partial update of a font's `is_universal` flag.
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'update_font'],
+                'permission_callback' => [self::class, 'require_admin'],
+            ],
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_font'],
@@ -630,56 +641,152 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         return new WP_REST_Response($template, 200);
     }
 
-    // ── Overlay Library (P15-H) ──────────────────────────────
+    // ── Asset Library (P15-H / P50-K) ────────────────────────
 
     /**
-     * List all overlay library items.
+     * P50-B: When a `space` param names a delegated space, restrict library
+     * items to assets associated with that space. Open-mode spaces (and
+     * requests with no space param) see the full global library.
      */
-    public static function list_overlay_library( $request ) {
-        $items = WPSG_Overlay_Library::get_all();
+    private static function filter_library_for_space( array $items, $request, string $asset_type ): array {
+        $space_id = intval( $request->get_param( 'space' ) );
+        if ( $space_id <= 0 ) {
+            return $items;
+        }
+        $space = WPSG_DB::get_space( $space_id );
+        if ( ! $space || $space->isolation_mode !== 'delegated' ) {
+            return $items;
+        }
+        $allowed = array_flip( WPSG_DB::get_space_library_assets( $space_id, $asset_type ) );
+        // P50-I: universal assets bypass the per-space association filter and are
+        // visible to every delegated space, regardless of association rows.
+        return array_values( array_filter(
+            $items,
+            fn( $item ) => ! empty( $item['isUniversal'] ) || isset( $allowed[ $item['id'] ?? '' ] )
+        ) );
+    }
+
+    /**
+     * List all asset library items.
+     */
+    public static function list_asset_library( $request ) {
+        $items = WPSG_Asset_Library::get_all();
+        $items = self::filter_library_for_space( $items, $request, 'asset' );
         return new WP_REST_Response( $items, 200 );
     }
 
     /**
-     * Upload a new overlay image (file upload) or register a URL.
+     * Upload a new visual asset (file upload) or register a URL.
      *
      * Accepts multipart/form-data with a 'file' field, or a JSON body
-     * with { url, name } to register an external URL.
+     * with { url, name, is_universal?, tags? } to register an external URL.
      */
-    public static function upload_overlay( $request ) {
+    public static function upload_asset( $request ) {
         $files = $request->get_file_params();
         // File upload path.
         if ( ! empty( $files['file'] ) ) {
-            $url = WPSG_Overlay_Library::handle_upload( $files['file'] );
+            $url = WPSG_Asset_Library::handle_upload( $files['file'] );
             if ( is_wp_error( $url ) ) {
                 return new WP_Error( 'wpsg_upload_failed', $url->get_error_message(), [ 'status' => 400 ] );
             }
-            $name = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $files['file']['name'] ) );
+            $name         = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $files['file']['name'] ) );
+            $is_universal = self::to_bool( $request->get_param( 'is_universal' ) );
+            $tags         = self::parse_tags_param( $request->get_param( 'tags' ) );
         } else {
             // URL-only path.
-            $data = $request->get_json_params() ?? [];
-            $url  = esc_url_raw( $data['url'] ?? '' );
-            $name = sanitize_text_field( $data['name'] ?? '' );
+            $data         = $request->get_json_params() ?? [];
+            $url          = esc_url_raw( $data['url'] ?? '' );
+            $name         = sanitize_text_field( $data['name'] ?? '' );
+            $is_universal = self::to_bool( $data['is_universal'] ?? false );
+            $tags         = self::parse_tags_param( $data['tags'] ?? null );
             if ( empty( $url ) ) {
                 return new WP_Error( 'wpsg_missing_file_or_url', 'A file or URL is required.', [ 'status' => 400 ] );
             }
         }
 
-        $entry = WPSG_Overlay_Library::add( [ 'url' => $url, 'name' => $name ] );
+        $entry = WPSG_Asset_Library::add( [ 'url' => $url, 'name' => $name, 'is_universal' => $is_universal, 'tags' => $tags ] );
         if ( is_wp_error( $entry ) ) {
-            return new WP_Error( 'wpsg_overlay_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
+            return new WP_Error( 'wpsg_asset_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
         }
         return new WP_REST_Response( $entry, 201 );
     }
 
     /**
-     * Remove an overlay library entry.
+     * P50-I / P50-K: Partial update of an asset's `is_universal` flag and/or
+     * `tags`. Only the fields present in the JSON body are changed.
      */
-    public static function delete_overlay( $request ) {
+    public static function update_asset( $request ) {
+        $id   = $request->get_param( 'id' );
+        $data = $request->get_json_params() ?? [];
+
+        $has_universal = array_key_exists( 'is_universal', $data );
+        $has_tags      = array_key_exists( 'tags', $data );
+        if ( ! $has_universal && ! $has_tags ) {
+            return new WP_Error( 'wpsg_missing_field', 'is_universal or tags is required.', [ 'status' => 400 ] );
+        }
+
+        $response = [ 'id' => $id ];
+        if ( $has_universal ) {
+            $universal = self::to_bool( $data['is_universal'] );
+            if ( ! WPSG_Asset_Library::set_universal( $id, $universal ) ) {
+                return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
+            }
+            $response['isUniversal'] = $universal;
+        }
+        if ( $has_tags ) {
+            $tags = self::parse_tags_param( $data['tags'] );
+            if ( ! WPSG_Asset_Library::set_tags( $id, $tags ) ) {
+                return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
+            }
+            $response['tags'] = $tags;
+        }
+        return new WP_REST_Response( $response, 200 );
+    }
+
+    /**
+     * Normalize a mixed REST input value to a boolean. Accepts native bools,
+     * the strings "1"/"true"/"on"/"yes" (case-insensitive), and integers.
+     */
+    private static function to_bool( $value ): bool {
+        if ( is_bool( $value ) ) {
+            return $value;
+        }
+        if ( is_string( $value ) ) {
+            return in_array( strtolower( trim( $value ) ), [ '1', 'true', 'on', 'yes' ], true );
+        }
+        return (bool) $value;
+    }
+
+    /**
+     * Normalize a mixed `tags` REST input to a clean string[]. Accepts a native
+     * array or a JSON-encoded array string; anything else yields [].
+     */
+    private static function parse_tags_param( $value ): array {
+        if ( is_string( $value ) ) {
+            $decoded = json_decode( $value, true );
+            $value   = is_array( $decoded ) ? $decoded : [];
+        }
+        if ( ! is_array( $value ) ) {
+            return [];
+        }
+        $clean = [];
+        foreach ( $value as $tag ) {
+            $t = sanitize_text_field( (string) $tag );
+            if ( $t !== '' && ! in_array( $t, $clean, true ) ) {
+                $clean[] = $t;
+            }
+        }
+        return $clean;
+    }
+
+    /**
+     * Remove an asset library entry.
+     */
+    public static function delete_asset( $request ) {
         $id      = $request->get_param( 'id' );
-        $deleted = WPSG_Overlay_Library::remove( $id );
+        $deleted = WPSG_Asset_Library::remove( $id );
         if ( ! $deleted ) {
-            return new WP_Error( 'wpsg_overlay_not_found', 'Overlay not found.', [ 'status' => 404 ] );
+            return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }
@@ -691,6 +798,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
      */
     public static function list_font_library( $request ) {
         $items = WPSG_Font_Library::get_all();
+        $items = self::filter_library_for_space( $items, $request, 'font' );
         return new WP_REST_Response( $items, 200 );
     }
 
@@ -746,13 +854,32 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         }
 
         $entry = WPSG_Font_Library::add( [
-            'url'      => $result['url'],
-            'name'     => $name,
-            'filename' => sanitize_file_name( $file['name'] ),
-            'format'   => $result['format'],
+            'url'          => $result['url'],
+            'name'         => $name,
+            'filename'     => sanitize_file_name( $file['name'] ),
+            'format'       => $result['format'],
+            'is_universal' => self::to_bool( $request->get_param( 'is_universal' ) ),
         ] );
 
         return new WP_REST_Response( $entry, 201 );
+    }
+
+    /**
+     * P50-J: Partial update of a font's `is_universal` flag.
+     */
+    public static function update_font( $request ) {
+        $id   = $request->get_param( 'id' );
+        $data = $request->get_json_params() ?? [];
+
+        if ( ! array_key_exists( 'is_universal', $data ) ) {
+            return new WP_Error( 'wpsg_missing_field', 'is_universal is required.', [ 'status' => 400 ] );
+        }
+
+        $universal = self::to_bool( $data['is_universal'] );
+        if ( ! WPSG_Font_Library::set_universal( $id, $universal ) ) {
+            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
+        }
+        return new WP_REST_Response( [ 'id' => $id, 'isUniversal' => $universal ], 200 );
     }
 
     /**

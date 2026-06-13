@@ -91,6 +91,23 @@ describe('MediaAddModal', () => {
     expect(onSelectFiles).toHaveBeenCalledWith([file]);
   });
 
+  it('hides the "Add to" selector when no targetOptions are provided', () => {
+    render(<MediaAddModal {...defaults} />);
+    expect(screen.queryByRole('combobox', { name: 'Add to' })).toBeNull();
+  });
+
+  it('shows the "Add to" selector when targetOptions are provided', () => {
+    render(
+      <MediaAddModal
+        {...defaults}
+        targetOptions={[{ value: '__general__', label: 'General library' }, { value: '1', label: 'Campaign One' }]}
+        targetValue="__general__"
+        onTargetChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('combobox', { name: 'Add to' })).toBeInTheDocument();
+  });
+
   it('does not register listeners when modal is closed', async () => {
     const onSelectFiles = vi.fn();
     const dropRef = makeMutableDropRef();

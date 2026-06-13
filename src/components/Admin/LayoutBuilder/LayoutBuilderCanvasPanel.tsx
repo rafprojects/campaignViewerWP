@@ -12,7 +12,7 @@ import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
 import { SNAP_MODE_LABELS, type SnapMode } from '@/utils/canvasMeasurement';
-import { safeLocalStorage } from '@/lib/safeLocalStorage';
+import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@/contexts/RootIdContext';
 

@@ -25,7 +25,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     setSelectedOverlayId,
     selectedMaskSlotId,
     handleUploadMask,
-    overlayLibrary,
+    assetLibrary,
     isBackgroundSelected,
     listingMode,
   } = useBuilderDock();
@@ -64,7 +64,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           slot={selectedSlot}
           onUpdate={(updates) => builder.updateSlot(selectedSlot.id, updates)}
           onUploadMask={handleUploadMask}
-          overlayLibrary={overlayLibrary}
+          assetLibrary={assetLibrary}
         />
       </Box>
     );

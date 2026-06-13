@@ -16,9 +16,9 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@/lib/cssUnits';
+import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@/hooks/useCarousel';
-import { Lightbox } from '@/components/Galleries/Shared/Lightbox';
+import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';

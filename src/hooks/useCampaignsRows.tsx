@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select, Menu } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconEdit, IconCopy, IconDownload, IconFileZip, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash, IconChevronDown } from '@tabler/icons-react';
+import { IconEdit, IconCopy, IconDownload, IconFileZip, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash, IconChevronDown, IconArrowsExchange, IconPhotoPlus } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import { useAllCompanies, usePatchCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
@@ -42,13 +42,17 @@ interface Options {
   apiClient: ApiClient;
   /** Map of campaign id (number) → AccessSummaryItem. Undefined while loading. */
   grantSummary?: Map<number, AccessSummaryItem> | undefined;
+  /** P50-A: show the owner-only "Move" action (host computes space gating). */
+  canMoveCampaigns?: boolean;
+  /** P50-I: open the unified media-upload modal targeting this campaign. */
+  onAddMedia?: (campaign: AdminCampaign) => void;
 }
 
-export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient }: Options) {
+export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns = false, onAddMedia }: Options) {
   const {
     selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
-    setDuplicateSource, handleExportCampaign,
+    setDuplicateSource, setMoveSource, handleExportCampaign,
     handleBinaryExportCampaign, binaryExportingIds,
     setConfirmRestore, setConfirmArchive, setConfirmDelete,
     restoringIds, archivingIds, deletingIds,
@@ -173,9 +177,19 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
           <Table.Td>
             <Group gap="xs" wrap="wrap">
               <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>Edit</Button>
+              {onAddMedia && (
+                <Tooltip label="Add media to this campaign">
+                  <Button variant="subtle" size="xs" leftSection={<IconPhotoPlus size={14} />} onClick={() => onAddMedia(c)} aria-label={`Add media to ${c.title}`}>Add media</Button>
+                </Tooltip>
+              )}
               <Tooltip label="Clone campaign">
                 <Button variant="subtle" size="xs" leftSection={<IconCopy size={14} />} onClick={() => setDuplicateSource(c)} aria-label={`Duplicate ${c.title}`}>Clone</Button>
               </Tooltip>
+              {canMoveCampaigns && (
+                <Tooltip label="Move to another space">
+                  <Button variant="subtle" size="xs" leftSection={<IconArrowsExchange size={14} />} onClick={() => setMoveSource(c)} aria-label={`Move ${c.title} to another space`}>Move</Button>
+                </Tooltip>
+              )}
               <Menu shadow="md" width={210} position="bottom-end" withinPortal>
                 <Menu.Target>
                   <Button
@@ -211,5 +225,5 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
         </Table.Tr>
       );
     });
-  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, setMoveSource, canMoveCampaigns, onAddMedia, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }

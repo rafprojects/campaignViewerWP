@@ -97,6 +97,64 @@ class WPSG_Image_Optimizer_Test extends WP_UnitTestCase {
         $this->assertEquals($upload, $result);
     }
 
+    // ── P50-I: skip-resize for asset-library uploads ───────────────────────
+
+    public function test_skip_resize_preserves_large_image_dimensions() {
+        update_option('wpsg_settings', ['optimize_on_upload' => true]);
+        WPSG_Image_Optimizer::$wpsg_upload_context = true;
+        WPSG_Image_Optimizer::$wpsg_skip_resize    = true;
+
+        $file = $this->create_test_image(3000, 2000);
+        if (!$file) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            WPSG_Image_Optimizer::$wpsg_skip_resize    = false;
+            delete_option('wpsg_settings');
+            $this->markTestSkipped('Could not create test image (GD not available)');
+        }
+
+        WPSG_Image_Optimizer::optimize_on_upload([
+            'file' => $file,
+            'url'  => 'http://example.com/big.jpg',
+            'type' => 'image/jpeg',
+        ], 'upload');
+
+        $size = getimagesize($file);
+        WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        WPSG_Image_Optimizer::$wpsg_skip_resize    = false;
+        delete_option('wpsg_settings');
+        @unlink($file);
+
+        $this->assertSame(3000, $size[0], 'skip_resize must preserve the original width.');
+        $this->assertSame(2000, $size[1], 'skip_resize must preserve the original height.');
+    }
+
+    public function test_upload_without_skip_resize_still_constrains() {
+        update_option('wpsg_settings', ['optimize_on_upload' => true]);
+        WPSG_Image_Optimizer::$wpsg_upload_context = true;
+        WPSG_Image_Optimizer::$wpsg_skip_resize    = false;
+
+        $file = $this->create_test_image(3000, 2000);
+        if (!$file) {
+            WPSG_Image_Optimizer::$wpsg_upload_context = false;
+            delete_option('wpsg_settings');
+            $this->markTestSkipped('Could not create test image (GD not available)');
+        }
+
+        WPSG_Image_Optimizer::optimize_on_upload([
+            'file' => $file,
+            'url'  => 'http://example.com/big.jpg',
+            'type' => 'image/jpeg',
+        ], 'upload');
+
+        $size = getimagesize($file);
+        WPSG_Image_Optimizer::$wpsg_upload_context = false;
+        delete_option('wpsg_settings');
+        @unlink($file);
+
+        $this->assertLessThanOrEqual(1920, $size[0], 'Default path must downscale to the gallery max.');
+        $this->assertLessThanOrEqual(1920, $size[1]);
+    }
+
     // ── constrain_image ────────────────────────────────────────────────────
 
     public function test_constrain_image_returns_true_for_small_image() {

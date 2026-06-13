@@ -36,7 +36,9 @@ export type GalleryAdapterId =
   | 'spotlight'
   | 'scroll-snap'
   | 'coverflow'
-  | 'pinterest';
+  | 'pinterest'
+  | 'stacked'
+  | 'isotope';
 
 /** Declared capabilities a gallery adapter can support. */
 export type AdapterCapability =
