@@ -136,6 +136,7 @@ class WPSG_Embed {
         }
 
         header('Content-Type: application/javascript; charset=utf-8');
+        header('Service-Worker-Allowed: /');
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('X-Content-Type-Options: nosniff');
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile

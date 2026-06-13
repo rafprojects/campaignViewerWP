@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage } from './safeLocalStorage';
 
 describe('safeLocalStorage', () => {
   const original = { ...Object.getOwnPropertyDescriptors(Storage.prototype) };

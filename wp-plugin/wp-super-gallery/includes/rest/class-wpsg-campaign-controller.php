@@ -574,6 +574,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         $source_space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
+        if ($source_space_id <= 0) {
+            // Campaign predates the spaces backfill — resolve to the default
+            // space, mirroring require_campaign_space_move() so the no-op check
+            // and the audit record both reflect the real source space.
+            $source_space_id = intval(get_option('wpsg_default_space_id'));
+        }
         if ($source_space_id === $target_space_id) {
             // No-op: already in the target space; no DB writes.
             return new WP_REST_Response([

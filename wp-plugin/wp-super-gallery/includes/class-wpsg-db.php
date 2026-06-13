@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '14';
+    const DB_VERSION = '15';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -33,6 +33,7 @@ class WPSG_DB {
         self::maybe_create_space_library_assoc_table();
         self::maybe_migrate_assoc_overlay_type_v14();
         self::maybe_backfill_space_library_assoc();
+        self::maybe_convert_campaign_tables_to_innodb_v15();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -54,7 +55,7 @@ class WPSG_DB {
             PRIMARY KEY  (id),
             KEY campaign_occurred (campaign_id, occurred_at),
             KEY media_id (media_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
     }
@@ -87,7 +88,7 @@ class WPSG_DB {
             PRIMARY KEY  (id),
             UNIQUE KEY media_campaign (media_id, campaign_id),
             KEY campaign_id (campaign_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
 
@@ -361,7 +362,7 @@ class WPSG_DB {
             UNIQUE KEY token (token),
             KEY campaign_status (campaign_id, status),
             KEY email_campaign (email, campaign_id)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
 
@@ -609,9 +610,49 @@ class WPSG_DB {
             KEY action (action),
             KEY created_at (created_at),
             KEY scope (scope)
-        ) {$charset};";
+        ) ENGINE=InnoDB {$charset};";
 
         dbDelta($sql);
+    }
+
+    /**
+     * P50 (review #2): convert the four campaign-scoped tables to InnoDB.
+     *
+     * move_campaign_to_space() wraps five writes in START TRANSACTION/ROLLBACK,
+     * which is only atomic on a transactional engine. These tables were
+     * historically created without an explicit ENGINE, so a server defaulting
+     * to MyISAM would silently no-op the ROLLBACK and leave a partial move.
+     * New installs now pin ENGINE=InnoDB in their CREATE statements; this
+     * one-time, option-guarded migration converts any pre-existing non-InnoDB
+     * tables on already-installed sites. Idempotent and safe to re-run.
+     */
+    private static function maybe_convert_campaign_tables_to_innodb_v15(): void {
+        if (get_option('wpsg_campaign_tables_innodb_v15')) {
+            return;
+        }
+        global $wpdb;
+
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $engine = $wpdb->get_var($wpdb->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
+                DB_NAME,
+                $table
+            ));
+            if ($engine && strtoupper($engine) !== 'INNODB') {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+                $wpdb->query("ALTER TABLE {$table} ENGINE=InnoDB");
+            }
+        }
+
+        update_option('wpsg_campaign_tables_innodb_v15', '1');
     }
 
     // ── P41-OL1 / P50-K: Asset library table (formerly "overlays") ──────────
@@ -626,10 +667,10 @@ class WPSG_DB {
         $old = $wpdb->prefix . 'wpsg_overlays';
         $new = $wpdb->prefix . 'wpsg_assets';
 
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $old_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$old}'" ) === $old;
-        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-        $new_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$new}'" ) === $new;
+        // esc_like() escapes the `_` in the WP table prefix so it isn't treated
+        // as a LIKE single-char wildcard.
+        $old_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) === $old;
+        $new_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $new ) ) ) === $new;
         if ( $old_exists && ! $new_exists ) {
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             $wpdb->query( "RENAME TABLE {$old} TO {$new}" );
@@ -1202,6 +1243,13 @@ class WPSG_DB {
      * update_post_meta) so it participates in the transaction without mutating
      * the object cache before COMMIT; the meta cache is flushed on every exit
      * path instead.
+     *
+     * Atomicity requires a transactional storage engine: the four campaign
+     * tables are pinned to InnoDB at creation and converted on upgrade (see
+     * maybe_convert_campaign_tables_to_innodb_v15). $wpdb->postmeta uses the
+     * WordPress core default, which is InnoDB on all supported MySQL/MariaDB
+     * versions. On a non-transactional engine START TRANSACTION/ROLLBACK are
+     * silent no-ops and a mid-move failure would leave a partial move.
      *
      * @param int $campaign_id     Campaign post ID.
      * @param int $target_space_id Destination space id.

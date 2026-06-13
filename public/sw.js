@@ -10,14 +10,20 @@ const META_CACHE = 'wpsg-meta-v1';
 // Serves stale data immediately regardless; TTL just throttles server hits.
 const META_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Maximum number of metadata cache entries before oldest are evicted.
-// Acts as a practical 5 MB budget proxy — each JSON response is well under 100 kB.
+// Global cap on metadata cache entries before the oldest are evicted. This is a
+// flat 50-entry count (not a per-space byte budget) — each JSON response is well
+// under 100 kB, so 50 entries stays comfortably small.
 const META_MAX_ENTRIES = 50;
 
 // Matches the two public gallery metadata endpoints (pathname only):
 //   /wp-json/wp-super-gallery/v1/campaigns              (campaign list)
 //   /wp-json/wp-super-gallery/v1/campaigns/{id}/media   (per-campaign media list)
 // Does NOT match /wp-json/wp-super-gallery/v1/admin/* or any other route.
+//
+// NOTE: this tests url.pathname (query string excluded), so the admin campaign
+// list — same pathname plus ?include_archived=… — also matches. The auth-header
+// bypass in the fetch handler keeps those (and every authenticated/mutation
+// flow) network-first per Key Decision D; only anonymous public reads get SWR.
 const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/media)?$/;
 
 // Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
@@ -63,7 +69,12 @@ self.addEventListener('fetch', (event) => {
 
   // ── Stale-while-revalidate for public gallery metadata ─────────────────────
   // Must be checked BEFORE the /wp-json/ bail below.
-  if (META_ENDPOINT_RE.test(url.pathname)) {
+  // Authenticated requests (admin SPA — cookie nonce or JWT bearer) must stay
+  // network-first so post-mutation refetches (create/archive/move) never read a
+  // stale cached list. Only anonymous public reads fall through to SWR.
+  const isAuthenticated =
+    request.headers.has('X-WP-Nonce') || request.headers.has('Authorization');
+  if (!isAuthenticated && META_ENDPOINT_RE.test(url.pathname)) {
     event.respondWith(handleMetaRequest(event, request));
     return;
   }
@@ -173,8 +184,9 @@ async function stampResponse(response) {
 
 /**
  * Evicts the oldest cache entries when META_MAX_ENTRIES is exceeded.
- * Cache.keys() returns entries in insertion order (oldest first) in all
- * major browsers, making this a practical FIFO/LRU approximation.
+ * Cache.keys() returns entries in insertion order (oldest first) in all major
+ * browsers, so this is plain FIFO eviction by first-insertion — re-fetching an
+ * existing key does not move it to the tail, so it is not LRU.
  */
 async function evictOldestMetaEntries(cache) {
   const keys = await cache.keys();

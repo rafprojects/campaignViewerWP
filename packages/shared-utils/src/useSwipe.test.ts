@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { useSwipe } from '@wp-super-gallery/shared-utils';
+import { useSwipe } from './useSwipe';
 
 function createPointerEvent(_type: string, clientX: number, pointerType = 'touch') {
   return { clientX, pointerType } as React.PointerEvent;
