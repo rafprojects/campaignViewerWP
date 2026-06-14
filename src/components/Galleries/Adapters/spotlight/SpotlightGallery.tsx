@@ -108,10 +108,7 @@ export function SpotlightGallery({
   return (
     <Stack
       gap="xs"
-      style={{
-        ...adapterSizing,
-        ...(heroMaxWidth > 0 ? { maxWidth: toCss(heroMaxWidth, heroMaxWidthUnit), marginInline: 'auto' } : {}),
-      }}
+      style={adapterSizing}
       {...getWpsgDebugProps('SpotlightGallery')}
     >
       {/* Optional gallery heading */}
@@ -125,15 +122,24 @@ export function SpotlightGallery({
         </Title>
       )}
 
-      {/* Hero + strip layout container */}
-      <Box
-        style={{
-          display: 'flex',
-          flexDirection: stripOnRight ? 'row' : 'column',
-          gap: 8,
-          alignItems: 'flex-start',
-        }}
-      >
+      {/* Justification wrapper: positions the (optionally max-width-capped)
+          hero+strip block within the full adapter width. Reuses the shared
+          `adapterJustifyContent` setting (start | center | end | …). */}
+      <Box style={{ display: 'flex', justifyContent: common.adapterJustifyContent || 'center', width: '100%' }}>
+        {/* Hero + strip layout container. `spotlightHeroMaxWidth` caps this
+            block; `alignItems: 'stretch'` in below mode makes the hero fill the
+            block width, so raising Hero Max Width actually enlarges the hero
+            (previously the block shrink-wrapped and the hero was pinned left). */}
+        <Box
+          style={{
+            display: 'flex',
+            flexDirection: stripOnRight ? 'row' : 'column',
+            gap: 8,
+            alignItems: stripOnRight ? 'flex-start' : 'stretch',
+            width: '100%',
+            ...(heroMaxWidth > 0 ? { maxWidth: toCss(heroMaxWidth, heroMaxWidthUnit) } : {}),
+          }}
+        >
         {/* ── Hero area ─────────────────────────────────────────────────── */}
         <Box
           role="button"
@@ -319,6 +325,7 @@ export function SpotlightGallery({
               </button>
             );
           })}
+        </Box>
         </Box>
       </Box>
 

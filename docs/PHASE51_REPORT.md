@@ -17,7 +17,7 @@ This phase carries **two track groups**:
 | P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | To do | Medium |
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
-| P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap, Hexagon/Diamond %-unit height + row reflow, Scroll-snap infinite growth; extract a shared tile-size/geometry helper | Implemented (live QA pending) | Medium |
+| P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap + hero max-width/justification, Hexagon/Diamond %-unit height + row reflow, Scroll-snap/Coverflow/Stacked infinite growth; shared tile-layout + bounded-section-height helpers | Implemented (live QA pending) | Medium |
 | P51-F | Campaign listing card — uniform hover scale (card + image grow together) | To do | Small |
 | P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | To do | Small |
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | To do | Small |
@@ -191,6 +191,20 @@ Four adapter bugs, all front-end-only:
 **Files changed:** `_shared/tileLayout.ts` (new), `hexagonal/HexagonalGallery.tsx`, `diamond/DiamondGallery.tsx`, `scroll-snap/ScrollSnapGallery.tsx`, `adapterRegistry.ts`. **Tests added:** `_shared/tileLayout.test.ts` (9 cases — px/%/vw/rem/em resolution + reflow/fallback/min-per-row), `scroll-snap/ScrollSnapGallery.heightBound.test.tsx` (2 cases — auto-mode falls back to fixed height, bounded mode adopts measured height). Full `src/components/Galleries/Adapters` suite: 276 passing; `tsc -b` and `eslint` clean.
 
 **Pending:** live visual QA in a WordPress environment (configure Hexagon/Diamond with `%` units to confirm reflow + aspect, and Scroll-snap in `auto` mode to confirm no runaway growth). Not blocking — the geometry and height-binding logic are unit-covered — but recommended before marking the track fully Done.
+
+### Implementation (2026-06-14, expansion from user manual QA) — status: implemented, automated tests green; live visual QA pending
+
+During manual QA the user found three more issues; the track was expanded to cover them.
+
+**Coverflow + Stacked infinite growth.** Both adapters had the *exact same* `containerDimensions.height` feedback loop as Scroll-snap (take the measured section height as their own fixed stage height; runaway in the default `auto` mode). Rather than triplicate the guard, extracted a shared helper `src/components/Galleries/Adapters/_shared/sectionHeight.ts` (`resolveBoundedSectionHeight`) that returns the measured height only in `viewport`/`manual` modes and a fixed fallback otherwise. Scroll-snap was refactored to use it too (replacing the inline guard added earlier), and Coverflow (`CoverflowAdapter.tsx`) and Stacked (`StackedDeckAdapter.tsx`) now call it. Second P51-A spike candidate alongside the tile-layout helper.
+
+**Spotlight "Hero Max Width" did not size the hero.** The cap was applied to the whole adapter shell (`Stack`) with `marginInline: auto`, and the inner hero/strip container used `alignItems: 'flex-start'`, so the block shrink-wrapped and the hero was pinned left rather than filling/growing. Restructured: the hero+strip block now carries the `spotlightHeroMaxWidth` cap with `width: 100%` and `alignItems: 'stretch'` (below mode), so the hero fills the block up to the cap and raising the cap enlarges the hero. The block sits inside a full-width justification wrapper.
+
+**Missing hero justification in "Below" mode.** The justification wrapper's `justifyContent` is driven by the existing shared `common.adapterJustifyContent` setting (start | center | end | …), which is already user-controllable via `src/components/Settings/GalleryLayoutDetailSections.tsx` — so no new setting was added, and the behaviour is consistent with how CompactGrid/Circular consume the same setting. Default `center`.
+
+**Files changed (expansion):** `_shared/sectionHeight.ts` (new), `coverflow/CoverflowAdapter.tsx`, `stacked/StackedDeckAdapter.tsx`, `scroll-snap/ScrollSnapGallery.tsx` (now uses the shared helper), `spotlight/SpotlightGallery.tsx`. **Tests added:** `_shared/sectionHeight.test.ts`, `_shared/boundedStageHeight.test.tsx` (Coverflow + Stacked: auto falls back, bounded adopts), `spotlight/SpotlightGallery.layout.test.tsx` (cap applies to the block + fills width, justify via adapterJustifyContent); updated the existing `adapters.test.tsx` spotlight-maxWidth case to the new structure. Full `src/components/Galleries/Adapters` suite: **287 passing**; `tsc -b` and `eslint` clean.
+
+**Pending (expansion):** live visual QA of Coverflow/Stacked in `auto` mode (no runaway growth) and Spotlight Hero Max Width + justification in both `below`/`right` strip positions.
 
 ## Track P51-F — Campaign listing card uniform hover scale
 

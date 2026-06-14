@@ -536,7 +536,10 @@ describe('SpotlightGallery — specific', () => {
     });
   });
 
-  it('applies spotlightHeroMaxWidth to the adapter shell and keeps it centered', () => {
+  it('caps the hero+strip block at spotlightHeroMaxWidth and centers it by default', () => {
+    // P51-E: the cap now applies to the hero+strip block (so raising it enlarges
+    // the hero) and justification is driven by adapterJustifyContent (default
+    // 'center'), instead of being a maxWidth + marginInline:auto on the shell.
     const constrainedSettings: GalleryBehaviorSettings = {
       ...SETTINGS,
       spotlightHeroMaxWidth: 48,
@@ -547,9 +550,9 @@ describe('SpotlightGallery — specific', () => {
       <SpotlightGallery media={THREE_IMAGES} settings={constrainedSettings} />,
     );
 
-    const shell = container.querySelector('[data-wpsg-component="SpotlightGallery"]') as HTMLElement | null;
-    expect(shell?.style.maxWidth).toBe('48rem');
-    expect(shell?.style.marginInline).toBe('auto');
+    const divs = [...container.querySelectorAll<HTMLElement>('div')];
+    expect(divs.some((d) => d.style.maxWidth === '48rem' && d.style.width === '100%')).toBe(true);
+    expect(divs.some((d) => d.style.justifyContent === 'center')).toBe(true);
   });
 
   it('renders gracefully with empty media — hero shows empty state', () => {
