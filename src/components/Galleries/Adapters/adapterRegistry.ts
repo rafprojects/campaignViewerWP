@@ -876,7 +876,7 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         label: 'Thumbnail Size',
         description: 'Width and height of each thumbnail strip item.',
         allowedUnits: CSS_WIDTH_UNITS,
-        max: 200,
+        max: 600,
         step: 4,
         fallback: 80,
       },

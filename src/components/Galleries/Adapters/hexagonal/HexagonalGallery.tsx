@@ -26,6 +26,7 @@ import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+import { resolveTileGridLayout } from '../_shared/tileLayout';
 
 const SCOPE = 'hex';
 /** Pointy-top hexagon — tip at 12 o'clock and 6 o'clock. */
@@ -65,7 +66,7 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
+  const tileValue = (settings.tileSize ?? 150) * (settings.itemScale ?? 1);
   const tileSizeUnit = settings.tileSizeUnit ?? 'px';
   const gapX = settings.tileGapX ?? 8;
   const gapXUnit = settings.tileGapXUnit ?? 'px';
@@ -75,16 +76,18 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
 
-  // How many tiles fit in one row (min 2 so offset rows still look good)
-  const tilesPerRow = containerWidth > 0
-    ? Math.max(2, Math.floor((containerWidth + gapX) / (tSize + gapX)))
-    : 4;
-
-  // Split items into rows
-  const rows: MediaItem[][] = [];
-  for (let i = 0; i < media.length; i += tilesPerRow) {
-    rows.push(media.slice(i, i + tilesPerRow));
-  }
+  // Resolve the tile size + gap to pixels against the measured container width,
+  // then reflow into rows. Computing in pixel-space fixes both the flattened-tile
+  // bug (a `%` height has no parent height to resolve against) and the broken row
+  // wrapping for every non-`px` unit. See _shared/tileLayout.ts.
+  const { tilePx, tilesPerRow, rows } = resolveTileGridLayout({
+    items: media,
+    tileValue,
+    tileUnit: tileSizeUnit,
+    gapValue: gapX,
+    gapUnit: gapXUnit,
+    containerWidth,
+  });
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
   const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
@@ -113,8 +116,8 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
               style={{
                 display: 'flex',
                 gap: toCssOrNumber(gapX, gapXUnit),
-                marginTop: rowIdx === 0 ? 0 : `calc(-${toCss(tSize * V_OVERLAP, tileSizeUnit)} + ${toCss(gapY, gapYUnit)})`,
-                paddingLeft: isOffset ? `calc((${toCss(tSize, tileSizeUnit)} + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
+                marginTop: rowIdx === 0 ? 0 : `calc(${-(tilePx * V_OVERLAP)}px + ${toCss(gapY, gapYUnit)})`,
+                paddingLeft: isOffset ? `calc((${tilePx}px + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
               }}
             >
               {row.map((item, itemIdx) => {
@@ -131,8 +134,8 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
                     className={`wpsg-tile-${SCOPE}`}
                     style={{
                       flexShrink: 0,
-                      width: toCssOrNumber(tSize, tileSizeUnit),
-                      height: toCssOrNumber(tSize, tileSizeUnit),
+                      width: tilePx,
+                      height: tilePx,
                       clipPath: HEX_CLIP,
                       border,
                       position: 'relative',
@@ -163,9 +166,9 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
                       }}
                     >
                       {isVideo
-                        ? <IconPlayerPlay size={tSize * 0.25} color="white"
+                        ? <IconPlayerPlay size={tilePx * 0.25} color="white"
                           style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
-                        : <IconZoomIn size={tSize * 0.22} color="white"
+                        : <IconZoomIn size={tilePx * 0.22} color="white"
                           className="wpsg-hex-zoom"
                           style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                       }
@@ -189,7 +192,7 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
         })}
 
         {/* Spacing at the bottom: compensate for final row's upward offset */}
-        <Box style={{ height: tSize * V_OVERLAP }} />
+        <Box style={{ height: tilePx * V_OVERLAP }} />
       </Box>
 
       <style>{`

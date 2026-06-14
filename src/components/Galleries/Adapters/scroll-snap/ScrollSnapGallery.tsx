@@ -74,9 +74,18 @@ export function ScrollSnapGallery({
   const snapMaxWidth = settings.scrollSnapMaxWidth ?? 0;
   const snapMaxWidthUnit = settings.scrollSnapMaxWidthUnit ?? 'px';
 
-  // Container height: prefer the measured section height; fall back to constant.
+  // Container height: a vertical scroll-snap pager needs a *bounded* height that
+  // does not depend on its own content. The measured section height is only safe
+  // to adopt when the section itself is height-bounded — `viewport`/`manual`
+  // modes, where GallerySectionWrapper applies a maxHeight + overflow:hidden. In
+  // the default `auto` mode the section is sized by its content, so taking that
+  // measurement as our own height creates a feedback loop: each ResizeObserver
+  // cycle the section grows by the heading/padding delta and the pager balloons
+  // without bound. Fall back to a fixed default height in that case.
+  const sectionHeightBounded =
+    common.sectionHeightMode === 'viewport' || common.sectionHeightMode === 'manual';
   const snapHeight =
-    containerDimensions?.height && containerDimensions.height > 0
+    sectionHeightBounded && containerDimensions?.height && containerDimensions.height > 0
       ? containerDimensions.height
       : FALLBACK_HEIGHT_PX;
   const snapHeightCss = `${snapHeight}px`;

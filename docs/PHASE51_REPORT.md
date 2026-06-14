@@ -17,7 +17,7 @@ This phase carries **two track groups**:
 | P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | To do | Medium |
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
-| P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap, Hexagon/Diamond %-unit height + row reflow, Scroll-snap infinite growth; extract a shared tile-size/geometry helper | To do | Medium |
+| P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap, Hexagon/Diamond %-unit height + row reflow, Scroll-snap infinite growth; extract a shared tile-size/geometry helper | Implemented (live QA pending) | Medium |
 | P51-F | Campaign listing card — uniform hover scale (card + image grow together) | To do | Small |
 | P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | To do | Small |
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | To do | Small |
@@ -179,6 +179,18 @@ Four adapter bugs, all front-end-only:
 - Hexagon and Diamond render correct aspect ratios and wrap into rows for every supported unit (`px`, `%`, `vw`, `em`, `rem`); none overflow the container horizontally.
 - Hexagon and Diamond share a single tile-layout helper (no copy-paste).
 - Scroll-snap renders a fixed-height pager that snaps between items and does not grow unbounded; covered by a test asserting bounded container height for N items.
+
+### Implementation (2026-06-14) — status: implemented, automated tests green; live visual QA pending
+
+**Corrected root cause for scroll-snap.** The planning note (inherited from the exploration agent) blamed `flexShrink: 0`. That was wrong — the snap container is a *block* container, not a flex container, so `flexShrink` is a no-op. The actual bug is a **measurement feedback loop**: `GallerySectionWrapper` measures the section's `contentRect.height` and passes it down as `containerDimensions.height`; the adapter then used that as its own fixed snap height. The wrapper only applies a bounding `maxHeight` + `overflow:hidden` when `common.sectionHeightMode` is `viewport`/`manual` — in the **default `auto` mode** the section is content-sized, so adopting the measurement made the section grow by the heading/padding delta every ResizeObserver cycle (the "one image growing infinitely" symptom). Fix: `ScrollSnapGallery` now only adopts `containerDimensions.height` when `common.sectionHeightMode` is `viewport`/`manual`; otherwise it uses the fixed `FALLBACK_HEIGHT_PX` (500). This reads the same resolved `common.sectionHeightMode` the wrapper keys its bounding off, so the two stay consistent.
+
+**Hexagon/Diamond %-unit bugs.** Both adapters computed tiles-per-row by comparing a px container width against the raw numeric tile value (unit-ignorant), and applied the same raw value to `height` (a `%` height has no parent height → collapsed/flattened tiles). Extracted a shared, framework-agnostic helper `src/components/Galleries/Adapters/_shared/tileLayout.ts` (`resolveLengthToPx`, `resolveTileGridLayout`) that resolves tile size + gap to pixels against the measured container width, then drives width/height/overlap/row-splitting from that single px value. Hexagon and Diamond now call it instead of each carrying a copy. `em` is approximated with the root font size (documented in the helper) since tiles size against the container, not a local font context. This helper is the seed candidate handed to the P51-A spike.
+
+**Spotlight cap.** Raised `spotlightThumbnailSize.max` from 200 → 600 in `adapterRegistry.ts`. Confirmed there is **no** corresponding server-side clamp (`spotlight_thumbnail_size` is not in `WPSG_Settings_Registry::get_field_ranges()`), so no PHP change is needed.
+
+**Files changed:** `_shared/tileLayout.ts` (new), `hexagonal/HexagonalGallery.tsx`, `diamond/DiamondGallery.tsx`, `scroll-snap/ScrollSnapGallery.tsx`, `adapterRegistry.ts`. **Tests added:** `_shared/tileLayout.test.ts` (9 cases — px/%/vw/rem/em resolution + reflow/fallback/min-per-row), `scroll-snap/ScrollSnapGallery.heightBound.test.tsx` (2 cases — auto-mode falls back to fixed height, bounded mode adopts measured height). Full `src/components/Galleries/Adapters` suite: 276 passing; `tsc -b` and `eslint` clean.
+
+**Pending:** live visual QA in a WordPress environment (configure Hexagon/Diamond with `%` units to confirm reflow + aspect, and Scroll-snap in `auto` mode to confirm no runaway growth). Not blocking — the geometry and height-binding logic are unit-covered — but recommended before marking the track fully Done.
 
 ## Track P51-F — Campaign listing card uniform hover scale
 

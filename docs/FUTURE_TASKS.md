@@ -170,30 +170,6 @@ The SettingsPanel Drawer renders via `withinPortal={true}` to `document.body`, o
 
 ---
 
-## Build & Bundle
-
-### Service Worker — Offline Support (App Shell Pattern)
-
-**Origin:** P50-F follow-on (2026-06-12). Identified during manual testing — going offline and reloading produces `ERR_INTERNET_DISCONNECTED` because the HTML page shell is not cached.
-
-**Context:** P50-F's SW intentionally skips navigation/HTML caching (the `request.mode === 'navigate'` bail in `public/sw.js`) to avoid a known failure mode: a stale cached shell that references Vite chunk URLs removed by a newer deploy causes broken lazy-loaded drawers and modals until the user manually clears site data. The metadata SWR cache (`wpsg-meta-v1`) is intact when offline, but it has no page to serve into.
-
-**What to implement:**
-- A **versioned app-shell cache** for the gallery entry-point HTML, tied to the deployed bundle (e.g. a version hash injected into the SW source at build time, or `workbox-window` + `injectManifest`).
-- **Deploy-time cache busting:** the shell HTML must be invalidated on every deploy so the new shell imports the correct Vite chunk URLs. Without this, caching the shell causes the exact stale-chunk failures that the current bail prevents.
-- **Offline fallback** — if the shell is absent or too stale, serve a minimal branded offline fallback page rather than Chrome's error screen.
-
-**Open questions:**
-- Q1: How is the deploy version communicated to the SW? Options: (a) inject a version hash into the SW script at build time; (b) a `/__wpsg_version` PHP endpoint returning a build hash; (c) `workbox-window` + `injectManifest`.
-- Q2: Does the SW need to handle multiple WordPress page URLs (any page embedding the WPSG shortcode), or only the site root?
-- Q3: Should the offline fallback be a static HTML string embedded in the SW, or a separately cached `offline.html` asset?
-
-**Prerequisites:** P50-F (SW metadata caching) must be complete (shipped).
-
-**Effort:** Medium (4–8 hours) | **Impact:** Medium — meaningful for mobile gallery viewers on intermittent connections.
-
----
-
 ## Deferred Gallery Adapters
 
 > **Origin:** Phase 8 brainstorm (P22). These gallery adapter concepts were identified as valuable additions but deferred from the active Phase 8 scope. They follow the existing `GalleryAdapterProps` contract and register via `registerAdapter` like all current adapters.
