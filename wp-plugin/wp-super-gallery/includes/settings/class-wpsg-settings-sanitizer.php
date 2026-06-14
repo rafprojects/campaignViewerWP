@@ -126,6 +126,7 @@ class WPSG_Settings_Sanitizer {
         'spotlightStripPosition' => 'spotlight_strip_position',
         'spotlightHeroMaxWidth' => 'spotlight_hero_max_width',
         'spotlightHeroMaxWidthUnit' => 'spotlight_hero_max_width_unit',
+        'spotlightHeroJustification' => 'spotlight_hero_justification',
         'imageViewportHeight' => 'image_viewport_height',
         'imageViewportHeightUnit' => 'image_viewport_height_unit',
         'videoViewportHeight' => 'video_viewport_height',

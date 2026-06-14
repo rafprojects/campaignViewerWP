@@ -70,6 +70,12 @@ export function SpotlightGallery({
   const stripPositionSetting = settings.spotlightStripPosition ?? 'below';
   const heroMaxWidth = settings.spotlightHeroMaxWidth ?? 0;
   const heroMaxWidthUnit = settings.spotlightHeroMaxWidthUnit ?? 'px';
+  // Dedicated hero justification (independent of the shared adapterJustifyContent
+  // grid-item-distribution setting). Maps to flexbox justify-content values.
+  const heroJustifyContent =
+    { start: 'flex-start', center: 'center', end: 'flex-end' }[
+      settings.spotlightHeroJustification ?? 'center'
+    ] ?? 'center';
 
   // Strip placement: honour 'right' only when container is wide enough.
   const containerWidth = containerDimensions?.width ?? 0;
@@ -123,9 +129,9 @@ export function SpotlightGallery({
       )}
 
       {/* Justification wrapper: positions the (optionally max-width-capped)
-          hero+strip block within the full adapter width. Reuses the shared
-          `adapterJustifyContent` setting (start | center | end | …). */}
-      <Box style={{ display: 'flex', justifyContent: common.adapterJustifyContent || 'center', width: '100%' }}>
+          hero+strip block within the full adapter width, via the dedicated
+          `spotlightHeroJustification` setting. */}
+      <Box style={{ display: 'flex', justifyContent: heroJustifyContent, width: '100%' }}>
         {/* Hero + strip layout container. `spotlightHeroMaxWidth` caps this
             block; `alignItems: 'stretch'` in below mode makes the hero fill the
             block width, so raising Hero Max Width actually enlarges the hero

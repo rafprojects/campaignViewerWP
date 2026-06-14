@@ -793,6 +793,7 @@ export interface GalleryBehaviorSettings {
   spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
   spotlightHeroMaxWidth: number;      // 0 = no max-width (full container)
   spotlightHeroMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  spotlightHeroJustification: 'start' | 'center' | 'end';                    // horizontal alignment of the hero block within the container
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
   navArrowSize: number;
@@ -1528,6 +1529,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   spotlightStripPosition: 'below',
   spotlightHeroMaxWidth: 0,
   spotlightHeroMaxWidthUnit: 'px',
+  spotlightHeroJustification: 'center',
   // P21-B: Card visibility toggles
   showCardCompanyName: true,
   showCardMediaCounts: true,

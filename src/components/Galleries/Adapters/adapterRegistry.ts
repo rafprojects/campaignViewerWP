@@ -912,6 +912,18 @@ const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefinition> =
         step: 10,
         fallback: 0,
       },
+      {
+        control: 'select',
+        key: 'spotlightHeroJustification',
+        label: 'Hero Justification',
+        description: 'Horizontal alignment of the hero block within the container when Hero Max Width makes it narrower than the container.',
+        fallback: 'center',
+        options: [
+          { value: 'start', label: 'Start (left)' },
+          { value: 'center', label: 'Center' },
+          { value: 'end', label: 'End (right)' },
+        ],
+      },
     ],
   },
   'scroll-snap': {

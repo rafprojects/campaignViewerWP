@@ -32,6 +32,8 @@ const MASONRY_ENTRANCE_ANIMATIONS = ['none', 'waterfall'] as const;
 const SCROLL_SNAP_ALIGNMENTS = ['start', 'center', 'end'] as const;
 // P31-E: spotlight strip placement options
 const SPOTLIGHT_STRIP_POSITIONS = ['below', 'right'] as const;
+// P51-E: spotlight hero horizontal justification
+const SPOTLIGHT_HERO_JUSTIFICATIONS = ['start', 'center', 'end'] as const;
 
 const optionalFiniteNumber = z.number().finite().optional().catch(undefined);
 const optionalBoolean = z.boolean().optional().catch(undefined);
@@ -140,6 +142,7 @@ export const GalleryAdapterSettingsSchema = z.object({
   spotlightStripPosition: optionalEnum(SPOTLIGHT_STRIP_POSITIONS),
   spotlightHeroMaxWidth: optionalFiniteNumber,
   spotlightHeroMaxWidthUnit: optionalEnum(CSS_WIDTH_UNITS),
+  spotlightHeroJustification: optionalEnum(SPOTLIGHT_HERO_JUSTIFICATIONS),
   imageViewportHeight: optionalFiniteNumber,
   imageViewportHeightUnit: optionalEnum(CSS_HEIGHT_UNITS),
   videoViewportHeight: optionalFiniteNumber,

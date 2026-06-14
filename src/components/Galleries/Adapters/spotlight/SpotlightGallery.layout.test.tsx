@@ -9,12 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 
-import type {
-  GalleryBehaviorSettings,
-  GalleryCommonSettings,
-  MediaItem,
-  ResolvedGallerySectionRuntime,
-} from '@/types';
+import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import { SpotlightGallery } from './SpotlightGallery';
 
@@ -36,18 +31,6 @@ const media: MediaItem[] = [
   { id: '2', url: 'b.jpg', type: 'image' } as MediaItem,
 ];
 
-function runtimeWithJustify(
-  justify: GalleryCommonSettings['adapterJustifyContent'],
-): ResolvedGallerySectionRuntime {
-  return {
-    breakpoint: 'desktop',
-    scope: 'image',
-    common: { adapterJustifyContent: justify } as GalleryCommonSettings,
-    background: { type: 'none', color: '', gradient: '', imageUrl: '' },
-    adapterSettings: {},
-  } as ResolvedGallerySectionRuntime;
-}
-
 const divStyles = (root: HTMLElement) => [...root.querySelectorAll<HTMLElement>('div')];
 
 describe('SpotlightGallery hero layout', () => {
@@ -57,24 +40,21 @@ describe('SpotlightGallery hero layout', () => {
       spotlightHeroMaxWidth: 400,
       spotlightHeroMaxWidthUnit: 'px',
     };
-    const { container } = render(
-      <SpotlightGallery media={media} settings={settings} runtime={runtimeWithJustify('center')} />,
-    );
+    const { container } = render(<SpotlightGallery media={media} settings={settings} />);
     const capped = divStyles(container).filter((d) => d.style.maxWidth === '400px');
     expect(capped.length).toBeGreaterThan(0);
     // The capped block also fills available width so the hero grows up to the cap.
     expect(capped.some((d) => d.style.width === '100%')).toBe(true);
   });
 
-  it('positions the block using adapterJustifyContent', () => {
+  it('positions the block using the dedicated spotlightHeroJustification setting', () => {
     const settings: GalleryBehaviorSettings = {
       ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
       spotlightHeroMaxWidth: 400,
       spotlightHeroMaxWidthUnit: 'px',
+      spotlightHeroJustification: 'end',
     };
-    const { container } = render(
-      <SpotlightGallery media={media} settings={settings} runtime={runtimeWithJustify('end')} />,
-    );
-    expect(divStyles(container).some((d) => d.style.justifyContent === 'end')).toBe(true);
+    const { container } = render(<SpotlightGallery media={media} settings={settings} />);
+    expect(divStyles(container).some((d) => d.style.justifyContent === 'flex-end')).toBe(true);
   });
 });
