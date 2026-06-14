@@ -58,6 +58,41 @@ class WPSG_CPT_Registration_Test extends WP_UnitTestCase {
         $this->assertContains('wpsg_campaign_tag', $taxonomies);
     }
 
+    // ── P51-G: admin IA labels + Companies term-list column ────────────────────
+
+    public function test_campaign_menu_is_supergallery_with_campaigns_list_item() {
+        $obj = get_post_type_object('wpsg_campaign');
+        $this->assertSame('SuperGallery', $obj->labels->menu_name);
+        // The submenu list item stays "Campaigns".
+        $this->assertSame('Campaigns', $obj->labels->all_items);
+        $this->assertSame('Add New Campaign', $obj->labels->add_new_item);
+    }
+
+    public function test_company_taxonomy_uses_company_labels_not_tag_defaults() {
+        $tax = get_taxonomy('wpsg_company');
+        $this->assertSame('Add New Company', $tax->labels->add_new_item);
+        $this->assertSame('New Company Name', $tax->labels->new_item_name);
+        // Guard against the default non-hierarchical tag fallback strings.
+        $this->assertStringNotContainsString('Tag', $tax->labels->add_new_item);
+    }
+
+    public function test_rename_company_count_column_relabels_posts_to_campaigns() {
+        $columns = WPSG_CPT::rename_company_count_column([
+            'cb'    => '<input type="checkbox" />',
+            'name'  => 'Name',
+            'posts' => 'Count',
+        ]);
+        $this->assertSame('Campaigns', $columns['posts']);
+        // Other columns are untouched.
+        $this->assertSame('Name', $columns['name']);
+    }
+
+    public function test_rename_company_count_column_is_noop_without_posts_column() {
+        $columns = WPSG_CPT::rename_company_count_column(['name' => 'Name']);
+        $this->assertArrayNotHasKey('posts', $columns);
+        $this->assertSame(['name' => 'Name'], $columns);
+    }
+
     // ── CPT_CAPS constant ──────────────────────────────────────────────────
 
     public function test_cpt_caps_constant_is_array() {

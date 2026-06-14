@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedValue } from '@mantine/hooks';
 import type { ApiClient } from '@/services/apiClient';
 import type { CompanyInfo, CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
+import type { CampaignAccessLevel } from '@/types';
 import { getErrorMessage } from '@/utils/getErrorMessage';
 
 export interface WpUser {
@@ -170,6 +171,54 @@ export function useAdminAccessState({
     }
   }, [accessViewMode, accessCampaignId, selectedCompanyId, apiClient, mutateAccess, onNotify]);
 
+  // P51-H: change the role of an existing grant via the inline dropdown.
+  // The server's upsert_grant() replaces the existing entry for the user, so
+  // re-POSTing with the new access_level is an in-place role update. We mirror
+  // the endpoint resolution used by handleRevokeAccess and preserve any expiry.
+  const handleChangeRole = useCallback(async (entry: CompanyAccessGrantType, newLevel: CampaignAccessLevel) => {
+    if (accessSavingRef.current) return;
+    const currentLevel = (entry.access_level ?? 'viewer') as CampaignAccessLevel;
+    if (currentLevel === newLevel) return;
+    accessSavingRef.current = true;
+    setAccessSaving(true);
+    try {
+      const expiresPayload = entry.expires_at ? { expires_at: entry.expires_at } : {};
+      if (accessViewMode === 'campaign') {
+        if (!accessCampaignId) return;
+        await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
+          userId: entry.userId,
+          source: entry.source,
+          action: 'grant',
+          access_level: newLevel,
+          ...expiresPayload,
+        });
+      } else if (entry.source === 'company' && selectedCompanyId) {
+        await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
+          userId: entry.userId,
+          access_level: newLevel,
+          ...expiresPayload,
+        });
+      } else if (entry.source === 'campaign' && entry.campaignId) {
+        await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${entry.campaignId}/access`, {
+          userId: entry.userId,
+          source: 'campaign',
+          action: 'grant',
+          access_level: newLevel,
+          ...expiresPayload,
+        });
+      } else {
+        return;
+      }
+      await mutateAccess();
+      onNotify({ type: 'success', text: 'Role updated.' });
+    } catch (err) {
+      onNotify({ type: 'error', text: getErrorMessage(err, 'Failed to update role.') });
+    } finally {
+      accessSavingRef.current = false;
+      setAccessSaving(false);
+    }
+  }, [accessViewMode, accessCampaignId, selectedCompanyId, apiClient, mutateAccess, onNotify]);
+
   const handleArchiveCompany = useCallback(async () => {
     if (!confirmArchiveCompany) return;
     setAccessSaving(true);
@@ -263,6 +312,7 @@ export function useAdminAccessState({
     quickAddTestMode, setQuickAddTestMode,
     handleGrantAccess,
     handleRevokeAccess,
+    handleChangeRole,
     handleArchiveCompany,
     handleQuickAddUser,
     handleOpenQuickAddUser,

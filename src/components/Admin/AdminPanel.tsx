@@ -378,7 +378,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
 
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign });
-  const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess });
+  const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole: accessState.handleChangeRole });
   const auditRows = useAuditRows(auditEntries);
 
   return (

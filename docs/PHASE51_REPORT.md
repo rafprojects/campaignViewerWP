@@ -219,6 +219,9 @@ Apply the scale to the whole card (scale `.card`, or wrap image + chrome in one 
 ### Acceptance criteria
 - On hover, the entire card (border, chrome, and image) scales as one unit; the image no longer scales independently of its frame.
 
+### Implementation (2026-06-14) — status: implemented
+In `CampaignCard.module.scss` the hover now applies `transform: translateY(-2px) scale(1.02)` to `.card` itself, and the image-only `.card:hover .thumbnailImage { transform: scale(1.02) }` rule (plus the now-unused `.thumbnailImage` transition) was removed — card chrome and image scale as one unit. Also fixed a latent reduced-motion bug: the `@media (prefers-reduced-motion: reduce)` block reset `.card { transform: none }`, which does **not** out-specify `.card:hover`, so the hover transform survived reduced-motion. The reset now targets `.card, .card:hover`, matching the hover specificity so the lift/scale is genuinely disabled. (`styles.thumbnailImage` is now undefined; the component applies that className conditionally, so it simply drops — no JS change needed.)
+
 ## Track P51-G — WP admin IA quick wins
 
 ### Problem & approach
@@ -230,6 +233,9 @@ PHP, `wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php`:
 ### Acceptance criteria
 - WP sidebar shows a "SuperGallery" top-level menu with a "Campaigns" item beneath it (plus existing Settings/Spaces).
 - The Companies taxonomy screen reads "Add New Company" (no "Add Tag" wording) and the count column is clearly labeled.
+
+### Implementation (2026-06-14) — status: implemented, PHP tests green
+In `class-wpsg-cpt.php`: the `wpsg_campaign` registration gained a full `labels` array with `menu_name => 'SuperGallery'` and `all_items => 'Campaigns'` (the bare `label` is kept as a fallback) — only the top-level menu is renamed; the campaign list item and the nested Settings/Spaces submenus (which hang off `edit.php?post_type=wpsg_campaign`) are unaffected. The `wpsg_company` taxonomy gained an explicit non-hierarchical `labels` array (`add_new_item => 'Add New Company'`, `new_item_name => 'New Company Name'`, plus the `separate_items_with_commas`/`add_or_remove_items`/`choose_from_most_used` strings) so WP no longer falls back to the default "tag" wording. For the ambiguous "Count" column I took the simpler route over the planned custom-column pair: a `manage_edit-wpsg_company_columns` filter (`rename_company_count_column`) relabels the built-in `posts` column header to **"Campaigns"**, preserving WP's working count + filtered-list link. **Tests:** `WPSG_CPT_Registration_Test` +4 methods (menu_name/all_items, company labels-not-tag-defaults, column rename, column-rename no-op) — class 30 passing.
 
 ## Track P51-H — Access-grant role editing (dropdown)
 
@@ -243,7 +249,11 @@ The access-grant row supports delete only; add an inline role `Select` (viewer /
 - Each grant row exposes a role dropdown; changing it persists the new `access_level` and the row reflects it after refetch.
 - No regression to the existing delete/revoke action.
 
+### Implementation (2026-06-14) — status: implemented, automated tests green
+The role column in `useAccessRows.tsx` is now a Mantine `Select` (viewer/editor/owner, options derived from the existing `ROLE_BADGE_CONFIG`, current-role tooltip retained) with an accessible `Role for <name>` label. Rather than adding a new mutation in `adminQuery.ts`, the change is handled by a new `handleChangeRole(entry, level)` in `useAdminAccessState.ts` — the server's `upsert_grant()` replaces the existing entry for the user, so re-`POST`ing to the same `/access` endpoint with the new `access_level` is an in-place role update. Endpoint resolution mirrors `handleRevokeAccess` exactly (campaign-view → `campaigns/{accessCampaignId}/access`; company-source → `companies/{selectedCompanyId}/access`; campaign-source → `campaigns/{entry.campaignId}/access`), any existing `expires_at` is preserved, and same-level re-selection is a no-op. `AdminPanel.tsx` passes `onChangeRole: accessState.handleChangeRole`. **Tests:** `useAccessRows.test.tsx` rewritten for the dropdown (11 tests incl. a `fireEvent` interaction asserting `onChangeRole(entry, 'owner')` and a same-role no-op); `useAdminAccessState` suite still green. `tsc` + `eslint` clean. No PHP change — the REST grant endpoints already accept `access_level`.
+
 ---
 
 *Updated: 2026-06-12 (P51-A spike track written; P51-B/C/D stubs blocked on spike findings)*
 *Updated: 2026-06-14 — Added front-end fix tracks P51-E…H (adapter bugs, card hover, WP menu/taxonomy labels, access-grant role dropdown). Recalibrated P51-A: added `src/components/Galleries/Adapters/` to the spike's survey scope and sequenced P51-E first so its extracted tile-layout helper seeds the spike candidate list. Larger net-new features and the RBAC audit split into PHASE52_REPORT.md.*
+*Updated: 2026-06-14 — P51-E adapter-settings persistence gap resolved (13 nested Spotlight/Scroll-snap/Masonry-entrance slugs registered in PHP `$defaults`/`$valid_options`/`$field_ranges`; parity guard + PHP regression tests added). P51-F (card hover), P51-G (WP menu/taxonomy IA), and P51-H (access-grant role dropdown) implemented with automated tests green. Remaining: P51-A…D abstraction tracks, and live visual QA of the P51-E adapter fixes.*
