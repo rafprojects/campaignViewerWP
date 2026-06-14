@@ -145,6 +145,36 @@ describe('adapter settings parity (P31-D)', () => {
     ].join('\n')).toHaveLength(0);
   });
 
+  // P51-E: Every adapter-map slug must also exist as a key in the registry
+  // $defaults array. The nested sanitizer gates on array_key_exists($flat_key,
+  // $defaults) (sanitize_nested_gallery_setting), so a slug present in the field
+  // map but absent from $defaults is silently dropped on save for both global
+  // gallery_config and per-campaign galleryOverrides. This guard caught the
+  // Spotlight / Scroll-snap / Masonry-entrance persistence gap.
+  it('every PHP adapter field-map slug is registered in $defaults', () => {
+    const registryPhpSource = readSource(
+      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php',
+    );
+
+    const defaultsStart = registryPhpSource.indexOf('private static $defaults = [');
+    const defaultsEnd   = registryPhpSource.indexOf('\n    ];', defaultsStart);
+    const defaultsBlock = registryPhpSource.slice(defaultsStart, defaultsEnd);
+    const defaultKeys   = new Set(
+      [...defaultsBlock.matchAll(/'([a-z][a-z0-9_]*)'\s*=>/g)].map((m) => m[1]),
+    );
+
+    const slugs   = Object.values(phpMap);
+    const missing = slugs.filter((slug) => !defaultKeys.has(slug));
+
+    expect(missing, [
+      'One or more adapter field-map slugs are missing from $defaults in',
+      'class-wpsg-settings-registry.php. The nested sanitizer rejects any slug',
+      'absent from $defaults, so these values are silently dropped on save.',
+      'Add a default (and valid_options / field_ranges where applicable) for:',
+      ...[...new Set(missing)].map((slug) => `  '${slug}' => ...,`),
+    ].join('\n')).toHaveLength(0);
+  });
+
   it('identifies legacy PHP map entries that have no registry counterpart', () => {
     // These are known orphan entries from formerly-dimension fields whose *Unit
     // companions were left in the PHP map when the control type changed to number.
