@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1+A2 done**; A3 next; A6 frontend may defer to P53) | In progress | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A3 done**; A4 next; A6 frontend may defer to P53) | In progress | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -94,7 +94,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 |-----------|-------|-------|--------|
 | **A1** | `WPSG_Permissions` centralized map wired to **current** gates + regression tests asserting the present matrix (provable baseline, no behavior change) | P52 | **Done 2026-06-15** |
 | **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | **Done 2026-06-15** |
-| **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | To do |
+| **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | **Done 2026-06-15** |
 | **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | To do |
 | **A5** | REST hardening: flip every `require_admin` endpoint per the matrix (system→`manage_options`; per-campaign/company→`manage_wpsg`+space access; per-resource delete policy + in-use guards) | P52 | To do |
 | **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
@@ -118,6 +118,14 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 **Touch points.** `class-wpsg-auth-controller.php` — `create_user` role enum + `$allowed_roles` + error text, and `list_roles` label ("Gallery Admin" → "Gallery Editor"). `uninstall.php` — removes `wpsg_editor` and the legacy `wpsg_admin` (if present) plus the new migration-flag option. `src/components/Admin/QuickAddUserModal.tsx` — role dropdown option. The localStorage keys `wpsg_admin_active_tab` / `wpsg_admin_shortcuts` are unrelated to the role and were intentionally **not** renamed.
 
 **Proven.** New `tests/WPSG_P52A2_Role_Migration_Test.php` (8 tests): editor caps present, no `manage_options`/CPT caps, `ensure_editor_role` strips legacy CPT caps, the required **migration test** (pre-existing `wpsg_admin` user → `wpsg_editor`, access intact, legacy role removed, flag set), no-op when already migrated, and the `/users` contract (accepts `wpsg_editor`, rejects `wpsg_admin` with 400, `list_roles` exposes editor not legacy). Full PHPUnit suite green — **975 tests, 12043 assertions, 0 failures** — and `QuickAddUserModal.test.tsx` green (12/12).
+
+### A3 — implementation notes (Done 2026-06-15)
+
+**Re-gated wp-admin surfaces to `manage_options`.** The **Spaces** submenu page (`class-wpsg-space-admin-renderer.php`) moves from `manage_wpsg` to `manage_options` — managing spaces is a System Admin function. The `admin_post_wpsg_create_space` handler (`WPSG_CPT::handle_create_space()`) likewise now requires `manage_options`. **Settings** was already `manage_options` (kept; regression-tested).
+
+**CPT menu provably hidden for editors.** The `wpsg_campaign` CPT is registered with `capability_type => ['wpsg_campaign','wpsg_campaigns']` + `map_meta_cap => true`, so its top-level "SuperGallery" menu (and the Spaces/Settings submenus nested under it) is gated by the CPT caps. A2 stripped those caps from `wpsg_editor`, so the entire menu is hidden for editors; A3's page-capability change additionally blocks direct-URL access. `render_create_space_ui()` only renders on the (CPT-cap-gated) campaign list screen, and the handler defends with `manage_options` regardless.
+
+**Proven.** New `tests/WPSG_P52A3_Admin_Gating_Test.php` (5 tests): the Spaces page is registered with `manage_options`, Settings remains `manage_options` (regression), a `wpsg_editor` lacks `manage_options` and every CPT cap (menu hidden) while keeping `manage_wpsg`, an administrator has both, and the create-space handler `wp_die()`s for an editor. Full PHPUnit suite green — **980 tests, 12060 assertions, 0 failures**.
 
 ### Acceptance criteria
 
