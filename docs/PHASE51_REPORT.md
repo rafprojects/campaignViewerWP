@@ -13,7 +13,7 @@ This phase carries **two track groups**:
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P51-A | Abstraction Spike — Opus/Fable audit of the full codebase for package candidates, WordPress-coupling points, and decoupling paths | To do | Medium |
+| P51-A | Abstraction Spike — Opus/Fable audit of the full codebase for package candidates, WordPress-coupling points, and decoupling paths | ✅ Complete | Medium |
 | P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | To do | Medium |
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
@@ -118,6 +118,125 @@ Invoke an Opus or Fable agent with read access to the full `src/` tree. The agen
 
 The agent should **not** write any code. Output is research only. P51-B and P51-C will use the findings to define their implementation scope.
 
+### Spike Findings (2026-06-14)
+
+**Method.** Read-only full-tree survey, fanned out over five parallel sub-agents (utils, hooks, services+auth+contexts, themes, canvas-primitives+adapters), each reading files in full and flagging coupling by symbol. Synthesis + every "ready-now / zero-coupling" claim and the strongest surprises were re-verified directly (grep of import lines + WP-global reads) before inclusion — see verification notes inline.
+
+**Baseline correction (supersedes the acceptance criteria above).** `src/lib/` and `src/i18n/` **no longer exist** — P50-G already extracted the `src/lib/` modules into `packages/shared-utils` (`cssUnits`, `safeLocalStorage`, `sanitizeCss`, `scrollLock`, `useSwipe`) and `packages/shared-ui` (`Lightbox`, `KeyboardHintOverlay`, `LoginForm`). The two packages exist and are wired; `shared-utils` is still `"private": true`. So the spike's real baseline is "what remains in `src/`", and the `AuthBarFloating`/`AuthBarMinimal` components named in the P50-G `shared-ui` scope were **not** carried over and are still in the app tree (a small loose end for P51-C).
+
+#### 1. Executive summary
+
+| Area | Files surveyed | Ready now (move w/ path change) | Ready w/ light decoupling | Stays (domain/WP) |
+|------|----------------|----------------------------------|----------------------------|--------------------|
+| `src/utils/` | 37 | 8 | ~13 | ~16 |
+| `src/hooks/` | 46 | 10 | ~7 | ~29 |
+| `src/services/{http,auth}` + `queryClient`/`apiClient` | 6 | 3 interfaces/factory | 2 impls (isolate globals) | 1 |
+| `src/contexts/` | 7 | 3 generic | 2 (externalize init) | 2 domain |
+| `src/themes/` | ~28 (incl. 23 JSON) | color/validation/types/JSON | adapter+index (Mantine, env, prefix) | — |
+| Layout Builder canvas primitives | 5 | 0 (shells) | — | 5 |
+| Adapters `_shared` + tree | ~20 | 2 (`tileLayout`, `sectionHeight`) | 1 (`pinterest` math) | rest |
+
+**Headline conclusions.**
+- **`shared-utils` has a large, low-risk backlog** — ~18 modules (8 pure utils + 10 generic hooks) can move with only path changes, plus ~20 more behind a single trivial decoupling each. This is the bulk of the value and should be P51-B.
+- **A dedicated `shared-layout` package is not justified.** The five canvas-primitive *components* are thin WPSG-coupled SVG render-shells (`useBuilderOverlayColors`, `useCanvasTransform`, `@/types` layout types). The only genuinely portable layout code is the *underlying* pure geometry in `src/utils/` (`canvasMeasurement`, `smartGuides`) — fold those into `shared-utils`, don't spin up a package.
+- **`theme-engine` is viable as a future package (YES-with-caveats)** — the color pipeline (`colorGen`, `validation`, `types`, all `definitions/*.json`) is genuinely clean; the blockers are mechanical (Mantine in `adapter.ts`, `import.meta.env.DEV`, a hardcoded `--wpsg` prefix, a catalog path import, and `shared-utils` being private). Recommend its own track, not folded into P51-B/C.
+- **The WP coupling is already well-isolated by interfaces in the service layer.** `AuthProvider`/`HttpTransport` are clean contracts; `WpJwtProvider` confines all WP endpoints/fields. The leaks are confined to two impls (`HttpTransportImpl.buildAuthHeaders`/`refreshNonce`) and the nonce-cookie branch of `AuthContext` — both fixable with a `getNonce`/`WpNonceProvider` injection (P51-D).
+
+#### 2. Candidate tables
+
+Confidence column omitted where "high" throughout; coupling cited by symbol. "shared-utils✓" = the package already exists and this is a clean add.
+
+**`src/utils/` — ready now (zero `@/` imports, verified by grep):**
+
+| file | what | target |
+|------|------|--------|
+| `clampDimension.ts` | pure math | shared-utils✓ |
+| `sortByOrder.ts` | `{order?}` sort | shared-utils✓ |
+| `getErrorMessage.ts` | error→string | shared-utils✓ |
+| `resolveColumnsFromWidth.ts` | pure column math | shared-utils✓ |
+| `galleryAnimations.ts` | DOM transition over `HTMLElement` | shared-utils✓ |
+| `maskFeather.ts` | Canvas feather | shared-utils✓ |
+| `canvasMeasurement.ts` | snap/tick/distance geometry | shared-utils✓ (geometry) |
+| `smartGuides.ts` | guide-snap geometry | shared-utils✓ (geometry) |
+
+**`src/utils/` — ready with light decoupling (one fix each):**
+
+| file | coupling (symbol) | fix | target |
+|------|--------------------|-----|--------|
+| `alignSlots.ts` | `LayoutSlot` (used as `{id,x,y,w,h}`) | inline structural type | shared-utils✓ |
+| `graphicLayerTransform.ts` | `LayoutGraphicLayer` (rotation/flipH/flipV) | accept `{rotation?,flipH?,flipV?}` | shared-utils✓ |
+| `slotEffects.ts` | `Slot*` data-bag types | inline structural types | shared-utils✓ |
+| `shadowPresets.ts` | `ShadowPreset` union | inline union literal | shared-utils✓ |
+| `resolveBreakpointValue.ts` | `Breakpoint` union | inline `'desktop'\|'tablet'\|'mobile'` | shared-utils✓ |
+| `gradientCss.ts` | `Gradient*` shape types | inline as generic CSS types | shared-utils✓ |
+| `clipPath.ts` | `getClipPathForShape` is pure; wrappers take `LayoutSlot` | move `getClipPathForShape` only | shared-utils✓ |
+| `groupGeometry.ts` | `LayoutGroup`/`LayoutSlot` | generic `{id,…,memberIds}` interfaces | shared-utils✓ (geometry) |
+| `checkeredBg.ts` | Mantine CSS vars | parametrize var names | shared-utils✓ |
+| `loadCustomFonts.ts` / `loadGoogleFont.ts` | hardcoded style-id / app-name strings | parametrize | shared-utils✓ |
+| `spaceColor.ts` / `themeScope.ts` / `debug.ts` / `fallback.ts` | hardcoded `wpsg-`/key/label strings only | parametrize prefix/label | shared-utils✓ (low) |
+
+**`src/utils/` — stays (WPSG-domain model, not worth decoupling):** `galleryConfig.ts`, `campaignGalleryOverrides.ts`, `campaignGalleryRenderPlan.ts`, `campaignViewerLayout.ts`, `cardConfig.ts`, `mergeSettingsWithDefaults.ts`, `resolveAdapterId.ts`, `resolveListingAdapterId.ts`, `gridLayout.ts` (`resolveListingColumns` takes `GalleryBehaviorSettings`; the pure `resolveFixedCardWidth`/`gridRowMaxWidthCss`/`formatGapCss` could split out later), `layerList.ts`, `layoutSlotAssignment.ts`, `wpsgDebug.ts` (reads `window.__WPSG_CONFIG__`), plus `assetFileType.ts`/`maskFeather` siblings already covered.
+
+**`src/hooks/` — ready now (zero `@/` imports + no WP globals, verified by grep):** `useCarousel`, `useIdleTimeout`, `useOnlineStatus`, `useTabVisibility`, `useViewportHeight`, `useDirtyGuard`, `useLazyAccordion`, `useXhrUpload` (takes `url`/`headers` as params), `useBuilderDeepLink` (History/URLSearchParams), and `useLightbox` (already imports `acquireBodyScrollLock` from `shared-utils`). → all `shared-utils✓` (mirrors `useSwipe` already living there).
+
+**`src/hooks/` — ready with light decoupling:**
+
+| hook | coupling (symbol) | fix |
+|------|--------------------|-----|
+| `usePersistentAccordion` / `useScrollRestore` / `useReloadSafeView` | `useRootId()` from `RootIdContext` for storage-key prefix | accept `storageKeyPrefix`/`storageKey` param |
+| `useRecentFonts` | `localStorage` key `wpsg-recent-fonts` | configurable `storageKey`/`maxRecent` |
+| `useMediaDimensions` / `useMediaLightbox` | `MediaItem` (uses `.id`/dims only) | generic `<T extends {id:string;…}>` |
+| `useBreakpoint` | `useMantineTheme()` for px + `ResponsiveBreakpoint` | inject `mobileMaxPx`/`tabletMaxPx` |
+
+**`src/hooks/` — stays (WP/WPSG/admin):** `useNonceHeartbeat` (`window.__WPSG_CONFIG__`, `/wp-json/.../nonce`), `useAuth` (re-export of WP `AuthContext`), `usePageSpaces` (`window.__WPSG_PAGE_SPACES__`), and the `ApiClient`/`adminQuery`/`@/types`-bound admin & builder hooks: `useAdminAccessState`, `useAccessRows`, `useAdminCampaignActions`, `useArchiveModal`, `useAuditRows`, `useCampaignsRows`, `useExternalMediaModal`, `useInContextSave`, `useMediaUsageSummary`, `useRecordAnalyticsEvent`, `useUnifiedCampaignModal`, `useBuilderCampaignMedia`, `useBuilderDraftRestore`, `useBuilderOverlayColors`, `useBuilderShellColors`, `useBuilderWorkspacePrefs`, `useLayoutBuilderState`, `useLayoutTemplate`, `useBroadcastStaleness`, `useFeatheredMask`, `useMediaTransition`, `useMediaDnd` (also `@dnd-kit`), `useMediaViewPrefs`, `useShortcutConfig`, `useTheme`, `useTypographyStyle`.
+
+**Service / auth / context layer:**
+
+| file | verdict | coupling (symbol) |
+|------|---------|--------------------|
+| `services/http/HttpTransport.ts` | clean interface (verified no WP globals) | none — injects `baseUrl`/`authProvider`/`onUnauthorized` |
+| `services/http/HttpTransportImpl.ts` | leak, P51-D | `buildAuthHeaders`/`refreshNonce` read+write `window.__WPSG_CONFIG__.restNonce`, `window.__WPSG_REST_NONCE__`; `/wp-json/.../nonce` literal |
+| `services/auth/AuthProvider.ts` | clean interface (verified no imports) | none |
+| `services/auth/WpJwtProvider.ts` | **playbook exemplar** — WP fully behind the interface | `/wp-json/jwt-auth/v1/token*`, `/permissions`; `wpsg_*` localStorage; `data.user_id/isAdmin/campaignIds` |
+| `services/queryClient.ts` | clean factory | none |
+| `services/apiClient.ts` | thin facade | wiring lives in caller |
+| `contexts/RootIdContext.tsx` | generic string-id provider | none |
+| `contexts/CanvasTransformContext.ts` | generic UI state (`scale`,`isHandTool`) | none |
+| `contexts/themeContextDef.ts` | generic | `MantineThemeOverride` (theme registry) |
+| `contexts/ThemeContext.tsx` | externalize init | `resolveInitialThemeId` reads `window.__WPSG_CONFIG__?.theme`, `window.__wpsgThemeId` |
+| `contexts/AuthContext.tsx` | leak, P51-D | nonce-cookie branch reads `__WPSG_CONFIG__`/`__WPSG_REST_NONCE__`/`__WPSG_API_BASE__`, hits `/auth/login`/`/auth/logout`, `window.location.reload()` |
+| `contexts/CampaignContext.tsx` | domain | `Campaign` + campaign callbacks |
+| `contexts/SettingsStore.ts` | domain | `GalleryBehaviorSettings`, `magicLinkLandingPageId` |
+
+**Themes (`theme-engine` candidate):** `colorGen.ts` (only `chroma-js`+`./types`, verified), `validation.ts` (portable; `import.meta.env.DEV`), `types.ts` (zero imports), `definitions/*.json` (23 plain JSON) — all clean. Blockers: `adapter.ts` returns `MantineThemeOverride`/`colorsTuple` (the framework boundary — split a neutral `resolveColors`/`generateCssVariables` layer from the `adaptTheme` Mantine shim); `cssVariables.ts` hardcodes `const PREFIX = '--wpsg'`; `index.ts` static-imports `../../wp-plugin/.../theme-catalog.json` and uses `import.meta.env.DEV`; `cssVariables` imports `sanitizeCssValue` from the still-private `shared-utils`.
+
+**Layout Builder canvas primitives:** `CanvasGrid`, `CanvasRulers`, `MeasurementOverlay`, `SmartGuides`, `GraphicLayerContent` — all thin render-shells coupled via `useBuilderOverlayColors`/`useCanvasTransform`/`@/types`. **No component extraction.** Their math already lives in `src/utils/{canvasMeasurement,smartGuides}.ts` (covered above).
+
+**Adapters:** `_shared/tileLayout.ts` (only `CssWidthUnit` from `shared-utils` + browser globals — verified) and `_shared/sectionHeight.ts` (zero imports — verified) are the **P51-E seed**, clean `shared-utils` adds. Minor further candidate: `pinterest/PinterestAdapter.tsx` `classifyTile(ratio)` + `rowUnit` formula (~8 lines, low value). `GalleryAdapter.ts` (contract), `adapterRegistry.ts`, `_shared/runtimeCommon.ts`, `_shared/tileHoverStyles.ts` stay (WPSG-domain).
+
+#### 3. Recommended package topology
+
+- **`@wp-super-gallery/shared-utils`** *(exists — expand in P51-B).* Add the 8 pure utils + 10 generic hooks (ready now), then the ~20 light-decoupling modules. Fold pure geometry (`canvasMeasurement`, `smartGuides`, and later `alignSlots`/`groupGeometry`) here under a `geometry` entry rather than a new package. **First action: flip `"private": true` → publishable**, since `theme-engine` and any external consumer depend on it.
+- **`@wp-super-gallery/shared-ui`** *(exists — expand in P51-C).* Carry over the still-missing `AuthBarFloating`/`AuthBarMinimal` from the P50-G scope; candidates to add: `RootIdContext`, `CanvasTransformContext`, `themeContextDef` (generic providers).
+- **`@wp-super-gallery/theme-engine`** *(new — its own track, recommend a dedicated P51 or P52 track, not folded into P51-B).* Contents: `colorGen`, `validation`, `types`, `cssVariables` (parametrized prefix), `definitions/*.json`, an injectable catalog. Excludes `adapter.ts` (stays app-side as the Mantine shim). Peer-dep-free if the Mantine boundary is kept out.
+- **`@wp-super-gallery/shared-layout`** — **argued against.** The only portable layout code is pure geometry already destined for `shared-utils`; the canvas components are WPSG shells. Revisit only if the geometry set grows enough to warrant its own surface.
+- **`@wp-super-gallery/canvas-primitives`** — **argued against**, same reason.
+
+#### 4. Decoupling playbook (recurring pattern → standard fix)
+
+1. **WPSG type used only structurally** → replace the `@/types` import with a local inline structural type or a generic `<T extends {…}>` param. (`alignSlots`, `slotEffects`, `graphicLayerTransform`, `shadowPresets`, `resolveBreakpointValue`, `gradientCss`, `useMediaDimensions`, `useMediaLightbox`.)
+2. **`useRootId()` storage-key scoping** → accept a `storageKeyPrefix`/`storageKey` string param; callers compose it. (`usePersistentAccordion`, `useScrollRestore`, `useReloadSafeView`.)
+3. **Direct `window.__WPSG_*` / nonce reads** → inject a `getNonce: () => string|undefined` callback + endpoint/baseURL options; for auth, lift the nonce-cookie branch into a `WpNonceProvider implements AuthProvider`. (`HttpTransportImpl`, `AuthContext`, `ThemeContext.resolveInitialThemeId`.)
+4. **Mantine token coupling** → split a framework-neutral token layer (`resolveColors`/`generateCssVariables`) from the Mantine `adaptTheme` shim; keep the shim app-side. (`themes/adapter.ts`.)
+5. **`import.meta.env.DEV`** → `process.env.NODE_ENV !== 'production'` or an injected `isDev`. (`themes/validation.ts`, `themes/index.ts`.)
+6. **Hardcoded `wpsg-`/`--wpsg`/style-id/app-name strings** → parametrize with a default. (`cssVariables` `PREFIX`, `loadCustomFonts`/`loadGoogleFont`, `themeScope`, `debug`, `fallback`, `spaceColor`.)
+
+#### 5. Notes / risks surfaced
+
+- **Eager registry import (verified).** `src/utils/galleryConfig.ts` imports `getRegisteredAdapters`/`getSettingGroupDefinition` from `adapterRegistry` and calls them at module-eval time to build `LEGACY_ADAPTER_SETTING_KEYS` (line 99), guarded by a defensive `getRegisteredAdaptersSafe()` — a real circular-dependency signal. Any extraction touching `galleryConfig` or the registry must preserve/keep this lazy-guard.
+- **`shared-utils` is `"private": true`** — a hard prerequisite for `theme-engine` (which imports `sanitizeCssValue` from it) and for any external publish. Flip this first in P51-B.
+- **P50-G loose end:** `AuthBarFloating`/`AuthBarMinimal` were named for `shared-ui` but never moved; pick them up in P51-C.
+
 ### Acceptance criteria
 
 - Every file in `src/lib/`, `src/utils/`, `src/hooks/`, `src/services/http/`, `src/services/auth/`, and `src/themes/` has an entry in the candidate table.
@@ -131,25 +250,39 @@ The agent should **not** write any code. Output is research only. P51-B and P51-
 
 ## Track P51-B — `packages/shared-utils/` extraction
 
-> **Blocked on P51-A.** Scope defined by spike findings.
+> **Unblocked by P51-A.** Scope below is set by the Spike Findings.
 
-Baseline from P50-G: `src/lib/sanitizeCss.ts`, `cssUnits.ts`, `safeLocalStorage.ts`, `useSwipe.ts`, `scrollLock.ts`. The spike may expand this to include generic hooks and pure utils from `src/utils/` and `src/hooks/`, plus the adapter tile-size/geometry helper landed by P51-E (a pure, framework-agnostic function over `cssUnits`).
+`shared-utils` already exists (P50-G: `sanitizeCss`, `cssUnits`, `safeLocalStorage`, `useSwipe`, `scrollLock`). The spike defines the expansion:
+
+- **First action:** flip the package's `"private": true` → publishable (prerequisite for `theme-engine` and external consumers).
+- **Move now (verified zero-coupling):** utils `clampDimension`, `sortByOrder`, `getErrorMessage`, `resolveColumnsFromWidth`, `galleryAnimations`, `maskFeather`, plus geometry `canvasMeasurement`, `smartGuides`; hooks `useCarousel`, `useIdleTimeout`, `useOnlineStatus`, `useTabVisibility`, `useViewportHeight`, `useDirtyGuard`, `useLazyAccordion`, `useXhrUpload`, `useBuilderDeepLink`, `useLightbox`; and the P51-E seed `_shared/tileLayout.ts` + `_shared/sectionHeight.ts`.
+- **Move after light decoupling (one fix each — see playbook §4):** `alignSlots`, `graphicLayerTransform`, `slotEffects`, `shadowPresets`, `resolveBreakpointValue`, `gradientCss`, `clipPath` (`getClipPathForShape` only), `groupGeometry`, `checkeredBg`, `loadCustomFonts`, `loadGoogleFont`; hooks `usePersistentAccordion`, `useScrollRestore`, `useReloadSafeView`, `useRecentFonts`, `useMediaDimensions`, `useMediaLightbox`, `useBreakpoint`.
 
 ---
 
 ## Track P51-C — `packages/shared-ui/` extraction
 
-> **Blocked on P51-A.** Scope defined by spike findings.
+> **Unblocked by P51-A.** Scope below is set by the Spike Findings.
 
-Baseline from P50-G: Auth components (`LoginForm`, `AuthBarFloating`, `AuthBarMinimal`) and Lightbox (`Lightbox`, `KeyboardHintOverlay`). The spike may expand this to include Layout Builder canvas primitives or theme engine components if they prove sufficiently decoupled.
+`shared-ui` already exists (P50-G: `Lightbox`, `KeyboardHintOverlay`, `LoginForm`).
+
+- **Loose end from P50-G:** `AuthBarFloating`/`AuthBarMinimal` were named for `shared-ui` but never moved — carry them over.
+- **New candidates (generic providers):** `RootIdContext`, `CanvasTransformContext`, `themeContextDef`.
+- **Explicitly NOT in scope:** the five Layout Builder canvas primitives (`CanvasGrid`, `CanvasRulers`, `MeasurementOverlay`, `SmartGuides`, `GraphicLayerContent`) — the spike found them to be thin WPSG-coupled render-shells; only their underlying geometry (already going to `shared-utils`) is portable.
+- **`theme-engine` (new package), recommended as its own track:** the color pipeline (`colorGen`, `validation`, `types`, `cssVariables` with a parametrized prefix, `definitions/*.json`, injectable catalog) is extractable; `themes/adapter.ts` stays app-side as the Mantine shim. Blockers are mechanical (Mantine boundary, `import.meta.env.DEV`, `--wpsg` prefix, catalog path import, `shared-utils` privacy).
 
 ---
 
 ## Track P51-D — WordPress coupling audit & decoupling
 
-> **Blocked on P51-A.** Specific WP coupling points identified by the spike.
+> **Unblocked by P51-A.** Specific WP coupling points identified by the spike.
 
-For any module targeted for extraction that has WordPress coupling, this track applies the decoupling playbook: replacing direct runtime global reads with injected parameters, replacing WP-specific interfaces with generic interface contracts, and removing or isolating WP admin CSS assumptions.
+The WP coupling is already well-isolated behind interfaces (`AuthProvider`/`HttpTransport` are clean; `WpJwtProvider` is the playbook exemplar). The remaining leaks to fix:
+
+- `HttpTransportImpl.buildAuthHeaders`/`refreshNonce` read+write `window.__WPSG_CONFIG__.restNonce` / `window.__WPSG_REST_NONCE__` and hardcode `/wp-json/.../nonce` → inject a `getNonce` callback + endpoint option.
+- `AuthContext.tsx` nonce-cookie branch reads `__WPSG_CONFIG__`/`__WPSG_REST_NONCE__`/`__WPSG_API_BASE__` and calls `/auth/login`·`/auth/logout` directly → lift into a `WpNonceProvider implements AuthProvider`.
+- `ThemeContext.resolveInitialThemeId` reads `window.__WPSG_CONFIG__?.theme` / `window.__wpsgThemeId` → externalize to an injected resolver.
+- Apply playbook §6 to remaining hardcoded `wpsg-`/`--wpsg` strings in extracted modules.
 
 ---
 
@@ -260,3 +393,4 @@ The role column in `useAccessRows.tsx` is now a Mantine `Select` (viewer/editor/
 *Updated: 2026-06-14 — Added front-end fix tracks P51-E…H (adapter bugs, card hover, WP menu/taxonomy labels, access-grant role dropdown). Recalibrated P51-A: added `src/components/Galleries/Adapters/` to the spike's survey scope and sequenced P51-E first so its extracted tile-layout helper seeds the spike candidate list. Larger net-new features and the RBAC audit split into PHASE52_REPORT.md.*
 *Updated: 2026-06-14 — P51-E adapter-settings persistence gap resolved (13 nested Spotlight/Scroll-snap/Masonry-entrance slugs registered in PHP `$defaults`/`$valid_options`/`$field_ranges`; parity guard + PHP regression tests added). P51-F (card hover), P51-G (WP menu/taxonomy IA), and P51-H (access-grant role dropdown) implemented with automated tests green. Remaining: P51-A…D abstraction tracks, and live visual QA of the P51-E adapter fixes.*
 *Updated: 2026-06-14 — Marked P51-E…H ✅ Complete in the Tracks table (all four shipped with automated tests green; P51-H follow-up fixed the second per-space Access UI in `SpaceManagementView`). Only live visual QA of the P51-E adapter fixes remains outstanding on those tracks. Starting P51-A (abstraction spike).*
+*Updated: 2026-06-14 — P51-A abstraction spike ✅ Complete. Full-tree read survey (5 parallel sub-agents, key claims re-verified by grep) appended as "Spike Findings": candidate tables for utils/hooks/services/contexts/themes/canvas/adapters, recommended topology (expand `shared-utils` + `shared-ui`; new `theme-engine` as its own track; argued against `shared-layout`/`canvas-primitives`), and a 6-pattern decoupling playbook. Corrected the baseline (`src/lib`/`src/i18n` already extracted in P50-G; `shared-utils` still `private`; `AuthBar*` a P50-G loose end). P51-B/C/D stubs rewritten with concrete spike-defined scope; B/C/D now unblocked.*
