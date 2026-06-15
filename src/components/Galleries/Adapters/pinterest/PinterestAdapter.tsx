@@ -26,7 +26,7 @@ import type {
 import { toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { useLightbox } from '@wp-super-gallery/shared-utils';
-import { useMediaDimensions } from '@/hooks/useMediaDimensions';
+import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

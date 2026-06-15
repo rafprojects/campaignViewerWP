@@ -52,7 +52,7 @@ import {
 } from './mediaTabLayout';
 import { SortableListRow, SortableGridItem, type SharedSortableProps } from './MediaTabSortableItems';
 import { useMediaViewPrefs, type ViewMode, type CardSize } from '@/hooks/useMediaViewPrefs';
-import { useMediaLightbox } from '@/hooks/useMediaLightbox';
+import { useMediaLightbox } from '@wp-super-gallery/shared-utils';
 import { useMediaUsageSummary } from '@/hooks/useMediaUsageSummary';
 import { useMediaDnd } from '@/hooks/useMediaDnd';
 import { applySortMode, type MediaSortMode } from './applySortMode';

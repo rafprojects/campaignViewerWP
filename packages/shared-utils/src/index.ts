@@ -33,6 +33,10 @@ export * from './loadCustomFonts'
 export * from './loadGoogleFont'
 export * from './useRecentFonts'
 
+// --- P51-B increment 2c: media hooks (generic over item shape) ---
+export * from './useMediaDimensions'
+export * from './useMediaLightbox'
+
 // --- P51-B: generic browser / React hooks ---
 export * from './useCarousel'
 export * from './useIdleTimeout'

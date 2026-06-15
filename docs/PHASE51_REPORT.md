@@ -292,7 +292,15 @@ Moved 3 modules (mostly as-is; parametrize with defaults so callers don't change
 
 Repointed 7 consumers. **`checkeredBg` deliberately NOT moved** — it's a `const` of Mantine CSS-var strings (`var(--mantine-color-*)`); "parametrizing" would mean functionizing it + a caller ripple for negligible extraction value, so it stays as app-side Mantine glue (a correction to the spike's optimistic "light decoupling" rating). **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.33%).
 
-**Remaining in P51-B (increment 2c/2d — deferred, more involved):** `useMediaDimensions`/`useMediaLightbox` (generic over `MediaItem` — exported-type changes with caller-inference ripple); `groupGeometry` (11 fns over the rich `LayoutGroup`/`LayoutSlot` types — heavier than "light"); the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites). Then the `theme-engine` track.
+### Implementation — increment 2c (2026-06-14): media hooks (generic over item shape)
+
+Moved `useMediaDimensions` and `useMediaLightbox`, made generic over a structural item shape instead of importing `@/types` `MediaItem`:
+- `useMediaLightbox<T extends { id: string }>` — `MediaLightboxState<T>` and `openLightbox(item: T)`.
+- `useMediaDimensions<T extends MediaDimensionInput>` — `MediaDimensionInput` is the structural `{ id; type?; thumbnail?; url?; width?; height? }` subset; the old `MediaItemWithDimensions` (which `extends MediaItem`) became the generic `WithDimensions<T> = T & { width; height }`.
+
+Verified there were **no external consumers** of the exported types (`MediaItemWithDimensions`/`MediaLightboxState`/`buildWithDimensions`), so the generics ripple only through inference — all 4 call sites (`PinterestAdapter`, `MasonryGallery`, `JustifiedGallery`, `MediaTab`) pass `MediaItem[]` and need no change. Merged the stale `vi.mock('@/hooks/useMediaDimensions')` in `adapters.test.tsx` into that file's existing barrel mock. `useMediaDimensions.test` stays in `src` (uses `@/types` fixtures), repointed to the package. **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.33%).
+
+**Remaining in P51-B (increment 2d — deferred, heavier / caller-rippling):** `groupGeometry` (11 fns over the rich `LayoutGroup`/`LayoutSlot` types — heavier than "light"); the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites + their tests). Then the `theme-engine` track.
 
 ---
 

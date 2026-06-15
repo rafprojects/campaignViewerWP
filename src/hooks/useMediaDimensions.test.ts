@@ -10,7 +10,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { MediaItem } from '@/types';
-import { useMediaDimensions, buildWithDimensions } from './useMediaDimensions';
+import { useMediaDimensions, buildWithDimensions } from '@wp-super-gallery/shared-utils';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 

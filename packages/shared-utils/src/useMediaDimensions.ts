@@ -13,12 +13,18 @@
  * and updates it asynchronously once probing completes.
  */
 import { useState, useEffect, useRef } from 'react';
-import type { MediaItem } from '@/types';
-
-export interface MediaItemWithDimensions extends MediaItem {
-  width: number;
-  height: number;
+/** Minimal media shape this hook needs (a structural subset of the app's `MediaItem`). */
+export interface MediaDimensionInput {
+  id: string;
+  type?: string | undefined;
+  thumbnail?: string | undefined;
+  url?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
 }
+
+/** The input item enriched with concrete pixel dimensions. */
+export type WithDimensions<T> = T & { width: number; height: number };
 
 // Aspect-ratio fallbacks used before probing resolves.
 const DEFAULT_IMAGE_RATIO = 4 / 3;
@@ -26,9 +32,9 @@ const DEFAULT_VIDEO_RATIO = 16 / 9;
 /** Nominal target height used when computing placeholder width from ratio. */
 const PROBE_BASE_HEIGHT = 400;
 
-export function buildWithDimensions(item: MediaItem): MediaItemWithDimensions {
+export function buildWithDimensions<T extends MediaDimensionInput>(item: T): WithDimensions<T> {
   if (item.width && item.height) {
-    return item as MediaItemWithDimensions;
+    return item as WithDimensions<T>;
   }
   const ratio =
     item.type === 'video' || item.type === 'other' ? DEFAULT_VIDEO_RATIO : DEFAULT_IMAGE_RATIO;
@@ -41,7 +47,7 @@ export function buildWithDimensions(item: MediaItem): MediaItemWithDimensions {
 
 type ProbeResult = { id: string; width: number; height: number } | null;
 
-function probeImageDimensions(item: MediaItem): Promise<ProbeResult> {
+function probeImageDimensions(item: MediaDimensionInput): Promise<ProbeResult> {
   const src = item.thumbnail || item.url;
   if (!src) return Promise.resolve(null);
 
@@ -59,7 +65,7 @@ function probeImageDimensions(item: MediaItem): Promise<ProbeResult> {
   });
 }
 
-export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[] {
+export function useMediaDimensions<T extends MediaDimensionInput>(media: T[]): WithDimensions<T>[] {
   // Cache: item ID → { url that was probed, resolved width, resolved height }
   // Persists across re-renders so probing only runs when the source URL changes.
   const probeCache = useRef<Map<string, { url: string; width: number; height: number }>>(new Map());
@@ -68,7 +74,7 @@ export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[
   // Effect only re-runs when actual content changes, not on every array reference change.
   const mediaKey = media.map((item) => `${item.id}:${item.thumbnail ?? item.url ?? ''}`).join('\x00');
 
-  const [items, setItems] = useState<MediaItemWithDimensions[]>(() =>
+  const [items, setItems] = useState<WithDimensions<T>[]>(() =>
     media.map(buildWithDimensions),
   );
 
@@ -81,7 +87,7 @@ export function useMediaDimensions(media: MediaItem[]): MediaItemWithDimensions[
     // Build initial state: server dims > cached probe result > fallback placeholder.
     setItems(
       media.map((item) => {
-        if (item.width && item.height) return item as MediaItemWithDimensions;
+        if (item.width && item.height) return item as WithDimensions<T>;
         const src = item.thumbnail ?? item.url ?? '';
         const cached = probeCache.current.get(item.id);
         if (cached && cached.url === src) return { ...item, width: cached.width, height: cached.height };

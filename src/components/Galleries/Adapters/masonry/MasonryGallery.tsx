@@ -30,7 +30,7 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
-import { useMediaDimensions } from '@/hooks/useMediaDimensions';
+import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';

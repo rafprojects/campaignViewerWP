@@ -33,8 +33,8 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-// Shared hook / component mocks. useCarousel now lives in the shared-utils
-// barrel (P51-B): spread the real module and override just the hook.
+// Shared hook / component mocks. useCarousel + useMediaDimensions now live in
+// the shared-utils barrel (P51-B): spread the real module and override these.
 vi.mock('@wp-super-gallery/shared-utils', async () => {
   const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
   return {
@@ -45,12 +45,9 @@ vi.mock('@wp-super-gallery/shared-utils', async () => {
       next: vi.fn(),
       prev: vi.fn(),
     }),
+    useMediaDimensions: (media: MediaItem[]) => media,
   };
 });
-
-vi.mock('@/hooks/useMediaDimensions', () => ({
-  useMediaDimensions: (media: MediaItem[]) => media,
-}));
 
 vi.mock('@wp-super-gallery/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
