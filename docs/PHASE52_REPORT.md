@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A4 done**; A5 next; A6 frontend may defer to P53) | In progress | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend pending P52-vs-P53 decision) | In progress | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -98,7 +98,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | **Done 2026-06-15** |
 | **A5a** | REST hardening — system/global endpoints → `manage_options` (new `require_system_admin`) | P52 | **Done 2026-06-15** |
 | **A5b** | REST hardening — per-campaign/company endpoints → `manage_wpsg` + space access (closes F2) | P52 | **Done 2026-06-15** |
-| **A5c** | Per-resource delete policy — layout-template/asset in-use guards; `fonts.delete` → `manage_options` | P52 | To do |
+| **A5c** | Per-resource delete policy — layout-template/asset in-use guards; `fonts.delete` → `manage_options` | P52 | **Done 2026-06-15** |
 | **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
 
 ### A1 — implementation notes (Done 2026-06-15)
@@ -156,6 +156,16 @@ Added two primitives sharing `user_can_access_campaign_space()` (mirrors the spa
 This is the direct F2 fix: a `manage_wpsg` editor can no longer touch analytics/audit/export of, or batch-act on, campaigns in delegated spaces they were not granted.
 
 **Proven.** New `tests/WPSG_P52A5b_Campaign_Space_Scoping_Test.php` (9 tests): open-mode editor allowed; **delegated-space editor without grant denied (403 — the F2 regression guard)**; delegated editor with grant allowed; `manage_options` escape hatch; subscriber-with-grant still denied (admin-tier); batch denied when any id is cross-space; batch allowed when all accessible; `GET /spaces` filtered for an editor and unfiltered for a System Admin. Full PHPUnit suite green — **999 tests, 12165 assertions, 0 failures**.
+
+#### A5c — per-resource delete policy (Done 2026-06-15)
+
+- **`fonts.delete` → `require_system_admin`** (admin-only) — MAP + frozen matrix updated in lockstep.
+- **Layout-template delete in-use guard.** `delete_layout_template` now resolves the template (404 if missing), counts campaigns bound to it via `_wpsg_layout_binding_template_id` (`count_campaigns_using_layout_template`), and returns **409 `wpsg_template_in_use`** when > 0 unless `force=true` is passed.
+- **Asset delete in-use guard.** Added `WPSG_DB::count_asset_associations($asset_id, 'asset')` (reverse lookup on the `wpsg_space_library` table). `delete_asset` returns **409 `wpsg_asset_in_use`** while the asset is associated with any space unless `force=true`. The `force` flag is the modal-confirm override (the modal itself is UX, not the control).
+
+**Proven.** New `tests/WPSG_P52A5c_Delete_Policy_Test.php` (8 tests): `fonts.delete` denies an editor (403) and a System Admin passes the gate (404 on a missing id); layout-template delete is blocked (409) while a campaign binds it, `force=true` overrides, and an unused template deletes; asset delete is blocked (409) while associated with a space, `force=true` overrides, and an unassociated asset deletes. Full PHPUnit suite green — **1007 tests, 12184 assertions, 0 failures**.
+
+**P52-A server-side enforcement (A1–A5) is complete.** F1 (provability) and F2 (delegated cross-space) are both closed, asserted by the frozen matrix + completeness/no-bypass test + per-tier suites. A6 (frontend UX) is the only remaining sub-track.
 
 ### Acceptance criteria
 

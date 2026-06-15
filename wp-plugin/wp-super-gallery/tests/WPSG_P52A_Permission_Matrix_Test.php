@@ -95,7 +95,7 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
             'fonts.list'                            => 'require_admin',
             'fonts.upload'                          => 'require_admin',
             'fonts.update'                          => 'require_admin',
-            'fonts.delete'                          => 'require_admin',
+            'fonts.delete'                          => 'require_system_admin',
             'layout_templates.read_public'          => '__return_true',
             // Settings
             'settings.read_public'                  => 'rate_limit_public',

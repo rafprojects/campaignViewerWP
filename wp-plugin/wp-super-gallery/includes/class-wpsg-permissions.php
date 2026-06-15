@@ -128,7 +128,7 @@ final class WPSG_Permissions {
         'fonts.list'                       => 'require_admin',              // GET    /admin/font-library
         'fonts.upload'                     => 'require_admin',              // POST   /admin/font-library
         'fonts.update'                     => 'require_admin',              // POST   /admin/font-library/{id}
-        'fonts.delete'                     => 'require_admin',              // DELETE /admin/font-library/{id}
+        'fonts.delete'                     => 'require_system_admin',        // DELETE /admin/font-library/{id} (P52-A5c: admin-only)
         'layout_templates.read_public'     => '__return_true',             // GET    /layout-templates/{templateId}
 
         // ── WPSG_Settings_Controller ───────────────────────────────────────
