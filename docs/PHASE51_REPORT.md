@@ -14,7 +14,7 @@ This phase carries **two track groups**:
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P51-A | Abstraction Spike — Opus/Fable audit of the full codebase for package candidates, WordPress-coupling points, and decoupling paths | ✅ Complete | Medium |
-| P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | 🔶 In progress (increment 1 done) | Medium |
+| P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | 🔶 In progress (35 modules extracted, inc 1–2d done; remaining: publishable `dist/`) | Medium |
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
 | P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap + hero max-width/justification, Hexagon/Diamond %-unit height + row reflow, Scroll-snap/Coverflow/Stacked infinite growth; shared tile-layout + bounded-section-height helpers | ✅ Complete | Medium |
@@ -308,7 +308,15 @@ Moved `groupGeometry` (12 exported fns: `buildGroupMap`, `collectDescendantSlotI
 
 **Every function is generic** (`<G extends GeoGroup>`, `<S extends GeoSlot>`) rather than typed on the bare structural interface — required because the three return-/mutation-preserving consumers (`migrateGroupsToP30G`, `reparentGroup`, `dissolveGroupInHierarchy`) feed results straight back into `draft.groups: LayoutGroup[]` in `useLayoutBuilderState`, and a bare-`GeoGroup` return is not assignable to `LayoutGroup[]`. Generics also sidestep `Map<string, V>` invariance for the map-passing read fns. The spread-and-override returns use `as G` (spreading a generic + overriding props isn't structurally assignable back to the type parameter — a known TS limitation). Repointed 4 importers (`LayoutBuilderModal`, `ContextualToolbar`, `layerList`, `useLayoutBuilderState`); `groupGeometry.test` (37 tests) stays in `src` (rich `@/types` fixtures), repointed to the package. **Gate:** `tsc`/`eslint` clean, 173 files/2348 tests pass, coverage met (functions 76.33%). Committed separately as a checkpoint before the riskier `useRootId`-hook decoupling (part 2).
 
-**Remaining in P51-B (increment 2d part 2 — heavier / caller-rippling):** the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites + their tests). Then the `theme-engine` track.
+### Implementation — increment 2d part 2 (2026-06-14): scope-keyed localStorage view hooks
+
+Moved the three `useRootId`-coupled localStorage hooks — `usePersistentAccordion`, `useScrollRestore`, `useReloadSafeView` — into the package, decoupled from `@/contexts/RootIdContext`. Each now takes an injected scope via a third `options: ViewScopeOptions = {}` param (`{ scopeId?; namespace? }`), replacing the internal `useRootId()` call. Defaults (`scopeId = 'root'`, `namespace = 'wpsg_view'`) **preserve the exact `wpsg_view_<scopeId>_…` key format**, so previously-persisted localStorage entries still resolve. `ViewScopeOptions` is declared once in `usePersistentAccordion` and imported by the other two.
+
+**Zero call-site / zero test-mock ripple** via the `clipPath` precedent: thin app-side wrappers stay at the original `@/hooks/X` paths, calling `useRootId()` and delegating to the package hook with `{ scopeId }`. All 8 consumers (5 Settings sections, `SettingsPanel`, `AdminPanel`, `App`) and their tests (e.g. `AdminPanel.test`, which exercises `useReloadSafeView` through the wrapper under the default `'root'` scope) are untouched — coverage of the moved logic follows the same consumer-test paths. **Gate:** `tsc`/`eslint` clean, 173 files/2348 tests pass, coverage met (functions 76.38%).
+
+**`useBreakpoint` deliberately NOT moved (deferred to P51-C / shared-ui).** Unlike the localStorage hooks, it has a *hard `@mantine/core` runtime dependency* (`useMantineTheme()` to read `theme.breakpoints.sm/lg`) plus the `ResponsiveBreakpoint` `@/types` import, and **18 consumers**. `shared-utils` is deliberately Mantine-free (pure utils + framework-agnostic React hooks); pulling Mantine into it would violate that boundary. The correct decoupling — inject px thresholds and split the Mantine theme-read into a wrapper — belongs with the Mantine-aware `shared-ui`/P51-C work (per spike playbook §4, "split the Mantine token layer from the adapter"), not a pure-utils move. This is a correction to the spike's grouping of `useBreakpoint` with the other view hooks.
+
+**P51-B status:** the utility/hook extraction is complete (35 modules: inc 1 = 20, 2a = 7, 2b = 3, 2c = 2, 2d = 3 + groupGeometry). Remaining sub-step: make `shared-utils` truly publishable (built `dist/` + `exports` map). The `theme-engine` extraction is its own track.
 
 ---
 

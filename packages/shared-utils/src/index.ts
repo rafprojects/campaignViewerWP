@@ -22,6 +22,11 @@ export * from './sectionHeight'
 // --- P51-B increment 2d: group geometry (generic over structural slot/group) ---
 export * from './groupGeometry'
 
+// --- P51-B increment 2d: scope-keyed localStorage view hooks (scopeId injected) ---
+export * from './usePersistentAccordion'
+export * from './useScrollRestore'
+export * from './useReloadSafeView'
+
 // --- P51-B increment 2: decoupled css / geometry / layout helpers ---
 export * from './shadowPresets'
 export * from './graphicLayerTransform'
