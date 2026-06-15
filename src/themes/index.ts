@@ -128,8 +128,9 @@ function registerTheme(extension: ThemeExtension): boolean {
     extension as unknown as Record<string, unknown>,
   ) as unknown;
 
-  // 2. Validate
-  if (!isValidTheme(merged)) {
+  // 2. Validate (inject the browser dev flag — the package's own isDevEnv()
+  //    can't see import.meta.env, so dev warnings would otherwise go dark here)
+  if (!isValidTheme(merged, import.meta.env.DEV)) {
     console.error(`[WPSG Theme] Skipping invalid theme: ${extension.id}`);
     return false;
   }
@@ -143,8 +144,8 @@ function registerTheme(extension: ThemeExtension): boolean {
   const rc = resolveColors(def.colors, def.colorScheme);
   const cssVars = generateCssVariables(rc, def);
 
-  // 4a. Dev-mode contrast advisory (non-blocking)
-  warnLowContrast(def.id, rc.text, rc.background);
+  // 4a. Dev-mode contrast advisory (non-blocking; inject the browser dev flag)
+  warnLowContrast(def.id, rc.text, rc.background, import.meta.env.DEV);
 
   // 5. Build metadata — enrich with catalog data when available
   const catalogEntry = catalog.get(def.id);
