@@ -14,6 +14,7 @@ import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
+import { getWpNonce, setWpNonce, WP_NONCE_PATH } from './services/wpNonce';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
 import { getCompanyById } from './data/mockData';
@@ -211,7 +212,14 @@ function AppContent({
   }, [logout]);
 
   const apiClient = useMemo(
-    () => new ApiClient({ baseUrl: apiBaseUrl, authProvider, onUnauthorized: handleUnauthorized }),
+    () => new ApiClient({
+      baseUrl: apiBaseUrl,
+      authProvider,
+      onUnauthorized: handleUnauthorized,
+      getNonce: getWpNonce,
+      setNonce: setWpNonce,
+      noncePath: WP_NONCE_PATH,
+    }),
     [apiBaseUrl, authProvider, handleUnauthorized],
   );
 

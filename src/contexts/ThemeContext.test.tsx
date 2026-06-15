@@ -3,10 +3,13 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
 import { ThemeProvider } from './ThemeContext';
 import { useTheme } from '../hooks/useTheme';
+import { resolveWpThemeIds } from '../services/wpThemeId';
 import { DEFAULT_THEME_ID, getAllThemeMeta, getTheme } from '../themes/index';
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <ThemeProvider>{children}</ThemeProvider>;
+  // Inject the app's WP theme-id resolver — the WordPress global reads now live
+  // app-side (see @/services/wpThemeId) rather than inside ThemeContext. [P51-D]
+  return <ThemeProvider resolveWpThemeIds={resolveWpThemeIds}>{children}</ThemeProvider>;
 }
 
 function forcedWrapper(themeId: string) {
