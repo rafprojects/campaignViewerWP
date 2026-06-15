@@ -16,11 +16,23 @@
  */
 
 import type { MantineThemeOverride } from '@mantine/core';
-import type { ThemeDefinition, ThemeExtension, ThemeMeta, ThemeCatalogEntry } from './types';
+// [P51-L] The framework-neutral pipeline (types, validation, colorGen,
+// cssVariables) + the 23 bundled theme JSONs now live in the theme-engine
+// package. This registry stays app-side: it composes those pieces with the
+// Mantine adapter (`adaptTheme`) and the WP theme catalog.
+import {
+  type ThemeDefinition,
+  type ThemeExtension,
+  type ThemeMeta,
+  type ThemeCatalogEntry,
+  isValidTheme,
+  warnLowContrast,
+  generateCssVariables,
+  resolveColors,
+  baseThemeDefaults,
+  bundledThemeDefinitions,
+} from '@wp-super-gallery/theme-engine';
 import { adaptTheme } from './adapter';
-import { isValidTheme, warnLowContrast } from './validation';
-import { generateCssVariables } from './cssVariables';
-import { resolveColors } from './colorGen';
 import catalogData from '../../wp-plugin/wp-super-gallery/theme-catalog.json';
 
 // ---------------------------------------------------------------------------
@@ -30,35 +42,6 @@ import catalogData from '../../wp-plugin/wp-super-gallery/theme-catalog.json';
 const catalog = new Map<string, ThemeCatalogEntry>(
   (catalogData as ThemeCatalogEntry[]).map((entry) => [entry.id, entry]),
 );
-
-// ---------------------------------------------------------------------------
-// JSON imports (Vite handles JSON imports natively)
-// ---------------------------------------------------------------------------
-
-import baseDefaults from './definitions/_base.json';
-import defaultDarkDef from './definitions/default-dark.json';
-import defaultLightDef from './definitions/default-light.json';
-import materialDarkDef from './definitions/material-dark.json';
-import materialLightDef from './definitions/material-light.json';
-import darculaDef from './definitions/darcula.json';
-import nordDef from './definitions/nord.json';
-import solarizedDarkDef from './definitions/solarized-dark.json';
-import solarizedLightDef from './definitions/solarized-light.json';
-import highContrastDef from './definitions/high-contrast.json';
-import catppuccinMochaDef from './definitions/catppuccin-mocha.json';
-import tokyoNightDef from './definitions/tokyo-night.json';
-import gruvboxDarkDef from './definitions/gruvbox-dark.json';
-import cyberpunkDef from './definitions/cyberpunk.json';
-import synthwaveDef from './definitions/synthwave.json';
-import githubLightDef from './definitions/github-light.json';
-import catppuccinLatteDef from './definitions/catppuccin-latte.json';
-import sunsetBoulevardDef from './definitions/sunset-boulevard.json';
-import oceanBreezeDef from './definitions/ocean-breeze.json';
-import crimsonCanvasDef from './definitions/crimson-canvas.json';
-import forestWhisperDef from './definitions/forest-whisper.json';
-import halloweenDef from './definitions/halloween.json';
-import reverseHalloweenDef from './definitions/reverse-halloween.json';
-import midnightRoseDef from './definitions/midnight-rose.json';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -141,7 +124,7 @@ export const DEFAULT_THEME_ID = 'default-dark';
 function registerTheme(extension: ThemeExtension): boolean {
   // 1. Deep-merge with base defaults
   const merged = deepMerge(
-    baseDefaults as unknown as Record<string, unknown>,
+    baseThemeDefaults,
     extension as unknown as Record<string, unknown>,
   ) as unknown;
 
@@ -193,32 +176,8 @@ function registerTheme(extension: ThemeExtension): boolean {
 function initializeRegistry(): void {
   const startTime = performance.now();
 
-  // Register bundled themes in order
-  const bundled: ThemeExtension[] = [
-    defaultDarkDef as unknown as ThemeExtension,
-    defaultLightDef as unknown as ThemeExtension,
-    materialDarkDef as unknown as ThemeExtension,
-    materialLightDef as unknown as ThemeExtension,
-    darculaDef as unknown as ThemeExtension,
-    nordDef as unknown as ThemeExtension,
-    solarizedDarkDef as unknown as ThemeExtension,
-    solarizedLightDef as unknown as ThemeExtension,
-    highContrastDef as unknown as ThemeExtension,
-    catppuccinMochaDef as unknown as ThemeExtension,
-    tokyoNightDef as unknown as ThemeExtension,
-    gruvboxDarkDef as unknown as ThemeExtension,
-    cyberpunkDef as unknown as ThemeExtension,
-    synthwaveDef as unknown as ThemeExtension,
-    githubLightDef as unknown as ThemeExtension,
-    catppuccinLatteDef as unknown as ThemeExtension,
-    sunsetBoulevardDef as unknown as ThemeExtension,
-    oceanBreezeDef as unknown as ThemeExtension,
-    crimsonCanvasDef as unknown as ThemeExtension,
-    forestWhisperDef as unknown as ThemeExtension,
-    halloweenDef as unknown as ThemeExtension,
-    reverseHalloweenDef as unknown as ThemeExtension,
-    midnightRoseDef as unknown as ThemeExtension,
-  ];
+  // Register bundled themes in order (sourced from the theme-engine package)
+  const bundled: ThemeExtension[] = bundledThemeDefinitions;
 
   let successCount = 0;
   for (const ext of bundled) {

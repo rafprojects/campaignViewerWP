@@ -11,8 +11,8 @@ import {
   withAlpha,
   deriveDarkTuple,
   resolveColors,
-} from '../colorGen';
-import type { ThemeColors } from '../types';
+} from './colorGen';
+import type { ThemeColors } from './types';
 
 // ---------------------------------------------------------------------------
 // generateColorScale
@@ -33,8 +33,8 @@ describe('generateColorScale', () => {
 
   it('shade 0 is lighter than shade 9', () => {
     const shades = generateColorScale('#3b82f6', 'dark');
-    const lightness0 = chroma(shades[0]).get('lab.l');
-    const lightness9 = chroma(shades[9]).get('lab.l');
+    const lightness0 = chroma(shades[0]!).get('lab.l');
+    const lightness9 = chroma(shades[9]!).get('lab.l');
     expect(lightness0).toBeGreaterThan(lightness9);
   });
 
@@ -42,8 +42,8 @@ describe('generateColorScale', () => {
     const darkShades = generateColorScale('#3b82f6', 'dark');
     const lightShades = generateColorScale('#3b82f6', 'light');
     // The first shade in light mode should be lighter than in dark mode
-    const darkL0 = chroma(darkShades[0]).get('lab.l');
-    const lightL0 = chroma(lightShades[0]).get('lab.l');
+    const darkL0 = chroma(darkShades[0]!).get('lab.l');
+    const lightL0 = chroma(lightShades[0]!).get('lab.l');
     expect(lightL0).toBeGreaterThan(darkL0);
   });
 
@@ -108,8 +108,8 @@ describe('deriveDarkTuple', () => {
 
   it('first element is lighter than last element', () => {
     const tuple = deriveDarkTuple('#ffffff', '#1e293b', '#0f172a');
-    const firstL = chroma(tuple[0]).get('lab.l');
-    const lastL = chroma(tuple[9]).get('lab.l');
+    const firstL = chroma(tuple[0]!).get('lab.l');
+    const lastL = chroma(tuple[9]!).get('lab.l');
     expect(firstL).toBeGreaterThan(lastL);
   });
 });

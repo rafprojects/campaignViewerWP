@@ -8,7 +8,7 @@
 
 import { createContext } from 'react';
 import type { MantineThemeOverride } from '@mantine/core';
-import type { ThemeMeta } from '../themes/types';
+import type { ThemeMeta } from '@wp-super-gallery/theme-engine';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ---------------------------------------------------------------------------

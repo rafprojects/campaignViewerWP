@@ -27,7 +27,7 @@ import {
   type SelectProps,
 } from '@mantine/core';
 import { useTheme } from '@/hooks/useTheme';
-import type { ThemeMeta } from '@/themes/types';
+import type { ThemeMeta } from '@wp-super-gallery/theme-engine';
 import { getTheme, getAllThemeMetaGrouped } from '@/themes/index';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

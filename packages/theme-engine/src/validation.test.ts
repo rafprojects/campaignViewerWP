@@ -5,9 +5,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { validateTheme, isValidTheme } from '../validation';
-import baseDefaults from '../definitions/_base.json';
-import defaultDarkDef from '../definitions/default-dark.json';
+import { validateTheme, isValidTheme } from './validation';
+import baseDefaults from './definitions/_base.json';
+import defaultDarkDef from './definitions/default-dark.json';
 
 // Helper: build a valid theme by deep-merging default-dark onto base
 function makeValidTheme(overrides?: Record<string, unknown>): unknown {

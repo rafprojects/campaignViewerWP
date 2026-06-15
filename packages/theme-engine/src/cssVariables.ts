@@ -18,27 +18,35 @@ import { sanitizeCssValue } from '@wp-super-gallery/shared-utils';
 // CSS variable namespace prefix
 // ---------------------------------------------------------------------------
 
-const PREFIX = '--wpsg';
+/**
+ * Default CSS custom-property namespace. [P51-L] Parametrized (playbook §6) so
+ * external consumers of this package can pick their own prefix instead of the
+ * hardcoded WPSG one; in-repo callers use the default.
+ */
+export const DEFAULT_CSS_VAR_PREFIX = '--wpsg';
 
 // ---------------------------------------------------------------------------
 // Generator
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a CSS string containing all --wpsg-* custom property
+ * Generate a CSS string containing all `<prefix>-*` custom property
  * declarations for a given theme. The string is scoped to a selector
  * (default `:host` for Shadow DOM, or `.wp-super-gallery` for normal DOM).
  *
  * @param rc - Resolved colors from colorGen
  * @param def - Full theme definition (for non-color tokens)
  * @param selector - CSS selector to scope the variables
+ * @param prefix - CSS custom-property namespace (default `--wpsg`)
  * @returns A complete CSS rule string
  */
 export function generateCssVariables(
   rc: ResolvedColors,
   def: ThemeDefinition,
   selector: string = ':host',
+  prefix: string = DEFAULT_CSS_VAR_PREFIX,
 ): string {
+  const PREFIX = prefix;
   const vars: string[] = [];
 
   // --- Colors ---

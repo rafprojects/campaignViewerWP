@@ -12,6 +12,23 @@
 import chroma from 'chroma-js';
 import type { ThemeDefinition, ThemeColors, SizeScale } from './types';
 
+/**
+ * [P51-L] Framework-neutral dev-mode check (playbook §5) — replaces the former
+ * `import.meta.env.DEV` so this package carries no bundler/Vite assumption.
+ * Bundlers statically replace `process.env.NODE_ENV`; falls back to false.
+ */
+function isDevEnv(): boolean {
+  try {
+    // Read process.env via globalThis so the package needs no @types/node and
+    // stays bundler-agnostic (bundlers statically replace process.env.NODE_ENV).
+    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+      .process?.env;
+    return !!env && env.NODE_ENV !== 'production';
+  } catch {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Error helpers
 // ---------------------------------------------------------------------------
@@ -239,7 +256,7 @@ export function isValidTheme(theme: unknown): theme is ThemeDefinition {
     validateTheme(theme);
     return true;
   } catch (err) {
-    if (import.meta.env.DEV && err instanceof ThemeValidationError) {
+    if (isDevEnv() && err instanceof ThemeValidationError) {
       console.warn('[WPSG Theme]', err.message);
     }
     return false;
@@ -272,10 +289,10 @@ function relativeLuminance(color: string): number | null {
  * fails WCAG AA (4.5:1 for normal text).
  *
  * This is a best-effort advisory — it does not block theme registration.
- * Only runs in development (`import.meta.env.DEV`).
+ * Only runs in development (see `isDevEnv`).
  */
 export function warnLowContrast(themeId: string, textColor: string, bgColor: string): void {
-  if (!import.meta.env.DEV) return;
+  if (!isDevEnv()) return;
 
   const textL = relativeLuminance(textColor);
   const bgL = relativeLuminance(bgColor);
