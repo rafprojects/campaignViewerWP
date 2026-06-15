@@ -12,7 +12,7 @@ import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { buildGradientCss } from '@wp-super-gallery/shared-utils';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
+import { loadGoogleFontsFromOverrides } from '@wp-super-gallery/shared-utils';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';

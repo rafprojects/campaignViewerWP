@@ -13,8 +13,8 @@ import {
 import { IconTrash } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { TypographyOverride } from '@/types';
-import { loadGoogleFont, getFailedFonts } from '@/utils/loadGoogleFont';
-import { useRecentFonts } from '@/hooks/useRecentFonts';
+import { loadGoogleFont, getFailedFonts } from '@wp-super-gallery/shared-utils';
+import { useRecentFonts } from '@wp-super-gallery/shared-utils';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

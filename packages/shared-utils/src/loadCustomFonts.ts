@@ -1,4 +1,4 @@
-import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
+import { sanitizeCssUrl } from './sanitizeCss';
 
 /**
  * Inject @font-face CSS for custom uploaded fonts into document.head.
@@ -26,8 +26,8 @@ function escapeCssString(value: string): string {
     .replace(/[\r\n\f]/g, ' ');
 }
 
-export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
-  const existing = document.getElementById(STYLE_ID);
+export function loadCustomFonts(fonts: FontLibraryEntry[], styleId: string = STYLE_ID): void {
+  const existing = document.getElementById(styleId);
 
   if (fonts.length === 0) {
     if (existing) existing.remove();
@@ -55,7 +55,7 @@ export function loadCustomFonts(fonts: FontLibraryEntry[]): void {
   if (existing) existing.remove();
 
   const style = document.createElement('style');
-  style.id = STYLE_ID;
+  style.id = styleId;
   style.textContent = css;
   document.head.appendChild(style);
 }

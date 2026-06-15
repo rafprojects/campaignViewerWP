@@ -283,6 +283,17 @@ Repointed 14 consumers. The `alignSlots`/`gradientCss` unit tests stay in `src` 
 
 **Coverage scope change:** extended the coverage `include` to `packages/shared-utils/src/**` — the package is first-party code extracted from `src/`, and its tests already run; counting them keeps the metric honest as modules migrate (and lifts function coverage to 76.28%, undoing the dip from moving well-tested fns out of `src/`). **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.28%).
 
+### Implementation — increment 2b (2026-06-14): font loaders + recent-fonts store
+
+Moved 3 modules (mostly as-is; parametrize with defaults so callers don't change):
+- `loadCustomFonts` — added an optional `styleId` param (default `'wpsg-custom-fonts'`); relativized `sanitizeCssUrl`.
+- `loadGoogleFont` — moved as-is (already pure; the `GOOGLE_FONT_SPECS` data + loaders); the `[WP Super Gallery]` warning label is branding, not a functional coupling.
+- `useRecentFonts` — moved as-is (pure React + `localStorage`; the `wpsg-recent-fonts` key is a string, not a coupling). Tests standalone, moved with sources.
+
+Repointed 7 consumers. **`checkeredBg` deliberately NOT moved** — it's a `const` of Mantine CSS-var strings (`var(--mantine-color-*)`); "parametrizing" would mean functionizing it + a caller ripple for negligible extraction value, so it stays as app-side Mantine glue (a correction to the spike's optimistic "light decoupling" rating). **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.33%).
+
+**Remaining in P51-B (increment 2c/2d — deferred, more involved):** `useMediaDimensions`/`useMediaLightbox` (generic over `MediaItem` — exported-type changes with caller-inference ripple); `groupGeometry` (11 fns over the rich `LayoutGroup`/`LayoutSlot` types — heavier than "light"); the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites). Then the `theme-engine` track.
+
 ---
 
 ## Track P51-C — `packages/shared-ui/` extraction

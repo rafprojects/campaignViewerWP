@@ -27,7 +27,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { notifications } from '@mantine/notifications';
-import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
+import { loadGoogleFontsFromOverrides } from '@wp-super-gallery/shared-utils';
 import { buildGradientCss } from '@wp-super-gallery/shared-utils';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { toCssOrNumber, type CssWidthUnit } from '@wp-super-gallery/shared-utils';

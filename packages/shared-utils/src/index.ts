@@ -28,6 +28,11 @@ export * from './gradientCss'
 export * from './clipPath'
 export * from './resolveBreakpointValue'
 
+// --- P51-B increment 2b: font loaders + recent-fonts store (parametrized) ---
+export * from './loadCustomFonts'
+export * from './loadGoogleFont'
+export * from './useRecentFonts'
+
 // --- P51-B: generic browser / React hooks ---
 export * from './useCarousel'
 export * from './useIdleTimeout'

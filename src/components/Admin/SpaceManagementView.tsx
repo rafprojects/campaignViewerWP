@@ -12,7 +12,7 @@ import { useSpaces } from '@/services/adminQuery';
 import { SettingsPanel } from './SettingsPanel';
 import { SpaceAssetLibrary } from './SpaceAssetLibrary';
 import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
-import type { FontLibraryEntry } from '@/utils/loadCustomFonts';
+import type { FontLibraryEntry } from '@wp-super-gallery/shared-utils';
 
 interface SpaceGrant {
   userId: number;
