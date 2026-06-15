@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend pending P52-vs-P53 decision) | In progress | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend UX deferred → PHASE53) | Done | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -99,7 +99,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | **A5a** | REST hardening — system/global endpoints → `manage_options` (new `require_system_admin`) | P52 | **Done 2026-06-15** |
 | **A5b** | REST hardening — per-campaign/company endpoints → `manage_wpsg` + space access (closes F2) | P52 | **Done 2026-06-15** |
 | **A5c** | Per-resource delete policy — layout-template/asset in-use guards; `fonts.delete` → `manage_options` | P52 | **Done 2026-06-15** |
-| **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
+| **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals (any tier/permission-management control belongs in the WordPress "Super Gallery" admin sidebar, **not** the React app) | P53 | **Deferred → PHASE53** (decided 2026-06-15) |
 
 ### A1 — implementation notes (Done 2026-06-15)
 
@@ -165,7 +165,9 @@ This is the direct F2 fix: a `manage_wpsg` editor can no longer touch analytics/
 
 **Proven.** New `tests/WPSG_P52A5c_Delete_Policy_Test.php` (8 tests): `fonts.delete` denies an editor (403) and a System Admin passes the gate (404 on a missing id); layout-template delete is blocked (409) while a campaign binds it, `force=true` overrides, and an unused template deletes; asset delete is blocked (409) while associated with a space, `force=true` overrides, and an unassociated asset deletes. Full PHPUnit suite green — **1007 tests, 12184 assertions, 0 failures**.
 
-**P52-A server-side enforcement (A1–A5) is complete.** F1 (provability) and F2 (delegated cross-space) are both closed, asserted by the frozen matrix + completeness/no-bypass test + per-tier suites. A6 (frontend UX) is the only remaining sub-track.
+**P52-A server-side enforcement (A1–A5) is complete.** F1 (provability) and F2 (delegated cross-space) are both closed, asserted by the frozen matrix + completeness/no-bypass test + per-tier suites. All P52-A acceptance criteria are met (matrix encoded + asserted; F1+F2 closed; role-rename migration; per-resource delete policy), so **the track is marked Done**.
+
+**A6 (frontend UX) is deferred to PHASE53 (decided 2026-06-15).** It is UX-only — the boundary is fully enforced server-side (editors receive 403 regardless of UI) — and a cohesive frontend effort: the React app has no `manage_options` concept yet (only `isAdmin` = `manage_wpsg`, used across ~32 files) and the AdminPanel is ~960 lines across a large component tree. Scope for P53: surface a System-Admin tier to the app + gate system controls in the AdminPanel; template/asset delete-confirm modals (catch the A5c `409` → resend `force=true`). Any tier/permission-management UI belongs in the WordPress "Super Gallery" admin sidebar, not the React app. Tracked in `docs/FUTURE_TASKS.md` › Access Control.
 
 ### Acceptance criteria
 
