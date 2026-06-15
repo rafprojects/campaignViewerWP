@@ -86,7 +86,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
                     ],
                     'role'        => [
                         'type'    => 'string',
-                        'enum'    => ['subscriber', 'wpsg_admin'],
+                        'enum'    => ['subscriber', 'wpsg_editor'],
                         'default' => 'subscriber',
                     ],
                     'campaignId'  => [
@@ -359,9 +359,9 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
         }
 
         // Validate role exists and prevent privilege escalation
-        $allowed_roles = ['subscriber', 'wpsg_admin'];
+        $allowed_roles = ['subscriber', 'wpsg_editor'];
         if (!in_array($role, $allowed_roles, true)) {
-            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_admin.', ['status' => 400]);
+            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_editor.', ['status' => 400]);
         }
 
         // Generate username from email (before @)
@@ -498,8 +498,8 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
                 'description' => 'Can view campaigns they are granted access to.',
             ],
             [
-                'value' => 'wpsg_admin',
-                'label' => 'Gallery Admin',
+                'value' => 'wpsg_editor',
+                'label' => 'Gallery Editor',
                 'description' => 'Can manage campaigns and access in this plugin, but not WordPress admin.',
             ],
         ];

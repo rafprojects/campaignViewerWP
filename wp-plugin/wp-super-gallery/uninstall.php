@@ -63,6 +63,7 @@ $options = [
 	'wpsg_thumbnail_cache_index',
 	'wpsg_oembed_provider_failures',
 	'wpsg_needs_setup',
+	'wpsg_roles_migrated_editor', // P52-A2: wpsg_admin → wpsg_editor migration flag
 	'wpsg_cache_version',
 	'wpsg_layout_templates',
 	'wpsg_media_refs_backfilled',
@@ -112,7 +113,8 @@ foreach ( $tables as $table ) {
 }
 
 // ── 7. Remove roles and capabilities ────────────────────────
-remove_role( 'wpsg_admin' );
+remove_role( 'wpsg_editor' );          // P52-A2 (Space Editor)
+remove_role( 'wpsg_admin' );           // legacy pre-P52-A2 role — remove if still present
 
 $admin_role = get_role( 'administrator' );
 if ( $admin_role ) {

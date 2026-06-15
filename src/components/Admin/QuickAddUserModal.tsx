@@ -172,7 +172,7 @@ function QuickAddUserFormState({
         label="Role"
         data={[
           { value: 'subscriber', label: '👁 Viewer - Can view granted campaigns' },
-          { value: 'wpsg_admin', label: '⚙️ Gallery Admin - Can manage this plugin' },
+          { value: 'wpsg_editor', label: '⚙️ Gallery Editor - Can manage this plugin' },
         ]}
         value={quickAddRole}
         onChange={(value) => setQuickAddRole(value ?? 'subscriber')}

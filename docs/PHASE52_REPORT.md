@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1 done**; A2 next; A6 frontend may defer to P53) | In progress | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1+A2 done**; A3 next; A6 frontend may defer to P53) | In progress | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -93,7 +93,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | Sub-track | Scope | Phase | Status |
 |-----------|-------|-------|--------|
 | **A1** | `WPSG_Permissions` centralized map wired to **current** gates + regression tests asserting the present matrix (provable baseline, no behavior change) | P52 | **Done 2026-06-15** |
-| **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | To do |
+| **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | **Done 2026-06-15** |
 | **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | To do |
 | **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | To do |
 | **A5** | REST hardening: flip every `require_admin` endpoint per the matrix (system→`manage_options`; per-campaign/company→`manage_wpsg`+space access; per-resource delete policy + in-use guards) | P52 | To do |
@@ -108,6 +108,16 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 **Proven.** New `tests/WPSG_P52A_Permission_Matrix_Test.php` (10 tests, 980 assertions) asserts: (1) the frozen matrix, one assertion per row, against an independently hand-maintained copy (drift guard for A4/A5); (2) every strategy resolves to a callable `WPSG_REST_Base` primitive; (3) **completeness / no-bypass** — every registered `wp-super-gallery/v1` route's `permission_callback` is a `WPSG_Permissions` gate bound to a known action, and the set of wired actions equals the MAP keys exactly; (4) per-strategy allow/deny for `require_admin` (incl. the **F2 baseline**: a `manage_wpsg`-only editor *currently* passes system `require_admin` — the gap A4/A5 will close), `rate_limit_public`, `require_authenticated`, `__return_true`; (5) fail-closed on unknown action; (6) the `gate()` typo-guard. The `require_campaign_*`/`require_space_*` strategies remain cross-covered by `WPSG_P33C_Role_Enforcement_Test` and `WPSG_P47_Spaces_Isolation_Test`.
 
 **No-behavior-change evidence.** Full PHPUnit suite green — **967 tests, 12003 assertions, 0 failures/0 errors** (2 pre-existing skips) — with P33C and P47 unmodified. Test-design note: an exact endpoint *count* assertion was dropped because WP's REST-server singleton accumulates duplicate endpoint registrations across the full suite (each `rest_api_init` re-appends); the action-set equality is the robust completeness proof and each accumulated duplicate is still validated as a gate.
+
+### A2 — implementation notes (Done 2026-06-15)
+
+**Role rename (slug only).** `wpsg_admin` → `wpsg_editor`; the *capability* stays `manage_wpsg` (renaming a stored cap is migration-heavy and unnecessary). The editor role now carries `read` + `upload_files` + `manage_wpsg` and **no custom CPT caps** (so it gets no wp-admin "Campaigns" menu) and **no `manage_options`**.
+
+**Setup + migration** (`wp-super-gallery.php`). `wpsg_setup_roles_and_caps()` refactored: `administrator` keeps `manage_wpsg` + CPT caps (System Admin); a new idempotent `wpsg_ensure_editor_role()` creates/normalizes `wpsg_editor` (and strips any CPT caps left over from the legacy definition). A one-time `wpsg_maybe_migrate_roles()` (init priority 11, flag `wpsg_roles_migrated_editor`) ensures the editor role, reassigns every `wpsg_admin` user to `wpsg_editor` with `manage_wpsg` access intact, then removes the old role. It is flag-gated rather than tied to the setup gate, so it also fires on existing installs where the administrator already has `manage_wpsg` (setup gate closed).
+
+**Touch points.** `class-wpsg-auth-controller.php` — `create_user` role enum + `$allowed_roles` + error text, and `list_roles` label ("Gallery Admin" → "Gallery Editor"). `uninstall.php` — removes `wpsg_editor` and the legacy `wpsg_admin` (if present) plus the new migration-flag option. `src/components/Admin/QuickAddUserModal.tsx` — role dropdown option. The localStorage keys `wpsg_admin_active_tab` / `wpsg_admin_shortcuts` are unrelated to the role and were intentionally **not** renamed.
+
+**Proven.** New `tests/WPSG_P52A2_Role_Migration_Test.php` (8 tests): editor caps present, no `manage_options`/CPT caps, `ensure_editor_role` strips legacy CPT caps, the required **migration test** (pre-existing `wpsg_admin` user → `wpsg_editor`, access intact, legacy role removed, flag set), no-op when already migrated, and the `/users` contract (accepts `wpsg_editor`, rejects `wpsg_admin` with 400, `list_roles` exposes editor not legacy). Full PHPUnit suite green — **975 tests, 12043 assertions, 0 failures** — and `QuickAddUserModal.test.tsx` green (12/12).
 
 ### Acceptance criteria
 
