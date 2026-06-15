@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A3 done**; A4 next; A6 frontend may defer to P53) | In progress | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A4 done**; A5 next; A6 frontend may defer to P53) | In progress | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -95,7 +95,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | **A1** | `WPSG_Permissions` centralized map wired to **current** gates + regression tests asserting the present matrix (provable baseline, no behavior change) | P52 | **Done 2026-06-15** |
 | **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | **Done 2026-06-15** |
 | **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | **Done 2026-06-15** |
-| **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | To do |
+| **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | **Done 2026-06-15** |
 | **A5** | REST hardening: flip every `require_admin` endpoint per the matrix (system→`manage_options`; per-campaign/company→`manage_wpsg`+space access; per-resource delete policy + in-use guards) | P52 | To do |
 | **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
 
@@ -126,6 +126,16 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 **CPT menu provably hidden for editors.** The `wpsg_campaign` CPT is registered with `capability_type => ['wpsg_campaign','wpsg_campaigns']` + `map_meta_cap => true`, so its top-level "SuperGallery" menu (and the Spaces/Settings submenus nested under it) is gated by the CPT caps. A2 stripped those caps from `wpsg_editor`, so the entire menu is hidden for editors; A3's page-capability change additionally blocks direct-URL access. `render_create_space_ui()` only renders on the (CPT-cap-gated) campaign list screen, and the handler defends with `manage_options` regardless.
 
 **Proven.** New `tests/WPSG_P52A3_Admin_Gating_Test.php` (5 tests): the Spaces page is registered with `manage_options`, Settings remains `manage_options` (regression), a `wpsg_editor` lacks `manage_options` and every CPT cap (menu hidden) while keeping `manage_wpsg`, an administrator has both, and the create-space handler `wp_die()`s for an editor. Full PHPUnit suite green — **980 tests, 12060 assertions, 0 failures**.
+
+### A4 — implementation notes (Done 2026-06-15)
+
+**Per-key split, not a flat flip.** `POST`/`PATCH /settings` is a *mixed-tier* endpoint — one request can carry both display/campaign keys and system keys — so the boundary is enforced **inside the handler**, not by swapping the route's strategy. The endpoints keep their `require_admin` (`manage_wpsg`) gate (you need `manage_wpsg` to write *any* setting); a new `WPSG_Settings_Controller::guard_admin_only_settings()` then returns **403 `wpsg_forbidden_settings`** if a caller lacking `manage_options` writes any key in the registry's `$admin_only_fields` (cache TTLs, upload limits, optimize/auth/retention, etc.).
+
+**Keyed off caller intent.** The guard inspects `WPSG_Settings::from_js($body)` — the keys the caller actually sent — which is independent of `sanitize_settings()`'s "merge over current" behavior, so an editor's legitimate display-only write never trips it and unspecified system keys are never touched. The guard runs **before** any persistence, so a mixed payload is rejected atomically (no partial write).
+
+**Map note.** `WPSG_Permissions::MAP` keeps `settings.update`/`settings.patch` ⇒ `require_admin` by design — a documented exception to A5's flat reclassification, since these endpoints are mixed-tier and enforce the system-key boundary per-key.
+
+**Proven.** New `tests/WPSG_P52A4_Settings_Split_Test.php` (5 tests): editor writes a display setting (200), editor denied a system setting via POST and via PATCH (value unchanged), a mixed payload is rejected atomically (display key not applied), and a System Admin writes a system setting (200, persisted). Full PHPUnit suite green — **985 tests, 12072 assertions, 0 failures**.
 
 ### Acceptance criteria
 
