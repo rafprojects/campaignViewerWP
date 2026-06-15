@@ -10,7 +10,7 @@ import {
   distributeSlotsVertically,
   distributeSlotsHorizontallyByGap,
   distributeSlotsVerticallyByGap,
-} from './alignSlots';
+} from '@wp-super-gallery/shared-utils';
 import type { LayoutSlot } from '@/types';
 
 function makeSlot(id: string, x: number, y: number, width: number, height: number): LayoutSlot {

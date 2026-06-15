@@ -13,7 +13,7 @@ import {
   centerSlotsHorizontally, centerSlotsVertically,
   distributeSlotsHorizontally, distributeSlotsVertically,
   distributeSlotsHorizontallyByGap, distributeSlotsVerticallyByGap,
-} from '@/utils/alignSlots';
+} from '@wp-super-gallery/shared-utils';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';

@@ -19,6 +19,15 @@ export * from './smartGuides'
 export * from './tileLayout'
 export * from './sectionHeight'
 
+// --- P51-B increment 2: decoupled css / geometry / layout helpers ---
+export * from './shadowPresets'
+export * from './graphicLayerTransform'
+export * from './alignSlots'
+export * from './slotEffects'
+export * from './gradientCss'
+export * from './clipPath'
+export * from './resolveBreakpointValue'
+
 // --- P51-B: generic browser / React hooks ---
 export * from './useCarousel'
 export * from './useIdleTimeout'

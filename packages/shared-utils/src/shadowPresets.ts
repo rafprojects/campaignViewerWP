@@ -1,4 +1,6 @@
-import type { ShadowPreset } from '@/types';
+/** Box-shadow preset keys (mirrors the app's `ShadowPreset`, kept local so this
+ *  module stays framework-agnostic). */
+export type ShadowPreset = 'none' | 'subtle' | 'medium' | 'strong' | 'custom';
 
 const SHADOW_PRESETS: Record<Exclude<ShadowPreset, 'custom'>, string> = {
   none: 'none',

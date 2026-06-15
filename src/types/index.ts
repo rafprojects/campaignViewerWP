@@ -1009,7 +1009,7 @@ export interface GalleryBehaviorSettings {
   // P21-D: Viewer background & border
   viewerBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   viewerBgColor: string;
-  viewerBgGradient: import('@/utils/gradientCss').GradientOptions;
+  viewerBgGradient: import('@wp-super-gallery/shared-utils').GradientOptions;
   showViewerBorder: boolean;
   // P21-C: Card aspect ratio & max columns
   cardMaxColumns: number;
@@ -1053,7 +1053,7 @@ export interface GalleryBehaviorSettings {
   modalMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
   modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   modalBgColor: string;
-  modalBgGradient: import('@/utils/gradientCss').GradientOptions;
+  modalBgGradient: import('@wp-super-gallery/shared-utils').GradientOptions;
   // P22-M: Modal gallery width/gap/margin
   modalGalleryMaxWidth: number;
   modalGalleryMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;

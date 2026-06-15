@@ -5,45 +5,48 @@
  * Each function returns a map of slotId → partial slot update so callers can
  * apply updates via builder.updateSlot without knowing internal slot state.
  */
-import type { LayoutSlot } from '@/types';
+// Slots are described by their geometry only (id + percentage rect). Reuse the
+// shared SlotRect shape so this module stays framework-agnostic; callers passing
+// the app's richer `LayoutSlot` remain compatible structurally.
+import type { SlotRect } from './smartGuides';
 
-type SlotUpdate = Record<string, Partial<LayoutSlot>>;
+type SlotUpdate = Record<string, Partial<SlotRect>>;
 
-function right(s: LayoutSlot) { return s.x + s.width; }
-function bottom(s: LayoutSlot) { return s.y + s.height; }
-function cx(s: LayoutSlot) { return s.x + s.width / 2; }
-function cy(s: LayoutSlot) { return s.y + s.height / 2; }
+function right(s: SlotRect) { return s.x + s.width; }
+function bottom(s: SlotRect) { return s.y + s.height; }
+function cx(s: SlotRect) { return s.x + s.width / 2; }
+function cy(s: SlotRect) { return s.y + s.height / 2; }
 
 // ── Align ────────────────────────────────────────────────────────────────────
 
-export function alignSlotsLeft(slots: LayoutSlot[]): SlotUpdate {
+export function alignSlotsLeft(slots: SlotRect[]): SlotUpdate {
   const minX = Math.min(...slots.map((s) => s.x));
   return Object.fromEntries(slots.map((s) => [s.id, { x: minX }]));
 }
 
-export function alignSlotsRight(slots: LayoutSlot[]): SlotUpdate {
+export function alignSlotsRight(slots: SlotRect[]): SlotUpdate {
   const maxRight = Math.max(...slots.map(right));
   return Object.fromEntries(slots.map((s) => [s.id, { x: maxRight - s.width }]));
 }
 
-export function alignSlotsTop(slots: LayoutSlot[]): SlotUpdate {
+export function alignSlotsTop(slots: SlotRect[]): SlotUpdate {
   const minY = Math.min(...slots.map((s) => s.y));
   return Object.fromEntries(slots.map((s) => [s.id, { y: minY }]));
 }
 
-export function alignSlotsBottom(slots: LayoutSlot[]): SlotUpdate {
+export function alignSlotsBottom(slots: SlotRect[]): SlotUpdate {
   const maxBottom = Math.max(...slots.map(bottom));
   return Object.fromEntries(slots.map((s) => [s.id, { y: maxBottom - s.height }]));
 }
 
-export function centerSlotsHorizontally(slots: LayoutSlot[]): SlotUpdate {
+export function centerSlotsHorizontally(slots: SlotRect[]): SlotUpdate {
   const minX = Math.min(...slots.map((s) => s.x));
   const maxRight = Math.max(...slots.map(right));
   const midX = (minX + maxRight) / 2;
   return Object.fromEntries(slots.map((s) => [s.id, { x: midX - s.width / 2 }]));
 }
 
-export function centerSlotsVertically(slots: LayoutSlot[]): SlotUpdate {
+export function centerSlotsVertically(slots: SlotRect[]): SlotUpdate {
   const minY = Math.min(...slots.map((s) => s.y));
   const maxBottom = Math.max(...slots.map(bottom));
   const midY = (minY + maxBottom) / 2;
@@ -52,7 +55,7 @@ export function centerSlotsVertically(slots: LayoutSlot[]): SlotUpdate {
 
 // ── Distribute ───────────────────────────────────────────────────────────────
 
-export function distributeSlotsHorizontally(slots: LayoutSlot[]): SlotUpdate {
+export function distributeSlotsHorizontally(slots: SlotRect[]): SlotUpdate {
   if (slots.length < 3) return alignSlotsLeft(slots);
   const sorted = [...slots].sort((a, b) => cx(a) - cx(b));
   const first = sorted[0]!;
@@ -64,7 +67,7 @@ export function distributeSlotsHorizontally(slots: LayoutSlot[]): SlotUpdate {
   );
 }
 
-export function distributeSlotsVertically(slots: LayoutSlot[]): SlotUpdate {
+export function distributeSlotsVertically(slots: SlotRect[]): SlotUpdate {
   if (slots.length < 3) return alignSlotsTop(slots);
   const sorted = [...slots].sort((a, b) => cy(a) - cy(b));
   const first = sorted[0]!;
@@ -81,7 +84,7 @@ export function distributeSlotsVertically(slots: LayoutSlot[]): SlotUpdate {
 // trailing edge of previous). The outermost slots anchor in place; only the
 // interior slots move. Falls back to alignSlotsLeft/Top when < 3 slots.
 
-export function distributeSlotsHorizontallyByGap(slots: LayoutSlot[]): SlotUpdate {
+export function distributeSlotsHorizontallyByGap(slots: SlotRect[]): SlotUpdate {
   if (slots.length < 3) return alignSlotsLeft(slots);
   const sorted = [...slots].sort((a, b) => a.x - b.x);
   const totalSpan = right(sorted[sorted.length - 1]!) - sorted[0]!.x;
@@ -97,7 +100,7 @@ export function distributeSlotsHorizontallyByGap(slots: LayoutSlot[]): SlotUpdat
   );
 }
 
-export function distributeSlotsVerticallyByGap(slots: LayoutSlot[]): SlotUpdate {
+export function distributeSlotsVerticallyByGap(slots: SlotRect[]): SlotUpdate {
   if (slots.length < 3) return alignSlotsTop(slots);
   const sorted = [...slots].sort((a, b) => a.y - b.y);
   const totalSpan = bottom(sorted[sorted.length - 1]!) - sorted[0]!.y;

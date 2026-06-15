@@ -1,50 +1,13 @@
 /**
- * Shared clip-path utilities for layout builder shapes.
+ * App-side clip-path wrappers that operate on the rich `LayoutSlot` type.
  *
- * Used by both LayoutSlotComponent (admin builder) and
- * LayoutBuilderGallery (public adapter) to ensure consistent rendering.
+ * The framework-agnostic shape→clip-path logic (`getClipPathForShape`) lives in
+ * `@wp-super-gallery/shared-utils`; these wrappers adapt it to `LayoutSlot`.
+ * Used by both LayoutSlotComponent (admin builder) and LayoutBuilderGallery
+ * (public adapter) to ensure consistent rendering.
  */
-import type { LayoutSlot, LayoutSlotShape } from '@/types';
-import { sanitizeClipPath } from '@wp-super-gallery/shared-utils';
-
-/**
- * Returns the CSS `clip-path` value for a given shape preset (and optional
- * custom clip-path when `shape === 'custom'`), or `undefined` for `rectangle`
- * / absent shape (no clipping).
- *
- * Shared by slots (LayoutSlotComponent) and graphic layers (GraphicLayerContent)
- * so both clip identically.
- */
-export function getClipPathForShape(
-  shape: LayoutSlotShape | undefined,
-  customClipPath?: string | undefined,
-): string | undefined {
-  switch (shape) {
-    case 'circle':
-      return 'ellipse(50% 50% at 50% 50%)';
-    case 'ellipse':
-      return 'ellipse(50% 50% at 50% 50%)';
-    case 'hexagon':
-      return 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)';
-    case 'diamond':
-      return 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
-    case 'parallelogram-left':
-      return 'polygon(15% 0%, 100% 0%, 85% 100%, 0% 100%)';
-    case 'parallelogram-right':
-      return 'polygon(0% 0%, 85% 0%, 100% 100%, 15% 100%)';
-    case 'chevron':
-      return 'polygon(0% 0%, 85% 0%, 100% 50%, 85% 100%, 0% 100%)';
-    case 'arrow':
-      return 'polygon(0% 0%, 70% 0%, 100% 50%, 70% 100%, 0% 100%, 30% 50%)';
-    case 'trapezoid':
-      return 'polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%)';
-    case 'custom':
-      return sanitizeClipPath(customClipPath) || undefined;
-    case 'rectangle':
-    default:
-      return undefined;
-  }
-}
+import type { LayoutSlot } from '@/types';
+import { getClipPathForShape } from '@wp-super-gallery/shared-utils';
 
 /**
  * Returns the CSS `clip-path` value for a given slot shape,

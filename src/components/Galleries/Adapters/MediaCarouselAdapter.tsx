@@ -19,8 +19,8 @@ import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
-import { resolveBoxShadow } from '@/utils/shadowPresets';
-import { combineMaxWidthConstraints, resolveBreakpointValue } from '@/utils/resolveBreakpointValue';
+import { resolveBoxShadow } from '@wp-super-gallery/shared-utils';
+import { combineMaxWidthConstraints, resolveBreakpointValue } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './_shared/runtimeCommon';
 import {

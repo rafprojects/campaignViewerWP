@@ -268,6 +268,21 @@ Moved the **20 verified zero-coupling modules** into `packages/shared-utils/src/
 
 **Gate:** `tsc -b` clean, `eslint` clean, **173 files / 2348 tests pass**, coverage thresholds met (functions 75.2% — note the gate is tight). **Remaining in P51-B:** the ~18 light-decoupling modules (playbook §4), then the `theme-engine` track.
 
+### Implementation — increment 2a (2026-06-14): decoupled css/geometry/layout helpers
+
+Moved 7 modules that needed a one-line decoupling each (playbook §1):
+- `shadowPresets` — inlined the `ShadowPreset` union locally.
+- `graphicLayerTransform` — replaced the `LayoutGraphicLayer` param with a structural `GraphicLayerTransformInput`.
+- `alignSlots` — retyped `LayoutSlot` → the package's existing `SlotRect` (from `smartGuides`); not re-exported, to avoid a barrel name clash.
+- `slotEffects` — inlined `SlotFilterEffects`/`SlotShadow`/`SlotOverlayEffect`/`SlotBlendMode`; relativized `sanitizeCssColor`.
+- `gradientCss` — inlined `GradientType`/`GradientDirection`/`RadialShape`/`RadialSize`/`GradientStop`; relativized `sanitizeCssColor`. `src/types/index.ts` now references `GradientOptions` via the package (same inline-import pattern it already uses for the `Css*Unit` types).
+- `resolveBreakpointValue` — inlined the `Breakpoint` literal.
+- `clipPath` — **split**: `getClipPathForShape` (+ inlined `LayoutSlotShape`) moved to the package; the `LayoutSlot` wrappers `getClipPath`/`usesClipPath` stay in `src/utils/clipPath.ts` and call the package fn (its test exercises them via the rich `DEFAULT_LAYOUT_SLOT`, so it stays app-side too).
+
+Repointed 14 consumers. The `alignSlots`/`gradientCss` unit tests stay in `src` (they import `@/types` fixtures) but now import the function from the package — an acceptable app-level test over a package fn.
+
+**Coverage scope change:** extended the coverage `include` to `packages/shared-utils/src/**` — the package is first-party code extracted from `src/`, and its tests already run; counting them keeps the metric honest as modules migrate (and lifts function coverage to 76.28%, undoing the dip from moving well-tested fns out of `src/`). **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.28%).
+
 ---
 
 ## Track P51-C — `packages/shared-ui/` extraction

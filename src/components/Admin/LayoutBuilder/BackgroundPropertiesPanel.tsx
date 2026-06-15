@@ -22,7 +22,7 @@ import type {
   RadialShape,
   RadialSize,
 } from '@/types';
-import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@/utils/gradientCss';
+import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@wp-super-gallery/shared-utils';
 import { useBuilderDock } from './BuilderDockContext';
 import { AssetUploader } from './AssetUploader';
 import { DesignAssetsGrid } from './DesignAssetsGrid';

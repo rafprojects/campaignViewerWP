@@ -1,8 +1,52 @@
 /**
  * Build CSS filter, shadow, blend-mode, and overlay strings from slot effect types.
  */
-import type { SlotFilterEffects, SlotShadow, SlotOverlayEffect, SlotBlendMode } from '@/types';
-import { sanitizeCssColor } from '@wp-super-gallery/shared-utils';
+import { sanitizeCssColor } from './sanitizeCss';
+
+// Structural copies of the app's slot-effect types, kept local so this module
+// stays framework-agnostic. Callers passing the app's `@/types` equivalents
+// remain compatible structurally.
+export interface SlotFilterEffects {
+  brightness?: number;
+  contrast?: number;
+  saturate?: number;
+  blur?: number;
+  grayscale?: number;
+  sepia?: number;
+  hueRotate?: number;
+  invert?: number;
+}
+
+export interface SlotShadow {
+  offsetX: number;
+  offsetY: number;
+  blur: number;
+  color: string;
+}
+
+export type SlotBlendMode =
+  | 'normal'
+  | 'multiply'
+  | 'screen'
+  | 'overlay'
+  | 'darken'
+  | 'lighten'
+  | 'color-dodge'
+  | 'color-burn'
+  | 'hard-light'
+  | 'soft-light'
+  | 'difference'
+  | 'exclusion'
+  | 'hue'
+  | 'saturation'
+  | 'color'
+  | 'luminosity';
+
+export interface SlotOverlayEffect {
+  mode: 'none' | 'darken' | 'lighten';
+  intensity: number;
+  onHoverOnly: boolean;
+}
 
 /**
  * Build a CSS `filter` string from slot filter effects and optional shadow.

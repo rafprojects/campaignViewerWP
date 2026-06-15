@@ -122,7 +122,10 @@ export default defineConfig({
         branches: 72,
         statements: 75,
       },
-      include: ['src/**/*.{ts,tsx}'],
+      // P51-B: the shared-utils package is first-party code extracted from src/,
+      // so its modules count toward coverage (their tests already run). Keeps the
+      // metric honest as modules migrate out of src/ into the package.
+      include: ['src/**/*.{ts,tsx}', 'packages/shared-utils/src/**/*.{ts,tsx}'],
       exclude: [
         'src/test/**',
         '**/*.test.{ts,tsx}',

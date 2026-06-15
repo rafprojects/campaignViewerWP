@@ -5,7 +5,7 @@ import { IconLock } from '@tabler/icons-react';
 import type { LayoutSlot, MaskLayer, MediaItem } from '@/types';
 import { getClipPath } from '@/utils/clipPath';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
-import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
+import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

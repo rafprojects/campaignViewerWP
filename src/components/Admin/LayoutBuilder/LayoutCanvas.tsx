@@ -20,7 +20,7 @@ import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
 import { GraphicLayerContent } from './GraphicLayerContent';
-import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
+import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

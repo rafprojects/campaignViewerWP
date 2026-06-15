@@ -28,7 +28,7 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { notifications } from '@mantine/notifications';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
-import { buildGradientCss } from '@/utils/gradientCss';
+import { buildGradientCss } from '@wp-super-gallery/shared-utils';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { toCssOrNumber, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
 import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';

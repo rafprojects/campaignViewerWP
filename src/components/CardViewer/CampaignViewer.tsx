@@ -10,7 +10,7 @@ import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
-import { buildGradientCss } from '@/utils/gradientCss';
+import { buildGradientCss } from '@wp-super-gallery/shared-utils';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';

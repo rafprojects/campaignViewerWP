@@ -1,11 +1,16 @@
-import type {
-  GradientDirection,
-  GradientStop,
-  GradientType,
-  RadialShape,
-  RadialSize,
-} from '@/types';
-import { sanitizeCssColor } from '@wp-super-gallery/shared-utils';
+import { sanitizeCssColor } from './sanitizeCss';
+
+// Structural copies of the app's gradient types, kept local so this module stays
+// framework-agnostic. Callers passing the app's `@/types` equivalents remain
+// compatible structurally.
+export type GradientType = 'linear' | 'radial' | 'conic';
+export type GradientDirection = 'horizontal' | 'vertical' | 'diagonal-right' | 'diagonal-left' | 'radial';
+export type RadialShape = 'circle' | 'ellipse';
+export type RadialSize = 'closest-side' | 'closest-corner' | 'farthest-side' | 'farthest-corner';
+export interface GradientStop {
+  color: string;
+  position?: number | undefined;
+}
 
 /** Options bag for fine-grained gradient control. */
 export interface GradientOptions {
