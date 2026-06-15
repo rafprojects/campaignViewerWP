@@ -62,23 +62,6 @@ Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPO
 
 ---
 
-### Frontend RBAC Tier Surfacing (deferred P52-A6)
-
-**Files:** `src/services/auth/*` (AuthProvider, WpJwtProvider, WpNonceProvider), `src/components/Admin/AdminPanel.tsx` (~960 lines) + settings tabs, `includes/rest/class-wpsg-auth-controller.php` (`list_permissions`), `includes/class-wpsg-embed.php` (page-config JS).
-
-**Context:** P52-A1–A5 fully enforce the System-Admin (`manage_options`) vs space-editor (`manage_wpsg`) boundary **server-side** — an editor receives `403` from every system endpoint and `409` on in-use template/asset deletes regardless of the UI. A6 is the matching **frontend UX** so editors aren't shown controls that will 403:
-- Surface a System-Admin tier to the React app. Today the frontend has **no `manage_options` concept** — only `isAdmin` (= `manage_wpsg`), consumed in ~32 files. Add the tier to `/permissions` + the page-config payload + the auth-provider types.
-- Gate system controls in the AdminPanel/settings tabs by tier (system settings keys, fonts delete, spaces management, user creation, global audit, webhooks, media library, binary import/export).
-- Template/asset **delete-confirm modals**: catch the A5c `409` (`wpsg_template_in_use` / `wpsg_asset_in_use`, includes the `inUse` count) and offer "delete anyway" → resend with `force=true`.
-
-**Constraint (user, 2026-06-15):** any tier/permission-**management** UI belongs in the WordPress "Super Gallery" admin sidebar (wp-admin), **not** the React app.
-
-**Rationale for deferral:** UX-only (no security dependency — the boundary is already provably enforced) and a cohesive frontend effort touching auth plumbing + a large AdminPanel tree + React tests. Best scoped as its own track. Deferred from [PHASE52_REPORT.md](PHASE52_REPORT.md) Track P52-A → PHASE53 (decided 2026-06-15).
-
-**Effort:** Medium–High (frontend track) | **Impact:** Medium (UX polish; prevents editors hitting avoidable 403s).
-
----
-
 ### CORS Origin Allow-List & Admin UI
 
 **Files:** `wp-super-gallery.php`, `class-wpsg-settings.php`
