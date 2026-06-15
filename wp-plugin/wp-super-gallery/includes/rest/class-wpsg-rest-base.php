@@ -70,10 +70,14 @@ abstract class WPSG_REST_Base {
      * `rate_limit_requests_per_minute` in settings_overrides (P48-D).
      * Global floor override via `wpsg_rate_limit_authenticated` filter.
      *
+     * P52-A5: this primitive exclusively guards user creation (POST /users),
+     * a System Admin action, so it requires `manage_options` (not merely
+     * `manage_wpsg`). Keep that in mind if it is ever reused for another route.
+     *
      * @since 0.18.0 P20-A
      */
     public static function rate_limit_authenticated($request) {
-        if (!current_user_can('manage_wpsg')) {
+        if (!current_user_can('manage_options')) {
             return false;
         }
 
@@ -223,6 +227,21 @@ abstract class WPSG_REST_Base {
 
     public static function require_admin() {
         if (!current_user_can('manage_wpsg')) {
+            return false;
+        }
+
+        return self::verify_admin_auth();
+    }
+
+    /**
+     * P52-A5: System Admin gate — requires `manage_options` (WordPress admin),
+     * not merely `manage_wpsg`. Used for system/global surfaces that a
+     * space-scoped `wpsg_editor` must never reach (health, caches, webhooks,
+     * global audit log, media library, binary import/export, role assignment,
+     * cross-space aggregates, company management, space creation).
+     */
+    public static function require_system_admin() {
+        if (!current_user_can('manage_options')) {
             return false;
         }
 

@@ -24,8 +24,9 @@ if (!defined('ABSPATH')) {
  *   rate_limit_public           public        — unauthenticated, IP rate-limited
  *   rate_limit_magic_approve    public        — unauthenticated, tight rate limit
  *   require_authenticated       authenticated — any logged-in user (self scope)
- *   rate_limit_authenticated    manage_wpsg   — global, rate-limited admin action
+ *   rate_limit_authenticated    manage_options— user creation, rate-limited (System Admin)
  *   require_admin               manage_wpsg   — global admin (bare cap, no space scope)
+ *   require_system_admin        manage_options— System Admin only (WP dashboard tier)
  *   require_campaign_editor     grant         — campaign editor|owner (manage_wpsg bypass)
  *   require_campaign_owner      grant         — campaign owner (manage_wpsg bypass)
  *   require_campaign_space_move grant         — owner of BOTH source & target space
@@ -54,7 +55,7 @@ final class WPSG_Permissions {
         'analytics.event.record'          => 'rate_limit_public',          // POST   /analytics/event
         'analytics.campaign.read'          => 'require_admin',              // GET    /analytics/campaigns/{id}
         'analytics.campaign.media.read'    => 'require_admin',              // GET    /analytics/campaigns/{id}/media
-        'analytics.summary.read'           => 'require_admin',              // GET    /analytics/summary
+        'analytics.summary.read'           => 'require_system_admin',              // GET    /analytics/summary
 
         // ── WPSG_Auth_Controller ───────────────────────────────────────────
         'auth.permissions.read'            => 'require_authenticated',      // GET    /permissions
@@ -63,10 +64,10 @@ final class WPSG_Permissions {
         'auth.logout'                      => 'require_authenticated',      // POST   /auth/logout
         'users.search'                     => 'require_admin',              // GET    /users/search
         'users.create'                     => 'rate_limit_authenticated',   // POST   /users
-        'roles.list'                       => 'require_admin',              // GET    /roles
+        'roles.list'                       => 'require_system_admin',              // GET    /roles
 
         // ── WPSG_Access_Controller ─────────────────────────────────────────
-        'campaigns.access_summary.read'    => 'require_admin',              // GET    /campaigns/access-summary
+        'campaigns.access_summary.read'    => 'require_system_admin',              // GET    /campaigns/access-summary
         'campaign.access.list'             => 'require_campaign_owner',     // GET    /campaigns/{id}/access
         'campaign.access.grant'            => 'require_campaign_owner',     // POST   /campaigns/{id}/access
         'campaign.access.revoke'           => 'require_campaign_owner',     // DELETE /campaigns/{id}/access/{userId}
@@ -75,14 +76,14 @@ final class WPSG_Permissions {
         'campaign.access_request.approve'  => 'require_campaign_owner',     // POST   /campaigns/{id}/access-requests/{token}/approve
         'campaign.access_request.deny'     => 'require_campaign_owner',     // POST   /campaigns/{id}/access-requests/{token}/deny
         'campaign.access_request.magic_approve' => 'rate_limit_magic_approve', // GET /campaigns/{id}/access-requests/{token}/magic-approve
-        'company.access.list'              => 'require_admin',              // GET    /companies/{id}/access
-        'company.access.grant'             => 'require_admin',              // POST   /companies/{id}/access
-        'company.access.revoke'            => 'require_admin',              // DELETE /companies/{id}/access/{userId}
-        'company.archive'                  => 'require_admin',              // POST   /companies/{id}/archive
+        'company.access.list'              => 'require_system_admin',              // GET    /companies/{id}/access
+        'company.access.grant'             => 'require_system_admin',              // POST   /companies/{id}/access
+        'company.access.revoke'            => 'require_system_admin',              // DELETE /companies/{id}/access/{userId}
+        'company.archive'                  => 'require_system_admin',              // POST   /companies/{id}/archive
 
         // ── WPSG_Media_Controller ──────────────────────────────────────────
-        'media.usage_summary.read'         => 'require_admin',              // GET    /media/usage-summary
-        'media.usage.read'                 => 'require_admin',              // GET    /media/{mediaId}/usage
+        'media.usage_summary.read'         => 'require_system_admin',              // GET    /media/usage-summary
+        'media.usage.read'                 => 'require_system_admin',              // GET    /media/{mediaId}/usage
         'campaign.media.list'              => 'rate_limit_public',          // GET    /campaigns/{id}/media
         'campaign.media.create'            => 'require_campaign_editor',    // POST   /campaigns/{id}/media
         'campaign.media.create_batch'      => 'require_campaign_editor',    // POST   /campaigns/{id}/media/batch
@@ -90,14 +91,14 @@ final class WPSG_Permissions {
         'campaign.media.rescan'            => 'require_campaign_editor',    // POST   /campaigns/{id}/media/rescan
         'campaign.media.update'            => 'require_campaign_editor',    // PUT    /campaigns/{id}/media/{mediaId}
         'campaign.media.delete'            => 'require_campaign_editor',    // DELETE /campaigns/{id}/media/{mediaId}
-        'media.rescan_all'                 => 'require_admin',              // POST   /media/rescan-all
-        'media.library.list'               => 'require_admin',              // GET    /media/library
+        'media.rescan_all'                 => 'require_system_admin',              // POST   /media/rescan-all
+        'media.library.list'               => 'require_system_admin',              // GET    /media/library
         'media.upload'                     => 'require_admin',              // POST   /media/upload
         'media_tags.list'                  => 'require_admin',              // GET    /tags/media
         'media_tags.create'                => 'require_admin',              // POST   /tags/media
         'media_tags.delete'                => 'require_admin',              // DELETE /tags/media/{id}
-        'media.export_binary'              => 'require_admin',              // POST   /admin/media/export/binary
-        'media.import_binary'              => 'require_admin',              // POST   /media/import/binary
+        'media.export_binary'              => 'require_system_admin',              // POST   /admin/media/export/binary
+        'media.import_binary'              => 'require_system_admin',              // POST   /media/import/binary
 
         // ── WPSG_Content_Controller ────────────────────────────────────────
         'categories.list'                  => 'require_admin',              // GET    /campaign-categories
@@ -136,31 +137,31 @@ final class WPSG_Permissions {
         // ── WPSG_Export_Controller ─────────────────────────────────────────
         'campaigns.batch.export_binary'    => 'require_admin',              // POST   /campaigns/batch/export/binary
         'campaign.export'                  => 'require_admin',              // GET    /campaigns/{id}/export
-        'campaigns.import'                 => 'require_admin',              // POST   /campaigns/import
+        'campaigns.import'                 => 'require_system_admin',              // POST   /campaigns/import
         'campaign.export_binary'           => 'require_admin',              // POST   /campaigns/{id}/export/binary
-        'campaigns.import_binary'          => 'require_admin',              // POST   /campaigns/import/binary
+        'campaigns.import_binary'          => 'require_system_admin',              // POST   /campaigns/import/binary
         'export_jobs.read'                 => 'require_admin',              // GET    /export-jobs/{job_id}
         'export_jobs.delete'               => 'require_admin',              // DELETE /export-jobs/{job_id}
         'export_jobs.download'             => 'require_admin',              // GET    /export-jobs/{job_id}/download
 
         // ── WPSG_System_Controller ─────────────────────────────────────────
         'system.oembed_proxy'              => '__return_true',             // GET    /oembed
-        'system.health.read'               => 'require_admin',              // GET    /admin/health
-        'system.oembed_failures.read'      => 'require_admin',              // GET    /admin/oembed-failures
-        'system.oembed_failures.reset'     => 'require_admin',              // DELETE /admin/oembed-failures
-        'system.thumbnail_cache.read'      => 'require_admin',              // GET    /admin/thumbnail-cache
-        'system.thumbnail_cache.clear'     => 'require_admin',              // DELETE /admin/thumbnail-cache
-        'system.thumbnail_cache.refresh'   => 'require_admin',              // POST   /admin/thumbnail-cache/refresh
-        'webhooks.list'                    => 'require_admin',              // GET    /webhooks
-        'webhooks.create'                  => 'require_admin',              // POST   /webhooks
-        'webhooks.delivery_log.read'       => 'require_admin',              // GET    /webhooks/delivery-log
-        'webhooks.update'                  => 'require_admin',              // PUT    /webhooks/{index}
-        'webhooks.delete'                  => 'require_admin',              // DELETE /webhooks/{index}
-        'webhooks.rotate_secret'           => 'require_admin',              // POST   /webhooks/{index}/rotate-secret
+        'system.health.read'               => 'require_system_admin',              // GET    /admin/health
+        'system.oembed_failures.read'      => 'require_system_admin',              // GET    /admin/oembed-failures
+        'system.oembed_failures.reset'     => 'require_system_admin',              // DELETE /admin/oembed-failures
+        'system.thumbnail_cache.read'      => 'require_system_admin',              // GET    /admin/thumbnail-cache
+        'system.thumbnail_cache.clear'     => 'require_system_admin',              // DELETE /admin/thumbnail-cache
+        'system.thumbnail_cache.refresh'   => 'require_system_admin',              // POST   /admin/thumbnail-cache/refresh
+        'webhooks.list'                    => 'require_system_admin',              // GET    /webhooks
+        'webhooks.create'                  => 'require_system_admin',              // POST   /webhooks
+        'webhooks.delivery_log.read'       => 'require_system_admin',              // GET    /webhooks/delivery-log
+        'webhooks.update'                  => 'require_system_admin',              // PUT    /webhooks/{index}
+        'webhooks.delete'                  => 'require_system_admin',              // DELETE /webhooks/{index}
+        'webhooks.rotate_secret'           => 'require_system_admin',              // POST   /webhooks/{index}/rotate-secret
 
         // ── WPSG_Space_Controller ──────────────────────────────────────────
         'spaces.list'                      => 'require_admin',              // GET    /spaces
-        'spaces.create'                    => 'require_admin',              // POST   /spaces
+        'spaces.create'                    => 'require_system_admin',              // POST   /spaces
         'space.read'                       => 'require_space_member',       // GET    /spaces/{id}
         'space.update'                     => 'require_space_owner',        // PUT    /spaces/{id}
         'space.delete'                     => 'require_space_owner',        // DELETE /spaces/{id}
@@ -186,8 +187,8 @@ final class WPSG_Permissions {
         'campaign.move'                    => 'require_campaign_space_move', // POST  /campaigns/{id}/move
         'campaigns.batch'                  => 'require_admin',              // POST   /campaigns/batch
         'campaign.audit.read'              => 'require_admin',              // GET    /campaigns/{id}/audit
-        'system.audit_log.read'            => 'require_admin',              // GET    /admin/audit-log
-        'system.audit_log.export_binary'   => 'require_admin',              // POST   /admin/audit-log/export/binary
+        'system.audit_log.read'            => 'require_system_admin',              // GET    /admin/audit-log
+        'system.audit_log.export_binary'   => 'require_system_admin',              // POST   /admin/audit-log/export/binary
     ];
 
     /**

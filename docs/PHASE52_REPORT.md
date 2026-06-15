@@ -96,7 +96,9 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | **Done 2026-06-15** |
 | **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | **Done 2026-06-15** |
 | **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | **Done 2026-06-15** |
-| **A5** | REST hardening: flip every `require_admin` endpoint per the matrix (system→`manage_options`; per-campaign/company→`manage_wpsg`+space access; per-resource delete policy + in-use guards) | P52 | To do |
+| **A5a** | REST hardening — system/global endpoints → `manage_options` (new `require_system_admin`) | P52 | **Done 2026-06-15** |
+| **A5b** | REST hardening — per-campaign/company endpoints → `manage_wpsg` + space access (closes F2) | P52 | To do |
+| **A5c** | Per-resource delete policy — layout-template/asset in-use guards; `fonts.delete` → `manage_options` | P52 | To do |
 | **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
 
 ### A1 — implementation notes (Done 2026-06-15)
@@ -136,6 +138,16 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 **Map note.** `WPSG_Permissions::MAP` keeps `settings.update`/`settings.patch` ⇒ `require_admin` by design — a documented exception to A5's flat reclassification, since these endpoints are mixed-tier and enforce the system-key boundary per-key.
 
 **Proven.** New `tests/WPSG_P52A4_Settings_Split_Test.php` (5 tests): editor writes a display setting (200), editor denied a system setting via POST and via PATCH (value unchanged), a mixed payload is rejected atomically (display key not applied), and a System Admin writes a system setting (200, persisted). Full PHPUnit suite green — **985 tests, 12072 assertions, 0 failures**.
+
+### A5 — REST hardening (decisions 2026-06-15)
+
+Four classification decisions were confirmed with the user (all as recommended): cross-space **global aggregates** (analytics summary, access-summary, media usage) → System Admin only; **company-level** endpoints (access list/grant/revoke, archive) → System Admin only (a company spans spaces); **import** endpoints → `manage_options` while `/media/upload` stays editor-tier; and **A5 delivered staged as A5a/A5b/A5c**. `users/search` is kept `manage_wpsg` (the access-grant UI needs it); the pre-existing gap that a subscriber-with-owner-grant can't reach it is noted for a future task, out of A5 scope.
+
+#### A5a — system → `manage_options` (Done 2026-06-15)
+
+Added `WPSG_REST_Base::require_system_admin()` (`manage_options` + auth-integrity). Flipped **30** MAP entries from `require_admin` to `require_system_admin` — roles.list; campaigns.access-summary; company access×3 + archive; media usage-summary/usage, rescan-all, library list, binary export/import; analytics summary; campaign import + import-binary; health; oembed-failures read/reset; thumbnail-cache read/clear/refresh; webhooks×6; global audit-log read + export; spaces.create — and retargeted `rate_limit_authenticated` (which exclusively guards `POST /users`) from `manage_wpsg` to `manage_options`. The frozen matrix in `WPSG_P52A_Permission_Matrix_Test` was updated in lockstep. `spaces.list` is deferred to A5b (handler-side space filtering); `fonts.delete` to A5c.
+
+**Proven.** New `tests/WPSG_P52A5a_System_Admin_Gating_Test.php` (5 tests, 73 assertions): a `wpsg_editor` is denied **every** one of the 30 system actions, a System Admin is allowed every one, editor-tier global content actions (categories/tags/templates/assets/fonts create, media upload, companies list) are retained, `users.create` requires System Admin, and the `require_system_admin` primitive gates correctly. Full PHPUnit suite green — **990 tests, 12146 assertions, 0 failures**.
 
 ### Acceptance criteria
 
