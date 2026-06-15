@@ -14,6 +14,11 @@ import i18next from 'eslint-plugin-i18next'
 export default tseslint.config({
   ignores: [
     'dist',
+    // Nested package build output (e.g. packages/shared-utils/dist) — built
+    // artifacts, never linted (mirrors the gitignored `dist/`).
+    '**/dist',
+    // Editor/agent tooling + transient git worktrees — not project source.
+    '.claude',
     'coverage',
     'node_modules',
     'wp-plugin/wp-super-gallery/admin/build/**',

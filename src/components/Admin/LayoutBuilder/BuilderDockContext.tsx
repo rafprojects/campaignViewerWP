@@ -2,7 +2,7 @@ import { createContext, useContext, type Dispatch, type RefObject, type SetState
 import type { DockviewApi } from 'dockview';
 import type { LayoutGraphicLayer, LayoutSlot, MediaItem } from '@/types';
 import type { UseLayoutBuilderReturn } from '@/hooks/useLayoutBuilderState';
-import type { SnapMode } from '@/utils/canvasMeasurement';
+import type { SnapMode } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 
 // ── Shared library type ───────────────────────────────────────

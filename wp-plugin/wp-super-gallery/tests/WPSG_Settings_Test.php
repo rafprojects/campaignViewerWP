@@ -213,6 +213,86 @@ class WPSG_Settings_Test extends WP_UnitTestCase {
     }
 
     /**
+     * P51-E: Spotlight / Scroll-snap / Masonry-entrance nested adapter settings
+     * must persist through the global gallery_config save path. These slugs were
+     * absent from the registry $defaults, so the nested sanitizer's
+     * array_key_exists($defaults) gate silently dropped them on save.
+     */
+    public function test_sanitize_settings_persists_spotlight_and_scroll_snap_adapter_settings() {
+        update_option(WPSG_Settings::OPTION_NAME, [
+            'gallery_config' => ['mode' => 'unified'],
+        ]);
+
+        $sanitized = WPSG_Settings::sanitize_settings([
+            'gallery_config' => [
+                'mode' => 'unified',
+                'breakpoints' => [
+                    'desktop' => [
+                        'unified' => [
+                            'adapterId' => 'spotlight',
+                            'adapterSettings' => [
+                                'spotlightStripPosition'     => 'right',
+                                'spotlightHeroMaxWidth'      => 900,
+                                'spotlightHeroMaxWidthUnit'  => '%',
+                                'spotlightThumbnailSize'     => 120,
+                                'spotlightHeroAspectRatio'   => '4:3',
+                                'spotlightTransitionDuration' => 400,
+                                'scrollSnapAlignment'        => 'center',
+                                'scrollSnapPageIndicator'    => false,
+                                'masonryEntranceAnimation'   => 'waterfall',
+                                'masonryEntranceStagger'     => 120,
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $adapter = $sanitized['gallery_config']['breakpoints']['desktop']['unified']['adapterSettings'] ?? [];
+
+        $this->assertSame('right', $adapter['spotlightStripPosition'] ?? null);
+        $this->assertSame(900, $adapter['spotlightHeroMaxWidth'] ?? null);
+        $this->assertSame('%', $adapter['spotlightHeroMaxWidthUnit'] ?? null);
+        $this->assertSame(120, $adapter['spotlightThumbnailSize'] ?? null);
+        $this->assertSame('4:3', $adapter['spotlightHeroAspectRatio'] ?? null);
+        $this->assertSame(400, $adapter['spotlightTransitionDuration'] ?? null);
+        $this->assertSame('center', $adapter['scrollSnapAlignment'] ?? null);
+        $this->assertFalse($adapter['scrollSnapPageIndicator'] ?? true);
+        $this->assertSame('waterfall', $adapter['masonryEntranceAnimation'] ?? null);
+        $this->assertSame(120, $adapter['masonryEntranceStagger'] ?? null);
+    }
+
+    /**
+     * P51-E: the same nested settings must persist through the per-campaign
+     * override path (sanitize_gallery_overrides, use_default_fallbacks=false),
+     * while invalid enum values are dropped rather than coerced to a default.
+     */
+    public function test_sanitize_gallery_overrides_persists_spotlight_adapter_settings() {
+        $overrides = WPSG_Settings_Sanitizer::sanitize_gallery_overrides([
+            'mode' => 'unified',
+            'breakpoints' => [
+                'desktop' => [
+                    'unified' => [
+                        'adapterId' => 'spotlight',
+                        'adapterSettings' => [
+                            'spotlightStripPosition'   => 'right',
+                            'spotlightHeroAspectRatio' => 'not-a-ratio',
+                            'scrollSnapAlignment'      => 'end',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $adapter = $overrides['breakpoints']['desktop']['unified']['adapterSettings'] ?? [];
+
+        $this->assertSame('right', $adapter['spotlightStripPosition'] ?? null);
+        $this->assertSame('end', $adapter['scrollSnapAlignment'] ?? null);
+        // Invalid enum is rejected (not coerced) on the override path.
+        $this->assertArrayNotHasKey('spotlightHeroAspectRatio', $adapter);
+    }
+
+    /**
      * Test explicit hidden checkbox values persist false in the classic admin flow.
      */
     public function test_sanitize_settings_persists_false_for_classic_checkbox_hidden_inputs() {

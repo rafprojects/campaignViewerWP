@@ -10,9 +10,9 @@
  * the ruler always reflect true canvas dimensions.
  */
 import { useMemo } from 'react';
-import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
-import { rulerTickIntervals } from '@/utils/canvasMeasurement';
-import type { PctRect } from '@/utils/canvasMeasurement';
+import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
+import { rulerTickIntervals } from '@wp-super-gallery/shared-utils';
+import type { PctRect } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 

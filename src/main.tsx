@@ -17,9 +17,10 @@ import { startWebVitalsMonitoring } from './services/monitoring/webVitals'
 import { initSentry } from './services/monitoring/sentry'
 import { createAppQueryClient } from './services/queryClient'
 import { ThemeProvider } from './contexts/ThemeContext'
+import { resolveWpThemeIds } from './services/wpThemeId'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
-import { RootIdProvider } from './contexts/RootIdContext'
+import { RootIdProvider } from '@wp-super-gallery/shared-ui'
 
 type MountProps = Record<string, unknown>
 
@@ -184,6 +185,7 @@ const renderApp = (
             allowPersistence={allowThemePersistence}
             defaultThemeId={nodeConfig.theme}
             instanceId={instanceId}
+            resolveWpThemeIds={resolveWpThemeIds}
           >
             <ThemedApp
               props={props}
@@ -330,6 +332,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
                 allowPersistence={i === 0 && allowThemePersistence}
                 defaultThemeId={inst.nodeConfig.theme}
                 instanceId={instanceId}
+                resolveWpThemeIds={resolveWpThemeIds}
               >
                 <ThemedApp
                   props={inst.props}

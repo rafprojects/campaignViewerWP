@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    // Emit requires this off; all relative imports here are extensionless.
+    "allowImportingTsExtensions": false,
+    // Framework-neutral: no import.meta.env (dev-mode is detected via
+    // process.env.NODE_ENV), so no vite/client ambient types are needed.
+    "resolveJsonModule": true,
+    "types": [],
+    // Resolve the sibling shared-utils package against its built declarations
+    // (a .d.ts is not subject to rootDir) so its source isn't pulled into this
+    // program; the emitted JS keeps the bare import as a real dependency.
+    // Requires shared-utils to be built first (see prepack).
+    "paths": {
+      "@wp-super-gallery/shared-utils": ["../shared-utils/dist/index.d.ts"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/theme-engine.build.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

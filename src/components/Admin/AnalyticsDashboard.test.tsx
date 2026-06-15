@@ -18,13 +18,17 @@ vi.mock('recharts', () => ({
   ),
 }));
 
-// P34-A: stub visibility and online hooks so tests get deterministic polling state
-vi.mock('@/hooks/useTabVisibility', () => ({
-  useTabVisibility: vi.fn().mockReturnValue(true),
-}));
-vi.mock('@/hooks/useOnlineStatus', () => ({
-  useOnlineStatus: vi.fn().mockReturnValue(true),
-}));
+// P34-A: stub visibility and online hooks so tests get deterministic polling
+// state. They now live in the shared-utils barrel (P51-B), so spread the real
+// module and override just these two.
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+  return {
+    ...actual,
+    useTabVisibility: vi.fn().mockReturnValue(true),
+    useOnlineStatus: vi.fn().mockReturnValue(true),
+  };
+});
 
 const mockAnalytics: CampaignAnalyticsResponse = {
   totalViews: 1200,
@@ -142,7 +146,7 @@ describe('AnalyticsDashboard', () => {
   });
 
   it('shows an Offline badge when the browser is offline', async () => {
-    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    const { useOnlineStatus } = await import('@wp-super-gallery/shared-utils');
     vi.mocked(useOnlineStatus).mockReturnValue(false);
 
     render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={campaigns} />);
@@ -151,7 +155,7 @@ describe('AnalyticsDashboard', () => {
 
   it('does not show Offline badge when the browser is online', async () => {
     // Explicitly (re)set to online so this test is independent of ordering
-    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    const { useOnlineStatus } = await import('@wp-super-gallery/shared-utils');
     vi.mocked(useOnlineStatus).mockReturnValue(true);
 
     render(<AnalyticsDashboard apiClient={makeApiClient()} campaigns={campaigns} />);
@@ -160,7 +164,7 @@ describe('AnalyticsDashboard', () => {
 
   it('clicking refresh calls all three analytics fetches', async () => {
     // Re-set online so this test is not affected by the offline-badge test above
-    const { useOnlineStatus } = await import('@/hooks/useOnlineStatus');
+    const { useOnlineStatus } = await import('@wp-super-gallery/shared-utils');
     vi.mocked(useOnlineStatus).mockReturnValue(true);
 
     const getCampaignAnalytics = vi.fn().mockResolvedValue(mockAnalytics);

@@ -7,8 +7,8 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
-import type { NavigationDirection } from '@/hooks/useCarousel';
-import { applyGalleryTransition } from '@/utils/galleryAnimations';
+import type { NavigationDirection } from '@wp-super-gallery/shared-utils';
+import { applyGalleryTransition } from '@wp-super-gallery/shared-utils';
 
 interface UseMediaTransitionResult {
   previousItem: MediaItem | null;

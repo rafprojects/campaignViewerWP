@@ -5,7 +5,7 @@ import { TypographyEditor, type CustomFontEntry } from '@/components/Common/Typo
 import { FontLibraryManager } from '@/components/Admin/FontLibraryManager';
 import type { ApiClient } from '@/services/apiClient';
 import type { TypographyOverride } from '@/types';
-import type { FontLibraryEntry } from '@/utils/loadCustomFonts';
+import type { FontLibraryEntry } from '@wp-super-gallery/shared-utils';
 
 interface TypographySettingsSectionProps {
   apiClient: ApiClient;

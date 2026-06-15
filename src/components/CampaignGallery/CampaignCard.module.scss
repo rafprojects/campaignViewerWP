@@ -2,23 +2,17 @@
   outline: none;
   transition: transform 200ms ease, box-shadow 200ms ease;
 
+  // P51-F: scale the whole card (chrome + image together) rather than scaling
+  // only the thumbnail, which produced a "zoom through a window" effect.
   &:hover {
-    transform: translateY(-2px);
+    transform: translateY(-2px) scale(1.02);
     box-shadow: var(--wpsg-shadow-lg);
-  }
-
-  &:hover .thumbnailImage {
-    transform: scale(1.02);
   }
 
   &:focus-visible {
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
-}
-
-.thumbnailImage {
-  transition: transform 0.5s ease;
 }
 
 .mediaStats {
@@ -47,17 +41,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card {
+  // Match the `.card:hover` specificity so the hover lift/scale is disabled too.
+  .card,
+  .card:hover {
     transition: none;
     transform: none;
-  }
-
-  .card:hover .thumbnailImage {
-    transform: none;
-  }
-
-  .thumbnailImage {
-    transition: none;
   }
 }
 

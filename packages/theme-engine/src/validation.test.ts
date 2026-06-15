@@ -4,10 +4,10 @@
  * Covers: validateTheme, isValidTheme — schema checks, edge cases
  */
 
-import { describe, it, expect } from 'vitest';
-import { validateTheme, isValidTheme } from '../validation';
-import baseDefaults from '../definitions/_base.json';
-import defaultDarkDef from '../definitions/default-dark.json';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { validateTheme, isValidTheme, warnLowContrast } from './validation';
+import baseDefaults from './definitions/_base.json';
+import defaultDarkDef from './definitions/default-dark.json';
 
 // Helper: build a valid theme by deep-merging default-dark onto base
 function makeValidTheme(overrides?: Record<string, unknown>): unknown {
@@ -141,5 +141,52 @@ describe('isValidTheme', () => {
   it('returns false for a theme with invalid color', () => {
     const theme = makeValidTheme({ colors: { background: 'xyz' } });
     expect(isValidTheme(theme)).toBe(false);
+  });
+
+  it('suppresses the dev validation log when isDev=false (browser prod path)', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const theme = makeValidTheme();
+    delete (theme as Record<string, unknown>)['id'];
+    expect(isValidTheme(theme, false)).toBe(false);
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('emits the dev validation log when isDev=true', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const theme = makeValidTheme();
+    delete (theme as Record<string, unknown>)['id'];
+    expect(isValidTheme(theme, true)).toBe(false);
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// warnLowContrast — dev-only advisory, dev-ness injectable for browser callers
+// ---------------------------------------------------------------------------
+
+describe('warnLowContrast', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('warns on a low-contrast pair when isDev=true', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // grey-on-grey: well below the 4.5:1 WCAG AA threshold
+    warnLowContrast('test', '#808080', '#888888', true);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays silent on a low-contrast pair when isDev=false', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnLowContrast('test', '#808080', '#888888', false);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('does not warn on a high-contrast pair even when isDev=true', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnLowContrast('test', '#ffffff', '#000000', true);
+    expect(warn).not.toHaveBeenCalled();
   });
 });

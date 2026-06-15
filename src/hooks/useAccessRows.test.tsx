@@ -1,22 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
-import { render, screen } from '../test/test-utils';
+import { render, screen, fireEvent } from '../test/test-utils';
 import { Table } from '@mantine/core';
 import { useAccessRows } from './useAccessRows';
 import type { CompanyAccessGrant } from '@/services/adminQuery';
+import type { CampaignAccessLevel } from '@/types';
 
 // Helper component that renders the hook output inside a Table.
 function TestRows({
   entries,
   viewMode = 'campaign',
+  onChangeRole = vi.fn(),
 }: {
   entries: CompanyAccessGrant[];
   viewMode?: 'campaign' | 'company' | 'all';
+  onChangeRole?: (entry: CompanyAccessGrant, level: CampaignAccessLevel) => Promise<void>;
 }) {
   const rows = useAccessRows({
     accessEntries: entries,
     accessViewMode: viewMode,
     onRevokeAccess: vi.fn(),
+    onChangeRole,
   });
   return (
     <Table>
@@ -41,71 +45,67 @@ const baseEntry: CompanyAccessGrant = {
   user: { displayName: 'Alice', email: 'alice@example.com' },
 };
 
-describe('useAccessRows — P33-D role badges', () => {
-  it('renders a viewer badge for a viewer-level grant', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />,
-    );
-    expect(screen.getByText(/viewer/i)).toBeInTheDocument();
+const roleInput = (name = 'Alice') =>
+  screen.getByLabelText(`Role for ${name}`, { selector: 'input' }) as HTMLInputElement;
+
+describe('useAccessRows — P51-H role dropdown', () => {
+  it('renders the current role in the dropdown for a viewer-level grant', () => {
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
+    expect(roleInput().value).toMatch(/viewer/i);
   });
 
-  it('renders an editor badge for an editor-level grant', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'editor' }]} />,
-    );
-    expect(screen.getByText(/editor/i)).toBeInTheDocument();
+  it('renders the current role in the dropdown for an editor-level grant', () => {
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'editor' }]} />);
+    expect(roleInput().value).toMatch(/editor/i);
   });
 
-  it('renders an owner badge for an owner-level grant', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'owner' }]} />,
-    );
-    expect(screen.getByText(/owner/i)).toBeInTheDocument();
+  it('renders the current role in the dropdown for an owner-level grant', () => {
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'owner' }]} />);
+    expect(roleInput().value).toMatch(/owner/i);
   });
 
-  it('defaults to viewer badge when access_level is absent (legacy grant)', () => {
-    // Simulate a legacy record by omitting access_level entirely.
+  it('defaults to viewer when access_level is absent (legacy grant)', () => {
     const legacyEntry: CompanyAccessGrant = { ...baseEntry };
     delete legacyEntry.access_level;
     render(<TestRows entries={[legacyEntry]} />);
-    expect(screen.getByText(/viewer/i)).toBeInTheDocument();
+    expect(roleInput().value).toMatch(/viewer/i);
   });
 
-  it('renders role badge with tooltip for each level', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'editor' }]} />,
-    );
-    // Badge has aria-label "Role: editor" per the implementation.
-    expect(screen.getByLabelText('Role: editor')).toBeInTheDocument();
+  it('exposes an accessible label per row', () => {
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
+    expect(roleInput()).toBeInTheDocument();
   });
 
-  it('renders viewer badge as accessible element with correct label', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />,
-    );
-    expect(screen.getByLabelText('Role: viewer')).toBeInTheDocument();
+  it('calls onChangeRole with the new level when a different option is picked', () => {
+    const onChangeRole = vi.fn().mockResolvedValue(undefined);
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} onChangeRole={onChangeRole} />);
+
+    fireEvent.click(roleInput());
+    fireEvent.click(screen.getByRole('option', { name: /owner/i }));
+
+    expect(onChangeRole).toHaveBeenCalledTimes(1);
+    expect(onChangeRole).toHaveBeenCalledWith(expect.objectContaining({ userId: 1 }), 'owner');
   });
 
-  it('renders owner badge with accessible label', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'owner' }]} />,
-    );
-    expect(screen.getByLabelText('Role: owner')).toBeInTheDocument();
+  it('does not call onChangeRole when the same role is re-selected', () => {
+    const onChangeRole = vi.fn().mockResolvedValue(undefined);
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} onChangeRole={onChangeRole} />);
+
+    fireEvent.click(roleInput());
+    fireEvent.click(screen.getByRole('option', { name: /viewer/i }));
+
+    expect(onChangeRole).not.toHaveBeenCalled();
   });
 
   it('renders a row with company source badge', () => {
     render(
-      <TestRows
-        entries={[{ ...baseEntry, source: 'company', access_level: 'viewer' }]}
-      />,
+      <TestRows entries={[{ ...baseEntry, source: 'company', access_level: 'viewer' }]} />,
     );
     expect(screen.getByText(/company/i)).toBeInTheDocument();
   });
 
   it('renders the revoke action icon for each row', () => {
-    render(
-      <TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />,
-    );
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
     expect(screen.getByRole('button', { name: /revoke access/i })).toBeInTheDocument();
   });
 
@@ -120,11 +120,10 @@ describe('useAccessRows — P33-D role badges', () => {
         }]}
       />,
     );
-    // Row should be rendered; expiry text should appear.
     expect(screen.getByText(/expired/i)).toBeInTheDocument();
   });
 
-  it('renders multiple rows with distinct role badges', () => {
+  it('renders distinct role dropdowns across multiple rows', () => {
     render(
       <TestRows
         entries={[
@@ -134,8 +133,8 @@ describe('useAccessRows — P33-D role badges', () => {
         ]}
       />,
     );
-    expect(screen.getByLabelText('Role: viewer')).toBeInTheDocument();
-    expect(screen.getByLabelText('Role: editor')).toBeInTheDocument();
-    expect(screen.getByLabelText('Role: owner')).toBeInTheDocument();
+    expect(roleInput('Alice').value).toMatch(/viewer/i);
+    expect(roleInput('Bob').value).toMatch(/editor/i);
+    expect(roleInput('Carol').value).toMatch(/owner/i);
   });
 });

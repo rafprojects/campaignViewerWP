@@ -80,6 +80,7 @@ export default defineConfig({
       '@': new URL('./src', import.meta.url).pathname,
       '@wp-super-gallery/shared-utils': new URL('./packages/shared-utils/src/index.ts', import.meta.url).pathname,
       '@wp-super-gallery/shared-ui': new URL('./packages/shared-ui/src/index.ts', import.meta.url).pathname,
+      '@wp-super-gallery/theme-engine': new URL('./packages/theme-engine/src/index.ts', import.meta.url).pathname,
     },
   },
   build: {
@@ -122,7 +123,10 @@ export default defineConfig({
         branches: 72,
         statements: 75,
       },
-      include: ['src/**/*.{ts,tsx}'],
+      // P51-B: the shared-utils package is first-party code extracted from src/,
+      // so its modules count toward coverage (their tests already run). Keeps the
+      // metric honest as modules migrate out of src/ into the package.
+      include: ['src/**/*.{ts,tsx}', 'packages/shared-utils/src/**/*.{ts,tsx}', 'packages/theme-engine/src/**/*.{ts,tsx}'],
       exclude: [
         'src/test/**',
         '**/*.test.{ts,tsx}',

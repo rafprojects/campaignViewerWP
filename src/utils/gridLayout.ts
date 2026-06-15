@@ -4,7 +4,7 @@
  */
 import { toCss, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
 import type { GalleryBehaviorSettings } from '@/types';
-import { resolveColumnsFromWidth } from './resolveColumnsFromWidth';
+import { resolveColumnsFromWidth } from '@wp-super-gallery/shared-utils';
 
 /**
  * Scale a card width and optionally resolve a percent width against a

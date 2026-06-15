@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    // Emit requires this off (it is incompatible with producing .js); the
+    // package's relative imports are all extensionless, so nothing relies on it.
+    "allowImportingTsExtensions": false,
+    // Isolated build: only sanitizeCss reads `import.meta.env.DEV`, which lives
+    // in vite/client (the app's src/vite-env.d.ts isn't in this project's scope).
+    "types": ["vite/client"],
+    "tsBuildInfoFile": "./node_modules/.tmp/shared-utils.build.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

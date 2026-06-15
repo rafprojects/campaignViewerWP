@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { getTheme } from '@/themes/index';
-import { resolveColors, withAlpha } from '@/themes/colorGen';
+import { resolveColors, withAlpha } from '@wp-super-gallery/theme-engine';
 import { useTheme } from './useTheme';
 
 export interface BuilderShellColors {

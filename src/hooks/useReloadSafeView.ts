@@ -1,46 +1,13 @@
-import { useCallback, useState } from 'react';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useReloadSafeView as useReloadSafeViewBase } from '@wp-super-gallery/shared-utils';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 
 /**
- * P36-A: Root-scoped localStorage-backed state.
- *
- * Reads from `localStorage` on mount (via lazy initializer — no effect needed)
- * and writes back on every update. The key is
- * `wpsg_view_<rootId>_<feature>`, which prevents collisions between multiple
- * shortcode mounts on the same page.
- *
- * `T` must be JSON-serializable. Returns `[value, setValue]`.
+ * App-side wrapper around the context-free
+ * {@link useReloadSafeViewBase | shared-utils `useReloadSafeView`}, injecting
+ * the current React root id as the localStorage `scopeId` so persisted state is
+ * scoped per shortcode mount.
  */
 export function useReloadSafeView<T>(feature: string, defaultValue: T): [T, (next: T) => void] {
-  const rootId = useRootId();
-  const key = `wpsg_view_${rootId}_${feature}`;
-
-  const [value, setValueState] = useState<T>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored === null) return defaultValue;
-      return JSON.parse(stored) as T;
-    } catch {
-      // non-fatal: localStorage unavailable or stale JSON — use default
-      return defaultValue;
-    }
-  });
-
-  const setValue = useCallback(
-    (next: T) => {
-      setValueState(next);
-      try {
-        if (next === null || next === undefined) {
-          localStorage.removeItem(key);
-        } else {
-          localStorage.setItem(key, JSON.stringify(next));
-        }
-      } catch {
-        // localStorage unavailable or full — state update still applies in memory
-      }
-    },
-    [key],
-  );
-
-  return [value, setValue];
+  const scopeId = useRootId();
+  return useReloadSafeViewBase<T>(feature, defaultValue, { scopeId });
 }

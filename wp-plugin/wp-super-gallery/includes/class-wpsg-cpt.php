@@ -56,10 +56,30 @@ class WPSG_CPT {
             add_action('pre_get_posts', [self::class, 'apply_space_filter']);
             add_action('manage_posts_extra_tablenav', [self::class, 'render_create_space_ui']);
             add_action('admin_post_wpsg_create_space', [self::class, 'handle_create_space']);
+            // P51-G: clarify the ambiguous default "Count" column on the Companies
+            // term list — it counts associated campaigns.
+            add_filter('manage_edit-wpsg_company_columns', [self::class, 'rename_company_count_column']);
         }
 
         register_post_type(self::POST_TYPE, [
+            // P51-G: rename the top-level WP menu to "SuperGallery" (menu_name)
+            // while keeping the campaign list item labelled "Campaigns" (all_items).
             'label' => __('Campaigns', 'wp-super-gallery'),
+            'labels' => [
+                'name'               => __('Campaigns', 'wp-super-gallery'),
+                'singular_name'      => __('Campaign', 'wp-super-gallery'),
+                'menu_name'          => __('SuperGallery', 'wp-super-gallery'),
+                'all_items'          => __('Campaigns', 'wp-super-gallery'),
+                'add_new'            => __('Add New', 'wp-super-gallery'),
+                'add_new_item'       => __('Add New Campaign', 'wp-super-gallery'),
+                'edit_item'          => __('Edit Campaign', 'wp-super-gallery'),
+                'new_item'           => __('New Campaign', 'wp-super-gallery'),
+                'view_item'          => __('View Campaign', 'wp-super-gallery'),
+                'view_items'         => __('View Campaigns', 'wp-super-gallery'),
+                'search_items'       => __('Search Campaigns', 'wp-super-gallery'),
+                'not_found'          => __('No campaigns found', 'wp-super-gallery'),
+                'not_found_in_trash' => __('No campaigns found in Trash', 'wp-super-gallery'),
+            ],
             'public' => false,
             'show_ui' => true,
             'show_in_rest' => true,
@@ -70,7 +90,27 @@ class WPSG_CPT {
         ]);
 
         register_taxonomy('wpsg_company', self::POST_TYPE, [
+            // P51-G: explicit non-hierarchical labels. Without these WP falls back
+            // to the default tag strings ("Add New Tag", "Separate tags with commas").
             'label' => __('Companies', 'wp-super-gallery'),
+            'labels' => [
+                'name'                       => __('Companies', 'wp-super-gallery'),
+                'singular_name'              => __('Company', 'wp-super-gallery'),
+                'menu_name'                  => __('Companies', 'wp-super-gallery'),
+                'all_items'                  => __('All Companies', 'wp-super-gallery'),
+                'edit_item'                  => __('Edit Company', 'wp-super-gallery'),
+                'view_item'                  => __('View Company', 'wp-super-gallery'),
+                'update_item'                => __('Update Company', 'wp-super-gallery'),
+                'add_new_item'               => __('Add New Company', 'wp-super-gallery'),
+                'new_item_name'              => __('New Company Name', 'wp-super-gallery'),
+                'search_items'               => __('Search Companies', 'wp-super-gallery'),
+                'popular_items'              => __('Popular Companies', 'wp-super-gallery'),
+                'not_found'                  => __('No companies found', 'wp-super-gallery'),
+                'back_to_items'              => __('← Back to Companies', 'wp-super-gallery'),
+                'separate_items_with_commas' => __('Separate companies with commas', 'wp-super-gallery'),
+                'add_or_remove_items'        => __('Add or remove companies', 'wp-super-gallery'),
+                'choose_from_most_used'      => __('Choose from the most used companies', 'wp-super-gallery'),
+            ],
             'public' => false,
             'show_ui' => true,
             'show_in_rest' => true,
@@ -355,6 +395,22 @@ class WPSG_CPT {
             }
         }
         return '';
+    }
+
+    // ── P51-G: Companies term-list column relabel ─────────────────────────────
+
+    /**
+     * Rename the default "Count" column on the Companies term list to
+     * "Campaigns", since the count reflects associated campaigns.
+     *
+     * @param array $columns Term-list columns.
+     * @return array
+     */
+    public static function rename_company_count_column(array $columns): array {
+        if (isset($columns['posts'])) {
+            $columns['posts'] = __('Campaigns', 'wp-super-gallery');
+        }
+        return $columns;
     }
 
     // ── P47-I: Space column + filter ──────────────────────────────────────────

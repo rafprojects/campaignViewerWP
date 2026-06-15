@@ -21,12 +21,13 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+import { resolveTileGridLayout } from '@wp-super-gallery/shared-utils';
 
 const SCOPE = 'diamond';
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */
@@ -66,7 +67,7 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
   );
   const close = useCallback(() => setLightboxOpen(false), []);
 
-  const tSize = Math.round((settings.tileSize ?? 150) * (settings.itemScale ?? 1));
+  const tileValue = (settings.tileSize ?? 150) * (settings.itemScale ?? 1);
   const tileSizeUnit = settings.tileSizeUnit ?? 'px';
   const gapX = settings.tileGapX ?? 8;
   const gapXUnit = settings.tileGapXUnit ?? 'px';
@@ -76,14 +77,17 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
     : 'none';
 
-  const tilesPerRow = containerWidth > 0
-    ? Math.max(2, Math.floor((containerWidth + gapX) / (tSize + gapX)))
-    : 4;
-
-  const rows: MediaItem[][] = [];
-  for (let i = 0; i < media.length; i += tilesPerRow) {
-    rows.push(media.slice(i, i + tilesPerRow));
-  }
+  // Resolve the tile size + gap to pixels against the measured container width,
+  // then reflow into rows — see _shared/tileLayout.ts and the rationale in the
+  // hexagonal adapter (this adapter shared the same non-`px` unit bugs).
+  const { tilePx, tilesPerRow, rows } = resolveTileGridLayout({
+    items: media,
+    tileValue,
+    tileUnit: tileSizeUnit,
+    gapValue: gapX,
+    gapUnit: gapXUnit,
+    containerWidth,
+  });
 
   const adapterPad = Math.max(0, Math.min(24, common.adapterContentPadding ?? 0));
   const adapterPadUnit = common.adapterContentPaddingUnit ?? 'px';
@@ -112,8 +116,8 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
               style={{
                 display: 'flex',
                 gap: toCssOrNumber(gapX, gapXUnit),
-                marginTop: rowIdx === 0 ? 0 : `calc(-${toCss(tSize * V_OVERLAP, tileSizeUnit)} + ${toCss(gapY, gapYUnit)})`,
-                paddingLeft: isOffset ? `calc((${toCss(tSize, tileSizeUnit)} + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
+                marginTop: rowIdx === 0 ? 0 : `calc(${-(tilePx * V_OVERLAP)}px + ${toCss(gapY, gapYUnit)})`,
+                paddingLeft: isOffset ? `calc((${tilePx}px + ${toCss(gapX, gapXUnit)}) / 2)` : 0,
               }}
             >
               {row.map((item, itemIdx) => {
@@ -131,8 +135,8 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
                     className={`wpsg-tile-${SCOPE}`}
                     style={{
                       flexShrink: 0,
-                      width: toCssOrNumber(tSize, tileSizeUnit),
-                      height: toCssOrNumber(tSize, tileSizeUnit),
+                      width: tilePx,
+                      height: tilePx,
                       clipPath: DIAMOND_CLIP,
                       border,
                       position: 'relative',
@@ -161,9 +165,9 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
                       }}
                     >
                       {isVideo
-                        ? <IconPlayerPlay size={tSize * 0.22} color="white"
+                        ? <IconPlayerPlay size={tilePx * 0.22} color="white"
                           style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
-                        : <IconZoomIn size={tSize * 0.2} color="white"
+                        : <IconZoomIn size={tilePx * 0.2} color="white"
                           className="wpsg-diamond-zoom"
                           style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                       }
@@ -188,7 +192,7 @@ export function DiamondGallery({ media, settings, runtime, containerDimensions: 
         })}
 
         {/* Compensate for final-row upward shift */}
-        <Box style={{ height: tSize * V_OVERLAP }} />
+        <Box style={{ height: tilePx * V_OVERLAP }} />
       </Box>
 
       <style>{`

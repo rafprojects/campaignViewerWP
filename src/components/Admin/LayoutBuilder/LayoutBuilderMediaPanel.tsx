@@ -14,7 +14,7 @@ import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
 import { MediaUploadController, GENERAL_LIBRARY_TARGET } from '../MediaUploadController';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
   const {

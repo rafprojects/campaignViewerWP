@@ -11,7 +11,7 @@ import {
 } from '@mantine/core';
 import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
 import type { ApiClient } from '@/services/apiClient';
-import { type FontLibraryEntry, loadCustomFonts } from '@/utils/loadCustomFonts';
+import { type FontLibraryEntry, loadCustomFonts } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';

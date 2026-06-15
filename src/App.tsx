@@ -7,6 +7,7 @@ import { CardGallery } from './components/CampaignGallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
+import { WpNonceProvider } from './services/auth/WpNonceProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from '@wp-super-gallery/shared-ui';
 import { AuthBar } from './components/Auth/AuthBar';
@@ -14,18 +15,19 @@ import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
+import { getWpNonce, setWpNonce, WP_NONCE_PATH } from './services/wpNonce';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
-import { sortByOrder } from './utils/sortByOrder';
-import { useBuilderDeepLink } from './hooks/useBuilderDeepLink';
+import { sortByOrder } from '@wp-super-gallery/shared-utils';
+import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
-import { useRootId } from './contexts/RootIdContext';
-import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
-import { useIdleTimeout } from './hooks/useIdleTimeout';
+import { useIdleTimeout } from '@wp-super-gallery/shared-utils';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
@@ -48,7 +50,9 @@ const getAuthProvider = (apiBaseUrl: string) => {
   if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
   }
-  return undefined;
+  // [P51-I] Default same-origin deployment: cookie + REST nonce, now behind the
+  // AuthProvider contract (previously AuthContext's inline no-provider branch).
+  return new WpNonceProvider();
 };
 
 type ApiCampaign = Omit<Campaign, 'company' | 'videos' | 'images'> & {
@@ -211,7 +215,14 @@ function AppContent({
   }, [logout]);
 
   const apiClient = useMemo(
-    () => new ApiClient({ baseUrl: apiBaseUrl, authProvider, onUnauthorized: handleUnauthorized }),
+    () => new ApiClient({
+      baseUrl: apiBaseUrl,
+      authProvider,
+      onUnauthorized: handleUnauthorized,
+      getNonce: getWpNonce,
+      setNonce: setWpNonce,
+      noncePath: WP_NONCE_PATH,
+    }),
     [apiBaseUrl, authProvider, handleUnauthorized],
   );
 

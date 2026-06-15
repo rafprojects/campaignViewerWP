@@ -1,20 +1,28 @@
 import { Badge, Menu, Text } from '@mantine/core';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
-import { usePageSpaces } from '@/hooks/usePageSpaces';
-import { spaceColor } from '@/utils/spaceColor';
+import { spaceColor } from '@wp-super-gallery/shared-utils';
+
+/** Minimal structural shape of a gallery space the switcher needs.
+ *  The app's `PageSpace` (which also has `id`/`slug`) is assignable to this. */
+export interface SpaceSwitcherSpace {
+  instanceId: string;
+  name: string;
+}
 
 interface SpaceSwitcherProps {
   /** The currently targeted space. */
   activeInstanceId: string;
   /** Called when the user picks a different space. */
   onSelect: (instanceId: string) => void;
+  /** All gallery spaces on the page. Injected by the host (the WP global read
+   *  via `usePageSpaces` lives app-side); defaults to empty (single-space). */
+  pageSpaces?: SpaceSwitcherSpace[] | undefined;
 }
 
 /** Space-context badge shown in all AuthBar variants.
  *  Single-space: non-interactive colored label.
  *  Multi-space: dropdown to switch which space the Admin Panel/Settings buttons target. */
-export function SpaceSwitcher({ activeInstanceId, onSelect }: SpaceSwitcherProps) {
-  const pageSpaces = usePageSpaces();
+export function SpaceSwitcher({ activeInstanceId, onSelect, pageSpaces = [] }: SpaceSwitcherProps) {
   const active = pageSpaces.find((s) => s.instanceId === activeInstanceId);
   const label = active?.name ?? activeInstanceId;
   const color = spaceColor(activeInstanceId);

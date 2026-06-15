@@ -38,6 +38,10 @@ function makeTransport(overrides: Partial<ConstructorParameters<typeof HttpTrans
   return new HttpTransportImpl({
     baseUrl: 'https://example.test',
     timeout: 30_000,
+    // [P51-D] Nonce is now injected; default to a refresh path so the 403 →
+    // refresh → retry tests exercise that branch. Individual tests override
+    // getNonce/setNonce to assert header injection and persistence.
+    noncePath: '/wp-json/wp-super-gallery/v1/nonce',
     ...overrides,
   });
 }
@@ -52,13 +56,6 @@ describe('HttpTransportImpl', () => {
       configurable: true,
       get: () => true,
     });
-    // Clear any window config that previous tests may have set.
-    if (typeof window !== 'undefined') {
-      delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
-      if (window.__WPSG_CONFIG__) {
-        window.__WPSG_CONFIG__.restNonce = undefined as unknown as string;
-      }
-    }
   });
 
   afterEach(() => {
@@ -186,15 +183,24 @@ describe('HttpTransportImpl', () => {
   // ── Auth header construction ──────────────────────────────────────────────
 
   describe('auth header construction', () => {
-    it('injects X-WP-Nonce from __WPSG_REST_NONCE__ when set', async () => {
-      (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ = 'test-nonce-123';
+    it('injects X-WP-Nonce from the injected getNonce callback when it returns a value', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
 
-      const transport = makeTransport();
+      const transport = makeTransport({ getNonce: () => 'test-nonce-123' });
       await transport.get('/some-path');
 
       const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
       expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBe('test-nonce-123');
+    });
+
+    it('omits X-WP-Nonce when no getNonce callback is provided', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport({ getNonce: undefined });
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBeUndefined();
     });
 
     it('injects Bearer token from authProvider when one returns a token', async () => {
@@ -314,7 +320,7 @@ describe('HttpTransportImpl', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
-    it('updates window.__WPSG_REST_NONCE__ with the refreshed nonce', async () => {
+    it('persists the refreshed nonce via the injected setNonce callback', async () => {
       const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
 
       mockFetch
@@ -324,12 +330,35 @@ describe('HttpTransportImpl', () => {
         )
         .mockResolvedValueOnce(makeResponse());
 
-      const transport = makeTransport();
+      const setNonce = vi.fn();
+      const transport = makeTransport({ setNonce });
       await transport.get('/some-path');
 
-      expect(
-        (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__,
-      ).toBe('updated-nonce');
+      expect(setNonce).toHaveBeenCalledWith('updated-nonce');
+    });
+
+    it('hits baseUrl + noncePath for the refresh and skips refresh when noncePath is omitted', async () => {
+      const mockFetch = globalThis.fetch as ReturnType<typeof vi.fn>;
+
+      // With noncePath omitted, a 403 must not trigger a refresh round-trip.
+      mockFetch.mockResolvedValueOnce(
+        makeResponse({ ok: false, status: 403, json: async () => ({}) }),
+      );
+      const noRefresh = makeTransport({ noncePath: undefined });
+      await expect(noRefresh.get('/some-path')).rejects.toMatchObject({ status: 403 });
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+
+      // With noncePath set, the refresh targets `${baseUrl}${noncePath}`.
+      mockFetch.mockReset();
+      mockFetch
+        .mockResolvedValueOnce(makeResponse({ ok: false, status: 403, json: async () => ({}) }))
+        .mockResolvedValueOnce(
+          makeResponse({ ok: true, status: 200, json: async () => ({ nonce: 'n2' }) }),
+        )
+        .mockResolvedValueOnce(makeResponse());
+      const transport = makeTransport({ noncePath: '/custom/nonce' });
+      await transport.get('/some-path');
+      expect(mockFetch.mock.calls[1]![0]).toBe('https://example.test/custom/nonce');
     });
   });
 
@@ -393,9 +422,8 @@ describe('HttpTransportImpl', () => {
       expect(transport.getBaseUrl()).toBe('https://example.test');
     });
 
-    it('getAuthHeaders resolves to an object with X-WP-Nonce when nonce is set', async () => {
-      (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ = 'nonce-xyz';
-      const transport = makeTransport();
+    it('getAuthHeaders resolves to an object with X-WP-Nonce when getNonce returns a value', async () => {
+      const transport = makeTransport({ getNonce: () => 'nonce-xyz' });
       const headers = await transport.getAuthHeaders();
       expect(headers['X-WP-Nonce']).toBe('nonce-xyz');
     });

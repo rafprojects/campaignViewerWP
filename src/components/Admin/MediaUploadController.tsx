@@ -26,7 +26,7 @@ import type {
   CampaignMediaBatchRequestItem,
   OEmbedResponse,
 } from '@/types';
-import { useXhrUpload } from '@/hooks/useXhrUpload';
+import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import { getAssetLibraryQueryKey } from '@/services/layoutTemplateQuery';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

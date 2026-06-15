@@ -31,8 +31,8 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
-import { useLightbox } from '@/hooks/useLightbox';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -41,6 +41,7 @@ import {
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
+import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
 
 /** Fallback snap container height when the section has no measured height. */
 const FALLBACK_HEIGHT_PX = 500;
@@ -74,11 +75,13 @@ export function ScrollSnapGallery({
   const snapMaxWidth = settings.scrollSnapMaxWidth ?? 0;
   const snapMaxWidthUnit = settings.scrollSnapMaxWidthUnit ?? 'px';
 
-  // Container height: prefer the measured section height; fall back to constant.
-  const snapHeight =
-    containerDimensions?.height && containerDimensions.height > 0
-      ? containerDimensions.height
-      : FALLBACK_HEIGHT_PX;
+  // Bounded height only — see _shared/sectionHeight.ts. Adopting the measured
+  // section height in the default `auto` mode would feed a runaway growth loop.
+  const snapHeight = resolveBoundedSectionHeight(
+    common.sectionHeightMode,
+    containerDimensions?.height,
+    FALLBACK_HEIGHT_PX,
+  );
   const snapHeightCss = `${snapHeight}px`;
 
   const imageBorderRadius = toCssOrNumber(

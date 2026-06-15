@@ -22,10 +22,11 @@
     "paths": {
       "@/*": ["./src/*"],
       "@wp-super-gallery/shared-utils": ["./packages/shared-utils/src/index.ts"],
-      "@wp-super-gallery/shared-ui": ["./packages/shared-ui/src/index.ts"]
+      "@wp-super-gallery/shared-ui": ["./packages/shared-ui/src/index.ts"],
+      "@wp-super-gallery/theme-engine": ["./packages/theme-engine/src/index.ts"]
     }
   },
-  "include": ["src", "packages/shared-utils/src", "packages/shared-ui/src"],
+  "include": ["src", "packages/shared-utils/src", "packages/shared-ui/src", "packages/theme-engine/src"],
   "exclude": [
     "src/**/*.test.ts",
     "src/**/*.test.tsx",

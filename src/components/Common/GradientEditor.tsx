@@ -13,7 +13,7 @@ import {
 } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GradientStop, GradientDirection, GradientType, RadialShape, RadialSize } from '@/types';
-import { buildGradientCss, DEFAULT_GRADIENT_STOPS, type GradientOptions } from '@/utils/gradientCss';
+import { buildGradientCss, DEFAULT_GRADIENT_STOPS, type GradientOptions } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface GradientEditorProps {

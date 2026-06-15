@@ -19,14 +19,14 @@ import type {
   MediaItem,
   UploadResponse,
 } from '@/types';
-import { getErrorMessage } from '@/utils/getErrorMessage';
-import { sortByOrder } from '@/utils/sortByOrder';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { sortByOrder } from '@wp-super-gallery/shared-utils';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 import {
   buildCampaignGalleryOverrideEditorValue,
 } from '@/utils/campaignGalleryOverrides';
-import { useXhrUpload } from './useXhrUpload';
+import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import type { GalleryConfig } from '@/types';
 
 function toSlug(name: string): string {

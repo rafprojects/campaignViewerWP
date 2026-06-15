@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '../test/test-utils';
 import { AuthProvider, useAuth } from './AuthContext';
+import { WpNonceProvider } from '@/services/auth/WpNonceProvider';
 import type { AuthProvider as AuthProviderInterface, AuthSession, AuthUser } from '@/services/auth/AuthProvider';
 
 /** Interactive consumer that exposes login/logout actions to tests. */
@@ -30,7 +31,7 @@ describe('AuthProvider', () => {
     delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
   });
 
-  it('detects nonce-only admin auth via permissions endpoint (P20-K)', async () => {
+  it('detects nonce-only admin auth via permissions endpoint (P20-K / P51-I WpNonceProvider)', async () => {
     // Simulate WP-injected config with nonce but no JWT.
     window.__WPSG_CONFIG__ = {
       restNonce: 'test-nonce-123',
@@ -47,7 +48,7 @@ describe('AuthProvider', () => {
     });
 
     render(
-      <AuthProvider fallbackPermissions={[]}>
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={[]}>
         <AuthConsumer />
       </AuthProvider>,
     );
@@ -60,7 +61,7 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('falls back to guest when nonce-only returns no user (P20-K)', async () => {
+  it('falls back to guest when nonce-only returns no user (P20-K / P51-I WpNonceProvider)', async () => {
     window.__WPSG_CONFIG__ = {
       restNonce: 'test-nonce-456',
     };
@@ -74,7 +75,7 @@ describe('AuthProvider', () => {
     });
 
     render(
-      <AuthProvider fallbackPermissions={['fallback']}>
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={['fallback']}>
         <AuthConsumer />
       </AuthProvider>,
     );
@@ -128,10 +129,10 @@ describe('AuthProvider', () => {
 
   // ── P20-K: Nonce-only cookie login/logout ───────────────
 
-  it('logs in via cookie endpoint when no provider is configured (P20-K)', async () => {
+  it('logs in via cookie endpoint through WpNonceProvider (P20-K / P51-I)', async () => {
     window.__WPSG_CONFIG__ = { restNonce: 'initial-nonce' };
 
-    // First call: detectNonceAuth during init — returns guest.
+    // First call: WpNonceProvider.init() detect — returns guest.
     // Second call: POST /auth/login — returns authenticated user.
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
     fetchMock
@@ -150,7 +151,7 @@ describe('AuthProvider', () => {
       });
 
     render(
-      <AuthProvider fallbackPermissions={[]}>
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={[]}>
         <AuthConsumer />
       </AuthProvider>,
     );
@@ -182,7 +183,7 @@ describe('AuthProvider', () => {
     expect(loginCall[1]?.method).toBe('POST');
   });
 
-  it('throws on cookie login failure with server error message (P20-K)', async () => {
+  it('throws on cookie login failure with server error message (P20-K / P51-I)', async () => {
     window.__WPSG_CONFIG__ = { restNonce: 'nonce-x' };
 
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
@@ -220,7 +221,7 @@ describe('AuthProvider', () => {
     }
 
     render(
-      <AuthProvider fallbackPermissions={[]}>
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={[]}>
         <ErrorCapture />
       </AuthProvider>,
     );
@@ -235,7 +236,7 @@ describe('AuthProvider', () => {
     expect(loginError!.message).toBe('Invalid username or password.');
   });
 
-  it('logs out via cookie endpoint and resets to guest (P20-K)', async () => {
+  it('logs out via cookie endpoint and resets to guest (P20-K / P51-I)', async () => {
     window.__WPSG_CONFIG__ = { restNonce: 'authed-nonce' };
 
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
@@ -257,7 +258,7 @@ describe('AuthProvider', () => {
       });
 
     render(
-      <AuthProvider fallbackPermissions={[]}>
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={[]}>
         <AuthConsumer />
       </AuthProvider>,
     );

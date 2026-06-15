@@ -15,7 +15,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type { LayoutGroup } from '@/types';
-import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
+import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Types ────────────────────────────────────────────────────

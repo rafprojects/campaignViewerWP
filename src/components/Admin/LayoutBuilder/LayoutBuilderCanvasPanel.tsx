@@ -10,11 +10,10 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
-import { CanvasTransformContext } from '@/contexts/CanvasTransformContext';
-import { SNAP_MODE_LABELS, type SnapMode } from '@/utils/canvasMeasurement';
+import { CanvasTransformContext, useRootId } from '@wp-super-gallery/shared-ui';
+import { SNAP_MODE_LABELS, type SnapMode } from '@wp-super-gallery/shared-utils';
 import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 

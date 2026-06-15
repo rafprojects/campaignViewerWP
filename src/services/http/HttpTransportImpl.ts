@@ -29,12 +29,18 @@ export class HttpTransportImpl implements HttpTransport {
   private authProvider: NonNullable<ApiClientOptions['authProvider']> | undefined;
   private onUnauthorized: (() => void) | undefined;
   private timeout: number;
+  private getNonce: (() => string | undefined) | undefined;
+  private setNonce: ((nonce: string) => void) | undefined;
+  private noncePath: string | undefined;
 
   constructor(options: ApiClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
     this.authProvider = options.authProvider;
     this.onUnauthorized = options.onUnauthorized;
     this.timeout = options.timeout ?? 30_000;
+    this.getNonce = options.getNonce;
+    this.setNonce = options.setNonce;
+    this.noncePath = options.noncePath;
   }
 
   // =========================================================================
@@ -82,7 +88,7 @@ export class HttpTransportImpl implements HttpTransport {
 
   private async buildAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {};
-    const nonce = window.__WPSG_CONFIG__?.restNonce ?? window.__WPSG_REST_NONCE__;
+    const nonce = this.getNonce?.();
     if (nonce) {
       headers['X-WP-Nonce'] = nonce;
     }
@@ -136,11 +142,11 @@ export class HttpTransportImpl implements HttpTransport {
    * Returns true if a new nonce was obtained and the request should be retried.
    */
   private async refreshNonce(): Promise<boolean> {
+    if (!this.noncePath) return false;
     try {
-      const currentNonce =
-        window.__WPSG_CONFIG__?.restNonce ?? window.__WPSG_REST_NONCE__;
+      const currentNonce = this.getNonce?.();
       const response = await fetch(
-        `${this.baseUrl}/wp-json/wp-super-gallery/v1/nonce`,
+        `${this.baseUrl}${this.noncePath}`,
         {
           credentials: 'same-origin',
           headers: currentNonce ? { 'X-WP-Nonce': currentNonce } : {},
@@ -149,11 +155,7 @@ export class HttpTransportImpl implements HttpTransport {
       if (!response.ok) return false;
       const data: { nonce?: string } = await response.json();
       if (data.nonce) {
-        if (window.__WPSG_CONFIG__) {
-          window.__WPSG_CONFIG__.restNonce = data.nonce;
-        }
-        (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ =
-          data.nonce;
+        this.setNonce?.(data.nonce);
         return true;
       }
     } catch {

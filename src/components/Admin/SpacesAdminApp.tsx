@@ -6,6 +6,7 @@ import { Notifications, notifications } from '@mantine/notifications';
 import { ModalsProvider } from '@mantine/modals';
 
 import { ApiClient } from '@/services/apiClient';
+import { getWpNonce, setWpNonce, WP_NONCE_PATH } from '@/services/wpNonce';
 import { createAppQueryClient } from '@/services/queryClient';
 import { SpaceManagementView } from '@/components/Admin/SpaceManagementView';
 
@@ -29,7 +30,12 @@ export function mountSpacesAdmin(host: HTMLElement): void {
   host.setAttribute('data-wpsg-mounted', 'true');
 
   const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
-  const apiClient = new ApiClient({ baseUrl: apiBaseUrl });
+  const apiClient = new ApiClient({
+    baseUrl: apiBaseUrl,
+    getNonce: getWpNonce,
+    setNonce: setWpNonce,
+    noncePath: WP_NONCE_PATH,
+  });
   const queryClient = createAppQueryClient();
 
   createRoot(host).render(

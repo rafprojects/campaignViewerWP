@@ -75,6 +75,27 @@ class WPSG_Settings_Registry {
         'grid_card_min_height'       => 0,
         'grid_card_height'           => 224,
         'mosaic_target_row_height'   => 200,
+        // P51-E: Spotlight / Hero adapter nested settings. These are persisted
+        // only inside gallery_config.adapterSettings, but must exist here so the
+        // nested sanitizer's array_key_exists($defaults) gate accepts them
+        // (same pattern as tile_size below). Without these the values are
+        // silently dropped on save for both global config and campaign overrides.
+        'spotlight_hero_aspect_ratio'   => '16:9',
+        'spotlight_thumbnail_size'      => 80,
+        'spotlight_thumbnail_size_unit' => 'px',
+        'spotlight_transition_duration' => 250,
+        'spotlight_strip_position'      => 'below',
+        'spotlight_hero_max_width'      => 0,
+        'spotlight_hero_max_width_unit' => 'px',
+        'spotlight_hero_justification'  => 'center',
+        // P51-E: Vertical Scroll Snap adapter nested settings.
+        'scroll_snap_alignment'         => 'start',
+        'scroll_snap_page_indicator'    => true,
+        'scroll_snap_max_width'         => 0,
+        'scroll_snap_max_width_unit'    => 'px',
+        // P51-E: Masonry entrance animation nested settings.
+        'masonry_entrance_animation'    => 'none',
+        'masonry_entrance_stagger'      => 60,
         'tile_size'                  => 150,
         'tile_gap_x'                 => 8,
         'tile_gap_y'                 => 8,
@@ -650,6 +671,15 @@ class WPSG_Settings_Registry {
         'scroll_transition_type' => ['fade', 'slide', 'slide-fade'],
         'nav_arrow_position'     => ['top', 'center', 'bottom'],
         'dot_nav_position'       => ['below', 'overlay-bottom', 'overlay-top'],
+        // P51-E: Spotlight / Scroll-snap / Masonry-entrance nested enum + unit options.
+        'spotlight_hero_aspect_ratio'   => ['16:9', '4:3', '3:2', '1:1', '3:4'],
+        'spotlight_thumbnail_size_unit' => ['px', '%', 'vw', 'em', 'rem'],
+        'spotlight_strip_position'      => ['below', 'right'],
+        'spotlight_hero_max_width_unit' => ['px', '%', 'vw', 'em', 'rem'],
+        'spotlight_hero_justification'  => ['start', 'center', 'end'],
+        'scroll_snap_alignment'         => ['start', 'center', 'end'],
+        'scroll_snap_max_width_unit'    => ['px', '%', 'vw', 'em', 'rem'],
+        'masonry_entrance_animation'    => ['none', 'waterfall'],
         'dot_nav_shape'          => ['circle', 'pill', 'square'],
         'image_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
         'video_shadow_preset'    => ['none', 'subtle', 'medium', 'strong', 'custom'],
@@ -763,6 +793,12 @@ class WPSG_Settings_Registry {
         'dot_nav_spacing'             => [2, 20],
         'dot_nav_active_scale'        => [1.0, 2.0],
         'mosaic_target_row_height'    => [60, 600],
+        // P51-E: Spotlight / Scroll-snap / Masonry-entrance nested numeric ranges.
+        'spotlight_thumbnail_size'    => [0, 600],
+        'spotlight_transition_duration' => [0, 1000],
+        'spotlight_hero_max_width'    => [0, 1800],
+        'scroll_snap_max_width'       => [0, 1800],
+        'masonry_entrance_stagger'    => [0, 300],
         'grid_card_width'             => [80, 400],
         'grid_card_max_columns'       => [0, 8],
         'grid_card_min_height'        => [0, 600],

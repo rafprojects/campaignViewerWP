@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group } from '@mantine/core';
+import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group, Select } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import type { CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
 import type { CampaignAccessLevel } from '@/types';
@@ -9,6 +9,8 @@ interface Options {
   accessEntries: CompanyAccessGrantType[];
   accessViewMode: AccessViewMode;
   onRevokeAccess: (entry: CompanyAccessGrantType) => Promise<void>;
+  // P51-H: change an existing grant's role via the inline dropdown.
+  onChangeRole: (entry: CompanyAccessGrantType, level: CampaignAccessLevel) => Promise<void>;
 }
 
 // P33-D: visual config for each role level.
@@ -18,7 +20,13 @@ const ROLE_BADGE_CONFIG: Record<CampaignAccessLevel, { label: string; color: str
   owner:  { label: '👑 Owner',   color: 'violet', tip: 'Full campaign control including access management and builder' },
 };
 
-export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }: Options) {
+// P51-H: ordered options for the inline role Select.
+const ROLE_SELECT_OPTIONS = (['viewer', 'editor', 'owner'] as CampaignAccessLevel[]).map((value) => ({
+  value,
+  label: ROLE_BADGE_CONFIG[value].label,
+}));
+
+export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, onChangeRole }: Options) {
   return useMemo(() => {
     return accessEntries.map((a) => {
       const isExpired = a.is_expired === true;
@@ -59,18 +67,25 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }:
               )}
             </Stack>
           </Table.Td>
-          {/* P33-D: role badge column */}
+          {/* P33-D role column → P51-H: editable role dropdown */}
           <Table.Td>
             <Group gap="xs" wrap="nowrap">
               <Tooltip label={roleCfg.tip} withArrow>
-                <Badge
-                  variant="light"
-                  color={roleCfg.color}
-                  size="sm"
-                  aria-label={`Role: ${level}`}
-                >
-                  {roleCfg.label}
-                </Badge>
+                <Select
+                  size="xs"
+                  variant="filled"
+                  w={150}
+                  data={ROLE_SELECT_OPTIONS}
+                  value={level}
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: true }}
+                  aria-label={`Role for ${a.user?.displayName ?? `user ${a.userId}`}`}
+                  onChange={(val) => {
+                    if (val && val !== level) {
+                      void onChangeRole(a, val as CampaignAccessLevel);
+                    }
+                  }}
+                />
               </Tooltip>
             </Group>
           </Table.Td>
@@ -96,5 +111,5 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }:
         </Table.Tr>
       );
     });
-  }, [accessEntries, accessViewMode, onRevokeAccess]);
+  }, [accessEntries, accessViewMode, onRevokeAccess, onChangeRole]);
 }

@@ -29,7 +29,7 @@ import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
-import { useCarousel } from '@/hooks/useCarousel';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

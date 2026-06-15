@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Accordion, Alert, Badge, Divider, Group, Loader, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
 import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';

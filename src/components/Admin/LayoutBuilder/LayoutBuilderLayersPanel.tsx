@@ -13,14 +13,14 @@ import {
   centerSlotsHorizontally, centerSlotsVertically,
   distributeSlotsHorizontally, distributeSlotsVertically,
   distributeSlotsHorizontallyByGap, distributeSlotsVerticallyByGap,
-} from '@/utils/alignSlots';
+} from '@wp-super-gallery/shared-utils';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   const {

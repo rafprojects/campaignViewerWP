@@ -12,8 +12,8 @@
 
 import type { MantineThemeOverride, MantineColorShade } from '@mantine/core';
 import { colorsTuple } from '@mantine/core';
-import type { ThemeDefinition, ResolvedColors } from './types';
-import { resolveColors, withAlpha } from './colorGen';
+import type { ThemeDefinition, ResolvedColors } from '@wp-super-gallery/theme-engine';
+import { resolveColors, withAlpha } from '@wp-super-gallery/theme-engine';
 
 const TABS_TAB_CLASS = 'wpsg-mantine-tabs-tab';
 const SEGMENTED_CONTROL_LABEL_CLASS = 'wpsg-mantine-segmented-control-label';

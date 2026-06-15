@@ -48,17 +48,22 @@ const STORAGE_KEY = 'wpsg-theme-id';
 /**
  * Determine the initial theme ID from (in priority order):
  *  1. User's localStorage preference (if persistence allowed — user's choice wins)
- *  2. WP config injection (global variable or data attribute)
- *  3. WP __WPSG_CONFIG__.theme (embed shortcode injection)
+ *  2. Per-instance admin-configured `defaultThemeId`
+ *  3. Host-injected theme candidates (`resolveWpThemeIds`), first valid wins
  *  4. DEFAULT_THEME_ID fallback
  *
  * When persistence is disabled (admin locked theme), localStorage is
- * skipped and the WP-injected theme takes precedence.
+ * skipped and the injected theme takes precedence.
+ *
+ * [P51-D] The WordPress-specific candidate reads (`__wpsgThemeId`,
+ * `data-wpsg-theme`, `__WPSG_CONFIG__.theme`) are injected via
+ * `resolveWpThemeIds` so this context carries no direct WP coupling.
  */
 function resolveInitialThemeId(
   allowPersistence: boolean,
   storageKey: string,
   defaultThemeId?: string,
+  resolveWpThemeIds?: () => Array<string | null | undefined>,
 ): string {
   // 1. User's localStorage preference (when persistence is allowed)
   // Checked first so user's explicit choice overrides admin defaults
@@ -78,28 +83,14 @@ function resolveInitialThemeId(
     return defaultThemeId;
   }
 
-  // 3. WP injected config (set by PHP on the embed container)
-  const wpConfigId: string | null | undefined =
-    (typeof window !== 'undefined'
-      ? window.__wpsgThemeId
-      : undefined) ??
-    (typeof document !== 'undefined'
-      ? document.querySelector('[data-wpsg-theme]')?.getAttribute('data-wpsg-theme')
-      : undefined);
-
-  if (wpConfigId && hasTheme(wpConfigId)) {
-    return wpConfigId;
-  }
-
-  // 4. __WPSG_CONFIG__.theme (set by WP embed shortcode)
-  if (typeof window !== 'undefined') {
-    const configTheme = window.__WPSG_CONFIG__?.theme;
-    if (configTheme && hasTheme(configTheme)) {
-      return configTheme;
+  // 3. Host-injected theme candidates, in priority order — first valid wins.
+  for (const candidate of resolveWpThemeIds?.() ?? []) {
+    if (candidate && hasTheme(candidate)) {
+      return candidate;
     }
   }
 
-  // 5. Default fallback
+  // 4. Default fallback
   return DEFAULT_THEME_ID;
 }
 
@@ -166,6 +157,15 @@ export interface ThemeProviderProps {
    * Example: `[data-wpsg-theme-scope="abc123"]`.
    */
   themeScopeSelector?: string | undefined;
+
+  /**
+   * Host-injected initial-theme candidates, in priority order. The first
+   * candidate that resolves to a registered theme is used as the initial
+   * theme (after localStorage and `defaultThemeId`). Kept injectable so the
+   * theme context stays free of any WordPress (`window.__WPSG_*`) coupling —
+   * see `@/services/wpThemeId`. [P51-D]
+   */
+  resolveWpThemeIds?: (() => Array<string | null | undefined>) | undefined;
 }
 
 export function ThemeProvider({
@@ -177,9 +177,10 @@ export function ThemeProvider({
   shadowRoot,
   hostElement,
   themeScopeSelector,
+  resolveWpThemeIds,
 }: ThemeProviderProps) {
   const storageKey = instanceId ? `${STORAGE_KEY}-${instanceId}` : STORAGE_KEY;
-  const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence, storageKey, defaultThemeId);
+  const initialId = forcedThemeId ?? resolveInitialThemeId(allowPersistence, storageKey, defaultThemeId, resolveWpThemeIds);
 
   const [themeId, setThemeIdState] = useState<string>(initialId);
   const [previewThemeId, setPreviewThemeIdState] = useState<string | null>(null);

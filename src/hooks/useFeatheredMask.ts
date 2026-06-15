@@ -10,7 +10,7 @@
  * Use clearFeatherCache() for global cleanup.
  */
 import { useState, useEffect, useRef } from 'react';
-import { featherMask } from '@/utils/maskFeather';
+import { featherMask } from '@wp-super-gallery/shared-utils';
 
 export function useFeatheredMask(
   maskUrl: string | undefined,

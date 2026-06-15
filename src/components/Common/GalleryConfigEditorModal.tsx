@@ -16,7 +16,7 @@ import {
   type GalleryConfig,
   type GalleryConfigBreakpoint,
 } from '@/types';
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
 import {

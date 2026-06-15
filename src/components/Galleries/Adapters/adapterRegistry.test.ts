@@ -165,6 +165,7 @@ describe('adapterRegistry', () => {
       'spotlightTransitionDuration',
       'spotlightStripPosition',
       'spotlightHeroMaxWidth',
+      'spotlightHeroJustification',
     ]);
 
     expect(fields).toEqual(expect.arrayContaining([

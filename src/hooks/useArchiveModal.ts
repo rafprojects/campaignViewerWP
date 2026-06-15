@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign } from '@/types';
 import { ApiError } from '@/services/apiClient';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 
 interface UseArchiveModalOptions {
   apiClient: ApiClient;

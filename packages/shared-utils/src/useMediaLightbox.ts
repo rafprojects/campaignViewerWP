@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { MediaItem } from '@/types';
 
-export interface MediaLightboxState {
+/** Minimal item shape: the lightbox only needs a stable id. */
+export interface MediaLightboxState<T = { id: string }> {
   lightboxOpen: boolean;
   setLightboxOpen: (open: boolean) => void;
   lightboxIndex: number;
-  openLightbox: (item: MediaItem) => void;
+  openLightbox: (item: T) => void;
   navigateLightbox: (direction: 'prev' | 'next') => void;
 }
 
 /** Manages lightbox open/index state and keyboard arrow navigation. */
-export function useMediaLightbox(imageItems: MediaItem[]): MediaLightboxState {
+export function useMediaLightbox<T extends { id: string }>(imageItems: T[]): MediaLightboxState<T> {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
-  const openLightbox = (item: MediaItem) => {
+  const openLightbox = (item: T) => {
     const idx = imageItems.findIndex((m) => m.id === item.id);
     if (idx !== -1) {
       setLightboxIndex(idx);

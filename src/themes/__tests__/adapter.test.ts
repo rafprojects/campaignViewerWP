@@ -6,10 +6,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { adaptTheme, themeStateClasses } from '../adapter';
-import type { ThemeDefinition } from '../types';
-import baseDefaults from '../definitions/_base.json';
-import defaultDarkDef from '../definitions/default-dark.json';
-import defaultLightDef from '../definitions/default-light.json';
+// [P51-L] Theme types + bundled definitions now live in the theme-engine package.
+import { type ThemeDefinition, baseThemeDefaults, bundledThemeDefinitions } from '@wp-super-gallery/theme-engine';
+
+const baseDefaults = baseThemeDefaults;
+const defaultDarkDef = bundledThemeDefinitions.find((t) => t.id === 'default-dark')!;
+const defaultLightDef = bundledThemeDefinitions.find((t) => t.id === 'default-light')!;
 
 // Helper: build a valid ThemeDefinition
 function makeThemeDef(ext: Record<string, unknown> = {}): ThemeDefinition {

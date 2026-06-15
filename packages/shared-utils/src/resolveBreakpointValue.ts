@@ -1,4 +1,6 @@
-import type { Breakpoint } from '@/hooks/useBreakpoint';
+/** Responsive breakpoint key (mirrors the app's `Breakpoint`, kept local so this
+ *  module stays framework-agnostic). */
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
 
 export interface BreakpointValueMap<T> {
   desktop: T;

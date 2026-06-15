@@ -37,11 +37,11 @@ import type {
   UploadDuplicateCampaign,
 } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { useXhrUpload } from '@/hooks/useXhrUpload';
+import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 import {
   buildMediaGridShellVars,
   mapToMediaGridBreakpoint,
@@ -52,7 +52,7 @@ import {
 } from './mediaTabLayout';
 import { SortableListRow, SortableGridItem, type SharedSortableProps } from './MediaTabSortableItems';
 import { useMediaViewPrefs, type ViewMode, type CardSize } from '@/hooks/useMediaViewPrefs';
-import { useMediaLightbox } from '@/hooks/useMediaLightbox';
+import { useMediaLightbox } from '@wp-super-gallery/shared-utils';
 import { useMediaUsageSummary } from '@/hooks/useMediaUsageSummary';
 import { useMediaDnd } from '@/hooks/useMediaDnd';
 import { applySortMode, type MediaSortMode } from './applySortMode';

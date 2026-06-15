@@ -5,10 +5,9 @@ import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabl
 import type { GalleryBehaviorSettings } from '@/types';
 import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { useCampaignContext } from '@/contexts/CampaignContext';
-import { AuthBarFloating } from './AuthBarFloating';
-import { AuthBarMinimal } from './AuthBarMinimal';
-import { SpaceSwitcher } from './SpaceSwitcher';
-import { spaceColor } from '@/utils/spaceColor';
+import { usePageSpaces } from '@/hooks/usePageSpaces';
+import { AuthBarFloating, AuthBarMinimal, SpaceSwitcher } from '@wp-super-gallery/shared-ui';
+import { spaceColor } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarProps {
@@ -58,6 +57,9 @@ export function AuthBar({
   instanceId,
 }: AuthBarProps) {
   const { activeCampaign, onEditCampaign, onEditGalleryConfig, onArchiveCampaign, onAddExternalMedia } = useCampaignContext();
+  // [P51-J] The WP-global page-spaces read stays app-side; inject into the
+  // (now generic, shared-ui) AuthBar variants + SpaceSwitcher as a prop.
+  const pageSpaces = usePageSpaces();
 
   // Route to the appropriate sub-component based on mode
   if (displayMode === 'floating') {
@@ -76,6 +78,7 @@ export function AuthBar({
         onArchiveCampaign={onArchiveCampaign}
         onAddExternalMedia={onAddExternalMedia}
         instanceId={instanceId}
+        pageSpaces={pageSpaces}
       />
     );
   }
@@ -98,6 +101,7 @@ export function AuthBar({
         onArchiveCampaign={onArchiveCampaign}
         onAddExternalMedia={onAddExternalMedia}
         instanceId={instanceId}
+        pageSpaces={pageSpaces}
       />
     );
   }
@@ -115,6 +119,7 @@ export function AuthBar({
         onOpenSignIn={onOpenSignIn}
         onLogout={onLogout}
         instanceId={instanceId}
+        pageSpaces={pageSpaces}
       />
     );
   }
@@ -133,6 +138,7 @@ export function AuthBar({
       onOpenSignIn={onOpenSignIn}
       onLogout={onLogout}
       instanceId={instanceId}
+      pageSpaces={pageSpaces}
     />
   );
 }
@@ -152,7 +158,8 @@ function AuthBarFull({
   onOpenSignIn,
   onLogout,
   instanceId,
-}: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean }) {
+  pageSpaces,
+}: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean; pageSpaces?: import('@wp-super-gallery/shared-ui').SpaceSwitcherSpace[] | undefined }) {
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
 
@@ -231,6 +238,7 @@ function AuthBarFull({
                             <SpaceSwitcher
                               activeInstanceId={activeInstanceId ?? instanceId}
                               onSelect={setActiveInstanceId}
+                              pageSpaces={pageSpaces}
                             />
                           </Box>
                         )}
@@ -270,6 +278,7 @@ function AuthBarFull({
                         <SpaceSwitcher
                           activeInstanceId={activeInstanceId ?? instanceId}
                           onSelect={setActiveInstanceId}
+                          pageSpaces={pageSpaces}
                         />
                       )}
                     </>

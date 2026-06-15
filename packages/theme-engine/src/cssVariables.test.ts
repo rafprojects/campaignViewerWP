@@ -5,11 +5,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { generateCssVariables } from '../cssVariables';
-import { resolveColors } from '../colorGen';
-import type { ThemeDefinition, ThemeColors } from '../types';
-import baseDefaults from '../definitions/_base.json';
-import defaultDarkDef from '../definitions/default-dark.json';
+import { generateCssVariables } from './cssVariables';
+import { resolveColors } from './colorGen';
+import type { ThemeDefinition, ThemeColors } from './types';
+import baseDefaults from './definitions/_base.json';
+import defaultDarkDef from './definitions/default-dark.json';
 
 function makeResolvedColors() {
   const colors: ThemeColors = (defaultDarkDef as Record<string, unknown>).colors as ThemeColors;

@@ -15,8 +15,8 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCssOrNumber, useSwipe } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
-import { useLightbox } from '@/hooks/useLightbox';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -25,6 +25,7 @@ import {
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
+import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
 
 const FALLBACK_HEIGHT_PX = 500;
 /** Width of each item as a fraction of the container width */
@@ -58,10 +59,14 @@ export function CoverflowAdapter({
   const heading = resolveGalleryHeading(common, media, runtime?.scope);
   const adapterSizing = resolveAdapterShellStyle(common);
 
-  const containerHeight =
-    containerDimensions?.height && containerDimensions.height > 0
-      ? containerDimensions.height
-      : FALLBACK_HEIGHT_PX;
+  // Bounded height only — see _shared/sectionHeight.ts. In the default `auto`
+  // height mode the section is content-sized, so adopting the measured height
+  // here would feed a runaway growth loop.
+  const containerHeight = resolveBoundedSectionHeight(
+    common.sectionHeightMode,
+    containerDimensions?.height,
+    FALLBACK_HEIGHT_PX,
+  );
   const containerWidth =
     containerDimensions?.width && containerDimensions.width > 0
       ? containerDimensions.width

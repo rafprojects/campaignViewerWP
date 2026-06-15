@@ -12,6 +12,26 @@
 import chroma from 'chroma-js';
 import type { ThemeDefinition, ThemeColors, SizeScale } from './types';
 
+/**
+ * [P51-L] Framework-neutral dev-mode check (playbook §5) — the default dev
+ * signal so this package carries no bundler/Vite assumption. It works in
+ * Node/test environments (where `globalThis.process` exists), but the browser
+ * has no global `process`, so it returns false there. Browser callers (the app
+ * registry) therefore inject their bundler's dev flag (`import.meta.env.DEV`)
+ * via the `isDev` parameter on the exported functions instead of relying on it.
+ */
+function isDevEnv(): boolean {
+  try {
+    // Read process.env via globalThis so the package needs no @types/node and
+    // stays bundler-agnostic. Present in Node/test; absent in browser bundles.
+    const env = (globalThis as { process?: { env?: Record<string, string | undefined> } })
+      .process?.env;
+    return !!env && env.NODE_ENV !== 'production';
+  } catch {
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Error helpers
 // ---------------------------------------------------------------------------
@@ -233,13 +253,21 @@ export function validateTheme(theme: unknown): asserts theme is ThemeDefinition 
 /**
  * Safe validation wrapper that returns a boolean + logs issues in dev.
  * Useful for the registry to skip bad themes without crashing.
+ *
+ * `isDev` gates the dev-only `console.warn`; it defaults to {@link isDevEnv}
+ * (Node/test). Browser callers should pass their bundler's dev flag
+ * (e.g. `import.meta.env.DEV`) since this package can't read it without a
+ * bundler assumption.
  */
-export function isValidTheme(theme: unknown): theme is ThemeDefinition {
+export function isValidTheme(
+  theme: unknown,
+  isDev: boolean = isDevEnv(),
+): theme is ThemeDefinition {
   try {
     validateTheme(theme);
     return true;
   } catch (err) {
-    if (import.meta.env.DEV && err instanceof ThemeValidationError) {
+    if (isDev && err instanceof ThemeValidationError) {
       console.warn('[WPSG Theme]', err.message);
     }
     return false;
@@ -272,10 +300,17 @@ function relativeLuminance(color: string): number | null {
  * fails WCAG AA (4.5:1 for normal text).
  *
  * This is a best-effort advisory — it does not block theme registration.
- * Only runs in development (`import.meta.env.DEV`).
+ * Only runs in development: `isDev` defaults to {@link isDevEnv} (Node/test);
+ * browser callers should pass their bundler's dev flag (e.g.
+ * `import.meta.env.DEV`).
  */
-export function warnLowContrast(themeId: string, textColor: string, bgColor: string): void {
-  if (!import.meta.env.DEV) return;
+export function warnLowContrast(
+  themeId: string,
+  textColor: string,
+  bgColor: string,
+  isDev: boolean = isDevEnv(),
+): void {
+  if (!isDev) return;
 
   const textL = relativeLuminance(textColor);
   const bgL = relativeLuminance(bgColor);

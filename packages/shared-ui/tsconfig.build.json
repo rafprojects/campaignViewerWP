@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    // Emit requires this off (it is incompatible with producing .js); the
+    // package's relative imports are all extensionless, so nothing relies on it.
+    "allowImportingTsExtensions": false,
+    // Isolated build: restrict ambient types to the DOM/JSX surface this
+    // Mantine-aware package needs (no app-scoped vite-env.d.ts is in range).
+    "types": [],
+    // Override the inherited in-repo paths alias. For the isolated build,
+    // resolve the sibling package against its built declarations (a .d.ts is
+    // not subject to rootDir) rather than its source — the emitted JS keeps the
+    // bare `@wp-super-gallery/shared-utils` import as a real runtime dependency.
+    // Requires shared-utils to be built first (see prepack).
+    "paths": {
+      "@wp-super-gallery/shared-utils": ["../shared-utils/dist/index.d.ts"]
+    },
+    "tsBuildInfoFile": "./node_modules/.tmp/shared-ui.build.tsbuildinfo"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

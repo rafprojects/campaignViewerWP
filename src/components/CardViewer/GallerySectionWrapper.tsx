@@ -12,7 +12,7 @@ import type {
   GalleryBehaviorSettings,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { clampDimension } from '@/utils/clampDimension';
+import { clampDimension } from '@wp-super-gallery/shared-utils';
 import { toCss, sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

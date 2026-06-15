@@ -32,17 +32,17 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
-import { useCarousel } from '@/hooks/useCarousel';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
-import { buildGradientCss, templateToGradientOpts } from '@/utils/gradientCss';
-import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@/utils/slotEffects';
+import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
+import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
-import { useViewportHeight } from '@/hooks/useViewportHeight';
+import { useViewportHeight } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
