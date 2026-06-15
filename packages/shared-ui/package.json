@@ -3,9 +3,30 @@
   "version": "1.0.0",
   "private": false,
   "type": "module",
-  "main": "src/index.ts",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf dist",
+    "prepack": "npm run clean && npm -w @wp-super-gallery/shared-utils run build && npm run build"
+  },
+  "dependencies": {
+    "@wp-super-gallery/shared-utils": "^1.0.0"
+  },
   "peerDependencies": {
     "@mantine/core": ">=9",
+    "@mantine/form": ">=9",
     "@tabler/icons-react": ">=3",
     "react": ">=18"
   }

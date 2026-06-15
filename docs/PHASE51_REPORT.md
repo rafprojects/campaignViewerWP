@@ -21,6 +21,12 @@ This phase carries **two track groups**:
 | P51-F | Campaign listing card — uniform hover scale (card + image grow together) | ✅ Complete | Small |
 | P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | ✅ Complete | Small |
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | ✅ Complete | Small |
+| P51-I | `AuthContext` → `WpNonceProvider implements AuthProvider` (deferred P51-D item 2) — lift the nonce-cookie branch out of the context | To do | Medium |
+| P51-J | AuthBar carry-over into `shared-ui` (deferred P51-C) — `spaceColor`→`shared-utils`, inject `pageSpaces` into `SpaceSwitcher`, move `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` | To do | Medium |
+| P51-K | `shared-ui` npm-dist build (deferred P51-C) — mirror `shared-utils` inc 3 (`tsconfig.build.json` + JSX emit + `exports` map) | To do | Small |
+| P51-L | `@wp-super-gallery/theme-engine` package extraction (deferred; folds in `themeContextDef`) — color pipeline + parametrized prefix + injectable catalog; `adapter.ts` stays app-side | To do | Large |
+
+**Abstraction follow-on tracks (P51-I…L):** the deferred loose ends from P51-C/D, formalized as Phase-51 tracks (2026-06-15). They are continuations of the abstraction line — package extraction + WP-decoupling — and so stay in Phase 51 rather than PHASE52 (which is scoped to net-new admin features + the RBAC audit). Sequenced K → I → J → L (mechanical packaging first, then the bounded refactors, then the large theme-engine extraction).
 
 ---
 
@@ -400,7 +406,30 @@ Decoupled the three low-risk leak points; the WordPress reads were lifted to thi
 
 **Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · full vitest **173 files / 2350 tests** pass · `shared-utils` `npm run build` clean (dist stays gitignored).
 
-**Deferred loose end:** Item 2 — lift the `AuthContext` nonce-cookie branch (`detectNonceAuth` + cookie `login`/`logout`) into a `WpNonceProvider implements AuthProvider`, rewire the app to always pass a provider, and migrate the 6 nonce-path `AuthContext` tests. (`useNonceHeartbeat` stays app-side per the spike — it is an intentional WP hook, not library code.)
+**Deferred loose end:** Item 2 — lift the `AuthContext` nonce-cookie branch (`detectNonceAuth` + cookie `login`/`logout`) into a `WpNonceProvider implements AuthProvider`, rewire the app to always pass a provider, and migrate the 6 nonce-path `AuthContext` tests. (`useNonceHeartbeat` stays app-side per the spike — it is an intentional WP hook, not library code.) → **formalized as track P51-I.**
+
+---
+
+# Abstraction Follow-on Tracks (P51-I…L)
+
+These tracks formalize the loose ends deferred from P51-C/D (2026-06-15). They continue the abstraction line — package extraction + WP-decoupling — so they live in Phase 51 rather than PHASE52 (net-new admin features + RBAC). Sequenced K → I → J → L.
+
+## Track P51-K — `shared-ui` npm-dist build
+
+> **Deferred from P51-C.** Mirrors the `shared-utils` inc-3 publishability work.
+
+`shared-ui` was `private:false` but still resolved `main` at `src/index.ts` (in-repo consumption is via the TS-path/Vite aliases). Made it emit a real `dist/` so it is `npm pack`/publish-ready.
+
+- New `tsconfig.build.json` (mirrors `shared-utils`): `declaration`+`declarationMap`+`sourceMap`, `outDir: dist`, `rootDir: src`, `allowImportingTsExtensions:false`, test excludes. Two `shared-ui`-specific deltas:
+  - `types: []` — this package has no `import.meta.env` usage (unlike `shared-utils`, which needs `vite/client`); JSX/DOM types come through the inherited root config (`jsx: react-jsx`, `lib: DOM`).
+  - **`paths` override** — `@wp-super-gallery/shared-utils` is repointed from the inherited source alias to `../shared-utils/dist/index.d.ts`. Without this, the source alias drags shared-utils' `.ts` files into the program (they fall outside `shared-ui`'s `rootDir` → TS6059, and `sanitizeCss`'s `import.meta.env` errors). Resolving against the sibling's built `.d.ts` keeps them out of the program while the emitted JS preserves the bare `@wp-super-gallery/shared-utils` import as a real dependency.
+- `package.json`: `main`/`module`/`types` → `dist/`, conditional `exports` map, `files:["dist"]`, `sideEffects:false`, `build`/`clean`/`prepack`. Added the missing **`@mantine/form`** peer dep (used by `LoginForm`) and a **`@wp-super-gallery/shared-utils` dependency** (used by `Lightbox`). `prepack` builds shared-utils first (`npm -w @wp-super-gallery/shared-utils run build`) so the `.d.ts` the build resolves against is fresh.
+
+**Build-order note:** `shared-ui`'s build depends on `shared-utils/dist` existing; `prepack` enforces this, and the gate builds shared-utils first.
+
+**Gotcha fixed:** the first build attempt (before the `paths` override) emitted ~150 stray `.js`/`.d.ts` artifacts into `shared-utils/src` (only `dist/` is gitignored, not `src/*.js`). All were untracked and deleted; the override prevents recurrence.
+
+**Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · both packages `npm run build` clean · `npm pack --dry-run` ships **dist-only**. `dist/` stays gitignored.
 
 ---
 
