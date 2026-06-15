@@ -1,8 +1,8 @@
 # Phase 52 - Admin Platform Features & RBAC Enforcement Audit
 
-**Status:** Planning
+**Status:** In Progress
 **Created:** 2026-06-14
-**Last updated:** 2026-06-14
+**Last updated:** 2026-06-15
 
 ### Tracks
 
@@ -12,14 +12,17 @@
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
+| P52-E | vitest CRITICAL spec fix — `"vitest": "^2.1.8"` caps at 2.1.9 which is below the fix threshold (≥ 3.2.6); bump to `^4.0.0` matching the version already used in the lock file | Done | Low |
+| P52-F | esbuild HIGH override — esbuild is capped at 0.25.x by vite's `^0.25.0` dep; needs an `overrides` entry to reach 0.28.1 (GHSA-gv7w-rqvm-qjhr); verify build/storybook still pass | Done | Low |
+| P52-G | Lock file regeneration — current lock file is stale/inconsistent; after P52-E+F land, delete lock and run fresh `npm install` to pull dompurify@3.4.10, fast-uri@3.1.2, postcss@8.5.15, and close 8 remaining alerts | Done | Low |
 
 ---
 
 ## Rationale
 
-Phase 52 collects the **larger, net-new features and the security audit** that were split out of the Phase 51 issue batch (Phase 51 kept the small, ship-now fixes — see PHASE51_REPORT.md, group P51-E…H). These items share a theme: they extend the admin/platform surface (asset management, campaign metadata UX) or harden it (RBAC enforcement), and each is big enough to warrant its own track rather than riding along as a quick fix.
+Phase 52 collects the **larger, net-new features, security audit, and dependency CVE remediation** that were split out of the Phase 51 issue batch (Phase 51 kept the small, ship-now fixes — see PHASE51_REPORT.md, group P51-E…H). The feature tracks share a theme: they extend the admin/platform surface (asset management, campaign metadata UX) or harden it (RBAC enforcement). Three new tracks (P52-E, P52-F, P52-G) address 11 active Dependabot/npm audit advisories (HIGH and MODERATE) surfaced on the current branch.
 
-Success: role boundaries are provably enforced server-side; admins can manage global assets from both the WP sidebar and the in-app Admin Panel using the same workflow; campaign tags/categories are first-class in listing and creation; and the gallery degrades gracefully offline.
+Success: all Dependabot advisories are resolved or explicitly accepted with documented rationale; role boundaries are provably enforced server-side; admins can manage global assets from both the WP sidebar and the in-app Admin Panel using the same workflow; campaign tags/categories are first-class in listing and creation; and the gallery degrades gracefully offline.
 
 ## Key Decisions
 
@@ -31,10 +34,13 @@ Success: role boundaries are provably enforced server-side; admins can manage gl
 
 ## Execution Priority
 
-1. **P52-A** first — it is a correctness/security audit; its findings may constrain how P52-B (asset endpoints) and any admin surface are gated.
-2. **P52-B** — depends on the P51-G menu rename (the new "SuperGallery" parent menu) and on P52-A's permission conclusions.
-3. **P52-C** — self-contained React/REST work; data + endpoints already exist.
-4. **P52-D** — independent; can land any time after P50-F (shipped).
+1. **P52-E** — two-line `package.json` spec change (vitest + coverage-v8 to `^4.0.0`); fixes the only CRITICAL alert.
+2. **P52-F** — add `"overrides": { "esbuild": ">=0.28.1" }` to `package.json`; fixes the only remaining HIGH alert.
+3. **P52-G** — delete the stale lock file and run `npm install`; a single command closes 8 remaining alerts and produces a clean, consistent lock file. Manually dismiss alert #1.
+4. **P52-A** — RBAC correctness/security audit; its findings may constrain how P52-B (asset endpoints) and any admin surface are gated.
+5. **P52-B** — depends on the P51-G menu rename (the new "SuperGallery" parent menu) and on P52-A's permission conclusions.
+6. **P52-C** — self-contained React/REST work; data + endpoints already exist.
+7. **P52-D** — independent; can land any time after P50-F (shipped).
 
 ---
 
@@ -152,6 +158,129 @@ Open questions (carried from FUTURE_TASKS): (Q1) how the deploy version reaches 
 
 - Manual QA in DevTools offline mode: reload and confirm the shell/fallback renders; deploy a new bundle and confirm the shell updates.
 
+## Track P52-E - vitest CRITICAL spec fix
+
+### Problem
+
+`package.json` has `"vitest": "^2.1.8"` (and `"@vitest/coverage-v8": "^2.1.8"`). The `^2.1.8` range resolves to **vitest 2.1.9** on a fresh install — no 2.x release fixes GHSA-5xrq-8626-4rwp; the fix required a new major line at **3.2.6**. This leaves the CRITICAL alert open regardless of the lock file state.
+
+| Alert | Advisory | Impact | Fix |
+|-------|----------|--------|-----|
+| #42 CRITICAL | GHSA-5xrq-8626-4rwp — arbitrary file read/execute when Vitest UI server is listening | Dev environment; exploitable on Windows or when `--api.host` is set | vitest ≥ 3.2.6 |
+
+Note: the lock file currently has vitest **4.1.9** (from a previous spec of `>=3.2.6` that was reverted). The spec should match the lock file, not the other way around.
+
+### Fix
+
+Two line changes in `package.json`:
+```json
+"vitest": "^4.0.0",
+"@vitest/coverage-v8": "^4.0.0"
+```
+`coverage-v8` must match the vitest major; mismatched majors cause runtime errors.
+
+After the spec change, run `npm install` (lock file already has 4.1.9 so this is a no-op for vitest itself — npm will confirm compatibility and leave the version as-is).
+
+Verify tests still pass: `npm test`. The project was previously running at 4.1.9, so no test regressions are expected.
+
+### Acceptance criteria
+
+- `package.json` shows `"vitest": "^4.0.0"` and `"@vitest/coverage-v8": "^4.0.0"`.
+- Dependabot alert #42 resolves (auto-dismissed after lock file reflects ≥ 3.2.6).
+- `npm test` green.
+
+### Validation
+
+- `npm ls vitest` shows ≥ 3.2.6.
+- CI passes.
+
+---
+
+## Track P52-F - esbuild HIGH override
+
+### Problem
+
+esbuild is pulled in transitively by vite (`"esbuild": "^0.25.0"`) and storybook (`"esbuild": "^0.18.0 || … || ^0.27.0"`). npm resolves to **esbuild 0.25.x** (satisfies both constraints simultaneously), but the fix for GHSA-gv7w-rqvm-qjhr requires **≥ 0.28.1**. Neither vite 6.x nor storybook 10.x currently requires a version that high, so this cannot resolve without an override.
+
+| Alert | Advisory | Impact | Fix |
+|-------|----------|--------|-----|
+| #43 HIGH | GHSA-gv7w-rqvm-qjhr — missing binary integrity check; RCE if `NPM_CONFIG_REGISTRY` is redirected during install | Build-time / CI; not a runtime risk | esbuild ≥ 0.28.1 |
+
+Note: alert #1 (MEDIUM, GHSA-67mh-4wv8-2f99, affected ≤ 0.24.2) is already resolved by 0.25.x — it will auto-dismiss once Dependabot re-evaluates after the lock file is regenerated in P52-G.
+
+### Fix
+
+Add an `overrides` block to `package.json`:
+```json
+"overrides": {
+  "esbuild": ">=0.28.1"
+}
+```
+
+Then run `npm install` and smoke-test both `npm run build` and `npm run storybook`. The current latest esbuild is **0.28.1** (exactly the fix version). Remove the override once vite and/or storybook upstream their esbuild requirements past 0.28.1.
+
+### Acceptance criteria
+
+- Dependabot alert #43 resolves.
+- `npm run build`, `npm test`, and `npm run storybook` remain green.
+
+### Validation
+
+- `npm ls esbuild` shows ≥ 0.28.1.
+- CI green.
+
+---
+
+## Track P52-G - Lock file regeneration + stale alert closure
+
+### Problem
+
+The `package-lock.json` is in an inconsistent state (vitest 4.1.9 in the lock vs `^2.1.8` in the package.json spec, along with stale versions of several other packages). After P52-E and P52-F land, a fresh lock file regeneration is needed to pull all package versions to their correct fresh-install resolutions and allow Dependabot to auto-dismiss the remaining open alerts.
+
+**Packages that resolve correctly under the current specs (no package.json change needed):**
+
+| Package | Lock file (stale) | Fresh install → | Advisory fix | Alerts closed |
+|---------|-------------------|----------------|-------------|---------------|
+| dompurify | 3.3.3 | **3.4.10** | > 3.3.3 | #29, #31, #32, #33 |
+| fast-uri | 3.1.0 | **3.1.2** (via `ajv@8.18.0 → "fast-uri": "^3.0.1"`) | ≥ 3.1.2 | #35, #36 |
+| postcss | 8.5.9 | **8.5.15** (via `vite → "postcss": "^8.5.3"`) | ≥ 8.5.10 | #34 |
+| vite | 6.4.2 | **6.4.3** | ≥ 6.4.2 | #28 |
+
+**Stale alert to manually dismiss (already fixed, no further action needed):**
+
+| Alert | Why it is already fixed |
+|-------|------------------------|
+| #1 esbuild MEDIUM (GHSA-67mh-4wv8-2f99) | Affected ≤ 0.24.2; fresh install gives 0.25.x or 0.28.1+ after P52-F override |
+
+Note: `brace-expansion` (#37) and `ws` (#38) are already **auto-dismissed** by Dependabot.
+
+### Fix
+
+1. After P52-E and P52-F changes to `package.json` are confirmed, delete `package-lock.json` and run:
+   ```bash
+   npm install
+   ```
+   This produces a clean lock file with all packages at their correct latest-within-spec versions.
+2. Run `npm test` and `npm run build` to confirm nothing regressed.
+3. Commit both `package.json` (with vitest spec + esbuild override) and the regenerated `package-lock.json`.
+4. Manually dismiss alert #1 via the GitHub Security tab (comment: "esbuild MEDIUM GHSA-67mh-4wv8-2f99 affected ≤ 0.24.2; we ship 0.25.x/0.28.1+ which exceeds the fix threshold").
+
+### Acceptance criteria
+
+- `package-lock.json` reflects: dompurify ≥ 3.4.0, fast-uri ≥ 3.1.2, postcss ≥ 8.5.10, vite ≥ 6.4.2, vitest ≥ 3.2.6, esbuild ≥ 0.28.1.
+- All 11 originally open Dependabot alerts are in `fixed` or `dismissed` state.
+- `npm test` and `npm run build` green.
+
+### Validation
+
+```bash
+gh api repos/rafprojects/campaignViewerWP/dependabot/alerts --paginate \
+  | python3 -c "import json,sys; open_=[a for a in json.load(sys.stdin) if a['state']=='open']; print('open:', len(open_), [a['number'] for a in open_])"
+```
+Should print `open: 0 []`.
+
+---
+
 ## Follow-On Candidates
 
 `docs/FUTURE_TASKS.md` items evaluated and intentionally left deferred:
@@ -169,7 +298,36 @@ Open questions (carried from FUTURE_TASKS): (Q1) how the deploy version reaches 
 
 ## Implementation Notes
 
-- Record completed work here as tracks land.
+### P52-E — vitest CRITICAL spec fix (Done 2026-06-15)
+
+Bumped `"vitest"` and `"@vitest/coverage-v8"` in `package.json` from `"^2.1.8"` to `"^4.0.0"`, resolving GHSA-5xrq-8626-4rwp (CRITICAL). The lock file already had vitest 4.1.9; the spec change aligns it.
+
+**Vitest 4 migration side-effect:** upgrading from the stale `^2.1.8` spec caused test failures because Vitest 4 enforces that mock implementations used as constructors must be regular functions (not arrow functions). Fixed 6 test files:
+- `packages/shared-utils/src/useXhrUpload.test.ts` — `XMLHttpRequest` constructor mock
+- `packages/shared-utils/src/maskFeather.test.ts` — `Image` constructor mock
+- `src/components/Galleries/Adapters/__tests__/adapters.test.tsx` — `ResizeObserver` constructor mock
+- `src/components/Galleries/Adapters/isotope/IsotopeAdapter.test.tsx` — same
+- `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.test.tsx` — same (3 instances)
+- `src/components/Admin/CampaignImportModal.test.tsx` — `FileReader` constructor mock
+
+Also migrated `vite.config.ts` test config: `poolOptions.forks.{minForks,maxForks}` → top-level `minForks`/`maxForks` per Vitest 4 pool rework.
+
+All 2361 tests pass after the fixes.
+
+### P52-F — esbuild HIGH override (Done 2026-06-15)
+
+Added `"overrides": { "esbuild": ">=0.28.1" }` to `package.json`, resolving GHSA-gv7w-rqvm-qjhr (HIGH). Fresh install resolves esbuild to 0.28.1. Build and tests confirmed green.
+
+### P52-G — Lock file regeneration (Done 2026-06-15)
+
+Deleted stale `package-lock.json` and ran `npm install`. Fresh lock file resolves:
+- dompurify → 3.4.10 (was 3.3.3) — closes #29, #31, #32, #33
+- fast-uri → 3.1.2 (was 3.1.0) — closes #35, #36
+- postcss → 8.5.15 (was 8.5.9) — closes #34
+- vite → 6.4.3 (was 6.4.2) — closes #28
+- vitest/esbuild as above
+
+`npm install` reported `found 0 vulnerabilities`. Alert #1 (esbuild MEDIUM, GHSA-67mh-4wv8-2f99, affected ≤ 0.24.2) should be manually dismissed via GitHub Security tab as we now ship 0.28.1+.
 
 ## Outcome
 

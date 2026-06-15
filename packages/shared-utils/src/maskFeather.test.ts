@@ -19,7 +19,7 @@ function setupMocks() {
 	vi.spyOn(URL, 'revokeObjectURL').mockReset();
 
 	// HTMLImageElement — fires onload synchronously when src is assigned
-	vi.spyOn(globalThis, 'Image').mockImplementation(() => {
+	vi.spyOn(globalThis, 'Image').mockImplementation(function() {
 		const img = {
 			crossOrigin: '',
 			naturalWidth: 100,

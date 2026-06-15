@@ -13,11 +13,13 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
 // ── Global mocks ─────────────────────────────────────────────────────────────
 
-const mockResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+const mockResizeObserver = vi.fn(function() {
+  return {
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  };
+});
 
 beforeAll(() => {
   vi.stubGlobal('ResizeObserver', mockResizeObserver);

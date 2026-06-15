@@ -22,7 +22,7 @@ function simulateFileRead(content: string, type = 'application/json') {
     onerror: null,
     result: content,
   };
-  globalThis.FileReader = vi.fn(() => mockReader) as unknown as typeof FileReader;
+  globalThis.FileReader = vi.fn(function() { return mockReader; }) as unknown as typeof FileReader;
   return {
     restore: () => { globalThis.FileReader = originalFileReader; },
     mockFile: new File([content], 'export.json', { type }),

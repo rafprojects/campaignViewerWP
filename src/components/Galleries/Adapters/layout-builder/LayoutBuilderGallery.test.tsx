@@ -190,16 +190,18 @@ describe('LayoutBuilderGallery', () => {
     }) as unknown as typeof globalThis.fetch;
 
     // Mock ResizeObserver with contentRect reporting
-    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => ({
-      observe: (el: Element) => {
-        callback(
-          [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
-          {} as ResizeObserver,
-        );
-      },
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    })) as unknown as typeof globalThis.ResizeObserver;
+    globalThis.ResizeObserver = vi.fn(function(callback: ResizeObserverCallback) {
+      return {
+        observe: (el: Element) => {
+          callback(
+            [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
+            {} as ResizeObserver,
+          );
+        },
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    }) as unknown as typeof globalThis.ResizeObserver;
   });
 
   afterEach(() => {
@@ -645,16 +647,18 @@ describe('LayoutBuilderGallery overlay rendering', () => {
       json: () => Promise.resolve(overlayTemplate),
     }) as unknown as typeof globalThis.fetch;
 
-    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => ({
-      observe: (el: Element) => {
-        callback(
-          [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
-          {} as ResizeObserver,
-        );
-      },
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    })) as unknown as typeof globalThis.ResizeObserver;
+    globalThis.ResizeObserver = vi.fn(function(callback: ResizeObserverCallback) {
+      return {
+        observe: (el: Element) => {
+          callback(
+            [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
+            {} as ResizeObserver,
+          );
+        },
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    }) as unknown as typeof globalThis.ResizeObserver;
   });
 
   afterEach(() => {
@@ -890,16 +894,18 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     originalFetch = globalThis.fetch;
     originalRO = globalThis.ResizeObserver;
 
-    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: ResizeObserverCallback) => ({
-      observe: (el: Element) => {
-        callback(
-          [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
-          {} as ResizeObserver,
-        );
-      },
-      disconnect: vi.fn(),
-      unobserve: vi.fn(),
-    })) as unknown as typeof globalThis.ResizeObserver;
+    globalThis.ResizeObserver = vi.fn(function(callback: ResizeObserverCallback) {
+      return {
+        observe: (el: Element) => {
+          callback(
+            [{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry],
+            {} as ResizeObserver,
+          );
+        },
+        disconnect: vi.fn(),
+        unobserve: vi.fn(),
+      };
+    }) as unknown as typeof globalThis.ResizeObserver;
   });
 
   afterEach(() => {
