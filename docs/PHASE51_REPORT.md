@@ -15,7 +15,7 @@ This phase carries **two track groups**:
 |-------|-------------|--------|--------|
 | P51-A | Abstraction Spike — Opus/Fable audit of the full codebase for package candidates, WordPress-coupling points, and decoupling paths | ✅ Complete | Medium |
 | P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | ✅ Complete | Medium |
-| P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
+| P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | ✅ Complete (generic providers moved; AuthBar + themeContextDef deferred — see notes) | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
 | P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap + hero max-width/justification, Hexagon/Diamond %-unit height + row reflow, Scroll-snap/Coverflow/Stacked infinite growth; shared tile-layout + bounded-section-height helpers | ✅ Complete | Medium |
 | P51-F | Campaign listing card — uniform hover scale (card + image grow together) | ✅ Complete | Small |
@@ -343,6 +343,33 @@ Made `shared-utils` truly publishable, the last remaining P51-B sub-step. The in
 - **Explicitly NOT in scope:** the five Layout Builder canvas primitives (`CanvasGrid`, `CanvasRulers`, `MeasurementOverlay`, `SmartGuides`, `GraphicLayerContent`) — the spike found them to be thin WPSG-coupled render-shells; only their underlying geometry (already going to `shared-utils`) is portable.
 - **`theme-engine` (new package), recommended as its own track:** the color pipeline (`colorGen`, `validation`, `types`, `cssVariables` with a parametrized prefix, `definitions/*.json`, injectable catalog) is extractable; `themes/adapter.ts` stays app-side as the Mantine shim. Blockers are mechanical (Mantine boundary, `import.meta.env.DEV`, `--wpsg` prefix, catalog path import, `shared-utils` privacy).
 
+### Pre-implementation verification (2026-06-14) — spike scope corrected
+
+Per the workon-phase contract, every candidate was re-read in full before moving anything; **two of the spike's five P51-C candidates did not hold up**:
+
+- **`themeContextDef` is NOT clean** (spike said "generic but `MantineThemeOverride`"). It also imports `ThemeMeta` from `../themes/types` **and** `setWpsgDebugDisplayName` from `@/utils/wpsgDebug` (which reads `window.__WPSG_CONFIG__`). It is tied to the theme engine (via `ThemeMeta`) and a WP-coupled debug util → **deferred to the `theme-engine` track**, where `ThemeMeta` naturally lives.
+- **AuthBar carry-over is not a clean "move"** (spike called it "a small loose end"). `AuthBarFloating`/`AuthBarMinimal` are themselves well-decoupled (props-driven, generic over a structural campaign shape, only importing `safeLocalStorage`), **but** both import `./SpaceSwitcher`, which depends on `usePageSpaces` (the WP global `window.__WPSG_PAGE_SPACES__`) **and** `@/utils/spaceColor`. A real carry-over requires: `spaceColor` → `shared-utils`; decoupling `SpaceSwitcher` from `usePageSpaces` by injecting `pageSpaces` as a prop (it is the *only* consumer); threading that prop through both AuthBar components; and the app-side `AuthBar.tsx` connector (which also uses `useCampaignContext` + `wpsgDebug`, so it stays app-side) supplying it. ~6 files + tests. **Deferred to a follow-up** (user decision) — the chain is larger than the spike implied and warrants its own focused change.
+
+`RootIdContext` and `CanvasTransformContext` were confirmed genuinely clean (zero non-`react` imports, no `@/` imports) and are the actual P51-C deliverable.
+
+### Implementation (2026-06-14) — generic providers moved; gate green
+
+Moved the two verified-clean generic React context providers into `shared-ui` via `git mv` (history preserved):
+
+- **`RootIdContext`** → `packages/shared-ui/src/RootIdContext.ts` (`RootIdProvider`, `useRootId`). **Renamed `.tsx` → `.ts`** — the file contains no JSX, and as `.tsx` it tripped `react-refresh/only-export-components` (a *warning* that `eslint .` tolerates but the `--max-warnings 0` lint-staged commit hook would reject); the sibling `.ts` `CanvasTransformContext` never warned for exactly this reason. 11 importers repointed `@/contexts/RootIdContext` → `@wp-super-gallery/shared-ui` (plus two **relative** `./contexts/RootIdContext` imports in `App.tsx`/`main.tsx` the alias-only sweep initially missed — caught by `tsc -b`).
+- **`CanvasTransformContext`** → `packages/shared-ui/src/CanvasTransformContext.ts` (`CanvasTransformContext`, `useCanvasTransform`, `CanvasTransformState`). 4 LayoutBuilder importers repointed; `LayoutBuilderCanvasPanel` (uses both) had its two new `shared-ui` lines consolidated into one.
+- Barrel (`index.ts`) re-exports all four symbols + the `CanvasTransformState` type (`export type`, per the package's `verbatimModuleSyntax` convention).
+- **Flipped `shared-ui` `"private": true → false`** (the spike's stated P51-C action). Both moved modules are Mantine-free, so they add no new peer-dep weight; they sit alongside the existing Mantine components. No tests moved (neither context had a test file; consumer tests exercise them through the repointed imports).
+
+**Package-home note:** these are Mantine-free pure-React contexts, so `shared-utils` would also be a defensible home; they were placed in `shared-ui` to honour the spike's topology (contexts/providers grouped as UI infrastructure) and the user's "spike scope only" choice.
+
+**Deferred (documented loose ends for follow-up tracks):**
+1. **AuthBar carry-over** (`spaceColor` → shared-utils; `SpaceSwitcher` `pageSpaces` injection; `AuthBarFloating`/`AuthBarMinimal` → shared-ui).
+2. **`themeContextDef`** → travels with the `theme-engine` track (coupled to `ThemeMeta` + `wpsgDebug`).
+3. **`shared-ui` npm-dist build** — `shared-ui` is now `private:false` but still resolves `main` at `src/index.ts` (in-repo consumption is via the path/Vite aliases, as with `shared-utils` before its inc-3 dist). Mirroring `shared-utils` inc 3 (a `tsconfig.build.json` with JSX emit + `exports` map) is a deferred publishability step.
+
+**Gate:** `tsc -b` clean, `eslint . --max-warnings 0` clean (commit-hook parity), **173 files / 2348 tests pass**.
+
 ---
 
 ## Track P51-D — WordPress coupling audit & decoupling
@@ -465,5 +492,6 @@ The role column in `useAccessRows.tsx` is now a Mantine `Select` (viewer/editor/
 *Updated: 2026-06-14 — Added front-end fix tracks P51-E…H (adapter bugs, card hover, WP menu/taxonomy labels, access-grant role dropdown). Recalibrated P51-A: added `src/components/Galleries/Adapters/` to the spike's survey scope and sequenced P51-E first so its extracted tile-layout helper seeds the spike candidate list. Larger net-new features and the RBAC audit split into PHASE52_REPORT.md.*
 *Updated: 2026-06-14 — P51-E adapter-settings persistence gap resolved (13 nested Spotlight/Scroll-snap/Masonry-entrance slugs registered in PHP `$defaults`/`$valid_options`/`$field_ranges`; parity guard + PHP regression tests added). P51-F (card hover), P51-G (WP menu/taxonomy IA), and P51-H (access-grant role dropdown) implemented with automated tests green. Remaining: P51-A…D abstraction tracks, and live visual QA of the P51-E adapter fixes.*
 *Updated: 2026-06-14 — Marked P51-E…H ✅ Complete in the Tracks table (all four shipped with automated tests green; P51-H follow-up fixed the second per-space Access UI in `SpaceManagementView`). Only live visual QA of the P51-E adapter fixes remains outstanding on those tracks. Starting P51-A (abstraction spike).*
+*Updated: 2026-06-14 — P51-C ✅ Complete (reduced scope). Pre-move verification corrected the spike: `themeContextDef` is NOT clean (couples to `ThemeMeta` + `wpsgDebug` → deferred to the theme-engine track) and the AuthBar carry-over is a real refactor, not a move (`SpaceSwitcher`→`usePageSpaces`/`spaceColor` chain → deferred to a follow-up). Delivered: moved the two genuinely-clean generic providers `RootIdContext` (renamed `.tsx`→`.ts`) + `CanvasTransformContext` into `shared-ui` (15 importers repointed), flipped `shared-ui` `private→false`. Gate: `tsc -b` + `eslint --max-warnings 0` + 2348 tests green. Loose ends: AuthBar carry-over, themeContextDef (theme-engine), and a `shared-ui` npm-dist build.*
 *Updated: 2026-06-14 — P51-B ✅ Complete. Closed out with increment 3 (publishability): `shared-utils` now emits a built `dist/` (JS + `.d.ts` + sourcemaps via a new `tsconfig.build.json`) with a conditional `exports` map, `files`/`sideEffects`, and `build`/`prepack` scripts; `dist/` stays gitignored as a regenerated artifact. eslint ignores extended (`**/dist`, `.claude`). In-repo consumption is unchanged (path/Vite aliases override package.json). Gate green: build + `npm pack` (dist-only) + `tsc -b` + eslint + 2348 tests. `theme-engine` remains a separate future track.*
 *Updated: 2026-06-14 — P51-A abstraction spike ✅ Complete. Full-tree read survey (5 parallel sub-agents, key claims re-verified by grep) appended as "Spike Findings": candidate tables for utils/hooks/services/contexts/themes/canvas/adapters, recommended topology (expand `shared-utils` + `shared-ui`; new `theme-engine` as its own track; argued against `shared-layout`/`canvas-primitives`), and a 6-pattern decoupling playbook. Corrected the baseline (`src/lib`/`src/i18n` already extracted in P50-G; `shared-utils` still `private`; `AuthBar*` a P50-G loose end). P51-B/C/D stubs rewritten with concrete spike-defined scope; B/C/D now unblocked.*

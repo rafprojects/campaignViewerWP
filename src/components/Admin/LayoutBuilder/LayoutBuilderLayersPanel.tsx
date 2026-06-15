@@ -20,7 +20,7 @@ import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   const {

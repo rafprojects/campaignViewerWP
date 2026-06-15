@@ -19,7 +19,7 @@ import { createAppQueryClient } from './services/queryClient'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
-import { RootIdProvider } from './contexts/RootIdContext'
+import { RootIdProvider } from '@wp-super-gallery/shared-ui'
 
 type MountProps = Record<string, unknown>
 

@@ -4,7 +4,7 @@ import { Text } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
 import type { LayoutSlot, MaskLayer, MediaItem } from '@/types';
 import { getClipPath } from '@/utils/clipPath';
-import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
+import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';

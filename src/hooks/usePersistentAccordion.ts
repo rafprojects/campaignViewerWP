@@ -1,5 +1,5 @@
 import { usePersistentAccordion as usePersistentAccordionBase } from '@wp-super-gallery/shared-utils';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 
 /**
  * App-side wrapper around the context-free

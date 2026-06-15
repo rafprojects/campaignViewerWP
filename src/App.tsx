@@ -22,7 +22,7 @@ import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGallery
 import { sortByOrder } from '@wp-super-gallery/shared-utils';
 import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
-import { useRootId } from './contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
 import { useIdleTimeout } from '@wp-super-gallery/shared-utils';

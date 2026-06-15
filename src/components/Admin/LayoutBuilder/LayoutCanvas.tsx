@@ -11,7 +11,7 @@ import {
   selectionUnionRect,
   type PctRect,
 } from '@wp-super-gallery/shared-utils';
-import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
+import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
 import { useViewportHeight } from '@wp-super-gallery/shared-utils';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';

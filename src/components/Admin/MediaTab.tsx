@@ -41,7 +41,7 @@ import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@/contexts/RootIdContext';
+import { useRootId } from '@wp-super-gallery/shared-ui';
 import {
   buildMediaGridShellVars,
   mapToMediaGridBreakpoint,
