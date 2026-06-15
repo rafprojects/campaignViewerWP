@@ -18,9 +18,9 @@ This phase carries **two track groups**:
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
 | P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap + hero max-width/justification, Hexagon/Diamond %-unit height + row reflow, Scroll-snap/Coverflow/Stacked infinite growth; shared tile-layout + bounded-section-height helpers | ✅ Complete | Medium |
-| P51-F | Campaign listing card — uniform hover scale (card + image grow together) | To do | Small |
-| P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | To do | Small |
-| P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | To do | Small |
+| P51-F | Campaign listing card — uniform hover scale (card + image grow together) | ✅ Complete | Small |
+| P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | ✅ Complete | Small |
+| P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | ✅ Complete | Small |
 
 ---
 
@@ -259,3 +259,4 @@ The role column in `useAccessRows.tsx` is now a Mantine `Select` (viewer/editor/
 *Updated: 2026-06-12 (P51-A spike track written; P51-B/C/D stubs blocked on spike findings)*
 *Updated: 2026-06-14 — Added front-end fix tracks P51-E…H (adapter bugs, card hover, WP menu/taxonomy labels, access-grant role dropdown). Recalibrated P51-A: added `src/components/Galleries/Adapters/` to the spike's survey scope and sequenced P51-E first so its extracted tile-layout helper seeds the spike candidate list. Larger net-new features and the RBAC audit split into PHASE52_REPORT.md.*
 *Updated: 2026-06-14 — P51-E adapter-settings persistence gap resolved (13 nested Spotlight/Scroll-snap/Masonry-entrance slugs registered in PHP `$defaults`/`$valid_options`/`$field_ranges`; parity guard + PHP regression tests added). P51-F (card hover), P51-G (WP menu/taxonomy IA), and P51-H (access-grant role dropdown) implemented with automated tests green. Remaining: P51-A…D abstraction tracks, and live visual QA of the P51-E adapter fixes.*
+*Updated: 2026-06-14 — Marked P51-E…H ✅ Complete in the Tracks table (all four shipped with automated tests green; P51-H follow-up fixed the second per-space Access UI in `SpaceManagementView`). Only live visual QA of the P51-E adapter fixes remains outstanding on those tracks. Starting P51-A (abstraction spike).*
