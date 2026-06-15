@@ -12,9 +12,9 @@
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
-| P52-E | vitest CRITICAL spec fix — `"vitest": "^2.1.8"` caps at 2.1.9 which is below the fix threshold (≥ 3.2.6); bump to `^4.0.0` matching the version already used in the lock file | Done | Low |
-| P52-F | esbuild HIGH override — esbuild is capped at 0.25.x by vite's `^0.25.0` dep; needs an `overrides` entry to reach 0.28.1 (GHSA-gv7w-rqvm-qjhr); verify build/storybook still pass | Done | Low |
-| P52-G | Lock file regeneration — current lock file is stale/inconsistent; after P52-E+F land, delete lock and run fresh `npm install` to pull dompurify@3.4.10, fast-uri@3.1.2, postcss@8.5.15, and close 8 remaining alerts | Done | Low |
+| P52-E | vitest CRITICAL spec fix — `"vitest": "^2.1.8"` caps at 2.1.9 which is below the fix threshold (≥ 3.2.6); bump to `^4.0.0` matching the version already used in the lock file | ✅ Done | Low |
+| P52-F | esbuild HIGH override — esbuild is capped at 0.25.x by vite's `^0.25.0` dep; needs an `overrides` entry to reach 0.28.1 (GHSA-gv7w-rqvm-qjhr); verify build/storybook still pass | ✅ Done | Low |
+| P52-G | Lock file regeneration — current lock file is stale/inconsistent; after P52-E+F land, delete lock and run fresh `npm install` to pull dompurify@3.4.10, fast-uri@3.1.2, postcss@8.5.15, and close 8 remaining alerts | ✅ Done | Low |
 
 ---
 
