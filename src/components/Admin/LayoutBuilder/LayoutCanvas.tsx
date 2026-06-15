@@ -3,16 +3,16 @@ import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
-import { computeGuides, type GuideLine, type SlotRect } from '@/utils/smartGuides';
+import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
 import {
   type SnapMode,
   snapToGrid,
   gridSizeToPct,
   selectionUnionRect,
   type PctRect,
-} from '@/utils/canvasMeasurement';
+} from '@wp-super-gallery/shared-utils';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
-import { useViewportHeight } from '@/hooks/useViewportHeight';
+import { useViewportHeight } from '@wp-super-gallery/shared-utils';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';

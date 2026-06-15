@@ -33,15 +33,20 @@ afterAll(() => {
   vi.unstubAllGlobals();
 });
 
-// Shared hook / component mocks
-vi.mock('@/hooks/useCarousel', () => ({
-  useCarousel: () => ({
-    currentIndex: 0,
-    setCurrentIndex: vi.fn(),
-    next: vi.fn(),
-    prev: vi.fn(),
-  }),
-}));
+// Shared hook / component mocks. useCarousel now lives in the shared-utils
+// barrel (P51-B): spread the real module and override just the hook.
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+  return {
+    ...actual,
+    useCarousel: () => ({
+      currentIndex: 0,
+      setCurrentIndex: vi.fn(),
+      next: vi.fn(),
+      prev: vi.fn(),
+    }),
+  };
+});
 
 vi.mock('@/hooks/useMediaDimensions', () => ({
   useMediaDimensions: (media: MediaItem[]) => media,

@@ -19,13 +19,13 @@ import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './ty
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
-import { sortByOrder } from './utils/sortByOrder';
-import { useBuilderDeepLink } from './hooks/useBuilderDeepLink';
+import { sortByOrder } from '@wp-super-gallery/shared-utils';
+import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
 import { useRootId } from './contexts/RootIdContext';
-import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
-import { useIdleTimeout } from './hooks/useIdleTimeout';
+import { useIdleTimeout } from '@wp-super-gallery/shared-utils';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';

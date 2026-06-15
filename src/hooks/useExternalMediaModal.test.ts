@@ -9,14 +9,20 @@ import type { Campaign } from '@/types';
 const mockUploadMany = vi.fn();
 const mockResetProgress = vi.fn();
 
-vi.mock('./useXhrUpload', () => ({
-  useXhrUpload: () => ({
-    uploadMany: mockUploadMany,
-    isUploading: false,
-    batchProgress: null,
-    resetProgress: mockResetProgress,
-  }),
-}));
+// useXhrUpload now lives in the shared-utils barrel (P51-B): spread the real
+// module and override just the hook.
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+  return {
+    ...actual,
+    useXhrUpload: () => ({
+      uploadMany: mockUploadMany,
+      isUploading: false,
+      batchProgress: null,
+      resetProgress: mockResetProgress,
+    }),
+  };
+});
 
 vi.mock('@/services/settingsQuery', () => ({
   useGetSettings: vi.fn(() => ({ data: { maxBatchUploadSize: 20 } })),

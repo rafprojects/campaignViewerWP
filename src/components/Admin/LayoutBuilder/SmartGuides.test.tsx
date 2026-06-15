@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 import { SmartGuides } from './SmartGuides';
-import type { GuideLine } from '@/utils/smartGuides';
+import type { GuideLine } from '@wp-super-gallery/shared-utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@
  * on top of the layout builder canvas during drag operations.
  */
 
-import type { GuideLine } from '@/utils/smartGuides';
+import type { GuideLine } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 

@@ -8,8 +8,8 @@
  * are in canvas-pixel space. Non-interactive; pointerEvents: none.
  */
 import { useMemo } from 'react';
-import type { PctRect } from '@/utils/canvasMeasurement';
-import { computeEdgeDistances, formatMeasurement } from '@/utils/canvasMeasurement';
+import type { PctRect } from '@wp-super-gallery/shared-utils';
+import { computeEdgeDistances, formatMeasurement } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 

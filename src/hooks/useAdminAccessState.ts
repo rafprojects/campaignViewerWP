@@ -3,7 +3,7 @@ import { useDebouncedValue } from '@mantine/hooks';
 import type { ApiClient } from '@/services/apiClient';
 import type { CompanyInfo, CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
 import type { CampaignAccessLevel } from '@/types';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 
 export interface WpUser {
   id: number;

@@ -29,7 +29,7 @@ import { TypographyEditor, GOOGLE_FONT_NAMES } from '@/components/Common/Typogra
 import { notifications } from '@mantine/notifications';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { buildGradientCss } from '@/utils/gradientCss';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { toCssOrNumber, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
 import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';

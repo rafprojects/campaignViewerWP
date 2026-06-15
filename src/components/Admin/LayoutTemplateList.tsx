@@ -55,7 +55,7 @@ import {
   useLayoutTemplates,
 } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useBuilderDeepLink } from '@/hooks/useBuilderDeepLink';
+import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

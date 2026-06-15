@@ -4,7 +4,7 @@ import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
-import { useLazyAccordion } from '@/hooks/useLazyAccordion';
+import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
 import { type GalleryBehaviorSettings } from '@/types';
 import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@wp-super-gallery/shared-utils';
 

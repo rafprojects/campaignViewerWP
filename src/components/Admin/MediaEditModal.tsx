@@ -1,5 +1,5 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
-import { useDirtyGuard } from '@/hooks/useDirtyGuard';
+import { useDirtyGuard } from '@wp-super-gallery/shared-utils';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

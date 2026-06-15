@@ -11,8 +11,8 @@
  */
 import { useMemo } from 'react';
 import { useCanvasTransform } from '@/contexts/CanvasTransformContext';
-import { rulerTickIntervals } from '@/utils/canvasMeasurement';
-import type { PctRect } from '@/utils/canvasMeasurement';
+import { rulerTickIntervals } from '@wp-super-gallery/shared-utils';
+import type { PctRect } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 

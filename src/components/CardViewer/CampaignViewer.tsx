@@ -15,7 +15,7 @@ import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { loadGoogleFontsFromOverrides } from '@/utils/loadGoogleFont';
 import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { useCampaignContext } from '@/contexts/CampaignContext';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { notifications } from '@mantine/notifications';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';

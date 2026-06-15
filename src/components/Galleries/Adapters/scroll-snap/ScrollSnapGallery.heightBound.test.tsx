@@ -39,12 +39,16 @@ function runtimeWithHeightMode(
   } as ResolvedGallerySectionRuntime;
 }
 
-vi.mock('@/hooks/useCarousel', () => ({
-  useCarousel: () => ({ currentIndex: 0, setCurrentIndex: vi.fn(), next: vi.fn(), prev: vi.fn() }),
-}));
-vi.mock('@/hooks/useLightbox', () => ({
-  useLightbox: () => ({ isOpen: false, open: vi.fn(), close: vi.fn() }),
-}));
+// useCarousel + useLightbox now live in the shared-utils barrel (P51-B): spread
+// the real module and override just these two.
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+  return {
+    ...actual,
+    useCarousel: () => ({ currentIndex: 0, setCurrentIndex: vi.fn(), next: vi.fn(), prev: vi.fn() }),
+    useLightbox: () => ({ isOpen: false, open: vi.fn(), close: vi.fn() }),
+  };
+});
 vi.mock('@wp-super-gallery/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="lightbox-open" /> : null),
 }));

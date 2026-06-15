@@ -31,7 +31,7 @@ describe('resolveColumnsFromWidth', () => {
     const first = parseAutoColumnBreakpoints('480:2,768:3');
 
     first.push({ width: 1440, columns: 6 });
-    first[0].columns = 99;
+    first[0]!.columns = 99;
 
     expect(parseAutoColumnBreakpoints('480:2,768:3')).toEqual([
       { width: 480, columns: 2 },

@@ -12,7 +12,7 @@ import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInp
 import { ModalSelect as Select } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { useDirtyGuard } from '@/hooks/useDirtyGuard';
+import { useDirtyGuard } from '@wp-super-gallery/shared-utils';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';

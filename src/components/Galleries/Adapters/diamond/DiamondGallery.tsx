@@ -21,13 +21,13 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
-import { resolveTileGridLayout } from '../_shared/tileLayout';
+import { resolveTileGridLayout } from '@wp-super-gallery/shared-utils';
 
 const SCOPE = 'diamond';
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */

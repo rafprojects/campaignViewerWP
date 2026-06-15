@@ -60,7 +60,7 @@ import { useRootId } from '@/contexts/RootIdContext';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { spaceColor } from '@/utils/spaceColor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 

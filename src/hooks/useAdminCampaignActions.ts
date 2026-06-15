@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import type { ApiClient, CampaignExportPayload } from '@/services/apiClient';
 import type { AdminCampaign } from '@/services/adminQuery';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { useShortcutConfig, type ShortcutConfigHandle } from './useShortcutConfig';
 
 interface Options {

@@ -18,8 +18,8 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
-import { useLightbox } from '@/hooks/useLightbox';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { useSwipe } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -29,7 +29,7 @@ import {
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
-import { resolveBoundedSectionHeight } from '../_shared/sectionHeight';
+import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
 
 const FALLBACK_HEIGHT_PX = 480;
 const FALLBACK_WIDTH_PX = 800;

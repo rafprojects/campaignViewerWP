@@ -24,8 +24,8 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@/hooks/useCarousel';
-import { useLightbox } from '@/hooks/useLightbox';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';

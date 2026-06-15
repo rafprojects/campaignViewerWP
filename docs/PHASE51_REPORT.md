@@ -14,7 +14,7 @@ This phase carries **two track groups**:
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P51-A | Abstraction Spike — Opus/Fable audit of the full codebase for package candidates, WordPress-coupling points, and decoupling paths | ✅ Complete | Medium |
-| P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | To do | Medium |
+| P51-B | `packages/shared-utils/` — extract pure utility and primitive hook modules | 🔶 In progress (increment 1 done) | Medium |
 | P51-C | `packages/shared-ui/` — extract decoupled Auth, Lightbox, and generic UI components | To do | Medium-High |
 | P51-D | WordPress coupling audit & decoupling — replace or wrap all hardcoded WP assumptions in library code | To do | Medium |
 | P51-E | Gallery adapter bug fixes — Spotlight thumbnail cap + hero max-width/justification, Hexagon/Diamond %-unit height + row reflow, Scroll-snap/Coverflow/Stacked infinite growth; shared tile-layout + bounded-section-height helpers | ✅ Complete | Medium |
@@ -257,6 +257,16 @@ Confidence column omitted where "high" throughout; coupling cited by symbol. "sh
 - **First action:** flip the package's `"private": true` → publishable (prerequisite for `theme-engine` and external consumers).
 - **Move now (verified zero-coupling):** utils `clampDimension`, `sortByOrder`, `getErrorMessage`, `resolveColumnsFromWidth`, `galleryAnimations`, `maskFeather`, plus geometry `canvasMeasurement`, `smartGuides`; hooks `useCarousel`, `useIdleTimeout`, `useOnlineStatus`, `useTabVisibility`, `useViewportHeight`, `useDirtyGuard`, `useLazyAccordion`, `useXhrUpload`, `useBuilderDeepLink`, `useLightbox`; and the P51-E seed `_shared/tileLayout.ts` + `_shared/sectionHeight.ts`.
 - **Move after light decoupling (one fix each — see playbook §4):** `alignSlots`, `graphicLayerTransform`, `slotEffects`, `shadowPresets`, `resolveBreakpointValue`, `gradientCss`, `clipPath` (`getClipPathForShape` only), `groupGeometry`, `checkeredBg`, `loadCustomFonts`, `loadGoogleFont`; hooks `usePersistentAccordion`, `useScrollRestore`, `useReloadSafeView`, `useRecentFonts`, `useMediaDimensions`, `useMediaLightbox`, `useBreakpoint`.
+
+### Implementation — increment 1 (2026-06-14): zero-coupling batch moved
+
+Moved the **20 verified zero-coupling modules** into `packages/shared-utils/src/` via `git mv` (history preserved), with their co-located unit tests: utils `clampDimension`, `sortByOrder`, `getErrorMessage`, `resolveColumnsFromWidth`, `galleryAnimations`, `maskFeather`, `canvasMeasurement`, `smartGuides`; hooks `useCarousel`, `useIdleTimeout`, `useOnlineStatus`, `useTabVisibility`, `useViewportHeight`, `useDirtyGuard`, `useLazyAccordion`, `useXhrUpload`, `useBuilderDeepLink`, `useLightbox`; and the P51-E seed `_shared/tileLayout.ts` + `_shared/sectionHeight.ts`. The barrel (`index.ts`) re-exports all of them; `useLightbox`'s `scrollLock` import and `tileLayout`'s `cssUnits` import were relativized to siblings. Flipped the package `"private": true → false` and added a `types` field (a built `dist/` + `exports` map for true external `npm publish` is the remaining publishability step — deferred; monorepo consumption already works via the workspace alias).
+
+**Consumer repoint:** 47 app files had their `@/utils/*` / `@/hooks/*` / relative / `../_shared/*` imports repointed to `@wp-super-gallery/shared-utils`; eslint `--fix` consolidated the resulting duplicate import lines.
+
+**Test-mock fallout (fixed):** nine test files mocked a moved module by its old path. Converted each to mock the barrel with the real module spread in (`vi.mock('@wp-super-gallery/shared-utils', async () => ({ ...(await vi.importActual(...)), <override> }))`), merging the per-file `useCarousel`+`useLightbox` pairs into one mock, and repointed three dynamic `await import('@/hooks/useOnlineStatus')` calls (`AnalyticsDashboard.test`). One latent strict-tsc issue surfaced (`resolveColumnsFromWidth.test` `first[0]!` under `noUncheckedIndexedAccess`, now type-checked by the package project) and was fixed.
+
+**Gate:** `tsc -b` clean, `eslint` clean, **173 files / 2348 tests pass**, coverage thresholds met (functions 75.2% — note the gate is tight). **Remaining in P51-B:** the ~18 light-decoupling modules (playbook §4), then the `theme-engine` track.
 
 ---
 

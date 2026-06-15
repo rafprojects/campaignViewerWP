@@ -17,7 +17,7 @@
  * These are pure functions with no React/WordPress coupling — a P51-A
  * abstraction-spike candidate for `shared-utils`.
  */
-import type { CssWidthUnit } from '@wp-super-gallery/shared-utils';
+import type { CssWidthUnit } from './cssUnits';
 
 /**
  * Resolve a `value + CSS width unit` pair to a concrete pixel length, measured

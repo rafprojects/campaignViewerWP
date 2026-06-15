@@ -6,19 +6,25 @@ import type { ApiClient } from '@/services/apiClient';
 // Silence notifications (no <Notifications/> provider in the test tree).
 vi.mock('@mantine/notifications', () => ({ notifications: { show: vi.fn() } }));
 
-// Campaign uploads route through useXhrUpload.uploadMany — stub it.
+// Campaign uploads route through useXhrUpload.uploadMany — stub it. The hook
+// now lives in the shared-utils barrel (P51-B), so spread the real module and
+// override just useXhrUpload.
 const uploadMany = vi.fn();
-vi.mock('@/hooks/useXhrUpload', () => ({
-  useXhrUpload: () => ({
-    upload: vi.fn(),
-    uploadMany,
-    progress: null,
-    batchProgress: null,
-    isUploading: false,
-    resetProgress: vi.fn(),
-    abort: vi.fn(),
-  }),
-}));
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+  return {
+    ...actual,
+    useXhrUpload: () => ({
+      upload: vi.fn(),
+      uploadMany,
+      progress: null,
+      batchProgress: null,
+      isUploading: false,
+      resetProgress: vi.fn(),
+      abort: vi.fn(),
+    }),
+  };
+});
 
 function makeApiClient(overrides: Partial<ApiClient> = {}): ApiClient {
   return {

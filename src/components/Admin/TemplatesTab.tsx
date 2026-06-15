@@ -6,7 +6,7 @@ import {
 import { IconTrash, IconPlus } from '@tabler/icons-react';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import type { AdminCampaign } from '@/services/adminQuery';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 
 interface Props {
   apiClient: ApiClient;

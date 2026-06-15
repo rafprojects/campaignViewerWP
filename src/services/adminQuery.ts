@@ -17,7 +17,7 @@ import type {
   TagEntry,
 } from '@/services/apiClient';
 import type { GalleryConfig, MediaItem } from '@/types';
-import { sortByOrder } from '@/utils/sortByOrder';
+import { sortByOrder } from '@wp-super-gallery/shared-utils';
 
 type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
 

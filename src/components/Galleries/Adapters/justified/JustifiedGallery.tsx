@@ -31,7 +31,7 @@ import type {
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
 import { useMediaDimensions } from '@/hooks/useMediaDimensions';
-import { useCarousel } from '@/hooks/useCarousel';
+import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';

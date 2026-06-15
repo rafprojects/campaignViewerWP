@@ -22,7 +22,7 @@ import {
 import { IconCopy, IconRefresh, IconTrash } from '@tabler/icons-react';
 import type { ApiClient, WebhookEndpoint } from '@/services/apiClient';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage } from '@/utils/getErrorMessage';
+import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 
 const WEBHOOK_EVENTS = [
   { value: 'campaign.created', label: 'Campaign created' },

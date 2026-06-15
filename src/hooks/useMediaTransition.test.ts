@@ -3,9 +3,15 @@ import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import { useMediaTransition } from './useMediaTransition';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 
-vi.mock('@/utils/galleryAnimations', () => ({
-	applyGalleryTransition: vi.fn(),
-}));
+// applyGalleryTransition now lives in the shared-utils barrel (P51-B): spread
+// the real module and no-op just the animation.
+vi.mock('@wp-super-gallery/shared-utils', async () => {
+	const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+	return {
+		...actual,
+		applyGalleryTransition: vi.fn(),
+	};
+});
 
 const defaultSettings: GalleryBehaviorSettings = {
 	scrollAnimationStyle: 'smooth',
