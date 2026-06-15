@@ -11,7 +11,7 @@ import {
   reparentGroup as reparentGroupInHierarchy,
   dissolveGroupInHierarchy,
   computeGroupMoveDelta,
-} from '@/utils/groupGeometry';
+} from '@wp-super-gallery/shared-utils';
 
 enableMapSet();
 

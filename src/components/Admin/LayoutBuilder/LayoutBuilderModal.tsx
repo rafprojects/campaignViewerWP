@@ -44,7 +44,7 @@ import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { buildGroupMap, collectDescendantSlotIds } from '@/utils/groupGeometry';
+import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
 import { useRootId } from '@/contexts/RootIdContext';
 import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';

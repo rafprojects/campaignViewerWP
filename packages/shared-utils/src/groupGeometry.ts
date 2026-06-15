@@ -15,8 +15,6 @@
  * (where only group.x/y need updating) is deferred; the user-visible nesting
  * feature is complete.
  */
-import type { LayoutGroup, LayoutSlot } from '@/types';
-
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface Rect {
@@ -26,10 +24,38 @@ export interface Rect {
   height: number;
 }
 
+/**
+ * Minimal structural shape of a slot this module needs (a subset of the app's
+ * richer `LayoutSlot`). Positions are canvas-absolute 0–100% coordinates.
+ */
+export interface GeoSlot {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Minimal structural shape of a group this module needs (a subset of the app's
+ * richer `LayoutGroup`). The frame fields (x/y/width/height) are optional —
+ * they are written by `refreshGroupRects` / `migrateGroupsToP30G`.
+ */
+export interface GeoGroup {
+  id: string;
+  memberIds: string[];
+  childGroupIds?: string[] | undefined;
+  parentGroupId?: string | null | undefined;
+  x?: number | undefined;
+  y?: number | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+}
+
 // ── Tree traversal ───────────────────────────────────────────────────────────
 
-/** Map from groupId → LayoutGroup for O(1) lookup. */
-export function buildGroupMap(groups: LayoutGroup[]): Map<string, LayoutGroup> {
+/** Map from groupId → group for O(1) lookup. */
+export function buildGroupMap<G extends GeoGroup>(groups: G[]): Map<string, G> {
   return new Map(groups.map((g) => [g.id, g]));
 }
 
@@ -37,9 +63,9 @@ export function buildGroupMap(groups: LayoutGroup[]): Map<string, LayoutGroup> {
  * Returns all LEAF slot IDs that belong to `groupId` or any of its
  * descendants, walking the child group tree recursively.
  */
-export function collectDescendantSlotIds(
+export function collectDescendantSlotIds<G extends GeoGroup>(
   groupId: string,
-  groupMap: Map<string, LayoutGroup>,
+  groupMap: Map<string, G>,
 ): string[] {
   const result: string[] = [];
   const stack = [groupId];
@@ -65,9 +91,9 @@ export function collectDescendantSlotIds(
  * Returns the IDs of all groups that are descendants of `groupId`
  * (direct and indirect child groups), not including `groupId` itself.
  */
-export function collectDescendantGroupIds(
+export function collectDescendantGroupIds<G extends GeoGroup>(
   groupId: string,
-  groupMap: Map<string, LayoutGroup>,
+  groupMap: Map<string, G>,
 ): string[] {
   const result: string[] = [];
   const stack = [...(groupMap.get(groupId)?.childGroupIds ?? [])];
@@ -89,9 +115,9 @@ export function collectDescendantGroupIds(
  * root, as an ordered array [ parentId, grandParentId, … ].
  * Returns an empty array for top-level groups.
  */
-export function getAncestorChain(
+export function getAncestorChain<G extends GeoGroup>(
   groupId: string,
-  groupMap: Map<string, LayoutGroup>,
+  groupMap: Map<string, G>,
 ): string[] {
   const chain: string[] = [];
   let current = groupMap.get(groupId);
@@ -117,10 +143,10 @@ export function getAncestorChain(
  *
  * Returns null if the group has no resolvable members.
  */
-function computeGroupRectShallow(
-  group: LayoutGroup,
-  slotMap: Map<string, LayoutSlot>,
-  groupMap: Map<string, LayoutGroup>,
+function computeGroupRectShallow<G extends GeoGroup, S extends GeoSlot>(
+  group: G,
+  slotMap: Map<string, S>,
+  groupMap: Map<string, G>,
 ): Rect | null {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
@@ -153,10 +179,10 @@ function computeGroupRectShallow(
  * Returns null if the group does not exist or has no slot members anywhere
  * in its descendant tree.
  */
-export function computeGroupRect(
+export function computeGroupRect<G extends GeoGroup, S extends GeoSlot>(
   groupId: string,
-  slotMap: Map<string, LayoutSlot>,
-  groupMap: Map<string, LayoutGroup>,
+  slotMap: Map<string, S>,
+  groupMap: Map<string, G>,
 ): Rect | null {
   const group = groupMap.get(groupId);
   if (!group) return null;
@@ -169,9 +195,9 @@ export function computeGroupRect(
  *
  * Call this after any operation that changes slot positions or group membership.
  */
-export function refreshGroupRects(
-  groups: LayoutGroup[],
-  slots: LayoutSlot[],
+export function refreshGroupRects<G extends GeoGroup, S extends GeoSlot>(
+  groups: G[],
+  slots: S[],
 ): void {
   const slotMap = new Map(slots.map((s) => [s.id, s]));
   const groupMap = buildGroupMap(groups);
@@ -198,17 +224,19 @@ export function refreshGroupRects(
  *
  * Slot positions are NOT mutated — they remain canvas-absolute.
  */
-export function migrateGroupsToP30G(
-  groups: LayoutGroup[],
-  slots: LayoutSlot[],
-): LayoutGroup[] {
-  const migrated = groups.map((g): LayoutGroup => {
+export function migrateGroupsToP30G<G extends GeoGroup, S extends GeoSlot>(
+  groups: G[],
+  slots: S[],
+): G[] {
+  const migrated = groups.map((g): G => {
     if (g.childGroupIds !== undefined) return g; // already migrated
+    // Spreading a generic and overriding props isn't structurally assignable
+    // back to the type parameter, so assert — the override types are compatible.
     return {
       ...g,
       childGroupIds: [],
       parentGroupId: null,
-    };
+    } as G;
   });
 
   // Compute initial bounding boxes for migrated groups
@@ -236,12 +264,12 @@ export function migrateGroupsToP30G(
  * Does NOT mutate slots or groups — purely returns the delta map for the
  * caller to commit via builder state.
  */
-export function computeGroupMoveDelta(
+export function computeGroupMoveDelta<G extends GeoGroup, S extends GeoSlot>(
   groupId: string,
   dx: number,
   dy: number,
-  groupMap: Map<string, LayoutGroup>,
-  slotMap: Map<string, LayoutSlot>,
+  groupMap: Map<string, G>,
+  slotMap: Map<string, S>,
 ): Map<string, { x: number; y: number }> {
   const slotIds = collectDescendantSlotIds(groupId, groupMap);
   const result = new Map<string, { x: number; y: number }>();
@@ -263,12 +291,12 @@ export function computeGroupMoveDelta(
  *
  * Does NOT mutate — returns the update map for the caller to commit.
  */
-export function computeGroupResizeDelta(
+export function computeGroupResizeDelta<G extends GeoGroup, S extends GeoSlot>(
   groupId: string,
   newWidth: number,
   newHeight: number,
-  groupMap: Map<string, LayoutGroup>,
-  slotMap: Map<string, LayoutSlot>,
+  groupMap: Map<string, G>,
+  slotMap: Map<string, S>,
 ): Map<string, { x: number; y: number; width: number; height: number }> {
   const group = groupMap.get(groupId);
   if (!group || group.x === undefined || group.width === undefined || group.height === undefined || group.width === 0 || group.height === 0) {
@@ -309,11 +337,11 @@ export function computeGroupResizeDelta(
  *
  * Returns the input array unchanged if the reparent would create a cycle.
  */
-export function reparentGroup(
+export function reparentGroup<G extends GeoGroup>(
   groupId: string,
   newParentId: string | null,
-  groups: LayoutGroup[],
-): LayoutGroup[] {
+  groups: G[],
+): G[] {
   const groupMap = buildGroupMap(groups);
   const movingGroup = groupMap.get(groupId);
   if (!movingGroup) return groups;
@@ -329,16 +357,16 @@ export function reparentGroup(
   const oldParentId = movingGroup.parentGroupId ?? null;
   if (oldParentId === newParentId) return groups; // no change
 
-  return groups.map((g): LayoutGroup => {
+  return groups.map((g): G => {
     if (g.id === groupId) {
-      return { ...g, parentGroupId: newParentId };
+      return { ...g, parentGroupId: newParentId } as G;
     }
     if (oldParentId !== null && g.id === oldParentId) {
-      return { ...g, childGroupIds: (g.childGroupIds ?? []).filter((id) => id !== groupId) };
+      return { ...g, childGroupIds: (g.childGroupIds ?? []).filter((id) => id !== groupId) } as G;
     }
     if (newParentId !== null && g.id === newParentId) {
       const already = (g.childGroupIds ?? []).includes(groupId);
-      return already ? g : { ...g, childGroupIds: [...(g.childGroupIds ?? []), groupId] };
+      return already ? g : ({ ...g, childGroupIds: [...(g.childGroupIds ?? []), groupId] } as G);
     }
     return g;
   });
@@ -352,10 +380,10 @@ export function reparentGroup(
  *
  * Child groups are reparented to `groupId`'s parent (or become top-level).
  */
-export function dissolveGroupInHierarchy(
+export function dissolveGroupInHierarchy<G extends GeoGroup>(
   groupId: string,
-  groups: LayoutGroup[],
-): LayoutGroup[] {
+  groups: G[],
+): G[] {
   const groupMap = buildGroupMap(groups);
   const dying = groupMap.get(groupId);
   if (!dying) return groups;
@@ -368,27 +396,27 @@ export function dissolveGroupInHierarchy(
 
   // Remove groupId from its parent's childGroupIds
   if (newParentId) {
-    updated = updated.map((g) =>
+    updated = updated.map((g): G =>
       g.id === newParentId
-        ? { ...g, childGroupIds: (g.childGroupIds ?? []).filter((id) => id !== groupId) }
+        ? ({ ...g, childGroupIds: (g.childGroupIds ?? []).filter((id) => id !== groupId) } as G)
         : g,
     );
   }
 
   // Reparent child groups to dying group's parent
-  updated = updated.map((g) =>
+  updated = updated.map((g): G =>
     childIds.includes(g.id)
-      ? { ...g, parentGroupId: newParentId }
+      ? ({ ...g, parentGroupId: newParentId } as G)
       : g,
   );
 
   // Add newly promoted children to parent's childGroupIds
   if (newParentId && childIds.length > 0) {
-    updated = updated.map((g) => {
+    updated = updated.map((g): G => {
       if (g.id !== newParentId) return g;
       const existing = g.childGroupIds ?? [];
       const toAdd = childIds.filter((id) => !existing.includes(id));
-      return toAdd.length > 0 ? { ...g, childGroupIds: [...existing, ...toAdd] } : g;
+      return toAdd.length > 0 ? ({ ...g, childGroupIds: [...existing, ...toAdd] } as G) : g;
     });
   }
 

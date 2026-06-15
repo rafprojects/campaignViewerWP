@@ -20,7 +20,7 @@ import {
   computeGroupResizeDelta,
   reparentGroup,
   dissolveGroupInHierarchy,
-} from '@/utils/groupGeometry';
+} from '@wp-super-gallery/shared-utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

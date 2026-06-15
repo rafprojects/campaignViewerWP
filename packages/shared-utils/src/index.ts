@@ -19,6 +19,9 @@ export * from './smartGuides'
 export * from './tileLayout'
 export * from './sectionHeight'
 
+// --- P51-B increment 2d: group geometry (generic over structural slot/group) ---
+export * from './groupGeometry'
+
 // --- P51-B increment 2: decoupled css / geometry / layout helpers ---
 export * from './shadowPresets'
 export * from './graphicLayerTransform'

@@ -300,7 +300,15 @@ Moved `useMediaDimensions` and `useMediaLightbox`, made generic over a structura
 
 Verified there were **no external consumers** of the exported types (`MediaItemWithDimensions`/`MediaLightboxState`/`buildWithDimensions`), so the generics ripple only through inference — all 4 call sites (`PinterestAdapter`, `MasonryGallery`, `JustifiedGallery`, `MediaTab`) pass `MediaItem[]` and need no change. Merged the stale `vi.mock('@/hooks/useMediaDimensions')` in `adapters.test.tsx` into that file's existing barrel mock. `useMediaDimensions.test` stays in `src` (uses `@/types` fixtures), repointed to the package. **Gate:** `tsc`/`eslint` clean, 2348 tests pass, coverage met (functions 76.33%).
 
-**Remaining in P51-B (increment 2d — deferred, heavier / caller-rippling):** `groupGeometry` (11 fns over the rich `LayoutGroup`/`LayoutSlot` types — heavier than "light"); the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites + their tests). Then the `theme-engine` track.
+### Implementation — increment 2d part 1 (2026-06-14): group geometry (generic over structural slot/group)
+
+Moved `groupGeometry` (12 exported fns: `buildGroupMap`, `collectDescendantSlotIds`, `collectDescendantGroupIds`, `getAncestorChain`, `computeGroupRect`, `refreshGroupRects`, `migrateGroupsToP30G`, `computeGroupMoveDelta`, `computeGroupResizeDelta`, `reparentGroup`, `dissolveGroupInHierarchy`, plus the `Rect` type). The module had **no runtime imports** — only `@/types` `LayoutGroup`/`LayoutSlot` — so it inlines two structural interfaces:
+- `GeoSlot = { id; x; y; width; height }` (positions canvas-absolute 0–100%).
+- `GeoGroup = { id; memberIds; childGroupIds?; parentGroupId?; x?/y?/width?/height? }` — frame fields optional (written by `refreshGroupRects`/`migrateGroupsToP30G`). Optionals typed `| undefined` to match the app's `exactOptionalPropertyTypes` style.
+
+**Every function is generic** (`<G extends GeoGroup>`, `<S extends GeoSlot>`) rather than typed on the bare structural interface — required because the three return-/mutation-preserving consumers (`migrateGroupsToP30G`, `reparentGroup`, `dissolveGroupInHierarchy`) feed results straight back into `draft.groups: LayoutGroup[]` in `useLayoutBuilderState`, and a bare-`GeoGroup` return is not assignable to `LayoutGroup[]`. Generics also sidestep `Map<string, V>` invariance for the map-passing read fns. The spread-and-override returns use `as G` (spreading a generic + overriding props isn't structurally assignable back to the type parameter — a known TS limitation). Repointed 4 importers (`LayoutBuilderModal`, `ContextualToolbar`, `layerList`, `useLayoutBuilderState`); `groupGeometry.test` (37 tests) stays in `src` (rich `@/types` fixtures), repointed to the package. **Gate:** `tsc`/`eslint` clean, 173 files/2348 tests pass, coverage met (functions 76.33%). Committed separately as a checkpoint before the riskier `useRootId`-hook decoupling (part 2).
+
+**Remaining in P51-B (increment 2d part 2 — heavier / caller-rippling):** the `useRootId`-coupled hooks `usePersistentAccordion`/`useScrollRestore`/`useReloadSafeView` + `useBreakpoint` (signature changes that ripple to all call sites + their tests). Then the `theme-engine` track.
 
 ---
 
