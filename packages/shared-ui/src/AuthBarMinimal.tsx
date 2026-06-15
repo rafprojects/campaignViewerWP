@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
-import { SpaceSwitcher } from './SpaceSwitcher';
-import { spaceColor } from '@/utils/spaceColor';
+import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
+import { spaceColor } from '@wp-super-gallery/shared-utils';
 
 interface AuthBarMinimalProps {
   email: string;
@@ -15,6 +15,8 @@ interface AuthBarMinimalProps {
   onOpenSignIn?: (() => void) | undefined;
   onLogout: () => void;
   instanceId?: string | undefined;
+  /** Page spaces for the SpaceSwitcher (injected by the host). */
+  pageSpaces?: SpaceSwitcherSpace[] | undefined;
 }
 
 function callOpener(instanceId: string, panel: 'settings' | 'admin') {
@@ -33,6 +35,7 @@ export function AuthBarMinimal({
   onOpenSignIn,
   onLogout,
   instanceId,
+  pageSpaces,
 }: AuthBarMinimalProps) {
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
@@ -104,6 +107,7 @@ export function AuthBarMinimal({
                           <SpaceSwitcher
                             activeInstanceId={activeInstanceId ?? instanceId}
                             onSelect={setActiveInstanceId}
+                            pageSpaces={pageSpaces}
                           />
                         </Box>
                       )}

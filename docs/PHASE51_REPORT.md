@@ -22,7 +22,7 @@ This phase carries **two track groups**:
 | P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | ✅ Complete | Small |
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | ✅ Complete | Small |
 | P51-I | `AuthContext` → `WpNonceProvider implements AuthProvider` (deferred P51-D item 2) — lift the nonce-cookie branch out of the context | ✅ Complete | Medium |
-| P51-J | AuthBar carry-over into `shared-ui` (deferred P51-C) — `spaceColor`→`shared-utils`, inject `pageSpaces` into `SpaceSwitcher`, move `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` | To do | Medium |
+| P51-J | AuthBar carry-over into `shared-ui` (deferred P51-C) — `spaceColor`→`shared-utils`, inject `pageSpaces` into `SpaceSwitcher`, move `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` | ✅ Complete | Medium |
 | P51-K | `shared-ui` npm-dist build (deferred P51-C) — mirror `shared-utils` inc 3 (`tsconfig.build.json` + JSX emit + `exports` map) | To do | Small |
 | P51-L | `@wp-super-gallery/theme-engine` package extraction (deferred; folds in `themeContextDef`) — color pipeline + parametrized prefix + injectable catalog; `adapter.ts` stays app-side | To do | Large |
 
@@ -445,6 +445,24 @@ These tracks formalize the loose ends deferred from P51-C/D (2026-06-15). They c
 - **Tests:** 5 nonce-path tests in `AuthContext.test.tsx` migrated to drive through `new WpNonceProvider()` (the 6th, "no provider + no nonce", stays a guest case); new `WpNonceProvider.test.ts` (+6) covers the adapter directly (admin/guest detect, no-nonce short-circuit, cookie login/logout nonce updates, null bearer).
 
 **Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · full vitest **174 files / 2356 tests** pass (+1 file, +6 tests). `useNonceHeartbeat` stays app-side per the spike (an intentional WP hook, not library code).
+
+---
+
+## Track P51-J — AuthBar carry-over into `shared-ui`
+
+> **Deferred from P51-C** (the P50-G loose end). The spike called it "a small loose end"; pre-move verification (P51-C) found it was a real refactor — the `SpaceSwitcher` → `usePageSpaces`/`spaceColor` chain.
+
+Moved the decoupled AuthBar presentation layer into `shared-ui`, decoupling the one WP-coupling point (`usePageSpaces`) by injection. The WP-coupled connector stays app-side.
+
+- **`spaceColor` → `shared-utils`** (`git mv` + its test). Pure function (hash → Mantine palette name); now exported from the barrel. App-side consumers repointed: `AdminPanel`, `SettingsPanel` (and the moved components import it from `shared-utils`).
+- **`SpaceSwitcher` → `shared-ui`, `pageSpaces` injected.** Dropped the internal `usePageSpaces()` call; added a `pageSpaces?: SpaceSwitcherSpace[]` prop (new structural type `{ instanceId; name }` — the app's `PageSpace`, which also has `id`/`slug`, is assignable). `usePageSpaces` (the `window.__WPSG_PAGE_SPACES__` read) **stays app-side**.
+- **`AuthBarFloating` + `AuthBarMinimal` → `shared-ui`.** Each gained a `pageSpaces` prop threaded to its embedded `SpaceSwitcher`; both now import `spaceColor` (and `safeLocalStorage`) from `shared-utils`. They were already props-driven and generic over a structural campaign shape.
+- **`AuthBar.tsx` stays app-side** (the connector — uses `useCampaignContext` + `wpsgDebug`). It now imports `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` from `@wp-super-gallery/shared-ui`, calls `usePageSpaces()` once, and injects `pageSpaces` into all variants (including the in-file `AuthBarFull` and its two `SpaceSwitcher` usages).
+- **Tests:** `SpaceSwitcher`/`AuthBarFloating`/`AuthBarMinimal`/portal tests repointed to the package and converted from the `window.__WPSG_PAGE_SPACES__` global to the `pageSpaces` prop (cross-space openers still use `window.__wpsgOpen_*`). `AuthBar.test.tsx` is unchanged — it exercises the connector, which still reads the WP global via `usePageSpaces`.
+
+**Gotcha (carried from P51-K):** the isolated `shared-ui` build pulls `shared-utils` via its built `.d.ts`, so after this move the gate builds `shared-utils` before `shared-ui`.
+
+**Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · both packages `npm run build` clean (no `src` leak) · full vitest **174 files / 2356 tests** pass (test files moved, not added).
 
 ---
 

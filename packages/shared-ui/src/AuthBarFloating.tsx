@@ -1,9 +1,8 @@
 import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
-import { SpaceSwitcher } from './SpaceSwitcher';
-import { spaceColor } from '@/utils/spaceColor';
+import { safeLocalStorage, spaceColor } from '@wp-super-gallery/shared-utils';
+import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';
 const ICON_SIZE = 44;
@@ -33,6 +32,8 @@ interface AuthBarFloatingProps<TCampaign extends AuthBarCampaignItem = AuthBarCa
   onArchiveCampaign?: ((campaign: TCampaign) => void) | undefined;
   onAddExternalMedia?: ((campaign: TCampaign) => void) | undefined;
   instanceId?: string | undefined;
+  /** Page spaces for the SpaceSwitcher (injected by the host). */
+  pageSpaces?: SpaceSwitcherSpace[] | undefined;
 }
 
 interface AuthBarFloatingTriggerProps extends React.ComponentPropsWithoutRef<'button'> {
@@ -100,6 +101,7 @@ interface AuthBarFloatingMenuContentProps<TCampaign extends AuthBarCampaignItem>
   instanceId?: string | undefined;
   activeInstanceId?: string | undefined;
   onSpaceSelect?: ((instanceId: string) => void) | undefined;
+  pageSpaces?: SpaceSwitcherSpace[] | undefined;
 }
 
 function callOpener(instanceId: string, panel: 'settings' | 'admin') {
@@ -124,6 +126,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
   instanceId,
   activeInstanceId,
   onSpaceSelect,
+  pageSpaces,
 }: AuthBarFloatingMenuContentProps<TCampaign>) {
   const handleOpenAdmin = useCallback(() => {
     if (activeInstanceId && activeInstanceId !== instanceId) {
@@ -173,6 +176,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                 <SpaceSwitcher
                   activeInstanceId={activeInstanceId ?? instanceId}
                   onSelect={onSpaceSelect ?? (() => {})}
+                  pageSpaces={pageSpaces}
                 />
               )}
               {activeCampaign && (
@@ -284,6 +288,7 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
   onArchiveCampaign,
   onAddExternalMedia,
   instanceId,
+  pageSpaces,
 }: AuthBarFloatingProps<TCampaign>) {
   const margin = dragMargin;
 
@@ -435,6 +440,7 @@ export function AuthBarFloating<TCampaign extends AuthBarCampaignItem = AuthBarC
           instanceId={instanceId}
           activeInstanceId={activeInstanceId}
           onSpaceSelect={setActiveInstanceId}
+          pageSpaces={pageSpaces}
         />
       </Popover.Dropdown>
     </Popover>

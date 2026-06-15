@@ -56,3 +56,6 @@ export * from './useLazyAccordion'
 export * from './useXhrUpload'
 export * from './useBuilderDeepLink'
 export * from './useLightbox'
+
+// --- P51-J: stable per-instance space color (AuthBar carry-over) ---
+export * from './spaceColor'

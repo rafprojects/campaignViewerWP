@@ -60,8 +60,8 @@ import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
-import { spaceColor } from '@/utils/spaceColor';
+import { getErrorMessage, spaceColor } from '@wp-super-gallery/shared-utils';
+
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 
 import {

@@ -36,7 +36,8 @@ import { useAccessRows } from '@/hooks/useAccessRows';
 import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { spaceColor } from '@/utils/spaceColor';
+import { spaceColor } from '@wp-super-gallery/shared-utils';
+
 
 const MediaTab = lazy(() => import('./MediaTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));

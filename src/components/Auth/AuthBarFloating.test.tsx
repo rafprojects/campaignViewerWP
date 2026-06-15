@@ -1,27 +1,20 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { AuthBarFloating } from './AuthBarFloating';
+import { AuthBarFloating, type SpaceSwitcherSpace } from '@wp-super-gallery/shared-ui';
 import type { Campaign, Company, MediaItem } from '@/types';
-import type { PageSpace } from '@/hooks/usePageSpaces';
 
-type Win = typeof window & {
-    __WPSG_PAGE_SPACES__?: PageSpace[];
-    [key: string]: unknown;
-};
+type Win = typeof window & { [key: string]: unknown };
 
-const SPACE_A: PageSpace = { instanceId: 'space-a', id: 1, slug: 'hero', name: 'Hero Gallery' };
-const SPACE_B: PageSpace = { instanceId: 'space-b', id: 2, slug: 'products', name: 'Products' };
+// [P51-J] pageSpaces is now an injected prop; cross-space openers stay on window.
+const SPACE_A: SpaceSwitcherSpace = { instanceId: 'space-a', name: 'Hero Gallery' };
+const SPACE_B: SpaceSwitcherSpace = { instanceId: 'space-b', name: 'Products' };
 
-function setSpaces(...spaces: PageSpace[]) {
-    (window as Win).__WPSG_PAGE_SPACES__ = spaces;
-}
 function setOpener(instanceId: string, fn: (...args: unknown[]) => void) {
     (window as Win)[`__wpsgOpen_${instanceId}`] = fn;
 }
 
 afterEach(() => {
-    delete (window as Win).__WPSG_PAGE_SPACES__;
     delete (window as Win)['__wpsgOpen_space-b'];
 });
 
@@ -91,13 +84,13 @@ describe('AuthBarFloating', () => {
 
 describe('AuthBarFloating — SpaceSwitcher presence', () => {
   it('shows SpaceSwitcher in the popover for admin + multi-space + instanceId', async () => {
-    setSpaces(SPACE_A, SPACE_B);
     render(
       <AuthBarFloating
         email="admin@example.com"
         isAdmin
         isAuthenticated
         instanceId="space-a"
+        pageSpaces={[SPACE_A, SPACE_B]}
         onOpenAdminPanel={vi.fn()}
         onOpenSettings={vi.fn()}
         onLogout={vi.fn()}
@@ -108,12 +101,12 @@ describe('AuthBarFloating — SpaceSwitcher presence', () => {
   });
 
   it('does NOT show SpaceSwitcher when instanceId is omitted', async () => {
-    setSpaces(SPACE_A, SPACE_B);
     render(
       <AuthBarFloating
         email="admin@example.com"
         isAdmin
         isAuthenticated
+        pageSpaces={[SPACE_A, SPACE_B]}
         onOpenAdminPanel={vi.fn()}
         onOpenSettings={vi.fn()}
         onLogout={vi.fn()}
@@ -130,11 +123,11 @@ describe('AuthBarFloating — cross-space opener routing', () => {
     isAdmin: true,
     isAuthenticated: true as const,
     instanceId: 'space-a',
+    pageSpaces: [SPACE_A, SPACE_B],
     onLogout: vi.fn(),
   };
 
   it('calls onOpenSettings directly when own space is active', async () => {
-    setSpaces(SPACE_A);
     const onOpenSettings = vi.fn();
     render(
       <AuthBarFloating
@@ -149,7 +142,6 @@ describe('AuthBarFloating — cross-space opener routing', () => {
   });
 
   it('routes Settings to the target space opener after switching — NOT the local handler', async () => {
-    setSpaces(SPACE_A, SPACE_B);
     const otherOpener = vi.fn();
     setOpener('space-b', otherOpener);
     const onOpenSettings = vi.fn();
@@ -179,7 +171,6 @@ describe('AuthBarFloating — cross-space opener routing', () => {
   });
 
   it('routes Admin Panel to the target space opener after switching — NOT the local handler', async () => {
-    setSpaces(SPACE_A, SPACE_B);
     const otherOpener = vi.fn();
     setOpener('space-b', otherOpener);
     const onOpenAdminPanel = vi.fn();

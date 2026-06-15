@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { AuthBarFloating } from './AuthBarFloating';
+import { AuthBarFloating } from '@wp-super-gallery/shared-ui';
 
 describe('AuthBarFloating portal safety', () => {
     it('keeps the floating admin menu inside the active render tree', async () => {
