@@ -176,6 +176,16 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         }
 
         $spaces   = WPSG_DB::list_spaces($include_archived ? [] : ['archived' => 0]);
+
+        // P52-A5b: a space editor (manage_wpsg, not manage_options) sees only the
+        // spaces they can access; System Admins see every space. The list cache
+        // key is already per-user, so the filtered view caches safely.
+        if (!current_user_can('manage_options')) {
+            $spaces = array_values(array_filter($spaces, function ($space) use ($user_id) {
+                return self::get_effective_space_level($user_id, intval($space->id)) !== '';
+            }));
+        }
+
         $default_id = intval(get_option('wpsg_default_space_id', 0));
         $items    = array_map(function ($space) use ($default_id) {
             return self::format_space($space, $default_id);

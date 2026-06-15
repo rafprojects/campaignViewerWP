@@ -97,7 +97,7 @@ System/global REST (settings system keys, health, thumbnail-cache, webhooks, glo
 | **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | **Done 2026-06-15** |
 | **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | **Done 2026-06-15** |
 | **A5a** | REST hardening — system/global endpoints → `manage_options` (new `require_system_admin`) | P52 | **Done 2026-06-15** |
-| **A5b** | REST hardening — per-campaign/company endpoints → `manage_wpsg` + space access (closes F2) | P52 | To do |
+| **A5b** | REST hardening — per-campaign/company endpoints → `manage_wpsg` + space access (closes F2) | P52 | **Done 2026-06-15** |
 | **A5c** | Per-resource delete policy — layout-template/asset in-use guards; `fonts.delete` → `manage_options` | P52 | To do |
 | **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
 
@@ -148,6 +148,14 @@ Four classification decisions were confirmed with the user (all as recommended):
 Added `WPSG_REST_Base::require_system_admin()` (`manage_options` + auth-integrity). Flipped **30** MAP entries from `require_admin` to `require_system_admin` — roles.list; campaigns.access-summary; company access×3 + archive; media usage-summary/usage, rescan-all, library list, binary export/import; analytics summary; campaign import + import-binary; health; oembed-failures read/reset; thumbnail-cache read/clear/refresh; webhooks×6; global audit-log read + export; spaces.create — and retargeted `rate_limit_authenticated` (which exclusively guards `POST /users`) from `manage_wpsg` to `manage_options`. The frozen matrix in `WPSG_P52A_Permission_Matrix_Test` was updated in lockstep. `spaces.list` is deferred to A5b (handler-side space filtering); `fonts.delete` to A5c.
 
 **Proven.** New `tests/WPSG_P52A5a_System_Admin_Gating_Test.php` (5 tests, 73 assertions): a `wpsg_editor` is denied **every** one of the 30 system actions, a System Admin is allowed every one, editor-tier global content actions (categories/tags/templates/assets/fonts create, media upload, companies list) are retained, `users.create` requires System Admin, and the `require_system_admin` primitive gates correctly. Full PHPUnit suite green — **990 tests, 12146 assertions, 0 failures**.
+
+#### A5b — per-campaign space-scoping (Done 2026-06-15) — closes F2
+
+Added two primitives sharing `user_can_access_campaign_space()` (mirrors the space gate in `get_effective_campaign_level`): `require_campaign_space_access` (manage_wpsg **and** access to the campaign in the `id` param) and `require_campaign_batch_space_access` (manage_wpsg **and** access to *every* campaign in the `ids` param — any inaccessible id denies the whole batch). Flipped **7** MAP entries off `require_admin`: analytics campaign read + media-read, campaign audit, campaign export + export-binary → `require_campaign_space_access`; campaigns batch + batch export-binary → `require_campaign_batch_space_access`. `GET /spaces` now filters to the caller's accessible spaces (System Admins see all). Subscribers (no manage_wpsg) stay denied — these remain admin-tier endpoints.
+
+This is the direct F2 fix: a `manage_wpsg` editor can no longer touch analytics/audit/export of, or batch-act on, campaigns in delegated spaces they were not granted.
+
+**Proven.** New `tests/WPSG_P52A5b_Campaign_Space_Scoping_Test.php` (9 tests): open-mode editor allowed; **delegated-space editor without grant denied (403 — the F2 regression guard)**; delegated editor with grant allowed; `manage_options` escape hatch; subscriber-with-grant still denied (admin-tier); batch denied when any id is cross-space; batch allowed when all accessible; `GET /spaces` filtered for an editor and unfiltered for a System Admin. Full PHPUnit suite green — **999 tests, 12165 assertions, 0 failures**.
 
 ### Acceptance criteria
 

@@ -543,6 +543,77 @@ abstract class WPSG_REST_Base {
     }
 
     /**
+     * P52-A5b: does the user have access to the space that owns this campaign?
+     *
+     * Mirrors the space gate in get_effective_campaign_level(): a campaign with
+     * no space (pre-spaces install) is accessible to any manage_wpsg holder;
+     * otherwise the user must have a level in its space (manage_options ⇒ owner
+     * everywhere; open-mode manage_wpsg ⇒ owner; delegated ⇒ explicit grant).
+     */
+    private static function user_can_access_campaign_space(int $campaign_id, int $user_id): bool {
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($space_id <= 0) {
+            $space_id = intval(get_option('wpsg_default_space_id'));
+        }
+        if ($space_id <= 0) {
+            return true;
+        }
+        return self::can_access_space($space_id, $user_id);
+    }
+
+    /**
+     * P52-A5b: per-campaign admin gate — requires manage_wpsg AND access to the
+     * space that owns the campaign in the request's `id` param. Closes F2: a
+     * manage_wpsg editor cannot act on campaigns in delegated spaces they were
+     * not granted. Subscribers (no manage_wpsg) are denied, preserving the
+     * admin-tier nature of these endpoints (analytics, audit, per-campaign export).
+     */
+    public static function require_campaign_space_access(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !current_user_can('manage_wpsg')) {
+            return false;
+        }
+        $campaign_id = intval($request->get_param('id'));
+        if ($campaign_id <= 0) {
+            return false;
+        }
+        return self::user_can_access_campaign_space($campaign_id, $user_id);
+    }
+
+    /**
+     * P52-A5b: batch variant — requires manage_wpsg AND access to the space of
+     * EVERY campaign in the request's `ids` param. Any inaccessible campaign
+     * denies the whole batch (no cross-space batch actions).
+     */
+    public static function require_campaign_batch_space_access(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !current_user_can('manage_wpsg')) {
+            return false;
+        }
+        $ids = $request->get_param('ids');
+        if (!is_array($ids) || empty($ids)) {
+            // Empty/malformed → let the handler return its own validation error.
+            return true;
+        }
+        foreach ($ids as $cid) {
+            $cid = intval($cid);
+            if ($cid <= 0) {
+                continue;
+            }
+            if (!self::user_can_access_campaign_space($cid, $user_id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * @since 0.18.0 P20-A
      */
     private static function verify_admin_auth() {

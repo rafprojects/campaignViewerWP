@@ -29,6 +29,8 @@ if (!defined('ABSPATH')) {
  *   require_system_admin        manage_options— System Admin only (WP dashboard tier)
  *   require_campaign_editor     grant         — campaign editor|owner (manage_wpsg bypass)
  *   require_campaign_owner      grant         — campaign owner (manage_wpsg bypass)
+ *   require_campaign_space_access       manage_wpsg + space — per-campaign admin op, scoped to the campaign's space
+ *   require_campaign_batch_space_access manage_wpsg + space — batch variant, every id's space must be accessible
  *   require_campaign_space_move grant         — owner of BOTH source & target space
  *   require_space_member        grant         — any access level in the space
  *   require_space_owner         grant         — owner level in the space
@@ -53,8 +55,8 @@ final class WPSG_Permissions {
     const MAP = [
         // ── WPSG_Analytics_Controller ──────────────────────────────────────
         'analytics.event.record'          => 'rate_limit_public',          // POST   /analytics/event
-        'analytics.campaign.read'          => 'require_admin',              // GET    /analytics/campaigns/{id}
-        'analytics.campaign.media.read'    => 'require_admin',              // GET    /analytics/campaigns/{id}/media
+        'analytics.campaign.read'          => 'require_campaign_space_access',              // GET    /analytics/campaigns/{id}
+        'analytics.campaign.media.read'    => 'require_campaign_space_access',              // GET    /analytics/campaigns/{id}/media
         'analytics.summary.read'           => 'require_system_admin',              // GET    /analytics/summary
 
         // ── WPSG_Auth_Controller ───────────────────────────────────────────
@@ -135,10 +137,10 @@ final class WPSG_Permissions {
         'settings.patch'                   => 'require_admin',              // PATCH  /settings
 
         // ── WPSG_Export_Controller ─────────────────────────────────────────
-        'campaigns.batch.export_binary'    => 'require_admin',              // POST   /campaigns/batch/export/binary
-        'campaign.export'                  => 'require_admin',              // GET    /campaigns/{id}/export
+        'campaigns.batch.export_binary'    => 'require_campaign_batch_space_access',              // POST   /campaigns/batch/export/binary
+        'campaign.export'                  => 'require_campaign_space_access',              // GET    /campaigns/{id}/export
         'campaigns.import'                 => 'require_system_admin',              // POST   /campaigns/import
-        'campaign.export_binary'           => 'require_admin',              // POST   /campaigns/{id}/export/binary
+        'campaign.export_binary'           => 'require_campaign_space_access',              // POST   /campaigns/{id}/export/binary
         'campaigns.import_binary'          => 'require_system_admin',              // POST   /campaigns/import/binary
         'export_jobs.read'                 => 'require_admin',              // GET    /export-jobs/{job_id}
         'export_jobs.delete'               => 'require_admin',              // DELETE /export-jobs/{job_id}
@@ -185,8 +187,8 @@ final class WPSG_Permissions {
         'campaign.restore'                 => 'require_campaign_owner',     // POST   /campaigns/{id}/restore
         'campaign.duplicate'               => 'require_campaign_editor',    // POST   /campaigns/{id}/duplicate
         'campaign.move'                    => 'require_campaign_space_move', // POST  /campaigns/{id}/move
-        'campaigns.batch'                  => 'require_admin',              // POST   /campaigns/batch
-        'campaign.audit.read'              => 'require_admin',              // GET    /campaigns/{id}/audit
+        'campaigns.batch'                  => 'require_campaign_batch_space_access',              // POST   /campaigns/batch
+        'campaign.audit.read'              => 'require_campaign_space_access',              // GET    /campaigns/{id}/audit
         'system.audit_log.read'            => 'require_system_admin',              // GET    /admin/audit-log
         'system.audit_log.export_binary'   => 'require_system_admin',              // POST   /admin/audit-log/export/binary
     ];

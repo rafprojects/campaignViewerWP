@@ -26,8 +26,8 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
         return [
             // Analytics
             'analytics.event.record'                => 'rate_limit_public',
-            'analytics.campaign.read'               => 'require_admin',
-            'analytics.campaign.media.read'         => 'require_admin',
+            'analytics.campaign.read'               => 'require_campaign_space_access',
+            'analytics.campaign.media.read'         => 'require_campaign_space_access',
             'analytics.summary.read'                => 'require_system_admin',
             // Auth
             'auth.permissions.read'                 => 'require_authenticated',
@@ -102,10 +102,10 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
             'settings.update'                       => 'require_admin',
             'settings.patch'                        => 'require_admin',
             // Export
-            'campaigns.batch.export_binary'         => 'require_admin',
-            'campaign.export'                       => 'require_admin',
+            'campaigns.batch.export_binary'         => 'require_campaign_batch_space_access',
+            'campaign.export'                       => 'require_campaign_space_access',
             'campaigns.import'                      => 'require_system_admin',
-            'campaign.export_binary'                => 'require_admin',
+            'campaign.export_binary'                => 'require_campaign_space_access',
             'campaigns.import_binary'               => 'require_system_admin',
             'export_jobs.read'                      => 'require_admin',
             'export_jobs.delete'                    => 'require_admin',
@@ -149,8 +149,8 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
             'campaign.restore'                      => 'require_campaign_owner',
             'campaign.duplicate'                    => 'require_campaign_editor',
             'campaign.move'                         => 'require_campaign_space_move',
-            'campaigns.batch'                       => 'require_admin',
-            'campaign.audit.read'                   => 'require_admin',
+            'campaigns.batch'                       => 'require_campaign_batch_space_access',
+            'campaign.audit.read'                   => 'require_campaign_space_access',
             'system.audit_log.read'                 => 'require_system_admin',
             'system.audit_log.export_binary'        => 'require_system_admin',
         ];
