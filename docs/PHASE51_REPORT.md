@@ -23,7 +23,7 @@ This phase carries **two track groups**:
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | ✅ Complete | Small |
 | P51-I | `AuthContext` → `WpNonceProvider implements AuthProvider` (deferred P51-D item 2) — lift the nonce-cookie branch out of the context | ✅ Complete | Medium |
 | P51-J | AuthBar carry-over into `shared-ui` (deferred P51-C) — `spaceColor`→`shared-utils`, inject `pageSpaces` into `SpaceSwitcher`, move `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` | ✅ Complete | Medium |
-| P51-K | `shared-ui` npm-dist build (deferred P51-C) — mirror `shared-utils` inc 3 (`tsconfig.build.json` + JSX emit + `exports` map) | To do | Small |
+| P51-K | `shared-ui` npm-dist build (deferred P51-C) — mirror `shared-utils` inc 3 (`tsconfig.build.json` + JSX emit + `exports` map) | ✅ Complete | Small |
 | P51-L | `@wp-super-gallery/theme-engine` package extraction (deferred; folds in `themeContextDef`) — color pipeline + parametrized prefix + injectable catalog; `adapter.ts` stays app-side | ✅ Complete | Large |
 
 **Abstraction follow-on tracks (P51-I…L):** the deferred loose ends from P51-C/D, formalized as Phase-51 tracks (2026-06-15). They are continuations of the abstraction line — package extraction + WP-decoupling — and so stay in Phase 51 rather than PHASE52 (which is scoped to net-new admin features + the RBAC audit). Sequenced K → I → J → L (mechanical packaging first, then the bounded refactors, then the large theme-engine extraction).
