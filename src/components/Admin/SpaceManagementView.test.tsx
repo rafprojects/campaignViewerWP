@@ -191,3 +191,65 @@ describe('SpaceManagementView — Library tab', () => {
     await waitFor(() => expect(screen.getByText(/No assets in the global library yet/i)).toBeInTheDocument());
   });
 });
+
+describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
+  const GRANT = {
+    userId: 42,
+    user: { displayName: 'Dana', email: 'dana@example.com' },
+    access_level: 'viewer',
+    grantedAt: '2025-01-01',
+  };
+
+  function clientWithGrants() {
+    return createMockApiClient({
+      get: vi.fn().mockImplementation((url: string) => {
+        if (/\/spaces\/\d+\/access/.test(url)) return Promise.resolve([GRANT]);
+        if (/\/spaces($|\?)/.test(url) || url.endsWith('/spaces')) return Promise.resolve([DELEGATED_SPACE]);
+        return Promise.resolve([]);
+      }),
+    });
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('renders the grant role as an editable dropdown reflecting the current level', async () => {
+    const apiClient = clientWithGrants();
+    renderView(apiClient);
+    await selectSpace('Delegated Space');
+    await clickTab('Access');
+
+    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
+    expect((input as HTMLInputElement).value).toMatch(/viewer/i);
+  });
+
+  it('POSTs the new access_level to the space /access endpoint on change', async () => {
+    const apiClient = clientWithGrants();
+    renderView(apiClient);
+    await selectSpace('Delegated Space');
+    await clickTab('Access');
+
+    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
+    fireEvent.click(input);
+    fireEvent.click(screen.getByRole('option', { name: 'Owner' }));
+
+    await waitFor(() => {
+      expect(apiClient.post).toHaveBeenCalledWith(
+        '/wp-json/wp-super-gallery/v1/spaces/10/access',
+        { userId: 42, access_level: 'owner' },
+      );
+    });
+  });
+
+  it('does not POST when the same role is re-selected', async () => {
+    const apiClient = clientWithGrants();
+    renderView(apiClient);
+    await selectSpace('Delegated Space');
+    await clickTab('Access');
+
+    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
+    fireEvent.click(input);
+    fireEvent.click(screen.getByRole('option', { name: 'Viewer' }));
+
+    expect(apiClient.post).not.toHaveBeenCalled();
+  });
+});

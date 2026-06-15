@@ -23,6 +23,13 @@ interface SpaceGrant {
   is_expired?: boolean;
 }
 
+// P51-H: role options shared by the grant form and the inline per-row editor.
+const SPACE_ROLE_OPTIONS = [
+  { value: 'viewer', label: 'Viewer' },
+  { value: 'editor', label: 'Editor' },
+  { value: 'owner', label: 'Owner' },
+];
+
 export interface SpaceManagementViewProps {
   apiClient: ApiClient;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
@@ -49,6 +56,8 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
   const [grantEmail, setGrantEmail] = useState('');
   const [grantRole, setGrantRole] = useState<string>('editor');
   const [grantSaving, setGrantSaving] = useState(false);
+  // P51-H: tracks the grant whose role is currently being updated inline.
+  const [roleSavingUserId, setRoleSavingUserId] = useState<number | null>(null);
 
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const selectedSpace = spaces.find((s) => s.id === selectedSpaceId) ?? null;
@@ -239,6 +248,26 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
     }
   }, [apiClient, selectedSpaceId, refetchGrants, onNotify]);
 
+  // P51-H: change an existing grant's role inline. POST /access upserts the grant
+  // (see WPSG_Space_Controller::upsert_space_grant), so re-posting with the new
+  // access_level updates it in place.
+  const handleChangeRole = useCallback(async (userId: number, newLevel: string) => {
+    if (!selectedSpaceId) return;
+    setRoleSavingUserId(userId);
+    try {
+      await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`, {
+        userId,
+        access_level: newLevel,
+      });
+      await refetchGrants();
+      onNotify({ type: 'success', text: 'Role updated' });
+    } catch (err) {
+      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update role' });
+    } finally {
+      setRoleSavingUserId(null);
+    }
+  }, [apiClient, selectedSpaceId, refetchGrants, onNotify]);
+
   return (
     <>
     <Tabs value={activeTab} onChange={setActiveTab}>
@@ -400,7 +429,22 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
                         </Stack>
                       </Table.Td>
                       <Table.Td>
-                        <Badge size="xs" variant="light">{grant.access_level ?? 'viewer'}</Badge>
+                        <Select
+                          size="xs"
+                          variant="filled"
+                          w={120}
+                          data={SPACE_ROLE_OPTIONS}
+                          value={grant.access_level ?? 'viewer'}
+                          allowDeselect={false}
+                          disabled={roleSavingUserId === grant.userId}
+                          comboboxProps={{ withinPortal: true }}
+                          aria-label={`Role for ${grant.user?.displayName ?? `user ${grant.userId}`}`}
+                          onChange={(v) => {
+                            if (v && v !== (grant.access_level ?? 'viewer')) {
+                              void handleChangeRole(grant.userId, v);
+                            }
+                          }}
+                        />
                       </Table.Td>
                       <Table.Td>
                         <Text size="xs" c="dimmed">
@@ -441,11 +485,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
               />
               <Select
                 label="Role"
-                data={[
-                  { value: 'viewer', label: 'Viewer' },
-                  { value: 'editor', label: 'Editor' },
-                  { value: 'owner', label: 'Owner' },
-                ]}
+                data={SPACE_ROLE_OPTIONS}
                 value={grantRole}
                 onChange={(v) => setGrantRole(v ?? 'editor')}
                 size="sm"
