@@ -313,7 +313,7 @@ Four adapter bugs, all front-end-only:
 - Hexagon and Diamond share a single tile-layout helper (no copy-paste).
 - Scroll-snap renders a fixed-height pager that snaps between items and does not grow unbounded; covered by a test asserting bounded container height for N items.
 
-### Implementation (2026-06-14) — status: implemented, automated tests green; live visual QA pending
+### Implementation (2026-06-14) — status: ✅ done; automated tests green + live visual QA passed (2026-06-14)
 
 **Corrected root cause for scroll-snap.** The planning note (inherited from the exploration agent) blamed `flexShrink: 0`. That was wrong — the snap container is a *block* container, not a flex container, so `flexShrink` is a no-op. The actual bug is a **measurement feedback loop**: `GallerySectionWrapper` measures the section's `contentRect.height` and passes it down as `containerDimensions.height`; the adapter then used that as its own fixed snap height. The wrapper only applies a bounding `maxHeight` + `overflow:hidden` when `common.sectionHeightMode` is `viewport`/`manual` — in the **default `auto` mode** the section is content-sized, so adopting the measurement made the section grow by the heading/padding delta every ResizeObserver cycle (the "one image growing infinitely" symptom). Fix: `ScrollSnapGallery` now only adopts `containerDimensions.height` when `common.sectionHeightMode` is `viewport`/`manual`; otherwise it uses the fixed `FALLBACK_HEIGHT_PX` (500). This reads the same resolved `common.sectionHeightMode` the wrapper keys its bounding off, so the two stay consistent.
 
@@ -323,9 +323,9 @@ Four adapter bugs, all front-end-only:
 
 **Files changed:** `_shared/tileLayout.ts` (new), `hexagonal/HexagonalGallery.tsx`, `diamond/DiamondGallery.tsx`, `scroll-snap/ScrollSnapGallery.tsx`, `adapterRegistry.ts`. **Tests added:** `_shared/tileLayout.test.ts` (9 cases — px/%/vw/rem/em resolution + reflow/fallback/min-per-row), `scroll-snap/ScrollSnapGallery.heightBound.test.tsx` (2 cases — auto-mode falls back to fixed height, bounded mode adopts measured height). Full `src/components/Galleries/Adapters` suite: 276 passing; `tsc -b` and `eslint` clean.
 
-**Pending:** live visual QA in a WordPress environment (configure Hexagon/Diamond with `%` units to confirm reflow + aspect, and Scroll-snap in `auto` mode to confirm no runaway growth). Not blocking — the geometry and height-binding logic are unit-covered — but recommended before marking the track fully Done.
+**Live visual QA (2026-06-14): passed.** Hexagon/Diamond with `%` units reflow and keep aspect; Scroll-snap in `auto` mode no longer grows unbounded.
 
-### Implementation (2026-06-14, expansion from user manual QA) — status: implemented, automated tests green; live visual QA pending
+### Implementation (2026-06-14, expansion from user manual QA) — status: ✅ done; automated tests green + live visual QA passed (2026-06-14)
 
 During manual QA the user found three more issues; the track was expanded to cover them.
 
@@ -339,7 +339,7 @@ During manual QA the user found three more issues; the track was expanded to cov
 
 **Files changed (expansion):** `_shared/sectionHeight.ts` (new), `coverflow/CoverflowAdapter.tsx`, `stacked/StackedDeckAdapter.tsx`, `scroll-snap/ScrollSnapGallery.tsx` (now uses the shared helper), `spotlight/SpotlightGallery.tsx`. **Tests added:** `_shared/sectionHeight.test.ts`, `_shared/boundedStageHeight.test.tsx` (Coverflow + Stacked: auto falls back, bounded adopts), `spotlight/SpotlightGallery.layout.test.tsx` (cap applies to the block + fills width, justify via adapterJustifyContent); updated the existing `adapters.test.tsx` spotlight-maxWidth case to the new structure. Full `src/components/Galleries/Adapters` suite: **287 passing**; `tsc -b` and `eslint` clean.
 
-**Pending (expansion):** live visual QA of Coverflow/Stacked in `auto` mode (no runaway growth) and Spotlight Hero Max Width + justification in both `below`/`right` strip positions.
+**Live visual QA (2026-06-14): passed.** Coverflow/Stacked in `auto` mode no longer grow unbounded; Spotlight Hero Max Width sizes the hero and justification works in both `below`/`right` strip positions. **P51-E fully Done.**
 
 ## Track P51-F — Campaign listing card uniform hover scale
 
