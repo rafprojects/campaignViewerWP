@@ -21,7 +21,7 @@ This phase carries **two track groups**:
 | P51-F | Campaign listing card — uniform hover scale (card + image grow together) | ✅ Complete | Small |
 | P51-G | WP admin IA quick wins — rename top-level menu to "SuperGallery"; fix Companies taxonomy labels ("Add Tag") + clarify "Count" column | ✅ Complete | Small |
 | P51-H | Access-grant role editing — inline role dropdown in the grant row (currently delete-only) | ✅ Complete | Small |
-| P51-I | `AuthContext` → `WpNonceProvider implements AuthProvider` (deferred P51-D item 2) — lift the nonce-cookie branch out of the context | To do | Medium |
+| P51-I | `AuthContext` → `WpNonceProvider implements AuthProvider` (deferred P51-D item 2) — lift the nonce-cookie branch out of the context | ✅ Complete | Medium |
 | P51-J | AuthBar carry-over into `shared-ui` (deferred P51-C) — `spaceColor`→`shared-utils`, inject `pageSpaces` into `SpaceSwitcher`, move `AuthBarFloating`/`AuthBarMinimal`/`SpaceSwitcher` | To do | Medium |
 | P51-K | `shared-ui` npm-dist build (deferred P51-C) — mirror `shared-utils` inc 3 (`tsconfig.build.json` + JSX emit + `exports` map) | To do | Small |
 | P51-L | `@wp-super-gallery/theme-engine` package extraction (deferred; folds in `themeContextDef`) — color pipeline + parametrized prefix + injectable catalog; `adapter.ts` stays app-side | To do | Large |
@@ -430,6 +430,21 @@ These tracks formalize the loose ends deferred from P51-C/D (2026-06-15). They c
 **Gotcha fixed:** the first build attempt (before the `paths` override) emitted ~150 stray `.js`/`.d.ts` artifacts into `shared-utils/src` (only `dist/` is gitignored, not `src/*.js`). All were untracked and deleted; the override prevents recurrence.
 
 **Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · both packages `npm run build` clean · `npm pack --dry-run` ships **dist-only**. `dist/` stays gitignored.
+
+---
+
+## Track P51-I — `AuthContext` → `WpNonceProvider`
+
+> **Deferred from P51-D (item 2).** Lift the nonce-cookie branch out of the context.
+
+`AuthContext` carried a no-provider branch with three inline WP-coupled flows (`detectNonceAuth`, cookie `login`, cookie `logout`) reading/writing `window.__WPSG_*` and hitting `/wp-json/.../auth/*` directly. Lifted all of it into a new **`WpNonceProvider implements AuthProvider`** (`src/services/auth/WpNonceProvider.ts`) — the WP cookie/nonce adapter, sibling to `WpJwtProvider`, confining all WP specifics behind the contract (it uses the P51-D `wpNonce` glue for the global reads/writes).
+
+- **`AuthContext` is now purely provider-driven and WP-free.** The dual init/login/logout branches collapse to a single provider path; with no provider the user is a guest with the fallback permissions. The "only override fallback permissions when auth was actually detected" semantic is preserved by `WpNonceProvider.init()` returning a (cookie-backed sentinel) session **only** when a user or permissions were detected — otherwise `null`, so the context skips the state write. The post-logout `window.location.reload()` stays in the context (an app-level reset, not WP coupling; it already fired for both paths). Only generic browser APIs remain in the context — no `__WPSG_*`, no `/wp-json/`.
+- **Wiring:** `getAuthProvider()` in `App.tsx` now returns `new WpNonceProvider()` in the default (non-JWT) case instead of `undefined`, so the app always supplies a provider.
+- **`getAccessToken()` returns null** — cookie auth uses `X-WP-Nonce` (injected into the transport via P51-D's `getNonce`), so no bearer header is added (identical to the previous no-provider behaviour).
+- **Tests:** 5 nonce-path tests in `AuthContext.test.tsx` migrated to drive through `new WpNonceProvider()` (the 6th, "no provider + no nonce", stays a guest case); new `WpNonceProvider.test.ts` (+6) covers the adapter directly (admin/guest detect, no-nonce short-circuit, cookie login/logout nonce updates, null bearer).
+
+**Gate:** `tsc -b` clean · `eslint . --max-warnings 0` clean · full vitest **174 files / 2356 tests** pass (+1 file, +6 tests). `useNonceHeartbeat` stays app-side per the spike (an intentional WP hook, not library code).
 
 ---
 

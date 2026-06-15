@@ -7,6 +7,7 @@ import { CardGallery } from './components/CampaignGallery/CardGallery';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
+import { WpNonceProvider } from './services/auth/WpNonceProvider';
 import { useAuth } from './hooks/useAuth';
 import { LoginForm } from '@wp-super-gallery/shared-ui';
 import { AuthBar } from './components/Auth/AuthBar';
@@ -49,7 +50,9 @@ const getAuthProvider = (apiBaseUrl: string) => {
   if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
   }
-  return undefined;
+  // [P51-I] Default same-origin deployment: cookie + REST nonce, now behind the
+  // AuthProvider contract (previously AuthContext's inline no-provider branch).
+  return new WpNonceProvider();
 };
 
 type ApiCampaign = Omit<Campaign, 'company' | 'videos' | 'images'> & {
