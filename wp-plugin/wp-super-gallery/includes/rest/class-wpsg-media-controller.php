@@ -12,14 +12,14 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_media_usage_summary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.usage_summary.read'),
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.-]+)/usage', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_media_usage'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.usage.read'),
             ],
         ]);
 
@@ -27,7 +27,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_media'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.list'),
                 'args'                => [
                     'sort' => [
                         'type'    => 'string',
@@ -40,7 +40,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'methods'             => 'POST',
                 // P33-C: editor and owner can add media.
                 'callback'            => [self::class, 'create_media'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.create'),
                 'args'                => [
                     'type'   => [
                         'required' => true,
@@ -69,7 +69,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: editor and owner can batch-add media.
                 'callback' => [self::class, 'create_media_batch'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.create_batch'),
             ],
         ]);
 
@@ -79,7 +79,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'methods' => 'PUT',
                 // P33-C: editor and owner can reorder media.
                 'callback' => [self::class, 'reorder_media'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.reorder'),
             ],
         ]);
 
@@ -88,7 +88,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: editor and owner can rescan media types.
                 'callback' => [self::class, 'rescan_media_types'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.rescan'),
             ],
         ]);
 
@@ -98,13 +98,13 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 'methods' => 'PUT',
                 // P33-C: editor and owner can update media items.
                 'callback' => [self::class, 'update_media'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.update'),
             ],
             [
                 'methods' => 'DELETE',
                 // P33-C: editor and owner can delete media items.
                 'callback' => [self::class, 'delete_media'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.media.delete'),
             ],
         ]);
 
@@ -112,7 +112,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'rescan_all_media_types'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.rescan_all'),
             ],
         ]);
 
@@ -120,7 +120,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_media_library'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.library.list'),
                 'args'                => [
                     'sort' => [
                         'type'    => 'string',
@@ -135,7 +135,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'upload_media'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.upload'),
                 'args'                => [
                     'force' => [
                         'type'    => 'boolean',
@@ -153,12 +153,12 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media_tags'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media_tags.list'),
             ],
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_media_tag'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media_tags.create'),
             ],
         ]);
 
@@ -166,7 +166,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_media_tag'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media_tags.delete'),
             ],
         ]);
 
@@ -175,7 +175,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_media_library_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.export_binary'),
                 'args'                => [
                     'campaign_id' => ['type' => 'integer', 'required' => false],
                     'mime_type'   => ['type' => 'string',  'required' => false, 'enum' => ['image', 'video', 'all']],
@@ -187,7 +187,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'import_media_library_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('media.import_binary'),
             ],
         ]);
     }

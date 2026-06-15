@@ -20,7 +20,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'proxy_oembed'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => WPSG_Permissions::gate('system.oembed_proxy'),
             ],
         ]);
 
@@ -29,7 +29,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_health_data'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.health.read'),
             ],
         ]);
 
@@ -37,12 +37,12 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_oembed_failures'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.oembed_failures.read'),
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'reset_oembed_failures'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.oembed_failures.reset'),
             ],
         ]);
 
@@ -51,12 +51,12 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_thumbnail_cache_stats'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.thumbnail_cache.read'),
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'clear_thumbnail_cache'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.thumbnail_cache.clear'),
             ],
         ]);
 
@@ -64,7 +64,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'refresh_thumbnail_cache'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.thumbnail_cache.refresh'),
             ],
         ]);
 
@@ -73,12 +73,12 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_webhook_endpoints'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_webhook_endpoint'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.create'),
             ],
         ]);
 
@@ -86,7 +86,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_webhook_deliveries'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.delivery_log.read'),
             ],
         ]);
 
@@ -94,12 +94,12 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_webhook_endpoint'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.update'),
             ],
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_webhook_endpoint'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.delete'),
             ],
         ]);
 
@@ -107,7 +107,7 @@ class WPSG_System_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'rotate_webhook_secret'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('webhooks.rotate_secret'),
             ],
         ]);
     }

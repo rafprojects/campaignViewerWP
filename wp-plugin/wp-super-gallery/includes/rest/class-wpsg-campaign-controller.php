@@ -11,12 +11,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaigns'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.create'),
                 'args'                => [
                     'title'       => [
                         'required'          => true,
@@ -49,13 +49,13 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_campaign'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.read'),
             ],
             [
                 'methods'             => 'PUT',
                 // P33-C: editor and owner can update campaign metadata.
                 'callback'            => [self::class, 'update_campaign'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.update'),
                 'args'                => [
                     'title'      => [
                         'type'              => 'string',
@@ -75,7 +75,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'methods' => 'DELETE',
                 // P33-C: only owner can delete a campaign.
                 'callback' => [self::class, 'delete_campaign'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.delete'),
             ],
         ]);
 
@@ -84,7 +84,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: only owner can archive a campaign.
                 'callback' => [self::class, 'archive_campaign'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.archive'),
             ],
         ]);
 
@@ -93,7 +93,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: restore is paired with archive — owner-only.
                 'callback' => [self::class, 'restore_campaign'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.restore'),
             ],
         ]);
 
@@ -103,7 +103,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: editor and owner can duplicate a campaign.
                 'callback' => [self::class, 'duplicate_campaign'],
-                'permission_callback' => [self::class, 'require_campaign_editor'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.duplicate'),
             ],
         ]);
 
@@ -113,7 +113,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'move_campaign'],
                 // P50-A: requires owner on both the source and target space.
-                'permission_callback' => [self::class, 'require_campaign_space_move'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.move'),
                 'args'                => [
                     'target_space_id' => [
                         'required' => true,
@@ -128,7 +128,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'batch_campaigns'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.batch'),
                 'args'                => [
                     'action' => [
                         'required' => true,
@@ -158,7 +158,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_audit'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.audit.read'),
             ],
         ]);
 
@@ -167,7 +167,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_global_audit'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.audit_log.read'),
             ],
         ]);
 
@@ -176,7 +176,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_audit_log_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('system.audit_log.export_binary'),
                 'args'                => [
                     'from'        => ['type' => 'string', 'required' => false],
                     'to'          => ['type' => 'string', 'required' => false],

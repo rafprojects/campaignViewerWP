@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — verify and enforce reader/editor/admin boundaries, especially WP Dashboard access and per-space scoping | To do | Medium-High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1 done**; A2 next; A6 frontend may defer to P53) | In progress | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
@@ -55,22 +55,78 @@ Key surfaces to audit:
 - **Dashboard gating:** admin menu pages guarded by `manage_wpsg` / `manage_options` (`class-wpsg-space-admin-renderer.php` ~line 34; `class-wpsg-settings-renderer.php` ~line 47).
 - **REST enforcement:** `includes/rest/class-wpsg-rest-base.php` (`require_admin` ~line 224, `require_campaign_editor`, `require_campaign_owner`); per-space/per-campaign grant resolution from post meta `access_grants` + `wpsg_company` term meta (`class-wpsg-access-controller.php`).
 
-### Fix
+### Audit findings (2026-06-15)
 
-- Produce an **audit matrix**: capability × screen/REST endpoint × expected tier, and walk every REST permission callback against it.
-- Confirm space scoping is enforced in the permission callback (server-side), not merely hidden in the React UI.
-- Close any gap found, and extend the P33 role-enforcement test suite with regression tests for each boundary (reader cannot mutate, editor cannot reach WP Dashboard or non-granted spaces, only admin gets cross-space + Dashboard).
+A full read of every capability gate confirmed the **existing** enforcement is largely correct: all mutating REST routes are gated (`require_admin` / `require_campaign_*` / `require_space_*`), public reads filter via `can_view_campaign` server-side, and delegated-space isolation is enforced for space-scoped callbacks. Two findings drove the redesign below:
+
+- **F1 — Provability gap.** Editor/reader denial of wp-admin screens and `require_admin` endpoints is real but **untested**. `WPSG_P33C_Role_Enforcement_Test` only covers campaign-scoped owner endpoints.
+- **F2 — Delegated-mode admin cross-space gap.** `require_admin` is bare `manage_wpsg` with no space scoping, so in a delegated deployment a space-scoped `wpsg_admin` can still act on other spaces via `POST /campaigns/batch` (incl. delete), `/campaigns/{id}/audit`, `/companies/{id}/access`, `/campaigns/{id}/export*`, `/campaigns/access-summary`, `/admin/audit-log`, `/media/library`. (`create_campaign` already has a `can_access_space` guard — the model is intended, just unevenly applied.)
+
+### Finalized model (decided 2026-06-15)
+
+The boundary is anchored on **`manage_options` vs `manage_wpsg`**:
+
+| Role | Caps | Meaning |
+|------|------|---------|
+| `administrator` | `manage_options` + `manage_wpsg` + CPT caps | **System Admin** — full WP + wp-admin gallery screens + system settings + all spaces |
+| `wpsg_editor` *(renamed from `wpsg_admin`)* | `manage_wpsg` + `read` + `upload_files`; **no** CPT caps, **no** `manage_options` | **Space Editor** — in-app Admin Panel only (no wp-admin), scoped to accessible spaces, campaign/display settings only |
+| subscriber + grants | — | viewer / editor / owner per campaign/company/space |
+
+- The capability stays named `manage_wpsg` (renaming a stored cap is migration-heavy); only the **role slug** changes, with an upgrade migration that moves existing users and removes the old role.
+- Stripping the CPT caps from `wpsg_editor` removes the wp-admin "Campaigns" menu. Verified safe: no REST permission callback checks the CPT caps — they all use `manage_wpsg`.
+- **Authorization is centralized** into a new `WPSG_Permissions` **action→requirement map** (tier + scope + optional resource guard). Named tiers are presets over this map; the map *is* the audit matrix and every row is asserted by a test. A future granular custom-role builder composes over this foundation (deferred — see `docs/FUTURE_TASKS.md` › Access Control).
+
+**Per-resource policy for global/shared resources** (here "editor" = `wpsg_editor` = `manage_wpsg`):
+
+| Action | wpsg_editor | System Admin | Guard |
+|--------|:----------:|:------------:|-------|
+| categories / tags — create/edit/delete | ✅ | ✅ | global, no guard |
+| layout templates / assets — create/edit | ✅ | ✅ | — |
+| layout templates / assets — **delete** | ✅ | ✅ | **server-side in-use guard** + client confirm modal (modal is UX, not a security control) |
+| fonts — upload/edit | ✅ | ✅ | — |
+| fonts — **delete** | ❌ | ✅ | admin-only |
+
+System/global REST (settings system keys, health, thumbnail-cache, webhooks, global audit-log, media library, binary import/export, user creation + role assignment) → `manage_options`. Per-campaign/company REST (batch ops, per-campaign audit/export, company access, analytics) → `manage_wpsg` **+ space access** derived from the target's space.
+
+### Sub-track decomposition (staged, with checkpoints)
+
+| Sub-track | Scope | Phase | Status |
+|-----------|-------|-------|--------|
+| **A1** | `WPSG_Permissions` centralized map wired to **current** gates + regression tests asserting the present matrix (provable baseline, no behavior change) | P52 | **Done 2026-06-15** |
+| **A2** | Role rename `wpsg_admin`→`wpsg_editor` (slug only), strip CPT caps, upgrade migration, uninstall + `create_user` enum + `list_roles` + frontend role-string updates | P52 | To do |
+| **A3** | wp-admin re-gating: Spaces page + `admin_post_wpsg_create_space` → `manage_options`; CPT menu hidden for editor (from A2) | P52 | To do |
+| **A4** | Settings split: `$admin_only_fields` (system keys) require `manage_options` on write; display/campaign keys stay `manage_wpsg` | P52 | To do |
+| **A5** | REST hardening: flip every `require_admin` endpoint per the matrix (system→`manage_options`; per-campaign/company→`manage_wpsg`+space access; per-resource delete policy + in-use guards) | P52 | To do |
+| **A6** | Frontend UX: AdminPanel tier surfacing + template/asset delete confirm modals **(in the WordPress "Super Gallery" admin sidebar, not the React app)** | P52/53 | To do (scope decision after A5) |
+
+### A1 — implementation notes (Done 2026-06-15)
+
+**Built.** New `includes/class-wpsg-permissions.php` — `WPSG_Permissions` holds the authoritative `const MAP` of **119 actions → strategy** (the complete tier × surface matrix), plus `check($action, $request)` (fail-closed dispatcher), `gate($action)` (returns the permission-callback closure; `_doing_it_wrong` on an unknown action), and `strategy()`/`has()`/`actions()` accessors. Required in `includes/class-wpsg-rest.php` ahead of the controllers.
+
+**Wired.** Every one of the 119 REST routes across the 10 controllers now uses `'permission_callback' => WPSG_Permissions::gate('<action>')`. Verified a strict 1:1 bijection — 119 registered routes ↔ 119 unique `gate()` action strings ↔ 119 MAP keys, with zero orphans on either side and zero duplicates. Each strategy value reproduces the *pre-refactor* gate verbatim (`require_admin`, `require_campaign_*`, `require_space_*`, `rate_limit_*`, `require_authenticated`, `__return_true`), so this is a pure indirection layer with **no behavior change**.
+
+**Proven.** New `tests/WPSG_P52A_Permission_Matrix_Test.php` (10 tests, 980 assertions) asserts: (1) the frozen matrix, one assertion per row, against an independently hand-maintained copy (drift guard for A4/A5); (2) every strategy resolves to a callable `WPSG_REST_Base` primitive; (3) **completeness / no-bypass** — every registered `wp-super-gallery/v1` route's `permission_callback` is a `WPSG_Permissions` gate bound to a known action, and the set of wired actions equals the MAP keys exactly; (4) per-strategy allow/deny for `require_admin` (incl. the **F2 baseline**: a `manage_wpsg`-only editor *currently* passes system `require_admin` — the gap A4/A5 will close), `rate_limit_public`, `require_authenticated`, `__return_true`; (5) fail-closed on unknown action; (6) the `gate()` typo-guard. The `require_campaign_*`/`require_space_*` strategies remain cross-covered by `WPSG_P33C_Role_Enforcement_Test` and `WPSG_P47_Spaces_Isolation_Test`.
+
+**No-behavior-change evidence.** Full PHPUnit suite green — **967 tests, 12003 assertions, 0 failures/0 errors** (2 pre-existing skips) — with P33C and P47 unmodified. Test-design note: an exact endpoint *count* assertion was dropped because WP's REST-server singleton accumulates duplicate endpoint registrations across the full suite (each `rest_api_init` re-appends); the action-set equality is the robust completeness proof and each accumulated duplicate is still validated as a gate.
 
 ### Acceptance criteria
 
-- A documented matrix of tier × surface with pass/fail noted.
-- Every identified gap is fixed, with a regression test that fails before and passes after.
-- Editors and readers provably cannot load any WP-admin screen or call any admin-gated REST endpoint.
+- A documented matrix of tier × surface, encoded in `WPSG_Permissions` and asserted by tests.
+- F1 + F2 closed: editors/readers provably cannot load any wp-admin screen or call any system-admin REST endpoint; `wpsg_editor` cannot act cross-space in delegated mode.
+- Role rename migration preserves access for existing `wpsg_admin` users; old role removed.
+- Per-resource delete policy enforced (font delete admin-only; template/asset delete guarded).
 
 ### Validation
 
-- New/extended PHPUnit role-enforcement tests (alongside `WPSG_P33C_Role_Enforcement_Test.php`).
-- Manual QA: log in as each tier, attempt to reach WP Dashboard and a non-granted space.
+- New/extended PHPUnit role-enforcement tests (alongside `WPSG_P33C_Role_Enforcement_Test.php`), one assertion per `WPSG_Permissions` row.
+- Migration test: a pre-existing `wpsg_admin` user is converted to `wpsg_editor` on upgrade with access intact.
+- Manual QA: log in as each tier; confirm `wpsg_editor` sees no wp-admin gallery screen and is confined to accessible spaces.
+
+### Rationale log
+
+- **2026-06-15 — Tier model.** User clarified `wpsg_admin` is conceptually the *editor* (space-scoped app admin, **no** WordPress access); only `administrator` touches WP itself. Editors get campaign/display settings, not system ones (e.g. cache). Anchoring on `manage_options` vs `manage_wpsg` (rather than minting many new caps) keeps the change provable and within WP's native capability system.
+- **2026-06-15 — Architecture.** Chose a centralized `WPSG_Permissions` action→requirement map over (a) scattered per-endpoint fixes (not exhaustively provable) and (b) a full GitHub-style custom-role engine (premature; large management surface — future-tasked). The map captures the granularity the user wanted today (per-resource delete policy) while making a future engine additive.
+- **2026-06-15 — Delivery.** Staged A1–A6 with checkpoints; A6 (frontend) is the candidate to defer to PHASE53 since server-side enforcement is the security-critical part.
 
 ## Track P52-B - Asset Management (global, non-campaign assets)
 

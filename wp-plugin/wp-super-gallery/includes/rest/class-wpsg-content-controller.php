@@ -12,12 +12,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_campaign_categories'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('categories.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_campaign_category'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('categories.create'),
                 'args'                => [
                     'name' => [
                         'required'          => true,
@@ -41,7 +41,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_campaign_category'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('categories.update'),
                 'args'                => [
                     'name' => [
                         'type'              => 'string',
@@ -60,7 +60,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_campaign_category'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('categories.delete'),
             ],
         ]);
 
@@ -69,12 +69,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_campaign_templates'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_templates.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_campaign_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_templates.create'),
                 'args'                => [
                     'name' => [
                         'required'          => true,
@@ -98,7 +98,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_campaign_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_templates.delete'),
             ],
         ]);
 
@@ -106,7 +106,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'instantiate_campaign_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_templates.instantiate'),
                 'args'                => [
                     'name' => [
                         'required'          => true,
@@ -122,7 +122,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_companies'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('companies.list'),
             ],
         ]);
 
@@ -131,12 +131,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaign_tags'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_tags.list'),
             ],
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_campaign_tag'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_tags.create'),
             ],
         ]);
 
@@ -144,7 +144,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_campaign_tag'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign_tags.delete'),
             ],
         ]);
 
@@ -153,12 +153,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_layout_templates'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.list'),
             ],
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'create_layout_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.create'),
             ],
         ]);
 
@@ -166,17 +166,17 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_layout_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.read'),
             ],
             [
                 'methods' => 'PUT',
                 'callback' => [self::class, 'update_layout_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.update'),
             ],
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_layout_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.delete'),
             ],
         ]);
 
@@ -184,7 +184,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'duplicate_layout_template'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.duplicate'),
             ],
         ]);
 
@@ -193,12 +193,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_asset_library'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('assets.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'upload_asset'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('assets.upload'),
             ],
         ]);
 
@@ -206,12 +206,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'update_asset'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('assets.update'),
             ],
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_asset'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('assets.delete'),
             ],
         ]);
 
@@ -220,12 +220,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_font_library'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('fonts.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'upload_font'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('fonts.upload'),
             ],
         ]);
 
@@ -234,12 +234,12 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
                 // P50-J: partial update of a font's `is_universal` flag.
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'update_font'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('fonts.update'),
             ],
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_font'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('fonts.delete'),
             ],
         ]);
 
@@ -248,7 +248,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_layout_template_public'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => WPSG_Permissions::gate('layout_templates.read_public'),
             ],
         ]);
     }

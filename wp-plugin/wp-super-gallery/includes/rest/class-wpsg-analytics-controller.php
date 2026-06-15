@@ -12,7 +12,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'record_analytics_event'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('analytics.event.record'),
                 'args'                => [
                     'campaign_id' => [
                         'required' => true,
@@ -35,7 +35,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_campaign_analytics'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('analytics.campaign.read'),
             ],
         ]);
 
@@ -43,7 +43,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_campaign_media_analytics'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('analytics.campaign.media.read'),
             ],
         ]);
 
@@ -51,7 +51,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_analytics_summary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('analytics.summary.read'),
             ],
         ]);
     }

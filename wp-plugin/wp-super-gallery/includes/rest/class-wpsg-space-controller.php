@@ -11,12 +11,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_spaces'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('spaces.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_space'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('spaces.create'),
                 'args'                => [
                     'name' => [
                         'required'          => true,
@@ -40,12 +40,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_item'],
-                'permission_callback' => [self::class, 'require_space_member'],
+                'permission_callback' => WPSG_Permissions::gate('space.read'),
             ],
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_space'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.update'),
                 'args'                => [
                     'name' => [
                         'type'              => 'string',
@@ -60,7 +60,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_space_item'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.delete'),
                 'args'                => [
                     'force' => [
                         'type'    => 'boolean',
@@ -74,12 +74,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_access'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.access.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'grant_access'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.access.grant'),
                 'args'                => [
                     'userId' => [
                         'required' => true,
@@ -103,7 +103,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'revoke_access'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.access.revoke'),
             ],
         ]);
 
@@ -111,7 +111,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'resolve_user'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.resolve_user'),
                 'args'                => [
                     'search' => [
                         'required'          => true,
@@ -126,12 +126,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_settings'],
-                'permission_callback' => [self::class, 'require_space_member'],
+                'permission_callback' => WPSG_Permissions::gate('space.settings.read'),
             ],
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_space_settings'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.settings.update'),
             ],
         ]);
 
@@ -140,12 +140,12 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_library'],
-                'permission_callback' => [self::class, 'require_space_member'],
+                'permission_callback' => WPSG_Permissions::gate('space.library.read'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'associate_library_asset'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.library.associate'),
                 'args'                => [
                     'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
                     'assetId'   => ['required' => true, 'type' => 'string'],
@@ -154,7 +154,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'dissociate_library_asset'],
-                'permission_callback' => [self::class, 'require_space_owner'],
+                'permission_callback' => WPSG_Permissions::gate('space.library.dissociate'),
                 'args'                => [
                     'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
                     'assetId'   => ['required' => true, 'type' => 'string'],

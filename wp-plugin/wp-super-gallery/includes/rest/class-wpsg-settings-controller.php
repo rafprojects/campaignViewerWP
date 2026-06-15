@@ -13,7 +13,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_public_settings'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('settings.read_public'),
                 'args' => [
                     // P47-J: optional space scoping — returns effective settings (global merged with space overrides).
                     'space' => [
@@ -25,12 +25,12 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'update_settings'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('settings.update'),
             ],
             [
                 'methods' => 'PATCH',
                 'callback' => [self::class, 'patch_settings'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('settings.patch'),
             ],
         ]);
     }

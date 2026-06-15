@@ -11,7 +11,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.permissions.read'),
             ],
         ]);
 
@@ -22,7 +22,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'refresh_nonce'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.nonce.refresh'),
             ],
         ]);
 
@@ -32,7 +32,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_login'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => WPSG_Permissions::gate('auth.login'),
                 'args'                => [
                     'username' => [
                         'required'          => true,
@@ -55,7 +55,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_logout'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.logout'),
             ],
         ]);
 
@@ -63,7 +63,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'search_users'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('users.search'),
             ],
         ]);
 
@@ -71,7 +71,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_user'],
-                'permission_callback' => [self::class, 'rate_limit_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('users.create'),
                 'args'                => [
                     'email'       => [
                         'required'          => true,
@@ -101,7 +101,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_roles'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('roles.list'),
             ],
         ]);
     }
