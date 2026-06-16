@@ -500,14 +500,23 @@ JS;
             return;
         }
         // Reshape to indexed array with instanceId included in each entry.
+        // P53-A: scope to spaces the actor can access. System admins resolve to
+        // every space; a wpsg_editor only sees open + granted-delegated spaces,
+        // so the SpaceSwitcher never offers a space it cannot administer.
         $spaces = [];
         foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
+            if (!WPSG_REST_Base::current_actor_can_access_space((int) $info['id'])) {
+                continue;
+            }
             $spaces[] = [
                 'instanceId' => $instance_id,
                 'id'         => $info['id'],
                 'slug'       => $info['slug'],
                 'name'       => $info['name'],
             ];
+        }
+        if (empty($spaces)) {
+            return;
         }
         echo '<script>window.__WPSG_PAGE_SPACES__ = ' . wp_json_encode($spaces) . ';</script>' . "\n";
     }
@@ -526,13 +535,25 @@ JS;
             return;
         }
 
+        // P53-A: scope to spaces the actor can access (system admins see all; a
+        // wpsg_editor sees only open + granted-delegated spaces).
+        $accessible = array_filter(
+            $GLOBALS['wpsg_spaces_on_page'],
+            static function ($info) {
+                return WPSG_REST_Base::current_actor_can_access_space((int) $info['id']);
+            }
+        );
+        if (empty($accessible)) {
+            return;
+        }
+
         $wp_admin_bar->add_node([
             'id'    => 'wpsg-root',
             'title' => 'WP Super Gallery',
             'href'  => false,
         ]);
 
-        foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
+        foreach ($accessible as $instance_id => $info) {
             $slug  = esc_attr($instance_id);
             $label = esc_html($info['name']);
 

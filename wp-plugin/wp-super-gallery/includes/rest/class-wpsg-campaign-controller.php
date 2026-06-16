@@ -211,7 +211,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
 
         // Generate cache key based on user ID, query parameters, and cache version
         $user_id = get_current_user_id();
-        $is_admin = current_user_can('manage_options') || current_user_can('manage_wpsg');
+        // P53-A: only a System Admin (manage_options) gets the unscoped "see every
+        // campaign" view. A wpsg_editor (manage_wpsg) is scoped to the campaigns it
+        // can access — public campaigns everywhere (P53-B) plus everything in the
+        // spaces it can access — closing the cross-space private-metadata leak while
+        // preserving public visibility.
+        $is_system_admin = current_user_can('manage_options');
         $search_key = $search ? md5($search) : 'none';
         $cv = self::get_cache_version();
         $cache_key = 'wpsg_campaigns_' . md5(sprintf(
@@ -224,7 +229,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             $search_key,
             $page,
             $per_page,
-            $is_admin ? 'admin' : 'user',
+            $is_system_admin ? 'admin' : 'user',
             $include_media ? 'with_media' : 'no_media',
             $category ?: 'none',
             $tag ?: 'none',
@@ -340,7 +345,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             $args['tax_query'] = $tax_clauses;
         }
 
-        if (!$is_admin) {
+        if (!$is_system_admin) {
             if (!$user_id) {
                 $meta_query[] = [
                     'key' => 'visibility',

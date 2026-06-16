@@ -317,6 +317,17 @@ abstract class WPSG_REST_Base {
         return self::get_effective_space_level(intval($user_id), $space_id) !== '';
     }
 
+    /**
+     * P53-A: public accessor so non-controller code (the embed page-spaces list
+     * and admin-bar nodes) can scope a space list to the CURRENT actor without
+     * duplicating the open/delegated resolution. System admins (manage_options)
+     * resolve to 'owner' for every space and see all; a wpsg_editor sees open
+     * spaces plus the delegated spaces it is granted.
+     */
+    public static function current_actor_can_access_space(int $space_id): bool {
+        return self::get_effective_space_level(get_current_user_id(), $space_id) !== '';
+    }
+
     // ── P33-C: Role-Aware Permission Helpers ─────────────────────────────────
 
     /**
