@@ -364,4 +364,33 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
         $this->setExpectedIncorrectUsage('WPSG_Permissions::gate');
         WPSG_Permissions::gate('totally.bogus.action');
     }
+
+    // ── Capability-tier seam (single WP-coupling point) ───────────────────
+
+    public function test_actor_has_tier_resolves_current_user() {
+        // System Admin (manage_options + manage_wpsg) meets every tier.
+        $this->make_admin();
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN));
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR));
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER));
+
+        // Space editor (manage_wpsg only) meets EDITOR + VIEWER, not SYSTEM_ADMIN.
+        $this->make_manage_wpsg_only();
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN));
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR));
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER));
+
+        // Plain subscriber meets only VIEWER.
+        wp_set_current_user(self::factory()->user->create(['role' => 'subscriber']));
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN));
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR));
+        $this->assertTrue(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER));
+
+        // Anonymous meets nothing; unknown tier fails closed.
+        wp_set_current_user(0);
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN));
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR));
+        $this->assertFalse(WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER));
+        $this->assertFalse(WPSG_Permissions::actor_has_tier('nonexistent_tier'));
+    }
 }

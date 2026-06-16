@@ -199,6 +199,43 @@ final class WPSG_Permissions {
      */
     const ALWAYS_ALLOW = '__return_true';
 
+    // ── Capability tiers (the single WordPress-coupling seam) ──────────────────
+    //
+    // App-level authorization tiers, decoupled from WordPress capabilities.
+    // {@see actor_has_tier()} is the ONE place that binds these tiers to WP caps;
+    // a future non-WP backend reimplements only that method. Permission primitives
+    // (require_admin / require_system_admin / …) ask for a tier, never a raw cap.
+    // (The per-grant resolution helpers — get_effective_campaign_level /
+    // get_effective_space_level / can_view_campaign — remain a separate storage
+    // seam, documented for the future port.)
+
+    /** Full WP/system control (currently `manage_options`). */
+    const TIER_SYSTEM_ADMIN = 'system_admin';
+    /** Space-scoped app admin / editor (currently `manage_wpsg`). */
+    const TIER_EDITOR = 'editor';
+    /** Any authenticated user. */
+    const TIER_VIEWER = 'viewer';
+
+    /**
+     * Does the CURRENT actor meet a capability tier? The single seam binding
+     * app authorization tiers to WordPress capabilities.
+     *
+     * @param string $tier One of the TIER_* constants.
+     * @return bool
+     */
+    public static function actor_has_tier(string $tier): bool {
+        switch ($tier) {
+            case self::TIER_SYSTEM_ADMIN:
+                return current_user_can('manage_options');
+            case self::TIER_EDITOR:
+                return current_user_can('manage_wpsg');
+            case self::TIER_VIEWER:
+                return is_user_logged_in();
+            default:
+                return false;
+        }
+    }
+
     /**
      * Resolve the strategy for an action.
      *

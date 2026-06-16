@@ -77,7 +77,7 @@ abstract class WPSG_REST_Base {
      * @since 0.18.0 P20-A
      */
     public static function rate_limit_authenticated($request) {
-        if (!current_user_can('manage_options')) {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)) {
             return false;
         }
 
@@ -226,7 +226,7 @@ abstract class WPSG_REST_Base {
     // ── Auth gates ────────────────────────────────────────────────────────────
 
     public static function require_admin() {
-        if (!current_user_can('manage_wpsg')) {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return false;
         }
 
@@ -241,7 +241,7 @@ abstract class WPSG_REST_Base {
      * cross-space aggregates, company management, space creation).
      */
     public static function require_system_admin() {
-        if (!current_user_can('manage_options')) {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)) {
             return false;
         }
 
@@ -418,7 +418,7 @@ abstract class WPSG_REST_Base {
         }
 
         // Site-wide admin is always allowed.
-        if (current_user_can('manage_wpsg')) {
+        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return true;
         }
 
@@ -453,7 +453,7 @@ abstract class WPSG_REST_Base {
         }
 
         // Site-wide admin is always allowed.
-        if (current_user_can('manage_wpsg')) {
+        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return true;
         }
 
@@ -573,7 +573,7 @@ abstract class WPSG_REST_Base {
             return false;
         }
         $user_id = get_current_user_id();
-        if ($user_id <= 0 || !current_user_can('manage_wpsg')) {
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return false;
         }
         $campaign_id = intval($request->get_param('id'));
@@ -593,7 +593,7 @@ abstract class WPSG_REST_Base {
             return false;
         }
         $user_id = get_current_user_id();
-        if ($user_id <= 0 || !current_user_can('manage_wpsg')) {
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return false;
         }
         $ids = $request->get_param('ids');
@@ -668,7 +668,7 @@ abstract class WPSG_REST_Base {
     }
 
     public static function require_authenticated() {
-        return is_user_logged_in();
+        return WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER);
     }
 
     // ── Cache version ─────────────────────────────────────────────────────────
@@ -739,7 +739,23 @@ abstract class WPSG_REST_Base {
     }
 
     protected static function can_view_campaign($post_id, $user_id) {
-        // P47-B: Space gate — delegated spaces deny ungranted admins before the admin short-circuit below.
+        $campaign_status = (string) get_post_meta($post_id, 'status', true);
+        $visibility      = get_post_meta($post_id, 'visibility', true) ?: 'private';
+
+        // Public campaigns are world-viewable (in schedule window, not draft)
+        // regardless of space isolation or grants — "public" means public. A
+        // logged-in user must never see less than an anonymous visitor does.
+        if (
+            $visibility === 'public'
+            && $campaign_status !== 'draft'
+            && self::is_campaign_within_schedule_window($post_id)
+        ) {
+            return true;
+        }
+
+        // P47-B: Space gate — delegated spaces deny ungranted admins before the
+        // admin short-circuit below. Applies to non-public / draft / out-of-window
+        // content only; in-window public campaigns already returned above.
         $space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
         if ($space_id > 0 && !self::can_access_space($space_id, intval($user_id))) {
             return false;
@@ -754,7 +770,6 @@ abstract class WPSG_REST_Base {
         }
 
         // P36-C: Draft campaigns are only visible to their author.
-        $campaign_status = (string) get_post_meta($post_id, 'status', true);
         if ($campaign_status === 'draft') {
             if (!$user_id) {
                 return false;
@@ -763,11 +778,7 @@ abstract class WPSG_REST_Base {
             return $post && intval($post->post_author) === $user_id;
         }
 
-        $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
-        if ($visibility === 'public') {
-            return true;
-        }
-
+        // Private campaign within window: explicit deny-list, then grants.
         if (!$user_id) {
             return false;
         }
