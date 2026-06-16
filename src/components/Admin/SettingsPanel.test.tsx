@@ -2125,7 +2125,7 @@ describe('SettingsPanel', () => {
 
   it('enables System & Admin tab via advancedSettingsEnabled switch', async () => {
     render(
-      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} isSystemAdmin />
     );
 
     await waitForTabs();
@@ -2149,7 +2149,7 @@ describe('SettingsPanel', () => {
 
   it('toggles component debug markers from the developer section', async () => {
     render(
-      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} isSystemAdmin />
     );
 
     await waitForTabs();
@@ -2187,7 +2187,7 @@ describe('SettingsPanel', () => {
   // P39-IN1: Integrations tab and webhook section.
   it('renders the Integrations tab', async () => {
     render(
-      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} isSystemAdmin />
     );
 
     await waitForTabs();
@@ -2196,7 +2196,7 @@ describe('SettingsPanel', () => {
 
   it('renders the webhook section when the Integrations tab is active', async () => {
     render(
-      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} isSystemAdmin />
     );
 
     await waitForTabs();
@@ -2222,7 +2222,7 @@ describe('SettingsPanel', () => {
 
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify}
-        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} />
+        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} isSystemAdmin />
     );
 
     await waitForTabs();
@@ -2249,7 +2249,7 @@ describe('SettingsPanel', () => {
 
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify}
-        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} />
+        initialSettings={{ ...seedSettings, advancedSettingsEnabled: true }} isSystemAdmin />
     );
 
     await waitForTabs();

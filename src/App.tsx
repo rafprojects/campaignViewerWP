@@ -99,7 +99,7 @@ function AppContent({
   instanceId?: string;
   authBarMode?: string | undefined;
 }) {
-  const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin } = useAuth();
+  const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin, isSystemAdmin } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
@@ -398,6 +398,7 @@ function AppContent({
                 onNotify={handleAdminNotify}
                 initialSettings={settingsResponse}
                 onSettingsSaved={(saved) => setSettingsQueryData(queryClient, apiClient, saved as unknown as Parameters<typeof setSettingsQueryData>[2])}
+                isSystemAdmin={isSystemAdmin}
                 {...(spaceId !== undefined && { spaceId })}
                 {...(spaceName !== undefined && { spaceName })}
                 {...(instanceId !== undefined && { instanceId })}

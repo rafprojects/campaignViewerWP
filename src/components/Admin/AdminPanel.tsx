@@ -37,6 +37,7 @@ import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { useAuth } from '@/hooks/useAuth';
 
 
 const MediaTab = lazy(() => import('./MediaTab'));
@@ -77,6 +78,9 @@ interface AdminPanelProps {
 export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, initialBuilderTemplateId, initialSpaceId, spaceName, instanceId }: AdminPanelProps) {
   const color = instanceId ? spaceColor(instanceId) : undefined;
   const queryClient = useQueryClient();
+  // P53-A: AdminPanel only mounts for editor-or-above (isAdmin); isSystemAdmin
+  // gates the system-only surfaces (Import, ZIP/rescan, System Audit, etc.).
+  const { isSystemAdmin } = useAuth();
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
   // first use so existing tab state is not lost when upgrading from pre-P36-A.
@@ -106,6 +110,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // P53-A: a non-system-admin must never land on a system-only tab (e.g. a
+  // persisted 'globalAudit' from a prior system-admin session on this browser).
+  useEffect(() => {
+    if (!isSystemAdmin && activeTab === 'globalAudit') {
+      setActiveTab('campaigns');
+    }
+  }, [isSystemAdmin, activeTab, setActiveTab]);
+
   const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', initialSpaceId ?? 'all');
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
@@ -149,7 +162,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const isAllSpaces = selectedSpaceId === 'all';
 
   const { campaigns, pagination: campaignPagination, campaignsLoading: isLoading, campaignsError: error, mutateCampaigns } = useAdminCampaigns(apiClient, selectedSpaceId, campaignPage, CAMPAIGNS_PER_PAGE, campaignFilters);
-  const { data: accessSummaryData } = useAccessSummary(apiClient);
+  const { data: accessSummaryData } = useAccessSummary(apiClient, 1, 200, isSystemAdmin);
   const allCampaigns = useAllCampaignOptions(apiClient, selectedSpaceId);
   const campaignsMutator = useCallback(async () => {
     await mutateCampaigns();
@@ -167,7 +180,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, selectedSpaceId, companiesEnabled);
   const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
-  const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {});
+  const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {}, isSystemAdmin);
 
   // P47-J: pass the active space to the campaign modal so new campaigns get space_id set.
   const activeSpaceId = selectedSpaceId !== 'all' ? parseInt(selectedSpaceId, 10) : undefined;
@@ -414,9 +427,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                 <Menu.Item leftSection={<IconPlus size={14} />} onClick={campaignActions.handleCreate} disabled={isAllSpaces}>
                   New Campaign
                 </Menu.Item>
-                <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)} disabled={isAllSpaces}>
-                  Import
-                </Menu.Item>
+                {isSystemAdmin && (
+                  <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)} disabled={isAllSpaces}>
+                    Import
+                  </Menu.Item>
+                )}
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconStack2 size={14} />} onClick={() => setSpaceManagementOpen(true)}>
                   Manage spaces
@@ -434,11 +449,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   New Campaign
                 </Button>
               </Tooltip>
-              <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Import campaigns'}>
-                <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm" disabled={isAllSpaces}>
-                  Import
-                </Button>
-              </Tooltip>
+              {isSystemAdmin && (
+                <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Import campaigns'}>
+                  <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm" disabled={isAllSpaces}>
+                    Import
+                  </Button>
+                </Tooltip>
+              )}
               <Tooltip label="Manage spaces">
                 <ActionIcon variant="subtle" size="lg" onClick={() => setSpaceManagementOpen(true)} aria-label="Manage spaces">
                   <IconStack2 size={18} />
@@ -467,7 +484,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               { value: 'templates', label: 'Templates' },
               { value: 'access', label: 'Access' },
               { value: 'audit', label: 'Campaign Activity' },
-              { value: 'globalAudit', label: 'System Audit' },
+              // P53-A: System Audit is system-admin only.
+              ...(isSystemAdmin ? [{ value: 'globalAudit', label: 'System Audit' }] : []),
               { value: 'analytics', label: 'Analytics' },
             ]}
             mb="sm"
@@ -481,7 +499,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <Tabs.Tab value="templates">Templates</Tabs.Tab>
             <Tabs.Tab value="access">Access</Tabs.Tab>
             <Tabs.Tab value="audit">Campaign Activity</Tabs.Tab>
-            <Tabs.Tab value="globalAudit">System Audit</Tabs.Tab>
+            {isSystemAdmin && <Tabs.Tab value="globalAudit">System Audit</Tabs.Tab>}
             <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
           </Tabs.List>
         )}
@@ -616,55 +634,60 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
           <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
             <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
-            <Button
-              size="sm"
-              variant="light"
-              loading={mediaZipExporting}
-              style={{ flex: '0 0 auto' }}
-              onClick={handleMediaZipExport}
-              aria-label="Export media library as ZIP"
-            >
-              Export ZIP
-            </Button>
-            <FileButton
-              onChange={(file) => { if (file) handleMediaZipImport(file); }}
-              accept=".zip,application/zip"
-            >
-              {(props) => (
+            {/* P53-A: library-wide media tools (binary export/import, cross-space rescan) are system-admin only. */}
+            {isSystemAdmin && (
+              <>
                 <Button
-                  {...props}
                   size="sm"
                   variant="light"
-                  loading={mediaZipImporting}
+                  loading={mediaZipExporting}
                   style={{ flex: '0 0 auto' }}
-                  aria-label="Import media library from ZIP"
+                  onClick={handleMediaZipExport}
+                  aria-label="Export media library as ZIP"
                 >
-                  Import ZIP
+                  Export ZIP
                 </Button>
-              )}
-            </FileButton>
-            <Button
-              variant="outline"
-              loading={rescanAllLoading}
-              style={{ flex: '0 0 auto' }}
-              onClick={async () => {
-                setRescanAllLoading(true);
-                try {
-                  const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
-                    '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
-                  );
-                  onNotify({
-                    type: 'success', text: result.media_updated > 0
-                      ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
-                      : 'All media types are correct.'
-                  });
-                  onCampaignsUpdated();
-                } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
-                finally { setRescanAllLoading(false); }
-              }}
-            >
-              Rescan All
-            </Button>
+                <FileButton
+                  onChange={(file) => { if (file) handleMediaZipImport(file); }}
+                  accept=".zip,application/zip"
+                >
+                  {(props) => (
+                    <Button
+                      {...props}
+                      size="sm"
+                      variant="light"
+                      loading={mediaZipImporting}
+                      style={{ flex: '0 0 auto' }}
+                      aria-label="Import media library from ZIP"
+                    >
+                      Import ZIP
+                    </Button>
+                  )}
+                </FileButton>
+                <Button
+                  variant="outline"
+                  loading={rescanAllLoading}
+                  style={{ flex: '0 0 auto' }}
+                  onClick={async () => {
+                    setRescanAllLoading(true);
+                    try {
+                      const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
+                        '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
+                      );
+                      onNotify({
+                        type: 'success', text: result.media_updated > 0
+                          ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
+                          : 'All media types are correct.'
+                      });
+                      onCampaignsUpdated();
+                    } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
+                    finally { setRescanAllLoading(false); }
+                  }}
+                >
+                  Rescan All
+                </Button>
+              </>
+            )}
           </Group>
           <ErrorBoundary>
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
@@ -702,6 +725,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             showExpiredGrants={showExpiredGrants}
             onShowExpiredGrantsChange={setShowExpiredGrants}
             isMobile={isMobile}
+            isSystemAdmin={isSystemAdmin}
           />
         </Tabs.Panel>
 
@@ -730,7 +754,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel value="globalAudit" pt="md" component="section">
-          <GlobalAuditTab
+          {isSystemAdmin && <GlobalAuditTab
             entries={globalAuditEntries}
             loading={globalAuditLoading}
             filters={globalAuditFilters}
@@ -745,13 +769,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               ...(globalAuditFilters.severity ? { severity: globalAuditFilters.severity } : {}),
             }, setGlobalAuditZipExporting, `global-audit-log-${Date.now()}.zip`)}
             exportingZip={globalAuditZipExporting}
-          />
+          />}
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
           <ErrorBoundary>
             <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
-              <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} />
+              <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} isSystemAdmin={isSystemAdmin} />
             </Suspense>
           </ErrorBoundary>
         </Tabs.Panel>
@@ -910,7 +934,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Suspense>
       )}
-      {campaignActions.importModalOpen && (
+      {campaignActions.importModalOpen && isSystemAdmin && (
         <Suspense fallback={null}>
           <CampaignImportModal
             opened={campaignActions.importModalOpen}
@@ -948,6 +972,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             onClose={() => setSpaceManagementOpen(false)}
             onNotify={onNotify}
             onSpacesChanged={() => void queryClient.invalidateQueries({ queryKey: ['spaces'] })}
+            isSystemAdmin={isSystemAdmin}
           />
         </Suspense>
       )}

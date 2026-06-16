@@ -65,6 +65,12 @@ interface AccessTabProps {
   showExpiredGrants: boolean;
   onShowExpiredGrantsChange: (value: boolean) => void;
   isMobile?: boolean;
+  /**
+   * P53-A: Company / All views read company-level access (require_system_admin).
+   * Editors only manage per-campaign access, so the view-mode toggle is hidden
+   * for them and the mode stays 'campaign'.
+   */
+  isSystemAdmin?: boolean;
 }
 
 export function AccessTab({
@@ -87,6 +93,7 @@ export function AccessTab({
   showExpiredGrants,
   onShowExpiredGrantsChange,
   isMobile = false,
+  isSystemAdmin = false,
 }: AccessTabProps) {
   const {
     userSearchResults,
@@ -119,19 +126,22 @@ export function AccessTab({
       <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
         <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
           <Group align="flex-end" gap="md" wrap="wrap">
-            <Box>
-              <Text size="sm" fw={500} mb={4}>View By</Text>
-              <SegmentedControl
-                value={accessViewMode}
-                onChange={(v) => onAccessViewModeChange(v as AccessViewMode)}
-                data={[
-                  { value: 'campaign', label: '📋 Campaign' },
-                  { value: 'company', label: '🏢 Company' },
-                  { value: 'all', label: '📊 All' },
-                ]}
-                aria-label="Access view mode"
-              />
-            </Box>
+            {/* P53-A: Company / All are system-admin only; editors see campaign access only. */}
+            {isSystemAdmin && (
+              <Box>
+                <Text size="sm" fw={500} mb={4}>View By</Text>
+                <SegmentedControl
+                  value={accessViewMode}
+                  onChange={(v) => onAccessViewModeChange(v as AccessViewMode)}
+                  data={[
+                    { value: 'campaign', label: '📋 Campaign' },
+                    { value: 'company', label: '🏢 Company' },
+                    { value: 'all', label: '📊 All' },
+                  ]}
+                  aria-label="Access view mode"
+                />
+              </Box>
+            )}
 
             {accessViewMode === 'campaign' ? (
               <CampaignSelector

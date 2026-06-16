@@ -174,9 +174,11 @@ describe('AnalyticsDashboard', () => {
     const getCampaignMediaAnalytics = vi.fn().mockResolvedValue({ items: [] });
 
     render(
+      // P53-A: the all-campaigns summary fetch/refetch is system-admin only.
       <AnalyticsDashboard
         apiClient={makeApiClient({ getCampaignAnalytics, getAnalyticsSummary, getCampaignMediaAnalytics })}
         campaigns={campaigns}
+        isSystemAdmin
       />,
     );
 
@@ -188,5 +190,26 @@ describe('AnalyticsDashboard', () => {
     await waitFor(() => expect(getCampaignAnalytics).toHaveBeenCalledTimes(2));
     expect(getAnalyticsSummary).toHaveBeenCalledTimes(2);
     expect(getCampaignMediaAnalytics).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not fetch the all-campaigns summary for a non-system-admin (P53-A)', async () => {
+    const getCampaignAnalytics = vi.fn().mockResolvedValue(mockAnalytics);
+    const getAnalyticsSummary = vi.fn().mockResolvedValue({
+      totalViews: 5000, uniqueVisitors: 1800, topCampaigns: [],
+    });
+    const getCampaignMediaAnalytics = vi.fn().mockResolvedValue({ items: [] });
+
+    render(
+      <AnalyticsDashboard
+        apiClient={makeApiClient({ getCampaignAnalytics, getAnalyticsSummary, getCampaignMediaAnalytics })}
+        campaigns={campaigns}
+        isSystemAdmin={false}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByText('1,200')).toBeInTheDocument());
+    // Editor sees per-campaign stats but the summary endpoint is never hit.
+    expect(getAnalyticsSummary).not.toHaveBeenCalled();
+    expect(screen.queryByText(/all campaigns/i)).not.toBeInTheDocument();
   });
 });

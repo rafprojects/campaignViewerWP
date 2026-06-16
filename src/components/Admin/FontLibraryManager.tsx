@@ -20,9 +20,14 @@ interface Props {
   apiClient: ApiClient;
   /** Called whenever the font list changes so parent can pass to TypographyEditors. */
   onFontsChange?: (fonts: FontLibraryEntry[]) => void;
+  /**
+   * P53-A: deleting a font is system-admin only (`fonts.delete` =
+   * require_system_admin). Editors can still upload + toggle universal.
+   */
+  isSystemAdmin?: boolean;
 }
 
-export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
+export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = false }: Props) {
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -117,16 +122,18 @@ export function FontLibraryManager({ apiClient, onFontsChange }: Props) {
                 >
                   {f.isUniversal ? <IconWorld size={14} /> : <IconWorldOff size={14} />}
                 </ActionIcon>
-                <ActionIcon
-                  variant="subtle"
-                  color="red"
-                  size="sm"
-                  onClick={() => handleDelete(f.id)}
-                  title={`Delete ${f.name}`}
-                  aria-label={`Delete ${f.name}`}
-                >
-                  <IconTrash size={14} />
-                </ActionIcon>
+                {isSystemAdmin && (
+                  <ActionIcon
+                    variant="subtle"
+                    color="red"
+                    size="sm"
+                    onClick={() => handleDelete(f.id)}
+                    title={`Delete ${f.name}`}
+                    aria-label={`Delete ${f.name}`}
+                  >
+                    <IconTrash size={14} />
+                  </ActionIcon>
+                )}
               </Group>
             </Group>
           ))}

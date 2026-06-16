@@ -55,6 +55,11 @@ interface SelectItem {
 interface AnalyticsDashboardProps {
   apiClient: ApiClient;
   campaigns: SelectItem[];
+  /**
+   * P53-A: the all-campaigns summary (totals + top campaigns) is
+   * require_system_admin. Editors see only the per-campaign view.
+   */
+  isSystemAdmin?: boolean;
 }
 
 type RangePreset = '7' | '30' | '90';
@@ -99,7 +104,7 @@ function StatCard({
 
 setWpsgDebugDisplayName(StatCard, 'AdminPanel:StatCard');
 
-export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardProps) {
+export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false }: AnalyticsDashboardProps) {
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
   const [preset, setPreset] = useState<RangePreset>('30');
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
@@ -135,7 +140,7 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
     'all',
     dateRange.from,
     dateRange.to,
-    true,
+    isSystemAdmin,
     pollingOptions,
   );
 
@@ -160,9 +165,11 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
 
   const handleRefreshAll = useCallback(() => {
     void refetchAnalytics();
-    void refetchSummary();
+    // A manual refetch ignores `enabled`, so only refresh the summary for a
+    // system admin (otherwise it would hit the require_system_admin endpoint).
+    if (isSystemAdmin) void refetchSummary();
     void refetchMedia();
-  }, [refetchAnalytics, refetchSummary, refetchMedia]);
+  }, [refetchAnalytics, refetchSummary, refetchMedia, isSystemAdmin]);
 
   const chartData = (data?.daily ?? []).map((d) => ({
     date: d.date.slice(5),
@@ -175,17 +182,23 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
   return (
     <Stack gap="md">
       {/* ── Summary strip ─────────────────────────────────────────────────── */}
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="sm">
-        <StatCard
-          label="Total Views (all campaigns)"
-          value={summaryData?.totalViews ?? null}
-          icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
-        />
-        <StatCard
-          label="Unique Visitors (all campaigns)"
-          value={summaryData?.uniqueVisitors ?? null}
-          icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
-        />
+      {/* P53-A: the "all campaigns" totals are system-admin only; editors see
+          only the selected-campaign stats. */}
+      <SimpleGrid cols={{ base: 2, sm: isSystemAdmin ? 4 : 2 }} spacing="sm">
+        {isSystemAdmin && (
+          <>
+            <StatCard
+              label="Total Views (all campaigns)"
+              value={summaryData?.totalViews ?? null}
+              icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
+            />
+            <StatCard
+              label="Unique Visitors (all campaigns)"
+              value={summaryData?.uniqueVisitors ?? null}
+              icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
+            />
+          </>
+        )}
         <StatCard
           label="Views (selected campaign)"
           value={data?.totalViews ?? null}
@@ -390,8 +403,8 @@ export function AnalyticsDashboard({ apiClient, campaigns }: AnalyticsDashboardP
             </Stack>
           </Paper>
 
-          {/* ── Top campaigns table ───────────────────────────────────────── */}
-          {(summaryData?.topCampaigns?.length ?? 0) > 0 && (
+          {/* ── Top campaigns table (system-admin only, P53-A) ────────────── */}
+          {isSystemAdmin && (summaryData?.topCampaigns?.length ?? 0) > 0 && (
             <Paper withBorder p="md" radius="md">
               <Stack gap="sm">
                 <Title order={5} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

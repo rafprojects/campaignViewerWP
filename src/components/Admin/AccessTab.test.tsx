@@ -40,6 +40,7 @@ type AccessTabWrapperProps = {
   accessEntriesCount?: number;
   accessLoading?: boolean;
   accessRows?: React.ReactNode;
+  isSystemAdmin?: boolean;
 } & AccessStateOverrides;
 
 function AccessTabWrapper({
@@ -57,6 +58,9 @@ function AccessTabWrapper({
   accessEntriesCount = 0,
   accessLoading = false,
   accessRows = null,
+  // P53-A: the View-By toggle (Company/All) is system-admin only; default the
+  // harness to a system admin so the existing toggle/company-mode tests hold.
+  isSystemAdmin = true,
   // accessState overrides
   userSearchResults = [],
   userSearchQuery = '',
@@ -122,6 +126,7 @@ function AccessTabWrapper({
       accessLoading={accessLoading}
       accessRows={accessRows}
       accessState={accessState}
+      isSystemAdmin={isSystemAdmin}
     />
   );
 }
@@ -142,6 +147,14 @@ describe('AccessTab', () => {
     expect(companyOption).not.toBeNull();
     fireEvent.click(companyOption);
     expect(onAccessViewModeChange).toHaveBeenCalled();
+  });
+
+  it('hides the Company/All view-mode toggle for a non-system-admin (P53-A)', () => {
+    render(<AccessTabWrapper isSystemAdmin={false} />);
+    // Editors manage per-campaign access only; the company/all toggle is gone.
+    expect(screen.queryByRole('radiogroup', { name: /access view mode/i })).not.toBeInTheDocument();
+    // The campaign access UI (user search) is still present.
+    expect(screen.getByPlaceholderText(/search name, email/i)).toBeInTheDocument();
   });
 
   it('renders company Select in company mode and fires onSelectedCompanyChange', () => {

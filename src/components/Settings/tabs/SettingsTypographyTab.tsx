@@ -13,6 +13,8 @@ interface SettingsTypographyTabProps {
   typographyOverrides: Record<string, TypographyOverride>;
   updateSetting: <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => void;
   updateTypoOverride: (elementId: string, override: TypographyOverride) => void;
+  /** P53-A: gates the font-delete action (system-admin only). */
+  isSystemAdmin?: boolean;
 }
 
 export const SettingsTypographyTab = memo(function SettingsTypographyTab({
@@ -22,6 +24,7 @@ export const SettingsTypographyTab = memo(function SettingsTypographyTab({
   typographyOverrides,
   updateSetting,
   updateTypoOverride,
+  isSystemAdmin = false,
 }: SettingsTypographyTabProps) {
   return (
     <TypographySettingsSection
@@ -31,6 +34,7 @@ export const SettingsTypographyTab = memo(function SettingsTypographyTab({
       onFontsChange={(fonts) => setCustomFonts(fonts)}
       onResetAll={() => updateSetting('typographyOverrides', {})}
       onOverrideChange={updateTypoOverride}
+      isSystemAdmin={isSystemAdmin}
     />
   );
 });

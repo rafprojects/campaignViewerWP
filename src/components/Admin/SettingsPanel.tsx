@@ -148,6 +148,8 @@ interface SettingsPanelProps {
   instanceId?: string | undefined;
   /** Render the Drawer via a React portal (to document.body). Defaults true so the Drawer escapes any CSS transform/contain stacking context on the shortcode host. */
   withinPortal?: boolean;
+  /** P53-A: gates the system-admin-only Integrations + System & Admin tabs (global mode only). */
+  isSystemAdmin?: boolean;
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -196,6 +198,8 @@ interface SettingsPanelTabsContentProps {
   tooltipLabel: SettingsPanelTooltipRenderer;
   /** When set, global-only tabs (Integrations, System & Admin) are hidden. */
   spaceId?: number;
+  /** P53-A: Integrations + System & Admin are system-admin only (webhooks etc.). */
+  isSystemAdmin?: boolean;
 }
 
 const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = ({
@@ -213,6 +217,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   updateTypoOverride,
   tooltipLabel,
   spaceId,
+  isSystemAdmin = false,
 }) => {
   const isSpaceMode = spaceId != null;
   return <Stack gap="md">
@@ -254,12 +259,12 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
           Typography
         </Tabs.Tab>
-        {!isSpaceMode && (
+        {!isSpaceMode && isSystemAdmin && (
           <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
             Integrations
           </Tabs.Tab>
         )}
-        {!isSpaceMode && settings.advancedSettingsEnabled && (
+        {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
           </Tabs.Tab>
@@ -308,16 +313,17 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
           typographyOverrides={settings.typographyOverrides}
           updateSetting={updateSetting}
           updateTypoOverride={updateTypoOverride}
+          isSystemAdmin={isSystemAdmin}
         />
       </Tabs.Panel>
 
-      {!isSpaceMode && (
+      {!isSpaceMode && isSystemAdmin && (
         <Tabs.Panel value="integrations" pt="md">
           <SettingsIntegrationsTab apiClient={apiClient} />
         </Tabs.Panel>
       )}
 
-      {!isSpaceMode && settings.advancedSettingsEnabled && (
+      {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           <SettingsSystemAdminTab
             settings={settings}
@@ -334,7 +340,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
-export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true }: SettingsPanelProps) {
+export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
   const color = instanceId ? spaceColor(instanceId) : undefined;
   const theme = useMantineTheme();
   const isDark = useComputedColorScheme('light') === 'dark';
@@ -616,6 +622,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               setCustomFonts={setCustomFonts}
               updateTypoOverride={updateTypoOverride}
               tooltipLabel={tt}
+              isSystemAdmin={isSystemAdmin}
               {...(spaceId != null ? { spaceId } : {})}
             />
           </Box>
