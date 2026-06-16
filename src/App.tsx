@@ -99,7 +99,7 @@ function AppContent({
   instanceId?: string;
   authBarMode?: string | undefined;
 }) {
-  const { permissions, isAuthenticated, isReady, login, logout, user } = useAuth();
+  const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
 
@@ -115,7 +115,6 @@ function AppContent({
     getInitialValueInEffect: false,
     deserialize: (value) => (value === 'hide' || value === 'lock' ? value : accessMode),
   });
-  const isAdmin = user?.role === 'admin';
   const [campaignLoadProgress, setCampaignLoadProgress] = useState<{ total: number; completed: number }>({ total: 0, completed: 0 });
 
   // ── P30-D: Builder deep-link bootstrap ─────────────────────────────────────

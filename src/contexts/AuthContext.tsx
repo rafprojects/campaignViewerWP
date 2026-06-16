@@ -6,6 +6,10 @@ interface AuthContextValue {
   permissions: string[];
   isAuthenticated: boolean;
   isReady: boolean;
+  /** Editor-or-above (manage_wpsg): can edit. True for both `editor` and `admin`. */
+  isAdmin: boolean;
+  /** System admin (manage_options): full control. Gates system-only surfaces (P53-A). */
+  isSystemAdmin: boolean;
   login: (email: string, password: string) => Promise<AuthSession>;
   logout: () => Promise<void>;
 }
@@ -96,6 +100,10 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       permissions,
       isAuthenticated: Boolean(user),
       isReady,
+      // P53-A: tier semantics derived once here. `admin` (system admin) is a
+      // superset of `editor`, so both can edit.
+      isAdmin: user?.role === 'editor' || user?.role === 'admin',
+      isSystemAdmin: user?.role === 'admin',
       login,
       logout,
     }),

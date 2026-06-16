@@ -69,20 +69,37 @@ describe('WpJwtProvider', () => {
     await expect(provider.login('test@example.com', 'bad-pass')).rejects.toThrow('Invalid username.');
   });
 
-  it('marks user as admin when permissions response indicates admin', async () => {
+  it('marks user as editor when permissions response indicates manage_wpsg only (P53-A)', async () => {
     localStorage.setItem('wpsg_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
     localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ campaignIds: ['1'], isAdmin: true }),
+      json: async () => ({ campaignIds: ['1'], isAdmin: true, isSystemAdmin: false }),
     });
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
 
     expect(permissions).toEqual(['1']);
+    const updatedUser = JSON.parse(localStorage.getItem('wpsg_user') ?? '{}');
+    expect(updatedUser.role).toBe('editor');
+  });
+
+  it('marks user as admin when permissions response indicates system admin (P53-A)', async () => {
+    localStorage.setItem('wpsg_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
+    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ campaignIds: ['1'], isAdmin: true, isSystemAdmin: true }),
+    });
+
+    const provider = new WpJwtProvider({ apiBaseUrl });
+    await provider.getPermissions();
+
     const updatedUser = JSON.parse(localStorage.getItem('wpsg_user') ?? '{}');
     expect(updatedUser.role).toBe('admin');
   });
