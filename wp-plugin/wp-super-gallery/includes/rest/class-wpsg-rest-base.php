@@ -508,20 +508,41 @@ abstract class WPSG_REST_Base {
     }
 
     /**
-     * P50-A: Permission callback for cross-space campaign moves — requires
-     * 'owner' level on BOTH the campaign's current space and the target space.
-     *
-     * manage_options users resolve to 'owner' everywhere (the super-admin
-     * bypass); manage_wpsg users resolve to 'owner' only in open-mode spaces,
-     * so a manage_wpsg-only user cannot move campaigns into or out of a
-     * delegated space they are not explicitly granted owner on.
+     * P53-D2: per-space admin gate — requires manage_wpsg AND access to the space
+     * in the request's `id` param. Space management + access-management are
+     * admin-tier: a non-admin viewer-grantee can READ the space
+     * (require_space_member) but cannot manage it. manage_options ⇒ allowed
+     * everywhere; open-mode manage_wpsg ⇒ allowed; delegated ⇒ explicit space
+     * grant required (closes F2 for space management).
+     */
+    public static function require_space_admin(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::can_access_space($space_id, $user_id);
+    }
+
+    /**
+     * P50-A / P53-D2: Permission callback for cross-space campaign moves —
+     * requires manage_wpsg AND access to BOTH the campaign's current space and
+     * the target space. manage_options resolves to access everywhere; an
+     * open-mode manage_wpsg editor has access to open spaces; a delegated-space
+     * editor needs an explicit grant on both spaces.
      */
     public static function require_campaign_space_move(WP_REST_Request $request): bool {
         if (!self::verify_admin_auth()) {
             return false;
         }
         $user_id = get_current_user_id();
-        if ($user_id <= 0) {
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return false;
         }
         $campaign_id     = intval($request->get_param('id'));
@@ -535,11 +556,14 @@ abstract class WPSG_REST_Base {
             // Campaign predates the spaces backfill — treat the default space as its source.
             $source_space_id = intval(get_option('wpsg_default_space_id'));
         }
-        if ($source_space_id > 0 && self::get_effective_space_level($user_id, $source_space_id) !== 'owner') {
+        // Use the archived-agnostic level check (not can_access_space) so the
+        // handler can still return its 404 for an archived target and so a
+        // campaign can be moved OUT of an archived source space.
+        if ($source_space_id > 0 && self::get_effective_space_level($user_id, $source_space_id) === '') {
             return false;
         }
 
-        return self::get_effective_space_level($user_id, $target_space_id) === 'owner';
+        return self::get_effective_space_level($user_id, $target_space_id) !== '';
     }
 
     /**

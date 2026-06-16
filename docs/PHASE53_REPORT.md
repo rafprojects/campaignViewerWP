@@ -11,7 +11,7 @@
 | P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel to its spaces; template/asset delete-confirm modals that handle the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** | To do | High |
 | P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | **Done 2026-06-15** | Low |
 | P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | **Done 2026-06-15** | Low |
-| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). Staged: **D1 (campaign+company) done 2026-06-15**; D2 (space) + D3 (frontend AccessTab) remaining | In progress | Medium |
+| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). Staged: **D1 (campaign+company) + D2 (space) done 2026-06-15**; D3 (frontend AccessTab) remaining | In progress | Medium |
 
 ---
 
@@ -89,9 +89,12 @@ Staged delivery:
 - **Reduced** the campaign / company / approve grant `access_level` enums to `['viewer']` (`class-wpsg-access-controller.php`). Legacy editor/owner grants in stored data degrade gracefully to "view-only" (gating ignores the level; viewing still honors the grant) — no data migration.
 - **Tests:** overhauled `WPSG_P33C_Role_Enforcement_Test` (a non-admin editor/owner grant now → 403 on every mutation) and `WPSG_P33B_Access_Level_Test` (viewer-only storage); new `WPSG_P53D_Grant_Model_Test` (a `wpsg_editor` edits in accessible spaces, is denied in a delegated space without access, allowed with a space grant; a legacy grant can view but not edit; the grant endpoint rejects non-viewer levels). Full PHPUnit suite green — **1018 tests, 12209 assertions, 0 failures**.
 
-### D2 — Space grant model (To do)
+### D2 — Space grant model (Done 2026-06-15)
 
-Space access-management + management endpoints → `require_space_admin` (new: manage_wpsg + space access); space grant `access_level` enum → viewer-only; relax `require_campaign_space_move` from owner-level to manage_wpsg + access to both spaces; update `WPSG_P47_Spaces_Isolation_Test`.
+- Added `WPSG_REST_Base::require_space_admin()` (manage_wpsg + space access) and flipped the **9** space management/access-management endpoints (update, delete, access list/grant/revoke, resolve-user, settings.update, library associate/dissociate) from `require_space_owner` to it. Space reads (`space.read` / `settings.read` / `library.read`) stay `require_space_member`, so a viewer-grantee can still read a space but not manage it. `require_space_owner` is now unused (deprecated in the legend).
+- Reduced the space grant `access_level` enum to `['viewer']`.
+- Relaxed `require_campaign_space_move` from owner-level on both spaces to **manage_wpsg + access to both** source and target. Uses the archived-agnostic level check (not `can_access_space`) so the handler still returns 404 for an archived target and a campaign can be moved *out* of an archived source.
+- **Tests:** extended `WPSG_P53D_Grant_Model_Test` (editor manages an accessible space; denied in a delegated space without access; a viewer-grantee can read but not manage; the space grant endpoint rejects non-viewer levels). The one affected P50-A move case (archived target) keeps its 404 via the archived-agnostic check. Full PHPUnit suite green — **1022 tests, 12215 assertions, 0 failures**.
 
 ### D3 — Frontend grant UI (To do)
 

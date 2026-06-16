@@ -31,9 +31,10 @@ if (!defined('ABSPATH')) {
  *   require_campaign_owner      DEPRECATED (P53-D) — unused; managing is role+space-scoped now
  *   require_campaign_space_access       manage_wpsg + space — per-campaign admin op, scoped to the campaign's space
  *   require_campaign_batch_space_access manage_wpsg + space — batch variant, every id's space must be accessible
- *   require_campaign_space_move grant         — owner of BOTH source & target space
- *   require_space_member        grant         — any access level in the space
- *   require_space_owner         grant         — owner level in the space
+ *   require_campaign_space_move manage_wpsg + space — manage_wpsg + access to BOTH source & target space
+ *   require_space_member        grant         — any access level in the space (read)
+ *   require_space_admin         manage_wpsg + space — per-space management/access, scoped to the space
+ *   require_space_owner         DEPRECATED (P53-D) — unused; space mgmt is role+space-scoped now
  *
  * ── P52-A staging ─────────────────────────────────────────────────────────
  * A1 (this commit) wires the map to the *current* gates verbatim — a provable
@@ -165,17 +166,17 @@ final class WPSG_Permissions {
         'spaces.list'                      => 'require_admin',              // GET    /spaces
         'spaces.create'                    => 'require_system_admin',              // POST   /spaces
         'space.read'                       => 'require_space_member',       // GET    /spaces/{id}
-        'space.update'                     => 'require_space_owner',        // PUT    /spaces/{id}
-        'space.delete'                     => 'require_space_owner',        // DELETE /spaces/{id}
-        'space.access.list'                => 'require_space_owner',        // GET    /spaces/{id}/access
-        'space.access.grant'               => 'require_space_owner',        // POST   /spaces/{id}/access
-        'space.access.revoke'              => 'require_space_owner',        // DELETE /spaces/{id}/access/{userId}
-        'space.resolve_user'               => 'require_space_owner',        // GET    /spaces/{id}/resolve-user
+        'space.update'                     => 'require_space_admin',        // PUT    /spaces/{id}
+        'space.delete'                     => 'require_space_admin',        // DELETE /spaces/{id}
+        'space.access.list'                => 'require_space_admin',        // GET    /spaces/{id}/access
+        'space.access.grant'               => 'require_space_admin',        // POST   /spaces/{id}/access
+        'space.access.revoke'              => 'require_space_admin',        // DELETE /spaces/{id}/access/{userId}
+        'space.resolve_user'               => 'require_space_admin',        // GET    /spaces/{id}/resolve-user
         'space.settings.read'              => 'require_space_member',       // GET    /spaces/{id}/settings
-        'space.settings.update'            => 'require_space_owner',        // PUT    /spaces/{id}/settings
+        'space.settings.update'            => 'require_space_admin',        // PUT    /spaces/{id}/settings
         'space.library.read'               => 'require_space_member',       // GET    /spaces/{id}/library
-        'space.library.associate'          => 'require_space_owner',        // POST   /spaces/{id}/library
-        'space.library.dissociate'         => 'require_space_owner',        // DELETE /spaces/{id}/library
+        'space.library.associate'          => 'require_space_admin',        // POST   /spaces/{id}/library
+        'space.library.dissociate'         => 'require_space_admin',        // DELETE /spaces/{id}/library
 
         // ── WPSG_Campaign_Controller ───────────────────────────────────────
         'campaigns.list'                   => 'rate_limit_public',          // GET    /campaigns

@@ -88,7 +88,8 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
                     ],
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: managing comes from the wpsg_editor role; space grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                     'expires_at' => [
