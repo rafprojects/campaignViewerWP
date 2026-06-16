@@ -394,14 +394,13 @@ export function AccessTab({
                 </>
               )}
 
-              {/* P33-D: role selector — hidden when action is 'deny' (deny carries no role) */}
+              {/* P53-D: access grants are viewer-only — editing/managing comes from the
+                  wpsg_editor role, not from per-campaign grants. Hidden when action is 'deny'. */}
               {accessAction !== 'deny' && (
                 <Select
                   label={<Text size="sm" fw={500}>Role</Text>}
                   data={[
                     { value: 'viewer', label: '👁 Viewer' },
-                    { value: 'editor', label: '✏️ Editor' },
-                    { value: 'owner', label: '👑 Owner' },
                   ]}
                   value={accessLevel}
                   onChange={(v) => onAccessLevelChange((v as 'viewer' | 'editor' | 'owner') ?? 'viewer')}

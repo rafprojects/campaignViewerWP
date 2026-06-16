@@ -11,7 +11,7 @@
 | P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel to its spaces; template/asset delete-confirm modals that handle the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** | To do | High |
 | P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | **Done 2026-06-15** | Low |
 | P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | **Done 2026-06-15** | Low |
-| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). Staged: **D1 (campaign+company) + D2 (space) done 2026-06-15**; D3 (frontend AccessTab) remaining | In progress | Medium |
+| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). D1 (campaign+company) + D2 (space) + D3 (frontend AccessTab) | **Done 2026-06-15** | Medium |
 
 ---
 
@@ -96,9 +96,9 @@ Staged delivery:
 - Relaxed `require_campaign_space_move` from owner-level on both spaces to **manage_wpsg + access to both** source and target. Uses the archived-agnostic level check (not `can_access_space`) so the handler still returns 404 for an archived target and a campaign can be moved *out* of an archived source.
 - **Tests:** extended `WPSG_P53D_Grant_Model_Test` (editor manages an accessible space; denied in a delegated space without access; a viewer-grantee can read but not manage; the space grant endpoint rejects non-viewer levels). The one affected P50-A move case (archived target) keeps its 404 via the archived-agnostic check. Full PHPUnit suite green — **1022 tests, 12215 assertions, 0 failures**.
 
-### D3 — Frontend grant UI (To do)
+### D3 — Frontend grant UI (Done 2026-06-15)
 
-`src/components/Admin/AccessTab.tsx` role dropdown → viewer-only (remove the ✏️ Editor / 👑 Owner options); `useAdminAccessState` default already `viewer`.
+`src/components/Admin/AccessTab.tsx` role dropdown reduced to **viewer-only** (removed the ✏️ Editor / 👑 Owner options) so the grant UI matches the server. `AccessTab.test.tsx` green (15/15). (The role state/prop type is left as the viewer/editor/owner union for now; a fuller redesign of the grant UI belongs to P53-A.)
 
 ---
 
