@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend UX deferred → PHASE53) | Done | High |
+| P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend UX deferred → PHASE53) | ✅ Done | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |

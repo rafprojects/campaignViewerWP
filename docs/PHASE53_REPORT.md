@@ -9,9 +9,9 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel to its spaces; template/asset delete-confirm modals that handle the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** | To do | High |
-| P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | **Done 2026-06-15** | Low |
-| P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | **Done 2026-06-15** | Low |
-| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). D1 (campaign+company) + D2 (space) + D3 (frontend AccessTab) | **Done 2026-06-15** | Medium |
+| P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | ✅ **Done 2026-06-15** | Low |
+| P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | ✅ **Done 2026-06-15** | Low |
+| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). D1 (campaign+company) + D2 (space) + D3 (frontend AccessTab) | ✅ **Done 2026-06-15** | Medium |
 
 ---
 
