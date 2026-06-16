@@ -27,8 +27,8 @@ if (!defined('ABSPATH')) {
  *   rate_limit_authenticated    manage_options— user creation, rate-limited (System Admin)
  *   require_admin               manage_wpsg   — global admin (bare cap, no space scope)
  *   require_system_admin        manage_options— System Admin only (WP dashboard tier)
- *   require_campaign_editor     grant         — campaign editor|owner (manage_wpsg bypass)
- *   require_campaign_owner      grant         — campaign owner (manage_wpsg bypass)
+ *   require_campaign_editor     DEPRECATED (P53-D) — unused; editing is role+space-scoped now
+ *   require_campaign_owner      DEPRECATED (P53-D) — unused; managing is role+space-scoped now
  *   require_campaign_space_access       manage_wpsg + space — per-campaign admin op, scoped to the campaign's space
  *   require_campaign_batch_space_access manage_wpsg + space — batch variant, every id's space must be accessible
  *   require_campaign_space_move grant         — owner of BOTH source & target space
@@ -70,13 +70,13 @@ final class WPSG_Permissions {
 
         // ── WPSG_Access_Controller ─────────────────────────────────────────
         'campaigns.access_summary.read'    => 'require_system_admin',              // GET    /campaigns/access-summary
-        'campaign.access.list'             => 'require_campaign_owner',     // GET    /campaigns/{id}/access
-        'campaign.access.grant'            => 'require_campaign_owner',     // POST   /campaigns/{id}/access
-        'campaign.access.revoke'           => 'require_campaign_owner',     // DELETE /campaigns/{id}/access/{userId}
+        'campaign.access.list'             => 'require_campaign_space_access',     // GET    /campaigns/{id}/access
+        'campaign.access.grant'            => 'require_campaign_space_access',     // POST   /campaigns/{id}/access
+        'campaign.access.revoke'           => 'require_campaign_space_access',     // DELETE /campaigns/{id}/access/{userId}
         'campaign.access_request.submit'   => 'rate_limit_public',          // POST   /campaigns/{id}/access-requests
-        'campaign.access_request.list'     => 'require_campaign_owner',     // GET    /campaigns/{id}/access-requests
-        'campaign.access_request.approve'  => 'require_campaign_owner',     // POST   /campaigns/{id}/access-requests/{token}/approve
-        'campaign.access_request.deny'     => 'require_campaign_owner',     // POST   /campaigns/{id}/access-requests/{token}/deny
+        'campaign.access_request.list'     => 'require_campaign_space_access',     // GET    /campaigns/{id}/access-requests
+        'campaign.access_request.approve'  => 'require_campaign_space_access',     // POST   /campaigns/{id}/access-requests/{token}/approve
+        'campaign.access_request.deny'     => 'require_campaign_space_access',     // POST   /campaigns/{id}/access-requests/{token}/deny
         'campaign.access_request.magic_approve' => 'rate_limit_magic_approve', // GET /campaigns/{id}/access-requests/{token}/magic-approve
         'company.access.list'              => 'require_system_admin',              // GET    /companies/{id}/access
         'company.access.grant'             => 'require_system_admin',              // POST   /companies/{id}/access
@@ -87,12 +87,12 @@ final class WPSG_Permissions {
         'media.usage_summary.read'         => 'require_system_admin',              // GET    /media/usage-summary
         'media.usage.read'                 => 'require_system_admin',              // GET    /media/{mediaId}/usage
         'campaign.media.list'              => 'rate_limit_public',          // GET    /campaigns/{id}/media
-        'campaign.media.create'            => 'require_campaign_editor',    // POST   /campaigns/{id}/media
-        'campaign.media.create_batch'      => 'require_campaign_editor',    // POST   /campaigns/{id}/media/batch
-        'campaign.media.reorder'           => 'require_campaign_editor',    // PUT    /campaigns/{id}/media/reorder
-        'campaign.media.rescan'            => 'require_campaign_editor',    // POST   /campaigns/{id}/media/rescan
-        'campaign.media.update'            => 'require_campaign_editor',    // PUT    /campaigns/{id}/media/{mediaId}
-        'campaign.media.delete'            => 'require_campaign_editor',    // DELETE /campaigns/{id}/media/{mediaId}
+        'campaign.media.create'            => 'require_campaign_space_access',    // POST   /campaigns/{id}/media
+        'campaign.media.create_batch'      => 'require_campaign_space_access',    // POST   /campaigns/{id}/media/batch
+        'campaign.media.reorder'           => 'require_campaign_space_access',    // PUT    /campaigns/{id}/media/reorder
+        'campaign.media.rescan'            => 'require_campaign_space_access',    // POST   /campaigns/{id}/media/rescan
+        'campaign.media.update'            => 'require_campaign_space_access',    // PUT    /campaigns/{id}/media/{mediaId}
+        'campaign.media.delete'            => 'require_campaign_space_access',    // DELETE /campaigns/{id}/media/{mediaId}
         'media.rescan_all'                 => 'require_system_admin',              // POST   /media/rescan-all
         'media.library.list'               => 'require_system_admin',              // GET    /media/library
         'media.upload'                     => 'require_admin',              // POST   /media/upload
@@ -181,11 +181,11 @@ final class WPSG_Permissions {
         'campaigns.list'                   => 'rate_limit_public',          // GET    /campaigns
         'campaigns.create'                 => 'require_admin',              // POST   /campaigns
         'campaign.read'                    => 'rate_limit_public',          // GET    /campaigns/{id}
-        'campaign.update'                  => 'require_campaign_editor',    // PUT    /campaigns/{id}
-        'campaign.delete'                  => 'require_campaign_owner',     // DELETE /campaigns/{id}
-        'campaign.archive'                 => 'require_campaign_owner',     // POST   /campaigns/{id}/archive
-        'campaign.restore'                 => 'require_campaign_owner',     // POST   /campaigns/{id}/restore
-        'campaign.duplicate'               => 'require_campaign_editor',    // POST   /campaigns/{id}/duplicate
+        'campaign.update'                  => 'require_campaign_space_access',    // PUT    /campaigns/{id}
+        'campaign.delete'                  => 'require_campaign_space_access',     // DELETE /campaigns/{id}
+        'campaign.archive'                 => 'require_campaign_space_access',     // POST   /campaigns/{id}/archive
+        'campaign.restore'                 => 'require_campaign_space_access',     // POST   /campaigns/{id}/restore
+        'campaign.duplicate'               => 'require_campaign_space_access',    // POST   /campaigns/{id}/duplicate
         'campaign.move'                    => 'require_campaign_space_move', // POST  /campaigns/{id}/move
         'campaigns.batch'                  => 'require_campaign_batch_space_access',              // POST   /campaigns/batch
         'campaign.audit.read'              => 'require_campaign_space_access',              // GET    /campaigns/{id}/audit

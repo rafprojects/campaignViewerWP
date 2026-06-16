@@ -51,7 +51,8 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                     // P33-B: per-campaign role level.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],
@@ -100,7 +101,8 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                     // P33-B: role to assign on approval. Defaults to 'viewer'.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],
@@ -138,7 +140,8 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                     // P33-B: per-company role level propagated to all company campaigns.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],

@@ -11,7 +11,7 @@
 | P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel to its spaces; template/asset delete-confirm modals that handle the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** | To do | High |
 | P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | **Done 2026-06-15** | Low |
 | P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | **Done 2026-06-15** | Low |
-| P53-D | Access-grant model simplification — reduce per-campaign/space grants to viewer-only; editing/managing comes from the `wpsg_editor` role | Decision pending | Medium |
+| P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). Staged: **D1 (campaign+company) done 2026-06-15**; D2 (space) + D3 (frontend AccessTab) remaining | In progress | Medium |
 
 ---
 
@@ -77,15 +77,25 @@ Any tier/permission-**management** UI (role assignment, future custom-role confi
 - React/vitest tests for tier gating + the 409→force flow.
 - Manual QA: log in as `wpsg_editor` vs administrator; confirm the editor gets a scoped, usable Admin Panel and the System Admin sees everything.
 
-## Track P53-D - Access-grant model simplification (decision pending)
+## Track P53-D - Access-grant model simplification (decided 2026-06-15: viewer-only)
 
-Since editing/managing comes from the `wpsg_editor` role (confirmed model), the per-campaign/space **editor/owner grant levels are redundant** and were the source of the testing confusion.
+Editing/managing comes from the `wpsg_editor` role, so the per-campaign/space **editor/owner grant levels are redundant**. Access grants are reduced to **viewer-only**: the Access tab shares read access to a *private* campaign/space with a specific reader; editing/managing requires the `wpsg_editor` role + space access. This **supersedes the proposed P52-A7 "admins-only granting"** (without editor/owner grants, non-admins can't grant by construction) and **resolves the `users/search` gap** (only `manage_wpsg` users grant, and they have search).
 
-**Recommended:** reduce access grants to **viewer-only** — the Access tab grants read access to a *private* campaign/space for a specific reader; editing/managing requires the `wpsg_editor` role + space access. Remove `editor`/`owner` from the grant enums/UI and collapse `require_campaign_editor`/`require_campaign_owner` toward role-based gating; update the frozen `WPSG_Permissions` matrix + `WPSG_P33C_Role_Enforcement_Test` accordingly.
+Staged delivery:
 
-This **supersedes the proposed P52-A7 "admins-only granting"** (no longer needed — without editor/owner grants, non-admins can't grant by construction) and **resolves the `users/search` gap** (only `manage_wpsg` users grant, and they have search).
+### D1 — Campaign + company grant model (Done 2026-06-15)
 
-**Alternative if rejected:** keep per-campaign editor/owner delegation and instead apply P52-A7 (granting requires `manage_wpsg`).
+- **Collapsed** the 17 per-campaign edit/manage endpoints (update, duplicate, media×6, delete, archive, restore, access list/grant/revoke, access-request list/approve/deny) from `require_campaign_editor`/`require_campaign_owner` to **`require_campaign_space_access`** (manage_wpsg + the campaign's space access). This also **closes a residual F2 gap**: bare `manage_wpsg` no longer bypasses space scope on the edit endpoints, so a delegated-space editor without access is denied. (`require_campaign_editor`/`owner` are now unused/deprecated; `company.access.*` were already `require_system_admin` from A5a.)
+- **Reduced** the campaign / company / approve grant `access_level` enums to `['viewer']` (`class-wpsg-access-controller.php`). Legacy editor/owner grants in stored data degrade gracefully to "view-only" (gating ignores the level; viewing still honors the grant) — no data migration.
+- **Tests:** overhauled `WPSG_P33C_Role_Enforcement_Test` (a non-admin editor/owner grant now → 403 on every mutation) and `WPSG_P33B_Access_Level_Test` (viewer-only storage); new `WPSG_P53D_Grant_Model_Test` (a `wpsg_editor` edits in accessible spaces, is denied in a delegated space without access, allowed with a space grant; a legacy grant can view but not edit; the grant endpoint rejects non-viewer levels). Full PHPUnit suite green — **1018 tests, 12209 assertions, 0 failures**.
+
+### D2 — Space grant model (To do)
+
+Space access-management + management endpoints → `require_space_admin` (new: manage_wpsg + space access); space grant `access_level` enum → viewer-only; relax `require_campaign_space_move` from owner-level to manage_wpsg + access to both spaces; update `WPSG_P47_Spaces_Isolation_Test`.
+
+### D3 — Frontend grant UI (To do)
+
+`src/components/Admin/AccessTab.tsx` role dropdown → viewer-only (remove the ✏️ Editor / 👑 Owner options); `useAdminAccessState` default already `viewer`.
 
 ---
 

@@ -3,16 +3,21 @@
 /**
  * P33-B: Campaign / Company Grant Schema — access_level
  *
+ * ── UPDATED for P53-D (2026-06-15) ────────────────────────────────────────
+ * Access grants are now VIEWER-ONLY — editing/managing comes from the
+ * wpsg_editor role, not from per-campaign/company grant levels. The grant
+ * endpoints' access_level enum is `['viewer']`; editor/owner are rejected (400)
+ * — that rejection is asserted in WPSG_P53D_Grant_Model_Test. This suite now
+ * covers the storage/normalisation of the (viewer) access_level and that
+ * out-of-enum values are rejected.
+ *
  * Covers:
- *  - POST /campaigns/{id}/access stores access_level in post meta.
+ *  - POST /campaigns/{id}/access stores access_level ('viewer') in post meta.
  *  - GET  /campaigns/{id}/access returns access_level on every entry.
  *  - Legacy grants without access_level are normalised to 'viewer' on GET.
- *  - Invalid access_level value is rejected with 400.
+ *  - Out-of-enum access_level is rejected with 400.
  *  - POST /companies/{id}/access stores access_level in term meta.
- *  - GET  /companies/{id}/access returns access_level on every entry.
- *  - POST /campaigns/{id}/access-requests/{token}/approve stores access_level.
- *  - Approve without explicit access_level defaults to 'viewer'.
- *  - deny action grants carry no access_level field.
+ *  - Approve workflow stores / defaults access_level to 'viewer'.
  */
 class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
 
@@ -54,7 +59,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
-        $request->set_param('access_level', 'editor');
+        $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());
@@ -64,7 +69,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         $match = array_filter($grants, fn($g) => intval($g['userId']) === $grantee_id);
         $match = array_values($match);
         $this->assertCount(1, $match);
-        $this->assertSame('editor', $match[0]['access_level']);
+        $this->assertSame('viewer', $match[0]['access_level']);
     }
 
     public function test_campaign_grant_list_returns_access_level() {
@@ -75,7 +80,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         $post_request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
         $post_request->set_param('userId', $grantee_id);
         $post_request->set_param('source', 'campaign');
-        $post_request->set_param('access_level', 'owner');
+        $post_request->set_param('access_level', 'viewer');
         rest_do_request($post_request);
 
         $get_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
@@ -85,7 +90,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         $data = $get_response->get_data();
         $this->assertNotEmpty($data['items']);
         $first = $data['items'][0];
-        $this->assertSame('owner', $first['access_level']);
+        $this->assertSame('viewer', $first['access_level']);
     }
 
     public function test_campaign_grant_defaults_to_viewer_when_omitted() {
@@ -155,7 +160,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
 
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/companies/{$company_id}/access");
         $request->set_param('userId', $grantee_id);
-        $request->set_param('access_level', 'editor');
+        $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());
@@ -164,7 +169,7 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         $this->assertIsArray($grants);
         $match = array_values(array_filter($grants, fn($g) => intval($g['userId']) === $grantee_id));
         $this->assertCount(1, $match);
-        $this->assertSame('editor', $match[0]['access_level']);
+        $this->assertSame('viewer', $match[0]['access_level']);
     }
 
     public function test_company_grant_list_normalises_legacy_records() {
@@ -209,24 +214,17 @@ class WPSG_P33B_Access_Level_Test extends WP_UnitTestCase {
         ]);
 
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/approve");
-        $request->set_param('access_level', 'editor');
+        $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());
 
+        $user = get_user_by('email', $email);
+        $this->assertNotFalse($user, 'User should have been provisioned on approval');
         $grants = get_post_meta($campaign_id, 'access_grants', true);
-        $match  = array_values(array_filter($grants, fn($g) => get_user_by('email', $email) && intval($g['userId']) === get_user_by('email', $email)->ID));
-        if (!empty($match)) {
-            $this->assertSame('editor', $match[0]['access_level']);
-        } else {
-            // User provisioned — find by email.
-            $user = get_user_by('email', $email);
-            $this->assertNotFalse($user, 'User should have been provisioned on approval');
-            $all = get_post_meta($campaign_id, 'access_grants', true);
-            $m   = array_values(array_filter($all, fn($g) => intval($g['userId']) === $user->ID));
-            $this->assertNotEmpty($m);
-            $this->assertSame('editor', $m[0]['access_level']);
-        }
+        $match  = array_values(array_filter($grants, fn($g) => intval($g['userId']) === $user->ID));
+        $this->assertNotEmpty($match);
+        $this->assertSame('viewer', $match[0]['access_level']);
     }
 
     public function test_approve_request_defaults_to_viewer_when_no_level_given() {
