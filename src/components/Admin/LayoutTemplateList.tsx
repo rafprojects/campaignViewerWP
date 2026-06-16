@@ -48,6 +48,7 @@ const PresetGalleryModal = lazy(() =>
   import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
 );
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
+import { ApiError } from '@/services/apiClient';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
 import type { LayoutPreset } from '@/data/layoutPresets';
 import {
@@ -124,6 +125,10 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
   const [editingTemplate, setEditingTemplate] = useState<LayoutTemplate | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<LayoutTemplate | null>(null);
+  // P53-A: when a delete hits the P52-A5c in-use guard (409), surface a second
+  // confirm that can force past it instead of just erroring.
+  const [forceDelete, setForceDelete] = useState<{ template: LayoutTemplate; inUse: number } | null>(null);
+  const [forceDeleting, setForceDeleting] = useState(false);
   const [presetGalleryOpen, setPresetGalleryOpen] = useState(false);
   const resetRef = useRef<() => void>(null);
 
@@ -245,16 +250,42 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
   const handleDelete = useCallback(
     async () => {
       if (!confirmDelete) return;
+      const target = confirmDelete;
       try {
-        await apiClient.deleteLayoutTemplate(confirmDelete.id);
-        onNotify({ type: 'success', text: `Deleted "${confirmDelete.name}"` });
+        await apiClient.deleteLayoutTemplate(target.id);
+        onNotify({ type: 'success', text: `Deleted "${target.name}"` });
         setConfirmDelete(null);
         await refetchTemplates();
       } catch (err) {
+        // P52-A5c in-use guard → escalate to a force-confirm instead of erroring.
+        if (err instanceof ApiError && err.status === 409) {
+          const inUse = Number((err.data as { data?: { inUse?: number } } | undefined)?.data?.inUse ?? 0);
+          setConfirmDelete(null);
+          setForceDelete({ template: target, inUse });
+          return;
+        }
         onNotify({ type: 'error', text: (err as Error).message });
       }
     },
     [apiClient, confirmDelete, onNotify, refetchTemplates],
+  );
+
+  const handleForceDelete = useCallback(
+    async () => {
+      if (!forceDelete) return;
+      setForceDeleting(true);
+      try {
+        await apiClient.deleteLayoutTemplate(forceDelete.template.id, true);
+        onNotify({ type: 'success', text: `Deleted "${forceDelete.template.name}"` });
+        setForceDelete(null);
+        await refetchTemplates();
+      } catch (err) {
+        onNotify({ type: 'error', text: (err as Error).message });
+      } finally {
+        setForceDeleting(false);
+      }
+    },
+    [apiClient, forceDelete, onNotify, refetchTemplates],
   );
 
   // ── Export (P15-F.4) ──────────────────────────────────────────────────────
@@ -489,6 +520,18 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         message={`Are you sure you want to delete "${confirmDelete?.name ?? ''}"? This cannot be undone.`}
         confirmLabel="Delete"
         confirmColor="red"
+      />
+
+      {/* P53-A: in-use (409) escalation — confirm a forced delete. */}
+      <ConfirmModal
+        opened={!!forceDelete}
+        onClose={() => setForceDelete(null)}
+        onConfirm={handleForceDelete}
+        title="Template in use"
+        message={`"${forceDelete?.template.name ?? ''}" is in use by ${forceDelete?.inUse ?? 0} campaign(s). Deleting it will unbind those campaigns. Delete anyway?`}
+        confirmLabel="Delete anyway"
+        confirmColor="red"
+        loading={forceDeleting}
       />
 
       {/* Preset gallery (P15-J.2) */}

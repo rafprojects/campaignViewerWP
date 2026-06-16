@@ -151,8 +151,8 @@ export class ApiClient extends HttpTransportImpl {
     return this._layoutTemplates.updateLayoutTemplate(id, data);
   }
 
-  deleteLayoutTemplate(id: string): Promise<{ deleted: boolean }> {
-    return this._layoutTemplates.deleteLayoutTemplate(id);
+  deleteLayoutTemplate(id: string, force = false): Promise<{ deleted: boolean }> {
+    return this._layoutTemplates.deleteLayoutTemplate(id, force);
   }
 
   duplicateLayoutTemplate(id: string, name?: string): Promise<LayoutTemplateResponse> {

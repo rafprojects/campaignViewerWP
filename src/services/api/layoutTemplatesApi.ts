@@ -39,9 +39,11 @@ export class LayoutTemplatesApi {
     );
   }
 
-  deleteLayoutTemplate(id: string): Promise<{ deleted: boolean }> {
+  deleteLayoutTemplate(id: string, force = false): Promise<{ deleted: boolean }> {
+    // P52-A5c/P53-A: force=true bypasses the in-use guard (the confirm-modal path).
+    const qs = force ? '?force=true' : '';
     return this.transport.delete<{ deleted: boolean }>(
-      `/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}`,
+      `/wp-json/wp-super-gallery/v1/admin/layout-templates/${encodeURIComponent(id)}${qs}`,
     );
   }
 

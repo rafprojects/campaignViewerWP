@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { LayoutTemplateList } from './LayoutTemplateList';
+import { ApiError } from '@/services/apiClient';
 
 // Stub heavy LayoutBuilder modal to keep tests fast
 vi.mock('./LayoutBuilder/LayoutBuilderModal', () => ({
@@ -120,6 +121,36 @@ describe('LayoutTemplateList', () => {
         expect.objectContaining({ type: 'success' }),
       );
     });
+  });
+
+  it('escalates an in-use (409) delete to a force-confirm and resends with force=true (P53-A)', async () => {
+    const deleteLayoutTemplate = vi
+      .fn()
+      // First call (no force) hits the in-use guard.
+      .mockRejectedValueOnce(new ApiError('in use', 409, { data: { status: 409, inUse: 3 } }))
+      // Second call (force=true) succeeds.
+      .mockResolvedValueOnce({ deleted: true });
+    const apiClient = makeApiClient({ deleteLayoutTemplate });
+    const onNotify = vi.fn();
+    render(<LayoutTemplateList apiClient={apiClient} onNotify={onNotify} />);
+    await screen.findByText('My Template');
+
+    fireEvent.click(screen.getByRole('button', { name: /actions/i }));
+    fireEvent.click(await screen.findByRole('menuitem', { name: /delete/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }));
+
+    // First delete attempt fires without force…
+    await waitFor(() => expect(deleteLayoutTemplate).toHaveBeenNthCalledWith(1, 'tpl-1'));
+    // …and the in-use escalation modal appears (no error notification).
+    expect(await screen.findByText(/in use by 3 campaign\(s\)/i)).toBeInTheDocument();
+    expect(onNotify).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+
+    // Confirm the forced delete → resends with force=true.
+    fireEvent.click(screen.getByRole('button', { name: /delete anyway/i }));
+    await waitFor(() => expect(deleteLayoutTemplate).toHaveBeenNthCalledWith(2, 'tpl-1', true));
+    await waitFor(() =>
+      expect(onNotify).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' })),
+    );
   });
 
   it('opens the layout builder when Edit is clicked', async () => {
