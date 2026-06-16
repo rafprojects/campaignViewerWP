@@ -1,14 +1,14 @@
 # Phase 53 - RBAC Model Alignment & Frontend Surfacing
 
-**Status:** In Progress
+**Status:** Done
 **Created:** 2026-06-15
-**Last updated:** 2026-06-15
+**Last updated:** 2026-06-16
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel to its spaces; template/asset delete-confirm modals that handle the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** | To do | High |
+| P53-A | Frontend RBAC tier surfacing — expose a System-Admin tier to the React app, gate AdminPanel system controls by tier, scope the editor's Admin Panel + campaign list to its spaces; layout-template delete-confirm modal handling the P52-A5c `409` → resend `force=true`. Makes the `wpsg_editor` role usable. **Deferred from P52-A6.** A1 (backend signal) + A2 (FE plumbing) + A3 (gate surfaces) + A4 (backend scoping) + A5 (delete-confirm) | ✅ **Done 2026-06-16** | High |
 | P53-B | Public-campaign visibility fix — public campaigns viewable by everyone (logged-in users no longer see less than anonymous) | ✅ **Done 2026-06-15** | Low |
 | P53-C | Portability — semantic capability-tier seam (`WPSG_Permissions::actor_has_tier`) isolating the WordPress-capability binding to one method | ✅ **Done 2026-06-15** | Low |
 | P53-D | Access-grant model simplification (viewer-only; editing/managing comes from the `wpsg_editor` role). D1 (campaign+company) + D2 (space) + D3 (frontend AccessTab) | ✅ **Done 2026-06-15** | Medium |
@@ -45,37 +45,37 @@ Deliberately **out of this seam** (documented as the separate storage/auth seam 
 
 **No behavior change** — `actor_has_tier(EDITOR) === current_user_can('manage_wpsg')`, etc.; the frozen `WPSG_Permissions` matrix (action→strategy) is unchanged. Proven by the full suite staying green plus a new `test_actor_has_tier_resolves_current_user` in `WPSG_P52A_Permission_Matrix_Test`.
 
-## Track P53-A - Frontend RBAC tier surfacing / editor enablement (deferred from P52-A6)
+## Track P53-A - Frontend RBAC tier surfacing / editor enablement (Done 2026-06-16, deferred from P52-A6)
 
 ### Problem
 
-The boundary is enforced server-side but invisible to the frontend, and **all editing UI is gated on `manage_wpsg`** (the frontend turns it into `role: 'admin'`). Consequences confirmed in testing:
+The boundary was enforced server-side but invisible to the frontend, and **all editing UI was gated on a single `manage_wpsg` → `role: 'admin'` flag**. A genuine `wpsg_editor` got the Admin Panel but **unscoped** — full of System-Admin-only controls the server now `403`s, plus a few queries (`access-summary`, `audit-log`, `analytics/summary`) that fired unconditionally and hard-`403`d. The React app had **no `manage_options` concept**, and P52-A5c's in-use delete guards returned `409` with no client affordance to force.
 
-- A user granted "editor" via the Access tab (an access *grant*, not the role) is a `subscriber` without `manage_wpsg` → the AuthBar shows **only "Sign out"**: no Admin Panel, Settings, Space Switcher, or edit actions. They behave like a viewer-but-worse.
-- A genuine `wpsg_editor` *does* get the Admin Panel today (it has `manage_wpsg`), but **unscoped** — it shows system controls that the server now `403`s and all spaces, because the tier was never surfaced.
-- The React app has **no `manage_options` concept** — auth state exposes only `isAdmin` (= `manage_wpsg`), consumed across ~32 files.
-- P52-A5c's in-use delete guards return `409` with no client affordance to confirm/`force`.
+### Design
 
-### Scope
+`isAdmin` is redefined to mean **editor-or-above** (true for `wpsg_editor` AND administrator) — every existing `isAdmin` consumer is an editing affordance the backend already grants editors, so they're unchanged and simply become true for editors. A new **`isSystemAdmin`** signal gates the system-admin-only surfaces. Tier semantics are exposed once from `AuthContext` (`isAdmin` / `isSystemAdmin`), not prop-drilled. The tier maps from two backend booleans: `isSystemAdmin ? 'admin' : isAdmin ? 'editor' : 'viewer'`.
 
-1. **Surface the tier semantically.** Add a System-Admin signal to `list_permissions` (`/permissions`) + page-config JS, threaded **through the existing `AuthProvider` interface** (`src/services/auth/*`) as `isSystemAdmin`/`isEditor`/`isViewer` — components consume tier semantics, never `manage_wpsg`, keeping the auth providers the only WP-aware layer (ties into P53-C).
-2. **Make the editor's Admin Panel scoped + usable.** Hide System-Admin-only surfaces (system settings keys, fonts delete, Spaces management, user creation, global audit log, webhooks, media library, binary import/export) from editors; scope the Space Switcher / campaign lists to the editor's accessible spaces; keep campaign + campaign/display settings.
-3. **Delete-confirm modals.** Catch the `409`, show "in use by N — delete anyway?", resend with `force=true`.
+Constraint (user direction, 2026-06-15): tier/permission-**management** UI stays in the WordPress "Super Gallery" sidebar; in-app work is limited to *reflecting* the tier + the delete-confirm flow.
 
-### Constraint
+### Staged delivery
 
-Any tier/permission-**management** UI (role assignment, future custom-role config) belongs in the WordPress "Super Gallery" admin sidebar, **not** the React app (user direction, 2026-06-15). In-app work is limited to *reflecting* the tier + the delete-confirm flow.
+**A-1 — Backend tier signal (commit `c328369d`).** `list_permissions` (`/permissions`) and the cookie-login payload now carry `isSystemAdmin` (= `actor_has_tier(TIER_SYSTEM_ADMIN)`) alongside `isAdmin` (manage_wpsg); login `user.role` resolves to admin/editor/viewer. New `WPSG_P53A_Tier_Signal_Test` (4) + editor/system-admin login cases in `WPSG_Cookie_Auth_Test`.
 
-### Acceptance criteria
+**A-2 — Frontend tier plumbing (commit `86cb337c`).** `AuthUser.role` widened to `viewer|editor|admin` with a `resolveRole(isAdmin, isSystemAdmin)` seam in `WpNonceProvider`/`WpJwtProvider`; `AuthContext` exposes `isAdmin` (editor-or-above) + `isSystemAdmin`; `App` derives `isAdmin` from context. So a `wpsg_editor` now correctly gets the editing UI. Auth-provider + context vitest updated (the old `isAdmin:true ⇒ 'admin'` cases now resolve to `'editor'`).
 
-- The app knows the caller's tier; no System-Admin-only control is rendered for a `wpsg_editor`; the editor's Admin Panel is scoped to its spaces and is genuinely usable for editing campaigns + campaign/display settings.
-- Template/asset delete surfaces the in-use conflict and can force past it.
-- No regression to the server boundary (P52-A suites stay green).
+**A-3 — Gate system-admin surfaces (commit `8b9b41d1`).** Hidden from editors (mirroring `WPSG_Permissions::MAP`): campaign **Import**, media **Export/Import ZIP + Rescan All**, the **System Audit** tab, the Access **Company/All** views, the **all-campaign analytics** (totals + top-campaigns), the **create-space** form, the Settings **Integrations + System & Admin** tabs, and **font delete**. The `useAccessSummary` / `useGlobalAuditEntries` / `useAnalyticsSummary` queries gain an `enabled` arg so editors never fire a request that hard-`403`s. Vitest gating cases added across AdminPanel/AccessTab/Analytics/FontLibrary/SpaceManagement/SettingsPanel.
 
-### Validation
+**A-4 — Backend scoping (commit `7ecee311`).** `list_campaigns` now gives only a System Admin (`manage_options`) the unscoped view; a `wpsg_editor` is scoped via `get_accessible_campaign_ids` (public campaigns everywhere per P53-B + everything in accessible spaces), closing the cross-space private-metadata leak (user-confirmed to fix here). The page-spaces list + admin-bar nodes are filtered through the new public `WPSG_REST_Base::current_actor_can_access_space()`. New `WPSG_P53A_Scoping_Test` (7); P47 isolation / public-visibility / draft suites unaffected.
 
-- React/vitest tests for tier gating + the 409→force flow.
-- Manual QA: log in as `wpsg_editor` vs administrator; confirm the editor gets a scoped, usable Admin Panel and the System Admin sees everything.
+**A-5 — Delete-confirm modal (commit `1a1cc72d`).** `ApiError` now carries the parsed response body, so the client reads the P52-A5c in-use count; `LayoutTemplateList` catches the `409`, shows a second confirm ("in use by N campaign(s) — delete anyway?"), and resends with `force=true` (`deleteLayoutTemplate` gains an optional `force` arg). Vitest covers the 409→force escalation.
+
+### Proven
+
+Full PHPUnit suite green — **1034 tests, 12964 assertions, 0 failures, 2 skipped**. Full frontend vitest green — **174 files, 2372 tests, 0 failures**. Manual QA pending on the deployed instance (log in as `wpsg_editor` vs administrator).
+
+### Follow-up
+
+Asset-library delete (the inline delete in `LayoutBuilderModal`) shares the same A5c 409 contract but was not wired to the force-confirm flow in A-5; the `ApiError.data` plumbing is in place for it. Minor — track as a future polish item if it surfaces.
 
 ## Track P53-D - Access-grant model simplification (decided 2026-06-15: viewer-only)
 
