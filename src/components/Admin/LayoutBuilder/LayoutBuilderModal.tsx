@@ -50,6 +50,7 @@ import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
 import { useBroadcastStaleness } from '@/hooks/useBroadcastStaleness';
 import { useBuilderDraftRestore } from '@/hooks/useBuilderDraftRestore';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -835,6 +836,29 @@ export function LayoutBuilderModal({
       }}
       aria-label="Layout Builder"
     >
+      <ErrorBoundary
+        fallback={
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 16,
+              height: '100vh',
+              padding: 32,
+            }}
+          >
+            <Text fw={600} size="lg">Something went wrong in the Layout Editor</Text>
+            <Text size="sm" c="dimmed" ta="center">
+              An unexpected error occurred. Close the editor and try again.
+            </Text>
+            <Button variant="light" color="red" onClick={onClose}>
+              Close Editor
+            </Button>
+          </Box>
+        }
+      >
       <div
         data-testid="builder-keyboard-handler"
         style={{
@@ -1024,6 +1048,7 @@ export function LayoutBuilderModal({
           {a11yAnnouncement}
         </div>
       </div>
+      </ErrorBoundary>
     </Modal>
   );
 }

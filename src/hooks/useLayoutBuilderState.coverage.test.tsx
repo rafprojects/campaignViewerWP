@@ -177,3 +177,34 @@ describe('history boundaries', () => {
     expect(result.current.template.name).toBe('test');
   });
 });
+
+// ── P54-D perf sanity — 100-slot state mutation ───────────────────────────
+
+describe('P54-D — 100-slot perf sanity', () => {
+  it('100 moveSlot calls complete under 200 ms', () => {
+    const t = templateWithSlots(100);
+    const { result } = renderHook(() => useLayoutBuilderState(t));
+    const start = performance.now();
+    act(() => {
+      for (let i = 0; i < 100; i++) {
+        result.current.moveSlot(`s${i + 1}`, 10 + i % 70, 10 + i % 70);
+      }
+    });
+    const elapsed = performance.now() - start;
+    // State mutation for 100 slots must remain well under 200 ms in a
+    // headless environment; drag jank in a real browser is tracked separately.
+    expect(elapsed).toBeLessThan(200);
+  });
+
+  it('100-slot nudge clamps all slots within bounds', () => {
+    const t = templateWithSlots(100);
+    const { result } = renderHook(() => useLayoutBuilderState(t));
+    const allIds = t.slots.map((s) => s.id);
+    // Nudge way off canvas — all slots must stay within [0, 100 - dimension]
+    act(() => { result.current.nudgeSlots(allIds, 200, 200); });
+    for (const slot of result.current.template.slots) {
+      expect(slot.x).toBeLessThanOrEqual(100 - slot.width);
+      expect(slot.y).toBeLessThanOrEqual(100 - slot.height);
+    }
+  });
+});

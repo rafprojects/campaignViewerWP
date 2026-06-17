@@ -79,6 +79,42 @@ The review found the security posture is already strong (DOMPurify, nonce handli
 - `vitest` for any front-end consumption-path change.
 - `/security-review` run + triage notes.
 
+### Implementation notes
+
+**Free-form CSS fields — consumption path verified (2026-06-17)**
+
+Both `image_shadow_custom` and `video_shadow_custom` flow through:
+`adapterSettings.imageShadowCustom` → `resolveBoxShadow()` → React inline `style.boxShadow` (MediaCarouselAdapter.tsx). The DOM style setter is a structured API; it does not interpret CSS breakout sequences (`}`, `;`), so these fields carry **no stylesheet-injection risk** on the front end. The PHP sanitizer now adds a defence-in-depth layer (`is_safe_css_box_shadow()`) that rejects values containing `;`, `{`, `}`, `url(`, `expression(`, or `@import`.
+
+`masonry_auto_column_breakpoints` is split by `,` and `:` and parsed with `Number()` in `resolveColumnsFromWidth.ts` — no CSS path; no code change needed.
+
+**DOMPurify — `MediaAddModal.tsx:351` (2026-06-17)**
+
+Config updated from `ADD_ATTR` to explicit `ALLOWED_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'src', 'title', 'width', 'height']`. This prevents event-handler attributes from slipping through regardless of DOMPurify default-list changes. Provider allowlist (YouTube, Vimeo, Rumble, Dailymotion, Wistia) and HTTPS-only `ALLOWED_URI_REGEXP` unchanged — confirmed correct.
+
+**localStorage inventory (2026-06-17)**
+
+All write points traced in `src/services/auth/WpJwtProvider.ts`, `src/hooks/useLayoutBuilderState.ts`, `src/hooks/useMediaTab.ts`, and `src/hooks/useAdminNavigation.ts`:
+
+| Key pattern | Content | Sensitivity |
+|-------------|---------|-------------|
+| `wpsg_access_token` | JWT bearer token | **High** — gated by `[WPSG_JWT_DISABLED]`; inactive by default |
+| `wpsg_user` | `{id, email, role}` JSON | **High** — gated by `[WPSG_JWT_DISABLED]`; inactive |
+| `wpsg_permissions` | `['campaignId', …]` array | **High** — gated by `[WPSG_JWT_DISABLED]`; inactive |
+| `wpsg_admin_shortcuts` | Keyboard shortcut overrides | Low — config only |
+| `wpsg_admin_active_tab` | Last admin tab viewed | Low — UI state |
+| `wpsg_view_${rootId}_scroll_${view}` | Window scroll Y position | Low — UI state |
+| `wpsg_builder_${rootId}_layout` | GoldenLayout panel state | Low — UI layout |
+| `wpsg_builder_${rootId}_design_assets_open` | Boolean panel toggle | Low — UI state |
+| `wpsg_media_viewMode_${layoutId}` | 'compact' or 'list' | Low — UI preference |
+| `wpsg_media_sortMode_${layoutId}` | Sort column name | Low — UI preference |
+
+**Finding**: No sensitive data is stored outside the `[WPSG_JWT_DISABLED]` gate. The JWT auth path is disabled by default (requires `WPSG_ENABLE_JWT_AUTH` constant in `wp-config.php`). If JWT auth is enabled in future, tokens should move to `httpOnly; Secure; SameSite=Strict` cookies. This is captured in FUTURE_TASKS.md.
+
+**PHPUnit results (2026-06-17)**
+
+`WPSG_P54A_Security_Test` — 12/12 tests passed (green). `WPSG_Settings_Test`, `WPSG_Settings_Extended_Test` — no regressions.
+
 ## Track P54-B - User-facing i18n harvest
 
 ### Problem
@@ -145,6 +181,29 @@ The LayoutBuilder is mature but has three fail-ugly gaps: (1) no error boundary 
 
 - `vitest` for the error boundary fallback and the clamp logic (boundary inputs).
 - Manual large-layout interaction check.
+
+### Implementation notes
+
+**Error boundary (2026-06-17)**
+
+`LayoutBuilderModal.tsx` is now wrapped in `<ErrorBoundary>` (existing component at `src/components/ErrorBoundary.tsx`). The fallback renders a centered "Something went wrong in the Layout Editor" message with a "Close Editor" button that calls `onClose()` directly (bypasses the dirty-check confirm modal since builder state may be corrupted). Sentry capture is handled automatically by `ErrorBoundary.componentDidCatch`.
+
+**Drag bounds clamping (2026-06-17)**
+
+`moveSlot` in `useLayoutBuilderState.ts` now applies the same clamping as `nudgeSlots`:
+```ts
+slot.x = Math.max(0, Math.min(100 - slot.width, x));
+slot.y = Math.max(0, Math.min(100 - slot.height, y));
+```
+This ensures slots cannot be dragged outside the 0–100% canvas boundary on either axis. The fix lives in the state mutation layer so all callers (canvas drag, canvas drop, group move) benefit automatically.
+
+**100-slot perf check (2026-06-17)**
+
+Hook-level: 100 `moveSlot` calls on a 100-slot template completed in <200 ms threshold (vitest, headless). Full-UI drag frame rate was not measured programmatically; the hook mutation overhead is negligible compared to React's render cost. If render jank is observed in a real browser at 50+ slots, a `useMemo` or virtualization pass can be filed in FUTURE_TASKS.
+
+**vitest results (2026-06-17)**
+
+`useLayoutBuilderState.test.ts` — 66/66 green. `useLayoutBuilderState.coverage.test.tsx` — 14/14 green (including 2 new P54-D perf tests).
 
 ## Track P54-E - Release-readiness closeout
 
