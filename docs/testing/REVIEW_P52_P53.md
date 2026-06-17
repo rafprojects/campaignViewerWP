@@ -1,6 +1,6 @@
 # PR Review — Phase 52 & Phase 53
 
-**Status:** In Progress
+**Status:** ✅ Complete
 **Created:** 2026-06-17
 **Last updated:** 2026-06-17
 **Branch under review:** `feat/phase52-admin-features-and-enhancements` (vs `main`)
@@ -21,8 +21,8 @@ corrections.
 | C2 | Role setup/migration & REST controllers | ✅ Done | 1 doc fix (+1 flag) | pending |
 | C3 | Frontend tier plumbing & gating | ✅ Done | 0 fixes | none (sound) |
 | C4 | Frontend features (assets, tags/cats, delete-confirm, access) | ✅ Done | 1 defensive fix | pending |
-| C5 | Service worker & build | Pending | — | — |
-| C6 | Dependencies & docs hygiene | Pending | — | — |
+| C5 | Service worker & build | ✅ Done | 0 fixes | none (sound) |
+| C6 | Dependencies & docs hygiene | ✅ Done | 0 fixes (+2 notes) | none (sound) |
 
 **Severity:** 🔴 High (security/correctness bug) · 🟠 Medium (real bug, narrow blast
 radius) · 🟡 Low (edge case / robustness) · 🔵 Doc (report claim vs code).
@@ -111,14 +111,76 @@ persisted-tab reset was only needed for `activeTab`). One defensive fix applied.
 
 ## C5 — Service worker & build
 
+**Verdict:** Clean — no findings; verified end-to-end. The fetch-handler restructure
+preserves every prior guard: method!=GET, cross-origin, wp-login, and wp-admin all
+return before the new navigate branch (wp-admin now short-circuits *all* its paths,
+not just navigations). `handleNavigationRequest` is network-first, caches only
+`response.ok` (no error/redirect/opaque caching), clones before returning, and falls
+back to exact-URL cache → inline `OFFLINE_HTML`. `activate` now also preserves
+`SHELL_CACHE`, so a new build's hash sweeps the stale shell. The Vite plugin is
+`apply:'build'` + `enforce:'post'` + try/catch, and `build.manifest: true` is set (the
+plugin's manifest dependency is satisfied). **Build run:** `npm run build` green;
+`dist/sw.js` shows `BUILD_HASH = '106839da'` with **zero** `__WPSG_BUILD_HASH__`
+placeholders left, while `public/sw.js` source correctly retains the placeholder for
+the next build. Vitest-4 pool config (`minForks`/`maxForks` top-level) validated by
+the green 2386-test baseline.
+
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| _pending_ | | | | | | |
+| — | — | — | No correctness/security findings. | — | — | — |
 
 ---
 
 ## C6 — Dependencies & docs hygiene
 
+**Verdict:** Clean. `package.json` carries `vitest`/`@vitest/coverage-v8` `^4.0.0`
+(matching majors) + the `overrides.esbuild >=0.28.1`. Resolved lock: vitest 4.1.9,
+esbuild **0.28.1 deduped across all instances** (override effective), dompurify 3.4.10,
+fast-uri 3.1.2, postcss 8.5.15, vite 6.4.3 — every advisory threshold met.
+**`npm audit` → 0 vulnerabilities** (the push-time "11 vulnerabilities" warning is on
+`main`, which lacks these fixes). Doc moves are committed cleanly: `object-cache-setup.md`
+→ `docs/setup/`, `PHASE51_REPORT.md` → `docs/archive/phases/`, with no dangling
+*active* links.
+
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| _pending_ | | | | | | |
+| C6-1 | 🔵 Doc | `docs/PHASE52_REPORT.md:3,523` | Header still says `Status: In Progress` and Outcome is `_Pending — phase in planning._`, yet all 7 tracks are ✅ Done and successor Phase 53 is `Done`. | **Flag** | Could be intentional (both reports note "manual QA pending on the deployed instance"), so I won't unilaterally flip it. Recommend the author set `Status: Done` + fill the Outcome once manual QA signs off, or annotate "code-complete, QA pending." | author call |
+| C6-2 | 🔵 Doc | `docs/archive/phases/PHASE39_REPORT.md:549,700` | Two prose references to the old `docs/object-cache-setup.md` path remain after the move to `docs/setup/`. | **Reject** | These are historical records inside an *archived* phase report (a past review log), not active navigation. Editing archived history to chase a moved file would be revisionist. Left as-is. | — |
+
+---
+
+## Summary
+
+**Reviewed:** all of Phase 52 (A–G) + Phase 53 (A–D) across 6 chunks — RBAC core,
+role migration + REST controllers, frontend tier plumbing/gating, frontend features,
+service worker/build, and deps/docs. Focus: correctness + security.
+
+**Headline: the security-critical RBAC work is sound.** The `WPSG_Permissions` MAP is
+fail-closed with a clean 119↔119 gate↔route bijection; the `can_view_campaign` reorder
+(P53-B) preserves private/draft/schedule isolation while fixing public visibility; the
+A4 settings per-key guard genuinely blocks system keys (snake_case both sides); A5c
+delete guards + `force` are correct; `list_campaigns`/`list_spaces` scoping is
+per-user-cached and restricts the unscoped view to `manage_options`; the frontend
+`isAdmin` redefinition is safe (single derivation point, every system surface
+`isSystemAdmin`-gated, hard-403 queries `enabled`-gated); the SW restructure preserves
+all guards and the deploy-hash injection works end-to-end; deps are at fix thresholds
+with `npm audit` clean.
+
+**Fixes applied (2, both low-risk):**
+- C2-1 — corrected two `class-wpsg-embed.php` comments that misstated the open-mode
+  access model (security-relevant doc). Commit `3819c528`.
+- C4-1 — `encodeURIComponent` on asset ids in `assetsApi` update/delete (defensive,
+  consistency with sibling API). Commit `860bd6e7`.
+
+**Flagged for the author (no code change):**
+- C1-3 / 🟠 — open-mode editors lose effective space access on upgrade (the migration
+  preserves the cap, not grants). No safe auto-backfill exists; document the re-grant
+  step / add a one-time admin notice.
+- C6-1 / 🔵 — finalize `PHASE52_REPORT.md` Status + Outcome once manual QA signs off.
+
+**Verification:** full vitest **2386/2386 green** (baseline + post-fix via pre-push
+hook); `npm run build` green with SW hash injected; `npm audit` 0 vulns. PHP PHPUnit
+**not run** here — the WP test harness (`/tmp/wordpress-tests-lib` + MySQL) isn't
+provisioned in this environment; the only PHP change was comment-only (`php -l` clean),
+so no behavioral PHP test was needed. **Recommend running the full PHPUnit suite in
+CI/wp-env before merge** to reconfirm the reports' 1037-test claim.
