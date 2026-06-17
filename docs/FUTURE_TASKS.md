@@ -26,6 +26,144 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### LayoutBuilder — Editor UX Polish
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #1 of the LayoutBuilder enhancements.
+
+**Context:** The builder is mature, but a few editor affordances stop short of design-tool parity. True clipboard **copy/paste** is currently a no-op routed through `Ctrl+D` duplicate (the `Ctrl+C` handler does nothing). Alignment/distribute exist only as Layers-panel buttons, with **no keyboard shortcuts** (unlike Figma). There is **no layer search/filter** for large layouts.
+
+**What to implement:**
+- Real `Ctrl+C` / `Ctrl+V` clipboard (in-memory clipboard buffer; paste offsets to avoid exact overlap; cross-template paste optional).
+- Keyboard shortcuts for the existing align/distribute actions.
+- Layer search/filter box in the Layers panel (`LayoutBuilderLayersPanel.tsx` / `LayerPanel.tsx`).
+
+**Files:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`, `LayoutBuilderLayersPanel.tsx`, `src/hooks/useLayoutBuilderState.ts`.
+
+**Effort:** Medium | **Impact:** Medium — finishes existing patterns; high perceived polish.
+
+---
+
+### LayoutBuilder — Responsive / Per-Breakpoint Editing
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #2.
+
+**Context:** Device presets today are **preview-only** — you can view at desktop/tablet/mobile widths but cannot give a slot different position/size/visibility per breakpoint. This is a real gap vs. Elementor/Figma responsive editing.
+
+**What to implement:** Per-breakpoint slot overrides (hide/move/resize per device) layered on the base layout, persisted in the template, and resolved at render time. Mirror the gallery config's existing breakpoint model (`desktop`/`tablet`/`mobile`) for consistency.
+
+**Files:** `src/hooks/useLayoutBuilderState.ts` (template schema + resolution), `LayoutCanvas.tsx`, the LayoutBuilder render path.
+
+**Dependencies:** None hard; benefits from the gallery breakpoint conventions in `src/utils/galleryConfig.ts`.
+
+**Effort:** Medium-High (likely its own track) | **Impact:** Medium-High — closes a headline responsive gap.
+
+---
+
+### LayoutBuilder — Text / Caption Layers
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #3.
+
+**Context:** Layers are media/graphic/mask only — there are **no first-class text layers**. Captions, titles, and call-to-action text currently require baking text into an uploaded image.
+
+**What to implement:** A `text` layer type with font family/size/weight/line-height/color/alignment controls, drag/resize like other layers, and i18n-aware rendering. Large enough to warrant **its own phase** (new layer type + properties panel + render path + persistence + tests).
+
+**Files:** new `TextLayerPropertiesPanel.tsx`, `useLayoutBuilderState.ts` (schema), `LayoutSlotComponent.tsx`/render path.
+
+**Effort:** High (own phase) | **Impact:** Medium-High — unlocks a major class of layouts without external image editing.
+
+---
+
+### LayoutBuilder — Design-Tool Affordances
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #4.
+
+**Context:** Polish features common to Figma/Canva/Photoshop that narrow the perceived gap: **saved color swatches/palettes**, an **eyedropper**, **rotation handles** on the canvas (no rotation transform today), and **persistent guide objects** (smart guides are transient-only).
+
+**What to implement:** Incremental — each is independently shippable. Swatches/eyedropper plug into the existing color-picker surfaces; rotation adds a transform handle + a `rotation` field on slots; persistent guides add draggable, lockable guide lines distinct from the transient `SmartGuides`.
+
+**Files:** color-picker usages across the LayoutBuilder properties panels, `LayoutCanvas.tsx`, `SmartGuides.tsx`, `useLayoutBuilderState.ts`.
+
+**Effort:** Medium (splittable) | **Impact:** Low-Medium — polish, not capability.
+
+---
+
+### Gallery — Admin-Control Additions
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). Sensible control additions surfaced by the gallery/adapter audit; server-side validation already enforces correctness, so these are convenience/parity, not blockers.
+
+**What to implement (independently):**
+- **Client-side range/enum validation** in the adapter settings UI mirroring the PHP `field_ranges`/`valid_options` (today validation is server-only).
+- **Configurable breakpoint pixel thresholds** (desktop/tablet/mobile are hardcoded).
+- **Listing-mode exposure** — `renderItem`/listing surface is code-only; not admin-configurable.
+- **Mobile-support visibility** — adapters with `supportsMobile: false` (e.g. layout-builder) fail only at runtime; surface this in the admin UI.
+
+**Files:** `src/components/Settings/GalleryAdapterSettingsSection.tsx`, `src/components/Galleries/Adapters/adapterRegistry.ts`, the PHP settings registry for the shared ranges.
+
+**Effort:** Medium (splittable) | **Impact:** Low-Medium.
+
+---
+
+## Code Quality & Refactoring
+
+### Adapter System — Data Extraction, Registration Seam, Field-Map Unification
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). The adapter pattern (Registry + Factory + Strategy) is sound; these are maintainability cleanups with no user-visible behavior change.
+
+**What to implement (independently):**
+- **Extract `SETTING_GROUP_DEFINITIONS`** (~1000 lines of *data*) out of `adapterRegistry.ts` into dedicated data modules; the registry keeps registration/resolution logic only.
+- **Resolve the closed-union vs. `registerAdapter()` tension** — `GalleryAdapterId` is a closed TS union, so the runtime `registerAdapter()` seam can't be extended by third parties. Either document it as internal-only or widen the type to accept arbitrary string ids.
+- **Unify the dual field-map** — the TS camelCase ↔ PHP snake_case mapping is maintained twice (`adapterRegistry.ts` / `class-wpsg-settings-sanitizer.php`); generate one from the other (build step or shared schema) to remove the single-source-of-truth violation.
+
+**Effort:** Medium | **Impact:** Low (maintenance); reduces a real "add a field, edit two files" footgun.
+
+---
+
+### Large-File Decomposition
+
+**Origin:** Phase 54 production-readiness review (2026-06-17).
+
+**Context:** A few files carry heavy orchestration load: `LayoutBuilderModal.tsx` (~1030 lines), `useLayoutBuilderState.ts` (~1256), `MediaTab.tsx` (~1007). All are test-covered, so this is a no-behavior-change refactor, deferred until it blocks a feature.
+
+**Effort:** Medium | **Impact:** Low — readability/testability.
+
+---
+
+## Internationalization
+
+### Full Admin-Panel i18n Migration
+
+**Origin:** Phase 54 (P54-B harvests **user-facing** strings only; admin deferred here).
+
+**Context:** ~300 raw JSX literals remain; `i18next/no-literal-string` is `'off'` globally (`eslint.config.js:82`). After the user-facing harvest in P54-B, complete the admin-panel strings and flip the lint rule to `'error'` **globally** so regressions are caught everywhere. **Gates the public WP.org / premium paths** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §5).
+
+**Effort:** Medium-High | **Impact:** Low for English-only deployments; High/required for public distribution.
+
+---
+
+## Accessibility
+
+### Full WCAG AA Audit
+
+**Origin:** Phase 54 (P54-C establishes a critical/serious axe baseline on the front-end only).
+
+**Context:** Beyond P54-C's front-end critical/serious baseline, a full WCAG AA pass across the admin panel and all flows (contrast, focus management, ARIA landmarks, Shadow-DOM screen-reader exposure). **Gates the public WP.org path.**
+
+**Effort:** High | **Impact:** Low for private/internal; High/required for public distribution.
+
+---
+
+## Monetization & Distribution
+
+### Licensing + Update Infrastructure (if a paid path is chosen)
+
+**Origin:** Phase 54 production-readiness review (2026-06-17). Full analysis in [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).
+
+**Context:** The plugin wasn't built toward monetization but nothing structurally blocks it. A premium path needs license activation, authenticated auto-updates, and checkout/tax handling. **Freemius** is the recommended lowest-LOE route (SDK collapses all three + freemium gating). Natural pro/free gating seams already exist: the adapter registry (`adapterRegistry.ts`) and the `WPSG_Permissions` tier map (`includes/class-wpsg-permissions.php`).
+
+**Effort:** Medium (Freemius) to High (self-hosted EDD/Woo/custom) | **Impact:** Enables direct revenue. Activates only once a distribution target is decided.
+
+---
+
 ## Campaign Management
 
 ### Campaign Binary Export — Stream Large Media Sets
@@ -243,3 +381,5 @@ When promoting future tasks to an active phase:
 *Updated: June 9, 2026 (P50 planning) — Promoted to Phase 50: "Full Audit and Extraction to Shared Package" (P50-G), "Cross-Space Campaign Move" (P50-A), "Per-Space Library Isolation" (P50-B), "Service Worker Metadata Caching Enhancements" (P50-F), "Stacked / Deck Adapter" (P50-C), "Waterfall Adapter" (P50-E), "Isotope / Filterable Grid Adapter" (P50-D). Removed now-empty sections: Reusable Component / Utility Library, Gallery Spaces, Build & Bundle.*
 
 *Updated: June 12, 2026 (P50-F follow-on) — Re-added Build & Bundle section with "Service Worker — Offline Support (App Shell Pattern)": deferred from P50-F after manual testing confirmed offline mode is unsupported by design (SW intentionally skips navigation/HTML caching to avoid stale-chunk failures after deploys). Full offline support requires a versioned app-shell cache with deploy-time busting.*
+
+*Updated: June 17, 2026 (P54 planning) — Added the Phase 54 production-readiness review follow-ons (deferred from [PHASE54_REPORT.md](PHASE54_REPORT.md), which is tight must-fix only): four LayoutBuilder enhancements (Editor UX Polish, Responsive/Per-Breakpoint Editing, Text/Caption Layers, Design-Tool Affordances) under Builder, ordered by user priority; "Gallery — Admin-Control Additions"; a new Code Quality & Refactoring section (adapter data extraction / registration-seam / field-map unification; large-file decomposition); Internationalization (full admin i18n migration — P54-B does user-facing only); Accessibility (full WCAG AA — P54-C does the front-end critical/serious baseline); and Monetization & Distribution (licensing/update infra), cross-linked to the new [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).*
