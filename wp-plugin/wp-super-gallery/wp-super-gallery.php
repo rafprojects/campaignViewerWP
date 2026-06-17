@@ -80,7 +80,7 @@ function wpsg_deactivate() {
 // Set up roles and capabilities on init (more reliable than activation hook)
 add_action('init', 'wpsg_setup_roles_and_caps');
 function wpsg_setup_roles_and_caps() {
-    // Only run setup if flagged or if capability is missing
+    // Only run heavy admin-role setup if flagged or if capability is missing.
     $needs_setup = get_option('wpsg_needs_setup', '0');
     $admin_role = get_role('administrator');
     $needs_cap = $admin_role && !$admin_role->has_cap('manage_wpsg');
@@ -100,6 +100,28 @@ function wpsg_setup_roles_and_caps() {
 
         // Clear setup flag
         delete_option('wpsg_needs_setup');
+    }
+
+    // Always self-heal the editor role: if the role is absent or is missing
+    // manage_wpsg (e.g. after a DB restore or WP role reset), repair it now.
+    // get_role() reads from the in-memory role cache — no DB hit when correct.
+    $editor_role = get_role('wpsg_editor');
+    if (!$editor_role || !$editor_role->has_cap('manage_wpsg')) {
+        wpsg_ensure_editor_role();
+    }
+}
+
+// Redirect Gallery Editors away from /wp-admin. Editors use the frontend
+// Admin Panel only — /wp-admin is reserved for system administrators.
+// AJAX requests are excluded so WP's own back-channel calls are unaffected.
+add_action('admin_init', 'wpsg_redirect_editors_from_admin');
+function wpsg_redirect_editors_from_admin() {
+    if (wp_doing_ajax()) {
+        return;
+    }
+    if (current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+        wp_safe_redirect(home_url());
+        exit;
     }
 }
 

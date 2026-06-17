@@ -63,12 +63,15 @@ class WPSG_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
 
     // ── Single-campaign space scoping ─────────────────────────────────────
 
-    public function test_open_space_editor_allowed() {
+    public function test_open_space_editor_allowed_with_grant() {
+        // P53-A: open-mode no longer confers implicit access; editor needs an explicit grant.
+        $editor   = $this->make_editor();
         $space    = $this->make_space('open');
+        $this->grant_space($space, $editor, 'viewer');
         $campaign = $this->campaign_in_space($space);
-        wp_set_current_user($this->make_editor());
+        wp_set_current_user($editor);
 
-        $this->assertSame(200, $this->audit_status($campaign), 'open-mode editor may read campaign audit');
+        $this->assertSame(200, $this->audit_status($campaign), 'explicitly-granted editor may read campaign audit in an open space');
     }
 
     public function test_delegated_space_editor_without_grant_denied() {
@@ -114,9 +117,10 @@ class WPSG_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
 
     public function test_batch_denied_when_any_campaign_is_cross_space() {
         $editor   = $this->make_editor();
-        $open     = $this->make_space('open');           // editor has access (open)
+        $granted  = $this->make_space('delegated');      // editor has explicit grant
         $foreign  = $this->make_space('delegated');      // editor has NO grant
-        $mine     = $this->campaign_in_space($open);
+        $this->grant_space($granted, $editor, 'viewer');
+        $mine     = $this->campaign_in_space($granted);
         $theirs   = $this->campaign_in_space($foreign);
         wp_set_current_user($editor);
 
@@ -127,31 +131,37 @@ class WPSG_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
     }
 
     public function test_batch_allowed_when_all_campaigns_accessible() {
-        $editor = $this->make_editor();
-        $open   = $this->make_space('open');
-        $a      = $this->campaign_in_space($open);
-        $b      = $this->campaign_in_space($open);
+        // P53-A: editor needs an explicit grant; open-mode implicit access removed.
+        $editor  = $this->make_editor();
+        $granted = $this->make_space('open');
+        $this->grant_space($granted, $editor, 'viewer');
+        $a = $this->campaign_in_space($granted);
+        $b = $this->campaign_in_space($granted);
         wp_set_current_user($editor);
 
         $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
         $req->set_param('action', 'archive');
         $req->set_param('ids', [$a, $b]);
-        $this->assertSame(200, rest_do_request($req)->get_status(), 'batch within accessible spaces proceeds');
+        $this->assertSame(200, rest_do_request($req)->get_status(), 'batch within explicitly-accessible spaces proceeds');
     }
 
     // ── spaces.list filtering ─────────────────────────────────────────────
 
     public function test_spaces_list_is_filtered_for_editor() {
+        // P53-A: open-mode no longer grants implicit access; only explicitly granted spaces appear.
         $editor    = $this->make_editor();
-        $open      = $this->make_space('open');        // accessible (open + manage_wpsg)
-        $delegated = $this->make_space('delegated');   // not accessible (no grant)
+        $open      = $this->make_space('open');      // no grant — editor must NOT see
+        $delegated = $this->make_space('delegated'); // no grant — editor must NOT see
+        $granted   = $this->make_space('delegated'); // explicit grant — editor SHOULD see
+        $this->grant_space($granted, $editor, 'viewer');
         wp_set_current_user($editor);
 
         $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/spaces');
         $ids  = array_map(fn($s) => intval($s['id']), rest_do_request($req)->get_data());
 
-        $this->assertContains($open, $ids, 'editor sees accessible (open) space');
-        $this->assertNotContains($delegated, $ids, 'editor must NOT see a delegated space they cannot access');
+        $this->assertNotContains($open,      $ids, 'editor must NOT see an ungranted open space');
+        $this->assertNotContains($delegated, $ids, 'editor must NOT see an ungranted delegated space');
+        $this->assertContains($granted,      $ids, 'editor sees the explicitly granted space');
     }
 
     public function test_spaces_list_unfiltered_for_super_admin() {

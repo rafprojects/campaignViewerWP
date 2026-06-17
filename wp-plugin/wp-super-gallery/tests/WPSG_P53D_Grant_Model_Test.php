@@ -60,11 +60,14 @@ class WPSG_P53D_Grant_Model_Test extends WP_UnitTestCase {
     // ── Editing comes from the role + space access ────────────────────────
 
     public function test_editor_role_can_edit_campaign_in_accessible_space() {
+        // P53-A: open-mode no longer grants implicit access; editor needs explicit grant.
         $editor = $this->make_editor();
-        $cid    = $this->campaign($this->make_space('open'));
+        $space  = $this->make_space('open');
+        $this->grant_space($space, $editor);
+        $cid = $this->campaign($space);
         wp_set_current_user($editor);
 
-        $this->assertSame(200, $this->update_status($cid), 'a wpsg_editor may edit a campaign in an open (accessible) space');
+        $this->assertSame(200, $this->update_status($cid), 'a wpsg_editor may edit a campaign in a space it has been granted access to');
     }
 
     public function test_editor_role_denied_in_delegated_space_without_access() {
@@ -127,15 +130,17 @@ class WPSG_P53D_Grant_Model_Test extends WP_UnitTestCase {
     // ── Space management is role + space-scoped (require_space_admin) ──────
 
     public function test_editor_can_manage_accessible_space() {
+        // P53-A: open-mode no longer grants implicit access; editor needs explicit grant.
         $editor = $this->make_editor();
         $space  = $this->make_space('open');
+        $this->grant_space($space, $editor);
         $target = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($editor);
 
         $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
         $req->set_param('userId', $target);
         $req->set_param('access_level', 'viewer');
-        $this->assertSame(200, rest_do_request($req)->get_status(), 'an editor may manage access in an accessible (open) space');
+        $this->assertSame(200, rest_do_request($req)->get_status(), 'an editor may manage access in a space it has been granted access to');
     }
 
     public function test_editor_denied_managing_delegated_space_without_access() {

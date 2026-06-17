@@ -74,10 +74,10 @@ class WPSG_P53A_Scoping_Test extends WP_UnitTestCase {
 
     // ── Campaign list scoping ─────────────────────────────────────────────
 
-    public function test_editor_list_excludes_private_campaigns_in_inaccessible_spaces() {
+    public function test_editor_list_excludes_private_campaigns_in_any_ungranted_space() {
         $editor = $this->make_editor();
-        $open   = $this->make_space('open');         // editor is owner here (manage_wpsg)
-        $deleg  = $this->make_space('delegated');     // editor has NO grant here
+        $open   = $this->make_space('open');      // editor has NO explicit grant here
+        $deleg  = $this->make_space('delegated'); // editor has NO grant here
 
         $a_priv = $this->campaign($open,  'private', 'A private (open)');
         $b_priv = $this->campaign($deleg, 'private', 'B private (delegated)');
@@ -86,9 +86,10 @@ class WPSG_P53A_Scoping_Test extends WP_UnitTestCase {
         wp_set_current_user($editor);
         $ids = $this->list_campaign_ids();
 
-        $this->assertContains((string) $a_priv, $ids, 'editor sees private campaigns in an accessible (open) space');
+        // P53-A (two-tier): open-mode spaces no longer grant implicit editor access.
+        $this->assertNotContains((string) $a_priv, $ids, 'editor must NOT see private campaigns in an ungranted open space');
         $this->assertContains((string) $b_pub, $ids, 'editor still sees PUBLIC campaigns everywhere (P53-B)');
-        $this->assertNotContains((string) $b_priv, $ids, 'editor must NOT see private campaigns in a delegated space it cannot access');
+        $this->assertNotContains((string) $b_priv, $ids, 'editor must NOT see private campaigns in an ungranted delegated space');
     }
 
     public function test_system_admin_list_includes_all_campaigns() {
@@ -126,9 +127,10 @@ class WPSG_P53A_Scoping_Test extends WP_UnitTestCase {
         $this->grant_space($granted, $editor);
 
         wp_set_current_user($editor);
-        $this->assertTrue(WPSG_REST_Base::current_actor_can_access_space($open), 'editor accesses open spaces');
+        // P53-A: open-mode no longer confers implicit access; editors need explicit grants.
+        $this->assertFalse(WPSG_REST_Base::current_actor_can_access_space($open), 'editor cannot access an ungranted open space');
         $this->assertFalse(WPSG_REST_Base::current_actor_can_access_space($deleg), 'editor cannot access an ungranted delegated space');
-        $this->assertTrue(WPSG_REST_Base::current_actor_can_access_space($granted), 'editor accesses a granted delegated space');
+        $this->assertTrue(WPSG_REST_Base::current_actor_can_access_space($granted), 'editor accesses a space it was explicitly granted');
     }
 
     public function test_actor_space_access_for_system_admin() {
@@ -148,18 +150,27 @@ class WPSG_P53A_Scoping_Test extends WP_UnitTestCase {
     }
 
     public function test_page_spaces_scoped_to_editor() {
-        $editor = $this->make_editor();
-        $open   = $this->make_space('open');
-        $deleg  = $this->make_space('delegated'); // editor ungranted
-        $this->set_page_spaces($open, $deleg);
+        $editor  = $this->make_editor();
+        $open    = $this->make_space('open');      // ungranted — editor should NOT see
+        $deleg   = $this->make_space('delegated'); // ungranted — editor should NOT see
+        $granted = $this->make_space('delegated'); // explicit grant — editor SHOULD see
+        $this->grant_space($granted, $editor);
+
+        $GLOBALS['wpsg_spaces_on_page'] = [
+            'inst-a' => ['id' => $open,    'slug' => 'alpha',  'name' => 'Alpha Space'],
+            'inst-b' => ['id' => $deleg,   'slug' => 'beta',   'name' => 'Beta Space'],
+            'inst-c' => ['id' => $granted, 'slug' => 'gamma',  'name' => 'Gamma Space'],
+        ];
 
         wp_set_current_user($editor);
         ob_start();
         WPSG_Embed::emit_page_spaces_js();
         $out = (string) ob_get_clean();
 
-        $this->assertStringContainsString('Alpha Space', $out, 'the accessible open space is offered');
-        $this->assertStringNotContainsString('Beta Space', $out, 'the inaccessible delegated space is filtered out');
+        // P53-A: open-mode no longer confers implicit access; only explicitly granted spaces appear.
+        $this->assertStringNotContainsString('Alpha Space', $out, 'ungranted open space filtered out');
+        $this->assertStringNotContainsString('Beta Space',  $out, 'ungranted delegated space filtered out');
+        $this->assertStringContainsString('Gamma Space',    $out, 'explicitly granted space is offered');
     }
 
     public function test_page_spaces_shows_all_for_system_admin() {

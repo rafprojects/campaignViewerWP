@@ -270,8 +270,10 @@ abstract class WPSG_REST_Base {
     /**
      * Resolves the user's access level within a space.
      *
-     * In open mode, manage_wpsg is treated as 'owner'. In delegated mode only
-     * manage_options (super-admin) and explicit space grants confer access.
+     * System admins (manage_options) are implicitly 'owner' in every space
+     * regardless of isolation mode. Editors (manage_wpsg) require an explicit
+     * space grant — open-mode spaces no longer confer implicit access to
+     * editors (P53-A: two-tier RBAC split).
      *
      * @return string 'owner'|'editor'|'viewer'|'' (empty = no access)
      */
@@ -282,10 +284,6 @@ abstract class WPSG_REST_Base {
         }
 
         if (user_can($user_id, 'manage_options')) {
-            return 'owner';
-        }
-
-        if ($space->isolation_mode === 'open' && user_can($user_id, 'manage_wpsg')) {
             return 'owner';
         }
 
@@ -321,8 +319,8 @@ abstract class WPSG_REST_Base {
      * P53-A: public accessor so non-controller code (the embed page-spaces list
      * and admin-bar nodes) can scope a space list to the CURRENT actor without
      * duplicating the open/delegated resolution. System admins (manage_options)
-     * resolve to 'owner' for every space and see all; a wpsg_editor sees open
-     * spaces plus the delegated spaces it is granted.
+     * resolve to 'owner' for every space and see all; a wpsg_editor sees only
+     * the spaces it has been explicitly granted access to.
      */
     public static function current_actor_can_access_space(int $space_id): bool {
         return self::get_effective_space_level(get_current_user_id(), $space_id) !== '';
