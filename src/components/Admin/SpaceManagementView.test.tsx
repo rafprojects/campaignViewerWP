@@ -75,15 +75,39 @@ async function clickTab(label: string) {
   fireEvent.click(tab);
 }
 
-function renderView(apiClient: ApiClient) {
+function renderView(apiClient: ApiClient, isSystemAdmin = false) {
   render(
     <SpaceManagementView
       apiClient={apiClient}
       onNotify={vi.fn()}
       onSpacesChanged={vi.fn()}
+      isSystemAdmin={isSystemAdmin}
     />,
   );
 }
+
+describe('SpaceManagementView — create-space gating (P53-A)', () => {
+  let apiClient: ReturnType<typeof createMockApiClient>;
+
+  beforeEach(() => {
+    apiClient = createMockApiClient();
+    vi.clearAllMocks();
+  });
+
+  it('hides the create-space form for a non-system-admin', async () => {
+    renderView(apiClient, false);
+    // The space list still loads (editors can manage spaces they can access)…
+    await waitFor(() => expect(screen.getByText('Open Space')).toBeInTheDocument());
+    // …but creating a new space is system-admin only (spaces.create).
+    expect(screen.queryByText(/Create new space/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the create-space form for a system admin', async () => {
+    renderView(apiClient, true);
+    await waitFor(() => expect(screen.getByText('Open Space')).toBeInTheDocument());
+    expect(screen.getByText(/Create new space/i)).toBeInTheDocument();
+  });
+});
 
 describe('SpaceManagementView — Library tab', () => {
   let apiClient: ReturnType<typeof createMockApiClient>;

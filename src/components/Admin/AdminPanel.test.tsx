@@ -2,6 +2,23 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { AdminPanel } from './AdminPanel';
 
+// AdminPanel reads useAuth().isSystemAdmin (P53-A). The test render harness does
+// not wrap AuthProvider, so mock the hook. `mockIsSystemAdmin` is mutable so a
+// test can model an editor (false) vs a system admin (true, the default).
+let mockIsSystemAdmin = true;
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({
+    user: { id: '1', email: 'admin@example.com', role: mockIsSystemAdmin ? 'admin' : 'editor' },
+    permissions: [],
+    isAuthenticated: true,
+    isReady: true,
+    isAdmin: true,
+    isSystemAdmin: mockIsSystemAdmin,
+    login: vi.fn(),
+    logout: vi.fn(),
+  }),
+}));
+
 // Static imports to warm the module cache for lazy-loaded modals.
 // This avoids dynamic import() in beforeAll which can hang under worker pressure.
 import './AdminCampaignArchiveModal';
@@ -32,10 +49,12 @@ describe('AdminPanel', () => {
   // Clear localStorage between tests to prevent tab state leaking across tests.
   beforeEach(() => {
     localStorage.clear();
+    mockIsSystemAdmin = true;
   });
 
   afterEach(() => {
     localStorage.clear();
+    mockIsSystemAdmin = true;
   });
 
   /** Inject stubs for methods AdminPanel calls through query-backed loaders to prevent unhandled
@@ -91,6 +110,35 @@ describe('AdminPanel', () => {
 
     const campaignLabels = await screen.findAllByText('Admin Campaign');
     expect(campaignLabels.length).toBeGreaterThan(0);
+  }, 30000);
+
+  it('hides system-admin-only surfaces for an editor (P53-A)', async () => {
+    mockIsSystemAdmin = false;
+    const apiClient = withDefaults({
+      get: vi.fn((path: string) => {
+        if (path.includes('/campaigns?per_page=50') || path.includes('/campaigns?page=')) {
+          return Promise.resolve(campaignsPayload);
+        }
+        return Promise.resolve([]);
+      }),
+      post: vi.fn().mockResolvedValue({ message: 'ok' }),
+      delete: vi.fn().mockResolvedValue({ message: 'ok' }),
+    });
+
+    render(
+      <AdminPanel
+        apiClient={apiClient}
+        onClose={() => undefined}
+        onCampaignsUpdated={() => undefined}
+        onNotify={vi.fn()}
+      />,
+    );
+
+    // The editor still sees the panel + the Campaigns tab.
+    await screen.findAllByText('Admin Campaign');
+    // …but not the System Audit tab or the (system-admin) campaign Import button.
+    expect(screen.queryByRole('tab', { name: 'System Audit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Import campaigns|^Import$/ })).not.toBeInTheDocument();
   }, 30000);
 
   it('shows error when campaigns fail to load', async () => {
@@ -151,7 +199,6 @@ describe('AdminPanel', () => {
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
     fireEvent.change(screen.getByPlaceholderText('Search or add company…'), { target: { value: 'acme' } });
-    fireEvent.change(screen.getByPlaceholderText('tag1, tag2, tag3'), { target: { value: 'a,b' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 

@@ -1,273 +1,624 @@
 /**
- * Phase 16 Tests: P16-A.1 — layerList utility (buildLayerList, getLayerName, computeReorderedZIndices)
+ * Comprehensive unit tests for layerList.ts — layer panel tree building and reordering.
+ * Covers layer list generation with group hierarchy, name resolution, and z-index reordering.
  */
 import { describe, it, expect } from 'vitest';
+import type {
+  LayerItem,
+  SlotLayerItem,
+  GraphicLayerItem,
+  BackgroundLayerItem,
+  GroupLayerItem,
+} from './layerList';
 import {
   buildLayerList,
   getLayerName,
   computeReorderedZIndices,
 } from '@/utils/layerList';
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGroup, LayoutGraphicLayer } from '@/types';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Test helpers ────────────────────────────────────────────────────────
 
-const makeSlot = (id: string, zIndex: number, overrides: Partial<LayoutSlot> = {}): LayoutSlot => ({
-  id,
-  x: 0, y: 0, width: 25, height: 25, zIndex,
-  shape: 'rectangle',
-  borderRadius: 4, borderWidth: 0, borderColor: '#fff',
-  objectFit: 'cover', objectPosition: '50% 50%',
-  clickAction: 'lightbox', hoverEffect: 'pop',
-  ...overrides,
-});
+function makeSlot(id: string, options: Partial<LayoutSlot> = {}): LayoutSlot {
+  return {
+    id,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    zIndex: 1,
+    name: '',
+    visible: true,
+    locked: false,
+    maskLayer: undefined,
+    ...options,
+  } as LayoutSlot;
+}
 
-const makeOverlay = (id: string, zIndex: number, overrides: Partial<LayoutGraphicLayer> = {}): LayoutGraphicLayer => ({
-  id, imageUrl: '/img.png',
-  x: 0, y: 0, width: 50, height: 50, zIndex,
-  opacity: 1, pointerEvents: false,
-  ...overrides,
-});
+function makeGroup(id: string, options: Partial<LayoutGroup> = {}): LayoutGroup {
+  return {
+    id,
+    memberIds: [],
+    childGroupIds: [],
+    parentGroupId: null,
+    name: '',
+    visible: true,
+    locked: false,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    ...options,
+  } as LayoutGroup;
+}
 
-const makeTemplate = (slots: LayoutSlot[], overlays: LayoutGraphicLayer[] = []): LayoutTemplate => ({
-  id: 'tpl', name: 'Test', schemaVersion: 1,
-  canvasAspectRatio: 16 / 9, canvasMinWidth: 400, canvasMaxWidth: 1200,
-  backgroundColor: '#000',
-  slots, overlays,
-  createdAt: '2026-01-01T00:00:00Z', updatedAt: '2026-01-01T00:00:00Z',
-  tags: [],
+function makeOverlay(id: string, options: Partial<LayoutGraphicLayer> = {}): LayoutGraphicLayer {
+  return {
+    id,
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+    zIndex: 1,
+    name: '',
+    visible: true,
+    locked: false,
+    opacity: 1,
+    ...options,
+  } as LayoutGraphicLayer;
+}
+
+function makeTemplate(overrides: Partial<LayoutTemplate> = {}): LayoutTemplate {
+  return {
+    id: 'template-1',
+    name: 'Test Template',
+    aspectRatio: 16 / 9,
+    slots: [],
+    overlays: [],
+    groups: [],
+    backgroundColor: { h: 0, s: 0, l: 50, a: 1 },
+    backgroundVisible: true,
+    backgroundLocked: false,
+    ...overrides,
+  } as LayoutTemplate;
+}
+
+// ── getLayerName ───────────────────────────────────────────────────────
+
+describe('getLayerName', () => {
+  const template = makeTemplate();
+
+  it('returns name for background layer', () => {
+    const item: BackgroundLayerItem = {
+      kind: 'background',
+      id: 'background',
+      zIndex: 0,
+      arrayIndex: -1,
+      name: 'Custom Background',
+      visible: true,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Custom Background');
+  });
+
+  it('returns "Background" if background has no explicit name', () => {
+    const item: BackgroundLayerItem = {
+      kind: 'background',
+      id: 'background',
+      zIndex: 0,
+      arrayIndex: -1,
+      name: '',
+      visible: true,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Background');
+  });
+
+  it('returns explicit name for mask', () => {
+    const item = {
+      kind: 'mask' as const,
+      id: 'mask-s1',
+      parentSlotId: 's1',
+      zIndex: 1,
+      arrayIndex: -1,
+      name: 'Custom Mask',
+      visible: true,
+      depth: 2,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Custom Mask');
+  });
+
+  it('returns "Mask" for mask with no explicit name', () => {
+    const item = {
+      kind: 'mask' as const,
+      id: 'mask-s1',
+      parentSlotId: 's1',
+      zIndex: 1,
+      arrayIndex: -1,
+      name: '',
+      visible: true,
+      depth: 2,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Mask');
+  });
+
+  it('returns explicit name for group', () => {
+    const item: GroupLayerItem = {
+      kind: 'group',
+      id: 'g1',
+      group: makeGroup('g1'),
+      zIndex: 1,
+      arrayIndex: 0,
+      name: 'My Group',
+      visible: true,
+      locked: false,
+      depth: 0,
+      ancestorGroupIds: [],
+      totalDescendantCount: 2,
+      descendantSlotIds: ['s1', 's2'],
+    };
+    expect(getLayerName(item, template)).toBe('My Group');
+  });
+
+  it('returns "Group" for group with no explicit name', () => {
+    const item: GroupLayerItem = {
+      kind: 'group',
+      id: 'g1',
+      group: makeGroup('g1'),
+      zIndex: 1,
+      arrayIndex: 0,
+      name: '',
+      visible: true,
+      locked: false,
+      depth: 0,
+      ancestorGroupIds: [],
+      totalDescendantCount: 2,
+      descendantSlotIds: ['s1', 's2'],
+    };
+    expect(getLayerName(item, template)).toBe('Group');
+  });
+
+  it('returns explicit name for slot', () => {
+    const item: SlotLayerItem = {
+      kind: 'slot',
+      id: 's1',
+      zIndex: 1,
+      arrayIndex: 0,
+      index: 0,
+      name: 'My Slot',
+      visible: true,
+      locked: false,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('My Slot');
+  });
+
+  it('returns "Media Layer N" fallback for slot (1-based)', () => {
+    const item: SlotLayerItem = {
+      kind: 'slot',
+      id: 's1',
+      zIndex: 1,
+      arrayIndex: 0,
+      index: 2,
+      name: '',
+      visible: true,
+      locked: false,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Media Layer 3');
+  });
+
+  it('returns explicit name for graphic layer', () => {
+    const item: GraphicLayerItem = {
+      kind: 'graphic',
+      id: 'g-overlay-1',
+      zIndex: 1,
+      arrayIndex: 0,
+      name: 'My Overlay',
+      visible: true,
+      locked: false,
+      opacity: 1,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('My Overlay');
+  });
+
+  it('returns "Graphic Layer N" fallback for graphic (1-based from arrayIndex)', () => {
+    const item: GraphicLayerItem = {
+      kind: 'graphic',
+      id: 'overlay-2',
+      zIndex: 1,
+      arrayIndex: 1,
+      name: '',
+      visible: true,
+      locked: false,
+      opacity: 1,
+      depth: 0,
+      ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, template)).toBe('Graphic Layer 2');
+  });
 });
 
 // ── buildLayerList ─────────────────────────────────────────────────────────
 
 describe('buildLayerList', () => {
-  it('returns only background row for empty template', () => {
-    const layers = buildLayerList(makeTemplate([], []));
-    expect(layers).toHaveLength(1);
-    expect(layers[0].kind).toBe('background');
+  it('returns only background for empty template', () => {
+    const template = makeTemplate();
+    const result = buildLayerList(template);
+    expect(result).toHaveLength(1);
+    expect(result[0].kind).toBe('background');
+  });
+
+  it('builds layer list with single ungrouped slot', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { zIndex: 10 })],
+    });
+    const result = buildLayerList(template);
+    expect(result).toHaveLength(2);
+    expect(result[0].kind).toBe('slot');
+    expect(result[0].id).toBe('s1');
+    expect(result[1].kind).toBe('background');
+  });
+
+  it('builds layer list with multiple ungrouped slots sorted by z-index descending', () => {
+    const template = makeTemplate({
+      slots: [
+        makeSlot('s1', { zIndex: 10 }),
+        makeSlot('s2', { zIndex: 20 }),
+        makeSlot('s3', { zIndex: 5 }),
+      ],
+    });
+    const result = buildLayerList(template);
+    expect(result[0].id).toBe('s2');
+    expect(result[1].id).toBe('s1');
+    expect(result[2].id).toBe('s3');
+  });
+
+  it('uses array index as tie-breaker for slots with same z-index', () => {
+    const template = makeTemplate({
+      slots: [
+        makeSlot('s1', { zIndex: 10 }),
+        makeSlot('s2', { zIndex: 10 }),
+      ],
+    });
+    const result = buildLayerList(template);
+    expect(result[0].id).toBe('s2');
+    expect(result[1].id).toBe('s1');
+  });
+
+  it('includes slot.maskLayer when present', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { maskLayer: { visible: true } as any })],
+    });
+    const result = buildLayerList(template);
+    expect(result.length).toBeGreaterThan(2);
+    const maskLayer = result.find((l) => l.kind === 'mask');
+    expect(maskLayer).toBeDefined();
+    expect(maskLayer?.id).toBe('mask-s1');
+  });
+
+  it('skips slot.maskLayer when not present', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1')],
+    });
+    const result = buildLayerList(template);
+    const maskLayers = result.filter((l) => l.kind === 'mask');
+    expect(maskLayers).toHaveLength(0);
+  });
+
+  it('includes graphic overlays sorted by z-index', () => {
+    const template = makeTemplate({
+      overlays: [
+        makeOverlay('o1', { zIndex: 15 }),
+        makeOverlay('o2', { zIndex: 25 }),
+      ],
+    });
+    const result = buildLayerList(template);
+    expect(result[0].kind).toBe('graphic');
+    expect(result[0].id).toBe('o2');
+    expect(result[1].kind).toBe('graphic');
+    expect(result[1].id).toBe('o1');
+  });
+
+  it('respects visible flag on slots and groups', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { visible: false })],
+    });
+    const result = buildLayerList(template);
+    const slot = result.find((l) => l.id === 's1') as SlotLayerItem;
+    expect(slot.visible).toBe(false);
+  });
+
+  it('respects locked flag on slots and groups', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { locked: true })],
+    });
+    const result = buildLayerList(template);
+    const slot = result.find((l) => l.id === 's1') as SlotLayerItem;
+    expect(slot.locked).toBe(true);
+  });
+
+  it('emits flat group when no child groups', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { zIndex: 10 })],
+      groups: [makeGroup('g1', { memberIds: ['s1'] })],
+    });
+    const result = buildLayerList(template);
+    const groupItem = result.find((l) => l.kind === 'group') as GroupLayerItem;
+    expect(groupItem).toBeDefined();
+    expect(groupItem.depth).toBe(0);
+    expect(groupItem.ancestorGroupIds).toEqual([]);
+  });
+
+  it('emits nested group hierarchy with correct depth', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { zIndex: 10 })],
+      groups: [
+        makeGroup('g1', { memberIds: [], childGroupIds: ['g2'] }),
+        makeGroup('g2', { memberIds: ['s1'], parentGroupId: 'g1' }),
+      ],
+    });
+    const result = buildLayerList(template);
+    const g1 = result.find((l) => l.kind === 'group' && l.id === 'g1') as GroupLayerItem;
+    const g2 = result.find((l) => l.kind === 'group' && l.id === 'g2') as GroupLayerItem;
+    const s1 = result.find((l) => l.kind === 'slot') as SlotLayerItem;
+    expect(g1.depth).toBe(0);
+    expect(g2.depth).toBe(1);
+    expect(s1.depth).toBe(2);
+  });
+
+  it('computes ancestorGroupIds correctly for nested items', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1')],
+      groups: [
+        makeGroup('g1', { memberIds: [], childGroupIds: ['g2'] }),
+        makeGroup('g2', { memberIds: ['s1'], parentGroupId: 'g1' }),
+      ],
+    });
+    const result = buildLayerList(template);
+    const s1 = result.find((l) => l.kind === 'slot') as SlotLayerItem;
+    // ancestorGroupIds is built as [parent, grandparent, ...] via myAncestors
+    expect(s1.ancestorGroupIds).toEqual(['g1', 'g2']);
+  });
+
+  it('excludes grouped slots from top-level ungrouped list', () => {
+    const template = makeTemplate({
+      slots: [
+        makeSlot('s1'),
+        makeSlot('s2'),
+      ],
+      groups: [makeGroup('g1', { memberIds: ['s1'] })],
+    });
+    const result = buildLayerList(template);
+    const topLevelSlots = result.filter((l) => l.kind === 'slot' && l.depth === 0);
+    expect(topLevelSlots).toHaveLength(1);
+    expect(topLevelSlots[0].id).toBe('s2');
+  });
+
+  it('computes totalDescendantCount and descendantSlotIds for group', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1'), makeSlot('s2')],
+      groups: [makeGroup('g1', { memberIds: ['s1', 's2'] })],
+    });
+    const result = buildLayerList(template);
+    const group = result.find((l) => l.kind === 'group') as GroupLayerItem;
+    expect(group.totalDescendantCount).toBe(2);
+    expect(new Set(group.descendantSlotIds)).toEqual(new Set(['s1', 's2']));
+  });
+
+  it('masks inherit depth from parent slot + 1', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { maskLayer: { visible: true } as any })],
+      groups: [makeGroup('g1', { memberIds: ['s1'] })],
+    });
+    const result = buildLayerList(template);
+    const slot = result.find((l) => l.kind === 'slot') as SlotLayerItem;
+    const mask = result.find((l) => l.kind === 'mask');
+    expect(mask?.depth).toBe((slot.depth ?? 0) + 1);
+  });
+
+  it('masks inherit ancestorGroupIds from parent slot', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { maskLayer: { visible: true } as any })],
+      groups: [
+        makeGroup('g1', { memberIds: [], childGroupIds: ['g2'] }),
+        makeGroup('g2', { memberIds: ['s1'], parentGroupId: 'g1' }),
+      ],
+    });
+    const result = buildLayerList(template);
+    const slot = result.find((l) => l.kind === 'slot') as SlotLayerItem;
+    const mask = result.find((l) => l.kind === 'mask');
+    expect(mask?.ancestorGroupIds).toEqual(['g1', 'g2']);
+    expect(mask?.ancestorGroupIds).toEqual(slot.ancestorGroupIds);
+  });
+
+  it('group rep z-index is max of all descendant slots', () => {
+    const template = makeTemplate({
+      slots: [
+        makeSlot('s1', { zIndex: 5 }),
+        makeSlot('s2', { zIndex: 20 }),
+        makeSlot('s3', { zIndex: 15 }),
+      ],
+      groups: [makeGroup('g1', { memberIds: ['s1', 's2', 's3'] })],
+    });
+    const result = buildLayerList(template);
+    const group = result.find((l) => l.kind === 'group') as GroupLayerItem;
+    expect(group.zIndex).toBe(20);
+  });
+
+  it('group with no resolvable slots has rep z-index of 0', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1')],
+      groups: [makeGroup('g1', { memberIds: ['s99'] })],
+    });
+    const result = buildLayerList(template);
+    const group = result.find((l) => l.kind === 'group') as GroupLayerItem;
+    expect(group.zIndex).toBe(0);
   });
 
   it('background is always the last item', () => {
-    const tpl = makeTemplate(
-      [makeSlot('s1', 10), makeSlot('s2', 5)],
-      [makeOverlay('o1', 20)],
-    );
-    const layers = buildLayerList(tpl);
-    expect(layers[layers.length - 1].kind).toBe('background');
+    const template = makeTemplate({
+      slots: [makeSlot('s1')],
+      overlays: [makeOverlay('o1')],
+    });
+    const result = buildLayerList(template);
+    expect(result[result.length - 1].kind).toBe('background');
   });
 
-  it('sorts items descending by zIndex', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 5), makeSlot('s3', 3)]);
-    const layers = buildLayerList(tpl);
-    const nonBg = layers.filter((l) => l.kind !== 'background');
-    expect(nonBg.map((l) => l.id)).toEqual(['s2', 's3', 's1']);
-  });
-
-  it('interleaves slots and overlays by zIndex', () => {
-    const tpl = makeTemplate(
-      [makeSlot('s1', 10)],
-      [makeOverlay('o1', 20), makeOverlay('o2', 5)],
-    );
-    const layers = buildLayerList(tpl);
-    const nonBg = layers.filter((l) => l.kind !== 'background');
-    expect(nonBg[0].id).toBe('o1'); // zIndex 20
-    expect(nonBg[1].id).toBe('s1'); // zIndex 10
-    expect(nonBg[2].id).toBe('o2'); // zIndex 5
-  });
-
-  it('uses arrayIndex as stable tie-breaker for equal zIndex', () => {
-    // Both slots have zIndex 5; slot at arrayIndex 1 (s2) should come first
-    const tpl = makeTemplate([makeSlot('s1', 5), makeSlot('s2', 5)]);
-    const layers = buildLayerList(tpl);
-    const nonBg = layers.filter((l) => l.kind !== 'background');
-    // Higher arrayIndex wins (later in array = placed above in panel on equal z)
-    expect(nonBg[0].id).toBe('s2');
-    expect(nonBg[1].id).toBe('s1');
-  });
-
-  it('assigns correct index (0-based) to slot items', () => {
-    const tpl = makeTemplate([makeSlot('s1', 10), makeSlot('s2', 5)]);
-    const layers = buildLayerList(tpl);
-    const s1 = layers.find((l) => l.id === 's1');
-    const s2 = layers.find((l) => l.id === 's2');
-    expect(s1?.kind === 'slot' && s1.index).toBe(0);
-    expect(s2?.kind === 'slot' && s2.index).toBe(1);
-  });
-
-  it('defaults visible to true when not set', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1)]);
-    const layers = buildLayerList(tpl);
-    const s = layers.find((l) => l.id === 's1');
-    expect(s?.visible).toBe(true);
-  });
-
-  it('respects visible: false on slot', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1, { visible: false })]);
-    const layers = buildLayerList(tpl);
-    const s = layers.find((l) => l.id === 's1');
-    expect(s?.visible).toBe(false);
-  });
-
-  it('defaults locked to false when not set', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1)]);
-    const layers = buildLayerList(tpl);
-    const s = layers.find((l) => l.id === 's1') as { locked?: boolean };
-    expect(s?.locked).toBe(false);
-  });
-
-  it('respects locked: true on overlay', () => {
-    const tpl = makeTemplate([], [makeOverlay('o1', 5, { locked: true })]);
-    const layers = buildLayerList(tpl);
-    const o = layers.find((l) => l.id === 'o1') as { locked?: boolean };
-    expect(o?.locked).toBe(true);
-  });
-
-  it('passes overlay opacity through', () => {
-    const tpl = makeTemplate([], [makeOverlay('o1', 5, { opacity: 0.6 })]);
-    const layers = buildLayerList(tpl);
-    const o = layers.find((l) => l.id === 'o1');
-    expect(o?.kind === 'graphic' && o.opacity).toBe(0.6);
-  });
-
-  it('handles single slot + no overlays', () => {
-    const tpl = makeTemplate([makeSlot('s1', 3)]);
-    const layers = buildLayerList(tpl);
-    expect(layers).toHaveLength(2); // 1 slot + background
-    expect(layers[0].id).toBe('s1');
-  });
-
-  it('total count = slots + overlays + 1 (background)', () => {
-    const tpl = makeTemplate(
-      [makeSlot('s1', 1), makeSlot('s2', 2)],
-      [makeOverlay('o1', 3)],
-    );
-    expect(buildLayerList(tpl)).toHaveLength(4);
+  it('handles backward-compatible templates without groups field', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1')],
+      groups: undefined,
+    });
+    const result = buildLayerList(template);
+    const slot = result.find((l) => l.kind === 'slot') as SlotLayerItem;
+    expect(slot.depth).toBe(0);
+    expect(slot.ancestorGroupIds).toEqual([]);
   });
 });
 
-// ── getLayerName ───────────────────────────────────────────────────────────
-
-describe('getLayerName', () => {
-  const tpl = makeTemplate(
-    [makeSlot('s1', 1), makeSlot('s2', 2)],
-    [makeOverlay('o1', 10), makeOverlay('o2', 20)],
-  );
-
-  it('returns "Background" for background item with no name', () => {
-    const layers = buildLayerList(tpl);
-    const bg = layers.find((l) => l.kind === 'background')!;
-    expect(getLayerName(bg, tpl)).toBe('Background');
-  });
-
-  it('returns "Media Layer 1" for first slot with no name', () => {
-    const layers = buildLayerList(tpl);
-    const s1 = layers.find((l) => l.id === 's1')!;
-    expect(getLayerName(s1, tpl)).toBe('Media Layer 1');
-  });
-
-  it('returns "Media Layer 2" for second slot', () => {
-    const layers = buildLayerList(tpl);
-    const s2 = layers.find((l) => l.id === 's2')!;
-    expect(getLayerName(s2, tpl)).toBe('Media Layer 2');
-  });
-
-  it('returns "Graphic Layer 1" for first overlay', () => {
-    const layers = buildLayerList(tpl);
-    const o1 = layers.find((l) => l.id === 'o1')!;
-    expect(getLayerName(o1, tpl)).toBe('Graphic Layer 1');
-  });
-
-  it('returns "Graphic Layer 2" for second overlay', () => {
-    const layers = buildLayerList(tpl);
-    const o2 = layers.find((l) => l.id === 'o2')!;
-    expect(getLayerName(o2, tpl)).toBe('Graphic Layer 2');
-  });
-
-  it('returns explicit name when set on slot', () => {
-    const tplNamed = makeTemplate([makeSlot('s1', 1, { name: 'Hero Image' })]);
-    const layers = buildLayerList(tplNamed);
-    const s = layers.find((l) => l.id === 's1')!;
-    expect(getLayerName(s, tplNamed)).toBe('Hero Image');
-  });
-
-  it('returns explicit name when set on overlay', () => {
-    const tplNamed = makeTemplate([], [makeOverlay('o1', 5, { name: 'Logo Watermark' })]);
-    const layers = buildLayerList(tplNamed);
-    const o = layers.find((l) => l.id === 'o1')!;
-    expect(getLayerName(o, tplNamed)).toBe('Logo Watermark');
-  });
-});
-
-// ── computeReorderedZIndices ─────────────────────────────────────────────────
+// ── computeReorderedZIndices ────────────────────────────────────────────
 
 describe('computeReorderedZIndices', () => {
-  it('moves dragged item above target and assigns sequential z-indices', () => {
-    // Panel order (desc z): s3(3), s2(2), s1(1)
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2), makeSlot('s3', 3)]);
-    const layers = buildLayerList(tpl);
-    // Drag s1 (bottom) above s3 (top)
-    const result = computeReorderedZIndices(layers, 's1', 's3');
-    // After move panel should be: s1, s3, s2
-    // s1 gets z=3, s3 gets z=2, s2 gets z=1
-    expect(result.get('s1')).toBe(3);
-    expect(result.get('s3')).toBe(2);
-    expect(result.get('s2')).toBe(1);
-  });
+  function makeLayerList(count: number): (SlotLayerItem | GraphicLayerItem)[] {
+    return Array.from({ length: count }, (_, i) => ({
+      kind: 'slot' as const,
+      id: `s${i}`,
+      zIndex: count - i,
+      arrayIndex: i,
+      index: i,
+      name: '',
+      visible: true,
+      locked: false,
+      depth: 0,
+      ancestorGroupIds: [],
+    }));
+  }
 
-  it('handles cross-type reorder (slot above overlay)', () => {
-    const tpl = makeTemplate(
-      [makeSlot('s1', 1)],
-      [makeOverlay('o1', 3)],
-    );
-    const layers = buildLayerList(tpl);
-    // Panel order: o1(3), s1(1). Drag s1 above o1.
-    const result = computeReorderedZIndices(layers, 's1', 'o1');
-    expect(result.get('s1')).toBe(2); // top
-    expect(result.get('o1')).toBe(1); // bottom
-  });
-
-  it('returns unchanged z-indices when dragged and target are the same', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2)]);
-    const layers = buildLayerList(tpl);
-    const result = computeReorderedZIndices(layers, 's1', 's1');
+  it('returns current z-indices if dragged item not found', () => {
+    const layers: LayerItem[] = [
+      ...makeLayerList(2),
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 'nonexistent', 's1');
+    expect(result.get('s0')).toBe(2);
     expect(result.get('s1')).toBe(1);
-    expect(result.get('s2')).toBe(2);
   });
 
-  it('returns unchanged z-indices when dragged id not found', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2)]);
-    const layers = buildLayerList(tpl);
-    const result = computeReorderedZIndices(layers, 'nonexistent', 's2');
+  it('returns current z-indices if target not found', () => {
+    const layers: LayerItem[] = [
+      ...makeLayerList(2),
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's1', 'nonexistent');
+    expect(result.get('s0')).toBe(2);
     expect(result.get('s1')).toBe(1);
-    expect(result.get('s2')).toBe(2);
   });
 
-  it('always produces sequential z-indices starting at 1', () => {
-    const tpl = makeTemplate(
-      [makeSlot('s1', 10), makeSlot('s2', 20), makeSlot('s3', 30)],
-    );
-    const layers = buildLayerList(tpl);
-    const result = computeReorderedZIndices(layers, 's1', 's2');
-    const values = Array.from(result.values()).sort((a, b) => a - b);
-    expect(values).toEqual([1, 2, 3]);
+  it('moves dragged item above target in the movable list', () => {
+    const layers: LayerItem[] = [
+      { kind: 'slot', id: 's0', zIndex: 3, arrayIndex: 0, index: 0, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's1', zIndex: 2, arrayIndex: 1, index: 1, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's2', zIndex: 1, arrayIndex: 2, index: 2, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's2', 's0');
+    expect(result.get('s2')).toBeGreaterThan(result.get('s0')!);
   });
 
-  it('dropping onto background row places dragged item at bottom of stack', () => {
-    // Panel order: s3(3), s2(2), s1(1), background
-    // Drag s3 (top) onto background row → s3 should become z=1
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2), makeSlot('s3', 3)]);
-    const layers = buildLayerList(tpl);
-    const result = computeReorderedZIndices(layers, 's3', 'background');
-    expect(result.get('s2')).toBe(3); // was 2, now top
-    expect(result.get('s1')).toBe(2); // was 1, now middle
-    expect(result.get('s3')).toBe(1); // was 3, now bottom
+  it('assigns sequential z-indices from top (highest) to bottom (lowest)', () => {
+    const layers: LayerItem[] = [
+      ...makeLayerList(3),
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's2', 's0');
+    const values = Array.from(result.values());
+    expect(values[0]).toBeGreaterThan(values[1]);
+    expect(values[1]).toBeGreaterThan(values[2]);
   });
 
-  it('dropping onto background row is a no-op when item is already at the bottom', () => {
-    const tpl = makeTemplate([makeSlot('s1', 1), makeSlot('s2', 2)]);
-    const layers = buildLayerList(tpl);
-    // s1 is already at the bottom (z=1)
-    const result = computeReorderedZIndices(layers, 's1', 'background');
-    expect(result.get('s1')).toBe(1);
-    expect(result.get('s2')).toBe(2);
+  it('ignores background and mask layers when reordering', () => {
+    const layers: LayerItem[] = [
+      { kind: 'slot', id: 's0', zIndex: 2, arrayIndex: 0, index: 0, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's1', zIndex: 1, arrayIndex: 1, index: 1, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'mask', id: 'mask-s0', parentSlotId: 's0', zIndex: 2, arrayIndex: -1, name: '', visible: true, depth: 1, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's1', 's0');
+    expect(result.size).toBe(2);
+    expect(result.has('mask-s0')).toBe(false);
+    expect(result.has('background')).toBe(false);
+  });
+
+  it('ignores group layers when reordering', () => {
+    const layers: LayerItem[] = [
+      {
+        kind: 'group',
+        id: 'g0',
+        group: {} as any,
+        zIndex: 2,
+        arrayIndex: 0,
+        name: '',
+        visible: true,
+        locked: false,
+        depth: 0,
+        ancestorGroupIds: [],
+        totalDescendantCount: 0,
+        descendantSlotIds: [],
+      },
+      { kind: 'slot', id: 's0', zIndex: 1, arrayIndex: 1, index: 1, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's0', 'g0');
+    expect(result.size).toBe(1);
+    expect(result.has('g0')).toBe(false);
+  });
+
+  it('places dragged item at bottom when target is background', () => {
+    const layers: LayerItem[] = [
+      { kind: 'slot', id: 's0', zIndex: 2, arrayIndex: 0, index: 0, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's1', zIndex: 1, arrayIndex: 1, index: 1, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's0', 'background');
+    expect(result.get('s0')).toBeLessThan(result.get('s1')!);
+  });
+
+  it('handles moving item within same level', () => {
+    const layers: LayerItem[] = [
+      { kind: 'slot', id: 's0', zIndex: 3, arrayIndex: 0, index: 0, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's1', zIndex: 2, arrayIndex: 1, index: 1, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'slot', id: 's2', zIndex: 1, arrayIndex: 2, index: 2, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's2', 's1');
+    const values = Array.from(result.values()).sort((a, b) => b - a);
+    expect(values).toEqual([3, 2, 1]);
+  });
+
+  it('handles graphic overlays in reordering', () => {
+    const layers: LayerItem[] = [
+      { kind: 'slot', id: 's0', zIndex: 2, arrayIndex: 0, index: 0, name: '', visible: true, locked: false, depth: 0, ancestorGroupIds: [] },
+      { kind: 'graphic', id: 'g0', zIndex: 1, arrayIndex: 0, name: '', visible: true, locked: false, opacity: 1, depth: 0, ancestorGroupIds: [] },
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 'g0', 's0');
+    expect(result.get('g0')).toBeGreaterThan(result.get('s0')!);
+  });
+
+  it('returns empty map for empty movable list', () => {
+    const layers: LayerItem[] = [
+      { kind: 'background', id: 'background', zIndex: 0, arrayIndex: -1, name: '', visible: true, depth: 0, ancestorGroupIds: [] },
+    ];
+    const result = computeReorderedZIndices(layers, 's0', 's1');
+    expect(result.size).toBe(0);
   });
 });

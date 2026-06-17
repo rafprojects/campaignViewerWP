@@ -1,4 +1,5 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
+import { resolveRole } from './AuthProvider';
 import { getWpNonce, setWpNonce } from '@/services/wpNonce';
 
 /**
@@ -127,12 +128,13 @@ export class WpNonceProvider implements AuthProvider {
       const data = await response.json();
       const permissions = Array.isArray(data?.campaignIds) ? data.campaignIds : [];
       const isAdmin = Boolean(data?.isAdmin);
+      const isSystemAdmin = Boolean(data?.isSystemAdmin);
 
       if (isAdmin || data?.userId) {
         const user: AuthUser = {
           id: String(data?.userId ?? '0'),
           email: data?.userEmail ?? '',
-          role: isAdmin ? 'admin' : 'viewer',
+          role: resolveRole(isAdmin, isSystemAdmin),
         };
         return { user, permissions };
       }

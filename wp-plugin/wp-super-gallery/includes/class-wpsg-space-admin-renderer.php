@@ -27,11 +27,14 @@ class WPSG_Space_Admin_Renderer {
     }
 
     public static function add_menu_page() {
+        // P52-A3: managing Spaces is a System Admin function (manage_options),
+        // not a space-editor one. Editors never see this page (the parent CPT
+        // menu is already hidden for them since they hold no CPT caps).
         self::$page_hook = (string) add_submenu_page(
             'edit.php?post_type=wpsg_campaign',
             __('Gallery Spaces', 'wp-super-gallery'),
             __('Spaces', 'wp-super-gallery'),
-            'manage_wpsg',
+            'manage_options',
             self::PAGE_SLUG,
             [self::class, 'render_page']
         );

@@ -12,7 +12,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'access_summary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.access_summary.read'),
             ],
         ]);
 
@@ -21,13 +21,13 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 'methods'             => 'GET',
                 // P33-C: owner can read the access list for their campaign.
                 'callback'            => [self::class, 'list_access'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access.list'),
             ],
             [
                 'methods'             => 'POST',
                 // P33-C: only owner can grant access.
                 'callback'            => [self::class, 'grant_access'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access.grant'),
                 'args'                => [
                     'userId'     => [
                         'required' => true,
@@ -51,7 +51,8 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                     // P33-B: per-campaign role level.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],
@@ -63,7 +64,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 'methods' => 'DELETE',
                 // P33-C: only owner can revoke access.
                 'callback' => [self::class, 'revoke_access'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access.revoke'),
             ],
         ]);
 
@@ -72,7 +73,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'submit_access_request'],
-                'permission_callback' => [self::class, 'rate_limit_public'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access_request.submit'),
                 'args'                => [
                     'email' => [
                         'required'          => true,
@@ -86,7 +87,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 'methods'             => 'GET',
                 // P33-C: owner can list pending access requests for their campaign.
                 'callback'            => [self::class, 'list_access_requests'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access_request.list'),
             ],
         ]);
 
@@ -95,12 +96,13 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 'methods'             => 'POST',
                 // P33-C: only owner can approve access requests.
                 'callback'            => [self::class, 'approve_access_request'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access_request.approve'),
                 'args'                => [
                     // P33-B: role to assign on approval. Defaults to 'viewer'.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],
@@ -112,7 +114,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 'methods' => 'POST',
                 // P33-C: only owner can deny access requests.
                 'callback' => [self::class, 'deny_access_request'],
-                'permission_callback' => [self::class, 'require_campaign_owner'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access_request.deny'),
             ],
         ]);
 
@@ -120,7 +122,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'magic_approve_access_request'],
-                'permission_callback' => [self::class, 'rate_limit_magic_approve'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.access_request.magic_approve'),
             ],
         ]);
 
@@ -128,17 +130,18 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_company_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('company.access.list'),
             ],
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'grant_company_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('company.access.grant'),
                 'args'                => [
                     // P33-B: per-company role level propagated to all company campaigns.
                     'access_level' => [
                         'type'    => 'string',
-                        'enum'    => ['viewer', 'editor', 'owner'],
+                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
                 ],
@@ -149,7 +152,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'revoke_company_access'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('company.access.revoke'),
             ],
         ]);
 
@@ -157,7 +160,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'archive_company'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('company.archive'),
             ],
         ]);
     }

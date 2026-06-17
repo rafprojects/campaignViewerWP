@@ -19,11 +19,13 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
 // ResizeObserver is not available in jsdom — provide a no-op polyfill so
 // Diamond and Hexagonal adapters (which measure container width) don't crash.
-const mockResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+const mockResizeObserver = vi.fn(function() {
+  return {
+    observe: vi.fn(),
+    unobserve: vi.fn(),
+    disconnect: vi.fn(),
+  };
+});
 
 beforeAll(() => {
   vi.stubGlobal('ResizeObserver', mockResizeObserver);

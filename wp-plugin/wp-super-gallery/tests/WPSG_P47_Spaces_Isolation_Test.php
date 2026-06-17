@@ -113,7 +113,9 @@ class WPSG_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     // open mode: manage_wpsg admin is admitted.
     // -------------------------------------------------------------------------
 
-    public function test_open_space_admits_manage_wpsg_admin() {
+    public function test_open_space_denies_manage_wpsg_without_grant() {
+        // P53-A: open-mode no longer grants implicit access to manage_wpsg editors.
+        // Editors need an explicit space grant regardless of isolation mode.
         $uid   = $this->make_wpsg_only_admin();
         $space = $this->make_space('open');
         wp_set_current_user($uid);
@@ -121,7 +123,7 @@ class WPSG_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'manage_wpsg admin must reach an open space.');
+        $this->assertSame(403, $response->get_status(), 'manage_wpsg without an explicit grant must be denied even an open space.');
     }
 
     // -------------------------------------------------------------------------

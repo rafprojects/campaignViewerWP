@@ -508,7 +508,8 @@ class WPSG_CPT {
     }
 
     public static function handle_create_space(): void {
-        if (!current_user_can('manage_wpsg') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
+        // P52-A3: creating spaces is a System Admin action (manage_options).
+        if (!current_user_can('manage_options') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
             wp_die(esc_html__('Forbidden', 'wp-super-gallery'));
         }
         $name     = sanitize_text_field($_POST['wpsg_space_name'] ?? '');

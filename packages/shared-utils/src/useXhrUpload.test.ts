@@ -42,7 +42,7 @@ let mockXhr: MockXhr;
 
 beforeEach(() => {
   mockXhr = createMockXhr();
-  vi.stubGlobal('XMLHttpRequest', vi.fn(() => mockXhr));
+  vi.stubGlobal('XMLHttpRequest', vi.fn(function() { return mockXhr; }));
 });
 
 afterEach(() => {

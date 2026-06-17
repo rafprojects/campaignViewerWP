@@ -11,7 +11,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.permissions.read'),
             ],
         ]);
 
@@ -22,7 +22,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'refresh_nonce'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.nonce.refresh'),
             ],
         ]);
 
@@ -32,7 +32,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_login'],
-                'permission_callback' => '__return_true',
+                'permission_callback' => WPSG_Permissions::gate('auth.login'),
                 'args'                => [
                     'username' => [
                         'required'          => true,
@@ -55,7 +55,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_logout'],
-                'permission_callback' => [self::class, 'require_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('auth.logout'),
             ],
         ]);
 
@@ -63,7 +63,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'search_users'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('users.search'),
             ],
         ]);
 
@@ -71,7 +71,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_user'],
-                'permission_callback' => [self::class, 'rate_limit_authenticated'],
+                'permission_callback' => WPSG_Permissions::gate('users.create'),
                 'args'                => [
                     'email'       => [
                         'required'          => true,
@@ -86,7 +86,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
                     ],
                     'role'        => [
                         'type'    => 'string',
-                        'enum'    => ['subscriber', 'wpsg_admin'],
+                        'enum'    => ['subscriber', 'wpsg_editor'],
                         'default' => 'subscriber',
                     ],
                     'campaignId'  => [
@@ -101,7 +101,7 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_roles'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('roles.list'),
             ],
         ]);
     }
@@ -109,20 +109,25 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
     public static function list_permissions() {
         $user_id = get_current_user_id();
         if (!$user_id) {
-            return new WP_REST_Response(['campaignIds' => [], 'isAdmin' => false], 200);
+            return new WP_REST_Response(['campaignIds' => [], 'isAdmin' => false, 'isSystemAdmin' => false], 200);
         }
 
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
-        $is_admin = current_user_can('manage_wpsg');
+        // P53-A: two tier signals via the WP-coupling seam. isAdmin = editor-or-above
+        // (manage_wpsg); isSystemAdmin = system admin (manage_options). The frontend
+        // derives the tier from this pair (system_admin > editor > viewer).
+        $is_admin = WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR);
+        $is_system_admin = WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN);
         $user = get_user_by('id', $user_id);
 
         // P20-K: Include userId and userEmail so the nonce-only auth path
         // (no JWT provider) can detect the current user without localStorage.
         return new WP_REST_Response([
-            'campaignIds' => $campaign_ids,
-            'isAdmin'     => $is_admin,
-            'userId'      => $user_id,
-            'userEmail'   => $user ? $user->user_email : '',
+            'campaignIds'   => $campaign_ids,
+            'isAdmin'       => $is_admin,
+            'isSystemAdmin' => $is_system_admin,
+            'userId'        => $user_id,
+            'userEmail'     => $user ? $user->user_email : '',
         ], 200);
     }
 
@@ -236,18 +241,24 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
             'resource_label' => $user->user_login,
         ]);
 
-        $is_admin = current_user_can('manage_wpsg');
+        // P53-A: two tier signals (see list_permissions). The login payload's
+        // user.role carries the resolved tier so providers don't need a second
+        // /permissions round-trip after login.
+        $is_admin = WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR);
+        $is_system_admin = WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN);
+        $role = $is_system_admin ? 'admin' : ($is_admin ? 'editor' : 'viewer');
         $campaign_ids = self::get_accessible_campaign_ids($user->ID);
 
         return new WP_REST_Response([
-            'user'        => [
+            'user'          => [
                 'id'    => (string) $user->ID,
                 'email' => $user->user_email,
-                'role'  => $is_admin ? 'admin' : 'viewer',
+                'role'  => $role,
             ],
-            'permissions' => $campaign_ids,
-            'isAdmin'     => $is_admin,
-            'nonce'       => wp_create_nonce('wp_rest'),
+            'permissions'   => $campaign_ids,
+            'isAdmin'       => $is_admin,
+            'isSystemAdmin' => $is_system_admin,
+            'nonce'         => wp_create_nonce('wp_rest'),
         ], 200);
     }
 
@@ -359,9 +370,9 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
         }
 
         // Validate role exists and prevent privilege escalation
-        $allowed_roles = ['subscriber', 'wpsg_admin'];
+        $allowed_roles = ['subscriber', 'wpsg_editor'];
         if (!in_array($role, $allowed_roles, true)) {
-            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_admin.', ['status' => 400]);
+            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_editor.', ['status' => 400]);
         }
 
         // Generate username from email (before @)
@@ -498,8 +509,8 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
                 'description' => 'Can view campaigns they are granted access to.',
             ],
             [
-                'value' => 'wpsg_admin',
-                'label' => 'Gallery Admin',
+                'value' => 'wpsg_editor',
+                'label' => 'Gallery Editor',
                 'description' => 'Can manage campaigns and access in this plugin, but not WordPress admin.',
             ],
         ];

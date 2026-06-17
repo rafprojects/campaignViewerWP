@@ -69,6 +69,26 @@ class WPSG_Cookie_Auth_Test extends WP_UnitTestCase {
         $this->assertEquals(200, $response->get_status());
         $this->assertEquals('admin', $data['user']['role']);
         $this->assertTrue($data['isAdmin']);
+        // P53-A: a system admin (manage_options) is flagged distinctly.
+        $this->assertTrue($data['isSystemAdmin']);
+    }
+
+    public function test_login_returns_editor_role_for_wpsg_editor() {
+        // manage_wpsg without manage_options = the wpsg_editor tier.
+        $user = get_user_by('id', $this->test_user_id);
+        $user->add_cap('manage_wpsg');
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request->set_param('username', 'testuser');
+        $request->set_param('password', $this->test_user_pass);
+
+        $response = rest_do_request($request);
+        $data     = $response->get_data();
+
+        $this->assertEquals(200, $response->get_status());
+        $this->assertEquals('editor', $data['user']['role'], 'manage_wpsg-only resolves to the editor tier');
+        $this->assertTrue($data['isAdmin'], 'an editor is editor-or-above');
+        $this->assertFalse($data['isSystemAdmin'], 'an editor lacks manage_options');
     }
 
     public function test_login_returns_viewer_role_for_non_admin() {

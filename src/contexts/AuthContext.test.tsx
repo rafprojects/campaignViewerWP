@@ -6,7 +6,7 @@ import type { AuthProvider as AuthProviderInterface, AuthSession, AuthUser } fro
 
 /** Interactive consumer that exposes login/logout actions to tests. */
 function AuthConsumer() {
-  const { isReady, isAuthenticated, permissions, user, login, logout } = useAuth();
+  const { isReady, isAuthenticated, permissions, user, isAdmin, isSystemAdmin, login, logout } = useAuth();
   return (
     <div>
       <span>{isReady ? 'ready' : 'loading'}</span>
@@ -14,6 +14,8 @@ function AuthConsumer() {
       <span>{permissions.join(',')}</span>
       {user && <span data-testid="role">{user.role}</span>}
       {user && <span data-testid="email">{user.email}</span>}
+      <span data-testid="is-admin">{isAdmin ? 'editor+' : 'no'}</span>
+      <span data-testid="is-system-admin">{isSystemAdmin ? 'sysadmin' : 'no'}</span>
       <button data-testid="login-btn" onClick={() => void login('user@example.com', 'pass123')}>Login</button>
       <button data-testid="logout-btn" onClick={() => void logout()}>Logout</button>
     </div>
@@ -31,7 +33,7 @@ describe('AuthProvider', () => {
     delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
   });
 
-  it('detects nonce-only admin auth via permissions endpoint (P20-K / P51-I WpNonceProvider)', async () => {
+  it('detects nonce-only system-admin auth via permissions endpoint (P20-K / P51-I WpNonceProvider)', async () => {
     // Simulate WP-injected config with nonce but no JWT.
     window.__WPSG_CONFIG__ = {
       restNonce: 'test-nonce-123',
@@ -42,6 +44,7 @@ describe('AuthProvider', () => {
       json: async () => ({
         campaignIds: ['42', '99'],
         isAdmin: true,
+        isSystemAdmin: true,
         userId: 1,
         userEmail: 'admin@example.com',
       }),
@@ -58,6 +61,36 @@ describe('AuthProvider', () => {
       expect(screen.getByText('authed')).toBeInTheDocument();
       expect(screen.getByText('42,99')).toBeInTheDocument();
       expect(screen.getByTestId('role')).toHaveTextContent('admin');
+      expect(screen.getByTestId('is-admin')).toHaveTextContent('editor+');
+      expect(screen.getByTestId('is-system-admin')).toHaveTextContent('sysadmin');
+    });
+  });
+
+  it('resolves the editor tier (manage_wpsg, not manage_options) and gates isSystemAdmin off (P53-A)', async () => {
+    window.__WPSG_CONFIG__ = { restNonce: 'test-nonce-editor' };
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        campaignIds: ['7'],
+        isAdmin: true,
+        isSystemAdmin: false,
+        userId: 2,
+        userEmail: 'editor@example.com',
+      }),
+    });
+
+    render(
+      <AuthProvider provider={new WpNonceProvider()} fallbackPermissions={[]}>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('role')).toHaveTextContent('editor');
+      // An editor can edit (isAdmin) but is NOT a system admin.
+      expect(screen.getByTestId('is-admin')).toHaveTextContent('editor+');
+      expect(screen.getByTestId('is-system-admin')).toHaveTextContent('no');
     });
   });
 

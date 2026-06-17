@@ -14,6 +14,8 @@ interface TypographySettingsSectionProps {
   onFontsChange: (fonts: CustomFontEntry[]) => void;
   onResetAll: () => void;
   onOverrideChange: (elementId: string, override: TypographyOverride) => void;
+  /** P53-A: gates the font-delete action (system-admin only). */
+  isSystemAdmin?: boolean;
 }
 
 const TYPOGRAPHY_SECTIONS = [
@@ -42,6 +44,7 @@ export function TypographySettingsSection({
   onFontsChange,
   onResetAll,
   onOverrideChange,
+  isSystemAdmin = false,
 }: TypographySettingsSectionProps) {
   const { value: accordionValue, onChange: onAccordionChange } = usePersistentAccordion('typography', null);
 
@@ -52,6 +55,7 @@ export function TypographySettingsSection({
       </Text>
       <FontLibraryManager
         apiClient={apiClient}
+        isSystemAdmin={isSystemAdmin}
         onFontsChange={(fonts: FontLibraryEntry[]) => onFontsChange(fonts.map((font) => ({
           name: font.name,
           family: `'${font.name}', sans-serif`,

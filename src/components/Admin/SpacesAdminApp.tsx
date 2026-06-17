@@ -48,6 +48,9 @@ export function mountSpacesAdmin(host: HTMLElement): void {
               apiClient={apiClient}
               onNotify={notify}
               onSpacesChanged={() => { /* standalone page: useSpaces refetches itself */ }}
+              // P53-A: the WP-admin "Gallery Spaces" page is registered with the
+              // manage_options capability, so only a System Admin can load it.
+              isSystemAdmin
             />
           </ModalsProvider>
         </MantineProvider>

@@ -70,10 +70,14 @@ abstract class WPSG_REST_Base {
      * `rate_limit_requests_per_minute` in settings_overrides (P48-D).
      * Global floor override via `wpsg_rate_limit_authenticated` filter.
      *
+     * P52-A5: this primitive exclusively guards user creation (POST /users),
+     * a System Admin action, so it requires `manage_options` (not merely
+     * `manage_wpsg`). Keep that in mind if it is ever reused for another route.
+     *
      * @since 0.18.0 P20-A
      */
     public static function rate_limit_authenticated($request) {
-        if (!current_user_can('manage_wpsg')) {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)) {
             return false;
         }
 
@@ -222,7 +226,22 @@ abstract class WPSG_REST_Base {
     // ── Auth gates ────────────────────────────────────────────────────────────
 
     public static function require_admin() {
-        if (!current_user_can('manage_wpsg')) {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
+            return false;
+        }
+
+        return self::verify_admin_auth();
+    }
+
+    /**
+     * P52-A5: System Admin gate — requires `manage_options` (WordPress admin),
+     * not merely `manage_wpsg`. Used for system/global surfaces that a
+     * space-scoped `wpsg_editor` must never reach (health, caches, webhooks,
+     * global audit log, media library, binary import/export, role assignment,
+     * cross-space aggregates, company management, space creation).
+     */
+    public static function require_system_admin() {
+        if (!WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)) {
             return false;
         }
 
@@ -251,8 +270,10 @@ abstract class WPSG_REST_Base {
     /**
      * Resolves the user's access level within a space.
      *
-     * In open mode, manage_wpsg is treated as 'owner'. In delegated mode only
-     * manage_options (super-admin) and explicit space grants confer access.
+     * System admins (manage_options) are implicitly 'owner' in every space
+     * regardless of isolation mode. Editors (manage_wpsg) require an explicit
+     * space grant — open-mode spaces no longer confer implicit access to
+     * editors (P53-A: two-tier RBAC split).
      *
      * @return string 'owner'|'editor'|'viewer'|'' (empty = no access)
      */
@@ -263,10 +284,6 @@ abstract class WPSG_REST_Base {
         }
 
         if (user_can($user_id, 'manage_options')) {
-            return 'owner';
-        }
-
-        if ($space->isolation_mode === 'open' && user_can($user_id, 'manage_wpsg')) {
             return 'owner';
         }
 
@@ -296,6 +313,17 @@ abstract class WPSG_REST_Base {
             return false;
         }
         return self::get_effective_space_level(intval($user_id), $space_id) !== '';
+    }
+
+    /**
+     * P53-A: public accessor so non-controller code (the embed page-spaces list
+     * and admin-bar nodes) can scope a space list to the CURRENT actor without
+     * duplicating the open/delegated resolution. System admins (manage_options)
+     * resolve to 'owner' for every space and see all; a wpsg_editor sees only
+     * the spaces it has been explicitly granted access to.
+     */
+    public static function current_actor_can_access_space(int $space_id): bool {
+        return self::get_effective_space_level(get_current_user_id(), $space_id) !== '';
     }
 
     // ── P33-C: Role-Aware Permission Helpers ─────────────────────────────────
@@ -399,7 +427,7 @@ abstract class WPSG_REST_Base {
         }
 
         // Site-wide admin is always allowed.
-        if (current_user_can('manage_wpsg')) {
+        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return true;
         }
 
@@ -434,7 +462,7 @@ abstract class WPSG_REST_Base {
         }
 
         // Site-wide admin is always allowed.
-        if (current_user_can('manage_wpsg')) {
+        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return true;
         }
 
@@ -489,20 +517,41 @@ abstract class WPSG_REST_Base {
     }
 
     /**
-     * P50-A: Permission callback for cross-space campaign moves — requires
-     * 'owner' level on BOTH the campaign's current space and the target space.
-     *
-     * manage_options users resolve to 'owner' everywhere (the super-admin
-     * bypass); manage_wpsg users resolve to 'owner' only in open-mode spaces,
-     * so a manage_wpsg-only user cannot move campaigns into or out of a
-     * delegated space they are not explicitly granted owner on.
+     * P53-D2: per-space admin gate — requires manage_wpsg AND access to the space
+     * in the request's `id` param. Space management + access-management are
+     * admin-tier: a non-admin viewer-grantee can READ the space
+     * (require_space_member) but cannot manage it. manage_options ⇒ allowed
+     * everywhere; open-mode manage_wpsg ⇒ allowed; delegated ⇒ explicit space
+     * grant required (closes F2 for space management).
+     */
+    public static function require_space_admin(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
+            return false;
+        }
+        $space_id = intval($request->get_param('id'));
+        if ($space_id <= 0) {
+            return false;
+        }
+        return self::can_access_space($space_id, $user_id);
+    }
+
+    /**
+     * P50-A / P53-D2: Permission callback for cross-space campaign moves —
+     * requires manage_wpsg AND access to BOTH the campaign's current space and
+     * the target space. manage_options resolves to access everywhere; an
+     * open-mode manage_wpsg editor has access to open spaces; a delegated-space
+     * editor needs an explicit grant on both spaces.
      */
     public static function require_campaign_space_move(WP_REST_Request $request): bool {
         if (!self::verify_admin_auth()) {
             return false;
         }
         $user_id = get_current_user_id();
-        if ($user_id <= 0) {
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
             return false;
         }
         $campaign_id     = intval($request->get_param('id'));
@@ -516,11 +565,85 @@ abstract class WPSG_REST_Base {
             // Campaign predates the spaces backfill — treat the default space as its source.
             $source_space_id = intval(get_option('wpsg_default_space_id'));
         }
-        if ($source_space_id > 0 && self::get_effective_space_level($user_id, $source_space_id) !== 'owner') {
+        // Use the archived-agnostic level check (not can_access_space) so the
+        // handler can still return its 404 for an archived target and so a
+        // campaign can be moved OUT of an archived source space.
+        if ($source_space_id > 0 && self::get_effective_space_level($user_id, $source_space_id) === '') {
             return false;
         }
 
-        return self::get_effective_space_level($user_id, $target_space_id) === 'owner';
+        return self::get_effective_space_level($user_id, $target_space_id) !== '';
+    }
+
+    /**
+     * P52-A5b: does the user have access to the space that owns this campaign?
+     *
+     * Mirrors the space gate in get_effective_campaign_level(): a campaign with
+     * no space (pre-spaces install) is accessible to any manage_wpsg holder;
+     * otherwise the user must have a level in its space (manage_options ⇒ owner
+     * everywhere; open-mode manage_wpsg ⇒ owner; delegated ⇒ explicit grant).
+     */
+    private static function user_can_access_campaign_space(int $campaign_id, int $user_id): bool {
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($space_id <= 0) {
+            $space_id = intval(get_option('wpsg_default_space_id'));
+        }
+        if ($space_id <= 0) {
+            return true;
+        }
+        return self::can_access_space($space_id, $user_id);
+    }
+
+    /**
+     * P52-A5b: per-campaign admin gate — requires manage_wpsg AND access to the
+     * space that owns the campaign in the request's `id` param. Closes F2: a
+     * manage_wpsg editor cannot act on campaigns in delegated spaces they were
+     * not granted. Subscribers (no manage_wpsg) are denied, preserving the
+     * admin-tier nature of these endpoints (analytics, audit, per-campaign export).
+     */
+    public static function require_campaign_space_access(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
+            return false;
+        }
+        $campaign_id = intval($request->get_param('id'));
+        if ($campaign_id <= 0) {
+            return false;
+        }
+        return self::user_can_access_campaign_space($campaign_id, $user_id);
+    }
+
+    /**
+     * P52-A5b: batch variant — requires manage_wpsg AND access to the space of
+     * EVERY campaign in the request's `ids` param. Any inaccessible campaign
+     * denies the whole batch (no cross-space batch actions).
+     */
+    public static function require_campaign_batch_space_access(WP_REST_Request $request): bool {
+        if (!self::verify_admin_auth()) {
+            return false;
+        }
+        $user_id = get_current_user_id();
+        if ($user_id <= 0 || !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
+            return false;
+        }
+        $ids = $request->get_param('ids');
+        if (!is_array($ids) || empty($ids)) {
+            // Empty/malformed → let the handler return its own validation error.
+            return true;
+        }
+        foreach ($ids as $cid) {
+            $cid = intval($cid);
+            if ($cid <= 0) {
+                continue;
+            }
+            if (!self::user_can_access_campaign_space($cid, $user_id)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -578,7 +701,7 @@ abstract class WPSG_REST_Base {
     }
 
     public static function require_authenticated() {
-        return is_user_logged_in();
+        return WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_VIEWER);
     }
 
     // ── Cache version ─────────────────────────────────────────────────────────
@@ -649,7 +772,23 @@ abstract class WPSG_REST_Base {
     }
 
     protected static function can_view_campaign($post_id, $user_id) {
-        // P47-B: Space gate — delegated spaces deny ungranted admins before the admin short-circuit below.
+        $campaign_status = (string) get_post_meta($post_id, 'status', true);
+        $visibility      = get_post_meta($post_id, 'visibility', true) ?: 'private';
+
+        // Public campaigns are world-viewable (in schedule window, not draft)
+        // regardless of space isolation or grants — "public" means public. A
+        // logged-in user must never see less than an anonymous visitor does.
+        if (
+            $visibility === 'public'
+            && $campaign_status !== 'draft'
+            && self::is_campaign_within_schedule_window($post_id)
+        ) {
+            return true;
+        }
+
+        // P47-B: Space gate — delegated spaces deny ungranted admins before the
+        // admin short-circuit below. Applies to non-public / draft / out-of-window
+        // content only; in-window public campaigns already returned above.
         $space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
         if ($space_id > 0 && !self::can_access_space($space_id, intval($user_id))) {
             return false;
@@ -664,7 +803,6 @@ abstract class WPSG_REST_Base {
         }
 
         // P36-C: Draft campaigns are only visible to their author.
-        $campaign_status = (string) get_post_meta($post_id, 'status', true);
         if ($campaign_status === 'draft') {
             if (!$user_id) {
                 return false;
@@ -673,11 +811,7 @@ abstract class WPSG_REST_Base {
             return $post && intval($post->post_author) === $user_id;
         }
 
-        $visibility = get_post_meta($post_id, 'visibility', true) ?: 'private';
-        if ($visibility === 'public') {
-            return true;
-        }
-
+        // Private campaign within window: explicit deny-list, then grants.
         if (!$user_id) {
             return false;
         }

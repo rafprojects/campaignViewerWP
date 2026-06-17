@@ -44,6 +44,24 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
 
+### Granular Custom-Role Permission Engine (GitHub-style)
+
+**Files:** `includes/class-wpsg-permissions.php` (introduced in P52-A), role/cap setup in `wp-super-gallery.php`, a new admin UI + storage.
+
+**Context:** P52-A establishes the authorization foundation as a centralized `WPSG_Permissions` action→requirement map — every protected action declares its required tier (`manage_options` / `manage_wpsg` / per-space grant level) and scope in one place, with the named tiers (viewer / editor / owner / wpsg_editor / admin) acting as fixed **presets** over that map. This future task is the optional **builder layer** on top of that foundation: let site admins compose **custom roles** from atomic capabilities (à la GitHub's Read/Triage/Write/Maintain/Admin presets plus Enterprise custom repository roles), with optional **per-space role overrides**.
+
+**What it would take:**
+- Promote the implicit atomic actions in the `WPSG_Permissions` map to first-class, individually grantable capabilities.
+- A storage schema for custom role definitions (composition of base preset + added/removed atomic caps), and optional per-space scoping of those definitions.
+- An admin UI to create/edit custom roles and assign them, plus a migration path from the fixed presets.
+- Permission resolution that layers custom roles over the preset map without breaking the existing tier checks or the P52-A regression matrix.
+
+**Rationale for deferral:** A full custom-role engine is a self-contained system (storage + UI + migration + resolution) whose cost is the management surface, not the enforcement. With only a handful of actor archetypes today, it is premature (YAGNI). The P52-A centralized map deliberately makes this work **additive rather than a rewrite** — revisit only if a concrete multi-tenant or custom-role requirement emerges. Deferred from [PHASE52_REPORT.md](PHASE52_REPORT.md) Track P52-A (decided 2026-06-15).
+
+**Effort:** High (multi-track / likely its own phase) | **Impact:** Low today; High if a multi-tenant custom-role need appears.
+
+---
+
 ### CORS Origin Allow-List & Admin UI
 
 **Files:** `wp-super-gallery.php`, `class-wpsg-settings.php`

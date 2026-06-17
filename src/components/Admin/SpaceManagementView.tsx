@@ -34,6 +34,12 @@ export interface SpaceManagementViewProps {
   apiClient: ApiClient;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
   onSpacesChanged: () => void;
+  /**
+   * P53-A: creating a space is a System Admin action (`spaces.create` =
+   * require_system_admin). Editors can manage spaces they have access to
+   * (archive / settings / access / library) but not create new ones.
+   */
+  isSystemAdmin?: boolean;
 }
 
 /**
@@ -41,7 +47,7 @@ export interface SpaceManagementViewProps {
  * Rendered both inside SpaceManagementModal (admin panel header) and standalone
  * on the WP-admin "Spaces" page (see main.tsx #wpsg-spaces-admin mount).
  */
-export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: SpaceManagementViewProps) {
+export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementViewProps) {
   const { spaces, spacesLoading, mutateSpaces } = useSpaces(apiClient);
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('spaces');
@@ -332,6 +338,8 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
             </Table>
           )}
 
+          {/* P53-A: creating a space is system-admin only (spaces.create). */}
+          {isSystemAdmin && <>
           <Divider label="Create new space" labelPosition="center" />
 
           <Stack gap="sm">
@@ -378,6 +386,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
               </Button>
             </Group>
           </Stack>
+          </>}
         </Stack>
       </Tabs.Panel>
 
@@ -568,6 +577,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged }: Sp
         onNotify={onNotify}
         spaceId={selectedSpace.id}
         withinPortal
+        isSystemAdmin={isSystemAdmin}
       />
     )}
     </>

@@ -70,4 +70,19 @@ describe('FontLibraryManager — universal toggle', () => {
       );
     });
   });
+
+  // P53-A: fonts.delete is require_system_admin; editors get upload + toggle but no delete.
+  it('hides the delete button for a non-system-admin', async () => {
+    render(<FontLibraryManager apiClient={apiClient} isSystemAdmin={false} />);
+    await waitFor(() => expect(screen.getByText('Font Alpha')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Delete Font Alpha/i })).not.toBeInTheDocument();
+    // Upload + the universal toggle remain available to editors.
+    expect(screen.getByRole('button', { name: /Make Font Alpha available to all spaces/i })).toBeInTheDocument();
+  });
+
+  it('shows the delete button for a system admin', async () => {
+    render(<FontLibraryManager apiClient={apiClient} isSystemAdmin />);
+    await waitFor(() => expect(screen.getByText('Font Alpha')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Delete Font Alpha/i })).toBeInTheDocument();
+  });
 });

@@ -52,6 +52,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-space-admin-renderer.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-admin-renderer.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -80,39 +81,111 @@ function wpsg_deactivate() {
 // Set up roles and capabilities on init (more reliable than activation hook)
 add_action('init', 'wpsg_setup_roles_and_caps');
 function wpsg_setup_roles_and_caps() {
-    // Only run setup if flagged or if capability is missing
+    // Only run heavy admin-role setup if flagged or if capability is missing.
     $needs_setup = get_option('wpsg_needs_setup', '0');
     $admin_role = get_role('administrator');
     $needs_cap = $admin_role && !$admin_role->has_cap('manage_wpsg');
-    
+
     if ($needs_setup === '1' || $needs_cap) {
-        // Add manage_wpsg capability to Administrator role
+        // System Admin (administrator): full plugin control + the custom CPT
+        // caps that drive the wp-admin gallery screens.
         if ($admin_role) {
             $admin_role->add_cap('manage_wpsg');
-            // Grant custom CPT capabilities
             foreach (WPSG_CPT::CPT_CAPS as $cap) {
                 $admin_role->add_cap($cap);
             }
         }
-        
-        // Create WPSG Admin role if it doesn't exist, or update caps
-        $wpsg_role = get_role('wpsg_admin');
-        $wpsg_caps = array_merge(
-            ['read' => true, 'upload_files' => true, 'manage_wpsg' => true],
-            array_fill_keys(WPSG_CPT::CPT_CAPS, true)
-        );
-        if (!$wpsg_role) {
-            add_role('wpsg_admin', __('Gallery Admin', 'wp-super-gallery'), $wpsg_caps);
-        } else {
-            // Ensure existing role gets CPT caps on upgrade
-            foreach (WPSG_CPT::CPT_CAPS as $cap) {
-                $wpsg_role->add_cap($cap);
-            }
-        }
-        
+
+        // Space Editor role (P52-A2): app-only admin scoped to granted spaces.
+        wpsg_ensure_editor_role();
+
         // Clear setup flag
         delete_option('wpsg_needs_setup');
     }
+
+    // Always self-heal the editor role: if the role is absent or is missing
+    // manage_wpsg (e.g. after a DB restore or WP role reset), repair it now.
+    // get_role() reads from the in-memory role cache — no DB hit when correct.
+    $editor_role = get_role('wpsg_editor');
+    if (!$editor_role || !$editor_role->has_cap('manage_wpsg')) {
+        wpsg_ensure_editor_role();
+    }
+}
+
+// Redirect Gallery Editors away from /wp-admin. Editors use the frontend
+// Admin Panel only — /wp-admin is reserved for system administrators.
+// AJAX requests are excluded so WP's own back-channel calls are unaffected.
+add_action('admin_init', 'wpsg_redirect_editors_from_admin');
+function wpsg_redirect_editors_from_admin() {
+    if (wp_doing_ajax()) {
+        return;
+    }
+    if (current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+        wp_safe_redirect(home_url());
+        exit;
+    }
+}
+
+/**
+ * Ensure the `wpsg_editor` role exists with exactly the intended capabilities:
+ * `manage_wpsg` + `read` + `upload_files`, with NO custom CPT caps (so it gets
+ * no wp-admin "Campaigns" menu) and NO `manage_options` (P52-A2). Idempotent —
+ * also strips CPT caps left over from the legacy `wpsg_admin` role definition.
+ */
+function wpsg_ensure_editor_role() {
+    $editor_caps = [
+        'read'         => true,
+        'upload_files' => true,
+        'manage_wpsg'  => true,
+    ];
+
+    $role = get_role('wpsg_editor');
+    if (!$role) {
+        add_role('wpsg_editor', __('Gallery Editor', 'wp-super-gallery'), $editor_caps);
+        return;
+    }
+
+    foreach (array_keys($editor_caps) as $cap) {
+        $role->add_cap($cap);
+    }
+    // Editors never hold the custom CPT caps — those gate the wp-admin Campaigns UI.
+    foreach (WPSG_CPT::CPT_CAPS as $cap) {
+        if ($role->has_cap($cap)) {
+            $role->remove_cap($cap);
+        }
+    }
+}
+
+/**
+ * One-time migration: rename the legacy `wpsg_admin` role to `wpsg_editor`
+ * (P52-A2). Reassigns every user holding `wpsg_admin` to `wpsg_editor`, then
+ * removes the old role. Runs on init until complete (flag-gated), so it also
+ * covers existing installs where wpsg_setup_roles_and_caps() no longer re-runs
+ * (administrator already has manage_wpsg, so its setup gate is closed).
+ */
+add_action('init', 'wpsg_maybe_migrate_roles', 11);
+function wpsg_maybe_migrate_roles() {
+    if (get_option('wpsg_roles_migrated_editor')) {
+        return;
+    }
+
+    // The destination role must exist before reassigning users to it.
+    wpsg_ensure_editor_role();
+
+    $legacy_user_ids = get_users(['role' => 'wpsg_admin', 'fields' => 'ID']);
+    foreach ($legacy_user_ids as $uid) {
+        $user = get_user_by('id', $uid);
+        if ($user instanceof WP_User) {
+            $user->add_role('wpsg_editor');
+            $user->remove_role('wpsg_admin');
+        }
+    }
+
+    if (get_role('wpsg_admin')) {
+        remove_role('wpsg_admin');
+    }
+
+    update_option('wpsg_roles_migrated_editor', '1');
 }
 
 add_action('init', function () {
@@ -382,6 +455,7 @@ function wpsg_should_add_security_headers() {
 if (is_admin()) {
     WPSG_Settings::init();
     WPSG_Space_Admin_Renderer::init();
+    WPSG_Asset_Admin_Renderer::init();
 }
 
 // P14-C/D/E/F: Register infrastructure.

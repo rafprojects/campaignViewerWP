@@ -3,31 +3,21 @@
 /**
  * P33-C: Role-Aware Server-Side Enforcement
  *
- * Covers the central role resolver and route-level allow/deny matrix:
+ * ── UPDATED for P53-D (2026-06-15) ────────────────────────────────────────
+ * The per-campaign editor/owner GRANT levels no longer confer mutation or
+ * management. Editing/managing a campaign now requires the `wpsg_editor` role
+ * (`manage_wpsg`) + access to the campaign's space (`require_campaign_space_access`);
+ * per-campaign grants are viewer-only (read). So a non-admin holding a legacy
+ * `editor`/`owner` grant can still VIEW the campaign but is denied every mutation.
  *
- * viewer:
- *  - PUT /campaigns/{id}           → 403
- *  - POST /campaigns/{id}/media    → 403
- *  - POST /campaigns/{id}/archive  → 403
- *  - GET  /campaigns/{id}/access   → 403
+ * Resulting matrix asserted here:
+ *  - viewer / editor / owner GRANT (non-admin):  all mutations → 403
+ *  - site-wide admin (`manage_wpsg`):            mutations → allowed
+ *  - explicit deny override + no-grant:          → 403
  *
- * editor:
- *  - PUT /campaigns/{id}           → 200
- *  - POST /campaigns/{id}/media    → 200 / 400 (validation after auth)
- *  - POST /campaigns/{id}/archive  → 403
- *  - GET  /campaigns/{id}/access   → 403
- *
- * owner:
- *  - PUT /campaigns/{id}           → 200
- *  - POST /campaigns/{id}/archive  → 200
- *  - GET  /campaigns/{id}/access   → 200
- *  - POST /campaigns/{id}/access   → 200
- *
- * site-wide admin (manage_wpsg):
- *  - All of the above              → allowed
- *
- * Explicit deny override:
- *  - Viewer-granted user with deny override → 403 on all mutations
+ * Affirmative coverage of the role-based path (manage_wpsg editor allowed; a
+ * delegated-space editor without access denied — F2) lives in
+ * WPSG_P52A5b_Campaign_Space_Scoping_Test and WPSG_P53D_Grant_Model_Test.
  */
 class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
@@ -128,7 +118,9 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
     // ── Editor is allowed metadata + media mutations, denied owner actions ───
 
-    public function test_editor_allowed_update_campaign() {
+    public function test_editor_grant_no_longer_allows_update_campaign() {
+        // P53-D: a per-campaign 'editor' grant on a non-admin no longer confers
+        // edit rights — editing requires the wpsg_editor role (manage_wpsg).
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $editor_id   = $this->create_user_with_level($campaign_id, 'editor');
@@ -138,8 +130,7 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request->set_param('title', 'Editor Updated Title');
         $response = rest_do_request($request);
 
-        // Expect 200 (success) — editor is allowed to update campaign metadata.
-        $this->assertSame(200, $response->get_status(), 'editor should be allowed PUT /campaigns/{id}');
+        $this->assertSame(403, $response->get_status(), 'editor grant must NOT allow PUT /campaigns/{id} (role required)');
     }
 
     public function test_editor_denied_archive_campaign() {
@@ -181,9 +172,11 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $this->assertSame(403, $response->get_status(), 'editor should be denied GET /campaigns/{id}/access');
     }
 
-    // ── Owner is allowed all campaign-scoped actions ──────────────────────────
+    // ── P53-D: an 'owner' grant no longer confers mutation/management ─────────
+    // Editing, archiving, and access management now require the wpsg_editor role
+    // (manage_wpsg) + access to the campaign's space — not a per-campaign grant.
 
-    public function test_owner_allowed_update_campaign() {
+    public function test_owner_grant_no_longer_allows_update_campaign() {
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
@@ -193,10 +186,10 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request->set_param('title', 'Owner Updated Title');
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'owner should be allowed PUT /campaigns/{id}');
+        $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow PUT /campaigns/{id}');
     }
 
-    public function test_owner_allowed_archive_campaign() {
+    public function test_owner_grant_no_longer_allows_archive_campaign() {
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
@@ -205,10 +198,10 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request  = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'owner should be allowed POST /campaigns/{id}/archive');
+        $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow POST /campaigns/{id}/archive');
     }
 
-    public function test_owner_allowed_list_access() {
+    public function test_owner_grant_no_longer_allows_list_access() {
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
@@ -217,10 +210,10 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'owner should be allowed GET /campaigns/{id}/access');
+        $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow GET /campaigns/{id}/access');
     }
 
-    public function test_owner_allowed_grant_access() {
+    public function test_owner_grant_no_longer_allows_grant_access() {
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
@@ -233,7 +226,7 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'owner should be allowed POST /campaigns/{id}/access');
+        $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow POST /campaigns/{id}/access');
     }
 
     // ── Site-wide admin overrides all campaign roles ──────────────────────────
@@ -312,7 +305,8 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
     // ── Company-level grant propagation ──────────────────────────────────────
 
-    public function test_company_editor_grant_allows_campaign_metadata_update() {
+    public function test_company_editor_grant_no_longer_allows_update() {
+        // P53-D: a company-level 'editor' grant no longer confers edit rights.
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
 
@@ -337,7 +331,7 @@ class WPSG_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $request->set_param('title', 'Company Editor Title');
         $response = rest_do_request($request);
 
-        $this->assertSame(200, $response->get_status(), 'company-level editor grant must allow campaign metadata update');
+        $this->assertSame(403, $response->get_status(), 'company editor grant must NOT allow campaign update (role required)');
     }
 
     public function test_campaign_grant_overrides_company_grant_downgrade() {

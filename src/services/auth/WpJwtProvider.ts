@@ -1,4 +1,5 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
+import { resolveRole } from './AuthProvider';
 import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
 
 interface WpJwtProviderOptions {
@@ -147,13 +148,17 @@ export class WpJwtProvider implements AuthProvider {
     const data = await response.json();
     const permissions = Array.isArray(data?.campaignIds) ? data.campaignIds : [];
     const isAdmin = Boolean(data?.isAdmin);
+    const isSystemAdmin = Boolean(data?.isSystemAdmin);
 
     if (isAdmin) {
       const raw = safeLocalStorage.getItem(USER_KEY);
       if (raw) {
         try {
           const user = JSON.parse(raw) as AuthUser;
-          safeLocalStorage.setItem(USER_KEY, JSON.stringify({ ...user, role: 'admin' }));
+          safeLocalStorage.setItem(
+            USER_KEY,
+            JSON.stringify({ ...user, role: resolveRole(isAdmin, isSystemAdmin) }),
+          );
         } catch {
           // no-op
         }

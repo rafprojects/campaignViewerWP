@@ -12,7 +12,7 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'batch_export_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.batch.export_binary'),
                 'args'                => [
                     'ids' => [
                         'required'  => true,
@@ -30,14 +30,14 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'export_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.export'),
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/campaigns/import', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'import_campaign'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.import'),
             ],
         ]);
 
@@ -46,33 +46,33 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_campaign_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaign.export_binary'),
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/campaigns/import/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'import_campaign_binary'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('campaigns.import_binary'),
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_export_job'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('export_jobs.read'),
             ],
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_export_job'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('export_jobs.delete'),
             ],
         ]);
         register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})/download', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'download_export_job'],
-                'permission_callback' => [self::class, 'require_admin'],
+                'permission_callback' => WPSG_Permissions::gate('export_jobs.download'),
             ],
         ]);
     }

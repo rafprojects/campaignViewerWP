@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 
 require_once __DIR__ . '/class-wpsg-oembed-providers.php';
 require_once __DIR__ . '/rest/class-wpsg-rest-base.php';
+require_once __DIR__ . '/class-wpsg-permissions.php';
 require_once __DIR__ . '/rest/class-wpsg-space-controller.php';
 require_once __DIR__ . '/rest/class-wpsg-campaign-controller.php';
 require_once __DIR__ . '/rest/class-wpsg-export-controller.php';

@@ -9,9 +9,11 @@ interface SpaceManagementModalProps {
   onClose: () => void;
   onNotify: (message: { type: 'error' | 'success'; text: string }) => void;
   onSpacesChanged: () => void;
+  /** P53-A: gates the create-space form (system-admin only). */
+  isSystemAdmin?: boolean;
 }
 
-export function SpaceManagementModal({ opened, apiClient, onClose, onNotify, onSpacesChanged }: SpaceManagementModalProps) {
+export function SpaceManagementModal({ opened, apiClient, onClose, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementModalProps) {
   return (
     <Modal
       opened={opened}
@@ -24,6 +26,7 @@ export function SpaceManagementModal({ opened, apiClient, onClose, onNotify, onS
         apiClient={apiClient}
         onNotify={onNotify}
         onSpacesChanged={onSpacesChanged}
+        isSystemAdmin={isSystemAdmin}
       />
     </Modal>
   );

@@ -8,10 +8,17 @@ import type { ApiClientOptions, HttpTransport } from './HttpTransport';
  */
 export class ApiError extends Error {
   status: number;
+  /**
+   * Parsed JSON body of the error response, when available. For WordPress
+   * REST errors this is `{ code, message, data: { status, ...extra } }` — e.g.
+   * a P52-A5c in-use guard carries the conflict count at `data.data.inUse`.
+   */
+  data: unknown;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, data: unknown = undefined) {
     super(message);
     this.status = status;
+    this.data = data;
   }
 }
 
@@ -123,8 +130,10 @@ export class HttpTransportImpl implements HttpTransport {
       }
 
       let errorMessage = 'Request failed';
+      let errorBody: unknown = undefined;
       try {
         const data = await response.json();
+        errorBody = data;
         if (data?.message) {
           errorMessage = data.message;
         }
@@ -132,7 +141,7 @@ export class HttpTransportImpl implements HttpTransport {
         // ignore parse errors
       }
 
-      throw new ApiError(errorMessage, response.status);
+      throw new ApiError(errorMessage, response.status, errorBody);
     }
     return response.json() as Promise<T>;
   }

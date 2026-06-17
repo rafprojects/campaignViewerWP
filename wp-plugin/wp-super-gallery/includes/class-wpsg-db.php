@@ -1414,6 +1414,25 @@ class WPSG_DB {
     }
 
     /**
+     * P52-A5c: how many spaces is this library asset associated with?
+     * Backs the asset-delete in-use guard (delete is blocked while > 0 unless
+     * the caller explicitly forces it).
+     */
+    public static function count_asset_associations(string $asset_id, string $asset_type): int {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $asset_id === '') {
+            return 0;
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE asset_type = %s AND asset_id = %s",
+            $asset_type,
+            sanitize_text_field($asset_id)
+        ));
+    }
+
+    /**
      * One-time migration: associate every existing overlay/font with every
      * existing delegated space so no delegated tenant loses access to assets
      * that were globally visible before P50-B. New delegated spaces created
