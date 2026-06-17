@@ -501,8 +501,9 @@ JS;
         }
         // Reshape to indexed array with instanceId included in each entry.
         // P53-A: scope to spaces the actor can access. System admins resolve to
-        // every space; a wpsg_editor only sees open + granted-delegated spaces,
-        // so the SpaceSwitcher never offers a space it cannot administer.
+        // every space; a wpsg_editor sees only the spaces it has been granted
+        // access to (in either isolation mode), so the SpaceSwitcher never
+        // offers a space it cannot reach.
         $spaces = [];
         foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
             if (!WPSG_REST_Base::current_actor_can_access_space((int) $info['id'])) {
@@ -536,7 +537,8 @@ JS;
         }
 
         // P53-A: scope to spaces the actor can access (system admins see all; a
-        // wpsg_editor sees only open + granted-delegated spaces).
+        // wpsg_editor sees only the spaces it has been granted access to, in
+        // either isolation mode).
         $accessible = array_filter(
             $GLOBALS['wpsg_spaces_on_page'],
             static function ($info) {
