@@ -1,4 +1,5 @@
-import { Group, Pagination, Skeleton, Table, Text, Checkbox } from '@mantine/core';
+import { Button, Group, Pagination, Skeleton, Table, Text, Checkbox } from '@mantine/core';
+import { IconPlus } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -17,6 +18,8 @@ function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
           <Table.Td><Skeleton height={22} width={56} radius="xl" /></Table.Td>
           <Table.Td><Skeleton height={14} width={80} /></Table.Td>
           <Table.Td><Skeleton height={22} width={40} radius="xl" /></Table.Td>
+          <Table.Td><Skeleton height={14} width={80} /></Table.Td>
+          <Table.Td><Skeleton height={14} width={80} /></Table.Td>
           <Table.Td>
             <Group gap="xs">
               <Skeleton height={28} width={60} radius="sm" />
@@ -49,6 +52,8 @@ interface CampaignsTabProps {
   total: number;
   /** Called when the user navigates to a different page. */
   onPageChange: (page: number) => void;
+  /** Opens the campaign creation flow. Omit or pass undefined to hide the button. */
+  onAddCampaign?: (() => void) | undefined;
 }
 
 export function CampaignsTab({
@@ -63,6 +68,7 @@ export function CampaignsTab({
   totalPages,
   total,
   onPageChange,
+  onAddCampaign,
 }: CampaignsTabProps) {
   if (error) {
     return <Text c="red" role="alert" aria-live="assertive">{error}</Text>;
@@ -73,6 +79,13 @@ export function CampaignsTab({
 
   return (
     <>
+      {onAddCampaign && (
+        <Group justify="flex-end" mb="xs">
+          <Button size="sm" leftSection={<IconPlus size={14} />} onClick={onAddCampaign}>
+            Add Campaign
+          </Button>
+        </Group>
+      )}
       <Table.ScrollContainer minWidth={720}>
         <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list">
           <Table.Thead>
@@ -90,6 +103,8 @@ export function CampaignsTab({
               <Table.Th>Visibility</Table.Th>
               <Table.Th>Company</Table.Th>
               <Table.Th>Grants</Table.Th>
+              <Table.Th>Tags</Table.Th>
+              <Table.Th>Categories</Table.Th>
               <Table.Th>Actions</Table.Th>
             </Table.Tr>
           </Table.Thead>

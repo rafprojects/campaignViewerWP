@@ -1,9 +1,10 @@
 import { Suspense, lazy, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
-  Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, Text, TextInput, Textarea, Tooltip,
+  Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
 } from '@mantine/core';
 import type { CampaignCategoryEntry } from '@/services/apiClient';
+import type { TagEntry } from '@/services/api/campaignsApi';
 import type { CompanyInfo } from '@/services/adminQuery';
 import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
 import { useMediaQuery } from '@mantine/hooks';
@@ -100,6 +101,8 @@ interface UnifiedCampaignModalProps {
   onEditLayout?: (templateId: string) => void;
   /** All existing categories for the hierarchical picker. */
   categoryItems?: CampaignCategoryEntry[];
+  /** All existing tags for the tag input autocomplete. */
+  tagItems?: TagEntry[];
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -231,6 +234,7 @@ interface UnifiedCampaignSettingsPanelProps {
   formState: UnifiedCampaignFormState;
   updateForm: UnifiedCampaignUpdateForm;
   categoryItems: CampaignCategoryEntry[];
+  tagItems: TagEntry[];
   campaignGalleryOverrideMode: 'unified' | 'per-type' | '' | null;
   effectiveCampaignGalleryMode: 'unified' | 'per-type';
   resolvedCampaignQuickOverrides: UnifiedCampaignGalleryOverrides;
@@ -252,6 +256,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   formState,
   updateForm,
   categoryItems,
+  tagItems,
   campaignGalleryOverrideMode,
   effectiveCampaignGalleryMode,
   resolvedCampaignQuickOverrides,
@@ -285,12 +290,15 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           onChange={(v) => updateForm({ ...formState, visibility: (v ?? 'private') as 'public' | 'private' })}
         />
       </Group>
-      <TextInput
+      <TagsInput
         label="Tags"
-        placeholder="tag1, tag2, tag3"
-        description="Comma separated list of tags"
+        placeholder="Add tags…"
+        description="Type a tag and press Enter or comma to add"
+        data={tagItems.map((t) => t.name)}
         value={formState.tags}
-        onChange={(e) => updateForm({ ...formState, tags: e.currentTarget.value })}
+        onChange={(v) => updateForm({ ...formState, tags: v })}
+        splitChars={[',']}
+        clearable
       />
       <MultiSelect
         label="Categories"
@@ -491,6 +499,7 @@ export function UnifiedCampaignModal({
   layoutTemplates = [],
   onEditLayout,
   categoryItems = [],
+  tagItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const {
@@ -621,6 +630,7 @@ export function UnifiedCampaignModal({
             formState={formState}
             updateForm={updateForm}
             categoryItems={categoryItems}
+            tagItems={tagItems}
             campaignGalleryOverrideMode={campaignGalleryOverrideMode}
             effectiveCampaignGalleryMode={effectiveCampaignGalleryMode}
             resolvedCampaignQuickOverrides={resolvedCampaignQuickOverrides}

@@ -351,6 +351,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
 }
 
 const spacesAdminHost = document.getElementById('wpsg-spaces-admin')
+const assetsAdminHost = document.getElementById('wpsg-assets-admin')
 const rootHost = document.getElementById('root')
 if (import.meta.env.DEV) {
   console.log('[WPSG] Mount init - rootHost:', rootHost, 'useShadowDom:', useShadowDom)
@@ -362,6 +363,11 @@ if (import.meta.env.DEV) {
 if (spacesAdminHost) {
   void import('./components/Admin/SpacesAdminApp').then(({ mountSpacesAdmin }) => {
     mountSpacesAdmin(spacesAdminHost)
+  })
+} else if (assetsAdminHost) {
+  // P52-B: the WP-admin "Asset Library" page mounts only the global asset manager.
+  void import('./components/Admin/GlobalAssetAdminApp').then(({ mountGlobalAssets }) => {
+    mountGlobalAssets(assetsAdminHost)
   })
 } else if (rootHost) {
   if (import.meta.env.DEV) console.log('[WPSG] Mounting to #root')

@@ -61,7 +61,7 @@ export interface UnifiedCampaignFormState {
   coverImage: string;
   status: Campaign['status'];
   visibility: Campaign['visibility'];
-  tags: string;
+  tags: string[];
   borderColor?: string | undefined;
   publishAt: string;
   unpublishAt: string;
@@ -77,7 +77,7 @@ const emptyForm: UnifiedCampaignFormState = {
   coverImage: '',
   status: 'draft',
   visibility: 'private',
-  tags: '',
+  tags: [],
   publishAt: '',
   unpublishAt: '',
   layoutTemplateId: '',
@@ -160,7 +160,7 @@ export function useUnifiedCampaignModal({
           : '',
       status: c.status ?? 'draft',
       visibility: c.visibility ?? 'private',
-      tags: (c.tags ?? []).join(', '),
+      tags: c.tags ?? [],
       publishAt: c.publishAt ?? '',
       unpublishAt: c.unpublishAt ?? '',
       layoutTemplateId: c.layoutTemplateId ?? '',
@@ -266,7 +266,7 @@ export function useUnifiedCampaignModal({
       company: companyPayload,
       status: formState.status,
       visibility: formState.visibility,
-      tags: formState.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: formState.tags,
       categories: formState.categories,
       publishAt: formState.publishAt || '',
       unpublishAt: formState.unpublishAt || '',

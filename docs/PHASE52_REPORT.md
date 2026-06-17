@@ -9,8 +9,8 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend UX deferred → PHASE53) | ✅ Done | High |
-| P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | To do | Medium-High |
-| P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | To do | Medium |
+| P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | ✅ Done | Medium-High |
+| P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | ✅ Done | Medium |
 | P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
 | P52-E | vitest CRITICAL spec fix — `"vitest": "^2.1.8"` caps at 2.1.9 which is below the fix threshold (≥ 3.2.6); bump to `^4.0.0` matching the version already used in the lock file | ✅ Done | Low |
 | P52-F | esbuild HIGH override — esbuild is capped at 0.25.x by vite's `^0.25.0` dep; needs an `overrides` entry to reach 0.28.1 (GHSA-gv7w-rqvm-qjhr); verify build/storybook still pass | ✅ Done | Low |
@@ -224,6 +224,38 @@ Choose the option that makes the WP-admin and Admin-Panel experiences easiest to
 - Component/integration tests for the shared asset manager.
 - Manual QA: add/delete an asset in WP admin, confirm it appears/disappears in the Admin Panel view and vice versa.
 
+### Implementation notes (Done 2026-06-17)
+
+**Host shape decision.** New dedicated **"Assets" tab** in the Admin Panel (Option i), not subtabs inside Media. Global assets are orthogonal to campaign-scoped media — a dedicated tab maps 1:1 to the WP admin sidebar page and keeps the surfaces easy to reason about.
+
+**Shared component — no duplication.** `GlobalAssetManager` (`src/components/Admin/GlobalAssetManager.tsx`) is the single implementation used by both surfaces. It uses the existing `useAssetLibrary` query hook (from `layoutTemplateQuery.ts`) for reading, `AssetUploader` for the upload UI, and `DesignAssetsGrid` for the asset grid. Both consumers (`GlobalAssetTab` for the Admin Panel, `GlobalAssetAdminApp` for WP admin) are thin wrappers over this one component.
+
+**No new PHP infrastructure needed.** All four REST routes (`GET/POST /admin/asset-library`, `POST/DELETE /admin/asset-library/{id}`) and the `WPSG_Asset_Library` PHP class already existed. The `WPSG_Permissions` MAP entries (`assets.list/upload/update/delete` → `require_admin`) were already correct from P52-A.
+
+**New files:**
+- `src/services/api/assetsApi.ts` — `AssetsApi` class wrapping the four REST endpoints (list, upload via `postForm`, update via `post`, delete with optional `?force=true`)
+- `src/services/adminQuery.ts` — added `useUploadGlobalAsset`, `useUpdateGlobalAsset`, `useDeleteGlobalAsset` mutation hooks; re-exports `ASSET_IN_USE_CODE`
+- `src/components/Admin/GlobalAssetManager.tsx` — shared CRUD UI; handles the P52-A5c in-use 409 guard with a two-step confirm flow (first confirm → if 409, `forceDelete` state → `ConfirmModal` with force=true)
+- `src/components/Admin/GlobalAssetTab.tsx` — lazy-loaded Admin Panel tab wrapper
+- `src/components/Admin/GlobalAssetAdminApp.tsx` — WP admin mount (mirrors `SpacesAdminApp.tsx`)
+- `includes/class-wpsg-asset-admin-renderer.php` — WP admin submenu renderer (`manage_options` cap, `#wpsg-assets-admin` div)
+- `tests/WPSG_P52B_Asset_Admin_Renderer_Test.php` — 3 assertions: submenu requires `manage_options`, `render_page()` outputs the mount div, editor lacks the capability
+- `src/components/Admin/GlobalAssetManager.test.tsx` — 5 tests: empty state, grid renders, delete+confirm, 409 escalation to force-confirm, upload
+
+**Modified files:**
+- `src/main.tsx` — added `#wpsg-assets-admin` detection branch (after `#wpsg-spaces-admin`, before `#root`)
+- `src/components/Admin/AdminPanel.tsx` — added `GlobalAssetTab` lazy import, "Assets" tab in desktop Tabs.List and mobile Select, `Tabs.Panel value="assets"` with Suspense
+- `wp-plugin/wp-super-gallery/wp-super-gallery.php` — `require_once` the new renderer; `WPSG_Asset_Admin_Renderer::init()` in the `is_admin()` block
+
+**Permissions summary:**
+| Surface | Gate |
+|---------|------|
+| WP admin "Asset Library" submenu | `manage_options` (System Admin only) |
+| Admin Panel "Assets" tab | no extra gate — REST gates apply automatically |
+| All `/admin/asset-library` REST routes | `require_admin` (`manage_wpsg`) — editor + admin |
+
+**Validation.** 2377 vitest tests pass (5 new for GlobalAssetManager). 1037 PHPUnit tests pass, 2 pre-existing skips (3 new for renderer).
+
 ## Track P52-C - Campaign tags/categories overhaul
 
 ### Problem
@@ -250,6 +282,20 @@ Data + endpoints already exist (`src/services/api/campaignsApi.ts`): tags `GET/P
 
 - Component tests for the multi-select input (add/remove badges) and the listing columns.
 - Manual QA: create a campaign with several tags and categories; confirm they persist and render in the listing.
+
+### Implementation notes (Done 2026-06-17)
+
+**Tags type change.** `UnifiedCampaignFormState.tags` changed from `string` (comma-separated) to `string[]`, consistent with `categories: string[]`. Four touch points in `src/hooks/useUnifiedCampaignModal.ts`: type declaration, `emptyForm` initializer, `openForEdit` load path (`.join(', ')` removed), and the save path (`.split(',').map(trim).filter(Boolean)` simplified to direct pass-through).
+
+**TagsInput.** `TextInput` for tags in `UnifiedCampaignSettingsPanel` (`src/components/Campaign/UnifiedCampaignModal.tsx`) replaced with Mantine `TagsInput`. Existing tags from `useCampaignTags` (already called in `AdminPanel`) are passed as the `data` autocomplete list via a new `tagItems: TagEntry[]` prop threaded from `UnifiedCampaignModal` → `UnifiedCampaignSettingsPanel`. `TagsInput` shows selected tags as removable pill chips, supports freeform creation (type + Enter or comma), and is visually consistent with the `MultiSelect` already used for categories. No new wrapper component was needed (`SearchableEntityInput` single-select callers untouched).
+
+**Listing columns.** `src/hooks/useCampaignsRows.tsx` adds a `categoryItems?: CampaignCategoryEntry[]` option, builds a `Map<id, name>` lookup inside `useMemo`, and inserts two new `<Table.Td>` cells per row — Tags (light variant badges, tag names from `AdminCampaign.tags`) and Categories (outline variant badges, ID→name resolved via the map, falling back to the raw ID). Empty arrays render `—`. `src/components/Admin/CampaignsTab.tsx` adds the matching `Tags` and `Categories` `<Table.Th>` headers and two placeholder skeleton cells in `CampaignSkeletonRows`.
+
+**Add Campaign toolbar.** `CampaignsTab` gains a `onAddCampaign?: () => void` prop. When provided, a `Button` ("Add Campaign", `IconPlus`) renders above the scroll container. `AdminPanel` passes `isAllSpaces ? undefined : campaignActions.handleCreate` — the button is absent in the "all spaces" aggregated view, matching the existing header button's `disabled={isAllSpaces}` behavior.
+
+**AdminPanel wiring.** Three additions: `categoryItems={campaignCategories}` to `useCampaignsRows`, `tagItems={campaignTags}` to `<UnifiedCampaignModal>`, and `onAddCampaign={...}` to `<CampaignsTab>`. Both `campaignCategories` and `campaignTags` were already fetched at lines 174–175.
+
+**Tests.** New `src/components/Admin/CampaignsTab.test.tsx` (6 tests): Tags/Categories column headers, all expected headers, Add Campaign button present/absent, click fires callback, campaign rows render. `UnifiedCampaignModal.test.tsx` gains 3 P52-C tests: pills render for initial tags, TagsInput onChange fires updateForm, empty-state placeholder. Existing tests updated: `tags: 'tag1, tag2'` → `tags: ['tag1', 'tag2']` in `makeMockModal` (8 occurrences); `defaultFormState.tags: ''` → `tags: [] as string[]` in `LayoutBuilderGallery.test.tsx`; removed stale `fireEvent.change(getByPlaceholderText('tag1, tag2, tag3'))` in `AdminPanel.test.tsx`. Full suite green — **2386 tests, 0 failures**.
 
 ## Track P52-D - Service Worker offline app-shell
 

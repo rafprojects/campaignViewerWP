@@ -199,7 +199,6 @@ describe('AdminPanel', () => {
     fireEvent.change(await screen.findByPlaceholderText('Campaign title'), { target: { value: 'New Campaign' } });
     fireEvent.change(screen.getByPlaceholderText('Campaign description'), { target: { value: 'Desc' } });
     fireEvent.change(screen.getByPlaceholderText('Search or add company…'), { target: { value: 'acme' } });
-    fireEvent.change(screen.getByPlaceholderText('tag1, tag2, tag3'), { target: { value: 'a,b' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Campaign' }));
 

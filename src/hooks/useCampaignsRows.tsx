@@ -3,6 +3,7 @@ import { Table, Text, Box, Group, Badge, Tooltip, Button, Checkbox, Select, Menu
 import { notifications } from '@mantine/notifications';
 import { IconEdit, IconCopy, IconDownload, IconFileZip, IconArchive, IconArchiveOff, IconLayoutGrid, IconTrash, IconChevronDown, IconArrowsExchange, IconPhotoPlus } from '@tabler/icons-react';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
+import type { CampaignCategoryEntry } from '@/services/apiClient';
 import { useAllCompanies, usePatchCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
@@ -46,9 +47,11 @@ interface Options {
   canMoveCampaigns?: boolean;
   /** P50-I: open the unified media-upload modal targeting this campaign. */
   onAddMedia?: (campaign: AdminCampaign) => void;
+  /** P52-C: all categories for ID→name resolution in the listing. */
+  categoryItems?: CampaignCategoryEntry[];
 }
 
-export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns = false, onAddMedia }: Options) {
+export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns = false, onAddMedia, categoryItems }: Options) {
   const {
     selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,
@@ -62,6 +65,7 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
   const { companies, companiesLoading } = useAllCompanies(apiClient);
 
   return useMemo(() => {
+    const catMap = new Map((categoryItems ?? []).map((cat) => [cat.id, cat.name]));
     return campaigns.map((c) => {
       const cid = String(c.id);
       const isSelected = selectedCampaignIds.has(cid);
@@ -175,6 +179,28 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
             )}
           </Table.Td>
           <Table.Td>
+            {c.tags.length > 0 ? (
+              <Group gap={4} wrap="wrap">
+                {c.tags.map((tag) => (
+                  <Badge key={tag} size="xs" variant="light">{tag}</Badge>
+                ))}
+              </Group>
+            ) : (
+              <Text size="xs" c="dimmed">—</Text>
+            )}
+          </Table.Td>
+          <Table.Td>
+            {(c.categories ?? []).length > 0 ? (
+              <Group gap={4} wrap="wrap">
+                {(c.categories ?? []).map((id) => (
+                  <Badge key={id} size="xs" variant="outline">{catMap.get(id) ?? id}</Badge>
+                ))}
+              </Group>
+            ) : (
+              <Text size="xs" c="dimmed">—</Text>
+            )}
+          </Table.Td>
+          <Table.Td>
             <Group gap="xs" wrap="wrap">
               <Button variant="outline" size="xs" leftSection={<IconEdit size={14} />} onClick={() => handleEdit(c)}>Edit</Button>
               {onAddMedia && (
@@ -225,5 +251,5 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
         </Table.Tr>
       );
     });
-  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, setMoveSource, canMoveCampaigns, onAddMedia, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
+  }, [campaigns, selectedCampaignIds, grantSummary, companies, companiesLoading, patchCampaign, handleToggleCampaignSelect, handleEdit, setDuplicateSource, setMoveSource, canMoveCampaigns, onAddMedia, categoryItems, handleExportCampaign, handleBinaryExportCampaign, binaryExportingIds, setConfirmRestore, setConfirmArchive, setConfirmDelete, restoringIds, archivingIds, deletingIds]);
 }

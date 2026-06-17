@@ -345,7 +345,7 @@ describe('UnifiedCampaignModal layout selector', () => {
     coverImage: '',
     status: 'draft' as const,
     visibility: 'private' as const,
-    tags: '',
+    tags: [] as string[],
     publishAt: '',
     unpublishAt: '',
     layoutTemplateId: '',

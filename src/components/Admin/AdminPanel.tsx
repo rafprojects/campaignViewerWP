@@ -41,6 +41,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 
 const MediaTab = lazy(() => import('./MediaTab'));
+const GlobalAssetTab = lazy(() => import('./GlobalAssetTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
 const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
 const CampaignMoveSpaceModal = lazy(() => import('./CampaignMoveSpaceModal').then((m) => ({ default: m.CampaignMoveSpaceModal })));
@@ -391,7 +392,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     && activeSpace.effectiveLevel === 'owner'
     && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
 
-  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign });
+  const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign, categoryItems: campaignCategories });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole: accessState.handleChangeRole });
   const auditRows = useAuditRows(auditEntries);
 
@@ -482,6 +483,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               { value: 'media', label: 'Media' },
               { value: 'layouts', label: 'Layouts' },
               { value: 'templates', label: 'Templates' },
+              { value: 'assets', label: 'Assets' },
               { value: 'access', label: 'Access' },
               { value: 'audit', label: 'Campaign Activity' },
               // P53-A: System Audit is system-admin only.
@@ -497,6 +499,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             <Tabs.Tab value="media">Media</Tabs.Tab>
             <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
             <Tabs.Tab value="templates">Templates</Tabs.Tab>
+            <Tabs.Tab value="assets">Assets</Tabs.Tab>
             <Tabs.Tab value="access">Access</Tabs.Tab>
             <Tabs.Tab value="audit">Campaign Activity</Tabs.Tab>
             {isSystemAdmin && <Tabs.Tab value="globalAudit">System Audit</Tabs.Tab>}
@@ -596,6 +599,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               totalPages={campaignPagination.totalPages}
               total={campaignPagination.total}
               onPageChange={setCampaignPage}
+              onAddCampaign={isAllSpaces ? undefined : campaignActions.handleCreate}
             />
           )}
           {campaignActions.selectedCampaignIds.size > 0 && (() => {
@@ -629,6 +633,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           layoutTemplates={layoutTemplates ?? []}
           onEditLayout={(id) => { unifiedModal.close(); setPendingEditLayoutId(id); setActiveTab('layouts'); }}
           categoryItems={campaignCategories}
+          tagItems={campaignTags}
         />
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
@@ -702,6 +707,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
 
         <Tabs.Panel value="templates" pt="md">
           <TemplatesTab apiClient={apiClient} campaigns={allCampaigns} onNotify={onNotify} />
+        </Tabs.Panel>
+
+        {/* P52-B: global asset library management. */}
+        <Tabs.Panel value="assets" pt="md">
+          <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
+            <GlobalAssetTab apiClient={apiClient} onNotify={onNotify} />
+          </Suspense>
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">

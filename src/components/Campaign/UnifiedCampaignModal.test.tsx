@@ -108,7 +108,7 @@ function makeMockModal(overrides: Partial<UnifiedCampaignModalHandle> = {}): Uni
       coverImage: '',
       status: 'active',
       visibility: 'private',
-      tags: 'tag1, tag2',
+      tags: ['tag1', 'tag2'],
       publishAt: '',
       unpublishAt: '',
       layoutTemplateId: '',
@@ -280,7 +280,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -316,7 +316,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -346,7 +346,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -384,7 +384,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -432,7 +432,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -482,7 +482,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -516,7 +516,7 @@ describe('UnifiedCampaignModal', () => {
         coverImage: '',
         status: 'active',
         visibility: 'private',
-        tags: 'tag1, tag2',
+        tags: ['tag1', 'tag2'],
         publishAt: '',
         unpublishAt: '',
         layoutTemplateId: '',
@@ -608,5 +608,30 @@ describe('UnifiedCampaignModal', () => {
     const removeBtn = screen.getByRole('button', { name: /remove from campaign/i });
     fireEvent.click(removeBtn);
     expect(handleRemoveMedia).toHaveBeenCalledWith(mediaItem);
+  });
+
+  describe('P52-C: TagsInput multi-select', () => {
+    it('renders existing tags as removable pills on the settings tab', () => {
+      const modal = makeMockModal({ activeTab: 'settings', formState: { ...makeMockModal().formState, tags: ['alpha', 'beta'] } });
+      render(<UnifiedCampaignModal modal={modal} />);
+      expect(screen.getByText('alpha')).toBeInTheDocument();
+      expect(screen.getByText('beta')).toBeInTheDocument();
+    });
+
+    it('calls updateForm when the TagsInput onChange fires', () => {
+      const updateForm = vi.fn();
+      const modal = makeMockModal({ activeTab: 'settings', updateForm });
+      render(<UnifiedCampaignModal modal={modal} />);
+      const input = screen.getByPlaceholderText('Add tags…');
+      fireEvent.change(input, { target: { value: 'newtag' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      expect(updateForm).toHaveBeenCalled();
+    });
+
+    it('renders empty tags input when no tags are set', () => {
+      const modal = makeMockModal({ activeTab: 'settings', formState: { ...makeMockModal().formState, tags: [] } });
+      render(<UnifiedCampaignModal modal={modal} />);
+      expect(screen.getByPlaceholderText('Add tags…')).toBeInTheDocument();
+    });
   });
 });

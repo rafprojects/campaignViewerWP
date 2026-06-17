@@ -838,3 +838,44 @@ export function useAccessSummary(apiClient: ApiClient, page = 1, perPage = 200, 
 }
 
 export type { AccessRequest, AccessSummaryItem, AccessSummaryResponse, AnalyticsSummaryResponse, CampaignAnalyticsResponse, CampaignCategoryEntry, MediaAnalyticsResponse, TagEntry };
+
+// ── P52-B: Global Asset Library mutations ─────────────────────────────────────
+
+import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
+import { AssetsApi, type AssetUploadOptions } from '@/services/api/assetsApi';
+import { getAssetLibraryQueryKey } from '@/services/layoutTemplateQuery';
+
+export { ASSET_IN_USE_CODE } from '@/services/api/assetsApi';
+
+export function useUploadGlobalAsset(apiClient: ApiClient) {
+  const queryClient = useQueryClient();
+  const api = new AssetsApi(apiClient);
+  return useMutation<AssetLibraryItem, Error, { file: File; opts?: AssetUploadOptions }>({
+    mutationFn: ({ file, opts }) => api.upload(file, opts),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getAssetLibraryQueryKey(apiClient) });
+    },
+  });
+}
+
+export function useUpdateGlobalAsset(apiClient: ApiClient) {
+  const queryClient = useQueryClient();
+  const api = new AssetsApi(apiClient);
+  return useMutation<unknown, Error, { id: string; is_universal?: boolean; tags?: string[] }>({
+    mutationFn: ({ id, ...patch }) => api.update(id, patch),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getAssetLibraryQueryKey(apiClient) });
+    },
+  });
+}
+
+export function useDeleteGlobalAsset(apiClient: ApiClient) {
+  const queryClient = useQueryClient();
+  const api = new AssetsApi(apiClient);
+  return useMutation<unknown, Error, { id: string; force?: boolean }>({
+    mutationFn: ({ id, force }) => api.delete(id, force),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: getAssetLibraryQueryKey(apiClient) });
+    },
+  });
+}
