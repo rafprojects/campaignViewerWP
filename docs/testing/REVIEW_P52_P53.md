@@ -183,15 +183,19 @@ with `npm audit` clean.
 - **ESLint** (`npm run lint`): **0 problems** (exit 0).
 - **Vitest** (`npm run test:coverage`): **2396 tests pass** (2386 baseline + 10 new for `assetsApi`). `npm run build` green with the SW build-hash injected; `npm audit` 0 vulns.
 
-**Coverage note (pre-existing gate, not a P52/P53 regression).** The configured global
-thresholds (lines/statements/functions 75, branches 72 — *unchanged* vs `main`) are not
-met: statements 76.79, lines 79.36 (pass); **functions 72.15, branches 66.76 (fail)**.
-This gate is **not** enforced by `npm test` or the pre-push hook (both run `vitest run`
-without `--coverage`), and the shortfall is dominated by code **outside this review's
-scope**: `src/services/api/adminApi.ts` (pre-existing on `main`, ~3.8% lines / 0%
-branches) and several bundled non-P52/P53 gallery modules (`GalleriesContext`,
-`useGalleriesDimensions`, `useGatheredMask`, `slotEffects`, `Pointer*`). The **one
-P52/P53 coverage gap — the new `assetsApi.ts` (was 33%) — is now closed** with
-`src/services/api/assetsApi.test.ts` (10 tests, all branches/methods incl. the C4-1
-encoding fix). Raising the global gate to green is a separate effort across
-pre-existing/non-P52 files.
+**Coverage gate — now GREEN (2026-06-17).** At review start the configured thresholds
+(lines/statements/functions 75, branches 72) were failing: functions 72.15%, branches
+66.76% (statements/lines passed). On user direction ("push to pass the gate"), the
+suite was extended with **hand-authored** tests (Haiku subagents were used only to
+*run* tests, not write them — they produced unreliable assertions). Final
+`npm run test:coverage` is **exit 0**: **Statements 82.63% · Branches 72.06% ·
+Functions 78% · Lines 84.82%** — all four thresholds met (suite ~3115 tests).
+
+New test files added (all hand-authored): `assetsApi`, `slotEffects`,
+`apiClient.delegation`, `galleryConfigUtils(+adapters)`, `useMediaDimensions`,
+`useTypographyStyle`, `adminApi`, `validation`, `groupGeometry`, `layerList`,
+`campaignGalleryOverrides`, `galleryConfig`, `useUnifiedCampaignModal`,
+`useAdminCampaignActions`, `useAdminAccessState`, `adminQuery`,
+`useLayoutBuilderState`, `LayoutTemplateList`, `MediaUploadController`,
+`layoutTemplateQuery`. The gate is **not** wired into `npm test`/pre-push (those run
+`vitest run` without `--coverage`); run `npm run test:coverage` to enforce it.
