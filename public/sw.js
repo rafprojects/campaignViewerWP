@@ -31,6 +31,24 @@ const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/medi
 // and SW cache-first would serve stale bundles after a deploy.
 const HASHED_ASSET_RE = /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.(js|css)$/;
 
+// P52-D: versioned shell cache for navigation responses (HTML pages).
+// __WPSG_BUILD_HASH__ is replaced with a hash of the Vite manifest by the
+// wpsg-sw-hash-inject Vite plugin on every production build. A new hash means
+// a new SW file → the browser detects the update → activate deletes the old
+// shell cache (any wpsg-* name not matching the current set is swept).
+const BUILD_HASH = '__WPSG_BUILD_HASH__';
+const SHELL_CACHE = `wpsg-shell-${BUILD_HASH}`;
+
+// Minimal branded offline fallback served when the network is down and no
+// cached shell is available (first offline load, or post-deploy before revisit).
+const OFFLINE_HTML = `<!DOCTYPE html><html lang="en"><head>\
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">\
+<title>Gallery — Offline</title>\
+<style>body{font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f8f9fa}div{text-align:center;max-width:400px;padding:2rem}h1{font-size:1.5rem;color:#212529;margin:0 0 .5rem}p{color:#6c757d;margin:0}</style>\
+</head><body><div><h1>You’re offline</h1>\
+<p>Check your connection and reload to view the gallery.</p>\
+</div></body></html>`;
+
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(caches.open(RUNTIME_CACHE));
@@ -44,7 +62,10 @@ self.addEventListener('activate', (event) => {
         keys
           .filter(
             (key) =>
-              key.startsWith('wpsg-') && key !== RUNTIME_CACHE && key !== META_CACHE,
+              key.startsWith('wpsg-') &&
+              key !== RUNTIME_CACHE &&
+              key !== META_CACHE &&
+              key !== SHELL_CACHE,
           )
           .map((key) => caches.delete(key)),
       );
@@ -57,15 +78,23 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
-  // Never cache document navigations or HTML pages. A stale cached shell can
-  // bootstrap an old entry module that lazy-loads chunk URLs removed by a new
-  // deploy, which shows up as overlays or settings drawers that stop opening.
-  const acceptHeader = request.headers.get('Accept') || '';
-  if (request.mode === 'navigate' || acceptHeader.includes('text/html')) return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes('/wp-login.php')) return;
+
+  // wp-admin navigations pass through to the network — admins should see the
+  // real error if they go offline, not a gallery offline fallback.
+  if (url.pathname.startsWith('/wp-admin/')) return;
+
+  const acceptHeader = request.headers.get('Accept') || '';
+
+  // P52-D: Navigation / HTML requests — network-first with shell cache + offline fallback.
+  // Previously these returned early (no caching). Now we intercept them to provide
+  // an offline-capable app shell.
+  if (request.mode === 'navigate' || acceptHeader.includes('text/html')) {
+    event.respondWith(handleNavigationRequest(request));
+    return;
+  }
 
   // ── Stale-while-revalidate for public gallery metadata ─────────────────────
   // Must be checked BEFORE the /wp-json/ bail below.
@@ -81,7 +110,7 @@ self.addEventListener('fetch', (event) => {
 
   // Admin SPA routes and all remaining /wp-json/ endpoints remain network-only.
   // Mutations are excluded by the request.method !== 'GET' guard above.
-  if (url.pathname.startsWith('/wp-admin/') || url.pathname.startsWith('/wp-json/')) return;
+  if (url.pathname.startsWith('/wp-json/')) return;
 
   // Never cache Vite hashed assets — the content hash in the filename
   // already provides perfect cache busting. SW caching these causes
@@ -113,6 +142,35 @@ self.addEventListener('fetch', (event) => {
     })(),
   );
 });
+
+/**
+ * Network-first handler for navigation (HTML) requests.
+ *
+ * - Online: fetch from network; on 2xx cache the response for offline use.
+ * - Offline/error: serve the cached shell for this exact URL if available,
+ *   otherwise serve the inline OFFLINE_HTML fallback.
+ *
+ * The shell cache name encodes the build hash so a new deploy automatically
+ * invalidates it (activate sweeps any wpsg-* name not in the current set).
+ */
+async function handleNavigationRequest(request) {
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(SHELL_CACHE);
+      // Fire-and-forget: don't block the response on the cache write.
+      cache.put(request, response.clone()).catch(() => {});
+    }
+    return response;
+  } catch {
+    const cache = await caches.open(SHELL_CACHE);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+    return new Response(OFFLINE_HTML, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+}
 
 /**
  * Stale-while-revalidate handler for the two public metadata endpoints.

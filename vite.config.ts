@@ -1,5 +1,8 @@
 /// <reference types="vitest" />
 
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { createHash } from 'node:crypto'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -74,6 +77,29 @@ export default defineConfig({
     ...(process.env.ANALYZE === 'true' || process.env.ANALYZE === '1'
       ? [visualizer({ filename: './dist/stats.html', open: false, gzipSize: true, brotliSize: true })]
       : []),
+    // P52-D: inject a deploy-unique hash into dist/sw.js so a new build produces
+    // a new SW file. The browser detects the changed script, installs the new SW,
+    // and the activate handler clears the old wpsg-shell-* cache automatically.
+    {
+      name: 'wpsg-sw-hash-inject',
+      apply: 'build' as const,
+      enforce: 'post' as const,
+      closeBundle() {
+        try {
+          const manifestPath = join(process.cwd(), 'dist', '.vite', 'manifest.json')
+          const swPath = join(process.cwd(), 'dist', 'sw.js')
+          const buildHash = createHash('sha256')
+            .update(readFileSync(manifestPath, 'utf-8'))
+            .digest('hex')
+            .slice(0, 8)
+          writeFileSync(swPath, readFileSync(swPath, 'utf-8').replaceAll('__WPSG_BUILD_HASH__', buildHash))
+        } catch {
+          // Non-fatal: dist/sw.js retains the placeholder if the manifest is not
+          // found (e.g. during a partial build). The shell cache still works; its
+          // key will be the literal placeholder string until the next full build.
+        }
+      },
+    },
   ],
   resolve: {
     alias: {

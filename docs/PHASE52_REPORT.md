@@ -11,7 +11,7 @@
 | P52-A | RBAC audit & boundary enforcement — redesigned to a `manage_options` (System Admin) vs `manage_wpsg` (`wpsg_editor`, space-scoped) model via a centralized `WPSG_Permissions` map; staged A1–A6 (**A1–A5 done — all server-side enforcement complete; F1+F2 closed**; A6 frontend UX deferred → PHASE53) | ✅ Done | High |
 | P52-B | Asset Management — global (non-campaign) asset add/delete in WP admin, mirrored into the app Admin Panel | ✅ Done | Medium-High |
 | P52-C | Campaign tags/categories overhaul — show tags+categories in the listing, "Add Campaign" modal, multi-select tag/category entry with removable badges | ✅ Done | Medium |
-| P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | To do | Medium |
+| P52-D | Service Worker offline app-shell — versioned shell cache + deploy-time busting + offline fallback (promoted from FUTURE_TASKS) | ✅ Done | Medium |
 | P52-E | vitest CRITICAL spec fix — `"vitest": "^2.1.8"` caps at 2.1.9 which is below the fix threshold (≥ 3.2.6); bump to `^4.0.0` matching the version already used in the lock file | ✅ Done | Low |
 | P52-F | esbuild HIGH override — esbuild is capped at 0.25.x by vite's `^0.25.0` dep; needs an `overrides` entry to reach 0.28.1 (GHSA-gv7w-rqvm-qjhr); verify build/storybook still pass | ✅ Done | Low |
 | P52-G | Lock file regeneration — current lock file is stale/inconsistent; after P52-E+F land, delete lock and run fresh `npm install` to pull dompurify@3.4.10, fast-uri@3.1.2, postcss@8.5.15, and close 8 remaining alerts | ✅ Done | Low |
@@ -319,6 +319,33 @@ Open questions (carried from FUTURE_TASKS): (Q1) how the deploy version reaches 
 ### Validation
 
 - Manual QA in DevTools offline mode: reload and confirm the shell/fallback renders; deploy a new bundle and confirm the shell updates.
+
+### Implementation notes (Done 2026-06-17)
+
+**Open question resolutions:**
+- **Q1 — version signal:** Vite `closeBundle` plugin (`wpsg-sw-hash-inject` in `vite.config.ts`, `enforce: 'post'`) reads `.vite/manifest.json` after the bundle is fully written, computes an 8-char SHA-256 hash of its contents, and replaces the `__WPSG_BUILD_HASH__` placeholder in `dist/sw.js`. Every deploy produces a changed SW file; the browser detects the new SW, installs/activates it, and the existing `activate` cleanup sweeps the old `wpsg-shell-*` cache automatically.
+- **Q2 — which URLs to cache:** All successful same-origin navigation responses (`mode === 'navigate'`), keyed by exact URL. This handles multiple WP pages with the shortcode without enumerating them in advance. On a miss, the branded offline fallback is served.
+- **Q3 — offline HTML:** Inline `OFFLINE_HTML` constant at the top of `sw.js`. No extra file, no cache entry.
+
+**`public/sw.js` changes:**
+- Added `BUILD_HASH`, `SHELL_CACHE`, and `OFFLINE_HTML` constants.
+- The `fetch` handler is restructured: `url`, origin, `wp-login`, and `wp-admin` checks are now computed *before* the navigate branch (they previously lived after the early-return that we removed). `wp-admin` navigations still pass through to the network unmodified.
+- New `handleNavigationRequest(request)` function: tries the network first; on `response.ok`, fire-and-forgets a `SHELL_CACHE.put`; on network failure, tries the exact-URL cache hit, then falls back to `OFFLINE_HTML`.
+- `activate` handler updated to also preserve `SHELL_CACHE` (the old `filter` only preserved `RUNTIME_CACHE` and `META_CACHE`).
+
+**`vite.config.ts` changes:**
+- Added `node:fs`, `node:path`, `node:crypto` imports.
+- Added `wpsg-sw-hash-inject` plugin (`apply: 'build'`, `enforce: 'post'`) — pure post-build step, never runs in dev or vitest.
+
+**No PHP changes.** `maybe_serve_service_worker()` already serves `assets/sw.js` with `no-cache` headers; `copy-wp-assets.js` copies the already-injected `dist/sw.js` to `assets/sw.js` as part of `build:wp`.
+
+**Validation.** Build confirmed: `dist/sw.js` contains `BUILD_HASH = '3e613417'` (placeholder fully replaced, zero occurrences of `__WPSG_BUILD_HASH__`). Full vitest suite green — **2386 tests, 0 failures**.
+
+### Rationale log
+
+- **2026-06-17 — Version signal.** Build-time hash injection via a Vite `closeBundle` plugin chosen over (a) a `/__wpsg_version` PHP endpoint (requires network to detect deploy — defeats offline purpose) and (b) Workbox `injectManifest` (adds a large dependency and changes the SW architecture). Hashing the full manifest content is deterministic and changes on every deploy.
+- **2026-06-17 — Network-first strategy.** Shell caching uses network-first (not cache-first) so the user always gets the freshest WP page when online. Only network failure falls through to the cache. This avoids serving a cached shell that references old chunk URLs that may no longer exist after a deploy.
+- **2026-06-17 — wp-admin pass-through.** wp-admin navigations are excluded from the shell cache and offline fallback — admins seeing a browser error while offline is correct behavior; serving a gallery offline page on wp-admin would be confusing.
 
 ## Track P52-E - vitest CRITICAL spec fix
 
