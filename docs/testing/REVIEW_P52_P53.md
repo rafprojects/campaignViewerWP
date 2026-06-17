@@ -19,8 +19,8 @@ corrections.
 |-------|------|--------|----------|------------|
 | C1 | RBAC core: permissions map & REST primitives | ✅ Done | 0 fixes (2 obs.) | none (sound) |
 | C2 | Role setup/migration & REST controllers | ✅ Done | 1 doc fix (+1 flag) | pending |
-| C3 | Frontend tier plumbing & gating | Pending | — | — |
-| C4 | Frontend features (assets, tags/cats, delete-confirm, access) | Pending | — | — |
+| C3 | Frontend tier plumbing & gating | ✅ Done | 0 fixes | none (sound) |
+| C4 | Frontend features (assets, tags/cats, delete-confirm, access) | ✅ Done | 1 defensive fix | pending |
 | C5 | Service worker & build | Pending | — | — |
 | C6 | Dependencies & docs hygiene | Pending | — | — |
 
@@ -71,17 +71,41 @@ documentation recommendation.
 
 ## C3 — Frontend tier plumbing & gating
 
+**Verdict:** Clean — no code findings. `resolveRole`/`AuthContext` derive the tier
+correctly (`isSystemAdmin ⟹ isAdmin` holds since an administrator carries both caps).
+The `isAdmin` *redefinition* (now editor-or-above) is safe: its **only** derivation
+point was `App.tsx` (`role === 'admin'` → context `isAdmin`), and every system-only
+surface was migrated to `isSystemAdmin` — Import (menu/button/modal), media binary
+ZIP export+import, Rescan All, System Audit (tab + panel + persisted-tab reset),
+all-campaign analytics totals/top, Access company/all, create-space, Settings
+Integrations + System tabs, and font delete. All three hard-403 queries
+(`useAccessSummary`, `useGlobalAuditEntries`, `useAnalyticsSummary`) take an `enabled`
+arg wired to `isSystemAdmin`. New `isSystemAdmin` props all default to `false`
+(fail-closed UI). `ApiError.data` plumbing is backward-compatible (optional ctor arg)
+and feeds the C4 409-force flow.
+
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| _pending_ | | | | | | |
+| — | — | — | No correctness/security findings. UI gating is defense-in-depth over server-side enforcement; a missed gate would be a UX error (control 403s), not a leak. | — | — | — |
 
 ---
 
 ## C4 — Frontend features
 
+**Verdict:** Sound. Both 409→force flows (GlobalAssetManager, LayoutTemplateList) read
+the in-use count at the correct `err.data.data.inUse` path, park state, and resend
+`force: true`. The tags `string → string[]` migration updated all 4 form touch points
+(type, `emptyForm`, `openForEdit` load, save) with no stale split/join — remaining
+`.tags.join()` calls are on the `Campaign` model (always `string[]`). Asset mutation
+hooks invalidate the library cache and thread `force`. The `main.tsx` asset-admin
+mount branch is correctly ordered. AccessTab company/all toggle is `isSystemAdmin`-
+gated and the role dropdown is viewer-only (P53-D3); `accessViewMode` is non-persisted
+`useState('campaign')`, so an editor can't carry a stale system-only mode (the
+persisted-tab reset was only needed for `activeTab`). One defensive fix applied.
+
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| _pending_ | | | | | | |
+| C4-1 | 🟡 Low | `src/services/api/assetsApi.ts:55,60` | `update()`/`delete()` interpolated the asset `id` into the URL **without** `encodeURIComponent`, unlike the sibling `layoutTemplatesApi.deleteLayoutTemplate`. | **Accept** | Not an active bug — asset ids are `wp_generate_uuid4()` (URL-safe) — but un-encoded interpolation in URL-building code is fragile if the id format ever changes, and it diverged from the sibling API. Added `encodeURIComponent` to both; zero-risk (no-op on UUIDs). 43 targeted tests green. | this commit |
 
 ---
 

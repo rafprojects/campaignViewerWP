@@ -52,15 +52,14 @@ export class AssetsApi {
     patch: AssetUpdatePatch,
   ): Promise<{ id: string; isUniversal?: boolean; tags?: string[] }> {
     return this.transport.post<{ id: string; isUniversal?: boolean; tags?: string[] }>(
-      `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
+      `/wp-json/wp-super-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`,
       patch,
     );
   }
 
   delete(id: string, force = false): Promise<AssetDeleteResult> {
-    const path = force
-      ? `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}?force=true`
-      : `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`;
-    return this.transport.delete<AssetDeleteResult>(path);
+    // Encode the id (matches layoutTemplatesApi) so an odd id can't alter the path.
+    const base = `/wp-json/wp-super-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`;
+    return this.transport.delete<AssetDeleteResult>(force ? `${base}?force=true` : base);
   }
 }
