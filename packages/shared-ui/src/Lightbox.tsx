@@ -285,7 +285,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
                   {current.caption}
                 </Text>
               )}
-              <Text size="sm" c="gray.4">
+              <Text size="sm" c="gray.4" aria-live="polite" aria-atomic="true">
                 {currentIndex + 1} / {media.length}
               </Text>
             </Stack>

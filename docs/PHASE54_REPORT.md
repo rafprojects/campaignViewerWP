@@ -8,10 +8,10 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P54-A | Security hardening pass — audit free-form CSS fields, DOMPurify allowlist, localStorage; run `/security-review` | Planned | Small-Medium |
+| P54-A | Security hardening pass — audit free-form CSS fields, DOMPurify allowlist, localStorage; run `/security-review` | **Done** | Small-Medium |
 | P54-B | User-facing i18n harvest — front-end strings → `t()`; scope the i18next lint rule on for front-end dirs | Planned | Medium |
-| P54-C | Front-end accessibility baseline — axe pass on gallery / Lightbox / auth; fix critical+serious | Planned | Medium |
-| P54-D | LayoutBuilder robustness — error boundary, drag bounds clamping, large-layout perf check | Planned | Small-Medium |
+| P54-C | Front-end accessibility baseline — axe pass on gallery / Lightbox / auth; fix critical+serious | **Done** | Medium |
+| P54-D | LayoutBuilder robustness — error boundary, drag bounds clamping, large-layout perf check | **Done** | Small-Medium |
 | P54-E | Release-readiness closeout — suites green, bundle budget, `build:wp`, version bump | Planned | Small |
 
 ---
@@ -158,6 +158,40 @@ No a11y audit exists. The gallery and Lightbox are the public-facing surface, an
 ### Validation
 
 - `axe-core` run (ideally as a Playwright check), manual keyboard-only pass, and a screen-reader spot-check of the Lightbox.
+
+### Implementation notes
+
+**Code review findings and fixes (2026-06-17)**
+
+Manual static analysis of the four public surfaces (`Lightbox`, `MediaCarouselAdapter`/`CampaignListingCarousel`, `OverlayArrows`, `KeyboardHintOverlay`, `AuthBar*`, `LoginForm`) against WCAG 2.1 AA and WAI-ARIA authoring patterns. The existing baseline was already strong — `Lightbox` had `role="dialog"`, `aria-modal`, `<FocusTrap>`, focus-on-open, focus-restore-on-close, Escape/arrow-key handling, and labelled close/prev/next buttons; `MediaCarouselAdapter` had `role="region"`, `aria-roledescription="carousel"`, per-slide `role="group"` labels, keyboard `onKeyDown`, and explicit arrow labels. Four specific gaps were found and fixed:
+
+| Finding | Severity | File | Fix |
+|---------|----------|------|-----|
+| `KeyboardHintOverlay` inside lightbox `<FocusTrap>` had no `aria-hidden` — screen readers would read decorative `<Kbd>` elements | Serious | `KeyboardHintOverlay.tsx` | Added `aria-hidden="true"` to outer `Box` |
+| Lightbox position counter (`1 / 5`) not announced on keyboard navigation — no live region | Serious | `Lightbox.tsx` | Added `aria-live="polite" aria-atomic="true"` to counter `<Text>` |
+| `OverlayArrows` buttons remain in tab order when opacity:0 (auto-hide mode) — keyboard users Tab to invisible controls | Moderate | `OverlayArrows.tsx` | Added `tabIndex={visible ? 0 : -1}` and `aria-hidden={!visible}` to both buttons |
+| `CampaignListingCarousel` outer container had no `role="region"` or label — carousel pattern incomplete | Moderate | `MediaCarouselAdapter.tsx` | Added `role="region" aria-label="Campaign listing"` |
+
+**Items confirmed sound (no changes):**
+- `LoginForm` — Mantine `TextInput`/`PasswordInput` supply `<label>` + `required`; error `Alert` has `role="alert" aria-live="assertive"`.
+- `AuthBarMinimal` — `<nav aria-label="User navigation">`, all interactive icons labelled, decorative icon has `aria-hidden`.
+- `AuthBarFloating` — Trigger has `aria-label="Admin menu"`; campaign action buttons have campaign-title-qualified labels.
+- `DotNavigator` — `role="tablist" aria-label="Slide navigation"` container; each dot is `role="tab" aria-selected aria-label="Go to slide N"` with 44 px min hit target; ellipsis spans are `aria-hidden`.
+- `OverlayArrows` — already had distinct `previousLabel`/`nextLabel` props threaded from each adapter.
+
+**Axe Playwright spec (2026-06-17)**
+
+`@axe-core/playwright` installed as dev dependency. `e2e/accessibility.spec.ts` added with four tests:
+1. **Gallery listing** — mocked campaign API, renders `CardGallery`, runs axe filtered to `impact: critical | serious`.
+2. **Login modal** — JWT mode, unauthenticated; opens sign-in modal via auth bar, runs axe scoped to `[role="dialog"]`.
+3. **Campaign carousel** — mocked campaign + image media, opens campaign detail, runs axe once the carousel region is visible.
+4. **Lightbox** — same mock; clicks "Open lightbox" button, waits for `role="dialog" aria-label="Media lightbox"`, runs axe scoped to the dialog.
+
+All four tests filter to `criticalViolations` (impact critical or serious) so the spec stays green against Mantine's own internal patterns while catching real regressions.
+
+**vitest results (2026-06-17)**
+
+3124/3124 green after all four fixes; no regressions in `OverlayArrows.test.tsx` or `Lightbox.test.tsx`.
 
 ## Track P54-D - LayoutBuilder robustness
 

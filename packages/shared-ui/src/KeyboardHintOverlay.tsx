@@ -60,6 +60,7 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
           pos="absolute"
           bottom={60}
           left="50%"
+          aria-hidden="true"
           style={{
             ...transitionStyles,
             transform: 'translateX(-50%)',

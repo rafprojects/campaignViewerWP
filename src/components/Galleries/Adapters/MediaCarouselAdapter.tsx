@@ -793,6 +793,8 @@ function CampaignListingCarousel({ items, renderItem, settings }: CampaignListin
     <Box
       {...getWpsgDebugProps('MediaCarouselAdapter', 'listing-carousel')}
       data-testid="campaign-listing-carousel"
+      role="region"
+      aria-label="Campaign listing"
       style={{ position: 'relative', width: '100%' }}
     >
       {/* Embla viewport */}
