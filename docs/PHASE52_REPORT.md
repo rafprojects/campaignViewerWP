@@ -1,8 +1,8 @@
 # Phase 52 - Admin Platform Features & RBAC Enforcement Audit
 
-**Status:** In Progress
+**Status:** ✅ Done
 **Created:** 2026-06-14
-**Last updated:** 2026-06-15
+**Last updated:** 2026-06-17
 
 ### Tracks
 
@@ -520,4 +520,24 @@ Deleted stale `package-lock.json` and ran `npm install`. Fresh lock file resolve
 
 ## Outcome
 
-_Pending — phase in planning._
+**Done (2026-06-17).** All seven tracks shipped and manual QA on the deployed
+instance is good.
+
+- **Shipped.** P52-A: a centralized `WPSG_Permissions` action→requirement map (119
+  actions, fail-closed) anchoring a two-tier `manage_options` (System Admin) vs
+  `manage_wpsg` (`wpsg_editor`, space-scoped) model, with the `wpsg_admin`→`wpsg_editor`
+  rename + migration, settings system-key split (A4), per-resource delete policy (A5c),
+  and server-side space scoping that closes F1 (provability) and F2 (delegated
+  cross-space). P52-B: global asset management as one shared `GlobalAssetManager`
+  surfaced in both the WP admin sidebar and the app Admin Panel. P52-C: first-class
+  campaign tags/categories in the listing + creation modal. P52-D: a versioned
+  service-worker app-shell with deploy-time cache busting and an offline fallback.
+  P52-E/F/G: vitest→4, esbuild override ≥0.28.1, and a regenerated lock file — `npm
+  audit` reports 0 vulnerabilities.
+- **Deferred.** The granular custom-role permission engine (composes over the P52-A
+  map) — see `docs/FUTURE_TASKS.md` › Access Control. Frontend tier surfacing (P52-A6)
+  was carried into Phase 53 and is now Done.
+- **Validated.** PHPUnit 1037 tests / 12970 assertions green (2 skipped); vitest
+  2386 tests green; production build green with the SW build-hash injected. A
+  post-merge correctness + security review of P52+P53 is recorded in
+  [docs/testing/REVIEW_P52_P53.md](testing/REVIEW_P52_P53.md).

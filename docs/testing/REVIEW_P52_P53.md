@@ -64,7 +64,7 @@ documentation recommendation.
 
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| C1-3 | 🟠 Med | `wp-super-gallery.php:170` `wpsg_maybe_migrate_roles` | (Carried from C1.) Migration preserves the `manage_wpsg` cap but not *effective* space access. In an open-mode deployment that relied on the now-removed `open + manage_wpsg ⇒ owner` short-circuit, existing editors lose space access on upgrade until an admin re-grants. | **Flag** | An automatic grant-backfill would be **wrong** in delegated installs (it would over-permission every editor on every space). No universally-safe auto-fix exists. Resolution: document the post-upgrade re-grant step in release notes / the QA plan, and consider a one-time admin notice (feature, not a review fix). | doc only |
+| C1-3 | 🟠→✅ | `wp-super-gallery.php:170` `wpsg_maybe_migrate_roles` | (Carried from C1.) Migration preserves the `manage_wpsg` cap but not *effective* space access; on an open-mode upgrade, existing editors that relied on the now-removed `open + manage_wpsg ⇒ owner` short-circuit lose access until re-granted. | **Resolved (user, 2026-06-17)** | App is **not in production**, so the upgrade scenario is moot. Verified **new editors are unaffected**: the intended provisioning is role + explicit space grant, and a granted `wpsg_editor` passes `require_campaign_space_access` in *both* isolation modes (the grant level is irrelevant — editing comes from the role). The only behavioral nuance is that in open mode the role alone no longer confers access (a space grant is now required) — by design (P53). No code change. | none |
 | C2-1 | 🔵 Doc | `class-wpsg-embed.php:503,535` | Two comments said a `wpsg_editor` sees "open + granted-delegated spaces," implying open-mode spaces are visible without a grant — contradicts the C1 open-mode removal (grants now required in *either* mode). Misstates the security model in security-relevant code. | **Accept** | Comment-only fix; reworded to "spaces it has been granted access to (in either isolation mode)." Behavior unchanged (`current_actor_can_access_space` was already correct). | this commit |
 
 ---
@@ -144,7 +144,7 @@ fast-uri 3.1.2, postcss 8.5.15, vite 6.4.3 — every advisory threshold met.
 
 | ID | Sev | Location | Finding | Disposition | Rationale | Fix |
 |----|-----|----------|---------|-------------|-----------|-----|
-| C6-1 | 🔵 Doc | `docs/PHASE52_REPORT.md:3,523` | Header still says `Status: In Progress` and Outcome is `_Pending — phase in planning._`, yet all 7 tracks are ✅ Done and successor Phase 53 is `Done`. | **Flag** | Could be intentional (both reports note "manual QA pending on the deployed instance"), so I won't unilaterally flip it. Recommend the author set `Status: Done` + fill the Outcome once manual QA signs off, or annotate "code-complete, QA pending." | author call |
+| C6-1 | 🔵→✅ | `docs/PHASE52_REPORT.md:3,523` | Header said `Status: In Progress` and Outcome `_Pending_` though all 7 tracks are ✅ Done. | **Resolved (user, 2026-06-17 — QA good)** | User confirmed manual QA is good. Set `Status: ✅ Done`, bumped Last updated, and wrote the Outcome section. | this commit |
 | C6-2 | 🔵 Doc | `docs/archive/phases/PHASE39_REPORT.md:549,700` | Two prose references to the old `docs/object-cache-setup.md` path remain after the move to `docs/setup/`. | **Reject** | These are historical records inside an *archived* phase report (a past review log), not active navigation. Editing archived history to chase a moved file would be revisionist. Left as-is. | — |
 
 ---
@@ -178,9 +178,20 @@ with `npm audit` clean.
   step / add a one-time admin notice.
 - C6-1 / 🔵 — finalize `PHASE52_REPORT.md` Status + Outcome once manual QA signs off.
 
-**Verification:** full vitest **2386/2386 green** (baseline + post-fix via pre-push
-hook); `npm run build` green with SW hash injected; `npm audit` 0 vulns. PHP PHPUnit
-**not run** here — the WP test harness (`/tmp/wordpress-tests-lib` + MySQL) isn't
-provisioned in this environment; the only PHP change was comment-only (`php -l` clean),
-so no behavioral PHP test was needed. **Recommend running the full PHPUnit suite in
-CI/wp-env before merge** to reconfirm the reports' 1037-test claim.
+**Verification (all run 2026-06-17, via Haiku subagents):**
+- **PHP PHPUnit** (wp-env/Docker): **1037 tests, 12970 assertions, 0 failures, 2 skipped** (exit 0) — confirms the reports' claim and that the C2 comment change broke nothing.
+- **ESLint** (`npm run lint`): **0 problems** (exit 0).
+- **Vitest** (`npm run test:coverage`): **2396 tests pass** (2386 baseline + 10 new for `assetsApi`). `npm run build` green with the SW build-hash injected; `npm audit` 0 vulns.
+
+**Coverage note (pre-existing gate, not a P52/P53 regression).** The configured global
+thresholds (lines/statements/functions 75, branches 72 — *unchanged* vs `main`) are not
+met: statements 76.79, lines 79.36 (pass); **functions 72.15, branches 66.76 (fail)**.
+This gate is **not** enforced by `npm test` or the pre-push hook (both run `vitest run`
+without `--coverage`), and the shortfall is dominated by code **outside this review's
+scope**: `src/services/api/adminApi.ts` (pre-existing on `main`, ~3.8% lines / 0%
+branches) and several bundled non-P52/P53 gallery modules (`GalleriesContext`,
+`useGalleriesDimensions`, `useGatheredMask`, `slotEffects`, `Pointer*`). The **one
+P52/P53 coverage gap — the new `assetsApi.ts` (was 33%) — is now closed** with
+`src/services/api/assetsApi.test.ts` (10 tests, all branches/methods incl. the C4-1
+encoding fix). Raising the global gate to green is a separate effort across
+pre-existing/non-P52 files.
