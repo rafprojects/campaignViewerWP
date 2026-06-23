@@ -30,16 +30,15 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #1 of the LayoutBuilder enhancements.
 
-**Context:** The builder is mature, but a few editor affordances stop short of design-tool parity. True clipboard **copy/paste** is currently a no-op routed through `Ctrl+D` duplicate (the `Ctrl+C` handler does nothing). Alignment/distribute exist only as Layers-panel buttons, with **no keyboard shortcuts** (unlike Figma). There is **no layer search/filter** for large layouts.
+**Context:** The builder is mature, but two editor affordances stop short of design-tool parity. True clipboard **copy/paste** is currently a no-op routed through `Ctrl+D` duplicate (the `Ctrl+C` handler does nothing). Alignment/distribute exist only as Layers-panel buttons, with **no keyboard shortcuts** (unlike Figma).
 
 **What to implement:**
 - Real `Ctrl+C` / `Ctrl+V` clipboard (in-memory clipboard buffer; paste offsets to avoid exact overlap; cross-template paste optional).
 - Keyboard shortcuts for the existing align/distribute actions.
-- Layer search/filter box in the Layers panel (`LayoutBuilderLayersPanel.tsx` / `LayerPanel.tsx`).
 
 **Files:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`, `LayoutBuilderLayersPanel.tsx`, `src/hooks/useLayoutBuilderState.ts`.
 
-**Effort:** Medium | **Impact:** Medium — finishes existing patterns; high perceived polish.
+**Effort:** Small-Medium | **Impact:** Medium — finishes existing patterns; high perceived polish.
 
 ---
 
@@ -73,58 +72,9 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### LayoutBuilder — Design-Tool Affordances
-
-**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #4.
-
-**Context:** Polish features common to Figma/Canva/Photoshop that narrow the perceived gap: **saved color swatches/palettes**, an **eyedropper**, **rotation handles** on the canvas (no rotation transform today), and **persistent guide objects** (smart guides are transient-only).
-
-**What to implement:** Incremental — each is independently shippable. Swatches/eyedropper plug into the existing color-picker surfaces; rotation adds a transform handle + a `rotation` field on slots; persistent guides add draggable, lockable guide lines distinct from the transient `SmartGuides`.
-
-**Files:** color-picker usages across the LayoutBuilder properties panels, `LayoutCanvas.tsx`, `SmartGuides.tsx`, `useLayoutBuilderState.ts`.
-
-**Effort:** Medium (splittable) | **Impact:** Low-Medium — polish, not capability.
-
----
-
-### Gallery — Admin-Control Additions
-
-**Origin:** Phase 54 production-readiness review (2026-06-17). Sensible control additions surfaced by the gallery/adapter audit; server-side validation already enforces correctness, so these are convenience/parity, not blockers.
-
-**What to implement (independently):**
-- **Client-side range/enum validation** in the adapter settings UI mirroring the PHP `field_ranges`/`valid_options` (today validation is server-only).
-- **Configurable breakpoint pixel thresholds** (desktop/tablet/mobile are hardcoded).
-- **Listing-mode exposure** — `renderItem`/listing surface is code-only; not admin-configurable.
-- **Mobile-support visibility** — adapters with `supportsMobile: false` (e.g. layout-builder) fail only at runtime; surface this in the admin UI.
-
-**Files:** `src/components/Settings/GalleryAdapterSettingsSection.tsx`, `src/components/Galleries/Adapters/adapterRegistry.ts`, the PHP settings registry for the shared ranges.
-
-**Effort:** Medium (splittable) | **Impact:** Low-Medium.
-
----
-
 ## Code Quality & Refactoring
 
-### Adapter System — Data Extraction, Registration Seam, Field-Map Unification
-
-**Origin:** Phase 54 production-readiness review (2026-06-17). The adapter pattern (Registry + Factory + Strategy) is sound; these are maintainability cleanups with no user-visible behavior change.
-
-**What to implement (independently):**
-- **Extract `SETTING_GROUP_DEFINITIONS`** (~1000 lines of *data*) out of `adapterRegistry.ts` into dedicated data modules; the registry keeps registration/resolution logic only.
-- **Resolve the closed-union vs. `registerAdapter()` tension** — `GalleryAdapterId` is a closed TS union, so the runtime `registerAdapter()` seam can't be extended by third parties. Either document it as internal-only or widen the type to accept arbitrary string ids.
-- **Unify the dual field-map** — the TS camelCase ↔ PHP snake_case mapping is maintained twice (`adapterRegistry.ts` / `class-wpsg-settings-sanitizer.php`); generate one from the other (build step or shared schema) to remove the single-source-of-truth violation.
-
-**Effort:** Medium | **Impact:** Low (maintenance); reduces a real "add a field, edit two files" footgun.
-
----
-
-### Large-File Decomposition
-
-**Origin:** Phase 54 production-readiness review (2026-06-17).
-
-**Context:** A few files carry heavy orchestration load: `LayoutBuilderModal.tsx` (~1030 lines), `useLayoutBuilderState.ts` (~1256), `MediaTab.tsx` (~1007). All are test-covered, so this is a no-behavior-change refactor, deferred until it blocks a feature.
-
-**Effort:** Medium | **Impact:** Low — readability/testability.
+*No tasks here yet.*
 
 ---
 
@@ -255,45 +205,7 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ## Settings & Admin UI
 
-### Settings Panel Open/Close Animation Variants
-
-**Origin:** P48-J follow-on (SpaceSwitcher / multi-space auth bar polish, 2026-06-10).
-
-**Context:** The Settings panel Drawer currently uses a hardcoded `slide-left` transition (200 ms). Admins may want to match their site's motion style or disable animation entirely for accessibility/performance reasons.
-
-**What to implement:**
-- Add a `settingsPanelAnimation` field to `GalleryBehaviorSettings` (enum: `slide-left` | `fade` | `scale` | `none`; default `slide-left`).
-- Expose it in the Settings panel's Appearance accordion (or a dedicated Motion/Animation sub-section).
-- Pass the resolved value to the `transitionProps` of the `Drawer` in `SettingsPanel.tsx` (currently hardcoded at line 564).
-- Map `none` to `{ duration: 0 }` so the Drawer opens instantly without a jarring flash.
-
-**Files:** `src/components/Admin/SettingsPanel.tsx`, `src/types/settingsSchemas.ts`, relevant settings tab component.
-
-**Dependencies:** None — self-contained settings field addition.
-
-**Effort:** Small (1–2 hours) | **Impact:** Low — polish/accessibility; slide-left default is acceptable for most sites.
-
----
-
-### SettingsPanel Space Badge — Exact Color Parity with SpaceSwitcher/AdminPanel in Dark Mode
-
-**Origin:** P48-I follow-on (unified space badge color, 2026-06-10).
-
-**Context:** The SpaceSwitcher (AuthBar) and AdminPanel space badges use Mantine's `variant="light"` directly — they render inside the shadow DOM where `cssVariablesSelector=":host"` makes Mantine CSS variables available, so color adapts correctly in both light and dark themes.
-
-The SettingsPanel Drawer renders via `withinPortal={true}` to `document.body`, outside the shadow DOM. Mantine CSS variables (`--mantine-color-{color}-light`, etc.) are not inherited by portal elements. The workaround (`useMantineTheme` + `useComputedColorScheme` with hardcoded shade indices) produces a close but not identical shade in dark mode because Mantine's `variant="light"` uses alpha-blended colors, not solid palette shades.
-
-**What to implement (two viable approaches):**
-
-1. **Portal target inside shadow DOM** — Pass `portalProps={{ target: shadowHostElement }}` to the Drawer so it renders as a child of the shadow host (inside shadow DOM). Obtain the element via `useRootId()` + `document.getElementById`. CSS variables become available; remove the `useMantineTheme`/`useComputedColorScheme` workaround entirely.
-
-2. **CSS variable bridge** — At the `MantineProvider` level, also emit a subset of color CSS variables to `:root` (in addition to `:host`). This makes them globally available to portals. Requires a custom `cssVariablesResolver` override and must be done carefully to avoid polluting the host page's `:root`.
-
-**Files:** `src/components/Admin/SettingsPanel.tsx`, possibly `src/main.tsx` (for approach 2).
-
-**Dependencies:** Approach 1 requires a stable reference to the shadow host element from within `SettingsPanel`. Approach 2 affects the entire Mantine CSS variable strategy.
-
-**Effort:** Small–Medium (1–3 hours) | **Impact:** Low — cosmetic; the badge is already correctly colored, just a slightly different shade in dark mode.
+*No tasks here yet.*
 
 ---
 
@@ -383,3 +295,5 @@ When promoting future tasks to an active phase:
 *Updated: June 12, 2026 (P50-F follow-on) — Re-added Build & Bundle section with "Service Worker — Offline Support (App Shell Pattern)": deferred from P50-F after manual testing confirmed offline mode is unsupported by design (SW intentionally skips navigation/HTML caching to avoid stale-chunk failures after deploys). Full offline support requires a versioned app-shell cache with deploy-time busting.*
 
 *Updated: June 17, 2026 (P54 planning) — Added the Phase 54 production-readiness review follow-ons (deferred from [PHASE54_REPORT.md](PHASE54_REPORT.md), which is tight must-fix only): four LayoutBuilder enhancements (Editor UX Polish, Responsive/Per-Breakpoint Editing, Text/Caption Layers, Design-Tool Affordances) under Builder, ordered by user priority; "Gallery — Admin-Control Additions"; a new Code Quality & Refactoring section (adapter data extraction / registration-seam / field-map unification; large-file decomposition); Internationalization (full admin i18n migration — P54-B does user-facing only); Accessibility (full WCAG AA — P54-C does the front-end critical/serious baseline); and Monetization & Distribution (licensing/update infra), cross-linked to the new [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).*
+
+*Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
