@@ -12,6 +12,7 @@
  * grid with only the sort control showing.
  */
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Chip, Group, Select, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
@@ -56,6 +57,7 @@ interface IsotopeAdapterProps {
 }
 
 export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps) {
+  const { t } = useTranslation('wpsg');
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('default');
 
@@ -180,7 +182,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
         {showFilter && (
           <Chip.Group value={activeFilter} onChange={handleFilterChange}>
             <Group gap={6}>
-              <Chip value="all" size="xs" variant="filled">All</Chip>
+              <Chip value="all" size="xs" variant="filled">{t('filter_all', 'All')}</Chip>
               {filterValues.map((type) => (
                 <Chip key={type} value={type} size="xs" variant="filled">
                   {TYPE_LABELS[type] ?? type}
@@ -194,12 +196,12 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
           value={sortOrder}
           onChange={handleSortChange}
           data={[
-            { value: 'default', label: 'Default order' },
-            { value: 'asc', label: 'Newest first' },
-            { value: 'desc', label: 'Oldest first' },
+            { value: 'default', label: t('sort_default', 'Default order') },
+            { value: 'asc', label: t('sort_newest', 'Newest first') },
+            { value: 'desc', label: t('sort_oldest', 'Oldest first') },
           ]}
           style={{ width: 140 }}
-          aria-label="Sort order"
+          aria-label={t('sort_aria_label', 'Sort order')}
         />
       </Group>
 
@@ -216,8 +218,10 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
           const isVideo = item.type === 'video';
           const thumbSrc = item.thumbnail || item.url;
           const label = item.caption
-            ? `${isVideo ? 'Play' : 'View'}: ${item.caption}`
-            : `${isVideo ? 'Play' : 'View'} ${isVideo ? 'video' : 'image'} ${mediaIndex + 1}`;
+            ? t(isVideo ? 'gallery_play_item' : 'gallery_view_item', `${isVideo ? 'Play' : 'View'}: {{caption}}`, { caption: item.caption })
+            : isVideo
+              ? t('gallery_play_video', 'Play video {{index}}', { index: mediaIndex + 1 })
+              : t('gallery_view_image', 'View image {{index}}', { index: mediaIndex + 1 });
 
           return (
             <Box
@@ -303,7 +307,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
                     pointerEvents: 'none',
                   }}
                 >
-                  VIDEO
+                  {t('gallery_video_badge', 'VIDEO')}
                 </Box>
               )}
             </Box>

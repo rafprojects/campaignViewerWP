@@ -22,6 +22,7 @@
  *  - `scrollSnapPageIndicator`: whether to render an "n / total" slide counter.
  */
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Text, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
@@ -59,6 +60,7 @@ export function ScrollSnapGallery({
   runtime,
   containerDimensions,
 }: ScrollSnapGalleryProps) {
+  const { t } = useTranslation('wpsg');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -164,7 +166,7 @@ export function ScrollSnapGallery({
               color: 'var(--mantine-color-dimmed, #868e96)',
             }}
           >
-            <Text size="sm">No media</Text>
+            <Text size="sm">{t('gallery_no_media', 'No media')}</Text>
           </Box>
         ) : (
           media.map((item, idx) => {
@@ -176,7 +178,7 @@ export function ScrollSnapGallery({
                 key={item.id}
                 role="button"
                 tabIndex={0}
-                aria-label={item.caption || item.title || `Slide ${idx + 1} of ${media.length}`}
+                aria-label={item.caption || item.title || t('carousel_slide_aria', 'Slide {{index}} of {{total}}', { index: idx + 1, total: media.length })}
                 onClick={() => handleSlideClick(idx)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
@@ -259,7 +261,7 @@ export function ScrollSnapGallery({
                       userSelect: 'none',
                     }}
                   >
-                    {idx + 1} / {media.length}
+                    {t('lightbox_counter', '{{current}} / {{total}}', { current: idx + 1, total: media.length })}
                   </Box>
                 )}
               </Box>

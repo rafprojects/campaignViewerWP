@@ -16,6 +16,7 @@
  * Adapter ID: `'layout-builder'`
  */
 import React, { useId, useState, useMemo, useRef, useEffect, useCallback, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import type { ListingItem } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { useRecordAnalyticsEvent } from '@/hooks/useRecordAnalyticsEvent';
@@ -134,6 +135,7 @@ function GallerySlotView({
   glowSpread,
   positionClassName,
 }: GallerySlotViewProps) {
+  const { t } = useTranslation('wpsg');
   // Px dimensions (used for mask position computation)
   const pxW = (slot.width / 100) * effectiveWidth;
   const pxH = (slot.height / 100) * canvasHeight;
@@ -190,7 +192,7 @@ function GallerySlotView({
         aria-hidden="true"
       >
         <Text size="xs" c="dimmed" ta="center">
-          Empty
+          {t('gallery_empty_slot', 'Empty')}
         </Text>
       </div>
     );
@@ -280,7 +282,7 @@ function GallerySlotView({
     role: isClickable ? ('button' as const) : undefined,
     tabIndex: isClickable ? 0 : undefined,
     'aria-label': isClickable
-      ? `View ${assigned.title || 'media'} in lightbox`
+      ? t('layout_view_in_lightbox', 'View {{title}} in lightbox', { title: assigned.title || t('layout_media_fallback', 'media') })
       : undefined,
     onClick: isClickable ? () => onOpenAt(lightboxIndex) : undefined,
     onKeyDown: isClickable
@@ -440,6 +442,7 @@ export function LayoutBuilderGallery({
   renderItem,
   listingMode,
 }: LayoutBuilderGalleryProps) {
+  const { t } = useTranslation('wpsg');
   const isListingMode = !!(items && renderItem && listingMode);
   const effectiveTemplateId = isListingMode
     ? (settings.campaignListingLayoutTemplateId ?? '')
@@ -470,8 +473,8 @@ export function LayoutBuilderGallery({
     return (
       <Center py="xl" mih={200}>
         <Stack align="center" gap="xs">
-          <Loader size="md" aria-label="Loading layout template" />
-          <Text size="sm" c="dimmed">Loading gallery…</Text>
+          <Loader size="md" aria-label={t('layout_loading_aria', 'Loading layout template')} />
+          <Text size="sm" c="dimmed">{t('layout_loading_text', 'Loading gallery…')}</Text>
         </Stack>
       </Center>
     );
@@ -482,7 +485,7 @@ export function LayoutBuilderGallery({
       <Stack align="center" gap="xs" py="xl">
         <IconAlertTriangle size={32} color="var(--mantine-color-yellow-6)" />
         <Text size="sm" c="dimmed">
-          {error ?? 'Layout template not found'}
+          {error ?? t('layout_not_found', 'Layout template not found')}
         </Text>
       </Stack>
     );
@@ -547,6 +550,7 @@ function LayoutBuilderGalleryInner({
   items,
   renderItem,
 }: InnerProps) {
+  const { t } = useTranslation('wpsg');
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
@@ -661,8 +665,8 @@ function LayoutBuilderGalleryInner({
         >
           <IconAlertTriangle size={16} />
           {mediaCount > slotCount
-            ? `${mediaCount - slotCount} media item(s) have no slot — they won't be displayed.`
-            : `${slotCount - mediaCount} slot(s) have no media — they'll appear as placeholders.`}
+            ? t('layout_media_overflow', '{{count}} media item(s) have no slot — they won\'t be displayed.', { count: mediaCount - slotCount })
+            : t('layout_slot_overflow', '{{count}} slot(s) have no media — they\'ll appear as placeholders.', { count: slotCount - mediaCount })}
         </Box>
       )}
 
@@ -683,25 +687,25 @@ function LayoutBuilderGalleryInner({
         >
           <IconInfoCircle size={16} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>
-            <strong>Slot assignment info</strong>
+            <strong>{t('layout_assignment_info', 'Slot assignment info')}</strong>
             {summary.kept.length > 0 && (
               <div>
-                Kept bindings: {summary.kept.map((k) => `slot ${k.slotIndex} \u2192 ${k.mediaTitle}`).join(', ')}
+                {t('layout_kept_bindings', 'Kept bindings: {{summary}}', { summary: summary.kept.map((k) => `slot ${k.slotIndex} \u2192 ${k.mediaTitle}`).join(', ') })}
               </div>
             )}
             {summary.cleared.length > 0 && (
               <div>
-                Cleared (media not in campaign): {summary.cleared.map((c) => `slot ${c.slotIndex}`).join(', ')}
+                {t('layout_cleared_bindings', 'Cleared (media not in campaign): {{summary}}', { summary: summary.cleared.map((c) => `slot ${c.slotIndex}`).join(', ') })}
               </div>
             )}
             {summary.autoFilled.length > 0 && (
               <div>
-                Auto-filled from remaining media: {summary.autoFilled.map((a) => `slot ${a.slotIndex} \u2192 ${a.mediaTitle}`).join(', ')}
+                {t('layout_auto_filled', 'Auto-filled from remaining media: {{summary}}', { summary: summary.autoFilled.map((a) => `slot ${a.slotIndex} \u2192 ${a.mediaTitle}`).join(', ') })}
               </div>
             )}
             {summary.empty.length > 0 && (
               <div>
-                Empty (no media remaining): slot{summary.empty.length > 1 ? 's' : ''} {summary.empty.join(', ')}
+                {t('layout_empty_slots', 'Empty (no media remaining): slot{{suffix}} {{summary}}', { suffix: summary.empty.length > 1 ? 's' : '', summary: summary.empty.join(', ') })}
               </div>
             )}
           </div>
@@ -734,7 +738,7 @@ function LayoutBuilderGalleryInner({
               margin: '0 auto',
             }}
             role="img"
-            aria-label={`Layout gallery: ${template.name}`}
+            aria-label={t('layout_canvas_aria', 'Layout gallery: {{name}}', { name: template.name })}
           >
             {/* Background image layer (below slots) */}
             {template.backgroundImage && (

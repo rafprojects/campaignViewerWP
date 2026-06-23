@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P54-A | Security hardening pass — audit free-form CSS fields, DOMPurify allowlist, localStorage; run `/security-review` | **Done** | Small-Medium |
-| P54-B | User-facing i18n harvest — front-end strings → `t()`; scope the i18next lint rule on for front-end dirs | Planned | Medium |
+| P54-B | User-facing i18n harvest — front-end strings → `t()`; scope the i18next lint rule on for front-end dirs | **Done** | Medium |
 | P54-C | Front-end accessibility baseline — axe pass on gallery / Lightbox / auth; fix critical+serious | **Done** | Medium |
 | P54-D | LayoutBuilder robustness — error boundary, drag bounds clamping, large-layout perf check | **Done** | Small-Medium |
 | P54-E | Release-readiness closeout — suites green, bundle budget, `build:wp`, version bump | Planned | Small |
@@ -137,6 +137,57 @@ All write points traced in `src/services/auth/WpJwtProvider.ts`, `src/hooks/useL
 
 - `eslint` (scoped rule green), `vitest` (no snapshot/string regressions).
 - Manual smoke: inject a non-English `window.__WPSG_I18N__.strings` subset and confirm the gallery/Lightbox/auth UI translate.
+
+### Implementation notes
+
+**Scope and approach (2026-06-23)**
+
+Harvested all user-facing JSX string literals from 20 front-end files into `t()` calls under the `wpsg` i18next namespace. Admin panel strings remain deferred per Decision B.
+
+**Files modified:**
+
+| File | String count |
+|------|-------------|
+| `packages/shared-ui/src/AuthBarFloating.tsx` | 15 |
+| `packages/shared-ui/src/AuthBarMinimal.tsx` | 7 |
+| `packages/shared-ui/src/LoginForm.tsx` | 12 |
+| `packages/shared-ui/src/Lightbox.tsx` | 7 |
+| `packages/shared-ui/src/KeyboardHintOverlay.tsx` | 6 |
+| `packages/shared-ui/src/SpaceSwitcher.tsx` | 2 |
+| `src/components/Galleries/Adapters/MediaCarouselAdapter.tsx` | 13 |
+| `src/components/Galleries/Adapters/compact-grid/CompactGridGallery.tsx` | 4 |
+| `src/components/Galleries/Adapters/circular/CircularGallery.tsx` | 3 |
+| `src/components/Galleries/Adapters/coverflow/CoverflowAdapter.tsx` | 2 |
+| `src/components/Galleries/Adapters/diamond/DiamondGallery.tsx` | 3 |
+| `src/components/Galleries/Adapters/hexagonal/HexagonalGallery.tsx` | 3 |
+| `src/components/Galleries/Adapters/isotope/IsotopeAdapter.tsx` | 8 |
+| `src/components/Galleries/Adapters/justified/JustifiedGallery.tsx` | 1 |
+| `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx` | 14 |
+| `src/components/Galleries/Adapters/masonry/MasonryGallery.tsx` | 1 |
+| `src/components/Galleries/Adapters/pinterest/PinterestAdapter.tsx` | 2 |
+| `src/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery.tsx` | 3 |
+| `src/components/Galleries/Adapters/spotlight/SpotlightGallery.tsx` | 2 |
+| `src/components/Galleries/Adapters/stacked/StackedDeckAdapter.tsx` | 2 |
+
+**English defaults (2026-06-23)**
+
+`src/i18n-strings.en.json` — 68 translation keys covering auth, login, lightbox, keyboard hint, gallery badges, carousel, filter/sort, and layout builder strings. Loaded as the `en` resource in `src/i18n.ts` so the UI shows correct English text in standalone/Storybook/test mode even without PHP injection. PHP-injected strings for the active locale override the defaults at runtime.
+
+**ESLint rule (2026-06-23)**
+
+`eslint.config.js` — added a scoped override for `src/components/Galleries/Adapters/**` and `packages/shared-ui/src/**` that sets `i18next/no-literal-string: ['error', { markupOnly: true }]`. The `markupOnly: true` option catches JSX text content regressions (the most common case) without producing noise from non-translatable attribute values. The global `src/**` block remains `'off'` to keep admin panel strings unblocked.
+
+**react-i18next peer dep (2026-06-23)**
+
+Added `react-i18next: >=13` as a peer dependency to `packages/shared-ui/package.json` so the package correctly declares its runtime requirement on the host app's i18next instance.
+
+**Test setup (2026-06-23)**
+
+`src/test/setup.ts` — added `import '../i18n'` so the English defaults are initialized before any test renders a component that calls `useTranslation`. Without this, `t()` returned keys instead of English strings, breaking 9 existing tests.
+
+**vitest results (2026-06-23)**
+
+3124/3124 green after the setup fix. `tsc --noEmit` and `eslint` (scoped rule) both pass cleanly.
 
 ## Track P54-C - Front-end accessibility baseline
 

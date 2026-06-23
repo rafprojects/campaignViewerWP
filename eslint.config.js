@@ -73,12 +73,21 @@ export default tseslint.config({
     globals: globals.node,
   },
 }, storybook.configs["flat/recommended"], {
-  // P49-C: i18n groundwork — rule is installed and wired up; currently off
-  // to avoid CI failures on the ~300 existing unharvested string literals.
-  // After the migration sprint, change to 'error' here to enforce going forward.
+  // P49-C / P54-B: i18n rule — globally off for src/ (admin panel strings deferred).
   files: ['src/**/*.{ts,tsx}'],
   plugins: { i18next },
   rules: {
     'i18next/no-literal-string': 'off',
+  },
+}, {
+  // P54-B: Enforce no-literal-string on harvested front-end dirs (JSX text only)
+  // so future regressions are caught. Admin (src/components/Admin/**) stays off.
+  files: [
+    'src/components/Galleries/Adapters/**/*.{ts,tsx}',
+    'packages/shared-ui/src/**/*.{ts,tsx}',
+  ],
+  plugins: { i18next },
+  rules: {
+    'i18next/no-literal-string': ['error', { markupOnly: true }],
   },
 });

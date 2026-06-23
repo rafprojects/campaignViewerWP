@@ -16,6 +16,7 @@
  * under default settings.  Lightbox is not mounted in listing mode.
  */
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Group, Stack, Title } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
@@ -275,12 +276,15 @@ interface GridCardProps {
 }
 
 function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }: GridCardProps) {
+  const { t } = useTranslation('wpsg');
   const [hovered, setHovered] = useState(false);
   const isVideo = item.type === 'video';
   const thumbSrc = item.thumbnail || item.url;
   const label = item.caption
-    ? `${isVideo ? 'Play' : 'View'}: ${item.caption}`
-    : `${isVideo ? 'Play' : 'View'} ${isVideo ? 'video' : 'image'} ${index + 1}`;
+    ? t(isVideo ? 'gallery_play_item' : 'gallery_view_item', `${isVideo ? 'Play' : 'View'}: {{caption}}`, { caption: item.caption })
+    : isVideo
+      ? t('gallery_play_video', 'Play video {{index}}', { index: index + 1 })
+      : t('gallery_view_image', 'View image {{index}}', { index: index + 1 });
 
   return (
     <Box
@@ -381,7 +385,7 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
             pointerEvents: 'none',
           }}
         >
-          VIDEO
+          {t('gallery_video_badge', 'VIDEO')}
         </Box>
       )}
     </Box>

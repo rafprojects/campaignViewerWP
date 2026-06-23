@@ -9,6 +9,7 @@
  * it correctly targets the shadow DOM mount point in WP plugin mode.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { toCss } from '@wp-super-gallery/shared-utils';
@@ -48,6 +49,7 @@ export interface LightboxProps {
 }
 
 export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose, videoMaxWidth, videoMaxWidthUnit, videoHeight, videoHeightUnit, mediaMaxHeight }: LightboxProps) {
+  const { t } = useTranslation('wpsg');
   const current = media[currentIndex];
 
   // Resolve lightbox sizing — settings → props → hardcoded defaults
@@ -144,7 +146,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
           onClick={onClose}
           role="dialog"
           aria-modal="true"
-          aria-label="Media lightbox"
+          aria-label={t('lightbox_aria_label', 'Media lightbox')}
           style={{
             position: 'fixed',
             inset: 0,
@@ -163,7 +165,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
             right={16}
             size="lg"
             variant="light"
-            aria-label="Close lightbox"
+            aria-label={t('lightbox_close', 'Close lightbox')}
             style={{ zIndex: 1 }}
             onClick={(e) => {
               e.stopPropagation();
@@ -190,7 +192,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
                 <iframe
                   key={current.id}
                   src={current.embedUrl}
-                  title={current.caption || 'Campaign video'}
+                  title={current.caption || t('lightbox_video_title', 'Campaign video')}
                   allowFullScreen
                   onClick={(e) => e.stopPropagation()}
                   style={{
@@ -221,7 +223,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
               <img
                 key={current.id}
                 src={current.url}
-                alt={current.caption || 'Campaign image'}
+                alt={current.caption || t('lightbox_image_alt', 'Campaign image')}
                 onClick={(e) => e.stopPropagation()}
                 style={{
                   maxWidth: '90vw',
@@ -243,7 +245,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
                 left={16}
                 size="xl"
                 variant="light"
-                aria-label="Previous image (lightbox)"
+                aria-label={t('lightbox_prev', 'Previous image (lightbox)')}
                 style={{ transform: 'translateY(-50%)' }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -258,7 +260,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
                 right={16}
                 size="xl"
                 variant="light"
-                aria-label="Next image (lightbox)"
+                aria-label={t('lightbox_next', 'Next image (lightbox)')}
                 style={{ transform: 'translateY(-50%)' }}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -286,7 +288,7 @@ export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose,
                 </Text>
               )}
               <Text size="sm" c="gray.4" aria-live="polite" aria-atomic="true">
-                {currentIndex + 1} / {media.length}
+                {t('lightbox_counter', '{{current}} / {{total}}', { current: currentIndex + 1, total: media.length })}
               </Text>
             </Stack>
           </Box>

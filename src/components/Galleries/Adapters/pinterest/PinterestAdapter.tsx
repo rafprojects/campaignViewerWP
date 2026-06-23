@@ -15,6 +15,7 @@
  * Responsive: 4 columns ≥ 500px; 2 columns < 500px (all tiles 1×1); 1 column < 360px.
  */
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Text, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
@@ -61,6 +62,7 @@ export function PinterestAdapter({
   runtime,
   containerDimensions,
 }: PinterestAdapterProps) {
+  const { t } = useTranslation('wpsg');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -125,7 +127,7 @@ export function PinterestAdapter({
             color: 'var(--mantine-color-dimmed, #868e96)',
           }}
         >
-          <Text size="sm">No media</Text>
+          <Text size="sm">{t('gallery_no_media', 'No media')}</Text>
         </Box>
       ) : (
         <Box
@@ -159,7 +161,7 @@ export function PinterestAdapter({
                 key={item.id}
                 role="button"
                 tabIndex={0}
-                aria-label={item.caption || item.title || `Item ${idx + 1} of ${media.length}`}
+                aria-label={item.caption || item.title || t('gallery_item_position', 'Item {{index}} of {{total}}', { index: idx + 1, total: media.length })}
                 onClick={() => handleClick(idx)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {

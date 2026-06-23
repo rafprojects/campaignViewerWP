@@ -9,6 +9,7 @@
  * peeking card promotes it to the top.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Text, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
@@ -59,6 +60,7 @@ export function StackedDeckAdapter({
   runtime,
   containerDimensions,
 }: StackedDeckAdapterProps) {
+  const { t } = useTranslation('wpsg');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -183,7 +185,7 @@ export function StackedDeckAdapter({
               color: 'var(--mantine-color-dimmed, #868e96)',
             }}
           >
-            <Text size="sm">No media</Text>
+            <Text size="sm">{t('gallery_no_media', 'No media')}</Text>
           </Box>
         ) : (
           media.map((item, idx) => {
@@ -206,7 +208,7 @@ export function StackedDeckAdapter({
                 key={item.id}
                 role="button"
                 tabIndex={isVisible ? 0 : -1}
-                aria-label={item.caption || item.title || `Item ${idx + 1} of ${count}`}
+                aria-label={item.caption || item.title || t('gallery_item_position', 'Item {{index}} of {{total}}', { index: idx + 1, total: count })}
                 className={`wpsg-stacked-card${isTop ? ' wpsg-stacked-top' : ''}`}
                 onClick={() => handleCardClick(idx)}
                 onKeyDown={(e) => {

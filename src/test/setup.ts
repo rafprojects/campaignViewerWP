@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
+// Initialise i18next with English defaults so t() returns English strings in tests.
+import '../i18n';
 
 // ── IntersectionObserver stub (needed by embla-carousel) ────────────
 if (!globalThis.IntersectionObserver) {

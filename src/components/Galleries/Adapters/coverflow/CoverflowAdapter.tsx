@@ -6,6 +6,7 @@
  * effect. Navigation via click, keyboard arrows, and swipe gestures.
  */
 import { useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Text, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
@@ -48,6 +49,7 @@ export function CoverflowAdapter({
   runtime,
   containerDimensions,
 }: CoverflowAdapterProps) {
+  const { t } = useTranslation('wpsg');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -141,7 +143,7 @@ export function CoverflowAdapter({
               color: 'var(--mantine-color-dimmed, #868e96)',
             }}
           >
-            <Text size="sm">No media</Text>
+            <Text size="sm">{t('gallery_no_media', 'No media')}</Text>
           </Box>
         ) : (
           media.map((item, idx) => {
@@ -166,7 +168,7 @@ export function CoverflowAdapter({
                 key={item.id}
                 role="button"
                 tabIndex={isVisible ? 0 : -1}
-                aria-label={item.caption || item.title || `Item ${idx + 1} of ${media.length}`}
+                aria-label={item.caption || item.title || t('gallery_item_position', 'Item {{index}} of {{total}}', { index: idx + 1, total: media.length })}
                 onClick={() => handleItemClick(idx)}
                 onKeyDown={(e) => {
                   if ((e.key === 'Enter' || e.key === ' ') && isVisible) {

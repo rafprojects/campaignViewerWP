@@ -10,6 +10,7 @@
  * via the shared gallery settings.
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconHexagon, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
@@ -42,6 +43,7 @@ interface HexagonalGalleryProps {
 }
 
 export function HexagonalGallery({ media, settings, runtime, containerDimensions: _containerDimensions }: HexagonalGalleryProps) {
+  const { t } = useTranslation('wpsg');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -124,7 +126,7 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
                 const globalIdx = rowIdx * tilesPerRow + itemIdx;
                 const thumbSrc = item.thumbnail || item.url;
                 const isVideo = item.type === 'video';
-                const label = item.caption || item.title || `${isVideo ? 'Video' : 'Image'} ${globalIdx + 1}`;
+                const label = item.caption || item.title || t('gallery_item_label', '{{type}} {{index}}', { type: isVideo ? t('gallery_video_type', 'Video') : t('gallery_image_type', 'Image'), index: globalIdx + 1 });
                 return (
                   <Box
                     key={item.id}
@@ -182,7 +184,7 @@ export function HexagonalGallery({ media, settings, runtime, containerDimensions
                           padding: '1px 5px', fontSize: 9, color: OVERLAY_TEXT, fontWeight: 600,
                           pointerEvents: 'none',
                         }}
-                      >VIDEO</Text>
+                      >{t('gallery_video_badge', 'VIDEO')}</Text>
                     )}
                   </Box>
                 );

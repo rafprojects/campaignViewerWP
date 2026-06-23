@@ -1,4 +1,5 @@
 import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage, spaceColor } from '@wp-super-gallery/shared-utils';
@@ -54,7 +55,9 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
     onPointerMove,
     onPointerUp,
     ...actionIconProps
-  }, ref) => (
+  }, ref) => {
+    const { t } = useTranslation('wpsg');
+    return (
     <ActionIcon
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(actionIconProps as any)}
@@ -62,7 +65,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
       size={ICON_SIZE}
       radius="xl"
       variant="filled"
-      aria-label="Admin menu"
+      aria-label={t('auth_admin_menu_label', 'Admin menu')}
       onClick={onClick}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -75,7 +78,8 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
     >
       {children ?? (draggable ? <IconGripVertical size={22} /> : <IconMenu2 size={22} />)}
     </ActionIcon>
-  ),
+    );
+  },
 );
 
 AuthBarFloatingTrigger.displayName = 'AuthBarFloatingTrigger';
@@ -128,6 +132,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
   onSpaceSelect,
   pageSpaces,
 }: AuthBarFloatingMenuContentProps<TCampaign>) {
+  const { t } = useTranslation('wpsg');
   const handleOpenAdmin = useCallback(() => {
     if (activeInstanceId && activeInstanceId !== instanceId) {
       callOpener(activeInstanceId, 'admin');
@@ -150,7 +155,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
     <Stack gap="xs">
       {isAuthenticated ? (
         <>
-          <Text size="xs" c="dimmed" truncate>Signed in as {email}</Text>
+          <Text size="xs" c="dimmed" truncate>{t('auth_signed_in_as', 'Signed in as {{email}}', { email })}</Text>
           <Divider />
           {isAdmin && (
             <>
@@ -161,7 +166,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                 justify="start"
                 onClick={handleOpenAdmin}
               >
-                Admin Panel
+                {t('auth_admin_panel', 'Admin Panel')}
               </Button>
               <Button
                 variant="subtle"
@@ -170,7 +175,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                 justify="start"
                 onClick={handleOpenSettings}
               >
-                Settings
+                {t('auth_settings', 'Settings')}
               </Button>
               {instanceId && (
                 <SpaceSwitcher
@@ -181,16 +186,16 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
               )}
               {activeCampaign && (
                 <>
-                  <Divider label="Campaign" labelPosition="center" />
+                  <Divider label={t('auth_campaign_divider', 'Campaign')} labelPosition="center" />
                   <Button
                     variant="subtle"
                     size="xs"
                     leftSection={<IconEdit size={14} />}
                     justify="start"
                     onClick={() => { onEditCampaign?.(activeCampaign); scheduleCloseMenu(closeMenu); }}
-                    aria-label={`Edit ${activeCampaign.title}`}
+                    aria-label={t('auth_edit_campaign_label', 'Edit {{title}}', { title: activeCampaign.title })}
                   >
-                    Edit Campaign
+                    {t('auth_edit_campaign', 'Edit Campaign')}
                   </Button>
                   {onEditGalleryConfig && (
                     <Button
@@ -199,9 +204,9 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                       leftSection={<IconAdjustments size={14} />}
                       justify="start"
                       onClick={() => { onEditGalleryConfig(activeCampaign); scheduleCloseMenu(closeMenu); }}
-                      aria-label={`Edit gallery config for ${activeCampaign.title}`}
+                      aria-label={t('auth_edit_gallery_config_label', 'Edit gallery config for {{title}}', { title: activeCampaign.title })}
                     >
-                      Edit Gallery Config
+                      {t('auth_edit_gallery_config', 'Edit Gallery Config')}
                     </Button>
                   )}
                   <Button
@@ -210,9 +215,9 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                     leftSection={<IconPhoto size={14} />}
                     justify="start"
                     onClick={() => { onAddExternalMedia?.(activeCampaign); scheduleCloseMenu(closeMenu); }}
-                    aria-label={`Manage media for ${activeCampaign.title}`}
+                    aria-label={t('auth_manage_media_label', 'Manage media for {{title}}', { title: activeCampaign.title })}
                   >
-                    Manage Media
+                    {t('auth_manage_media', 'Manage Media')}
                   </Button>
                   <Button
                     variant="subtle"
@@ -221,9 +226,9 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
                     leftSection={<IconArchive size={14} />}
                     justify="start"
                     onClick={() => { onArchiveCampaign?.(activeCampaign); scheduleCloseMenu(closeMenu); }}
-                    aria-label={`Archive ${activeCampaign.title}`}
+                    aria-label={t('auth_archive_label', 'Archive {{title}}', { title: activeCampaign.title })}
                   >
-                    Archive
+                    {t('auth_archive', 'Archive')}
                   </Button>
                 </>
               )}
@@ -238,20 +243,20 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
               leftSection={<IconLogout size={14} />}
               onClick={onLogout}
             >
-              Sign out
+              {t('auth_sign_out', 'Sign out')}
             </Button>
           </Group>
         </>
       ) : (
         <>
-          <Text size="xs" c="dimmed">Sign in to access private campaigns.</Text>
+          <Text size="xs" c="dimmed">{t('auth_sign_in_prompt', 'Sign in to access private campaigns.')}</Text>
           <Button
             variant="light"
             size="xs"
             leftSection={<IconLogin size={14} />}
             onClick={() => { onOpenSignIn?.(); scheduleCloseMenu(closeMenu); }}
           >
-            Sign in
+            {t('auth_sign_in', 'Sign in')}
           </Button>
         </>
       )}

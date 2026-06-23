@@ -7,6 +7,7 @@
  * border ring (via outline, which respects border-radius).
  */
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Title, Group, Text } from '@mantine/core';
 import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
@@ -34,6 +35,7 @@ interface CircularGalleryProps {
 }
 
 export function CircularGallery({ media, settings, runtime }: CircularGalleryProps) {
+  const { t } = useTranslation('wpsg');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
@@ -77,7 +79,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
         {media.map((item, idx) => {
           const thumbSrc = item.thumbnail || item.url;
           const isVideo = item.type === 'video';
-          const label = item.caption || item.title || `${isVideo ? 'Video' : 'Image'} ${idx + 1}`;
+          const label = item.caption || item.title || t('gallery_item_label', '{{type}} {{index}}', { type: isVideo ? t('gallery_video_type', 'Video') : t('gallery_image_type', 'Image'), index: idx + 1 });
           return (
             <Box
               {...getWpsgDebugProps('CircularGallery', 'card')}
@@ -140,7 +142,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
                     pointerEvents: 'none',
                     whiteSpace: 'nowrap',
                   }}
-                >VIDEO</Text>
+                >{t('gallery_video_badge', 'VIDEO')}</Text>
               )}
             </Box>
           );
