@@ -384,3 +384,11 @@ All five tracks landed on `feat/phase54-production-hardening` (commits `987d1589
 - Zero critical/serious axe violations on gallery, Lightbox, and auth flows; axe Playwright spec enforcing the baseline (P54-C)
 - LayoutBuilder fails safe with an error boundary and correct canvas drag bounds (P54-D)
 - Both test suites green, bundle within budget, clean `build:wp`, Sentry wired — version shipped as **v0.27.0** (P54-E)
+
+## Review Follow-Ups
+
+**P54-B i18n lint gate — `markupOnly` → `mode` (2026-06-23)**
+
+Branch self-review found the i18n lint gate configured with `['error', { markupOnly: true }]`. `markupOnly` is **not** a recognized option in `eslint-plugin-i18next` v6.1.4 (valid keys: `framework, mode, jsx-components, jsx-attributes, words, callees, object-properties, class-properties, message, should-validate-template`). The rule schema does not forbid unknown keys, so the option was silently ignored and the gate ran in the plugin's default `mode: 'jsx-text-only'`. The intended behavior (flag literal JSX text only, skip attribute-string noise) was therefore being achieved by accident, not by config.
+
+Fixed by switching to the supported, explicit `['error', { mode: 'jsx-text-only' }]` — identical effective behavior in this version, but valid and resilient to a future change in the plugin's default mode. Note the gate intentionally covers JSX **text** only; literals in attributes (`aria-label`, `placeholder`, `title`) are not enforced, so broadening to attribute coverage (`mode: 'jsx-only'` + an `jsx-attributes` allowlist) remains a follow-on if/when the public-distribution path is pursued.

@@ -88,6 +88,10 @@ export default tseslint.config({
   ],
   plugins: { i18next },
   rules: {
-    'i18next/no-literal-string': ['error', { markupOnly: true }],
+    // `jsx-text-only` is the supported option in eslint-plugin-i18next v6:
+    // it flags literal JSX text children only (not attribute strings, which
+    // carry role/data-testid/style noise). The earlier `markupOnly` key was
+    // not in the v6 schema and was silently ignored.
+    'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
   },
 });
