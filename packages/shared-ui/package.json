@@ -28,6 +28,7 @@
     "@mantine/core": ">=9",
     "@mantine/form": ">=9",
     "@tabler/icons-react": ">=3",
-    "react": ">=18"
+    "react": ">=18",
+    "react-i18next": ">=13"
   }
 }

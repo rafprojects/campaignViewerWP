@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
 import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
@@ -37,6 +38,7 @@ export function AuthBarMinimal({
   instanceId,
   pageSpaces,
 }: AuthBarMinimalProps) {
+  const { t } = useTranslation('wpsg');
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
 
@@ -57,7 +59,7 @@ export function AuthBarMinimal({
   return (
     <Box
       component="nav"
-      aria-label="User navigation"
+      aria-label={t('auth_user_nav_label', 'User navigation')}
       style={{
         position: 'sticky',
         top: 'var(--wp-admin--admin-bar--height, 0px)',
@@ -72,8 +74,8 @@ export function AuthBarMinimal({
         <Group justify="space-between" wrap="nowrap" gap={4}>
           {!isAuthenticated ? (
             <>
-              <Text size="xs" c="dimmed" truncate style={{ minWidth: 0, lineHeight: 1 }}>Sign in</Text>
-              <ActionIcon size={22} variant="subtle" onClick={onOpenSignIn} aria-label="Sign in">
+              <Text size="xs" c="dimmed" truncate style={{ minWidth: 0, lineHeight: 1 }}>{t('auth_sign_in', 'Sign in')}</Text>
+              <ActionIcon size={22} variant="subtle" onClick={onOpenSignIn} aria-label={t('auth_sign_in', 'Sign in')}>
                 <IconLogin size={14} />
               </ActionIcon>
             </>
@@ -89,7 +91,7 @@ export function AuthBarMinimal({
                 styles={{ dropdown: color ? { borderColor: `var(--mantine-color-${color}-5)` } : {} }}
               >
                 <Menu.Target>
-                  <ActionIcon variant="subtle" size="sm" aria-label="User menu">
+                  <ActionIcon variant="subtle" size="sm" aria-label={t('auth_user_menu_label', 'User menu')}>
                     <IconChevronDown size={14} />
                   </ActionIcon>
                 </Menu.Target>
@@ -97,10 +99,10 @@ export function AuthBarMinimal({
                   {isAdmin && (
                     <>
                       <Menu.Item leftSection={<IconDashboard size={14} />} onClick={handleOpenAdmin}>
-                        Admin Panel
+                        {t('auth_admin_panel', 'Admin Panel')}
                       </Menu.Item>
                       <Menu.Item leftSection={<IconSettings size={14} />} onClick={handleOpenSettings}>
-                        Settings
+                        {t('auth_settings', 'Settings')}
                       </Menu.Item>
                       {instanceId && (
                         <Box px={8} py={4}>
@@ -115,7 +117,7 @@ export function AuthBarMinimal({
                     </>
                   )}
                   <Menu.Item leftSection={<IconLogout size={14} />} onClick={onLogout} color="red">
-                    Sign out
+                    {t('auth_sign_out', 'Sign out')}
                   </Menu.Item>
                 </Menu.Dropdown>
               </Menu>

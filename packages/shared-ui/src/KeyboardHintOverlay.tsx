@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Group, Kbd, Text, Transition } from '@mantine/core';
 
 const SESSION_KEY = 'lightbox-hint-shown';
@@ -15,6 +16,7 @@ interface KeyboardHintOverlayProps {
  * or on any user interaction.
  */
 export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
+  const { t } = useTranslation('wpsg');
   const [show, setShow] = useState(false);
 
   const dismiss = useCallback(() => setShow(false), []);
@@ -60,6 +62,7 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
           pos="absolute"
           bottom={60}
           left="50%"
+          aria-hidden="true"
           style={{
             ...transitionStyles,
             transform: 'translateX(-50%)',
@@ -78,12 +81,12 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
             }}
           >
             <Group gap="xs" wrap="nowrap">
-              <Kbd>←</Kbd>
-              <Kbd>→</Kbd>
-              <Text size="sm" c="dimmed">navigate</Text>
-              <Text size="sm" c="dimmed" mx={4}>·</Text>
-              <Kbd>Esc</Kbd>
-              <Text size="sm" c="dimmed">close</Text>
+              <Kbd>{t('kb_arrow_left', '←')}</Kbd>
+              <Kbd>{t('kb_arrow_right', '→')}</Kbd>
+              <Text size="sm" c="dimmed">{t('kb_hint_navigate', 'navigate')}</Text>
+              <Text size="sm" c="dimmed" mx={4}>{t('kb_hint_separator', '·')}</Text>
+              <Kbd>{t('kb_escape', 'Esc')}</Kbd>
+              <Text size="sm" c="dimmed">{t('kb_hint_close', 'close')}</Text>
             </Group>
           </Box>
         </Box>

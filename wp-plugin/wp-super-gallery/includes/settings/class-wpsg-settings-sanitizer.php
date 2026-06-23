@@ -298,6 +298,29 @@ class WPSG_Settings_Sanitizer {
         return preg_match('/^[a-zA-Z-]+$/', $value) === 1;
     }
 
+    /**
+     * Validate that a CSS box-shadow string contains no injection vectors.
+     *
+     * Values for `image_shadow_custom` and `video_shadow_custom` are consumed
+     * as React inline style objects (the DOM style API neutralises breakout),
+     * so this is a defence-in-depth layer. We reject statement terminators,
+     * block delimiters, and dangerous CSS functions rather than attempting a
+     * full grammar parse.
+     *
+     * @param string $value Candidate box-shadow string.
+     * @return bool
+     */
+    private static function is_safe_css_box_shadow($value) {
+        $value = trim((string) $value);
+        if ($value === '' || strtolower($value) === 'none') {
+            return true;
+        }
+        if (preg_match('/[;{}]|url\s*\(|expression\s*\(|@import/i', $value)) {
+            return false;
+        }
+        return true;
+    }
+
     // ------------------------------------------------------------------
     // CSS unit validation
     // ------------------------------------------------------------------
@@ -892,6 +915,14 @@ class WPSG_Settings_Sanitizer {
                 'accepted' => true,
                 'value' => esc_url_raw(trim((string) $value)),
             ];
+        }
+
+        if (str_ends_with($flat_key, '_shadow_custom')) {
+            $sanitized_value = sanitize_text_field((string) $value);
+            if (self::is_safe_css_box_shadow($sanitized_value)) {
+                return ['accepted' => true, 'value' => $sanitized_value];
+            }
+            return self::invalid_nested_gallery_setting_result($flat_key, $defaults, $use_default_fallbacks);
         }
 
         return [

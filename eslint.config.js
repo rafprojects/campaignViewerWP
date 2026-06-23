@@ -73,12 +73,25 @@ export default tseslint.config({
     globals: globals.node,
   },
 }, storybook.configs["flat/recommended"], {
-  // P49-C: i18n groundwork — rule is installed and wired up; currently off
-  // to avoid CI failures on the ~300 existing unharvested string literals.
-  // After the migration sprint, change to 'error' here to enforce going forward.
+  // P49-C / P54-B: i18n rule — globally off for src/ (admin panel strings deferred).
   files: ['src/**/*.{ts,tsx}'],
   plugins: { i18next },
   rules: {
     'i18next/no-literal-string': 'off',
+  },
+}, {
+  // P54-B: Enforce no-literal-string on harvested front-end dirs (JSX text only)
+  // so future regressions are caught. Admin (src/components/Admin/**) stays off.
+  files: [
+    'src/components/Galleries/Adapters/**/*.{ts,tsx}',
+    'packages/shared-ui/src/**/*.{ts,tsx}',
+  ],
+  plugins: { i18next },
+  rules: {
+    // `jsx-text-only` is the supported option in eslint-plugin-i18next v6:
+    // it flags literal JSX text children only (not attribute strings, which
+    // carry role/data-testid/style noise). The earlier `markupOnly` key was
+    // not in the v6 schema and was silently ignored.
+    'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
   },
 });

@@ -348,7 +348,12 @@ export function MediaAddModal({
                 >
                   <div
                     style={{ position: 'absolute', inset: 0 }}
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(externalPreview.html, { ADD_TAGS: ['iframe'], ADD_ATTR: ['allow', 'allowfullscreen', 'frameborder'], ALLOWED_URI_REGEXP: /^https:\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com|vimeo\.com|rumble\.com|dailymotion\.com|fast\.wistia\.(com|net))\// }) }}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(externalPreview.html, {
+                      ADD_TAGS: ['iframe'],
+                      // Explicit allowlist — no event-handler attributes can slip through.
+                      ALLOWED_ATTR: ['allow', 'allowfullscreen', 'frameborder', 'src', 'title', 'width', 'height'],
+                      ALLOWED_URI_REGEXP: /^https:\/\/(www\.)?(youtube\.com|youtube-nocookie\.com|player\.vimeo\.com|vimeo\.com|rumble\.com|dailymotion\.com|fast\.wistia\.(com|net))\//,
+                    }) }}
                   />
                 </div>
               ) : (

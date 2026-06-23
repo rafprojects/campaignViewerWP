@@ -1,5 +1,13 @@
 ## Version History
 
+### v0.27.0 (June 23, 2026)
+- **MINOR**: Phase 54 — Production Hardening
+  - **P54-A** (security): PHP sanitizer extended with `is_safe_css_box_shadow()` for defence-in-depth on free-form CSS fields; `MediaAddModal` DOMPurify config locked to explicit `ALLOWED_ATTR` allowlist; localStorage inventory confirmed — no sensitive data outside the `enableJwt` gate.
+  - **P54-B** (feat): User-facing i18n harvest — 68 translation keys across 20 front-end components (`AuthBar*`, `LoginForm`, `Lightbox`, `KeyboardHintOverlay`, `SpaceSwitcher`, `MediaCarouselAdapter`, all 13 gallery adapters) wrapped in `t()` under the `wpsg` namespace. English defaults in `src/i18n-strings.en.json`; `i18next/no-literal-string` rule set to `'error'` for gallery adapters and shared-ui.
+  - **P54-C** (fix): Front-end accessibility baseline — 4 violations fixed (`KeyboardHintOverlay` `aria-hidden`, Lightbox counter `aria-live`, `OverlayArrows` keyboard tab order, `CampaignListingCarousel` region landmark); `@axe-core/playwright` axe spec added covering gallery, login modal, carousel, and lightbox.
+  - **P54-D** (fix): LayoutBuilder robustness — `ErrorBoundary` wrap on `LayoutBuilderModal`; drag bounds clamped to 0–100% in `moveSlot` state layer; 100-slot perf check documented.
+  - **P54-E** (chore): Release-readiness closeout — vitest 3124/3124, PHPUnit 1049/1049, all bundle budgets met, `build:wp` clean, Sentry wiring confirmed.
+
 ### v0.26.0 (May 19, 2026)
 - **MINOR**: Phase 29 — Bug Fixes & UI Increments
   - **P29-A** (fix): Campaign media delete now removes only the targeted item instead of wiping the entire media array.

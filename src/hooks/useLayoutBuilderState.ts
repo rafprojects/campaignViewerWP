@@ -495,7 +495,10 @@ export function useLayoutBuilderState(
     (id: string, x: number, y: number) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
-        if (slot) { slot.x = x; slot.y = y; }
+        if (slot) {
+          slot.x = Math.max(0, Math.min(100 - slot.width, x));
+          slot.y = Math.max(0, Math.min(100 - slot.height, y));
+        }
       }, 'Move slot'),
     [mutate],
   );

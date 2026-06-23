@@ -161,6 +161,7 @@ const { SpotlightGallery } = await import('@/components/Galleries/Adapters/spotl
 const { ScrollSnapGallery } = await import('@/components/Galleries/Adapters/scroll-snap/ScrollSnapGallery');
 const { StackedDeckAdapter } = await import('@/components/Galleries/Adapters/stacked/StackedDeckAdapter');
 const { IsotopeAdapter } = await import('@/components/Galleries/Adapters/isotope/IsotopeAdapter');
+const { PinterestAdapter } = await import('@/components/Galleries/Adapters/pinterest/PinterestAdapter');
 
 // ─── Component map for parameterised tests ────────────────────────────────────
 
@@ -196,6 +197,7 @@ const ADAPTERS: [string, AdapterComponent][] = [
   ['ScrollSnapGallery', ScrollSnapGallery],
   ['StackedDeckAdapter', StackedDeckAdapter],
   ['IsotopeAdapter', IsotopeAdapter],
+  ['PinterestAdapter', PinterestAdapter],
 ];
 
 // ─── Shared test suite ────────────────────────────────────────────────────────
@@ -653,5 +655,60 @@ describe('ScrollSnapGallery — specific', () => {
     expect(container.firstChild).not.toBeNull();
     // No slide role="button" elements
     expect(container.querySelectorAll('[role="button"]').length).toBe(0);
+  });
+});
+
+// ─── P48-H: PinterestAdapter-specific tests ───────────────────────────────────
+
+describe('PinterestAdapter — specific', () => {
+  it('renders a play-icon overlay for video items', () => {
+    const { container } = render(
+      <PinterestAdapter media={MIXED_MEDIA} settings={SETTINGS} />,
+    );
+    // The video tile renders an IconPlayerPlay (svg) inside its hover overlay.
+    expect(container.querySelector('svg')).not.toBeNull();
+  });
+
+  it('classifies tile col/row spans by aspect ratio at full width', () => {
+    const media: MediaItem[] = [
+      { ...makeImage('wide', 0), width: 1600, height: 600 },    // ratio 2.67 → 2×2
+      { ...makeImage('square', 1), width: 600, height: 600 },   // ratio 1.0  → 1×1
+      { ...makeImage('portrait', 2), width: 400, height: 800 }, // ratio 0.5  → 1×2
+      { ...makeImage('nodims', 3), width: 0, height: 0 },       // ratio null → 1×1
+    ];
+    const { container } = render(
+      <PinterestAdapter
+        media={media}
+        settings={SETTINGS}
+        containerDimensions={{ width: 800, height: 600 }}
+      />,
+    );
+    const tiles = Array.from(container.querySelectorAll('[role="button"]')) as HTMLElement[];
+    expect(tiles).toHaveLength(4);
+    // Hero / landscape tile spans two columns and two rows.
+    expect(tiles[0].style.gridColumn).toBe('span 2');
+    expect(tiles[0].style.gridRow).toBe('span 2');
+    // Portrait tile spans two rows in a single column.
+    expect(tiles[2].style.gridColumn).toBe('span 1');
+    expect(tiles[2].style.gridRow).toBe('span 2');
+    // Square + dimensionless tiles stay 1×1.
+    expect(tiles[1].style.gridRow).toBe('span 1');
+    expect(tiles[3].style.gridRow).toBe('span 1');
+  });
+
+  it('collapses every tile to 1×1 in narrow (mobile) layouts', () => {
+    const { container } = render(
+      <PinterestAdapter
+        media={THREE_IMAGES}
+        settings={SETTINGS}
+        containerDimensions={{ width: 400, height: 600 }}
+      />,
+    );
+    const tiles = Array.from(container.querySelectorAll('[role="button"]')) as HTMLElement[];
+    expect(tiles).toHaveLength(THREE_IMAGES.length);
+    tiles.forEach((tile) => {
+      expect(tile.style.gridColumn).toBe('span 1');
+      expect(tile.style.gridRow).toBe('span 1');
+    });
   });
 });

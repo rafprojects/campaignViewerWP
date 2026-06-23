@@ -426,6 +426,38 @@ describe('useLayoutBuilderState — Slot mutation', () => {
     expect(result.current.template.slots[0].x).toBe(before.x);
   });
 
+  it('moveSlot clamps x to lower bound (0)', () => {
+    const { result } = renderHook(() =>
+      useLayoutBuilderState(templateWithSlots(1)),
+    );
+    act(() => result.current.moveSlot('s1', -5, 0));
+    expect(result.current.template.slots[0].x).toBe(0);
+  });
+
+  it('moveSlot clamps x to upper bound (100 - slot.width)', () => {
+    const initial = templateWithSlots(1);
+    initial.slots[0].width = 20;
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+    act(() => result.current.moveSlot('s1', 110, 0));
+    expect(result.current.template.slots[0].x).toBe(80); // 100 - 20
+  });
+
+  it('moveSlot clamps y to lower bound (0)', () => {
+    const { result } = renderHook(() =>
+      useLayoutBuilderState(templateWithSlots(1)),
+    );
+    act(() => result.current.moveSlot('s1', 0, -10));
+    expect(result.current.template.slots[0].y).toBe(0);
+  });
+
+  it('moveSlot clamps y to upper bound (100 - slot.height)', () => {
+    const initial = templateWithSlots(1);
+    initial.slots[0].height = 20;
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+    act(() => result.current.moveSlot('s1', 0, 110));
+    expect(result.current.template.slots[0].y).toBe(80); // 100 - 20
+  });
+
   it('resizeSlot updates all four dimensions', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(templateWithSlots(1)),

@@ -19,6 +19,7 @@
  */
 import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
 import { Box, Stack, Title, Group } from '@mantine/core';
@@ -65,6 +66,7 @@ interface MasonryGalleryProps {
 }
 
 export function MasonryGallery({ media, settings, runtime, containerDimensions, items, renderItem }: MasonryGalleryProps) {
+  const { t } = useTranslation('wpsg');
   // P35-E: listing-mode detection
   const isListingMode = !!(items && renderItem);
 
@@ -252,7 +254,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
                     background: OVERLAY_BG,
                     borderRadius: 4, padding: '2px 5px',
                     fontSize: 10, color: OVERLAY_TEXT, fontWeight: 600,
-                  }}>VIDEO</Box>
+                  }}>{t('gallery_video_badge', 'VIDEO')}</Box>
                 )}
               </Box>
             );

@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconPhoto, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -167,6 +168,7 @@ export interface MediaCarouselInnerProps {
 
 /** @internal Exported for backward-compat wrappers — prefer MediaCarouselAdapter. */
 export function MediaCarouselInner({ media, settings, commonSettings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
+  const { t } = useTranslation('wpsg');
   // ── Embla setup ──────────────────────────────────────────────────
 
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
@@ -457,7 +459,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
     const isSlideVideo = item.type === 'video';
     const isSlideUploadVideo = isSlideVideo && item.source === 'upload';
     const isSlidePlaying = playingSlides.has(originalIndex);
-    const playerTitle = `Video player: ${item.caption || 'Campaign video'}`;
+    const playerTitle = t('carousel_video_player', 'Video player: {{caption}}', { caption: item.caption || t('lightbox_video_title', 'Campaign video') });
     const showDarken = settings.carouselDarkenUnfocused && renderedIndex !== focusedRenderedIndex;
 
     return (
@@ -465,7 +467,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
         key={slide.key}
         role="group"
         aria-roledescription="slide"
-        aria-label={`Slide ${originalIndex + 1} of ${media.length}`}
+        aria-label={t('carousel_slide_aria', 'Slide {{index}} of {{total}}', { index: originalIndex + 1, total: media.length })}
         style={{
           flex: `0 0 ${slideBasis}`,
           minWidth: 0,
@@ -533,7 +535,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
             >
               <Image
                 src={item.thumbnail}
-                alt={item.caption || 'Campaign video'}
+                alt={item.caption || t('lightbox_video_title', 'Campaign video')}
                 h="100%"
                 fit="contain"
               />
@@ -560,7 +562,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
             >
               <Image
                 src={item.url}
-                alt={item.caption || 'Campaign image'}
+                alt={item.caption || t('lightbox_image_alt', 'Campaign image')}
                 fit="contain"
                 h="100%"
               />
@@ -589,8 +591,8 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
   const isCurrentVideo = currentItem?.type === 'video';
   const testId = isCurrentVideo ? 'video-player-frame' : 'image-viewer-frame';
   const ariaLabel = isCurrentVideo
-    ? `Video ${focusedIndex + 1} of ${media.length}: ${currentItem.caption || 'Untitled video'}. Use arrow keys to navigate, Enter or Space to play.`
-    : `View image ${focusedIndex + 1} of ${media.length}`;
+    ? t('carousel_video_aria', 'Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play.', { index: focusedIndex + 1, total: media.length, caption: currentItem.caption || t('carousel_untitled_video', 'Untitled video') })
+    : t('carousel_view_image_aria', 'View image {{index}} of {{total}}', { index: focusedIndex + 1, total: media.length });
 
   // Edge fade mask
   const edgeFadeMask = settings.carouselEdgeFade
@@ -668,7 +670,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
             onClick={openLightbox}
             size="lg"
             variant="light"
-            aria-label="Open lightbox"
+            aria-label={t('carousel_open_lightbox', 'Open lightbox')}
             style={{ zIndex: 3 }}
           >
             <IconZoomIn size={20} />
@@ -681,8 +683,8 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
           onNext={scrollNext}
           total={media.length}
           settings={settings}
-          previousLabel={isCurrentVideo ? 'Previous video (overlay)' : 'Previous image (overlay)'}
-          nextLabel={isCurrentVideo ? 'Next video (overlay)' : 'Next image (overlay)'}
+          previousLabel={isCurrentVideo ? t('carousel_prev_video', 'Previous video (overlay)') : t('carousel_prev_image', 'Previous image (overlay)')}
+          nextLabel={isCurrentVideo ? t('carousel_next_video', 'Next video (overlay)') : t('carousel_next_image', 'Next image (overlay)')}
         />
 
         {/* Overlay dot navigator (inside viewport) */}
@@ -698,7 +700,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
       {/* Caption */}
       <Text {...getWpsgDebugProps('MediaCarouselAdapter', 'caption')} size="sm" c="dimmed">
-        {currentItem?.caption || (isCurrentVideo ? 'Untitled video' : 'Untitled image')}
+        {currentItem?.caption || (isCurrentVideo ? t('carousel_untitled_video', 'Untitled video') : t('carousel_untitled_image', 'Untitled image'))}
       </Text>
 
       {/* Dot navigator (below viewport) */}
@@ -745,6 +747,7 @@ interface CampaignListingCarouselProps {
 }
 
 function CampaignListingCarousel({ items, renderItem, settings }: CampaignListingCarouselProps) {
+  const { t } = useTranslation('wpsg');
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
   const gap = settings.carouselGap;
   const gapUnit = settings.carouselGapUnit ?? 'px';
@@ -793,6 +796,8 @@ function CampaignListingCarousel({ items, renderItem, settings }: CampaignListin
     <Box
       {...getWpsgDebugProps('MediaCarouselAdapter', 'listing-carousel')}
       data-testid="campaign-listing-carousel"
+      role="region"
+      aria-label={t('carousel_campaign_listing', 'Campaign listing')}
       style={{ position: 'relative', width: '100%' }}
     >
       {/* Embla viewport */}
@@ -842,8 +847,8 @@ function CampaignListingCarousel({ items, renderItem, settings }: CampaignListin
           onNext={scrollNext}
           total={items.length}
           settings={settings}
-          previousLabel="Previous campaigns"
-          nextLabel="Next campaigns"
+          previousLabel={t('carousel_prev_campaigns', 'Previous campaigns')}
+          nextLabel={t('carousel_next_campaigns', 'Next campaigns')}
         />
       )}
 

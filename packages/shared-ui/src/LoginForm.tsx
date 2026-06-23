@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { TextInput, PasswordInput, Button, Paper, Title, Text, Stack, Alert } from '@mantine/core';
 import { useForm } from '@mantine/form';
 
@@ -9,17 +10,18 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: LoginFormProps) {
+  const { t } = useTranslation('wpsg');
   const form = useForm({
     initialValues: {
       email: '',
       password: '',
     },
     validate: {
-      email: (value: string) => (/^\S+@\S+\.\S+$/.test(value) ? null : 'Enter a valid email'),
+      email: (value: string) => (/^\S+@\S+\.\S+$/.test(value) ? null : t('login_email_error', 'Enter a valid email')),
       password: (value: string) =>
         value.trim().length >= minPasswordLength
           ? null
-          : `Password must be at least ${minPasswordLength} character${minPasswordLength === 1 ? '' : 's'}`,
+          : t('login_password_error', `Password must be at least ${minPasswordLength} character${minPasswordLength === 1 ? '' : 's'}`, { count: minPasswordLength }),
     },
   });
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: 
       if (err instanceof Error && err.message) {
         setError(err.message);
       } else {
-        setError('Login failed. Check your credentials.');
+        setError(t('login_error_generic', 'Login failed. Check your credentials.'));
       }
     } finally {
       setIsSubmitting(false);
@@ -45,36 +47,36 @@ export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: 
     <Stack gap="lg">
       {!compact && (
         <Stack gap="xs">
-          <Title order={2} size="h4">Sign in</Title>
+          <Title order={2} size="h4">{t('login_title', 'Sign in')}</Title>
           <Text c="dimmed" size="sm">
-            Access private campaigns with your WordPress account.
+            {t('login_subtitle', 'Access private campaigns with your WordPress account.')}
           </Text>
         </Stack>
       )}
 
       <TextInput
-        label="Email"
+        label={t('login_email_label', 'Email')}
         type="email"
-        placeholder="you@example.com"
+        placeholder={t('login_email_placeholder', 'you@example.com')}
         required
         {...form.getInputProps('email')}
       />
 
       <PasswordInput
-        label="Password"
-        placeholder="Enter your password"
+        label={t('login_password_label', 'Password')}
+        placeholder={t('login_password_placeholder', 'Enter your password')}
         required
         {...form.getInputProps('password')}
       />
 
       {error && (
-        <Alert color="red" title="Error" role="alert" aria-live="assertive">
+        <Alert color="red" title={t('login_error_title', 'Error')} role="alert" aria-live="assertive">
           {error}
         </Alert>
       )}
 
       <Button type="submit" loading={isSubmitting} fullWidth>
-        {isSubmitting ? 'Signing in...' : 'Sign in'}
+        {isSubmitting ? t('login_submitting', 'Signing in...') : t('login_submit', 'Sign in')}
       </Button>
     </Stack>
   );

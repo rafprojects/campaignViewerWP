@@ -19,6 +19,7 @@
  */
 import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RowsPhotoAlbum } from 'react-photo-album';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { Box, Stack, Title, Group } from '@mantine/core';
@@ -63,6 +64,7 @@ interface JustifiedGalleryProps {
 }
 
 export function JustifiedGallery({ media, settings, runtime, containerDimensions, items, renderItem }: JustifiedGalleryProps) {
+  const { t } = useTranslation('wpsg');
   // P35-F: listing-mode detection
   const isListingMode = !!(items && renderItem);
 
@@ -246,7 +248,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
                     position: 'absolute', top: 5, left: 5,
                     background: OVERLAY_BG, borderRadius: 4,
                     padding: '2px 5px', fontSize: 10, color: OVERLAY_TEXT, fontWeight: 600,
-                  }}>VIDEO</Box>
+                  }}>{t('gallery_video_badge', 'VIDEO')}</Box>
                 )}
               </Box>
             );

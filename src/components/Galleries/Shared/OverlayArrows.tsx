@@ -124,6 +124,8 @@ export function OverlayArrows({
     >
       <button
         type="button"
+        tabIndex={visible ? 0 : -1}
+        aria-hidden={!visible}
         style={{ ...baseBtnStyle, left: edgeInset, ...verticalStyle }}
         onClick={(e) => { e.stopPropagation(); onPrev(); }}
         onMouseEnter={(e) => handleHover(e, true)}
@@ -135,6 +137,8 @@ export function OverlayArrows({
 
       <button
         type="button"
+        tabIndex={visible ? 0 : -1}
+        aria-hidden={!visible}
         style={{ ...baseBtnStyle, right: edgeInset, ...verticalStyle }}
         onClick={(e) => { e.stopPropagation(); onNext(); }}
         onMouseEnter={(e) => handleHover(e, true)}

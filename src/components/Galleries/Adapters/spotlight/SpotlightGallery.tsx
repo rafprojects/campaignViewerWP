@@ -16,6 +16,7 @@
  * than introducing a second inline playback model.
  */
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Stack, Title } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn, IconPhoto } from '@tabler/icons-react';
 import type {
@@ -52,6 +53,7 @@ export function SpotlightGallery({
   runtime,
   containerDimensions,
 }: SpotlightGalleryProps) {
+  const { t } = useTranslation('wpsg');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -153,7 +155,7 @@ export function SpotlightGallery({
           aria-label={
             activeItem?.caption ||
             activeItem?.title ||
-            'Open in lightbox'
+            t('gallery_open_lightbox', 'Open in lightbox')
           }
           onClick={handleHeroClick}
           onKeyDown={(e) => {
@@ -282,7 +284,7 @@ export function SpotlightGallery({
               <button
                 key={item.id}
                 type="button"
-                aria-label={item.caption || item.title || `Item ${idx + 1}`}
+                aria-label={item.caption || item.title || t('gallery_item_index', 'Item {{index}}', { index: idx + 1 })}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => selectThumbnail(idx)}
                 {...getWpsgDebugProps('SpotlightGallery', 'thumbnail')}
