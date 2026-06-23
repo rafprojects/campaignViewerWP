@@ -13,6 +13,7 @@
 | P54-C | Front-end accessibility baseline — axe pass on gallery / Lightbox / auth; fix critical+serious | **Done** | Medium |
 | P54-D | LayoutBuilder robustness — error boundary, drag bounds clamping, large-layout perf check | **Done** | Small-Medium |
 | P54-E | Release-readiness closeout — suites green, bundle budget, `build:wp`, version bump | **Done** | Small |
+| P54-F | SpaceSwitcher regression — dropdown broken after P54-B; hook removed from `forwardRef` trigger and `SpaceSwitcher`, imperative `i18n.t()` used instead | **Done** | XS |
 
 ---
 
@@ -376,9 +377,36 @@ Surfaced by the review, intentionally **out of P54** (tight must-fix). Promoted 
 - Record completed work here as tracks land; keep it factual.
 - PHP test/build execution is delegated to Haiku subagents; tests are authored in this repo.
 
+## Track P54-F - SpaceSwitcher regression fix
+
+### Problem
+
+Manual testing after P54-B revealed that on multi-space pages, the `SpaceSwitcher` badge no longer opened the dropdown menu, and the displayed space defaulted to the wrong (last) entry. The regression was introduced by P54-B adding `useTranslation` hooks to two components:
+
+1. **`AuthBarFloatingTrigger`** — a `forwardRef` expression-body component used directly as `Popover.Target`'s child. Converting it from an expression body to a block body to add a React hook changed the component's contract in a way that interferes with how Mantine v9's `Popover.Target` attaches its ref and click handlers via `React.cloneElement`.
+
+2. **`SpaceSwitcher`** — now had `useTranslation` which subscribes to i18n state updates. In Mantine v9 with React 18's `useSyncExternalStore` (used by react-i18next v17), this may schedule additional render passes that race with Mantine's click-outside / floater open/close state machines, preventing the nested `Menu` from opening inside the `Popover.Dropdown`.
+
+### Fix (2026-06-23)
+
+- **`AuthBarFloatingTrigger`**: Restored to the original expression-body `forwardRef` form (no hooks). The single `aria-label` string uses the imperative `i18n.t()` API — correct at load time, doesn't subscribe to i18n updates, zero render-cycle impact.
+- **`SpaceSwitcher`**: Removed `useTranslation` hook. Both strings (`aria-label` and "Target space" menu label) use `i18n.t()` — same translation, no hook subscription.
+
+The `AuthBarFloatingMenuContent` function (the inner popover content) retains `useTranslation` unchanged — it has many strings, is not a Mantine Target/Trigger, and had no reported issues.
+
+### Why `i18n.t()` is correct here
+
+Both affected strings are read once at render time (locale is set by PHP before the page loads and doesn't change at runtime). `i18n.t()` is synchronous, uses the initialized namespace, and returns the correct translated string. The only trade-off vs `useTranslation` is that runtime language switches won't re-render these two strings — which is acceptable since the plugin doesn't support mid-session language switching.
+
+### Validation
+
+3150/3150 vitest green; `tsc --noEmit` and scoped ESLint clean.
+
+---
+
 ## Outcome
 
-All five tracks landed on `feat/phase54-production-hardening` (commits `987d1589`→`20bd4043`). The codebase now has:
+All five core tracks and the regression fix landed on `feat/phase54-production-hardening` (commits `987d1589`→`20bd4043`). The codebase now has:
 - No unaddressed high/critical security findings (P54-A)
 - All public-facing JSX strings translatable via `t()` with PHP-injectable translations (P54-B)
 - Zero critical/serious axe violations on gallery, Lightbox, and auth flows; axe Playwright spec enforcing the baseline (P54-C)

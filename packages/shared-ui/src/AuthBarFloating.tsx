@@ -1,5 +1,6 @@
 import { forwardRef, useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
 import { safeLocalStorage, spaceColor } from '@wp-super-gallery/shared-utils';
@@ -55,9 +56,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
     onPointerMove,
     onPointerUp,
     ...actionIconProps
-  }, ref) => {
-    const { t } = useTranslation('wpsg');
-    return (
+  }, ref) => (
     <ActionIcon
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       {...(actionIconProps as any)}
@@ -65,7 +64,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
       size={ICON_SIZE}
       radius="xl"
       variant="filled"
-      aria-label={t('auth_admin_menu_label', 'Admin menu')}
+      aria-label={i18n.t('auth_admin_menu_label', 'Admin menu')}
       onClick={onClick}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -78,8 +77,7 @@ const AuthBarFloatingTrigger = forwardRef<HTMLButtonElement, AuthBarFloatingTrig
     >
       {children ?? (draggable ? <IconGripVertical size={22} /> : <IconMenu2 size={22} />)}
     </ActionIcon>
-    );
-  },
+  ),
 );
 
 AuthBarFloatingTrigger.displayName = 'AuthBarFloatingTrigger';

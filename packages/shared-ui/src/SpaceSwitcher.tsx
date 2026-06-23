@@ -1,6 +1,6 @@
 import { Badge, Menu, Text } from '@mantine/core';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
-import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
 
 /** Minimal structural shape of a gallery space the switcher needs.
@@ -24,7 +24,6 @@ interface SpaceSwitcherProps {
  *  Single-space: non-interactive colored label.
  *  Multi-space: dropdown to switch which space the Admin Panel/Settings buttons target. */
 export function SpaceSwitcher({ activeInstanceId, onSelect, pageSpaces = [] }: SpaceSwitcherProps) {
-  const { t } = useTranslation('wpsg');
   const active = pageSpaces.find((s) => s.instanceId === activeInstanceId);
   const label = active?.name ?? activeInstanceId;
   const color = spaceColor(activeInstanceId);
@@ -37,7 +36,7 @@ export function SpaceSwitcher({ activeInstanceId, onSelect, pageSpaces = [] }: S
       size="sm"
       rightSection={isMultiSpace ? <IconChevronDown size={10} /> : undefined}
       style={{ cursor: isMultiSpace ? 'pointer' : 'default', userSelect: 'none' }}
-      aria-label={isMultiSpace ? t('auth_space_switcher_label', 'Switch targeted gallery space') : label}
+      aria-label={isMultiSpace ? i18n.t('auth_space_switcher_label', 'Switch targeted gallery space') : label}
     >
       {label}
     </Badge>
@@ -50,7 +49,7 @@ export function SpaceSwitcher({ activeInstanceId, onSelect, pageSpaces = [] }: S
       <Menu.Target>{badge}</Menu.Target>
       <Menu.Dropdown>
         <Menu.Label>
-          <Text size="xs" c="dimmed">{t('auth_target_space', 'Target space')}</Text>
+          <Text size="xs" c="dimmed">{i18n.t('auth_target_space', 'Target space')}</Text>
         </Menu.Label>
         {pageSpaces.map((space) => {
           const isActive = space.instanceId === activeInstanceId;
