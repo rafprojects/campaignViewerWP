@@ -1,4 +1,5 @@
 # Phase XX - Short Phase Title
+(note the created document name should reflect this as PHASEXX_REPORT.md)
 
 **Status:** Planned | In Progress | Complete
 **Created:** YYYY-MM-DD
