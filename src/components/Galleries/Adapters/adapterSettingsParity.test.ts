@@ -77,7 +77,8 @@ function toSnakeCase(camel: string): string {
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
 describe('adapter settings parity (P31-D)', () => {
-  const registrySource = readSource('src/components/Galleries/Adapters/adapterRegistry.ts');
+  // P55-A: data moved from adapterRegistry.ts to the data module
+  const registrySource = readSource('src/data/adapterSettingGroups.ts');
   const phpSource      = readSource(
     'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
   );
