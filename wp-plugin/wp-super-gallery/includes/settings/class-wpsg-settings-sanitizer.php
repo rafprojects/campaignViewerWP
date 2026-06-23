@@ -92,114 +92,16 @@ class WPSG_Settings_Sanitizer {
     }
 
     /**
-     * Nested adapter-setting keys mapped to existing flat settings metadata.
-     *
-     * @var array<string, string>
-     */
-    private static $nested_adapter_field_map = [
-        'gridCardWidth' => 'grid_card_width',
-        'gridCardAspectRatio' => 'grid_card_aspect_ratio',
-        'gridCardMaxColumns' => 'grid_card_max_columns',
-        'gridCardMinHeight' => 'grid_card_min_height',
-        'gridCardWidthUnit' => 'grid_card_width_unit',
-        'gridCardHeight' => 'grid_card_height',
-        'gridCardHeightUnit' => 'grid_card_height_unit',
-        'mosaicTargetRowHeight' => 'mosaic_target_row_height',
-        'mosaicTargetRowHeightUnit' => 'mosaic_target_row_height_unit',
-        'photoNormalizeHeight' => 'photo_normalize_height',
-        'photoNormalizeHeightUnit' => 'photo_normalize_height_unit',
-        'masonryColumns' => 'masonry_columns',
-        'masonryAutoColumnBreakpoints' => 'masonry_auto_column_breakpoints',
-        // P31-G: Masonry entrance animation
-        'masonryEntranceAnimation' => 'masonry_entrance_animation',
-        'masonryEntranceStagger' => 'masonry_entrance_stagger',
-        // P31-F: Vertical Scroll Snap adapter
-        'scrollSnapAlignment' => 'scroll_snap_alignment',
-        'scrollSnapPageIndicator' => 'scroll_snap_page_indicator',
-        'scrollSnapMaxWidth' => 'scroll_snap_max_width',
-        'scrollSnapMaxWidthUnit' => 'scroll_snap_max_width_unit',
-        // P31-E: Spotlight / Hero adapter
-        'spotlightHeroAspectRatio' => 'spotlight_hero_aspect_ratio',
-        'spotlightThumbnailSize' => 'spotlight_thumbnail_size',
-        'spotlightThumbnailSizeUnit' => 'spotlight_thumbnail_size_unit',
-        'spotlightTransitionDuration' => 'spotlight_transition_duration',
-        'spotlightStripPosition' => 'spotlight_strip_position',
-        'spotlightHeroMaxWidth' => 'spotlight_hero_max_width',
-        'spotlightHeroMaxWidthUnit' => 'spotlight_hero_max_width_unit',
-        'spotlightHeroJustification' => 'spotlight_hero_justification',
-        'imageViewportHeight' => 'image_viewport_height',
-        'imageViewportHeightUnit' => 'image_viewport_height_unit',
-        'videoViewportHeight' => 'video_viewport_height',
-        'videoViewportHeightUnit' => 'video_viewport_height_unit',
-        'imageBorderRadius' => 'image_border_radius',
-        'imageBorderRadiusUnit' => 'image_border_radius_unit',
-        'videoBorderRadius' => 'video_border_radius',
-        'videoBorderRadiusUnit' => 'video_border_radius_unit',
-        'thumbnailGap' => 'thumbnail_gap',
-        'tileSize' => 'tile_size',
-        'tileSizeUnit' => 'tile_size_unit',
-        'imageTileSize' => 'image_tile_size',
-        'imageTileSizeUnit' => 'image_tile_size_unit',
-        'videoTileSize' => 'video_tile_size',
-        'videoTileSizeUnit' => 'video_tile_size_unit',
-        'layoutBuilderScope' => 'layout_builder_scope',
-        'tileGapX' => 'tile_gap_x',
-        'tileGapXUnit' => 'tile_gap_x_unit',
-        'tileGapY' => 'tile_gap_y',
-        'tileGapYUnit' => 'tile_gap_y_unit',
-        'tileBorderWidth' => 'tile_border_width',
-        'tileBorderColor' => 'tile_border_color',
-        'tileGlowEnabled' => 'tile_glow_enabled',
-        'tileGlowColor' => 'tile_glow_color',
-        'tileGlowSpread' => 'tile_glow_spread',
-        'tileHoverBounce' => 'tile_hover_bounce',
-        'carouselVisibleCards' => 'carousel_visible_cards',
-        'carouselAutoplay' => 'carousel_autoplay',
-        'carouselAutoplaySpeed' => 'carousel_autoplay_speed',
-        'carouselAutoplayPauseOnHover' => 'carousel_autoplay_pause_on_hover',
-        'carouselAutoplayDirection' => 'carousel_autoplay_direction',
-        'carouselDragEnabled' => 'carousel_drag_enabled',
-        'carouselDarkenUnfocused' => 'carousel_darken_unfocused',
-        'carouselDarkenOpacity' => 'carousel_darken_opacity',
-        'carouselEdgeFade' => 'carousel_edge_fade',
-        'carouselLoop' => 'carousel_loop',
-        'carouselGap' => 'carousel_gap',
-        'carouselGapUnit' => 'carousel_gap_unit',
-        'navArrowPosition' => 'nav_arrow_position',
-        'navArrowSize' => 'nav_arrow_size',
-        'navArrowColor' => 'nav_arrow_color',
-        'navArrowBgColor' => 'nav_arrow_bg_color',
-        'navArrowBorderWidth' => 'nav_arrow_border_width',
-        'navArrowHoverScale' => 'nav_arrow_hover_scale',
-        'navArrowAutoHideMs' => 'nav_arrow_auto_hide_ms',
-        'navArrowEdgeInset' => 'nav_arrow_edge_inset',
-        'navArrowMinHitTarget' => 'nav_arrow_min_hit_target',
-        'navArrowFadeDurationMs' => 'nav_arrow_fade_duration_ms',
-        'navArrowScaleTransitionMs' => 'nav_arrow_scale_transition_ms',
-        'dotNavEnabled' => 'dot_nav_enabled',
-        'dotNavPosition' => 'dot_nav_position',
-        'dotNavSize' => 'dot_nav_size',
-        'dotNavMaxVisibleDots' => 'dot_nav_max_visible_dots',
-        'dotNavActiveColor' => 'dot_nav_active_color',
-        'dotNavInactiveColor' => 'dot_nav_inactive_color',
-        'dotNavShape' => 'dot_nav_shape',
-        'dotNavSpacing' => 'dot_nav_spacing',
-        'dotNavActiveScale' => 'dot_nav_active_scale',
-        'viewportHeightMobileRatio' => 'viewport_height_mobile_ratio',
-        'viewportHeightTabletRatio' => 'viewport_height_tablet_ratio',
-        'imageShadowPreset' => 'image_shadow_preset',
-        'imageShadowCustom' => 'image_shadow_custom',
-        'videoShadowPreset' => 'video_shadow_preset',
-        'videoShadowCustom' => 'video_shadow_custom',
-    ];
-
-    /**
      * Return the nested adapter-setting map.
+     *
+     * P55-C: Sourced from the canonical adapter-fields.json schema via
+     * WPSG_Adapter_Field_Schema::get_map() (statically cached per request).
+     * Add new adapter fields to the schema JSON — no PHP edit required.
      *
      * @return array<string, string>
      */
     public static function get_nested_adapter_field_map() {
-        return self::$nested_adapter_field_map;
+        return WPSG_Adapter_Field_Schema::get_map();
     }
 
     /**
@@ -214,7 +116,7 @@ class WPSG_Settings_Sanitizer {
             array_values(self::get_nested_common_field_map_for_scope('image')),
             array_values(self::get_nested_common_field_map_for_scope('video')),
             array_values(self::get_nested_common_field_map_for_scope('unified')),
-            array_values(self::$nested_adapter_field_map)
+            array_values(self::get_nested_adapter_field_map())
         )));
     }
 
@@ -998,7 +900,8 @@ class WPSG_Settings_Sanitizer {
      */
     private static function sanitize_gallery_adapter_settings($settings, $defaults, $valid_options, $field_ranges, $use_default_fallbacks) {
         $sanitized = [];
-        $allowed_flat_keys = array_values(self::$nested_adapter_field_map);
+        $adapter_field_map = self::get_nested_adapter_field_map();
+        $allowed_flat_keys = array_values($adapter_field_map);
 
         foreach ($settings as $key => $value) {
             if (!is_string($key)) {
@@ -1010,7 +913,7 @@ class WPSG_Settings_Sanitizer {
                 continue;
             }
 
-            $flat_key = self::$nested_adapter_field_map[$key] ?? null;
+            $flat_key = $adapter_field_map[$key] ?? null;
             if (is_string($flat_key)) {
                 $result = self::sanitize_nested_gallery_setting(
                     $flat_key,

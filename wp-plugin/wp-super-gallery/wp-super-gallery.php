@@ -29,6 +29,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-registry.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-core-fields.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-renderer.php';
+require_once WPSG_PLUGIN_DIR . 'includes/schema/class-wpsg-adapter-field-schema.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-sanitizer.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-service.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-typography.php';
