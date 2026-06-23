@@ -1,6 +1,6 @@
 # Phase 54 - Production Hardening
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-06-17
 **Last updated:** 2026-06-17
 
@@ -12,7 +12,7 @@
 | P54-B | User-facing i18n harvest — front-end strings → `t()`; scope the i18next lint rule on for front-end dirs | **Done** | Medium |
 | P54-C | Front-end accessibility baseline — axe pass on gallery / Lightbox / auth; fix critical+serious | **Done** | Medium |
 | P54-D | LayoutBuilder robustness — error boundary, drag bounds clamping, large-layout perf check | **Done** | Small-Medium |
-| P54-E | Release-readiness closeout — suites green, bundle budget, `build:wp`, version bump | Planned | Small |
+| P54-E | Release-readiness closeout — suites green, bundle budget, `build:wp`, version bump | **Done** | Small |
 
 ---
 
@@ -314,6 +314,33 @@ Hook-level: 100 `moveSlot` calls on a 100-slot template completed in <200 ms thr
 
 - Run suites (Haiku for PHP), `check-bundle-size.mjs`, `build:wp`.
 
+### Implementation notes
+
+**Suite results (2026-06-23)**
+
+| Suite | Result |
+|-------|--------|
+| vitest | 3124/3124 green (0 failures) |
+| PHPUnit | 1049 tests, 12 982 assertions, 2 skipped, 0 failures, 0 errors |
+
+**Bundle budget (2026-06-23)**
+
+All 50 non-vendor chunks pass. Main entries: `index-7T6wA9-4.js` 156.9 kB gz (budget 200 kB), `index-CQvpIELy.js` 89.2 kB gz. No adapter chunk exceeds 50 kB gz. Vendor bundles (Mantine, dockview, charts) are excluded from the budget check per `check-bundle-size.mjs` policy.
+
+**`build:wp` (2026-06-23)**
+
+Clean build in 8.52 s; output copied to `wp-plugin/wp-super-gallery/assets/`. Rollup large-chunk warnings for vendor bundles (`vendor-mantine-core`, `vendor-charts`, `vendor-dockview`) are expected pre-existing notices — all are vendor code excluded from the size budget.
+
+**Sentry / web-vitals (2026-06-23)**
+
+Sentry: correctly gated — `initSentry()` is a no-op when no DSN is provided and is skipped entirely in `DEV` mode. DSN is injected via `window.__WPSG_SENTRY_DSN__` or `wpsgConfig.sentryDsn` from the WP plugin config. `Authorization` headers are stripped from breadcrumbs; user IP is redacted before sending. Ready to activate by setting the DSN constant in `wp-config.php`.
+
+Web-vitals: not yet implemented — expected at this stage since the production target is undecided (see Decision C). Promoted to `FUTURE_TASKS.md` for the chosen distribution path.
+
+**Version bump (2026-06-23)**
+
+`0.26.0 → 0.27.0` in `package.json`, `package-lock.json`, and `wp-super-gallery.php` plugin header. `docs/VERSION_HISTORY.md` updated with full P54 track summary.
+
 ---
 
 ## Production Target & Monetization
@@ -351,4 +378,9 @@ Surfaced by the review, intentionally **out of P54** (tight must-fix). Promoted 
 
 ## Outcome
 
-_To be completed when the phase lands._
+All five tracks landed on `feat/phase54-production-hardening` (commits `987d1589`→`20bd4043`). The codebase now has:
+- No unaddressed high/critical security findings (P54-A)
+- All public-facing JSX strings translatable via `t()` with PHP-injectable translations (P54-B)
+- Zero critical/serious axe violations on gallery, Lightbox, and auth flows; axe Playwright spec enforcing the baseline (P54-C)
+- LayoutBuilder fails safe with an error boundary and correct canvas drag bounds (P54-D)
+- Both test suites green, bundle within budget, clean `build:wp`, Sentry wired — version shipped as **v0.27.0** (P54-E)
