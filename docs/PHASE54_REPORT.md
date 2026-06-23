@@ -392,3 +392,14 @@ All five tracks landed on `feat/phase54-production-hardening` (commits `987d1589
 Branch self-review found the i18n lint gate configured with `['error', { markupOnly: true }]`. `markupOnly` is **not** a recognized option in `eslint-plugin-i18next` v6.1.4 (valid keys: `framework, mode, jsx-components, jsx-attributes, words, callees, object-properties, class-properties, message, should-validate-template`). The rule schema does not forbid unknown keys, so the option was silently ignored and the gate ran in the plugin's default `mode: 'jsx-text-only'`. The intended behavior (flag literal JSX text only, skip attribute-string noise) was therefore being achieved by accident, not by config.
 
 Fixed by switching to the supported, explicit `['error', { mode: 'jsx-text-only' }]` — identical effective behavior in this version, but valid and resilient to a future change in the plugin's default mode. Note the gate intentionally covers JSX **text** only; literals in attributes (`aria-label`, `placeholder`, `title`) are not enforced, so broadening to attribute coverage (`mode: 'jsx-only'` + an `jsx-attributes` allowlist) remains a follow-on if/when the public-distribution path is pursued.
+
+**Branch-coverage buffer (2026-06-23)**
+
+Post-P54 the global branch coverage sat at 72.02% (5398/7495) — only 0.02 over the 72 gate, i.e. a single new uncovered branch would have broken the build. Added targeted tests to restore a real margin:
+
+- `PinterestAdapter` was fully untested (0% — it was simply missing from the parametrized adapter suite in `__tests__/adapters.test.tsx`). Added it to that suite plus a Pinterest-specific block for aspect-ratio tile classification and the narrow-layout collapse → 0% → 75.4% branch.
+- `resolveBoxShadow` (`shadowPresets.ts`, 33% → 100%) — new unit suite covering custom/named/unknown-key paths.
+- `themeScope.ts` (58% → 100%) — covered the `CSS.escape`-absent fallback and token-generation branches.
+- `i18n.ts` — covered the `locale !== 'en'` branch (injected non-en locale with en-default fallback) that the existing test never exercised.
+
+Result: branches 72.02% → **72.72%** (5451/7495), margin +0.02 → +0.72 over the gate. Full suite 3150 tests green, `tsc -b` clean.
