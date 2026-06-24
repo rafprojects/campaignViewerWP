@@ -170,6 +170,54 @@ describe('useInContextSave', () => {
     expect(queryClient.getQueryData(getSettingsQueryKey(client))).toMatchObject({ theme: 'dark' });
   });
 
+  it('uses apiClient.put for space-specific saves (spaceId branch, line 53)', async () => {
+    const put = vi.fn().mockResolvedValue({ settings: { theme: 'solarized' } });
+    const client = {
+      getBaseUrl: () => 'https://example.test',
+      put,
+    } as unknown as ApiClient;
+    const { wrapper } = makeWrapper(client);
+
+    const { result } = renderHook(
+      () => useInContextSave(client, baseSettings, 500, undefined, 5),
+      { wrapper },
+    );
+
+    act(() => { result.current('theme', 'dark'); });
+    await act(async () => { await vi.runAllTimersAsync(); });
+    expect(put).toHaveBeenCalledWith(
+      expect.stringContaining('/spaces/5/settings'),
+      expect.objectContaining({ theme: 'dark' }),
+    );
+  });
+
+  it('skips query cache update when spaceResponse has no settings key (line 57 false)', async () => {
+    const put = vi.fn().mockResolvedValue({}); // no settings key in response
+    const client = {
+      getBaseUrl: () => 'https://example.test',
+      put,
+    } as unknown as ApiClient;
+    // gcTime: Infinity prevents fake-timer GC from flushing optimistic writes (same pattern as existing test)
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { retry: false } },
+    });
+    queryClient.setQueryData(getSettingsQueryKey(client, 5), normalizeSettingsResponse({ theme: 'nord' }));
+    const { createElement: ce } = await import('react');
+    const { QueryClientProvider: QCP } = await import('@tanstack/react-query');
+    const wrapper = ({ children }: { children: import('react').ReactNode }) =>
+      ce(QCP, { client: queryClient }, children);
+
+    const { result } = renderHook(
+      () => useInContextSave(client, baseSettings, 500, undefined, 5),
+      { wrapper },
+    );
+
+    act(() => { result.current('theme', 'dark'); });
+    await act(async () => { await vi.runAllTimersAsync(); });
+    // put returned no settings → cache keeps optimistic value (theme: 'dark'), doesn't throw
+    expect(queryClient.getQueryData(getSettingsQueryKey(client, 5))).toMatchObject({ theme: 'dark' });
+  });
+
   it('clears pending timer on unmount — updateSettings is not called after unmount', async () => {
     const { client, updateSettings } = makeApiClient();
     const { wrapper } = makeWrapper(client);
@@ -240,6 +288,26 @@ describe('useInContextSave', () => {
       });
 
       expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('does not throw when onError is omitted and updateSettings fails for space save', async () => {
+      const put = vi.fn().mockRejectedValue(new Error('Space save failed'));
+      const client = {
+        getBaseUrl: () => 'https://example.test',
+        getSettings: vi.fn().mockResolvedValue({ theme: 'nord' }),
+        put,
+      } as unknown as ApiClient;
+      const { wrapper } = makeWrapper(client);
+
+      const { result } = renderHook(
+        () => useInContextSave(client, baseSettings, 500, undefined, 7),
+        { wrapper },
+      );
+
+      act(() => { result.current('theme', 'dark'); });
+      await expect(
+        act(async () => { await vi.runAllTimersAsync(); }),
+      ).resolves.toBeUndefined();
     });
 
     it('does not throw when onError is omitted and updateSettings fails', async () => {

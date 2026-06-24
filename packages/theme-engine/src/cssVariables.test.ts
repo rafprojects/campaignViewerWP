@@ -127,4 +127,17 @@ describe('generateCssVariables', () => {
     expect(result).toContain('--wpsg-color-info:');
     expect(result).toContain('--wpsg-color-accent:');
   });
+
+  it('falls back to "none" / "inherit" / "monospace" when shadow/typography values are undefined (lines 89-97)', () => {
+    const rc = makeResolvedColors();
+    const def = makeThemeDef();
+    // Clear shadow and typography values to trigger the ?? fallback branches
+    const defAny = def as unknown as Record<string, unknown>;
+    defAny.shadows = { xs: null, sm: null, md: null, lg: null, xl: null };
+    defAny.typography = { fontFamily: null, fontFamilyMono: null };
+    const result = generateCssVariables(rc, def);
+    expect(result).toContain('--wpsg-shadow-xs: none');
+    expect(result).toContain('--wpsg-font-family: inherit');
+    expect(result).toContain('--wpsg-font-family-mono: monospace');
+  });
 });

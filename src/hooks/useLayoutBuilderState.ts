@@ -1,23 +1,20 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
-import { produce, enableMapSet } from 'immer';
+import { useState, useCallback, useEffect } from 'react';
+import { enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
-import {
-  buildGroupMap,
-  collectDescendantSlotIds,
-  migrateGroupsToP30G,
-  refreshGroupRects,
-  reparentGroup as reparentGroupInHierarchy,
-  dissolveGroupInHierarchy,
-  computeGroupMoveDelta,
-} from '@wp-super-gallery/shared-utils';
+import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
+import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
+import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
+import { useLayoutBuilderGroups } from './useLayoutBuilderGroups';
+import type { HistoryEntry } from './useLayoutBuilderHistory';
+
+export type { HistoryEntry } from './useLayoutBuilderHistory';
 
 enableMapSet();
 
 // ── Constants ────────────────────────────────────────────────
 
-const MAX_HISTORY = 50;
 const STORAGE_KEY_PREFIX = 'wpsg_layout_draft_';
 
 /**
@@ -59,24 +56,6 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
 /** Generate a short unique ID for new slots. */
 function generateSlotId(): string {
   return crypto.randomUUID?.() ?? `slot-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-// ── History entry ──────────────────────────────────────────
-
-export interface HistoryEntry {
-  /** Unique key for React lists. */
-  id: string;
-  /** Human-readable label, e.g. "Move slot", "Add layer". */
-  label: string;
-  /** Epoch ms — display only. */
-  timestamp: number;
-}
-
-/** Internal past/future stack item — not part of the public API. */
-interface HistoryItem {
-  /** Template snapshot captured BEFORE the named mutation was applied. */
-  snapshot: LayoutTemplate;
-  entry: HistoryEntry;
 }
 
 // ── Types ────────────────────────────────────────────────────
@@ -286,54 +265,38 @@ export function useLayoutBuilderState(
   const [isDirty, setIsDirty] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
 
-  // ── History stack (past / future model) ──
-  // past[i] = { snapshot: template BEFORE mutation i, entry: label for mutation i }
-  // future[0] = most-recently-undone item (restored on redo)
-  const [past, setPast] = useState<HistoryItem[]>([]);
-  const [future, setFuture] = useState<HistoryItem[]>([]);
-  // Tracks whether any push has ever caused a trim; once true, past[0] is no
-  // longer the snapshot before the very first mutation.
-  const [historyTrimmed, setHistoryTrimmed] = useState(false);
+  // ── Sub-hooks ──
 
-  /** Save current template to the undo stack before applying a mutation. */
-  const pushHistory = useCallback((label: string) => {
-    const entry: HistoryEntry = {
-      id: crypto.randomUUID?.() ?? `h-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
-      label,
-      timestamp: Date.now(),
-    };
-    if (!historyTrimmed && past.length >= MAX_HISTORY) {
-      setHistoryTrimmed(true);
-    }
-    setPast((prev) => {
-      const next = [...prev, { snapshot: template, entry }];
-      return next.length > MAX_HISTORY ? next.slice(1) : next;
-    });
-    setFuture([]); // new mutation always clears the redo stack
-  }, [template, past, historyTrimmed]);
+  const {
+    mutate, resetHistory,
+    undo, redo, canUndo, canRedo,
+    historyEntries, historyCurrentIndex,
+    jumpToHistoryIndex, isHistoryTrimmed,
+  } = useLayoutBuilderHistory({ template, setTemplateRaw, setIsDirty });
 
-  /** Apply a template mutation via Immer, pushing history first. */
-  const mutate = useCallback(
-    (recipe: (draft: LayoutTemplate) => void, label = 'Edit') => {
-      pushHistory(label);
-      setTemplateRaw((prev) => produce(prev, recipe));
-      setIsDirty(true);
-    },
-    [pushHistory],
-  );
+  const {
+    bringToFront, sendToBack, bringForward, sendBackward, normalizeZIndices,
+  } = useLayoutBuilderZIndex({ mutate, template });
+
+  const {
+    addOverlay, removeOverlay, updateOverlay, moveOverlay, resizeOverlay,
+  } = useLayoutBuilderOverlays({ mutate });
+
+  const {
+    migrateGroupsIfNeeded, createGroup, wrapInGroup,
+    dissolveGroup, updateGroup, selectGroup, moveGroup, reparentGroup,
+  } = useLayoutBuilderGroups({ mutate, template, setSelectedSlotIds });
 
   // ── Template-level actions ──
 
   const setTemplate = useCallback((t: LayoutTemplate, opts?: { preserveSelection?: boolean }) => {
     setTemplateRaw(t);
-    setPast([]);
-    setFuture([]);
-    setHistoryTrimmed(false);
+    resetHistory();
     setIsDirty(false);
     if (!opts?.preserveSelection) {
       setSelectedSlotIds(new Set());
     }
-  }, []);
+  }, [resetHistory]);
 
   const setName = useCallback(
     (name: string) => mutate((d) => { d.name = name; }, 'Rename template'),
@@ -603,204 +566,6 @@ export function useLayoutBuilderState(
     [mutate],
   );
 
-  // ── Z-Index reorder (P15-G) ───────────────────────────────
-
-  const bringToFront = useCallback(
-    (ids: string[]) =>
-      mutate((d) => {
-        const idSet = new Set(ids);
-        const maxZ = Math.max(
-          ...d.slots.map((s) => s.zIndex),
-          ...d.overlays.map((o) => o.zIndex),
-          0,
-        );
-        let nextZ = maxZ + 1;
-        for (const slot of d.slots) {
-          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
-        }
-        for (const overlay of d.overlays) {
-          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
-        }
-      }, 'Bring to front'),
-    [mutate],
-  );
-
-  const sendToBack = useCallback(
-    (ids: string[]) =>
-      mutate((d) => {
-        const idSet = new Set(ids);
-        const minZ = Math.min(
-          ...d.slots.map((s) => s.zIndex),
-          ...d.overlays.map((o) => o.zIndex),
-          0,
-        );
-        let nextZ = minZ - ids.length;
-        for (const slot of d.slots) {
-          if (idSet.has(slot.id)) slot.zIndex = nextZ++;
-        }
-        for (const overlay of d.overlays) {
-          if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
-        }
-        // Normalize so nothing goes below 1
-        const lowestZ = Math.min(
-          ...d.slots.map((s) => s.zIndex),
-          ...d.overlays.map((o) => o.zIndex),
-        );
-        if (lowestZ < 1) {
-          const offset = 1 - lowestZ;
-          for (const slot of d.slots) slot.zIndex += offset;
-          for (const overlay of d.overlays) overlay.zIndex += offset;
-        }
-      }, 'Send to back'),
-    [mutate],
-  );
-
-  const bringForward = useCallback(
-    (ids: string[]) =>
-      mutate((d) => {
-        const idSet = new Set(ids);
-        // Merge slots + overlays, sort by zIndex ascending, swap target with item above
-        type ZItem = { id: string; zIndex: number };
-        const all: ZItem[] = [
-          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
-          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
-        ].sort((a, b) => a.zIndex - b.zIndex);
-
-        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
-        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
-
-        for (let i = all.length - 1; i >= 0; i--) {
-          if (idSet.has(all[i]!.id)) {
-            const above = all[i + 1];
-            if (above && !idSet.has(above.id)) {
-              const itemA = byId.get(all[i]!.id)!;
-              const itemB = byId.get(above.id)!;
-              const tmp = itemA.zIndex;
-              itemA.zIndex = itemB.zIndex;
-              itemB.zIndex = tmp;
-            }
-          }
-        }
-      }, 'Bring forward'),
-    [mutate],
-  );
-
-  const sendBackward = useCallback(
-    (ids: string[]) =>
-      mutate((d) => {
-        const idSet = new Set(ids);
-        type ZItem = { id: string; zIndex: number };
-        const all: ZItem[] = [
-          ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
-          ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
-        ].sort((a, b) => a.zIndex - b.zIndex);
-
-        // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
-        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
-
-        for (let i = 0; i < all.length; i++) {
-          if (idSet.has(all[i]!.id)) {
-            const below = all[i - 1];
-            if (below && !idSet.has(below.id)) {
-              const itemA = byId.get(all[i]!.id)!;
-              const itemB = byId.get(below.id)!;
-              const tmp = itemA.zIndex;
-              itemA.zIndex = itemB.zIndex;
-              itemB.zIndex = tmp;
-            }
-          }
-        }
-      }, 'Send backward'),
-    [mutate],
-  );
-
-  const normalizeZIndices = useCallback(
-    (): LayoutTemplate => {
-      // Produce the normalized template synchronously so the caller can use it
-      // immediately (React state updates are async and would be read stale).
-      const normalized = produce(template, (d) => {
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        sorted.forEach((ref, i) => {
-          const real = d.slots.find((s) => s.id === ref.id)!;
-          real.zIndex = i + 1;
-        });
-      });
-      // Also apply to React state for consistency (won't affect in-flight save).
-      mutate((d) => {
-        const sorted = [...d.slots].sort((a, b) => a.zIndex - b.zIndex);
-        sorted.forEach((ref, i) => {
-          const real = d.slots.find((s) => s.id === ref.id)!;
-          real.zIndex = i + 1;
-        });
-      }, 'Normalize z-indices');
-      return normalized;
-    },
-    [template, mutate],
-  );
-
-  // ── Overlay CRUD (P15-H) ──────────────────────────────────
-
-  const addOverlay = useCallback(
-    (imageUrl: string): string => {
-      const newId = crypto.randomUUID?.() ?? `overlay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      mutate((d) => {
-        const maxZ = Math.max(
-          ...d.slots.map((s) => s.zIndex),
-          ...d.overlays.map((o) => o.zIndex),
-          0,
-        );
-        d.overlays.push({
-          id: newId,
-          imageUrl,
-          x: 10,
-          y: 10,
-          width: 30,
-          height: 30,
-          zIndex: maxZ + 100, // Overlays above slots by default
-          opacity: 1,
-          pointerEvents: false,
-        });
-      }, 'Add layer');
-      return newId;
-    },
-    [mutate],
-  );
-
-  const removeOverlay = useCallback(
-    (id: string) =>
-      mutate((d) => {
-        d.overlays = d.overlays.filter((o) => o.id !== id);
-      }, 'Remove layer'),
-    [mutate],
-  );
-
-  const updateOverlay = useCallback(
-    (id: string, updates: Partial<LayoutGraphicLayer>) =>
-      mutate((d) => {
-        const idx = d.overlays.findIndex((o) => o.id === id);
-        if (idx !== -1) Object.assign(d.overlays[idx]!, updates);
-      }, 'Update layer'),
-    [mutate],
-  );
-
-  const moveOverlay = useCallback(
-    (id: string, x: number, y: number) =>
-      mutate((d) => {
-        const o = d.overlays.find((ov) => ov.id === id);
-        if (o) { o.x = x; o.y = y; }
-      }, 'Move layer'),
-    [mutate],
-  );
-
-  const resizeOverlay = useCallback(
-    (id: string, x: number, y: number, width: number, height: number) =>
-      mutate((d) => {
-        const o = d.overlays.find((ov) => ov.id === id);
-        if (o) { o.x = x; o.y = y; o.width = width; o.height = height; }
-      }, 'Resize layer'),
-    [mutate],
-  );
-
   // ── Layer system (P16) ─────────────────────────────────────────────────────
 
   const renameSlot = useCallback(
@@ -902,91 +667,6 @@ export function useLayoutBuilderState(
     [],
   );
 
-  // ── History ──
-
-  const canUndo = past.length > 0;
-  const canRedo = future.length > 0;
-
-  const undo = useCallback(() => {
-    if (past.length === 0) return;
-    const lastItem = past[past.length - 1]!;
-    // Snapshot goes to future so redo can restore it.
-    setFuture((prev) => [{ snapshot: template, entry: lastItem.entry }, ...prev]);
-    setPast((prev) => prev.slice(0, -1));
-    setTemplateRaw(lastItem.snapshot);
-    setIsDirty(true);
-  }, [past, template]);
-
-  const redo = useCallback(() => {
-    if (future.length === 0) return;
-    const nextItem = future[0]!;
-    // Save current template to past before restoring redo state.
-    setPast((prev) => {
-      const next = [...prev, { snapshot: template, entry: nextItem.entry }];
-      return next.length > MAX_HISTORY ? next.slice(1) : next;
-    });
-    setFuture((prev) => prev.slice(1));
-    setTemplateRaw(nextItem.snapshot);
-    setIsDirty(true);
-  }, [future, template]);
-
-  /**
-   * Jump to any history position in a single synchronous state transition.
-   * `target === -1` restores the initial state (before any mutations).
-   * `target === k` restores the state after mutation k was applied.
-   *
-   * This avoids the stale-closure problem of calling undo()/redo() in a loop
-   * (repeated calls in one tick would all read the same pre-update state).
-   */
-  const jumpToHistoryIndex = useCallback((target: number) => {
-    // Guard: nothing to jump to.
-    if (past.length === 0 && future.length === 0) return;
-
-    // Clamp target to valid range: -1 (initial state) … (total entries - 1).
-    const maxIndex = past.length + future.length - 1;
-    const clamped = Math.max(-1, Math.min(target, maxIndex));
-
-    const currentIndex = past.length - 1;
-    if (clamped === currentIndex) return;
-
-    if (clamped < currentIndex) {
-      // ── Jumping backward ──────────────────────────────────────────────────
-      // Build future items ordered so that future[0] undoes the smallest step,
-      // i.e. first redo takes us back to position (clamped + 1).
-      const newFutureItems: HistoryItem[] = [];
-      for (let k = clamped + 1; k < past.length; k++) {
-        // Template *at* position k = past[k+1].snapshot (before mutation k+1)
-        //                          = current template when k is the last past entry.
-        const snapshotAtK = k === past.length - 1 ? template : past[k + 1]!.snapshot;
-        newFutureItems.push({ snapshot: snapshotAtK, entry: past[k]!.entry });
-      }
-      // The template to restore: state after mutation `clamped`
-      //   = past[clamped + 1].snapshot (before mutation clamped+1)
-      //   = past[0].snapshot (the initial template) when clamped === -1.
-      const targetTemplate = clamped >= 0 ? past[clamped + 1]!.snapshot : past[0]!.snapshot;
-      setPast(past.slice(0, clamped + 1));
-      setFuture([...newFutureItems, ...future]);
-      setTemplateRaw(targetTemplate);
-      setIsDirty(true);
-    } else {
-      // ── Jumping forward ───────────────────────────────────────────────────
-      // Consume `stepsForward` items from the front of future.
-      const stepsForward = clamped - currentIndex;
-      const toApply = future.slice(0, stepsForward);
-      let tmpl = template;
-      const newPastItems: HistoryItem[] = [];
-      for (const item of toApply) {
-        newPastItems.push({ snapshot: tmpl, entry: item.entry });
-        tmpl = item.snapshot;
-      }
-      const newPast = [...past, ...newPastItems];
-      setPast(newPast.length > MAX_HISTORY ? newPast.slice(newPast.length - MAX_HISTORY) : newPast);
-      setFuture(future.slice(stepsForward));
-      setTemplateRaw(tmpl);
-      setIsDirty(true);
-    }
-  }, [past, future, template]);
-
   // ── Preview ──
 
   const togglePreview = useCallback(() => setIsPreview((p) => !p), []);
@@ -994,154 +674,6 @@ export function useLayoutBuilderState(
   // ── Persistence helpers ──
 
   const markSaved = useCallback(() => setIsDirty(false), []);
-
-  // ── Groups (P30-G: nested hierarchy) ──
-
-  const migrateGroupsIfNeeded = useCallback(() => {
-    const groups = template.groups ?? [];
-    const needsMigration = groups.some((g) => g.childGroupIds === undefined);
-    if (!needsMigration) return;
-    mutate((draft) => {
-      draft.groups = migrateGroupsToP30G(draft.groups ?? [], draft.slots);
-    }, 'Migrate groups to P30-G');
-  }, [mutate, template.groups]);
-
-  const createGroup = useCallback((memberIds: string[]): string => {
-    const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
-    const uniqueIds = [...new Set(memberIds)];
-    mutate((draft) => {
-      const groups = draft.groups ?? [];
-      // Remove these slot IDs from any existing group's leaf members
-      for (const g of groups) {
-        g.memberIds = g.memberIds.filter((mid) => !uniqueIds.includes(mid));
-      }
-      // New group is always a top-level group (P30-G flat default)
-      const newGroup: LayoutGroup = {
-        id,
-        memberIds: uniqueIds,
-        childGroupIds: [],
-        parentGroupId: null,
-      };
-      // Remove empty groups; prune any dangling childGroupIds that reference
-      // a group that was just removed (P30-G: parent groups must not hold
-      // stale child references or traversal/selection will break).
-      draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
-      const survivingIds = new Set(draft.groups.map((g) => g.id));
-      for (const g of draft.groups) {
-        if (g.childGroupIds?.length) {
-          g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
-        }
-      }
-      draft.groups.push(newGroup);
-      // Refresh all group rects: covers the new group AND any existing groups
-      // that had members removed above (their cached union rects are now stale).
-      refreshGroupRects(draft.groups, draft.slots);
-    }, `Group (${uniqueIds.length} layers)`);
-    return id;
-  }, [mutate]);
-
-  const wrapInGroup = useCallback((slotAndGroupIds: string[]): string => {
-    const id = crypto.randomUUID?.() ?? `group-${Date.now()}`;
-    mutate((draft) => {
-      const groups = draft.groups ?? [];
-      const groupMap = buildGroupMap(groups);
-
-      // Separate passed IDs into group IDs and slot IDs
-      const selectedGroupIds = slotAndGroupIds.filter((i) => groupMap.has(i));
-      const selectedSlotIds = slotAndGroupIds.filter((i) => !groupMap.has(i));
-
-      // Remove selected slots from existing leaf member lists
-      for (const g of groups) {
-        g.memberIds = g.memberIds.filter((mid) => !selectedSlotIds.includes(mid));
-      }
-
-      // Create new parent group
-      const newGroup: LayoutGroup = {
-        id,
-        memberIds: selectedSlotIds,
-        childGroupIds: selectedGroupIds,
-        parentGroupId: null,
-      };
-
-      // Reparent selected groups under the new parent
-      for (const gid of selectedGroupIds) {
-        const g = groups.find((g) => g.id === gid);
-        if (g) {
-          // Remove from old parent's childGroupIds
-          const oldParentId = g.parentGroupId ?? null;
-          if (oldParentId) {
-            const oldParent = groups.find((p) => p.id === oldParentId);
-            if (oldParent) {
-              oldParent.childGroupIds = (oldParent.childGroupIds ?? []).filter((c) => c !== gid);
-            }
-          }
-          g.parentGroupId = id;
-        }
-      }
-
-      // Remove empty groups; prune dangling childGroupIds references (same
-      // invariant as createGroup — parent groups must not reference removed IDs).
-      draft.groups = groups.filter((g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0);
-      const survivingIds = new Set(draft.groups.map((g) => g.id));
-      for (const g of draft.groups) {
-        if (g.childGroupIds?.length) {
-          g.childGroupIds = g.childGroupIds.filter((cid) => survivingIds.has(cid));
-        }
-      }
-      draft.groups.push(newGroup);
-      refreshGroupRects(draft.groups, draft.slots);
-    }, `Wrap in group`);
-    return id;
-  }, [mutate]);
-
-  const dissolveGroup = useCallback((groupId: string) => {
-    mutate((draft) => {
-      draft.groups = dissolveGroupInHierarchy(groupId, draft.groups ?? []);
-      // Remove empty groups after promotion
-      draft.groups = draft.groups.filter(
-        (g) => g.memberIds.length > 0 || (g.childGroupIds ?? []).length > 0,
-      );
-      // Refresh cached group rects: parent groups that absorbed promoted children
-      // have a new membership set and their cached union rects are now stale.
-      refreshGroupRects(draft.groups, draft.slots);
-    }, 'Ungroup');
-  }, [mutate]);
-
-  const updateGroup = useCallback((groupId: string, updates: Partial<LayoutGroup>) => {
-    mutate((draft) => {
-      const g = (draft.groups ?? []).find((g) => g.id === groupId);
-      if (g) Object.assign(g, updates);
-    }, 'Update group');
-  }, [mutate]);
-
-  const selectGroup = useCallback((groupId: string) => {
-    const groups = template.groups ?? [];
-    const groupMap = buildGroupMap(groups);
-    const slotIds = collectDescendantSlotIds(groupId, groupMap);
-    const validIds = slotIds.filter((id) => template.slots.some((s) => s.id === id));
-    setSelectedSlotIds(new Set(validIds));
-  }, [template]);
-
-  const moveGroup = useCallback((groupId: string, dx: number, dy: number) => {
-    mutate((draft) => {
-      const groups = draft.groups ?? [];
-      const slotMap = new Map(draft.slots.map((s) => [s.id, s]));
-      const groupMap = buildGroupMap(groups);
-      const delta = computeGroupMoveDelta(groupId, dx, dy, groupMap, slotMap);
-      for (const slot of draft.slots) {
-        const upd = delta.get(slot.id);
-        if (upd) { slot.x = upd.x; slot.y = upd.y; }
-      }
-      refreshGroupRects(groups, draft.slots);
-    }, 'Move group');
-  }, [mutate]);
-
-  const reparentGroup = useCallback((groupId: string, newParentId: string | null) => {
-    mutate((draft) => {
-      draft.groups = reparentGroupInHierarchy(groupId, newParentId, draft.groups ?? []);
-      refreshGroupRects(draft.groups, draft.slots);
-    }, 'Reparent group');
-  }, [mutate]);
 
   const clearDraft = useCallback(() => {
     if (!template.id) return;
@@ -1234,13 +766,10 @@ export function useLayoutBuilderState(
     redo,
     canUndo,
     canRedo,
-    historyEntries: useMemo(
-      () => [...past.map((p) => p.entry), ...future.map((f) => f.entry)],
-      [past, future],
-    ),
-    historyCurrentIndex: past.length - 1,
+    historyEntries,
+    historyCurrentIndex,
     jumpToHistoryIndex,
-    isHistoryTrimmed: historyTrimmed,
+    isHistoryTrimmed,
     // Preview
     togglePreview,
     // Persistence

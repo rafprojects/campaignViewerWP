@@ -22,6 +22,12 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 
+/**
+ * @internal Closed union — all members correspond to built-in adapters registered
+ * at startup. `registerAdapter()` is intentionally internal-only: widening this
+ * union to accept arbitrary string ids would also require PHP sanitizer entries
+ * and a new `AdapterSettingGroup` member per adapter.
+ */
 export type GalleryAdapterId =
   | 'classic'
   | 'carousel'

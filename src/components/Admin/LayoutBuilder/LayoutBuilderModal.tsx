@@ -27,12 +27,11 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
-import { DockviewReact, DockviewDefaultTab, type DockviewReadyEvent, type DockviewApi } from 'dockview';
+import { DockviewReact, DockviewDefaultTab } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
   BuilderDockContext,
   type BuilderDockContextValue,
-  type AssetLibraryItem,
 } from './BuilderDockContext';
 import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
 import { LayoutBuilderMediaPanel } from './LayoutBuilderMediaPanel';
@@ -44,13 +43,16 @@ import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
 import { useBroadcastStaleness } from '@/hooks/useBroadcastStaleness';
 import { useBuilderDraftRestore } from '@/hooks/useBuilderDraftRestore';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { useLayoutBuilderFileIO } from '@/hooks/useLayoutBuilderFileIO';
+import { useLayoutBuilderAssets } from '@/hooks/useLayoutBuilderAssets';
+import { useLayoutBuilderKeyboardHandlers } from '@/hooks/useLayoutBuilderKeyboardHandlers';
+import { useBuilderDockLayout } from '@/hooks/useBuilderDockLayout';
 
 // ── Dockview panel components (stable reference outside component) ──────────
 
@@ -102,9 +104,7 @@ export function LayoutBuilderModal({
   const rootId = useRootId();
   const { colorScheme } = useTheme();
   const shellColors = useBuilderShellColors();
-  const dockApiRef = useRef<DockviewApi | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const importFileRef = useRef<HTMLInputElement>(null);
 
   const builderShellVars = useMemo(
     () => ({
@@ -143,8 +143,6 @@ export function LayoutBuilderModal({
 
   // ── Overlay library (P15-H) ──
   const { data: assetLibrary, refetch: refetchAssetLibrary } = useAssetLibrary(apiClient, opened, spaceId);
-  const [isUploadingAsset, setIsUploadingOverlay] = useState(false);
-  const [isUploadingBg, setIsUploadingBg] = useState(false);
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
@@ -192,6 +190,13 @@ export function LayoutBuilderModal({
     migrateGroupsRef.current();
 
   }, [opened]);
+
+  // ── A11y announce helper ──
+  const announce = useCallback((msg: string) => {
+    setA11yAnnouncement(msg);
+    // Clear after screen reader has time to read it
+    setTimeout(() => setA11yAnnouncement(''), 3000);
+  }, []);
 
   // ── Close with dirty guard ──
   const handleClose = useCallback(() => {
@@ -282,212 +287,15 @@ export function LayoutBuilderModal({
     });
   }, [builder]);
 
-  // ── A11y announce helper ──
-  const announce = useCallback((msg: string) => {
-    setA11yAnnouncement(msg);
-    // Clear after screen reader has time to read it
-    setTimeout(() => setA11yAnnouncement(''), 3000);
-  }, []);
+  // ── JSON file I/O ──
+  const { importFileRef, handleExportJson, handleImportJson } = useLayoutBuilderFileIO({ builder });
 
-  // ── JSON export ──
-  const handleExportJson = useCallback(() => {
-    const json = JSON.stringify(builder.template, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const safeName = builder.template.name.replace(/[^a-z0-9_-]/gi, '-') || 'layout';
-    a.href = url;
-    a.download = `${safeName}.wpsg-layout.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [builder.template]);
-
-  // ── JSON import ──
-  const handleImportJson = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const parsed = JSON.parse(ev.target?.result as string) as unknown;
-          if (
-            typeof parsed !== 'object' ||
-            parsed === null ||
-            !('name' in parsed) ||
-            !('slots' in parsed) ||
-            !Array.isArray((parsed as { slots: unknown }).slots) ||
-            !('canvasAspectRatio' in parsed)
-          ) {
-            notifications.show({
-              title: 'Invalid layout file',
-              message: 'The file is missing required fields (name, slots, canvasAspectRatio).',
-              color: 'red',
-              autoClose: 5000,
-            });
-            return;
-          }
-          const defaults = createEmptyTemplate();
-          const imported: LayoutTemplate = {
-            ...defaults,
-            ...(parsed as Partial<LayoutTemplate>),
-            id: '',
-            createdAt: defaults.createdAt,
-            updatedAt: defaults.updatedAt,
-          };
-          builder.setTemplate(imported, { preserveSelection: false });
-          notifications.show({
-            title: 'Layout imported',
-            message: `"${imported.name}" loaded successfully.`,
-            color: 'green',
-            autoClose: 3000,
-          });
-        } catch {
-          notifications.show({
-            title: 'Import failed',
-            message: 'Could not parse JSON file.',
-            color: 'red',
-            autoClose: 5000,
-          });
-        } finally {
-          // Reset so same file can be re-imported
-          if (importFileRef.current) importFileRef.current.value = '';
-        }
-      };
-      reader.readAsText(file);
-    },
-    [builder],
-  );
-
-  // ── Overlay library handlers ──
-  const handleUploadAsset = useCallback(
-    async (file: File | null) => {
-      if (!file) return;
-      setIsUploadingOverlay(true);
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
-          formData,
-        );
-        await refetchAssetLibrary();
-        builder.addOverlay(entry.url);
-        announce('Overlay uploaded and added to canvas');
-        notifications.show({ message: 'Overlay added to canvas', color: 'blue', autoClose: 3000 });
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Overlay upload failed';
-        onNotify?.({ type: 'error', text: errMsg });
-        notifications.show({ title: 'Overlay upload failed', message: errMsg, color: 'red', autoClose: 5000 });
-      } finally {
-        setIsUploadingOverlay(false);
-      }
-    },
-    [apiClient, refetchAssetLibrary, builder, announce, onNotify],
-  );
-
-  const handleDeleteLibraryAsset = useCallback(
-    async (id: string) => {
-      try {
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`);
-        await refetchAssetLibrary();
-      } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Failed to delete overlay',
-        });
-      }
-    },
-    [apiClient, refetchAssetLibrary, onNotify],
-  );
-
-  const handleSetAssetUniversal = useCallback(
-    async (id: string, universal: boolean) => {
-      try {
-        await apiClient.post(
-          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
-          { is_universal: universal },
-        );
-        await refetchAssetLibrary();
-      } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Failed to update asset visibility',
-        });
-      }
-    },
-    [apiClient, refetchAssetLibrary, onNotify],
-  );
-
-  const handleSetAssetTags = useCallback(
-    async (id: string, tags: string[]) => {
-      try {
-        await apiClient.post(
-          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
-          { tags },
-        );
-        await refetchAssetLibrary();
-      } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Failed to update asset tags',
-        });
-      }
-    },
-    [apiClient, refetchAssetLibrary, onNotify],
-  );
-
-  // ── Background image upload ──
-  const handleUploadBgImage = useCallback(
-    async (file: File | null) => {
-      if (!file) return;
-      setIsUploadingBg(true);
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
-          formData,
-        );
-        builder.setBackgroundImage(entry.url);
-        announce('Background image uploaded and applied');
-        notifications.show({ message: 'Background image applied', color: 'blue', autoClose: 3000 });
-      } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Background image upload failed';
-        onNotify?.({ type: 'error', text: errMsg });
-        notifications.show({ title: 'Background upload failed', message: errMsg, color: 'red', autoClose: 5000 });
-      } finally {
-        setIsUploadingBg(false);
-      }
-    },
-    [apiClient, builder, announce, onNotify],
-  );
-
-  // ── Mask image upload (reuses asset-library endpoint) ──
-  const handleUploadMask = useCallback(
-    async (file: File): Promise<string | null> => {
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
-        const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
-          formData,
-        );
-        announce('Mask image uploaded');
-        return entry.url;
-      } catch (err) {
-        onNotify?.({
-          type: 'error',
-          text: err instanceof Error ? err.message : 'Mask upload failed',
-        });
-        return null;
-      }
-    },
-    [apiClient, announce, onNotify],
-  );
+  // ── Asset / overlay / background upload handlers ──
+  const {
+    isUploadingAsset, isUploadingBg,
+    handleUploadAsset, handleDeleteLibraryAsset, handleSetAssetUniversal,
+    handleSetAssetTags, handleUploadBgImage, handleUploadMask,
+  } = useLayoutBuilderAssets({ apiClient, refetchAssetLibrary, builder, announce, onNotify });
 
   // ── Group actions (used by contextual toolbar) ──
   const handleCreateGroup = useCallback(() => {
@@ -563,177 +371,25 @@ export function LayoutBuilderModal({
   }, [builder, media, announce]);
 
   // ── Keyboard shortcuts ──
-  // Attached at the document level so shortcuts fire regardless of which
-  // focusable child (canvas, button, panel header, etc.) has focus.
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      // Don't capture when inside inputs
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      )
-        return;
+  useLayoutBuilderKeyboardHandlers({
+    opened,
+    builder,
+    announce,
+    handleClose,
+    handleDeleteSelected,
+    handleDuplicateSelected,
+    handleSave,
+    setSelectedOverlayId,
+    setIsBackgroundSelected,
+    setBuilderShortcutsOpen,
+  });
 
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        handleDeleteSelected();
-        e.preventDefault();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
-        builder.undo();
-        e.preventDefault();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
-        builder.redo();
-        e.preventDefault();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'c') {
-        // Copy is handled via duplicateSlots on paste
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'd') {
-        handleDuplicateSelected();
-        e.preventDefault();
-      }
-      // Group / wrap-in-group / select-in-group (P30-G)
-      if ((e.metaKey || e.ctrlKey) && e.key === 'g' && !e.shiftKey) {
-        const ids = [...builder.selectedSlotIds];
-        const groups = builder.template.groups ?? [];
-        const groupMap = buildGroupMap(groups);
-
-        // P30-G: detect if selection is exactly one complete group's descendants
-        const fullySelectedGroup = groups.find((g) => {
-          const descIds = collectDescendantSlotIds(g.id, groupMap);
-          return (
-            descIds.length > 0 &&
-            descIds.length === builder.selectedSlotIds.size &&
-            descIds.every((id) => builder.selectedSlotIds.has(id))
-          );
-        });
-
-        if (fullySelectedGroup) {
-          // Wrap the full group in a new parent group
-          const newId = builder.wrapInGroup([fullySelectedGroup.id]);
-          builder.selectGroup(newId);
-          announce('Group wrapped in parent group');
-        } else {
-          const touchedGroup = groups.find((g) =>
-            g.memberIds.some((id) => builder.selectedSlotIds.has(id))
-          );
-          if (touchedGroup) {
-            // Any selected slot belongs to a group — expand selection to all descendants.
-            builder.selectGroup(touchedGroup.id);
-            announce(`Group selected`);
-          } else if (ids.length >= 2) {
-            builder.createGroup(ids);
-            announce(`Group created (${ids.length} slots)`);
-          }
-        }
-        e.preventDefault();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'g' && e.shiftKey) {
-        const groups = builder.template.groups ?? [];
-        const selectedIds = builder.selectedSlotIds;
-        if (groups.length > 0 && selectedIds.size > 0) {
-          const shiftGGroupMap = buildGroupMap(groups);
-          // P30-G fix: match by full descendant set, fall back to member overlap
-          const targetGroup =
-            groups.find((g) => {
-              const descIds = collectDescendantSlotIds(g.id, shiftGGroupMap);
-              return (
-                descIds.length > 0 &&
-                descIds.length === selectedIds.size &&
-                descIds.every((id) => selectedIds.has(id))
-              );
-            }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
-          if (targetGroup) {
-            builder.dissolveGroup(targetGroup.id);
-            announce('Ungrouped');
-          }
-        }
-        e.preventDefault();
-      }
-      if (e.key === 'Escape') {
-        if (builder.selectedSlotIds.size > 0) {
-          // Something is selected — deselect and absorb the event so the
-          // Modal's own Escape-to-close handler does not fire.
-          builder.clearSelection();
-          e.preventDefault();
-          e.stopPropagation();
-        } else {
-          // Nothing selected — treat Escape as a modal close.
-          handleClose();
-        }
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        void handleSave();
-      }
-
-      if (e.key === '?') {
-        setBuilderShortcutsOpen(true);
-      }
-
-      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !builder.isPreview) {
-        const id = builder.addSlot();
-        builder.selectSlot(id);
-        setSelectedOverlayId(null);
-        setIsBackgroundSelected(false);
-        announce('New slot added');
-        e.preventDefault();
-      }
-
-      // Z-index shortcuts (P15-G): ] = forward, [ = backward, Shift+] = front, Shift+[ = back
-      const ids = Array.from(builder.selectedSlotIds);
-      if (ids.length > 0) {
-        if (e.key === ']' && e.shiftKey) {
-          builder.bringToFront(ids);
-          announce('Brought to front');
-          e.preventDefault();
-        } else if (e.key === ']') {
-          builder.bringForward(ids);
-          announce('Brought forward');
-          e.preventDefault();
-        } else if (e.key === '[' && e.shiftKey) {
-          builder.sendToBack(ids);
-          announce('Sent to back');
-          e.preventDefault();
-        } else if (e.key === '[') {
-          builder.sendBackward(ids);
-          announce('Sent backward');
-          e.preventDefault();
-        }
-      }
-
-      // Arrow keys: nudge selected slots
-      const step = e.shiftKey ? 0.1 : 1;
-      if (ids.length > 0) {
-        if (e.key === 'ArrowLeft') {
-          builder.nudgeSlots(ids, -step, 0);
-          e.preventDefault();
-        }
-        if (e.key === 'ArrowRight') {
-          builder.nudgeSlots(ids, step, 0);
-          e.preventDefault();
-        }
-        if (e.key === 'ArrowUp') {
-          builder.nudgeSlots(ids, 0, -step);
-          e.preventDefault();
-        }
-        if (e.key === 'ArrowDown') {
-          builder.nudgeSlots(ids, 0, step);
-          e.preventDefault();
-        }
-      }
-    },
-    [announce, builder, handleClose, handleDeleteSelected, handleDuplicateSelected, handleSave, setSelectedOverlayId, setIsBackgroundSelected],
-  );
-
-  // Attach/detach the document-level listener whenever the modal opens/closes.
-  useEffect(() => {
-    if (!opened) return;
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [opened, handleKeyDown]);
+  // ── Dock layout ──
+  const { dockApiRef, handleDockReady } = useBuilderDockLayout({
+    rootId,
+    layoutScope,
+    initialTemplateId: initialTemplate?.id ?? '',
+  });
 
   // ── Get selected slot for properties panel ──
   const selectedSlot =
@@ -751,55 +407,6 @@ export function LayoutBuilderModal({
     selectedOverlayIndex >= 0
       ? builder.template.overlays[selectedOverlayIndex]
       : undefined;
-
-  // ── Dockview ready handler (P17-E) ──
-  const handleDockReady = useCallback((event: DockviewReadyEvent) => {
-    dockApiRef.current = event.api;
-    const templateId = initialTemplate?.id ?? '';
-    const LAYOUT_KEY = layoutScope === 'per-template' && templateId
-      ? `wpsg_builder_${rootId}_template_${templateId}_layout`
-      : `wpsg_builder_${rootId}_layout`;
-    // P30-E: bumped 1 → 2 (removed History dock tab).
-    // P50-H: bumped 2 → 3 (canvas panel carries tabComponent:'canvas' for hideClose;
-    // old saves without that field must be cleared so the close button disappears).
-    const LAYOUT_VERSION = 3;
-    const persistLayout = () => {
-      try {
-        localStorage.setItem(LAYOUT_KEY, JSON.stringify({ version: LAYOUT_VERSION, layout: event.api.toJSON() }));
-      } catch { /* ignore storage errors */ }
-    };
-    const saved = localStorage.getItem(LAYOUT_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { version?: number; layout?: unknown } | null;
-        const savedVersion = parsed && typeof parsed === 'object' ? (parsed.version ?? 0) : 0;
-        if (savedVersion < LAYOUT_VERSION) {
-          // Old layout (pre-P30-E) — clear and fall through to the new default.
-          try { localStorage.removeItem(LAYOUT_KEY); } catch { /* ignore */ }
-        } else {
-          // Accept both versioned { version, layout } and legacy bare-JSON saves.
-          const layout =
-            parsed && typeof parsed === 'object' && 'layout' in parsed
-              ? parsed.layout
-              : parsed;
-          event.api.fromJSON(layout as Parameters<typeof event.api.fromJSON>[0]);
-          event.api.onDidLayoutChange(persistLayout);
-          return;
-        }
-      } catch {
-        // Saved layout is invalid or incompatible — clear it so every
-        // subsequent open doesn't repeat the same try/catch failure.
-        try { localStorage.removeItem(LAYOUT_KEY); } catch { /* ignore */ }
-        // fall through to default layout
-      }
-    }
-    // Default layout: Layers+Media tabs left | Canvas centre | Properties right
-    const layersPanel = event.api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
-    event.api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    const canvasPanel = event.api.addPanel({ id: 'canvas', component: 'canvas', tabComponent: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
-    event.api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
-    event.api.onDidLayoutChange(persistLayout);
-  }, [rootId, layoutScope, initialTemplate?.id]);
 
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {

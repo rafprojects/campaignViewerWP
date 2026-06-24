@@ -23,23 +23,14 @@ import { MediaAddModal } from './MediaAddModal';
 import { MediaEditModal } from './MediaEditModal';
 import { MediaDeleteModal } from './MediaDeleteModal';
 import { NearDuplicateWarning } from '@/components/Common/NearDuplicateWarning';
-import { showNotification } from '@mantine/notifications';
 import { IconPlus, IconRefresh, IconLayoutGrid, IconList, IconGridDots } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
-import { useMediaItems, getMediaItemsQueryKey } from '@/services/adminQuery';
+import { useMediaItems } from '@/services/adminQuery';
 import { useGetSettings } from '@/services/settingsQuery';
-import type {
-  BatchUploadResponse,
-  CampaignMediaBatchRequestItem,
-  MediaItem,
-  OEmbedResponse,
-  UploadDuplicateCampaign,
-} from '@/types';
+import type { MediaItem, OEmbedResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 import {
@@ -54,8 +45,11 @@ import { SortableListRow, SortableGridItem, type SharedSortableProps } from './M
 import { useMediaViewPrefs, type ViewMode, type CardSize } from '@/hooks/useMediaViewPrefs';
 import { useMediaLightbox } from '@wp-super-gallery/shared-utils';
 import { useMediaUsageSummary } from '@/hooks/useMediaUsageSummary';
-import { useMediaDnd } from '@/hooks/useMediaDnd';
-import { applySortMode, type MediaSortMode } from './applySortMode';
+import { type MediaSortMode } from './applySortMode';
+import { useMediaUpload } from '@/hooks/useMediaUpload';
+import { useMediaExternal } from '@/hooks/useMediaExternal';
+import { useMediaCrud } from '@/hooks/useMediaCrud';
+import { useMediaDisplay } from '@/hooks/useMediaDisplay';
 import styles from './MediaTab.module.scss';
 
 // Position the DragOverlay so its top-center sits just below the cursor.
@@ -78,30 +72,8 @@ const snapThumbnailToCursor: Modifier = ({ activatorEvent, draggingNodeRect, tra
 };
 
 const LIST_MIN_WIDTH = 720;
-const LIST_PAGE_SIZE = 50;
-
-function normalizeSelectedFiles(value: File | File[] | null): File[] {
-  if (!value) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
-
-function getNextMediaOrder(items: MediaItem[]): number {
-  return items.reduce((maxOrder, item) => Math.max(maxOrder, item.order ?? 0), 0) + 1;
-}
 
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
-
-interface NearDuplicateEntry {
-  file: File;
-  filename: string;
-  similarId: number;
-  similarUrl: string;
-  distance: number;
-  similarName: string;
-  campaigns: UploadDuplicateCampaign[];
-}
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
   const rootId = useRootId();
@@ -113,32 +85,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const { data: settingsResponse } = useGetSettings(apiClient);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [addOpen, setAddOpen] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [uploadErrors, setUploadErrors] = useState<Array<string | null>>([]);
-  const { upload, uploadMany, batchProgress, isUploading: uploading, resetProgress } = useXhrUpload();
-  const [uploadTitle, setUploadTitle] = useState('');
-  const [uploadCaption, setUploadCaption] = useState('');
   const dropRef = useRef<HTMLDivElement | null>(null);
-  const [externalUrl, setExternalUrl] = useState('');
-  const [externalPreview, setExternalPreview] = useState<OEmbedResponse | null>(null);
-  const [externalLoading, setExternalLoading] = useState(false);
-  const [externalError, setExternalError] = useState<string | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
-  const [editingTitle, setEditingTitle] = useState('');
-  const [editingCaption, setEditingCaption] = useState('');
-  const [editingThumbnail, setEditingThumbnail] = useState<string | undefined>(undefined);
-  const [deleteItem, setDeleteItem] = useState<MediaItem | null>(null);
-  const [rescanning, setRescanning] = useState(false);
-  const reorderingRef = useRef(false);
-
-  // P38-MD1: Near-duplicate warning queue — one entry per file that triggered a near-duplicate 409.
-  const [pendingNearDuplicates, setPendingNearDuplicates] = useState<NearDuplicateEntry[]>([]);
-  const [nearDupLoading, setNearDupLoading] = useState(false);
-
-  // Scroll position preservation across tab switches (sessionStorage, per-campaign)
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
 
   const maxBatchUploadSize = settingsResponse?.maxBatchUploadSize ?? 20;
 
@@ -147,6 +94,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   const { usageSummary, usageSummaryLoading } = useMediaUsageSummary(apiClient, media);
 
   const hasMedia = media.length > 0;
+
+  // Scroll position preservation across tab switches (sessionStorage, per-campaign)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
 
   // Restore scroll on mount (after data ready)
   useEffect(() => {
@@ -204,16 +155,6 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Show skeleton only on first load when no cached query data exists yet.
   const effectiveLoading = mediaQueryLoading && media.length === 0;
 
-  function getMediaTypeFromUrl(url: string): 'image' | 'video' {
-    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
-    const lowerUrl = url.toLowerCase();
-    if (imageExtensions.some(ext => lowerUrl.includes(ext))) {
-      return 'image';
-    }
-    // Default to video for external links, as most oEmbed content is video
-    return 'video';
-  }
-
   /** Enrich external media items that are missing thumbnail / caption via oEmbed. */
   const enrichOEmbedMetadata = useCallback(async (items: MediaItem[]) => {
     const needs = items.filter((it) => it.source === 'external' && (!it.thumbnail || !it.caption));
@@ -264,458 +205,68 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     }
   }, [mediaItems, mediaQueryLoading, campaignId, enrichOEmbedMetadata]);
 
-  const handleSelectFiles = useCallback((value: File | File[] | null) => {
-    if (value === null) return;
-    const incoming = normalizeSelectedFiles(value);
-    const mediaFiles = incoming.filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'));
-    const skippedCount = incoming.length - mediaFiles.length;
+  const {
+    selectedFiles,
+    uploadErrors,
+    uploadTitle,
+    setUploadTitle,
+    uploadCaption,
+    setUploadCaption,
+    batchProgress,
+    uploading,
+    pendingNearDuplicates,
+    nearDupLoading,
+    handleSelectFiles,
+    handleRemoveFile,
+    handleClearFiles,
+    handleUpload,
+    handleNearDupUseExisting,
+    handleNearDupUploadAnyway,
+    handleNearDupDismiss,
+  } = useMediaUpload({ apiClient, campaignId, maxBatchUploadSize, media, setMedia, queryClient, onCampaignsUpdated, setAddOpen });
 
-    if (skippedCount > 0) {
-      showNotification({
-        title: 'Some files were skipped',
-        message: `${skippedCount} non-media file${skippedCount === 1 ? '' : 's'} ${skippedCount === 1 ? 'was' : 'were'} ignored.`,
-        color: 'yellow',
-      });
-    }
+  const {
+    externalUrl,
+    setExternalUrl,
+    externalPreview,
+    externalLoading,
+    externalError,
+    handleAddExternal,
+    handleFetchOEmbed,
+  } = useMediaExternal({ apiClient, campaignId, setMedia, queryClient, onCampaignsUpdated, setAddOpen });
 
-    const existingKeys = new Set(selectedFiles.map((f) => `${f.name}-${f.size}-${f.lastModified}`));
-    const merged = [
-      ...selectedFiles,
-      ...mediaFiles.filter((f) => !existingKeys.has(`${f.name}-${f.size}-${f.lastModified}`)),
-    ];
+  const {
+    editOpen,
+    setEditOpen,
+    editingTitle,
+    setEditingTitle,
+    editingCaption,
+    setEditingCaption,
+    editingThumbnail,
+    setEditingThumbnail,
+    deleteItem,
+    setDeleteItem,
+    rescanning,
+    handleDelete,
+    confirmDelete,
+    openEdit,
+    saveEdit,
+    handleRescanTypes,
+  } = useMediaCrud({ apiClient, campaignId, setMedia, queryClient, onCampaignsUpdated, mutateMedia });
 
-    if (merged.length > maxBatchUploadSize) {
-      showNotification({
-        title: 'Batch limit reached',
-        message: `Only the first ${maxBatchUploadSize} files were kept.`,
-        color: 'yellow',
-      });
-    }
-
-    const limited = merged.slice(0, maxBatchUploadSize);
-    setSelectedFiles(limited);
-    setUploadErrors(Array(limited.length).fill(null));
-    if (limited.length !== 1) {
-      setUploadTitle('');
-      setUploadCaption('');
-    }
-  }, [maxBatchUploadSize, selectedFiles]);
-
-  const handleRemoveFile = useCallback((index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
-    setUploadErrors((prev) => prev.filter((_, i) => i !== index));
-  }, []);
-
-  const handleClearFiles = useCallback(() => {
-    setSelectedFiles([]);
-    setUploadErrors([]);
-    setUploadTitle('');
-    setUploadCaption('');
-  }, []);
-
-  async function handleUpload() {
-    if (selectedFiles.length === 0) return;
-
-    try {
-      setUploadErrors(Array(selectedFiles.length).fill(null));
-
-      const authHeaders = await apiClient.getAuthHeaders();
-      const uploadResponse = await uploadMany<BatchUploadResponse>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
-        files: selectedFiles,
-        headers: authHeaders,
-        extraFields: { campaign_id: String(campaignId) },
-      });
-
-      const nextOrder = getNextMediaOrder(media);
-      const successfulUploadEntries = uploadResponse.results
-        .map((result, index) => ({ result, file: selectedFiles[index] }))
-        .filter(({ result, file }) => Boolean(file) && result.success && result.attachmentId && result.url);
-
-      const batchItems: CampaignMediaBatchRequestItem[] = successfulUploadEntries.map(({ result, file }, index) => ({
-        type: file!.type.startsWith('image') ? 'image' : 'video',
-        source: 'upload',
-        provider: 'wordpress',
-        attachmentId: result.attachmentId!,
-        url: result.url!,
-        thumbnail: result.thumbnail ?? result.url,
-        caption: selectedFiles.length === 1
-          ? uploadCaption.trim() || uploadTitle.trim() || file!.name
-          : file!.name,
-        title: selectedFiles.length === 1 ? uploadTitle.trim() || undefined : undefined,
-        order: nextOrder + index,
-      }));
-
-      let addedMedia: MediaItem[] = [];
-      let batchAddFailures = 0;
-
-      if (batchItems.length > 0) {
-        const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, batchItems);
-        addedMedia = batchAddResponse.added;
-        batchAddFailures = batchAddResponse.failed.length;
-
-        if (addedMedia.length > 0) {
-          setMedia((current) => [...current, ...addedMedia]);
-          queryClient.setQueryData<MediaItem[]>(
-            getMediaItemsQueryKey(apiClient, campaignId),
-            (prev) => [...(prev ?? []), ...addedMedia],
-          );
-          onCampaignsUpdated?.();
-        }
-      }
-
-      // Separate near-duplicates (interactive resolution) from hard errors.
-      const nearDupEntries: NearDuplicateEntry[] = uploadResponse.results
-        .map((result, index) => ({ result, file: selectedFiles[index] }))
-        .filter(({ result, file }) => Boolean(file) && !result.success && result.near_duplicate === true)
-        .map(({ result, file }) => ({
-          file: file!,
-          filename: file!.name,
-          similarId: result.similar_id!,
-          similarUrl: result.similar_url!,
-          distance: result.distance ?? 0,
-          similarName: result.similar_name ?? '',
-          campaigns: result.similar_campaigns ?? [],
-        }));
-
-      const nearDupFiles = new Set(nearDupEntries.map((e) => e.file));
-
-      const failedUploadEntries = uploadResponse.results
-        .map((result, index) => {
-          let error: string | null = null;
-          if (!result.success && !result.near_duplicate) {
-            if (result.duplicate && result.existing_name) {
-              const name = result.existing_name;
-              const camps = result.existing_campaigns ?? [];
-              if (camps.length === 0) {
-                error = `Already uploaded as '${name}'`;
-              } else if (camps.length === 1) {
-                error = `Already uploaded as '${name}' — used in ${camps[0]!.title}`;
-              } else {
-                error = `Already uploaded as '${name}' — used in ${camps.length} campaigns`;
-              }
-            } else {
-              error = result.error ?? 'Upload failed.';
-            }
-          }
-          return { file: selectedFiles[index], error };
-        })
-        .filter((entry): entry is { file: File; error: string } =>
-          Boolean(entry.file) && Boolean(entry.error) && !nearDupFiles.has(entry.file!),
-        );
-
-      if (nearDupEntries.length > 0) {
-        setPendingNearDuplicates((prev) => [...prev, ...nearDupEntries]);
-      }
-
-      const uploadedCount = addedMedia.length;
-      const totalCount = selectedFiles.length;
-      const hasFailures = failedUploadEntries.length > 0 || batchAddFailures > 0;
-
-      if (failedUploadEntries.length > 0) {
-        setSelectedFiles(failedUploadEntries.map((entry) => entry.file));
-        setUploadErrors(failedUploadEntries.map((entry) => entry.error));
-      } else {
-        setSelectedFiles([]);
-        setUploadErrors([]);
-        setUploadTitle('');
-        setUploadCaption('');
-        setAddOpen(false);
-      }
-
-      showNotification({
-        title: hasFailures ? 'Upload complete with issues' : 'Upload complete',
-        message: `${uploadedCount} of ${totalCount} file${totalCount === 1 ? '' : 's'} uploaded successfully.${batchAddFailures > 0 ? ` ${batchAddFailures} file${batchAddFailures === 1 ? '' : 's'} could not be added to the campaign.` : ''}`,
-        color: hasFailures ? 'yellow' : 'blue',
-      });
-    } catch (err) {
-      console.error(err);
-      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
-    } finally {
-      resetProgress();
-    }
-  }
-
-  // P38-MD1: Near-duplicate resolution handlers.
-  async function handleNearDupUseExisting() {
-    const entry = pendingNearDuplicates[0];
-    if (!entry) return;
-    setNearDupLoading(true);
-    try {
-      const nextOrder = getNextMediaOrder(media);
-      const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, [{
-        type: 'image',
-        source: 'upload',
-        provider: 'wordpress',
-        attachmentId: entry.similarId,
-        url: entry.similarUrl,
-        thumbnail: entry.similarUrl,
-        caption: entry.filename,
-        order: nextOrder,
-      }]);
-      if (batchAddResponse.added.length > 0) {
-        setMedia((current) => [...current, ...batchAddResponse.added]);
-        queryClient.setQueryData<MediaItem[]>(
-          getMediaItemsQueryKey(apiClient, campaignId),
-          (prev) => [...(prev ?? []), ...batchAddResponse.added],
-        );
-        onCampaignsUpdated?.();
-        showNotification({ title: 'Existing image added', message: `Using existing image for "${entry.filename}".`, color: 'blue' });
-      }
-    } catch (err) {
-      showNotification({ title: 'Failed to add image', message: getErrorMessage(err, 'Could not add existing image.'), color: 'red' });
-    } finally {
-      setNearDupLoading(false);
-      setPendingNearDuplicates((prev) => prev.slice(1));
-    }
-  }
-
-  async function handleNearDupUploadAnyway() {
-    const entry = pendingNearDuplicates[0];
-    if (!entry) return;
-    setNearDupLoading(true);
-    try {
-      const authHeaders = await apiClient.getAuthHeaders();
-      const singleResult = await upload<{ attachmentId: number; url: string; thumbnail?: string }>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
-        file: entry.file,
-        headers: authHeaders,
-        extraFields: { force: '1', campaign_id: String(campaignId) },
-      });
-      const nextOrder = getNextMediaOrder(media);
-      const batchAddResponse = await apiClient.addCampaignMediaBatch(campaignId, [{
-        type: entry.file.type.startsWith('image') ? 'image' : 'video',
-        source: 'upload',
-        provider: 'wordpress',
-        attachmentId: singleResult.attachmentId,
-        url: singleResult.url,
-        thumbnail: singleResult.thumbnail ?? singleResult.url,
-        caption: entry.filename,
-        order: nextOrder,
-      }]);
-      if (batchAddResponse.added.length > 0) {
-        setMedia((current) => [...current, ...batchAddResponse.added]);
-        queryClient.setQueryData<MediaItem[]>(
-          getMediaItemsQueryKey(apiClient, campaignId),
-          (prev) => [...(prev ?? []), ...batchAddResponse.added],
-        );
-        onCampaignsUpdated?.();
-        showNotification({ title: 'Image uploaded', message: `"${entry.filename}" uploaded successfully.`, color: 'blue' });
-      }
-    } catch (err) {
-      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
-    } finally {
-      setNearDupLoading(false);
-      setPendingNearDuplicates((prev) => prev.slice(1));
-    }
-  }
-
-  function handleNearDupDismiss() {
-    setPendingNearDuplicates((prev) => prev.slice(1));
-  }
-
-  async function handleAddExternal() {
-    if (!externalUrl) return;
-    if (!isValidExternalUrl(externalUrl)) {
-      showNotification({ title: 'Invalid URL', message: 'Please enter a valid https URL.', color: 'red' });
-      return;
-    }
-    try {
-      const inferredType = externalPreview?.type || getMediaTypeFromUrl(externalUrl);
-      const payload: Record<string, unknown> = {
-        type: inferredType,
-        source: 'external',
-        provider: externalPreview?.provider ?? externalPreview?.provider_name ?? 'external',
-        url: externalUrl,
-        caption: externalPreview?.title ?? '',
-        thumbnail: externalPreview?.thumbnail_url ?? undefined,
-      };
-      const created = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, payload);
-      setMedia((m) => [...m, created]);
-      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), created]);
-      setExternalUrl('');
-      setExternalPreview(null);
-      setAddOpen(false);
-      showNotification({ title: 'Added', message: 'External media added.' });
-      onCampaignsUpdated?.();
-    } catch (err) {
-      console.error(err);
-      showNotification({ title: 'Add failed', message: getErrorMessage(err, 'Failed to add external media.'), color: 'red' });
-    }
-  }
-
-  async function handleFetchOEmbed() {
-    if (!externalUrl) return;
-    if (!isValidExternalUrl(externalUrl)) {
-      setExternalError('Please enter a valid https URL.');
-      return;
-    }
-    try {
-      setExternalLoading(true);
-      setExternalError(null);
-      // Rely on server-side proxy to avoid CORS/provider restrictions.
-      // The server implements provider handlers and caching; if it cannot
-      // fetch a preview it will return a non-200 or error payload.
-      const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
-      if (data) {
-        setExternalPreview(data);
-        showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
-      } else {
-        throw new Error('No preview available');
-      }
-    } catch (err) {
-      console.error(err);
-      setExternalError(getErrorMessage(err, 'Failed to load preview.'));
-      showNotification({ title: 'Preview failed', message: getErrorMessage(err, 'Failed to load preview.'), color: 'red' });
-    } finally {
-      setExternalLoading(false);
-    }
-  }
-
-  function isValidExternalUrl(value: string) {
-    try {
-      const url = new URL(value);
-      return url.protocol === 'https:';
-    } catch {
-      return false;
-    }
-  }
-
-  async function handleDelete(item: MediaItem) {
-    setDeleteItem(item);
-  }
-
-  async function confirmDelete() {
-    if (!deleteItem) return;
-    try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
-      setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
-      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).filter((x) => x.id !== deleteItem.id));
-      showNotification({ title: 'Deleted', message: 'Media removed.' });
-      onCampaignsUpdated?.();
-    } catch (err) {
-      console.error(err);
-      showNotification({ title: 'Delete failed', message: getErrorMessage(err, 'Failed to delete media.'), color: 'red' });
-    } finally {
-      setDeleteItem(null);
-    }
-  }
-
-  function openEdit(item: MediaItem) {
-    setEditingItem(item);
-    setEditingTitle(item.title ?? '');
-    setEditingCaption(item.caption ?? '');
-    setEditingThumbnail(item.thumbnail);
-    setEditOpen(true);
-  }
-
-  async function saveEdit() {
-    if (!editingItem) return;
-    try {
-      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, {
-        title: editingTitle.trim() || undefined,
-        caption: editingCaption,
-        thumbnail: editingThumbnail
-      });
-      setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
-      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).map((it) => (it.id === updated.id ? updated : it)));
-      setEditOpen(false);
-      showNotification({ title: 'Saved', message: 'Media updated.' });
-    } catch (err) {
-      showNotification({ title: 'Save failed', message: getErrorMessage(err, 'Failed to save media.'), color: 'red' });
-    }
-  }
-
-  async function handleRescanTypes() {
-    setRescanning(true);
-    try {
-      const result = await apiClient.post<{ message: string; updated: number; total: number }>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/rescan`,
-        {},
-      );
-      if (result.updated > 0) {
-        showNotification({ title: 'Rescan Complete', message: `Updated ${result.updated} of ${result.total} media items.` });
-        await mutateMedia();
-      } else {
-        showNotification({ title: 'Rescan Complete', message: 'All media types are correct.' });
-      }
-    } catch (err) {
-      showNotification({ title: 'Rescan failed', message: getErrorMessage(err, 'Failed to rescan media types.'), color: 'red' });
-    } finally {
-      setRescanning(false);
-    }
-  }
-
-  async function reorderMediaItems(nextMedia: MediaItem[]) {
-    // Prevent concurrent reorder operations using stable ref-based guard
-    if (reorderingRef.current) return;
-    reorderingRef.current = true;
-
-    const prev = media.slice();
-    const itemsToSend = nextMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
-
-    try {
-      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
-      const reorderedMedia = nextMedia.map((it, i) => ({ ...it, order: i + 1 }));
-      setMedia(reorderedMedia);
-      queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), reorderedMedia);
-      showNotification({ title: 'Reordered', message: 'Media order updated.' });
-      onCampaignsUpdated?.();
-    } catch (err) {
-      // Roll back local state to previous order
-      setMedia(prev);
-      showNotification({ title: 'Reorder failed', message: getErrorMessage(err, 'Failed to reorder media.'), color: 'red' });
-    } finally {
-      reorderingRef.current = false;
-    }
-  }
-
-  const { sensors, activeMediaItem,
-    getInsertionStyle, handleDndStart, handleDndOver, handleDndEnd, moveByKeyboard } = useMediaDnd(media, reorderMediaItems);
-
-  // P18-G: Optionally filter to items used in exactly 1 campaign (only this one)
-  // P34-B: then apply the selected sort mode.
-  const displayedMedia = useMemo(() => {
-    // 1. Orphan filter
-    let items: MediaItem[];
-    if (!orphanFilter) {
-      items = media;
-    } else if (usageSummaryLoading) {
-      // Don't apply the filter while counts are being fetched — unknown entries
-      // would be incorrectly excluded, making items temporarily disappear.
-      items = media;
-    } else {
-      // Only include items whose usage count is a known number ≤ 1.
-      // Items absent from the summary (partial/failed response) are excluded
-      // rather than assumed exclusive.
-      items = media.filter((m) => {
-        const count = usageSummary[m.id];
-        return typeof count === 'number' && count <= 1;
-      });
-    }
-
-    // 2. Sort (P34-B)
-    return applySortMode(items, sortMode, usageSummary);
-  }, [media, orphanFilter, usageSummary, usageSummaryLoading, sortMode]);
-
-  const mediaIds = useMemo(() => displayedMedia.map((item) => item.id), [displayedMedia]);
-  const listTotalPages = useMemo(() => Math.max(1, Math.ceil(displayedMedia.length / LIST_PAGE_SIZE)), [displayedMedia.length]);
-  const pagedListMedia = useMemo(() => {
-    const start = (listPage - 1) * LIST_PAGE_SIZE;
-    return displayedMedia.slice(start, start + LIST_PAGE_SIZE);
-  }, [displayedMedia, listPage]);
-
-  useEffect(() => {
-    if (listPage > listTotalPages) {
-      setListPage(listTotalPages);
-    }
-  }, [listPage, listTotalPages, setListPage]);
-
-  useEffect(() => {
-    if (viewMode !== 'list') {
-      setListPage(1);
-    }
-  }, [viewMode, setListPage]);
+  const {
+    displayedMedia,
+    mediaIds,
+    listTotalPages,
+    pagedListMedia,
+    sensors,
+    activeMediaItem,
+    getInsertionStyle,
+    handleDndStart,
+    handleDndOver,
+    handleDndEnd,
+    moveByKeyboard,
+  } = useMediaDisplay({ media, setMedia, apiClient, campaignId, queryClient, onCampaignsUpdated, orphanFilter, usageSummary, usageSummaryLoading, sortMode, viewMode, listPage, setListPage });
 
   // Stable data arrays for SegmentedControl — new array references on every render can trigger
   // Mantine's internal ref-measurement loop and cause infinite setState cycles under rapid updates.

@@ -1,6 +1,6 @@
 # Phase 55 - Code Quality & Refactoring
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-06-23
 **Last updated:** 2026-06-23
 
@@ -8,12 +8,12 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P55-A | Extract `SETTING_GROUP_DEFINITIONS` (~830 lines of data) out of `adapterRegistry.ts` into a data module | Planned | Medium |
-| P55-B | Registration-seam decision — document `GalleryAdapterId` as an internal closed union | Planned | Small |
-| P55-C | Unify the dual field-map via a **runtime shared schema** (single TS + PHP source of truth) | Planned | Medium-High |
-| P55-D | Decompose `LayoutBuilderModal.tsx` (~1055 → ~600) into extracted hooks | Planned | Medium |
-| P55-E | Decompose `useLayoutBuilderState.ts` (~1259 → ~700) into extracted hooks | Planned | Medium |
-| P55-F | Decompose `MediaTab.tsx` (~1007 → ~500) into extracted hooks | Planned | Medium |
+| P55-A | Extract `SETTING_GROUP_DEFINITIONS` (~830 lines of data) out of `adapterRegistry.ts` into a data module | Complete | Medium |
+| P55-B | Registration-seam decision — document `GalleryAdapterId` as an internal closed union | Complete | Small |
+| P55-C | Unify the dual field-map via a **runtime shared schema** (single TS + PHP source of truth) | Complete | Medium-High |
+| P55-D | Decompose `LayoutBuilderModal.tsx` (~1055 → ~600) into extracted hooks | Complete | Medium |
+| P55-E | Decompose `useLayoutBuilderState.ts` (~1259 → ~700) into extracted hooks | Complete | Medium |
+| P55-F | Decompose `MediaTab.tsx` (~1007 → ~500) into extracted hooks | Complete | Medium |
 
 ---
 
@@ -211,10 +211,81 @@ Extract handler+state groups into hooks (component props/output unchanged):
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; keep it factual.
-- All tracks are refactor-only — the bar is a **zero net behavior diff**; existing suites are the regression net.
-- PHP test/build execution is delegated to Haiku subagents; tests are authored in this repo.
+### P55-A + P55-B (2026-06-23)
+
+`src/data/adapterSettingGroups.ts` created; `SETTING_GROUP_DEFINITIONS` and `BUILTIN_ADAPTERS` literals (≈990 lines) moved from `adapterRegistry.ts` which now imports them. `@internal` JSDoc added to `GalleryAdapterId` and `registerAdapter()`. All adapter tests green; `tsc` + lint clean.
+
+### P55-C (2026-06-23)
+
+`wp-plugin/.../includes/schema/adapter-fields.json` (canonical schema, 96 adapter entries + 31 common entries) created. PHP class `WPSG_Adapter_Field_Schema` reads it via `file_get_contents` + `json_decode` with static cache. `class-wpsg-settings-sanitizer.php` now derives `$nested_adapter_field_map` and `$nested_common_field_map` from the schema loader. TS side imports schema JSON via Vite and derives camelCase→snakeCase map from `camelKey`/`snakeSlug` pairs. `adapterSettingsParity.test.ts` rewritten as a structural contract guard (JSON import, no regex). Three legacy-orphan entries pruned from both sides. PHPUnit suites green (Haiku subagent). Full vitest suite 3151 tests green.
+
+### P55-E (2026-06-23)
+
+`useLayoutBuilderState.ts` (1259 → ~700 lines) decomposed into:
+- `useLayoutBuilderHistory.ts` — past/future stacks, `HistoryEntry`/`MutateFn` types, undo/redo/jump/trim
+- `useLayoutBuilderZIndex.ts` — z-index reorder callbacks; `normalizeZIndices` returns a synchronous template value to avoid stale-state reads
+- `useLayoutBuilderOverlays.ts` — overlay CRUD callbacks
+- `useLayoutBuilderGroups.ts` — P30-G group hierarchy actions; all group utils imported from `@wp-super-gallery/shared-utils`
+
+`HistoryEntry` exported from the history hook and re-exported from the state hook for backward compat. `setTemplate` now calls `resetHistory()` to clear stale history on explicit template load. All 3151 tests green; `tsc` + ESLint `--max-warnings 0` clean.
+
+### P55-D (2026-06-23)
+
+`LayoutBuilderModal.tsx` (1055 → ~720 lines) decomposed into:
+- `useLayoutBuilderFileIO.ts` — `handleExportJson` / `handleImportJson` + `importFileRef`
+- `useLayoutBuilderAssets.ts` — upload/delete/tag/bg/mask handlers + `isUploadingAsset`/`isUploadingBg` state
+- `useLayoutBuilderKeyboardHandlers.ts` — side-effect-only hook; owns keydown listener + ~24 action callbacks
+- `useBuilderDockLayout.ts` — `handleDockReady`, localStorage key/version, default panel layout; `LayoutScope` re-exported from `useBuilderWorkspacePrefs`
+
+`buildGroupMap`/`collectDescendantSlotIds` imports removed from modal (moved to keyboard hook). `setWpsgDebugDisplayName` attribution string preserved as `'LayoutBuilder:LayoutBuilderModal'`. All 3151 tests green; `tsc` + ESLint clean.
+
+### P55-F (2026-06-23)
+
+`MediaTab.tsx` (1007 → 558 lines) decomposed into:
+- `useMediaUpload.ts` — `NearDuplicateEntry` interface, `normalizeSelectedFiles` / `getNextMediaOrder` helpers, `useXhrUpload` call, all upload + near-dup state and handlers
+- `useMediaExternal.ts` — `getMediaTypeFromUrl` / `isValidExternalUrl` helpers, external state, `handleAddExternal` / `handleFetchOEmbed`
+- `useMediaCrud.ts` — edit/delete/rescan state and handlers; accepts `mutateMedia: () => void | Promise<unknown>` for the rescan refresh
+- `useMediaDisplay.ts` — `reorderMediaItems` (ref-guarded), `useMediaDnd` call, `displayedMedia`/pagination memos, page-reset effects
+
+`enrichOEmbedMetadata` (background enrichment on first load) kept in component; scroll-position preservation also kept in component. All hook parameter types use `(() => void) | undefined` for optional callbacks to satisfy `exactOptionalPropertyTypes`. All 3151 tests green; `tsc` + ESLint `--max-warnings 0` clean.
 
 ## Outcome
 
-_To be completed when the phase lands._
+All six tracks landed on the `feat/phase55-code-refactor-for-quality` branch (commits `ac46567a` → `0677502f`). Zero user-visible behavior change:
+
+- `adapterRegistry.ts`: 1189 → ~200 lines (data extracted)
+- `useLayoutBuilderState.ts`: 1259 → ~700 lines (4 sub-hooks)
+- `LayoutBuilderModal.tsx`: 1055 → ~720 lines (4 hooks)
+- `MediaTab.tsx`: 1007 → 558 lines (4 hooks)
+- Field contract: single JSON schema consumed by both TS and PHP
+- Full vitest suite (3151 tests) green; PHPUnit sanitizer/registry suites green; `tsc --noEmit` + ESLint `--max-warnings 0` clean across all touched files.
+
+---
+
+## PR Review — Branch Coverage Remediation
+
+**Context.** The Phase 55 hook extractions introduced 12 new hook files, none with tests. Branch coverage fell below the 72% CI threshold (`71.71%` → `ERROR: Coverage for branches (71.71%) does not meet global threshold (72%)`). This section records the remediation.
+
+### Decision: write tests directly against the extracted hooks
+
+The extracted hooks (`useLayoutBuilderHistory`, `useLayoutBuilderGroups`, `useLayoutBuilderZIndex`, `useLayoutBuilderOverlays`, `useBuilderDockLayout`, `useLayoutBuilderAssets`, `useLayoutBuilderFileIO`, `useMediaDisplay`, `useMediaUpload`, `useMediaCrud`, `useMediaExternal`) are independently testable. Testing them directly at the hook level rather than only through component integration tests gives faster feedback and cleaner branch isolation.
+
+### Coverage gains — 22 new test files, ~223 additional branches covered
+
+| File | Before | After |
+|------|--------|-------|
+| `useLayoutBuilderHistory` | ~45% (via state) | ~86% |
+| `useLayoutBuilderGroups` | 0% | ~61% |
+| `useBuilderDockLayout` | 0% | ~89% |
+| `useLayoutBuilderZIndex` | ~77% | ~86% |
+| `useLayoutBuilderAssets` | 0% | ~75% |
+| `useLayoutBuilderFileIO` | 0% | ~65% |
+| `useMediaDisplay` | ~36% | ~86% |
+| `useBuilderDraftRestore` | ~12% | ~90% |
+| `useMediaUpload` | ~37% | ~55% |
+| `useAdminCampaignActions` | ~59% | ~73% |
+| `useScrollRestore` (pkg) | ~12% | ~89% |
+| `useMediaLightbox` (pkg) | ~44% | ~94% |
+| Various utilities | — | +15–30 branches each |
+
+**Final result: 74.94% branch coverage (5856/7814), clearing the 72% threshold with ~3% padding.**

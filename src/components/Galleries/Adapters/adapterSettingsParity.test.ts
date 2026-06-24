@@ -1,131 +1,136 @@
 /**
- * P31-D: Adapter settings parity regression test.
+ * P55-C: Adapter fields schema contract guard (replaces P31-D regex parity test).
  *
- * Verifies that every adapter setting key declared in SETTING_GROUP_DEFINITIONS
- * (including unitKey companions from dimension controls) is present in the PHP
- * nested adapter field map in class-wpsg-settings-sanitizer.php.
+ * Single source of truth: wp-plugin/.../schema/adapter-fields.json
  *
- * Also validates that the camelCase→snake_case transform rule is correct for
- * all registry keys that appear in the PHP map.
+ * Checks:
+ *  1. Schema is readable and has the expected number of fields.
+ *  2. Every schema camelKey matches the deterministic camelCase→snake_case rule.
+ *  3. Every TS registry field key is in the schema (no missing schema entries).
+ *  4. Every schema camelKey is in the TS registry (no orphan schema entries).
+ *  5. Every schema snakeSlug is registered in PHP $defaults.
+ *  6. Every canonical adapter id is in WPSG_CPT::VALID_ADAPTERS.
+ *  7. PHP sanitizer sources adapter map from WPSG_Adapter_Field_Schema (not a hand-maintained array).
+ *  8. Legacy orphan keys were pruned and are absent from the schema.
  *
  * Run: npx vitest run adapterSettingsParity
- * Or via CI: npm test (included in the full suite)
- *
- * If this test fails, a new adapter setting was added to the registry without
- * updating the PHP sanitizer map. Add the missing entry and re-run.
  */
 
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { describe, expect, it } from 'vitest';
+import { SETTING_GROUP_DEFINITIONS } from '../../../data/adapterSettingGroups';
 
-// ─── Source file paths ────────────────────────────────────────────────────────
-
-// ESM-safe equivalent of __dirname (package.json has "type": "module")
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
-
 const root = resolve(__dirname, '../../../../');
 
 function readSource(relPath: string): string {
   return readFileSync(resolve(root, relPath), 'utf8');
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Schema ──────────────────────────────────────────────────────────────────
 
-/**
- * Extract all field `key` and `unitKey` string literals from the
- * SETTING_GROUP_DEFINITIONS block in adapterRegistry.ts.
- */
-function extractRegistryKeys(source: string): string[] {
-  const start = source.indexOf('const SETTING_GROUP_DEFINITIONS');
-  const end   = source.indexOf('\nfor (', start);
-  const block = source.slice(start, end);
-
-  const fieldKeys = [...block.matchAll(/\bkey:\s*'([^']+)'/g)].map((m) => m[1]);
-  const unitKeys  = [...block.matchAll(/\bunitKey:\s*'([^']+)'/g)].map((m) => m[1]);
-
-  return [...new Set([...fieldKeys, ...unitKeys])].sort();
+interface SchemaField {
+  camelKey: string;
+  snakeSlug: string;
 }
 
-/**
- * Extract the key→slug pairs from the PHP $nested_adapter_field_map array.
- */
-function extractPhpMap(source: string): Record<string, string> {
-  const start = source.indexOf('$nested_adapter_field_map = [');
-  const end   = source.indexOf('\n    ];', start);
-  const block = source.slice(start, end);
+const schemaPath = 'wp-plugin/wp-super-gallery/includes/schema/adapter-fields.json';
+const schema: { version: string; fields: SchemaField[] } = JSON.parse(readSource(schemaPath));
+const schemaFields = schema.fields;
+const schemaCamelKeys = new Set(schemaFields.map((f) => f.camelKey));
 
-  const pairs = [...block.matchAll(/'([a-zA-Z][a-zA-Z0-9]*)'\s*=>\s*'([a-z_]+)'/g)];
-  return Object.fromEntries(pairs.map((m) => [m[1], m[2]]));
+// ─── TS registry keys (runtime traversal, no regex) ──────────────────────────
+
+function extractRegistryKeys(): string[] {
+  const keys: string[] = [];
+  for (const group of Object.values(SETTING_GROUP_DEFINITIONS)) {
+    for (const field of group.fields) {
+      keys.push(field.key as string);
+      if ('unitKey' in field && typeof (field as { unitKey?: string }).unitKey === 'string') {
+        keys.push((field as { unitKey: string }).unitKey);
+      }
+    }
+  }
+  return [...new Set(keys)].sort();
 }
 
-/**
- * Deterministic camelCase → snake_case used by the PHP sanitizer and the
- * future code generator.
- *
- * Examples:
- *   carouselVisibleCards     → carousel_visible_cards
- *   scrollSnapAlignment      → scroll_snap_alignment
- *   spotlightThumbnailSizeUnit → spotlight_thumbnail_size_unit
- */
+const registryKeys = extractRegistryKeys();
+
+// ─── Shared helpers ───────────────────────────────────────────────────────────
+
 function toSnakeCase(camel: string): string {
   return camel.replace(/([A-Z])/g, (_, c: string) => `_${c.toLowerCase()}`);
 }
 
 // ─── Test suite ───────────────────────────────────────────────────────────────
 
-describe('adapter settings parity (P31-D)', () => {
-  const registrySource = readSource('src/components/Galleries/Adapters/adapterRegistry.ts');
-  const phpSource      = readSource(
-    'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
-  );
+describe('adapter fields schema contract (P55-C)', () => {
 
-  const registryKeys = extractRegistryKeys(registrySource);
-  const phpMap       = extractPhpMap(phpSource);
-  const phpKeys      = Object.keys(phpMap);
-
-  it('locates SETTING_GROUP_DEFINITIONS in the registry source', () => {
-    expect(registryKeys.length).toBeGreaterThan(50);
+  it('schema is readable and has the expected field count', () => {
+    expect(schema.version).toBe('1');
+    expect(schemaFields.length).toBeGreaterThan(80);
+    expect(schemaFields.length).toBe(registryKeys.length);
   });
 
-  it('locates $nested_adapter_field_map in the PHP sanitizer source', () => {
-    expect(phpKeys.length).toBeGreaterThan(50);
-  });
-
-  it('every registry adapter setting key is present in the PHP sanitizer map', () => {
-    const missing = registryKeys.filter((k) => !phpKeys.includes(k));
-
-    expect(missing, [
-      'One or more adapter setting keys are in the registry but missing from the',
-      'PHP nested adapter field map. Add the following entries to',
-      'class-wpsg-settings-sanitizer.php $nested_adapter_field_map:',
-      ...missing.map((k) => `  '${k}' => '${toSnakeCase(k)}',`),
-    ].join('\n')).toHaveLength(0);
-  });
-
-  it('snake_case transformation matches PHP map entries for all registry keys', () => {
-    const mismatches = registryKeys
-      .filter((k) => phpKeys.includes(k))
-      .filter((k) => phpMap[k] !== toSnakeCase(k));
-
+  it('every schema camelKey matches the camelCase→snake_case transform rule', () => {
+    const mismatches = schemaFields.filter((f) => toSnakeCase(f.camelKey) !== f.snakeSlug);
     expect(mismatches, [
-      'The following registry keys have incorrect snake_case entries in the PHP map:',
-      ...mismatches.map((k) => `  '${k}': expected '${toSnakeCase(k)}', PHP has '${phpMap[k]}'`),
+      'The following schema entries have snakeSlug values that do not match the',
+      'deterministic camelCase→snake_case transform. Fix the snakeSlug in the schema:',
+      ...mismatches.map((f) => `  '${f.camelKey}': expected '${toSnakeCase(f.camelKey)}', got '${f.snakeSlug}'`),
     ].join('\n')).toHaveLength(0);
   });
 
-  // P50-C: adapter-id allowlist parity. P48 registered coverflow/pinterest in
-  // the TS registry without adding them to WPSG_CPT::VALID_ADAPTERS, so the
-  // PHP sanitizer silently dropped those adapterId values on save. This guard
-  // keeps the two lists in sync for every future adapter.
-  it('every canonical registry adapter id is present in WPSG_CPT::VALID_ADAPTERS', () => {
-    const cptSource = readSource('wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php');
+  it('every TS registry field key is in the schema', () => {
+    const missing = registryKeys.filter((k) => !schemaCamelKeys.has(k));
+    expect(missing, [
+      'One or more TS adapter setting keys are missing from adapter-fields.json.',
+      'Add the following entries to the schema:',
+      ...missing.map((k) => `  { "camelKey": "${k}", "snakeSlug": "${toSnakeCase(k)}" }`),
+    ].join('\n')).toHaveLength(0);
+  });
 
-    const adaptersBlockStart = registrySource.indexOf('const BUILTIN_ADAPTERS');
-    const adaptersBlockEnd   = registrySource.indexOf('\n];', adaptersBlockStart);
-    const adaptersBlock      = registrySource.slice(adaptersBlockStart, adaptersBlockEnd);
+  it('every schema camelKey is in the TS registry (no orphan schema entries)', () => {
+    const registryKeySet = new Set(registryKeys);
+    const orphans = schemaFields.filter((f) => !registryKeySet.has(f.camelKey));
+    expect(orphans, [
+      'The following schema entries have no matching TS registry key.',
+      'Remove them from adapter-fields.json or add the field to SETTING_GROUP_DEFINITIONS:',
+      ...orphans.map((f) => `  '${f.camelKey}'`),
+    ].join('\n')).toHaveLength(0);
+  });
+
+  it('every schema snakeSlug is registered in PHP $defaults', () => {
+    const registryPhpSource = readSource(
+      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php',
+    );
+    const defaultsStart = registryPhpSource.indexOf('private static $defaults = [');
+    const defaultsEnd   = registryPhpSource.indexOf('\n    ];', defaultsStart);
+    const defaultsBlock = registryPhpSource.slice(defaultsStart, defaultsEnd);
+    const defaultKeys   = new Set(
+      [...defaultsBlock.matchAll(/'([a-z][a-z0-9_]*)'\s*=>/g)].map((m) => m[1]),
+    );
+
+    const missing = schemaFields.filter((f) => !defaultKeys.has(f.snakeSlug));
+    expect(missing, [
+      'One or more schema snakeSlugs are missing from $defaults in',
+      'class-wpsg-settings-registry.php. The nested sanitizer rejects any slug',
+      'absent from $defaults, so these values are silently dropped on save.',
+      'Add a default (and valid_options / field_ranges where applicable) for:',
+      ...missing.map((f) => `  '${f.snakeSlug}' (from camelKey '${f.camelKey}'),`),
+    ].join('\n')).toHaveLength(0);
+  });
+
+  it('every canonical adapter id is in WPSG_CPT::VALID_ADAPTERS', () => {
+    const dataSource = readSource('src/data/adapterSettingGroups.ts');
+    const cptSource  = readSource('wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php');
+
+    const adaptersBlockStart = dataSource.indexOf('const BUILTIN_ADAPTERS');
+    const adaptersBlockEnd   = dataSource.indexOf('\n];', adaptersBlockStart);
+    const adaptersBlock      = dataSource.slice(adaptersBlockStart, adaptersBlockEnd);
     const registryIds        = [...adaptersBlock.matchAll(/^\s*id:\s*'([^']+)'/gm)].map((m) => m[1]);
 
     const validStart = cptSource.indexOf('const VALID_ADAPTERS = [');
@@ -138,62 +143,32 @@ describe('adapter settings parity (P31-D)', () => {
 
     const missing = registryIds.filter((id) => !phpIds.includes(id));
     expect(missing, [
-      'One or more adapter ids are registered in the TS adapter registry but',
-      'missing from WPSG_CPT::VALID_ADAPTERS, so the PHP sanitizer will drop',
-      'them from saved gallery configs. Add to class-wpsg-cpt.php:',
+      'One or more adapter ids are in the TS registry but missing from',
+      'WPSG_CPT::VALID_ADAPTERS. Add to class-wpsg-cpt.php:',
       ...missing.map((id) => `  '${id}',`),
     ].join('\n')).toHaveLength(0);
   });
 
-  // P51-E: Every adapter-map slug must also exist as a key in the registry
-  // $defaults array. The nested sanitizer gates on array_key_exists($flat_key,
-  // $defaults) (sanitize_nested_gallery_setting), so a slug present in the field
-  // map but absent from $defaults is silently dropped on save for both global
-  // gallery_config and per-campaign galleryOverrides. This guard caught the
-  // Spotlight / Scroll-snap / Masonry-entrance persistence gap.
-  it('every PHP adapter field-map slug is registered in $defaults', () => {
-    const registryPhpSource = readSource(
-      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php',
+  it('PHP sanitizer sources adapter map from WPSG_Adapter_Field_Schema, not a hand-maintained array', () => {
+    const sanitizerSource = readSource(
+      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
     );
-
-    const defaultsStart = registryPhpSource.indexOf('private static $defaults = [');
-    const defaultsEnd   = registryPhpSource.indexOf('\n    ];', defaultsStart);
-    const defaultsBlock = registryPhpSource.slice(defaultsStart, defaultsEnd);
-    const defaultKeys   = new Set(
-      [...defaultsBlock.matchAll(/'([a-z][a-z0-9_]*)'\s*=>/g)].map((m) => m[1]),
-    );
-
-    const slugs   = Object.values(phpMap);
-    const missing = slugs.filter((slug) => !defaultKeys.has(slug));
-
-    expect(missing, [
-      'One or more adapter field-map slugs are missing from $defaults in',
-      'class-wpsg-settings-registry.php. The nested sanitizer rejects any slug',
-      'absent from $defaults, so these values are silently dropped on save.',
-      'Add a default (and valid_options / field_ranges where applicable) for:',
-      ...[...new Set(missing)].map((slug) => `  '${slug}' => ...,`),
-    ].join('\n')).toHaveLength(0);
+    expect(sanitizerSource).toContain('WPSG_Adapter_Field_Schema::get_map()');
+    expect(sanitizerSource).not.toContain("private static $nested_adapter_field_map = [");
   });
 
-  it('identifies legacy PHP map entries that have no registry counterpart', () => {
-    // These are known orphan entries from formerly-dimension fields whose *Unit
-    // companions were left in the PHP map when the control type changed to number.
-    // They are harmless but should not grow without a matching registry change.
-    const knownLegacyKeys = [
+  it('legacy orphan keys were pruned from the schema', () => {
+    const prunedKeys = [
       'gridCardHeight',
       'gridCardHeightUnit',
       'mosaicTargetRowHeightUnit',
       'photoNormalizeHeightUnit',
     ];
-
-    const extraInPhp  = phpKeys.filter((k) => !registryKeys.includes(k));
-    const newOrphans  = extraInPhp.filter((k) => !knownLegacyKeys.includes(k));
-
-    expect(newOrphans, [
-      'New PHP map entries were found with no registry counterpart.',
-      'If these are intentional legacy entries, add them to knownLegacyKeys above.',
-      'If they are stale, remove them from the PHP map.',
-      ...newOrphans.map((k) => `  '${k}' => '${phpMap[k]}'`),
+    const stillPresent = prunedKeys.filter((k) => schemaCamelKeys.has(k));
+    expect(stillPresent, [
+      'Legacy orphan keys should have been pruned from adapter-fields.json.',
+      'Remove the following entries:',
+      ...stillPresent.map((k) => `  '${k}'`),
     ].join('\n')).toHaveLength(0);
   });
 });

@@ -143,4 +143,21 @@ describe('useMediaTransition', () => {
 
 		expect(result.current.previousItem).toBeNull();
 	});
+
+	it('calls applyGalleryTransition when index changes with active animation settings (lines 83-86)', async () => {
+		const { applyGalleryTransition } = await import('@wp-super-gallery/shared-utils');
+		const spied = vi.mocked(applyGalleryTransition);
+		spied.mockClear();
+
+		const { rerender } = renderHook(
+			({ idx, dir }: { idx: number; dir: 1 | -1 }) =>
+				useMediaTransition(defaultSettings, idx, dir, mockItems),
+			{ initialProps: { idx: 0, dir: 1 as 1 | -1 } },
+		);
+		// Initial render: prevIndexRef=0, currentIndex=0 → no change, first guard fires
+
+		// Change index to 1 with direction=1 and non-instant style → should call applyGalleryTransition
+		act(() => { rerender({ idx: 1, dir: 1 }); });
+		expect(spied).toHaveBeenCalled();
+	});
 });

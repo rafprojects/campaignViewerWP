@@ -127,4 +127,40 @@ describe('GallerySectionWrapper', () => {
 
 		expect(screen.getByTestId('gradient-child')).toBeDefined();
 	});
+
+	it('renders with image background type and valid URL', () => {
+		expect(() =>
+			render(
+				<GallerySectionWrapper
+					settings={minimalSettings}
+					runtime={minimalRuntime}
+					bgType="image"
+					bgColor=""
+					bgGradient=""
+					bgImageUrl="https://example.com/bg.jpg"
+				>
+					{() => <div data-testid="image-child" />}
+				</GallerySectionWrapper>,
+			),
+		).not.toThrow();
+		expect(screen.getByTestId('image-child')).toBeDefined();
+	});
+
+	it('renders with image background type and empty URL (safeUrl falsy branch)', () => {
+		expect(() =>
+			render(
+				<GallerySectionWrapper
+					settings={minimalSettings}
+					runtime={minimalRuntime}
+					bgType="image"
+					bgColor=""
+					bgGradient=""
+					bgImageUrl=""
+				>
+					{() => <div data-testid="image-empty-child" />}
+				</GallerySectionWrapper>,
+			),
+		).not.toThrow();
+		expect(screen.getByTestId('image-empty-child')).toBeDefined();
+	});
 });

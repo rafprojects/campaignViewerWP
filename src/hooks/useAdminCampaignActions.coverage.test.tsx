@@ -225,3 +225,70 @@ describe('export / import', () => {
     expect(err.onNotify).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
   });
 });
+
+describe('hotkey handler — bulkSelect branches (lines 344-349)', () => {
+  it('bulkSelect hotkey selects all when nothing is selected (else branch)', () => {
+    const { hook } = setup();
+    // No campaigns selected initially — bulkSelect should call handleSelectAll
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'a', bubbles: true });
+    act(() => hook.result.current.hotkeyHandler(event as never));
+    expect(hook.result.current.selectedCampaignIds.size).toBe(2);
+  });
+
+  it('bulkSelect hotkey deselects all when campaigns are selected (if branch)', () => {
+    const { hook } = setup();
+    // Select some campaigns first
+    act(() => hook.result.current.handleSelectAll(['1', '2']));
+    expect(hook.result.current.selectedCampaignIds.size).toBe(2);
+    // Now hotkey should deselect
+    const event = new KeyboardEvent('keydown', { ctrlKey: true, shiftKey: true, key: 'a', bubbles: true });
+    act(() => hook.result.current.hotkeyHandler(event as never));
+    expect(hook.result.current.selectedCampaignIds.size).toBe(0);
+  });
+
+  it('newCampaign hotkey is a no-op when createModalOpen is true (false branch of !createModalOpen)', () => {
+    const { hook, onOpenCreate } = setup(makeApi(), true); // createModalOpen=true
+    const event = new KeyboardEvent('keydown', { altKey: true, key: 'n', bubbles: true });
+    act(() => hook.result.current.hotkeyHandler(event as never));
+    // When createModalOpen=true, handleCreate should NOT be called
+    expect(onOpenCreate).not.toHaveBeenCalled();
+  });
+
+  it('openHelp hotkey sets shortcutHelpOpen to true', () => {
+    const { hook } = setup();
+    const event = new KeyboardEvent('keydown', { key: '?', bubbles: true });
+    act(() => hook.result.current.hotkeyHandler(event as never));
+    expect(hook.result.current.shortcutHelpOpen).toBe(true);
+  });
+});
+
+describe('bulk binary export — additional branch coverage', () => {
+  it('failed status without error message uses fallback text (line 286 ?? branch)', async () => {
+    const { hook, onNotify } = setup(makeApi({
+      startBulkBinaryExport: vi.fn().mockResolvedValue({ jobId: 'jb' }),
+      getExportJob: vi.fn().mockResolvedValue({ status: 'failed' }),
+    }));
+    act(() => hook.result.current.handleSelectAll(['1']));
+    await act(async () => { await hook.result.current.handleBulkBinaryExport(); });
+    expect(onNotify).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+  });
+
+  it('polls when job starts as processing then completes (line 282)', async () => {
+    vi.useFakeTimers();
+    const getExportJobMock = vi.fn()
+      .mockResolvedValueOnce({ status: 'processing' })
+      .mockResolvedValueOnce({ status: 'completed' });
+    const { hook } = setup(makeApi({
+      startBulkBinaryExport: vi.fn().mockResolvedValue({ jobId: 'jb3' }),
+      getExportJob: getExportJobMock,
+    }));
+    act(() => hook.result.current.handleSelectAll(['1']));
+    await act(async () => {
+      const p = hook.result.current.handleBulkBinaryExport();
+      await vi.runAllTimersAsync();
+      return p;
+    });
+    expect(getExportJobMock).toHaveBeenCalledTimes(2);
+    vi.useRealTimers();
+  });
+});
