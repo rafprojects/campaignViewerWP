@@ -1,5 +1,6 @@
 import { type ReactNode } from 'react';
 import { ActionIcon, Badge, Box, Button, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput, Tooltip, type SelectProps } from '@mantine/core';
+import { useGalleryAdapterSettingsIO } from '@/hooks/useGalleryAdapterSettingsIO';
 import { IconRefresh } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
@@ -325,6 +326,11 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
     updateSetting('galleryConfig', config);
   };
 
+  const { importFileRef, handleExport, handleImport } = useGalleryAdapterSettingsIO({
+    galleryConfig: settings.galleryConfig,
+    updateSetting,
+  });
+
   return (
     <Stack gap="md">
       <Switch
@@ -482,8 +488,33 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
 
       {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
 
-      {activeSettingGroups.length > 0 && (
-        <Group justify="flex-end">
+      <Group justify="space-between">
+        <Group gap="xs">
+          <Button
+            size="compact-xs"
+            variant="subtle"
+            color="blue"
+            onClick={handleExport}
+          >
+            Export settings
+          </Button>
+          <Button
+            size="compact-xs"
+            variant="subtle"
+            color="blue"
+            onClick={() => importFileRef.current?.click()}
+          >
+            Import settings
+          </Button>
+          <input
+            ref={importFileRef}
+            type="file"
+            accept=".json,.wpsg.json"
+            style={{ display: 'none' }}
+            onChange={handleImport}
+          />
+        </Group>
+        {activeSettingGroups.length > 0 && (
           <Button
             size="compact-xs"
             variant="subtle"
@@ -493,8 +524,8 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
           >
             Reset all adapter settings to defaults
           </Button>
-        </Group>
-      )}
+        )}
+      </Group>
     </Stack>
   );
 }
