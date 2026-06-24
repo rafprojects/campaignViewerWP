@@ -1,20 +1,20 @@
 # Phase 56 - Gallery Admin-Control Additions
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-06-23
-**Last updated:** 2026-06-23
+**Last updated:** 2026-06-24
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P56-A | Client-side range/enum validation in the adapter settings UI (consumes the P55-C schema) | Planned | Low-Medium |
-| P56-B | Configurable breakpoint pixel thresholds (today hardcoded) | Planned | Low-Medium |
-| P56-C | Mobile-support visibility — explain why an adapter is disabled on mobile | Planned | Low |
-| P56-D | Listing-mode exposure — make the listing surface admin-configurable | Planned | Medium |
-| P56-E | Adapter capability badges in the adapter picker | Planned | Small-Medium |
-| P56-F | Per-field reset-to-default + schema-driven help hints | Planned | Small |
-| P56-G | Import/export gallery adapter settings as JSON | Planned | Medium |
+| P56-A | Client-side range/enum validation in the adapter settings UI (consumes the P55-C schema) | Complete | Low-Medium |
+| P56-B | Configurable breakpoint pixel thresholds (today hardcoded) | Complete | Low-Medium |
+| P56-C | Mobile-support visibility — explain why an adapter is disabled on mobile | Complete | Low |
+| P56-D | Listing-mode exposure — make the listing surface admin-configurable | Complete (pre-existing P35-B) | — |
+| P56-E | Adapter capability badges in the adapter picker | Complete | Small-Medium |
+| P56-F | Per-field reset-to-default + schema-driven help hints | Complete | Small |
+| P56-G | Import/export gallery adapter settings as JSON | Complete | Medium |
 
 ---
 
@@ -203,10 +203,26 @@ A gallery's adapter settings cannot be copied between galleries/campaigns. The L
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; keep it factual.
-- A–F center on `GalleryAdapterSettingsSection.tsx`; coordinate edits to avoid churn (do A's schema wiring first, then reuse it).
-- PHP test/build execution is delegated to Haiku subagents; tests are authored in this repo.
+### P56-A + P56-F (2026-06-24)
+
+`GalleryAdapterSettingsSection.tsx` updated. `renderSettingFields` now computes `error` props for number fields (range check) and select fields (valid-options check) sourced from the field definitions in `SETTING_GROUP_DEFINITIONS` — the P55-C-derived TS registry, no hand-duplicated client copy. All field controls gain per-field reset buttons embedded in the `label` ReactNode via a `fieldLabel()` helper that wraps each label with an `ActionIcon<IconRefresh>`. Number and dimension fields append "(min–max, default: N)" to their `description` text. A "Reset all adapter settings to defaults" button applies all group field fallbacks in a single `setGalleryAdapterSetting` loop to avoid state-batching overwrites. 18 new vitest cases cover both tracks; full suite 3,385 tests green.
+
+### P56-E + P56-C (2026-06-24)
+
+`CAPABILITY_LABELS` constant and `renderAdapterOption` (`NonNullable<SelectProps['renderOption']>`) added; `getAdapterRegistration` imported to look up capabilities per option. All adapter `ModalSelect` pickers pass `renderOption={renderAdapterOption}`. Mobile-restriction note ("Some adapters are unavailable on mobile…") rendered conditionally below the mobile breakpoint row when `adapterOptions.some(o => o.disabled)`. `SettingsPanel.test.tsx` option queries updated to prefix-regex (`/^Label/i`) to handle badge text appended to accessible names. 14 new vitest cases cover both tracks.
+
+### P56-B (2026-06-24)
+
+`mobileBreakpointPx: number` (default: 768) and `tabletBreakpointPx: number` (default: 1200) added to `GalleryBehaviorSettings` and `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`. `deriveBreakpoint` in `MediaCarouselAdapter.tsx` de-hardcoded: now accepts `mobileMax` and `tabletMax` params threaded from `settings.mobileBreakpointPx / settings.tabletBreakpointPx`. "Breakpoint Pixel Thresholds" section added to `GalleryAdapterSettingsSection` using direct `updateSetting` calls (not nested galleryConfig). Ordering validation (mobile < tablet) shown inline. PHP: `mobile_breakpoint_px` and `tablet_breakpoint_px` added to `$defaults` and `$field_ranges` in `class-wpsg-settings-registry.php`; the existing generic sanitizer `foreach` loop handles int clamping automatically. PHPUnit 22 tests + vitest 18 tests green.
+
+### P56-D (pre-existing)
+
+Track already fully implemented prior to this phase as part of P35-B: `CampaignCardSettingsSection.tsx` already exposes per-breakpoint listing adapter selects (`campaignListingAdapterId`, `campaignListingAdapterIdTablet`, `campaignListingAdapterIdMobile`) populated from `getListingAdapterSelectOptions(breakpoint)`. PHP validates adapter IDs against a hard-coded list in `$valid_options`. No work needed.
+
+### P56-G (2026-06-24)
+
+`useGalleryAdapterSettingsIO` hook (`src/hooks/useGalleryAdapterSettingsIO.ts`) implements `handleExport` (serializes `galleryConfig` to a `.wpsg.json` blob download) and `handleImport` (reads file, validates via `GalleryConfigSchema` Zod parse + explicit adapter-ID and adapter-setting-key checks, applies via `updateSetting('galleryConfig', ...)`). Export/Import buttons wired into `GalleryAdapterSettingsSection` toolbar. Unknown adapter IDs (not in `BUILTIN_ADAPTERS`) and foreign setting keys (not in `SETTING_GROUP_DEFINITIONS`) are rejected with a Mantine notification. Valid imports round-trip losslessly; the PHP sanitizer bounds-checks values on next save. 6 new hook tests cover export and all rejection paths; full suite 3,398 tests green.
 
 ## Outcome
 
-_To be completed when the phase lands._
+All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. 3 commits, 3,398 vitest tests green, 22 PHPUnit settings tests green.
