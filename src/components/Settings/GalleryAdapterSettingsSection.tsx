@@ -1,8 +1,10 @@
-import { Box, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { type ReactNode } from 'react';
+import { ActionIcon, Badge, Box, Button, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput, Tooltip, type SelectProps } from '@mantine/core';
+import { IconRefresh } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
-import type { AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
-import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import type { AdapterCapability, AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
+import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterRegistration, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { cloneGalleryConfig, collectGalleryAdapterSettingValues, GALLERY_BREAKPOINTS, getGalleryConfigScopeAdapterIds, resolveGalleryConfig, setGalleryAdapterSetting } from '@/utils/galleryConfig';
 import { DimensionInput } from './DimensionInput';
@@ -21,6 +23,37 @@ const BREAKPOINT_LABELS: Record<GalleryConfigBreakpoint, string> = {
   desktop: 'Desktop',
   tablet: 'Tablet',
   mobile: 'Mobile',
+};
+
+const CAPABILITY_LABELS: Record<AdapterCapability, string> = {
+  lightbox: 'Lightbox',
+  'drag-scroll': 'Drag scroll',
+  'infinite-scroll': 'Infinite scroll',
+  'grid-layout': 'Grid',
+  'carousel-layout': 'Carousel',
+  'keyboard-nav': 'Keyboard nav',
+  'touch-swipe': 'Touch swipe',
+  'layout-builder': 'Layout builder',
+  'listing-compatible': 'Listing',
+};
+
+const renderAdapterOption: NonNullable<SelectProps['renderOption']> = ({ option }) => {
+  const reg = getAdapterRegistration(option.value);
+  const caps = reg?.capabilities ?? [];
+  return (
+    <Stack gap={4}>
+      <Text size="sm">{option.label}</Text>
+      {caps.length > 0 && (
+        <Group gap={4} wrap="wrap">
+          {caps.map((cap) => (
+            <Badge key={cap} size="xs" variant="light" color="gray" radius="sm">
+              {CAPABILITY_LABELS[cap] ?? cap}
+            </Badge>
+          ))}
+        </Group>
+      )}
+    </Stack>
+  );
 };
 
 function getConfiguredAdapterId(
@@ -58,6 +91,25 @@ function getConfiguredScopeAdapterIds(
   return getGalleryConfigScopeAdapterIds(galleryConfig, scope);
 }
 
+function fieldLabel(label: string, onReset: () => void): ReactNode {
+  return (
+    <Group justify="space-between" gap={4} wrap="nowrap" style={{ width: '100%' }}>
+      <span>{label}</span>
+      <Tooltip label="Reset to default" withArrow position="top" offset={4}>
+        <ActionIcon
+          size="xs"
+          variant="subtle"
+          color="gray"
+          onClick={onReset}
+          aria-label={`Reset ${label} to default`}
+        >
+          <IconRefresh size={12} />
+        </ActionIcon>
+      </Tooltip>
+    </Group>
+  );
+}
+
 function getResolvedAdapterFieldValue<K extends keyof GalleryBehaviorSettings>(
   resolvedAdapterSettings: Partial<Record<keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]>>,
   settings: GalleryBehaviorSettings,
@@ -82,42 +134,58 @@ function renderSettingFields(
     .filter((field) => includeAppliesTo.includes(field.appliesTo ?? 'always'))
     .map((field) => {
       if (field.control === 'number') {
+        const numValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined;
+        const numError = numValue !== undefined && (numValue < field.min || numValue > field.max)
+          ? `Enter a value between ${field.min} and ${field.max}`
+          : undefined;
+        const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         return (
           <NumberInput
             key={`${group}-${String(field.key)}`}
-            label={field.label}
-            description={field.description}
-            {...((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined) !== undefined ? { value: getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number } : {})}
+            label={fieldLabel(field.label, reset)}
+            description={`${field.description} (${field.min}–${field.max}, default: ${field.fallback})`}
+            {...(numValue !== undefined ? { value: numValue } : {})}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
             max={field.max}
             step={field.step}
+            error={numError}
           />
         );
       }
 
       if (field.control === 'dimension') {
+        const dimValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined;
+        const dimError = dimValue !== undefined && dimValue > field.max
+          ? `Value exceeds maximum of ${field.max}`
+          : undefined;
+        const reset = () => {
+          updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
+          updateSetting(field.unitKey, field.allowedUnits[0] as GalleryBehaviorSettings[typeof field.unitKey]);
+        };
         return (
           <DimensionInput
             key={`${group}-${String(field.key)}`}
-            label={field.label}
-            description={field.description}
-            value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined) ?? field.fallback}
+            label={fieldLabel(field.label, reset)}
+            description={`${field.description} (max: ${field.max}, default: ${field.fallback})`}
+            value={(dimValue ?? field.fallback)}
             unit={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.unitKey) as string | undefined) ?? 'px'}
             onValueChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
             onUnitChange={(unit) => updateSetting(field.unitKey, unit as GalleryBehaviorSettings[typeof field.unitKey])}
             allowedUnits={field.allowedUnits}
             max={field.max}
             step={field.step}
+            {...(dimError ? { numberInputProps: { error: dimError } } : {})}
           />
         );
       }
 
       if (field.control === 'boolean') {
+        const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         return (
           <ModalSelect
             key={`${group}-${String(field.key)}`}
-            label={field.label}
+            label={fieldLabel(field.label, reset)}
             description={field.description}
             value={String((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as boolean | undefined) ?? field.fallback)}
             onChange={(value) => updateSetting(field.key, ((value ?? String(field.fallback)) === 'true') as GalleryBehaviorSettings[typeof field.key])}
@@ -130,10 +198,11 @@ function renderSettingFields(
       }
 
       if (field.control === 'text') {
+        const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         return (
           <TextInput
             key={`${group}-${String(field.key)}`}
-            label={field.label}
+            label={fieldLabel(field.label, reset)}
             description={field.description}
             value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
             placeholder={field.placeholder}
@@ -143,10 +212,11 @@ function renderSettingFields(
       }
 
       if (field.control === 'color') {
+        const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         return (
           <ColorInput
             key={`${group}-${String(field.key)}`}
-            label={field.label}
+            label={fieldLabel(field.label, reset)}
             description={field.description}
             value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
             onChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
@@ -154,15 +224,22 @@ function renderSettingFields(
         );
       }
 
+      // select (fallthrough)
+      const selectValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined;
+      const selectError = selectValue !== undefined && !field.options.some((o) => o.value === selectValue)
+        ? `Stored value "${selectValue}" is not a valid option`
+        : undefined;
+      const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
       return (
         <ModalSelect
           key={`${group}-${String(field.key)}`}
-          label={field.label}
+          label={fieldLabel(field.label, reset)}
           description={field.description}
           {...(field.size !== undefined ? { size: field.size } : {})}
-          {...((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) !== undefined ? { value: getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string } : {})}
+          {...(selectValue !== undefined ? { value: selectValue } : {})}
           onChange={(value) => updateSetting(field.key, (value ?? field.fallback) as GalleryBehaviorSettings[typeof field.key])}
           data={field.options}
+          error={selectError}
         />
       );
     });
@@ -235,6 +312,19 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
     updateSetting('galleryConfig', setGalleryAdapterSetting(resolvedGalleryConfig, key, value));
   };
 
+  const resetAllAdapterSettings = () => {
+    let config = resolvedGalleryConfig;
+    for (const groupDefinition of activeSettingGroups) {
+      for (const field of getSettingGroupFieldDefinitions(groupDefinition.group)) {
+        config = setGalleryAdapterSetting(config, field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
+        if (field.control === 'dimension') {
+          config = setGalleryAdapterSetting(config, field.unitKey, field.allowedUnits[0] as GalleryBehaviorSettings[typeof field.unitKey]);
+        }
+      }
+    }
+    updateSetting('galleryConfig', config);
+  };
+
   return (
     <Stack gap="md">
       <Switch
@@ -262,25 +352,34 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
               context: 'unified-gallery',
               breakpoint,
             });
+            const hasMobileUnsupported = breakpoint === 'mobile' && adapterOptions.some((o) => o.disabled);
 
             return (
-              <SimpleGrid cols={2} spacing="xs" mb="xs" key={breakpoint}>
-                <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                  {BREAKPOINT_LABELS[breakpoint]}
-                </Text>
-                <ModalSelect
-                  size="xs"
-                  label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
-                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
-                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || null}
-                  onChange={(value) => updateConfiguredAdapterId(
-                    breakpoint,
-                    'unified',
-                    value ?? (getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || 'compact-grid'),
-                  )}
-                  data={adapterOptions}
-                />
-              </SimpleGrid>
+              <Box key={breakpoint} mb="xs">
+                <SimpleGrid cols={2} spacing="xs">
+                  <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                    {BREAKPOINT_LABELS[breakpoint]}
+                  </Text>
+                  <ModalSelect
+                    size="xs"
+                    label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
+                    aria-label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
+                    value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || null}
+                    onChange={(value) => updateConfiguredAdapterId(
+                      breakpoint,
+                      'unified',
+                      value ?? (getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'unified') || 'compact-grid'),
+                    )}
+                    data={adapterOptions}
+                    renderOption={renderAdapterOption}
+                  />
+                </SimpleGrid>
+                {hasMobileUnsupported && (
+                  <Text size="xs" c="dimmed" mt={4}>
+                    Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above).
+                  </Text>
+                )}
+              </Box>
             );
           })}
         </Box>
@@ -300,29 +399,39 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
               context: 'per-breakpoint-gallery',
               breakpoint,
             });
+            const hasMobileUnsupported = breakpoint === 'mobile' && adapterOptions.some((o) => o.disabled);
 
             return (
-              <SimpleGrid cols={3} spacing="xs" mb="xs" key={breakpoint}>
-                <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                  {BREAKPOINT_LABELS[breakpoint]}
-                </Text>
-                <ModalSelect
-                  size="xs"
-                  label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
-                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
-                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'image') || null}
-                  onChange={(value) => updateConfiguredAdapterId(breakpoint, 'image', value ?? 'classic')}
-                  data={adapterOptions}
-                />
-                <ModalSelect
-                  size="xs"
-                  label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
-                  aria-label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
-                  value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'video') || null}
-                  onChange={(value) => updateConfiguredAdapterId(breakpoint, 'video', value ?? 'classic')}
-                  data={adapterOptions}
-                />
-              </SimpleGrid>
+              <Box key={breakpoint} mb="xs">
+                <SimpleGrid cols={3} spacing="xs">
+                  <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
+                    {BREAKPOINT_LABELS[breakpoint]}
+                  </Text>
+                  <ModalSelect
+                    size="xs"
+                    label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
+                    aria-label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
+                    value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'image') || null}
+                    onChange={(value) => updateConfiguredAdapterId(breakpoint, 'image', value ?? 'classic')}
+                    data={adapterOptions}
+                    renderOption={renderAdapterOption}
+                  />
+                  <ModalSelect
+                    size="xs"
+                    label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
+                    aria-label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
+                    value={getConfiguredAdapterId(resolvedGalleryConfig, breakpoint, 'video') || null}
+                    onChange={(value) => updateConfiguredAdapterId(breakpoint, 'video', value ?? 'classic')}
+                    data={adapterOptions}
+                    renderOption={renderAdapterOption}
+                  />
+                </SimpleGrid>
+                {hasMobileUnsupported && (
+                  <Text size="xs" c="dimmed" mt={4}>
+                    Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above).
+                  </Text>
+                )}
+              </Box>
             );
           })}
         </Box>
@@ -331,6 +440,20 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
       {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
 
       {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+
+      {activeSettingGroups.length > 0 && (
+        <Group justify="flex-end">
+          <Button
+            size="compact-xs"
+            variant="subtle"
+            color="gray"
+            leftSection={<IconRefresh size={12} />}
+            onClick={resetAllAdapterSettings}
+          >
+            Reset all adapter settings to defaults
+          </Button>
+        </Group>
+      )}
     </Stack>
   );
 }
