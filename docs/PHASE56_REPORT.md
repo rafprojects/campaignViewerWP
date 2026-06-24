@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-23
-**Last updated:** 2026-06-24 (post-delivery review)
+**Last updated:** 2026-06-24 (post-delivery review + manual QA)
 
 ### Tracks
 
@@ -303,6 +303,36 @@ A high-effort multi-angle review was run against the three branch commits after 
 
 1 follow-on commit (`fix(p56-review)`) — 2 files changed, 67 insertions (+15 deletions). Full vitest suite 3,398 tests green post-fix; all four coverage thresholds maintained (lines 87.7%, functions 81.3%, branches 74.9%, statements 85.8%).
 
+## Manual Testing Findings (2026-06-24)
+
+Manual QA after the code-review fixes surfaced two additional bugs, both involving the "Edit Gallery Config" option in the floating AuthBar menu.
+
+### T1 — "Edit Gallery Config" missing when campaign opened from admin panel
+
+**Bug.** The floating AuthBar menu's "Edit Gallery Config" option only appeared when a campaign was open in `CampaignViewer` (gallery listing view). Opening a campaign via the admin panel's `UnifiedCampaignModal` left the option absent because `CampaignViewer` never runs while the admin panel is the active view — `CardGallery` (which hosts `CampaignViewer`) is unmounted when `isAdminPanelOpen` is true. `UnifiedCampaignModal` never called `setActiveCampaign` or `setOnEditGalleryConfig` in `CampaignContext`, so both remained null/undefined.
+
+**How found.** Manual testing: user opened the admin panel, selected a campaign for editing, opened the floating AuthBar menu, and observed the Campaign section was absent.
+
+**Fix rationale.** Added `editingCampaign` state to `useUnifiedCampaignModal` — storing the `Campaign` object passed to `openForEdit` and clearing it on `close`. In `UnifiedCampaignModal`, added a `useEffect` that mirrors the `CampaignViewer` pattern: when the modal is open in edit mode, calls `setActiveCampaign(editingCampaign)` and `setOnEditGalleryConfig(() => setGalleryConfigEditorOpen(true))`; clears both on close. Clicking "Edit Gallery Config" in the AuthBar menu now opens the same `GalleryConfigEditorModal` already wired inside the campaign modal. 2 files changed — `useUnifiedCampaignModal.ts`, `UnifiedCampaignModal.tsx`.
+
+---
+
+### T2 — "Edit Gallery Config" missing on multi-space pages (all instances)
+
+**Bug.** On pages with multiple gallery instances (e.g., the MEOWER page with three: `wpsg-test-2`, `wpsg-test-3`, `wpsg-iso-space`), all three floating AuthBar buttons render at the same `position: fixed` viewport coordinate (`right: 24px, bottom: 24px, z-index: 9999`). Because the shadow DOM hosts share the same stacking context and the last one in DOM order (`wpsg-iso-space`) always wins pointer-event hit testing, every click on the floating button opened `wpsg-iso-space`'s menu — regardless of which instance contained the active campaign. `wpsg-iso-space` had no active campaign, so its menu showed Admin Panel / Settings / SpaceSwitcher but no Campaign section and no "Edit Gallery Config" option.
+
+Investigated via Playwright automation against the live dev site: after opening a campaign in `wpsg-test-2`, a real coordinate click at the button position consistently landed on `#wpsg-iso-space` (confirmed via `document.elementFromPoint`). Direct shadow-DOM `.click()` calls on each instance's button DID show the correct menu, isolating the fault to the stacking order rather than the context registration logic.
+
+**How found.** Live browser testing: user opened a campaign on the multi-space page, clicked the floating menu, and saw no "Edit Gallery Config." Automated Playwright session confirmed all three buttons sit at the identical viewport coordinate and that the last instance always intercepts pointer events.
+
+**Fix rationale.** In `AuthBar.tsx`, added a `useEffect` that fires when `activeCampaign`, `instanceId`, or `pageSpaces` change. When `activeCampaign` is set and `pageSpaces.length > 1` (multi-space page), it sets `position: relative; z-index: 10001` on the shadow host element (`document.getElementById(instanceId)`). This creates a stacking context at z-index 10001, which outranks the other instances' root-context fixed buttons (z-index 9999), causing the active instance's button to win hit testing. The style is removed on cleanup when the campaign closes. 1 file changed — `AuthBar.tsx`.
+
+---
+
+### Manual testing outcome
+
+2 additional commits: `fix: wire UnifiedCampaignModal into CampaignContext` (admin panel path) and `fix: elevate shadow host z-index on multi-space pages when campaign is active` (multi-space stacking fix). 6 commits total on the branch.
+
 ## Outcome
 
-All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. Post-delivery review found and fixed 7 bugs (see above). 4 commits total, 3,398 vitest tests green, 22 PHPUnit settings tests green.
+All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. Post-delivery code review fixed 7 bugs; manual QA fixed 2 further bugs (admin panel campaign context and multi-space floating button stacking). 6 commits total, 3,398 vitest tests green, 22 PHPUnit settings tests green.
