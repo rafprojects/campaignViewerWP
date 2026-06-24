@@ -437,6 +437,47 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         </Box>
       )}
 
+      <Box>
+        <Text size="sm" fw={500} mb={4}>Breakpoint Pixel Thresholds</Text>
+        <Text size="xs" c="dimmed" mb={8}>
+          Width thresholds (px) used by the classic carousel adapter to determine the active breakpoint. Defaults match Mantine (768 / 1200).
+        </Text>
+        <SimpleGrid cols={2} spacing="xs">
+          <NumberInput
+            label={fieldLabel('Mobile max (px)', () => updateSetting('mobileBreakpointPx', 768))}
+            description="Max container width considered mobile. (320–1440, default: 768)"
+            value={settings.mobileBreakpointPx}
+            onChange={(v) => updateSetting('mobileBreakpointPx', typeof v === 'number' ? v : 768)}
+            min={320}
+            max={1440}
+            step={10}
+            error={
+              settings.mobileBreakpointPx < 320 || settings.mobileBreakpointPx > 1440
+                ? 'Enter a value between 320 and 1440'
+                : settings.mobileBreakpointPx >= settings.tabletBreakpointPx
+                  ? 'Mobile threshold must be less than tablet threshold'
+                  : undefined
+            }
+          />
+          <NumberInput
+            label={fieldLabel('Tablet max (px)', () => updateSetting('tabletBreakpointPx', 1200))}
+            description="Max container width considered tablet. (320–1920, default: 1200)"
+            value={settings.tabletBreakpointPx}
+            onChange={(v) => updateSetting('tabletBreakpointPx', typeof v === 'number' ? v : 1200)}
+            min={320}
+            max={1920}
+            step={10}
+            error={
+              settings.tabletBreakpointPx < 320 || settings.tabletBreakpointPx > 1920
+                ? 'Enter a value between 320 and 1920'
+                : settings.mobileBreakpointPx >= settings.tabletBreakpointPx
+                  ? 'Tablet threshold must be greater than mobile threshold'
+                  : undefined
+            }
+          />
+        </SimpleGrid>
+      </Box>
+
       {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
 
       {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}

@@ -138,6 +138,56 @@ describe('GalleryAdapterSettingsSection – P56-F reset', () => {
   });
 });
 
+describe('GalleryAdapterSettingsSection – P56-B breakpoint thresholds', () => {
+  it('renders the breakpoint threshold section', () => {
+    render(
+      <GalleryAdapterSettingsSection
+        settings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
+        updateSetting={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Breakpoint Pixel Thresholds')).toBeInTheDocument();
+    // The field labels are ReactNode (via fieldLabel helper); verify by label text
+    expect(screen.getByText(/mobile max \(px\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/tablet max \(px\)/i)).toBeInTheDocument();
+  });
+
+  it('shows a range error when mobileBreakpointPx is out of bounds', () => {
+    const settings = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS, mobileBreakpointPx: 100 };
+    render(
+      <GalleryAdapterSettingsSection
+        settings={settings}
+        updateSetting={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/enter a value between 320 and 1440/i)).toBeInTheDocument();
+  });
+
+  it('shows an ordering error when mobileBreakpointPx >= tabletBreakpointPx', () => {
+    const settings = { ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS, mobileBreakpointPx: 1200, tabletBreakpointPx: 900 };
+    render(
+      <GalleryAdapterSettingsSection
+        settings={settings}
+        updateSetting={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/mobile threshold must be less than tablet threshold/i)).toBeInTheDocument();
+  });
+
+  it('calls updateSetting when reset button is clicked', () => {
+    const updateSetting = vi.fn();
+    render(
+      <GalleryAdapterSettingsSection
+        settings={{ ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS, mobileBreakpointPx: 600 }}
+        updateSetting={updateSetting}
+      />,
+    );
+    const resetBtn = screen.getByRole('button', { name: /reset mobile max/i });
+    fireEvent.click(resetBtn);
+    expect(updateSetting).toHaveBeenCalledWith('mobileBreakpointPx', 768);
+  });
+});
+
 describe('GalleryAdapterSettingsSection – P56-E capability badges', () => {
   it('renders adapter picker selects in the per-type section', () => {
     render(

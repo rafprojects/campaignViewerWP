@@ -229,6 +229,9 @@ class WPSG_Settings_Registry {
         'auth_bar_backdrop_blur'         => 8,
         'auth_bar_mobile_breakpoint'     => 768,
         'card_auto_columns_breakpoints'  => '480:1,768:2,1024:3,1280:4',
+        // P56-B: Configurable breakpoint thresholds for the classic carousel adapter.
+        'mobile_breakpoint_px'           => 768,
+        'tablet_breakpoint_px'           => 1200,
         'session_idle_timeout_minutes' => 0,
         'layout_builder_scope'           => 'full',
         'preserve_data_on_uninstall'     => true,
@@ -925,6 +928,9 @@ class WPSG_Settings_Registry {
         'carousel_autoplay_speed'      => [500, 15000],
         'carousel_darken_opacity'      => [0, 1],
         'carousel_gap'                 => [0, 64],
+        // P56-B: Configurable breakpoint thresholds.
+        'mobile_breakpoint_px'         => [320, 1440],
+        'tablet_breakpoint_px'         => [320, 1920],
     ];
 
     private static function create_default_gallery_scope_config($adapter_id) {

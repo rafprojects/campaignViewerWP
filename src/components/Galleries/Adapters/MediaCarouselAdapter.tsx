@@ -58,10 +58,6 @@ const VIEWPORT_MAX_WIDTHS: Record<Breakpoint, string> = {
 
 const CSS_HEIGHT_VALUE_RE = /^\s*\d+(?:\.\d+)?\s*(px|em|rem|vh|dvh|svh|lvh|vw|%)\s*$/i;
 
-// Breakpoint thresholds (matches useBreakpoint / Mantine defaults)
-const BP_MOBILE_MAX = 768;
-const BP_TABLET_MAX = 1200;
-
 // ── Helpers ──────────────────────────────────────────────────────────
 
 function resolveManualHeight(value: string | undefined, fallback: string): string {
@@ -79,9 +75,13 @@ function withAutoplay(url: string): string {
   }
 }
 
-function deriveBreakpoint(containerWidth: number | undefined): Breakpoint {
-  if (!containerWidth || containerWidth >= BP_TABLET_MAX) return 'desktop';
-  if (containerWidth >= BP_MOBILE_MAX) return 'tablet';
+function deriveBreakpoint(
+  containerWidth: number | undefined,
+  mobileMax: number,
+  tabletMax: number,
+): Breakpoint {
+  if (!containerWidth || containerWidth >= tabletMax) return 'desktop';
+  if (containerWidth >= mobileMax) return 'tablet';
   return 'mobile';
 }
 
@@ -151,7 +151,11 @@ export function MediaCarouselAdapter({
       media={media}
       settings={settings}
       commonSettings={commonSettings}
-      breakpoint={deriveBreakpoint(containerDimensions?.width)}
+      breakpoint={deriveBreakpoint(
+        containerDimensions?.width,
+        settings.mobileBreakpointPx,
+        settings.tabletBreakpointPx,
+      )}
       maxWidth={containerDimensions?.width ?? 0}
     />
   );
