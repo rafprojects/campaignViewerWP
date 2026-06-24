@@ -15,6 +15,8 @@ export type UpdateGallerySetting = <K extends keyof GalleryBehaviorSettings>(
   value: GalleryBehaviorSettings[K],
 ) => void;
 
+type BatchGalleryConfigUpdate = (pairs: Array<[keyof GalleryBehaviorSettings, GalleryBehaviorSettings[keyof GalleryBehaviorSettings]]>) => void;
+
 interface GalleryAdapterSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
@@ -126,6 +128,7 @@ function renderSettingFields(
   updateSetting: UpdateGallerySetting,
   options?: {
     includeAppliesTo?: AdapterSettingFieldAppliesTo[];
+    batchGalleryConfigUpdate?: BatchGalleryConfigUpdate;
   },
 ) {
   const includeAppliesTo = options?.includeAppliesTo ?? ['always'];
@@ -160,10 +163,15 @@ function renderSettingFields(
         const dimError = dimValue !== undefined && dimValue > field.max
           ? `Value exceeds maximum of ${field.max}`
           : undefined;
-        const reset = () => {
-          updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
-          updateSetting(field.unitKey, field.allowedUnits[0] as GalleryBehaviorSettings[typeof field.unitKey]);
-        };
+        const reset = options?.batchGalleryConfigUpdate
+          ? () => options.batchGalleryConfigUpdate!([
+              [field.key as keyof GalleryBehaviorSettings, field.fallback as GalleryBehaviorSettings[keyof GalleryBehaviorSettings]],
+              [field.unitKey as keyof GalleryBehaviorSettings, field.allowedUnits[0] as GalleryBehaviorSettings[keyof GalleryBehaviorSettings]],
+            ])
+          : () => {
+              updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
+              updateSetting(field.unitKey, field.allowedUnits[0] as GalleryBehaviorSettings[typeof field.unitKey]);
+            };
         return (
           <DimensionInput
             key={`${group}-${String(field.key)}`}
@@ -254,25 +262,28 @@ function renderSettingGroup(
   imageAdapterIds: string[],
   videoAdapterIds: string[],
   isUnifiedMode: boolean,
+  batchGalleryConfigUpdate?: BatchGalleryConfigUpdate,
 ) {
+  const batchOpt = batchGalleryConfigUpdate ? { batchGalleryConfigUpdate } : {};
+
   if (groupDefinition.scopeMode === 'contextual') {
     if (isUnifiedMode) {
-      return renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['unified'] });
+      return renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['unified'], ...batchOpt });
     }
 
     return (
       <Group key={groupDefinition.group} grow>
         {anyAdapterUsesSettingGroup(imageAdapterIds, groupDefinition.group)
-          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['image'] })
+          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['image'], ...batchOpt })
           : null}
         {anyAdapterUsesSettingGroup(videoAdapterIds, groupDefinition.group)
-          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['video'] })
+          ? renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { includeAppliesTo: ['video'], ...batchOpt })
           : null}
       </Group>
     );
   }
 
-  const fields = renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting);
+  const fields = renderSettingFields(groupDefinition, resolvedAdapterSettings, settings, updateSetting, { ...batchOpt });
 
   if (fields.length === 0) {
     return null;
@@ -313,10 +324,23 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
     updateSetting('galleryConfig', setGalleryAdapterSetting(resolvedGalleryConfig, key, value));
   };
 
+  const batchUpdateAdapterSettings: BatchGalleryConfigUpdate = (pairs) => {
+    let config = resolvedGalleryConfig;
+    for (const [key, value] of pairs) {
+      config = setGalleryAdapterSetting(config, key, value as GalleryBehaviorSettings[typeof key]);
+    }
+    updateSetting('galleryConfig', config);
+  };
+
   const resetAllAdapterSettings = () => {
     let config = resolvedGalleryConfig;
     for (const groupDefinition of activeSettingGroups) {
-      for (const field of getSettingGroupFieldDefinitions(groupDefinition.group)) {
+      const appliesToFilter: AdapterSettingFieldAppliesTo[] = groupDefinition.scopeMode === 'contextual'
+        ? (isUnifiedMode ? ['unified'] : ['image', 'video'])
+        : ['always'];
+      for (const field of getSettingGroupFieldDefinitions(groupDefinition.group).filter(
+        (f) => appliesToFilter.includes((f.appliesTo ?? 'always') as AdapterSettingFieldAppliesTo),
+      )) {
         config = setGalleryAdapterSetting(config, field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         if (field.control === 'dimension') {
           config = setGalleryAdapterSetting(config, field.unitKey, field.allowedUnits[0] as GalleryBehaviorSettings[typeof field.unitKey]);
@@ -324,6 +348,8 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
       }
     }
     updateSetting('galleryConfig', config);
+    updateSetting('mobileBreakpointPx', 768);
+    updateSetting('tabletBreakpointPx', 1200);
   };
 
   const { importFileRef, handleExport, handleImport } = useGalleryAdapterSettingsIO({
@@ -453,7 +479,10 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
             label={fieldLabel('Mobile max (px)', () => updateSetting('mobileBreakpointPx', 768))}
             description="Max container width considered mobile. (320–1440, default: 768)"
             value={settings.mobileBreakpointPx}
-            onChange={(v) => updateSetting('mobileBreakpointPx', typeof v === 'number' ? v : 768)}
+            onChange={(v) => {
+              const raw = typeof v === 'number' ? v : 768;
+              updateSetting('mobileBreakpointPx', Math.min(raw, settings.tabletBreakpointPx - 1));
+            }}
             min={320}
             max={1440}
             step={10}
@@ -469,7 +498,10 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
             label={fieldLabel('Tablet max (px)', () => updateSetting('tabletBreakpointPx', 1200))}
             description="Max container width considered tablet. (320–1920, default: 1200)"
             value={settings.tabletBreakpointPx}
-            onChange={(v) => updateSetting('tabletBreakpointPx', typeof v === 'number' ? v : 1200)}
+            onChange={(v) => {
+              const raw = typeof v === 'number' ? v : 1200;
+              updateSetting('tabletBreakpointPx', Math.max(raw, settings.mobileBreakpointPx + 1));
+            }}
             min={320}
             max={1920}
             step={10}
@@ -484,9 +516,9 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
         </SimpleGrid>
       </Box>
 
-      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {inlineSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode, batchUpdateAdapterSettings))}
 
-      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode))}
+      {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode, batchUpdateAdapterSettings))}
 
       <Group justify="space-between">
         <Group gap="xs">

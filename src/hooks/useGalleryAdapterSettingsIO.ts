@@ -80,10 +80,19 @@ export function useGalleryAdapterSettingsIO({
   const importFileRef = useRef<HTMLInputElement>(null);
 
   const handleExport = useCallback(() => {
+    if (!galleryConfig) {
+      notifications.show({
+        title: 'Nothing to export',
+        message: 'No gallery adapter settings have been configured yet.',
+        color: 'yellow',
+        autoClose: 4000,
+      });
+      return;
+    }
     const payload = {
       version: '1',
       exportedAt: new Date().toISOString(),
-      galleryConfig: galleryConfig ?? {},
+      galleryConfig,
     };
     const json = JSON.stringify(payload, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -91,8 +100,10 @@ export function useGalleryAdapterSettingsIO({
     const a = document.createElement('a');
     a.href = url;
     a.download = 'gallery-adapter-settings.wpsg.json';
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }, [galleryConfig]);
 
   const handleImport = useCallback(
@@ -133,6 +144,15 @@ export function useGalleryAdapterSettingsIO({
         } finally {
           if (importFileRef.current) importFileRef.current.value = '';
         }
+      };
+      reader.onerror = () => {
+        notifications.show({
+          title: 'Import failed',
+          message: 'Could not read the selected file.',
+          color: 'red',
+          autoClose: 5000,
+        });
+        if (importFileRef.current) importFileRef.current.value = '';
       };
       reader.readAsText(file);
     },
