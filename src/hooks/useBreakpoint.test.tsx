@@ -282,6 +282,26 @@ describe('useBreakpoint – first-render and late-ref contract', () => {
     expect(result.current.width).toBe(0);
   });
 
+  it('tears down ResizeObserver when source switches from container to viewport (lines 150-152)', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 1360, configurable: true, writable: true });
+    const refEl = document.createElement('div');
+    Object.defineProperty(refEl, 'clientWidth', { value: 600, configurable: true });
+    const ref = { current: refEl } as React.MutableRefObject<HTMLElement | null>;
+
+    const { result, rerender } = renderHook(
+      ({ src }: { src: 'container' | 'viewport' }) =>
+        useBreakpoint(ref, { source: src }),
+      { initialProps: { src: 'container' as const }, wrapper: Wrapper },
+    );
+    expect(result.current.breakpoint).toBe('mobile'); // container-measured
+
+    // Switch source to viewport — should tear down the ResizeObserver
+    act(() => rerender({ src: 'viewport' }));
+    expect(result.current.breakpoint).toBe('desktop'); // viewport-measured (innerWidth=1360)
+    // The observer should have been disconnected (observerDisconnected flag)
+    expect(observerDisconnected).toBe(true);
+  });
+
   it('tears down the old observer and builds a new one when the element swaps', () => {
     const refA = document.createElement('div');
     Object.defineProperty(refA, 'clientWidth', { value: 1400, configurable: true });

@@ -283,4 +283,18 @@ describe('useAdminAccessState', () => {
     await new Promise(r => setTimeout(r, 450));
     expect(get).not.toHaveBeenCalled();
   });
+
+  it('handles AbortError silently when user search is cancelled (line 85)', async () => {
+    const abortErr = new DOMException('Aborted', 'AbortError');
+    const get = vi.fn().mockRejectedValue(abortErr);
+    const apiClient = makeApiClient({ get });
+    const opts = makeBaseOptions();
+    const { result } = renderHook(
+      () => useAdminAccessState({ apiClient, ...opts }),
+    );
+    act(() => { result.current.setUserSearchQuery('test'); });
+    await new Promise(r => setTimeout(r, 450));
+    // AbortError is swallowed — results stay empty, no error thrown
+    expect(result.current.userSearchResults).toHaveLength(0);
+  });
 });

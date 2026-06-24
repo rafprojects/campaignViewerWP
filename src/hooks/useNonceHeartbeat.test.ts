@@ -113,6 +113,49 @@ describe('useNonceHeartbeat', () => {
     expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
   });
 
+  it('is a no-op when server returns response without nonce field (line 54 false branch)', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({}), // no nonce field in response
+    });
+
+    renderHook(() => useNonceHeartbeat(5000));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    // Nonce should remain unchanged since server returned no nonce
+    expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
+  });
+
+  it('updates __WPSG_REST_NONCE__ alongside config restNonce on success', async () => {
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ nonce: 'fresh-nonce' }),
+    });
+
+    renderHook(() => useNonceHeartbeat(5000));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    expect(win.__WPSG_REST_NONCE__).toBe('fresh-nonce');
+  });
+
+  it('does not set __WPSG_CONFIG__ when it is absent (line 68 false branch)', async () => {
+    delete win.__WPSG_CONFIG__;
+    // Use __WPSG_REST_NONCE__ as the startup nonce instead
+    win.__WPSG_REST_NONCE__ = 'legacy-nonce';
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({ nonce: 'refreshed' }),
+    });
+
+    renderHook(() => useNonceHeartbeat(5000));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+
+    // __WPSG_CONFIG__ was absent — should not have been created
+    expect(win.__WPSG_CONFIG__).toBeUndefined();
+    expect(win.__WPSG_REST_NONCE__).toBe('refreshed');
+  });
+
   it('clears interval on unmount', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,

@@ -259,3 +259,33 @@ All six tracks landed on the `feat/phase55-code-refactor-for-quality` branch (co
 - `MediaTab.tsx`: 1007 → 558 lines (4 hooks)
 - Field contract: single JSON schema consumed by both TS and PHP
 - Full vitest suite (3151 tests) green; PHPUnit sanitizer/registry suites green; `tsc --noEmit` + ESLint `--max-warnings 0` clean across all touched files.
+
+---
+
+## PR Review — Branch Coverage Remediation
+
+**Context.** The Phase 55 hook extractions introduced 12 new hook files, none with tests. Branch coverage fell below the 72% CI threshold (`71.71%` → `ERROR: Coverage for branches (71.71%) does not meet global threshold (72%)`). This section records the remediation.
+
+### Decision: write tests directly against the extracted hooks
+
+The extracted hooks (`useLayoutBuilderHistory`, `useLayoutBuilderGroups`, `useLayoutBuilderZIndex`, `useLayoutBuilderOverlays`, `useBuilderDockLayout`, `useLayoutBuilderAssets`, `useLayoutBuilderFileIO`, `useMediaDisplay`, `useMediaUpload`, `useMediaCrud`, `useMediaExternal`) are independently testable. Testing them directly at the hook level rather than only through component integration tests gives faster feedback and cleaner branch isolation.
+
+### Coverage gains — 22 new test files, ~223 additional branches covered
+
+| File | Before | After |
+|------|--------|-------|
+| `useLayoutBuilderHistory` | ~45% (via state) | ~86% |
+| `useLayoutBuilderGroups` | 0% | ~61% |
+| `useBuilderDockLayout` | 0% | ~89% |
+| `useLayoutBuilderZIndex` | ~77% | ~86% |
+| `useLayoutBuilderAssets` | 0% | ~75% |
+| `useLayoutBuilderFileIO` | 0% | ~65% |
+| `useMediaDisplay` | ~36% | ~86% |
+| `useBuilderDraftRestore` | ~12% | ~90% |
+| `useMediaUpload` | ~37% | ~55% |
+| `useAdminCampaignActions` | ~59% | ~73% |
+| `useScrollRestore` (pkg) | ~12% | ~89% |
+| `useMediaLightbox` (pkg) | ~44% | ~94% |
+| Various utilities | — | +15–30 branches each |
+
+**Final result: 74.94% branch coverage (5856/7814), clearing the 72% threshold with ~3% padding.**
