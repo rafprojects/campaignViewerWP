@@ -104,6 +104,7 @@ export function useUnifiedCampaignModal({
   const [opened, setOpened] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('edit');
   const [editingCampaignId, setEditingCampaignId] = useState<string | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [formState, setFormState] = useState<UnifiedCampaignFormState>({ ...emptyForm });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -173,6 +174,7 @@ export function useUnifiedCampaignModal({
     setAddMediaUrl('');
     setAddMediaType('video');
     setAddMediaCaption('');
+    setEditingCampaign(c as Campaign);
     setOpened(true);
 
     // Load media for this campaign
@@ -204,6 +206,7 @@ export function useUnifiedCampaignModal({
   const close = useCallback(() => {
     setOpened(false);
     setEditingCampaignId(null);
+    setEditingCampaign(null);
     setFormState({ ...emptyForm });
     setMediaItems([]);
     setCoverImageChanged(false);
@@ -476,6 +479,7 @@ export function useUnifiedCampaignModal({
     opened,
     mode,
     editingCampaignId,
+    editingCampaign,
 
     // Form
     formState,
