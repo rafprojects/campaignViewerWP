@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-23
-**Last updated:** 2026-06-24
+**Last updated:** 2026-06-24 (post-delivery review)
 
 ### Tracks
 
@@ -223,6 +223,86 @@ Track already fully implemented prior to this phase as part of P35-B: `CampaignC
 
 `useGalleryAdapterSettingsIO` hook (`src/hooks/useGalleryAdapterSettingsIO.ts`) implements `handleExport` (serializes `galleryConfig` to a `.wpsg.json` blob download) and `handleImport` (reads file, validates via `GalleryConfigSchema` Zod parse + explicit adapter-ID and adapter-setting-key checks, applies via `updateSetting('galleryConfig', ...)`). Export/Import buttons wired into `GalleryAdapterSettingsSection` toolbar. Unknown adapter IDs (not in `BUILTIN_ADAPTERS`) and foreign setting keys (not in `SETTING_GROUP_DEFINITIONS`) are rejected with a Mantine notification. Valid imports round-trip losslessly; the PHP sanitizer bounds-checks values on next save. 6 new hook tests cover export and all rejection paths; full suite 3,398 tests green.
 
+## Post-Delivery Code Review (2026-06-24)
+
+A high-effort multi-angle review was run against the three branch commits after delivery. Eight independent finder angles (line-by-line scan, removed-behaviour audit, cross-file tracer, reuse, simplification, efficiency, altitude, and conventions) were executed in parallel, producing a candidate pool that was then deduped and verified. Seven findings survived verification (four CONFIRMED, three PLAUSIBLE) and were fixed in a single follow-on commit (`fix(p56-review)`).
+
+### Findings and fixes
+
+#### R1 — `FileReader.onerror` never set (CONFIRMED)
+
+**Bug.** `useGalleryAdapterSettingsIO.ts` — `handleImport` creates a `FileReader`, assigns `reader.onload`, and relies on a `finally` block inside `onload` to clear `importFileRef.current.value`. `reader.onerror` was never assigned. When the browser fires an error event (OS-level read failure, revoked file handle, sandboxed iframe), `onload` never runs, the `finally` block is never reached, the file input stays bound to the failed file (the user cannot re-select the same filename), and no notification is shown.
+
+**How found.** The line-by-line diff scan (Angle A) flagged the absent error handler. The removed-behaviour audit (Angle B) confirmed no alternative cleanup path existed.
+
+**Fix rationale.** Added a `reader.onerror` handler that shows a Mantine error notification and clears `importFileRef.current.value`, mirroring the `finally` block's behaviour for the failure path.
+
+---
+
+#### R2 — Inverted breakpoint pair allowed to persist (CONFIRMED)
+
+**Bug.** `GalleryAdapterSettingsSection.tsx` — the "Breakpoint Pixel Thresholds" `NumberInput` components displayed an inline error when `mobileBreakpointPx >= tabletBreakpointPx`, but both `onChange` handlers called `updateSetting` unconditionally. The inverted pair could be saved to the WordPress settings store and subsequently passed to `deriveBreakpoint` in `MediaCarouselAdapter.tsx`. There, the desktop branch (`containerWidth >= tabletMax`) fires first, so any width above `tabletMax` maps to `'desktop'`. The `'tablet'` branch (`containerWidth >= mobileMax`) can only match widths in `[mobileMax, tabletMax)` — but when `mobileMax >= tabletMax` that interval is empty or inverted, making the `'tablet'` layout permanently unreachable. The carousel silently jumped from mobile to desktop.
+
+**How found.** The line-by-line scan (Angle A) noticed the unconditional `updateSetting` call beneath the error display. The removed-behaviour audit (Angle B) traced the consequence to `deriveBreakpoint` and confirmed no runtime guard existed there.
+
+**Fix rationale.** Clamped `onChange` for the mobile input to `Math.min(raw, tabletBreakpointPx - 1)` and for the tablet input to `Math.max(raw, mobileBreakpointPx + 1)`. This preserves the ordering invariant at the point of entry rather than relying on a display-only error. The error display is intentionally kept for any pre-existing stored values that arrived before the fix.
+
+---
+
+#### R3 — Dimension field per-field reset lost the value change (CONFIRMED)
+
+**Bug.** `GalleryAdapterSettingsSection.tsx` — the `reset` closure for `dimension`-control fields called `updateSetting(field.key, fallback)` then `updateSetting(field.unitKey, defaultUnit)` as two separate calls. Both routes through `updateConfiguredAdapterSetting`, which computes `setGalleryAdapterSetting(resolvedGalleryConfig, key, value)` where `resolvedGalleryConfig` is the render-time snapshot. With React 18 automatic batching, both `setState` calls are queued synchronously; because the second call reads the same stale snapshot as the first (it does not see the first call's update), the second result overwrites the first: only the unit was reset, and the value remained at its pre-reset figure.
+
+**How found.** The cross-file tracer (Angle C) examined how `updateConfiguredAdapterSetting` was called and noticed the closure captured `resolvedGalleryConfig` at render time. The verifier confirmed React 18 batching semantics would cause the second update to overwrite the first.
+
+**Fix rationale.** Added a `BatchGalleryConfigUpdate` callback threaded from the component through `renderSettingGroup` into `renderSettingFields`. When present (always in the component render path), the dimension reset chains both changes — `field.key` and `field.unitKey` — through a single `setGalleryAdapterSetting` call sequence before dispatching one `updateSetting('galleryConfig', ...)`, matching the same pattern already used by `resetAllAdapterSettings`.
+
+---
+
+#### R4 — `resetAllAdapterSettings` omitted `mobileBreakpointPx` / `tabletBreakpointPx` (CONFIRMED)
+
+**Bug.** `GalleryAdapterSettingsSection.tsx` — the "Reset all adapter settings to defaults" button iterated `activeSettingGroups` and called `setGalleryAdapterSetting`, which writes into `galleryConfig`'s nested `adapterSettings` structure. `mobileBreakpointPx` and `tabletBreakpointPx` are top-level `GalleryBehaviorSettings` keys (added by P56-B), not stored inside `galleryConfig`. After clicking the reset, carousel breakpoint thresholds were silently left at whatever custom values the user had previously set.
+
+**How found.** The removed-behaviour audit (Angle B) identified that the two new P56-B fields, introduced in the same phase, were not included in the reset loop. Confirmed by reading `resetAllAdapterSettings` directly.
+
+**Fix rationale.** Added explicit `updateSetting('mobileBreakpointPx', 768)` and `updateSetting('tabletBreakpointPx', 1200)` calls after the `galleryConfig` reset, using the same default values as the individual per-field reset buttons already in the UI.
+
+---
+
+#### R5 — `resetAllAdapterSettings` ignored `appliesTo` visibility filter (CONFIRMED)
+
+**Bug.** `GalleryAdapterSettingsSection.tsx` — `resetAllAdapterSettings` called `getSettingGroupFieldDefinitions(groupDefinition.group)` with no filter, returning all fields for each group. `renderSettingFields`, by contrast, filters by `includeAppliesTo` (e.g. `['unified']` in unified mode, `['image']` or `['video']` in per-type mode). Fields with `appliesTo: 'image'` or `appliesTo: 'video'` were therefore reset even when invisible in the current mode, silently wiping settings that would only be in use when the user switched mode.
+
+**How found.** The simplification/efficiency angle (Angle E/F) flagged the inconsistency between the `resetAllAdapterSettings` iteration and `renderSettingFields`' filtering. The verifier confirmed the discrepancy by reading both functions and checking available `appliesTo` values in `adapterSettingGroups.ts`.
+
+**Fix rationale.** Applied the same `appliesTo` filter logic used by `renderSettingGroup`: for contextual-scope groups, the filter is `['unified']` in unified mode and `['image', 'video']` in per-type mode; for non-contextual groups it is `['always']`. Fields not currently rendered are no longer reset.
+
+---
+
+#### R6 — Export serialised an empty object when `galleryConfig` was `undefined` (PLAUSIBLE)
+
+**Bug.** `useGalleryAdapterSettingsIO.ts` — `handleExport` used `galleryConfig ?? {}` in the payload. When `galleryConfig` is `undefined` (the field has never been written to the WordPress settings, or the user has not yet saved), the export JSON contained `galleryConfig: {}`. `GalleryConfigSchema.safeParse({})` succeeds (all fields are optional), so reimporting the file applied an empty config, discarding all adapter selections configured by the recipient.
+
+**How found.** The cross-file tracer (Angle C) examined the export path and noted the `?? {}` fallback. The verifier confirmed `GalleryConfigSchema` allows an empty object by reading `settingsSchemas.ts`.
+
+**Fix rationale.** Added an early-return guard: if `galleryConfig` is `undefined`, a Mantine notification explains there is nothing to export. When defined, `galleryConfig` is serialised directly (no `?? {}`), guaranteeing the exported document represents the user's actual configuration.
+
+---
+
+#### R7 — `URL.revokeObjectURL` called before async download initiation (PLAUSIBLE)
+
+**Bug.** `useGalleryAdapterSettingsIO.ts` — `handleExport` created an object URL, set it on a detached anchor (`document.createElement('a')`, never appended to the DOM), called `a.click()`, then immediately called `URL.revokeObjectURL(url)`. On Firefox and some Chromium builds, the download manager acquires the object URL asynchronously after `click()` returns. Revoking the URL synchronously before that acquisition can produce an empty or failed download. Omitting `document.body.appendChild` also makes the click unreliable in some environments (Safari, WebViews).
+
+**How found.** The altitude angle (Angle G) flagged the detached-anchor pattern and immediate revocation. The verifier marked it PLAUSIBLE, citing the spec not guaranteeing download initiation from a detached element and the async nature of the download manager.
+
+**Fix rationale.** Appended the anchor to `document.body` before `.click()` and removed it immediately after, following the standard cross-browser download pattern. Wrapped `URL.revokeObjectURL` in `setTimeout(..., 0)` to defer it to the next tick, ensuring the download manager has acquired the URL before it is invalidated.
+
+---
+
+### Review outcome
+
+1 follow-on commit (`fix(p56-review)`) — 2 files changed, 67 insertions (+15 deletions). Full vitest suite 3,398 tests green post-fix; all four coverage thresholds maintained (lines 87.7%, functions 81.3%, branches 74.9%, statements 85.8%).
+
 ## Outcome
 
-All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. 3 commits, 3,398 vitest tests green, 22 PHPUnit settings tests green.
+All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. Post-delivery review found and fixed 7 bugs (see above). 4 commits total, 3,398 vitest tests green, 22 PHPUnit settings tests green.
