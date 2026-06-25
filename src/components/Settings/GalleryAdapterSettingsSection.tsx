@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { ActionIcon, Badge, Box, Button, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput, Tooltip, type SelectProps } from '@mantine/core';
+import { ActionIcon, Box, Button, Group, NumberInput, SimpleGrid, Stack, Switch, Text, TextInput, Tooltip, type SelectProps } from '@mantine/core';
 import { useGalleryAdapterSettingsIO } from '@/hooks/useGalleryAdapterSettingsIO';
 import { IconRefresh } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
@@ -44,16 +44,14 @@ const renderAdapterOption: NonNullable<SelectProps['renderOption']> = ({ option 
   const reg = getAdapterRegistration(option.value);
   const caps = reg?.capabilities ?? [];
   return (
-    <Stack gap={4}>
-      <Text size="sm">{option.label}</Text>
+    <Stack gap={0}>
+      <Box bg="gray.0" px={6} py={3} style={{ borderRadius: 'var(--mantine-radius-sm)' }}>
+        <Text size="sm" fw={500}>{option.label}</Text>
+      </Box>
       {caps.length > 0 && (
-        <Group gap={4} wrap="wrap">
-          {caps.map((cap) => (
-            <Badge key={cap} size="xs" variant="light" color="gray" radius="sm">
-              {CAPABILITY_LABELS[cap] ?? cap}
-            </Badge>
-          ))}
-        </Group>
+        <Text size="xs" c="dimmed" px={6} pt={2} pb={1}>
+          {caps.map((cap) => CAPABILITY_LABELS[cap] ?? cap).join(' · ')}
+        </Text>
       )}
     </Stack>
   );
@@ -103,10 +101,11 @@ function fieldLabel(label: string, onReset: () => void): ReactNode {
           size="xs"
           variant="subtle"
           color="gray"
-          onClick={onReset}
+          style={{ opacity: 0.7 }}
+          onClick={(e) => { e.stopPropagation(); onReset(); }}
           aria-label={`Reset ${label} to default`}
         >
-          <IconRefresh size={12} />
+          <IconRefresh size={14} />
         </ActionIcon>
       </Tooltip>
     </Group>
@@ -520,44 +519,49 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
 
       {sectionSettingGroups.map((groupDefinition) => renderSettingGroup(groupDefinition, resolvedAdapterSettings, settings, updateConfiguredAdapterSetting, imageAdapterIds, videoAdapterIds, isUnifiedMode, batchUpdateAdapterSettings))}
 
-      <Group justify="space-between">
-        <Group gap="xs">
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            color="blue"
-            onClick={handleExport}
-          >
-            Export settings
-          </Button>
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            color="blue"
-            onClick={() => importFileRef.current?.click()}
-          >
-            Import settings
-          </Button>
-          <input
-            ref={importFileRef}
-            type="file"
-            accept=".json,.wpsg.json"
-            style={{ display: 'none' }}
-            onChange={handleImport}
-          />
+      <Stack gap={4}>
+        <Text size="xs" c="dimmed">
+          Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included.
+        </Text>
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              color="blue"
+              onClick={handleExport}
+            >
+              Export adapter settings
+            </Button>
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              color="blue"
+              onClick={() => importFileRef.current?.click()}
+            >
+              Import adapter settings
+            </Button>
+            <input
+              ref={importFileRef}
+              type="file"
+              accept=".json,.wpsg.json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+          </Group>
+          {activeSettingGroups.length > 0 && (
+            <Button
+              size="compact-xs"
+              variant="subtle"
+              color="gray"
+              leftSection={<IconRefresh size={12} />}
+              onClick={resetAllAdapterSettings}
+            >
+              Reset all adapter settings to defaults
+            </Button>
+          )}
         </Group>
-        {activeSettingGroups.length > 0 && (
-          <Button
-            size="compact-xs"
-            variant="subtle"
-            color="gray"
-            leftSection={<IconRefresh size={12} />}
-            onClick={resetAllAdapterSettings}
-          >
-            Reset all adapter settings to defaults
-          </Button>
-        )}
-      </Group>
+      </Stack>
     </Stack>
   );
 }
