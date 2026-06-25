@@ -194,9 +194,9 @@ interface SettingsPanelTabsContentProps {
   setCustomFonts: (fonts: CustomFontEntry[]) => void;
   updateTypoOverride: (elementId: string, override: TypographyOverride) => void;
   tooltipLabel: SettingsPanelTooltipRenderer;
-  /** When set, global-only tabs (Integrations, System & Admin) are hidden. */
+  /** When set, hides the Integrations tab and the magic-link picker inside System & Admin. */
   spaceId?: number;
-  /** P53-A: Integrations + System & Admin are system-admin only (webhooks etc.). */
+  /** P53-A: System & Admin tab is system-admin only. The tab itself is available in space mode; only the magic-link picker is hidden. */
   isSystemAdmin?: boolean;
 }
 
@@ -262,7 +262,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
             Integrations
           </Tabs.Tab>
         )}
-        {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
+        {isSystemAdmin && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
           </Tabs.Tab>
@@ -270,7 +270,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
       </Tabs.List>
 
       <Tabs.Panel value="appearance" pt="md">
-        <SettingsAppearanceTab settings={settings} updateSetting={updateSetting} />
+        <SettingsAppearanceTab settings={settings} updateSetting={updateSetting} isSystemAdmin={isSystemAdmin} />
       </Tabs.Panel>
 
       <Tabs.Panel value="cards" pt="md">
@@ -321,7 +321,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         </Tabs.Panel>
       )}
 
-      {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
+      {isSystemAdmin && settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           <SettingsSystemAdminTab
             settings={settings}
@@ -329,6 +329,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
             updateGallerySetting={updateGallerySetting}
             apiClient={apiClient}
             tooltipLabel={tooltipLabel}
+            showGlobalOnlySettings={!isSpaceMode}
           />
         </Tabs.Panel>
       )}

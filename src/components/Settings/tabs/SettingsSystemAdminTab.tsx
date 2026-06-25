@@ -61,6 +61,8 @@ interface SettingsSystemAdminTabProps {
   updateGallerySetting: UpdateGallerySetting;
   apiClient: ApiClient;
   tooltipLabel: (label: string, key: string) => ReactNode;
+  /** False in space-scoped panels; hides global-only controls like the magic-link page picker. */
+  showGlobalOnlySettings?: boolean;
 }
 
 export const SettingsSystemAdminTab = memo(function SettingsSystemAdminTab({
@@ -69,14 +71,17 @@ export const SettingsSystemAdminTab = memo(function SettingsSystemAdminTab({
   updateGallerySetting,
   apiClient,
   tooltipLabel,
+  showGlobalOnlySettings = true,
 }: SettingsSystemAdminTabProps) {
   return (
     <Stack gap="xl">
-      <MagicLinkPageSelector
-        apiClient={apiClient}
-        value={settings.magicLinkLandingPageId ?? 0}
-        onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
-      />
+      {showGlobalOnlySettings && (
+        <MagicLinkPageSelector
+          apiClient={apiClient}
+          value={settings.magicLinkLandingPageId ?? 0}
+          onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
+        />
+      )}
       <AdvancedSettingsSection
         settings={settings}
         updateSetting={updateGallerySetting}
