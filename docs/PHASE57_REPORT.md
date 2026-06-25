@@ -1,8 +1,8 @@
 # Phase 57 - UI & Editor Polish
 
-**Status:** In progress
+**Status:** In progress (A, B done — incl. round-2 QA fixes)
 **Created:** 2026-06-23
-**Last updated:** 2026-06-25
+**Last updated:** 2026-06-25 (round 2)
 
 ### Tracks
 
@@ -70,15 +70,15 @@ The Settings panel Drawer uses a hardcoded transition — `{ transition: 'slide-
 
 - Added `settingsPanelAnimation: 'slide-left' | 'fade' | 'scale' | 'none'` to `GalleryBehaviorSettings` (`src/types/index.ts`) with default `'slide-left'` in `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`.
 - **Deviation from plan:** the plan called for Zod validation in `src/types/settingsSchemas.ts`. Verified that file only validates *gallery config* (adapters/typography/breakpoints) — the sibling behavior settings (`settingsPanelWidth`, `settingsDrawerBlurEnabled`, the `*Unit` enums) are **not** Zod-validated. They flow through the generic `mergeSettingsWithDefaults` (`src/utils/mergeSettingsWithDefaults.ts`), which uses `??` defaults but no per-field enum check. To stay consistent with siblings and still harden against bad stored values, validation happens at the **point of use** instead: `resolveSettingsPanelTransition()` (`src/components/Admin/settingsPanelTransition.ts`) maps known values to Mantine `transitionProps` and falls back to `slide-left` for unknown/legacy/`undefined`. No `settingsSchemas.ts` change.
-- The transition map lives in its own module (not inline in `SettingsPanel.tsx`) to avoid a `react-refresh/only-export-components` lint warning and keep it unit-testable. `none` → `{ transition: 'fade', duration: 0 }` (instant, no flash); `scale` → `scale-x` (right-anchored).
+- The transition map lives in its own module (not inline in `SettingsPanel.tsx`) to avoid a `react-refresh/only-export-components` lint warning and keep it unit-testable. `none` → `{ transition: 'fade', duration: 0 }` (instant, no flash); `scale` → `scale-x` initially, later replaced by a custom corner-origin scale (see [Round 2 Bug 5](#bug-5-polish--scale-now-expands-from-the-lower-right-corner)).
+- **Note:** the actual open/close animation did **not** work as shipped in round 1 — see [Round 2 Bug 1](#round-2--manual-qa-bugs--final-implementation-2026-06-25) for the root cause and the `requestAnimationFrame` fix that made it play.
 - Wired `transitionProps={resolveSettingsPanelTransition(settings.settingsPanelAnimation)}` on the Drawer (`SettingsPanel.tsx`).
 - Added a `Select` (Slide / Fade / Scale / None) to the "Settings Drawer" accordion in `AdvancedSettingsSection.tsx`, beside the width/blur controls, using `comboboxProps={{ withinPortal: false }}` to match the sibling DimensionInput so the dropdown stays styled inside the shadow DOM.
 - Tests: default + merge cases in `defaultsAndMerge.test.ts`; full mapping (incl. `none`→0 and unknown→slide-left fallback) in `resolveSettingsPanelTransition.test.ts`.
 
-### Manual QA (2026-06-25, `see-wp`)
+### Manual QA (2026-06-25, round 1)
 
-- The Drawer visibly animates on open (default slide-left reproduced) during the Track B shadow-DOM session.
-- The animation `Select` UI itself was **not** visually confirmed in-app: it lives in the SettingsPanel "System & Admin" tab, which renders only for a **non-space** panel with `advancedSettingsEnabled` — every gallery on the dev site is space-scoped (the tab is hidden in space mode), and the standalone wp-admin "Super Gallery Settings" page is a separate UI that does not mount `AdvancedSettingsSection`. The control is covered by unit tests and wired identically to its proven sibling drawer controls; visual confirmation is deferred until a non-space gallery is available.
+> **Superseded — see [Round 2](#round-2--manual-qa-bugs--final-implementation-2026-06-25) below.** Round-1 QA wrongly assumed the panel animated and could not reach the animation `Select` at all (the System & Admin tab was hidden in space mode). Round 2 found the animation **never** played, the tab was unreachable for admins, and the setting did not persist — all fixed there.
 
 ## Track P57-B - SettingsPanel space-badge dark-mode parity
 
@@ -100,22 +100,104 @@ The SettingsPanel Drawer renders via `withinPortal` to `document.body`, outside 
 
 - `npm run test` for the badge rendering; manual QA comparing all three badge locations in light and dark mode (`see-wp` flow).
 
-### Implementation (2026-06-25)
+### Implementation (2026-06-25, round 1 — shadow-portal approach, SUPERSEDED)
+
+> **This approach was reverted in [Round 2](#round-2--manual-qa-bugs--final-implementation-2026-06-25).** Portaling the Drawer into the shadow tree achieved badge parity but **broke the open/close animation** (it moved the Drawer's Mantine `Transition` and remounted it when `withinPortal` toggled). The final approach keeps the `document.body` portal and reads `:host` values via `getComputedStyle(shadowHost)` — the very fallback flagged below. Retained here for history.
 
 - **Deviation from plan:** the plan/report suggested resolving the shadow host via `document.getElementById(useRootId())`. Verified this is wrong twice: (1) `rootId` only equals the host element id when the host *has* an id — un-id'd shortcode mounts get a synthesized path slug (`getRootId`, `src/main.tsx`) with no matching element; and (2) the host element is in the **light** DOM, so portaling into it renders outside the shadow tree (host light-DOM children aren't displayed once a shadow root is attached), and `:host` CSS variables still wouldn't resolve.
-- **Approach used — `getRootNode()`:** an inline hidden `<span ref={shadowSentinelRef}>` (rendered as a sibling of the Drawer, so it lives in the shadow tree) resolves its `getRootNode()`. When that is a `ShadowRoot`, a dedicated `<div data-wpsg-drawer-portal>` is created once and appended to the shadow root, and passed as `portalProps={{ target }}`. A dedicated sibling container (rather than the React mount node) keeps the Drawer out of React's managed subtree. Outside the shadow DOM (tests, non-shadow mounts) the target stays `null` and the Drawer keeps its default `document.body` portal.
-- With the Drawer now inside the shadow tree, `:host` Mantine CSS variables resolve, so the badge reverted to plain `variant="light"` and the `useMantineTheme`/`useComputedColorScheme` + `colorHex`/`badgeBg`/`badgeText` hardcoded-shade workaround was removed. The left-border accent (also previously `colorHex`) now uses `var(--mantine-color-${color}-5)`.
-- **QA risk (carry into manual QA):** moving the Drawer off `document.body` makes its `position: fixed` overlay viewport-relative only if no ancestor between the shadow-root container and the Drawer has a `transform`/`filter`/`perspective`. The container is a direct child of the shadow root, so this is expected to be safe — confirm in `see-wp` that the overlay covers the full viewport and the drawer is not clipped/offset. Fallback if it breaks: keep the `document.body` portal and instead read `:host` values via `getComputedStyle(shadowHost)`.
-- Tests: `SettingsPanel.test.tsx` asserts the badge renders with `data-variant="light"` and no inline `background-color`/`color` override (regression guard for the removed workaround).
+- **Approach used (then reverted) — `getRootNode()` + shadow-tree portal:** an inline hidden `<span ref={shadowSentinelRef}>` resolves its `getRootNode()`; when a `ShadowRoot`, a dedicated `<div data-wpsg-drawer-portal>` was appended to it and passed as `portalProps={{ target }}`. With the Drawer inside the shadow tree, `:host` vars resolved and the badge used plain `variant="light"`.
+- **QA risk that materialized differently:** the flagged concern was `position: fixed` clipping. The actual failure was the **animation** — see Round 2.
 
-### Manual QA (2026-06-25, `see-wp`)
+## Round 2 — manual-QA bugs & final implementation (2026-06-25)
 
-Verified on the live dev site (`/meower`, the dark/Halloween-themed `iso-space` gallery) via a Playwright probe that pierces the shadow DOM. With the Settings drawer open:
+Manual QA of the deployed plugin surfaced four real bugs that the round-1 unit tests missed, plus two polish items. Each is documented below with symptom → root cause → fix, including the dead-ends, because several were non-obvious and future changes to the settings panel or Mantine upgrades could regress them.
 
-- **Portal location:** exactly one `[data-wpsg-drawer-portal]` container, created **inside the shadow root** (`portalsInShadow: 1, portalsInLight: 0`) — the Drawer is no longer in `document.body`.
-- **Badge:** renders `data-variant="light"` with `--badge-bg: var(--mantine-color-green-light)` / `--badge-color: var(--mantine-color-green-light-color)` (computed `rgb(22,69,31)` / `rgb(235,251,238)` in dark mode) — the same Mantine variable mechanism as the AuthBar/AdminPanel badges, with **no** hardcoded inline color. Confirms dark-mode parity.
-- **Border accent:** `var(--mantine-color-green-5)` resolves to `rgb(81,207,102)`.
-- **Positioning (the flagged risk):** drawer rect `x=800 w=600 h=1000` against a `1400×1000` viewport — full-height, right-anchored, not clipped/offset. The `position: fixed` ancestor-transform concern does not materialize.
+Files touched in round 2: `src/components/Admin/SettingsPanel.tsx`, `src/components/Admin/settingsPanelTransition.ts`, `src/components/Settings/tabs/SettingsSystemAdminTab.tsx`, `src/components/Settings/tabs/SettingsAppearanceTab.tsx`, `src/components/Settings/GeneralSettingsSection.tsx`, `wp-plugin/.../includes/settings/class-wpsg-settings-registry.php`, `wp-plugin/.../includes/rest/class-wpsg-space-controller.php`, and the corresponding tests.
+
+### Bug 1 — The open/close animation never played (it never had, even pre-P57)
+
+**Symptom.** The Settings panel opened and closed instantly. Cycling the new `settingsPanelAnimation` values changed nothing. The user confirmed it had *never* animated, even with the old hardcoded `{ transition: 'slide-left', duration: 200 }`.
+
+**Root cause (two layers).**
+1. **Mounts already-open.** The panel is conditionally rendered by its parent (`App.tsx`: `{isSettingsOpen && <SettingsPanel opened={isSettingsOpen} … />}`), so the Mantine `Drawer` always receives `opened=true` on its *first* render. Mantine's `useTransition` (`@mantine/core/.../Transition/use-transition.mjs`) initializes status with `useState(mounted ? 'entered' : 'exited')` and only animates via `useDidUpdate` on a **subsequent** `mounted` change. A Transition that first renders open starts at `'entered'` and never plays the enter animation.
+2. **Sub-frame flip.** The first fix — an `internalOpened` state that starts `false` and is set to `opened` in a `useEffect` — was proven (via commit-phase logging) to genuinely commit `false → true`. But the two commits landed **~14 ms apart (< one 16.7 ms frame)**, so the browser never *painted* the closed "from" state, and a CSS transition with no painted start frame does not run. A per-frame `requestAnimationFrame` recorder confirmed the drawer's `transform` was stuck at `translateX(0)` the entire time.
+
+**Dead-ends ruled out (don't re-try these):**
+- *Shadow-DOM CSS isolation* — Mantine's `Transition` writes the transform/transition as **inline styles**, so the animation does not depend on the shadow-root stylesheet. Portal location is irrelevant to whether it animates. (This is why the Track B shadow-portal approach was both unnecessary for animation and harmful — see Bug 4.)
+- *`keepMounted`* — keeping the content mounted while closed did not help; the problem was the unpainted frame, not a missing element.
+- *`prefers-reduced-motion`* — verified off; not the cause.
+
+**Fix.** Defer the open across **two** `requestAnimationFrame`s so the closed state is painted before flipping open (`SettingsPanel.tsx`):
+```ts
+const [internalOpened, setInternalOpened] = useState(false);
+useEffect(() => {
+  if (!opened) { setInternalOpened(false); return; }
+  let raf2 = 0;
+  const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => setInternalOpened(true)); });
+  return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+}, [opened]);
+```
+The `Drawer` uses `opened={internalOpened}`. **Verified** in a production (`vite preview`) build: the transform sweeps `translateX(600 → 466 → 354 → … → 2 → 0)`.
+
+> **Watch-outs for future devs:** (a) keep the Drawer's structural props (esp. `withinPortal`) stable across the flip — toggling them remounts the Mantine `Transition` and resets it to `'entered'`; (b) jsdom advances rAF, so tests must `await` the panel opening rather than querying synchronously (see test changes below).
+
+### Bug 2 — System & Admin tab unreachable for admins (so the animation control couldn't be found)
+
+**Symptom.** Logged in as a WordPress admin, the "System & Admin" tab (which hosts the animation `Select`, via `AdvancedSettingsSection`) never appeared.
+
+**Root cause.** The tab was gated `!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled`. On a site where every gallery is space-scoped, `!isSpaceMode` is always false, so the tab is permanently hidden. Separately, the "Enable Advanced Settings" toggle in `GeneralSettingsSection` was visible to **all** users, not just admins.
+
+**Fix.** Removed the `!isSpaceMode` guard from both the tab trigger and panel (`SettingsPanel.tsx`); the tab now shows for `isSystemAdmin && advancedSettingsEnabled` in any mode. Gated the "Enable Advanced Settings" toggle on `isSystemAdmin`, threaded `isSystemAdmin` through `SettingsAppearanceTab → GeneralSettingsSection`.
+
+### Bug 3 — The animation setting never persisted (always reverted to `slide-left`)
+
+**Symptom.** Choosing Fade/Scale/None, saving, and reopening always showed `slide-left`.
+
+**Root cause (two layers).**
+1. **Not in the PHP registry.** `settings_panel_animation` was never added to `WPSG_Settings_Registry`. The generic sanitizer (`WPSG_Settings_Sanitizer::sanitize_settings`) **drops any key not present in `$defaults`**, so the value was stripped on every global save.
+2. **Wrong save path for a global setting (the dominant cause).** Because the panel was opened space-scoped, the save went to `PUT /spaces/{id}/settings` (`update_space_settings`), which keeps only `get_space_overridable_fields()` and drops the rest. The animation — like all "Advanced"/System settings — is **global**, not space-overridable, so it was silently discarded.
+
+**Architectural clarification (decision record).** The Advanced settings are global because of their **nature** (settings-drawer chrome, cache TTLs, image-optimization, magic-link page) — not merely because they are admin-only. *Access control* (who may edit) and *value scope* (global vs per-space) are orthogonal: e.g. `theme` and per-type background settings are admin/editor-set yet deliberately **space-overridable**. The governing question is "does this value meaningfully vary per space?" — for these settings, no.
+
+**Fix (chosen approach: "split-save").**
+1. Registered `settings_panel_animation` in `WPSG_Settings_Registry`: added to `$defaults` (`'slide-left'`) and `$valid_options` (`['slide-left','fade','scale','none']`) so it persists and validates as an enum globally. (It is **not** added to `$space_overridable_fields` — it is intentionally global.)
+2. `update_space_settings` now **splits** the incoming payload (`class-wpsg-space-controller.php`): overridable keys → the space override (unchanged); the remaining global-only keys that **actually changed** → the global option via `update_option`, gated on `current_user_can('manage_options')` (system-level write; the System & Admin tab is already manage_options-gated client-side) and audited. The frontend save path is unchanged — it already POSTs the full settings blob, and the backend (sole owner of the registry) classifies each key.
+3. Removed the `showGlobalOnlySettings` gating added mid-round-1 so the whole System & Admin tab (incl. the magic-link picker) is editable from the space drawer and split-saves.
+
+> **Watch-out:** the panel sends the *entire* settings object on save, so the split only writes global keys whose value **differs from the current global value** — avoids clobbering global settings or audit-log noise on every per-space save.
+
+### Bug 4 — Badge dark-mode parity: shadow-portal approach reverted for `getComputedStyle`
+
+**Symptom.** The round-1 Track B approach (portal the Drawer into the shadow tree) gave correct badge colors but **broke the animation** (Bug 1): the `withinPortal` toggle and shadow-tree relocation remounted the Mantine `Transition`.
+
+**Fix.** Keep the Drawer portaling to `document.body` (stable, proven positioning) and obtain exact colors by reading the shadow host's resolved `:host` CSS variables from light-DOM JS:
+```ts
+const colorHex  = shadowHost ? getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-5`).trim() : `var(--mantine-color-${color}-5)`;
+const badgeBg   = shadowHost ? getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light`).trim() : undefined;
+const badgeText = shadowHost ? getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light-color`).trim() : undefined;
+```
+The `shadowHost` element is still found via the inline sentinel's `getRootNode()`. These exact values are applied as inline styles on the badge (`variant="light"` base + inline override) and the left-border accent. In non-shadow mounts (dev/tests) `shadowHost` is null and it falls back to `variant="light"` / the CSS-var string. This is the refined form of the *original* hardcoded-shade workaround — but it reads the **exact** computed values instead of guessing shade indices, so parity is pixel-perfect. **Verified** in dark mode (`iso-space`, Halloween theme): badge `rgb(22,69,31)`/`rgb(235,251,238)`, border `rgb(81,207,102)`.
+
+### Bug 5 (polish) — "Scale" now expands from the lower-right corner
+
+`scale` mapped to Mantine's built-in `scale-x`, which scales horizontally from the edge (left edge renders first, expands right). Replaced with a custom `MantineTransition` (`settingsPanelTransition.ts`): `scale(0) → scale(1)` with `transformOrigin: 'bottom right'`, so the panel grows out of the lower-right corner — visually as if emerging from the floating auth menu anchored there.
+
+### Bug 6 (polish) — Close animation
+
+The panel unmounted instantly on close because the parent removes it the moment `onClose()` runs, cutting off any exit transition. Now `handleClose` reverts the theme preview and sets `internalOpened = false` to play the exit animation; the real `onClose()` (which unmounts) fires from the Drawer's **`onExitTransitionEnd`** once the exit finishes.
+
+> **Subtle bug fixed here:** the first attempt wired the unmount to `transitionProps.onExited`, which Mantine invokes from **both** the overlay *and* content transitions → `onClose` fired **twice**. The top-level `onExitTransitionEnd` prop is called only from the content transition (`ModalBaseContent`), so it fires exactly once. `none` (duration 0) resolves `onExited` synchronously, so it still closes instantly.
+
+### Round-2 verification
+
+- Unit/integration: `SettingsPanel.test.tsx` (incl. async-open and async-`onClose` updates), `resolveSettingsPanelTransition.test.ts` (incl. the custom scale object), `defaultsAndMerge.test.ts`, plus the badge regression guard. tsc + eslint clean; PHP files pass `php -l`.
+- Browser (production `vite preview`, per-frame rAF capture): open slide `600 → 0`; close slide `0 → 600 → unmount`.
+- Live deploy (`see-wp`): user-confirmed open animation, all four variants persist & play, scale emerges from the corner, close animates, and dark-mode badge parity.
+- Test-env note: because the open is now deferred by rAF, two tests that assumed synchronous open were updated to `await` the panel (`clickTabAndWait` now uses `findByRole`; the "renders without a loading spinner" test awaits the tabs), and the close test now `await`s `onClose`.
+
+### Follow-up
+
+- Add a PHP unit test for the `update_space_settings` split-save (global-only keys routed to the global option for `manage_options`, overridable keys to the space, non-admins blocked from global writes).
 
 ## Track P57-C - LayoutBuilder swatches + eyedropper
 
