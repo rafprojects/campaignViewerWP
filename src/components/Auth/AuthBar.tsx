@@ -61,6 +61,26 @@ export function AuthBar({
   // (now generic, shared-ui) AuthBar variants + SpaceSwitcher as a prop.
   const pageSpaces = usePageSpaces();
 
+  // On multi-space pages all floating buttons share the same fixed viewport position, so the
+  // last shadow host in DOM order always intercepts pointer events. When this instance has an
+  // active campaign we elevate its shadow host's z-index so ITS button wins hit-testing.
+  useEffect(() => {
+    if (!instanceId || !pageSpaces || pageSpaces.length <= 1) return;
+    const host = document.getElementById(instanceId);
+    if (!host) return;
+    if (activeCampaign) {
+      host.style.position = 'relative';
+      host.style.zIndex = '10001';
+    } else {
+      host.style.position = '';
+      host.style.zIndex = '';
+    }
+    return () => {
+      host.style.position = '';
+      host.style.zIndex = '';
+    };
+  }, [activeCampaign, instanceId, pageSpaces]);
+
   // Route to the appropriate sub-component based on mode
   if (displayMode === 'floating') {
     return (

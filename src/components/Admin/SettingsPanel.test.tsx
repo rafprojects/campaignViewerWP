@@ -1134,7 +1134,8 @@ describe('SettingsPanel', () => {
       'Mobile Unified Gallery Adapter',
     ]) {
       fireEvent.click(screen.getByLabelText(label, { selector: 'input' }));
-      fireEvent.click(screen.getByRole('option', { name: masonryLabel ?? 'Masonry' }));
+      // Capability badges are appended to the option accessible name; match by prefix.
+      fireEvent.click(screen.getByRole('option', { name: new RegExp(`^${masonryLabel ?? 'Masonry'}`, 'i') }));
     }
 
     await waitFor(() => {
@@ -1168,7 +1169,8 @@ describe('SettingsPanel', () => {
     expect(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('Desktop Unified Gallery Adapter', { selector: 'input' }));
-    fireEvent.click(screen.getByRole('option', { name: unifiedClassicLabel ?? 'Classic' }));
+    const escapedClassicLabel = (unifiedClassicLabel ?? 'Classic').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    fireEvent.click(screen.getByRole('option', { name: new RegExp(`^${escapedClassicLabel}`, 'i') }));
 
     const { value } = await openResponsiveConfigEditor();
 
@@ -1188,7 +1190,7 @@ describe('SettingsPanel', () => {
     await screen.findByText('Gallery Adapters');
 
     fireEvent.click(screen.getByLabelText('Mobile Image Gallery Adapter', { selector: 'input' }));
-    fireEvent.click(screen.getByRole('option', { name: masonryLabel ?? 'Masonry' }));
+    fireEvent.click(screen.getByRole('option', { name: new RegExp(`^${masonryLabel ?? 'Masonry'}`, 'i') }));
 
     const { value } = await openResponsiveConfigEditor();
 

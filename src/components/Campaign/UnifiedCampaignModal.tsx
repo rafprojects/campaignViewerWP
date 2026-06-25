@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, type ReactElement } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -19,6 +19,7 @@ import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEdit
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
+import { useCampaignContext } from '@/contexts/CampaignContext';
 import { resolveGalleryMode } from '@/utils/resolveAdapterId';
 import {
   clearCampaignGalleryOverrides,
@@ -502,8 +503,10 @@ export function UnifiedCampaignModal({
   tagItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
+  const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const {
     opened, mode, formState, updateForm, isSaving,
+    editingCampaign,
     coverImageUploading, handleSelectCoverImage, handleUploadCoverImage,
     activeTab, setActiveTab,
     mediaItems, mediaLoading, handleRemoveMedia, handleAddFromLibrary,
@@ -515,6 +518,24 @@ export function UnifiedCampaignModal({
     companies, companiesLoading,
     close, save,
   } = modal;
+
+  const openGalleryConfigFromAuthBar = useCallback(() => {
+    setGalleryConfigEditorOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (!opened || mode !== 'edit' || !editingCampaign) {
+      setActiveCampaign(null);
+      setOnEditGalleryConfig(undefined);
+      return;
+    }
+    setActiveCampaign(editingCampaign);
+    setOnEditGalleryConfig(openGalleryConfigFromAuthBar);
+    return () => {
+      setActiveCampaign(null);
+      setOnEditGalleryConfig(undefined);
+    };
+  }, [opened, mode, editingCampaign, openGalleryConfigFromAuthBar, setActiveCampaign, setOnEditGalleryConfig]);
 
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: formState,

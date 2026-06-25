@@ -989,6 +989,9 @@ export interface GalleryBehaviorSettings {
   sessionIdleWarningSeconds: number;
   // P15-A: Layout builder scope
   layoutBuilderScope: 'full' | 'viewport';
+  // P56-B: Configurable breakpoint pixel thresholds for the classic carousel adapter.
+  mobileBreakpointPx: number;
+  tabletBreakpointPx: number;
   // P23-D: Canonical responsive gallery configuration surface.
   galleryConfig?: GalleryConfig;
   // P20-E: Uninstall data preservation
@@ -1478,6 +1481,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   authBarBackdropBlur: 8,
   authBarMobileBreakpoint: 768,
   cardAutoColumnsBreakpoints: '480:1,768:2,1024:3,1280:4',
+  // P56-B: Configurable breakpoint pixel thresholds.
+  mobileBreakpointPx: 768,
+  tabletBreakpointPx: 1200,
   // P20-K: Session idle timeout
   sessionIdleTimeoutMinutes: 0,
   sessionIdleWarningSeconds: 120,
