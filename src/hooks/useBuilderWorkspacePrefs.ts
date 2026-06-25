@@ -21,6 +21,9 @@ export interface BuilderWorkspacePrefs {
   setDesignAssetsOpen: (open: boolean) => void;
   layoutScope: LayoutScope;
   setLayoutScope: (scope: LayoutScope) => void;
+  /** P57-C: recently-used colors shown as swatches in the builder color pickers. */
+  savedSwatches: string[];
+  addSwatch: (color: string) => void;
 }
 
 /** P30-B workspace preferences, persisted in localStorage and root-scoped per P37-KS1. */
@@ -64,6 +67,26 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
     [rootId],
   );
 
+  const [savedSwatches, setSavedSwatches] = useState<string[]>(() => {
+    try {
+      const raw = safeLocalStorage.getItem(`wpsg_builder_${rootId}_color_swatches`);
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch { return []; }
+  });
+
+  const addSwatch = useCallback(
+    (color: string) => {
+      const trimmed = color.trim();
+      if (!trimmed || trimmed === '#') return;
+      setSavedSwatches((prev) => {
+        const deduped = [trimmed, ...prev.filter((c) => c !== trimmed)].slice(0, 30);
+        try { safeLocalStorage.setItem(`wpsg_builder_${rootId}_color_swatches`, JSON.stringify(deduped)); } catch { /* ignore */ }
+        return deduped;
+      });
+    },
+    [rootId],
+  );
+
   useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
   useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
   useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
@@ -102,5 +125,6 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
     showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen,
     layoutScope, setLayoutScope,
+    savedSwatches, addSwatch,
   };
 }

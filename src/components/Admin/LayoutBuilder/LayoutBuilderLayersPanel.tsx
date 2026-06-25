@@ -1,5 +1,6 @@
-import { useCallback } from 'react';
-import { Group, Tooltip, ActionIcon, Divider } from '@mantine/core';
+import { useCallback, useState } from 'react';
+import { Group, Tooltip, ActionIcon, Divider, TextInput } from '@mantine/core';
+import { IconSearch, IconX } from '@tabler/icons-react';
 import {
   IconPlus, IconTrash, IconCopy, IconMask,
   IconAlignBoxLeftMiddle, IconAlignBoxCenterMiddle, IconAlignBoxRightMiddle,
@@ -23,6 +24,8 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
+  const [filterQuery, setFilterQuery] = useState('');
+
   const {
     builder,
     selectedOverlayId,
@@ -311,10 +314,32 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         </Group>
       )}
 
+      {/* Layer search filter */}
+      <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--wpsg-builder-border)', flexShrink: 0 }}>
+        <TextInput
+          size="xs"
+          placeholder="Filter layers…"
+          value={filterQuery}
+          onChange={(e) => setFilterQuery(e.currentTarget.value)}
+          leftSection={<IconSearch size={12} />}
+          rightSection={
+            filterQuery
+              ? (
+                <ActionIcon size="xs" variant="transparent" onClick={() => setFilterQuery('')} aria-label="Clear filter">
+                  <IconX size={12} />
+                </ActionIcon>
+              )
+              : null
+          }
+          styles={{ input: { background: 'var(--wpsg-builder-surface)', color: 'var(--wpsg-builder-text)', borderColor: 'var(--wpsg-builder-border)' } }}
+        />
+      </div>
+
       {/* Unified layer list */}
       <div style={{ flex: 1, overflow: 'auto' }}>
         <LayerPanel
           template={builder.template}
+          filterText={filterQuery}
           selectedSlotIds={builder.selectedSlotIds}
           selectedOverlayId={selectedOverlayId}
           isBackgroundSelected={isBackgroundSelected}

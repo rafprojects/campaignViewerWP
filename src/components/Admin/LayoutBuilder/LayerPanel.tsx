@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
 import { Stack, Text, ScrollArea, ActionIcon, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconLayersLinked, IconLayersOff } from '@tabler/icons-react';
-import { buildLayerList, type GroupLayerItem } from '@/utils/layerList';
+import { buildLayerList, getLayerName, type GroupLayerItem } from '@/utils/layerList';
 import { LayerRow } from './LayerRow';
 import type { LayoutTemplate } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -58,6 +58,8 @@ export interface LayerPanelProps {
    * P30-G: drag-reparent in the layer panel.
    */
   onReparentGroup?: (groupId: string, newParentId: string) => void;
+  /** When non-empty, narrows the list to matching layers; ancestor groups of matches stay visible. */
+  filterText?: string;
 }
 
 // ── Indent per nesting depth (px) ────────────────────────────
@@ -96,8 +98,34 @@ export function LayerPanel({
   onDissolveGroup,
   onToggleGroupCollapsed,
   onReparentGroup,
+  filterText,
 }: LayerPanelProps) {
   const layers = buildLayerList(template);
+
+  // ── Filter layers ─────────────────────────────────────────
+  const needle = filterText?.trim().toLowerCase() ?? '';
+  const displayedLayers = needle
+    ? (() => {
+        const matchingIds = new Set(
+          layers
+            .filter(
+              (l) =>
+                l.kind !== 'group' &&
+                getLayerName(l, template).toLowerCase().includes(needle),
+            )
+            .map((l) => l.id),
+        );
+        const ancestorGroupIds = new Set<string>();
+        for (const l of layers) {
+          if (matchingIds.has(l.id)) {
+            for (const gid of l.ancestorGroupIds) ancestorGroupIds.add(gid);
+          }
+        }
+        return layers.filter(
+          (l) => matchingIds.has(l.id) || (l.kind === 'group' && ancestorGroupIds.has(l.id)),
+        );
+      })()
+    : layers;
   const dragIdRef = useRef<string | null>(null);
   // Local collapsed state for groups (mirrors group.collapsed but tracked here for instant UI)
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
@@ -155,10 +183,10 @@ export function LayerPanel({
   const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : firstSelectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
-    const selectedIndex = layers.findIndex((l) => l.id === activeLayerId);
+    const selectedIndex = displayedLayers.findIndex((l) => l.id === activeLayerId);
     if (selectedIndex < 0) return;
 
-    function selectLayer(item: (typeof layers)[0]) {
+    function selectLayer(item: (typeof displayedLayers)[0]) {
       if (item.kind === 'slot') onSelectSlot(item.id);
       else if (item.kind === 'graphic') onSelectOverlay(item.id);
       else if (item.kind === 'mask') onSelectMask?.(item.parentSlotId);
@@ -168,20 +196,20 @@ export function LayerPanel({
     switch (e.key) {
       case 'ArrowUp': {
         e.preventDefault();
-        const prev = layers[selectedIndex - 1];
+        const prev = displayedLayers[selectedIndex - 1];
         if (prev) selectLayer(prev);
         break;
       }
       case 'ArrowDown': {
         e.preventDefault();
-        const next = layers[selectedIndex + 1];
+        const next = displayedLayers[selectedIndex + 1];
         if (next) selectLayer(next);
         break;
       }
       case ' ':
       case 'Space': {
         e.preventDefault();
-        const cur = layers[selectedIndex]!;
+        const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotVisible(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayVisible(cur.id);
         else if (cur.kind === 'mask') onToggleMaskVisible?.(cur.parentSlotId);
@@ -190,7 +218,7 @@ export function LayerPanel({
       case 'l':
       case 'L': {
         e.preventDefault();
-        const cur = layers[selectedIndex]!;
+        const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotLocked(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayLocked(cur.id);
         break;
@@ -198,7 +226,7 @@ export function LayerPanel({
       case 'f':
       case 'F': {
         e.preventDefault();
-        const cur = layers[selectedIndex]!;
+        const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'background') break;
         onBringToFront(cur.id);
         break;
@@ -206,7 +234,7 @@ export function LayerPanel({
       case 'b':
       case 'B': {
         e.preventDefault();
-        const cur = layers[selectedIndex]!;
+        const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'background') break;
         onSendToBack(cur.id);
         break;
@@ -255,11 +283,12 @@ export function LayerPanel({
         style={{ outline: 'none' }}
       >
         <Stack gap={0} py={4}>
-          {layers.map((item) => {
+          {displayedLayers.map((item) => {
             // ── Hide items whose ancestor group is collapsed ──────────
-            const isHiddenByCollapse = item.ancestorGroupIds.some(
-              (gid) => collapsedGroups.has(gid),
-            );
+            // (skip collapse-hide when a filter is active — matches should always show)
+            const isHiddenByCollapse =
+              !needle &&
+              item.ancestorGroupIds.some((gid) => collapsedGroups.has(gid));
             if (isHiddenByCollapse) return null;
 
             // ── Indentation based on depth ────────────────────────────

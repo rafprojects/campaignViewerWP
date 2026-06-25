@@ -38,7 +38,7 @@ import {
   IconFlipVertical,
   IconTrash,
 } from '@tabler/icons-react';
-import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
+import { BuilderColorInput as ColorInput } from './BuilderColorInput';
 import type {
   LayoutGraphicLayer,
   LayoutSlotShape,

@@ -13,7 +13,7 @@ import {
   Slider,
   Accordion,
 } from '@mantine/core';
-import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
+import { BuilderColorInput as ColorInput } from './BuilderColorInput';
 import {
   IconArrowBigUpLine,
   IconArrowBigDownLine,

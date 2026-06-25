@@ -110,6 +110,10 @@ export interface BuilderDockContextValue {
   handleBringForwardSelected: (ids: string[]) => void;
   /** Send currently selected slots backward one z-index step. */
   handleSendBackwardSelected: (ids: string[]) => void;
+
+  // P57-C: recently-used color swatches, shared across all builder color pickers.
+  savedSwatches: string[];
+  addSwatch: (color: string) => void;
 }
 
 // ── Context + hook ────────────────────────────────────────────

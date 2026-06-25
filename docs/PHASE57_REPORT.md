@@ -1,8 +1,8 @@
 # Phase 57 - UI & Editor Polish
 
-**Status:** In progress (A, B done — incl. round-2 QA fixes)
+**Status:** In progress (A, B, C, D done)
 **Created:** 2026-06-23
-**Last updated:** 2026-06-25 (round 2)
+**Last updated:** 2026-06-25 (C+D)
 
 ### Tracks
 
@@ -10,8 +10,8 @@
 |-------|-------------|--------|--------|
 | P57-A | Settings panel open/close animation variants | Done | Small |
 | P57-B | SettingsPanel space-badge dark-mode color parity | Done | Small-Medium |
-| P57-C | LayoutBuilder saved color swatches + eyedropper | Planned | Small |
-| P57-D | LayoutBuilder layer search/filter in the Layers panel | Planned | Small |
+| P57-C | LayoutBuilder saved color swatches + eyedropper | Done | Small |
+| P57-D | LayoutBuilder layer search/filter in the Layers panel | Done | Small |
 | P57-E | LayoutBuilder persistent (draggable/lockable) guides | Planned | Medium |
 | P57-F | LayoutBuilder slot rotation handles + `rotation` field | Planned | Medium |
 
@@ -199,6 +199,35 @@ The panel unmounted instantly on close because the parent removes it the moment 
 
 - ~~Add a PHP unit test for the `update_space_settings` split-save~~ **Done** — `tests/WPSG_P57A_Settings_Split_Save_Test.php` (5 tests, 18 assertions): registry contract; global key routed to the global option; mixed-payload split; invalid-enum fallback; and a space-admin editor (manage_wpsg + space grant, no manage_options) saving overridable keys while being blocked from the global write.
 
+## Track P57-D - LayoutBuilder layer search/filter
+
+### Problem
+
+The Layers panel in the LayoutBuilder has no search/filter, making large layouts (many named slots and groups) hard to navigate.
+
+### Fix
+
+- Added optional `filterText?: string` prop to `LayerPanel.tsx`. When non-empty, the layer list computed by `buildLayerList(template)` is narrowed: leaf items (slot, graphic, background, mask) whose display name (`getLayerName`) contains the query (case-insensitive) are kept; their ancestor groups are kept visible; all other items are hidden.
+- Collapse-hide is bypassed when a filter is active so matched items inside collapsed groups still surface.
+- Keyboard navigation (ArrowUp/Down, Space, L, F, B) operates on the filtered list.
+- Added a `TextInput` search box (with magnifier icon and clear × button) to `LayoutBuilderLayersPanel.tsx` above the layer list. `filterQuery` is purely local `useState` — no hook or context change.
+
+### Implementation notes
+
+- Filtering is a derived view: `buildLayerList` is still called with the full template; the filter is applied client-side before render. Drag/drop cross-type detection still uses the full `layers` list so group reparent checks never mis-classify a dragged item.
+- `getLayerName` (existing utility) is the single source of truth for display names — slots without a `name` field match on "Media Layer N", graphics on "Graphic Layer N", etc.
+
+### Acceptance criteria met
+
+- Typing narrows the list to matching layers; ancestor groups remain visible.
+- Clearing (× button or deleting query) restores the full hierarchy; selection and interaction are unaffected.
+
+### Validation
+
+- 4 new tests in `LayerPanel.test.tsx` (match, no-match, clear, ancestor-group). All 27 LayerPanel tests pass.
+
+---
+
 ## Track P57-C - LayoutBuilder swatches + eyedropper
 
 ### Problem
@@ -216,9 +245,17 @@ The LayoutBuilder color pickers (background, slot, graphic-layer, mask propertie
 - Saved swatches appear in and apply from each LayoutBuilder color picker and persist across sessions.
 - The eyedropper samples a color where the browser supports it and is hidden/no-op where it doesn't.
 
+### Implementation (2026-06-25)
+
+- **`useBuilderWorkspacePrefs.ts`**: Added `savedSwatches: string[]` and `addSwatch(color: string): void`. `addSwatch` validates non-empty / non-bare-`#`, deduplicates (moves to front), limits to 30 entries, and persists as JSON under `wpsg_builder_{rootId}_color_swatches`. Loaded from localStorage on mount.
+- **`BuilderDockContext.tsx`**: Added `savedSwatches` and `addSwatch` to `BuilderDockContextValue`.
+- **`LayoutBuilderModal.tsx`**: Destructured `savedSwatches, addSwatch` from `useBuilderWorkspacePrefs` and added both to `contextValue`.
+- **New `BuilderColorInput.tsx`**: Builder-specific wrapper around `ModalColorInput`. Reads `savedSwatches`/`addSwatch` from `useBuilderDock()`, passes `swatches={savedSwatches}` (Mantine renders them in the picker dropdown), sets `withEyeDropper={true}` by default (Mantine v9 handles the native EyeDropper API — no-op in unsupported browsers), and hooks `onChangeEnd` (not `onChange`) to call `addSwatch`. `onChangeEnd` fires on mouse-up after a drag and on blur after manual hex entry, so incremental drag ticks do not flood the swatch list.
+- **Three property panels** (`BackgroundPropertiesPanel`, `SlotPropertiesPanel`, `GraphicLayerPropertiesPanel`): swapped `import { ModalColorInput as ColorInput }` for `import { BuilderColorInput as ColorInput }` — drop-in replacement, no call-site changes needed.
+
 ### Validation
 
-- `npm run test` for swatch persistence/apply; manual QA of swatches + eyedropper across the properties panels.
+- 6 new tests in `useBuilderWorkspacePrefs.test.ts` (init, load, add, dedup, limit, ignore-invalid) and 3 new tests in `BuilderColorInput.test.tsx` (renders, onChange triggers addSwatch, empty input skips addSwatch). All new tests pass.
 
 ## Track P57-D - LayoutBuilder layer search/filter
 
