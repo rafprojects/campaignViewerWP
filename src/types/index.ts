@@ -871,6 +871,8 @@ export interface GalleryBehaviorSettings {
   // P36-D: Settings Panel (right-side drawer) width on non-small screens.
   settingsPanelWidth: number;
   settingsPanelWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  // P57-A: Settings Panel open/close transition. 'none' opens instantly.
+  settingsPanelAnimation: 'slide-left' | 'fade' | 'scale' | 'none';
   // P36-D: Admin Panel (main container) max-width. 0 = no constraint (full width).
   adminPanelMaxWidth: number;
   adminPanelMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
@@ -1379,6 +1381,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P36-D: Settings Panel width
   settingsPanelWidth: 600,
   settingsPanelWidthUnit: 'px',
+  // P57-A: Settings Panel transition
+  settingsPanelAnimation: 'slide-left',
   // P36-D: Admin Panel max-width (0 = no constraint)
   adminPanelMaxWidth: 0,
   adminPanelMaxWidthUnit: 'px',

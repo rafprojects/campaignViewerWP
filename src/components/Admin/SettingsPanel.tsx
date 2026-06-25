@@ -15,10 +15,7 @@ import {
   Title,
   NativeScrollArea,
   Tabs,
-  useMantineTheme,
-  useComputedColorScheme,
 } from '@mantine/core';
-import type { MantineColor } from '@mantine/core';
 import {
   IconSettings,
   IconPhoto,
@@ -72,6 +69,7 @@ import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey, normalizeSettingsResponse } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 import { toCss } from '@wp-super-gallery/shared-utils';
+import { resolveSettingsPanelTransition } from './settingsPanelTransition';
 
 /**
  * P36-A: Settings draft persistence.
@@ -342,13 +340,27 @@ SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
   const color = instanceId ? spaceColor(instanceId) : undefined;
-  const theme = useMantineTheme();
-  const isDark = useComputedColorScheme('light') === 'dark';
-  // Resolve actual hex values: CSS variables from :host are unavailable in the portal (withinPortal=true).
-  // Shade indices mirror Mantine's variant="light" behavior so all 3 badge locations stay in sync.
-  const colorHex = color ? (theme.colors[color as MantineColor]?.[isDark ? 4 : 5] ?? undefined) : undefined;
-  const badgeBg = color ? (theme.colors[color as MantineColor]?.[isDark ? 8 : 1] ?? undefined) : undefined;
-  const badgeText = color ? (theme.colors[color as MantineColor]?.[isDark ? 2 : 7] ?? undefined) : undefined;
+  // P57-B: When mounted inside the shadow DOM, portal the Drawer into a container
+  // inside the shadow tree so Mantine's `:host`-scoped CSS variables resolve. This
+  // lets the space badge use `variant="light"` and match the AuthBar/AdminPanel
+  // badges exactly, instead of the old hardcoded-shade workaround. Outside the
+  // shadow DOM (tests, non-shadow mounts) the Drawer keeps its default portal.
+  const [drawerPortalTarget, setDrawerPortalTarget] = useState<HTMLElement | null>(null);
+  const shadowSentinelRef = useCallback((node: HTMLSpanElement | null) => {
+    if (!node) return;
+    const root = node.getRootNode();
+    if (root instanceof ShadowRoot) {
+      let container = root.querySelector<HTMLElement>('[data-wpsg-drawer-portal]');
+      if (!container) {
+        container = root.ownerDocument.createElement('div');
+        container.setAttribute('data-wpsg-drawer-portal', 'true');
+        root.appendChild(container);
+      }
+      setDrawerPortalTarget(container);
+    } else {
+      setDrawerPortalTarget(null);
+    }
+  }, []);
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -554,7 +566,11 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const handleClose = () => { revertThemePreview(); onClose(); };
 
   return (
-    <Drawer
+    <>
+      {/* P57-B: inline sentinel (lives in the shadow tree) used to resolve the
+          shadow-DOM portal target for the Drawer below. */}
+      <span ref={shadowSentinelRef} style={{ display: 'none' }} aria-hidden="true" />
+      <Drawer
       opened={opened}
       onClose={handleClose}
       title={
@@ -567,7 +583,6 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 size="sm"
                 color={color ?? 'blue'}
                 variant="light"
-                {...(badgeBg ? { style: { backgroundColor: badgeBg, color: badgeText } } : {})}
               >
                 {spaceName ?? `Space ${spaceId}`}
               </Badge>
@@ -588,9 +603,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       size={isSmallScreen ? '100%' : toCss(settings.settingsPanelWidth ?? 600, settings.settingsPanelWidthUnit ?? 'px')}
       zIndex={450}
       withinPortal={withinPortal}
+      {...(drawerPortalTarget ? { portalProps: { target: drawerPortalTarget } } : {})}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
-      transitionProps={{ transition: 'slide-left', duration: 200 }}
+      transitionProps={resolveSettingsPanelTransition(settings.settingsPanelAnimation)}
       overlayProps={{
         backgroundOpacity: 0.6,
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
@@ -598,7 +614,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       scrollAreaComponent={NativeScrollArea}
       styles={{
         body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
-        ...(colorHex ? { content: { borderLeft: `2px solid ${colorHex}` } } : {}),
+        ...(color ? { content: { borderLeft: `2px solid var(--mantine-color-${color}-5)` } } : {}),
       }}
     >
       {isLoading ? (
@@ -649,7 +665,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
         </>
       )}
-    </Drawer>
+      </Drawer>
+    </>
   );
 }
 

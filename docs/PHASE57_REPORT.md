@@ -1,15 +1,15 @@
 # Phase 57 - UI & Editor Polish
 
-**Status:** Planned
+**Status:** In progress
 **Created:** 2026-06-23
-**Last updated:** 2026-06-23
+**Last updated:** 2026-06-25
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P57-A | Settings panel open/close animation variants | Planned | Small |
-| P57-B | SettingsPanel space-badge dark-mode color parity | Planned | Small-Medium |
+| P57-A | Settings panel open/close animation variants | Done | Small |
+| P57-B | SettingsPanel space-badge dark-mode color parity | Done | Small-Medium |
 | P57-C | LayoutBuilder saved color swatches + eyedropper | Planned | Small |
 | P57-D | LayoutBuilder layer search/filter in the Layers panel | Planned | Small |
 | P57-E | LayoutBuilder persistent (draggable/lockable) guides | Planned | Medium |
@@ -66,6 +66,15 @@ The Settings panel Drawer uses a hardcoded transition — `{ transition: 'slide-
 
 - `npm run test` for the new field + default; manual QA cycling all four variants.
 
+### Implementation (2026-06-25)
+
+- Added `settingsPanelAnimation: 'slide-left' | 'fade' | 'scale' | 'none'` to `GalleryBehaviorSettings` (`src/types/index.ts`) with default `'slide-left'` in `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`.
+- **Deviation from plan:** the plan called for Zod validation in `src/types/settingsSchemas.ts`. Verified that file only validates *gallery config* (adapters/typography/breakpoints) — the sibling behavior settings (`settingsPanelWidth`, `settingsDrawerBlurEnabled`, the `*Unit` enums) are **not** Zod-validated. They flow through the generic `mergeSettingsWithDefaults` (`src/utils/mergeSettingsWithDefaults.ts`), which uses `??` defaults but no per-field enum check. To stay consistent with siblings and still harden against bad stored values, validation happens at the **point of use** instead: `resolveSettingsPanelTransition()` (`src/components/Admin/settingsPanelTransition.ts`) maps known values to Mantine `transitionProps` and falls back to `slide-left` for unknown/legacy/`undefined`. No `settingsSchemas.ts` change.
+- The transition map lives in its own module (not inline in `SettingsPanel.tsx`) to avoid a `react-refresh/only-export-components` lint warning and keep it unit-testable. `none` → `{ transition: 'fade', duration: 0 }` (instant, no flash); `scale` → `scale-x` (right-anchored).
+- Wired `transitionProps={resolveSettingsPanelTransition(settings.settingsPanelAnimation)}` on the Drawer (`SettingsPanel.tsx`).
+- Added a `Select` (Slide / Fade / Scale / None) to the "Settings Drawer" accordion in `AdvancedSettingsSection.tsx`, beside the width/blur controls, using `comboboxProps={{ withinPortal: false }}` to match the sibling DimensionInput so the dropdown stays styled inside the shadow DOM.
+- Tests: default + merge cases in `defaultsAndMerge.test.ts`; full mapping (incl. `none`→0 and unknown→slide-left fallback) in `resolveSettingsPanelTransition.test.ts`.
+
 ## Track P57-B - SettingsPanel space-badge dark-mode parity
 
 ### Problem
@@ -85,6 +94,14 @@ The SettingsPanel Drawer renders via `withinPortal` to `document.body`, outside 
 ### Validation
 
 - `npm run test` for the badge rendering; manual QA comparing all three badge locations in light and dark mode (`see-wp` flow).
+
+### Implementation (2026-06-25)
+
+- **Deviation from plan:** the plan/report suggested resolving the shadow host via `document.getElementById(useRootId())`. Verified this is wrong twice: (1) `rootId` only equals the host element id when the host *has* an id — un-id'd shortcode mounts get a synthesized path slug (`getRootId`, `src/main.tsx`) with no matching element; and (2) the host element is in the **light** DOM, so portaling into it renders outside the shadow tree (host light-DOM children aren't displayed once a shadow root is attached), and `:host` CSS variables still wouldn't resolve.
+- **Approach used — `getRootNode()`:** an inline hidden `<span ref={shadowSentinelRef}>` (rendered as a sibling of the Drawer, so it lives in the shadow tree) resolves its `getRootNode()`. When that is a `ShadowRoot`, a dedicated `<div data-wpsg-drawer-portal>` is created once and appended to the shadow root, and passed as `portalProps={{ target }}`. A dedicated sibling container (rather than the React mount node) keeps the Drawer out of React's managed subtree. Outside the shadow DOM (tests, non-shadow mounts) the target stays `null` and the Drawer keeps its default `document.body` portal.
+- With the Drawer now inside the shadow tree, `:host` Mantine CSS variables resolve, so the badge reverted to plain `variant="light"` and the `useMantineTheme`/`useComputedColorScheme` + `colorHex`/`badgeBg`/`badgeText` hardcoded-shade workaround was removed. The left-border accent (also previously `colorHex`) now uses `var(--mantine-color-${color}-5)`.
+- **QA risk (carry into manual QA):** moving the Drawer off `document.body` makes its `position: fixed` overlay viewport-relative only if no ancestor between the shadow-root container and the Drawer has a `transform`/`filter`/`perspective`. The container is a direct child of the shadow root, so this is expected to be safe — confirm in `see-wp` that the overlay covers the full viewport and the drawer is not clipped/offset. Fallback if it breaks: keep the `document.body` portal and instead read `:host` values via `getComputedStyle(shadowHost)`.
+- Tests: `SettingsPanel.test.tsx` asserts the badge renders with `data-variant="light"` and no inline `background-color`/`color` override (regression guard for the removed workaround).
 
 ## Track P57-C - LayoutBuilder swatches + eyedropper
 

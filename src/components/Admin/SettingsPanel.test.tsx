@@ -206,6 +206,31 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('tab', { name: /Gallery Layout/i })).toBeDefined();
   });
 
+  it('renders the space badge via the light variant without an inline color override (P57-B)', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={seedSettings}
+        spaceId={7}
+        spaceName="Marketing"
+        instanceId="7"
+      />
+    );
+
+    await waitForTabs();
+
+    const badge = screen.getByText('Marketing').closest('[class*="Badge-root"]') as HTMLElement;
+    expect(badge).not.toBeNull();
+    // P57-B removed the hardcoded-shade workaround; the badge must rely on
+    // Mantine's variant="light" with no inline background/color override.
+    expect(badge.getAttribute('data-variant')).toBe('light');
+    expect(badge.style.backgroundColor).toBe('');
+    expect(badge.style.color).toBe('');
+  });
+
   it('shows gallery style settings when Gallery Style tab is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
