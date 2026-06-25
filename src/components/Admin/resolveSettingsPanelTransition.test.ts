@@ -10,9 +10,19 @@ describe('resolveSettingsPanelTransition', () => {
     });
   });
 
-  it('maps fade and scale to their respective transitions', () => {
+  it('maps fade to the fade transition', () => {
     expect(resolveSettingsPanelTransition('fade')).toEqual({ transition: 'fade', duration: 200 });
-    expect(resolveSettingsPanelTransition('scale')).toEqual({ transition: 'scale-x', duration: 200 });
+  });
+
+  it('maps scale to a custom bottom-right-origin scale transition', () => {
+    const result = resolveSettingsPanelTransition('scale');
+    expect(result.duration).toBe(200);
+    expect(result.transition).toMatchObject({
+      common: { transformOrigin: 'bottom right' },
+      in: { transform: 'scale(1)' },
+      out: { transform: 'scale(0)' },
+      transitionProperty: 'transform, opacity',
+    });
   });
 
   it('maps none to a zero-duration transition (instant, no flash)', () => {

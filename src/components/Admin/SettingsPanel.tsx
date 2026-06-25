@@ -329,7 +329,6 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
             updateGallerySetting={updateGallerySetting}
             apiClient={apiClient}
             tooltipLabel={tooltipLabel}
-            showGlobalOnlySettings={!isSpaceMode}
           />
         </Tabs.Panel>
       )}
@@ -341,27 +340,48 @@ SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
   const color = instanceId ? spaceColor(instanceId) : undefined;
-  // P57-B: When mounted inside the shadow DOM, portal the Drawer into a container
-  // inside the shadow tree so Mantine's `:host`-scoped CSS variables resolve. This
-  // lets the space badge use `variant="light"` and match the AuthBar/AdminPanel
-  // badges exactly, instead of the old hardcoded-shade workaround. Outside the
-  // shadow DOM (tests, non-shadow mounts) the Drawer keeps its default portal.
-  const [drawerPortalTarget, setDrawerPortalTarget] = useState<HTMLElement | null>(null);
+  // P57-B: Read the exact badge/accent colors from the shadow host element.
+  // The Drawer portals to document.body, where `:host`-scoped Mantine CSS
+  // variables don't resolve, so we read them directly via getComputedStyle on the
+  // shadow host — which IS the element that `:host {}` styles apply to and whose
+  // custom properties are accessible from light-DOM JS. In non-shadow mounts (dev
+  // server, tests) the shadow host is never set, so shadowHost stays null and the
+  // badge falls back to variant="light" (which resolves from `:root` there).
+  const [shadowHost, setShadowHost] = useState<Element | null>(null);
   const shadowSentinelRef = useCallback((node: HTMLSpanElement | null) => {
     if (!node) return;
     const root = node.getRootNode();
-    if (root instanceof ShadowRoot) {
-      let container = root.querySelector<HTMLElement>('[data-wpsg-drawer-portal]');
-      if (!container) {
-        container = root.ownerDocument.createElement('div');
-        container.setAttribute('data-wpsg-drawer-portal', 'true');
-        root.appendChild(container);
-      }
-      setDrawerPortalTarget(container);
-    } else {
-      setDrawerPortalTarget(null);
-    }
+    if (root instanceof ShadowRoot) setShadowHost(root.host);
   }, []);
+
+  // P57-A animation: SettingsPanel is conditionally rendered by its parent, so the
+  // Drawer receives opened=true on its first render and Mantine's Transition starts
+  // already 'entered' (it only animates on a subsequent false→true change). Rendering
+  // the Drawer closed first and flipping in a plain effect isn't enough — the two
+  // commits land in the same frame (~14ms apart, sub-frame), so the browser never
+  // paints the closed "from" state and the CSS transition has nothing to animate
+  // from. Fix: hold opened=false, then flip true across TWO animation frames, which
+  // guarantees the closed state is painted before the slide begins.
+  const [internalOpened, setInternalOpened] = useState(false);
+  useEffect(() => {
+    if (!opened) { setInternalOpened(false); return; }
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => setInternalOpened(true)); });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  }, [opened]);
+
+  // Resolved inline-style values for the space badge and drawer border accent.
+  // getComputedStyle reads the exact CSS variable values Mantine sets on the
+  // host element, giving pixel-perfect parity with the AuthBar/AdminPanel badges.
+  const colorHex = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-5`).trim() || undefined)
+    : color ? `var(--mantine-color-${color}-5)` : undefined;
+  const badgeBg = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light`).trim() || undefined)
+    : undefined;
+  const badgeText = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light-color`).trim() || undefined)
+    : undefined;
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -564,7 +584,13 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setGalleryConfigEditorOpen(false);
   };
 
-  const handleClose = () => { revertThemePreview(); onClose(); };
+  // P57-A close animation: the parent unmounts the panel when onClose() runs, which
+  // would cut off the exit transition. So a close *request* (X / Cancel / overlay /
+  // escape) reverts the theme preview and flips internalOpened false — letting the
+  // Drawer animate out — and the real onClose() (unmount) fires from the Transition's
+  // onExited, once the exit animation has finished. `none` (duration 0) resolves
+  // onExited synchronously, so it still closes instantly.
+  const handleClose = () => { revertThemePreview(); setInternalOpened(false); };
 
   return (
     <>
@@ -572,7 +598,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
           shadow-DOM portal target for the Drawer below. */}
       <span ref={shadowSentinelRef} style={{ display: 'none' }} aria-hidden="true" />
       <Drawer
-      opened={opened}
+      opened={internalOpened}
       onClose={handleClose}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
@@ -584,6 +610,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 size="sm"
                 color={color ?? 'blue'}
                 variant="light"
+                {...(badgeBg ? { style: { backgroundColor: badgeBg, color: badgeText } } : {})}
               >
                 {spaceName ?? `Space ${spaceId}`}
               </Badge>
@@ -604,10 +631,10 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       size={isSmallScreen ? '100%' : toCss(settings.settingsPanelWidth ?? 600, settings.settingsPanelWidthUnit ?? 'px')}
       zIndex={450}
       withinPortal={withinPortal}
-      {...(drawerPortalTarget ? { portalProps: { target: drawerPortalTarget } } : {})}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
       transitionProps={resolveSettingsPanelTransition(settings.settingsPanelAnimation)}
+      onExitTransitionEnd={onClose}
       overlayProps={{
         backgroundOpacity: 0.6,
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
@@ -615,7 +642,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       scrollAreaComponent={NativeScrollArea}
       styles={{
         body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
-        ...(color ? { content: { borderLeft: `2px solid var(--mantine-color-${color}-5)` } } : {}),
+        ...(colorHex ? { content: { borderLeft: `2px solid ${colorHex}` } } : {}),
       }}
     >
       {isLoading ? (

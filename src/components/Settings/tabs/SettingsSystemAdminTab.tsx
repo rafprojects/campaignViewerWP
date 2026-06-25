@@ -61,27 +61,26 @@ interface SettingsSystemAdminTabProps {
   updateGallerySetting: UpdateGallerySetting;
   apiClient: ApiClient;
   tooltipLabel: (label: string, key: string) => ReactNode;
-  /** False in space-scoped panels; hides global-only controls like the magic-link page picker. */
-  showGlobalOnlySettings?: boolean;
 }
 
+// P57-A: The System & Admin tab holds global (non-space-overridable) settings.
+// It renders in space-scoped panels too; the backend split-saves these keys to
+// the global option (see update_space_settings), so editing them from any panel
+// persists globally.
 export const SettingsSystemAdminTab = memo(function SettingsSystemAdminTab({
   settings,
   updateSetting,
   updateGallerySetting,
   apiClient,
   tooltipLabel,
-  showGlobalOnlySettings = true,
 }: SettingsSystemAdminTabProps) {
   return (
     <Stack gap="xl">
-      {showGlobalOnlySettings && (
-        <MagicLinkPageSelector
-          apiClient={apiClient}
-          value={settings.magicLinkLandingPageId ?? 0}
-          onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
-        />
-      )}
+      <MagicLinkPageSelector
+        apiClient={apiClient}
+        value={settings.magicLinkLandingPageId ?? 0}
+        onChange={(id) => updateSetting('magicLinkLandingPageId', id)}
+      />
       <AdvancedSettingsSection
         settings={settings}
         updateSetting={updateGallerySetting}
