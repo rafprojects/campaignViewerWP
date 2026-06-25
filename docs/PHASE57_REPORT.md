@@ -75,6 +75,11 @@ The Settings panel Drawer uses a hardcoded transition — `{ transition: 'slide-
 - Added a `Select` (Slide / Fade / Scale / None) to the "Settings Drawer" accordion in `AdvancedSettingsSection.tsx`, beside the width/blur controls, using `comboboxProps={{ withinPortal: false }}` to match the sibling DimensionInput so the dropdown stays styled inside the shadow DOM.
 - Tests: default + merge cases in `defaultsAndMerge.test.ts`; full mapping (incl. `none`→0 and unknown→slide-left fallback) in `resolveSettingsPanelTransition.test.ts`.
 
+### Manual QA (2026-06-25, `see-wp`)
+
+- The Drawer visibly animates on open (default slide-left reproduced) during the Track B shadow-DOM session.
+- The animation `Select` UI itself was **not** visually confirmed in-app: it lives in the SettingsPanel "System & Admin" tab, which renders only for a **non-space** panel with `advancedSettingsEnabled` — every gallery on the dev site is space-scoped (the tab is hidden in space mode), and the standalone wp-admin "Super Gallery Settings" page is a separate UI that does not mount `AdvancedSettingsSection`. The control is covered by unit tests and wired identically to its proven sibling drawer controls; visual confirmation is deferred until a non-space gallery is available.
+
 ## Track P57-B - SettingsPanel space-badge dark-mode parity
 
 ### Problem
@@ -102,6 +107,15 @@ The SettingsPanel Drawer renders via `withinPortal` to `document.body`, outside 
 - With the Drawer now inside the shadow tree, `:host` Mantine CSS variables resolve, so the badge reverted to plain `variant="light"` and the `useMantineTheme`/`useComputedColorScheme` + `colorHex`/`badgeBg`/`badgeText` hardcoded-shade workaround was removed. The left-border accent (also previously `colorHex`) now uses `var(--mantine-color-${color}-5)`.
 - **QA risk (carry into manual QA):** moving the Drawer off `document.body` makes its `position: fixed` overlay viewport-relative only if no ancestor between the shadow-root container and the Drawer has a `transform`/`filter`/`perspective`. The container is a direct child of the shadow root, so this is expected to be safe — confirm in `see-wp` that the overlay covers the full viewport and the drawer is not clipped/offset. Fallback if it breaks: keep the `document.body` portal and instead read `:host` values via `getComputedStyle(shadowHost)`.
 - Tests: `SettingsPanel.test.tsx` asserts the badge renders with `data-variant="light"` and no inline `background-color`/`color` override (regression guard for the removed workaround).
+
+### Manual QA (2026-06-25, `see-wp`)
+
+Verified on the live dev site (`/meower`, the dark/Halloween-themed `iso-space` gallery) via a Playwright probe that pierces the shadow DOM. With the Settings drawer open:
+
+- **Portal location:** exactly one `[data-wpsg-drawer-portal]` container, created **inside the shadow root** (`portalsInShadow: 1, portalsInLight: 0`) — the Drawer is no longer in `document.body`.
+- **Badge:** renders `data-variant="light"` with `--badge-bg: var(--mantine-color-green-light)` / `--badge-color: var(--mantine-color-green-light-color)` (computed `rgb(22,69,31)` / `rgb(235,251,238)` in dark mode) — the same Mantine variable mechanism as the AuthBar/AdminPanel badges, with **no** hardcoded inline color. Confirms dark-mode parity.
+- **Border accent:** `var(--mantine-color-green-5)` resolves to `rgb(81,207,102)`.
+- **Positioning (the flagged risk):** drawer rect `x=800 w=600 h=1000` against a `1400×1000` viewport — full-height, right-anchored, not clipped/offset. The `position: fixed` ancestor-transform concern does not materialize.
 
 ## Track P57-C - LayoutBuilder swatches + eyedropper
 
