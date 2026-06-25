@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-06-23
-**Last updated:** 2026-06-24 (post-delivery review + manual QA)
+**Last updated:** 2026-06-25 (post-delivery review + manual QA rounds 1 & 2)
 
 ### Tracks
 
@@ -329,10 +329,58 @@ Investigated via Playwright automation against the live dev site: after opening 
 
 ---
 
-### Manual testing outcome
+### Round 1 outcome
 
-2 additional commits: `fix: wire UnifiedCampaignModal into CampaignContext` (admin panel path) and `fix: elevate shadow host z-index on multi-space pages when campaign is active` (multi-space stacking fix). 6 commits total on the branch.
+2 commits: `fix: wire UnifiedCampaignModal into CampaignContext` and `fix: elevate shadow host z-index on multi-space pages when campaign is active`.
+
+---
+
+## Manual Testing Findings — Round 2 (2026-06-25)
+
+A second round of manual QA on the deployed build surfaced four more issues across tracks A, B, E, F, and G.
+
+### T3 — P56-E: Capability badges rendered as unstyled text (not pill chips)
+
+**Bug.** The Mantine `<Badge>` components rendered inside `renderAdapterOption` (the custom `renderOption` callback passed to `ModalSelect`) appeared as plain unstyled strings with no background, border-radius, or color. The Mantine `Select` dropdown option render context does not fully apply component-class styles to `Badge` even with `withinPortal: false` on the combobox.
+
+**How found.** Manual inspection: opened an adapter picker dropdown and observed capability labels rendered as raw text with no visual differentiation from the adapter name.
+
+**Fix rationale.** Removed Mantine `Badge` entirely. Replaced `renderAdapterOption` with a two-zone layout: the adapter name sits on a `gray.0` background box (providing the darker/selectable zone the user requested), and capabilities are rendered as a plain `Text size="xs" c="dimmed"` line with values joined by ` · ` separators. This is more robust than relying on Badge class scoping and cleaner visually. The `Badge` import was removed from the Mantine import list.
+
+---
+
+### T4 — P56-F/B: Per-field reset icons invisible in adapter settings and breakpoint fields
+
+**Bug.** The `fieldLabel()` helper — which wraps every adapter-settings field label with a small `↺` reset icon — was using Mantine's `<Group>` component (which renders as a `<div>`) inside Mantine's `<label>` HTML element. A block-level `<div>` inside a `<label>` is invalid HTML (phrasing content constraint). Browsers collapsed the flex container width to zero when the block element's dimension could not be resolved inside the inline label context, hiding the `ActionIcon` entirely. The description text (rendered outside the label in the `description` prop) was unaffected and displayed correctly, making this confusing to diagnose.
+
+The same issue applied to both adapter-specific settings fields (via `renderSettingFields`) and the Breakpoint Pixel Threshold fields in the unconditional section.
+
+**How found.** User confirmed hint text `(1–10, default: 1)` was visible (from `description` prop) but no reset icon appeared anywhere. Isolating by prop: the `description` renders outside the `<label>` while the `label` prop containing `fieldLabel()` renders inside it, pointing to the invalid HTML nesting as the cause.
+
+**Fix rationale.** Replaced `<Group>` with `<span style={{ display: 'flex', justifyContent: 'space-between', ... }}>`. A `<span>` is valid phrasing content inside `<label>`; applying `display: flex` via inline style produces identical layout without the invalid nesting. Added `flexShrink: 0` on the `ActionIcon` style to explicitly prevent it from being squeezed to zero. Also improved icon visibility: `IconRefresh` size increased 12 → 14 px and `opacity: 0.7` added at rest. `e.stopPropagation()` added to `onClick` to prevent the parent `<label>` from re-focusing the input on each reset click.
+
+---
+
+### T5 — P56-G: Export scope not obvious; "dot" nav settings absent from exported JSON
+
+**Bug.** The export only captured `galleryConfig` (adapter-specific settings stored via `setGalleryAdapterSetting`). Settings stored as flat `GalleryBehaviorSettings` keys — such as `dotNavEnabled`, `dotNavPosition`, `navArrowEnabled`, and other navigation/presentation settings managed in separate settings tabs — were silently excluded. Users expected the export to capture everything visible in the Gallery Layout section.
+
+**How found.** User noticed navigation ("dot") settings were absent from the exported JSON despite being visible in the settings panel.
+
+**Fix rationale.** Expanding the export to include all flat `GalleryBehaviorSettings` keys risks unintentionally overwriting unrelated settings (auth, session, layout preferences) on import. Instead, the UI was updated to clarify scope: the Export/Import buttons were renamed to **"Export adapter settings"** / **"Import adapter settings"**, and a short description was added above them — *"Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included."* This surfaces the intentional limitation without a risky scope expansion.
+
+---
+
+### T6 — P56-A: Validation errors not found (discoverability, no code change)
+
+**Observation.** User could not find P56-A range-validation errors or P56-F reset icons in "the carousel settings." Investigation confirmed the adapter-specific settings group (which contains these features) renders between the Breakpoint Pixel Thresholds section and the export/import buttons — above `GalleryLayoutDetailSections`, which also contains a "carousel settings" block for common settings. The common settings block does not have P56-A or P56-F features. No code change was required; the feature works correctly when the Classic adapter is active (which it is by default). The section location is a discoverability issue.
+
+---
+
+### Round 2 outcome
+
+3 commits: `fix(p56-qa): adapter option styling, reset icon visibility, export label clarity` and `fix(p56-qa): use span with inline flex in fieldLabel to fix reset icon visibility`. 8 commits total on the branch.
 
 ## Outcome
 
-All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges, mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. Post-delivery code review fixed 7 bugs; manual QA fixed 2 further bugs (admin panel campaign context and multi-space floating button stacking). 6 commits total, 3,398 vitest tests green, 22 PHPUnit settings tests green.
+All seven tracks delivered. P56-A/B/C/E/F/G implemented; P56-D confirmed pre-existing (P35-B). `GalleryAdapterSettingsSection.tsx` now provides: inline client-side range/enum validation, per-field and per-adapter reset-to-default, adapter capability badges (two-zone dropdown layout), mobile-restriction explanations, configurable breakpoint thresholds, and JSON import/export with structural + schema-key validation. Post-delivery code review fixed 7 bugs; two rounds of manual QA fixed 5 further bugs (admin panel campaign context, multi-space floating button stacking, badge styling, reset icon HTML validity, export scope labelling). 8 commits total, 3,398 vitest tests green, 22 PHPUnit settings tests green.
