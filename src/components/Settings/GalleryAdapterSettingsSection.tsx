@@ -94,21 +94,21 @@ function getConfiguredScopeAdapterIds(
 
 function fieldLabel(label: string, onReset: () => void): ReactNode {
   return (
-    <Group justify="space-between" gap={4} wrap="nowrap" style={{ width: '100%' }}>
+    <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 4 }}>
       <span>{label}</span>
       <Tooltip label="Reset to default" withArrow position="top" offset={4}>
         <ActionIcon
           size="xs"
           variant="subtle"
           color="gray"
-          style={{ opacity: 0.7 }}
+          style={{ opacity: 0.7, flexShrink: 0 }}
           onClick={(e) => { e.stopPropagation(); onReset(); }}
           aria-label={`Reset ${label} to default`}
         >
           <IconRefresh size={14} />
         </ActionIcon>
       </Tooltip>
-    </Group>
+    </span>
   );
 }
 
