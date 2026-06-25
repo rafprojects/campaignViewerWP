@@ -197,7 +197,7 @@ The panel unmounted instantly on close because the parent removes it the moment 
 
 ### Follow-up
 
-- Add a PHP unit test for the `update_space_settings` split-save (global-only keys routed to the global option for `manage_options`, overridable keys to the space, non-admins blocked from global writes).
+- ~~Add a PHP unit test for the `update_space_settings` split-save~~ **Done** — `tests/WPSG_P57A_Settings_Split_Save_Test.php` (5 tests, 18 assertions): registry contract; global key routed to the global option; mixed-payload split; invalid-enum fallback; and a space-admin editor (manage_wpsg + space grant, no manage_options) saving overridable keys while being blocked from the global write.
 
 ## Track P57-C - LayoutBuilder swatches + eyedropper
 
