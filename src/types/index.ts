@@ -366,6 +366,8 @@ export interface LayoutSlot {
   overlayEffect?: SlotOverlayEffect | undefined;
   /** Visual rotation in degrees (0–359). Does not affect drag/resize bounding box. */
   rotation?: number | undefined;
+  /** Render opacity 0–1 (default 1 = fully opaque). Applies in builder preview/edit and gallery. */
+  opacity?: number | undefined;
 }
 
 /** Sensible defaults for a new layout slot. */

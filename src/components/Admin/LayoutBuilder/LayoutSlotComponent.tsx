@@ -607,6 +607,7 @@ export function LayoutSlotComponent({
             width: pixelWidth,
             height: pixelHeight,
             zIndex: slot.zIndex,
+            opacity: slot.opacity ?? 1,
             cursor,
             filter: filterCss || undefined,
             mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
@@ -653,6 +654,7 @@ export function LayoutSlotComponent({
           width: pixelWidth,
           height: pixelHeight,
           zIndex: slot.zIndex,
+          opacity: slot.opacity ?? 1,
           borderRadius: slot.borderRadius,
           overflow: 'hidden',
           border: slot.borderWidth > 0
@@ -788,12 +790,19 @@ export function LayoutSlotComponent({
           </svg>
         </div>
       )}
-      {/* Rotation wrapper: rotates visual content while Rnd bounding box stays axis-aligned */}
+      {/* Rotation wrapper: rotates visual content while Rnd bounding box stays axis-aligned.
+          Slot opacity (P58-A) applies here so the selection ring (on the Rnd box) and the
+          rotation handle (a sibling) stay crisp while the media preview fades. */}
       <div
-        style={(liveRotation ?? slot.rotation ?? 0) !== 0
-          ? { transform: `rotate(${liveRotation ?? slot.rotation ?? 0}deg)`, transformOrigin: 'center center', width: '100%', height: '100%', position: 'relative' }
-          : { width: '100%', height: '100%', position: 'relative' }
-        }
+        style={{
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          opacity: slot.opacity ?? 1,
+          ...((liveRotation ?? slot.rotation ?? 0) !== 0
+            ? { transform: `rotate(${liveRotation ?? slot.rotation ?? 0}deg)`, transformOrigin: 'center center' }
+            : {}),
+        }}
       >
       {hasClipOrMask ? (
         /* ── Clip-path / mask: double-container border technique ──────────────

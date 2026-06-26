@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + align/distribute keyboard shortcuts (+ folded: per-slot opacity, Shift+arrow large-nudge) | Planned | Small-Medium |
+| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
 | P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
 | P58-C | Starter template library — pre-built layouts to clone | Planned | Medium |
 | P58-D | Marquee multi-select on the canvas | Planned | Small-Medium |
@@ -72,6 +72,17 @@ Two editor affordances stop short of design-tool parity. True clipboard **copy/p
 ### Validation
 
 - `npm run test` for the clipboard buffer, opacity field default/merge, and the keyboard handler; manual QA of copy/paste, align/distribute hotkeys, opacity, and Shift-nudge via the `see-wp` flow.
+
+### Implementation notes (2026-06-26)
+
+Shipped: real clipboard, per-slot opacity, and the three-tier nudge. **Align/distribute keyboard shortcuts were split off** to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder (binding scheme needs design — user direction); the rest landed.
+
+- **Clipboard** — `copySlots`/`pasteSlots` in `useLayoutBuilderState.ts`, backed by per-hook-instance `useRef`s (`clipboardRef`, `pasteCountRef`) so the buffer never leaks across builders; wired to `Ctrl+C`/`Ctrl+V` in `useLayoutBuilderKeyboardHandlers.ts` (gated on `!isPreview`). Copy deep-clones via `structuredClone` (captures nested `maskLayer`/`filterEffects`/`shadow`/`tilt`/`overlayEffect`); paste offsets `+3%` cumulatively per repeat and selects the new slots as one undo entry.
+  - **Gotcha:** `mutate()` runs its recipe inside a deferred functional updater (`setTemplateRaw((prev) => produce(prev, recipe))`), so IDs generated *inside* the recipe aren't visible to the synchronous `setSelectedSlotIds` that follows. `pasteSlots` pre-builds clones + IDs *before* `mutate` (mirroring `addSlot`). Caught by a test asserting paste selects the new slots.
+  - **Pre-existing bug noticed (not fixed here):** `duplicateSlots` has the same shape — it populates `newIds` inside the recipe then guards `setSelectedSlotIds` on `newIds.length`, which is `0` synchronously, so Ctrl+D never updates the selection to the copy. Untested + out of P58-A scope; flagged for the user.
+- **Slot opacity** — optional `LayoutSlot.opacity` (no `schemaVersion` bump; absence ⇒ 1). `Slider` in `SlotPropertiesPanel` (clears to `undefined` at 100%). Rendered via `slot.opacity ?? 1` in the builder preview wrappers, the edit-mode rotation-wrapper (keeps the selection ring + rotation handle crisp; badges inside fade with the media — acceptable), and the gallery `GallerySlotView` (clip + rect) plus the listing-mode container for parity.
+- **Nudge** — `step = e.altKey ? 0.1 : e.shiftKey ? 10 : 1` (Figma convention): plain `1%`, Shift `10%` (large), Alt `0.1%` (fine). Flips the prior Shift=fine behavior; shortcuts modal updated.
+- **Verified:** 75/75 `useLayoutBuilderState` tests, `tsc -b`, and `eslint` all green.
 
 ## Track P58-B - Responsive / per-breakpoint slot overrides
 

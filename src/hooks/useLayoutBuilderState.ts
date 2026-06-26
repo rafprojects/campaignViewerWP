@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
@@ -108,6 +108,10 @@ export interface LayoutBuilderActions {
   removeSlots: (ids: string[]) => void;
   /** Duplicate selected slot(s) with a slight offset. */
   duplicateSlots: (ids: string[]) => void;
+  /** Copy slot(s) into an in-memory clipboard (deep clone). Returns the number copied. */
+  copySlots: (ids: string[]) => number;
+  /** Paste the clipboard as new slots with a cumulative offset; selects them. Returns new IDs. */
+  pasteSlots: () => string[];
 
   // ── Slot mutation ──
   /** Move a slot to a new position. */
@@ -271,6 +275,13 @@ export function useLayoutBuilderState(
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
   const [isDirty, setIsDirty] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
+
+  // ── In-memory clipboard (P58-A) ──
+  // Per-hook-instance (not a module global) so the clipboard never leaks across
+  // multiple builders mounted on one page. A ref (not state) — copy needs no re-render.
+  const clipboardRef = useRef<LayoutSlot[]>([]);
+  // Cumulative paste offset so repeated Ctrl+V keeps stepping instead of stacking.
+  const pasteCountRef = useRef(0);
 
   // ── Sub-hooks ──
 
@@ -462,6 +473,50 @@ export function useLayoutBuilderState(
     },
     [mutate],
   );
+
+  const copySlots = useCallback(
+    (ids: string[]): number => {
+      const idSet = new Set(ids);
+      // Read from live template.slots (not a stale prop); preserve stacking order.
+      const picked = template.slots
+        .filter((s) => idSet.has(s.id))
+        .sort((a, b) => a.zIndex - b.zIndex)
+        .map((s) => structuredClone(s));
+      clipboardRef.current = picked;
+      pasteCountRef.current = 0; // fresh copy resets the offset cadence
+      return picked.length;
+    },
+    [template.slots],
+  );
+
+  const pasteSlots = useCallback((): string[] => {
+    const src = clipboardRef.current;
+    if (src.length === 0) return [];
+    pasteCountRef.current += 1;
+    const off = 3 * pasteCountRef.current; // cumulative % offset across repeated pastes
+    // Build clones (new IDs + offset) BEFORE mutate. The mutate recipe runs deferred
+    // inside a functional state updater (useLayoutBuilderHistory), so IDs generated
+    // inside it would not be visible to the synchronous setSelectedSlotIds below.
+    // This mirrors addSlot, which also generates its ID before mutate.
+    const clones = src.map((s) => {
+      const clone = structuredClone(s);
+      return {
+        ...clone,
+        id: generateSlotId(),
+        x: Math.max(0, Math.min(100 - clone.width, clone.x + off)),
+        y: Math.max(0, Math.min(100 - clone.height, clone.y + off)),
+      };
+    });
+    const newIds = clones.map((c) => c.id);
+    mutate((d) => {
+      let z = d.slots.length;
+      for (const clone of clones) {
+        d.slots.push({ ...clone, zIndex: ++z });
+      }
+    }, clones.length > 1 ? 'Paste slots' : 'Paste slot');
+    setSelectedSlotIds(new Set(newIds));
+    return newIds;
+  }, [mutate]);
 
   // ── Slot mutation ──
 
@@ -738,6 +793,8 @@ export function useLayoutBuilderState(
     addSlot,
     removeSlots,
     duplicateSlots,
+    copySlots,
+    pasteSlots,
     // Slot mutation
     moveSlot,
     resizeSlot,

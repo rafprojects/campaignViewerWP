@@ -784,3 +784,105 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     expect(result.current.template.name).toBe('C');
   });
 });
+
+// ── P58-A: Clipboard (copy / paste) ──────────────────────────
+
+describe('useLayoutBuilderState — Clipboard (P58-A)', () => {
+  it('copySlots returns the count; pasteSlots clones with an offset, leaving originals intact', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    let copied = 0;
+    act(() => { copied = result.current.copySlots(['s1']); });
+    expect(copied).toBe(1);
+    // copy alone does not mutate the template
+    expect(result.current.template.slots).toHaveLength(2);
+
+    act(() => { result.current.pasteSlots(); });
+    expect(result.current.template.slots).toHaveLength(3);
+    const original = result.current.template.slots.find((s) => s.id === 's1')!;
+    const pasted = result.current.template.slots[2]!;
+    expect(pasted.id).not.toBe('s1');
+    expect(pasted.x).toBe(3); // s1 at x:0 → +3% offset
+    expect(pasted.y).toBe(3);
+    expect(original.x).toBe(0); // original untouched
+    expect(original.y).toBe(0);
+  });
+
+  it('pasteSlots selects the pasted slots, not the originals', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.copySlots(['s1', 's2']); });
+    act(() => { result.current.pasteSlots(); });
+    expect(result.current.selectedSlotIds.size).toBe(2);
+    expect(result.current.selectedSlotIds.has('s1')).toBe(false);
+    expect(result.current.selectedSlotIds.has('s2')).toBe(false);
+  });
+
+  it('repeated pasteSlots offsets cumulatively', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.copySlots(['s1']); });
+    act(() => { result.current.pasteSlots(); }); // offset 3
+    act(() => { result.current.pasteSlots(); }); // offset 6
+    const slots = result.current.template.slots;
+    expect(slots).toHaveLength(3);
+    expect(slots[1]!.x).toBe(3);
+    expect(slots[2]!.x).toBe(6);
+  });
+
+  it('a fresh copySlots resets the paste offset cadence', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.copySlots(['s1']); });
+    act(() => { result.current.pasteSlots(); }); // offset 3
+    act(() => { result.current.copySlots(['s1']); }); // reset cadence
+    act(() => { result.current.pasteSlots(); }); // offset 3 again, not 6
+    const slots = result.current.template.slots;
+    expect(slots[1]!.x).toBe(3);
+    expect(slots[2]!.x).toBe(3);
+  });
+
+  it('pasteSlots with an empty clipboard is a no-op', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    let ids: string[] = ['sentinel'];
+    act(() => { ids = result.current.pasteSlots(); });
+    expect(ids).toEqual([]);
+    expect(result.current.template.slots).toHaveLength(2);
+  });
+
+  it('paste is a single undo entry (one undo removes the whole paste)', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.copySlots(['s1', 's2']); });
+    act(() => { result.current.pasteSlots(); });
+    expect(result.current.template.slots).toHaveLength(4);
+    act(() => { result.current.undo(); });
+    expect(result.current.template.slots).toHaveLength(2);
+  });
+
+  it('copySlots deep-clones nested effect objects (paste is independent of the source)', () => {
+    const initial = templateWithSlots(1);
+    initial.slots[0].filterEffects = { brightness: 50 };
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+    act(() => { result.current.copySlots(['s1']); });
+    act(() => { result.current.pasteSlots(); });
+    const pasted = result.current.template.slots[1]!;
+    act(() => { result.current.updateSlot(pasted.id, { filterEffects: { brightness: 99 } }); });
+    const original = result.current.template.slots.find((s) => s.id === 's1')!;
+    expect(original.filterEffects?.brightness).toBe(50); // source not mutated
+  });
+});
+
+// ── P58-A: Slot opacity ──────────────────────────────────────
+
+describe('useLayoutBuilderState — Slot opacity (P58-A)', () => {
+  it('opacity defaults to undefined and updateSlot merges a value', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    expect(result.current.template.slots[0]!.opacity).toBeUndefined();
+    act(() => { result.current.updateSlot('s1', { opacity: 0.5 }); });
+    expect(result.current.template.slots[0]!.opacity).toBe(0.5);
+  });
+
+  it('opacity can be cleared back to undefined', () => {
+    const initial = templateWithSlots(1);
+    initial.slots[0].opacity = 0.3;
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+    act(() => { result.current.updateSlot('s1', { opacity: undefined }); });
+    expect(result.current.template.slots[0]!.opacity).toBeUndefined();
+  });
+});

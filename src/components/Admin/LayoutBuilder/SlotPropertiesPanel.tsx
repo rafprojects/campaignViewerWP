@@ -501,6 +501,18 @@ export function SlotPropertiesPanel({
               )}
             </Group>
 
+            <SectionHeader label="Opacity" />
+            <Slider
+              value={slot.opacity ?? 1}
+              onChange={(v) => onUpdate({ opacity: v >= 1 ? undefined : v })}
+              min={0}
+              max={1}
+              step={0.05}
+              size="xs"
+              label={(v) => `${Math.round(v * 100)}%`}
+              aria-label="Slot opacity"
+            />
+
             <SectionHeader label="Shape" />
             <PropRow label="Preset">
               <Select

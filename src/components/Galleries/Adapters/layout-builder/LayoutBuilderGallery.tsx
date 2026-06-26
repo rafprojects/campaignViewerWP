@@ -299,6 +299,7 @@ function GallerySlotView({
   if (clipPath) {
     const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
     const outerStyle: React.CSSProperties = {
+      opacity: slot.opacity ?? 1,
       cursor: isClickable ? 'pointer' : 'default',
       filter: mergedFilter,
       transition: needsInlineGlow ? 'filter 0.25s ease' : undefined,
@@ -361,6 +362,7 @@ function GallerySlotView({
 
   // Rectangle slots
   const rectStyle: React.CSSProperties = {
+    opacity: slot.opacity ?? 1,
     borderRadius: slot.borderRadius,
     ...maskStyle,
     border:
@@ -769,6 +771,7 @@ function LayoutBuilderGalleryInner({
                 if (!item) return null;
                 const listingSlotClass = slotCssClass(instanceId, rawSlot.id);
                 const containerStyle: React.CSSProperties = {
+                  opacity: rawSlot.opacity ?? 1,
                   borderRadius: rawSlot.borderRadius || undefined,
                   border: rawSlot.borderWidth > 0
                     ? `${rawSlot.borderWidth}px solid ${rawSlot.borderColor}`
