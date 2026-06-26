@@ -128,11 +128,14 @@ describe('LayoutCanvas — canvas element', () => {
     expect(screen.getByRole('application', { name: 'Layout canvas' })).toBeInTheDocument();
   });
 
-  it('calls onCanvasClick when user clicks the canvas directly', () => {
+  it('calls onCanvasClick on a click (mousedown then mouseup without dragging)', () => {
+    // P58-D: marquee select defers the background-clear to mouseup so a real
+    // drag-select never deselects. A click (sub-threshold movement) still clears.
     const onCanvasClick = vi.fn();
     renderCanvas({ onCanvasClick });
     const canvas = screen.getByRole('application');
     fireEvent.mouseDown(canvas);
+    fireEvent.mouseUp(canvas); // bubbles to the window-level marquee mouseup listener
     expect(onCanvasClick).toHaveBeenCalledOnce();
   });
 });

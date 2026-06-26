@@ -189,7 +189,7 @@ function renderModal(props: Partial<Parameters<typeof LayoutBuilderModal>[0]> = 
 /** Fire a keydown on the builder keyboard-handler div (rendered in a Mantine portal). */
 function pressKey(
   key: string,
-  options: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean } = {},
+  options: { ctrlKey?: boolean; metaKey?: boolean; shiftKey?: boolean; altKey?: boolean } = {},
 ) {
   const builderDiv = document.body.querySelector('[data-testid="builder-keyboard-handler"]') as Element | null;
   if (!builderDiv) throw new Error('builder-keyboard-handler not found in document.body');
@@ -363,10 +363,18 @@ describe('LayoutBuilderModal — keyboard shortcuts (P19-A)', () => {
     mockSelectedSlotIds.delete('slot-1');
   });
 
-  it('Shift+ArrowLeft calls nudgeSlots with fine step', () => {
+  it('Shift+ArrowLeft calls nudgeSlots with the large step (P58-A)', () => {
     mockSelectedSlotIds.add('slot-1');
     renderModal();
     pressKey('ArrowLeft', { shiftKey: true });
+    expect(mockNudgeSlots).toHaveBeenCalledWith(['slot-1'], -10, 0);
+    mockSelectedSlotIds.delete('slot-1');
+  });
+
+  it('Alt+ArrowLeft calls nudgeSlots with the fine step (P58-A)', () => {
+    mockSelectedSlotIds.add('slot-1');
+    renderModal();
+    pressKey('ArrowLeft', { altKey: true });
     expect(mockNudgeSlots).toHaveBeenCalledWith(['slot-1'], -0.1, 0);
     mockSelectedSlotIds.delete('slot-1');
   });
