@@ -9,6 +9,8 @@ import {
   snapToGrid,
   gridSizeToPct,
   selectionUnionRect,
+  normalizeDragRect,
+  pctRectsIntersect,
   type PctRect,
 } from '@wp-super-gallery/shared-utils';
 import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
@@ -40,6 +42,8 @@ export interface LayoutCanvasProps {
   onSlotSelect: (id: string) => void;
   onSlotToggleSelect: (id: string) => void;
   onCanvasClick: () => void;
+  /** Marquee (rubber-band) selection committed on drag end. `additive` = union with current selection. */
+  onMarqueeSelect?: (ids: string[], additive: boolean) => void;
   onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) => void;
   /** Announce a11y messages. */
   onAnnounce?: (msg: string) => void;
@@ -84,6 +88,10 @@ export interface LayoutCanvasProps {
 const MIN_CANVAS_PX = 400;
 const MAX_CANVAS_PX = 1200;
 
+// Movement (in screen px) below this on canvas-background mousedown is a click
+// (clears selection); at or above it the gesture is a marquee drag-select (P58-D).
+const MARQUEE_CLICK_THRESHOLD_PX = 4;
+
 // ── Helpers ──────────────────────────────────────────────────
 
 function formatAspectRatio(ratio: number): string {
@@ -109,6 +117,7 @@ export function LayoutCanvas({
   onSlotSelect,
   onSlotToggleSelect,
   onCanvasClick,
+  onMarqueeSelect,
   onMediaDrop,
   onAnnounce,
   onOverlayMove,
@@ -212,6 +221,9 @@ export function LayoutCanvas({
   // Live pixel delta applied to co-selected slots while the primary slot is dragged.
   const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
   const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null);
+
+  // ── Marquee (rubber-band) selection state (P58-D) ──────────
+  const [marqueeRect, setMarqueeRect] = useState<PctRect | null>(null);
   // Refs so drag-stop callback reads latest values without recreating on every selection change.
   const selectedSlotIdsRef = useRef(selectedSlotIds);
   selectedSlotIdsRef.current = selectedSlotIds;
@@ -374,16 +386,70 @@ export function LayoutCanvas({
 
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Clear selection only when the pointer-down lands directly on the canvas
-      // background — not on a child slot.  Using mousedown instead of click
-      // prevents accidental deselection after a drag/resize where the mouseup
-      // lands on the canvas background (click fires on the common ancestor of
-      // mousedown/mouseup targets, but mousedown only on the actual target).
-      if (e.button === 0 && e.target === e.currentTarget) {
+      // Only act when the pointer-down lands directly on the canvas background —
+      // not on a child slot (slots are Rnd children, so a slot press has
+      // e.target !== e.currentTarget and never starts a marquee).
+      if (e.button !== 0 || e.target !== e.currentTarget) return;
+
+      // Hand-tool / preview: keep the prior behavior (clear selection on bg press).
+      const canvasEl = canvasRef.current;
+      if (isPreview || isHandTool || !canvasEl) {
         onCanvasClick();
+        return;
       }
+
+      // ── Marquee (rubber-band) drag-select (P58-D) ──
+      // Coords come straight from the scaled bounding rect, matching the
+      // drop/double-click handlers, so react-zoom-pan-pinch scale is handled.
+      const rect = canvasEl.getBoundingClientRect();
+      const toPct = (clientX: number, clientY: number) => ({
+        x: Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
+        y: Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)),
+      });
+      const start = toPct(e.clientX, e.clientY);
+      const startClientX = e.clientX;
+      const startClientY = e.clientY;
+      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+      let moved = false;
+
+      const onMove = (me: MouseEvent) => {
+        if (!moved && Math.hypot(me.clientX - startClientX, me.clientY - startClientY) >= MARQUEE_CLICK_THRESHOLD_PX) {
+          moved = true;
+        }
+        if (moved) {
+          const cur = toPct(me.clientX, me.clientY);
+          setMarqueeRect(normalizeDragRect(start.x, start.y, cur.x, cur.y));
+        }
+      };
+
+      const onUp = (ue: MouseEvent) => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        setMarqueeRect(null);
+
+        // Sub-threshold movement = a plain click on empty canvas → clear selection.
+        if (Math.hypot(ue.clientX - startClientX, ue.clientY - startClientY) < MARQUEE_CLICK_THRESHOLD_PX) {
+          onCanvasClick();
+          return;
+        }
+
+        const cur = toPct(ue.clientX, ue.clientY);
+        const dragRect = normalizeDragRect(start.x, start.y, cur.x, cur.y);
+        const hits = templateSlotsRef.current
+          .filter(
+            (s) =>
+              (s.visible ?? true) &&
+              !(s.locked ?? false) &&
+              pctRectsIntersect(dragRect, { x: s.x, y: s.y, width: s.width, height: s.height }),
+          )
+          .map((s) => s.id);
+        onMarqueeSelect?.(hits, additive);
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
     },
-    [onCanvasClick],
+    [isPreview, isHandTool, onCanvasClick, onMarqueeSelect],
   );
 
   const handleCanvasDblClick = useCallback(
@@ -735,6 +801,23 @@ export function LayoutCanvas({
             guides={activeGuides}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
+          />
+        )}
+
+        {/* P58-D: Marquee (rubber-band) selection box */}
+        {!isPreview && marqueeRect && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${marqueeRect.x}%`,
+              top: `${marqueeRect.y}%`,
+              width: `${marqueeRect.width}%`,
+              height: `${marqueeRect.height}%`,
+              border: '1px dashed var(--mantine-color-blue-5)',
+              background: 'rgba(51,154,240,0.12)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
           />
         )}
 

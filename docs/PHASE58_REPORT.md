@@ -11,7 +11,7 @@
 | P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
 | P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
 | P58-C | Starter template library — pre-built layouts to clone | Planned | Medium |
-| P58-D | Marquee multi-select on the canvas | Planned | Small-Medium |
+| P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
 | P58-E | Slot entrance animations (scroll-reveal at gallery render) | Planned | Medium |
 | P58-F | Auto-grid slot generator | Done | Small-Medium |
 
@@ -149,6 +149,14 @@ There is no rubber-band selection. Selecting multiple slots requires shift-click
 ### Validation
 
 - `npm run test` for the intersection logic; manual QA marquee-selecting and then aligning/grouping.
+
+### Implementation notes (2026-06-26)
+
+- **Pure helpers** in `packages/shared-utils/src/canvasMeasurement.ts`: `normalizeDragRect(x0,y0,x1,y1)` (any-direction drag → positive-size rect clamped 0–100) and `pctRectsIntersect(a,b)` (AABB overlap; edge-touch = no overlap). 8 unit tests.
+- **Canvas** (`LayoutCanvas.tsx`): the marquee starts only on a left-button mousedown landing directly on the canvas background (`e.target === e.currentTarget`), gated `!isPreview && !isHandTool` — slots are Rnd children, so a slot press never starts a marquee (no event-swallowing conflict). `mousemove`/`mouseup` are attached to `window` for the drag; corners come from `getBoundingClientRect()` so react-zoom-pan-pinch scale is handled.
+  - **Deselect-vs-marquee:** the prior immediate `onCanvasClick()` clear was moved into the mouseup *click* branch (movement `< 4px`). A real drag commits the marquee and never clears; a slot drag ends on the canvas but never started a marquee, so it never clears either.
+- **Commit:** intersecting **visible + unlocked** slots → `onMarqueeSelect(ids, additive)`. `additive` (Shift/Ctrl/Cmd held at mousedown) → `addSlotsToSelection` (union); otherwise `selectSlotsInRange` (replace). Existing align/distribute/group/nudge operate on the resulting selection unchanged. Box rendered as a `pointerEvents:'none'` dashed overlay.
+- **Verified:** state + geometry tests, `tsc -b`, and `eslint` all green.
 
 ## Track P58-E - Slot entrance animations
 

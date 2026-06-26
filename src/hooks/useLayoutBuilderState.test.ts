@@ -925,3 +925,21 @@ describe('useLayoutBuilderState — Auto-grid (P58-F)', () => {
     expect(result.current.template.slots).toHaveLength(0);
   });
 });
+
+// ── P58-D: Marquee selection helper ──────────────────────────
+
+describe('useLayoutBuilderState — addSlotsToSelection (P58-D)', () => {
+  it('unions ids into the current selection', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(3)));
+    act(() => { result.current.selectSlot('s1'); });
+    act(() => { result.current.addSlotsToSelection(['s2', 's3']); });
+    expect(result.current.selectedSlotIds).toEqual(new Set(['s1', 's2', 's3']));
+  });
+
+  it('does not drop already-selected ids it re-adds', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.selectSlot('s1'); });
+    act(() => { result.current.addSlotsToSelection(['s1', 's2']); });
+    expect(result.current.selectedSlotIds).toEqual(new Set(['s1', 's2']));
+  });
+});

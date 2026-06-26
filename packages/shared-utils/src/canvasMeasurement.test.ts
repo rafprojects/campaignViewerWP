@@ -11,6 +11,8 @@ import {
   formatMeasurement,
   formatPx,
   computeGridSlots,
+  normalizeDragRect,
+  pctRectsIntersect,
 } from './canvasMeasurement';
 
 // ── snapToGrid ────────────────────────────────────────────────────────────────
@@ -225,5 +227,49 @@ describe('computeGridSlots', () => {
   it('returns empty when gap + margin over-constrain the canvas', () => {
     // 10 columns × 20% gap = 180% of gaps alone → no room for any cell
     expect(computeGridSlots(1, 10, 20, 0)).toEqual([]);
+  });
+});
+
+// ── normalizeDragRect (P58-D) ──────────────────────────────────────────────────
+
+describe('normalizeDragRect', () => {
+  it('keeps a top-left → bottom-right drag as-is', () => {
+    expect(normalizeDragRect(10, 20, 40, 60)).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+  });
+
+  it('normalizes a bottom-right → top-left drag to positive size', () => {
+    expect(normalizeDragRect(40, 60, 10, 20)).toEqual({ x: 10, y: 20, width: 30, height: 40 });
+  });
+
+  it('clamps corners to the 0–100 canvas bounds', () => {
+    expect(normalizeDragRect(-10, -5, 130, 120)).toEqual({ x: 0, y: 0, width: 100, height: 100 });
+  });
+
+  it('returns zero size when both corners coincide', () => {
+    expect(normalizeDragRect(50, 50, 50, 50)).toEqual({ x: 50, y: 50, width: 0, height: 0 });
+  });
+});
+
+// ── pctRectsIntersect (P58-D) ──────────────────────────────────────────────────
+
+describe('pctRectsIntersect', () => {
+  const a = { x: 10, y: 10, width: 20, height: 20 }; // spans 10–30 on both axes
+
+  it('detects overlapping rects', () => {
+    expect(pctRectsIntersect(a, { x: 20, y: 20, width: 20, height: 20 })).toBe(true);
+  });
+
+  it('detects containment in either direction', () => {
+    expect(pctRectsIntersect(a, { x: 12, y: 12, width: 5, height: 5 })).toBe(true);
+    expect(pctRectsIntersect({ x: 0, y: 0, width: 100, height: 100 }, a)).toBe(true);
+  });
+
+  it('returns false for disjoint rects', () => {
+    expect(pctRectsIntersect(a, { x: 40, y: 40, width: 10, height: 10 })).toBe(false);
+  });
+
+  it('treats edge-touching as no intersection', () => {
+    // a's right edge is at x=30; b starts exactly at 30
+    expect(pctRectsIntersect(a, { x: 30, y: 10, width: 10, height: 20 })).toBe(false);
   });
 });

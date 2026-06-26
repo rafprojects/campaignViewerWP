@@ -194,6 +194,8 @@ export interface LayoutBuilderActions {
   toggleSlotSelection: (id: string) => void;
   /** Replace selection with the given set of slot IDs (Shift+click range). */
   selectSlotsInRange: (ids: string[]) => void;
+  /** Add the given slot IDs to the current selection (marquee additive). */
+  addSlotsToSelection: (ids: string[]) => void;
   /** Clear selection. */
   clearSelection: () => void;
 
@@ -758,6 +760,11 @@ export function useLayoutBuilderState(
     [],
   );
 
+  const addSlotsToSelection = useCallback(
+    (ids: string[]) => setSelectedSlotIds((prev) => new Set([...prev, ...ids])),
+    [],
+  );
+
   const clearSelection = useCallback(
     () => setSelectedSlotIds(new Set()),
     [],
@@ -859,6 +866,7 @@ export function useLayoutBuilderState(
     selectSlot,
     toggleSlotSelection,
     selectSlotsInRange,
+    addSlotsToSelection,
     clearSelection,
     // History
     undo,

@@ -197,3 +197,30 @@ export function computeGridSlots(
   }
   return out;
 }
+
+// ── Marquee selection (P58-D) ──────────────────────────────────────────────────
+
+/**
+ * Normalizes a drag defined by two corners (dragged in any direction) into a
+ * positive-size rectangle in canvas-percentage space, clamped to the 0–100 bounds.
+ */
+export function normalizeDragRect(x0: number, y0: number, x1: number, y1: number): PctRect {
+  const left = Math.max(0, Math.min(100, Math.min(x0, x1)));
+  const top = Math.max(0, Math.min(100, Math.min(y0, y1)));
+  const right = Math.max(0, Math.min(100, Math.max(x0, x1)));
+  const bottom = Math.max(0, Math.min(100, Math.max(y0, y1)));
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+/**
+ * Axis-aligned overlap test for two percentage-space rectangles. Edge-touching
+ * (zero-area overlap) counts as NO intersection.
+ */
+export function pctRectsIntersect(a: PctRect, b: PctRect): boolean {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}

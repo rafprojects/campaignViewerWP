@@ -308,6 +308,12 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     setIsBackgroundSelected(false);
                     builder.clearSelection();
                   }}
+                  onMarqueeSelect={(ids, additive) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    if (additive) builder.addSlotsToSelection(ids);
+                    else builder.selectSlotsInRange(ids);
+                  }}
                   onMediaDrop={builder.assignMediaToSlot}
                   onAnnounce={announce}
                   onOverlayMove={builder.moveOverlay}
