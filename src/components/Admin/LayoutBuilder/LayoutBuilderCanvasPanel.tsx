@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getHotkeyHandler } from '@mantine/hooks';
 import {
   Box, Group, Text, NumberInput, Switch, Slider,
-  Button, Divider, ActionIcon, Tooltip, SegmentedControl,
+  Button, Divider, ActionIcon, Tooltip, SegmentedControl, Alert,
 } from '@mantine/core';
+import type { ResponsiveBreakpoint } from '@/types';
 import { IconHandGrab, IconPlus, IconArrowsMaximize, IconSeparatorVertical, IconSeparatorHorizontal } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
@@ -36,6 +37,20 @@ const PRESET_DEFS: Record<PreviewPreset, PresetDef> = {
 const PRESET_SEGMENTED_DATA = (Object.entries(PRESET_DEFS) as [PreviewPreset, PresetDef][]).map(
   ([value, { label }]) => ({ value, label }),
 );
+
+// ── P58-B: Breakpoint edit mode ──────────────────────────────────────────────
+
+const BREAKPOINT_EDIT_WIDTHS: Record<ResponsiveBreakpoint, number | null> = {
+  desktop: null,
+  tablet: 768,
+  mobile: 390,
+};
+
+const BREAKPOINT_EDIT_DATA: { value: ResponsiveBreakpoint; label: string }[] = [
+  { value: 'desktop', label: 'Desktop' },
+  { value: 'tablet', label: 'Tablet' },
+  { value: 'mobile', label: 'Mobile' },
+];
 
 // ── P30-B: Snap mode ─────────────────────────────────────────────────────────
 
@@ -225,10 +240,13 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
   /** Resolved pixel width of the active device preset (null = unconstrained). */
   const activePresetWidth = useMemo<number | null>(() => {
-    if (!builder.isPreview) return null;
+    if (!builder.isPreview) {
+      // P58-B: In edit mode, constrain canvas to breakpoint width when not 'desktop'.
+      return BREAKPOINT_EDIT_WIDTHS[builder.activeBreakpoint];
+    }
     if (previewPreset === 'custom') return Math.max(200, Math.min(3840, customPreviewWidth));
     return PRESET_DEFS[previewPreset].width;
-  }, [builder.isPreview, previewPreset, customPreviewWidth]);
+  }, [builder.isPreview, builder.activeBreakpoint, previewPreset, customPreviewWidth]);
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
@@ -237,6 +255,25 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
         onKeyDown={handleCanvasHotkeys}
         style={{ display: 'flex', flexDirection: 'column', height: '100%', outline: 'none' }}
       >
+        {/* P58-B: Breakpoint edit mode banner */}
+        {!builder.isPreview && builder.activeBreakpoint !== 'desktop' && (
+          <Alert
+            color="blue"
+            variant="light"
+            p="xs"
+            radius={0}
+            style={{ flexShrink: 0, borderBottom: '1px solid var(--wpsg-builder-border)' }}
+          >
+            <Text size="xs" ta="center">
+              Editing{' '}
+              <strong>
+                {builder.activeBreakpoint.charAt(0).toUpperCase() + builder.activeBreakpoint.slice(1)}
+              </strong>{' '}
+              layout — moves and resizes apply to this breakpoint only
+            </Text>
+          </Alert>
+        )}
+
         {/* Canvas area */}
         <Box
           ref={canvasAreaRef}
@@ -287,6 +324,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   template={builder.template}
                   selectedSlotIds={builder.selectedSlotIds}
                   isPreview={builder.isPreview}
+                  activeBreakpoint={builder.activeBreakpoint}
                   media={media}
                   showSlotIndices={showSlotIndices}
                   snapMode={snapMode}
@@ -470,6 +508,20 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     <IconSeparatorHorizontal size={14} />
                   </ActionIcon>
                 </Tooltip>
+              </Group>
+              <Divider orientation="vertical" />
+
+              {/* ── P58-B: Breakpoint edit mode ─────────────────── */}
+              <Group gap={6} wrap="nowrap" align="center">
+                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Breakpoint:</Text>
+                <SegmentedControl
+                  data={BREAKPOINT_EDIT_DATA}
+                  value={builder.activeBreakpoint}
+                  onChange={(v) => builder.setActiveBreakpoint(v as ResponsiveBreakpoint)}
+                  size="xs"
+                  aria-label="Breakpoint edit mode"
+                  data-testid="breakpoint-edit-selector"
+                />
               </Group>
               <Divider orientation="vertical" />
 

@@ -1,6 +1,6 @@
 # Phase 58 - LayoutBuilder Enhancements
 
-**Status:** Planned
+**Status:** Done
 **Created:** 2026-06-26
 **Last updated:** 2026-06-26
 
@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
-| P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
+| P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Done | Medium-High |
 | P58-C | Starter template library — already shipped (P15-J); enhanced with rotated/split presets + faithful previews | Done | Small |
 | P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
 | P58-E | Slot entrance animations (scroll-reveal at gallery render) | Done | Medium |
@@ -106,6 +106,26 @@ Device presets today are **preview-only** — you can view the canvas at desktop
 ### Validation
 
 - `npm run test` for schema resolution + back-compat; manual QA editing per-device overrides and confirming render at each width. Note in the doc if this track is split to its own phase.
+
+### Implementation notes (2026-06-26)
+
+**Shipped.** Per-breakpoint slot overrides landed in full across the schema, state, builder UI, and gallery render path.
+
+**Schema** (`src/types/index.ts`): Added `SLOT_BREAKPOINT_OVERRIDE_KEYS` (`x`, `y`, `width`, `height`, `visible`, `rotation`, `opacity`, `zIndex`), `SlotBreakpointOverrides`, and `LayoutTemplate.breakpointOverrides?: Partial<Record<ResponsiveBreakpoint, Record<string, SlotBreakpointOverrides>>>`. Bumped `schemaVersion` from 1 → 2.
+
+**Migration** (`src/hooks/useLayoutBuilderState.ts`): `migrateTemplate()` upgrades v1 → v2 (no data to transform; just initialises `breakpointOverrides: {}`). New state field `activeBreakpoint` (default `'desktop'`). New actions: `setActiveBreakpoint`, `setSlotBreakpointOverride`, `clearSlotBreakpointOverride`. `moveSlot`, `resizeSlot`, and `nudgeSlots` are now breakpoint-aware: in desktop mode they update the base slot; in tablet/mobile they write to `template.breakpointOverrides[bp][slotId]` instead.
+
+**Resolver** (`src/utils/layoutSlotAssignment.ts`): `resolveSlotForBreakpoint(slot, template, bp)` merges base slot with the sparse per-breakpoint override. `containerWidthToBreakpoint(width)` maps px → `ResponsiveBreakpoint` using the existing Mantine thresholds (< 768 mobile, < 1200 tablet).
+
+**Builder UI** (`src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx`): A **Breakpoint** `SegmentedControl` (Desktop/Tablet/Mobile) in the edit-mode footer sets `activeBreakpoint`. When a non-desktop breakpoint is selected, the canvas is constrained to the breakpoint's reference width (tablet = 768 px, mobile = 390 px) and a blue alert banner appears: "Editing [Tablet/Mobile] layout — moves and resizes apply to this breakpoint only."
+
+**Canvas rendering** (`src/components/Admin/LayoutBuilder/LayoutCanvas.tsx`): Accepts `activeBreakpoint` prop. Computes `effectiveSlots` via `resolveSlotForBreakpoint` for all relevant computations (slot rendering, selection rect, snap guides, marquee hit-testing, multi-drag delta). Slots with `visible: false` in the active breakpoint are skipped.
+
+**Gallery rendering** (`src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`): Derives `activeBreakpoint` from `containerWidth` (tracked by existing ResizeObserver). `slotPositionCss` now resolves each slot through `resolveSlotForBreakpoint` before computing pixel positions, handles `visible: false` with `display:none`, and includes `opacity` in the CSS. The JSX slot loop also applies the breakpoint override and skips hidden slots.
+
+**Tests**: 24 new test cases across `useLayoutBuilderState.test.ts` (breakpoint move/resize/nudge/override CRUD, `migrateTemplate`, `setActiveBreakpoint`) and `layoutSlotAssignment.test.ts` (`resolveSlotForBreakpoint` with each overridable field, `containerWidthToBreakpoint` boundary conditions). All 516 layout-builder tests pass.
+
+**Back-compat**: Templates without `breakpointOverrides` render identically — the resolver returns the base slot unchanged when no overrides exist.
 
 ## Track P58-C - Starter template library
 
@@ -243,8 +263,8 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 
 ## Outcome
 
-_Updated 2026-06-26 — five of six tracks shipped; P58-B remains._
+_Updated 2026-06-26 — all six tracks shipped._
 
-- **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), and P58-E (scroll-reveal entrance animations with full per-slot controls). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
-- **What was deferred.** P58-B (responsive / per-breakpoint slot overrides) — the schema-migration heavyweight — is sequenced as its own effort per Key Decision D (user direction, 2026-06-26). The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design.
-- **What should happen next.** Plan and execute P58-B on its own (schema version bump + back-compat resolution + per-breakpoint editing), and pick up the align/distribute hotkeys when a conflict-free binding is chosen. Manual QA of the shipped tracks via the `see-wp` flow is still recommended.
+- **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), P58-E (scroll-reveal entrance animations with full per-slot controls), and P58-B (responsive / per-breakpoint slot overrides — schema v2, breakpoint editing UI, gallery resolution). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
+- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design.
+- **What should happen next.** Manual QA of all tracks via the `see-wp` flow is recommended, especially P58-B's responsive editing UX. The align/distribute hotkeys can be picked up when a conflict-free binding is chosen.

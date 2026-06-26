@@ -36,7 +36,7 @@ import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
+import { assignMediaToSlots, resolveSlotWithOverrides, resolveSlotForBreakpoint, containerWidthToBreakpoint } from '@/utils/layoutSlotAssignment';
 import { buildSlotEntranceCss, entranceKeyframeName, ENTRANCE_MARKER_CLASS, REVEAL_CLASS } from '@/utils/slotEntrance';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
@@ -578,6 +578,13 @@ function LayoutBuilderGalleryInner({
     return () => ro.disconnect();
   }, []);
 
+  // ── P58-B: Active breakpoint for per-breakpoint slot overrides ───────────────
+  // Derived from container width so the gallery responds to its container, not the viewport.
+  const activeBreakpoint = useMemo(
+    () => containerWidthToBreakpoint(containerWidth || 9999),
+    [containerWidth],
+  );
+
   // ── Media assignment (skipped in listing mode) ────────────────────────────
   const { assignments, summary } = useMemo(
     () => isListingMode
@@ -617,15 +624,21 @@ function LayoutBuilderGalleryInner({
   // Extracts position/size from per-element inline styles into a single injected
   // <style> block, improving DevTools inspectability.
   const slotPositionCss = useMemo(() => {
-    return template.slots.map((slot) => {
+    return template.slots.map((rawSlot) => {
+      // P58-B: resolve per-breakpoint geometry overrides before computing CSS.
+      const slot = resolveSlotForBreakpoint(rawSlot, template, activeBreakpoint);
+      if (slot.visible === false) {
+        return `.${slotCssClass(instanceId, slot.id)}{display:none}`;
+      }
       const pxX = (slot.x / 100) * finalCanvasWidth;
       const pxY = (slot.y / 100) * canvasHeight;
       const pxW = (slot.width / 100) * finalCanvasWidth;
       const pxH = (slot.height / 100) * canvasHeight;
       const rotCss = slot.rotation ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center` : '';
-      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}}`;
+      const opacityCss = slot.opacity !== undefined && slot.opacity !== 1 ? `;opacity:${slot.opacity}` : '';
+      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}${opacityCss}}`;
     }).join('\n');
-  }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
+  }, [template, activeBreakpoint, finalCanvasWidth, canvasHeight, instanceId]);
 
   // ── Slot entrance-animation CSS (P58-E) ───────────────────────────────────
   // Per-slot keyframes + hidden/revealed states; an IntersectionObserver (below)
@@ -836,8 +849,11 @@ function LayoutBuilderGalleryInner({
                 );
               }
 
-              // Media mode — identity-based slot rendering
-              const slot = resolveSlotWithOverrides(rawSlot, slotOverrides);
+              // Media mode — identity-based slot rendering.
+              // P58-B: apply breakpoint geometry override, then campaign override (media/position).
+              const bpSlot = resolveSlotForBreakpoint(rawSlot, template, activeBreakpoint);
+              if (bpSlot.visible === false) return null;
+              const slot = resolveSlotWithOverrides(bpSlot, slotOverrides);
               const assigned = assignments.get(slot.id);
               return (
                 <GallerySlotView

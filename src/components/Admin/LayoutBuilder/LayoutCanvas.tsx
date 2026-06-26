@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
-import type { LayoutTemplate, MediaItem, PersistentGuide } from '@/types';
-import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
+import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
+import { assignMediaToSlots, resolveSlotForBreakpoint } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
 import {
   type SnapMode,
@@ -81,6 +81,9 @@ export interface LayoutCanvasProps {
   onMoveGuide?: (id: string, position: number) => void;
   onRemoveGuide?: (id: string) => void;
   onToggleGuideLock?: (id: string) => void;
+  // ── P58-B: Per-breakpoint slot overrides ────────────────────
+  /** Active breakpoint being edited. Slots resolve to their breakpoint-overridden geometry. */
+  activeBreakpoint?: ResponsiveBreakpoint;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -138,6 +141,7 @@ export function LayoutCanvas({
   onMoveGuide,
   onRemoveGuide,
   onToggleGuideLock,
+  activeBreakpoint = 'desktop',
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -189,12 +193,22 @@ export function LayoutCanvas({
     [canvasWidth, canvasHeight],
   );
 
+  // ── P58-B: Effective slots with breakpoint overrides applied ──
+
+  const effectiveSlots = useMemo(
+    () => template.slots.map((s) => resolveSlotForBreakpoint(s, template, activeBreakpoint)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template.slots, template.breakpointOverrides, activeBreakpoint],
+  );
+  const effectiveSlotsRef = useRef(effectiveSlots);
+  effectiveSlotsRef.current = effectiveSlots;
+
   // ── Contextual toolbar: union bounding rect of selected slots ─
 
   const selectionRect = useMemo(() => {
     if (isPreview || selectedSlotIds.size === 0 || !contextualToolbarCallbacks) return null;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const slot of template.slots) {
+    for (const slot of effectiveSlots) {
       if (!selectedSlotIds.has(slot.id)) continue;
       const px = pctToPx(slot.x, slot.y, slot.width, slot.height);
       minX = Math.min(minX, px.x);
@@ -204,13 +218,13 @@ export function LayoutCanvas({
     }
     if (!isFinite(minX)) return null;
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-  }, [isPreview, selectedSlotIds, template.slots, pctToPx, contextualToolbarCallbacks]);
+  }, [isPreview, selectedSlotIds, effectiveSlots, pctToPx, contextualToolbarCallbacks]);
 
   // ── P30-B: selection bounding rect in canvas-% for rulers & measurements ──
   const selectionPct = useMemo<PctRect | null>(() => {
     if (isPreview || selectedSlotIds.size === 0) return null;
-    return selectionUnionRect(selectedSlotIds, template.slots);
-  }, [isPreview, selectedSlotIds, template.slots]);
+    return selectionUnionRect(selectedSlotIds, effectiveSlots);
+  }, [isPreview, selectedSlotIds, effectiveSlots]);
 
   // ── Smart guides state ─────────────────────────────────────
 
@@ -233,13 +247,13 @@ export function LayoutCanvas({
   // Pre-compute per-slot "others" arrays so every drag frame avoids O(n) allocations.
   // Rebuilds only when template.slots changes (on committed moves/adds/removes, not drag frames).
   const slotOthersMap = useMemo(() => {
-    const allRects = template.slots.map((s): SlotRect => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+    const allRects = effectiveSlots.map((s): SlotRect => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
     const map = new Map<string, SlotRect[]>();
-    for (const { id } of template.slots) {
+    for (const { id } of effectiveSlots) {
       map.set(id, allRects.filter((r) => r.id !== id));
     }
     return map;
-  }, [template.slots]);
+  }, [effectiveSlots]);
   // Stable ref so handleDragFrame reads the latest map without listing it as a dependency.
   const slotOthersMapRef = useRef(slotOthersMap);
   slotOthersMapRef.current = slotOthersMap;
@@ -252,8 +266,9 @@ export function LayoutCanvas({
   const handleDragFrame = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
       // Track live delta for co-selected slots in multi-drag.
+      // Use effectiveSlotsRef so the delta is relative to the breakpoint-overridden position.
       if (selectedSlotIdsRef.current.size > 1 && selectedSlotIdsRef.current.has(slotId)) {
-        const draggedSlot = templateSlotsRef.current.find((s) => s.id === slotId);
+        const draggedSlot = effectiveSlotsRef.current.find((s) => s.id === slotId);
         if (draggedSlot) {
           const origPx = pctToPx(draggedSlot.x, draggedSlot.y);
           setLiveDragDelta({ dx: pxX - origPx.x, dy: pxY - origPx.y });
@@ -267,7 +282,7 @@ export function LayoutCanvas({
         return;
       }
 
-      const slot = templateSlotsRef.current.find((s) => s.id === slotId);
+      const slot = effectiveSlotsRef.current.find((s) => s.id === slotId);
       if (!slot) return;
 
       const pct = pxToPct(pxX, pxY);
@@ -351,8 +366,9 @@ export function LayoutCanvas({
       lastGuideResultRef.current = {};
 
       // Move co-selected slots by the same % delta.
+      // Use effectiveSlotsRef so delta is relative to breakpoint-overridden positions (P58-B).
       const ids = selectedSlotIdsRef.current;
-      const slots = templateSlotsRef.current;
+      const slots = effectiveSlotsRef.current;
       if (ids.size > 1) {
         const draggedSlot = slots.find((s) => s.id === slotId);
         if (draggedSlot) {
@@ -435,7 +451,8 @@ export function LayoutCanvas({
 
         const cur = toPct(ue.clientX, ue.clientY);
         const dragRect = normalizeDragRect(start.x, start.y, cur.x, cur.y);
-        const hits = templateSlotsRef.current
+        // Use effective (breakpoint-resolved) positions for marquee hit testing (P58-B).
+        const hits = effectiveSlotsRef.current
           .filter(
             (s) =>
               (s.visible ?? true) &&
@@ -635,7 +652,10 @@ export function LayoutCanvas({
           </div>
         )}
 
-        {template.slots.map((slot, index) => {
+        {effectiveSlots.map((slot, index) => {
+          // slot is the breakpoint-resolved slot (P58-B); invisible in the active breakpoint → skip.
+          if (slot.visible === false) return null;
+
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);
 

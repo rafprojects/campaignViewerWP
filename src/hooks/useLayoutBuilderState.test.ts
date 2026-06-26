@@ -6,7 +6,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useLayoutBuilderState, createEmptyTemplate } from './useLayoutBuilderState';
+import { useLayoutBuilderState, createEmptyTemplate, migrateTemplate } from './useLayoutBuilderState';
 import type { LayoutTemplate } from '@/types';
 
 function templateWithSlots(count: number): LayoutTemplate {
@@ -261,7 +261,7 @@ describe('createEmptyTemplate', () => {
   it('returns a template with sensible defaults', () => {
     const t = createEmptyTemplate();
     expect(t.name).toBe('Untitled Layout');
-    expect(t.schemaVersion).toBe(1);
+    expect(t.schemaVersion).toBe(2);
     expect(t.canvasAspectRatio).toBeCloseTo(16 / 9);
     expect(t.slots).toEqual([]);
     expect(t.overlays).toEqual([]);
@@ -950,5 +950,105 @@ describe('useLayoutBuilderState — addSlotsToSelection (P58-D)', () => {
     act(() => { result.current.selectSlot('s1'); });
     act(() => { result.current.addSlotsToSelection(['s1', 's2']); });
     expect(result.current.selectedSlotIds).toEqual(new Set(['s1', 's2']));
+  });
+});
+
+// ── P58-B: Per-breakpoint slot overrides ────────────────────
+
+describe('useLayoutBuilderState — breakpoint overrides (P58-B)', () => {
+  it('starts with desktop as activeBreakpoint', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    expect(result.current.activeBreakpoint).toBe('desktop');
+  });
+
+  it('setActiveBreakpoint changes the active breakpoint without creating a history entry', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    const historyBefore = result.current.historyEntries.length;
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    expect(result.current.activeBreakpoint).toBe('tablet');
+    expect(result.current.historyEntries.length).toBe(historyBefore);
+  });
+
+  it('moveSlot in tablet mode writes to breakpointOverrides, not base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.moveSlot('s1', 50, 50); });
+    // Base slot unchanged
+    expect(result.current.template.slots[0]!.x).toBe(0);
+    expect(result.current.template.slots[0]!.y).toBe(0);
+    // Breakpoint override written
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.x).toBe(50);
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.y).toBe(50);
+  });
+
+  it('moveSlot in desktop mode updates the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.moveSlot('s1', 30, 40); });
+    expect(result.current.template.slots[0]!.x).toBe(30);
+    expect(result.current.template.slots[0]!.y).toBe(40);
+    expect(result.current.template.breakpointOverrides).toBeUndefined();
+  });
+
+  it('resizeSlot in mobile mode writes to breakpointOverrides', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('mobile'); });
+    act(() => { result.current.resizeSlot('s1', 10, 10, 30, 30); });
+    const mobileOverride = result.current.template.breakpointOverrides?.mobile?.s1;
+    expect(mobileOverride).toMatchObject({ x: 10, y: 10, width: 30, height: 30 });
+    // Base slot unchanged
+    expect(result.current.template.slots[0]!.width).toBe(20);
+  });
+
+  it('setSlotBreakpointOverride writes sparse overrides', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setSlotBreakpointOverride('s1', 'tablet', { visible: false }); });
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.visible).toBe(false);
+  });
+
+  it('clearSlotBreakpointOverride removes the override', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setSlotBreakpointOverride('s1', 'tablet', { x: 50, y: 50 }); });
+    act(() => { result.current.clearSlotBreakpointOverride('s1', 'tablet'); });
+    expect(result.current.template.breakpointOverrides?.tablet?.s1).toBeUndefined();
+  });
+
+  it('nudgeSlots in tablet mode delta-applies to breakpoint override', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    // Set a base tablet position first
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.moveSlot('s1', 20, 20); });
+    // Nudge by +5, +5
+    act(() => { result.current.nudgeSlots(['s1'], 5, 5); });
+    const override = result.current.template.breakpointOverrides?.tablet?.s1;
+    expect(override?.x).toBe(25);
+    expect(override?.y).toBe(25);
+  });
+});
+
+describe('migrateTemplate (P58-B)', () => {
+  it('upgrades a schemaVersion 1 template to version 2', () => {
+    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
+    const migrated = migrateTemplate(old);
+    expect(migrated.schemaVersion).toBe(2);
+  });
+
+  it('initialises breakpointOverrides to an empty object on migration', () => {
+    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
+    const migrated = migrateTemplate(old);
+    expect(migrated.breakpointOverrides).toEqual({});
+  });
+
+  it('does not modify a template that is already at version 2', () => {
+    const t = createEmptyTemplate();
+    expect(t.schemaVersion).toBe(2);
+    const result = migrateTemplate(t);
+    expect(result).toBe(t);
+  });
+
+  it('preserves existing slot data during migration', () => {
+    const old: LayoutTemplate = { ...templateWithSlots(2), schemaVersion: 1 };
+    const migrated = migrateTemplate(old);
+    expect(migrated.slots).toHaveLength(2);
+    expect(migrated.slots[0]!.id).toBe('s1');
   });
 });
