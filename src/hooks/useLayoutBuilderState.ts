@@ -456,27 +456,29 @@ export function useLayoutBuilderState(
 
   const duplicateSlots = useCallback(
     (ids: string[]) => {
-      const newIds: string[] = [];
+      const idSet = new Set(ids);
+      // Build clones + IDs BEFORE mutate. The recipe runs deferred inside a
+      // functional state updater, so IDs generated inside it would not be visible
+      // to the synchronous setSelectedSlotIds below (mirrors addSlot/pasteSlots).
+      const clones = template.slots
+        .filter((s) => idSet.has(s.id))
+        .map((source) => ({
+          ...source,
+          id: generateSlotId(),
+          x: Math.min(source.x + 3, 100 - source.width),
+          y: Math.min(source.y + 3, 100 - source.height),
+        }));
+      if (clones.length === 0) return;
+      const newIds = clones.map((c) => c.id);
       mutate((d) => {
-        for (const id of ids) {
-          const source = d.slots.find((s) => s.id === id);
-          if (!source) continue;
-          const newId = generateSlotId();
-          newIds.push(newId);
-          d.slots.push({
-            ...source,
-            id: newId,
-            x: Math.min(source.x + 3, 100 - source.width),
-            y: Math.min(source.y + 3, 100 - source.height),
-            zIndex: d.slots.length + 1,
-          });
+        let z = d.slots.length;
+        for (const clone of clones) {
+          d.slots.push({ ...clone, zIndex: ++z });
         }
-      }, ids.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
-      if (newIds.length > 0) {
-        setSelectedSlotIds(new Set(newIds));
-      }
+      }, clones.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
+      setSelectedSlotIds(new Set(newIds));
     },
-    [mutate],
+    [mutate, template.slots],
   );
 
   const copySlots = useCallback(

@@ -403,6 +403,15 @@ describe('useLayoutBuilderState — Slot CRUD', () => {
     act(() => result.current.duplicateSlots(['nonexistent']));
     expect(result.current.template.slots).toHaveLength(2);
   });
+
+  it('duplicateSlots selects the duplicated slot(s), not the originals', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.duplicateSlots(['s1']); });
+    expect(result.current.selectedSlotIds.size).toBe(1);
+    expect(result.current.selectedSlotIds.has('s1')).toBe(false);
+    const newId = [...result.current.selectedSlotIds][0]!;
+    expect(result.current.template.slots.some((s) => s.id === newId)).toBe(true);
+  });
 });
 
 // ── Slot mutation ───────────────────────────────────────────
