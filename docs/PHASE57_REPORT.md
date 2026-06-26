@@ -1,6 +1,6 @@
 # Phase 57 - UI & Editor Polish
 
-**Status:** In progress (A, B, C, D, F done)
+**Status:** Done (A, B, C, D, E, F all complete)
 **Created:** 2026-06-23
 **Last updated:** 2026-06-25 (C+D)
 
@@ -12,8 +12,8 @@
 | P57-B | SettingsPanel space-badge dark-mode color parity | Done | Small-Medium |
 | P57-C | LayoutBuilder saved color swatches + eyedropper | Done | Small |
 | P57-D | LayoutBuilder layer search/filter in the Layers panel | Done | Small |
-| P57-E | LayoutBuilder persistent (draggable/lockable) guides | Planned | Medium |
-| P57-F | LayoutBuilder slot rotation handles + `rotation` field | Planned | Medium |
+| P57-E | LayoutBuilder persistent (draggable/lockable) guides | Done | Medium |
+| P57-F | LayoutBuilder slot rotation handles + `rotation` field | Done | Medium |
 
 ---
 
@@ -295,9 +295,19 @@ Smart guides today are transient-only (`SmartGuides.tsx`) — there are no persi
 - Admins can add, drag, lock, and remove guide lines that persist with the template across save/reload.
 - Slots snap to persistent guides using the existing snapping geometry; locked guides don't move.
 
-### Validation
+### Implementation notes (completed 2026-06-25, commit `65e07bc5`)
 
-- `npm run test` for the `guides` schema mutations + persistence; manual QA of add/drag/lock/snap on the canvas (`see-wp`).
+**Schema.** `PersistentGuide { id, axis ('x'|'y'), position (0–100%), locked }` added to `src/types/index.ts`; `guides?: PersistentGuide[]` added to `LayoutTemplate`. PHP `sanitize_guides()` added to `class-wpsg-layout-templates.php` inside `build_template()` so guides survive the save round-trip.
+
+**State.** `useLayoutBuilderGuides` sub-hook takes `{ mutate }` (the Immer `MutateFn` from `useLayoutBuilderHistory`) and exposes `addGuide / moveGuide / removeGuide / toggleGuideLock`. All four ops go through the history pipeline and are fully undoable. Wired into `useLayoutBuilderState` and exported in its return object; guide actions surfaced in `BuilderDockContext`.
+
+**Overlay.** `PersistentGuidesOverlay.tsx` renders an SVG with z-index 200 (above grid/rulers, below SmartGuides at 9999). Per guide: full-span `<line>` in teal, dashed when locked; a 12px transparent hit `<rect>` for drag (mouse pointer capture on `document`) and double-click delete; an inline SVG lock/unlock icon button. No React state — guide position comes from template and is updated live via `onMoveGuide` on every `mousemove`.
+
+**Canvas integration.** `LayoutCanvas` accepts `guides?`, `onMoveGuide?`, `onRemoveGuide?`, `onToggleGuideLock?`; renders `PersistentGuidesOverlay` when there are guides and not in preview mode. Persistent guide snap added to `handleDragFrame` after existing smart-guide and grid snap blocks — checks all three edges (left/center/right for X guides, top/center/bottom for Y guides) against each guide position using the same threshold as smart guides.
+
+**UI.** "Guides: V H" button group added to `LayoutBuilderCanvasPanel` footer between Rulers and Indices. Uses `IconSeparatorVertical` / `IconSeparatorHorizontal` from `@tabler/icons-react`.
+
+**Tests.** 8 hook tests cover add/move/remove/toggleLock/undo; 9 overlay tests cover render count, dash style, double-click delete, lock-icon click, drag (locked vs unlocked). 3451 total tests pass.
 
 ## Track P57-F - LayoutBuilder slot rotation
 
