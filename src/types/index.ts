@@ -368,6 +368,8 @@ export interface LayoutSlot {
   rotation?: number | undefined;
   /** Render opacity 0–1 (default 1 = fully opaque). Applies in builder preview/edit and gallery. */
   opacity?: number | undefined;
+  /** Scroll-reveal entrance animation in the rendered gallery (P58-E). Absent = no animation. */
+  entranceAnimation?: SlotEntranceAnimation | undefined;
 }
 
 /** Sensible defaults for a new layout slot. */
@@ -532,6 +534,20 @@ export interface SlotTiltEffect {
   perspective: number;
   /** Transition speed in ms when resetting tilt (default 300). */
   resetSpeed: number;
+}
+
+/** Entrance (scroll-reveal) animation for a slot in the rendered gallery (P58-E). */
+export type SlotEntranceType = 'fade' | 'slide' | 'zoom';
+export type SlotEntranceDirection = 'up' | 'down' | 'left' | 'right';
+export interface SlotEntranceAnimation {
+  /** Animation variant. */
+  type: SlotEntranceType;
+  /** Slide direction (only used when type === 'slide'). Default 'up'. */
+  direction?: SlotEntranceDirection | undefined;
+  /** Duration in ms (default 600). */
+  durationMs?: number | undefined;
+  /** Delay before the animation starts, in ms — for staggering (default 0). */
+  delayMs?: number | undefined;
 }
 
 /** CSS mix-blend-mode for the slot element. */

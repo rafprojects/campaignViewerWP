@@ -37,6 +37,7 @@ import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
+import { buildSlotEntranceCss, entranceKeyframeName, ENTRANCE_MARKER_CLASS, REVEAL_CLASS } from '@/utils/slotEntrance';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
 import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
@@ -173,12 +174,14 @@ function GallerySlotView({
   const blendCss = getBlendModeCss(slot.blendMode);
   const overlayBg = buildOverlayBg(slot.overlayEffect);
   const [hovered, setHovered] = useState(false);
+  // P58-E: marker class the IntersectionObserver queries to drive the reveal.
+  const entranceClass = slot.entranceAnimation ? ENTRANCE_MARKER_CLASS : '';
 
   if (!assigned) {
     // E.4: Empty slot — gray dashed placeholder, non-interactive
     return (
       <div
-        className={positionClassName}
+        className={[positionClassName, entranceClass].filter(Boolean).join(' ')}
         style={{
           clipPath,
           ...maskStyle,
@@ -305,7 +308,7 @@ function GallerySlotView({
       transition: needsInlineGlow ? 'filter 0.25s ease' : undefined,
       mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
     };
-    const outerClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
+    const outerClassName = [positionClassName, hoverClass, entranceClass].filter(Boolean).join(' ');
     const clipContent = (
       <>
         {/* Border fill layer */}
@@ -374,7 +377,7 @@ function GallerySlotView({
     filter: mergedFilter,
     mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
   };
-  const rectClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
+  const rectClassName = [positionClassName, hoverClass, entranceClass].filter(Boolean).join(' ');
   const rectContent = (
     <>
       {slotMedia}
@@ -624,6 +627,44 @@ function LayoutBuilderGalleryInner({
     }).join('\n');
   }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
 
+  // ── Slot entrance-animation CSS (P58-E) ───────────────────────────────────
+  // Per-slot keyframes + hidden/revealed states; an IntersectionObserver (below)
+  // adds REVEAL_CLASS when the slot scrolls into view. Composes slot rotation.
+  const slotEntranceCss = useMemo(() => {
+    return template.slots
+      .filter((slot) => slot.entranceAnimation)
+      .map((slot) => buildSlotEntranceCss({
+        className: slotCssClass(instanceId, slot.id),
+        keyframeName: entranceKeyframeName(instanceId, slot.id),
+        anim: slot.entranceAnimation!,
+        rotationDeg: slot.rotation ?? 0,
+      }))
+      .join('\n');
+  }, [template.slots, instanceId]);
+
+  // Reveal animated slots on first viewport entry (one-shot). Falls back to
+  // revealing everything immediately when IntersectionObserver is unavailable.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !slotEntranceCss) return;
+    const targets = Array.from(el.querySelectorAll<HTMLElement>(`.${ENTRANCE_MARKER_CLASS}`));
+    if (targets.length === 0) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      targets.forEach((tEl) => tEl.classList.add(REVEAL_CLASS));
+      return;
+    }
+    const io = new IntersectionObserver((entries, obs) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add(REVEAL_CLASS);
+          obs.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.12 });
+    targets.forEach((tEl) => io.observe(tEl));
+    return () => io.disconnect();
+  }, [slotEntranceCss]);
+
   // ── Slot-count mismatch warning ───────────────────────────────────────────
   const slotCount = template.slots.length;
   const mediaCount = media.length;
@@ -639,6 +680,7 @@ function LayoutBuilderGalleryInner({
       {/* Hover and slot position styles injected into DOM */}
       <style>{hoverStylesCss}</style>
       <style>{slotPositionCss}</style>
+      {slotEntranceCss && <style>{slotEntranceCss}</style>}
 
       {/* Header */}
       {heading.visible && (

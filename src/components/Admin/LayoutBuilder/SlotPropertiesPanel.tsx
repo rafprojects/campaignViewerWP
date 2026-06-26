@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Stack,
   Text,
@@ -11,6 +11,7 @@ import {
   Tooltip,
   Box,
   Slider,
+  Button,
   Accordion,
 } from '@mantine/core';
 import { BuilderColorInput as ColorInput } from './BuilderColorInput';
@@ -24,6 +25,7 @@ import {
   IconLink,
   IconUnlink,
   IconRefresh,
+  IconPlayerPlay,
 } from '@tabler/icons-react';
 import type {
   LayoutSlot,
@@ -33,7 +35,11 @@ import type {
   SlotTiltEffect,
   SlotBlendMode,
   SlotOverlayEffect,
+  SlotEntranceAnimation,
+  SlotEntranceType,
+  SlotEntranceDirection,
 } from '@/types';
+import { buildSlotEntranceCss, REVEAL_CLASS } from '@/utils/slotEntrance';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── Props ────────────────────────────────────────────────────
@@ -317,6 +323,111 @@ function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
     </Stack>
   );
 }
+
+function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
+  // P58-E: scroll-reveal entrance animation, previewed in-panel (the live builder
+  // canvas uses LayoutSlotComponent; entrance only runs in the rendered gallery).
+  const anim = slot.entranceAnimation;
+  const [playNonce, setPlayNonce] = useState(0);
+  const previewClass = 'wpsg-entrance-preview-box';
+
+  const setAnim = (patch: Partial<SlotEntranceAnimation>) => {
+    if (!anim) return;
+    onUpdate({ entranceAnimation: { ...anim, ...patch } });
+  };
+
+  const previewCss = anim
+    ? buildSlotEntranceCss({ className: previewClass, keyframeName: 'wpsgEntrancePreviewKf', anim, rotationDeg: 0 })
+    : '';
+  // Re-mount the preview box (replaying the CSS animation) on any setting change or Play click.
+  const previewKey = anim
+    ? `${playNonce}-${anim.type}-${anim.direction ?? ''}-${anim.durationMs ?? ''}-${anim.delayMs ?? ''}`
+    : `${playNonce}`;
+
+  return (
+    <Stack gap={4}>
+      <PropRow label="Type">
+        <Select
+          data={[
+            { value: 'none', label: 'None' },
+            { value: 'fade', label: 'Fade' },
+            { value: 'slide', label: 'Slide' },
+            { value: 'zoom', label: 'Zoom' },
+          ]}
+          value={anim?.type ?? 'none'}
+          onChange={(val) => {
+            if (!val || val === 'none') { onUpdate({ entranceAnimation: undefined }); return; }
+            onUpdate({ entranceAnimation: { ...(anim ?? {}), type: val as SlotEntranceType } });
+          }}
+          size="xs" variant="filled"
+          aria-label="Entrance animation type"
+        />
+      </PropRow>
+
+      {anim && (
+        <>
+          {anim.type === 'slide' && (
+            <PropRow label="Direction">
+              <Select
+                data={[
+                  { value: 'up', label: 'Up' },
+                  { value: 'down', label: 'Down' },
+                  { value: 'left', label: 'Left' },
+                  { value: 'right', label: 'Right' },
+                ]}
+                value={anim.direction ?? 'up'}
+                onChange={(val) => val && setAnim({ direction: val as SlotEntranceDirection })}
+                size="xs" variant="filled"
+                aria-label="Slide direction"
+              />
+            </PropRow>
+          )}
+          <PropRow label="Duration">
+            <NumberInput
+              value={anim.durationMs ?? 600}
+              onChange={(v) => setAnim({ durationMs: typeof v === 'number' ? v : 600 })}
+              min={50} max={5000} step={50} size="xs" variant="filled" suffix=" ms"
+              aria-label="Entrance duration"
+            />
+          </PropRow>
+          <PropRow label="Delay">
+            <NumberInput
+              value={anim.delayMs ?? 0}
+              onChange={(v) => setAnim({ delayMs: typeof v === 'number' ? v : 0 })}
+              min={0} max={5000} step={50} size="xs" variant="filled" suffix=" ms"
+              aria-label="Entrance delay"
+            />
+          </PropRow>
+          <Group gap={8} align="center" mt={2}>
+            <Box
+              style={{
+                width: 64, height: 40, position: 'relative', overflow: 'hidden',
+                borderRadius: 4, background: 'var(--mantine-color-default-hover)',
+                border: '1px solid var(--mantine-color-default-border)', flexShrink: 0,
+              }}
+            >
+              <style>{previewCss}</style>
+              <div
+                key={previewKey}
+                className={`${previewClass} ${REVEAL_CLASS}`}
+                style={{ position: 'absolute', inset: 8, background: 'var(--mantine-color-blue-5)', borderRadius: 2 }}
+              />
+            </Box>
+            <Button
+              size="compact-xs"
+              variant="light"
+              leftSection={<IconPlayerPlay size={12} />}
+              onClick={() => setPlayNonce((n) => n + 1)}
+            >
+              Play preview
+            </Button>
+          </Group>
+        </>
+      )}
+    </Stack>
+  );
+}
+setWpsgDebugDisplayName(EntranceSection, 'LayoutBuilder:SlotPropertiesPanel:EntranceSection');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -700,6 +811,9 @@ export function SlotPropertiesPanel({
 
             <SectionHeader label="3D Tilt" />
             <TiltEffectSection slot={slot} onUpdate={onUpdate} />
+
+            <SectionHeader label="Entrance" />
+            <EntranceSection slot={slot} onUpdate={onUpdate} />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

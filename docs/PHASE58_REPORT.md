@@ -12,7 +12,7 @@
 | P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
 | P58-C | Starter template library — already shipped (P15-J); enhanced with rotated/split presets + faithful previews | Done | Small |
 | P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
-| P58-E | Slot entrance animations (scroll-reveal at gallery render) | Planned | Medium |
+| P58-E | Slot entrance animations (scroll-reveal at gallery render) | Done | Medium |
 | P58-F | Auto-grid slot generator | Done | Small-Medium |
 
 ---
@@ -189,6 +189,16 @@ Slots support hover effects but have **no entrance motion** — they cannot fade
 
 - `npm run test` for the field default/merge + the reduced-motion branch; manual QA scrolling a rendered gallery and toggling reduced-motion.
 
+### Implementation notes (2026-06-26)
+
+User direction: **full controls** (type + direction + duration + delay).
+
+- **Field** — `SlotEntranceAnimation { type: 'fade'|'slide'|'zoom'; direction?; durationMs?; delayMs? }` added to `LayoutSlot` (optional; no `schemaVersion` bump).
+- **Pure helper** — `src/utils/slotEntrance.ts` (`buildSlotEntranceCss`): per-slot `@keyframes` + a pre-reveal hidden state + a revealed-state animation + a `prefers-reduced-motion` override. Transforms **compose the slot's rotation** so a rotated slot (e.g. the new Polaroid Scatter preset) keeps its angle while animating in. Unit-tested (`slotEntrance.test.ts`).
+- **Gallery reveal** — `LayoutBuilderGallery` injects the entrance CSS and runs an `IntersectionObserver` that adds `wpsg-lb-revealed` on first viewport entry (one-shot; `obs.unobserve` after). No-IO fallback reveals everything immediately. Entrance runs **only in the rendered gallery** (front-end) — the builder canvas uses `LayoutSlotComponent` and is unaffected.
+- **Properties UI** — an "Entrance" section in `SlotPropertiesPanel` (type/direction/duration/delay) with an in-panel **mini "Play preview"** that replays the chosen animation (used `Select`, not `SegmentedControl`, to avoid the known setState-in-ref-callback loop). This is the builder-side preview the criteria call for.
+- **Verified:** helper unit test, `tsc -b`, `eslint`, and the full regression suite all green.
+
 ## Track P58-F - Auto-grid slot generator
 
 ### Problem
@@ -233,8 +243,8 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 
 ## Outcome
 
-_To be completed once the phase ships._
+_Updated 2026-06-26 — five of six tracks shipped; P58-B remains._
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+- **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), and P58-E (scroll-reveal entrance animations with full per-slot controls). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
+- **What was deferred.** P58-B (responsive / per-breakpoint slot overrides) — the schema-migration heavyweight — is sequenced as its own effort per Key Decision D (user direction, 2026-06-26). The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design.
+- **What should happen next.** Plan and execute P58-B on its own (schema version bump + back-compat resolution + per-breakpoint editing), and pick up the align/distribute hotkeys when a conflict-free binding is chosen. Manual QA of the shipped tracks via the `see-wp` flow is still recommended.
