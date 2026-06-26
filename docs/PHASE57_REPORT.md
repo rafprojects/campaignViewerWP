@@ -322,20 +322,22 @@ Slots cannot be rotated — there is no rotation transform on the canvas and no 
 
 ### Implementation (P57-F — done)
 
-**Schema:** `rotation?: number | undefined` added to `LayoutSlot` in `src/types/index.ts`; `undefined` means 0°, which avoids emitting zero-value noise in serialized JSON.
+**Schema:** `rotation?: number | undefined` added to `LayoutSlot` in `src/types/index.ts`; `undefined` means 0°, which avoids emitting zero-value noise in serialized JSON. PHP `sanitize_slots()` extended to include `rotation` (clamped 0–359, `null` when absent) — the field was being silently dropped on every save before this fix.
 
 **Builder canvas (`LayoutSlotComponent.tsx`):**
 - Inner rotation wrapper div applies `transform: rotate(Xdeg)` inside the Rnd bounding box so drag/resize handles stay axis-aligned.
 - `liveRotation` state allows smooth drag feedback; committed via `onSlotUpdate` on mouseup.
-- Rotation handle: blue circle positioned 28 px above top-center of slot, visible only when `isSelected && !isHandTool && !slot.locked`. `atan2` converts mouse position relative to slot center into degrees.
+- Rotation handle: blue circle with rotate SVG icon, positioned at `top: 6 / left: 50%` inside the slot bounding box. Previous design placed the handle 40 px above the slot top edge, which was clipped by `overflow: hidden` on the modal canvas container; moving it inside the slot bounds was the correct fix. Visible only when `isSelected && !isHandTool && !slot.locked`. `atan2` converts mouse position relative to slot center into degrees.
 - Selection ring (`boxShadow`) moved to Rnd `style` prop (from inner content divs) so it stays axis-aligned regardless of inner rotation.
 - Zero-rotation guard: rotation wrapper uses full shorthand only when `(liveRotation ?? slot.rotation ?? 0) !== 0` to avoid creating an unnecessary CSS stacking context.
 
-**SlotPropertiesPanel:** `NumberInput` (0–359°) with `IconRefresh` reset button (visible when `rotation` is non-zero).
+**SlotPropertiesPanel:** `NumberInput` (0–359°) with `IconRefresh` reset button (visible when `rotation` is non-zero). The Rotation section header is a scrub target: pointer-capture drag left/right adjusts degrees (Adobe-style). Uses `onPointerDown` + `setPointerCapture` + `onPointerMove` rather than `document.addEventListener` for reliability inside the modal.
 
 **Front-end renderer (`LayoutBuilderGallery.tsx`):** `transform:rotate(Xdeg);transform-origin:center center` appended to slot CSS class only when `slot.rotation` is truthy — same zero-stacking-context guard as builder.
 
-**Tests:** 15 new tests across `LayoutSlotComponent.test.tsx`, `SlotPropertiesPanel.test.tsx`, `LayoutBuilderGallery.test.tsx`. Also patched pre-existing `SlotPropertiesPanel.test.tsx` failure (all 51 tests were broken since P57-C because `BuilderColorInput` requires `BuilderDockContext`; added `vi.mock('./BuilderDockContext')` to unblock them). Full suite: 3435/3435 pass.
+**Tests:** 15 new tests across `LayoutSlotComponent.test.tsx`, `SlotPropertiesPanel.test.tsx`, `LayoutBuilderGallery.test.tsx`. Also patched pre-existing `SlotPropertiesPanel.test.tsx` failure (all 51 tests were broken since P57-C because `BuilderColorInput` requires `BuilderDockContext`; added `vi.mock('./BuilderDockContext')` to unblock them). Full suite: 3435/3435 pass. Manual QA confirmed rotation saves and renders correctly across builder and front-end.
+
+**Status: complete.**
 
 ## Follow-On Candidates
 
