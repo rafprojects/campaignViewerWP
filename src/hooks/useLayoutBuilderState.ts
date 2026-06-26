@@ -7,6 +7,7 @@ import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
 import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
 import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
 import { useLayoutBuilderGroups } from './useLayoutBuilderGroups';
+import { useLayoutBuilderGuides } from './useLayoutBuilderGuides';
 import type { HistoryEntry } from './useLayoutBuilderHistory';
 
 export type { HistoryEntry } from './useLayoutBuilderHistory';
@@ -203,6 +204,12 @@ export interface LayoutBuilderActions {
   /** True once the history stack has been trimmed (oldest snapshot is no longer the initial one). */
   isHistoryTrimmed: boolean;
 
+  // ── Persistent guides (P57-E) ──
+  addGuide: (axis: 'x' | 'y', position?: number) => void;
+  moveGuide: (id: string, position: number) => void;
+  removeGuide: (id: string) => void;
+  toggleGuideLock: (id: string) => void;
+
   // ── Preview ──
   togglePreview: () => void;
 
@@ -286,6 +293,10 @@ export function useLayoutBuilderState(
     migrateGroupsIfNeeded, createGroup, wrapInGroup,
     dissolveGroup, updateGroup, selectGroup, moveGroup, reparentGroup,
   } = useLayoutBuilderGroups({ mutate, template, setSelectedSlotIds });
+
+  const {
+    addGuide, moveGuide, removeGuide, toggleGuideLock,
+  } = useLayoutBuilderGuides({ mutate });
 
   // ── Template-level actions ──
 
@@ -784,5 +795,10 @@ export function useLayoutBuilderState(
     moveGroup,
     reparentGroup,
     migrateGroupsIfNeeded,
+    // Persistent guides (P57-E)
+    addGuide,
+    moveGuide,
+    removeGuide,
+    toggleGuideLock,
   };
 }

@@ -1,6 +1,6 @@
 import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { DockviewApi } from 'dockview';
-import type { LayoutGraphicLayer, LayoutSlot, MediaItem } from '@/types';
+import type { LayoutGraphicLayer, LayoutSlot, MediaItem, PersistentGuide } from '@/types';
 import type { UseLayoutBuilderReturn } from '@/hooks/useLayoutBuilderState';
 import type { SnapMode } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
@@ -114,6 +114,13 @@ export interface BuilderDockContextValue {
   // P57-C: recently-used color swatches, shared across all builder color pickers.
   savedSwatches: string[];
   addSwatch: (color: string) => void;
+
+  // P57-E: persistent guides
+  guides: PersistentGuide[];
+  addGuide: (axis: 'x' | 'y', position?: number) => void;
+  moveGuide: (id: string, position: number) => void;
+  removeGuide: (id: string) => void;
+  toggleGuideLock: (id: string) => void;
 }
 
 // ── Context + hook ────────────────────────────────────────────

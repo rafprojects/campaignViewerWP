@@ -513,10 +513,40 @@ class WPSG_Layout_Templates {
                 : 1,
             'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
+            'guides'            => self::sanitize_guides( $data['guides'] ?? [] ),
             'createdAt'         => $data['createdAt'] ?? $now,
             'updatedAt'         => $now,
             'tags'              => array_map( 'sanitize_text_field', (array) ( $data['tags'] ?? [] ) ),
         ];
+    }
+
+    /**
+     * Sanitize an array of persistent guide lines (P57-E).
+     *
+     * @param  mixed $guides Raw guide data.
+     * @return array
+     */
+    private static function sanitize_guides( $guides ): array {
+        if ( ! is_array( $guides ) ) {
+            return [];
+        }
+        return array_values( array_filter( array_map( function ( $g ) {
+            if ( ! is_array( $g ) ) {
+                return null;
+            }
+            $axis = $g['axis'] ?? '';
+            if ( ! in_array( $axis, [ 'x', 'y' ], true ) ) {
+                return null;
+            }
+            return [
+                'id'       => sanitize_text_field( $g['id'] ?? wp_generate_uuid4() ),
+                'axis'     => $axis,
+                'position' => max( 0, min( 100, floatval( $g['position'] ?? 50 ) ) ),
+                'locked'   => (bool) ( $g['locked'] ?? false ),
+            ];
+        }, $guides ), static function ( $g ) {
+            return is_array( $g );
+        } ) );
     }
 
     /**

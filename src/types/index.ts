@@ -561,6 +561,16 @@ export interface SlotOverlayEffect {
   onHoverOnly: boolean;
 }
 
+/** Persistent guide line saved per-template in the Layout Builder (P57-E). */
+export interface PersistentGuide {
+  id: string;
+  /** 'x' = vertical line at x% of canvas width; 'y' = horizontal line at y% of canvas height. */
+  axis: 'x' | 'y';
+  /** Position as 0–100% of the canvas along the guide's axis dimension. */
+  position: number;
+  locked: boolean;
+}
+
 /**
  * A reusable layout template that defines the visual arrangement of media slots
  * on a fixed-ratio canvas. Stored globally in `wpsg_layout_templates` WP option.
@@ -621,6 +631,8 @@ export interface LayoutTemplate {
    * is derived from the union of all descendants and stored for resolver efficiency.
    */
   groups?: LayoutGroup[] | undefined;
+  /** Persistent guide lines saved with the template (P57-E). */
+  guides?: PersistentGuide[] | undefined;
   /** ISO 8601 created timestamp */
   createdAt: string;
   /** ISO 8601 last-updated timestamp */
