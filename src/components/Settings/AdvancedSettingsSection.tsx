@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { Accordion, Alert, Badge, Divider, Group, Loader, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { Accordion, Alert, Badge, Divider, Group, Loader, NumberInput, Select, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
 import { useQuery } from '@tanstack/react-query';
 
 import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
@@ -64,6 +64,23 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
                   description="When enabled, content behind open settings drawers is blurred."
                   checked={settings.settingsDrawerBlurEnabled ?? true}
                   onChange={(event) => updateSetting('settingsDrawerBlurEnabled', event.currentTarget.checked)}
+                />
+                <Select
+                  label={tooltipLabel('Settings Panel Animation', 'settingsPanelAnimation')}
+                  description="Open/close transition for the settings panel drawer. Choose None to disable animation."
+                  data={[
+                    { value: 'slide-left', label: 'Slide' },
+                    { value: 'fade', label: 'Fade' },
+                    { value: 'scale', label: 'Scale' },
+                    { value: 'none', label: 'None' },
+                  ]}
+                  value={settings.settingsPanelAnimation ?? 'slide-left'}
+                  onChange={(value) => updateSetting(
+                    'settingsPanelAnimation',
+                    (value ?? 'slide-left') as GalleryBehaviorSettings['settingsPanelAnimation'],
+                  )}
+                  allowDeselect={false}
+                  comboboxProps={{ withinPortal: false }}
                 />
               </Stack>
             ) : null}

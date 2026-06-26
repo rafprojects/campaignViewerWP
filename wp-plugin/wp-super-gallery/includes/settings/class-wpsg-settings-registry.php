@@ -145,6 +145,7 @@ class WPSG_Settings_Registry {
         'app_max_width'              => 1200,
         'app_padding'                => 16,
         'settings_panel_width'       => 600,
+        'settings_panel_animation'   => 'slide-left',
         'admin_panel_max_width'      => 0,
         'wp_full_bleed_desktop'      => false,
         'wp_full_bleed_tablet'       => false,
@@ -714,6 +715,8 @@ class WPSG_Settings_Registry {
         'gallery_section_content_align_x' => ['start', 'center', 'end'],
         'gallery_section_content_align_y' => ['start', 'center', 'end'],
         'carousel_autoplay_direction'  => ['ltr', 'rtl'],
+        // P57-A: Settings panel open/close animation variants
+        'settings_panel_animation'     => ['slide-left', 'fade', 'scale', 'none'],
         // P25-X: CSS unit valid options
         'app_max_width_unit'             => ['px', '%', 'vw', 'em', 'rem'],
         'app_padding_unit'               => ['px', 'em', 'rem', '%'],

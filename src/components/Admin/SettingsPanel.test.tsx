@@ -144,7 +144,9 @@ async function waitForTabs() {
 
 /** Navigate to a tab and wait for a piece of panel content to appear. */
 async function clickTabAndWait(name: string, contentText: string) {
-  fireEvent.click(screen.getByRole('tab', { name }));
+  // P57-A: the panel opens one+ animation frames after mount, so wait for the
+  // tab to appear rather than querying synchronously.
+  fireEvent.click(await screen.findByRole('tab', { name }));
   await screen.findByText(contentText);
 }
 
@@ -206,6 +208,33 @@ describe('SettingsPanel', () => {
     expect(screen.getByRole('tab', { name: /Gallery Layout/i })).toBeDefined();
   });
 
+  it('renders the space badge via the light variant; in shadow DOM exact CSS vars override color (P57-B)', async () => {
+    render(
+      <SettingsPanel
+        opened={true}
+        apiClient={apiClient}
+        onClose={onClose}
+        onNotify={onNotify}
+        initialSettings={seedSettings}
+        spaceId={7}
+        spaceName="Marketing"
+        instanceId="7"
+      />
+    );
+
+    await waitForTabs();
+
+    const badge = screen.getByText('Marketing').closest('[class*="Badge-root"]') as HTMLElement;
+    expect(badge).not.toBeNull();
+    // P57-B: badge uses variant="light". In shadow DOM production, getComputedStyle
+    // on the shadow host resolves the exact :host CSS variables, which are applied as
+    // inline styles for color parity. In jsdom (no shadow host found), no inline
+    // style override is applied — guarding that we don't use hardcoded shade values.
+    expect(badge.getAttribute('data-variant')).toBe('light');
+    expect(badge.style.backgroundColor).toBe(''); // jsdom: shadow host not found, no override
+    expect(badge.style.color).toBe('');
+  });
+
   it('shows gallery style settings when Gallery Style tab is clicked', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
@@ -243,7 +272,8 @@ describe('SettingsPanel', () => {
     const closeButton = document.querySelector('.mantine-Drawer-close') as HTMLButtonElement;
     expect(closeButton).not.toBeNull();
     fireEvent.click(closeButton);
-    expect(onClose).toHaveBeenCalledOnce();
+    // P57-A: onClose now fires after the exit animation (Transition onExited).
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
   });
 
   it('shows Save Changes button that is disabled when no changes', async () => {
@@ -782,7 +812,7 @@ describe('SettingsPanel', () => {
     expect(screen.queryByText('Settings')).toBeNull();
   });
 
-  it('renders instantly without spinner when initialSettings are provided', () => {
+  it('renders without a loading spinner when initialSettings are provided', async () => {
     const initial = {
       videoViewportHeight: 500,
       imageViewportHeight: 600,
@@ -803,10 +833,13 @@ describe('SettingsPanel', () => {
       />
     );
 
-    // Should render immediately — no loader, tabs visible synchronously
-    expect(screen.getByText('Settings')).toBeDefined();
+    // No async-load spinner at any point — initialSettings bypass the network load.
+    // (The panel opens one+ animation frames after mount for the P57-A enter
+    // animation, so wait for the tabs rather than querying synchronously.)
+    expect(screen.queryByRole('status')).toBeNull(); // no loader spinner on mount
+    expect(await screen.findByText('Settings')).toBeDefined();
     expect(screen.getByRole('tab', { name: /Appearance/i })).toBeDefined();
-    expect(screen.queryByRole('status')).toBeNull(); // no loader spinner
+    expect(screen.queryByRole('status')).toBeNull(); // still no loader after open
   });
 
   it('toggles Appearance tab switches to call updateSetting lambdas', async () => {

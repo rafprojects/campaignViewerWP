@@ -12,7 +12,7 @@ import {
   ActionIcon,
   Tooltip,
 } from '@mantine/core';
-import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
+import { BuilderColorInput as ColorInput } from './BuilderColorInput';
 import { IconTrash } from '@tabler/icons-react';
 import type {
   GradientStop,

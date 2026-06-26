@@ -477,6 +477,35 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         $allowed     = array_flip(WPSG_Settings::get_overridable_keys());
         $to_set      = array_intersect_key($snake_input, $allowed);
 
+        // P57-A: The settings panel sends one payload, but its "System & Admin"
+        // tab holds *global* (non-overridable) settings — settings-drawer chrome,
+        // cache, optimization, the magic-link page. Those keys are not space-
+        // overridable, so instead of silently dropping them, route the ones that
+        // actually changed to the global option. System-level writes require
+        // manage_options (the System & Admin tab is already gated to that tier
+        // client-side); editors writing only display keys are unaffected.
+        $global_input = array_diff_key($snake_input, $allowed);
+        if (!empty($global_input) && current_user_can('manage_options')) {
+            $sanitized_global = WPSG_Settings::sanitize_settings($global_input);
+            $applied_global   = array_intersect_key($sanitized_global, $global_input);
+            $current_global   = WPSG_Settings::get_settings();
+            $changed_global   = array_filter(
+                $applied_global,
+                fn($v, $k) => !array_key_exists($k, $current_global) || $current_global[$k] !== $v,
+                ARRAY_FILTER_USE_BOTH
+            );
+            if (!empty($changed_global)) {
+                update_option(WPSG_Settings::OPTION_NAME, array_merge($current_global, $changed_global));
+                self::add_audit_entry(0, 'settings.updated', [
+                    'changedKeys' => array_keys($changed_global),
+                    'via'         => 'space-panel',
+                ], [
+                    'scope'   => 'system',
+                    'summary' => 'Global settings updated via space panel: ' . implode(', ', array_keys($changed_global)),
+                ]);
+            }
+        }
+
         $to_clear  = array_keys(array_filter($to_set, fn($v) => $v === null));
         $to_update = array_filter($to_set, fn($v) => $v !== null);
 

@@ -22,9 +22,10 @@ interface GeneralSettingsSectionProps {
   settings: GeneralSettingsData;
   updateSetting: <K extends keyof GeneralSettingsData>(key: K, value: GeneralSettingsData[K]) => void;
   onThemeChange: (themeId: string) => void;
+  isSystemAdmin?: boolean;
 }
 
-export function GeneralSettingsSection({ settings, updateSetting, onThemeChange }: GeneralSettingsSectionProps) {
+export function GeneralSettingsSection({ settings, updateSetting, onThemeChange, isSystemAdmin = false }: GeneralSettingsSectionProps) {
   const { mounted, onChange } = useLazyAccordion('gen-theme');
 
   return (
@@ -266,12 +267,14 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange 
                 placeholder="0 = no warning"
                 disabled={settings.sessionIdleTimeoutMinutes === 0}
               />
-              <Switch
-                label="Enable Advanced Settings"
-                description="Unlock the Advanced tab with granular control over card opacities, tile dimensions, lightbox behavior, breakpoints, and more."
-                checked={settings.advancedSettingsEnabled}
-                onChange={(event) => updateSetting('advancedSettingsEnabled', event.currentTarget.checked)}
-              />
+              {isSystemAdmin && (
+                <Switch
+                  label="Enable Advanced Settings"
+                  description="Unlock the System & Admin tab with granular control over panel behavior, cache, drawer settings, and more."
+                  checked={settings.advancedSettingsEnabled}
+                  onChange={(event) => updateSetting('advancedSettingsEnabled', event.currentTarget.checked)}
+                />
+              )}
               <Switch
                 label="Show Settings Tooltips"
                 description="Display info icons next to Advanced-tab labels that explain each setting on hover."

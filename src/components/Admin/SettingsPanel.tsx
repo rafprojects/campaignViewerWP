@@ -15,10 +15,7 @@ import {
   Title,
   NativeScrollArea,
   Tabs,
-  useMantineTheme,
-  useComputedColorScheme,
 } from '@mantine/core';
-import type { MantineColor } from '@mantine/core';
 import {
   IconSettings,
   IconPhoto,
@@ -72,6 +69,7 @@ import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey, normalizeSettingsResponse } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
 import { toCss } from '@wp-super-gallery/shared-utils';
+import { resolveSettingsPanelTransition } from './settingsPanelTransition';
 
 /**
  * P36-A: Settings draft persistence.
@@ -196,9 +194,9 @@ interface SettingsPanelTabsContentProps {
   setCustomFonts: (fonts: CustomFontEntry[]) => void;
   updateTypoOverride: (elementId: string, override: TypographyOverride) => void;
   tooltipLabel: SettingsPanelTooltipRenderer;
-  /** When set, global-only tabs (Integrations, System & Admin) are hidden. */
+  /** When set, hides the Integrations tab and the magic-link picker inside System & Admin. */
   spaceId?: number;
-  /** P53-A: Integrations + System & Admin are system-admin only (webhooks etc.). */
+  /** P53-A: System & Admin tab is system-admin only. The tab itself is available in space mode; only the magic-link picker is hidden. */
   isSystemAdmin?: boolean;
 }
 
@@ -264,7 +262,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
             Integrations
           </Tabs.Tab>
         )}
-        {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
+        {isSystemAdmin && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
             System & Admin
           </Tabs.Tab>
@@ -272,7 +270,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
       </Tabs.List>
 
       <Tabs.Panel value="appearance" pt="md">
-        <SettingsAppearanceTab settings={settings} updateSetting={updateSetting} />
+        <SettingsAppearanceTab settings={settings} updateSetting={updateSetting} isSystemAdmin={isSystemAdmin} />
       </Tabs.Panel>
 
       <Tabs.Panel value="cards" pt="md">
@@ -323,7 +321,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
         </Tabs.Panel>
       )}
 
-      {!isSpaceMode && isSystemAdmin && settings.advancedSettingsEnabled && (
+      {isSystemAdmin && settings.advancedSettingsEnabled && (
         <Tabs.Panel value="system-admin" pt="md">
           <SettingsSystemAdminTab
             settings={settings}
@@ -342,13 +340,48 @@ SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
   const color = instanceId ? spaceColor(instanceId) : undefined;
-  const theme = useMantineTheme();
-  const isDark = useComputedColorScheme('light') === 'dark';
-  // Resolve actual hex values: CSS variables from :host are unavailable in the portal (withinPortal=true).
-  // Shade indices mirror Mantine's variant="light" behavior so all 3 badge locations stay in sync.
-  const colorHex = color ? (theme.colors[color as MantineColor]?.[isDark ? 4 : 5] ?? undefined) : undefined;
-  const badgeBg = color ? (theme.colors[color as MantineColor]?.[isDark ? 8 : 1] ?? undefined) : undefined;
-  const badgeText = color ? (theme.colors[color as MantineColor]?.[isDark ? 2 : 7] ?? undefined) : undefined;
+  // P57-B: Read the exact badge/accent colors from the shadow host element.
+  // The Drawer portals to document.body, where `:host`-scoped Mantine CSS
+  // variables don't resolve, so we read them directly via getComputedStyle on the
+  // shadow host — which IS the element that `:host {}` styles apply to and whose
+  // custom properties are accessible from light-DOM JS. In non-shadow mounts (dev
+  // server, tests) the shadow host is never set, so shadowHost stays null and the
+  // badge falls back to variant="light" (which resolves from `:root` there).
+  const [shadowHost, setShadowHost] = useState<Element | null>(null);
+  const shadowSentinelRef = useCallback((node: HTMLSpanElement | null) => {
+    if (!node) return;
+    const root = node.getRootNode();
+    if (root instanceof ShadowRoot) setShadowHost(root.host);
+  }, []);
+
+  // P57-A animation: SettingsPanel is conditionally rendered by its parent, so the
+  // Drawer receives opened=true on its first render and Mantine's Transition starts
+  // already 'entered' (it only animates on a subsequent false→true change). Rendering
+  // the Drawer closed first and flipping in a plain effect isn't enough — the two
+  // commits land in the same frame (~14ms apart, sub-frame), so the browser never
+  // paints the closed "from" state and the CSS transition has nothing to animate
+  // from. Fix: hold opened=false, then flip true across TWO animation frames, which
+  // guarantees the closed state is painted before the slide begins.
+  const [internalOpened, setInternalOpened] = useState(false);
+  useEffect(() => {
+    if (!opened) { setInternalOpened(false); return; }
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => { raf2 = requestAnimationFrame(() => setInternalOpened(true)); });
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
+  }, [opened]);
+
+  // Resolved inline-style values for the space badge and drawer border accent.
+  // getComputedStyle reads the exact CSS variable values Mantine sets on the
+  // host element, giving pixel-perfect parity with the AuthBar/AdminPanel badges.
+  const colorHex = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-5`).trim() || undefined)
+    : color ? `var(--mantine-color-${color}-5)` : undefined;
+  const badgeBg = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light`).trim() || undefined)
+    : undefined;
+  const badgeText = (color && shadowHost)
+    ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light-color`).trim() || undefined)
+    : undefined;
   const { setPreviewTheme, setTheme } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
@@ -551,11 +584,21 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     setGalleryConfigEditorOpen(false);
   };
 
-  const handleClose = () => { revertThemePreview(); onClose(); };
+  // P57-A close animation: the parent unmounts the panel when onClose() runs, which
+  // would cut off the exit transition. So a close *request* (X / Cancel / overlay /
+  // escape) reverts the theme preview and flips internalOpened false — letting the
+  // Drawer animate out — and the real onClose() (unmount) fires from the Transition's
+  // onExited, once the exit animation has finished. `none` (duration 0) resolves
+  // onExited synchronously, so it still closes instantly.
+  const handleClose = () => { revertThemePreview(); setInternalOpened(false); };
 
   return (
-    <Drawer
-      opened={opened}
+    <>
+      {/* P57-B: inline sentinel (lives in the shadow tree) used to resolve the
+          shadow-DOM portal target for the Drawer below. */}
+      <span ref={shadowSentinelRef} style={{ display: 'none' }} aria-hidden="true" />
+      <Drawer
+      opened={internalOpened}
       onClose={handleClose}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
@@ -590,7 +633,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       withinPortal={withinPortal}
       closeOnClickOutside={!hasChanges}
       closeOnEscape={!hasChanges}
-      transitionProps={{ transition: 'slide-left', duration: 200 }}
+      transitionProps={resolveSettingsPanelTransition(settings.settingsPanelAnimation)}
+      onExitTransitionEnd={onClose}
       overlayProps={{
         backgroundOpacity: 0.6,
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
@@ -649,7 +693,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
 
         </>
       )}
-    </Drawer>
+      </Drawer>
+    </>
   );
 }
 

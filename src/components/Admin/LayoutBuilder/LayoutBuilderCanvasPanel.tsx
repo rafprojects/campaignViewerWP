@@ -4,7 +4,7 @@ import {
   Box, Group, Text, NumberInput, Switch, Slider,
   Button, Divider, ActionIcon, Tooltip, SegmentedControl,
 } from '@mantine/core';
-import { IconHandGrab, IconPlus, IconArrowsMaximize } from '@tabler/icons-react';
+import { IconHandGrab, IconPlus, IconArrowsMaximize, IconSeparatorVertical, IconSeparatorHorizontal } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
@@ -74,6 +74,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     handleGroupRename,
     handleBringForwardSelected,
     handleSendBackwardSelected,
+    guides,
+    addGuide,
+    moveGuide,
+    removeGuide,
+    toggleGuideLock,
   } = useBuilderDock();
 
   const rootId = useRootId();
@@ -313,6 +318,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onAssetCanvasDrop={handleAssetCanvasDrop}
                   onMediaCanvasDrop={handleMediaCanvasDrop}
                   contextualToolbarCallbacks={contextualToolbarCallbacks}
+                  guides={guides}
+                  onMoveGuide={moveGuide}
+                  onRemoveGuide={removeGuide}
+                  onToggleGuideLock={toggleGuideLock}
                 />
               </TransformComponent>
             </TransformWrapper>
@@ -439,6 +448,22 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onChange={(e) => setShowMeasurements(e.currentTarget.checked)}
                   aria-label="Toggle measurement overlay"
                 />
+              </Group>
+              <Divider orientation="vertical" />
+
+              {/* ── Persistent guides (P57-E) ──────────────────── */}
+              <Group gap={4} wrap="nowrap" align="center">
+                <Text size="xs" c="dimmed">Guides:</Text>
+                <Tooltip label="Add vertical guide">
+                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('x')} aria-label="Add vertical guide">
+                    <IconSeparatorVertical size={14} />
+                  </ActionIcon>
+                </Tooltip>
+                <Tooltip label="Add horizontal guide">
+                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('y')} aria-label="Add horizontal guide">
+                    <IconSeparatorHorizontal size={14} />
+                  </ActionIcon>
+                </Tooltip>
               </Group>
               <Divider orientation="vertical" />
 

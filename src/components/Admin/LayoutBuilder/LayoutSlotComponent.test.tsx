@@ -331,3 +331,79 @@ describe('LayoutSlotComponent — media drop events', () => {
     expect(onMediaDrop).not.toHaveBeenCalled();
   });
 });
+
+// ── P57-F: Rotation ───────────────────────────────────────────────────────────
+
+describe('LayoutSlotComponent — rotation (P57-F)', () => {
+  function renderWithRotation(rotation: number | undefined, extraProps: Record<string, unknown> = {}) {
+    const slot = { ...baseSlot, rotation };
+    return render(
+      <LayoutSlotComponent
+        slot={slot}
+        {...defaultProps}
+        isPreview={false}
+        isSelected
+        {...extraProps}
+      />,
+    );
+  }
+
+  it('applies transform:rotate in preview mode when rotation is set', () => {
+    const { container } = render(
+      <LayoutSlotComponent
+        slot={{ ...baseSlot, rotation: 45 }}
+        {...defaultProps}
+        isPreview
+      />,
+    );
+    const outer = container.querySelector('[role="img"]') as HTMLElement;
+    expect(outer).toHaveStyle({ transform: 'rotate(45deg)', transformOrigin: 'center center' });
+  });
+
+  it('omits transform in preview mode when rotation is 0 or undefined', () => {
+    const { container } = render(
+      <LayoutSlotComponent
+        slot={{ ...baseSlot, rotation: 0 }}
+        {...defaultProps}
+        isPreview
+      />,
+    );
+    const outer = container.querySelector('[role="img"]') as HTMLElement;
+    // rotation 0 → no transform applied
+    expect(outer).not.toHaveStyle({ transform: 'rotate(0deg)' });
+  });
+
+  it('renders rotation handle when selected and not locked', () => {
+    const { container } = renderWithRotation(0);
+    const handle = container.querySelector('[title^="Rotation:"]');
+    expect(handle).toBeInTheDocument();
+  });
+
+  it('does not render rotation handle when locked', () => {
+    const { container } = renderWithRotation(0, { slot: { ...baseSlot, locked: true } });
+    expect(container.querySelector('[title^="Rotation:"]')).toBeNull();
+  });
+
+  it('rotation handle mousedown calls e.stopPropagation', () => {
+    const onSlotUpdate = vi.fn();
+    const { container } = renderWithRotation(30, { onSlotUpdate });
+    const handle = container.querySelector('[title^="Rotation:"]') as HTMLElement;
+    const event = new MouseEvent('mousedown', { bubbles: true });
+    const stopSpy = vi.spyOn(event, 'stopPropagation');
+    handle.dispatchEvent(event);
+    expect(stopSpy).toHaveBeenCalled();
+  });
+
+  it('rotation wrapper applies transform:rotate when rotation is non-zero', () => {
+    const { container } = renderWithRotation(90);
+    // The rotation wrapper is a sibling div after the handle inside Rnd
+    const rotWrappers = container.querySelectorAll('[style*="rotate(90deg)"]');
+    expect(rotWrappers.length).toBeGreaterThan(0);
+  });
+
+  it('rotation wrapper has no transform when rotation is 0', () => {
+    const { container } = renderWithRotation(undefined);
+    const rotWrappers = container.querySelectorAll('[style*="rotate("]');
+    expect(rotWrappers.length).toBe(0);
+  });
+});

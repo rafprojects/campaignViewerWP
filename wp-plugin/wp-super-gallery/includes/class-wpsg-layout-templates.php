@@ -513,10 +513,40 @@ class WPSG_Layout_Templates {
                 : 1,
             'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
+            'guides'            => self::sanitize_guides( $data['guides'] ?? [] ),
             'createdAt'         => $data['createdAt'] ?? $now,
             'updatedAt'         => $now,
             'tags'              => array_map( 'sanitize_text_field', (array) ( $data['tags'] ?? [] ) ),
         ];
+    }
+
+    /**
+     * Sanitize an array of persistent guide lines (P57-E).
+     *
+     * @param  mixed $guides Raw guide data.
+     * @return array
+     */
+    private static function sanitize_guides( $guides ): array {
+        if ( ! is_array( $guides ) ) {
+            return [];
+        }
+        return array_values( array_filter( array_map( function ( $g ) {
+            if ( ! is_array( $g ) ) {
+                return null;
+            }
+            $axis = $g['axis'] ?? '';
+            if ( ! in_array( $axis, [ 'x', 'y' ], true ) ) {
+                return null;
+            }
+            return [
+                'id'       => sanitize_text_field( $g['id'] ?? wp_generate_uuid4() ),
+                'axis'     => $axis,
+                'position' => max( 0, min( 100, floatval( $g['position'] ?? 50 ) ) ),
+                'locked'   => (bool) ( $g['locked'] ?? false ),
+            ];
+        }, $guides ), static function ( $g ) {
+            return is_array( $g );
+        } ) );
     }
 
     /**
@@ -572,6 +602,8 @@ class WPSG_Layout_Templates {
                 'tilt'           => self::sanitize_tilt( $s['tilt'] ?? null ),
                 'blendMode'      => self::sanitize_blend_mode( $s['blendMode'] ?? null ),
                 'overlayEffect'  => self::sanitize_overlay_effect( $s['overlayEffect'] ?? null ),
+                // ── Rotation (P57-F) ──
+                'rotation'       => isset( $s['rotation'] ) ? max( 0, min( 359, intval( $s['rotation'] ) ) ) : null,
             ];
         }, $slots ) );
     }

@@ -541,4 +541,65 @@ describe('LayerPanel', () => {
     // Parent header should have blue-light background (selected)
     expect(parentHeader).toHaveStyle('background: var(--mantine-color-blue-light)');
   });
+
+  // ── P57-D: filterText ─────────────────────────────────────────────────────
+
+  it('filterText narrows the list to matching layers', () => {
+    const namedTemplate = {
+      ...template,
+      slots: [
+        { ...template.slots[0]!, name: 'Hero Image' },
+        { ...template.slots[1]!, name: 'Thumb Image' },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: namedTemplate, filterText: 'hero' })} />);
+    expect(screen.getByText('Hero Image')).toBeInTheDocument();
+    expect(screen.queryByText('Thumb Image')).not.toBeInTheDocument();
+    expect(screen.queryByText('Graphic Layer 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Background')).not.toBeInTheDocument();
+  });
+
+  it('filterText with no match renders an empty list without crashing', () => {
+    render(<LayerPanel {...makeProps({ filterText: 'zzznomatch' })} />);
+    expect(screen.queryByText('Media Layer 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Graphic Layer 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Background')).not.toBeInTheDocument();
+  });
+
+  it('clearing filterText restores the full list', () => {
+    const { rerender } = render(<LayerPanel {...makeProps({ filterText: 'zzznomatch' })} />);
+    expect(screen.queryByText('Media Layer 1')).not.toBeInTheDocument();
+
+    rerender(<LayerPanel {...makeProps({ filterText: '' })} />);
+    expect(screen.getByText('Media Layer 1')).toBeInTheDocument();
+    expect(screen.getByText('Media Layer 2')).toBeInTheDocument();
+    expect(screen.getByText('Graphic Layer 1')).toBeInTheDocument();
+  });
+
+  it('filterText keeps ancestor groups of matched slots visible', () => {
+    const groupedTemplate = {
+      ...template,
+      slots: [
+        { ...template.slots[0]!, name: 'Slot Alpha' },
+        { ...template.slots[1]!, name: 'Slot Beta' },
+      ],
+      groups: [
+        {
+          id: 'g1',
+          name: 'My Group',
+          memberIds: ['slot-1'],
+          childGroupIds: [] as string[],
+          parentGroupId: null as null,
+        },
+      ],
+    } satisfies import('@/types').LayoutTemplate;
+
+    render(<LayerPanel {...makeProps({ template: groupedTemplate, filterText: 'alpha' })} />);
+    // 'My Group' is ancestor of slot-1 ('Slot Alpha') → stays visible
+    expect(screen.getByText('My Group')).toBeInTheDocument();
+    expect(screen.getByText('Slot Alpha')).toBeInTheDocument();
+    // 'Slot Beta' is not in the group and doesn't match → hidden
+    expect(screen.queryByText('Slot Beta')).not.toBeInTheDocument();
+  });
 });

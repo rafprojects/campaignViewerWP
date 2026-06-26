@@ -26,49 +26,45 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### LayoutBuilder — Editor UX Polish
+### LayoutBuilder — History Persistence Across Sessions
 
-**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #1 of the LayoutBuilder enhancements.
+**Origin:** Phase 58 planning (2026-06-26). Surfaced while scoping the LayoutBuilder enhancements; future-task'd per user direction.
 
-**Context:** The builder is mature, but two editor affordances stop short of design-tool parity. True clipboard **copy/paste** is currently a no-op routed through `Ctrl+D` duplicate (the `Ctrl+C` handler does nothing). Alignment/distribute exist only as Layers-panel buttons, with **no keyboard shortcuts** (unlike Figma).
+**Context:** The undo/redo stack (`useLayoutBuilderHistory`) is fresh on every edit session — reopening a template loses its history. Persisting it with the existing local draft would let users undo across sessions.
 
-**What to implement:**
-- Real `Ctrl+C` / `Ctrl+V` clipboard (in-memory clipboard buffer; paste offsets to avoid exact overlap; cross-template paste optional).
-- Keyboard shortcuts for the existing align/distribute actions.
+**What to implement:** Persist the history stack (or a bounded slice) alongside the localStorage draft and restore it on builder open, reconciling with the draft-restore/conflict path.
 
-**Files:** `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx`, `LayoutBuilderLayersPanel.tsx`, `src/hooks/useLayoutBuilderState.ts`.
+**Files:** `src/hooks/useLayoutBuilderState.ts` (history composition), the draft-restore hook.
 
-**Effort:** Small-Medium | **Impact:** Medium — finishes existing patterns; high perceived polish.
+**Effort:** Medium | **Impact:** Low-Medium — quality-of-life; not a headline capability.
 
 ---
 
-### LayoutBuilder — Responsive / Per-Breakpoint Editing
+### LayoutBuilder — Reusable "Symbol" / Linked-Component Slots
 
-**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #2.
+**Origin:** Phase 58 planning (2026-06-26). Surfaced while scoping the LayoutBuilder enhancements; future-task'd per user direction.
 
-**Context:** Device presets today are **preview-only** — you can view at desktop/tablet/mobile widths but cannot give a slot different position/size/visibility per breakpoint. This is a real gap vs. Elementor/Figma responsive editing.
+**Context:** Slots and groups are all independent — there is no Figma-style "component/symbol" concept where editing one instance updates every linked instance. Useful for repeated layout motifs (e.g. a captioned card reused across a template).
 
-**What to implement:** Per-breakpoint slot overrides (hide/move/resize per device) layered on the base layout, persisted in the template, and resolved at render time. Mirror the gallery config's existing breakpoint model (`desktop`/`tablet`/`mobile`) for consistency.
+**What to implement:** A symbol definition + linked-instance model (shared source, per-instance position overrides), instance sync on edit, and persistence in the template schema. Significant editor + schema work.
 
-**Files:** `src/hooks/useLayoutBuilderState.ts` (template schema + resolution), `LayoutCanvas.tsx`, the LayoutBuilder render path.
+**Files:** `src/hooks/useLayoutBuilderState.ts` (schema + sync), the Layers panel, the canvas render path.
 
-**Dependencies:** None hard; benefits from the gallery breakpoint conventions in `src/utils/galleryConfig.ts`.
-
-**Effort:** Medium-High (likely its own track) | **Impact:** Medium-High — closes a headline responsive gap.
+**Effort:** High | **Impact:** Medium — power-user efficiency; large surface for a niche-but-loved feature.
 
 ---
 
-### LayoutBuilder — Text / Caption Layers
+### LayoutBuilder — Slot Constraints / Pinning (Anchor-to-Edge)
 
-**Origin:** Phase 54 production-readiness review (2026-06-17). User-prioritized #3.
+**Origin:** Phase 58 planning (2026-06-26). Surfaced while scoping the LayoutBuilder enhancements; future-task'd per user direction.
 
-**Context:** Layers are media/graphic/mask only — there are **no first-class text layers**. Captions, titles, and call-to-action text currently require baking text into an uploaded image.
+**Context:** Slots are positioned in percentages with no constraint model — they cannot be pinned to a canvas edge so they reflow predictably on resize. A constraints/pinning system is the deeper responsive model that complements the per-breakpoint overrides in [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B.
 
-**What to implement:** A `text` layer type with font family/size/weight/line-height/color/alignment controls, drag/resize like other layers, and i18n-aware rendering. Large enough to warrant **its own phase** (new layer type + properties panel + render path + persistence + tests).
+**What to implement:** Per-slot anchor constraints (pin to left/right/top/bottom/center, fixed vs. stretch), resolved at render and on canvas resize, persisted in the template schema.
 
-**Files:** new `TextLayerPropertiesPanel.tsx`, `useLayoutBuilderState.ts` (schema), `LayoutSlotComponent.tsx`/render path.
+**Files:** `src/hooks/useLayoutBuilderState.ts` (schema + resolution), `LayoutCanvas.tsx`, the LayoutBuilder render path.
 
-**Effort:** High (own phase) | **Impact:** Medium-High — unlocks a major class of layouts without external image editing.
+**Effort:** High | **Impact:** Medium — robust responsive behavior beyond discrete breakpoints.
 
 ---
 
@@ -86,6 +82,8 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Context:** ~300 raw JSX literals remain; `i18next/no-literal-string` is `'off'` globally (`eslint.config.js:82`). After the user-facing harvest in P54-B, complete the admin-panel strings and flip the lint rule to `'error'` **globally** so regressions are caught everywhere. **Gates the public WP.org / premium paths** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §5).
 
+**Status (2026-06-26):** `.pot` generation + confirming user-facing coverage is scheduled in [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B (the Freemius-premium floor). This entry — the **full** admin harvest (~300 literals) + flipping the lint rule to `'error'` — remains deferred as the **WP.org public-listing gate**.
+
 **Effort:** Medium-High | **Impact:** Low for English-only deployments; High/required for public distribution.
 
 ---
@@ -98,19 +96,15 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Context:** Beyond P54-C's front-end critical/serious baseline, a full WCAG AA pass across the admin panel and all flows (contrast, focus management, ARIA landmarks, Shadow-DOM screen-reader exposure). **Gates the public WP.org path.**
 
+**Status (2026-06-26):** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-D extends the critical/serious axe baseline to the **main admin flows** (the Freemius-premium tier). The **full** WCAG AA pass below remains deferred as the **WP.org public-listing gate**.
+
 **Effort:** High | **Impact:** Low for private/internal; High/required for public distribution.
 
 ---
 
 ## Monetization & Distribution
 
-### Licensing + Update Infrastructure (if a paid path is chosen)
-
-**Origin:** Phase 54 production-readiness review (2026-06-17). Full analysis in [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).
-
-**Context:** The plugin wasn't built toward monetization but nothing structurally blocks it. A premium path needs license activation, authenticated auto-updates, and checkout/tax handling. **Freemius** is the recommended lowest-LOE route (SDK collapses all three + freemium gating). Natural pro/free gating seams already exist: the adapter registry (`adapterRegistry.ts`) and the `WPSG_Permissions` tier map (`includes/class-wpsg-permissions.php`).
-
-**Effort:** Medium (Freemius) to High (self-hosted EDD/Woo/custom) | **Impact:** Enables direct revenue. Activates only once a distribution target is decided.
+*No tasks here yet.*
 
 ---
 
@@ -297,3 +291,5 @@ When promoting future tasks to an active phase:
 *Updated: June 17, 2026 (P54 planning) — Added the Phase 54 production-readiness review follow-ons (deferred from [PHASE54_REPORT.md](PHASE54_REPORT.md), which is tight must-fix only): four LayoutBuilder enhancements (Editor UX Polish, Responsive/Per-Breakpoint Editing, Text/Caption Layers, Design-Tool Affordances) under Builder, ordered by user priority; "Gallery — Admin-Control Additions"; a new Code Quality & Refactoring section (adapter data extraction / registration-seam / field-map unification; large-file decomposition); Internationalization (full admin i18n migration — P54-B does user-facing only); Accessibility (full WCAG AA — P54-C does the front-end critical/serious baseline); and Monetization & Distribution (licensing/update infra), cross-linked to the new [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).*
 
 *Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
+
+*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE61_REPORT.md](PHASE61_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*

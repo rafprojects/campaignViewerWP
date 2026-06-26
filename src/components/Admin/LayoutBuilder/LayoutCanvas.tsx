@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
-import type { LayoutTemplate, MediaItem } from '@/types';
+import type { LayoutTemplate, MediaItem, PersistentGuide } from '@/types';
 import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
 import {
@@ -20,6 +20,7 @@ import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
 import { GraphicLayerContent } from './GraphicLayerContent';
+import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
@@ -71,6 +72,11 @@ export interface LayoutCanvasProps {
   showRulers?: boolean;
   /** Show edge-distance measurement lines on selection (P30-B). */
   showMeasurements?: boolean;
+  // ── P57-E: Persistent guides ────────────────────────────────
+  guides?: PersistentGuide[];
+  onMoveGuide?: (id: string, position: number) => void;
+  onRemoveGuide?: (id: string) => void;
+  onToggleGuideLock?: (id: string) => void;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -119,6 +125,10 @@ export function LayoutCanvas({
   gridSizePx = 20,
   showRulers = false,
   showMeasurements = false,
+  guides,
+  onMoveGuide,
+  onRemoveGuide,
+  onToggleGuideLock,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -222,6 +232,10 @@ export function LayoutCanvas({
   const slotOthersMapRef = useRef(slotOthersMap);
   slotOthersMapRef.current = slotOthersMap;
 
+  // Stable ref for persistent guides so handleDragFrame doesn't re-create on guide changes.
+  const guidesRef = useRef(guides);
+  guidesRef.current = guides;
+
   /** Called on every drag frame from a slot. */
   const handleDragFrame = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
@@ -274,6 +288,35 @@ export function LayoutCanvas({
         const gridPctY = gridSizeToPct(gridSizePx, canvasHeight);
         if (snapX === undefined) snapX = snapToGrid(pct.x, gridPctX);
         if (snapY === undefined) snapY = snapToGrid(pct.y, gridPctY);
+      }
+
+      // ── Persistent guide snap (all non-off modes) ──────────────
+      // Snaps slot left/center/right or top/center/bottom edge to guide lines.
+      const persistentGuides = guidesRef.current;
+      if (persistentGuides?.length) {
+        const thresholdPct = (snapThresholdPx / canvasWidth) * 100;
+        for (const pg of persistentGuides) {
+          if (pg.axis === 'x' && snapX === undefined) {
+            const gPct = pg.position;
+            const edges = [pct.x, pct.x + slot.width / 2, pct.x + slot.width];
+            for (const edge of edges) {
+              if (Math.abs(edge - gPct) <= thresholdPct) {
+                snapX = gPct - (edge - pct.x);
+                break;
+              }
+            }
+          } else if (pg.axis === 'y' && snapY === undefined) {
+            const gPct = pg.position;
+            const thresholdPctY = (snapThresholdPx / canvasHeight) * 100;
+            const edges = [pct.y, pct.y + slot.height / 2, pct.y + slot.height];
+            for (const edge of edges) {
+              if (Math.abs(edge - gPct) <= thresholdPctY) {
+                snapY = gPct - (edge - pct.y);
+                break;
+              }
+            }
+          }
+        }
       }
 
       lastGuideResultRef.current = { snapX, snapY };
@@ -670,6 +713,19 @@ export function LayoutCanvas({
             selectionPct={selectionPct}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
+          />
+        )}
+
+        {/* P57-E: Persistent guides overlay */}
+        {!isPreview && (guides?.length ?? 0) > 0 && onMoveGuide && onRemoveGuide && onToggleGuideLock && (
+          <PersistentGuidesOverlay
+            guides={guides!}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            canvasRef={canvasRef}
+            onMoveGuide={onMoveGuide}
+            onRemoveGuide={onRemoveGuide}
+            onToggleGuideLock={onToggleGuideLock}
           />
         )}
 

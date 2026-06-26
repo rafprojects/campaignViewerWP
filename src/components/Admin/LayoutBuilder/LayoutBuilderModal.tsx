@@ -157,6 +157,7 @@ export function LayoutBuilderModal({
     showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen,
     layoutScope, setLayoutScope,
+    savedSwatches, addSwatch,
   } = useBuilderWorkspacePrefs(rootId);
 
   const bgSectionRef = useRef<HTMLDivElement>(null);
@@ -419,6 +420,12 @@ export function LayoutBuilderModal({
     showGrid, setShowGrid, gridSizePx, setGridSizePx,
     showRulers, setShowRulers, showMeasurements, setShowMeasurements,
     designAssetsOpen, setDesignAssetsOpen, bgSectionRef, dockApiRef,
+    savedSwatches, addSwatch,
+    guides: builder.template.guides ?? [],
+    addGuide: builder.addGuide,
+    moveGuide: builder.moveGuide,
+    removeGuide: builder.removeGuide,
+    toggleGuideLock: builder.toggleGuideLock,
     announce,
     handleSave, handleClose, handleAutoAssign, handleUploadAsset,
     handleDeleteLibraryAsset, handleSetAssetUniversal, handleSetAssetTags, handleUploadBgImage,

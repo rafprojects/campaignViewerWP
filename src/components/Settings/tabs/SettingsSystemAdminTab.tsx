@@ -63,6 +63,10 @@ interface SettingsSystemAdminTabProps {
   tooltipLabel: (label: string, key: string) => ReactNode;
 }
 
+// P57-A: The System & Admin tab holds global (non-space-overridable) settings.
+// It renders in space-scoped panels too; the backend split-saves these keys to
+// the global option (see update_space_settings), so editing them from any panel
+// persists globally.
 export const SettingsSystemAdminTab = memo(function SettingsSystemAdminTab({
   settings,
   updateSetting,

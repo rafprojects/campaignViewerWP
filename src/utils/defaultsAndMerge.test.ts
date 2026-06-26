@@ -62,6 +62,10 @@ describe('DEFAULT_GALLERY_BEHAVIOR_SETTINGS – nested gallery config', () => {
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.layoutBuilderScope).toBe('full');
   });
 
+  it('defaults settingsPanelAnimation to slide-left (P57-A)', () => {
+    expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.settingsPanelAnimation).toBe('slide-left');
+  });
+
   it('hydrates the default nested galleryConfig data', () => {
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.mode).toBe('per-type');
     expect(DEFAULT_GALLERY_BEHAVIOR_SETTINGS.galleryConfig?.breakpoints?.desktop?.image?.adapterId).toBe('classic');
@@ -132,6 +136,18 @@ describe('mergeSettingsWithDefaults', () => {
       layoutBuilderScope: undefined,
     });
     expect(merged.layoutBuilderScope).toBe('full');
+  });
+
+  it('overrides settingsPanelAnimation with a provided value (P57-A)', () => {
+    const merged = mergeSettingsWithDefaults({ settingsPanelAnimation: 'none' });
+    expect(merged.settingsPanelAnimation).toBe('none');
+  });
+
+  it('falls back to the default settingsPanelAnimation when absent (P57-A)', () => {
+    const merged = mergeSettingsWithDefaults({
+      settingsPanelAnimation: undefined,
+    });
+    expect(merged.settingsPanelAnimation).toBe('slide-left');
   });
 
   it('does not mutate the default object', () => {

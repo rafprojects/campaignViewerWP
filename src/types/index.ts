@@ -364,6 +364,8 @@ export interface LayoutSlot {
   blendMode?: SlotBlendMode | undefined;
   /** Darken/lighten overlay on the slot. */
   overlayEffect?: SlotOverlayEffect | undefined;
+  /** Visual rotation in degrees (0–359). Does not affect drag/resize bounding box. */
+  rotation?: number | undefined;
 }
 
 /** Sensible defaults for a new layout slot. */
@@ -559,6 +561,16 @@ export interface SlotOverlayEffect {
   onHoverOnly: boolean;
 }
 
+/** Persistent guide line saved per-template in the Layout Builder (P57-E). */
+export interface PersistentGuide {
+  id: string;
+  /** 'x' = vertical line at x% of canvas width; 'y' = horizontal line at y% of canvas height. */
+  axis: 'x' | 'y';
+  /** Position as 0–100% of the canvas along the guide's axis dimension. */
+  position: number;
+  locked: boolean;
+}
+
 /**
  * A reusable layout template that defines the visual arrangement of media slots
  * on a fixed-ratio canvas. Stored globally in `wpsg_layout_templates` WP option.
@@ -619,6 +631,8 @@ export interface LayoutTemplate {
    * is derived from the union of all descendants and stored for resolver efficiency.
    */
   groups?: LayoutGroup[] | undefined;
+  /** Persistent guide lines saved with the template (P57-E). */
+  guides?: PersistentGuide[] | undefined;
   /** ISO 8601 created timestamp */
   createdAt: string;
   /** ISO 8601 last-updated timestamp */
@@ -871,6 +885,8 @@ export interface GalleryBehaviorSettings {
   // P36-D: Settings Panel (right-side drawer) width on non-small screens.
   settingsPanelWidth: number;
   settingsPanelWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  // P57-A: Settings Panel open/close transition. 'none' opens instantly.
+  settingsPanelAnimation: 'slide-left' | 'fade' | 'scale' | 'none';
   // P36-D: Admin Panel (main container) max-width. 0 = no constraint (full width).
   adminPanelMaxWidth: number;
   adminPanelMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
@@ -1379,6 +1395,8 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   // P36-D: Settings Panel width
   settingsPanelWidth: 600,
   settingsPanelWidthUnit: 'px',
+  // P57-A: Settings Panel transition
+  settingsPanelAnimation: 'slide-left',
   // P36-D: Admin Panel max-width (0 = no constraint)
   adminPanelMaxWidth: 0,
   adminPanelMaxWidthUnit: 'px',

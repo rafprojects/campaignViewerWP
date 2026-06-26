@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   Stack,
   Text,
@@ -13,7 +13,7 @@ import {
   Slider,
   Accordion,
 } from '@mantine/core';
-import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
+import { BuilderColorInput as ColorInput } from './BuilderColorInput';
 import {
   IconArrowBigUpLine,
   IconArrowBigDownLine,
@@ -23,6 +23,7 @@ import {
   IconInfoCircle,
   IconLink,
   IconUnlink,
+  IconRefresh,
 } from '@tabler/icons-react';
 import type {
   LayoutSlot,
@@ -329,6 +330,7 @@ export function SlotPropertiesPanel({
   listingMode = false,
 }: SlotPropertiesPanelProps) {
   const lockSizeRatio = slot.lockAspectRatio ?? false;
+  const rotScrubRef = useRef<{ startX: number; startRot: number } | null>(null);
   const aspectRatio = useMemo(() => {
     const safeWidth = slot.width > 0 ? slot.width : 1;
     const safeHeight = slot.height > 0 ? slot.height : 1;
@@ -449,6 +451,54 @@ export function SlotPropertiesPanel({
                   leftSection={<Text size="10px" c="dimmed">H</Text>}
                 />
               </Box>
+            </Group>
+
+            {/* Rotation section header — drag left/right to scrub value (pointer capture for reliability) */}
+            <div
+              style={{
+                marginTop: 6,
+                marginBottom: 2,
+                paddingBottom: 3,
+                borderBottom: '1px solid var(--mantine-color-default-border)',
+                cursor: 'ew-resize',
+                userSelect: 'none',
+                touchAction: 'none',
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                rotScrubRef.current = { startX: e.clientX, startRot: slot.rotation ?? 0 };
+              }}
+              onPointerMove={(e) => {
+                if (!rotScrubRef.current || !(e.buttons & 1)) return;
+                const delta = e.clientX - rotScrubRef.current.startX;
+                const next = ((Math.round(rotScrubRef.current.startRot + delta) % 360) + 360) % 360;
+                onUpdate({ rotation: next === 0 ? undefined : next });
+              }}
+              onPointerUp={() => { rotScrubRef.current = null; }}
+              onPointerCancel={() => { rotScrubRef.current = null; }}
+            >
+              <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>Rotation</Text>
+            </div>
+            <Group gap={6} align="center" wrap="nowrap">
+              <NumberInput
+                value={slot.rotation ?? 0}
+                onChange={(val) => {
+                  const deg = ((Math.round(Number(val)) % 360) + 360) % 360;
+                  onUpdate({ rotation: deg === 0 ? undefined : deg });
+                }}
+                min={0} max={359} step={1} size="xs" variant="filled"
+                aria-label="Rotation degrees"
+                rightSection={<Text size="10px" c="dimmed">°</Text>}
+                style={{ flex: 1 }}
+              />
+              {(slot.rotation ?? 0) !== 0 && (
+                <Tooltip label="Reset rotation">
+                  <ActionIcon size="sm" variant="subtle" onClick={() => onUpdate({ rotation: undefined })} aria-label="Reset rotation">
+                    <IconRefresh size={14} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
             </Group>
 
             <SectionHeader label="Shape" />
