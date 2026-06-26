@@ -68,6 +68,23 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### LayoutBuilder — Align/Distribute Keyboard Shortcuts
+
+**Origin:** Deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A (Editor UX Polish) during batch-1 execution (2026-06-26), per user direction — the binding scheme needs design before implementation. The rest of P58-A (clipboard, slot opacity, nudge steps) ships in batch 1.
+
+**Context:** Align and distribute exist only as Layers-panel buttons (`src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx`); there are no keyboard equivalents (unlike Figma). The blocker is binding choice: nearly all single keys are taken (`N`/`H`/`V`/`F`/`?`/`[`/`]`, plus `Ctrl+Z`/`D`/`G`/`S`), and the obvious `Ctrl+Alt+Arrows` collides with OS shortcuts (Linux workspace switch, Intel-GPU screen rotation). Two candidate schemes surfaced in planning: an **"A-chord"** (press `A`, then a direction / `H` / `V`) which is conflict-free but two-step, or a single-press `Ctrl+Alt+…` combo which is faster but unreliable cross-OS.
+
+**What to implement:**
+- Decide the binding scheme (A-chord vs. single-press combo) and document it in `src/components/Admin/LayoutBuilder/BuilderKeyboardShortcutsModal.tsx`.
+- Extract the group-aware alignment closure at `LayoutBuilderLayersPanel.tsx:110-168` into a reusable `src/hooks/useSlotAlignment.ts` (`useSlotAlignment(builder)`) so both the Layers panel and `useLayoutBuilderKeyboardHandlers.ts` call the same logic.
+- Wire the chosen bindings in `src/hooks/useLayoutBuilderKeyboardHandlers.ts`, gated on `selectedSlotIds.size >= 2` and `!isPreview`.
+
+**Acceptance:** align/distribute invokable from the keyboard, matching the Layers-panel buttons, with 2+ slots selected.
+
+**Effort:** Small-Medium | **Impact:** Low-Medium — power-user efficiency; the buttons already cover the capability.
+
+---
+
 ## Code Quality & Refactoring
 
 *No tasks here yet.*
@@ -293,3 +310,5 @@ When promoting future tasks to an active phase:
 *Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
 
 *Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE61_REPORT.md](PHASE61_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
+
+*Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
