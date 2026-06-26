@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
 | P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
-| P58-C | Starter template library — pre-built layouts to clone | Planned | Medium |
+| P58-C | Starter template library — already shipped (P15-J); enhanced with rotated/split presets + faithful previews | Done | Small |
 | P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
 | P58-E | Slot entrance animations (scroll-reveal at gallery render) | Planned | Medium |
 | P58-F | Auto-grid slot generator | Done | Small-Medium |
@@ -128,6 +128,15 @@ Every layout starts from a blank canvas. New users face a cold start with no exa
 ### Validation
 
 - `npm run test` for the clone-on-select path; manual QA picking each preset and editing the result.
+
+### Implementation notes (2026-06-26)
+
+**Already shipped.** The track's core was delivered in **P15-J.1/J.2**: a `PresetGalleryModal` "Start from Template" picker (wired into `LayoutTemplateList`, `handleCreateFromPreset`) with mini-canvas previews and clone-on-select over `LAYOUT_PRESETS` in `src/data/layoutPresets.ts`. All three P58-C acceptance criteria were already met — the picker shows visual previews, choosing a preset creates a fully editable new template (immer guarantees the module-constant presets are never mutated), and presets are image-only (i18n-safe). The doc's "blank-canvas cold start" premise was outdated.
+
+**Enhancements added (per user direction to "also enhance C"):**
+- Two new presets: **Polaroid Scatter** (scattered, rotated, white-bordered slots — the first preset to exercise the P57-F slot `rotation`) and **Split Feature** (feature + two stacked supports).
+- `PresetPreview` now applies `rotation` and reflects a slot's border, so thumbnails render faithfully (previously axis-aligned rectangles only).
+- `layoutPresets.test.ts` updated (14 presets; new names/slot-counts; a rotation-showcase assertion).
 
 ## Track P58-D - Marquee multi-select on the canvas
 
