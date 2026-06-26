@@ -13,7 +13,7 @@
 | P58-C | Starter template library — pre-built layouts to clone | Planned | Medium |
 | P58-D | Marquee multi-select on the canvas | Planned | Small-Medium |
 | P58-E | Slot entrance animations (scroll-reveal at gallery render) | Planned | Medium |
-| P58-F | Auto-grid slot generator | Planned | Small-Medium |
+| P58-F | Auto-grid slot generator | Done | Small-Medium |
 
 ---
 
@@ -192,6 +192,14 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 ### Validation
 
 - `npm run test` for the generator's geometry + single-history-entry behavior; manual QA generating a few grid sizes and undoing.
+
+### Implementation notes (2026-06-26)
+
+- **Geometry** — `computeGridSlots(rows, cols, gapPct, marginPct)` in `packages/shared-utils/src/canvasMeasurement.ts` (pure, %-space). Solves `2*margin + cols*cellW + (cols-1)*gap = 100` for the cell size; floors fractional counts; clamps negative gap/margin to 0; returns `[]` when the gap + margin over-constrain the canvas (cell ≤ 0). 8 unit tests in `canvasMeasurement.test.ts`.
+- **State action** — `generateGrid({ rows, cols, gapPct, marginPct, replace? })` in `useLayoutBuilderState.ts`: a single `mutate('Generate grid')` (one undo reverts the whole grid, incl. a replace), pre-building slots + IDs *before* the recipe (same deferred-recipe reason as `pasteSlots`), then selecting them. Appends by default; `replace` clears first.
+- **Dialog** — `AutoGridDialog.tsx` (Mantine `Modal`): rows/cols/gap/margin `NumberInput`s, a "Replace existing slots" `Switch` (only when the canvas has slots), a live preview driven by the *same* `computeGridSlots`, and a Generate button disabled when the settings yield no cells.
+- **Trigger** — "Generate grid…" in the menu bar **Edit** menu (`onOpenGridGenerator`); **menu-only, no hotkey** (user direction). Wired in `LayoutBuilderModal.tsx`.
+- **Verified:** state + geometry tests, `tsc -b`, and `eslint` all green.
 
 ## Follow-On Candidates
 

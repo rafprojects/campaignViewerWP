@@ -39,6 +39,7 @@ import { LayoutBuilderCanvasPanel } from './LayoutBuilderCanvasPanel';
 import { LayoutBuilderPropertiesPanel } from './LayoutBuilderPropertiesPanel';
 import { BuilderKeyboardShortcutsModal } from './BuilderKeyboardShortcutsModal';
 import { LayoutBuilderMenuBar } from './LayoutBuilderMenuBar';
+import { AutoGridDialog } from './AutoGridDialog';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
@@ -146,6 +147,7 @@ export function LayoutBuilderModal({
 
   const [builderShortcutsOpen, setBuilderShortcutsOpen] = useState(false);
   const [historyDropdownOpen, setHistoryDropdownOpen] = useState(false);
+  const [gridDialogOpen, setGridDialogOpen] = useState(false);
 
   // ── P30-B workspace preferences ──
   const {
@@ -568,6 +570,7 @@ export function LayoutBuilderModal({
               onDuplicate={handleDuplicateSelected}
               onDelete={handleDeleteSelected}
               onOpenHistory={() => setHistoryDropdownOpen(true)}
+              onOpenGridGenerator={() => setGridDialogOpen(true)}
               onExport={handleExportJson}
               onImport={() => importFileRef.current?.click()}
               onSave={handleSave}
@@ -632,6 +635,21 @@ export function LayoutBuilderModal({
         <BuilderKeyboardShortcutsModal
           opened={builderShortcutsOpen}
           onClose={() => setBuilderShortcutsOpen(false)}
+        />
+
+        {/* ── Auto-grid generator (P58-F) ── */}
+        <AutoGridDialog
+          opened={gridDialogOpen}
+          onClose={() => setGridDialogOpen(false)}
+          onGenerate={(opts) => {
+            const ids = builder.generateGrid(opts);
+            if (ids.length > 0) {
+              setSelectedOverlayId(null);
+              setIsBackgroundSelected(false);
+              announce(`Generated ${ids.length} slot${ids.length !== 1 ? 's' : ''}`);
+            }
+          }}
+          hasExistingSlots={builder.template.slots.length > 0}
         />
 
         {/* Hidden file input for JSON import */}

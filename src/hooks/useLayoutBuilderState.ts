@@ -3,6 +3,7 @@ import { enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
 import { DEFAULT_LAYOUT_SLOT } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
+import { computeGridSlots } from '@wp-super-gallery/shared-utils';
 import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
 import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
 import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
@@ -112,6 +113,8 @@ export interface LayoutBuilderActions {
   copySlots: (ids: string[]) => number;
   /** Paste the clipboard as new slots with a cumulative offset; selects them. Returns new IDs. */
   pasteSlots: () => string[];
+  /** Generate an evenly-spaced grid of slots as one undo entry; selects them. Returns new IDs. */
+  generateGrid: (opts: { rows: number; cols: number; gapPct: number; marginPct: number; replace?: boolean }) => string[];
 
   // ── Slot mutation ──
   /** Move a slot to a new position. */
@@ -518,6 +521,33 @@ export function useLayoutBuilderState(
     return newIds;
   }, [mutate]);
 
+  const generateGrid = useCallback(
+    (opts: { rows: number; cols: number; gapPct: number; marginPct: number; replace?: boolean }): string[] => {
+      const cells = computeGridSlots(opts.rows, opts.cols, opts.gapPct, opts.marginPct);
+      if (cells.length === 0) return [];
+      // Pre-build slots + IDs before mutate (deferred recipe) — see pasteSlots note.
+      const newSlots = cells.map((cell) => ({
+        ...DEFAULT_LAYOUT_SLOT,
+        id: generateSlotId(),
+        x: cell.x,
+        y: cell.y,
+        width: cell.width,
+        height: cell.height,
+      }));
+      const newIds = newSlots.map((s) => s.id);
+      mutate((d) => {
+        if (opts.replace) d.slots = [];
+        let z = d.slots.length;
+        for (const s of newSlots) {
+          d.slots.push({ ...s, zIndex: ++z });
+        }
+      }, 'Generate grid');
+      setSelectedSlotIds(new Set(newIds));
+      return newIds;
+    },
+    [mutate],
+  );
+
   // ── Slot mutation ──
 
   const moveSlot = useCallback(
@@ -795,6 +825,7 @@ export function useLayoutBuilderState(
     duplicateSlots,
     copySlots,
     pasteSlots,
+    generateGrid,
     // Slot mutation
     moveSlot,
     resizeSlot,

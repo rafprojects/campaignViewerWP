@@ -10,6 +10,7 @@ import {
   selectionUnionRect,
   formatMeasurement,
   formatPx,
+  computeGridSlots,
 } from './canvasMeasurement';
 
 // ── snapToGrid ────────────────────────────────────────────────────────────────
@@ -173,5 +174,56 @@ describe('formatMeasurement', () => {
 describe('formatPx', () => {
   it('formats px only', () => {
     expect(formatPx(25, 800)).toBe('200px');
+  });
+});
+
+// ── computeGridSlots (P58-F) ───────────────────────────────────────────────────
+
+describe('computeGridSlots', () => {
+  it('returns a single cell inset by the margin for 1×1', () => {
+    expect(computeGridSlots(1, 1, 0, 10)).toEqual([{ x: 10, y: 10, width: 80, height: 80 }]);
+  });
+
+  it('tiles the full canvas with zero gap and margin', () => {
+    expect(computeGridSlots(2, 2, 0, 0)).toEqual([
+      { x: 0, y: 0, width: 50, height: 50 },
+      { x: 50, y: 0, width: 50, height: 50 },
+      { x: 0, y: 50, width: 50, height: 50 },
+      { x: 50, y: 50, width: 50, height: 50 },
+    ]);
+  });
+
+  it('places the first cell at the margin and the last cell ending at 100 - margin', () => {
+    const cells = computeGridSlots(2, 3, 0, 5); // cellW=(100-10)/3=30, cellH=(100-10)/2=45
+    expect(cells).toHaveLength(6);
+    expect(cells[0]).toMatchObject({ x: 5, y: 5 });
+    const last = cells[cells.length - 1]!;
+    expect(last.x + last.width).toBeCloseTo(95, 5);
+    expect(last.y + last.height).toBeCloseTo(95, 5);
+  });
+
+  it('respects the gap between cells', () => {
+    expect(computeGridSlots(1, 2, 10, 0)).toEqual([
+      { x: 0, y: 0, width: 45, height: 100 },
+      { x: 55, y: 0, width: 45, height: 100 },
+    ]);
+  });
+
+  it('floors fractional row/column counts', () => {
+    expect(computeGridSlots(2.9, 3.2, 0, 0)).toHaveLength(6); // 2×3
+  });
+
+  it('clamps negative gap and margin to zero', () => {
+    expect(computeGridSlots(1, 1, -5, -5)).toEqual([{ x: 0, y: 0, width: 100, height: 100 }]);
+  });
+
+  it('returns empty for counts below 1', () => {
+    expect(computeGridSlots(0, 3, 0, 0)).toEqual([]);
+    expect(computeGridSlots(3, 0, 0, 0)).toEqual([]);
+  });
+
+  it('returns empty when gap + margin over-constrain the canvas', () => {
+    // 10 columns × 20% gap = 180% of gaps alone → no room for any cell
+    expect(computeGridSlots(1, 10, 20, 0)).toEqual([]);
   });
 });

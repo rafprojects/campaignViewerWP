@@ -152,3 +152,48 @@ export function formatMeasurement(pct: number, canvasPx: number): string {
 export function formatPx(pct: number, canvasPx: number): string {
   return `${Math.round((pct / 100) * canvasPx)}px`;
 }
+
+// ── Auto-grid generator (P58-F) ───────────────────────────────────────────────
+
+/**
+ * Generates evenly-spaced grid cells in canvas-percentage space.
+ *
+ * Solves `2*margin + cols*cellW + (cols-1)*gap = 100` for `cellW` (and the row
+ * equivalent for `cellH`), then lays cells out left-to-right, top-to-bottom.
+ * The first cell's left edge sits at `margin` and the last cell's right edge at
+ * `100 - margin`. Returns an empty array for invalid counts (`rows`/`cols < 1`)
+ * or when gap + margin over-constrain the canvas so a cell would be non-positive.
+ *
+ * @param rows       Number of rows (≥ 1; floored).
+ * @param cols       Number of columns (≥ 1; floored).
+ * @param gapPct     Gap between cells, as a canvas percentage (≥ 0).
+ * @param marginPct  Outer margin around the whole grid, as a canvas percentage (≥ 0).
+ */
+export function computeGridSlots(
+  rows: number,
+  cols: number,
+  gapPct: number,
+  marginPct: number,
+): PctRect[] {
+  const R = Math.floor(rows);
+  const C = Math.floor(cols);
+  if (!Number.isFinite(R) || !Number.isFinite(C) || R < 1 || C < 1) return [];
+  const m = Math.max(0, marginPct);
+  const g = Math.max(0, gapPct);
+  const cellW = (100 - 2 * m - g * (C - 1)) / C;
+  const cellH = (100 - 2 * m - g * (R - 1)) / R;
+  if (cellW <= 0 || cellH <= 0) return [];
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const out: PctRect[] = [];
+  for (let r = 0; r < R; r++) {
+    for (let c = 0; c < C; c++) {
+      out.push({
+        x: round2(m + c * (cellW + g)),
+        y: round2(m + r * (cellH + g)),
+        width: round2(cellW),
+        height: round2(cellH),
+      });
+    }
+  }
+  return out;
+}

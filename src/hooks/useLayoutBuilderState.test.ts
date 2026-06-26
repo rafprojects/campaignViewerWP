@@ -886,3 +886,42 @@ describe('useLayoutBuilderState — Slot opacity (P58-A)', () => {
     expect(result.current.template.slots[0]!.opacity).toBeUndefined();
   });
 });
+
+// ── P58-F: Auto-grid generator ───────────────────────────────
+
+describe('useLayoutBuilderState — Auto-grid (P58-F)', () => {
+  it('generateGrid creates rows×cols slots, selected, as a single undo entry', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
+    act(() => { result.current.generateGrid({ rows: 2, cols: 3, gapPct: 0, marginPct: 0 }); });
+    expect(result.current.template.slots).toHaveLength(6);
+    expect(result.current.selectedSlotIds.size).toBe(6);
+    act(() => { result.current.undo(); }); // one undo clears the whole grid
+    expect(result.current.template.slots).toHaveLength(0);
+  });
+
+  it('generateGrid appends by default and replaces when asked', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.generateGrid({ rows: 1, cols: 2, gapPct: 0, marginPct: 0 }); });
+    expect(result.current.template.slots).toHaveLength(4); // 2 existing + 2 appended
+    act(() => { result.current.generateGrid({ rows: 1, cols: 3, gapPct: 0, marginPct: 0, replace: true }); });
+    expect(result.current.template.slots).toHaveLength(3); // replaced
+  });
+
+  it('generateGrid assigns sequential z-indices and default slot props', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
+    act(() => { result.current.generateGrid({ rows: 1, cols: 2, gapPct: 0, marginPct: 0 }); });
+    const slots = result.current.template.slots;
+    expect(slots[0]!.zIndex).toBe(1);
+    expect(slots[1]!.zIndex).toBe(2);
+    expect(slots[0]!.shape).toBe('rectangle'); // from DEFAULT_LAYOUT_SLOT
+    expect(slots[0]!.width).toBe(50);
+  });
+
+  it('generateGrid with over-constrained settings is a no-op', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
+    let ids: string[] = ['sentinel'];
+    act(() => { ids = result.current.generateGrid({ rows: 1, cols: 10, gapPct: 20, marginPct: 0 }); });
+    expect(ids).toEqual([]);
+    expect(result.current.template.slots).toHaveLength(0);
+  });
+});
