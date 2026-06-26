@@ -364,6 +364,8 @@ export interface LayoutSlot {
   blendMode?: SlotBlendMode | undefined;
   /** Darken/lighten overlay on the slot. */
   overlayEffect?: SlotOverlayEffect | undefined;
+  /** Visual rotation in degrees (0–359). Does not affect drag/resize bounding box. */
+  rotation?: number | undefined;
 }
 
 /** Sensible defaults for a new layout slot. */

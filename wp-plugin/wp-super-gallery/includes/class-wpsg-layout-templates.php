@@ -572,6 +572,8 @@ class WPSG_Layout_Templates {
                 'tilt'           => self::sanitize_tilt( $s['tilt'] ?? null ),
                 'blendMode'      => self::sanitize_blend_mode( $s['blendMode'] ?? null ),
                 'overlayEffect'  => self::sanitize_overlay_effect( $s['overlayEffect'] ?? null ),
+                // ── Rotation (P57-F) ──
+                'rotation'       => isset( $s['rotation'] ) ? max( 0, min( 359, intval( $s['rotation'] ) ) ) : null,
             ];
         }, $slots ) );
     }

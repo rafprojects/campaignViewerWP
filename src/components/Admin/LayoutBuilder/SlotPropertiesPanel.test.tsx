@@ -10,6 +10,11 @@ import '@testing-library/jest-dom/vitest';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import type { LayoutSlot } from '@/types';
 
+// BuilderColorInput (used by SlotPropertiesPanel) requires BuilderDockContext.
+vi.mock('./BuilderDockContext', () => ({
+  useBuilderDock: () => ({ savedSwatches: [], addSwatch: vi.fn(), guides: [], addGuide: vi.fn(), moveGuide: vi.fn(), removeGuide: vi.fn(), toggleGuideLock: vi.fn() }),
+}));
+
 // ── Fixture ───────────────────────────────────────────────────────────────────
 
 function makeSlot(overrides: Partial<LayoutSlot> = {}): LayoutSlot {
@@ -414,5 +419,45 @@ describe('SlotPropertiesPanel — blend mode', () => {
     const option = await screen.findByText('Multiply');
     await user.click(option);
     expect(onUpdate).toHaveBeenCalledWith({ blendMode: 'multiply' });
+  });
+});
+
+// ── P57-F: Rotation ───────────────────────────────────────────────────────────
+
+describe('SlotPropertiesPanel — rotation (P57-F)', () => {
+  it('renders Rotation section header', () => {
+    renderPanel();
+    expect(screen.getByText('Rotation')).toBeInTheDocument();
+  });
+
+  it('rotation input shows 0 when rotation is undefined', () => {
+    renderPanel({ rotation: undefined });
+    // The NumberInput for rotation shows "0"
+    const inputs = screen.getAllByRole('textbox');
+    const rotInput = inputs.find((el) => (el as HTMLInputElement).getAttribute('aria-label') === 'Rotation degrees');
+    expect(rotInput).toBeInTheDocument();
+    expect((rotInput as HTMLInputElement).value).toBe('0');
+  });
+
+  it('rotation input shows current rotation value', () => {
+    renderPanel({ rotation: 45 });
+    const rotInput = screen.getByRole('textbox', { name: 'Rotation degrees' });
+    expect((rotInput as HTMLInputElement).value).toBe('45');
+  });
+
+  it('reset button visible when rotation is non-zero', () => {
+    renderPanel({ rotation: 90 });
+    expect(screen.getByRole('button', { name: 'Reset rotation' })).toBeInTheDocument();
+  });
+
+  it('reset button hidden when rotation is 0 or undefined', () => {
+    renderPanel({ rotation: 0 });
+    expect(screen.queryByRole('button', { name: 'Reset rotation' })).toBeNull();
+  });
+
+  it('reset button calls onUpdate with rotation: undefined', () => {
+    const { onUpdate } = renderPanel({ rotation: 45 });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset rotation' }));
+    expect(onUpdate).toHaveBeenCalledWith({ rotation: undefined });
   });
 });

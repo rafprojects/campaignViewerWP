@@ -1,6 +1,6 @@
 # Phase 57 - UI & Editor Polish
 
-**Status:** In progress (A, B, C, D done)
+**Status:** In progress (A, B, C, D, F done)
 **Created:** 2026-06-23
 **Last updated:** 2026-06-25 (C+D)
 
@@ -319,6 +319,23 @@ Slots cannot be rotated — there is no rotation transform on the canvas and no 
 ### Validation
 
 - `npm run test` for the `rotation` schema field + transform; manual QA of rotate + render parity (`see-wp`).
+
+### Implementation (P57-F — done)
+
+**Schema:** `rotation?: number | undefined` added to `LayoutSlot` in `src/types/index.ts`; `undefined` means 0°, which avoids emitting zero-value noise in serialized JSON.
+
+**Builder canvas (`LayoutSlotComponent.tsx`):**
+- Inner rotation wrapper div applies `transform: rotate(Xdeg)` inside the Rnd bounding box so drag/resize handles stay axis-aligned.
+- `liveRotation` state allows smooth drag feedback; committed via `onSlotUpdate` on mouseup.
+- Rotation handle: blue circle positioned 28 px above top-center of slot, visible only when `isSelected && !isHandTool && !slot.locked`. `atan2` converts mouse position relative to slot center into degrees.
+- Selection ring (`boxShadow`) moved to Rnd `style` prop (from inner content divs) so it stays axis-aligned regardless of inner rotation.
+- Zero-rotation guard: rotation wrapper uses full shorthand only when `(liveRotation ?? slot.rotation ?? 0) !== 0` to avoid creating an unnecessary CSS stacking context.
+
+**SlotPropertiesPanel:** `NumberInput` (0–359°) with `IconRefresh` reset button (visible when `rotation` is non-zero).
+
+**Front-end renderer (`LayoutBuilderGallery.tsx`):** `transform:rotate(Xdeg);transform-origin:center center` appended to slot CSS class only when `slot.rotation` is truthy — same zero-stacking-context guard as builder.
+
+**Tests:** 15 new tests across `LayoutSlotComponent.test.tsx`, `SlotPropertiesPanel.test.tsx`, `LayoutBuilderGallery.test.tsx`. Also patched pre-existing `SlotPropertiesPanel.test.tsx` failure (all 51 tests were broken since P57-C because `BuilderColorInput` requires `BuilderDockContext`; added `vi.mock('./BuilderDockContext')` to unblock them). Full suite: 3435/3435 pass.
 
 ## Follow-On Candidates
 

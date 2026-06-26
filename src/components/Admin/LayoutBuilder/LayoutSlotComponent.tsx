@@ -386,6 +386,9 @@ export function LayoutSlotComponent({
   // ── Live info overlay during drag / resize ──
   const [liveInfo, setLiveInfo] = useState<SlotLiveInfo | null>(null);
 
+  // ── Rotation drag (P57-F) ──
+  const [liveRotation, setLiveRotation] = useState<number | null>(null);
+
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
       e.stopPropagation();
@@ -407,6 +410,37 @@ export function LayoutSlotComponent({
       onDragFrame?.(slot.id, data.x, data.y);
     },
     [slot.id, onDragFrame],
+  );
+
+  // ── Rotation drag handler (P57-F) ──
+  const handleRotationStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const selfEl = rndRef.current?.getSelfElement();
+      if (!selfEl) return;
+      const rect = selfEl.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const startAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+      const baseRotation = slot.rotation ?? 0;
+
+      function onMove(ev: MouseEvent) {
+        const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
+        setLiveRotation(Math.round(((baseRotation + (ang - startAngle)) % 360 + 360) % 360));
+      }
+      function onUp(ev: MouseEvent) {
+        const ang = Math.atan2(ev.clientY - cy, ev.clientX - cx) * (180 / Math.PI);
+        const next = Math.round(((baseRotation + (ang - startAngle)) % 360 + 360) % 360);
+        onSlotUpdate?.(slot.id, { rotation: next });
+        setLiveRotation(null);
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    [slot.id, slot.rotation, onSlotUpdate],
   );
 
   // ── HTML5 Drop handlers (media assignment) ──
@@ -508,12 +542,11 @@ export function LayoutSlotComponent({
   const blendCss = getBlendModeCss(slot.blendMode);
   const overlayBg = buildOverlayBg(slot.overlayEffect);
 
-  // ── Rectangle: standard CSS border + selection box-shadow ─────────────
+  // ── Rectangle: standard CSS border ─────────────────────────────────────
   const rectBorder =
     slot.borderWidth > 0
       ? `${slot.borderWidth}px solid ${slot.borderColor}`
       : '1px dashed var(--mantine-color-dark-3)';
-  const rectBoxShadow = isSelected ? '0 0 0 2px var(--mantine-color-blue-5)' : undefined;
 
   // ── Dynamic handle styles: dim on non-focused slots ─────────────────────
   const cornerHandle: React.CSSProperties = {
@@ -577,6 +610,8 @@ export function LayoutSlotComponent({
             cursor,
             filter: filterCss || undefined,
             mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
+            transform: slot.rotation ? `rotate(${slot.rotation}deg)` : undefined,
+            transformOrigin: slot.rotation ? 'center center' : undefined,
           }}
           role="img"
           aria-label={ariaLabel}
@@ -626,6 +661,8 @@ export function LayoutSlotComponent({
           cursor,
           filter: filterCss || undefined,
           mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
+          transform: slot.rotation ? `rotate(${slot.rotation}deg)` : undefined,
+          transformOrigin: slot.rotation ? 'center center' : undefined,
         }}
         role="img"
         aria-label={ariaLabel}
@@ -706,6 +743,8 @@ export function LayoutSlotComponent({
         // can still see its position while editing other layers.
         opacity: !isPreview && !(slot.visible ?? true) ? 0.1 : undefined,
         pointerEvents: (!isPreview && !(slot.visible ?? true)) || isHandTool ? 'none' : undefined,
+        // Selection ring on the axis-aligned Rnd box so it stays axis-aligned even when slot is rotated.
+        boxShadow: isSelected ? '0 0 0 2px var(--mantine-color-blue-5), 0 0 8px rgba(51,154,240,0.35)' : undefined,
       }}
       resizeHandleStyles={{
         topLeft: cornerHandle,
@@ -718,13 +757,50 @@ export function LayoutSlotComponent({
         right: barHandleV,
       }}
     >
+      {/* Rotation handle (P57-F): inside slot top-center to avoid overflow:hidden clipping */}
+      {isSelected && !(slot.locked ?? false) && !isHandTool && (
+        <div
+          onMouseDown={handleRotationStart}
+          style={{
+            position: 'absolute',
+            top: 6,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: 'rgba(51,154,240,0.9)',
+            border: '2px solid white',
+            cursor: 'grab',
+            zIndex: 10001,
+            userSelect: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 1px 4px rgba(0,0,0,0.25)',
+          }}
+          title={`Rotation: ${Math.round(liveRotation ?? slot.rotation ?? 0)}°`}
+        >
+          {/* Rotation arrow SVG */}
+          <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="white" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9.5 2.5A5 5 0 1 0 11 6" />
+            <polyline points="9,0 9.5,2.5 12,2" />
+          </svg>
+        </div>
+      )}
+      {/* Rotation wrapper: rotates visual content while Rnd bounding box stays axis-aligned */}
+      <div
+        style={(liveRotation ?? slot.rotation ?? 0) !== 0
+          ? { transform: `rotate(${liveRotation ?? slot.rotation ?? 0}deg)`, transformOrigin: 'center center', width: '100%', height: '100%', position: 'relative' }
+          : { width: '100%', height: '100%', position: 'relative' }
+        }
+      >
       {hasClipOrMask ? (
         /* ── Clip-path / mask: double-container border technique ──────────────
          * Outer: full bounding box, clipped to shape, background = borderColor
          * Inner: inset by borderWidth, same clip-path, overflow:hidden, image
          * This is the only reliable CSS approach for borders on arbitrary shapes.
-         * Selection ring is shown as a rectangular bounding-box glow outside Rnd
-         * (standard design-tool pattern; shape-following is SVG-only territory). */
+         * Selection ring is on the Rnd style (axis-aligned) — see above. */
         <div
           style={{
             width: '100%',
@@ -733,10 +809,6 @@ export function LayoutSlotComponent({
             cursor: 'move',
             filter: filterCss || undefined,
             mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
-            // Rectangular selection ring outside the bounding box (standard UX pattern)
-            boxShadow: isSelected
-              ? '0 0 0 2px var(--mantine-color-blue-5), 0 0 8px rgba(51,154,240,0.35)'
-              : undefined,
           }}
         >
           {/* 1. Border fill: full size, clipped, shows borderColor as background */}
@@ -834,7 +906,6 @@ export function LayoutSlotComponent({
             borderRadius: slot.borderRadius,
             overflow: 'hidden',
             border: isDragOver ? '2px dashed var(--mantine-color-green-5)' : rectBorder,
-            boxShadow: rectBoxShadow,
             boxSizing: 'border-box',
             position: 'relative',
             cursor: 'move',
@@ -903,6 +974,7 @@ export function LayoutSlotComponent({
           {liveInfo && <SlotLiveInfoOverlay liveInfo={liveInfo} bg={overlayColors.slotLiveInfoBg} />}
         </div>
       )}
+      </div>{/* end rotation wrapper */}
     </Rnd>
   );
 }

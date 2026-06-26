@@ -1036,3 +1036,95 @@ describe('LayoutBuilderGallery clip-path slots', () => {
     expect(imageLayer.style.clipPath).toContain('polygon');
   });
 });
+
+// ── P57-F: Slot rotation CSS class ───────────────────────────────────────────
+
+describe('LayoutBuilderGallery — slot rotation CSS (P57-F)', () => {
+  const makeRotationTemplate = (rotation?: number) => ({
+    id: 'tpl-rot',
+    name: 'Rotation Test',
+    schemaVersion: 1,
+    canvasAspectRatio: 16 / 9,
+    canvasMinWidth: 400,
+    canvasMaxWidth: 1200,
+    backgroundColor: '#000',
+    slots: [
+      {
+        id: 's1',
+        x: 10, y: 10, width: 30, height: 40, zIndex: 1,
+        shape: 'rectangle' as const,
+        borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+        objectFit: 'cover' as const, objectPosition: '50% 50%',
+        clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+        rotation,
+      },
+    ],
+    overlays: [],
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z',
+    tags: [],
+  });
+
+  const mockMedia = [
+    { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Img', order: 0 },
+  ];
+  const defaultSettings = {
+    tileHoverBounce: false, tileGlowEnabled: false, tileGlowColor: '#fff',
+    tileGlowSpread: 4, imageBorderRadius: 0, tileBorderWidth: 0, tileBorderColor: '#fff',
+  } as unknown as import('@/types').GalleryBehaviorSettings;
+
+  let originalFetch: typeof globalThis.fetch;
+  let originalRO: typeof globalThis.ResizeObserver;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    originalRO = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = vi.fn(function(cb: ResizeObserverCallback) {
+      return {
+        observe: (el: Element) => cb([{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry], {} as ResizeObserver),
+        disconnect: vi.fn(), unobserve: vi.fn(),
+      };
+    }) as unknown as typeof globalThis.ResizeObserver;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    globalThis.ResizeObserver = originalRO;
+    vi.restoreAllMocks();
+  });
+
+  it('includes transform:rotate in injected CSS when slot has rotation', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeRotationTemplate(45)),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+    render(<LayoutBuilderGallery media={mockMedia} settings={defaultSettings} templateId="tpl-rot" />);
+
+    await waitFor(() => expect(screen.getByText('Images (1)')).toBeInTheDocument());
+
+    const allStyles = Array.from(document.querySelectorAll('style')).map((s) => s.innerHTML).join('\n');
+    expect(allStyles).toContain('transform:rotate(45deg)');
+    expect(allStyles).toContain('transform-origin:center center');
+  });
+
+  it('omits transform from injected CSS when slot rotation is undefined', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(makeRotationTemplate(undefined)),
+    }) as unknown as typeof globalThis.fetch;
+
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+    render(<LayoutBuilderGallery media={mockMedia} settings={defaultSettings} templateId="tpl-rot" />);
+
+    await waitFor(() => expect(screen.getByText('Images (1)')).toBeInTheDocument());
+
+    const allStyles = Array.from(document.querySelectorAll('style')).map((s) => s.innerHTML).join('\n');
+    expect(allStyles).not.toContain('transform:rotate');
+  });
+});

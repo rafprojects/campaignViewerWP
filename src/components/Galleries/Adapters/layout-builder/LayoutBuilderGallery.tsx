@@ -617,7 +617,8 @@ function LayoutBuilderGalleryInner({
       const pxY = (slot.y / 100) * canvasHeight;
       const pxW = (slot.width / 100) * finalCanvasWidth;
       const pxH = (slot.height / 100) * canvasHeight;
-      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}}`;
+      const rotCss = slot.rotation ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center` : '';
+      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}}`;
     }).join('\n');
   }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
 
