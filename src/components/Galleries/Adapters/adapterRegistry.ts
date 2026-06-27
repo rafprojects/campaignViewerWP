@@ -103,11 +103,7 @@ export function getAdapterSelectOptions(options: {
 
   return getRegisteredAdapters().map((adapter) => {
     const disabled = breakpoint ? !isAdapterSupportedAtBreakpoint(adapter.id, breakpoint) : false;
-    let label = adapter.optionLabels?.[context] ?? adapter.label;
-
-    if (disabled && adapter.id === 'layout-builder') {
-      label = 'Layout Builder (desktop/tablet only)';
-    }
+    const label = adapter.optionLabels?.[context] ?? adapter.label;
 
     return {
       value: adapter.id,

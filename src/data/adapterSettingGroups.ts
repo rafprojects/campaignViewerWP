@@ -213,7 +213,8 @@ export const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     // P37-LB: listing-compatible; adapter owns pagination (slot count = page size).
     capabilities: ['layout-builder', 'listing-compatible'],
     settingGroups: ['layout-builder'],
-    supportsMobile: false,
+    // P58-B fix-up: LB is now responsive (per-breakpoint slot overrides), so it
+    // participates at the mobile breakpoint like any other adapter.
     paginationOwnership: 'adapter',
     component: LayoutBuilderRegistryFallback,
   },

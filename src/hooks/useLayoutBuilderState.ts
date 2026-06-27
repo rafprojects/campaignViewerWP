@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem, ResponsiveBreakpoint, SlotBreakpointOverrides } from '@/types';
-import { DEFAULT_LAYOUT_SLOT } from '@/types';
+import { DEFAULT_LAYOUT_SLOT, SLOT_BREAKPOINT_OVERRIDE_KEYS } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 import { computeGridSlots } from '@wp-super-gallery/shared-utils';
 import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
@@ -634,11 +634,40 @@ export function useLayoutBuilderState(
     (id: string, updates: Partial<LayoutSlot>) =>
       mutate((d) => {
         const idx = d.slots.findIndex((s) => s.id === id);
-        if (idx !== -1) {
+        if (idx === -1) return;
+
+        if (activeBreakpoint === 'desktop') {
           Object.assign(d.slots[idx]!, updates);
+          return;
         }
-      }, 'Update slot'),
-    [mutate],
+
+        // P58-B (B-1): when editing a non-desktop breakpoint, route override-eligible
+        // keys (position/size/visibility/rotation/opacity/zIndex) to the breakpoint
+        // layer; keys outside that set (shape, border, media, effects…) always edit
+        // the base slot since they aren't breakpoint-specific.
+        const overrideKeys = SLOT_BREAKPOINT_OVERRIDE_KEYS as readonly string[];
+        const overrideUpdates: Record<string, unknown> = {};
+        const baseUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updates)) {
+          if (overrideKeys.includes(key)) {
+            overrideUpdates[key] = value;
+          } else {
+            baseUpdates[key] = value;
+          }
+        }
+        if (Object.keys(baseUpdates).length > 0) {
+          Object.assign(d.slots[idx]!, baseUpdates);
+        }
+        if (Object.keys(overrideUpdates).length > 0) {
+          if (!d.breakpointOverrides) d.breakpointOverrides = {};
+          if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+          d.breakpointOverrides[activeBreakpoint]![id] = {
+            ...(d.breakpointOverrides[activeBreakpoint]![id] ?? {}),
+            ...(overrideUpdates as SlotBreakpointOverrides),
+          };
+        }
+      }, activeBreakpoint === 'desktop' ? 'Update slot' : `Update slot (${activeBreakpoint})`),
+    [mutate, activeBreakpoint],
   );
 
   const updateSlots = useCallback(
@@ -762,9 +791,25 @@ export function useLayoutBuilderState(
     (id: string) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
-        if (slot) slot.visible = !(slot.visible ?? true);
-      }, 'Toggle slot visibility'),
-    [mutate],
+        if (!slot) return;
+
+        if (activeBreakpoint === 'desktop') {
+          slot.visible = !(slot.visible ?? true);
+          return;
+        }
+
+        // P58-B (B-2): per-breakpoint visibility — toggle relative to the slot's
+        // effective visibility at this breakpoint, written to the override layer.
+        if (!d.breakpointOverrides) d.breakpointOverrides = {};
+        if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+        const existing = d.breakpointOverrides[activeBreakpoint]![id] ?? {};
+        const effectiveVisible = existing.visible ?? slot.visible ?? true;
+        d.breakpointOverrides[activeBreakpoint]![id] = {
+          ...existing,
+          visible: !effectiveVisible,
+        };
+      }, activeBreakpoint === 'desktop' ? 'Toggle slot visibility' : `Toggle visibility (${activeBreakpoint})`),
+    [mutate, activeBreakpoint],
   );
 
   const toggleOverlayVisible = useCallback(

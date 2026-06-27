@@ -66,6 +66,24 @@ function getCampaignBreakpointAdapterId(
   return galleryOverrides?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? null;
 }
 
+/**
+ * B-6: true when any configured campaign adapter (across breakpoints/scopes) is
+ * the Layout Builder. Used to contextually surface the layout-template picker.
+ */
+function campaignUsesLayoutBuilder(
+  galleryOverrides: UnifiedCampaignModalHandle['formState']['galleryOverrides'],
+): boolean {
+  const breakpoints = galleryOverrides?.breakpoints;
+  if (!breakpoints) return false;
+  for (const scopeConfig of Object.values(breakpoints)) {
+    if (!scopeConfig) continue;
+    for (const scope of Object.values(scopeConfig)) {
+      if (scope?.adapterId === 'layout-builder') return true;
+    }
+  }
+  return false;
+}
+
 function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: string; label: string }[] {
   const result: { value: string; label: string }[] = [];
   const byParent = new Map<number, CampaignCategoryEntry[]>();
@@ -267,7 +285,9 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   onOpenResponsiveConfig,
   layoutTemplates,
   onEditLayout,
-}) => (
+}) => {
+  const usesLayoutBuilder = campaignUsesLayoutBuilder(formState.galleryOverrides);
+  return (
   <Tabs.Panel value="settings" pt="md">
     <Stack gap="md">
       <Group grow wrap="wrap" gap="sm">
@@ -460,36 +480,52 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           </Stack>
         </>
       )}
-      {layoutTemplates.length > 0 && (
-        <Group grow wrap="wrap" gap="sm" align="flex-end">
-          <Select
-            label="Layout Template"
-            description="Assign a layout template to use the Layout Builder adapter"
-            placeholder="None (use default adapter)"
-            clearable
-            data={layoutTemplates.map((lt) => ({
-              value: lt.id,
-              label: `${lt.name} (${lt.slots.length} slots)`,
-            }))}
-            value={formState.layoutTemplateId || null}
-            onChange={(v) => updateForm({ ...formState, layoutTemplateId: v ?? '' })}
-          />
-          {formState.layoutTemplateId && onEditLayout && (
-            <Button
-              variant="light"
-              size="sm"
-              onClick={() => onEditLayout(formState.layoutTemplateId)}
-              style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
-            >
-              Edit Layout
-            </Button>
+      {/* B-6: contextual layout-template picker — surfaced/emphasized when the
+          Layout Builder adapter is the chosen gallery adapter for this campaign. */}
+      {(layoutTemplates.length > 0 || usesLayoutBuilder) && (
+        <Box>
+          {layoutTemplates.length > 0 && (
+            <Group grow wrap="wrap" gap="sm" align="flex-end">
+              <Select
+                label="Layout Template"
+                description={usesLayoutBuilder
+                  ? 'Layout Builder is your selected gallery adapter — choose the template it renders.'
+                  : 'Assign a layout template to use the Layout Builder adapter'}
+                placeholder="None (use default adapter)"
+                clearable
+                data={layoutTemplates.map((lt) => ({
+                  value: lt.id,
+                  label: `${lt.name} (${lt.slots.length} slots)`,
+                }))}
+                value={formState.layoutTemplateId || null}
+                onChange={(v) => updateForm({ ...formState, layoutTemplateId: v ?? '' })}
+              />
+              {formState.layoutTemplateId && onEditLayout && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  onClick={() => onEditLayout(formState.layoutTemplateId)}
+                  style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
+                >
+                  Edit Layout
+                </Button>
+              )}
+            </Group>
           )}
-        </Group>
+          {usesLayoutBuilder && !formState.layoutTemplateId && (
+            <Text size="xs" c="orange" mt={layoutTemplates.length > 0 ? 4 : 0}>
+              {layoutTemplates.length > 0
+                ? 'Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter.'
+                : 'Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first.'}
+            </Text>
+          )}
+        </Box>
       )}
 
     </Stack>
   </Tabs.Panel>
-);
+  );
+};
 
 UnifiedCampaignSettingsPanel.displayName = 'UnifiedCampaignSettingsPanel';
 

@@ -653,9 +653,9 @@ export function LayoutCanvas({
         )}
 
         {effectiveSlots.map((slot, index) => {
-          // slot is the breakpoint-resolved slot (P58-B); invisible in the active breakpoint → skip.
-          if (slot.visible === false) return null;
-
+          // slot is the breakpoint-resolved slot (P58-B). Slots hidden at the active
+          // breakpoint are NOT removed here — LayoutSlotComponent renders them as a
+          // selectable 10%-opacity ghost so they can be toggled back on (B-2).
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);
 

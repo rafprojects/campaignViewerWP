@@ -1023,6 +1023,63 @@ describe('useLayoutBuilderState — breakpoint overrides (P58-B)', () => {
     expect(override?.x).toBe(25);
     expect(override?.y).toBe(25);
   });
+
+  // ── B-1: updateSlot routes override-eligible keys per breakpoint ──
+
+  it('updateSlot in tablet mode routes rotation/opacity to the override, not the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.updateSlot('s1', { rotation: 30, opacity: 0.5 }); });
+
+    // Base slot untouched
+    expect(result.current.template.slots[0]!.rotation).toBeUndefined();
+    expect(result.current.template.slots[0]!.opacity).toBeUndefined();
+    // Override written
+    const override = result.current.template.breakpointOverrides?.tablet?.s1;
+    expect(override?.rotation).toBe(30);
+    expect(override?.opacity).toBe(0.5);
+  });
+
+  it('updateSlot in tablet mode still writes non-override keys (e.g. shape) to the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.updateSlot('s1', { shape: 'circle', rotation: 15 }); });
+
+    // Non-override key edits the base slot
+    expect(result.current.template.slots[0]!.shape).toBe('circle');
+    // Override key still goes to the breakpoint layer
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.rotation).toBe(15);
+    // ...and shape is NOT duplicated into the override
+    expect((result.current.template.breakpointOverrides?.tablet?.s1 as Record<string, unknown> | undefined)?.shape).toBeUndefined();
+  });
+
+  it('updateSlot in desktop mode edits the base slot directly', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.updateSlot('s1', { rotation: 45, shape: 'diamond' }); });
+    expect(result.current.template.slots[0]!.rotation).toBe(45);
+    expect(result.current.template.slots[0]!.shape).toBe('diamond');
+    expect(result.current.template.breakpointOverrides).toBeUndefined();
+  });
+
+  // ── B-2: toggleSlotVisible is per-breakpoint ──
+
+  it('toggleSlotVisible in tablet mode writes a visibility override, not the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.toggleSlotVisible('s1'); });
+
+    // Base slot visibility unchanged
+    expect(result.current.template.slots[0]!.visible).toBeUndefined();
+    // Override hides the slot at tablet only
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.visible).toBe(false);
+  });
+
+  it('toggleSlotVisible in desktop mode toggles the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.toggleSlotVisible('s1'); });
+    expect(result.current.template.slots[0]!.visible).toBe(false);
+    expect(result.current.template.breakpointOverrides).toBeUndefined();
+  });
 });
 
 describe('migrateTemplate (P58-B)', () => {

@@ -53,12 +53,15 @@ export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOpt
 `);
 
   // ── Bounce keyframes (always emitted — needed by both combined & per-slot) ─
+  // Composes a per-slot rotation custom property (--wpsg-slot-rot, default 0deg)
+  // so rotated slots keep their angle during the bounce (B-7). Adapters that
+  // never set the property are unaffected (rotate(0deg) is a no-op).
   parts.push(`
 @keyframes ${cls}-bounce {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.07); }
-  75%  { transform: scale(0.97); }
-  100% { transform: scale(1); }
+  0%   { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
+  40%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1.07); }
+  75%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(0.97); }
+  100% { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
 }
 `);
 
@@ -122,12 +125,14 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
 `);
 
   // ── Bounce keyframes (always emitted) ──────────────────────────────────
+  // Composes a per-slot rotation custom property (--wpsg-slot-rot, default 0deg)
+  // so rotated slots keep their angle during the bounce (B-7).
   parts.push(`
 @keyframes ${cls}-bounce {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.06); }
-  75%  { transform: scale(0.98); }
-  100% { transform: scale(1); }
+  0%   { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
+  40%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1.06); }
+  75%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(0.98); }
+  100% { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
 }
 `);
 

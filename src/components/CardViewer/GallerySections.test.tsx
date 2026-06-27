@@ -141,7 +141,7 @@ describe('UnifiedGallerySection', () => {
     expect(screen.getByTestId('layout-builder-gallery')).toHaveTextContent('video-1,image-1');
   });
 
-  it('falls back to the shared adapter resolver output when layout-builder is unsupported on mobile', () => {
+  it('renders layout-builder on mobile when configured there (P58-B fix-up)', async () => {
     const settings = makeSettings({
       galleryConfig: {
         mode: 'unified',
@@ -157,15 +157,16 @@ describe('UnifiedGallerySection', () => {
 
     renderWithSuspense(
       <UnifiedGallerySection
-        campaign={makeCampaign()}
+        campaign={makeCampaign({ layoutTemplateId: 'template-1' })}
         settings={settings}
         breakpoint="mobile"
         isAdmin={false}
       />,
     );
 
-    expect(screen.getByTestId('adapter-compact-grid')).toHaveTextContent('video-1,image-1');
-    expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
+    // Previously LB was unsupported on mobile and fell back to another adapter;
+    // it now renders at the mobile breakpoint like any other adapter.
+    expect(await screen.findByTestId('layout-builder-gallery')).toHaveAttribute('data-template-id', 'template-1');
   });
 
   it('projects nested unified viewport background settings onto the wrapper props', () => {
@@ -317,7 +318,7 @@ describe('PerTypeGallerySection', () => {
     expect(screen.getByTestId('adapter-classic')).toHaveTextContent('video-1');
   });
 
-  it('falls back from unsupported mobile layout-builder selections to classic for per-type sections', () => {
+  it('renders layout-builder on mobile for per-type sections when bound to a template (P58-B fix-up)', async () => {
     const settings = makeSettings({
       galleryConfig: {
         mode: 'per-type',
@@ -333,15 +334,15 @@ describe('PerTypeGallerySection', () => {
 
     renderWithSuspense(
       <PerTypeGallerySection
-        campaign={makeCampaign({ videos: [], images: [image] })}
+        campaign={makeCampaign({ videos: [], images: [image], layoutTemplateId: 'template-1' })}
         settings={settings}
         breakpoint="mobile"
         isAdmin={false}
       />,
     );
 
-    expect(screen.getByTestId('adapter-classic')).toHaveTextContent('image-1');
-    expect(screen.queryByTestId('layout-builder-gallery')).not.toBeInTheDocument();
+    // Previously LB was unsupported on mobile and fell back to classic; it now renders.
+    expect(await screen.findByTestId('layout-builder-gallery')).toHaveAttribute('data-template-id', 'template-1');
   });
 });
 

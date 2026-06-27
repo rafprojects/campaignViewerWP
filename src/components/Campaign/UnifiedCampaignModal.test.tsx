@@ -3,7 +3,7 @@ import { render, screen, fireEvent, waitFor, within } from '../../test/test-util
 import { UnifiedCampaignModal } from './UnifiedCampaignModal';
 import type { UnifiedCampaignModalHandle } from '@/hooks/useUnifiedCampaignModal';
 import { getAdapterSelectOptions } from '@/components/Galleries/Adapters/adapterRegistry';
-import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
+import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate } from '@/types';
 
 let capturedGalleryConfigEditorZIndex: number | undefined;
 
@@ -296,6 +296,46 @@ describe('UnifiedCampaignModal', () => {
     expect(screen.getByLabelText('Mobile Unified Gallery Adapter', { selector: 'input' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Desktop Image Gallery Adapter', { selector: 'input' })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Desktop Video Gallery Adapter', { selector: 'input' })).not.toBeInTheDocument();
+  });
+
+  // ── B-6: contextual layout-template picker ──────────────────────────────────
+
+  const layoutBuilderOverrides = {
+    mode: 'unified' as const,
+    breakpoints: { desktop: { unified: { adapterId: 'layout-builder' } } },
+  };
+  const sampleTemplates = [
+    { id: 't1', name: 'Hero', schemaVersion: 2, slots: [{}, {}], overlays: [], tags: [], canvasAspectRatio: 1.78, canvasMinWidth: 320, canvasMaxWidth: 0, backgroundColor: '#000', createdAt: '', updatedAt: '' },
+  ] as unknown as LayoutTemplate[];
+
+  it('warns when Layout Builder is the chosen adapter but no template is assigned (B-6)', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign', description: '', company: 'acme', coverImage: '',
+        status: 'active', visibility: 'private', tags: [], publishAt: '', unpublishAt: '',
+        layoutTemplateId: '', galleryOverrides: layoutBuilderOverrides, categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} layoutTemplates={sampleTemplates} />);
+
+    expect(screen.getByText(/no template is assigned/i)).toBeInTheDocument();
+    // Description is the LB-contextual variant.
+    expect(screen.getByText(/Layout Builder is your selected gallery adapter/i)).toBeInTheDocument();
+  });
+
+  it('does not warn when a template is assigned (B-6)', () => {
+    const modal = makeMockModal({
+      activeTab: 'settings',
+      formState: {
+        title: 'Test Campaign', description: '', company: 'acme', coverImage: '',
+        status: 'active', visibility: 'private', tags: [], publishAt: '', unpublishAt: '',
+        layoutTemplateId: 't1', galleryOverrides: layoutBuilderOverrides, categories: [],
+      },
+    });
+    render(<UnifiedCampaignModal modal={modal} layoutTemplates={sampleTemplates} />);
+
+    expect(screen.queryByText(/no template is assigned/i)).not.toBeInTheDocument();
   });
 
   it('uses the effective global unified mode to choose the quick override controls when no explicit campaign mode override exists', () => {

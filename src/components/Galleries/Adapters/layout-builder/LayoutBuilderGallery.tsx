@@ -634,7 +634,11 @@ function LayoutBuilderGalleryInner({
       const pxY = (slot.y / 100) * canvasHeight;
       const pxW = (slot.width / 100) * finalCanvasWidth;
       const pxH = (slot.height / 100) * canvasHeight;
-      const rotCss = slot.rotation ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center` : '';
+      // Expose rotation as a custom property too, so the shared hover-bounce
+      // keyframes compose it instead of overwriting the angle on hover (B-7).
+      const rotCss = slot.rotation
+        ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center;--wpsg-slot-rot:${slot.rotation}deg`
+        : '';
       const opacityCss = slot.opacity !== undefined && slot.opacity !== 1 ? `;opacity:${slot.opacity}` : '';
       return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}${opacityCss}}`;
     }).join('\n');
@@ -705,8 +709,8 @@ function LayoutBuilderGalleryInner({
         </Text>
       )}
 
-      {/* Mismatch warning — only relevant in media mode */}
-      {!isListingMode && hasMismatch && (
+      {/* Mismatch warning — admin/editor only (B-8); never shown to public viewers */}
+      {!isListingMode && isAdmin && hasMismatch && (
         <Box
           {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{

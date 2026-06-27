@@ -287,7 +287,7 @@ describe('LayoutBuilderGallery', () => {
     expect(lightboxButtons.length).toBe(2);
   });
 
-  it('shows mismatch warning when media count differs from slot count', async () => {
+  it('shows mismatch warning to admins when media count differs from slot count', async () => {
     // 3 media for 2 slots
     const extraMedia = [
       ...mockMedia,
@@ -303,12 +303,39 @@ describe('LayoutBuilderGallery', () => {
         media={extraMedia}
         settings={defaultSettings}
         templateId="tpl-1"
+        isAdmin
       />,
     );
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
       expect(screen.getByText(/1 media item\(s\) have no slot/)).toBeInTheDocument();
+    });
+  });
+
+  it('hides the mismatch warning from public (non-admin) viewers (B-8)', async () => {
+    // 3 media for 2 slots — same mismatch, but no admin context.
+    const extraMedia = [
+      ...mockMedia,
+      { id: 'm3', type: 'image' as const, source: 'upload' as const, url: '/img3.jpg', title: 'Image 3', order: 2 },
+    ];
+
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+
+    render(
+      <LayoutBuilderGallery
+        media={extraMedia}
+        settings={defaultSettings}
+        templateId="tpl-1"
+        isAdmin={false}
+      />,
+    );
+
+    // Slots still render, but the admin-only warning must not appear publicly.
+    await waitFor(() => {
+      expect(screen.queryByText(/have no slot/)).not.toBeInTheDocument();
     });
   });
 
@@ -325,6 +352,7 @@ describe('LayoutBuilderGallery', () => {
         media={lessMedia}
         settings={defaultSettings}
         templateId="tpl-1"
+        isAdmin
       />,
     );
 
