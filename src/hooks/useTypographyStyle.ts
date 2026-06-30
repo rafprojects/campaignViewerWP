@@ -5,6 +5,52 @@ import type { GalleryBehaviorSettings, TypographyOverride } from '../types';
 const EMPTY: TypographyOverride = {};
 
 /**
+ * Pure converter: a {@link TypographyOverride} → `CSSProperties`. Assembles the
+ * font-family fallback chain and the combined text-shadow/glow. Shared by
+ * `useTypographyStyle` (settings-driven) and the LayoutBuilder text layer (P59)
+ * so both produce identical typography CSS. Returns `{}` for an empty override.
+ */
+export function typographyOverrideToStyle(override: TypographyOverride): CSSProperties {
+  const style: CSSProperties = {};
+
+  // Core typography — build fontFamily with fallback chain
+  if (override.fontFamily) {
+    const segments = override.fontFamily.split(',').map((s) => s.trim());
+    const primary = segments[0];
+    const terminal = segments.slice(1).join(', ');
+    const fb = [override.fontFallback1, override.fontFallback2].filter(Boolean);
+    style.fontFamily = [primary, ...fb, terminal].filter(Boolean).join(', ');
+  }
+  if (override.fontSize) style.fontSize = override.fontSize;
+  if (override.fontWeight) style.fontWeight = override.fontWeight;
+  if (override.fontStyle) style.fontStyle = override.fontStyle;
+  if (override.textTransform) style.textTransform = override.textTransform;
+  if (override.textDecoration) style.textDecoration = override.textDecoration;
+  if (override.lineHeight) style.lineHeight = override.lineHeight;
+  if (override.letterSpacing) style.letterSpacing = override.letterSpacing;
+  if (override.wordSpacing) style.wordSpacing = override.wordSpacing;
+  if (override.color) style.color = override.color;
+
+  // Text Stroke (via -webkit-text-stroke)
+  if (override.textStrokeWidth) style.WebkitTextStrokeWidth = override.textStrokeWidth;
+  if (override.textStrokeColor) style.WebkitTextStrokeColor = override.textStrokeColor;
+
+  // Text Shadow + Text Glow (both map to CSS text-shadow, combined)
+  const shadows: string[] = [];
+  if (override.textShadowColor && override.textShadowBlur) {
+    shadows.push(
+      `${override.textShadowOffsetX ?? '0px'} ${override.textShadowOffsetY ?? '0px'} ${override.textShadowBlur} ${override.textShadowColor}`,
+    );
+  }
+  if (override.textGlowColor && override.textGlowBlur) {
+    shadows.push(`0 0 ${override.textGlowBlur} ${override.textGlowColor}`);
+  }
+  if (shadows.length > 0) style.textShadow = shadows.join(', ');
+
+  return style;
+}
+
+/**
  * Returns a CSSProperties object for a named text element, derived from the
  * user's typography overrides.  When no override is set the hook returns `{}`
  * and Mantine defaults apply as before.
@@ -14,44 +60,5 @@ export function useTypographyStyle(
   settings: GalleryBehaviorSettings,
 ): CSSProperties {
   const override = settings.typographyOverrides?.[elementId] ?? EMPTY;
-
-  return useMemo(() => {
-    const style: CSSProperties = {};
-
-    // Core typography — build fontFamily with fallback chain
-    if (override.fontFamily) {
-      const segments = override.fontFamily.split(',').map((s) => s.trim());
-      const primary = segments[0];
-      const terminal = segments.slice(1).join(', ');
-      const fb = [override.fontFallback1, override.fontFallback2].filter(Boolean);
-      style.fontFamily = [primary, ...fb, terminal].filter(Boolean).join(', ');
-    }
-    if (override.fontSize) style.fontSize = override.fontSize;
-    if (override.fontWeight) style.fontWeight = override.fontWeight;
-    if (override.fontStyle) style.fontStyle = override.fontStyle;
-    if (override.textTransform) style.textTransform = override.textTransform;
-    if (override.textDecoration) style.textDecoration = override.textDecoration;
-    if (override.lineHeight) style.lineHeight = override.lineHeight;
-    if (override.letterSpacing) style.letterSpacing = override.letterSpacing;
-    if (override.wordSpacing) style.wordSpacing = override.wordSpacing;
-    if (override.color) style.color = override.color;
-
-    // Text Stroke (via -webkit-text-stroke)
-    if (override.textStrokeWidth) style.WebkitTextStrokeWidth = override.textStrokeWidth;
-    if (override.textStrokeColor) style.WebkitTextStrokeColor = override.textStrokeColor;
-
-    // Text Shadow + Text Glow (both map to CSS text-shadow, combined)
-    const shadows: string[] = [];
-    if (override.textShadowColor && override.textShadowBlur) {
-      shadows.push(
-        `${override.textShadowOffsetX ?? '0px'} ${override.textShadowOffsetY ?? '0px'} ${override.textShadowBlur} ${override.textShadowColor}`,
-      );
-    }
-    if (override.textGlowColor && override.textGlowBlur) {
-      shadows.push(`0 0 ${override.textGlowBlur} ${override.textGlowColor}`);
-    }
-    if (shadows.length > 0) style.textShadow = shadows.join(', ');
-
-    return style;
-  }, [override]);
+  return useMemo(() => typographyOverrideToStyle(override), [override]);
 }

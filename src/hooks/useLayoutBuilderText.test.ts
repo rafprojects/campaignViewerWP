@@ -31,7 +31,9 @@ describe('useLayoutBuilderText — CRUD (P59-A)', () => {
     expect(text.id).toBe(id);
     expect(text.content).toBe(DEFAULT_TEXT_LAYER.content);
     expect(text.semanticTag).toBe('heading');
-    expect(text.fontSize).toBe(DEFAULT_TEXT_LAYER.fontSize);
+    expect(text.textAlign).toBe('left');
+    expect(text.typography.fontSize).toBe('28px');
+    expect(text.typography.fontWeight).toBe(600);
     expect(text.opacity).toBe(1);
   });
 
@@ -52,16 +54,21 @@ describe('useLayoutBuilderText — CRUD (P59-A)', () => {
     expect(result.current.template.texts).toHaveLength(1);
   });
 
-  it('updateText patches content and typography properties', () => {
+  it('updateText patches content, role, and typography', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
     let id = '';
     act(() => { id = result.current.addText(); });
-    act(() => result.current.updateText(id, { content: 'Summer Sale', fontSize: 48, semanticTag: 'paragraph' }));
+    act(() => result.current.updateText(id, {
+      content: 'Summer Sale',
+      semanticTag: 'paragraph',
+      typography: { fontSize: '48px', fontWeight: 700 },
+    }));
 
     const text = result.current.template.texts![0]!;
     expect(text.content).toBe('Summer Sale');
-    expect(text.fontSize).toBe(48);
     expect(text.semanticTag).toBe('paragraph');
+    expect(text.typography.fontSize).toBe('48px');
+    expect(text.typography.fontWeight).toBe(700);
   });
 
   it('moveText updates x and y', () => {

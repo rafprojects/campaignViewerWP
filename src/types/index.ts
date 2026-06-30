@@ -468,7 +468,8 @@ export type LayoutTextAlign = 'left' | 'center' | 'right';
  * `LayoutGraphicLayer`. `content` is a plain user-authored string rendered as
  * real, semantic, screen-reader-reachable DOM text (never baked into an image),
  * so it stays editable, accessible, and translatable by multilingual plugins.
- * Stored in `template.texts`.
+ * Typography reuses the shared {@link TypographyOverride} system. Stored in
+ * `template.texts`.
  */
 export interface LayoutTextLayer {
   id: string;
@@ -484,25 +485,20 @@ export interface LayoutTextLayer {
   zIndex: number;
   /** Render opacity 0–1 (default 1 = fully opaque). */
   opacity: number;
-  // ── Text content & typography ──
+  // ── Text content & role ──
   /** The text to render (plain string; output directly as semantic DOM). */
   content: string;
   /** Semantic role → element: heading→h2, subheading→h3, paragraph→p, caption→styled p. */
   semanticTag: LayoutTextSemanticTag;
-  /** CSS font-family ('inherit' = use the theme font). */
-  fontFamily: string;
-  /** Font size in px. */
-  fontSize: number;
-  /** Font weight (100–900). */
-  fontWeight: number;
-  /** Unitless line-height multiplier. */
-  lineHeight: number;
-  /** Letter spacing in px. */
-  letterSpacing: number;
-  /** Text CSS color. */
-  color: string;
-  /** Horizontal alignment. */
+  /** Horizontal text alignment within the layer box (not part of TypographyOverride). */
   textAlign: LayoutTextAlign;
+  /**
+   * Typography — reuses the shared {@link TypographyOverride} system, so the
+   * properties panel can drop in `<TypographyEditor>` and the render path can
+   * use the same override→CSS converter (`typographyOverrideToStyle`) as the
+   * rest of the app. Sparse: unset keys inherit theme/element defaults.
+   */
+  typography: TypographyOverride;
   // ── Layer system (P16 parity) ──
   /** Human-readable label shown in the layer panel. Defaults to "Text Layer N" if absent. */
   name?: string | undefined;
@@ -514,7 +510,8 @@ export interface LayoutTextLayer {
   rotation?: number | undefined;
 }
 
-/** Sensible defaults for a new text layer. */
+/** Sensible defaults for a new text layer. Typography is sparse — only seeds a
+ *  legible starting style; unset keys inherit the theme font. */
 export const DEFAULT_TEXT_LAYER: LayoutTextLayer = {
   id: '',
   x: 20,
@@ -525,13 +522,13 @@ export const DEFAULT_TEXT_LAYER: LayoutTextLayer = {
   opacity: 1,
   content: 'Text',
   semanticTag: 'heading',
-  fontFamily: 'inherit',
-  fontSize: 28,
-  fontWeight: 600,
-  lineHeight: 1.2,
-  letterSpacing: 0,
-  color: '#ffffff',
   textAlign: 'left',
+  typography: {
+    fontSize: '28px',
+    fontWeight: 600,
+    lineHeight: 1.2,
+    color: '#ffffff',
+  },
 };
 
 export type BackgroundMode = 'none' | 'color' | 'gradient' | 'image';
