@@ -46,7 +46,7 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertIsArray( $result );
         $this->assertNotEmpty( $result['id'] );
         $this->assertEquals( 'Test Layout', $result['name'] );
-        $this->assertEquals( 1, $result['schemaVersion'] );
+        $this->assertEquals( 2, $result['schemaVersion'] );
         $this->assertCount( 1, $result['slots'] );
         $this->assertNotEmpty( $result['createdAt'] );
         $this->assertNotEmpty( $result['updatedAt'] );
@@ -399,7 +399,7 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
     // ── Schema migration ────────────────────────────────────
 
-    public function test_migrate_template_v0_to_v1() {
+    public function test_migrate_template_v0_to_latest() {
         $old = [
             'name'              => 'Old Template',
             'canvasAspectRatio' => 1.5,
@@ -409,15 +409,33 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
         $migrated = WPSG_Layout_Templates::migrate_template( $old );
 
-        $this->assertEquals( 1, $migrated['schemaVersion'] );
+        // v0 → v2: migrates all the way to the current schema version.
+        $this->assertEquals( 2, $migrated['schemaVersion'] );
+        $this->assertArrayHasKey( 'breakpointOverrides', $migrated );
     }
 
-    public function test_migrate_template_v1_is_noop() {
-        $current = [
-            'name'              => 'Current Template',
+    public function test_migrate_template_v1_to_v2_adds_breakpoint_overrides() {
+        $v1 = [
+            'name'              => 'V1 Template',
             'canvasAspectRatio' => 1.5,
             'schemaVersion'     => 1,
             'slots'             => [],
+        ];
+
+        $migrated = WPSG_Layout_Templates::migrate_template( $v1 );
+
+        $this->assertEquals( 2, $migrated['schemaVersion'] );
+        $this->assertArrayHasKey( 'breakpointOverrides', $migrated );
+        $this->assertSame( [], $migrated['breakpointOverrides'] );
+    }
+
+    public function test_migrate_template_v2_is_noop() {
+        $current = [
+            'name'                => 'Current Template',
+            'canvasAspectRatio'   => 1.5,
+            'schemaVersion'       => 2,
+            'slots'               => [],
+            'breakpointOverrides' => [],
         ];
 
         $migrated = WPSG_Layout_Templates::migrate_template( $current );
@@ -455,5 +473,157 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
         $this->assertIsArray( $result );
         $this->assertCount( 0, $result['slots'] );
+    }
+
+    // ── Persistence round-trip (P58-B fix-up) ───────────────
+    // Guards against the allowlist in build_template()/sanitize_slots()/
+    // sanitize_overlays() drifting out of sync with the TypeScript type,
+    // which silently stripped breakpointOverrides, groups, slot opacity,
+    // slot entranceAnimation, and the P50-J overlay fields.
+
+    public function test_persists_slot_opacity_and_entrance_animation() {
+        $data = $this->valid_template_data( [
+            'slots' => [
+                [
+                    'id'     => 'slot-1',
+                    'x'      => 0, 'y' => 0, 'width' => 50, 'height' => 50, 'zIndex' => 1,
+                    'shape'  => 'rectangle',
+                    'opacity' => 0.4,
+                    'entranceAnimation' => [
+                        'type'       => 'slide',
+                        'direction'  => 'up',
+                        'durationMs' => 600,
+                        'delayMs'    => 100,
+                    ],
+                ],
+            ],
+        ] );
+        $result = WPSG_Layout_Templates::create( $data );
+        $slot   = $result['slots'][0];
+
+        $this->assertEqualsWithDelta( 0.4, $slot['opacity'], 0.0001 );
+        $this->assertIsArray( $slot['entranceAnimation'] );
+        $this->assertEquals( 'slide', $slot['entranceAnimation']['type'] );
+        $this->assertEquals( 'up', $slot['entranceAnimation']['direction'] );
+        $this->assertEquals( 600, $slot['entranceAnimation']['durationMs'] );
+        $this->assertEquals( 100, $slot['entranceAnimation']['delayMs'] );
+    }
+
+    public function test_persists_breakpoint_overrides() {
+        $data = $this->valid_template_data( [
+            'breakpointOverrides' => [
+                'tablet' => [
+                    'slot-1' => [ 'x' => 10, 'y' => 20, 'visible' => false ],
+                ],
+                'mobile' => [
+                    'slot-1' => [ 'width' => 80, 'height' => 80, 'rotation' => 45, 'opacity' => 0.5, 'zIndex' => 3 ],
+                ],
+            ],
+        ] );
+        $result = WPSG_Layout_Templates::create( $data );
+
+        $this->assertArrayHasKey( 'breakpointOverrides', $result );
+        $tablet = $result['breakpointOverrides']['tablet']['slot-1'];
+        $this->assertEqualsWithDelta( 10, $tablet['x'], 0.0001 );
+        $this->assertEqualsWithDelta( 20, $tablet['y'], 0.0001 );
+        $this->assertFalse( $tablet['visible'] );
+        // Sparse: keys not supplied are absent, not defaulted.
+        $this->assertArrayNotHasKey( 'width', $tablet );
+
+        $mobile = $result['breakpointOverrides']['mobile']['slot-1'];
+        $this->assertEqualsWithDelta( 80, $mobile['width'], 0.0001 );
+        $this->assertEquals( 45, $mobile['rotation'] );
+        $this->assertEqualsWithDelta( 0.5, $mobile['opacity'], 0.0001 );
+        $this->assertEquals( 3, $mobile['zIndex'] );
+    }
+
+    public function test_breakpoint_overrides_drop_empty_and_clamp() {
+        $data = $this->valid_template_data( [
+            'breakpointOverrides' => [
+                'tablet'  => [ 'slot-1' => [] ],          // empty → dropped
+                'desktop' => [ 'slot-1' => [ 'x' => 150 ] ], // out of range → clamped
+                'bogus'   => [ 'slot-1' => [ 'x' => 5 ] ],   // invalid breakpoint → dropped
+            ],
+        ] );
+        $result = WPSG_Layout_Templates::create( $data );
+        $bo     = $result['breakpointOverrides'];
+
+        $this->assertArrayNotHasKey( 'tablet', $bo );
+        $this->assertArrayNotHasKey( 'bogus', $bo );
+        $this->assertEqualsWithDelta( 100, $bo['desktop']['slot-1']['x'], 0.0001 );
+    }
+
+    public function test_persists_groups() {
+        $data = $this->valid_template_data( [
+            'groups' => [
+                [
+                    'id'            => 'group-1',
+                    'name'          => 'My Group',
+                    'memberIds'     => [ 'slot-1' ],
+                    'childGroupIds' => [],
+                    'parentGroupId' => null,
+                    'x' => 0, 'y' => 0, 'width' => 50, 'height' => 50,
+                    'collapsed' => false, 'locked' => false, 'visible' => true,
+                ],
+            ],
+        ] );
+        $result = WPSG_Layout_Templates::create( $data );
+
+        $this->assertArrayHasKey( 'groups', $result );
+        $this->assertCount( 1, $result['groups'] );
+        $group = $result['groups'][0];
+        $this->assertEquals( 'group-1', $group['id'] );
+        $this->assertEquals( 'My Group', $group['name'] );
+        $this->assertEquals( [ 'slot-1' ], $group['memberIds'] );
+        $this->assertEqualsWithDelta( 50, $group['width'], 0.0001 );
+    }
+
+    public function test_persists_overlay_p50j_fields() {
+        $data = $this->valid_template_data( [
+            'overlays' => [
+                [
+                    'imageUrl'     => 'https://example.com/overlay.png',
+                    'rotation'     => 30,
+                    'flipH'        => true,
+                    'flipV'        => false,
+                    'shape'        => 'hexagon',
+                    'borderRadius' => 8,
+                    'borderWidth'  => 2,
+                    'borderColor'  => '#ff0000',
+                    'blendMode'    => 'multiply',
+                    'shadow'       => [ 'offsetX' => 1, 'offsetY' => 2, 'blur' => 3, 'color' => 'rgba(0,0,0,0.5)' ],
+                    'filterEffects' => [ 'brightness' => 120 ],
+                ],
+            ],
+        ] );
+        $result  = WPSG_Layout_Templates::create( $data );
+        $overlay = $result['overlays'][0];
+
+        $this->assertEquals( 30, $overlay['rotation'] );
+        $this->assertTrue( $overlay['flipH'] );
+        $this->assertFalse( $overlay['flipV'] );
+        $this->assertEquals( 'hexagon', $overlay['shape'] );
+        $this->assertEquals( 8, $overlay['borderRadius'] );
+        $this->assertEquals( 2, $overlay['borderWidth'] );
+        $this->assertEquals( 'multiply', $overlay['blendMode'] );
+        $this->assertIsArray( $overlay['shadow'] );
+        $this->assertIsArray( $overlay['filterEffects'] );
+        $this->assertEqualsWithDelta( 120, $overlay['filterEffects']['brightness'], 0.0001 );
+    }
+
+    public function test_breakpoint_overrides_survive_update() {
+        $created = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'breakpointOverrides' => [
+                'tablet' => [ 'slot-1' => [ 'x' => 12 ] ],
+            ],
+        ] ) );
+
+        $updated = WPSG_Layout_Templates::update( $created['id'], [
+            'name' => 'Renamed',
+        ] );
+
+        $this->assertEquals( 'Renamed', $updated['name'] );
+        // The merge-update path must preserve previously-saved overrides.
+        $this->assertEqualsWithDelta( 12, $updated['breakpointOverrides']['tablet']['slot-1']['x'], 0.0001 );
     }
 }

@@ -213,7 +213,8 @@ export const BUILTIN_ADAPTERS: AdapterRegistration[] = [
     // P37-LB: listing-compatible; adapter owns pagination (slot count = page size).
     capabilities: ['layout-builder', 'listing-compatible'],
     settingGroups: ['layout-builder'],
-    supportsMobile: false,
+    // P58-B fix-up: LB is now responsive (per-breakpoint slot overrides), so it
+    // participates at the mobile breakpoint like any other adapter.
     paginationOwnership: 'adapter',
     component: LayoutBuilderRegistryFallback,
   },
@@ -1017,6 +1018,7 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
     group: 'layout-builder',
     layout: 'stack',
     placement: 'inline',
+    note: 'Choose which layout this gallery uses with the "Layout Template" picker in the campaign\'s Settings tab (Edit Campaign). These options only style the chosen layout.',
     fields: [
       {
         control: 'select',

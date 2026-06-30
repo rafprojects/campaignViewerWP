@@ -208,7 +208,7 @@ describe('campaignGalleryRenderPlan', () => {
     expect(plan?.adapterId).toBe('masonry');
   });
 
-  it('falls back from unsupported nested campaign adapters to global nested config', () => {
+  it('honors a mobile campaign-override adapter now that all adapters support mobile (P58-B B-5)', () => {
     const plan = resolvePerTypeCampaignGalleryRenderPlan(
       makeCampaign({
         videos: [],
@@ -240,10 +240,14 @@ describe('campaignGalleryRenderPlan', () => {
       'image',
     );
 
-    expect(plan?.adapterId).toBe('masonry');
+    // Layout Builder used to declare supportsMobile: false, so this campaign
+    // override was skipped at mobile and the global 'masonry' config won. The
+    // P58-B B-5 fix-up made all adapters mobile-capable, so the campaign
+    // override is now honored at mobile (matches resolveAdapterId.test.ts).
+    expect(plan?.adapterId).toBe('layout-builder');
   });
 
-  it('resolves per-type plans with tile-size projection and adapter fallback', () => {
+  it('resolves per-type plans with tile-size projection (mobile layout-builder now supported, P58-B B-5)', () => {
     const imagePlan = resolvePerTypeCampaignGalleryRenderPlan(
       makeCampaign({ videos: [], images: [image] }),
       makeSettings({
@@ -267,7 +271,11 @@ describe('campaignGalleryRenderPlan', () => {
       'image',
     );
 
-    expect(imagePlan?.adapterId).toBe('classic');
+    // Previously fell back to 'classic' at mobile because Layout Builder declared
+    // supportsMobile: false; post-P58-B B-5 it participates at mobile, so the
+    // configured adapter resolves directly. Tile-size / border-radius projection is
+    // adapter-independent and unchanged.
+    expect(imagePlan?.adapterId).toBe('layout-builder');
     expect(imagePlan?.settings.tileSize).toBe(180);
     expect(imagePlan?.wrapper.borderRadius).toBe(imagePlan?.settings.imageBorderRadius ?? 0);
   });

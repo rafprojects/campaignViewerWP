@@ -1,8 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem } from '@/types';
-import { DEFAULT_LAYOUT_SLOT } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem, ResponsiveBreakpoint, SlotBreakpointOverrides } from '@/types';
+import { DEFAULT_LAYOUT_SLOT, SLOT_BREAKPOINT_OVERRIDE_KEYS } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
+import { computeGridSlots } from '@wp-super-gallery/shared-utils';
 import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
 import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
 import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
@@ -41,7 +42,7 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
   return {
     id: '',
     name,
-    schemaVersion: 1,
+    schemaVersion: 2,
     canvasAspectRatio: 16 / 9,
     canvasMinWidth: 320,
     canvasMaxWidth: 0,
@@ -52,6 +53,15 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
     updatedAt: new Date().toISOString(),
     tags: [],
   };
+}
+
+/**
+ * Migrate a template to the current schema version in-place (P58-B).
+ * v1 → v2: initialise breakpointOverrides so callers can rely on its presence.
+ */
+export function migrateTemplate(template: LayoutTemplate): LayoutTemplate {
+  if (template.schemaVersion >= 2) return template;
+  return { ...template, schemaVersion: 2, breakpointOverrides: template.breakpointOverrides ?? {} };
 }
 
 /** Generate a short unique ID for new slots. */
@@ -70,6 +80,8 @@ export interface LayoutBuilderState {
   isDirty: boolean;
   /** Whether the builder is in preview mode (hides chrome, shows finalized). */
   isPreview: boolean;
+  /** Which breakpoint the builder is currently editing (P58-B). Default: 'desktop'. */
+  activeBreakpoint: ResponsiveBreakpoint;
 }
 
 export interface LayoutBuilderActions {
@@ -108,6 +120,12 @@ export interface LayoutBuilderActions {
   removeSlots: (ids: string[]) => void;
   /** Duplicate selected slot(s) with a slight offset. */
   duplicateSlots: (ids: string[]) => void;
+  /** Copy slot(s) into an in-memory clipboard (deep clone). Returns the number copied. */
+  copySlots: (ids: string[]) => number;
+  /** Paste the clipboard as new slots with a cumulative offset; selects them. Returns new IDs. */
+  pasteSlots: () => string[];
+  /** Generate an evenly-spaced grid of slots as one undo entry; selects them. Returns new IDs. */
+  generateGrid: (opts: { rows: number; cols: number; gapPct: number; marginPct: number; replace?: boolean }) => string[];
 
   // ── Slot mutation ──
   /** Move a slot to a new position. */
@@ -187,6 +205,8 @@ export interface LayoutBuilderActions {
   toggleSlotSelection: (id: string) => void;
   /** Replace selection with the given set of slot IDs (Shift+click range). */
   selectSlotsInRange: (ids: string[]) => void;
+  /** Add the given slot IDs to the current selection (marquee additive). */
+  addSlotsToSelection: (ids: string[]) => void;
   /** Clear selection. */
   clearSelection: () => void;
 
@@ -203,6 +223,14 @@ export interface LayoutBuilderActions {
   jumpToHistoryIndex: (target: number) => void;
   /** True once the history stack has been trimmed (oldest snapshot is no longer the initial one). */
   isHistoryTrimmed: boolean;
+
+  // ── Per-breakpoint slot overrides (P58-B) ──
+  /** Switch the active breakpoint being edited. No-op on 'desktop' (base). */
+  setActiveBreakpoint: (bp: ResponsiveBreakpoint) => void;
+  /** Write sparse overrides for a slot at a specific breakpoint. Creates history entry. */
+  setSlotBreakpointOverride: (slotId: string, bp: ResponsiveBreakpoint, overrides: SlotBreakpointOverrides) => void;
+  /** Remove all overrides for a slot at a specific breakpoint. Creates history entry. */
+  clearSlotBreakpointOverride: (slotId: string, bp: ResponsiveBreakpoint) => void;
 
   // ── Persistent guides (P57-E) ──
   addGuide: (axis: 'x' | 'y', position?: number) => void;
@@ -271,6 +299,14 @@ export function useLayoutBuilderState(
   const [selectedSlotIds, setSelectedSlotIds] = useState<Set<string>>(new Set());
   const [isDirty, setIsDirty] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
+  const [activeBreakpoint, setActiveBreakpoint] = useState<ResponsiveBreakpoint>('desktop');
+
+  // ── In-memory clipboard (P58-A) ──
+  // Per-hook-instance (not a module global) so the clipboard never leaks across
+  // multiple builders mounted on one page. A ref (not state) — copy needs no re-render.
+  const clipboardRef = useRef<LayoutSlot[]>([]);
+  // Cumulative paste offset so repeated Ctrl+V keeps stepping instead of stacking.
+  const pasteCountRef = useRef(0);
 
   // ── Sub-hooks ──
 
@@ -440,25 +476,98 @@ export function useLayoutBuilderState(
 
   const duplicateSlots = useCallback(
     (ids: string[]) => {
-      const newIds: string[] = [];
+      const idSet = new Set(ids);
+      // Build clones + IDs BEFORE mutate. The recipe runs deferred inside a
+      // functional state updater, so IDs generated inside it would not be visible
+      // to the synchronous setSelectedSlotIds below (mirrors addSlot/pasteSlots).
+      const clones = template.slots
+        .filter((s) => idSet.has(s.id))
+        .map((source) => ({
+          ...source,
+          id: generateSlotId(),
+          x: Math.min(source.x + 3, 100 - source.width),
+          y: Math.min(source.y + 3, 100 - source.height),
+        }));
+      if (clones.length === 0) return;
+      const newIds = clones.map((c) => c.id);
       mutate((d) => {
-        for (const id of ids) {
-          const source = d.slots.find((s) => s.id === id);
-          if (!source) continue;
-          const newId = generateSlotId();
-          newIds.push(newId);
-          d.slots.push({
-            ...source,
-            id: newId,
-            x: Math.min(source.x + 3, 100 - source.width),
-            y: Math.min(source.y + 3, 100 - source.height),
-            zIndex: d.slots.length + 1,
-          });
+        let z = d.slots.length;
+        for (const clone of clones) {
+          d.slots.push({ ...clone, zIndex: ++z });
         }
-      }, ids.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
-      if (newIds.length > 0) {
-        setSelectedSlotIds(new Set(newIds));
+      }, clones.length > 1 ? 'Duplicate slots' : 'Duplicate slot');
+      setSelectedSlotIds(new Set(newIds));
+    },
+    [mutate, template.slots],
+  );
+
+  const copySlots = useCallback(
+    (ids: string[]): number => {
+      const idSet = new Set(ids);
+      // Read from live template.slots (not a stale prop); preserve stacking order.
+      const picked = template.slots
+        .filter((s) => idSet.has(s.id))
+        .sort((a, b) => a.zIndex - b.zIndex)
+        .map((s) => structuredClone(s));
+      clipboardRef.current = picked;
+      pasteCountRef.current = 0; // fresh copy resets the offset cadence
+      return picked.length;
+    },
+    [template.slots],
+  );
+
+  const pasteSlots = useCallback((): string[] => {
+    const src = clipboardRef.current;
+    if (src.length === 0) return [];
+    pasteCountRef.current += 1;
+    const off = 3 * pasteCountRef.current; // cumulative % offset across repeated pastes
+    // Build clones (new IDs + offset) BEFORE mutate. The mutate recipe runs deferred
+    // inside a functional state updater (useLayoutBuilderHistory), so IDs generated
+    // inside it would not be visible to the synchronous setSelectedSlotIds below.
+    // This mirrors addSlot, which also generates its ID before mutate.
+    const clones = src.map((s) => {
+      const clone = structuredClone(s);
+      return {
+        ...clone,
+        id: generateSlotId(),
+        x: Math.max(0, Math.min(100 - clone.width, clone.x + off)),
+        y: Math.max(0, Math.min(100 - clone.height, clone.y + off)),
+      };
+    });
+    const newIds = clones.map((c) => c.id);
+    mutate((d) => {
+      let z = d.slots.length;
+      for (const clone of clones) {
+        d.slots.push({ ...clone, zIndex: ++z });
       }
+    }, clones.length > 1 ? 'Paste slots' : 'Paste slot');
+    setSelectedSlotIds(new Set(newIds));
+    return newIds;
+  }, [mutate]);
+
+  const generateGrid = useCallback(
+    (opts: { rows: number; cols: number; gapPct: number; marginPct: number; replace?: boolean }): string[] => {
+      const cells = computeGridSlots(opts.rows, opts.cols, opts.gapPct, opts.marginPct);
+      if (cells.length === 0) return [];
+      // Pre-build slots + IDs before mutate (deferred recipe) — see pasteSlots note.
+      const newSlots = cells.map((cell) => ({
+        ...DEFAULT_LAYOUT_SLOT,
+        id: generateSlotId(),
+        x: cell.x,
+        y: cell.y,
+        width: cell.width,
+        height: cell.height,
+      }));
+      const newIds = newSlots.map((s) => s.id);
+      mutate((d) => {
+        if (opts.replace) d.slots = [];
+        let z = d.slots.length;
+        for (const s of newSlots) {
+          d.slots.push({ ...s, zIndex: ++z });
+        }
+      }, 'Generate grid');
+      setSelectedSlotIds(new Set(newIds));
+      return newIds;
     },
     [mutate],
   );
@@ -466,69 +575,182 @@ export function useLayoutBuilderState(
   // ── Slot mutation ──
 
   const moveSlot = useCallback(
-    (id: string, x: number, y: number) =>
-      mutate((d) => {
-        const slot = d.slots.find((s) => s.id === id);
-        if (slot) {
-          slot.x = Math.max(0, Math.min(100 - slot.width, x));
-          slot.y = Math.max(0, Math.min(100 - slot.height, y));
-        }
-      }, 'Move slot'),
-    [mutate],
+    (id: string, x: number, y: number) => {
+      if (activeBreakpoint !== 'desktop') {
+        mutate((d) => {
+          const baseSlot = d.slots.find((s) => s.id === id);
+          if (!baseSlot) return;
+          if (!d.breakpointOverrides) d.breakpointOverrides = {};
+          if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+          const existing = d.breakpointOverrides[activeBreakpoint]![id] ?? {};
+          const effectiveWidth = existing.width ?? baseSlot.width;
+          const effectiveHeight = existing.height ?? baseSlot.height;
+          d.breakpointOverrides[activeBreakpoint]![id] = {
+            ...existing,
+            x: Math.max(0, Math.min(100 - effectiveWidth, x)),
+            y: Math.max(0, Math.min(100 - effectiveHeight, y)),
+          };
+        }, `Move slot (${activeBreakpoint})`);
+      } else {
+        mutate((d) => {
+          const slot = d.slots.find((s) => s.id === id);
+          if (slot) {
+            slot.x = Math.max(0, Math.min(100 - slot.width, x));
+            slot.y = Math.max(0, Math.min(100 - slot.height, y));
+          }
+        }, 'Move slot');
+      }
+    },
+    [mutate, activeBreakpoint],
   );
 
   const resizeSlot = useCallback(
-    (id: string, x: number, y: number, width: number, height: number) =>
-      mutate((d) => {
-        const slot = d.slots.find((s) => s.id === id);
-        if (slot) {
-          slot.x = x;
-          slot.y = y;
-          slot.width = width;
-          slot.height = height;
-        }
-      }, 'Resize slot'),
-    [mutate],
+    (id: string, x: number, y: number, width: number, height: number) => {
+      if (activeBreakpoint !== 'desktop') {
+        mutate((d) => {
+          if (!d.breakpointOverrides) d.breakpointOverrides = {};
+          if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+          d.breakpointOverrides[activeBreakpoint]![id] = {
+            ...(d.breakpointOverrides[activeBreakpoint]![id] ?? {}),
+            x, y, width, height,
+          };
+        }, `Resize slot (${activeBreakpoint})`);
+      } else {
+        mutate((d) => {
+          const slot = d.slots.find((s) => s.id === id);
+          if (slot) {
+            slot.x = x;
+            slot.y = y;
+            slot.width = width;
+            slot.height = height;
+          }
+        }, 'Resize slot');
+      }
+    },
+    [mutate, activeBreakpoint],
   );
 
   const updateSlot = useCallback(
     (id: string, updates: Partial<LayoutSlot>) =>
       mutate((d) => {
         const idx = d.slots.findIndex((s) => s.id === id);
-        if (idx !== -1) {
+        if (idx === -1) return;
+
+        if (activeBreakpoint === 'desktop') {
           Object.assign(d.slots[idx]!, updates);
+          return;
         }
-      }, 'Update slot'),
-    [mutate],
+
+        // P58-B (B-1): when editing a non-desktop breakpoint, route override-eligible
+        // keys (position/size/visibility/rotation/opacity/zIndex) to the breakpoint
+        // layer; keys outside that set (shape, border, media, effects…) always edit
+        // the base slot since they aren't breakpoint-specific.
+        const overrideKeys = SLOT_BREAKPOINT_OVERRIDE_KEYS as readonly string[];
+        const overrideUpdates: Record<string, unknown> = {};
+        const baseUpdates: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(updates)) {
+          if (overrideKeys.includes(key)) {
+            overrideUpdates[key] = value;
+          } else {
+            baseUpdates[key] = value;
+          }
+        }
+        if (Object.keys(baseUpdates).length > 0) {
+          Object.assign(d.slots[idx]!, baseUpdates);
+        }
+        if (Object.keys(overrideUpdates).length > 0) {
+          if (!d.breakpointOverrides) d.breakpointOverrides = {};
+          if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+          d.breakpointOverrides[activeBreakpoint]![id] = {
+            ...(d.breakpointOverrides[activeBreakpoint]![id] ?? {}),
+            ...(overrideUpdates as SlotBreakpointOverrides),
+          };
+        }
+      }, activeBreakpoint === 'desktop' ? 'Update slot' : `Update slot (${activeBreakpoint})`),
+    [mutate, activeBreakpoint],
   );
 
   const updateSlots = useCallback(
     (updatesById: Record<string, Partial<LayoutSlot>>, label = 'Update slots') => {
       const slotIds = Object.keys(updatesById);
       if (slotIds.length === 0) return;
+
+      if (activeBreakpoint === 'desktop') {
+        mutate((d) => {
+          const slotIdSet = new Set(slotIds);
+          for (const slot of d.slots) {
+            if (!slotIdSet.has(slot.id)) continue;
+            Object.assign(slot, updatesById[slot.id]!);
+          }
+        }, label);
+        return;
+      }
+
+      // P58-B: when editing a non-desktop breakpoint, route override-eligible keys
+      // (position/size/visibility/rotation/opacity/zIndex) to the breakpoint layer;
+      // any other keys still edit the base slot. Mirrors updateSlot (B-1) so the
+      // align/distribute/fit toolbar respects the active breakpoint.
+      const overrideKeys = SLOT_BREAKPOINT_OVERRIDE_KEYS as readonly string[];
       mutate((d) => {
         const slotIdSet = new Set(slotIds);
+        if (!d.breakpointOverrides) d.breakpointOverrides = {};
+        if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
         for (const slot of d.slots) {
           if (!slotIdSet.has(slot.id)) continue;
-          Object.assign(slot, updatesById[slot.id]!);
+          const updates = updatesById[slot.id]!;
+          const overrideUpdates: Record<string, unknown> = {};
+          const baseUpdates: Record<string, unknown> = {};
+          for (const [key, value] of Object.entries(updates)) {
+            if (overrideKeys.includes(key)) overrideUpdates[key] = value;
+            else baseUpdates[key] = value;
+          }
+          if (Object.keys(baseUpdates).length > 0) Object.assign(slot, baseUpdates);
+          if (Object.keys(overrideUpdates).length > 0) {
+            d.breakpointOverrides[activeBreakpoint]![slot.id] = {
+              ...(d.breakpointOverrides[activeBreakpoint]![slot.id] ?? {}),
+              ...(overrideUpdates as SlotBreakpointOverrides),
+            };
+          }
         }
-      }, label);
+      }, `${label} (${activeBreakpoint})`);
     },
-    [mutate],
+    [mutate, activeBreakpoint],
   );
 
   const nudgeSlots = useCallback(
-    (ids: string[], dx: number, dy: number) =>
-      mutate((d) => {
-        const idSet = new Set(ids);
-        for (const slot of d.slots) {
-          if (idSet.has(slot.id)) {
-            slot.x = Math.max(0, Math.min(100 - slot.width, slot.x + dx));
-            slot.y = Math.max(0, Math.min(100 - slot.height, slot.y + dy));
+    (ids: string[], dx: number, dy: number) => {
+      if (activeBreakpoint !== 'desktop') {
+        mutate((d) => {
+          const idSet = new Set(ids);
+          if (!d.breakpointOverrides) d.breakpointOverrides = {};
+          if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+          for (const slot of d.slots) {
+            if (!idSet.has(slot.id)) continue;
+            const existing = d.breakpointOverrides[activeBreakpoint]![slot.id] ?? {};
+            const effectiveX = existing.x ?? slot.x;
+            const effectiveY = existing.y ?? slot.y;
+            const effectiveWidth = existing.width ?? slot.width;
+            const effectiveHeight = existing.height ?? slot.height;
+            d.breakpointOverrides[activeBreakpoint]![slot.id] = {
+              ...existing,
+              x: Math.max(0, Math.min(100 - effectiveWidth, effectiveX + dx)),
+              y: Math.max(0, Math.min(100 - effectiveHeight, effectiveY + dy)),
+            };
           }
-        }
-      }, 'Nudge slot'),
-    [mutate],
+        }, `Nudge slot (${activeBreakpoint})`);
+      } else {
+        mutate((d) => {
+          const idSet = new Set(ids);
+          for (const slot of d.slots) {
+            if (idSet.has(slot.id)) {
+              slot.x = Math.max(0, Math.min(100 - slot.width, slot.x + dx));
+              slot.y = Math.max(0, Math.min(100 - slot.height, slot.y + dy));
+            }
+          }
+        }, 'Nudge slot');
+      }
+    },
+    [mutate, activeBreakpoint],
   );
 
   const assignMediaToSlot = useCallback(
@@ -601,9 +823,25 @@ export function useLayoutBuilderState(
     (id: string) =>
       mutate((d) => {
         const slot = d.slots.find((s) => s.id === id);
-        if (slot) slot.visible = !(slot.visible ?? true);
-      }, 'Toggle slot visibility'),
-    [mutate],
+        if (!slot) return;
+
+        if (activeBreakpoint === 'desktop') {
+          slot.visible = !(slot.visible ?? true);
+          return;
+        }
+
+        // P58-B (B-2): per-breakpoint visibility — toggle relative to the slot's
+        // effective visibility at this breakpoint, written to the override layer.
+        if (!d.breakpointOverrides) d.breakpointOverrides = {};
+        if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
+        const existing = d.breakpointOverrides[activeBreakpoint]![id] ?? {};
+        const effectiveVisible = existing.visible ?? slot.visible ?? true;
+        d.breakpointOverrides[activeBreakpoint]![id] = {
+          ...existing,
+          visible: !effectiveVisible,
+        };
+      }, activeBreakpoint === 'desktop' ? 'Toggle slot visibility' : `Toggle visibility (${activeBreakpoint})`),
+    [mutate, activeBreakpoint],
   );
 
   const toggleOverlayVisible = useCallback(
@@ -673,9 +911,38 @@ export function useLayoutBuilderState(
     [],
   );
 
+  const addSlotsToSelection = useCallback(
+    (ids: string[]) => setSelectedSlotIds((prev) => new Set([...prev, ...ids])),
+    [],
+  );
+
   const clearSelection = useCallback(
     () => setSelectedSlotIds(new Set()),
     [],
+  );
+
+  // ── Per-breakpoint slot overrides (P58-B) ──
+
+  const setSlotBreakpointOverride = useCallback(
+    (slotId: string, bp: ResponsiveBreakpoint, overrides: SlotBreakpointOverrides) =>
+      mutate((d) => {
+        if (!d.breakpointOverrides) d.breakpointOverrides = {};
+        if (!d.breakpointOverrides[bp]) d.breakpointOverrides[bp] = {};
+        d.breakpointOverrides[bp]![slotId] = {
+          ...(d.breakpointOverrides[bp]![slotId] ?? {}),
+          ...overrides,
+        };
+      }, `Set ${bp} override`),
+    [mutate],
+  );
+
+  const clearSlotBreakpointOverride = useCallback(
+    (slotId: string, bp: ResponsiveBreakpoint) =>
+      mutate((d) => {
+        if (!d.breakpointOverrides?.[bp]) return;
+        delete d.breakpointOverrides[bp]![slotId];
+      }, `Clear ${bp} override`),
+    [mutate],
   );
 
   // ── Preview ──
@@ -715,6 +982,7 @@ export function useLayoutBuilderState(
     selectedSlotIds,
     isDirty,
     isPreview,
+    activeBreakpoint,
     // Template-level
     setTemplate,
     setName,
@@ -738,6 +1006,9 @@ export function useLayoutBuilderState(
     addSlot,
     removeSlots,
     duplicateSlots,
+    copySlots,
+    pasteSlots,
+    generateGrid,
     // Slot mutation
     moveSlot,
     resizeSlot,
@@ -771,6 +1042,7 @@ export function useLayoutBuilderState(
     selectSlot,
     toggleSlotSelection,
     selectSlotsInRange,
+    addSlotsToSelection,
     clearSelection,
     // History
     undo,
@@ -800,5 +1072,9 @@ export function useLayoutBuilderState(
     moveGuide,
     removeGuide,
     toggleGuideLock,
+    // Per-breakpoint slot overrides (P58-B)
+    setActiveBreakpoint,
+    setSlotBreakpointOverride,
+    clearSlotBreakpointOverride,
   };
 }

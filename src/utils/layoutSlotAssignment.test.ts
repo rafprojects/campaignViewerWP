@@ -5,6 +5,8 @@ import {
   assignMediaToSlots,
   getUnassignedMedia,
   resolveSlotWithOverrides,
+  resolveSlotForBreakpoint,
+  containerWidthToBreakpoint,
 } from './layoutSlotAssignment';
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -443,5 +445,138 @@ describe('resolveSlotWithOverrides', () => {
 
     // objectPosition should remain unchanged because the override doesn't include it
     expect(result.objectPosition).toBe('50% 50%');
+  });
+});
+
+// ── P58-B: resolveSlotForBreakpoint ──────────────────────────
+
+describe('resolveSlotForBreakpoint', () => {
+  const baseSlot = makeSlot({ id: 'slot-1', x: 10, y: 20, width: 30, height: 40 });
+  const template = makeTemplate([baseSlot]);
+
+  it('returns the base slot unchanged for desktop', () => {
+    const result = resolveSlotForBreakpoint(baseSlot, template, 'desktop');
+    expect(result).toBe(baseSlot);
+  });
+
+  it('returns the base slot unchanged when no breakpoint overrides exist', () => {
+    const result = resolveSlotForBreakpoint(baseSlot, template, 'tablet');
+    expect(result).toBe(baseSlot);
+  });
+
+  it('merges x, y, width, height overrides for tablet', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { tablet: { 'slot-1': { x: 5, y: 5, width: 50, height: 60 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'tablet');
+    expect(result.x).toBe(5);
+    expect(result.y).toBe(5);
+    expect(result.width).toBe(50);
+    expect(result.height).toBe(60);
+  });
+
+  it('applies visible: false override', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { mobile: { 'slot-1': { visible: false } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'mobile');
+    expect(result.visible).toBe(false);
+  });
+
+  it('applies rotation, opacity, zIndex overrides', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { tablet: { 'slot-1': { rotation: 45, opacity: 0.5, zIndex: 3 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'tablet');
+    expect(result.rotation).toBe(45);
+    expect(result.opacity).toBe(0.5);
+    expect(result.zIndex).toBe(3);
+  });
+
+  it('preserves non-overridden base properties', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { tablet: { 'slot-1': { x: 99 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'tablet');
+    expect(result.y).toBe(baseSlot.y);
+    expect(result.shape).toBe(baseSlot.shape);
+    expect(result.objectFit).toBe(baseSlot.objectFit);
+  });
+
+  it('returns base slot when override exists for a different slot', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { tablet: { 'other-slot': { x: 99 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'tablet');
+    expect(result).toBe(baseSlot);
+  });
+
+  // ── Responsive cascade (mobile ← tablet ← desktop) ──────────
+
+  it('mobile inherits the tablet override when no mobile override exists', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { tablet: { 'slot-1': { x: 5, width: 50 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'mobile');
+    // No mobile-specific override → falls through to tablet, not desktop base.
+    expect(result.x).toBe(5);
+    expect(result.width).toBe(50);
+  });
+
+  it('mobile override wins over tablet for the same field', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: {
+        tablet: { 'slot-1': { x: 5, width: 50 } },
+        mobile: { 'slot-1': { x: 90 } },
+      },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'mobile');
+    expect(result.x).toBe(90);       // mobile-specific
+    expect(result.width).toBe(50);   // inherited from tablet
+  });
+
+  it('mobile uses the desktop base when neither tablet nor mobile overrides exist', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { mobile: {} },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'mobile');
+    expect(result.x).toBe(baseSlot.x);
+    expect(result.width).toBe(baseSlot.width);
+  });
+
+  it('tablet does NOT inherit mobile overrides (cascade is one-directional)', () => {
+    const t = makeTemplate([baseSlot], {
+      breakpointOverrides: { mobile: { 'slot-1': { x: 90 } } },
+    });
+    const result = resolveSlotForBreakpoint(baseSlot, t, 'tablet');
+    expect(result.x).toBe(baseSlot.x); // tablet ignores mobile
+  });
+});
+
+// ── P58-B: containerWidthToBreakpoint ────────────────────────
+
+describe('containerWidthToBreakpoint', () => {
+  it('returns mobile for width < 768', () => {
+    expect(containerWidthToBreakpoint(767)).toBe('mobile');
+    expect(containerWidthToBreakpoint(0)).toBe('mobile');
+    expect(containerWidthToBreakpoint(390)).toBe('mobile');
+  });
+
+  it('returns tablet at the 768px boundary', () => {
+    expect(containerWidthToBreakpoint(768)).toBe('tablet');
+  });
+
+  it('returns tablet for 768–1199', () => {
+    expect(containerWidthToBreakpoint(1000)).toBe('tablet');
+    expect(containerWidthToBreakpoint(1199)).toBe('tablet');
+  });
+
+  it('returns desktop at the 1200px boundary', () => {
+    expect(containerWidthToBreakpoint(1200)).toBe('desktop');
+  });
+
+  it('returns desktop for large widths', () => {
+    expect(containerWidthToBreakpoint(1920)).toBe('desktop');
+    expect(containerWidthToBreakpoint(9999)).toBe('desktop');
   });
 });

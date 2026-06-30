@@ -50,7 +50,11 @@ function PresetPreview({ preset }: { preset: LayoutPreset }) {
             opacity: 0.85,
             borderRadius: 2,
             zIndex: slot.zIndex,
-            border: '1px solid rgba(255,255,255,0.15)',
+            border: slot.borderWidth && slot.borderWidth > 0
+              ? `2px solid ${slot.borderColor || '#ffffff'}`
+              : '1px solid rgba(255,255,255,0.15)',
+            transform: slot.rotation ? `rotate(${slot.rotation}deg)` : undefined,
+            transformOrigin: 'center center',
           }}
         />
       ))}

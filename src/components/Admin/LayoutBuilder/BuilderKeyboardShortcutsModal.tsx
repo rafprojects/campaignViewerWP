@@ -29,6 +29,8 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
       { keys: ['Delete'], description: 'Remove selected slot(s)' },
       { keys: ['Escape'], description: 'Deselect all' },
       { keys: ['Ctrl / ⌘', 'D'], description: 'Duplicate selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'C'], description: 'Copy selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'V'], description: 'Paste slot(s)' },
       { keys: ['Ctrl / ⌘', 'G'], description: 'Group selected (2+) · or select all in group when already grouped' },
       { keys: ['Ctrl / ⌘', 'Shift', 'G'], description: 'Ungroup selected group' },
       { keys: ['Ctrl / ⌘', 'click'], description: 'Toggle slot in selection (layers panel)' },
@@ -38,8 +40,9 @@ const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
   {
     heading: 'Nudge',
     rows: [
-      { keys: ['↑ ↓ ← →'], description: 'Move selected slot 1 unit' },
-      { keys: ['Shift', '↑ ↓ ← →'], description: 'Move selected slot 0.1 unit (fine)' },
+      { keys: ['↑ ↓ ← →'], description: 'Move selected slot 1%' },
+      { keys: ['Shift', '↑ ↓ ← →'], description: 'Move selected slot 10% (large)' },
+      { keys: ['Alt', '↑ ↓ ← →'], description: 'Move selected slot 0.1% (fine)' },
     ],
   },
   {

@@ -1,14 +1,16 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
-import type { LayoutTemplate, MediaItem, PersistentGuide } from '@/types';
-import { assignMediaToSlots } from '@/utils/layoutSlotAssignment';
+import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
+import { assignMediaToSlots, resolveSlotForBreakpoint } from '@/utils/layoutSlotAssignment';
 import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
 import {
   type SnapMode,
   snapToGrid,
   gridSizeToPct,
   selectionUnionRect,
+  normalizeDragRect,
+  pctRectsIntersect,
   type PctRect,
 } from '@wp-super-gallery/shared-utils';
 import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
@@ -40,6 +42,8 @@ export interface LayoutCanvasProps {
   onSlotSelect: (id: string) => void;
   onSlotToggleSelect: (id: string) => void;
   onCanvasClick: () => void;
+  /** Marquee (rubber-band) selection committed on drag end. `additive` = union with current selection. */
+  onMarqueeSelect?: (ids: string[], additive: boolean) => void;
   onMediaDrop?: (slotId: string, mediaId: string, meta?: { attachmentId?: number | undefined; url?: string | undefined }) => void;
   /** Announce a11y messages. */
   onAnnounce?: (msg: string) => void;
@@ -77,12 +81,25 @@ export interface LayoutCanvasProps {
   onMoveGuide?: (id: string, position: number) => void;
   onRemoveGuide?: (id: string) => void;
   onToggleGuideLock?: (id: string) => void;
+  // ── P58-B: Per-breakpoint slot overrides ────────────────────
+  /** Active breakpoint being edited. Slots resolve to their breakpoint-overridden geometry. */
+  activeBreakpoint?: ResponsiveBreakpoint;
+  /**
+   * Device width (px) of the active non-desktop breakpoint. When set (edit mode),
+   * a centered, non-clipping guide band is drawn on the canvas to mark the device
+   * viewport width. Absent/0 = no guide (desktop or preview).
+   */
+  breakpointViewportPx?: number | null | undefined;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
 
 const MIN_CANVAS_PX = 400;
 const MAX_CANVAS_PX = 1200;
+
+// Movement (in screen px) below this on canvas-background mousedown is a click
+// (clears selection); at or above it the gesture is a marquee drag-select (P58-D).
+const MARQUEE_CLICK_THRESHOLD_PX = 4;
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -109,6 +126,7 @@ export function LayoutCanvas({
   onSlotSelect,
   onSlotToggleSelect,
   onCanvasClick,
+  onMarqueeSelect,
   onMediaDrop,
   onAnnounce,
   onOverlayMove,
@@ -129,6 +147,8 @@ export function LayoutCanvas({
   onMoveGuide,
   onRemoveGuide,
   onToggleGuideLock,
+  activeBreakpoint = 'desktop',
+  breakpointViewportPx,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -180,12 +200,22 @@ export function LayoutCanvas({
     [canvasWidth, canvasHeight],
   );
 
+  // ── P58-B: Effective slots with breakpoint overrides applied ──
+
+  const effectiveSlots = useMemo(
+    () => template.slots.map((s) => resolveSlotForBreakpoint(s, template, activeBreakpoint)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [template.slots, template.breakpointOverrides, activeBreakpoint],
+  );
+  const effectiveSlotsRef = useRef(effectiveSlots);
+  effectiveSlotsRef.current = effectiveSlots;
+
   // ── Contextual toolbar: union bounding rect of selected slots ─
 
   const selectionRect = useMemo(() => {
     if (isPreview || selectedSlotIds.size === 0 || !contextualToolbarCallbacks) return null;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const slot of template.slots) {
+    for (const slot of effectiveSlots) {
       if (!selectedSlotIds.has(slot.id)) continue;
       const px = pctToPx(slot.x, slot.y, slot.width, slot.height);
       minX = Math.min(minX, px.x);
@@ -195,13 +225,13 @@ export function LayoutCanvas({
     }
     if (!isFinite(minX)) return null;
     return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-  }, [isPreview, selectedSlotIds, template.slots, pctToPx, contextualToolbarCallbacks]);
+  }, [isPreview, selectedSlotIds, effectiveSlots, pctToPx, contextualToolbarCallbacks]);
 
   // ── P30-B: selection bounding rect in canvas-% for rulers & measurements ──
   const selectionPct = useMemo<PctRect | null>(() => {
     if (isPreview || selectedSlotIds.size === 0) return null;
-    return selectionUnionRect(selectedSlotIds, template.slots);
-  }, [isPreview, selectedSlotIds, template.slots]);
+    return selectionUnionRect(selectedSlotIds, effectiveSlots);
+  }, [isPreview, selectedSlotIds, effectiveSlots]);
 
   // ── Smart guides state ─────────────────────────────────────
 
@@ -212,6 +242,9 @@ export function LayoutCanvas({
   // Live pixel delta applied to co-selected slots while the primary slot is dragged.
   const [liveDragDelta, setLiveDragDelta] = useState<{ dx: number; dy: number } | null>(null);
   const [draggingSlotId, setDraggingSlotId] = useState<string | null>(null);
+
+  // ── Marquee (rubber-band) selection state (P58-D) ──────────
+  const [marqueeRect, setMarqueeRect] = useState<PctRect | null>(null);
   // Refs so drag-stop callback reads latest values without recreating on every selection change.
   const selectedSlotIdsRef = useRef(selectedSlotIds);
   selectedSlotIdsRef.current = selectedSlotIds;
@@ -221,13 +254,13 @@ export function LayoutCanvas({
   // Pre-compute per-slot "others" arrays so every drag frame avoids O(n) allocations.
   // Rebuilds only when template.slots changes (on committed moves/adds/removes, not drag frames).
   const slotOthersMap = useMemo(() => {
-    const allRects = template.slots.map((s): SlotRect => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
+    const allRects = effectiveSlots.map((s): SlotRect => ({ id: s.id, x: s.x, y: s.y, width: s.width, height: s.height }));
     const map = new Map<string, SlotRect[]>();
-    for (const { id } of template.slots) {
+    for (const { id } of effectiveSlots) {
       map.set(id, allRects.filter((r) => r.id !== id));
     }
     return map;
-  }, [template.slots]);
+  }, [effectiveSlots]);
   // Stable ref so handleDragFrame reads the latest map without listing it as a dependency.
   const slotOthersMapRef = useRef(slotOthersMap);
   slotOthersMapRef.current = slotOthersMap;
@@ -240,8 +273,9 @@ export function LayoutCanvas({
   const handleDragFrame = useCallback(
     (slotId: string, pxX: number, pxY: number) => {
       // Track live delta for co-selected slots in multi-drag.
+      // Use effectiveSlotsRef so the delta is relative to the breakpoint-overridden position.
       if (selectedSlotIdsRef.current.size > 1 && selectedSlotIdsRef.current.has(slotId)) {
-        const draggedSlot = templateSlotsRef.current.find((s) => s.id === slotId);
+        const draggedSlot = effectiveSlotsRef.current.find((s) => s.id === slotId);
         if (draggedSlot) {
           const origPx = pctToPx(draggedSlot.x, draggedSlot.y);
           setLiveDragDelta({ dx: pxX - origPx.x, dy: pxY - origPx.y });
@@ -255,7 +289,7 @@ export function LayoutCanvas({
         return;
       }
 
-      const slot = templateSlotsRef.current.find((s) => s.id === slotId);
+      const slot = effectiveSlotsRef.current.find((s) => s.id === slotId);
       if (!slot) return;
 
       const pct = pxToPct(pxX, pxY);
@@ -339,8 +373,9 @@ export function LayoutCanvas({
       lastGuideResultRef.current = {};
 
       // Move co-selected slots by the same % delta.
+      // Use effectiveSlotsRef so delta is relative to breakpoint-overridden positions (P58-B).
       const ids = selectedSlotIdsRef.current;
-      const slots = templateSlotsRef.current;
+      const slots = effectiveSlotsRef.current;
       if (ids.size > 1) {
         const draggedSlot = slots.find((s) => s.id === slotId);
         if (draggedSlot) {
@@ -374,16 +409,71 @@ export function LayoutCanvas({
 
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Clear selection only when the pointer-down lands directly on the canvas
-      // background — not on a child slot.  Using mousedown instead of click
-      // prevents accidental deselection after a drag/resize where the mouseup
-      // lands on the canvas background (click fires on the common ancestor of
-      // mousedown/mouseup targets, but mousedown only on the actual target).
-      if (e.button === 0 && e.target === e.currentTarget) {
+      // Only act when the pointer-down lands directly on the canvas background —
+      // not on a child slot (slots are Rnd children, so a slot press has
+      // e.target !== e.currentTarget and never starts a marquee).
+      if (e.button !== 0 || e.target !== e.currentTarget) return;
+
+      // Hand-tool / preview: keep the prior behavior (clear selection on bg press).
+      const canvasEl = canvasRef.current;
+      if (isPreview || isHandTool || !canvasEl) {
         onCanvasClick();
+        return;
       }
+
+      // ── Marquee (rubber-band) drag-select (P58-D) ──
+      // Coords come straight from the scaled bounding rect, matching the
+      // drop/double-click handlers, so react-zoom-pan-pinch scale is handled.
+      const rect = canvasEl.getBoundingClientRect();
+      const toPct = (clientX: number, clientY: number) => ({
+        x: Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)),
+        y: Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100)),
+      });
+      const start = toPct(e.clientX, e.clientY);
+      const startClientX = e.clientX;
+      const startClientY = e.clientY;
+      const additive = e.shiftKey || e.metaKey || e.ctrlKey;
+      let moved = false;
+
+      const onMove = (me: MouseEvent) => {
+        if (!moved && Math.hypot(me.clientX - startClientX, me.clientY - startClientY) >= MARQUEE_CLICK_THRESHOLD_PX) {
+          moved = true;
+        }
+        if (moved) {
+          const cur = toPct(me.clientX, me.clientY);
+          setMarqueeRect(normalizeDragRect(start.x, start.y, cur.x, cur.y));
+        }
+      };
+
+      const onUp = (ue: MouseEvent) => {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        setMarqueeRect(null);
+
+        // Sub-threshold movement = a plain click on empty canvas → clear selection.
+        if (Math.hypot(ue.clientX - startClientX, ue.clientY - startClientY) < MARQUEE_CLICK_THRESHOLD_PX) {
+          onCanvasClick();
+          return;
+        }
+
+        const cur = toPct(ue.clientX, ue.clientY);
+        const dragRect = normalizeDragRect(start.x, start.y, cur.x, cur.y);
+        // Use effective (breakpoint-resolved) positions for marquee hit testing (P58-B).
+        const hits = effectiveSlotsRef.current
+          .filter(
+            (s) =>
+              (s.visible ?? true) &&
+              !(s.locked ?? false) &&
+              pctRectsIntersect(dragRect, { x: s.x, y: s.y, width: s.width, height: s.height }),
+          )
+          .map((s) => s.id);
+        onMarqueeSelect?.(hits, additive);
+      };
+
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
     },
-    [onCanvasClick],
+    [isPreview, isHandTool, onCanvasClick, onMarqueeSelect],
   );
 
   const handleCanvasDblClick = useCallback(
@@ -546,6 +636,37 @@ export function LayoutCanvas({
             />
           </div>
         )}
+        {/* P58-B: Breakpoint viewport guide — non-clipping band marking the device
+            width while editing a non-desktop breakpoint. Purely visual (pointer-events
+            none) so slots inside AND outside the band stay fully draggable. */}
+        {!isPreview && activeBreakpoint !== 'desktop' && !!breakpointViewportPx && (() => {
+          const bandWidth = Math.min(breakpointViewportPx, canvasWidth);
+          const bandLeft = (canvasWidth - bandWidth) / 2;
+          const label = `${activeBreakpoint.charAt(0).toUpperCase()}${activeBreakpoint.slice(1)} · ${breakpointViewportPx}px`;
+          return (
+            <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9000 }}>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: bandLeft, borderLeft: '2px dashed var(--mantine-color-blue-5)' }} />
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: bandLeft + bandWidth, borderLeft: '2px dashed var(--mantine-color-blue-5)' }} />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  left: bandLeft + bandWidth / 2,
+                  transform: 'translateX(-50%)',
+                  background: 'var(--mantine-color-blue-6)',
+                  color: '#fff',
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </div>
+            </div>
+          );
+        })()}
         {/* Empty-canvas affordance — only shown in edit mode with no slots */}
         {!isPreview && template.slots.length === 0 && (
           <div
@@ -569,7 +690,10 @@ export function LayoutCanvas({
           </div>
         )}
 
-        {template.slots.map((slot, index) => {
+        {effectiveSlots.map((slot, index) => {
+          // slot is the breakpoint-resolved slot (P58-B). Slots hidden at the active
+          // breakpoint are NOT removed here — LayoutSlotComponent renders them as a
+          // selectable 10%-opacity ghost so they can be toggled back on (B-2).
           const pos = pctToPx(slot.x, slot.y, slot.width, slot.height);
           const assignedMedia = mediaAssignments.get(slot.id);
 
@@ -735,6 +859,23 @@ export function LayoutCanvas({
             guides={activeGuides}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
+          />
+        )}
+
+        {/* P58-D: Marquee (rubber-band) selection box */}
+        {!isPreview && marqueeRect && (
+          <div
+            style={{
+              position: 'absolute',
+              left: `${marqueeRect.x}%`,
+              top: `${marqueeRect.y}%`,
+              width: `${marqueeRect.width}%`,
+              height: `${marqueeRect.height}%`,
+              border: '1px dashed var(--mantine-color-blue-5)',
+              background: 'rgba(51,154,240,0.12)',
+              pointerEvents: 'none',
+              zIndex: 9999,
+            }}
           />
         )}
 

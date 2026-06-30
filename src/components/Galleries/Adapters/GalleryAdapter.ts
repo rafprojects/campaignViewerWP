@@ -163,6 +163,8 @@ export interface AdapterSettingGroupDefinition {
   layout?: AdapterSettingGroupLayout;
   placement?: AdapterSettingGroupPlacement;
   scopeMode?: AdapterSettingGroupScopeMode;
+  /** Optional informational note rendered at the top of the group's settings panel. */
+  note?: string;
 }
 
 export type AdapterOptionContext =

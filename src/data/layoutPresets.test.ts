@@ -5,8 +5,8 @@ import { describe, it, expect } from 'vitest';
 import { LAYOUT_PRESETS, type LayoutPreset } from './layoutPresets';
 
 describe('LAYOUT_PRESETS', () => {
-  it('exports exactly 12 presets', () => {
-    expect(LAYOUT_PRESETS).toHaveLength(12);
+  it('exports exactly 14 presets', () => {
+    expect(LAYOUT_PRESETS).toHaveLength(14);
   });
 
   it('every preset has required fields', () => {
@@ -66,6 +66,8 @@ describe('LAYOUT_PRESETS', () => {
     expect(names).toContain('Photo Stack');
     expect(names).toContain('L-Shape');
     expect(names).toContain('T-Layout');
+    expect(names).toContain('Polaroid Scatter');
+    expect(names).toContain('Split Feature');
   });
 
   it('all preset names are unique', () => {
@@ -87,6 +89,16 @@ describe('LAYOUT_PRESETS', () => {
       expect(zIndices[i]).toBeGreaterThan(zIndices[i - 1]);
     }
   });
+
+  it('Polaroid Scatter showcases slot rotation', () => {
+    const preset = LAYOUT_PRESETS.find((p) => p.name === 'Polaroid Scatter')!;
+    expect(preset.slots.some((s) => (s.rotation ?? 0) !== 0)).toBe(true);
+    // rotation is stored in the valid 0–359 range
+    for (const s of preset.slots) {
+      expect(s.rotation ?? 0).toBeGreaterThanOrEqual(0);
+      expect(s.rotation ?? 0).toBeLessThanOrEqual(359);
+    }
+  });
 });
 
 // ── Per-preset slot count verification ───────────────────────
@@ -105,6 +117,8 @@ describe('LAYOUT_PRESETS — per-preset slot counts', () => {
     'Photo Stack': 3,
     'L-Shape': 4,
     'T-Layout': 4,
+    'Polaroid Scatter': 5,
+    'Split Feature': 3,
   };
 
   it.each(Object.entries(expectations))(

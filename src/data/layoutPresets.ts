@@ -245,6 +245,40 @@ function makeTLayout(): LayoutPreset {
   };
 }
 
+function makePolaroidScatter(): LayoutPreset {
+  resetCounter();
+  // Slight rotations (stored 0–359°) + thick white borders for a photo-wall look.
+  // Showcases the P57-F slot rotation feature.
+  return {
+    name: 'Polaroid Scatter',
+    description: 'Scattered, slightly rotated photos with thick white borders — a casual photo-wall look',
+    canvasAspectRatio: 4 / 3,
+    tags: ['polaroid', 'scatter', 'rotated', 'creative'],
+    slots: [
+      slot({ x: 6, y: 10, width: 30, height: 40, borderWidth: 6, rotation: 352, zIndex: 1 }),
+      slot({ x: 37, y: 6, width: 30, height: 40, borderWidth: 6, rotation: 7, zIndex: 2 }),
+      slot({ x: 64, y: 12, width: 30, height: 40, borderWidth: 6, rotation: 354, zIndex: 3 }),
+      slot({ x: 20, y: 50, width: 30, height: 40, borderWidth: 6, rotation: 6, zIndex: 4 }),
+      slot({ x: 50, y: 52, width: 30, height: 40, borderWidth: 6, rotation: 349, zIndex: 5 }),
+    ],
+  };
+}
+
+function makeSplitFeature(): LayoutPreset {
+  resetCounter();
+  return {
+    name: 'Split Feature',
+    description: 'One large feature image beside two stacked supporting images',
+    canvasAspectRatio: 16 / 9,
+    tags: ['split', 'feature', 'editorial'],
+    slots: [
+      slot({ x: 0, y: 0, width: 62, height: 100 }),
+      slot({ x: 64, y: 0, width: 36, height: 49 }),
+      slot({ x: 64, y: 51, width: 36, height: 49 }),
+    ],
+  };
+}
+
 // ── Export all presets ────────────────────────────────────────
 
 export const LAYOUT_PRESETS: LayoutPreset[] = [
@@ -260,4 +294,6 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
   makePhotoStack(),
   makeLShape(),
   makeTLayout(),
+  makePolaroidScatter(),
+  makeSplitFeature(),
 ];

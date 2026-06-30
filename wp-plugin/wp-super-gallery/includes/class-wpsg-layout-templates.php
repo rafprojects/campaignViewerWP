@@ -23,8 +23,10 @@ class WPSG_Layout_Templates {
 
     /**
      * Current schema version for templates.
+     *
+     * v2 (P58-B): per-breakpoint slot overrides (`breakpointOverrides`).
      */
-    const SCHEMA_VERSION = 1;
+    const SCHEMA_VERSION = 2;
 
     /**
      * Maximum serialized size (bytes) before emitting an admin notice.
@@ -514,6 +516,10 @@ class WPSG_Layout_Templates {
             'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
             'guides'            => self::sanitize_guides( $data['guides'] ?? [] ),
+            // ── Nested groups (P30-G) ──
+            'groups'            => self::sanitize_groups( $data['groups'] ?? [] ),
+            // ── Per-breakpoint slot overrides (P58-B) ──
+            'breakpointOverrides' => self::sanitize_breakpoint_overrides( $data['breakpointOverrides'] ?? [] ),
             'createdAt'         => $data['createdAt'] ?? $now,
             'updatedAt'         => $now,
             'tags'              => array_map( 'sanitize_text_field', (array) ( $data['tags'] ?? [] ) ),
@@ -604,6 +610,10 @@ class WPSG_Layout_Templates {
                 'overlayEffect'  => self::sanitize_overlay_effect( $s['overlayEffect'] ?? null ),
                 // ── Rotation (P57-F) ──
                 'rotation'       => isset( $s['rotation'] ) ? max( 0, min( 359, intval( $s['rotation'] ) ) ) : null,
+                // ── Render opacity (P58-A) ──
+                'opacity'        => isset( $s['opacity'] ) ? max( 0, min( 1, floatval( $s['opacity'] ) ) ) : null,
+                // ── Entrance animation (P58-E) ──
+                'entranceAnimation' => self::sanitize_entrance_animation( $s['entranceAnimation'] ?? null ),
             ];
         }, $slots ) );
     }
@@ -619,7 +629,9 @@ class WPSG_Layout_Templates {
             return [];
         }
 
-        return array_values( array_filter( array_map( function ( $o ) {
+        $valid_shapes = [ 'rectangle', 'circle', 'ellipse', 'hexagon', 'diamond', 'parallelogram-left', 'parallelogram-right', 'chevron', 'arrow', 'trapezoid', 'custom' ];
+
+        return array_values( array_filter( array_map( function ( $o ) use ( $valid_shapes ) {
             $raw_url = $o['imageUrl'] ?? '';
 
             // Never persist blob URLs; they are local-tab only and break
@@ -645,6 +657,22 @@ class WPSG_Layout_Templates {
                 'name'          => isset( $o['name'] ) && is_string( $o['name'] ) ? sanitize_text_field( $o['name'] ) : null,
                 'visible'       => isset( $o['visible'] ) ? (bool) $o['visible'] : true,
                 'locked'        => isset( $o['locked'] ) ? (bool) $o['locked'] : false,
+                // ── Transform (P50-J asset-layer parity) ──
+                'rotation'      => isset( $o['rotation'] ) ? max( 0, min( 359, intval( $o['rotation'] ) ) ) : null,
+                'flipH'         => isset( $o['flipH'] ) ? (bool) $o['flipH'] : null,
+                'flipV'         => isset( $o['flipV'] ) ? (bool) $o['flipV'] : null,
+                // ── Shape & geometry (P50-J) ──
+                'shape'         => in_array( $o['shape'] ?? '', $valid_shapes, true ) ? $o['shape'] : null,
+                'clipPath'      => isset( $o['clipPath'] ) ? self::sanitize_css_value( $o['clipPath'], 'clip-path' ) : null,
+                'maskLayer'     => self::sanitize_mask_layer( $o['maskLayer'] ?? null ),
+                // ── Border (P50-J) ──
+                'borderRadius'  => isset( $o['borderRadius'] ) ? max( 0, intval( $o['borderRadius'] ) ) : null,
+                'borderWidth'   => isset( $o['borderWidth'] ) ? max( 0, intval( $o['borderWidth'] ) ) : null,
+                'borderColor'   => isset( $o['borderColor'] ) ? self::sanitize_css_value( $o['borderColor'], 'color' ) : null,
+                // ── Effects (P50-J) ──
+                'filterEffects' => self::sanitize_filter_effects( $o['filterEffects'] ?? null ),
+                'shadow'        => self::sanitize_shadow( $o['shadow'] ?? null ),
+                'blendMode'     => self::sanitize_blend_mode( $o['blendMode'] ?? null ),
             ];
         }, $overlays ), static function ( $o ) {
             return is_array( $o );
@@ -815,6 +843,139 @@ class WPSG_Layout_Templates {
     }
 
     /**
+     * Sanitize a slot entrance (scroll-reveal) animation (P58-E).
+     *
+     * @param  mixed $anim Raw entrance-animation data.
+     * @return array|null
+     */
+    private static function sanitize_entrance_animation( $anim ) {
+        if ( ! is_array( $anim ) ) {
+            return null;
+        }
+        $type = in_array( $anim['type'] ?? '', [ 'fade', 'slide', 'zoom' ], true ) ? $anim['type'] : null;
+        if ( $type === null ) {
+            return null;
+        }
+        $result = [ 'type' => $type ];
+        if ( isset( $anim['direction'] ) && in_array( $anim['direction'], [ 'up', 'down', 'left', 'right' ], true ) ) {
+            $result['direction'] = $anim['direction'];
+        }
+        if ( isset( $anim['durationMs'] ) ) {
+            $result['durationMs'] = max( 0, min( 10000, intval( $anim['durationMs'] ) ) );
+        }
+        if ( isset( $anim['delayMs'] ) ) {
+            $result['delayMs'] = max( 0, min( 10000, intval( $anim['delayMs'] ) ) );
+        }
+        return $result;
+    }
+
+    /**
+     * Sanitize nested slot/overlay groups (P30-G).
+     *
+     * @param  mixed $groups Raw group data.
+     * @return array
+     */
+    private static function sanitize_groups( $groups ): array {
+        if ( ! is_array( $groups ) ) {
+            return [];
+        }
+        $clean_ids = static function ( $ids ): array {
+            return array_values( array_filter(
+                array_map( 'sanitize_text_field', (array) $ids ),
+                static function ( $v ) {
+                    return $v !== '';
+                }
+            ) );
+        };
+        return array_values( array_filter( array_map( function ( $g ) use ( $clean_ids ) {
+            if ( ! is_array( $g ) ) {
+                return null;
+            }
+            $result = [
+                'id'            => sanitize_text_field( $g['id'] ?? wp_generate_uuid4() ),
+                'name'          => isset( $g['name'] ) && is_string( $g['name'] ) ? sanitize_text_field( $g['name'] ) : null,
+                'memberIds'     => $clean_ids( $g['memberIds'] ?? [] ),
+                'childGroupIds' => $clean_ids( $g['childGroupIds'] ?? [] ),
+                'parentGroupId' => isset( $g['parentGroupId'] ) && $g['parentGroupId'] !== null
+                    ? sanitize_text_field( $g['parentGroupId'] )
+                    : null,
+                'collapsed'     => isset( $g['collapsed'] ) ? (bool) $g['collapsed'] : null,
+                'locked'        => isset( $g['locked'] ) ? (bool) $g['locked'] : null,
+                'visible'       => isset( $g['visible'] ) ? (bool) $g['visible'] : null,
+            ];
+            // Bounding-box cache (P30-G) — optional, only persisted when present.
+            foreach ( [ 'x', 'y', 'width', 'height' ] as $k ) {
+                if ( isset( $g[ $k ] ) ) {
+                    $result[ $k ] = floatval( $g[ $k ] );
+                }
+            }
+            return $result;
+        }, $groups ), static function ( $g ) {
+            return is_array( $g );
+        } ) );
+    }
+
+    /**
+     * Sanitize per-breakpoint slot overrides (P58-B).
+     *
+     * Shape: { desktop|tablet|mobile: { slotId: { x?, y?, width?, height?,
+     * visible?, rotation?, opacity?, zIndex? } } }. Sparse — only present
+     * sub-fields are emitted; empty breakpoints/slots are dropped.
+     *
+     * @param  mixed $overrides Raw breakpoint-override data.
+     * @return array
+     */
+    private static function sanitize_breakpoint_overrides( $overrides ): array {
+        if ( ! is_array( $overrides ) ) {
+            return [];
+        }
+        $result = [];
+        foreach ( [ 'desktop', 'tablet', 'mobile' ] as $bp ) {
+            if ( ! isset( $overrides[ $bp ] ) || ! is_array( $overrides[ $bp ] ) ) {
+                continue;
+            }
+            $slot_map = [];
+            foreach ( $overrides[ $bp ] as $slot_id => $ov ) {
+                if ( ! is_array( $ov ) ) {
+                    continue;
+                }
+                $clean = [];
+                if ( isset( $ov['x'] ) ) {
+                    $clean['x'] = self::clamp_pct( $ov['x'] );
+                }
+                if ( isset( $ov['y'] ) ) {
+                    $clean['y'] = self::clamp_pct( $ov['y'] );
+                }
+                if ( isset( $ov['width'] ) ) {
+                    $clean['width'] = self::clamp_pct( $ov['width'] );
+                }
+                if ( isset( $ov['height'] ) ) {
+                    $clean['height'] = self::clamp_pct( $ov['height'] );
+                }
+                if ( isset( $ov['visible'] ) ) {
+                    $clean['visible'] = (bool) $ov['visible'];
+                }
+                if ( isset( $ov['rotation'] ) ) {
+                    $clean['rotation'] = max( 0, min( 359, intval( $ov['rotation'] ) ) );
+                }
+                if ( isset( $ov['opacity'] ) ) {
+                    $clean['opacity'] = max( 0, min( 1, floatval( $ov['opacity'] ) ) );
+                }
+                if ( isset( $ov['zIndex'] ) ) {
+                    $clean['zIndex'] = intval( $ov['zIndex'] );
+                }
+                if ( ! empty( $clean ) ) {
+                    $slot_map[ sanitize_text_field( (string) $slot_id ) ] = $clean;
+                }
+            }
+            if ( ! empty( $slot_map ) ) {
+                $result[ $bp ] = $slot_map;
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Check if the serialized template library exceeds the size limit.
      *
      * @deprecated P20-I-1 — CPT storage removes the single-row bottleneck.
@@ -848,8 +1009,15 @@ class WPSG_Layout_Templates {
             $template['overlays'] = self::sanitize_overlays( $template['overlays'] );
         }
 
-        // Future migrations go here:
-        // if ( $version < 2 ) { ... }
+        // v1 → v2 (P58-B): per-breakpoint slot overrides. No structural change —
+        // older templates simply have no overrides; the field defaults to an
+        // empty map on the client. Bump the version label.
+        if ( $version < 2 ) {
+            $template['schemaVersion'] = 2;
+            if ( ! isset( $template['breakpointOverrides'] ) || ! is_array( $template['breakpointOverrides'] ) ) {
+                $template['breakpointOverrides'] = [];
+            }
+        }
 
         return $template;
     }

@@ -1,6 +1,6 @@
 # Phase 58 - LayoutBuilder Enhancements
 
-**Status:** Planned
+**Status:** Done
 **Created:** 2026-06-26
 **Last updated:** 2026-06-26
 
@@ -8,12 +8,12 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + align/distribute keyboard shortcuts (+ folded: per-slot opacity, Shift+arrow large-nudge) | Planned | Small-Medium |
-| P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Planned | Medium-High |
-| P58-C | Starter template library — pre-built layouts to clone | Planned | Medium |
-| P58-D | Marquee multi-select on the canvas | Planned | Small-Medium |
-| P58-E | Slot entrance animations (scroll-reveal at gallery render) | Planned | Medium |
-| P58-F | Auto-grid slot generator | Planned | Small-Medium |
+| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
+| P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Done | Medium-High |
+| P58-C | Starter template library — already shipped (P15-J); enhanced with rotated/split presets + faithful previews | Done | Small |
+| P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
+| P58-E | Slot entrance animations (scroll-reveal at gallery render) | Done | Medium |
+| P58-F | Auto-grid slot generator | Done | Small-Medium |
 
 ---
 
@@ -73,6 +73,17 @@ Two editor affordances stop short of design-tool parity. True clipboard **copy/p
 
 - `npm run test` for the clipboard buffer, opacity field default/merge, and the keyboard handler; manual QA of copy/paste, align/distribute hotkeys, opacity, and Shift-nudge via the `see-wp` flow.
 
+### Implementation notes (2026-06-26)
+
+Shipped: real clipboard, per-slot opacity, and the three-tier nudge. **Align/distribute keyboard shortcuts were split off** to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder (binding scheme needs design — user direction); the rest landed.
+
+- **Clipboard** — `copySlots`/`pasteSlots` in `useLayoutBuilderState.ts`, backed by per-hook-instance `useRef`s (`clipboardRef`, `pasteCountRef`) so the buffer never leaks across builders; wired to `Ctrl+C`/`Ctrl+V` in `useLayoutBuilderKeyboardHandlers.ts` (gated on `!isPreview`). Copy deep-clones via `structuredClone` (captures nested `maskLayer`/`filterEffects`/`shadow`/`tilt`/`overlayEffect`); paste offsets `+3%` cumulatively per repeat and selects the new slots as one undo entry.
+  - **Gotcha:** `mutate()` runs its recipe inside a deferred functional updater (`setTemplateRaw((prev) => produce(prev, recipe))`), so IDs generated *inside* the recipe aren't visible to the synchronous `setSelectedSlotIds` that follows. `pasteSlots` pre-builds clones + IDs *before* `mutate` (mirroring `addSlot`). Caught by a test asserting paste selects the new slots.
+  - **Pre-existing bug noticed (not fixed here):** `duplicateSlots` has the same shape — it populates `newIds` inside the recipe then guards `setSelectedSlotIds` on `newIds.length`, which is `0` synchronously, so Ctrl+D never updates the selection to the copy. Untested + out of P58-A scope; flagged for the user.
+- **Slot opacity** — optional `LayoutSlot.opacity` (no `schemaVersion` bump; absence ⇒ 1). `Slider` in `SlotPropertiesPanel` (clears to `undefined` at 100%). Rendered via `slot.opacity ?? 1` in the builder preview wrappers, the edit-mode rotation-wrapper (keeps the selection ring + rotation handle crisp; badges inside fade with the media — acceptable), and the gallery `GallerySlotView` (clip + rect) plus the listing-mode container for parity.
+- **Nudge** — `step = e.altKey ? 0.1 : e.shiftKey ? 10 : 1` (Figma convention): plain `1%`, Shift `10%` (large), Alt `0.1%` (fine). Flips the prior Shift=fine behavior; shortcuts modal updated.
+- **Verified:** 75/75 `useLayoutBuilderState` tests, `tsc -b`, and `eslint` all green.
+
 ## Track P58-B - Responsive / per-breakpoint slot overrides
 
 ### Problem
@@ -96,6 +107,40 @@ Device presets today are **preview-only** — you can view the canvas at desktop
 
 - `npm run test` for schema resolution + back-compat; manual QA editing per-device overrides and confirming render at each width. Note in the doc if this track is split to its own phase.
 
+### Implementation notes (2026-06-26)
+
+**Shipped.** Per-breakpoint slot overrides landed in full across the schema, state, builder UI, and gallery render path.
+
+**Schema** (`src/types/index.ts`): Added `SLOT_BREAKPOINT_OVERRIDE_KEYS` (`x`, `y`, `width`, `height`, `visible`, `rotation`, `opacity`, `zIndex`), `SlotBreakpointOverrides`, and `LayoutTemplate.breakpointOverrides?: Partial<Record<ResponsiveBreakpoint, Record<string, SlotBreakpointOverrides>>>`. Bumped `schemaVersion` from 1 → 2.
+
+**Migration** (`src/hooks/useLayoutBuilderState.ts`): `migrateTemplate()` upgrades v1 → v2 (no data to transform; just initialises `breakpointOverrides: {}`). New state field `activeBreakpoint` (default `'desktop'`). New actions: `setActiveBreakpoint`, `setSlotBreakpointOverride`, `clearSlotBreakpointOverride`. `moveSlot`, `resizeSlot`, and `nudgeSlots` are now breakpoint-aware: in desktop mode they update the base slot; in tablet/mobile they write to `template.breakpointOverrides[bp][slotId]` instead.
+
+**Resolver** (`src/utils/layoutSlotAssignment.ts`): `resolveSlotForBreakpoint(slot, template, bp)` merges base slot with the sparse per-breakpoint override. `containerWidthToBreakpoint(width)` maps px → `ResponsiveBreakpoint` using the existing Mantine thresholds (< 768 mobile, < 1200 tablet).
+
+**Builder UI** (`src/components/Admin/LayoutBuilder/LayoutBuilderCanvasPanel.tsx`): A **Breakpoint** `SegmentedControl` (Desktop/Tablet/Mobile) in the edit-mode footer sets `activeBreakpoint`. When a non-desktop breakpoint is selected, the canvas is constrained to the breakpoint's reference width (tablet = 768 px, mobile = 390 px) and a blue alert banner appears: "Editing [Tablet/Mobile] layout — moves and resizes apply to this breakpoint only."
+
+**Canvas rendering** (`src/components/Admin/LayoutBuilder/LayoutCanvas.tsx`): Accepts `activeBreakpoint` prop. Computes `effectiveSlots` via `resolveSlotForBreakpoint` for all relevant computations (slot rendering, selection rect, snap guides, marquee hit-testing, multi-drag delta). Slots with `visible: false` in the active breakpoint are skipped.
+
+**Gallery rendering** (`src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`): Derives `activeBreakpoint` from `containerWidth` (tracked by existing ResizeObserver). `slotPositionCss` now resolves each slot through `resolveSlotForBreakpoint` before computing pixel positions, handles `visible: false` with `display:none`, and includes `opacity` in the CSS. The JSX slot loop also applies the breakpoint override and skips hidden slots.
+
+**Tests**: 24 new test cases across `useLayoutBuilderState.test.ts` (breakpoint move/resize/nudge/override CRUD, `migrateTemplate`, `setActiveBreakpoint`) and `layoutSlotAssignment.test.ts` (`resolveSlotForBreakpoint` with each overridable field, `containerWidthToBreakpoint` boundary conditions). All 516 layout-builder tests pass.
+
+**Back-compat**: Templates without `breakpointOverrides` render identically — the resolver returns the base slot unchanged when no overrides exist.
+
+### Post-ship fixes
+
+Manual QA after the initial ship surfaced several issues and UX gaps, fixed across four follow-up rounds. The first two rounds are documented issue-by-issue in [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md); rounds 3–4 are summarized here.
+
+**Round 1 — 8 issues (2026-06-26).** See [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md) B-1…B-8. Headline: **B-4 was a server-persistence bug** — the PHP allowlist in `class-wpsg-layout-templates.php` had drifted from the TS type and silently stripped `breakpointOverrides` (and, as a full TS↔PHP audit found, slot `opacity`, `entranceAnimation`, `groups`, and the P50-J overlay field set) on every save, so overrides never reached the gallery. All now persist behind `SCHEMA_VERSION = 2` with a round-trip regression test. Also: `updateSlot`/`toggleSlotVisible` made breakpoint-aware (B-1/B-2), rotation composes through hover via `--wpsg-slot-rot` (B-7), the slot-mismatch banner gated to `isAdmin` (B-8), Layout Builder re-enabled at mobile (B-5), a contextual campaign template picker (B-6), and the adapter-per-breakpoint "unblock + inherit" contract (B-3).
+
+**Round 2 — 3 follow-ups (2026-06-28).** See [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md) F-1…F-3. Restore the shared `activeCampaign` context on Edit-Campaign close (F-1); pass `layoutTemplates` to the in-app `UnifiedCampaignModal` so the picker appears in both edit paths (F-2); and resolve the gallery breakpoint from the authoritative `runtime.breakpoint` with a **responsive cascade** (mobile ← tablet ← desktop) in `resolveSlotForBreakpoint`, fixing the reversed/stuck-mobile layouts (F-3).
+
+**Round 3 — Builder boundary guide (no-clip editing).** The breakpoint edit view originally *clipped* the canvas to the device width, hiding inherited slots positioned beyond that window and making them un-editable. Replaced the clip with a non-clipping model: edit mode shows the **full canvas** plus a centered, to-scale **device-width guide band** (390 mobile / 768 tablet) marking the breakpoint's visible area (`LayoutCanvas.tsx`). Added a breakpoint-aware `updateSlots` (so the align/distribute toolbar writes per-breakpoint overrides on tablet/mobile, not the base), a `fitRectsIntoBand` helper (`packages/shared-utils/src/alignSlots.ts`), and a **"Fit to viewport"** action that scales/centers the selection (or all slots) into the active breakpoint's band. *(This supersedes the "canvas is constrained to the breakpoint's reference width" behaviour described in the Builder-UI note above — the canvas is no longer clipped in edit mode.)*
+
+**Round 4 — Publish at the actual breakpoint + toolbar polish (2026-06-29).** The published gallery rendered the canvas at its design width and **left-aligned the scroll**, so a phone showed the *left edge* of the desktop canvas instead of the centered band the editor designed. Now, at tablet/mobile the gallery renders **only the centered device-width band, scaled to fill the container** — matching the builder's guide exactly. Implemented via a new pure helper `computeBreakpointBand` (`packages/shared-utils/src/breakpointViewport.ts`): the canvas renders at its design size inside an `overflow:hidden` window and is cropped + `transform: scale()`'d to the band. Slots stay percentages of the design canvas (no coordinate remap), so builder and gallery share one coordinate basis. Model (user-confirmed): **scale-to-fill** + a **full-height vertical slice** of the design canvas (per-breakpoint canvas aspect is out of scope — see [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder "Published Responsive Canvas Sizing"). Also: **"Fit to viewport"** now shows on desktop too (labelled "Fit to canvas" — pulls stray slots back into bounds), and the redundant **"Add Slot"** footer button was removed (slots are added via the Layers panel and canvas double-click).
+
+**Deferred from these rounds** (to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder): a better published responsive sizing model (the on-page left/right constraint and progressive-shrink across breakpoints), and a faithful builder Preview (align the Preview render with the published breakpoint model and surface runtime effects — glow, bounce, entrance, tilt — in Preview).
+
 ## Track P58-C - Starter template library
 
 ### Problem
@@ -118,6 +163,15 @@ Every layout starts from a blank canvas. New users face a cold start with no exa
 
 - `npm run test` for the clone-on-select path; manual QA picking each preset and editing the result.
 
+### Implementation notes (2026-06-26)
+
+**Already shipped.** The track's core was delivered in **P15-J.1/J.2**: a `PresetGalleryModal` "Start from Template" picker (wired into `LayoutTemplateList`, `handleCreateFromPreset`) with mini-canvas previews and clone-on-select over `LAYOUT_PRESETS` in `src/data/layoutPresets.ts`. All three P58-C acceptance criteria were already met — the picker shows visual previews, choosing a preset creates a fully editable new template (immer guarantees the module-constant presets are never mutated), and presets are image-only (i18n-safe). The doc's "blank-canvas cold start" premise was outdated.
+
+**Enhancements added (per user direction to "also enhance C"):**
+- Two new presets: **Polaroid Scatter** (scattered, rotated, white-bordered slots — the first preset to exercise the P57-F slot `rotation`) and **Split Feature** (feature + two stacked supports).
+- `PresetPreview` now applies `rotation` and reflects a slot's border, so thumbnails render faithfully (previously axis-aligned rectangles only).
+- `layoutPresets.test.ts` updated (14 presets; new names/slot-counts; a rotation-showcase assertion).
+
 ## Track P58-D - Marquee multi-select on the canvas
 
 ### Problem
@@ -138,6 +192,14 @@ There is no rubber-band selection. Selecting multiple slots requires shift-click
 ### Validation
 
 - `npm run test` for the intersection logic; manual QA marquee-selecting and then aligning/grouping.
+
+### Implementation notes (2026-06-26)
+
+- **Pure helpers** in `packages/shared-utils/src/canvasMeasurement.ts`: `normalizeDragRect(x0,y0,x1,y1)` (any-direction drag → positive-size rect clamped 0–100) and `pctRectsIntersect(a,b)` (AABB overlap; edge-touch = no overlap). 8 unit tests.
+- **Canvas** (`LayoutCanvas.tsx`): the marquee starts only on a left-button mousedown landing directly on the canvas background (`e.target === e.currentTarget`), gated `!isPreview && !isHandTool` — slots are Rnd children, so a slot press never starts a marquee (no event-swallowing conflict). `mousemove`/`mouseup` are attached to `window` for the drag; corners come from `getBoundingClientRect()` so react-zoom-pan-pinch scale is handled.
+  - **Deselect-vs-marquee:** the prior immediate `onCanvasClick()` clear was moved into the mouseup *click* branch (movement `< 4px`). A real drag commits the marquee and never clears; a slot drag ends on the canvas but never started a marquee, so it never clears either.
+- **Commit:** intersecting **visible + unlocked** slots → `onMarqueeSelect(ids, additive)`. `additive` (Shift/Ctrl/Cmd held at mousedown) → `addSlotsToSelection` (union); otherwise `selectSlotsInRange` (replace). Existing align/distribute/group/nudge operate on the resulting selection unchanged. Box rendered as a `pointerEvents:'none'` dashed overlay.
+- **Verified:** state + geometry tests, `tsc -b`, and `eslint` all green.
 
 ## Track P58-E - Slot entrance animations
 
@@ -161,6 +223,16 @@ Slots support hover effects but have **no entrance motion** — they cannot fade
 
 - `npm run test` for the field default/merge + the reduced-motion branch; manual QA scrolling a rendered gallery and toggling reduced-motion.
 
+### Implementation notes (2026-06-26)
+
+User direction: **full controls** (type + direction + duration + delay).
+
+- **Field** — `SlotEntranceAnimation { type: 'fade'|'slide'|'zoom'; direction?; durationMs?; delayMs? }` added to `LayoutSlot` (optional; no `schemaVersion` bump).
+- **Pure helper** — `src/utils/slotEntrance.ts` (`buildSlotEntranceCss`): per-slot `@keyframes` + a pre-reveal hidden state + a revealed-state animation + a `prefers-reduced-motion` override. Transforms **compose the slot's rotation** so a rotated slot (e.g. the new Polaroid Scatter preset) keeps its angle while animating in. Unit-tested (`slotEntrance.test.ts`).
+- **Gallery reveal** — `LayoutBuilderGallery` injects the entrance CSS and runs an `IntersectionObserver` that adds `wpsg-lb-revealed` on first viewport entry (one-shot; `obs.unobserve` after). No-IO fallback reveals everything immediately. Entrance runs **only in the rendered gallery** (front-end) — the builder canvas uses `LayoutSlotComponent` and is unaffected.
+- **Properties UI** — an "Entrance" section in `SlotPropertiesPanel` (type/direction/duration/delay) with an in-panel **mini "Play preview"** that replays the chosen animation (used `Select`, not `SegmentedControl`, to avoid the known setState-in-ref-callback loop). This is the builder-side preview the criteria call for.
+- **Verified:** helper unit test, `tsc -b`, `eslint`, and the full regression suite all green.
+
 ## Track P58-F - Auto-grid slot generator
 
 ### Problem
@@ -182,6 +254,14 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 
 - `npm run test` for the generator's geometry + single-history-entry behavior; manual QA generating a few grid sizes and undoing.
 
+### Implementation notes (2026-06-26)
+
+- **Geometry** — `computeGridSlots(rows, cols, gapPct, marginPct)` in `packages/shared-utils/src/canvasMeasurement.ts` (pure, %-space). Solves `2*margin + cols*cellW + (cols-1)*gap = 100` for the cell size; floors fractional counts; clamps negative gap/margin to 0; returns `[]` when the gap + margin over-constrain the canvas (cell ≤ 0). 8 unit tests in `canvasMeasurement.test.ts`.
+- **State action** — `generateGrid({ rows, cols, gapPct, marginPct, replace? })` in `useLayoutBuilderState.ts`: a single `mutate('Generate grid')` (one undo reverts the whole grid, incl. a replace), pre-building slots + IDs *before* the recipe (same deferred-recipe reason as `pasteSlots`), then selecting them. Appends by default; `replace` clears first.
+- **Dialog** — `AutoGridDialog.tsx` (Mantine `Modal`): rows/cols/gap/margin `NumberInput`s, a "Replace existing slots" `Switch` (only when the canvas has slots), a live preview driven by the *same* `computeGridSlots`, and a Generate button disabled when the settings yield no cells.
+- **Trigger** — "Generate grid…" in the menu bar **Edit** menu (`onOpenGridGenerator`); **menu-only, no hotkey** (user direction). Wired in `LayoutBuilderModal.tsx`.
+- **Verified:** state + geometry tests, `tsc -b`, and `eslint` all green.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -197,8 +277,9 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 
 ## Outcome
 
-_To be completed once the phase ships._
+_Updated 2026-06-26 — all six tracks shipped. Updated 2026-06-29 — P58-B post-ship fixes (four rounds) landed._
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+- **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), P58-E (scroll-reveal entrance animations with full per-slot controls), and P58-B (responsive / per-breakpoint slot overrides — schema v2, breakpoint editing UI, gallery resolution). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
+- **P58-B post-ship.** Four follow-up rounds (see Track P58-B › Post-ship fixes): the 8-issue round (B-4 PHP persistence drift was the headline), the F-1/F-2/F-3 round, the builder boundary-guide (no-clip editing + device-width band), and the publish-at-breakpoint round (centered band scaled-to-fill via `computeBreakpointBand`, desktop "Fit to canvas", removed "Add Slot").
+- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design. From the P58-B post-ship work: a better published responsive sizing model and a faithful builder Preview (with runtime effects), both in [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder.
+- **What should happen next.** Manual QA of all tracks via the `see-wp` flow is recommended, especially P58-B's responsive editing UX. The align/distribute hotkeys can be picked up when a conflict-free binding is chosen.

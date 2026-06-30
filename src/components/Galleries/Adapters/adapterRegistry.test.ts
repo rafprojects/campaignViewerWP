@@ -19,17 +19,15 @@ describe('adapterRegistry', () => {
     expect(normalizeAdapterId('unknown-adapter')).toBe('unknown-adapter');
   });
 
-  it('disables layout builder in mobile per-breakpoint options', () => {
+  it('enables layout builder in mobile per-breakpoint options (P58-B fix-up)', () => {
     const mobileOptions = getAdapterSelectOptions({
       context: 'per-breakpoint-gallery',
       breakpoint: 'mobile',
     });
 
-    expect(mobileOptions.find((option) => option.value === 'layout-builder')).toEqual({
-      value: 'layout-builder',
-      label: 'Layout Builder (desktop/tablet only)',
-      disabled: true,
-    });
+    const lb = mobileOptions.find((option) => option.value === 'layout-builder');
+    expect(lb?.disabled).toBe(false);
+    expect(lb?.label).not.toContain('desktop/tablet only');
   });
 
   it('provides the campaign-specific classic label', () => {
@@ -294,10 +292,10 @@ describe('adapterRegistry', () => {
       expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'layout-builder', 'masonry'].sort());
     });
 
-    it('getListingAdapterSelectOptions with mobile breakpoint excludes layout-builder (supportsMobile: false)', () => {
+    it('getListingAdapterSelectOptions with mobile breakpoint includes layout-builder (P58-B fix-up)', () => {
       const options = getListingAdapterSelectOptions('mobile');
       const ids = options.map((o) => o.value).sort();
-      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'masonry'].sort());
+      expect(ids).toEqual(['classic', 'compact-grid', 'justified', 'layout-builder', 'masonry'].sort());
     });
 
     it('getListingAdapterSelectOptions uses adapter label as display text', () => {

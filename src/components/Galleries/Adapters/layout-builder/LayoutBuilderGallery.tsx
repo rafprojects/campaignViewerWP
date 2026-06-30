@@ -36,10 +36,12 @@ import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { assignMediaToSlots, resolveSlotWithOverrides } from '@/utils/layoutSlotAssignment';
+import { assignMediaToSlots, resolveSlotWithOverrides, resolveSlotForBreakpoint, containerWidthToBreakpoint } from '@/utils/layoutSlotAssignment';
+import { buildSlotEntranceCss, entranceKeyframeName, ENTRANCE_MARKER_CLASS, REVEAL_CLASS } from '@/utils/slotEntrance';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
 import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
+import { computeBreakpointBand } from '@wp-super-gallery/shared-utils';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
@@ -173,12 +175,14 @@ function GallerySlotView({
   const blendCss = getBlendModeCss(slot.blendMode);
   const overlayBg = buildOverlayBg(slot.overlayEffect);
   const [hovered, setHovered] = useState(false);
+  // P58-E: marker class the IntersectionObserver queries to drive the reveal.
+  const entranceClass = slot.entranceAnimation ? ENTRANCE_MARKER_CLASS : '';
 
   if (!assigned) {
     // E.4: Empty slot — gray dashed placeholder, non-interactive
     return (
       <div
-        className={positionClassName}
+        className={[positionClassName, entranceClass].filter(Boolean).join(' ')}
         style={{
           clipPath,
           ...maskStyle,
@@ -299,12 +303,13 @@ function GallerySlotView({
   if (clipPath) {
     const inset = slot.borderWidth > 0 ? `${slot.borderWidth}px` : 0;
     const outerStyle: React.CSSProperties = {
+      opacity: slot.opacity ?? 1,
       cursor: isClickable ? 'pointer' : 'default',
       filter: mergedFilter,
       transition: needsInlineGlow ? 'filter 0.25s ease' : undefined,
       mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
     };
-    const outerClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
+    const outerClassName = [positionClassName, hoverClass, entranceClass].filter(Boolean).join(' ');
     const clipContent = (
       <>
         {/* Border fill layer */}
@@ -361,6 +366,7 @@ function GallerySlotView({
 
   // Rectangle slots
   const rectStyle: React.CSSProperties = {
+    opacity: slot.opacity ?? 1,
     borderRadius: slot.borderRadius,
     ...maskStyle,
     border:
@@ -372,7 +378,7 @@ function GallerySlotView({
     filter: mergedFilter,
     mixBlendMode: (blendCss as React.CSSProperties['mixBlendMode']) || undefined,
   };
-  const rectClassName = [positionClassName, hoverClass].filter(Boolean).join(' ');
+  const rectClassName = [positionClassName, hoverClass, entranceClass].filter(Boolean).join(' ');
   const rectContent = (
     <>
       {slotMedia}
@@ -573,6 +579,16 @@ function LayoutBuilderGalleryInner({
     return () => ro.disconnect();
   }, []);
 
+  // ── P58-B: Active breakpoint for per-breakpoint slot overrides ───────────────
+  // Prefer the runtime breakpoint resolved by the host gallery section — it is the
+  // SAME signal that decided this adapter should render, so overrides stay in sync
+  // with adapter selection. Fall back to the locally-measured container width only
+  // when there is no runtime (e.g. standalone/preview usage).
+  const activeBreakpoint = useMemo(
+    () => runtime?.breakpoint ?? containerWidthToBreakpoint(containerWidth || 9999),
+    [runtime?.breakpoint, containerWidth],
+  );
+
   // ── Media assignment (skipped in listing mode) ────────────────────────────
   const { assignments, summary } = useMemo(
     () => isListingMode
@@ -600,6 +616,26 @@ function LayoutBuilderGalleryInner({
       ? viewportHeight * ((template.canvasHeightVh || 50) / 100)
       : finalCanvasWidth / (template.canvasAspectRatio || 16 / 9);
 
+  // ── P58-B: Publish a non-desktop breakpoint at the actual device width ──────
+  // Tablet/mobile render only the centered device-width band (full-height slice) of the
+  // design canvas, scaled to fill the container — matching the builder's band guide.
+  // Slots stay percentages of the design canvas (no coordinate remap); only the wrapper
+  // crops + scales. The design width mirrors the builder's clamped canvas so coordinates
+  // agree between the two.
+  const isBpCropped = activeBreakpoint !== 'desktop';
+  const designWidth = Math.max(400, Math.min(1200, template.canvasMaxWidth || 1200));
+  const designHeight =
+    template.canvasHeightMode === 'fixed-vh'
+      ? viewportHeight * ((template.canvasHeightVh || 50) / 100)
+      : designWidth / (template.canvasAspectRatio || 16 / 9);
+  const breakpointPx = activeBreakpoint === 'tablet' ? 768 : 390;
+  const band = isBpCropped
+    ? computeBreakpointBand(designWidth, designHeight, breakpointPx, containerWidth)
+    : null;
+  // Inner-canvas dimensions slots are positioned against.
+  const canvasW = isBpCropped ? designWidth : finalCanvasWidth;
+  const canvasH = isBpCropped ? designHeight : canvasHeight;
+
   // ── Hover styles ──────────────────────────────────────────────────────────
   // Two sets — drop-shadow for clip-path shapes (on wrapper div), box-shadow for rectangles.
   const hoverStylesCss = useMemo(() => {
@@ -612,15 +648,63 @@ function LayoutBuilderGalleryInner({
   // Extracts position/size from per-element inline styles into a single injected
   // <style> block, improving DevTools inspectability.
   const slotPositionCss = useMemo(() => {
-    return template.slots.map((slot) => {
-      const pxX = (slot.x / 100) * finalCanvasWidth;
-      const pxY = (slot.y / 100) * canvasHeight;
-      const pxW = (slot.width / 100) * finalCanvasWidth;
-      const pxH = (slot.height / 100) * canvasHeight;
-      const rotCss = slot.rotation ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center` : '';
-      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}}`;
+    return template.slots.map((rawSlot) => {
+      // P58-B: resolve per-breakpoint geometry overrides before computing CSS.
+      const slot = resolveSlotForBreakpoint(rawSlot, template, activeBreakpoint);
+      if (slot.visible === false) {
+        return `.${slotCssClass(instanceId, slot.id)}{display:none}`;
+      }
+      const pxX = (slot.x / 100) * canvasW;
+      const pxY = (slot.y / 100) * canvasH;
+      const pxW = (slot.width / 100) * canvasW;
+      const pxH = (slot.height / 100) * canvasH;
+      // Expose rotation as a custom property too, so the shared hover-bounce
+      // keyframes compose it instead of overwriting the angle on hover (B-7).
+      const rotCss = slot.rotation
+        ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center;--wpsg-slot-rot:${slot.rotation}deg`
+        : '';
+      const opacityCss = slot.opacity !== undefined && slot.opacity !== 1 ? `;opacity:${slot.opacity}` : '';
+      return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}${opacityCss}}`;
     }).join('\n');
-  }, [template.slots, finalCanvasWidth, canvasHeight, instanceId]);
+  }, [template, activeBreakpoint, canvasW, canvasH, instanceId]);
+
+  // ── Slot entrance-animation CSS (P58-E) ───────────────────────────────────
+  // Per-slot keyframes + hidden/revealed states; an IntersectionObserver (below)
+  // adds REVEAL_CLASS when the slot scrolls into view. Composes slot rotation.
+  const slotEntranceCss = useMemo(() => {
+    return template.slots
+      .filter((slot) => slot.entranceAnimation)
+      .map((slot) => buildSlotEntranceCss({
+        className: slotCssClass(instanceId, slot.id),
+        keyframeName: entranceKeyframeName(instanceId, slot.id),
+        anim: slot.entranceAnimation!,
+        rotationDeg: slot.rotation ?? 0,
+      }))
+      .join('\n');
+  }, [template.slots, instanceId]);
+
+  // Reveal animated slots on first viewport entry (one-shot). Falls back to
+  // revealing everything immediately when IntersectionObserver is unavailable.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !slotEntranceCss) return;
+    const targets = Array.from(el.querySelectorAll<HTMLElement>(`.${ENTRANCE_MARKER_CLASS}`));
+    if (targets.length === 0) return;
+    if (typeof IntersectionObserver === 'undefined') {
+      targets.forEach((tEl) => tEl.classList.add(REVEAL_CLASS));
+      return;
+    }
+    const io = new IntersectionObserver((entries, obs) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add(REVEAL_CLASS);
+          obs.unobserve(entry.target);
+        }
+      }
+    }, { threshold: 0.12 });
+    targets.forEach((tEl) => io.observe(tEl));
+    return () => io.disconnect();
+  }, [slotEntranceCss]);
 
   // ── Slot-count mismatch warning ───────────────────────────────────────────
   const slotCount = template.slots.length;
@@ -637,6 +721,7 @@ function LayoutBuilderGalleryInner({
       {/* Hover and slot position styles injected into DOM */}
       <style>{hoverStylesCss}</style>
       <style>{slotPositionCss}</style>
+      {slotEntranceCss && <style>{slotEntranceCss}</style>}
 
       {/* Header */}
       {heading.visible && (
@@ -648,8 +733,8 @@ function LayoutBuilderGalleryInner({
         </Text>
       )}
 
-      {/* Mismatch warning — only relevant in media mode */}
-      {!isListingMode && hasMismatch && (
+      {/* Mismatch warning — admin/editor only (B-8); never shown to public viewers */}
+      {!isListingMode && isAdmin && hasMismatch && (
         <Box
           {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{
@@ -717,30 +802,40 @@ function LayoutBuilderGalleryInner({
       <div
         {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-shell')}
         ref={containerRef}
-        style={{ width: '100%', maxWidth: maxW || undefined, overflowX: 'auto' }}
+        style={{
+          width: '100%',
+          maxWidth: band ? undefined : (maxW || undefined),
+          overflowX: band ? 'hidden' : 'auto',
+        }}
       >
-        {containerWidth > 0 && (
-          <div
-            {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas')}
-            style={{
-              position: 'relative',
-              width: finalCanvasWidth,
-              height: canvasHeight,
-              backgroundColor:
-                (template.backgroundMode ?? 'color') === 'color'
-                  ? (template.backgroundColor || '#000')
-                  : (template.backgroundMode === 'none' ? 'transparent' : undefined),
-              background:
-                (template.backgroundMode ?? 'color') === 'gradient'
-                  ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
-                  : undefined,
-              overflow: 'hidden',
-              borderRadius: toCssOrNumber(settings.imageBorderRadius || 0, settings.imageBorderRadiusUnit ?? 'px'),
-              margin: '0 auto',
-            }}
-            role="img"
-            aria-label={t('layout_canvas_aria', 'Layout gallery: {{name}}', { name: template.name })}
-          >
+        {containerWidth > 0 && (() => {
+          // P58-B: tablet/mobile render the centered device band cropped+scaled inside a
+          // fixed-height window; desktop renders the canvas inline as before.
+          const radiusCss = toCssOrNumber(settings.imageBorderRadius || 0, settings.imageBorderRadiusUnit ?? 'px');
+          const canvasEl = (
+            <div
+              {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas')}
+              style={{
+                position: band ? 'absolute' : 'relative',
+                width: canvasW,
+                height: canvasH,
+                backgroundColor:
+                  (template.backgroundMode ?? 'color') === 'color'
+                    ? (template.backgroundColor || '#000')
+                    : (template.backgroundMode === 'none' ? 'transparent' : undefined),
+                background:
+                  (template.backgroundMode ?? 'color') === 'gradient'
+                    ? buildGradientCss(templateToGradientOpts(template)) ?? 'transparent'
+                    : undefined,
+                overflow: 'hidden',
+                borderRadius: band ? undefined : radiusCss,
+                ...(band
+                  ? { top: 0, left: -band.bandLeftPx * band.scale, transform: `scale(${band.scale})`, transformOrigin: 'top left' }
+                  : { margin: '0 auto' }),
+              }}
+              role="img"
+              aria-label={t('layout_canvas_aria', 'Layout gallery: {{name}}', { name: template.name })}
+            >
             {/* Background image layer (below slots) */}
             {template.backgroundImage && (
               <img
@@ -769,6 +864,7 @@ function LayoutBuilderGalleryInner({
                 if (!item) return null;
                 const listingSlotClass = slotCssClass(instanceId, rawSlot.id);
                 const containerStyle: React.CSSProperties = {
+                  opacity: rawSlot.opacity ?? 1,
                   borderRadius: rawSlot.borderRadius || undefined,
                   border: rawSlot.borderWidth > 0
                     ? `${rawSlot.borderWidth}px solid ${rawSlot.borderColor}`
@@ -791,16 +887,19 @@ function LayoutBuilderGalleryInner({
                 );
               }
 
-              // Media mode — identity-based slot rendering
-              const slot = resolveSlotWithOverrides(rawSlot, slotOverrides);
+              // Media mode — identity-based slot rendering.
+              // P58-B: apply breakpoint geometry override, then campaign override (media/position).
+              const bpSlot = resolveSlotForBreakpoint(rawSlot, template, activeBreakpoint);
+              if (bpSlot.visible === false) return null;
+              const slot = resolveSlotWithOverrides(bpSlot, slotOverrides);
               const assigned = assignments.get(slot.id);
               return (
                 <GallerySlotView
                   key={slot.id}
                   slot={slot}
                   assigned={assigned}
-                  effectiveWidth={finalCanvasWidth}
-                  canvasHeight={canvasHeight}
+                  effectiveWidth={canvasW}
+                  canvasHeight={canvasH}
                   onOpenAt={onOpenAt}
                   mediaIndexMap={mediaIndexMap}
                   glowColor={slot.glowColor || settings.tileGlowColor || '#7c9ef8'}
@@ -818,10 +917,10 @@ function LayoutBuilderGalleryInner({
                 return null;
               }
 
-              const oPxX = (overlay.x / 100) * effectiveWidth;
-              const oPxY = (overlay.y / 100) * canvasHeight;
-              const oPxW = (overlay.width / 100) * effectiveWidth;
-              const oPxH = (overlay.height / 100) * canvasHeight;
+              const oPxX = (overlay.x / 100) * canvasW;
+              const oPxY = (overlay.y / 100) * canvasH;
+              const oPxW = (overlay.width / 100) * canvasW;
+              const oPxH = (overlay.height / 100) * canvasH;
 
               return (
                 <div
@@ -846,8 +945,24 @@ function LayoutBuilderGalleryInner({
                 </div>
               );
             })}
-          </div>
-        )}
+            </div>
+          );
+          return band ? (
+            <div
+              {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-window')}
+              style={{
+                position: 'relative',
+                width: '100%',
+                height: band.windowHeightPx,
+                overflow: 'hidden',
+                borderRadius: radiusCss,
+                margin: '0 auto',
+              }}
+            >
+              {canvasEl}
+            </div>
+          ) : canvasEl;
+        })()}
       </div>
 
       {/* Lightbox — not used in listing mode (card owns click) */}

@@ -366,7 +366,19 @@ export interface LayoutSlot {
   overlayEffect?: SlotOverlayEffect | undefined;
   /** Visual rotation in degrees (0–359). Does not affect drag/resize bounding box. */
   rotation?: number | undefined;
+  /** Render opacity 0–1 (default 1 = fully opaque). Applies in builder preview/edit and gallery. */
+  opacity?: number | undefined;
+  /** Scroll-reveal entrance animation in the rendered gallery (P58-E). Absent = no animation. */
+  entranceAnimation?: SlotEntranceAnimation | undefined;
 }
+
+/** Keys of LayoutSlot that can be overridden per breakpoint (P58-B). */
+export const SLOT_BREAKPOINT_OVERRIDE_KEYS = [
+  'x', 'y', 'width', 'height', 'visible', 'rotation', 'opacity', 'zIndex',
+] as const;
+export type SlotBreakpointOverrideKey = typeof SLOT_BREAKPOINT_OVERRIDE_KEYS[number];
+/** Sparse per-breakpoint overrides for a single slot (P58-B). */
+export type SlotBreakpointOverrides = Partial<Pick<LayoutSlot, SlotBreakpointOverrideKey>>;
 
 /** Sensible defaults for a new layout slot. */
 export const DEFAULT_LAYOUT_SLOT: LayoutSlot = {
@@ -532,6 +544,20 @@ export interface SlotTiltEffect {
   resetSpeed: number;
 }
 
+/** Entrance (scroll-reveal) animation for a slot in the rendered gallery (P58-E). */
+export type SlotEntranceType = 'fade' | 'slide' | 'zoom';
+export type SlotEntranceDirection = 'up' | 'down' | 'left' | 'right';
+export interface SlotEntranceAnimation {
+  /** Animation variant. */
+  type: SlotEntranceType;
+  /** Slide direction (only used when type === 'slide'). Default 'up'. */
+  direction?: SlotEntranceDirection | undefined;
+  /** Duration in ms (default 600). */
+  durationMs?: number | undefined;
+  /** Delay before the animation starts, in ms — for staggering (default 0). */
+  delayMs?: number | undefined;
+}
+
 /** CSS mix-blend-mode for the slot element. */
 export type SlotBlendMode =
   | 'normal'
@@ -633,6 +659,13 @@ export interface LayoutTemplate {
   groups?: LayoutGroup[] | undefined;
   /** Persistent guide lines saved with the template (P57-E). */
   guides?: PersistentGuide[] | undefined;
+  /**
+   * Per-breakpoint slot overrides (P58-B). Each key is a ResponsiveBreakpoint;
+   * value maps slotId → sparse overrides (position, size, visibility, appearance).
+   * Desktop is always the base; tablet/mobile entries are sparse overrides on top.
+   * Absent = no overrides (desktop-only layout).
+   */
+  breakpointOverrides?: Partial<Record<ResponsiveBreakpoint, Record<string, SlotBreakpointOverrides>>> | undefined;
   /** ISO 8601 created timestamp */
   createdAt: string;
   /** ISO 8601 last-updated timestamp */

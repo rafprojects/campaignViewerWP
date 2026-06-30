@@ -56,6 +56,7 @@ export interface LayoutBuilderMenuBarProps {
   onDuplicate: () => void;
   onDelete: () => void;
   onOpenHistory: () => void;
+  onOpenGridGenerator: () => void;
   // file actions
   onExport: () => void;
   onImport: () => void;
@@ -119,7 +120,7 @@ function CheckItem({
 
 export function LayoutBuilderMenuBar({
   canUndo, canRedo, hasSelection,
-  onUndo, onRedo, onDuplicate, onDelete, onOpenHistory,
+  onUndo, onRedo, onDuplicate, onDelete, onOpenHistory, onOpenGridGenerator,
   onExport, onImport, onSave, onClose,
   showGrid, setShowGrid,
   showRulers, setShowRulers,
@@ -231,6 +232,10 @@ export function LayoutBuilderMenuBar({
         </Menu.Item>
         <Menu.Item leftSection={<IconTrash size={14} />} onClick={onDelete} disabled={!hasSelection} color="red">
           Delete
+        </Menu.Item>
+        <Menu.Divider />
+        <Menu.Item leftSection={<IconGrid4x4 size={14} />} onClick={onOpenGridGenerator}>
+          Generate grid…
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconHistory size={14} />} onClick={onOpenHistory}>

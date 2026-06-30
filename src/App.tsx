@@ -15,6 +15,7 @@ import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
+import { useLayoutTemplates } from './services/layoutTemplateQuery';
 import { getWpNonce, setWpNonce, WP_NONCE_PATH } from './services/wpNonce';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
@@ -290,6 +291,9 @@ function AppContent({
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 
   const editModal = useUnifiedCampaignModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify, ...(spaceId !== undefined && { spaceId }) });
+  // B-6: feed layout templates to the in-campaign edit modal so its layout-template
+  // picker appears here too (not just in the Admin Panel edit path).
+  const { data: layoutTemplates } = useLayoutTemplates(apiClient, isAdmin);
   const archiveModal = useArchiveModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
   const externalMediaModal = useExternalMediaModal({ apiClient, isAdmin, onMutate: campaignsMutator, onNotify: handleAdminNotify });
 
@@ -452,7 +456,7 @@ function AppContent({
           />
         )}
 
-        <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} />
+        <UnifiedCampaignModal modal={editModal} galleryBehaviorSettings={resolvedSettings} layoutTemplates={layoutTemplates ?? []} />
 
         <ArchiveCampaignModal
           opened={!!archiveModal.archiveModalCampaign}

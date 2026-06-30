@@ -202,30 +202,17 @@ describe('GalleryAdapterSettingsSection – P56-E capability badges', () => {
   });
 });
 
-describe('GalleryAdapterSettingsSection – P56-C mobile explanation', () => {
-  it('shows mobile-restriction note for the mobile breakpoint row', () => {
+describe('GalleryAdapterSettingsSection – mobile adapter availability (P58-B fix-up)', () => {
+  it('no longer shows the mobile-restriction note now that all adapters support mobile', () => {
     render(
       <GalleryAdapterSettingsSection
         settings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
         updateSetting={vi.fn()}
       />,
     );
-    // The layout-builder adapter declares supportsMobile: false so mobile rows
-    // will have disabled options, triggering the explanation note.
-    expect(screen.getByText(/some adapters are unavailable on mobile/i)).toBeInTheDocument();
-  });
-
-  it('does not show the mobile note for desktop or tablet rows', () => {
-    render(
-      <GalleryAdapterSettingsSection
-        settings={DEFAULT_GALLERY_BEHAVIOR_SETTINGS}
-        updateSetting={vi.fn()}
-      />,
-    );
-    // Only one note should appear (for the mobile row, not repeated for desktop/tablet)
-    const notes = screen.queryAllByText(/some adapters are unavailable on mobile/i);
-    // Per-type mode has image + video selects per breakpoint — mobile has ONE note per section
-    expect(notes.length).toBeGreaterThan(0);
-    expect(notes.length).toBeLessThanOrEqual(2); // at most one per section (unified or per-type)
+    // Layout Builder used to declare supportsMobile: false; that restriction was
+    // removed in the P58-B fix-up, so no adapter options are disabled on mobile
+    // and the explanation note no longer renders.
+    expect(screen.queryByText(/some adapters are unavailable on mobile/i)).not.toBeInTheDocument();
   });
 });

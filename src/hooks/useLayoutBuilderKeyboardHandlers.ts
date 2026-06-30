@@ -51,6 +51,21 @@ export function useLayoutBuilderKeyboardHandlers({
         handleDuplicateSelected();
         e.preventDefault();
       }
+      // Clipboard (P58-A): copy/paste through an in-memory app clipboard.
+      if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !e.shiftKey && !builder.isPreview) {
+        const n = builder.copySlots([...builder.selectedSlotIds]);
+        if (n > 0) announce(`Copied ${n} slot${n !== 1 ? 's' : ''}`);
+        e.preventDefault();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v' && !e.shiftKey && !builder.isPreview) {
+        const pastedIds = builder.pasteSlots();
+        if (pastedIds.length > 0) {
+          setSelectedOverlayId(null);
+          setIsBackgroundSelected(false);
+          announce(`Pasted ${pastedIds.length} slot${pastedIds.length !== 1 ? 's' : ''}`);
+        }
+        e.preventDefault();
+      }
       // Group / wrap-in-group / select-in-group (P30-G)
       if ((e.metaKey || e.ctrlKey) && e.key === 'g' && !e.shiftKey) {
         const ids = [...builder.selectedSlotIds];
@@ -162,8 +177,9 @@ export function useLayoutBuilderKeyboardHandlers({
         }
       }
 
-      // Arrow keys: nudge selected slots
-      const step = e.shiftKey ? 0.1 : 1;
+      // Arrow keys: nudge selected slots.
+      // P58-A: Alt = fine (0.1%), Shift = large (10%), plain = 1% (Figma/Sketch convention).
+      const step = e.altKey ? 0.1 : e.shiftKey ? 10 : 1;
       if (ids.length > 0) {
         if (e.key === 'ArrowLeft') {
           builder.nudgeSlots(ids, -step, 0);

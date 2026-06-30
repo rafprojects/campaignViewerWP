@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState, type ReactElement } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -64,6 +64,24 @@ function getCampaignBreakpointAdapterId(
   scope: 'unified' | 'image' | 'video',
 ): string | null {
   return galleryOverrides?.breakpoints?.[breakpoint]?.[scope]?.adapterId ?? null;
+}
+
+/**
+ * B-6: true when any configured campaign adapter (across breakpoints/scopes) is
+ * the Layout Builder. Used to contextually surface the layout-template picker.
+ */
+function campaignUsesLayoutBuilder(
+  galleryOverrides: UnifiedCampaignModalHandle['formState']['galleryOverrides'],
+): boolean {
+  const breakpoints = galleryOverrides?.breakpoints;
+  if (!breakpoints) return false;
+  for (const scopeConfig of Object.values(breakpoints)) {
+    if (!scopeConfig) continue;
+    for (const scope of Object.values(scopeConfig)) {
+      if (scope?.adapterId === 'layout-builder') return true;
+    }
+  }
+  return false;
 }
 
 function buildCategorySelectData(items: CampaignCategoryEntry[]): { value: string; label: string }[] {
@@ -267,7 +285,9 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   onOpenResponsiveConfig,
   layoutTemplates,
   onEditLayout,
-}) => (
+}) => {
+  const usesLayoutBuilder = campaignUsesLayoutBuilder(formState.galleryOverrides);
+  return (
   <Tabs.Panel value="settings" pt="md">
     <Stack gap="md">
       <Group grow wrap="wrap" gap="sm">
@@ -460,36 +480,52 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           </Stack>
         </>
       )}
-      {layoutTemplates.length > 0 && (
-        <Group grow wrap="wrap" gap="sm" align="flex-end">
-          <Select
-            label="Layout Template"
-            description="Assign a layout template to use the Layout Builder adapter"
-            placeholder="None (use default adapter)"
-            clearable
-            data={layoutTemplates.map((lt) => ({
-              value: lt.id,
-              label: `${lt.name} (${lt.slots.length} slots)`,
-            }))}
-            value={formState.layoutTemplateId || null}
-            onChange={(v) => updateForm({ ...formState, layoutTemplateId: v ?? '' })}
-          />
-          {formState.layoutTemplateId && onEditLayout && (
-            <Button
-              variant="light"
-              size="sm"
-              onClick={() => onEditLayout(formState.layoutTemplateId)}
-              style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
-            >
-              Edit Layout
-            </Button>
+      {/* B-6: contextual layout-template picker — surfaced/emphasized when the
+          Layout Builder adapter is the chosen gallery adapter for this campaign. */}
+      {(layoutTemplates.length > 0 || usesLayoutBuilder) && (
+        <Box>
+          {layoutTemplates.length > 0 && (
+            <Group grow wrap="wrap" gap="sm" align="flex-end">
+              <Select
+                label="Layout Template"
+                description={usesLayoutBuilder
+                  ? 'Layout Builder is your selected gallery adapter — choose the template it renders.'
+                  : 'Assign a layout template to use the Layout Builder adapter'}
+                placeholder="None (use default adapter)"
+                clearable
+                data={layoutTemplates.map((lt) => ({
+                  value: lt.id,
+                  label: `${lt.name} (${lt.slots.length} slots)`,
+                }))}
+                value={formState.layoutTemplateId || null}
+                onChange={(v) => updateForm({ ...formState, layoutTemplateId: v ?? '' })}
+              />
+              {formState.layoutTemplateId && onEditLayout && (
+                <Button
+                  variant="light"
+                  size="sm"
+                  onClick={() => onEditLayout(formState.layoutTemplateId)}
+                  style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
+                >
+                  Edit Layout
+                </Button>
+              )}
+            </Group>
           )}
-        </Group>
+          {usesLayoutBuilder && !formState.layoutTemplateId && (
+            <Text size="xs" c="orange" mt={layoutTemplates.length > 0 ? 4 : 0}>
+              {layoutTemplates.length > 0
+                ? 'Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter.'
+                : 'Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first.'}
+            </Text>
+          )}
+        </Box>
       )}
 
     </Stack>
   </Tabs.Panel>
-);
+  );
+};
 
 UnifiedCampaignSettingsPanel.displayName = 'UnifiedCampaignSettingsPanel';
 
@@ -503,7 +539,13 @@ export function UnifiedCampaignModal({
   tagItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
-  const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
+  const { activeCampaign, onEditGalleryConfig, setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
+  // Live mirrors of the context so the edit-modal effect can snapshot whatever was
+  // active *before* it took over, and restore it on close instead of nulling.
+  const prevActiveCampaignRef = useRef(activeCampaign);
+  prevActiveCampaignRef.current = activeCampaign;
+  const prevOnEditGalleryConfigRef = useRef(onEditGalleryConfig);
+  prevOnEditGalleryConfigRef.current = onEditGalleryConfig;
   const {
     opened, mode, formState, updateForm, isSaving,
     editingCampaign,
@@ -524,16 +566,22 @@ export function UnifiedCampaignModal({
   }, []);
 
   useEffect(() => {
+    // Only take over the campaign context while actively editing an existing
+    // campaign. When not editing, leave the context untouched so a campaign the
+    // viewer set (e.g. when editing from within an open campaign) is preserved.
     if (!opened || mode !== 'edit' || !editingCampaign) {
-      setActiveCampaign(null);
-      setOnEditGalleryConfig(undefined);
       return;
     }
+    // Snapshot the pre-existing context (captured at open) and restore it on close,
+    // rather than nulling it — otherwise closing the edit modal while a campaign is
+    // still being viewed wipes the campaign-scoped AuthBar menu items.
+    const prevCampaign = prevActiveCampaignRef.current;
+    const prevOnEditGalleryConfig = prevOnEditGalleryConfigRef.current;
     setActiveCampaign(editingCampaign);
     setOnEditGalleryConfig(openGalleryConfigFromAuthBar);
     return () => {
-      setActiveCampaign(null);
-      setOnEditGalleryConfig(undefined);
+      setActiveCampaign(prevCampaign);
+      setOnEditGalleryConfig(prevOnEditGalleryConfig);
     };
   }, [opened, mode, editingCampaign, openGalleryConfigFromAuthBar, setActiveCampaign, setOnEditGalleryConfig]);
 

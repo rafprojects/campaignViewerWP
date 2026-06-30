@@ -145,8 +145,8 @@ describe('resolveAdapterId – with defaults', () => {
 
 // ── Layout-builder mobile guard ──────────────────────────────
 
-describe('resolveAdapterId – layout-builder mobile fallback', () => {
-  it('falls back to another configured nested scope adapter when layout-builder is unsupported on mobile', () => {
+describe('resolveAdapterId – layout-builder mobile support (P58-B fix-up)', () => {
+  it('uses the explicitly-configured layout-builder adapter on mobile', () => {
     const s = makeSettings({
       galleryConfig: {
         mode: 'per-type',
@@ -166,10 +166,11 @@ describe('resolveAdapterId – layout-builder mobile fallback', () => {
 
     expect(resolveAdapterId(s, 'image', 'desktop')).toBe('masonry');
     expect(resolveAdapterId(s, 'image', 'tablet')).toBe('layout-builder');
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('masonry');
+    // Previously fell back to masonry; LB is now responsive and renders at mobile.
+    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('layout-builder');
   });
 
-  it('falls back to classic when no supported nested image adapter exists on mobile', () => {
+  it('keeps layout-builder across all breakpoints when configured everywhere', () => {
     const s = makeSettings({
       galleryConfig: {
         mode: 'per-type',
@@ -187,7 +188,8 @@ describe('resolveAdapterId – layout-builder mobile fallback', () => {
       },
     });
 
-    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('classic');
+    // Previously fell back to 'classic' on mobile; now LB participates everywhere.
+    expect(resolveAdapterId(s, 'image', 'mobile')).toBe('layout-builder');
   });
 });
 
@@ -267,7 +269,7 @@ describe('resolveUnifiedAdapterId', () => {
     })).toBe('diamond');
   });
 
-  it('falls back to classic when unified nested adapter is unsupported on mobile', () => {
+  it('keeps the unified layout-builder adapter on mobile (P58-B fix-up)', () => {
     const s = makeSettings({
       galleryConfig: {
         mode: 'unified',
@@ -291,7 +293,8 @@ describe('resolveUnifiedAdapterId', () => {
       },
     });
 
-    expect(resolveUnifiedAdapterId(s, 'mobile')).toBe('classic');
+    // Previously fell back to 'classic'; LB is now responsive and supported on mobile.
+    expect(resolveUnifiedAdapterId(s, 'mobile')).toBe('layout-builder');
   });
 });
 
