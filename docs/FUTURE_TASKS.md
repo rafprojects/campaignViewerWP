@@ -135,7 +135,19 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Code Quality & Refactoring
 
-*No tasks here yet.*
+### Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs
+
+**Origin:** Surfaced during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D planning (2026-06-30), per user direction — P59-D itself stays scoped to `TypographyEditor`'s 8 CSS-unit fields; the app-wide rollout is explicitly deferred.
+
+**Context:** P59-D extracts `UnitScrubField` (`src/components/Common/UnitScrubField.tsx`) — a shared `NumberInput` + unit `Select` + drag-to-scrub control — and migrates `DimensionInput` (`src/components/Settings/DimensionInput.tsx`) and the new `CssValueInput` (`src/components/Common/CssValueInput.tsx`, used by `TypographyEditor`) onto it as thin, contract-preserving adapters. That leaves at least one known ad hoc numeric input outside the new pattern, and likely others not yet inventoried.
+
+**What to implement:**
+- Migrate the bespoke rotation-degree scrub in `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx:567-613` onto a `UnitScrubField`-based adapter. This is a different value domain (plain degrees, not a CSS unit) so it needs its own thin adapter — not `CssValueInput`, which is CSS-string-shaped.
+- Audit Settings and LayoutBuilder property panels (`src/components/Settings/`, `src/components/Admin/LayoutBuilder/`) for any other free-text CSS-value inputs or raw `NumberInput`s without unit safety that predate P59-D, and migrate the good candidates onto `DimensionInput`/`CssValueInput`/`UnitScrubField` for visual consistency and scrub support.
+
+**Files:** `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` (rotation scrub), `src/components/Common/UnitScrubField.tsx`, `src/components/Common/CssValueInput.tsx`, `src/components/Settings/DimensionInput.tsx`.
+
+**Effort:** Small-Medium (rotation migration is contained; the audit scope depends on what the sweep finds) | **Impact:** Low-Medium — consistency and scrub-everywhere polish, not a functional gap.
 
 ---
 
@@ -364,3 +376,5 @@ When promoting future tasks to an active phase:
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
 
 *Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
+
+*Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
