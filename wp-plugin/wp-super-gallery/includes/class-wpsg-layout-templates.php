@@ -26,7 +26,7 @@ class WPSG_Layout_Templates {
      *
      * v2 (P58-B): per-breakpoint slot overrides (`breakpointOverrides`).
      */
-    const SCHEMA_VERSION = 2;
+    const SCHEMA_VERSION = 3;
 
     /**
      * Maximum serialized size (bytes) before emitting an admin notice.
@@ -315,6 +315,12 @@ class WPSG_Layout_Templates {
             }
             unset( $overlay );
         }
+        if ( ! empty( $clone['texts'] ) && is_array( $clone['texts'] ) ) {
+            foreach ( $clone['texts'] as &$text ) {
+                $text['id'] = wp_generate_uuid4();
+            }
+            unset( $text );
+        }
 
         return self::create( $clone );
     }
@@ -515,6 +521,8 @@ class WPSG_Layout_Templates {
                 : 1,
             'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
+            // ── First-class text layers (P59) ──
+            'texts'             => self::sanitize_texts( $data['texts'] ?? [] ),
             'guides'            => self::sanitize_guides( $data['guides'] ?? [] ),
             // ── Nested groups (P30-G) ──
             'groups'            => self::sanitize_groups( $data['groups'] ?? [] ),
@@ -677,6 +685,92 @@ class WPSG_Layout_Templates {
         }, $overlays ), static function ( $o ) {
             return is_array( $o );
         } ) );
+    }
+
+    /**
+     * Sanitize an array of first-class text layers (P59).
+     *
+     * @param  mixed $texts Raw text-layer data.
+     * @return array
+     */
+    private static function sanitize_texts( $texts ): array {
+        if ( ! is_array( $texts ) ) {
+            return [];
+        }
+
+        $valid_tags   = [ 'heading', 'subheading', 'paragraph', 'caption' ];
+        $valid_aligns = [ 'left', 'center', 'right' ];
+
+        return array_values( array_filter( array_map( function ( $t ) use ( $valid_tags, $valid_aligns ) {
+            if ( ! is_array( $t ) ) {
+                return null;
+            }
+            return [
+                'id'          => sanitize_text_field( $t['id'] ?? wp_generate_uuid4() ),
+                'x'           => self::clamp_pct( $t['x'] ?? 0 ),
+                'y'           => self::clamp_pct( $t['y'] ?? 0 ),
+                'width'       => self::clamp_pct( $t['width'] ?? 40 ),
+                'height'      => self::clamp_pct( $t['height'] ?? 12 ),
+                'zIndex'      => intval( $t['zIndex'] ?? 999 ),
+                'opacity'     => max( 0, min( 1, floatval( $t['opacity'] ?? 1 ) ) ),
+                // Plain user text — rendered as escaped React text content on the
+                // frontend; sanitize_textarea_field strips tags but keeps newlines.
+                'content'     => sanitize_textarea_field( (string) ( $t['content'] ?? '' ) ),
+                'semanticTag' => in_array( $t['semanticTag'] ?? '', $valid_tags, true ) ? $t['semanticTag'] : 'heading',
+                'textAlign'   => in_array( $t['textAlign'] ?? '', $valid_aligns, true ) ? $t['textAlign'] : 'left',
+                'typography'  => self::sanitize_text_typography( $t['typography'] ?? [] ),
+                // ── Layer system (P16 parity) ──
+                'name'        => isset( $t['name'] ) && is_string( $t['name'] ) ? sanitize_text_field( $t['name'] ) : null,
+                'visible'     => isset( $t['visible'] ) ? (bool) $t['visible'] : true,
+                'locked'      => isset( $t['locked'] ) ? (bool) $t['locked'] : false,
+                // Panel rotation is -180..180; clamp to that range so negative
+                // rotations are not clipped to 0 on save.
+                'rotation'    => isset( $t['rotation'] ) ? max( -180, min( 180, intval( $t['rotation'] ) ) ) : null,
+            ];
+        }, $texts ), static function ( $t ) {
+            return is_array( $t );
+        } ) );
+    }
+
+    /**
+     * Sanitize a single text-layer typography override (the TypographyOverride
+     * shape shared with the settings typography system).
+     *
+     * @param  mixed $typo Raw typography object.
+     * @return array
+     */
+    private static function sanitize_text_typography( $typo ): array {
+        if ( ! is_array( $typo ) ) {
+            return [];
+        }
+
+        $allowed_props = [
+            'fontFamily', 'fontFallback1', 'fontFallback2',
+            'fontSize', 'fontWeight', 'fontStyle',
+            'textTransform', 'textDecoration', 'lineHeight',
+            'letterSpacing', 'wordSpacing', 'color',
+            'textStrokeWidth', 'textStrokeColor',
+            'textShadowOffsetX', 'textShadowOffsetY', 'textShadowBlur', 'textShadowColor',
+            'textGlowColor', 'textGlowBlur',
+        ];
+        $color_props = [ 'color', 'textStrokeColor', 'textShadowColor', 'textGlowColor' ];
+
+        $clean = [];
+        foreach ( $typo as $prop => $val ) {
+            if ( ! in_array( $prop, $allowed_props, true ) ) {
+                continue;
+            }
+            if ( 'fontWeight' === $prop ) {
+                $clean[ $prop ] = max( 100, min( 900, intval( $val ) ) );
+            } elseif ( 'lineHeight' === $prop ) {
+                $clean[ $prop ] = max( 0.5, min( 5.0, floatval( $val ) ) );
+            } elseif ( in_array( $prop, $color_props, true ) ) {
+                $clean[ $prop ] = self::sanitize_css_value( (string) $val, 'color' );
+            } else {
+                $clean[ $prop ] = sanitize_text_field( (string) $val );
+            }
+        }
+        return $clean;
     }
 
     /**
@@ -1016,6 +1110,15 @@ class WPSG_Layout_Templates {
             $template['schemaVersion'] = 2;
             if ( ! isset( $template['breakpointOverrides'] ) || ! is_array( $template['breakpointOverrides'] ) ) {
                 $template['breakpointOverrides'] = [];
+            }
+        }
+
+        // v2 → v3 (P59): first-class text layers. Older templates simply have no
+        // text layers; default the field to an empty array and bump the label.
+        if ( $version < 3 ) {
+            $template['schemaVersion'] = 3;
+            if ( ! isset( $template['texts'] ) || ! is_array( $template['texts'] ) ) {
+                $template['texts'] = [];
             }
         }
 

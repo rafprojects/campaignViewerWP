@@ -46,10 +46,80 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertIsArray( $result );
         $this->assertNotEmpty( $result['id'] );
         $this->assertEquals( 'Test Layout', $result['name'] );
-        $this->assertEquals( 2, $result['schemaVersion'] );
+        $this->assertEquals( 3, $result['schemaVersion'] );
         $this->assertCount( 1, $result['slots'] );
         $this->assertNotEmpty( $result['createdAt'] );
         $this->assertNotEmpty( $result['updatedAt'] );
+    }
+
+    // ── Text layers (P59) ───────────────────────────────────
+
+    public function test_create_persists_text_layers() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [
+                [
+                    'id'          => 'text-1',
+                    'x'           => 10,
+                    'y'           => 20,
+                    'width'       => 40,
+                    'height'      => 12,
+                    'zIndex'      => 5,
+                    'opacity'     => 0.9,
+                    'content'     => 'Summer Sale',
+                    'semanticTag' => 'heading',
+                    'textAlign'   => 'center',
+                    'typography'  => [ 'fontSize' => '28px', 'fontWeight' => 700, 'color' => '#ffffff' ],
+                    'name'        => 'Headline',
+                    'rotation'    => -15,
+                ],
+            ],
+        ] ) );
+
+        $this->assertIsArray( $result );
+        $this->assertArrayHasKey( 'texts', $result, 'texts must survive sanitization (P59 save bug)' );
+        $this->assertCount( 1, $result['texts'] );
+
+        $text = $result['texts'][0];
+        $this->assertEquals( 'text-1', $text['id'] );
+        $this->assertEquals( 'Summer Sale', $text['content'] );
+        $this->assertEquals( 'heading', $text['semanticTag'] );
+        $this->assertEquals( 'center', $text['textAlign'] );
+        $this->assertEquals( 10, $text['x'] );
+        $this->assertEquals( -15, $text['rotation'], 'Negative rotation must be preserved, not clamped to 0' );
+        $this->assertEquals( '28px', $text['typography']['fontSize'] );
+        $this->assertEquals( 700, $text['typography']['fontWeight'] );
+    }
+
+    public function test_create_defaults_texts_to_empty_array() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data() );
+        $this->assertArrayHasKey( 'texts', $result );
+        $this->assertIsArray( $result['texts'] );
+        $this->assertCount( 0, $result['texts'] );
+    }
+
+    public function test_text_layer_invalid_role_and_align_fall_back() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'X', 'semanticTag' => 'bogus', 'textAlign' => 'sideways' ] ],
+        ] ) );
+        $this->assertEquals( 'heading', $result['texts'][0]['semanticTag'] );
+        $this->assertEquals( 'left', $result['texts'][0]['textAlign'] );
+    }
+
+    public function test_text_layer_strips_html_from_content() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'Hi <script>alert(1)</script>' ] ],
+        ] ) );
+        $this->assertStringNotContainsString( '<script>', $result['texts'][0]['content'] );
+    }
+
+    public function test_text_layer_typography_drops_unknown_props() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'X', 'typography' => [ 'fontSize' => '20px', 'evil' => 'x', 'onclick' => 'y' ] ] ],
+        ] ) );
+        $typo = $result['texts'][0]['typography'];
+        $this->assertArrayHasKey( 'fontSize', $typo );
+        $this->assertArrayNotHasKey( 'evil', $typo );
+        $this->assertArrayNotHasKey( 'onclick', $typo );
     }
 
     public function test_create_assigns_uuid_id() {
@@ -409,9 +479,11 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
         $migrated = WPSG_Layout_Templates::migrate_template( $old );
 
-        // v0 → v2: migrates all the way to the current schema version.
-        $this->assertEquals( 2, $migrated['schemaVersion'] );
+        // v0 → v3: migrates all the way to the current schema version.
+        $this->assertEquals( 3, $migrated['schemaVersion'] );
         $this->assertArrayHasKey( 'breakpointOverrides', $migrated );
+        $this->assertArrayHasKey( 'texts', $migrated );
+        $this->assertSame( [], $migrated['texts'] );
     }
 
     public function test_migrate_template_v1_to_v2_adds_breakpoint_overrides() {
@@ -424,18 +496,36 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
         $migrated = WPSG_Layout_Templates::migrate_template( $v1 );
 
-        $this->assertEquals( 2, $migrated['schemaVersion'] );
+        $this->assertEquals( 3, $migrated['schemaVersion'] );
         $this->assertArrayHasKey( 'breakpointOverrides', $migrated );
         $this->assertSame( [], $migrated['breakpointOverrides'] );
+        $this->assertArrayHasKey( 'texts', $migrated );
     }
 
-    public function test_migrate_template_v2_is_noop() {
-        $current = [
-            'name'                => 'Current Template',
+    public function test_migrate_template_v2_to_v3_adds_texts() {
+        $v2 = [
+            'name'                => 'V2 Template',
             'canvasAspectRatio'   => 1.5,
             'schemaVersion'       => 2,
             'slots'               => [],
             'breakpointOverrides' => [],
+        ];
+
+        $migrated = WPSG_Layout_Templates::migrate_template( $v2 );
+
+        $this->assertEquals( 3, $migrated['schemaVersion'] );
+        $this->assertArrayHasKey( 'texts', $migrated );
+        $this->assertSame( [], $migrated['texts'] );
+    }
+
+    public function test_migrate_template_v3_is_noop() {
+        $current = [
+            'name'                => 'Current Template',
+            'canvasAspectRatio'   => 1.5,
+            'schemaVersion'       => 3,
+            'slots'               => [],
+            'breakpointOverrides' => [],
+            'texts'               => [],
         ];
 
         $migrated = WPSG_Layout_Templates::migrate_template( $current );
