@@ -1,14 +1,14 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** Planned
+**Status:** In progress — P59-A landed
 **Created:** 2026-06-26
-**Last updated:** 2026-06-26
+**Last updated:** 2026-06-30
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P59-A | `text` layer type — schema, state CRUD, persistence | Planned | Medium |
+| P59-A | `text` layer type — schema, state CRUD, persistence | ✅ Done | Medium |
 | P59-B | Text properties panel + on-canvas inline editing | Planned | Medium |
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | Planned | Medium |
 
@@ -62,6 +62,15 @@ The template schema models media slots, graphic overlays, and masks — there is
 ### Validation
 
 - `npm run test` for the new CRUD actions, default shape, and back-compat resolution.
+
+### Implementation notes (P59-A — landed 2026-06-30)
+
+- **Data model.** Added `LayoutTextLayer` (+ `LayoutTextSemanticTag`, `LayoutTextAlign`, `DEFAULT_TEXT_LAYER`) in `src/types/index.ts`, mirroring `LayoutGraphicLayer` for the shared geometry/layer fields and adding `content`, `semanticTag`, and typography (`fontFamily`/`fontSize`/`fontWeight`/`lineHeight`/`letterSpacing`/`color`/`textAlign`). New top-level `template.texts?: LayoutTextLayer[]`, parallel to `slots`/`overlays`.
+- **i18n decision (Decision C → resolved).** `content` is stored as a **plain string** — no gettext-key indirection. The i18n catalog here is build-time/static (i18next + `window.__WPSG_I18N__`), so user-authored runtime text cannot be harvested into a `.pot`; the codebase already renders other user content (media titles) directly. Rendering text as real semantic DOM in P59-C is what makes it translatable (WPML/Polylang) and screen-reader reachable — the real win over text baked into an image. The Phase 60 harvest will cover only the **panel's developer-authored labels** introduced in P59-B.
+- **Schema version.** Bumped `schemaVersion` 2 → 3. `migrateTemplate()` is now cumulative (v1→v2 `breakpointOverrides`, v2→v3 `texts: []`). Note: `migrateTemplate` is invoked only by tests today; production load paths rely on defensive defaults — so every consumer reads `texts ?? []` and writers lazily run `if (!d.texts) d.texts = []`.
+- **State.** New `useLayoutBuilderText` sub-hook (mirrors `useLayoutBuilderOverlays`): `addText`/`removeText`/`updateText`/`moveText`/`resizeText` + `renameText`/`toggleTextVisible`/`toggleTextLocked`, all through the shared Immer `mutate()` so they inherit undo/redo, dirty tracking, and autosave. Wired into `useLayoutBuilderState`; z-order ops (`bringToFront`/`sendToBack`/`bringForward`/`sendBackward`) extended to include text layers.
+- **Deferred to P59-B.** The layers-panel projection (`buildLayerList`/`computeReorderedZIndices` + a `text` `LayerKind`) is UI-layer work and rides with the panel/canvas track, not the data model.
+- **Tests.** `useLayoutBuilderText.test.ts` (CRUD, z-order, undo, legacy pre-v3 back-compat, draft-autosave persistence) + updated `migrateTemplate`/`createEmptyTemplate` tests for v3. Full `vitest run` green (118 tests in the two hook files); `tsc -b` clean.
 
 ## Track P59-B - Text properties panel + on-canvas inline editing
 

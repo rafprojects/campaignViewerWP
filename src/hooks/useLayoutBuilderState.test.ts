@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLayoutBuilderState, createEmptyTemplate, migrateTemplate } from './useLayoutBuilderState';
 import type { LayoutTemplate } from '@/types';
+import { DEFAULT_TEXT_LAYER } from '@/types';
 
 function templateWithSlots(count: number): LayoutTemplate {
   const t = createEmptyTemplate('test');
@@ -261,10 +262,11 @@ describe('createEmptyTemplate', () => {
   it('returns a template with sensible defaults', () => {
     const t = createEmptyTemplate();
     expect(t.name).toBe('Untitled Layout');
-    expect(t.schemaVersion).toBe(2);
+    expect(t.schemaVersion).toBe(3);
     expect(t.canvasAspectRatio).toBeCloseTo(16 / 9);
     expect(t.slots).toEqual([]);
     expect(t.overlays).toEqual([]);
+    expect(t.texts).toEqual([]);
     expect(t.id).toBe('');
     expect(t.backgroundColor).toBe('#1a1a2e');
     expect(t.tags).toEqual([]);
@@ -1119,22 +1121,43 @@ describe('useLayoutBuilderState — breakpoint overrides (P58-B)', () => {
   });
 });
 
-describe('migrateTemplate (P58-B)', () => {
-  it('upgrades a schemaVersion 1 template to version 2', () => {
-    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
-    const migrated = migrateTemplate(old);
-    expect(migrated.schemaVersion).toBe(2);
+describe('migrateTemplate (P58-B, P59-A)', () => {
+  /** Build a genuine vN template by stripping fields a later version would add. */
+  function vTemplate(version: number): LayoutTemplate {
+    const t: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: version };
+    if (version < 3) delete (t as { texts?: unknown }).texts;
+    if (version < 2) delete (t as { breakpointOverrides?: unknown }).breakpointOverrides;
+    return t;
+  }
+
+  it('carries a schemaVersion 1 template all the way to the current version (3)', () => {
+    const migrated = migrateTemplate(vTemplate(1));
+    expect(migrated.schemaVersion).toBe(3);
   });
 
-  it('initialises breakpointOverrides to an empty object on migration', () => {
-    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
-    const migrated = migrateTemplate(old);
+  it('initialises breakpointOverrides to an empty object when migrating from v1', () => {
+    const migrated = migrateTemplate(vTemplate(1));
     expect(migrated.breakpointOverrides).toEqual({});
   });
 
-  it('does not modify a template that is already at version 2', () => {
+  it('initialises texts to an empty array when migrating a v2 template to v3', () => {
+    const old = vTemplate(2);
+    expect(old.texts).toBeUndefined();
+    const migrated = migrateTemplate(old);
+    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.texts).toEqual([]);
+  });
+
+  it('preserves existing text layers during migration', () => {
+    const old: LayoutTemplate = { ...vTemplate(2), texts: [{ ...DEFAULT_TEXT_LAYER, id: 'tx1', content: 'Hi' }] };
+    const migrated = migrateTemplate(old);
+    expect(migrated.texts).toHaveLength(1);
+    expect(migrated.texts![0]!.content).toBe('Hi');
+  });
+
+  it('does not modify a template that is already at the current version (3)', () => {
     const t = createEmptyTemplate();
-    expect(t.schemaVersion).toBe(2);
+    expect(t.schemaVersion).toBe(3);
     const result = migrateTemplate(t);
     expect(result).toBe(t);
   });

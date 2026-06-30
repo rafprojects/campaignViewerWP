@@ -17,6 +17,7 @@ export function useLayoutBuilderZIndex({
         const maxZ = Math.max(
           ...d.slots.map((s) => s.zIndex),
           ...d.overlays.map((o) => o.zIndex),
+          ...(d.texts ?? []).map((t) => t.zIndex),
           0,
         );
         let nextZ = maxZ + 1;
@@ -25,6 +26,9 @@ export function useLayoutBuilderZIndex({
         }
         for (const overlay of d.overlays) {
           if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
+        }
+        for (const text of d.texts ?? []) {
+          if (idSet.has(text.id)) text.zIndex = nextZ++;
         }
       }, 'Bring to front'),
     [mutate],
@@ -37,6 +41,7 @@ export function useLayoutBuilderZIndex({
         const minZ = Math.min(
           ...d.slots.map((s) => s.zIndex),
           ...d.overlays.map((o) => o.zIndex),
+          ...(d.texts ?? []).map((t) => t.zIndex),
           0,
         );
         let nextZ = minZ - ids.length;
@@ -46,15 +51,20 @@ export function useLayoutBuilderZIndex({
         for (const overlay of d.overlays) {
           if (idSet.has(overlay.id)) overlay.zIndex = nextZ++;
         }
+        for (const text of d.texts ?? []) {
+          if (idSet.has(text.id)) text.zIndex = nextZ++;
+        }
         // Normalize so nothing goes below 1
         const lowestZ = Math.min(
           ...d.slots.map((s) => s.zIndex),
           ...d.overlays.map((o) => o.zIndex),
+          ...(d.texts ?? []).map((t) => t.zIndex),
         );
         if (lowestZ < 1) {
           const offset = 1 - lowestZ;
           for (const slot of d.slots) slot.zIndex += offset;
           for (const overlay of d.overlays) overlay.zIndex += offset;
+          for (const text of d.texts ?? []) text.zIndex += offset;
         }
       }, 'Send to back'),
     [mutate],
@@ -68,10 +78,11 @@ export function useLayoutBuilderZIndex({
         const all: ZItem[] = [
           ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
           ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+          ...(d.texts ?? []).map((t) => ({ id: t.id, zIndex: t.zIndex })),
         ].sort((a, b) => a.zIndex - b.zIndex);
 
         // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
-        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+        const byId = new Map([...d.slots, ...d.overlays, ...(d.texts ?? [])].map((x) => [x.id, x]));
 
         for (let i = all.length - 1; i >= 0; i--) {
           if (idSet.has(all[i]!.id)) {
@@ -97,10 +108,11 @@ export function useLayoutBuilderZIndex({
         const all: ZItem[] = [
           ...d.slots.map((s) => ({ id: s.id, zIndex: s.zIndex })),
           ...d.overlays.map((o) => ({ id: o.id, zIndex: o.zIndex })),
+          ...(d.texts ?? []).map((t) => ({ id: t.id, zIndex: t.zIndex })),
         ].sort((a, b) => a.zIndex - b.zIndex);
 
         // Precompute one O(1) lookup map to avoid repeated spread+find inside the loop
-        const byId = new Map([...d.slots, ...d.overlays].map((x) => [x.id, x]));
+        const byId = new Map([...d.slots, ...d.overlays, ...(d.texts ?? [])].map((x) => [x.id, x]));
 
         for (let i = 0; i < all.length; i++) {
           if (idSet.has(all[i]!.id)) {

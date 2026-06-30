@@ -1,12 +1,13 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { enableMapSet } from 'immer';
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup, MediaItem, ResponsiveBreakpoint, SlotBreakpointOverrides } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutTextLayer, LayoutGroup, MediaItem, ResponsiveBreakpoint, SlotBreakpointOverrides } from '@/types';
 import { DEFAULT_LAYOUT_SLOT, SLOT_BREAKPOINT_OVERRIDE_KEYS } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
 import { computeGridSlots } from '@wp-super-gallery/shared-utils';
 import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
 import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
 import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
+import { useLayoutBuilderText } from './useLayoutBuilderText';
 import { useLayoutBuilderGroups } from './useLayoutBuilderGroups';
 import { useLayoutBuilderGuides } from './useLayoutBuilderGuides';
 import type { HistoryEntry } from './useLayoutBuilderHistory';
@@ -42,13 +43,14 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
   return {
     id: '',
     name,
-    schemaVersion: 2,
+    schemaVersion: 3,
     canvasAspectRatio: 16 / 9,
     canvasMinWidth: 320,
     canvasMaxWidth: 0,
     backgroundColor: '#1a1a2e',
     slots: [],
     overlays: [],
+    texts: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     tags: [],
@@ -56,12 +58,21 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
 }
 
 /**
- * Migrate a template to the current schema version in-place (P58-B).
- * v1 → v2: initialise breakpointOverrides so callers can rely on its presence.
+ * Migrate a template to the current schema version (P58-B, P59-A).
+ * Steps are cumulative so a v1 template is carried all the way to the latest:
+ *   v1 → v2: initialise breakpointOverrides so callers can rely on its presence.
+ *   v2 → v3: initialise texts (first-class text layers) to an empty array.
+ * Returns the same reference when already at the current version.
  */
 export function migrateTemplate(template: LayoutTemplate): LayoutTemplate {
-  if (template.schemaVersion >= 2) return template;
-  return { ...template, schemaVersion: 2, breakpointOverrides: template.breakpointOverrides ?? {} };
+  let t = template;
+  if (t.schemaVersion < 2) {
+    t = { ...t, schemaVersion: 2, breakpointOverrides: t.breakpointOverrides ?? {} };
+  }
+  if (t.schemaVersion < 3) {
+    t = { ...t, schemaVersion: 3, texts: t.texts ?? [] };
+  }
+  return t;
 }
 
 /** Generate a short unique ID for new slots. */
@@ -178,6 +189,24 @@ export interface LayoutBuilderActions {
   moveOverlay: (id: string, x: number, y: number) => void;
   /** Resize an overlay. */
   resizeOverlay: (id: string, x: number, y: number, width: number, height: number) => void;
+
+  // ── Text-layer CRUD (P59-A) ──
+  /** Add a new text layer. Returns the layer's ID. */
+  addText: () => string;
+  /** Remove a text layer by ID. */
+  removeText: (id: string) => void;
+  /** Update arbitrary text-layer properties. */
+  updateText: (id: string, updates: Partial<LayoutTextLayer>) => void;
+  /** Move a text layer to a new position. */
+  moveText: (id: string, x: number, y: number) => void;
+  /** Resize a text layer. */
+  resizeText: (id: string, x: number, y: number, width: number, height: number) => void;
+  /** Rename a text layer. */
+  renameText: (id: string, name: string) => void;
+  /** Toggle builder-only visibility on a text layer. */
+  toggleTextVisible: (id: string) => void;
+  /** Toggle drag/resize lock on a text layer. */
+  toggleTextLocked: (id: string) => void;
 
   // ── Layer system (P16) ──
   /** Rename a slot (persists in template data). */
@@ -324,6 +353,11 @@ export function useLayoutBuilderState(
   const {
     addOverlay, removeOverlay, updateOverlay, moveOverlay, resizeOverlay,
   } = useLayoutBuilderOverlays({ mutate });
+
+  const {
+    addText, removeText, updateText, moveText, resizeText,
+    renameText, toggleTextVisible, toggleTextLocked,
+  } = useLayoutBuilderText({ mutate });
 
   const {
     migrateGroupsIfNeeded, createGroup, wrapInGroup,
@@ -1030,6 +1064,15 @@ export function useLayoutBuilderState(
     updateOverlay,
     moveOverlay,
     resizeOverlay,
+    // Text CRUD (P59-A)
+    addText,
+    removeText,
+    updateText,
+    moveText,
+    resizeText,
+    renameText,
+    toggleTextVisible,
+    toggleTextLocked,
     // Layer system (P16)
     renameSlot,
     renameOverlay,
