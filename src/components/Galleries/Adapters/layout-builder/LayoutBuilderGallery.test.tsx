@@ -1156,3 +1156,107 @@ describe('LayoutBuilderGallery — slot rotation CSS (P57-F)', () => {
     expect(allStyles).not.toContain('transform:rotate');
   });
 });
+
+describe('LayoutBuilderGallery — breakpoint override resolution (P58-B fix-up)', () => {
+  // Base s1.x=10 → 120px at the 1200px canvas. Tablet override x=80 → 960px.
+  const bpTemplate = {
+    id: 'tpl-bp',
+    name: 'Breakpoint Test',
+    schemaVersion: 2,
+    canvasAspectRatio: 16 / 9,
+    canvasMinWidth: 400,
+    canvasMaxWidth: 1200,
+    backgroundColor: '#000',
+    slots: [
+      {
+        id: 's1',
+        x: 10, y: 10, width: 30, height: 40, zIndex: 1,
+        shape: 'rectangle' as const,
+        borderRadius: 0, borderWidth: 0, borderColor: '#fff',
+        objectFit: 'cover' as const, objectPosition: '50% 50%',
+        clickAction: 'lightbox' as const, hoverEffect: 'none' as const,
+      },
+    ],
+    overlays: [],
+    breakpointOverrides: { tablet: { s1: { x: 80 } } },
+    createdAt: '2025-01-01T00:00:00Z',
+    updatedAt: '2025-01-01T00:00:00Z',
+    tags: [],
+  };
+
+  const mockMedia = [
+    { id: 'm1', type: 'image' as const, source: 'upload' as const, url: '/img1.jpg', title: 'Img', order: 0 },
+  ];
+  const defaultSettings = {
+    tileHoverBounce: false, tileGlowEnabled: false, tileGlowColor: '#fff',
+    tileGlowSpread: 4, imageBorderRadius: 0, tileBorderWidth: 0, tileBorderColor: '#fff',
+  } as unknown as import('@/types').GalleryBehaviorSettings;
+
+  const makeRuntime = (breakpoint: 'desktop' | 'tablet' | 'mobile') =>
+    ({ breakpoint, scope: 'unified', adapterSettings: {} } as unknown as import('@/types').ResolvedGallerySectionRuntime);
+
+  let originalFetch: typeof globalThis.fetch;
+  let originalRO: typeof globalThis.ResizeObserver;
+
+  beforeEach(() => {
+    originalFetch = globalThis.fetch;
+    originalRO = globalThis.ResizeObserver;
+    // Report a tablet-range width (800px) so the locally-measured fallback would be 'tablet'.
+    globalThis.ResizeObserver = vi.fn(function(cb: ResizeObserverCallback) {
+      return {
+        observe: (el: Element) => cb([{ contentRect: { width: 800, height: 450 }, target: el } as unknown as ResizeObserverEntry], {} as ResizeObserver),
+        disconnect: vi.fn(), unobserve: vi.fn(),
+      };
+    }) as unknown as typeof globalThis.ResizeObserver;
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(bpTemplate),
+    }) as unknown as typeof globalThis.fetch;
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+    globalThis.ResizeObserver = originalRO;
+    vi.restoreAllMocks();
+  });
+
+  it('uses runtime.breakpoint (desktop) over the measured tablet width — renders base position', async () => {
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+    render(<LayoutBuilderGallery media={mockMedia} settings={defaultSettings} templateId="tpl-bp" runtime={makeRuntime('desktop')} />);
+
+    await waitFor(() => expect(screen.getByText('Images (1)')).toBeInTheDocument());
+
+    const allStyles = Array.from(document.querySelectorAll('style')).map((s) => s.innerHTML).join('\n');
+    // Desktop base: 10% of 1200 = 120px. The tablet override (960px) must NOT win.
+    expect(allStyles).toContain('left:120px');
+    expect(allStyles).not.toContain('left:960px');
+  });
+
+  it('applies the tablet override when runtime.breakpoint is tablet', async () => {
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+    render(<LayoutBuilderGallery media={mockMedia} settings={defaultSettings} templateId="tpl-bp" runtime={makeRuntime('tablet')} />);
+
+    await waitFor(() => expect(screen.getByText('Images (1)')).toBeInTheDocument());
+
+    const allStyles = Array.from(document.querySelectorAll('style')).map((s) => s.innerHTML).join('\n');
+    // Tablet override: 80% of 1200 = 960px.
+    expect(allStyles).toContain('left:960px');
+  });
+
+  it('falls back to measured container width when no runtime is provided', async () => {
+    const { LayoutBuilderGallery } = await import(
+      '@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery'
+    );
+    render(<LayoutBuilderGallery media={mockMedia} settings={defaultSettings} templateId="tpl-bp" />);
+
+    await waitFor(() => expect(screen.getByText('Images (1)')).toBeInTheDocument());
+
+    const allStyles = Array.from(document.querySelectorAll('style')).map((s) => s.innerHTML).join('\n');
+    // Measured 800px → tablet → override 960px.
+    expect(allStyles).toContain('left:960px');
+  });
+});

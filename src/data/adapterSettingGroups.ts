@@ -1018,6 +1018,7 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
     group: 'layout-builder',
     layout: 'stack',
     placement: 'inline',
+    note: 'Choose which layout this gallery uses with the "Layout Template" picker in the campaign\'s Settings tab (Edit Campaign). These options only style the chosen layout.',
     fields: [
       {
         control: 'select',

@@ -84,6 +84,12 @@ export interface LayoutCanvasProps {
   // ── P58-B: Per-breakpoint slot overrides ────────────────────
   /** Active breakpoint being edited. Slots resolve to their breakpoint-overridden geometry. */
   activeBreakpoint?: ResponsiveBreakpoint;
+  /**
+   * Device width (px) of the active non-desktop breakpoint. When set (edit mode),
+   * a centered, non-clipping guide band is drawn on the canvas to mark the device
+   * viewport width. Absent/0 = no guide (desktop or preview).
+   */
+  breakpointViewportPx?: number | null | undefined;
 }
 
 // ── Minimum canvas render width ──────────────────────────────
@@ -142,6 +148,7 @@ export function LayoutCanvas({
   onRemoveGuide,
   onToggleGuideLock,
   activeBreakpoint = 'desktop',
+  breakpointViewportPx,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
@@ -629,6 +636,37 @@ export function LayoutCanvas({
             />
           </div>
         )}
+        {/* P58-B: Breakpoint viewport guide — non-clipping band marking the device
+            width while editing a non-desktop breakpoint. Purely visual (pointer-events
+            none) so slots inside AND outside the band stay fully draggable. */}
+        {!isPreview && activeBreakpoint !== 'desktop' && !!breakpointViewportPx && (() => {
+          const bandWidth = Math.min(breakpointViewportPx, canvasWidth);
+          const bandLeft = (canvasWidth - bandWidth) / 2;
+          const label = `${activeBreakpoint.charAt(0).toUpperCase()}${activeBreakpoint.slice(1)} · ${breakpointViewportPx}px`;
+          return (
+            <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9000 }}>
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: bandLeft, borderLeft: '2px dashed var(--mantine-color-blue-5)' }} />
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: bandLeft + bandWidth, borderLeft: '2px dashed var(--mantine-color-blue-5)' }} />
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  left: bandLeft + bandWidth / 2,
+                  transform: 'translateX(-50%)',
+                  background: 'var(--mantine-color-blue-6)',
+                  color: '#fff',
+                  fontSize: 11,
+                  lineHeight: 1.4,
+                  padding: '1px 6px',
+                  borderRadius: 4,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {label}
+              </div>
+            </div>
+          );
+        })()}
         {/* Empty-canvas affordance — only shown in edit mode with no slots */}
         {!isPreview && template.slots.length === 0 && (
           <div

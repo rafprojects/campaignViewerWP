@@ -1080,6 +1080,43 @@ describe('useLayoutBuilderState — breakpoint overrides (P58-B)', () => {
     expect(result.current.template.slots[0]!.visible).toBe(false);
     expect(result.current.template.breakpointOverrides).toBeUndefined();
   });
+
+  // ── updateSlots (batch) breakpoint-awareness — powers the fit/align toolbar ──
+
+  it('updateSlots in tablet mode routes override-eligible keys to the breakpoint layer', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(2)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => {
+      result.current.updateSlots({
+        s1: { x: 10, y: 20, width: 30, height: 40 },
+        s2: { x: 50 },
+      });
+    });
+
+    // Base slots untouched
+    expect(result.current.template.slots[0]!.x).toBe(0);
+    expect(result.current.template.slots[1]!.x).toBe(10);
+    // Overrides written to tablet
+    expect(result.current.template.breakpointOverrides?.tablet?.s1).toMatchObject({ x: 10, y: 20, width: 30, height: 40 });
+    expect(result.current.template.breakpointOverrides?.tablet?.s2).toMatchObject({ x: 50 });
+  });
+
+  it('updateSlots in tablet mode still writes non-override keys to the base slot', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.setActiveBreakpoint('tablet'); });
+    act(() => { result.current.updateSlots({ s1: { shape: 'circle', x: 25 } }); });
+
+    expect(result.current.template.slots[0]!.shape).toBe('circle');
+    expect(result.current.template.breakpointOverrides?.tablet?.s1?.x).toBe(25);
+  });
+
+  it('updateSlots in desktop mode edits base slots directly', () => {
+    const { result } = renderHook(() => useLayoutBuilderState(templateWithSlots(1)));
+    act(() => { result.current.updateSlots({ s1: { x: 33, shape: 'diamond' } }); });
+    expect(result.current.template.slots[0]!.x).toBe(33);
+    expect(result.current.template.slots[0]!.shape).toBe('diamond');
+    expect(result.current.template.breakpointOverrides).toBeUndefined();
+  });
 });
 
 describe('migrateTemplate (P58-B)', () => {

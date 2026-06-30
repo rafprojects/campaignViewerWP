@@ -168,9 +168,14 @@ export function containerWidthToBreakpoint(width: number): ResponsiveBreakpoint 
 }
 
 /**
- * Returns the effective slot for a given breakpoint, merging base slot with
+ * Returns the effective slot for a given breakpoint, merging the base slot with
  * any per-breakpoint layout overrides stored on the template (P58-B).
- * Desktop always returns the slot unchanged (desktop is the base).
+ *
+ * Overrides cascade from larger to smaller breakpoints, mirroring the
+ * conventional responsive model: desktop is the base; tablet layers on top of
+ * desktop; mobile layers on top of tablet (and thus desktop). So a breakpoint
+ * with no override of its own inherits the next-larger defined layout rather
+ * than snapping back to desktop. A more-specific override wins per field.
  */
 export function resolveSlotForBreakpoint(
   slot: LayoutSlot,
@@ -178,9 +183,18 @@ export function resolveSlotForBreakpoint(
   breakpoint: ResponsiveBreakpoint,
 ): LayoutSlot {
   if (breakpoint === 'desktop') return slot;
-  const overrides = template.breakpointOverrides?.[breakpoint]?.[slot.id];
-  if (!overrides) return slot;
-  return { ...slot, ...overrides };
+  const bp = template.breakpointOverrides;
+  if (!bp) return slot;
+
+  let merged = slot;
+  // Apply larger-breakpoint overrides first, then smaller ones override them.
+  const tabletOverride = bp.tablet?.[slot.id];
+  if (tabletOverride) merged = { ...merged, ...tabletOverride };
+  if (breakpoint === 'mobile') {
+    const mobileOverride = bp.mobile?.[slot.id];
+    if (mobileOverride) merged = { ...merged, ...mobileOverride };
+  }
+  return merged;
 }
 
 /**

@@ -750,6 +750,9 @@ export function GalleryConfigEditorModal({
                       <Accordion.Control>{formatSettingGroupLabel(group.group)}</Accordion.Control>
                       <Accordion.Panel>
                         <Stack gap="sm">
+                          {group.note && (
+                            <Text size="xs" c="dimmed">{group.note}</Text>
+                          )}
                           {group.fields.filter((field) => shouldRenderAdapterSettingField(resolvedDraft, activeBreakpoint, group, field)).map((field) => {
                             const representativeValue = getRepresentativeAdapterSettingValue(resolvedDraft, activeBreakpoint, group, field);
 

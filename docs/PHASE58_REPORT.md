@@ -127,6 +127,20 @@ Device presets today are **preview-only** — you can view the canvas at desktop
 
 **Back-compat**: Templates without `breakpointOverrides` render identically — the resolver returns the base slot unchanged when no overrides exist.
 
+### Post-ship fixes
+
+Manual QA after the initial ship surfaced several issues and UX gaps, fixed across four follow-up rounds. The first two rounds are documented issue-by-issue in [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md); rounds 3–4 are summarized here.
+
+**Round 1 — 8 issues (2026-06-26).** See [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md) B-1…B-8. Headline: **B-4 was a server-persistence bug** — the PHP allowlist in `class-wpsg-layout-templates.php` had drifted from the TS type and silently stripped `breakpointOverrides` (and, as a full TS↔PHP audit found, slot `opacity`, `entranceAnimation`, `groups`, and the P50-J overlay field set) on every save, so overrides never reached the gallery. All now persist behind `SCHEMA_VERSION = 2` with a round-trip regression test. Also: `updateSlot`/`toggleSlotVisible` made breakpoint-aware (B-1/B-2), rotation composes through hover via `--wpsg-slot-rot` (B-7), the slot-mismatch banner gated to `isAdmin` (B-8), Layout Builder re-enabled at mobile (B-5), a contextual campaign template picker (B-6), and the adapter-per-breakpoint "unblock + inherit" contract (B-3).
+
+**Round 2 — 3 follow-ups (2026-06-28).** See [PHASE58B_ISSUES.md](PHASE58B_ISSUES.md) F-1…F-3. Restore the shared `activeCampaign` context on Edit-Campaign close (F-1); pass `layoutTemplates` to the in-app `UnifiedCampaignModal` so the picker appears in both edit paths (F-2); and resolve the gallery breakpoint from the authoritative `runtime.breakpoint` with a **responsive cascade** (mobile ← tablet ← desktop) in `resolveSlotForBreakpoint`, fixing the reversed/stuck-mobile layouts (F-3).
+
+**Round 3 — Builder boundary guide (no-clip editing).** The breakpoint edit view originally *clipped* the canvas to the device width, hiding inherited slots positioned beyond that window and making them un-editable. Replaced the clip with a non-clipping model: edit mode shows the **full canvas** plus a centered, to-scale **device-width guide band** (390 mobile / 768 tablet) marking the breakpoint's visible area (`LayoutCanvas.tsx`). Added a breakpoint-aware `updateSlots` (so the align/distribute toolbar writes per-breakpoint overrides on tablet/mobile, not the base), a `fitRectsIntoBand` helper (`packages/shared-utils/src/alignSlots.ts`), and a **"Fit to viewport"** action that scales/centers the selection (or all slots) into the active breakpoint's band. *(This supersedes the "canvas is constrained to the breakpoint's reference width" behaviour described in the Builder-UI note above — the canvas is no longer clipped in edit mode.)*
+
+**Round 4 — Publish at the actual breakpoint + toolbar polish (2026-06-29).** The published gallery rendered the canvas at its design width and **left-aligned the scroll**, so a phone showed the *left edge* of the desktop canvas instead of the centered band the editor designed. Now, at tablet/mobile the gallery renders **only the centered device-width band, scaled to fill the container** — matching the builder's guide exactly. Implemented via a new pure helper `computeBreakpointBand` (`packages/shared-utils/src/breakpointViewport.ts`): the canvas renders at its design size inside an `overflow:hidden` window and is cropped + `transform: scale()`'d to the band. Slots stay percentages of the design canvas (no coordinate remap), so builder and gallery share one coordinate basis. Model (user-confirmed): **scale-to-fill** + a **full-height vertical slice** of the design canvas (per-breakpoint canvas aspect is out of scope — see [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder "Published Responsive Canvas Sizing"). Also: **"Fit to viewport"** now shows on desktop too (labelled "Fit to canvas" — pulls stray slots back into bounds), and the redundant **"Add Slot"** footer button was removed (slots are added via the Layers panel and canvas double-click).
+
+**Deferred from these rounds** (to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder): a better published responsive sizing model (the on-page left/right constraint and progressive-shrink across breakpoints), and a faithful builder Preview (align the Preview render with the published breakpoint model and surface runtime effects — glow, bounce, entrance, tilt — in Preview).
+
 ## Track P58-C - Starter template library
 
 ### Problem
@@ -263,8 +277,9 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 
 ## Outcome
 
-_Updated 2026-06-26 — all six tracks shipped._
+_Updated 2026-06-26 — all six tracks shipped. Updated 2026-06-29 — P58-B post-ship fixes (four rounds) landed._
 
 - **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), P58-E (scroll-reveal entrance animations with full per-slot controls), and P58-B (responsive / per-breakpoint slot overrides — schema v2, breakpoint editing UI, gallery resolution). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
-- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design.
+- **P58-B post-ship.** Four follow-up rounds (see Track P58-B › Post-ship fixes): the 8-issue round (B-4 PHP persistence drift was the headline), the F-1/F-2/F-3 round, the builder boundary-guide (no-clip editing + device-width band), and the publish-at-breakpoint round (centered band scaled-to-fill via `computeBreakpointBand`, desktop "Fit to canvas", removed "Add Slot").
+- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design. From the P58-B post-ship work: a better published responsive sizing model and a faithful builder Preview (with runtime effects), both in [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder.
 - **What should happen next.** Manual QA of all tracks via the `see-wp` flow is recommended, especially P58-B's responsive editing UX. The align/distribute hotkeys can be picked up when a conflict-free binding is chosen.

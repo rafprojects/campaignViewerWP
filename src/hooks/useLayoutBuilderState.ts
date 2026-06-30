@@ -674,15 +674,47 @@ export function useLayoutBuilderState(
     (updatesById: Record<string, Partial<LayoutSlot>>, label = 'Update slots') => {
       const slotIds = Object.keys(updatesById);
       if (slotIds.length === 0) return;
+
+      if (activeBreakpoint === 'desktop') {
+        mutate((d) => {
+          const slotIdSet = new Set(slotIds);
+          for (const slot of d.slots) {
+            if (!slotIdSet.has(slot.id)) continue;
+            Object.assign(slot, updatesById[slot.id]!);
+          }
+        }, label);
+        return;
+      }
+
+      // P58-B: when editing a non-desktop breakpoint, route override-eligible keys
+      // (position/size/visibility/rotation/opacity/zIndex) to the breakpoint layer;
+      // any other keys still edit the base slot. Mirrors updateSlot (B-1) so the
+      // align/distribute/fit toolbar respects the active breakpoint.
+      const overrideKeys = SLOT_BREAKPOINT_OVERRIDE_KEYS as readonly string[];
       mutate((d) => {
         const slotIdSet = new Set(slotIds);
+        if (!d.breakpointOverrides) d.breakpointOverrides = {};
+        if (!d.breakpointOverrides[activeBreakpoint]) d.breakpointOverrides[activeBreakpoint] = {};
         for (const slot of d.slots) {
           if (!slotIdSet.has(slot.id)) continue;
-          Object.assign(slot, updatesById[slot.id]!);
+          const updates = updatesById[slot.id]!;
+          const overrideUpdates: Record<string, unknown> = {};
+          const baseUpdates: Record<string, unknown> = {};
+          for (const [key, value] of Object.entries(updates)) {
+            if (overrideKeys.includes(key)) overrideUpdates[key] = value;
+            else baseUpdates[key] = value;
+          }
+          if (Object.keys(baseUpdates).length > 0) Object.assign(slot, baseUpdates);
+          if (Object.keys(overrideUpdates).length > 0) {
+            d.breakpointOverrides[activeBreakpoint]![slot.id] = {
+              ...(d.breakpointOverrides[activeBreakpoint]![slot.id] ?? {}),
+              ...(overrideUpdates as SlotBreakpointOverrides),
+            };
+          }
         }
-      }, label);
+      }, `${label} (${activeBreakpoint})`);
     },
-    [mutate],
+    [mutate, activeBreakpoint],
   );
 
   const nudgeSlots = useCallback(

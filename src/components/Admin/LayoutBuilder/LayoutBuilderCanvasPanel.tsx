@@ -5,7 +5,7 @@ import {
   Button, Divider, ActionIcon, Tooltip, SegmentedControl, Alert,
 } from '@mantine/core';
 import type { ResponsiveBreakpoint } from '@/types';
-import { IconHandGrab, IconPlus, IconArrowsMaximize, IconSeparatorVertical, IconSeparatorHorizontal } from '@tabler/icons-react';
+import { IconHandGrab, IconArrowsMaximize, IconSeparatorVertical, IconSeparatorHorizontal } from '@tabler/icons-react';
 import { TransformWrapper, TransformComponent, type ReactZoomPanPinchRef } from 'react-zoom-pan-pinch';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
@@ -13,7 +13,7 @@ import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext, useRootId } from '@wp-super-gallery/shared-ui';
 import { SNAP_MODE_LABELS, type SnapMode } from '@wp-super-gallery/shared-utils';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage, fitRectsIntoBand } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
@@ -51,6 +51,16 @@ const BREAKPOINT_EDIT_DATA: { value: ResponsiveBreakpoint; label: string }[] = [
   { value: 'tablet', label: 'Tablet' },
   { value: 'mobile', label: 'Mobile' },
 ];
+
+/** Map a device preview preset to the breakpoint whose overrides should render (P58-B fix-up). */
+function presetToBreakpoint(preset: PreviewPreset, customWidth: number): ResponsiveBreakpoint {
+  switch (preset) {
+    case 'tablet': return 'tablet';
+    case 'mobile': return 'mobile';
+    case 'custom': return customWidth < 768 ? 'mobile' : customWidth < 1200 ? 'tablet' : 'desktop';
+    default: return 'desktop'; // 'none' | 'desktop' | 'laptop'
+  }
+}
 
 // ── P30-B: Snap mode ─────────────────────────────────────────────────────────
 
@@ -118,14 +128,6 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       handleBringForwardSelected, handleSendBackwardSelected, announce,
     ],
   );
-
-  const handleAddSlot = useCallback(() => {
-    const id = builder.addSlot();
-    builder.selectSlot(id);
-    setSelectedOverlayId(null);
-    setIsBackgroundSelected(false);
-    announce('New slot added');
-  }, [builder, setSelectedOverlayId, setIsBackgroundSelected, announce]);
 
   const handleCanvasBgDoubleClick = useCallback(
     (pctX: number, pctY: number) => {
@@ -238,15 +240,61 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Resolved pixel width of the active device preset (null = unconstrained). */
+  /**
+   * Width that physically constrains/clips the canvas frame — PREVIEW mode only.
+   * In edit mode we no longer clip to the breakpoint (P58-B fix-up): the full canvas
+   * stays visible so inherited slots beyond the device width remain accessible, and
+   * the breakpoint width is shown as a non-clipping in-canvas guide instead.
+   */
   const activePresetWidth = useMemo<number | null>(() => {
-    if (!builder.isPreview) {
-      // P58-B: In edit mode, constrain canvas to breakpoint width when not 'desktop'.
-      return BREAKPOINT_EDIT_WIDTHS[builder.activeBreakpoint];
-    }
+    if (!builder.isPreview) return null;
     if (previewPreset === 'custom') return Math.max(200, Math.min(3840, customPreviewWidth));
     return PRESET_DEFS[previewPreset].width;
-  }, [builder.isPreview, builder.activeBreakpoint, previewPreset, customPreviewWidth]);
+  }, [builder.isPreview, previewPreset, customPreviewWidth]);
+
+  /**
+   * Device width (px) of the breakpoint being edited, drawn as a centered guide band
+   * on the canvas in edit mode for non-desktop breakpoints so the editor can see the
+   * breakpoint's visible area and place slots within it. null = no guide (desktop/preview).
+   */
+  const breakpointViewportPx = useMemo<number | null>(() => {
+    if (builder.isPreview) return null;
+    return BREAKPOINT_EDIT_WIDTHS[builder.activeBreakpoint];
+  }, [builder.isPreview, builder.activeBreakpoint]);
+
+  // P58-B: scale+center the selection (or all slots) into the active breakpoint's target
+  // band, writing per-breakpoint overrides (via breakpoint-aware updateSlots). For a
+  // non-desktop breakpoint the band is the centered device viewport; for desktop it is the
+  // full canvas (pulls stray/overflowing slots back into bounds).
+  const handleFitToViewport = useCallback(() => {
+    let leftPct = 0;
+    let widthPct = 100;
+    if (breakpointViewportPx) {
+      const canvasW = Math.max(400, Math.min(1200, builder.template.canvasMaxWidth || 1200));
+      widthPct = Math.min(100, (breakpointViewportPx / canvasW) * 100);
+      leftPct = (100 - widthPct) / 2;
+    }
+    const selected = builder.template.slots.filter((s) => builder.selectedSlotIds.has(s.id));
+    const target = selected.length > 0 ? selected : builder.template.slots;
+    if (target.length === 0) return;
+    const updates = fitRectsIntoBand(target, leftPct, widthPct);
+    const where = breakpointViewportPx ? `${builder.activeBreakpoint} viewport` : 'canvas';
+    if (Object.keys(updates).length > 0) {
+      builder.updateSlots(updates, breakpointViewportPx ? 'Fit to viewport' : 'Fit to canvas');
+      announce(`Fit ${target.length} slot(s) into the ${where}`);
+    } else {
+      announce(`Slots already fit the ${where}`);
+    }
+  }, [breakpointViewportPx, builder, announce]);
+
+  /**
+   * Breakpoint whose slot overrides the canvas should render. In edit mode this
+   * is the breakpoint being edited; in preview mode it follows the device preset
+   * so previewing a device shows that device's layout (P58-B fix-up).
+   */
+  const canvasBreakpoint = builder.isPreview
+    ? presetToBreakpoint(previewPreset, customPreviewWidth)
+    : builder.activeBreakpoint;
 
   return (
     <CanvasTransformContext.Provider value={{ scale, isHandTool }}>
@@ -324,7 +372,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   template={builder.template}
                   selectedSlotIds={builder.selectedSlotIds}
                   isPreview={builder.isPreview}
-                  activeBreakpoint={builder.activeBreakpoint}
+                  activeBreakpoint={canvasBreakpoint}
+                  breakpointViewportPx={breakpointViewportPx}
                   media={media}
                   showSlotIndices={showSlotIndices}
                   snapMode={snapMode}
@@ -522,6 +571,23 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   aria-label="Breakpoint edit mode"
                   data-testid="breakpoint-edit-selector"
                 />
+                <Tooltip
+                  label={
+                    breakpointViewportPx
+                      ? "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
+                      : 'Move/scale the selected slots (or all slots) back inside the canvas bounds'
+                  }
+                >
+                  <Button
+                    size="xs"
+                    variant="light"
+                    onClick={handleFitToViewport}
+                    aria-label={breakpointViewportPx ? 'Fit slots to viewport' : 'Fit slots to canvas'}
+                    data-testid="fit-to-viewport"
+                  >
+                    {breakpointViewportPx ? 'Fit to viewport' : 'Fit to canvas'}
+                  </Button>
+                </Tooltip>
               </Group>
               <Divider orientation="vertical" />
 
@@ -532,18 +598,6 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 onChange={(e) => setShowSlotIndices(e.currentTarget.checked)}
                 aria-label="Toggle slot index badges"
               />
-              <Divider orientation="vertical" />
-              <Tooltip label="Add slot (or double-click canvas)">
-                <Button
-                  size="xs"
-                  variant="light"
-                  leftSection={<IconPlus size={12} />}
-                  onClick={handleAddSlot}
-                  aria-label="Add slot"
-                >
-                  Add Slot
-                </Button>
-              </Tooltip>
               <Divider orientation="vertical" />
               {/* ── Zoom controls ────────────────────────────────── */}
               <Group gap={4} wrap="nowrap">

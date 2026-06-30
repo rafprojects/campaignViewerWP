@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState, type ReactElement } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -539,7 +539,13 @@ export function UnifiedCampaignModal({
   tagItems = [],
 }: UnifiedCampaignModalProps) {
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
-  const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
+  const { activeCampaign, onEditGalleryConfig, setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
+  // Live mirrors of the context so the edit-modal effect can snapshot whatever was
+  // active *before* it took over, and restore it on close instead of nulling.
+  const prevActiveCampaignRef = useRef(activeCampaign);
+  prevActiveCampaignRef.current = activeCampaign;
+  const prevOnEditGalleryConfigRef = useRef(onEditGalleryConfig);
+  prevOnEditGalleryConfigRef.current = onEditGalleryConfig;
   const {
     opened, mode, formState, updateForm, isSaving,
     editingCampaign,
@@ -560,16 +566,22 @@ export function UnifiedCampaignModal({
   }, []);
 
   useEffect(() => {
+    // Only take over the campaign context while actively editing an existing
+    // campaign. When not editing, leave the context untouched so a campaign the
+    // viewer set (e.g. when editing from within an open campaign) is preserved.
     if (!opened || mode !== 'edit' || !editingCampaign) {
-      setActiveCampaign(null);
-      setOnEditGalleryConfig(undefined);
       return;
     }
+    // Snapshot the pre-existing context (captured at open) and restore it on close,
+    // rather than nulling it — otherwise closing the edit modal while a campaign is
+    // still being viewed wipes the campaign-scoped AuthBar menu items.
+    const prevCampaign = prevActiveCampaignRef.current;
+    const prevOnEditGalleryConfig = prevOnEditGalleryConfigRef.current;
     setActiveCampaign(editingCampaign);
     setOnEditGalleryConfig(openGalleryConfigFromAuthBar);
     return () => {
-      setActiveCampaign(null);
-      setOnEditGalleryConfig(undefined);
+      setActiveCampaign(prevCampaign);
+      setOnEditGalleryConfig(prevOnEditGalleryConfig);
     };
   }, [opened, mode, editingCampaign, openGalleryConfigFromAuthBar, setActiveCampaign, setOnEditGalleryConfig]);
 

@@ -115,3 +115,49 @@ export function distributeSlotsVerticallyByGap(slots: SlotRect[]): SlotUpdate {
     }),
   );
 }
+
+// ── Fit to a centered viewport band (P58-B) ────────────────────────────────────
+// Translates + uniformly scales the union bounding box of `slots` so it fits within
+// a centered vertical band (the device viewport width, in canvas %) and the full
+// canvas height. Preserves the relative arrangement and aspect of the selection.
+// Never upscales. Returns {} (no change) when the selection already fits — so slots
+// already inside the band are left untouched.
+
+export function fitRectsIntoBand(
+  slots: SlotRect[],
+  bandLeftPct: number,
+  bandWidthPct: number,
+): SlotUpdate {
+  if (slots.length === 0) return {};
+  const EPS = 0.01;
+  const minX = Math.min(...slots.map((s) => s.x));
+  const minY = Math.min(...slots.map((s) => s.y));
+  const maxR = Math.max(...slots.map(right));
+  const maxB = Math.max(...slots.map(bottom));
+  const bandRight = bandLeftPct + bandWidthPct;
+
+  if (minX >= bandLeftPct - EPS && maxR <= bandRight + EPS && minY >= -EPS && maxB <= 100 + EPS) {
+    return {};
+  }
+
+  const bboxW = maxR - minX;
+  const bboxH = maxB - minY;
+  const scale = Math.min(
+    bboxW > 0 ? bandWidthPct / bboxW : 1,
+    bboxH > 0 ? 100 / bboxH : 1,
+    1,
+  );
+  const newW = bboxW * scale;
+  const newH = bboxH * scale;
+  const offsetX = bandLeftPct + (bandWidthPct - newW) / 2;
+  const offsetY = (100 - newH) / 2;
+
+  return Object.fromEntries(
+    slots.map((s) => [s.id, {
+      x: offsetX + (s.x - minX) * scale,
+      y: offsetY + (s.y - minY) * scale,
+      width: s.width * scale,
+      height: s.height * scale,
+    }]),
+  );
+}

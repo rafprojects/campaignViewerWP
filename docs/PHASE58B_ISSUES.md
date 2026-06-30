@@ -1,7 +1,7 @@
 # Phase 58-B Post-Ship Issues
 
 **Created:** 2026-06-26
-**Status:** Resolved (all 8 issues fixed 2026-06-26)
+**Status:** Resolved (8 issues fixed 2026-06-26; 3 follow-up issues fixed 2026-06-28)
 **Relates to:** [PHASE58_REPORT.md](PHASE58_REPORT.md) › Track P58-B
 
 Issues discovered during manual QA of the P58-B responsive / per-breakpoint slot overrides feature. Grouped by surface area. Each entry includes the observed symptom, the root cause, and the resolution.
@@ -153,3 +153,72 @@ its per-breakpoint slot overrides, not from per-breakpoint template switching.
 campaign with desktop = Layout Builder and an unconfigured tablet/mobile inherits LB
 and renders the overrides at those widths, and that a breakpoint explicitly set to a
 different adapter renders that adapter.
+
+---
+
+## Follow-up round 2 (2026-06-28)
+
+Three further issues surfaced in manual QA after round 1. All fixed.
+
+### F-1: Campaign menu items disappear after Edit Campaign → exit
+
+**Symptom.** Opening Edit Campaign from within an open campaign, then closing the
+edit modal, removed all campaign-scoped AuthBar menu items (Edit Campaign, Edit
+Gallery Config, Archive, Add Media) — only Admin Panel, Settings, and the space
+selector remained. Re-entering the campaign restored them.
+
+**Root cause.** Pre-existing context-ownership bug (not introduced by P58-B). Both
+`CampaignViewer` and `UnifiedCampaignModal` write the shared `activeCampaign`
+context. The edit modal's effect set `activeCampaign` on open and **nulled it on
+close**; the still-open viewer's effect didn't re-run, so `activeCampaign` stayed
+null and the AuthBar hid the campaign-scoped items.
+
+**Fix.** `UnifiedCampaignModal` now snapshots the pre-existing `activeCampaign` /
+`onEditGalleryConfig` at open and **restores** them on close instead of nulling, and
+no longer touches the context when not editing. From Admin Panel (no viewer) the
+snapshot is null, so behaviour is unchanged there.
+
+### F-2: Layout template picker missing when editing a campaign directly
+
+**Symptom.** The B-6 picker appeared in Admin Panel › Campaigns › Edit but not when
+editing a campaign directly from within the campaign view.
+
+**Root cause.** Both entry points render the same `UnifiedCampaignModal`, but the
+in-app instance (`App.tsx`) never passed the `layoutTemplates` prop (AdminPanel did).
+With no templates, the picker had nothing to render.
+
+**Fix.** `App.tsx` now fetches templates via `useLayoutTemplates(apiClient, isAdmin)`
+and passes them to its `UnifiedCampaignModal`. The picker is the contextual
+campaign-level one from B-6 (Option 2) — it appears in **both** edit paths now.
+(Answer to the open question: it lives in the Edit Campaign modal, mirroring Admin
+Panel — not as an adapter-specific setting in the gallery config editor.) To avoid
+confusion, the Layout Builder adapter-specific settings panel (in the gallery config
+editor) now shows a note pointing users to the campaign Settings tab for the template
+picker — implemented via a new optional `note` on `AdapterSettingGroupDefinition`.
+
+### F-3: Breakpoint layouts reversed; mobile didn't switch
+
+**Symptom.** In the rendered gallery, desktop showed the tablet layout and vice
+versa; mobile kept the tablet layout and just scaled down.
+
+**Root cause.** `LayoutBuilderGallery` re-detected the breakpoint from its own
+locally-measured inner width (`containerWidthToBreakpoint(containerWidth)`), which
+disagreed with the app's authoritative `runtime.breakpoint` (the same signal that
+selected this adapter). The measured inner element rarely dropped below 768px, so
+mobile never triggered, and the width-vs-app mismatch produced the desktop/tablet
+swap. The builder's device-preview presets also didn't sync to the canvas breakpoint.
+
+**Fix.**
+- Gallery now uses `runtime?.breakpoint ?? containerWidthToBreakpoint(...)` — the
+  authoritative breakpoint when present (viewport-sourced via `useBreakpoint`), the
+  measured width only as a standalone fallback. Override resolution is now consistent
+  with adapter selection. This fixed the desktop/tablet swap.
+- **Responsive cascade** added to `resolveSlotForBreakpoint`: overrides now cascade
+  mobile ← tablet ← desktop(base). A breakpoint with no override of its own inherits
+  the next-larger defined layout instead of snapping back to desktop, and a
+  mobile-specific override still wins per field. This fixed the follow-up report that
+  mobile (with no mobile-specific override) jumped to the desktop layout. The builder
+  canvas uses the same resolver, so editing mobile starts from the tablet layout.
+- Builder preview maps the device preset → breakpoint (`presetToBreakpoint`) so
+  previewing Tablet/Mobile shows that breakpoint's overrides.
+- Added gallery tests (`runtime.breakpoint` precedence) and resolver cascade tests.
