@@ -1,6 +1,6 @@
 import { createContext, useContext, type Dispatch, type RefObject, type SetStateAction } from 'react';
 import type { DockviewApi } from 'dockview';
-import type { LayoutGraphicLayer, LayoutSlot, MediaItem, PersistentGuide } from '@/types';
+import type { LayoutGraphicLayer, LayoutSlot, LayoutTextLayer, MediaItem, PersistentGuide } from '@/types';
 import type { UseLayoutBuilderReturn } from '@/hooks/useLayoutBuilderState';
 import type { SnapMode } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
@@ -50,6 +50,11 @@ export interface BuilderDockContextValue {
   /** Slot ID whose mask sublayer is currently selected in the Layers panel. */
   selectedMaskSlotId: string | null;
   setSelectedMaskSlotId: Dispatch<SetStateAction<string | null>>;
+  /** Text layer ID currently selected in the builder (P59-B). */
+  selectedTextId: string | null;
+  setSelectedTextId: Dispatch<SetStateAction<string | null>>;
+  /** The selected text layer object, resolved from `selectedTextId`. */
+  selectedText: LayoutTextLayer | undefined;
 
   // Snap & grid (P30-B)
   snapMode: SnapMode;

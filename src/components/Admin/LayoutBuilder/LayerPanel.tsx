@@ -14,6 +14,8 @@ export interface LayerPanelProps {
   selectedSlotIds?: Set<string> | null | undefined;
   /** ID of the currently-selected graphic layer / overlay (local modal state). */
   selectedOverlayId?: string | null | undefined;
+  /** ID of the currently-selected text layer (P59-B). */
+  selectedTextId?: string | null | undefined;
   /** Whether the Background row is currently selected. */
   isBackgroundSelected?: boolean | undefined;
   /** Slot ID whose mask sublayer is currently selected. */
@@ -35,6 +37,11 @@ export interface LayerPanelProps {
   onToggleOverlayVisible: (id: string) => void;
   onToggleSlotLocked: (id: string) => void;
   onToggleOverlayLocked: (id: string) => void;
+  /** Text layer callbacks (P59-B). */
+  onSelectText?: (id: string) => void;
+  onRenameText?: (id: string, name: string) => void;
+  onToggleTextVisible?: (id: string) => void;
+  onToggleTextLocked?: (id: string) => void;
   /** Toggle mask sublayer visibility (parentSlotId). */
   onToggleMaskVisible?: (parentSlotId: string) => void;
   onReorderLayers: (draggedId: string, targetId: string) => void;
@@ -43,7 +50,7 @@ export interface LayerPanelProps {
   onBringForward: (id: string) => void;
   onSendBackward: (id: string) => void;
   /** Delete a specific layer by ID. */
-  onDeleteLayer?: (id: string, kind: 'slot' | 'graphic' | 'mask') => void;
+  onDeleteLayer?: (id: string, kind: 'slot' | 'graphic' | 'text' | 'mask') => void;
   /** Add an empty mask sublayer to a slot. */
   onAddMask?: (slotId: string) => void;
   /** Called when the user clicks a group row — should select all group slot members. */
@@ -71,6 +78,7 @@ export function LayerPanel({
   template,
   selectedSlotIds,
   selectedOverlayId,
+  selectedTextId,
   isBackgroundSelected,
   selectedMaskSlotId,
   onSelectSlot,
@@ -86,6 +94,10 @@ export function LayerPanel({
   onToggleOverlayVisible,
   onToggleSlotLocked,
   onToggleOverlayLocked,
+  onSelectText,
+  onRenameText,
+  onToggleTextVisible,
+  onToggleTextLocked,
   onToggleMaskVisible,
   onReorderLayers,
   onBringToFront,
@@ -180,7 +192,7 @@ export function LayerPanel({
   // ── Keyboard navigation ───────────────────────────────────
   // For keyboard nav use the first selected slot as the anchor.
   const firstSelectedSlotId = selectedSlotIds && selectedSlotIds.size > 0 ? [...selectedSlotIds][0] : null;
-  const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : firstSelectedSlotId ?? selectedOverlayId ?? (isBackgroundSelected ? 'background' : null);
+  const activeLayerId = selectedMaskSlotId ? `mask-${selectedMaskSlotId}` : firstSelectedSlotId ?? selectedOverlayId ?? selectedTextId ?? (isBackgroundSelected ? 'background' : null);
 
   function handleKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     const selectedIndex = displayedLayers.findIndex((l) => l.id === activeLayerId);
@@ -189,6 +201,7 @@ export function LayerPanel({
     function selectLayer(item: (typeof displayedLayers)[0]) {
       if (item.kind === 'slot') onSelectSlot(item.id);
       else if (item.kind === 'graphic') onSelectOverlay(item.id);
+      else if (item.kind === 'text') onSelectText?.(item.id);
       else if (item.kind === 'mask') onSelectMask?.(item.parentSlotId);
       else onSelectBackground?.();
     }
@@ -212,6 +225,7 @@ export function LayerPanel({
         const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotVisible(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayVisible(cur.id);
+        else if (cur.kind === 'text') onToggleTextVisible?.(cur.id);
         else if (cur.kind === 'mask') onToggleMaskVisible?.(cur.parentSlotId);
         break;
       }
@@ -221,6 +235,7 @@ export function LayerPanel({
         const cur = displayedLayers[selectedIndex]!;
         if (cur.kind === 'slot') onToggleSlotLocked(cur.id);
         else if (cur.kind === 'graphic') onToggleOverlayLocked(cur.id);
+        else if (cur.kind === 'text') onToggleTextLocked?.(cur.id);
         break;
       }
       case 'f':
@@ -379,6 +394,7 @@ export function LayerPanel({
             const isSelected =
               (item.kind === 'slot' && (selectedSlotIds?.has(item.id) ?? false) && !selectedMaskSlotId) ||
               (item.kind === 'graphic' && item.id === selectedOverlayId) ||
+              (item.kind === 'text' && item.id === selectedTextId) ||
               (item.kind === 'background' && !!isBackgroundSelected) ||
               (item.kind === 'mask' && item.parentSlotId === selectedMaskSlotId);
 
@@ -402,6 +418,7 @@ export function LayerPanel({
                     if (isBackground) onSelectBackground?.();
                     else if (isMask) onSelectMask?.(item.parentSlotId);
                     else if (item.kind === 'graphic') onSelectOverlay(item.id);
+                    else if (item.kind === 'text') onSelectText?.(item.id);
                     else onSelectSlot(item.id);
                   }}
                   onToggleSelect={item.kind === 'slot' ? onToggleSelectSlot : undefined}
@@ -409,15 +426,18 @@ export function LayerPanel({
                   onRename={(id, name) => {
                     if (item.kind === 'slot') onRenameSlot(id, name);
                     else if (item.kind === 'graphic') onRenameOverlay(id, name);
+                    else if (item.kind === 'text') onRenameText?.(id, name);
                   }}
                   onToggleVisible={(id) => {
                     if (item.kind === 'slot') onToggleSlotVisible(id);
                     else if (item.kind === 'graphic') onToggleOverlayVisible(id);
+                    else if (item.kind === 'text') onToggleTextVisible?.(id);
                     else if (item.kind === 'mask') onToggleMaskVisible?.(item.parentSlotId);
                   }}
                   onToggleLocked={(id) => {
                     if (item.kind === 'slot') onToggleSlotLocked(id);
                     else if (item.kind === 'graphic') onToggleOverlayLocked(id);
+                    else if (item.kind === 'text') onToggleTextLocked?.(id);
                   }}
                   onBringToFront={onBringToFront}
                   onSendToBack={onSendToBack}
@@ -425,7 +445,9 @@ export function LayerPanel({
                   onSendBackward={onSendBackward}
                   onDelete={onDeleteLayer ? (id) => {
                     if (item.kind === 'mask') onDeleteLayer(item.parentSlotId, 'mask');
-                    else onDeleteLayer(id, item.kind === 'graphic' ? 'graphic' : 'slot');
+                    else if (item.kind === 'graphic') onDeleteLayer(id, 'graphic');
+                    else if (item.kind === 'text') onDeleteLayer(id, 'text');
+                    else onDeleteLayer(id, 'slot');
                   } : undefined}
                   onAddMask={onAddMask}
                   onDragStart={handleDragStart}

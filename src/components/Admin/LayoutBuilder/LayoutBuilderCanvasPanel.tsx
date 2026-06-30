@@ -88,6 +88,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     setShowMeasurements,
     setSelectedOverlayId,
     setIsBackgroundSelected,
+    setSelectedTextId,
+    selectedTextId,
     selectedMaskSlotId,
     announce,
     handleDeleteSelected,
@@ -137,9 +139,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.selectSlot(id);
       setSelectedOverlayId(null);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
       announce('New slot added at cursor position');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, announce],
   );
 
   // ── Canvas drop handlers ──────────────────────────────────────────────────
@@ -149,10 +152,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.moveOverlay(id, x, y);
       setSelectedOverlayId(id);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
       builder.clearSelection();
       announce('Graphic layer added to canvas');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, announce],
   );
 
   const handleMediaCanvasDrop = useCallback(
@@ -161,9 +165,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.updateSlot(slotId, { x, y });
       builder.assignMediaToSlot(slotId, mediaId, meta);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
       announce('New slot created with assigned media');
     },
-    [builder, setIsBackgroundSelected, announce],
+    [builder, setIsBackgroundSelected, setSelectedTextId, announce],
   );
 
   // ── Zoom / pan state ──────────────────────────────────────────────────────
@@ -387,17 +392,20 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onSlotSelect={(id) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
                     builder.selectSlot(id);
                   }}
                   onSlotToggleSelect={builder.toggleSlotSelection}
                   onCanvasClick={() => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
                     builder.clearSelection();
                   }}
                   onMarqueeSelect={(ids, additive) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
                     if (additive) builder.addSlotsToSelection(ids);
                     else builder.selectSlotsInRange(ids);
                   }}
@@ -405,6 +413,16 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onAnnounce={announce}
                   onOverlayMove={builder.moveOverlay}
                   onOverlayResize={builder.resizeOverlay}
+                  selectedTextId={selectedTextId}
+                  onTextMove={builder.moveText}
+                  onTextResize={builder.resizeText}
+                  onTextSelect={(id) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    builder.clearSelection();
+                    setSelectedTextId(id);
+                  }}
+                  onTextUpdate={builder.updateText}
                   onCanvasBgDoubleClick={handleCanvasBgDoubleClick}
                   onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
                   selectedMaskSlotId={selectedMaskSlotId}

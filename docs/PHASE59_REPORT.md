@@ -1,6 +1,6 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** In progress — P59-A landed
+**Status:** In progress — P59-A, P59-B landed
 **Created:** 2026-06-26
 **Last updated:** 2026-06-30
 
@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P59-A | `text` layer type — schema, state CRUD, persistence | ✅ Done | Medium |
-| P59-B | Text properties panel + on-canvas inline editing | Planned | Medium |
+| P59-B | Text properties panel + on-canvas inline editing | ✅ Done | Medium |
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | Planned | Medium |
 
 ---
@@ -94,6 +94,16 @@ Even with a data model, there is no way to author text — no typography control
 ### Validation
 
 - `npm run test` for the panel's control bindings and inline-edit commit/cancel; manual QA authoring a caption end-to-end via the `see-wp` flow.
+
+### Implementation notes (P59-B — landed 2026-06-30)
+
+- **Typography reuse.** The panel embeds the shared `<TypographyEditor>` bound to `LayoutTextLayer.typography` (font picker incl. Google fonts + fallback chain, weight/style/transform/decoration, stroke/shadow/glow) — no bespoke font controls (see the P59-A typography-reuse note).
+- **`TextPropertiesPanel.tsx`** (filename matches the pre-registered coverage exclusion): content (Textarea, commit-on-blur), semantic role (Select → h2/h3/p), alignment (SegmentedControl), `<TypographyEditor>`, position/size, rotation/opacity, z-order, name, remove. Routed in `LayoutBuilderPropertiesPanel` after the overlay branch.
+- **Selection.** Mirrors the overlay model — a local `selectedTextId` in `BuilderDockContext`/`LayoutBuilderModal`, mutually exclusive with slot/overlay/background/mask (cleared at every selection site in `LayoutBuilderCanvasPanel`).
+- **Canvas.** `LayoutCanvas` renders each text layer in an `Rnd` (drag/resize parity with overlays) with a selection outline; **double-click enters inline edit** (a fill `<textarea>`: Enter commits, Shift+Enter newline, Escape cancels, blur commits). A shared `TextLayerContent` renders the semantic element + typography and is reused by the P59-C gallery render; `textLayerTextStyle` also styles the inline editor.
+- **Add + Layers panel.** An "Add text" toolbar button (`IconLetterT`) creates + selects a layer. Text layers are first-class in the unified layer list: `buildLayerList` emits a `text` `LayerKind`; `LayerRow`/`LayerPanel` dispatch select/rename/visible/lock/delete + keyboard nav; z-order ops and `computeReorderedZIndices` include texts.
+- **Admin i18n note.** Panel labels are hardcoded English, consistent with every sibling builder panel (Slot/Graphic/Mask/Background); full admin-panel i18n is the deferred Phase 60-B follow-on (its Decision B). Decision C's translatable-DOM requirement lands in the user-facing render (P59-C).
+- **Tests.** `TextPropertiesPanel.test.tsx` (content/role/align/geometry/z-order/remove/rename + TypographyEditor wiring) and `layerList` text-kind coverage (kind, ordering, name fallback, reorder, back-compat). Typecheck clean; full builder + layerList suites green.
 
 ## Track P59-C - Render path, i18n-aware output, a11y semantics, tests
 

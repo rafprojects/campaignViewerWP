@@ -167,6 +167,7 @@ export function LayoutBuilderModal({
   const [selectedOverlayId, setSelectedOverlayId] = useState<string | null>(null);
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
   const [selectedMaskSlotId, setSelectedMaskSlotId] = useState<string | null>(null);
+  const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── P30-D: Cross-tab stale detection ──
@@ -411,6 +412,11 @@ export function LayoutBuilderModal({
       ? builder.template.overlays[selectedOverlayIndex]
       : undefined;
 
+  // ── Get selected text layer (P59-B) ──
+  const selectedText = selectedTextId
+    ? builder.template.texts?.find((t) => t.id === selectedTextId)
+    : undefined;
+
   // ── Context value for dock panels (P17-E) ──
   const contextValue: BuilderDockContextValue = {
     builder, isSaving, apiClient, media, campaigns, selectedCampaignId, setSelectedCampaignId,
@@ -418,6 +424,7 @@ export function LayoutBuilderModal({
     selectedSlot, selectedOverlayId, setSelectedOverlayId, selectedOverlay,
     selectedOverlayIndex, isBackgroundSelected, setIsBackgroundSelected,
     selectedMaskSlotId, setSelectedMaskSlotId,
+    selectedTextId, setSelectedTextId, selectedText,
     snapMode, setSnapMode, snapThreshold, setSnapThreshold,
     showGrid, setShowGrid, gridSizePx, setGridSizePx,
     showRulers, setShowRulers, showMeasurements, setShowMeasurements,
