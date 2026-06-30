@@ -45,6 +45,7 @@ import { computeBreakpointBand } from '@wp-super-gallery/shared-utils';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
+import { TextLayerContent } from '@/components/Admin/LayoutBuilder/TextLayerContent';
 import { useViewportHeight } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -942,6 +943,38 @@ function LayoutBuilderGalleryInner({
                     pixelWidth={oPxW}
                     pixelHeight={oPxH}
                   />
+                </div>
+              );
+            })}
+
+            {/* Text layers (P59-C) — real, semantic, screen-reader-reachable DOM
+                text (deliberately NOT aria-hidden) so it is accessible and
+                translatable by multilingual plugins, unlike text baked into an
+                image. */}
+            {(template.texts ?? []).map((text) => {
+              const tPxX = (text.x / 100) * canvasW;
+              const tPxY = (text.y / 100) * canvasH;
+              const tPxW = (text.width / 100) * canvasW;
+              const tPxH = (text.height / 100) * canvasH;
+              return (
+                <div
+                  key={text.id}
+                  style={{
+                    position: 'absolute',
+                    left: tPxX,
+                    top: tPxY,
+                    width: tPxW,
+                    height: tPxH,
+                    zIndex: text.zIndex,
+                    opacity: text.opacity,
+                    transform: text.rotation ? `rotate(${text.rotation}deg)` : undefined,
+                    // Non-interactive in v1 (a clickable CTA is a deferred
+                    // follow-on); pointer-events:none lets clicks fall through to
+                    // slots beneath and does not affect a11y reachability.
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <TextLayerContent layer={text} />
                 </div>
               );
             })}

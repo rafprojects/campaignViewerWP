@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import type { LayoutTextLayer } from '@/types';
+import { loadGoogleFont } from '@wp-super-gallery/shared-utils';
+import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
 import { textLayerElement, textLayerTextStyle, TEXT_LAYER_WRAPPER_STYLE } from '@/utils/textLayerStyle';
 
 /**
@@ -8,6 +11,17 @@ import { textLayerElement, textLayerTextStyle, TEXT_LAYER_WRAPPER_STYLE } from '
  * (`@/utils/textLayerStyle`) and adds positioning + a11y context.
  */
 export function TextLayerContent({ layer }: { layer: LayoutTextLayer }) {
+  const fontFamily = layer.typography.fontFamily;
+  // Re-inject the layer's Google Font wherever the text renders (builder canvas
+  // + published gallery). loadGoogleFont() is idempotent. Without this, a saved
+  // non-system font reverts to its fallback on reload, because the @font-face is
+  // only injected when the font is first selected in the editor.
+  useEffect(() => {
+    if (!fontFamily) return;
+    const name = fontFamily.split(',')[0]!.trim();
+    if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
+  }, [fontFamily]);
+
   const Tag = textLayerElement(layer.semanticTag);
   return (
     <div style={TEXT_LAYER_WRAPPER_STYLE}>

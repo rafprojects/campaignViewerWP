@@ -1,6 +1,6 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** In progress — P59-A, P59-B landed
+**Status:** A/B/C shipped 2026-06-30 · P59-D (text UX polish) planned
 **Created:** 2026-06-26
 **Last updated:** 2026-06-30
 
@@ -10,7 +10,8 @@
 |-------|-------------|--------|--------|
 | P59-A | `text` layer type — schema, state CRUD, persistence | ✅ Done | Medium |
 | P59-B | Text properties panel + on-canvas inline editing | ✅ Done | Medium |
-| P59-C | Render path, i18n-aware output, a11y semantics, tests | Planned | Medium |
+| P59-C | Render path, i18n-aware output, a11y semantics, tests | ✅ Done | Medium |
+| P59-D | Text authoring UX polish — intuitive typography/effect inputs | Planned | Medium |
 
 ---
 
@@ -69,6 +70,7 @@ The template schema models media slots, graphic overlays, and masks — there is
 - **Typography reuse (course-correct, 2026-06-30).** Initially added flat typography fields; on review, switched the layer to store the existing app-wide `TypographyOverride` shape instead of reinventing one. This lets P59-B drop in the canonical `<TypographyEditor>` (grouped System/Google font picker, `loadGoogleFont`, fallback chain, weight/style/transform/decoration + stroke/shadow/glow) and P59-C reuse the same override→CSS converter — extracted as the pure `typographyOverrideToStyle()` from `src/hooks/useTypographyStyle.ts` (single source of truth for both settings-driven and text-layer typography). `semanticTag` + `textAlign` stay as layer fields (box/role, not part of `TypographyOverride`).
 - **i18n decision (Decision C → resolved).** `content` is stored as a **plain string** — no gettext-key indirection. The i18n catalog here is build-time/static (i18next + `window.__WPSG_I18N__`), so user-authored runtime text cannot be harvested into a `.pot`; the codebase already renders other user content (media titles) directly. Rendering text as real semantic DOM in P59-C is what makes it translatable (WPML/Polylang) and screen-reader reachable — the real win over text baked into an image. The Phase 60 harvest will cover only the **panel's developer-authored labels** introduced in P59-B.
 - **Schema version.** Bumped `schemaVersion` 2 → 3. `migrateTemplate()` is now cumulative (v1→v2 `breakpointOverrides`, v2→v3 `texts: []`). Note: `migrateTemplate` is invoked only by tests today; production load paths rely on defensive defaults — so every consumer reads `texts ?? []` and writers lazily run `if (!d.texts) d.texts = []`.
+- **Server-side persistence (PHP — completed post-QA).** P59-A's schema was frontend-only; manual QA surfaced that the PHP layout-template sanitizer (`wp-plugin/.../includes/class-wpsg-layout-templates.php`) **allowlists** fields and silently dropped `texts` on save (the "text slot removed on-save" bug). Fixed by adding a `texts` field to `build_template` + `sanitize_texts()` / `sanitize_text_typography()` (typography reuses the same allowed-props as the settings sanitizer; content via `sanitize_textarea_field`; colors via the CSS sanitizer), bumping PHP `SCHEMA_VERSION` 2→3, adding a `migrate_template` v2→v3 step (mirrors the TS), and regenerating text IDs on template duplicate. 48 PHP tests green. **Known follow-up:** the campaign export/import controller (a separate Phase-41 post-meta path) does not yet round-trip `texts`.
 - **State.** New `useLayoutBuilderText` sub-hook (mirrors `useLayoutBuilderOverlays`): `addText`/`removeText`/`updateText`/`moveText`/`resizeText` + `renameText`/`toggleTextVisible`/`toggleTextLocked`, all through the shared Immer `mutate()` so they inherit undo/redo, dirty tracking, and autosave. Wired into `useLayoutBuilderState`; z-order ops (`bringToFront`/`sendToBack`/`bringForward`/`sendBackward`) extended to include text layers.
 - **Deferred to P59-B.** The layers-panel projection (`buildLayerList`/`computeReorderedZIndices` + a `text` `LayerKind`) is UI-layer work and rides with the panel/canvas track, not the data model.
 - **Tests.** `useLayoutBuilderText.test.ts` (CRUD, z-order, undo, legacy pre-v3 back-compat, draft-autosave persistence) + updated `migrateTemplate`/`createEmptyTemplate` tests for v3. Full `vitest run` green (118 tests in the two hook files); `tsc -b` clean.
@@ -127,6 +129,55 @@ Authored text must render correctly in the gallery — and do so translatably an
 
 - `npm run test` for render + a11y semantics; Playwright `e2e/accessibility.spec.ts` shows no new critical/serious violations; manual QA of a rendered gallery with text layers.
 
+### Implementation notes (P59-C — landed 2026-06-30)
+
+- **Render.** `LayoutBuilderGallery` renders `(template.texts ?? [])` in an absolutely-positioned loop mirroring the overlay loop, but reuses the shared `TextLayerContent` so the published output is the semantic element (h2/h3/p) carrying the layer's typography — identical to the builder canvas. Position/size (% → px), `zIndex`, `opacity`, and `rotation` are applied inline.
+- **i18n (Decision C, resolved).** Text content is the layer's plain string rendered directly into the semantic element — the same surface media titles already use. It is therefore translatable by multilingual plugins (WPML/Polylang) and reachable, the real win over text baked into an uploaded image. No gettext-key indirection (the catalog is build-time/static).
+- **a11y.** The text container is **not** `aria-hidden` (overlays are), so the content sits in the accessibility tree; the role→element map gives sensible heading/paragraph semantics. `pointer-events: none` keeps text non-interactive in v1 (clicks fall through to slots; no a11y impact) — the clickable CTA is the deferred follow-on. The Playwright a11y sweep needs a gallery fixture containing text layers to assert end-to-end; the semantic/reachable markup is unit-covered meanwhile.
+- **Tests.** `TextLayerContent.test.tsx` covers the role→element mapping, reachability (`getByRole('heading')` succeeds ⇒ not aria-hidden), typography/alignment application, and the `textLayerStyle` helpers. The full-gallery component is coverage-excluded; integration is covered by `tsc -b` + the production build + manual QA.
+
+## Track P59-D - Text authoring UX polish (intuitive typography & effect inputs)
+
+**Added 2026-06-30 (post-ship, user direction).** A follow-on track to make the text-authoring
+controls more intuitive and forgiving.
+
+### Problem
+
+The text-layer typography panel (P59-B) reuses the shared `<TypographyEditor>`, whose numeric
+inputs (font size, letter/word spacing, glow/shadow blur & offsets, stroke width) are **free-text
+fields where the user must type the CSS unit themselves** (e.g. `10px`). This is a UX trap: a
+unit-less value like `10` produces invalid CSS and the effect silently does nothing — surfaced
+during P59 QA, where a glow appeared "broken" only because its spread/blur had no unit. More
+broadly, the text-authoring affordances are functional but not as discoverable or forgiving as
+professional design tools.
+
+### Fix (direction — research-led)
+
+- **Explore proven professional patterns first.** Survey how Figma, Webflow, Canva, and browser
+  devtools handle numeric-with-unit inputs and typography/effect controls (scrubbable number
+  fields, explicit unit selectors, sensible defaults, live previews) and adapt the best fit.
+- **Concrete starting idea (user):** replace free-text unit entry with a **value field + a small
+  right-oriented unit dropdown inside the input** (px / em / rem / %), so a bare number can never
+  produce invalid CSS — the unit is always explicit and defaulted. Build it as a **shared control**
+  so the settings `TypographyEditor` benefits too, not just text layers.
+- Add forgiveness: coerce unit-less numeric input to a sensible default unit; surface a live
+  preview of the effect so the result is visible while editing.
+
+### Acceptance criteria
+
+- A user cannot accidentally enter a unit-less value that silently breaks an effect.
+- Numeric typography/effect inputs use the new value+unit control with a sensible default unit.
+- The chosen approach is documented against the professional patterns it adapts.
+
+### Validation
+
+- `npm run test` for the new control's binding + unit behavior; manual QA authoring text + effects
+  via the `see-wp` flow.
+
+### Notes
+
+- Effort/scope to be refined when the track is picked up — the research step gates the design.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -141,8 +192,13 @@ Authored text must render correctly in the gallery — and do so translatably an
 
 ## Outcome
 
-_To be completed once the phase ships._
+Shipped 2026-06-30 — a first-class **text layer** for the LayoutBuilder, across all three tracks.
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); and a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C). A designer can now add editable, accessible, translatable text without an external image editor.
+- **Key decision (course-correct).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A.
+- **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates.
+- **What should happen next.** **P59-D** (text authoring UX polish — researched value+unit controls)
+  was added post-ship as a follow-on track. The Phase 60-B i18n harvest should include the new admin
+  strings when it lands; Pro-gating of text layers is noted for [PHASE61_REPORT.md](PHASE61_REPORT.md)
+  (Decision D). A small a11y follow-up could add a text-layer fixture to `e2e/accessibility.spec.ts`
+  for an end-to-end axe sweep. The campaign export/import path does not yet round-trip `texts`.

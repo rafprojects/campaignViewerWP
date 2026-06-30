@@ -47,5 +47,7 @@ export const TEXT_LAYER_WRAPPER_STYLE: CSSProperties = {
   justifyContent: 'center',
   width: '100%',
   height: '100%',
-  overflow: 'hidden',
+  // `visible`, not `hidden`: text-shadow / glow / -webkit-text-stroke paint
+  // outside the text box, so clipping the wrapper would hide those effects.
+  overflow: 'visible',
 };
