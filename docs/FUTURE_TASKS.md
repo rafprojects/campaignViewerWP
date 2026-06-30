@@ -113,6 +113,26 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### LayoutBuilder — Clickable / Linking CTA Text Layer
+
+**Origin:** Deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) during P59 planning (2026-06-29), per user direction — Phase 59 ships single-style text layers with semantic roles (heading/subheading/paragraph/caption) rendered as real DOM text (Decision B: single-style text for v1); the linking/CTA variant was split off to keep v1 to pure, non-interactive text.
+
+**Context:** Phase 59 text layers (`LayoutTextLayer` in `src/types/index.ts`; render path in `LayoutBuilderGallery.tsx`, P59-C) render as non-interactive semantic text — a heading or caption, not a link. A common layout need is a **call-to-action**: text that navigates somewhere when clicked (e.g. "Shop now"). That requires a link target on the layer plus interactive, accessible rendering — more than "style a string."
+
+**What to implement:**
+- Add an optional `href` (+ link behavior, e.g. same-tab/new-tab) to `LayoutTextLayer`; absent = plain text, so existing text layers stay back-compatible.
+- Render a CTA layer as a real anchor (`<a>` / `role="link"`) with correct keyboard focus + Enter/Space activation and an accessible name — reuse the slot click/keydown a11y pattern already in `LayoutBuilderGallery.tsx` (`role`/`tabIndex`/key handling).
+- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE61_REPORT.md](PHASE61_REPORT.md)).
+- Sanitize the URL on save and on render.
+
+**Files:** `src/types/index.ts` (`LayoutTextLayer`), `src/components/Admin/LayoutBuilder/TextPropertiesPanel.tsx`, `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`.
+
+**Depends on:** the Phase 59 text-layer schema + render path (P59-A landed 2026-06-30; P59-B/P59-C pending).
+
+**Effort:** Small-Medium | **Impact:** Medium — unlocks CTA/banner layouts (a primary reason to put text on a gallery) without an external image editor.
+
+---
+
 ## Code Quality & Refactoring
 
 *No tasks here yet.*
@@ -342,3 +362,5 @@ When promoting future tasks to an active phase:
 *Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
+
+*Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
