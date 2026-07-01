@@ -1,8 +1,8 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** A/B/C shipped 2026-06-30 · P59-D (text UX polish) planned
+**Status:** A/B/C/D shipped 2026-07-01
 **Created:** 2026-06-26
-**Last updated:** 2026-06-30
+**Last updated:** 2026-07-01
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P59-A | `text` layer type — schema, state CRUD, persistence | ✅ Done | Medium |
 | P59-B | Text properties panel + on-canvas inline editing | ✅ Done | Medium |
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | ✅ Done | Medium |
-| P59-D | Text authoring UX polish — intuitive typography/effect inputs | Planned | Medium |
+| P59-D | Text authoring UX polish — intuitive typography/effect inputs | ✅ Done | Medium |
 
 ---
 
@@ -178,6 +178,72 @@ professional design tools.
 
 - Effort/scope to be refined when the track is picked up — the research step gates the design.
 
+### Implementation notes (P59-D — landed 2026-07-01)
+
+- **Patterns adapted.** Figma/Webflow-style value+unit editing (a `NumberInput` with the unit
+  chooser embedded in the field's own right edge, not a separate boxed dropdown) plus
+  click-drag-to-scrub on the label — the same interaction devtools/Figma/Webflow number fields
+  use so a mouse drag adjusts the value without needing to click into the field.
+- **`parseCss()`** added to `packages/shared-utils/src/cssUnits.ts` alongside the existing
+  `toCss`/`toCssOrUndefined`/`toCssOrNumber` helpers — parses a CSS string (`'28px'`) into
+  `{value, unit}`, coercing unit-less legacy values (`'10'`) to a default unit rather than
+  failing, and returning `undefined` for empty/invalid input. Also added `CSS_TRACKING_UNITS`
+  (`px`/`em`/`rem` — no `%`, which isn't valid for letter-spacing/word-spacing/stroke-width/shadow
+  offsets & blur in CSS).
+- **Shared interaction layer, not a one-off.** Rather than build a typography-only control, the
+  `NumberInput` + unit selector + drag-scrub + per-unit clamping logic was extracted into a new
+  low-level `UnitScrubField` (`src/components/Common/UnitScrubField.tsx`). Two thin adapters sit
+  on top of it: `DimensionInput` (`src/components/Settings/DimensionInput.tsx`, refactored
+  in-place — its public `value: number` + `unit: string` contract and existing
+  `DimensionInput.test.tsx` suite are unchanged, so every existing Settings call site gained
+  drag-to-scrub for free) and the new `CssValueInput` (`src/components/Common/CssValueInput.tsx`),
+  which adapts `UnitScrubField` to `TypographyOverride`'s optional-CSS-string contract via
+  `parseCss`/`toCss`. This was a user-directed course-correct during planning — the storage
+  contracts (`DimensionInput`'s split number+unit vs. `CssValueInput`'s single CSS string) are
+  different and weren't unified, but the interaction layer is now genuinely shared. A
+  `/future-task-it` entry (Code Quality & Refactoring, added 2026-06-30) tracks migrating the
+  remaining ad hoc numeric input — the bespoke rotation-degree scrub in `SlotPropertiesPanel.tsx`
+  — and auditing for other candidates, deferred out of this track.
+- **Embedded unit selector, not a boxed dropdown.** First pass put the unit `Select` next to the
+  `NumberInput` in a `Group` (mirroring the original `DimensionInput` layout), but manual QA
+  showed a visible height mismatch — the `NumberInput` defaulted to Mantine's `sm` size while the
+  adjacent `Select` was forced to `xs`, so the two boxes didn't align. Fixed by moving the unit
+  `Select` into the `NumberInput`'s own `rightSection` (`variant="unstyled"`, a thin left border
+  as a divider, height locked to 100% of the input) so value and unit render as one bordered box
+  with the unit flush against the right edge and vertically centered by Mantine's own layout —
+  matching the Elementor-style reference the user pointed to. Confirmed via the Mantine source
+  (`NumberInput.mjs`) that a custom `rightSection` cleanly replaces the built-in stepper
+  chevrons; that's an acceptable trade since drag-to-scrub now covers the same role.
+- **Scrub discoverability.** Manual QA also surfaced that the drag-to-scrub label had no visual
+  affordance — nothing signaled it was draggable. Added a small `IconArrowsHorizontal` (Tabler)
+  next to every scrubbable label, always visible (not hover-only), matching how design tools
+  typically hint a draggable numeric field.
+- **jsdom test-infra additions.** jsdom has never implemented the `PointerEvent` constructor
+  (`window.PointerEvent` is `undefined`) or `Element.setPointerCapture`/`releasePointerCapture`/
+  `hasPointerCapture`, so `fireEvent.pointerDown/Move/Up` from `@testing-library/dom` silently
+  fell back to a plain `Event` and dropped `clientX`/`buttons`/`pointerId` — scrub tests failed
+  with zero calls until this was diagnosed. Polyfilled both (a thin `MouseEvent` subclass for
+  `PointerEvent`, no-op stubs for capture) in `src/test/setup.ts`, following the same pattern
+  already used there for `IntersectionObserver`/`ResizeObserver`/`scrollIntoView`/
+  `URL.createObjectURL`. This also unblocks testing the deferred rotation-scrub migration.
+- **Field tuning.** `fontSize` uses `CSS_SPACING_UNITS` (px/em/rem/%, matching real CSS
+  font-size); the other seven (letter/word-spacing, stroke width, shadow offset X/Y, shadow blur,
+  glow blur) use `CSS_TRACKING_UNITS`. Offsets and letter/word-spacing allow negative values
+  (CSS permits negative tracking and shadow offsets); stroke width and blur values do not (CSS
+  disallows a negative blur radius). `lineHeight` was left untouched — it's already a unitless
+  `NumberInput` (a CSS multiplier), out of scope per this track's problem statement.
+- **No schema/persistence changes.** `TypographyOverride`, the PHP sanitizer, and
+  `migrateTemplate`/`schemaVersion` were untouched — this stayed a pure input-layer change, since
+  `typographyOverrideToStyle()` already consumed complete CSS strings.
+- **Tests.** `UnitScrubField.test.tsx` (render/label, unit dropdown, per-unit clamping, and new
+  scrub coverage — drag increases/decreases value, respects `min`/`max`/`allowNegative`, stops on
+  pointerup), `CssValueInput.test.tsx` (parse/serialize round-trip, clear → `undefined`, unit-less
+  legacy coercion, unit re-serialization), plus `parseCss` unit tests in `cssUnits.test.ts`. The
+  existing `DimensionInput.test.tsx` suite passes unmodified against the refactored adapter. Full
+  `vitest run`: 3624/3624 passing; `tsc -b` clean. Manual QA via `see-wp`: authored a text layer,
+  set a glow color + scrubbed the glow blur value, reloaded, and confirmed it persisted and
+  rendered correctly in the gallery.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -192,13 +258,12 @@ professional design tools.
 
 ## Outcome
 
-Shipped 2026-06-30 — a first-class **text layer** for the LayoutBuilder, across all three tracks.
+Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D) — a first-class **text layer** for the LayoutBuilder, with intuitive, forgiving authoring controls, across all four tracks.
 
-- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); and a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C). A designer can now add editable, accessible, translatable text without an external image editor.
-- **Key decision (course-correct).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A.
-- **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates.
-- **What should happen next.** **P59-D** (text authoring UX polish — researched value+unit controls)
-  was added post-ship as a follow-on track. The Phase 60-B i18n harvest should include the new admin
+- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C); and a value+unit + drag-to-scrub control (`UnitScrubField`, with `DimensionInput`/`CssValueInput` adapters) replacing the free-text CSS-unit fields across `<TypographyEditor>`'s typography/effect inputs, so a bare unit-less number can no longer silently produce invalid CSS (P59-D). A designer can now add editable, accessible, translatable text — with forgiving, professional-tool-style controls — without an external image editor.
+- **Key decisions (course-corrects).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A. In P59-D, the value+unit control was generalized into a shared `UnitScrubField` (rather than a typography-only component) after user direction during planning, and its unit selector was moved from a separate boxed `Select` into the `NumberInput`'s own `rightSection` after manual QA surfaced a height mismatch between the two — both caught and corrected mid-track.
+- **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates. Migrating the remaining ad hoc numeric input (`SlotPropertiesPanel`'s rotation scrub) and auditing for other `UnitScrubField` rollout candidates is future-tasked (`FUTURE_TASKS.md`, Code Quality & Refactoring).
+- **What should happen next.** The Phase 60-B i18n harvest should include the new admin
   strings when it lands; Pro-gating of text layers is noted for [PHASE61_REPORT.md](PHASE61_REPORT.md)
   (Decision D). A small a11y follow-up could add a text-layer fixture to `e2e/accessibility.spec.ts`
   for an end-to-end axe sweep. The campaign export/import path does not yet round-trip `texts`.

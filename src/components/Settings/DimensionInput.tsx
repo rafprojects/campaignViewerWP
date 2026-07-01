@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
-import { Group, NumberInput, Select, type NumberInputProps } from '@mantine/core';
-import { UNIT_MAX_DEFAULTS } from '@wp-super-gallery/shared-utils';
+import { type NumberInputProps } from '@mantine/core';
+import { UnitScrubField } from '@/components/Common/UnitScrubField';
 
 export interface DimensionInputProps {
   /** Current numeric value */
@@ -32,11 +32,14 @@ export interface DimensionInputProps {
 }
 
 /**
- * Compound dimension control: NumberInput + SegmentedControl unit switcher.
+ * Compound dimension control: NumberInput + unit Select, with drag-to-scrub on the label.
  *
  * When the user switches units, the current value is clamped to the new unit's
  * sensible range (e.g. px 3000 → vw 100) and both onValueChange and
  * onUnitChange fire.
+ *
+ * Thin adapter over the shared UnitScrubField — this keeps DimensionInput's
+ * required-number+unit contract unchanged for its existing call sites.
  */
 export function DimensionInput({
   value,
@@ -53,55 +56,21 @@ export function DimensionInput({
   allowNegative = false,
   numberInputProps,
 }: DimensionInputProps) {
-  const resolvedMax = resolveMax(unit, max);
-  const resolvedMin = min ?? (allowNegative ? -resolvedMax : 0);
-
-  const handleUnitChange = (newUnit: string) => {
-    const newMax = resolveMax(newUnit, max);
-    const newMin = min ?? (allowNegative ? -newMax : 0);
-    // Clamp the current value to the new unit's range
-    const clamped = Math.max(newMin, Math.min(newMax, value));
-    if (clamped !== value) {
-      onValueChange(clamped);
-    }
-    onUnitChange(newUnit);
-  };
-
-  const showUnitSelector = allowedUnits.length > 1;
-
   return (
-    <Group gap="xs" align="flex-end" wrap="nowrap">
-      <NumberInput
-        label={label}
-        description={description}
-        value={value}
-        onChange={(v) => onValueChange(typeof v === 'number' ? v : 0)}
-        min={resolvedMin}
-        max={resolvedMax}
-        step={step}
-        placeholder={placeholder}
-        style={{ flex: 1 }}
-        {...numberInputProps}
-      />
-      {showUnitSelector && (
-        <Select
-          size="xs"
-          data={allowedUnits.map((u) => ({ label: u, value: u }))}
-          value={unit}
-          onChange={(v) => v && handleUnitChange(v)}
-          allowDeselect={false}
-          withCheckIcon={false}
-          comboboxProps={{ withinPortal: false }}
-          styles={{ root: { flexShrink: 0, width: 72 } }}
-          aria-label="Unit"
-        />
-      )}
-    </Group>
+    <UnitScrubField
+      label={label}
+      description={description}
+      value={value}
+      unit={unit}
+      onValueChange={(v) => onValueChange(typeof v === 'number' ? v : 0)}
+      onUnitChange={onUnitChange}
+      allowedUnits={allowedUnits}
+      min={min}
+      max={max}
+      step={step}
+      placeholder={placeholder}
+      allowNegative={allowNegative}
+      numberInputProps={numberInputProps}
+    />
   );
-}
-
-/** Resolve the effective max for a given unit, falling back to explicit max for px. */
-function resolveMax(unit: string, explicitMax?: number): number {
-  if (unit === 'px') return explicitMax ?? UNIT_MAX_DEFAULTS.px ?? 9999;
-  return UNIT_MAX_DEFAULTS[unit] ?? UNIT_MAX_DEFAULTS.px ?? 9999;
 }

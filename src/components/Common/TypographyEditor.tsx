@@ -5,15 +5,20 @@ import {
   NumberInput,
   Select,
   Stack,
-  TextInput,
   ActionIcon,
   Text,
   Badge,
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
+import { CssValueInput } from '@/components/Common/CssValueInput';
 import type { TypographyOverride } from '@/types';
-import { loadGoogleFont, getFailedFonts } from '@wp-super-gallery/shared-utils';
+import {
+  loadGoogleFont,
+  getFailedFonts,
+  CSS_SPACING_UNITS,
+  CSS_TRACKING_UNITS,
+} from '@wp-super-gallery/shared-utils';
 import { useRecentFonts } from '@wp-super-gallery/shared-utils';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -304,12 +309,12 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
       )}
 
       <Group grow gap="sm">
-        <TextInput
+        <CssValueInput
           label="Font Size"
-          placeholder="e.g. 14px, 0.875rem"
-          value={value.fontSize ?? ''}
-          onChange={(e) => set('fontSize', e.currentTarget.value || undefined)}
-          size="xs"
+          value={value.fontSize}
+          onChange={(v) => set('fontSize', v)}
+          allowedUnits={CSS_SPACING_UNITS}
+          max={500}
         />
         <Select
           label="Font Weight"
@@ -365,19 +370,23 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
           decimalScale={2}
           size="xs"
         />
-        <TextInput
+        <CssValueInput
           label="Letter Spacing"
-          placeholder="e.g. 0.02em"
-          value={value.letterSpacing ?? ''}
-          onChange={(e) => set('letterSpacing', e.currentTarget.value || undefined)}
-          size="xs"
+          value={value.letterSpacing}
+          onChange={(v) => set('letterSpacing', v)}
+          allowedUnits={CSS_TRACKING_UNITS}
+          allowNegative
+          step={0.01}
+          max={20}
         />
-        <TextInput
+        <CssValueInput
           label="Word Spacing"
-          placeholder="e.g. 0.1em"
-          value={value.wordSpacing ?? ''}
-          onChange={(e) => set('wordSpacing', e.currentTarget.value || undefined)}
-          size="xs"
+          value={value.wordSpacing}
+          onChange={(v) => set('wordSpacing', v)}
+          allowedUnits={CSS_TRACKING_UNITS}
+          allowNegative
+          step={0.01}
+          max={50}
         />
       </Group>
 
@@ -392,12 +401,13 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
           </Accordion.Control>
           <Accordion.Panel>
             <Group grow gap="sm">
-              <TextInput
+              <CssValueInput
                 label="Width"
-                placeholder="e.g. 1px"
-                value={value.textStrokeWidth ?? ''}
-                onChange={(e) => set('textStrokeWidth', e.currentTarget.value || undefined)}
-                size="xs"
+                value={value.textStrokeWidth}
+                onChange={(v) => set('textStrokeWidth', v)}
+                allowedUnits={CSS_TRACKING_UNITS}
+                step={0.5}
+                max={20}
               />
               <ColorInput
                 label="Color"
@@ -419,28 +429,30 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
           <Accordion.Panel>
             <Stack gap="sm">
               <Group grow gap="sm">
-                <TextInput
+                <CssValueInput
                   label="Offset X"
-                  placeholder="e.g. 2px"
-                  value={value.textShadowOffsetX ?? ''}
-                  onChange={(e) => set('textShadowOffsetX', e.currentTarget.value || undefined)}
-                  size="xs"
+                  value={value.textShadowOffsetX}
+                  onChange={(v) => set('textShadowOffsetX', v)}
+                  allowedUnits={CSS_TRACKING_UNITS}
+                  allowNegative
+                  max={50}
                 />
-                <TextInput
+                <CssValueInput
                   label="Offset Y"
-                  placeholder="e.g. 2px"
-                  value={value.textShadowOffsetY ?? ''}
-                  onChange={(e) => set('textShadowOffsetY', e.currentTarget.value || undefined)}
-                  size="xs"
+                  value={value.textShadowOffsetY}
+                  onChange={(v) => set('textShadowOffsetY', v)}
+                  allowedUnits={CSS_TRACKING_UNITS}
+                  allowNegative
+                  max={50}
                 />
               </Group>
               <Group grow gap="sm">
-                <TextInput
+                <CssValueInput
                   label="Blur"
-                  placeholder="e.g. 4px"
-                  value={value.textShadowBlur ?? ''}
-                  onChange={(e) => set('textShadowBlur', e.currentTarget.value || undefined)}
-                  size="xs"
+                  value={value.textShadowBlur}
+                  onChange={(v) => set('textShadowBlur', v)}
+                  allowedUnits={CSS_TRACKING_UNITS}
+                  max={100}
                 />
                 <ColorInput
                   label="Color"
@@ -470,12 +482,12 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
                 onChange={(v) => set('textGlowColor', v || undefined)}
                 size="xs"
               />
-              <TextInput
+              <CssValueInput
                 label="Glow Blur"
-                placeholder="e.g. 10px"
-                value={value.textGlowBlur ?? ''}
-                onChange={(e) => set('textGlowBlur', e.currentTarget.value || undefined)}
-                size="xs"
+                value={value.textGlowBlur}
+                onChange={(v) => set('textGlowBlur', v)}
+                allowedUnits={CSS_TRACKING_UNITS}
+                max={100}
               />
             </Group>
           </Accordion.Panel>
