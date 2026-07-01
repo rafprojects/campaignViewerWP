@@ -266,6 +266,8 @@ export interface LayoutBuilderActions {
   moveGuide: (id: string, position: number) => void;
   removeGuide: (id: string) => void;
   toggleGuideLock: (id: string) => void;
+  /** Remove all guides in a single history step (P59-F). */
+  clearGuides: () => void;
 
   // ── Preview ──
   togglePreview: () => void;
@@ -365,7 +367,7 @@ export function useLayoutBuilderState(
   } = useLayoutBuilderGroups({ mutate, template, setSelectedSlotIds });
 
   const {
-    addGuide, moveGuide, removeGuide, toggleGuideLock,
+    addGuide, moveGuide, removeGuide, toggleGuideLock, clearGuides,
   } = useLayoutBuilderGuides({ mutate });
 
   // ── Template-level actions ──
@@ -1119,6 +1121,7 @@ export function useLayoutBuilderState(
     moveGuide,
     removeGuide,
     toggleGuideLock,
+    clearGuides,
     // Per-breakpoint slot overrides (P58-B)
     setActiveBreakpoint,
     setSlotBreakpointOverride,

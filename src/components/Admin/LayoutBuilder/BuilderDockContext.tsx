@@ -126,6 +126,11 @@ export interface BuilderDockContextValue {
   moveGuide: (id: string, position: number) => void;
   removeGuide: (id: string) => void;
   toggleGuideLock: (id: string) => void;
+  /** Remove all guides in one history step (P59-F). */
+  clearGuides: () => void;
+  /** Currently selected guide, or null (P59-F). */
+  selectedGuideId: string | null;
+  setSelectedGuideId: Dispatch<SetStateAction<string | null>>;
 }
 
 // ── Context + hook ────────────────────────────────────────────

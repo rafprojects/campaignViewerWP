@@ -94,6 +94,10 @@ export interface LayoutCanvasProps {
   onMoveGuide?: (id: string, position: number) => void;
   onRemoveGuide?: (id: string) => void;
   onToggleGuideLock?: (id: string) => void;
+  /** Currently selected guide, or null (P59-F). */
+  selectedGuideId?: string | null;
+  /** Fired when a guide is clicked (not dragged) — P59-F. */
+  onSelectGuide?: (id: string) => void;
   // ── P58-B: Per-breakpoint slot overrides ────────────────────
   /** Active breakpoint being edited. Slots resolve to their breakpoint-overridden geometry. */
   activeBreakpoint?: ResponsiveBreakpoint;
@@ -165,6 +169,8 @@ export function LayoutCanvas({
   onMoveGuide,
   onRemoveGuide,
   onToggleGuideLock,
+  selectedGuideId = null,
+  onSelectGuide,
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
@@ -970,15 +976,17 @@ export function LayoutCanvas({
         )}
 
         {/* P57-E: Persistent guides overlay */}
-        {!isPreview && (guides?.length ?? 0) > 0 && onMoveGuide && onRemoveGuide && onToggleGuideLock && (
+        {!isPreview && (guides?.length ?? 0) > 0 && onMoveGuide && onRemoveGuide && onToggleGuideLock && onSelectGuide && (
           <PersistentGuidesOverlay
             guides={guides!}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
             canvasRef={canvasRef}
+            selectedGuideId={selectedGuideId}
             onMoveGuide={onMoveGuide}
             onRemoveGuide={onRemoveGuide}
             onToggleGuideLock={onToggleGuideLock}
+            onSelectGuide={onSelectGuide}
           />
         )}
 

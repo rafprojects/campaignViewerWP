@@ -36,6 +36,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
     setSelectedMaskSlotId,
     selectedTextId,
     setSelectedTextId,
+    setSelectedGuideId,
     designAssetsOpen: _designAssetsOpen,
     setDesignAssetsOpen,
     bgSectionRef,
@@ -226,6 +227,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
                 setSelectedOverlayId(null);
                 setIsBackgroundSelected(false);
                 setSelectedMaskSlotId(null);
+                setSelectedGuideId(null);
                 builder.clearSelection();
                 setSelectedTextId(id);
               }}
@@ -371,18 +373,21 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.selectSlot(id);
           }}
           onToggleSelectSlot={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.toggleSlotSelection(id);
           }}
           onRangeSelectSlot={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             const slotLayers = buildLayerList(builder.template).filter((l) => l.kind === 'slot');
             const clickedIdx = slotLayers.findIndex((l) => l.id === id);
             const selectedArr = [...builder.selectedSlotIds];
@@ -400,12 +405,14 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
             setSelectedTextId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
           }}
           onSelectText={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
             setSelectedTextId(id);
           }}
@@ -413,6 +420,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(true);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
             // Focus media panel in dockview and expand Design Assets accordion
             dockApiRef.current?.getPanel('media')?.api.setActive();
@@ -428,12 +436,14 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
           }}
           onSelectMask={(parentSlotId) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(parentSlotId);
+            setSelectedGuideId(null);
             // Also select the parent slot so properties panel shows slot props
             builder.selectSlot(parentSlotId);
           }}
@@ -487,6 +497,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
           }}
           onDissolveGroup={builder.dissolveGroup}
           onToggleGroupCollapsed={(groupId, collapsed) =>

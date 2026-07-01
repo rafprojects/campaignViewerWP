@@ -91,6 +91,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     setSelectedTextId,
     selectedTextId,
     selectedMaskSlotId,
+    setSelectedGuideId,
+    selectedGuideId,
     announce,
     handleDeleteSelected,
     handleDuplicateSelected,
@@ -140,9 +142,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       setSelectedOverlayId(null);
       setIsBackgroundSelected(false);
       setSelectedTextId(null);
+      setSelectedGuideId(null);
       announce('New slot added at cursor position');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   // ── Canvas drop handlers ──────────────────────────────────────────────────
@@ -153,10 +156,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       setSelectedOverlayId(id);
       setIsBackgroundSelected(false);
       setSelectedTextId(null);
+      setSelectedGuideId(null);
       builder.clearSelection();
       announce('Graphic layer added to canvas');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   const handleMediaCanvasDrop = useCallback(
@@ -166,9 +170,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.assignMediaToSlot(slotId, mediaId, meta);
       setIsBackgroundSelected(false);
       setSelectedTextId(null);
+      setSelectedGuideId(null);
       announce('New slot created with assigned media');
     },
-    [builder, setIsBackgroundSelected, setSelectedTextId, announce],
+    [builder, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   // ── Zoom / pan state ──────────────────────────────────────────────────────
@@ -393,6 +398,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
                     setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     builder.selectSlot(id);
                   }}
                   onSlotToggleSelect={builder.toggleSlotSelection}
@@ -400,12 +406,14 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
                     setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     builder.clearSelection();
                   }}
                   onMarqueeSelect={(ids, additive) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
                     setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     if (additive) builder.addSlotsToSelection(ids);
                     else builder.selectSlotsInRange(ids);
                   }}
@@ -419,6 +427,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onTextSelect={(id) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedGuideId(null);
                     builder.clearSelection();
                     setSelectedTextId(id);
                   }}
@@ -430,9 +439,17 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onMediaCanvasDrop={handleMediaCanvasDrop}
                   contextualToolbarCallbacks={contextualToolbarCallbacks}
                   guides={guides}
+                  selectedGuideId={selectedGuideId}
                   onMoveGuide={moveGuide}
                   onRemoveGuide={removeGuide}
                   onToggleGuideLock={toggleGuideLock}
+                  onSelectGuide={(id) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
+                    builder.clearSelection();
+                    setSelectedGuideId(id);
+                  }}
                 />
               </TransformComponent>
             </TransformWrapper>

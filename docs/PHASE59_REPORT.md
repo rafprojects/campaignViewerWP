@@ -1,6 +1,6 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** A/B/C/D/E shipped 2026-07-01 (E opened by PR review)
+**Status:** A/B/C/D/E/F shipped 2026-07-01 (E opened by PR review, F user-directed)
 **Created:** 2026-06-26
 **Last updated:** 2026-07-01
 
@@ -13,6 +13,7 @@
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | ✅ Done | Medium |
 | P59-D | Text authoring UX polish — intuitive typography/effect inputs | ✅ Done | Medium |
 | P59-E | `duplicate()` id-remap for groups & per-breakpoint overrides | ✅ Done | Medium |
+| P59-F | Discoverable persistent-guide removal | ✅ Done | Small |
 
 ---
 
@@ -330,6 +331,118 @@ then rewrite every reference through it in one pass:
   exit 0 (49 → 53 with the four new cases). Full PHPUnit suite: **1072 tests, 13098 assertions, 2
   skipped** (the expected pre-existing skips), 0 failures/errors, exit 0.
 
+## Track P59-F - Discoverable persistent-guide removal
+
+> Opened 2026-07-01 (user-directed) — persistent guides (P57-E) can be added but the user found no
+> apparent way to remove one.
+
+### Problem
+
+Investigation found this is only half true: `removeGuide(id)` already exists, is fully wired,
+undo-aware, and tested (`useLayoutBuilderGuides.ts:25-32`), and is already triggered by
+**double-clicking a guide line** on the canvas (`PersistentGuidesOverlay.tsx:109-112`, covered by
+`PersistentGuidesOverlay.test.tsx:68`). The real gap is **discoverability** — nothing on the guide
+(no icon, tooltip, or hint) signals that double-click deletes it, so in practice it cannot be found.
+This is inconsistent with every other layer type (slots, overlays, text), which all have a visible
+delete affordance (a Layers-panel trash icon and/or a keyboard shortcut).
+
+### Fix
+
+1. **Visible delete icon.** Add a second small hand-drawn SVG icon next to the existing lock icon in
+   `PersistentGuidesOverlay.tsx` (this file renders inside an `<svg>`, so no Mantine `ActionIcon` —
+   mirror the lock icon's existing raw-SVG-primitive style), `onClick` → `onRemoveGuide(guide.id)`,
+   plus a native SVG `<title>` for a built-in hover tooltip. Keep double-click as a bonus shortcut.
+2. **Select + Delete/Backspace.** Add `selectedGuideId` state to `LayoutBuilderModal.tsx` (mirrors
+   `selectedTextId`/`selectedOverlayId`, mutually exclusive with them). Add click-vs-drag
+   disambiguation to `startGuideDrag` (a mousedown-move threshold) since guides don't use
+   `react-rnd` and have no existing click concept. Give the selected guide a distinct stroke. Wire
+   Delete/Backspace to remove the selected guide via a new branch in `handleDeleteSelected`
+   (verified that function today only handles `selectedSlotIds` — overlay/text deletion via
+   Delete/Backspace is a separate pre-existing gap, not fixed by this track).
+3. **"Clear guides" menu item.** Add `clearGuides()` to `useLayoutBuilderGuides.ts` as a single
+   `mutate()` call (one undo step, not a loop over `removeGuide`), exposed through
+   `useLayoutBuilderState.ts` and `BuilderDockContext.tsx`, and added to the existing **View →
+   Canvas** menu section in `LayoutBuilderMenuBar.tsx` (next to "Reset layout") rather than a new
+   toolbar button — keeps the toolbar uncluttered, matches this codebase's convention for
+   infrequent canvas-scoped actions. No confirm dialog, consistent with the Edit-menu "Delete" and
+   "Reset layout" precedent of relying on undo/redo instead of a modal.
+
+### Acceptance criteria
+
+- Every guide shows a discoverable way to delete it once selected (no reliance on knowing about
+  double-click).
+- A guide can be selected by click (not drag) and removed with Delete/Backspace, mirroring slot
+  deletion.
+- A "Clear guides" action exists in the View menu, is disabled when there are no guides, and removes
+  all guides in a single undo step.
+- Existing guide behavior (add, drag-to-move, lock/unlock) is unchanged.
+
+### Validation
+
+- `npm run test` for `PersistentGuidesOverlay.test.tsx` (delete icon, click-select, drag threshold),
+  `useLayoutBuilderGuides.test.ts` (`clearGuides` single-undo-step), and the menu item's
+  enabled/disabled state.
+- Manual QA via `see-wp`: add several guides, delete one via the new icon, select+delete another via
+  keyboard, confirm dragging is unaffected, then use "Clear guides" and confirm a single undo
+  restores everything.
+
+### Implementation notes (P59-F — landed 2026-07-01)
+
+- **Manual QA course-corrects (user, live on `see-wp`).** The first pass shipped both icons
+  always-visible, offset horizontally from the lock icon regardless of guide axis. Live QA on the
+  actual dev site (not just jsdom) surfaced that this looked cluttered — a vertical guide's icon
+  pair stuck out sideways, perpendicular to the line, and every guide showed icons all the time
+  even when idle. Two fixes, both in `PersistentGuidesOverlay.tsx`:
+  1. **Icons are selected-only.** The lock/delete icon pair now renders only when
+     `guide.id === selectedGuideId` — an idle canvas with several guides shows only the lines (the
+     locked/unlocked state itself stays visible via the dashed-vs-solid stroke regardless of
+     selection, so no information is lost by hiding the icons). The first click on a guide selects
+     it (revealing the icons); a second, deliberate click on an icon performs the action — this
+     already fell out of the existing click-to-select wiring with no extra state needed.
+  2. **Icons stack along the guide's own axis**, not always sideways: vertical guides stack the
+     delete icon *below* the lock icon (same X, offset Y); horizontal guides stack it to the
+     *right* (same Y, offset X, unchanged from the first pass). This hugs the guide's line instead
+     of poking out perpendicular to it.
+- **Double-click-to-delete removed (user decision, post-QA).** The original `onDoubleClick` handler
+  on the hit-rect (inherited from P57-E, the guide's original and only removal path) was kept
+  through the first P59-F pass as a "bonus shortcut." Manual QA raised a real conflict: now that a
+  plain click selects a guide (a new, frequent interaction), two clicks in quick succession at the
+  same spot — a routine byproduct of clicking to (re)select — fire the browser's native `dblclick`
+  and would silently delete the guide with no confirm dialog, unlike before P59-F where a bare
+  click was a no-op and accidental double-clicks were harmless. Discussed the tradeoff and agreed
+  to remove the handler entirely: the delete icon and keyboard path both require a deliberate extra
+  step and don't share this accidental-deletion risk, and double-click no longer fills a
+  discoverability gap now that a real affordance exists. A regression test
+  (`double-click on hit rect does not delete`) locks in the new behavior rather than just deleting
+  the old coverage, to guard against reintroducing the footgun.
+- **Selection independent of lock.** `removeGuide` has no lock check (deletion always worked on
+  locked guides), so `onSelectGuide` fires on mousedown for locked guides too — otherwise a locked
+  guide's delete icon/keyboard path would be unreachable. Locked guides just skip the drag-threshold
+  logic entirely (mousedown selects immediately; nothing to distinguish from a drag since dragging
+  is disallowed).
+- **Mutual exclusivity.** `selectedGuideId` (new state in `LayoutBuilderModal.tsx`) is cleared at
+  every other selection site across `LayoutBuilderCanvasPanel.tsx` and `LayoutBuilderLayersPanel.tsx`
+  (slot/overlay/text/background/mask/group select, marquee select, canvas-click-to-deselect, grid
+  generation), and selecting a guide clears the others — mirrors the existing
+  `selectedOverlayId`/`selectedTextId`/`isBackgroundSelected` pattern exactly, just one more flag in
+  the same already-established (if verbose) convention rather than a new selection model.
+- **Known pre-existing gap, not fixed here.** `handleDeleteSelected` was already slot-only before
+  this track — pressing Delete/Backspace on a selected overlay or text layer does nothing (they're
+  only removable via the Layers-panel trash icon or their panel's Remove button). This track adds a
+  guide-specific branch ahead of the slot branch rather than trying to unify with overlay/text,
+  which is a separate, wider inconsistency out of scope here.
+- **Tests.** `PersistentGuidesOverlay.test.tsx` grew to 17 cases: delete-icon click, click-vs-drag
+  threshold (select vs. move), locked-guide immediate select, selected-guide stroke styling,
+  icons-hidden-when-unselected, icons-shown-only-for-the-selected-guide (not leaking to others),
+  axis-based stacking (vertical → same X/different Y, horizontal → same Y/different X), and the
+  double-click-no-longer-deletes regression guard. `useLayoutBuilderGuides.test.ts` added
+  `clearGuides` cases (empties in one call, single undo step restores all, no-op on an empty list).
+  New `LayoutBuilderMenuBar.test.tsx` covers the "Clear guides" menu item's disabled/enabled state
+  and click dispatch. Full `vitest run`: 3641/3641 passing; `tsc -b` clean.
+- **No schema/persistence changes.** `PersistentGuide`, the PHP sanitizer, and
+  `migrateTemplate`/`schemaVersion` were untouched — pure interaction-layer work on top of the
+  already-existing P57-E data model and the already-wired `removeGuide` action.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -344,10 +457,10 @@ then rewrite every reference through it in one pass:
 
 ## Outcome
 
-Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D, E) — a first-class **text layer** for the LayoutBuilder, with intuitive, forgiving authoring controls, across all five tracks.
+Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D, E, F) — a first-class **text layer** for the LayoutBuilder, with intuitive, forgiving authoring controls, across all six tracks.
 
-- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C); and a value+unit + drag-to-scrub control (`UnitScrubField`, with `DimensionInput`/`CssValueInput` adapters) replacing the free-text CSS-unit fields across `<TypographyEditor>`'s typography/effect inputs, so a bare unit-less number can no longer silently produce invalid CSS (P59-D). A designer can now add editable, accessible, translatable text — with forgiving, professional-tool-style controls — without an external image editor. A post-review follow-up (P59-E) then closed a pre-existing `duplicate()` gap: copying a template now regenerates layer ids *and* remaps everything that references them (group membership + per-breakpoint override keys), so duplicating a grouped or responsive layout no longer orphans its groups or drops its overrides.
-- **Key decisions (course-corrects).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A. In P59-D, the value+unit control was generalized into a shared `UnitScrubField` (rather than a typography-only component) after user direction during planning, and its unit selector was moved from a separate boxed `Select` into the `NumberInput`'s own `rightSection` after manual QA surfaced a height mismatch between the two — both caught and corrected mid-track.
+- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C); and a value+unit + drag-to-scrub control (`UnitScrubField`, with `DimensionInput`/`CssValueInput` adapters) replacing the free-text CSS-unit fields across `<TypographyEditor>`'s typography/effect inputs, so a bare unit-less number can no longer silently produce invalid CSS (P59-D). A designer can now add editable, accessible, translatable text — with forgiving, professional-tool-style controls — without an external image editor. A post-review follow-up (P59-E) then closed a pre-existing `duplicate()` gap: copying a template now regenerates layer ids *and* remaps everything that references them (group membership + per-breakpoint override keys), so duplicating a grouped or responsive layout no longer orphans its groups or drops its overrides. A user-directed follow-up (P59-F) made persistent-guide removal (P57-E) actually discoverable — a selection-gated delete icon, click-to-select + Delete/Backspace, and a "Clear guides" menu action — replacing an undiscoverable, ultimately-risky double-click-only delete path.
+- **Key decisions (course-corrects).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A. In P59-D, the value+unit control was generalized into a shared `UnitScrubField` (rather than a typography-only component) after user direction during planning, and its unit selector was moved from a separate boxed `Select` into the `NumberInput`'s own `rightSection` after manual QA surfaced a height mismatch between the two — both caught and corrected mid-track. In P59-F, live manual QA on the actual dev site (not just jsdom) surfaced that always-visible, sideways-offset guide icons looked cluttered — fixed by gating icons behind selection and stacking them along the guide's own axis — and that surfaced a second issue: the legacy double-click-to-delete path (kept as a "bonus shortcut") now risked accidental deletion once plain click became a frequent select gesture, so it was removed entirely after discussion.
 - **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates. Migrating the remaining ad hoc numeric input (`SlotPropertiesPanel`'s rotation scrub) and auditing for other `UnitScrubField` rollout candidates is future-tasked (`FUTURE_TASKS.md`, Code Quality & Refactoring).
 - **What should happen next.** The Phase 60-B i18n harvest should include the new admin
   strings when it lands; Pro-gating of text layers is noted for [PHASE61_REPORT.md](PHASE61_REPORT.md)

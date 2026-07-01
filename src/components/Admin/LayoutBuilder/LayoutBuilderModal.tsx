@@ -168,6 +168,7 @@ export function LayoutBuilderModal({
   const [isBackgroundSelected, setIsBackgroundSelected] = useState(false);
   const [selectedMaskSlotId, setSelectedMaskSlotId] = useState<string | null>(null);
   const [selectedTextId, setSelectedTextId] = useState<string | null>(null);
+  const [selectedGuideId, setSelectedGuideId] = useState<string | null>(null);
   const [a11yAnnouncement, setA11yAnnouncement] = useState('');
 
   // ── P30-D: Cross-tab stale detection ──
@@ -267,8 +268,14 @@ export function LayoutBuilderModal({
     }
   }, [builder, apiClient, onSaved, onNotify, postSaved]);
 
-  // ── Delete selected slots ──
+  // ── Delete selected slots (or the selected guide — P59-F) ──
   const handleDeleteSelected = useCallback(() => {
+    if (selectedGuideId) {
+      builder.removeGuide(selectedGuideId);
+      setSelectedGuideId(null);
+      notifications.show({ message: 'Guide deleted', color: 'gray', autoClose: 2500 });
+      return;
+    }
     const ids = Array.from(builder.selectedSlotIds);
     if (ids.length === 0) return;
     builder.removeSlots(ids);
@@ -277,7 +284,7 @@ export function LayoutBuilderModal({
       color: 'gray',
       autoClose: 2500,
     });
-  }, [builder]);
+  }, [builder, selectedGuideId]);
 
   // ── Duplicate selected slots ──
   const handleDuplicateSelected = useCallback(() => {
@@ -435,6 +442,9 @@ export function LayoutBuilderModal({
     moveGuide: builder.moveGuide,
     removeGuide: builder.removeGuide,
     toggleGuideLock: builder.toggleGuideLock,
+    clearGuides: builder.clearGuides,
+    selectedGuideId,
+    setSelectedGuideId,
     announce,
     handleSave, handleClose, handleAutoAssign, handleUploadAsset,
     handleDeleteLibraryAsset, handleSetAssetUniversal, handleSetAssetTags, handleUploadBgImage,
@@ -593,6 +603,8 @@ export function LayoutBuilderModal({
               rootId={rootId}
               layoutScope={layoutScope}
               setLayoutScope={setLayoutScope}
+              guideCount={(builder.template.guides ?? []).length}
+              onClearGuides={builder.clearGuides}
             />
 
             {/* Right: preview + save + close */}
@@ -653,6 +665,7 @@ export function LayoutBuilderModal({
             if (ids.length > 0) {
               setSelectedOverlayId(null);
               setIsBackgroundSelected(false);
+              setSelectedGuideId(null);
               announce(`Generated ${ids.length} slot${ids.length !== 1 ? 's' : ''}`);
             }
           }}
