@@ -25,15 +25,18 @@ declare global {
 const injected = window.__WPSG_I18N__ ?? {};
 const locale = injected.locale ?? 'en';
 
+// P60-G: PHP (WPSG_Frontend_Strings) injects the active-locale translation of the
+// whole front-end catalogue, keyed identically to enStrings. Merge it over the
+// bundled English defaults so any key missing from the injection degrades to
+// English per-key (belt-and-suspenders alongside fallbackLng below).
+const active = { ...enStrings, ...(injected.strings ?? {}) };
+
 const resources: Record<string, { wpsg: Record<string, string> }> = {
-  en: { wpsg: enStrings },
+  en: { wpsg: locale === 'en' ? active : enStrings },
 };
 
 if (locale !== 'en') {
-  resources[locale] = { wpsg: injected.strings ?? {} };
-} else {
-  // Merge PHP-injected strings over the English defaults
-  resources.en = { wpsg: { ...enStrings, ...(injected.strings ?? {}) } };
+  resources[locale] = { wpsg: active };
 }
 
 i18n.use(initReactI18next).init({

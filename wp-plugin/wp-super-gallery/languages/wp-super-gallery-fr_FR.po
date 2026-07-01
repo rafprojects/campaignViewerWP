@@ -1,0 +1,57 @@
+# WP Super Gallery — French (France) translation.
+#
+# Pilot locale for P60-G: demonstrates that a single .po/.mo translates BOTH the
+# PHP-rendered surface and the React (i18next) front-end. Only a representative
+# subset is translated; every other string degrades to English per-key at runtime
+# (PHP __() returns the source, and src/i18n.ts falls back to its bundled English).
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Language: fr_FR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: wp-super-gallery\n"
+
+#. React front-end (i18next) strings — keyed identically across auth/login,
+#. so a single "Sign in" translation covers auth_sign_in, login_title, login_submit.
+msgid "Admin menu"
+msgstr "Menu d’administration"
+
+msgid "Admin Panel"
+msgstr "Panneau d’administration"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "Sign in"
+msgstr "Se connecter"
+
+msgid "Sign out"
+msgstr "Se déconnecter"
+
+msgid "Sign in to access private campaigns."
+msgstr "Connectez-vous pour accéder aux campagnes privées."
+
+msgid "Signed in as {{email}}"
+msgstr "Connecté en tant que {{email}}"
+
+msgid "Close lightbox"
+msgstr "Fermer la visionneuse"
+
+msgid "No media"
+msgstr "Aucun média"
+
+#. i18next plural pair — each variant is a plain, independently-translated string;
+#. i18next selects between them client-side by {{count}}.
+msgid "Password must be at least {{count}} character"
+msgstr "Le mot de passe doit contenir au moins {{count}} caractère"
+
+msgid "Password must be at least {{count}} characters"
+msgstr "Le mot de passe doit contenir au moins {{count}} caractères"
+
+#. PHP-rendered string — proves the same .po covers the server surface too.
+msgid "API connection successful!"
+msgstr "Connexion API réussie !"

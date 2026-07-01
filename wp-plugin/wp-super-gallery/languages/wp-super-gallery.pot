@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-01T20:37:14+00:00\n"
+"POT-Creation-Date: 2026-07-01T21:10:43+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -49,6 +49,7 @@ msgid "Campaigns"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:70
+#: includes/i18n/class-wpsg-frontend-strings.php:35
 msgid "Campaign"
 msgstr ""
 
@@ -65,6 +66,7 @@ msgid "Add New Campaign"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:75
+#: includes/i18n/class-wpsg-frontend-strings.php:36
 msgid "Edit Campaign"
 msgstr ""
 
@@ -198,50 +200,6 @@ msgstr ""
 msgid "Forbidden"
 msgstr ""
 
-#: includes/class-wpsg-embed.php:84
-msgid "Close"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:85
-msgid "Loading…"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:86
-msgid "An error occurred. Please try again."
-msgstr ""
-
-#: includes/class-wpsg-embed.php:87
-msgid "No media found."
-msgstr ""
-
-#: includes/class-wpsg-embed.php:88
-msgid "Upload files"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:89
-msgid "Choose files"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:90
-msgid "or drag & drop files here"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:91
-msgid "Cancel"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:92
-msgid "Save"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:93
-msgid "Delete"
-msgstr ""
-
-#: includes/class-wpsg-embed.php:94
-msgid "Confirm"
-msgstr ""
-
 #: includes/class-wpsg-space-admin-renderer.php:35
 #: includes/class-wpsg-space-admin-renderer.php:70
 msgid "Gallery Spaces"
@@ -253,6 +211,357 @@ msgstr ""
 
 #: includes/class-wpsg-space-admin-renderer.php:71
 msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:29
+msgid "Admin menu"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:30
+msgid "User navigation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:31
+msgid "User menu"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:32
+msgid "Signed in as {{email}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:33
+msgid "Admin Panel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:34
+#: includes/settings/class-wpsg-settings-renderer.php:46
+msgid "Settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:37
+msgid "Edit {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:38
+msgid "Edit Gallery Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:39
+msgid "Edit gallery config for {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:40
+msgid "Manage Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:41
+msgid "Manage media for {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:42
+msgid "Archive"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:43
+msgid "Archive {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:44
+msgid "Sign out"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:45
+#: includes/i18n/class-wpsg-frontend-strings.php:49
+#: includes/i18n/class-wpsg-frontend-strings.php:61
+msgid "Sign in"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:46
+msgid "Sign in to access private campaigns."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:47
+msgid "Switch targeted gallery space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:48
+msgid "Target space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:50
+msgid "Access private campaigns with your WordPress account."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:51
+msgid "Email"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:52
+msgid "you@example.com"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:53
+msgid "Password"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:54
+msgid "Enter your password"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:55
+msgid "Enter a valid email"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:56
+msgid "Password must be at least {{count}} character"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:57
+msgid "Password must be at least {{count}} characters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:58
+msgid "Error"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:59
+msgid "Login failed. Check your credentials."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:60
+msgid "Signing in..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:62
+msgid "Media lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:63
+msgid "Close lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:64
+msgid "Previous image (lightbox)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:65
+msgid "Next image (lightbox)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:66
+msgid "Campaign video"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:67
+msgid "Campaign image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:68
+msgid "{{current}} / {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:69
+msgid "←"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:70
+msgid "→"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:71
+msgid "Esc"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:72
+msgid "navigate"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:73
+msgid "·"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:74
+msgid "close"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:75
+msgid "VIDEO"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:76
+msgid "No media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:77
+msgid "Video"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:78
+msgid "Image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:79
+msgid "{{type}} {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:80
+msgid "Item {{index}} of {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:81
+msgid "Item {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:82
+msgid "Play: {{caption}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:83
+msgid "View: {{caption}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:84
+msgid "Play video {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:85
+msgid "View image {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:86
+msgid "Open in lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:87
+msgid "Empty"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:88
+msgid "Slide {{index}} of {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:89
+msgid "View image {{index}} of {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:90
+msgid "Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:91
+msgid "Video player: {{caption}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:92
+msgid "Untitled video"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:93
+msgid "Untitled image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:94
+msgid "Open lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:95
+msgid "Previous video (overlay)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:96
+msgid "Next video (overlay)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:97
+msgid "Previous image (overlay)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:98
+msgid "Next image (overlay)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:99
+msgid "Campaign listing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:100
+msgid "Previous campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:101
+msgid "Next campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:102
+msgid "All"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:103
+msgid "Default order"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:104
+msgid "Newest first"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:105
+msgid "Oldest first"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:106
+msgid "Sort order"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:107
+msgid "Loading layout template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:108
+msgid "Loading gallery…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:109
+msgid "Layout template not found"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:110
+msgid "View {{title}} in lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:111
+msgid "media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:112
+msgid "{{count}} media item(s) have no slot — they won't be displayed."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:113
+msgid "{{count}} slot(s) have no media — they'll appear as placeholders."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:114
+msgid "Slot assignment info"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:115
+msgid "Kept bindings: {{summary}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:116
+msgid "Cleared (media not in campaign): {{summary}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:117
+msgid "Auto-filled from remaining media: {{summary}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:118
+msgid "Empty (no media remaining): slot{{suffix}} {{summary}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:119
+msgid "Layout gallery: {{name}}"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
@@ -576,10 +885,6 @@ msgstr ""
 msgid "Super Gallery Settings"
 msgstr ""
 
-#: includes/settings/class-wpsg-settings-renderer.php:46
-msgid "Settings"
-msgstr ""
-
 #: includes/settings/class-wpsg-settings-renderer.php:78
 msgid "Testing..."
 msgstr ""
@@ -724,6 +1029,6 @@ msgstr ""
 msgid "Unexpected response: HTTP %d"
 msgstr ""
 
-#: wp-super-gallery.php:145
+#: wp-super-gallery.php:146
 msgid "Gallery Editor"
 msgstr ""

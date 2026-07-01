@@ -14,7 +14,7 @@
 | P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | Planned | Medium |
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | Planned | Small-Medium |
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
-| P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | Planned | Medium-Large |
+| P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
 
 ---
 
@@ -256,6 +256,35 @@ Net effect: a translator **cannot** ship a non-English React UI today, even thou
 ### Notes
 
 - Effort is **Medium-Large**; this track can run independently of P60-C/D/E and does not block the P60-F packaging artifact (the plugin ships English-complete without it). It *does* elevate the product from "translatable back-end" to "translatable product," which matters for international premium buyers.
+
+### Implementation (2026-07-01) — ✅ Done
+
+**Architecture chosen: unified gettext bridge** (user-approved over the parallel-per-locale-JSON alternative). A single `.po`/`.mo` per locale now translates *both* the PHP surface and the React (i18next) front-end; translators never touch a React-specific format.
+
+**How it works.**
+
+1. **Single source of truth** stays `src/i18n-strings.en.json` (key → English), already lint-enforced.
+2. **`scripts/generate-frontend-i18n.mjs`** (new) generates a PHP manifest, `includes/i18n/class-wpsg-frontend-strings.php`, mapping each i18next key to its English default wrapped in `__()`. This one file does double duty: `wp i18n make-pot` harvests the `__()` calls into the `.pot`, and `WPSG_Frontend_Strings::get_translated()` resolves each key to the active-locale translation at runtime.
+3. **`page_config_js()`** (`class-wpsg-embed.php`) now injects `WPSG_Frontend_Strings::get_translated()` into `window.__WPSG_I18N__.strings` (behind the preserved `wpsg_i18n_strings` filter), replacing the previous **dead stub** — 11 hardcoded keys (`close`, `loading`, …) that matched *none* of the 91 i18next keys and therefore never resolved.
+4. **`src/i18n.ts`** merges the injected map over the bundled English defaults for the active locale, so any untranslated key degrades to English per-key (belt-and-suspenders with `fallbackLng: 'en'`).
+
+**Drift protection.** `npm run i18n:generate` regenerates the manifest; it is wired into `build:wp` (releases are always fresh) and a new `npm run i18n:check` step in `ci.yml`'s lint job fails the build if the committed manifest diverges from the JSON source.
+
+**Pilot locale.** Shipped `languages/wp-super-gallery-fr_FR.po` + compiled `.mo` + `.l10n.php`, translating a representative slice across *both* surfaces (PHP `API connection successful!` + React auth/login/lightbox strings, including an interpolated string and the plural pair).
+
+**What shipped (files).**
+
+- New: `scripts/generate-frontend-i18n.mjs`, `includes/i18n/class-wpsg-frontend-strings.php` (generated, 91 keys), `languages/wp-super-gallery-fr_FR.{po,mo,l10n.php}`, `docs/guides/TRANSLATING.md`.
+- Changed: `class-wpsg-embed.php` (injection), `wp-super-gallery.php` (require), `src/i18n.ts` (merge/fallback), `package.json` (`i18n:generate`/`i18n:check` + `build:wp`), `ci.yml` (freshness gate), `languages/wp-super-gallery.pot` (175 → 250 msgids).
+
+**Verification.**
+
+- `.pot` regenerated to **250 msgids**; front-end strings present with manifest source refs; interpolation (`{{email}}`, `{{count}}`) preserved.
+- **End-to-end chain proven without booting WP** (a standalone PHP harness over the compiled `.l10n.php`): `i18next key → English default → French` resolves for auth/settings/interpolated/plural keys; identical-`msgid` dedup works (`auth_sign_in` + `login_submit` → "Se connecter"); an untranslated key (`gallery_video_badge`) correctly falls back to English.
+- `.po → .mo/.l10n.php` compile cleanly via WP-CLI; French translations embedded in the binaries.
+- Manifest and edited PHP are syntax-clean; `i18n:check` idempotent.
+
+**Scope boundary (unchanged).** Enforcement of `i18next/no-literal-string` was *not* broadened to the whole app: the 91 already-harvested customer-facing strings are the complete front-end set for this release, and the full **admin-panel** harvest + global lint flip remains the WP.org-tier Follow-On (Key Decision B). P60-G delivered the *runtime pipeline + pilot + docs*, not new string coverage.
 
 ## Follow-On Candidates
 

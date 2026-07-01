@@ -25,6 +25,7 @@ define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
+require_once WPSG_PLUGIN_DIR . 'includes/i18n/class-wpsg-frontend-strings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-registry.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-core-fields.php';

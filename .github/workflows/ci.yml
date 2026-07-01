@@ -44,6 +44,11 @@ jobs:
       - name: TypeScript
         run: npx tsc --noEmit
 
+      # P60-G: fail if the generated front-end i18n PHP manifest has drifted from
+      # src/i18n-strings.en.json (someone edited the source without regenerating).
+      - name: i18n manifest freshness
+        run: npm run i18n:check
+
   # ── Job 2: Frontend tests + build ────────────────────────────────────────
   test-frontend:
     name: Vitest + Build
