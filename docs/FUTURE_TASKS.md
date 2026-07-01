@@ -133,6 +133,26 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### LayoutBuilder — Right-Click / Long-Press Contextual Menu
+
+**Origin:** Raised by the user during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F planning (2026-07-01) as a follow-on idea, explicitly not urgent — sized as a future UX investment rather than something to build now.
+
+**Context:** The LayoutBuilder currently exposes actions through two menu surfaces only: the top `Menu`-bar dropdowns (`LayoutBuilderMenuBar.tsx` — File/Edit/View, global scope) and the per-row `Menu` inside `LayerRow.tsx` (Layers-panel row actions). There is **no context menu anywhere on the canvas itself** — verified during P59-F research. A right-click (or long-press, for touch) menu on a canvas object is a standard design-tool convention (Figma, Photoshop, Canva) for fast, targeted actions without leaving the canvas or hunting through a side panel.
+
+**What to implement:**
+- A contextual menu component triggered by right-click (`onContextMenu`) and long-press on canvas targets, positioned at the cursor/touch point.
+- Per-target-type action sets — the menu contents vary by what's under the cursor: a slot, overlay, text layer, group, or guide. Likely shared actions (delete, duplicate, bring-to-front/send-to-back, lock/hide) plus type-specific ones.
+- Needs to compose with the builder's existing single-selection-per-type model (`selectedOverlayId`/`selectedTextId`/`selectedSlotIds`/etc. in `LayoutBuilderModal.tsx`) — right-clicking an unselected item should likely select it first, mirroring how most design tools handle this.
+- Reuse the existing action handlers already wired to the Edit menu and Layers-panel rows (`handleDeleteSelected`, `handleDuplicateSelected`, `bringToFront`/`sendToBack`, etc. in `LayoutBuilderModal.tsx`/`useLayoutBuilderState.ts`) rather than duplicating logic — the contextual menu should be a new *trigger surface* for actions that already exist, not a new action-implementation layer.
+
+**Files:** New component under `src/components/Admin/LayoutBuilder/` (e.g. a `LayoutBuilderContextMenu.tsx`); wiring touches `LayoutCanvas.tsx` (attach `onContextMenu`/long-press handlers per target) and `LayoutBuilderModal.tsx` (action dispatch, selection-on-right-click).
+
+**Depends on:** No hard dependency, but [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F (guide delete-icon + keyboard delete) is a natural first candidate action this menu would eventually expose for guides — P59-F solves guide deletion directly rather than waiting on this larger system.
+
+**Effort:** Medium-Large (new UI infrastructure: positioning, per-type action-set logic, touch long-press handling, keyboard/a11y for the menu itself) | **Impact:** Medium — meaningful workflow speedup for power users, matches conventions from professional design tools, but existing menu surfaces (Edit menu, Layers-panel row actions) already cover the same actions today, just less directly.
+
+---
+
 ## Code Quality & Refactoring
 
 ### Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs
