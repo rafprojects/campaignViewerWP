@@ -14,6 +14,8 @@ export type CssHeightUnit = 'px' | '%' | 'vh' | 'dvh' | 'svh' | 'lvh' | 'em' | '
 export type CssSpacingUnit = 'px' | 'em' | 'rem' | '%';
 export type CssOffsetUnit = 'px' | 'em' | 'rem' | '%' | 'vw' | 'vh';
 export type CssBorderRadiusUnit = 'px' | '%' | 'em' | 'rem';
+/** Units valid for typography tracking/effect values (no '%' — letter-spacing, word-spacing, text-stroke-width, text-shadow offsets/blur are not percentage-able in CSS). */
+export type CssTrackingUnit = 'px' | 'em' | 'rem';
 
 /** Union of every CSS unit the system supports. */
 export type AnyCssUnit =
@@ -21,7 +23,8 @@ export type AnyCssUnit =
   | CssHeightUnit
   | CssSpacingUnit
   | CssOffsetUnit
-  | CssBorderRadiusUnit;
+  | CssBorderRadiusUnit
+  | CssTrackingUnit;
 
 // ---------------------------------------------------------------------------
 // Allowed-unit arrays (for DimensionInput and PHP validation)
@@ -32,6 +35,7 @@ export const CSS_HEIGHT_UNITS: readonly CssHeightUnit[] = ['px', '%', 'vh', 'dvh
 export const CSS_SPACING_UNITS: readonly CssSpacingUnit[] = ['px', 'em', 'rem', '%'];
 export const CSS_OFFSET_UNITS: readonly CssOffsetUnit[] = ['px', 'em', 'rem', '%', 'vw', 'vh'];
 export const CSS_BORDER_RADIUS_UNITS: readonly CssBorderRadiusUnit[] = ['px', '%', 'em', 'rem'];
+export const CSS_TRACKING_UNITS: readonly CssTrackingUnit[] = ['px', 'em', 'rem'];
 
 // ---------------------------------------------------------------------------
 // Per-unit sensible max values (used by DimensionInput for clamping)
@@ -88,4 +92,32 @@ export function toCssOrUndefined(
  */
 export function toCssOrNumber(value: number, unit: string = 'px'): number | string {
   return unit === 'px' ? value : toCss(value, unit);
+}
+
+// ---------------------------------------------------------------------------
+// parseCss helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a CSS value string into its numeric value and unit.
+ *
+ *   parseCss('28px')        → { value: 28, unit: 'px' }
+ *   parseCss('0.02em')      → { value: 0.02, unit: 'em' }
+ *   parseCss('10')          → { value: 10, unit: 'px' }   (unit-less legacy value, coerced)
+ *   parseCss(undefined)     → undefined
+ *   parseCss('not-a-value') → undefined
+ *
+ * Used to drive value+unit editing controls (e.g. UnitScrubField/CssValueInput) off of
+ * CSS-string-typed fields like TypographyOverride's fontSize/letterSpacing/etc.
+ */
+export function parseCss(
+  value: string | undefined,
+  defaultUnit: string = 'px',
+): { value: number; unit: string } | undefined {
+  if (!value) return undefined;
+  const match = /^(-?\d*\.?\d+)\s*([a-z%]*)$/i.exec(value.trim());
+  if (!match) return undefined;
+  const num = parseFloat(match[1]!);
+  if (Number.isNaN(num)) return undefined;
+  return { value: num, unit: match[2] || defaultUnit };
 }

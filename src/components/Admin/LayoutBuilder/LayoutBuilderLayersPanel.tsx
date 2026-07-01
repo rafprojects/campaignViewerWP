@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { Group, Tooltip, ActionIcon, Divider, TextInput } from '@mantine/core';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import {
-  IconPlus, IconTrash, IconCopy, IconMask,
+  IconPlus, IconTrash, IconCopy, IconMask, IconLetterT,
   IconAlignBoxLeftMiddle, IconAlignBoxCenterMiddle, IconAlignBoxRightMiddle,
   IconAlignBoxTopCenter, IconAlignBoxBottomCenter,
   IconLayoutDistributeHorizontal, IconLayoutDistributeVertical,
@@ -34,6 +34,9 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
     setIsBackgroundSelected,
     selectedMaskSlotId,
     setSelectedMaskSlotId,
+    selectedTextId,
+    setSelectedTextId,
+    setSelectedGuideId,
     designAssetsOpen: _designAssetsOpen,
     setDesignAssetsOpen,
     bgSectionRef,
@@ -45,9 +48,12 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
 
   /** Delete a single layer by ID (slot, overlay, or mask). */
   const handleDeleteLayer = useCallback(
-    (id: string, kind: 'slot' | 'graphic' | 'mask') => {
+    (id: string, kind: 'slot' | 'graphic' | 'text' | 'mask') => {
       if (kind === 'graphic') {
         builder.removeOverlay(id);
+      } else if (kind === 'text') {
+        builder.removeText(id);
+        if (selectedTextId === id) setSelectedTextId(null);
       } else if (kind === 'mask') {
         // id is the parent slot id for mask deletions
         builder.updateSlot(id, { maskLayer: undefined, maskUrl: undefined, maskMode: undefined });
@@ -56,7 +62,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         builder.removeSlots([id]);
       }
     },
-    [builder, selectedMaskSlotId, setSelectedMaskSlotId],
+    [builder, selectedMaskSlotId, setSelectedMaskSlotId, selectedTextId, setSelectedTextId],
   );
 
   /** Toggle mask visibility for a given slot. */
@@ -212,6 +218,24 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
               <IconPlus size={14} />
             </ActionIcon>
           </Tooltip>
+          <Tooltip label="Add text">
+            <ActionIcon
+              size="sm"
+              variant="light"
+              onClick={() => {
+                const id = builder.addText();
+                setSelectedOverlayId(null);
+                setIsBackgroundSelected(false);
+                setSelectedMaskSlotId(null);
+                setSelectedGuideId(null);
+                builder.clearSelection();
+                setSelectedTextId(id);
+              }}
+              aria-label="Add text"
+            >
+              <IconLetterT size={14} />
+            </ActionIcon>
+          </Tooltip>
           <Tooltip label="Add mask to selected slot">
             <ActionIcon
               size="sm"
@@ -342,24 +366,28 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           filterText={filterQuery}
           selectedSlotIds={builder.selectedSlotIds}
           selectedOverlayId={selectedOverlayId}
+          selectedTextId={selectedTextId}
           isBackgroundSelected={isBackgroundSelected}
           selectedMaskSlotId={selectedMaskSlotId}
           onSelectSlot={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.selectSlot(id);
           }}
           onToggleSelectSlot={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.toggleSlotSelection(id);
           }}
           onRangeSelectSlot={(id) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             const slotLayers = buildLayerList(builder.template).filter((l) => l.kind === 'slot');
             const clickedIdx = slotLayers.findIndex((l) => l.id === id);
             const selectedArr = [...builder.selectedSlotIds];
@@ -376,12 +404,23 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(id);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedTextId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
+          }}
+          onSelectText={(id) => {
+            setSelectedOverlayId(null);
+            setIsBackgroundSelected(false);
+            setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
+            builder.clearSelection();
+            setSelectedTextId(id);
           }}
           onSelectBackground={() => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(true);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
             // Focus media panel in dockview and expand Design Assets accordion
             dockApiRef.current?.getPanel('media')?.api.setActive();
@@ -397,48 +436,57 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
             builder.clearSelection();
           }}
           onSelectMask={(parentSlotId) => {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(parentSlotId);
+            setSelectedGuideId(null);
             // Also select the parent slot so properties panel shows slot props
             builder.selectSlot(parentSlotId);
           }}
           onToggleMaskVisible={handleToggleMaskVisible}
           onRenameSlot={builder.renameSlot}
           onRenameOverlay={builder.renameOverlay}
+          onRenameText={builder.renameText}
           onToggleSlotVisible={builder.toggleSlotVisible}
           onToggleOverlayVisible={builder.toggleOverlayVisible}
+          onToggleTextVisible={builder.toggleTextVisible}
           onToggleSlotLocked={builder.toggleSlotLocked}
           onToggleOverlayLocked={builder.toggleOverlayLocked}
+          onToggleTextLocked={builder.toggleTextLocked}
           onReorderLayers={builder.reorderLayers}
           onBringToFront={(id) => {
             if (
               builder.template.slots.some((s) => s.id === id) ||
-              builder.template.overlays.some((o) => o.id === id)
+              builder.template.overlays.some((o) => o.id === id) ||
+              (builder.template.texts ?? []).some((t) => t.id === id)
             )
               builder.bringToFront([id]);
           }}
           onSendToBack={(id) => {
             if (
               builder.template.slots.some((s) => s.id === id) ||
-              builder.template.overlays.some((o) => o.id === id)
+              builder.template.overlays.some((o) => o.id === id) ||
+              (builder.template.texts ?? []).some((t) => t.id === id)
             )
               builder.sendToBack([id]);
           }}
           onBringForward={(id) => {
             if (
               builder.template.slots.some((s) => s.id === id) ||
-              builder.template.overlays.some((o) => o.id === id)
+              builder.template.overlays.some((o) => o.id === id) ||
+              (builder.template.texts ?? []).some((t) => t.id === id)
             )
               builder.bringForward([id]);
           }}
           onSendBackward={(id) => {
             if (
               builder.template.slots.some((s) => s.id === id) ||
-              builder.template.overlays.some((o) => o.id === id)
+              builder.template.overlays.some((o) => o.id === id) ||
+              (builder.template.texts ?? []).some((t) => t.id === id)
             )
               builder.sendBackward([id]);
           }}
@@ -449,6 +497,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             setSelectedOverlayId(null);
             setIsBackgroundSelected(false);
             setSelectedMaskSlotId(null);
+            setSelectedGuideId(null);
           }}
           onDissolveGroup={builder.dissolveGroup}
           onToggleGroupCollapsed={(groupId, collapsed) =>

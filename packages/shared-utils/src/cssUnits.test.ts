@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toCss, toCssOrUndefined, toCssOrNumber, UNIT_MAX_DEFAULTS } from './cssUnits';
+import { toCss, toCssOrUndefined, toCssOrNumber, parseCss, UNIT_MAX_DEFAULTS } from './cssUnits';
 
 describe('toCss', () => {
   it('joins value and unit', () => {
@@ -61,6 +61,38 @@ describe('toCssOrNumber', () => {
 
   it('defaults to px (returns number) when unit omitted', () => {
     expect(toCssOrNumber(16)).toBe(16);
+  });
+});
+
+describe('parseCss', () => {
+  it('parses a value with a unit', () => {
+    expect(parseCss('28px')).toEqual({ value: 28, unit: 'px' });
+    expect(parseCss('0.02em')).toEqual({ value: 0.02, unit: 'em' });
+    expect(parseCss('1.5rem')).toEqual({ value: 1.5, unit: 'rem' });
+    expect(parseCss('50%')).toEqual({ value: 50, unit: '%' });
+  });
+
+  it('parses negative values', () => {
+    expect(parseCss('-2px')).toEqual({ value: -2, unit: 'px' });
+  });
+
+  it('round-trips with toCss', () => {
+    expect(parseCss(toCss(16, 'em'))).toEqual({ value: 16, unit: 'em' });
+  });
+
+  it('coerces a unit-less legacy value to the default unit', () => {
+    expect(parseCss('10')).toEqual({ value: 10, unit: 'px' });
+    expect(parseCss('10', 'em')).toEqual({ value: 10, unit: 'em' });
+  });
+
+  it('returns undefined for empty/undefined input', () => {
+    expect(parseCss(undefined)).toBeUndefined();
+    expect(parseCss('')).toBeUndefined();
+  });
+
+  it('returns undefined for invalid input', () => {
+    expect(parseCss('not-a-value')).toBeUndefined();
+    expect(parseCss('normal')).toBeUndefined();
   });
 });
 

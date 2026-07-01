@@ -7,6 +7,7 @@ import type {
   LayerItem,
   SlotLayerItem,
   GraphicLayerItem,
+  TextLayerItem,
   BackgroundLayerItem,
   GroupLayerItem,
 } from './layerList';
@@ -15,7 +16,7 @@ import {
   getLayerName,
   computeReorderedZIndices,
 } from '@/utils/layerList';
-import type { LayoutTemplate, LayoutSlot, LayoutGroup, LayoutGraphicLayer } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGroup, LayoutGraphicLayer, LayoutTextLayer } from '@/types';
 
 // ── Test helpers ────────────────────────────────────────────────────────
 
@@ -68,6 +69,26 @@ function makeOverlay(id: string, options: Partial<LayoutGraphicLayer> = {}): Lay
   } as LayoutGraphicLayer;
 }
 
+function makeText(id: string, options: Partial<LayoutTextLayer> = {}): LayoutTextLayer {
+  return {
+    id,
+    x: 0,
+    y: 0,
+    width: 40,
+    height: 12,
+    zIndex: 1,
+    opacity: 1,
+    content: 'Text',
+    semanticTag: 'heading',
+    textAlign: 'left',
+    typography: {},
+    name: '',
+    visible: true,
+    locked: false,
+    ...options,
+  } as LayoutTextLayer;
+}
+
 function makeTemplate(overrides: Partial<LayoutTemplate> = {}): LayoutTemplate {
   return {
     id: 'template-1',
@@ -82,6 +103,57 @@ function makeTemplate(overrides: Partial<LayoutTemplate> = {}): LayoutTemplate {
     ...overrides,
   } as LayoutTemplate;
 }
+
+// ── Text layers (P59-B) ────────────────────────────────────────────────
+
+describe('buildLayerList — text layers (P59-B)', () => {
+  it('includes text layers as kind "text" with name + visible/locked', () => {
+    const template = makeTemplate({
+      texts: [makeText('tx1', { name: 'Headline', zIndex: 3, locked: true })],
+    });
+    const list = buildLayerList(template);
+    const textItem = list.find((l) => l.kind === 'text') as TextLayerItem | undefined;
+    expect(textItem).toBeDefined();
+    expect(textItem!.id).toBe('tx1');
+    expect(textItem!.name).toBe('Headline');
+    expect(textItem!.locked).toBe(true);
+    expect(textItem!.visible).toBe(true);
+  });
+
+  it('orders a higher-z text above a lower-z slot in the panel', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { zIndex: 1 })],
+      texts: [makeText('tx1', { zIndex: 5 })],
+    });
+    const list = buildLayerList(template).filter((l) => l.kind === 'slot' || l.kind === 'text');
+    expect(list[0]!.kind).toBe('text'); // higher z sorts to the top
+    expect(list[1]!.kind).toBe('slot');
+  });
+
+  it('getLayerName falls back to "Text Layer N" using arrayIndex', () => {
+    const item: TextLayerItem = {
+      kind: 'text', id: 'tx1', zIndex: 1, arrayIndex: 2,
+      name: '', visible: true, locked: false, opacity: 1,
+      depth: 0, ancestorGroupIds: [],
+    };
+    expect(getLayerName(item, makeTemplate())).toBe('Text Layer 3');
+  });
+
+  it('computeReorderedZIndices treats text layers as movable', () => {
+    const template = makeTemplate({
+      slots: [makeSlot('s1', { zIndex: 1 })],
+      texts: [makeText('tx1', { zIndex: 2 })],
+    });
+    const z = computeReorderedZIndices(buildLayerList(template), 's1', 'tx1');
+    expect(z.has('s1')).toBe(true);
+    expect(z.has('tx1')).toBe(true);
+  });
+
+  it('templates without a texts array still build (back-compat)', () => {
+    const list = buildLayerList(makeTemplate());
+    expect(list.some((l) => l.kind === 'text')).toBe(false);
+  });
+});
 
 // ── getLayerName ───────────────────────────────────────────────────────
 

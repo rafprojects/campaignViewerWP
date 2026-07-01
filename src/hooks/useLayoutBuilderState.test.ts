@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useLayoutBuilderState, createEmptyTemplate, migrateTemplate } from './useLayoutBuilderState';
 import type { LayoutTemplate } from '@/types';
+import { DEFAULT_TEXT_LAYER } from '@/types';
 
 function templateWithSlots(count: number): LayoutTemplate {
   const t = createEmptyTemplate('test');
@@ -104,6 +105,45 @@ describe('useLayoutBuilderState — Z-Index reorder (P15-G)', () => {
     act(() => result.current.sendToBack(['s1']));
     const allZ = result.current.template.slots.map((s) => s.zIndex);
     expect(allZ.every((z) => z >= 0)).toBe(true);
+  });
+});
+
+// ── P59: text layers participate in the unified z-index stack ──
+
+describe('useLayoutBuilderState — text-layer z-index (P59)', () => {
+  it('reorderLayers renumbers text layers alongside slots/overlays', () => {
+    const initial = templateWithSlots(2); // s1 z=1, s2 z=2
+    initial.texts = [{ ...DEFAULT_TEXT_LAYER, id: 't1', zIndex: 3 }];
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+
+    // Panel order (top→bottom by z): t1(3), s2(2), s1(1).
+    // Drag s1 above t1 → [s1, t1, s2] → s1=3, t1=2, s2=1.
+    act(() => result.current.reorderLayers('s1', 't1'));
+
+    const s1 = result.current.template.slots.find((s) => s.id === 's1')!;
+    const s2 = result.current.template.slots.find((s) => s.id === 's2')!;
+    const t1 = result.current.template.texts!.find((t) => t.id === 't1')!;
+    expect(s1.zIndex).toBe(3);
+    // Regression guard: before the fix the text kept its stale z-index (3).
+    expect(t1.zIndex).toBe(2);
+    expect(s2.zIndex).toBe(1);
+  });
+
+  it('addOverlay stacks above an existing high-z text layer', () => {
+    const initial = createEmptyTemplate('test');
+    initial.texts = [{ ...DEFAULT_TEXT_LAYER, id: 't1', zIndex: 500 }];
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+
+    let overlayId = '';
+    act(() => {
+      overlayId = result.current.addOverlay('https://example.com/o.png');
+    });
+
+    const overlay = result.current.template.overlays.find((o) => o.id === overlayId)!;
+    const t1 = result.current.template.texts!.find((t) => t.id === 't1')!;
+    // Regression guard: addOverlay's max-z now includes text layers, so a new
+    // overlay is never placed underneath an existing text layer.
+    expect(overlay.zIndex).toBeGreaterThan(t1.zIndex);
   });
 });
 
@@ -261,10 +301,11 @@ describe('createEmptyTemplate', () => {
   it('returns a template with sensible defaults', () => {
     const t = createEmptyTemplate();
     expect(t.name).toBe('Untitled Layout');
-    expect(t.schemaVersion).toBe(2);
+    expect(t.schemaVersion).toBe(3);
     expect(t.canvasAspectRatio).toBeCloseTo(16 / 9);
     expect(t.slots).toEqual([]);
     expect(t.overlays).toEqual([]);
+    expect(t.texts).toEqual([]);
     expect(t.id).toBe('');
     expect(t.backgroundColor).toBe('#1a1a2e');
     expect(t.tags).toEqual([]);
@@ -1119,22 +1160,43 @@ describe('useLayoutBuilderState — breakpoint overrides (P58-B)', () => {
   });
 });
 
-describe('migrateTemplate (P58-B)', () => {
-  it('upgrades a schemaVersion 1 template to version 2', () => {
-    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
-    const migrated = migrateTemplate(old);
-    expect(migrated.schemaVersion).toBe(2);
+describe('migrateTemplate (P58-B, P59-A)', () => {
+  /** Build a genuine vN template by stripping fields a later version would add. */
+  function vTemplate(version: number): LayoutTemplate {
+    const t: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: version };
+    if (version < 3) delete (t as { texts?: unknown }).texts;
+    if (version < 2) delete (t as { breakpointOverrides?: unknown }).breakpointOverrides;
+    return t;
+  }
+
+  it('carries a schemaVersion 1 template all the way to the current version (3)', () => {
+    const migrated = migrateTemplate(vTemplate(1));
+    expect(migrated.schemaVersion).toBe(3);
   });
 
-  it('initialises breakpointOverrides to an empty object on migration', () => {
-    const old: LayoutTemplate = { ...createEmptyTemplate(), schemaVersion: 1 };
-    const migrated = migrateTemplate(old);
+  it('initialises breakpointOverrides to an empty object when migrating from v1', () => {
+    const migrated = migrateTemplate(vTemplate(1));
     expect(migrated.breakpointOverrides).toEqual({});
   });
 
-  it('does not modify a template that is already at version 2', () => {
+  it('initialises texts to an empty array when migrating a v2 template to v3', () => {
+    const old = vTemplate(2);
+    expect(old.texts).toBeUndefined();
+    const migrated = migrateTemplate(old);
+    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.texts).toEqual([]);
+  });
+
+  it('preserves existing text layers during migration', () => {
+    const old: LayoutTemplate = { ...vTemplate(2), texts: [{ ...DEFAULT_TEXT_LAYER, id: 'tx1', content: 'Hi' }] };
+    const migrated = migrateTemplate(old);
+    expect(migrated.texts).toHaveLength(1);
+    expect(migrated.texts![0]!.content).toBe('Hi');
+  });
+
+  it('does not modify a template that is already at the current version (3)', () => {
     const t = createEmptyTemplate();
-    expect(t.schemaVersion).toBe(2);
+    expect(t.schemaVersion).toBe(3);
     const result = migrateTemplate(t);
     expect(result).toBe(t);
   });

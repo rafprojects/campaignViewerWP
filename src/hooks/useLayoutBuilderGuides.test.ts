@@ -87,4 +87,33 @@ describe('useLayoutBuilderGuides (P57-E)', () => {
     act(() => { result.current.undo(); });
     expect(result.current.template.guides).toHaveLength(1);
   });
+
+  // ── P59-F: clearGuides ──────────────────────────────────────
+
+  it('clearGuides removes all guides in one call', () => {
+    const { result } = renderHook(useStateHook);
+    act(() => { result.current.addGuide('x'); });
+    act(() => { result.current.addGuide('y'); });
+    act(() => { result.current.addGuide('x', 75); });
+    expect(result.current.template.guides).toHaveLength(3);
+    act(() => { result.current.clearGuides(); });
+    expect((result.current.template.guides ?? []).length).toBe(0);
+  });
+
+  it('clearGuides is a single undo step, not one per guide', () => {
+    const { result } = renderHook(useStateHook);
+    act(() => { result.current.addGuide('x'); });
+    act(() => { result.current.addGuide('y'); });
+    act(() => { result.current.clearGuides(); });
+    expect((result.current.template.guides ?? []).length).toBe(0);
+    act(() => { result.current.undo(); });
+    // A single undo restores both guides — proving clearGuides was one history entry.
+    expect(result.current.template.guides).toHaveLength(2);
+  });
+
+  it('clearGuides on an empty guide list is a no-op', () => {
+    const { result } = renderHook(useStateHook);
+    act(() => { result.current.clearGuides(); });
+    expect((result.current.template.guides ?? []).length).toBe(0);
+  });
 });

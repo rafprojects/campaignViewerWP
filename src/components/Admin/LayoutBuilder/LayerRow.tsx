@@ -10,6 +10,7 @@ import {
 import {
   IconPhoto,
   IconStack2,
+  IconLetterT,
   IconPhoto as IconBg,
   IconMask,
   IconEye,
@@ -62,6 +63,7 @@ export interface LayerRowProps {
 function TypeIcon({ item }: { item: LayerItem }) {
   if (item.kind === 'background') return <IconBg size={14} />;
   if (item.kind === 'graphic') return <IconStack2 size={14} />;
+  if (item.kind === 'text') return <IconLetterT size={14} />;
   if (item.kind === 'mask') return <IconMask size={14} />;
   return <IconPhoto size={14} />;
 }

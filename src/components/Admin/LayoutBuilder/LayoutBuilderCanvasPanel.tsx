@@ -88,7 +88,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     setShowMeasurements,
     setSelectedOverlayId,
     setIsBackgroundSelected,
+    setSelectedTextId,
+    selectedTextId,
     selectedMaskSlotId,
+    setSelectedGuideId,
+    selectedGuideId,
     announce,
     handleDeleteSelected,
     handleDuplicateSelected,
@@ -137,9 +141,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.selectSlot(id);
       setSelectedOverlayId(null);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
+      setSelectedGuideId(null);
       announce('New slot added at cursor position');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   // ── Canvas drop handlers ──────────────────────────────────────────────────
@@ -149,10 +155,12 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.moveOverlay(id, x, y);
       setSelectedOverlayId(id);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
+      setSelectedGuideId(null);
       builder.clearSelection();
       announce('Graphic layer added to canvas');
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   const handleMediaCanvasDrop = useCallback(
@@ -161,9 +169,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       builder.updateSlot(slotId, { x, y });
       builder.assignMediaToSlot(slotId, mediaId, meta);
       setIsBackgroundSelected(false);
+      setSelectedTextId(null);
+      setSelectedGuideId(null);
       announce('New slot created with assigned media');
     },
-    [builder, setIsBackgroundSelected, announce],
+    [builder, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
   );
 
   // ── Zoom / pan state ──────────────────────────────────────────────────────
@@ -387,17 +397,23 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onSlotSelect={(id) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     builder.selectSlot(id);
                   }}
                   onSlotToggleSelect={builder.toggleSlotSelection}
                   onCanvasClick={() => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     builder.clearSelection();
                   }}
                   onMarqueeSelect={(ids, additive) => {
                     setSelectedOverlayId(null);
                     setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
+                    setSelectedGuideId(null);
                     if (additive) builder.addSlotsToSelection(ids);
                     else builder.selectSlotsInRange(ids);
                   }}
@@ -405,6 +421,17 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onAnnounce={announce}
                   onOverlayMove={builder.moveOverlay}
                   onOverlayResize={builder.resizeOverlay}
+                  selectedTextId={selectedTextId}
+                  onTextMove={builder.moveText}
+                  onTextResize={builder.resizeText}
+                  onTextSelect={(id) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    setSelectedGuideId(null);
+                    builder.clearSelection();
+                    setSelectedTextId(id);
+                  }}
+                  onTextUpdate={builder.updateText}
                   onCanvasBgDoubleClick={handleCanvasBgDoubleClick}
                   onSlotUpdate={(id, updates) => builder.updateSlot(id, updates)}
                   selectedMaskSlotId={selectedMaskSlotId}
@@ -412,9 +439,17 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   onMediaCanvasDrop={handleMediaCanvasDrop}
                   contextualToolbarCallbacks={contextualToolbarCallbacks}
                   guides={guides}
+                  selectedGuideId={selectedGuideId}
                   onMoveGuide={moveGuide}
                   onRemoveGuide={removeGuide}
                   onToggleGuideLock={toggleGuideLock}
+                  onSelectGuide={(id) => {
+                    setSelectedOverlayId(null);
+                    setIsBackgroundSelected(false);
+                    setSelectedTextId(null);
+                    builder.clearSelection();
+                    setSelectedGuideId(id);
+                  }}
                 />
               </TransformComponent>
             </TransformWrapper>

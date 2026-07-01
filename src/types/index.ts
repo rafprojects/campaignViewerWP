@@ -453,6 +453,84 @@ export interface LayoutGraphicLayer {
   blendMode?: SlotBlendMode | undefined;
 }
 
+// ── P59-A: Text Layer ─────────────────────────────────────────────
+
+/** Semantic role for a text layer — selects the rendered HTML element. */
+export type LayoutTextSemanticTag = 'heading' | 'subheading' | 'paragraph' | 'caption';
+
+/** Horizontal text alignment for a text layer. */
+export type LayoutTextAlign = 'left' | 'center' | 'right';
+
+/**
+ * A first-class text layer rendered above slots (P59-A).
+ *
+ * Position/size values are percentages (0–100) of the canvas, mirroring
+ * `LayoutGraphicLayer`. `content` is a plain user-authored string rendered as
+ * real, semantic, screen-reader-reachable DOM text (never baked into an image),
+ * so it stays editable, accessible, and translatable by multilingual plugins.
+ * Typography reuses the shared {@link TypographyOverride} system. Stored in
+ * `template.texts`.
+ */
+export interface LayoutTextLayer {
+  id: string;
+  /** % from left edge */
+  x: number;
+  /** % from top edge */
+  y: number;
+  /** % of canvas width */
+  width: number;
+  /** % of canvas height */
+  height: number;
+  /** Layer order */
+  zIndex: number;
+  /** Render opacity 0–1 (default 1 = fully opaque). */
+  opacity: number;
+  // ── Text content & role ──
+  /** The text to render (plain string; output directly as semantic DOM). */
+  content: string;
+  /** Semantic role → element: heading→h2, subheading→h3, paragraph→p, caption→styled p. */
+  semanticTag: LayoutTextSemanticTag;
+  /** Horizontal text alignment within the layer box (not part of TypographyOverride). */
+  textAlign: LayoutTextAlign;
+  /**
+   * Typography — reuses the shared {@link TypographyOverride} system, so the
+   * properties panel can drop in `<TypographyEditor>` and the render path can
+   * use the same override→CSS converter (`typographyOverrideToStyle`) as the
+   * rest of the app. Sparse: unset keys inherit theme/element defaults.
+   */
+  typography: TypographyOverride;
+  // ── Layer system (P16 parity) ──
+  /** Human-readable label shown in the layer panel. Defaults to "Text Layer N" if absent. */
+  name?: string | undefined;
+  /** Builder-only visibility. false = ghost in editor; no effect on gallery rendering. */
+  visible?: boolean | undefined;
+  /** Prevents drag/resize in the builder. No effect on gallery rendering. */
+  locked?: boolean | undefined;
+  /** Visual rotation in degrees. Does not affect the drag/resize bounding box. */
+  rotation?: number | undefined;
+}
+
+/** Sensible defaults for a new text layer. Typography is sparse — only seeds a
+ *  legible starting style; unset keys inherit the theme font. */
+export const DEFAULT_TEXT_LAYER: LayoutTextLayer = {
+  id: '',
+  x: 20,
+  y: 20,
+  width: 40,
+  height: 12,
+  zIndex: 0,
+  opacity: 1,
+  content: 'Text',
+  semanticTag: 'heading',
+  textAlign: 'left',
+  typography: {
+    fontSize: '28px',
+    fontWeight: 600,
+    lineHeight: 1.2,
+    color: '#ffffff',
+  },
+};
+
 export type BackgroundMode = 'none' | 'color' | 'gradient' | 'image';
 
 /** Gradient type: linear, radial, or conic. */
@@ -650,6 +728,8 @@ export interface LayoutTemplate {
   slots: LayoutSlot[];
   /** Decorative graphic layers (P15-H). Key is `overlays` for DB compatibility. */
   overlays: LayoutGraphicLayer[];
+  /** First-class text layers rendered above slots (P59-A). Absent on pre-v3 templates. */
+  texts?: LayoutTextLayer[] | undefined;
   /**
    * Nested slot/overlay groups (P30-G). Each group has direct leaf members
    * (memberIds) and optional child groups (childGroupIds), forming a tree.

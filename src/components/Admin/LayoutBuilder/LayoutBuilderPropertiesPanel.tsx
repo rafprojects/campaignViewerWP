@@ -6,6 +6,7 @@ import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
+import { TextPropertiesPanel } from './TextPropertiesPanel';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ASPECT_PRESETS = [
@@ -23,6 +24,8 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     selectedOverlay,
     selectedOverlayIndex,
     setSelectedOverlayId,
+    selectedText,
+    setSelectedTextId,
     selectedMaskSlotId,
     handleUploadMask,
     assetLibrary,
@@ -100,6 +103,30 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           onRemove={(id) => {
             builder.removeOverlay(id);
             setSelectedOverlayId(null);
+          }}
+          onBringToFront={(id) => builder.bringToFront([id])}
+          onSendToBack={(id) => builder.sendToBack([id])}
+          onBringForward={(id) => builder.bringForward([id])}
+          onSendBackward={(id) => builder.sendBackward([id])}
+        />
+      </Box>
+    );
+  }
+
+  if (selectedText) {
+    const textIndex = (builder.template.texts ?? []).findIndex((t) => t.id === selectedText.id);
+    return (
+      <Box style={panelStyle}>
+        <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>TEXT LAYER</Text>
+        <TextPropertiesPanel
+          key={selectedText.id}
+          text={selectedText}
+          textIndex={textIndex + 1}
+          onUpdate={builder.updateText}
+          onRename={builder.renameText}
+          onRemove={(id) => {
+            builder.removeText(id);
+            setSelectedTextId(null);
           }}
           onBringToFront={(id) => builder.bringToFront([id])}
           onSendToBack={(id) => builder.sendToBack([id])}

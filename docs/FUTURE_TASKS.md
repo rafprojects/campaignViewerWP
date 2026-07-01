@@ -113,9 +113,61 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### LayoutBuilder — Clickable / Linking CTA Text Layer
+
+**Origin:** Deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) during P59 planning (2026-06-29), per user direction — Phase 59 ships single-style text layers with semantic roles (heading/subheading/paragraph/caption) rendered as real DOM text (Decision B: single-style text for v1); the linking/CTA variant was split off to keep v1 to pure, non-interactive text.
+
+**Context:** Phase 59 text layers (`LayoutTextLayer` in `src/types/index.ts`; render path in `LayoutBuilderGallery.tsx`, P59-C) render as non-interactive semantic text — a heading or caption, not a link. A common layout need is a **call-to-action**: text that navigates somewhere when clicked (e.g. "Shop now"). That requires a link target on the layer plus interactive, accessible rendering — more than "style a string."
+
+**What to implement:**
+- Add an optional `href` (+ link behavior, e.g. same-tab/new-tab) to `LayoutTextLayer`; absent = plain text, so existing text layers stay back-compatible.
+- Render a CTA layer as a real anchor (`<a>` / `role="link"`) with correct keyboard focus + Enter/Space activation and an accessible name — reuse the slot click/keydown a11y pattern already in `LayoutBuilderGallery.tsx` (`role`/`tabIndex`/key handling).
+- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE61_REPORT.md](PHASE61_REPORT.md)).
+- Sanitize the URL on save and on render.
+
+**Files:** `src/types/index.ts` (`LayoutTextLayer`), `src/components/Admin/LayoutBuilder/TextPropertiesPanel.tsx`, `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`.
+
+**Depends on:** the Phase 59 text-layer schema + render path (P59-A landed 2026-06-30; P59-B/P59-C pending).
+
+**Effort:** Small-Medium | **Impact:** Medium — unlocks CTA/banner layouts (a primary reason to put text on a gallery) without an external image editor.
+
+---
+
+### LayoutBuilder — Right-Click / Long-Press Contextual Menu
+
+**Origin:** Raised by the user during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F planning (2026-07-01) as a follow-on idea, explicitly not urgent — sized as a future UX investment rather than something to build now.
+
+**Context:** The LayoutBuilder currently exposes actions through two menu surfaces only: the top `Menu`-bar dropdowns (`LayoutBuilderMenuBar.tsx` — File/Edit/View, global scope) and the per-row `Menu` inside `LayerRow.tsx` (Layers-panel row actions). There is **no context menu anywhere on the canvas itself** — verified during P59-F research. A right-click (or long-press, for touch) menu on a canvas object is a standard design-tool convention (Figma, Photoshop, Canva) for fast, targeted actions without leaving the canvas or hunting through a side panel.
+
+**What to implement:**
+- A contextual menu component triggered by right-click (`onContextMenu`) and long-press on canvas targets, positioned at the cursor/touch point.
+- Per-target-type action sets — the menu contents vary by what's under the cursor: a slot, overlay, text layer, group, or guide. Likely shared actions (delete, duplicate, bring-to-front/send-to-back, lock/hide) plus type-specific ones.
+- Needs to compose with the builder's existing single-selection-per-type model (`selectedOverlayId`/`selectedTextId`/`selectedSlotIds`/etc. in `LayoutBuilderModal.tsx`) — right-clicking an unselected item should likely select it first, mirroring how most design tools handle this.
+- Reuse the existing action handlers already wired to the Edit menu and Layers-panel rows (`handleDeleteSelected`, `handleDuplicateSelected`, `bringToFront`/`sendToBack`, etc. in `LayoutBuilderModal.tsx`/`useLayoutBuilderState.ts`) rather than duplicating logic — the contextual menu should be a new *trigger surface* for actions that already exist, not a new action-implementation layer.
+
+**Files:** New component under `src/components/Admin/LayoutBuilder/` (e.g. a `LayoutBuilderContextMenu.tsx`); wiring touches `LayoutCanvas.tsx` (attach `onContextMenu`/long-press handlers per target) and `LayoutBuilderModal.tsx` (action dispatch, selection-on-right-click).
+
+**Depends on:** No hard dependency, but [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F (guide delete-icon + keyboard delete) is a natural first candidate action this menu would eventually expose for guides — P59-F solves guide deletion directly rather than waiting on this larger system.
+
+**Effort:** Medium-Large (new UI infrastructure: positioning, per-type action-set logic, touch long-press handling, keyboard/a11y for the menu itself) | **Impact:** Medium — meaningful workflow speedup for power users, matches conventions from professional design tools, but existing menu surfaces (Edit menu, Layers-panel row actions) already cover the same actions today, just less directly.
+
+---
+
 ## Code Quality & Refactoring
 
-*No tasks here yet.*
+### Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs
+
+**Origin:** Surfaced during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D planning (2026-06-30), per user direction — P59-D itself stays scoped to `TypographyEditor`'s 8 CSS-unit fields; the app-wide rollout is explicitly deferred.
+
+**Context:** P59-D extracts `UnitScrubField` (`src/components/Common/UnitScrubField.tsx`) — a shared `NumberInput` + unit `Select` + drag-to-scrub control — and migrates `DimensionInput` (`src/components/Settings/DimensionInput.tsx`) and the new `CssValueInput` (`src/components/Common/CssValueInput.tsx`, used by `TypographyEditor`) onto it as thin, contract-preserving adapters. That leaves at least one known ad hoc numeric input outside the new pattern, and likely others not yet inventoried.
+
+**What to implement:**
+- Migrate the bespoke rotation-degree scrub in `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx:567-613` onto a `UnitScrubField`-based adapter. This is a different value domain (plain degrees, not a CSS unit) so it needs its own thin adapter — not `CssValueInput`, which is CSS-string-shaped.
+- Audit Settings and LayoutBuilder property panels (`src/components/Settings/`, `src/components/Admin/LayoutBuilder/`) for any other free-text CSS-value inputs or raw `NumberInput`s without unit safety that predate P59-D, and migrate the good candidates onto `DimensionInput`/`CssValueInput`/`UnitScrubField` for visual consistency and scrub support.
+
+**Files:** `src/components/Admin/LayoutBuilder/SlotPropertiesPanel.tsx` (rotation scrub), `src/components/Common/UnitScrubField.tsx`, `src/components/Common/CssValueInput.tsx`, `src/components/Settings/DimensionInput.tsx`.
+
+**Effort:** Small-Medium (rotation migration is contained; the audit scope depends on what the sweep finds) | **Impact:** Low-Medium — consistency and scrub-everywhere polish, not a functional gap.
 
 ---
 
@@ -342,3 +394,7 @@ When promoting future tasks to an active phase:
 *Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
+
+*Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
+
+*Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*

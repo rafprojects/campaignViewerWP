@@ -41,5 +41,12 @@ export function useLayoutBuilderGuides({ mutate }: { mutate: MutateFn }) {
     [mutate],
   );
 
-  return { addGuide, moveGuide, removeGuide, toggleGuideLock };
+  // Single mutate call so this is one undo step, not one per guide.
+  const clearGuides = useCallback(() => {
+    mutate((d) => {
+      d.guides = [];
+    }, 'Clear guides');
+  }, [mutate]);
+
+  return { addGuide, moveGuide, removeGuide, toggleGuideLock, clearGuides };
 }

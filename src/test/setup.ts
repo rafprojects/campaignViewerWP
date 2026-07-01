@@ -179,6 +179,34 @@ if (!window.HTMLElement.prototype.scrollIntoView) {
 	window.HTMLElement.prototype.scrollIntoView = function () {};
 }
 
+// JSDOM doesn't implement the PointerEvent constructor at all (longstanding gap —
+// see jsdom/jsdom#2527), so @testing-library's fireEvent.pointerDown/Move/Up fall back to a
+// plain Event and silently drop clientX/buttons/pointerId. Polyfill it as a thin MouseEvent
+// subclass so drag-to-scrub controls can be tested.
+if (typeof window.PointerEvent === 'undefined') {
+	class PointerEvent extends MouseEvent {
+		public pointerId: number;
+		public pointerType: string;
+		constructor(type: string, params: PointerEventInit = {}) {
+			super(type, params);
+			this.pointerId = params.pointerId ?? 0;
+			this.pointerType = params.pointerType ?? 'mouse';
+		}
+	}
+	window.PointerEvent = PointerEvent as unknown as typeof window.PointerEvent;
+}
+
+// JSDOM doesn't implement Pointer Events capture (used by drag-to-scrub controls).
+if (!window.HTMLElement.prototype.setPointerCapture) {
+	window.HTMLElement.prototype.setPointerCapture = function () {};
+}
+if (!window.HTMLElement.prototype.releasePointerCapture) {
+	window.HTMLElement.prototype.releasePointerCapture = function () {};
+}
+if (!window.HTMLElement.prototype.hasPointerCapture) {
+	window.HTMLElement.prototype.hasPointerCapture = function () { return false; };
+}
+
 // JSDOM doesn't implement URL.createObjectURL / revokeObjectURL.
 // Stub them globally so any useEffect that calls URL.revokeObjectURL in cleanup
 // doesn't crash when tests restore the (undefined) original value.

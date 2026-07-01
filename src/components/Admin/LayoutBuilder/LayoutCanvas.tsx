@@ -22,6 +22,8 @@ import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
 import { GraphicLayerContent } from './GraphicLayerContent';
+import { TextLayerContent } from './TextLayerContent';
+import { textLayerTextStyle } from '@/utils/textLayerStyle';
 import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
@@ -51,6 +53,17 @@ export interface LayoutCanvasProps {
   onOverlayMove?: (id: string, x: number, y: number) => void;
   /** Overlay resize callback (P15-H). */
   onOverlayResize?: (id: string, x: number, y: number, w: number, h: number) => void;
+  // ── Text layers (P59-B) ──────────────────────────────────────
+  /** Text move callback. */
+  onTextMove?: (id: string, x: number, y: number) => void;
+  /** Text resize callback. */
+  onTextResize?: (id: string, x: number, y: number, w: number, h: number) => void;
+  /** Text select callback (single click / drag start). */
+  onTextSelect?: (id: string) => void;
+  /** Inline content-edit commit callback. */
+  onTextUpdate?: (id: string, updates: Partial<import('@/types').LayoutTextLayer>) => void;
+  /** Currently selected text layer ID (drives the selection outline + edit gate). */
+  selectedTextId?: string | null;
   /** Snap detection distance in canvas pixels (default: 5). Higher = snaps from further away. */
   snapThresholdPx?: number;
   /** Called on double-click on canvas background with click position as canvas %. */
@@ -81,6 +94,10 @@ export interface LayoutCanvasProps {
   onMoveGuide?: (id: string, position: number) => void;
   onRemoveGuide?: (id: string) => void;
   onToggleGuideLock?: (id: string) => void;
+  /** Currently selected guide, or null (P59-F). */
+  selectedGuideId?: string | null;
+  /** Fired when a guide is clicked (not dragged) — P59-F. */
+  onSelectGuide?: (id: string) => void;
   // ── P58-B: Per-breakpoint slot overrides ────────────────────
   /** Active breakpoint being edited. Slots resolve to their breakpoint-overridden geometry. */
   activeBreakpoint?: ResponsiveBreakpoint;
@@ -131,6 +148,11 @@ export function LayoutCanvas({
   onAnnounce,
   onOverlayMove,
   onOverlayResize,
+  onTextMove,
+  onTextResize,
+  onTextSelect,
+  onTextUpdate,
+  selectedTextId,
   snapThresholdPx = 5,
   onCanvasBgDoubleClick,
   onSlotUpdate,
@@ -147,12 +169,16 @@ export function LayoutCanvas({
   onMoveGuide,
   onRemoveGuide,
   onToggleGuideLock,
+  selectedGuideId = null,
+  onSelectGuide,
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
   const viewportHeight = useViewportHeight();
+  // P59-B: which text layer is in inline-edit mode (double-click to enter).
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
   // Compute canvas pixel dimensions from aspect ratio
   const canvasWidth = Math.max(
@@ -813,6 +839,115 @@ export function LayoutCanvas({
           );
         })}
 
+        {/* Text layers (P59-B) */}
+        {(template.texts ?? []).map((text) => {
+          const tPos = pctToPx(text.x, text.y, text.width, text.height);
+          const isSelected = selectedTextId === text.id;
+          const isEditing = editingTextId === text.id;
+          const isHidden = !(text.visible ?? true);
+          const rotate = text.rotation ? `rotate(${text.rotation}deg)` : undefined;
+
+          if (isPreview) {
+            return (
+              <div
+                key={text.id}
+                style={{
+                  position: 'absolute',
+                  left: tPos.x,
+                  top: tPos.y,
+                  width: tPos.width,
+                  height: tPos.height,
+                  zIndex: text.zIndex,
+                  opacity: text.opacity,
+                  transform: rotate,
+                }}
+              >
+                <TextLayerContent layer={text} />
+              </div>
+            );
+          }
+
+          return (
+            <Rnd
+              key={text.id}
+              position={{ x: tPos.x, y: tPos.y }}
+              size={{ width: tPos.width!, height: tPos.height! }}
+              bounds="parent"
+              minWidth={20}
+              minHeight={16}
+              maxWidth={canvasWidth}
+              maxHeight={canvasHeight}
+              scale={scale}
+              onDragStop={(_e, data) => {
+                const pct = pxToPct(data.x, data.y);
+                onTextMove?.(text.id, pct.x, pct.y);
+              }}
+              onResizeStop={(_e, _dir, ref, _delta, position) => {
+                const pct = pxToPct(position.x, position.y, ref.offsetWidth, ref.offsetHeight);
+                onTextResize?.(text.id, pct.x, pct.y, pct.width!, pct.height!);
+              }}
+              style={{
+                zIndex: text.zIndex,
+                opacity: isHidden ? 0.1 : text.opacity,
+                outline: isSelected
+                  ? '1.5px solid var(--mantine-color-violet-5)'
+                  : '1px dashed rgba(138, 43, 226, 0.4)',
+                transform: rotate,
+                pointerEvents: isHidden || isHandTool ? 'none' : undefined,
+                cursor: isEditing ? 'text' : 'move',
+              }}
+              enableResizing={!isEditing && !(text.locked ?? false) && !isHandTool}
+              disableDragging={isEditing || (text.locked ?? false) || isHandTool}
+            >
+              <div
+                style={{ width: '100%', height: '100%' }}
+                onMouseDown={() => { if (!isEditing) onTextSelect?.(text.id); }}
+                onDoubleClick={() => {
+                  if (!(text.locked ?? false)) {
+                    onTextSelect?.(text.id);
+                    setEditingTextId(text.id);
+                  }
+                }}
+              >
+                {isEditing ? (
+                  <textarea
+                    autoFocus
+                    defaultValue={text.content}
+                    onBlur={(e) => {
+                      onTextUpdate?.(text.id, { content: e.currentTarget.value });
+                      setEditingTextId(null);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      e.stopPropagation();
+                      if (e.key === 'Escape') {
+                        e.preventDefault();
+                        setEditingTextId(null);
+                      } else if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        onTextUpdate?.(text.id, { content: e.currentTarget.value });
+                        setEditingTextId(null);
+                      }
+                    }}
+                    style={{
+                      ...textLayerTextStyle(text),
+                      height: '100%',
+                      resize: 'none',
+                      border: 'none',
+                      outline: 'none',
+                      padding: 0,
+                      background: 'rgba(255,255,255,0.06)',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                ) : (
+                  <TextLayerContent layer={text} />
+                )}
+              </div>
+            </Rnd>
+          );
+        })}
+
         {/* P30-B: Grid overlay */}
         {!isPreview && showGrid && gridSizePx > 0 && (
           <CanvasGrid
@@ -841,15 +976,17 @@ export function LayoutCanvas({
         )}
 
         {/* P57-E: Persistent guides overlay */}
-        {!isPreview && (guides?.length ?? 0) > 0 && onMoveGuide && onRemoveGuide && onToggleGuideLock && (
+        {!isPreview && (guides?.length ?? 0) > 0 && onMoveGuide && onRemoveGuide && onToggleGuideLock && onSelectGuide && (
           <PersistentGuidesOverlay
             guides={guides!}
             canvasWidth={canvasWidth}
             canvasHeight={canvasHeight}
             canvasRef={canvasRef}
+            selectedGuideId={selectedGuideId}
             onMoveGuide={onMoveGuide}
             onRemoveGuide={onRemoveGuide}
             onToggleGuideLock={onToggleGuideLock}
+            onSelectGuide={onSelectGuide}
           />
         )}
 

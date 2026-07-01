@@ -25,8 +25,9 @@ class WPSG_Layout_Templates {
      * Current schema version for templates.
      *
      * v2 (P58-B): per-breakpoint slot overrides (`breakpointOverrides`).
+     * v3 (P59):   first-class text layers (`texts`).
      */
-    const SCHEMA_VERSION = 2;
+    const SCHEMA_VERSION = 3;
 
     /**
      * Maximum serialized size (bytes) before emitting an admin notice.
@@ -302,18 +303,82 @@ class WPSG_Layout_Templates {
         unset( $clone['id'] );
         $clone['name'] = $new_name ?: ( $source['name'] . ' (Copy)' );
 
-        // Generate new IDs for slots and overlays to avoid collisions.
-        if ( ! empty( $clone['slots'] ) && is_array( $clone['slots'] ) ) {
-            foreach ( $clone['slots'] as &$slot ) {
-                $slot['id'] = wp_generate_uuid4();
+        // Regenerate IDs for every layer/group so the copy cannot collide with
+        // its source, recording old→new in a single map. Structures that
+        // *reference* those IDs (group membership, per-breakpoint overrides) are
+        // rewritten through the map in a second pass so the copy stays internally
+        // consistent — without this, a copied template's groups orphan and its
+        // breakpoint overrides silently drop (P59-E).
+        //
+        // memberIds today only ever hold slot IDs and childGroupIds/parentGroupId
+        // only group IDs (selection is per-type), but the map unions slots,
+        // overlays, texts and groups so any cross-reference remaps correctly and
+        // this stays robust if member types ever broaden. All IDs are UUIDs, so
+        // the union cannot alias across categories.
+        $id_map = [];
+
+        // First pass — assign fresh IDs and record old→new. Groups are included
+        // here (before any rewriting) so childGroupIds/parentGroupId, which may
+        // point at a group appearing later in the array, resolve in pass two.
+        foreach ( [ 'slots', 'overlays', 'texts', 'groups' ] as $collection ) {
+            if ( empty( $clone[ $collection ] ) || ! is_array( $clone[ $collection ] ) ) {
+                continue;
             }
-            unset( $slot );
+            foreach ( $clone[ $collection ] as &$item ) {
+                if ( ! is_array( $item ) ) {
+                    continue;
+                }
+                $old_id     = isset( $item['id'] ) ? (string) $item['id'] : '';
+                $new_id     = wp_generate_uuid4();
+                $item['id'] = $new_id;
+                if ( $old_id !== '' ) {
+                    $id_map[ $old_id ] = $new_id;
+                }
+            }
+            unset( $item );
         }
-        if ( ! empty( $clone['overlays'] ) && is_array( $clone['overlays'] ) ) {
-            foreach ( $clone['overlays'] as &$overlay ) {
-                $overlay['id'] = wp_generate_uuid4();
+
+        // Rewrite a single ID through the map, leaving unknown IDs untouched
+        // rather than dropping them (an already-orphaned reference in the source
+        // stays as-is instead of silently vanishing).
+        $remap_id = static function ( $id ) use ( $id_map ) {
+            $id = (string) $id;
+            return $id_map[ $id ] ?? $id;
+        };
+
+        // Second pass — rewrite group references now that the map is complete.
+        if ( ! empty( $clone['groups'] ) && is_array( $clone['groups'] ) ) {
+            foreach ( $clone['groups'] as &$group ) {
+                if ( ! is_array( $group ) ) {
+                    continue;
+                }
+                if ( isset( $group['memberIds'] ) && is_array( $group['memberIds'] ) ) {
+                    $group['memberIds'] = array_map( $remap_id, $group['memberIds'] );
+                }
+                if ( isset( $group['childGroupIds'] ) && is_array( $group['childGroupIds'] ) ) {
+                    $group['childGroupIds'] = array_map( $remap_id, $group['childGroupIds'] );
+                }
+                if ( isset( $group['parentGroupId'] ) && $group['parentGroupId'] !== null ) {
+                    $group['parentGroupId'] = $remap_id( $group['parentGroupId'] );
+                }
             }
-            unset( $overlay );
+            unset( $group );
+        }
+
+        // Rekey per-breakpoint overrides from old slot ID → new slot ID. Unknown
+        // keys are kept as-is (consistent with group references); the client
+        // resolves overrides by slot lookup, so a stale key is simply never read.
+        if ( ! empty( $clone['breakpointOverrides'] ) && is_array( $clone['breakpointOverrides'] ) ) {
+            foreach ( $clone['breakpointOverrides'] as $bp => $slot_overrides ) {
+                if ( ! is_array( $slot_overrides ) ) {
+                    continue;
+                }
+                $rekeyed = [];
+                foreach ( $slot_overrides as $slot_id => $override ) {
+                    $rekeyed[ $remap_id( $slot_id ) ] = $override;
+                }
+                $clone['breakpointOverrides'][ $bp ] = $rekeyed;
+            }
         }
 
         return self::create( $clone );
@@ -515,6 +580,8 @@ class WPSG_Layout_Templates {
                 : 1,
             'slots'                => self::sanitize_slots( $data['slots'] ?? [] ),
             'overlays'          => self::sanitize_overlays( $data['overlays'] ?? [] ),
+            // ── First-class text layers (P59) ──
+            'texts'             => self::sanitize_texts( $data['texts'] ?? [] ),
             'guides'            => self::sanitize_guides( $data['guides'] ?? [] ),
             // ── Nested groups (P30-G) ──
             'groups'            => self::sanitize_groups( $data['groups'] ?? [] ),
@@ -677,6 +744,96 @@ class WPSG_Layout_Templates {
         }, $overlays ), static function ( $o ) {
             return is_array( $o );
         } ) );
+    }
+
+    /**
+     * Sanitize an array of first-class text layers (P59).
+     *
+     * @param  mixed $texts Raw text-layer data.
+     * @return array
+     */
+    private static function sanitize_texts( $texts ): array {
+        if ( ! is_array( $texts ) ) {
+            return [];
+        }
+
+        $valid_tags   = [ 'heading', 'subheading', 'paragraph', 'caption' ];
+        $valid_aligns = [ 'left', 'center', 'right' ];
+
+        return array_values( array_filter( array_map( function ( $t ) use ( $valid_tags, $valid_aligns ) {
+            if ( ! is_array( $t ) ) {
+                return null;
+            }
+            // Fall back to a generated UUID when the id is missing OR blank —
+            // `??` alone keeps an empty string, which would collide across layers
+            // and break selection / React keys on the client.
+            $id = isset( $t['id'] ) ? sanitize_text_field( (string) $t['id'] ) : '';
+            return [
+                'id'          => '' !== $id ? $id : wp_generate_uuid4(),
+                'x'           => self::clamp_pct( $t['x'] ?? 0 ),
+                'y'           => self::clamp_pct( $t['y'] ?? 0 ),
+                'width'       => self::clamp_pct( $t['width'] ?? 40 ),
+                'height'      => self::clamp_pct( $t['height'] ?? 12 ),
+                'zIndex'      => intval( $t['zIndex'] ?? 999 ),
+                'opacity'     => max( 0, min( 1, floatval( $t['opacity'] ?? 1 ) ) ),
+                // Plain user text — rendered as escaped React text content on the
+                // frontend; sanitize_textarea_field strips tags but keeps newlines.
+                'content'     => sanitize_textarea_field( (string) ( $t['content'] ?? '' ) ),
+                'semanticTag' => in_array( $t['semanticTag'] ?? '', $valid_tags, true ) ? $t['semanticTag'] : 'heading',
+                'textAlign'   => in_array( $t['textAlign'] ?? '', $valid_aligns, true ) ? $t['textAlign'] : 'left',
+                'typography'  => self::sanitize_text_typography( $t['typography'] ?? [] ),
+                // ── Layer system (P16 parity) ──
+                'name'        => isset( $t['name'] ) && is_string( $t['name'] ) ? sanitize_text_field( $t['name'] ) : null,
+                'visible'     => isset( $t['visible'] ) ? (bool) $t['visible'] : true,
+                'locked'      => isset( $t['locked'] ) ? (bool) $t['locked'] : false,
+                // Panel rotation is -180..180; clamp to that range so negative
+                // rotations are not clipped to 0 on save.
+                'rotation'    => isset( $t['rotation'] ) ? max( -180, min( 180, intval( $t['rotation'] ) ) ) : null,
+            ];
+        }, $texts ), static function ( $t ) {
+            return is_array( $t );
+        } ) );
+    }
+
+    /**
+     * Sanitize a single text-layer typography override (the TypographyOverride
+     * shape shared with the settings typography system).
+     *
+     * @param  mixed $typo Raw typography object.
+     * @return array
+     */
+    private static function sanitize_text_typography( $typo ): array {
+        if ( ! is_array( $typo ) ) {
+            return [];
+        }
+
+        $allowed_props = [
+            'fontFamily', 'fontFallback1', 'fontFallback2',
+            'fontSize', 'fontWeight', 'fontStyle',
+            'textTransform', 'textDecoration', 'lineHeight',
+            'letterSpacing', 'wordSpacing', 'color',
+            'textStrokeWidth', 'textStrokeColor',
+            'textShadowOffsetX', 'textShadowOffsetY', 'textShadowBlur', 'textShadowColor',
+            'textGlowColor', 'textGlowBlur',
+        ];
+        $color_props = [ 'color', 'textStrokeColor', 'textShadowColor', 'textGlowColor' ];
+
+        $clean = [];
+        foreach ( $typo as $prop => $val ) {
+            if ( ! in_array( $prop, $allowed_props, true ) ) {
+                continue;
+            }
+            if ( 'fontWeight' === $prop ) {
+                $clean[ $prop ] = max( 100, min( 900, intval( $val ) ) );
+            } elseif ( 'lineHeight' === $prop ) {
+                $clean[ $prop ] = max( 0.5, min( 5.0, floatval( $val ) ) );
+            } elseif ( in_array( $prop, $color_props, true ) ) {
+                $clean[ $prop ] = self::sanitize_css_value( (string) $val, 'color' );
+            } else {
+                $clean[ $prop ] = sanitize_text_field( (string) $val );
+            }
+        }
+        return $clean;
     }
 
     /**
@@ -1016,6 +1173,15 @@ class WPSG_Layout_Templates {
             $template['schemaVersion'] = 2;
             if ( ! isset( $template['breakpointOverrides'] ) || ! is_array( $template['breakpointOverrides'] ) ) {
                 $template['breakpointOverrides'] = [];
+            }
+        }
+
+        // v2 → v3 (P59): first-class text layers. Older templates simply have no
+        // text layers; default the field to an empty array and bump the label.
+        if ( $version < 3 ) {
+            $template['schemaVersion'] = 3;
+            if ( ! isset( $template['texts'] ) || ! is_array( $template['texts'] ) ) {
+                $template['texts'] = [];
             }
         }
 

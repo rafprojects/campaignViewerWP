@@ -10,14 +10,18 @@ const guide2: PersistentGuide = { id: 'g2', axis: 'y', position: 30, locked: tru
 
 function Wrapper({
   guides,
+  selectedGuideId = null,
   onMoveGuide = vi.fn(),
   onRemoveGuide = vi.fn(),
   onToggleGuideLock = vi.fn(),
+  onSelectGuide = vi.fn(),
 }: {
   guides: PersistentGuide[];
+  selectedGuideId?: string | null;
   onMoveGuide?: ReturnType<typeof vi.fn>;
   onRemoveGuide?: ReturnType<typeof vi.fn>;
   onToggleGuideLock?: ReturnType<typeof vi.fn>;
+  onSelectGuide?: ReturnType<typeof vi.fn>;
 }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   return (
@@ -27,9 +31,11 @@ function Wrapper({
         canvasWidth={800}
         canvasHeight={450}
         canvasRef={canvasRef}
+        selectedGuideId={selectedGuideId}
         onMoveGuide={onMoveGuide}
         onRemoveGuide={onRemoveGuide}
         onToggleGuideLock={onToggleGuideLock}
+        onSelectGuide={onSelectGuide}
       />
     </div>
   );
@@ -60,18 +66,19 @@ describe('PersistentGuidesOverlay (P57-E)', () => {
     expect(line?.getAttribute('stroke-dasharray')).toBeNull();
   });
 
-  it('double-click on hit rect calls onRemoveGuide', () => {
+  it('double-click on hit rect does not delete (removed in P59-F)', () => {
     const onRemoveGuide = vi.fn();
     const { container } = render(<Wrapper guides={[guide1]} onRemoveGuide={onRemoveGuide} />);
     const rects = container.querySelectorAll('rect');
-    // First rect is the hit area (second is the lock icon bg)
     fireEvent.doubleClick(rects[0]!);
-    expect(onRemoveGuide).toHaveBeenCalledWith('g1');
+    expect(onRemoveGuide).not.toHaveBeenCalled();
   });
 
   it('clicking lock icon calls onToggleGuideLock', () => {
     const onToggleGuideLock = vi.fn();
-    const { container } = render(<Wrapper guides={[guide1]} onToggleGuideLock={onToggleGuideLock} />);
+    const { container } = render(
+      <Wrapper guides={[guide1]} selectedGuideId="g1" onToggleGuideLock={onToggleGuideLock} />,
+    );
     // The <g> with the onClick for the lock icon
     const lockGroups = container.querySelectorAll('g g');
     fireEvent.click(lockGroups[0]!);
@@ -98,5 +105,96 @@ describe('PersistentGuidesOverlay (P57-E)', () => {
     fireEvent.mouseMove(document, { clientX: 300, clientY: 0 });
     fireEvent.mouseUp(document);
     expect(onMoveGuide).not.toHaveBeenCalled();
+  });
+
+  // ── P59-F: discoverable removal ──────────────────────────────
+
+  it('clicking the delete icon calls onRemoveGuide', () => {
+    const onRemoveGuide = vi.fn();
+    const { getByRole } = render(
+      <Wrapper guides={[guide1]} selectedGuideId="g1" onRemoveGuide={onRemoveGuide} />,
+    );
+    fireEvent.click(getByRole('button', { name: 'Delete guide' }));
+    expect(onRemoveGuide).toHaveBeenCalledWith('g1');
+  });
+
+  it('does not render lock/delete icons for an unselected guide', () => {
+    const { queryByRole } = render(<Wrapper guides={[guide1]} selectedGuideId={null} />);
+    expect(queryByRole('button', { name: 'Delete guide' })).toBeNull();
+    expect(queryByRole('button', { name: 'Toggle guide lock' })).toBeNull();
+  });
+
+  it('renders lock/delete icons only for the selected guide, not others', () => {
+    const { getAllByRole } = render(<Wrapper guides={[guide1, guide2]} selectedGuideId="g1" />);
+    // Exactly one of each — not one per guide.
+    expect(getAllByRole('button', { name: 'Delete guide' })).toHaveLength(1);
+    expect(getAllByRole('button', { name: 'Toggle guide lock' })).toHaveLength(1);
+  });
+
+  it('a plain click (no movement) on an unlocked guide calls onSelectGuide', () => {
+    const onSelectGuide = vi.fn();
+    const onMoveGuide = vi.fn();
+    const { container } = render(
+      <Wrapper guides={[guide1]} onSelectGuide={onSelectGuide} onMoveGuide={onMoveGuide} />,
+    );
+    const hitRect = container.querySelectorAll('rect')[0]!;
+    fireEvent.mouseDown(hitRect, { clientX: 400, clientY: 0 });
+    fireEvent.mouseUp(document, { clientX: 400, clientY: 0 });
+    expect(onSelectGuide).toHaveBeenCalledWith('g1');
+    expect(onMoveGuide).not.toHaveBeenCalled();
+  });
+
+  it('a drag past the threshold does not call onSelectGuide', () => {
+    const onSelectGuide = vi.fn();
+    const { container } = render(<Wrapper guides={[guide1]} onSelectGuide={onSelectGuide} />);
+    const hitRect = container.querySelectorAll('rect')[0]!;
+    fireEvent.mouseDown(hitRect, { clientX: 400, clientY: 0 });
+    fireEvent.mouseMove(document, { clientX: 300, clientY: 0 });
+    fireEvent.mouseUp(document, { clientX: 300, clientY: 0 });
+    expect(onSelectGuide).not.toHaveBeenCalled();
+  });
+
+  it('mousedown on a locked guide calls onSelectGuide immediately', () => {
+    const onSelectGuide = vi.fn();
+    const { container } = render(<Wrapper guides={[guide2]} onSelectGuide={onSelectGuide} />);
+    const hitRect = container.querySelectorAll('rect')[0]!;
+    fireEvent.mouseDown(hitRect, { clientX: 400, clientY: 0 });
+    expect(onSelectGuide).toHaveBeenCalledWith('g2');
+  });
+
+  it('stacks the two icons vertically for a vertical guide (same X, different Y)', () => {
+    const { getByRole } = render(<Wrapper guides={[guide1]} selectedGuideId="g1" />);
+    const lockGroup = getByRole('button', { name: 'Toggle guide lock' });
+    const deleteGroup = getByRole('button', { name: 'Delete guide' });
+    const parseXY = (transform: string | null) => {
+      const m = /translate\(([-\d.]+), ([-\d.]+)\)/.exec(transform ?? '');
+      return { x: Number(m?.[1]), y: Number(m?.[2]) };
+    };
+    const lockPos = parseXY(lockGroup.getAttribute('transform'));
+    const deletePos = parseXY(deleteGroup.getAttribute('transform'));
+    expect(deletePos.x).toBe(lockPos.x);
+    expect(deletePos.y).not.toBe(lockPos.y);
+  });
+
+  it('stacks the two icons horizontally for a horizontal guide (same Y, different X)', () => {
+    const { getByRole } = render(<Wrapper guides={[guide2]} selectedGuideId="g2" />);
+    const lockGroup = getByRole('button', { name: 'Toggle guide lock' });
+    const deleteGroup = getByRole('button', { name: 'Delete guide' });
+    const parseXY = (transform: string | null) => {
+      const m = /translate\(([-\d.]+), ([-\d.]+)\)/.exec(transform ?? '');
+      return { x: Number(m?.[1]), y: Number(m?.[2]) };
+    };
+    const lockPos = parseXY(lockGroup.getAttribute('transform'));
+    const deletePos = parseXY(deleteGroup.getAttribute('transform'));
+    expect(deletePos.y).toBe(lockPos.y);
+    expect(deletePos.x).not.toBe(lockPos.x);
+  });
+
+  it('renders the selected guide with a thicker, fully-opaque stroke', () => {
+    const { container } = render(<Wrapper guides={[guide1, guide2]} selectedGuideId="g1" />);
+    const lines = container.querySelectorAll('line');
+    expect(lines[0]!.getAttribute('stroke-width')).toBe('2.5');
+    expect(lines[0]!.getAttribute('opacity')).toBe('1');
+    expect(lines[1]!.getAttribute('stroke-width')).toBe('1');
   });
 });

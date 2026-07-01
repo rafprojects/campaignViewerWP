@@ -76,6 +76,9 @@ export interface LayoutBuilderMenuBarProps {
   // options
   layoutScope: LayoutScope;
   setLayoutScope: (scope: LayoutScope) => void;
+  // guides (P59-F)
+  guideCount: number;
+  onClearGuides: () => void;
 }
 
 function MenuButton({ label, children }: { label: string; children: React.ReactNode }) {
@@ -127,6 +130,7 @@ export function LayoutBuilderMenuBar({
   showMeasurements, setShowMeasurements,
   dockApiRef, templateId, rootId,
   layoutScope, setLayoutScope,
+  guideCount, onClearGuides,
 }: LayoutBuilderMenuBarProps) {
   // Track which side panels are open — queried from dockview on each menu open.
   const [openPanels, setOpenPanels] = useState<Set<SidePanel>>(new Set(SIDE_PANELS));
@@ -271,6 +275,14 @@ export function LayoutBuilderMenuBar({
           <CheckItem checked={showGrid} label="Show grid" icon={<IconGrid4x4 size={14} />} onClick={() => setShowGrid(!showGrid)} />
           <CheckItem checked={showRulers} label="Show rulers" icon={<IconRuler size={14} />} onClick={() => setShowRulers(!showRulers)} />
           <CheckItem checked={showMeasurements} label="Show measurements" icon={<IconDimensions size={14} />} onClick={() => setShowMeasurements(!showMeasurements)} />
+          <Menu.Item
+            leftSection={<IconTrash size={14} />}
+            onClick={onClearGuides}
+            disabled={guideCount === 0}
+            color="red"
+          >
+            Clear guides
+          </Menu.Item>
           <Menu.Divider />
           <Menu.Item leftSection={<IconRefresh size={14} />} onClick={handleResetLayout}>
             Reset layout

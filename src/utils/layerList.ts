@@ -15,12 +15,12 @@
  * (0 = top-level) and `ancestorGroupIds` so the panel can collapse entire
  * subtrees without rescanning the tree on every render.
  */
-import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutGroup } from '@/types';
+import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutTextLayer, LayoutGroup } from '@/types';
 import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
 
 // ── Types ──────────────────────────────────────────────────────────────
 
-export type LayerKind = 'slot' | 'graphic' | 'background' | 'mask' | 'group';
+export type LayerKind = 'slot' | 'graphic' | 'text' | 'background' | 'mask' | 'group';
 
 export type SlotLayerItem = {
   kind: 'slot';
@@ -52,6 +52,22 @@ export type GraphicLayerItem = {
   /** Nesting depth. Overlays are not yet group-aware so this is always 0. P30-G */
   depth: number;
   /** Always empty for overlays. P30-G */
+  ancestorGroupIds: string[];
+};
+
+export type TextLayerItem = {
+  kind: 'text';
+  id: string;
+  zIndex: number;
+  /** 0-based position in template.texts[] */
+  arrayIndex: number;
+  name: string;
+  visible: boolean;
+  locked: boolean;
+  opacity: number;
+  /** Text layers are not group-aware (P59-B), so this is always 0. */
+  depth: number;
+  /** Always empty for text layers. */
   ancestorGroupIds: string[];
 };
 
@@ -111,7 +127,7 @@ export type GroupLayerItem = {
   descendantSlotIds: string[];
 };
 
-export type LayerItem = SlotLayerItem | GraphicLayerItem | BackgroundLayerItem | MaskLayerItem | GroupLayerItem;
+export type LayerItem = SlotLayerItem | GraphicLayerItem | TextLayerItem | BackgroundLayerItem | MaskLayerItem | GroupLayerItem;
 
 // ── Name helper ──────────────────────────────────────────────────────────────
 
@@ -140,6 +156,9 @@ export function getLayerName(item: LayerItem, _template: LayoutTemplate): string
   if (item.name) return item.name;
   if (item.kind === 'slot') {
     return `Media Layer ${item.index + 1}`;
+  }
+  if (item.kind === 'text') {
+    return `Text Layer ${item.arrayIndex + 1}`;
   }
   // graphic layer — use stored 0-based arrayIndex for 1-based label
   return `Graphic Layer ${item.arrayIndex + 1}`;
@@ -303,7 +322,8 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
   type TopItem =
     | { kind: 'group'; id: string; z: number; ai: number }
     | { kind: 'slot'; slot: LayoutSlot; ai: number; z: number }
-    | { kind: 'graphic'; overlay: LayoutGraphicLayer; ai: number; z: number };
+    | { kind: 'graphic'; overlay: LayoutGraphicLayer; ai: number; z: number }
+    | { kind: 'text'; text: LayoutTextLayer; ai: number; z: number };
 
   const topItems: TopItem[] = [
     ...topLevelGroups.map((g) => {
@@ -319,6 +339,9 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
     }),
     ...template.overlays.map((o, ai) => ({
       kind: 'graphic' as const, overlay: o, ai, z: o.zIndex,
+    })),
+    ...(template.texts ?? []).map((t, ai) => ({
+      kind: 'text' as const, text: t, ai, z: t.zIndex,
     })),
   ];
 
@@ -357,7 +380,7 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
           ancestorGroupIds: [],
         });
       }
-    } else {
+    } else if (item.kind === 'graphic') {
       const { overlay, ai } = item;
       result.push({
         kind: 'graphic',
@@ -368,6 +391,20 @@ export function buildLayerList(template: LayoutTemplate): LayerItem[] {
         visible: overlay.visible ?? true,
         locked: overlay.locked ?? false,
         opacity: overlay.opacity,
+        depth: 0,
+        ancestorGroupIds: [],
+      });
+    } else {
+      const { text, ai } = item;
+      result.push({
+        kind: 'text',
+        id: text.id,
+        zIndex: text.zIndex,
+        arrayIndex: ai,
+        name: text.name ?? '',
+        visible: text.visible ?? true,
+        locked: text.locked ?? false,
+        opacity: text.opacity,
         depth: 0,
         ancestorGroupIds: [],
       });
@@ -410,7 +447,7 @@ export function computeReorderedZIndices(
   targetId: string,
 ): Map<string, number> {
   // Work only with non-background, non-mask, non-group items
-  const movable = layers.filter((l): l is SlotLayerItem | GraphicLayerItem =>
+  const movable = layers.filter((l): l is SlotLayerItem | GraphicLayerItem | TextLayerItem =>
     l.kind !== 'background' && l.kind !== 'mask' && l.kind !== 'group',
   );
 
