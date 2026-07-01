@@ -5,6 +5,31 @@ All notable changes to WP Super Gallery will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.90.0] - 2026-07-01
+
+Consolidated pre-release covering development Phases 30–59. The version number
+is advanced to `0.90.0` to signal proximity to the first paid release; interim
+per-phase notes were not separately tagged. Highlights below are grouped by
+theme rather than by phase.
+
+### Added
+
+- **Gallery Spaces (multi-instance isolation)** — run independent, access-scoped galleries on one site, each with its own media library, settings inheritance, and access grants; move campaigns across spaces; target a space from the shortcode via a `space` attribute and switch spaces from the admin. (Phases 47, 48, 50)
+- **Expanded adapter library** — new tile/layout adapters: Spotlight/Hero, Scroll-Snap, Waterfall, Coverflow (3D), Mosaic/Pinterest, Stacked/Deck, and Isotope/Filterable Grid; unified campaign-listing adapters (compact-grid, masonry, justified) with carousel pagination. (Phases 31, 35, 48, 50)
+- **Layout Builder maturity** — floating toolbar with grid/snapping/rulers, responsive per-breakpoint preview and slot overrides, nested groups, marquee multi-select, real clipboard copy/paste, per-slot opacity and rotation, scroll-reveal entrance animations, an auto-grid generator, saved color swatches with an eyedropper, layer search/filter, draggable guides, and full text/caption layers with on-canvas inline editing. (Phases 30, 37, 57, 58, 59)
+- **Role-based access control** — System-Admin vs Editor capability tiers, per-campaign and per-company access grants, a centralized capability matrix, and viewer-only time-limited grants. (Phases 33, 52, 53)
+- **Admin productivity** — analytics dashboard with live refresh, advanced media sorting (file size / usage count), near-duplicate detection on upload, reload-safe UI state, inline campaign-metadata edits, an asset-management UI, and a campaign tags/categories overhaul. (Phases 34, 36, 38, 52)
+- **Gallery configuration controls** — client-side range/enum validation, configurable breakpoint pixel thresholds, adapter capability badges, reset-to-default, schema help hints, and JSON import/export of gallery settings. (Phase 56)
+- **Enterprise & integration** — webhooks for campaign events, binary campaign/media/audit-log exports with ZIP import, and object-cache (Redis/Memcached) guidance. (Phases 39, 41, 48)
+- **Auditing & observability** — a canonical audit-event contract with campaign- and system-scoped coverage, structured server-side logging, and audit-log export. (Phases 32, 40)
+
+### Changed
+
+- **Production hardening** — free-form CSS sanitization, a locked DOMPurify allowlist, a localStorage inventory audit, a front-end accessibility baseline (axe), and LayoutBuilder robustness (error boundaries, drag-bounds clamping). (Phase 54)
+- **Internationalization groundwork** — user-facing front-end strings wrapped for translation under the `wpsg` namespace with WordPress-locale detection. (Phases 49, 54)
+- **Maintainability** — the monolithic REST class was decomposed into domain controllers; shared `@wpsg` packages (utils, UI, theme engine) were extracted; a runtime-shared field-map schema now derives from a single TS/PHP source; broad audit-driven refactors across the codebase. (Phases 42, 44, 45, 51, 55)
+- **Offline & performance** — service-worker app-shell/metadata caching, lazy-loaded adapters, and thumbnail-cache scalability improvements. (Phases 49, 50, 52)
+
 ## [0.26.0] - 2026-05-19
 
 ### Added - Phase 29: Bug Fixes & UI Increments

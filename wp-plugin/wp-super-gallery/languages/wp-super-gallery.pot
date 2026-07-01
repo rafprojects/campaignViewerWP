@@ -1,0 +1,729 @@
+# Copyright (C) 2026 WP Super Gallery
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-07-01T20:37:14+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: wp-super-gallery\n"
+
+#. Plugin Name of the plugin
+#. Author of the plugin
+#: wp-super-gallery.php
+msgid "WP Super Gallery"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: wp-super-gallery.php
+msgid "https://github.com/rafprojects/wp-super-gallery"
+msgstr ""
+
+#. Description of the plugin
+#: wp-super-gallery.php
+msgid "Embeddable campaign gallery with Shadow DOM rendering."
+msgstr ""
+
+#: includes/class-wpsg-asset-admin-renderer.php:37
+#: includes/class-wpsg-asset-admin-renderer.php:38
+#: includes/class-wpsg-asset-admin-renderer.php:72
+msgid "Asset Library"
+msgstr ""
+
+#: includes/class-wpsg-asset-admin-renderer.php:73
+msgid "Upload and manage global overlay/graphic assets available across all spaces."
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:67
+#: includes/class-wpsg-cpt.php:69
+#: includes/class-wpsg-cpt.php:72
+#: includes/class-wpsg-cpt.php:411
+msgid "Campaigns"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:70
+msgid "Campaign"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:71
+msgid "SuperGallery"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:73
+msgid "Add New"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:74
+msgid "Add New Campaign"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:75
+msgid "Edit Campaign"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:76
+msgid "New Campaign"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:77
+msgid "View Campaign"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:78
+msgid "View Campaigns"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:79
+msgid "Search Campaigns"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:80
+msgid "No campaigns found"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:81
+msgid "No campaigns found in Trash"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:95
+#: includes/class-wpsg-cpt.php:97
+#: includes/class-wpsg-cpt.php:99
+msgid "Companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:98
+msgid "Company"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:100
+msgid "All Companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:101
+msgid "Edit Company"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:102
+msgid "View Company"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:103
+msgid "Update Company"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:104
+msgid "Add New Company"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:105
+msgid "New Company Name"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:106
+msgid "Search Companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:107
+msgid "Popular Companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:108
+msgid "No companies found"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:109
+msgid "← Back to Companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:110
+msgid "Separate companies with commas"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:111
+msgid "Add or remove companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:112
+msgid "Choose from the most used companies"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:122
+msgid "Campaign Tags"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:132
+msgid "Campaign Categories"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:143
+msgid "Media Tags"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:152
+msgid "Layout Templates"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:423
+msgid "Space"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:456
+msgid "All spaces"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:494
+msgid "+ New Space"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:499
+msgid "Space name"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:501
+msgid "Slug (auto)"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:503
+msgid "Create"
+msgstr ""
+
+#: includes/class-wpsg-cpt.php:513
+msgid "Forbidden"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:84
+msgid "Close"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:85
+msgid "Loading…"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:86
+msgid "An error occurred. Please try again."
+msgstr ""
+
+#: includes/class-wpsg-embed.php:87
+msgid "No media found."
+msgstr ""
+
+#: includes/class-wpsg-embed.php:88
+msgid "Upload files"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:89
+msgid "Choose files"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:90
+msgid "or drag & drop files here"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:91
+msgid "Cancel"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:92
+msgid "Save"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:93
+msgid "Delete"
+msgstr ""
+
+#: includes/class-wpsg-embed.php:94
+msgid "Confirm"
+msgstr ""
+
+#: includes/class-wpsg-space-admin-renderer.php:35
+#: includes/class-wpsg-space-admin-renderer.php:70
+msgid "Gallery Spaces"
+msgstr ""
+
+#: includes/class-wpsg-space-admin-renderer.php:36
+msgid "Spaces"
+msgstr ""
+
+#: includes/class-wpsg-space-admin-renderer.php:71
+msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:23
+msgid "Configure how the gallery authenticates with the WordPress REST API."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:32
+msgid "Configure default display settings for galleries."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:41
+msgid "Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:52
+msgid "Floating (circular icon, bottom-right)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:53
+msgid "Draggable (movable floating icon)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:54
+msgid "Bar (full-width sticky bar)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:55
+msgid "Auto-hide (bar hides on scroll)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:56
+msgid "Minimal (thin strip, ≤32px)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:67
+msgid "How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:88
+msgid "Minimum distance from viewport edges when dragging (draggable mode only)."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:99
+msgid "Configure caching and performance settings."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:110
+msgid "WordPress JWT (Recommended)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:111
+msgid "None (Public Access Only)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:122
+msgid "Select the authentication method for REST API access."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:126
+msgid "Test Connection"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:148
+msgid "Leave empty to use the current site URL. Only change this for multi-site or headless setups."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:192
+#: includes/settings/class-wpsg-settings-renderer.php:262
+msgid "Default"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:193
+msgid "Default Dark"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:194
+msgid "Default Light"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:196
+msgid "Material"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:197
+msgid "Material Dark"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:198
+msgid "Material Light"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:200
+msgid "Classic"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:201
+msgid "Darcula"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:202
+msgid "Nord"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:204
+msgid "Solarized"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:205
+msgid "Solarized Dark"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:206
+msgid "Solarized Light"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:208
+msgid "Accessibility"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:209
+msgid "High Contrast"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:211
+msgid "Community"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:212
+msgid "Catppuccin Mocha"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:213
+msgid "Catppuccin Latte"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:214
+msgid "Tokyo Night"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:215
+msgid "Gruvbox Dark"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:216
+msgid "GitHub Light"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:218
+msgid "Neon"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:219
+msgid "Cyberpunk"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:220
+msgid "Synthwave '84"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:222
+msgid "Artistic"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:223
+msgid "Sunset Boulevard"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:224
+msgid "Ocean Breeze"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:225
+msgid "Crimson Canvas"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:226
+msgid "Forest Whisper"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:227
+msgid "Midnight Rose"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:229
+msgid "Seasonal"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:230
+msgid "Halloween"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:231
+msgid "Reverse Halloween"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:252
+msgid "Default color theme for gallery display. Users can override this if allowed below."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:274
+msgid "Allow visitors to switch themes via the gallery UI."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:277
+msgid "When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:299
+msgid "Keep React DevTools names and emit DOM component markers in deployed builds."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:302
+msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:315
+msgid "Grid"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:316
+msgid "Masonry"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:317
+msgid "Carousel"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:328
+msgid "Default layout for displaying gallery items."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:350
+msgid "Number of items to display per page (1-100)."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:372
+msgid "Enable fullscreen lightbox when clicking gallery items."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:394
+msgid "Enable smooth animations and transitions."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:397
+msgid "Disable for better performance on low-end devices."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:410
+msgid "Disabled"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:411
+msgid "10 seconds"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:412
+msgid "30 seconds"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:413
+msgid "1 minute"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:414
+msgid "5 minutes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:415
+msgid "15 minutes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:416
+msgid "20 minutes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:417
+msgid "30 minutes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:418
+msgid "45 minutes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:419
+msgid "1 hour"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:420
+msgid "2 hours"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:421
+msgid "4 hours"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:422
+msgid "8 hours"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:423
+msgid "12 hours"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:424
+msgid "1 day"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:425
+msgid "3 days"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:426
+msgid "1 week"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-core-fields.php:437
+msgid "How long to cache API responses. Higher values improve performance but show stale data."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:45
+msgid "Super Gallery Settings"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:46
+msgid "Settings"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:78
+msgid "Testing..."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:79
+msgid "Connection failed"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:80
+msgid "Request failed"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:81
+msgid "Authentication test was rejected. Refresh the page and try again."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:82
+msgid "Unexpected server response while testing authentication."
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:107
+msgid "Authentication"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:114
+msgid "Auth Provider"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:122
+msgid "API Base URL"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:130
+msgid "Display Settings"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:137
+msgid "Theme"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:145
+msgid "Allow User Theme Override"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:153
+msgid "Component Debug Names & Markers"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:161
+msgid "Default Layout"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:169
+msgid "Items Per Page"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:177
+msgid "Enable Lightbox"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:185
+msgid "Enable Animations"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:193
+msgid "Auth Bar"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:200
+msgid "Display Mode"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:208
+msgid "Drag Margin (px)"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:216
+msgid "Performance"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:223
+msgid "Cache Duration"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:246
+msgid "Save Settings"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:252
+msgid "Shortcode Usage"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:253
+msgid "Embed a gallery using the following shortcode:"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:256
+msgid "Shortcode Attributes"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:260
+msgid "Attribute"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:261
+msgid "Description"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:268
+msgid "Campaign slug or ID to display"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:273
+msgid "Filter by company slug"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-renderer.php:278
+msgid "Use compact display mode"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-service.php:47
+msgid "Permission denied."
+msgstr ""
+
+#. translators: %s: WordPress HTTP API error message.
+#: includes/settings/class-wpsg-settings-service.php:63
+#, php-format
+msgid "Connection failed: %s"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-service.php:73
+msgid "API connection successful!"
+msgstr ""
+
+#: includes/settings/class-wpsg-settings-service.php:79
+msgid "API reachable. Authentication required for protected endpoints."
+msgstr ""
+
+#. translators: %d: HTTP response status code.
+#: includes/settings/class-wpsg-settings-service.php:86
+#, php-format
+msgid "Unexpected response: HTTP %d"
+msgstr ""
+
+#: wp-super-gallery.php:145
+msgid "Gallery Editor"
+msgstr ""

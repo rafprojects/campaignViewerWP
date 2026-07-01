@@ -1,19 +1,20 @@
 # Phase 60 - Release / Store-Readiness (Freemius-targeted)
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-26
-**Last updated:** 2026-06-26
+**Last updated:** 2026-07-01
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P60-A | Version & metadata single-source-of-truth + `readme.txt` polish | Planned | Small |
-| P60-B | i18n completeness — generate `.pot`, confirm user-facing coverage, scope admin harvest | Planned | Medium |
+| P60-A | Version & metadata single-source-of-truth + `readme.txt` polish | ✅ Done (2026-07-01) | Small |
+| P60-B | i18n completeness — generate `.pot`, confirm user-facing coverage, scope admin harvest | ✅ Done (2026-07-01) | Medium |
 | P60-C | Plugin Check + escaping/sanitization compliance pass | Planned | Medium |
 | P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | Planned | Medium |
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | Planned | Small-Medium |
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
+| P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | Planned | Medium-Large |
 
 ---
 
@@ -42,7 +43,8 @@ The product is feature-complete enough to sell; this phase closes the **release-
 2. **P60-B (i18n + `.pot`)** and **P60-C (Plugin Check / escaping)** — the compliance core; can proceed in parallel.
 3. **P60-D (a11y hardening)** — extends the existing axe baseline; independent.
 4. **P60-E (store assets + privacy + docs)** — collateral; can run alongside the compliance tracks.
-5. **P60-F (packaging + final QA)** — last; validates everything above as a single installable artifact.
+5. **P60-G (front-end locale delivery)** — follows P60-B (sources ready); independent of C/D/E and non-blocking for F. Elevates the product to fully translatable.
+6. **P60-F (packaging + final QA)** — last; validates everything above as a single installable artifact.
 
 ---
 
@@ -67,6 +69,21 @@ The committed version values disagree: the plugin header is `Version: 0.27.0` (`
 
 - Grep the four sources for the version string and confirm equality; run a dry-run of the release workflow / version script and confirm it agrees.
 
+### Implementation (2026-07-01) — ✅ Done
+
+**What was found.** The drift was confirmed exactly as described: plugin header + `package.json` were `0.27.0`, while `WPSG_VERSION` and `readme.txt` `Stable tag` were `0.26.0`. Two further facts surfaced during verification:
+
+- **No `v0.27.0` tag exists.** The only tags are `v0.17.0` and `v0.26.0`; `docs/VERSION_HISTORY.md` documented a `v0.27.0` (Phase 54) release that was never actually cut, and **455 commits across Phases 30–59** had landed on top of `v0.26.0` with no version bump. So the repo's real released baseline is `0.26.0`.
+- **`Tested up to: 7.0` was an unverifiable/false compatibility claim** — CI (`ci.yml:142`) only exercises WordPress `6.7`. Shipping `7.0` would draw a Plugin Check flag (cross-checked in P60-C).
+
+**Decisions & actions.**
+
+- **Version set to `0.90.0`** across all four sources (header, `WPSG_VERSION`, `readme.txt` `Stable tag`, `package.json`). This is a **deliberate manual override** of `compute-version.sh` (which computes `0.27.0` from conventional commits since `v0.26.0`); the release workflow explicitly supports an override via its `version` input (`VERSIONING.md` §"Version Bump Process" step 3). Rationale: the product is one phase from a paid release, and jumping the number signals that proximity — user direction, 2026-07-01. **This supersedes Key Decision D's "reconcile to the computed value" for this release only:** the canonical *mechanism* is still the workflow; the *value* is an intentional override, not drift.
+- **`Tested up to` corrected to `6.7`** in both the plugin header and `readme.txt` to match what CI actually validates. `Requires at least: 6.4` and `Requires PHP: 8.2` left unchanged (already accurate).
+- **Consolidated `0.90.0` changelog entry** written to `CHANGELOG.md`, `docs/VERSION_HISTORY.md`, and the `readme.txt` `== Changelog ==` / `== Upgrade Notice ==` sections, summarizing Phases 30–59 by theme at buyer-relevant granularity (per user direction: consolidated, not per-phase backfill). All three files had drifted (they stopped at Phase 28/29/54 respectively); the new entry re-tops all three.
+
+**Verification.** All four sources grep-equal to `0.90.0` (automated equality check passed). `compute-version.sh` confirmed to output `0.27.0`, documenting the override delta.
+
 ## Track P60-B - i18n completeness (`.pot` + coverage)
 
 ### Problem
@@ -88,6 +105,33 @@ The `languages/` directory is empty — there is **no `.pot` file** for translat
 ### Validation
 
 - `npm run test` for the existing i18n surface; generate the `.pot` and spot-check it contains representative user-facing strings; manual QA loading a sample locale.
+
+### Implementation (2026-07-01) — ✅ Done
+
+**Key discovery — the plugin has two parallel, unbridged i18n systems.** The original track framing assumed a single `.pot` would "cover the user-facing strings." Investigation showed that is only half the surface:
+
+- **PHP-rendered strings** use WordPress gettext (`__('…','wp-super-gallery')`, ~344 call sites). These *are* harvestable into a `.pot`.
+- **The React front-end** (the P54-B harvest — `Lightbox`, `AuthBar*`, `LoginForm`, `SpaceSwitcher`, gallery adapters, etc.; **91 keys** in `src/i18n-strings.en.json`) runs on **i18next**, a completely separate system. `wp i18n make-pot` cannot see these strings, and there is **no bridge**: a translator working from the `.pot` would never encounter the React UI strings, and `src/i18n.ts` has a per-locale injection seam (`window.__WPSG_I18N__.strings`) that PHP currently feeds only ~12 hardcoded English defaults — so every non-English locale falls back to English for the entire React UI.
+
+**Scope split (user-approved, 2026-07-01).** Completing the front-end runtime pipeline is a Medium-Large architectural build, so it was carved out into a new track, **P60-G**. The division:
+
+- **P60-B (this track) = translation _sources_ complete and shipped.** The gettext `.pot` for the PHP surface, and confirmation that the React English source of truth (`src/i18n-strings.en.json`) is complete and ships (compiled into the built bundle + copied by `build:wp`).
+- **P60-G = _consumption_ of a non-English locale in the React UI** (per-locale source generation, runtime loading, a pilot locale, and extending lint enforcement). See the P60-G section.
+
+**Actions.**
+
+- Generated `wp-plugin/wp-super-gallery/languages/wp-super-gallery.pot` via `wp i18n make-pot` (175 msgids across the PHP surface: CPT, embed, settings, asset/space admin renderers, plugin header).
+- Fixed the two `make-pot` warnings by adding `/* translators: … */` comments for the placeholder strings in `class-wpsg-settings-service.php` (`Connection failed: %s`, `Unexpected response: HTTP %d`); regenerated → clean, zero warnings.
+- **Shipping:** the release ZIP (`release.yml`) zips the whole plugin dir minus an explicit exclude list; `languages/` is **not** excluded, so the committed `.pot` ships automatically. No workflow change needed.
+- **Admin-harvest scope decision recorded** (per Key Decision B): the full admin-panel harvest (~300 literals) + flipping `i18next/no-literal-string` from `'off'` to `'error'` globally remains a WP.org-tier Follow-On, unchanged. `eslint.config.js` currently enforces `no-literal-string` only on gallery adapters + `packages/shared-ui`.
+
+**Verification.**
+
+- `.pot` is valid gettext and harvests real strings (spot-checked, e.g. `"API connection successful!"`).
+- **Translation round-trip proven:** authored a sample `fr_FR` `.po` translating a shipped string, compiled `.po → .mo` via `wp i18n make-mo` (success), and confirmed the French translation is embedded in the compiled `.mo` binary.
+- Text-domain load wiring confirmed at `wp-super-gallery.php:193` (`load_plugin_textdomain('wp-super-gallery', …, '/languages')`).
+
+**Acceptance-criteria reconciliation.** The original criterion "a `.pot` covers the user-facing strings" is amended to reflect the two-source reality: the `.pot` covers the **PHP-rendered** user-facing strings (complete + shipped), and the **React** user-facing strings are covered by the i18next English source (complete + shipped). End-to-end *translated* rendering of the React UI is the P60-G deliverable, not P60-B.
 
 ## Track P60-C - Plugin Check + escaping/sanitization compliance pass
 
@@ -176,6 +220,42 @@ The release artifact and final cross-version behavior have not been validated as
 ### Validation
 
 - Build the release artifact and install it on a clean WP test site; PHPUnit + frontend suites green in CI; manual install/activate/uninstall + cross-version smoke test.
+
+## Track P60-G - i18n runtime: front-end (i18next) locale delivery
+
+### Problem
+
+Split out of P60-B (2026-07-01). The plugin's user-facing strings live in **two parallel systems** (see P60-B → "Key discovery"): the PHP surface uses WordPress gettext (now covered by the shipped `.pot`), while the **React front-end** uses **i18next** with a single English source (`src/i18n-strings.en.json`, 91 keys). There is **no bridge** between them, and no per-locale source or delivery path for the React UI:
+
+- `src/i18n.ts:32-33` exposes a per-locale seam (`window.__WPSG_I18N__.strings`), but PHP (`class-wpsg-embed.php` `page_config_js()`) injects only ~12 hardcoded **English** defaults into it. For any non-English locale, all 91 React keys fall back to English.
+- No `i18n-strings.<locale>.json` files exist, and there is no build/conversion step to produce them from a translator's work.
+- `eslint`'s `i18next/no-literal-string` covers only gallery adapters + `packages/shared-ui`; other customer-facing React components (13 of 36 adapters use `useTranslation`; `src/components/Admin/**` is exempt) are not enforced, so the English source is not guaranteed complete.
+
+Net effect: a translator **cannot** ship a non-English React UI today, even though the gettext side is ready. This is the runtime half of "the i18n system is complete."
+
+### Fix
+
+- **Per-locale front-end source.** Define and produce `i18n-strings.<locale>.json` for the `wpsg` namespace, generated from the translator's `.po`/`.pot` work via a documented conversion step (e.g. `po2json` / a small Node script), or a documented manual JSON workflow. Establish the single canonical path so PHP gettext and React i18next stay in sync.
+- **Runtime loading.** Wire `src/i18n.ts` to receive the *full* translated set for the active WordPress locale (`window.__WPSG_I18N__.locale`) — either by expanding the PHP `wpsg_i18n_strings` injection to read from the loaded translation, or by client-side loading of the locale JSON bundle — with English fallback preserved.
+- **Pilot locale.** Ship one non-English locale end-to-end (e.g. a partial `fr_FR`) to prove the round-trip renders in the React UI.
+- **Enforcement.** Extend `i18next/no-literal-string` to the remaining customer-facing React components so the English source stays complete (coordinate with Key Decision B's admin-harvest Follow-On boundary — this track covers the *customer-facing* front end, not the full admin panel).
+- **Translator docs.** A "how to add a language" guide covering *both* the PHP `.po` and the React JSON.
+
+### Acceptance criteria
+
+- A non-English locale renders translated strings across the React front-end (not just the PHP-rendered surface), with clean English fallback for untranslated keys.
+- A documented, repeatable path exists to produce a new locale's front-end source from a translator's work.
+- `no-literal-string` enforcement covers the customer-facing React components; the English source is verified complete.
+- The pilot locale is included (or documented) and the translator workflow doc is published.
+
+### Validation
+
+- Load the app under the pilot locale and confirm React UI strings are translated; confirm fallback for a deliberately-omitted key.
+- `npm run test` + lint green; spot-check that a newly-added front-end string appears in both the source and the harvest path.
+
+### Notes
+
+- Effort is **Medium-Large**; this track can run independently of P60-C/D/E and does not block the P60-F packaging artifact (the plugin ships English-complete without it). It *does* elevate the product from "translatable back-end" to "translatable product," which matters for international premium buyers.
 
 ## Follow-On Candidates
 

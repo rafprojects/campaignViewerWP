@@ -59,6 +59,7 @@ class WPSG_Settings_Service {
         if (is_wp_error($response)) {
             wp_send_json_error([
                 'message' => sprintf(
+                    /* translators: %s: WordPress HTTP API error message. */
                     __('Connection failed: %s', 'wp-super-gallery'),
                     $response->get_error_message()
                 ),
@@ -81,6 +82,7 @@ class WPSG_Settings_Service {
 
         wp_send_json_error([
             'message' => sprintf(
+                /* translators: %d: HTTP response status code. */
                 __('Unexpected response: HTTP %d', 'wp-super-gallery'),
                 $code
             ),

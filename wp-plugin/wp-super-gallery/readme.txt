@@ -2,9 +2,9 @@
 Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.4
-Tested up to: 7.0
+Tested up to: 6.7
 Requires PHP: 8.2
-Stable tag: 0.26.0
+Stable tag: 0.90.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -68,6 +68,23 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 5. Advanced settings accordion.
 
 == Changelog ==
+
+= 0.90.0 =
+**Consolidated pre-release — development Phases 30–59**
+
+The version is advanced to 0.90.0 to signal proximity to the first paid release. Highlights, grouped by theme:
+
+* Added: Gallery Spaces — run independent, access-scoped galleries on one site, each with its own media library, settings inheritance, and access grants; move campaigns across spaces; target a space with the shortcode `space` attribute.
+* Added: New tile/layout adapters — Spotlight/Hero, Scroll-Snap, Waterfall, Coverflow (3D), Mosaic/Pinterest, Stacked/Deck, and Isotope/Filterable Grid; unified campaign-listing adapters with carousel pagination.
+* Added: Layout Builder maturity — grid/snapping/rulers toolbar, responsive per-breakpoint preview and slot overrides, nested groups, marquee select, clipboard copy/paste, per-slot opacity/rotation, scroll-reveal animations, auto-grid generator, saved color swatches with eyedropper, layer search, draggable guides, and full text/caption layers with on-canvas editing.
+* Added: Role-based access control — System-Admin vs Editor tiers, per-campaign and per-company access grants, and viewer-only time-limited grants.
+* Added: Admin productivity — analytics live-refresh, advanced media sorting, near-duplicate detection, reload-safe UI state, inline campaign-metadata edits, asset-management UI, and a tags/categories overhaul.
+* Added: Gallery configuration controls — client-side validation, configurable breakpoint thresholds, adapter capability badges, reset-to-default, schema hints, and JSON import/export of gallery settings.
+* Added: Enterprise & integration — webhooks for campaign events, binary campaign/media/audit-log exports with ZIP import, and object-cache (Redis/Memcached) guidance.
+* Added: Auditing & observability — canonical audit-event contract, campaign- and system-scoped coverage, structured server-side logging, and audit-log export.
+* Changed: Production hardening — CSS/DOMPurify sanitization, localStorage audit, front-end accessibility baseline, and LayoutBuilder robustness (error boundaries, drag-bounds clamping).
+* Changed: Internationalization groundwork — user-facing front-end strings wrapped for translation with WordPress-locale detection; translation template (`.pot`) now ships.
+* Changed: Maintainability & performance — REST class decomposed into domain controllers, shared `@wpsg` packages extracted, single-source TS/PHP field-map schema, lazy-loaded adapters, and service-worker offline caching.
 
 = 0.25.0 =
 **Phase 28 — API Capability Expansion & Backend Hardening**
@@ -202,6 +219,9 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 * Settings DRY refactor: deleted 586 lines of triplicated mapping code.
 
 == Upgrade Notice ==
+
+= 0.90.0 =
+Consolidated pre-release covering Phases 30–59: Gallery Spaces (multi-instance isolation), an expanded adapter library, a matured Layout Builder with text layers, role-based access control, and production hardening. Rebuild plugin assets and review access-control roles and per-space settings after upgrade.
 
 = 0.24.0 =
 Settings and gallery configuration now run on the nested-only `galleryConfig` / `galleryOverrides` contract, and the frontend runtime now uses React 19.2.6 plus Mantine 9.1.1. Rebuild plugin assets and smoke-test custom settings and modal-heavy flows after upgrade.

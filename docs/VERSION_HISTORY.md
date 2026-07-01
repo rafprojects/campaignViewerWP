@@ -1,5 +1,17 @@
 ## Version History
 
+### v0.90.0 (July 1, 2026)
+- **CONSOLIDATED PRE-RELEASE**: Development Phases 30–59, rolled into one version. The number is advanced to `0.90.0` to signal proximity to the first paid release; interim per-phase work (including the previously-listed `v0.27.0` Phase 54 notes below) was not separately tagged. Grouped by theme:
+  - **Gallery Spaces** (Phases 47, 48, 50): multi-instance isolation — independent, access-scoped galleries per site, each with its own media library, per-space settings inheritance, cross-space campaign moves, admin space switcher, and a shortcode `space` attribute.
+  - **Adapter library expansion** (Phases 31, 35, 48, 50): Spotlight/Hero, Scroll-Snap, Waterfall, Coverflow (3D), Mosaic/Pinterest, Stacked/Deck, and Isotope/Filterable Grid adapters; unified campaign-listing adapters with carousel pagination.
+  - **Layout Builder maturity** (Phases 30, 37, 57, 58, 59): grid/snapping/rulers toolbar, responsive per-breakpoint preview and slot overrides, nested groups, marquee select, clipboard copy/paste, per-slot opacity/rotation, scroll-reveal animations, auto-grid generator, color swatches + eyedropper, layer search, draggable guides, and full text/caption layers with on-canvas editing.
+  - **Role-based access control** (Phases 33, 52, 53): System-Admin vs Editor tiers, per-campaign/per-company grants, centralized capability matrix, viewer-only time-limited grants.
+  - **Admin productivity** (Phases 34, 36, 38, 52): analytics live-refresh, advanced media sorting, near-duplicate detection, reload-safe UI state, inline campaign-metadata edits, asset-management UI, tags/categories overhaul.
+  - **Gallery configuration** (Phase 56): client-side validation, configurable breakpoint thresholds, capability badges, reset-to-default, schema hints, JSON import/export.
+  - **Enterprise & integration** (Phases 39, 41, 48): webhooks, binary campaign/media/audit exports with ZIP import, object-cache guidance.
+  - **Auditing & observability** (Phases 32, 40): canonical audit-event contract, campaign/system-scoped coverage, structured logging, audit export.
+  - **Under the hood** (Phases 42, 44, 45, 49, 51, 54, 55): production hardening (CSS/DOMPurify sanitization, a11y baseline), i18n groundwork, REST decomposition into domain controllers, shared `@wpsg` package extraction, single-source TS/PHP field-map schema, and service-worker offline caching.
+
 ### v0.27.0 (June 23, 2026)
 - **MINOR**: Phase 54 — Production Hardening
   - **P54-A** (security): PHP sanitizer extended with `is_safe_css_box_shadow()` for defence-in-depth on free-form CSS fields; `MediaAddModal` DOMPurify config locked to explicit `ALLOWED_ATTR` allowlist; localStorage inventory confirmed — no sensitive data outside the `enableJwt` gate.
