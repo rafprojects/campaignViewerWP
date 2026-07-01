@@ -918,6 +918,10 @@ export function useLayoutBuilderState(
           const z = newZMap.get(overlay.id);
           if (z !== undefined) overlay.zIndex = z;
         }
+        for (const text of d.texts ?? []) {
+          const z = newZMap.get(text.id);
+          if (z !== undefined) text.zIndex = z;
+        }
       }, 'Reorder layers'),
     [mutate],
   );

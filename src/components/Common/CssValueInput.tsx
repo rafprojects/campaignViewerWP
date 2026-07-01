@@ -46,9 +46,12 @@ export function CssValueInput({
       value={parsed?.value ?? ''}
       unit={unit}
       onValueChange={(v) => onChange(v === '' ? undefined : toCss(v, unit))}
-      onUnitChange={(u) => {
+      onUnitChange={(u, clampedValue) => {
         setDraftUnit(u);
-        if (parsed) onChange(toCss(parsed.value, u));
+        // Serialize the already-clamped value with the new unit in one call, so
+        // switching to a smaller-range unit persists the clamp (not the stale
+        // pre-clamp value) — see UnitScrubField.onUnitChange.
+        if (clampedValue !== '') onChange(toCss(clampedValue, u));
       }}
       allowedUnits={allowedUnits}
       min={min}

@@ -105,6 +105,22 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertEquals( 'left', $result['texts'][0]['textAlign'] );
     }
 
+    public function test_text_layer_blank_id_gets_generated_uuid() {
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [
+                [ 'id' => '', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'A' ],
+                [ 'id' => '', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'B' ],
+            ],
+        ] ) );
+        $id_a = $result['texts'][0]['id'];
+        $id_b = $result['texts'][1]['id'];
+        // Blank ids must be replaced with generated UUIDs, not persisted as '' —
+        // otherwise two text layers collide on id (selection / React keys break).
+        $this->assertNotEmpty( $id_a );
+        $this->assertNotEmpty( $id_b );
+        $this->assertNotEquals( $id_a, $id_b );
+    }
+
     public function test_text_layer_strips_html_from_content() {
         $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
             'texts' => [ [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'Hi <script>alert(1)</script>' ] ],

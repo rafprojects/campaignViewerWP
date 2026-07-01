@@ -10,6 +10,7 @@ export function useLayoutBuilderOverlays({ mutate }: { mutate: MutateFn }) {
         const maxZ = Math.max(
           ...d.slots.map((s) => s.zIndex),
           ...d.overlays.map((o) => o.zIndex),
+          ...(d.texts ?? []).map((t) => t.zIndex),
           0,
         );
         d.overlays.push({

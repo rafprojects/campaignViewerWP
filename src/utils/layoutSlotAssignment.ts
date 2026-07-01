@@ -157,7 +157,6 @@ export function getUnassignedMedia(
 }
 
 /**
-/**
  * Maps a container width (px) to the active ResponsiveBreakpoint (P58-B).
  * Thresholds align with useBreakpoint / Mantine sm (768px) and lg (1200px).
  */

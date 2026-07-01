@@ -78,7 +78,7 @@ describe('UnitScrubField', () => {
 		const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: 'em' }));
-		expect(onUnitChange).toHaveBeenCalledWith('em');
+		expect(onUnitChange).toHaveBeenCalledWith('em', 50);
 	});
 
 	it('clamps value when switching to a unit with lower max', async () => {
@@ -99,7 +99,7 @@ describe('UnitScrubField', () => {
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: 'vw' }));
 		expect(onValueChange).toHaveBeenCalledWith(100);
-		expect(onUnitChange).toHaveBeenCalledWith('vw');
+		expect(onUnitChange).toHaveBeenCalledWith('vw', 100);
 	});
 
 	it('does not clamp when value already fits new unit range', async () => {
@@ -119,7 +119,7 @@ describe('UnitScrubField', () => {
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: '%' }));
 		expect(onValueChange).not.toHaveBeenCalled();
-		expect(onUnitChange).toHaveBeenCalledWith('%');
+		expect(onUnitChange).toHaveBeenCalledWith('%', 50);
 	});
 
 	it('does not clamp an empty value on unit switch', async () => {
@@ -139,7 +139,7 @@ describe('UnitScrubField', () => {
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: 'vw' }));
 		expect(onValueChange).not.toHaveBeenCalled();
-		expect(onUnitChange).toHaveBeenCalledWith('vw');
+		expect(onUnitChange).toHaveBeenCalledWith('vw', '');
 	});
 
 	it('renders all height units in dropdown', async () => {

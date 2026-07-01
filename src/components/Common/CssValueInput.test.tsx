@@ -95,6 +95,25 @@ describe('CssValueInput', () => {
 		expect(onChange).toHaveBeenCalledWith('4em');
 	});
 
+	it('persists the clamped value (not the pre-clamp value) when switching to a smaller-range unit', async () => {
+		const user = userEvent.setup();
+		const onChange = vi.fn();
+		render(
+			<CssValueInput
+				label="Font Size"
+				value="400px"
+				onChange={onChange}
+				allowedUnits={TRACKING_UNITS}
+			/>,
+		);
+		const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
+		await user.click(unitSelect);
+		// em max is 100, so 400 must clamp to 100 — and the stored string must be
+		// the clamped value with the new unit, not the stale '400em'.
+		fireEvent.click(screen.getByRole('option', { name: 'em' }));
+		expect(onChange).toHaveBeenLastCalledWith('100em');
+	});
+
 	it('remembers a unit picked before any number is typed, without emitting a change', async () => {
 		const user = userEvent.setup();
 		const onChange = vi.fn();

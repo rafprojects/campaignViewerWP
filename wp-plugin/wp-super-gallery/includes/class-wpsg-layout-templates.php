@@ -25,6 +25,7 @@ class WPSG_Layout_Templates {
      * Current schema version for templates.
      *
      * v2 (P58-B): per-breakpoint slot overrides (`breakpointOverrides`).
+     * v3 (P59):   first-class text layers (`texts`).
      */
     const SCHEMA_VERSION = 3;
 
@@ -705,8 +706,12 @@ class WPSG_Layout_Templates {
             if ( ! is_array( $t ) ) {
                 return null;
             }
+            // Fall back to a generated UUID when the id is missing OR blank —
+            // `??` alone keeps an empty string, which would collide across layers
+            // and break selection / React keys on the client.
+            $id = isset( $t['id'] ) ? sanitize_text_field( (string) $t['id'] ) : '';
             return [
-                'id'          => sanitize_text_field( $t['id'] ?? wp_generate_uuid4() ),
+                'id'          => '' !== $id ? $id : wp_generate_uuid4(),
                 'x'           => self::clamp_pct( $t['x'] ?? 0 ),
                 'y'           => self::clamp_pct( $t['y'] ?? 0 ),
                 'width'       => self::clamp_pct( $t['width'] ?? 40 ),

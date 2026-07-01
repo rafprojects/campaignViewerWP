@@ -66,7 +66,7 @@ describe('DimensionInput', () => {
 		const unitSelect = screen.getByRole('combobox', { name: 'Unit' });
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: 'em' }));
-		expect(onUnitChange).toHaveBeenCalledWith('em');
+		expect(onUnitChange).toHaveBeenCalledWith('em', 50);
 	});
 
 	it('clamps value when switching to a unit with lower max', async () => {
@@ -88,7 +88,7 @@ describe('DimensionInput', () => {
 		await user.click(unitSelect);
 		fireEvent.click(screen.getByRole('option', { name: 'vw' }));
 		expect(onValueChange).toHaveBeenCalledWith(100);
-		expect(onUnitChange).toHaveBeenCalledWith('vw');
+		expect(onUnitChange).toHaveBeenCalledWith('vw', 100);
 	});
 
 	it('does not clamp when value already fits new unit range', async () => {
@@ -109,7 +109,7 @@ describe('DimensionInput', () => {
 		fireEvent.click(screen.getByRole('option', { name: '%' }));
 		// 50 fits within 0–100, so onValueChange should NOT be called
 		expect(onValueChange).not.toHaveBeenCalled();
-		expect(onUnitChange).toHaveBeenCalledWith('%');
+		expect(onUnitChange).toHaveBeenCalledWith('%', 50);
 	});
 
 	it('renders all height units in dropdown', async () => {

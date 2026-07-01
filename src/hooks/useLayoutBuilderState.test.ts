@@ -108,6 +108,45 @@ describe('useLayoutBuilderState — Z-Index reorder (P15-G)', () => {
   });
 });
 
+// ── P59: text layers participate in the unified z-index stack ──
+
+describe('useLayoutBuilderState — text-layer z-index (P59)', () => {
+  it('reorderLayers renumbers text layers alongside slots/overlays', () => {
+    const initial = templateWithSlots(2); // s1 z=1, s2 z=2
+    initial.texts = [{ ...DEFAULT_TEXT_LAYER, id: 't1', zIndex: 3 }];
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+
+    // Panel order (top→bottom by z): t1(3), s2(2), s1(1).
+    // Drag s1 above t1 → [s1, t1, s2] → s1=3, t1=2, s2=1.
+    act(() => result.current.reorderLayers('s1', 't1'));
+
+    const s1 = result.current.template.slots.find((s) => s.id === 's1')!;
+    const s2 = result.current.template.slots.find((s) => s.id === 's2')!;
+    const t1 = result.current.template.texts!.find((t) => t.id === 't1')!;
+    expect(s1.zIndex).toBe(3);
+    // Regression guard: before the fix the text kept its stale z-index (3).
+    expect(t1.zIndex).toBe(2);
+    expect(s2.zIndex).toBe(1);
+  });
+
+  it('addOverlay stacks above an existing high-z text layer', () => {
+    const initial = createEmptyTemplate('test');
+    initial.texts = [{ ...DEFAULT_TEXT_LAYER, id: 't1', zIndex: 500 }];
+    const { result } = renderHook(() => useLayoutBuilderState(initial));
+
+    let overlayId = '';
+    act(() => {
+      overlayId = result.current.addOverlay('https://example.com/o.png');
+    });
+
+    const overlay = result.current.template.overlays.find((o) => o.id === overlayId)!;
+    const t1 = result.current.template.texts!.find((t) => t.id === 't1')!;
+    // Regression guard: addOverlay's max-z now includes text layers, so a new
+    // overlay is never placed underneath an existing text layer.
+    expect(overlay.zIndex).toBeGreaterThan(t1.zIndex);
+  });
+});
+
 // ── P15-H: Overlay CRUD ─────────────────────────────────────
 
 describe('useLayoutBuilderState — Overlay CRUD (P15-H)', () => {

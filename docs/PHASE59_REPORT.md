@@ -1,6 +1,6 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** A/B/C/D shipped 2026-07-01
+**Status:** A/B/C/D shipped 2026-07-01 · E planned (opened by PR review)
 **Created:** 2026-06-26
 **Last updated:** 2026-07-01
 
@@ -12,6 +12,7 @@
 | P59-B | Text properties panel + on-canvas inline editing | ✅ Done | Medium |
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | ✅ Done | Medium |
 | P59-D | Text authoring UX polish — intuitive typography/effect inputs | ✅ Done | Medium |
+| P59-E | `duplicate()` id-remap for groups & per-breakpoint overrides | 📋 Planned | Medium |
 
 ---
 
@@ -244,6 +245,50 @@ professional design tools.
   set a glow color + scrubbed the glow blur value, reloaded, and confirmed it persisted and
   rendered correctly in the gallery.
 
+## Track P59-E - `duplicate()` id-remap for groups & per-breakpoint overrides
+
+> Opened by the 2026-07-01 PR review (see **PR Review & Fixes** below). Sized as its own track
+> because the fix is cross-cutting (touches P58-B and P30-G data) and out of scope for the
+> text-layer work under review.
+
+### Problem
+
+`WPSG_Layout_Templates::duplicate()` regenerates fresh UUIDs for `slots`, `overlays`, and `texts`
+so a copied template does not collide with its source. It does **not** remap the structures that
+*reference* those ids:
+
+- `groups[].memberIds` / `childGroupIds` / `parentGroupId` (P30-G) — nested-group membership.
+- `breakpointOverrides[bp][slotId]` (P58-B) — the per-breakpoint override map is keyed by slot id.
+
+Because these still point at the source's (now-stale) ids, duplicating a template that uses groups
+or per-breakpoint overrides yields a copy whose groups are orphaned (members no longer resolve) and
+whose per-breakpoint overrides are silently dropped on the client (the slot-id keys match nothing).
+The source template is unaffected — this only degrades the *copy*. The gap became reachable once
+`groups` and `breakpointOverrides` started round-tripping through the sanitizer in this branch.
+
+### Fix
+
+In `duplicate()`, build a single old→new id map while regenerating slot/overlay/text/group ids,
+then rewrite every reference through it in one pass:
+
+- Assign new ids to `slots`, `overlays`, `texts`, **and** `groups`, recording `old → new` in the map.
+- Rewrite `groups[].memberIds`, `childGroupIds`, and `parentGroupId` through the map (leave unknown
+  ids untouched rather than dropping them).
+- Rekey `breakpointOverrides[bp]` from old slot id → new slot id.
+
+### Acceptance criteria
+
+- Duplicating a template with a group whose `memberIds` reference slots produces a copy whose group
+  members resolve to the copy's regenerated slot ids.
+- Duplicating a template with `breakpointOverrides` produces a copy whose overrides are keyed by the
+  copy's regenerated slot ids and apply on the client.
+- Existing `duplicate()` behavior for slots/overlays/texts is unchanged.
+
+### Validation
+
+- New `WPSG_Layout_Templates_Test.php` cases for group-reference and breakpoint-override remapping
+  on duplicate; full PHPUnit suite green via `wp-env`.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -267,3 +312,55 @@ Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D) — a first-class **text layer** f
   strings when it lands; Pro-gating of text layers is noted for [PHASE61_REPORT.md](PHASE61_REPORT.md)
   (Decision D). A small a11y follow-up could add a text-layer fixture to `e2e/accessibility.spec.ts`
   for an end-to-end axe sweep. The campaign export/import path does not yet round-trip `texts`.
+
+## PR Review & Fixes (2026-07-01)
+
+A post-ship review pass over the whole phase-59 branch (`main...HEAD`, ~6k lines / 76 files).
+There was no open GitHub PR, so this ran as a high-effort `/code-review` — four parallel
+finder agents partitioned by risk area (PHP persistence/migration, TS state/hooks, TS
+rendering/components, cleanup/altitude/conventions), with every candidate re-verified against
+the code before acting. Six issues were accepted and fixed; the rest were rejected or deferred
+with rationale below.
+
+### Accepted & fixed
+
+| # | Severity | Issue | Fix |
+|---|----------|-------|-----|
+| 1 | High | `reorderLayers` rebuilt the layer list including text layers and computed a z-index map spanning them, but only wrote the map back to `slots` and `overlays` — never `texts`. Any layer-panel drag left text layers with a stale z-index, silently corrupting text stacking order (and dragging a text row did nothing). | Apply the computed z-map to `d.texts` as well. |
+| 2 | Med-High | `CssValueInput` dropped the clamp when switching to a smaller-range unit. `UnitScrubField` fired `onValueChange(clamped)` then `onUnitChange(newUnit)` as two separate callbacks; `CssValueInput` serialized the first with the *stale* old unit and the second re-serialized the *pre-clamp* value with the new unit, and the second `onChange` won — e.g. `400px` → `%` stored `400%` instead of the intended `100%`. (`DimensionInput` was unaffected: it stores value/unit as independent state fields.) | Extended `UnitScrubField.onUnitChange` to `(unit, clampedValue)` so `CssValueInput` composes one consistent `onChange`; `DimensionInput`'s passthrough is unchanged in behavior. |
+| 3 | Low | `addOverlay`'s "max z-index" spanned only `slots` + `overlays`, so a new overlay could be placed *underneath* an existing high-z text layer (inconsistent with `addText`, which already included all three). | Include `texts` in the max-z computation. |
+| 4 | Low | PHP `sanitize_texts` used `$t['id'] ?? wp_generate_uuid4()`, which keeps an explicit empty-string id (`??` only fires on `null`). Two text layers with blank ids would collide, breaking selection and React keys. | Fall back to a generated UUID on a blank *or* missing id. |
+| 5 | Trivial | `SCHEMA_VERSION` docblock documented v2 but not the current v3. | Added the v3 (P59) line. |
+| 6 | Trivial | A stray doubled `/**` opener above `containerWidthToBreakpoint` in `layoutSlotAssignment.ts`. | Removed the orphaned comment line. |
+
+Regression tests were added for #1–#4: `useLayoutBuilderState.test.ts` (text z-index is renumbered
+on reorder; a new overlay stacks above an existing text layer), `CssValueInput.test.tsx` /
+`UnitScrubField.test.tsx` / `DimensionInput.test.tsx` (clamp persisted on unit switch; the new
+two-arg `onUnitChange` contract), and `WPSG_Layout_Templates_Test.php` (blank text-layer ids get
+distinct generated UUIDs).
+
+### Rejected / deferred
+
+- **Rejected — typography color stored as `''`.** Colors that fail the PHP color regex persist as
+  an empty string rather than being dropped. No observable effect: `typographyOverrideToStyle`
+  guards `if (override.color)`, so an empty string never reaches the rendered CSS. Not worth a
+  behavior change.
+- **Rejected — cleanup duplication.** A shared `maxLayerZIndex(template)` helper, a shared
+  Google-font-load helper, and de-duplicating the text-layer positioned wrapper between the
+  builder canvas and the published gallery are quality-only observations, not defects; noted for
+  future-tasking rather than changed under this review.
+- **Deferred — `duplicate()` id remap is incomplete.** `duplicate()` regenerates `slots`/
+  `overlays`/`texts` ids but does **not** remap `groups[].memberIds`/`childGroupIds`/`parentGroupId`
+  (P30-G) or the `breakpointOverrides` slot-id keys (P58-B). Duplicating a template that uses
+  groups or per-breakpoint overrides yields a copy with orphaned group members / lost overrides
+  (the original is unaffected). The correct fix is a cross-cutting old→new id-map touching P58-B
+  and P30-G, with its own tests — outside the P59 text-layer scope under review, so it was promoted
+  to its own track, **P59-E** (see above), rather than expanded into this pass.
+
+### QA
+
+- `tsc -b && vite build`: clean.
+- `vitest run` (full): **3627/3627 passing** (the three `DimensionInput` tests that asserted the
+  old single-arg `onUnitChange` were updated to the `(unit, clampedValue)` contract).
+- PHPUnit via `wp-env` (full suite): **1068 tests, 13072 assertions, 2 skipped** (expected), exit 0;
+  the focused `WPSG_Layout_Templates_Test.php` file passes at 49 tests / 172 assertions.

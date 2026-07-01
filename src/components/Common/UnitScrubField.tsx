@@ -15,8 +15,13 @@ export interface UnitScrubFieldProps {
   unit: string;
   /** Called when the numeric value changes (typing or scrubbing) */
   onValueChange: (value: number | '') => void;
-  /** Called when the unit changes. The component auto-clamps the current value to the new unit's max. */
-  onUnitChange: (unit: string) => void;
+  /**
+   * Called when the unit changes. The component auto-clamps the current value to
+   * the new unit's max and passes that clamped value alongside the unit, so a
+   * consumer that serializes value+unit together (e.g. CssValueInput) can emit a
+   * single, consistent update instead of racing two callbacks.
+   */
+  onUnitChange: (unit: string, clampedValue: number | '') => void;
   /** Allowed unit options. If single-element, the unit selector is hidden. */
   allowedUnits: readonly string[];
   /** Explicit minimum (default 0, or -max when allowNegative) */
@@ -65,11 +70,10 @@ export function UnitScrubField({
   const handleUnitChange = (newUnit: string) => {
     const newMax = resolveMax(newUnit, max);
     const newMin = min ?? (allowNegative ? -newMax : 0);
-    if (typeof value === 'number') {
-      const clamped = Math.max(newMin, Math.min(newMax, value));
-      if (clamped !== value) onValueChange(clamped);
-    }
-    onUnitChange(newUnit);
+    const clamped =
+      typeof value === 'number' ? Math.max(newMin, Math.min(newMax, value)) : value;
+    if (typeof value === 'number' && clamped !== value) onValueChange(clamped);
+    onUnitChange(newUnit, clamped);
   };
 
   const showUnitSelector = allowedUnits.length > 1;
