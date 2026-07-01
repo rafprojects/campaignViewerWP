@@ -340,6 +340,115 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertStringContainsString( '(Copy)', $clone['name'] );
     }
 
+    public function test_duplicate_generates_new_overlay_and_text_ids() {
+        $source = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'overlays' => [
+                [ 'id' => 'ov-1', 'type' => 'shape', 'x' => 0, 'y' => 0, 'width' => 20, 'height' => 20, 'zIndex' => 1 ],
+            ],
+            'texts' => [
+                [ 'id' => 'text-1', 'x' => 10, 'y' => 10, 'width' => 40, 'height' => 12, 'zIndex' => 5, 'content' => 'Hi', 'semanticTag' => 'heading', 'textAlign' => 'center' ],
+            ],
+        ] ) );
+        $clone = WPSG_Layout_Templates::duplicate( $source['id'], 'Clone' );
+
+        $this->assertIsArray( $clone );
+        $this->assertCount( 1, $clone['overlays'] );
+        $this->assertCount( 1, $clone['texts'] );
+        $this->assertNotEquals( 'ov-1', $clone['overlays'][0]['id'] );
+        $this->assertNotEquals( 'text-1', $clone['texts'][0]['id'] );
+    }
+
+    public function test_duplicate_remaps_group_member_ids() {
+        $source = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'slots'  => [
+                [ 'id' => 'slot-a', 'x' => 0,  'y' => 0, 'width' => 40, 'height' => 40, 'zIndex' => 1, 'shape' => 'rectangle' ],
+                [ 'id' => 'slot-b', 'x' => 50, 'y' => 0, 'width' => 40, 'height' => 40, 'zIndex' => 2, 'shape' => 'rectangle' ],
+            ],
+            'groups' => [
+                [ 'id' => 'group-1', 'memberIds' => [ 'slot-a', 'slot-b' ], 'childGroupIds' => [], 'parentGroupId' => null ],
+            ],
+        ] ) );
+
+        $clone = WPSG_Layout_Templates::duplicate( $source['id'], 'Clone' );
+
+        $this->assertIsArray( $clone );
+        $this->assertCount( 1, $clone['groups'] );
+
+        $clone_slot_ids = array_column( $clone['slots'], 'id' );
+        $member_ids     = $clone['groups'][0]['memberIds'];
+        sort( $clone_slot_ids );
+        sort( $member_ids );
+
+        // Members resolve to the clone's regenerated slot IDs, not the source's.
+        $this->assertEquals( $clone_slot_ids, $member_ids );
+        $this->assertEmpty( array_intersect( [ 'slot-a', 'slot-b' ], $member_ids ) );
+    }
+
+    public function test_duplicate_remaps_group_parent_and_child_ids() {
+        $source = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'groups' => [
+                [ 'id' => 'parent-g', 'memberIds' => [], 'childGroupIds' => [ 'child-g' ], 'parentGroupId' => null ],
+                [ 'id' => 'child-g',  'memberIds' => [ 'slot-1' ], 'childGroupIds' => [], 'parentGroupId' => 'parent-g' ],
+            ],
+        ] ) );
+
+        $clone = WPSG_Layout_Templates::duplicate( $source['id'], 'Clone' );
+
+        $this->assertIsArray( $clone );
+        $this->assertCount( 2, $clone['groups'] );
+
+        // IDs are regenerated, so locate the two groups by structural role.
+        $parent = null;
+        $child  = null;
+        foreach ( $clone['groups'] as $g ) {
+            if ( ! empty( $g['childGroupIds'] ) ) {
+                $parent = $g;
+            }
+            if ( ! empty( $g['parentGroupId'] ) ) {
+                $child = $g;
+            }
+        }
+        $this->assertNotNull( $parent );
+        $this->assertNotNull( $child );
+
+        // parentGroupId / childGroupIds resolve to the clone's regenerated group IDs.
+        $this->assertEquals( $parent['id'], $child['parentGroupId'] );
+        $this->assertEquals( [ $child['id'] ], $parent['childGroupIds'] );
+
+        // None of the source group IDs survive.
+        $this->assertNotEquals( 'parent-g', $parent['id'] );
+        $this->assertNotEquals( 'child-g', $child['id'] );
+        $this->assertNotEquals( 'parent-g', $child['parentGroupId'] );
+    }
+
+    public function test_duplicate_remaps_breakpoint_override_keys() {
+        $source = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'breakpointOverrides' => [
+                'tablet' => [
+                    'slot-1' => [ 'x' => 10, 'y' => 20 ],
+                ],
+            ],
+        ] ) );
+
+        // Sanity: the source override is keyed by the original slot ID.
+        $this->assertArrayHasKey( 'slot-1', $source['breakpointOverrides']['tablet'] );
+
+        $clone = WPSG_Layout_Templates::duplicate( $source['id'], 'Clone' );
+
+        $this->assertIsArray( $clone );
+        $new_slot_id = $clone['slots'][0]['id'];
+        $this->assertNotEquals( 'slot-1', $new_slot_id );
+
+        $tablet = $clone['breakpointOverrides']['tablet'];
+        $this->assertCount( 1, $tablet );
+        $this->assertArrayHasKey( $new_slot_id, $tablet );
+        $this->assertArrayNotHasKey( 'slot-1', $tablet );
+
+        // Override payload survives the rekey.
+        $this->assertEquals( 10, $tablet[ $new_slot_id ]['x'] );
+        $this->assertEquals( 20, $tablet[ $new_slot_id ]['y'] );
+    }
+
     // ── Sanitize slots — shape whitelist ────────────────────
 
     public function test_sanitize_rejects_invalid_shape_to_rectangle() {

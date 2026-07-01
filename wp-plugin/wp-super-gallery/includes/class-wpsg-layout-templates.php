@@ -303,24 +303,82 @@ class WPSG_Layout_Templates {
         unset( $clone['id'] );
         $clone['name'] = $new_name ?: ( $source['name'] . ' (Copy)' );
 
-        // Generate new IDs for slots and overlays to avoid collisions.
-        if ( ! empty( $clone['slots'] ) && is_array( $clone['slots'] ) ) {
-            foreach ( $clone['slots'] as &$slot ) {
-                $slot['id'] = wp_generate_uuid4();
+        // Regenerate IDs for every layer/group so the copy cannot collide with
+        // its source, recording old→new in a single map. Structures that
+        // *reference* those IDs (group membership, per-breakpoint overrides) are
+        // rewritten through the map in a second pass so the copy stays internally
+        // consistent — without this, a copied template's groups orphan and its
+        // breakpoint overrides silently drop (P59-E).
+        //
+        // memberIds today only ever hold slot IDs and childGroupIds/parentGroupId
+        // only group IDs (selection is per-type), but the map unions slots,
+        // overlays, texts and groups so any cross-reference remaps correctly and
+        // this stays robust if member types ever broaden. All IDs are UUIDs, so
+        // the union cannot alias across categories.
+        $id_map = [];
+
+        // First pass — assign fresh IDs and record old→new. Groups are included
+        // here (before any rewriting) so childGroupIds/parentGroupId, which may
+        // point at a group appearing later in the array, resolve in pass two.
+        foreach ( [ 'slots', 'overlays', 'texts', 'groups' ] as $collection ) {
+            if ( empty( $clone[ $collection ] ) || ! is_array( $clone[ $collection ] ) ) {
+                continue;
             }
-            unset( $slot );
+            foreach ( $clone[ $collection ] as &$item ) {
+                if ( ! is_array( $item ) ) {
+                    continue;
+                }
+                $old_id     = isset( $item['id'] ) ? (string) $item['id'] : '';
+                $new_id     = wp_generate_uuid4();
+                $item['id'] = $new_id;
+                if ( $old_id !== '' ) {
+                    $id_map[ $old_id ] = $new_id;
+                }
+            }
+            unset( $item );
         }
-        if ( ! empty( $clone['overlays'] ) && is_array( $clone['overlays'] ) ) {
-            foreach ( $clone['overlays'] as &$overlay ) {
-                $overlay['id'] = wp_generate_uuid4();
+
+        // Rewrite a single ID through the map, leaving unknown IDs untouched
+        // rather than dropping them (an already-orphaned reference in the source
+        // stays as-is instead of silently vanishing).
+        $remap_id = static function ( $id ) use ( $id_map ) {
+            $id = (string) $id;
+            return $id_map[ $id ] ?? $id;
+        };
+
+        // Second pass — rewrite group references now that the map is complete.
+        if ( ! empty( $clone['groups'] ) && is_array( $clone['groups'] ) ) {
+            foreach ( $clone['groups'] as &$group ) {
+                if ( ! is_array( $group ) ) {
+                    continue;
+                }
+                if ( isset( $group['memberIds'] ) && is_array( $group['memberIds'] ) ) {
+                    $group['memberIds'] = array_map( $remap_id, $group['memberIds'] );
+                }
+                if ( isset( $group['childGroupIds'] ) && is_array( $group['childGroupIds'] ) ) {
+                    $group['childGroupIds'] = array_map( $remap_id, $group['childGroupIds'] );
+                }
+                if ( isset( $group['parentGroupId'] ) && $group['parentGroupId'] !== null ) {
+                    $group['parentGroupId'] = $remap_id( $group['parentGroupId'] );
+                }
             }
-            unset( $overlay );
+            unset( $group );
         }
-        if ( ! empty( $clone['texts'] ) && is_array( $clone['texts'] ) ) {
-            foreach ( $clone['texts'] as &$text ) {
-                $text['id'] = wp_generate_uuid4();
+
+        // Rekey per-breakpoint overrides from old slot ID → new slot ID. Unknown
+        // keys are kept as-is (consistent with group references); the client
+        // resolves overrides by slot lookup, so a stale key is simply never read.
+        if ( ! empty( $clone['breakpointOverrides'] ) && is_array( $clone['breakpointOverrides'] ) ) {
+            foreach ( $clone['breakpointOverrides'] as $bp => $slot_overrides ) {
+                if ( ! is_array( $slot_overrides ) ) {
+                    continue;
+                }
+                $rekeyed = [];
+                foreach ( $slot_overrides as $slot_id => $override ) {
+                    $rekeyed[ $remap_id( $slot_id ) ] = $override;
+                }
+                $clone['breakpointOverrides'][ $bp ] = $rekeyed;
             }
-            unset( $text );
         }
 
         return self::create( $clone );

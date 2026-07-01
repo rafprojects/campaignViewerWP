@@ -1,6 +1,6 @@
 # Phase 59 - LayoutBuilder Text & Caption Layers
 
-**Status:** A/B/C/D shipped 2026-07-01 · E planned (opened by PR review)
+**Status:** A/B/C/D/E shipped 2026-07-01 (E opened by PR review)
 **Created:** 2026-06-26
 **Last updated:** 2026-07-01
 
@@ -12,7 +12,7 @@
 | P59-B | Text properties panel + on-canvas inline editing | ✅ Done | Medium |
 | P59-C | Render path, i18n-aware output, a11y semantics, tests | ✅ Done | Medium |
 | P59-D | Text authoring UX polish — intuitive typography/effect inputs | ✅ Done | Medium |
-| P59-E | `duplicate()` id-remap for groups & per-breakpoint overrides | 📋 Planned | Medium |
+| P59-E | `duplicate()` id-remap for groups & per-breakpoint overrides | ✅ Done | Medium |
 
 ---
 
@@ -289,6 +289,47 @@ then rewrite every reference through it in one pass:
 - New `WPSG_Layout_Templates_Test.php` cases for group-reference and breakpoint-override remapping
   on duplicate; full PHPUnit suite green via `wp-env`.
 
+### Implementation notes (P59-E — landed 2026-07-01)
+
+- **Single old→new id map, two passes.** `duplicate()` (`class-wpsg-layout-templates.php`) now builds
+  one flat `$id_map` while regenerating ids for `slots`, `overlays`, `texts`, **and** `groups` in a
+  first pass (all four collections looped by a shared `foreach ( [...] as $collection )`), then a
+  second pass rewrites every reference through the map. Group ids must be assigned *before* the
+  rewrite pass because `childGroupIds` can point at a group that appears later in the array.
+- **What the map actually needs vs. what it unions (verified, plan claim corrected).** The plan's
+  premise that `memberIds` can reference overlay/text ids is **not** how selection works today: the
+  multi-select `selectedSlotIds` set that feeds `createGroup()` holds **only slot ids** — overlays
+  and texts use the mutually-exclusive single-selection `selectedOverlayId`/`selectedTextId` and are
+  cleared via `clearSelection()` at every slot/marquee select site (`LayoutBuilderCanvasPanel.tsx`).
+  So in practice `memberIds` references only slot ids and `childGroupIds`/`parentGroupId` only group
+  ids; the *only* references that exist are slot→(group member / breakpoint key) and group→group.
+  The map still unions all four collections anyway — it's harmless (all ids are UUIDs, no aliasing)
+  and keeps the remap correct if member types ever broaden. This is the one plan claim that didn't
+  survive verification; behaviour is unchanged either way.
+- **Unknown ids are kept, not dropped.** `memberIds`/`childGroupIds`/`parentGroupId` and the
+  `breakpointOverrides[bp]` keys are all rewritten via `$id_map[$id] ?? $id`, leaving ids absent from
+  the map untouched (an already-orphaned reference in the source stays as-is rather than silently
+  vanishing). This differs from the plan's "drop unmatched breakpoint-override keys" — kept uniform
+  with the group handling instead, since the client resolves overrides by slot lookup so a stale key
+  is simply never read, and a uniform "remap what you can, leave the rest" rule is simpler to reason
+  about. Well-formed templates never hit this path (every reference resolves).
+- **Remap runs before `self::create()`.** `create()`/`build_template()` only *sanitize* the data
+  handed to them (`sanitize_groups` / `sanitize_breakpoint_overrides` / `sanitize_slots` etc. each
+  preserve an incoming id, only generating a fresh UUID when one is absent) — they do no
+  cross-reference remapping. So `duplicate()` resolves all references itself first; the regenerated
+  ids then survive the re-sanitization unchanged. No schema, sanitizer, or `migrate_template` change
+  was needed — this is a pure `duplicate()`-local fix.
+- **Tests.** Added to the `// ── Duplicate ──` section of `WPSG_Layout_Templates_Test.php`:
+  `test_duplicate_remaps_group_member_ids` (members resolve to the clone's regenerated slot ids),
+  `test_duplicate_remaps_group_parent_and_child_ids` (parent/child links resolve to the clone's
+  regenerated group ids), `test_duplicate_remaps_breakpoint_override_keys` (override map rekeyed to
+  the clone's slot id, payload intact), and `test_duplicate_generates_new_overlay_and_text_ids`
+  (locks the overlay/text id regeneration the refactor now shares). Existing duplicate tests
+  (`…_generates_new_slot_ids`, etc.) pass unchanged.
+- **QA.** Focused `WPSG_Layout_Templates_Test.php` via `wp-env`: **OK (53 tests, 198 assertions)**,
+  exit 0 (49 → 53 with the four new cases). Full PHPUnit suite: **1072 tests, 13098 assertions, 2
+  skipped** (the expected pre-existing skips), 0 failures/errors, exit 0.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -303,9 +344,9 @@ then rewrite every reference through it in one pass:
 
 ## Outcome
 
-Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D) — a first-class **text layer** for the LayoutBuilder, with intuitive, forgiving authoring controls, across all four tracks.
+Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D, E) — a first-class **text layer** for the LayoutBuilder, with intuitive, forgiving authoring controls, across all five tracks.
 
-- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C); and a value+unit + drag-to-scrub control (`UnitScrubField`, with `DimensionInput`/`CssValueInput` adapters) replacing the free-text CSS-unit fields across `<TypographyEditor>`'s typography/effect inputs, so a bare unit-less number can no longer silently produce invalid CSS (P59-D). A designer can now add editable, accessible, translatable text — with forgiving, professional-tool-style controls — without an external image editor.
+- **What shipped.** A `text` layer type (`LayoutTextLayer`, `schemaVersion` 3) with full CRUD + undo/redo + autosave and back-compat (P59-A); an authoring UI — `TextPropertiesPanel` reusing the shared `<TypographyEditor>`, on-canvas drag/resize + double-click inline editing, an "Add text" button, and first-class layers-panel listing (P59-B); a gallery render path emitting real, semantic, screen-reader-reachable, translatable DOM text (P59-C); and a value+unit + drag-to-scrub control (`UnitScrubField`, with `DimensionInput`/`CssValueInput` adapters) replacing the free-text CSS-unit fields across `<TypographyEditor>`'s typography/effect inputs, so a bare unit-less number can no longer silently produce invalid CSS (P59-D). A designer can now add editable, accessible, translatable text — with forgiving, professional-tool-style controls — without an external image editor. A post-review follow-up (P59-E) then closed a pre-existing `duplicate()` gap: copying a template now regenerates layer ids *and* remaps everything that references them (group membership + per-breakpoint override keys), so duplicating a grouped or responsive layout no longer orphans its groups or drops its overrides.
 - **Key decisions (course-corrects).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A. In P59-D, the value+unit control was generalized into a shared `UnitScrubField` (rather than a typography-only component) after user direction during planning, and its unit selector was moved from a separate boxed `Select` into the `NumberInput`'s own `rightSection` after manual QA surfaced a height mismatch between the two — both caught and corrected mid-track.
 - **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates. Migrating the remaining ad hoc numeric input (`SlotPropertiesPanel`'s rotation scrub) and auditing for other `UnitScrubField` rollout candidates is future-tasked (`FUTURE_TASKS.md`, Code Quality & Refactoring).
 - **What should happen next.** The Phase 60-B i18n harvest should include the new admin
@@ -349,13 +390,14 @@ distinct generated UUIDs).
   Google-font-load helper, and de-duplicating the text-layer positioned wrapper between the
   builder canvas and the published gallery are quality-only observations, not defects; noted for
   future-tasking rather than changed under this review.
-- **Deferred — `duplicate()` id remap is incomplete.** `duplicate()` regenerates `slots`/
-  `overlays`/`texts` ids but does **not** remap `groups[].memberIds`/`childGroupIds`/`parentGroupId`
-  (P30-G) or the `breakpointOverrides` slot-id keys (P58-B). Duplicating a template that uses
-  groups or per-breakpoint overrides yields a copy with orphaned group members / lost overrides
-  (the original is unaffected). The correct fix is a cross-cutting old→new id-map touching P58-B
-  and P30-G, with its own tests — outside the P59 text-layer scope under review, so it was promoted
-  to its own track, **P59-E** (see above), rather than expanded into this pass.
+- **Deferred → resolved in P59-E — `duplicate()` id remap was incomplete.** `duplicate()`
+  regenerated `slots`/`overlays`/`texts` ids but did **not** remap `groups[].memberIds`/
+  `childGroupIds`/`parentGroupId` (P30-G) or the `breakpointOverrides` slot-id keys (P58-B).
+  Duplicating a template that uses groups or per-breakpoint overrides yielded a copy with orphaned
+  group members / lost overrides (the original is unaffected). The correct fix is a cross-cutting
+  old→new id-map touching P58-B and P30-G, with its own tests — outside the P59 text-layer scope
+  under review, so it was promoted to its own track, **P59-E**, and shipped 2026-07-01 (see the
+  P59-E implementation notes above).
 
 ### QA
 
