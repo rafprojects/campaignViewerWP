@@ -7,6 +7,7 @@ import {
   IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings, IconInfoCircle,
 } from '@tabler/icons-react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { useSpaces } from '@/services/adminQuery';
 import { SettingsPanel } from './SettingsPanel';
@@ -22,13 +23,6 @@ interface SpaceGrant {
   expires_at?: string | null;
   is_expired?: boolean;
 }
-
-// P51-H: role options shared by the grant form and the inline per-row editor.
-const SPACE_ROLE_OPTIONS = [
-  { value: 'viewer', label: 'Viewer' },
-  { value: 'editor', label: 'Editor' },
-  { value: 'owner', label: 'Owner' },
-];
 
 export interface SpaceManagementViewProps {
   apiClient: ApiClient;
@@ -48,6 +42,12 @@ export interface SpaceManagementViewProps {
  * on the WP-admin "Spaces" page (see main.tsx #wpsg-spaces-admin mount).
  */
 export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementViewProps) {
+  const { t } = useTranslation('wpsg');
+  const spaceRoleOptions = [
+    { value: 'viewer', label: t('admin_space_role_viewer', 'Viewer') },
+    { value: 'editor', label: t('admin_space_role_editor', 'Editor') },
+    { value: 'owner', label: t('admin_space_role_owner', 'Owner') },
+  ];
   const { spaces, spacesLoading, mutateSpaces } = useSpaces(apiClient);
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('spaces');
@@ -149,9 +149,9 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
       await toggleLibraryAsset(assetType, assetId, checked);
       await refetchLibrary();
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update library' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_lib_fail', 'Failed to update library') });
     }
-  }, [toggleLibraryAsset, refetchLibrary, onNotify]);
+  }, [toggleLibraryAsset, refetchLibrary, onNotify, t]);
 
   const handleBulkLibraryToggle = useCallback(async (assetIds: string[], associated: boolean) => {
     const current = new Set(spaceLibrary?.asset ?? []);
@@ -164,9 +164,9 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
       }
       await refetchLibrary();
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update library' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_lib_fail', 'Failed to update library') });
     }
-  }, [spaceLibrary, toggleLibraryAsset, refetchLibrary, onNotify]);
+  }, [spaceLibrary, toggleLibraryAsset, refetchLibrary, onNotify, t]);
 
   const autoSlug = (name: string) =>
     name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -192,15 +192,15 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
       setCreateIsolation(false);
       await mutateSpaces();
       onSpacesChanged();
-      onNotify({ type: 'success', text: `Space "${createName.trim()}" created` });
+      onNotify({ type: 'success', text: t('admin_space_created', 'Space "{{name}}" created', { name: createName.trim() }) });
       setSelectedSpaceId(res.id);
       setActiveTab('settings');
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to create space' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_create_fail', 'Failed to create space') });
     } finally {
       setCreateSaving(false);
     }
-  }, [apiClient, createName, createSlug, createIsolation, mutateSpaces, onSpacesChanged, onNotify]);
+  }, [apiClient, createName, createSlug, createIsolation, mutateSpaces, onSpacesChanged, onNotify, t]);
 
   const handleArchiveSpace = useCallback(async (spaceId: number, spaceName: string) => {
     try {
@@ -211,11 +211,11 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
         setSelectedSpaceId(null);
         setActiveTab('spaces');
       }
-      onNotify({ type: 'success', text: `Space "${spaceName}" archived` });
+      onNotify({ type: 'success', text: t('admin_space_archived', 'Space "{{name}}" archived', { name: spaceName }) });
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to archive space' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_archive_fail', 'Failed to archive space') });
     }
-  }, [apiClient, mutateSpaces, onSpacesChanged, onNotify, selectedSpaceId]);
+  }, [apiClient, mutateSpaces, onSpacesChanged, onNotify, selectedSpaceId, t]);
 
   const handleGrantAccess = useCallback(async () => {
     if (!grantEmail.trim() || !selectedSpaceId) return;
@@ -225,7 +225,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
         `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/resolve-user?search=${encodeURIComponent(grantEmail.trim())}`,
       );
       if (!resolveRes?.found || !resolveRes.id) {
-        onNotify({ type: 'error', text: 'No WordPress user found with that email' });
+        onNotify({ type: 'error', text: t('admin_space_no_user', 'No WordPress user found with that email') });
         setGrantSaving(false);
         return;
       }
@@ -235,24 +235,24 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
       });
       setGrantEmail('');
       await refetchGrants();
-      onNotify({ type: 'success', text: 'Access granted' });
+      onNotify({ type: 'success', text: t('admin_space_access_granted', 'Access granted') });
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to grant access' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_grant_fail', 'Failed to grant access') });
     } finally {
       setGrantSaving(false);
     }
-  }, [apiClient, grantEmail, grantRole, selectedSpaceId, refetchGrants, onNotify]);
+  }, [apiClient, grantEmail, grantRole, selectedSpaceId, refetchGrants, onNotify, t]);
 
   const handleRevokeAccess = useCallback(async (userId: number) => {
     if (!selectedSpaceId) return;
     try {
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access/${userId}`);
       await refetchGrants();
-      onNotify({ type: 'success', text: 'Access revoked' });
+      onNotify({ type: 'success', text: t('admin_space_access_revoked', 'Access revoked') });
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to revoke access' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_revoke_fail', 'Failed to revoke access') });
     }
-  }, [apiClient, selectedSpaceId, refetchGrants, onNotify]);
+  }, [apiClient, selectedSpaceId, refetchGrants, onNotify, t]);
 
   // P51-H: change an existing grant's role inline. POST /access upserts the grant
   // (see WPSG_Space_Controller::upsert_space_grant), so re-posting with the new
@@ -266,22 +266,22 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
         access_level: newLevel,
       });
       await refetchGrants();
-      onNotify({ type: 'success', text: 'Role updated' });
+      onNotify({ type: 'success', text: t('admin_space_role_updated', 'Role updated') });
     } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? 'Failed to update role' });
+      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_role_fail', 'Failed to update role') });
     } finally {
       setRoleSavingUserId(null);
     }
-  }, [apiClient, selectedSpaceId, refetchGrants, onNotify]);
+  }, [apiClient, selectedSpaceId, refetchGrants, onNotify, t]);
 
   return (
     <>
     <Tabs value={activeTab} onChange={setActiveTab}>
       <Tabs.List>
-        <Tabs.Tab value="spaces">Spaces</Tabs.Tab>
-        <Tabs.Tab value="settings" disabled={!selectedSpaceId}>Settings</Tabs.Tab>
-        <Tabs.Tab value="access" disabled={!selectedSpaceId}>Access</Tabs.Tab>
-        <Tabs.Tab value="library" disabled={!selectedSpaceId}>Library</Tabs.Tab>
+        <Tabs.Tab value="spaces">{t('admin_space_tab_spaces', 'Spaces')}</Tabs.Tab>
+        <Tabs.Tab value="settings" disabled={!selectedSpaceId}>{t('admin_space_tab_settings', 'Settings')}</Tabs.Tab>
+        <Tabs.Tab value="access" disabled={!selectedSpaceId}>{t('admin_space_tab_access', 'Access')}</Tabs.Tab>
+        <Tabs.Tab value="library" disabled={!selectedSpaceId}>{t('admin_space_tab_library', 'Library')}</Tabs.Tab>
       </Tabs.List>
 
       <Tabs.Panel value="spaces" pt="md">
@@ -292,9 +292,9 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
             <Table striped highlightOnHover withTableBorder>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th>Name</Table.Th>
-                  <Table.Th>Slug</Table.Th>
-                  <Table.Th>Mode</Table.Th>
+                  <Table.Th>{t('admin_space_th_name', 'Name')}</Table.Th>
+                  <Table.Th>{t('admin_space_th_slug', 'Slug')}</Table.Th>
+                  <Table.Th>{t('admin_space_th_mode', 'Mode')}</Table.Th>
                   <Table.Th />
                 </Table.Tr>
               </Table.Thead>
@@ -308,24 +308,24 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                     <Table.Td>
                       <Group gap="xs">
                         <Text size="sm">{space.name}</Text>
-                        {space.isDefault && <Badge size="xs" variant="light">default</Badge>}
+                        {space.isDefault && <Badge size="xs" variant="light">{t('admin_space_default', 'default')}</Badge>}
                       </Group>
                     </Table.Td>
                     <Table.Td><Text size="sm" c="dimmed">{space.slug}</Text></Table.Td>
                     <Table.Td>
                       <Badge size="xs" color={space.isolationMode === 'delegated' ? 'orange' : 'gray'} variant="outline">
-                        {space.isolationMode}
+                        {t(`admin_space_mode_${space.isolationMode}`, space.isolationMode)}
                       </Badge>
                     </Table.Td>
                     <Table.Td>
                       {!space.isDefault && (
-                        <Tooltip label="Archive space">
+                        <Tooltip label={t('admin_space_archive_tt', 'Archive space')}>
                           <ActionIcon
                             variant="subtle"
                             color="red"
                             size="sm"
                             onClick={(e) => { e.stopPropagation(); void handleArchiveSpace(space.id, space.name); }}
-                            aria-label={`Archive ${space.name}`}
+                            aria-label={t('admin_space_archive_aria', 'Archive {{name}}', { name: space.name })}
                           >
                             <IconTrash size={14} />
                           </ActionIcon>
@@ -340,21 +340,21 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
 
           {/* P53-A: creating a space is system-admin only (spaces.create). */}
           {isSystemAdmin && <>
-          <Divider label="Create new space" labelPosition="center" />
+          <Divider label={t('admin_space_create_divider', 'Create new space')} labelPosition="center" />
 
           <Stack gap="sm">
             <Group grow align="flex-start">
               <TextInput
-                label="Space name"
-                placeholder="My Gallery Space"
+                label={t('admin_space_name_label', 'Space name')}
+                placeholder={t('admin_space_name_ph', 'My Gallery Space')}
                 value={createName}
                 onChange={(e) => handleNameChange(e.currentTarget.value)}
                 required
                 size="sm"
               />
               <TextInput
-                label="Slug"
-                placeholder="my-gallery-space"
+                label={t('admin_space_slug_label', 'Slug')}
+                placeholder={t('admin_space_slug_ph', 'my-gallery-space')}
                 value={createSlug}
                 onChange={(e) => setCreateSlug(e.currentTarget.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                 size="sm"
@@ -362,15 +362,15 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
             </Group>
             <Stack gap="xs">
               <Switch
-                label="Delegated isolation mode"
-                description="Only explicit grantees can access this space. Admins without a grant are denied."
+                label={t('admin_space_delegated_label', 'Delegated isolation mode')}
+                description={t('admin_space_delegated_desc', 'Only explicit grantees can access this space. Admins without a grant are denied.')}
                 checked={createIsolation}
                 onChange={(e) => setCreateIsolation(e.currentTarget.checked)}
                 size="sm"
               />
               {createIsolation && (
                 <Alert icon={<IconAlertCircle size={14} />} color="orange" variant="light" p="xs">
-                  In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving.
+                  {t('admin_space_delegated_alert', 'In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving.')}
                 </Alert>
               )}
             </Stack>
@@ -382,7 +382,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                 disabled={!createName.trim()}
                 size="sm"
               >
-                Create space
+                {t('admin_space_create_btn', 'Create space')}
               </Button>
             </Group>
           </Stack>
@@ -394,8 +394,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
         {selectedSpace ? (
           <Stack gap="sm">
             <Text size="sm" c="dimmed">
-              Configure display settings for <Text span fw={500}>{selectedSpace.name}</Text>.
-              Unset fields inherit the global defaults.
+              {t('admin_space_settings_pre', 'Configure display settings for ')}<Text span fw={500}>{selectedSpace.name}</Text>{t('admin_space_settings_post', '. Unset fields inherit the global defaults.')}
             </Text>
             <Button
               leftSection={<IconSettings size={14} />}
@@ -403,18 +402,18 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
               size="sm"
               onClick={() => setSettingsPanelOpen(true)}
             >
-              Configure display settings
+              {t('admin_space_settings_btn', 'Configure display settings')}
             </Button>
           </Stack>
         ) : (
-          <Text c="dimmed" size="sm">Select a space from the Spaces tab to edit its settings.</Text>
+          <Text c="dimmed" size="sm">{t('admin_space_settings_empty', 'Select a space from the Spaces tab to edit its settings.')}</Text>
         )}
       </Tabs.Panel>
 
       <Tabs.Panel value="access" pt="md">
         {selectedSpace ? (
           <Stack gap="md">
-            <Text size="sm" fw={500}>Access grants for {selectedSpace.name}</Text>
+            <Text size="sm" fw={500}>{t('admin_space_grants_for', 'Access grants for {{name}}', { name: selectedSpace.name })}</Text>
 
             {grantsLoading ? (
               <Center py="md"><Loader size="sm" /></Center>
@@ -422,9 +421,9 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
               <Table striped withTableBorder>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>User</Table.Th>
-                    <Table.Th>Role</Table.Th>
-                    <Table.Th>Granted</Table.Th>
+                    <Table.Th>{t('admin_space_th_user', 'User')}</Table.Th>
+                    <Table.Th>{t('admin_space_th_role', 'Role')}</Table.Th>
+                    <Table.Th>{t('admin_space_th_granted', 'Granted')}</Table.Th>
                     <Table.Th />
                   </Table.Tr>
                 </Table.Thead>
@@ -433,7 +432,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                     <Table.Tr key={grant.userId}>
                       <Table.Td>
                         <Stack gap={0}>
-                          <Text size="sm">{grant.user?.displayName ?? `User #${grant.userId}`}</Text>
+                          <Text size="sm">{grant.user?.displayName ?? t('admin_space_user_num', 'User #{{id}}', { id: grant.userId })}</Text>
                           {grant.user?.email && <Text size="xs" c="dimmed">{grant.user.email}</Text>}
                         </Stack>
                       </Table.Td>
@@ -442,12 +441,12 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                           size="xs"
                           variant="filled"
                           w={120}
-                          data={SPACE_ROLE_OPTIONS}
+                          data={spaceRoleOptions}
                           value={grant.access_level ?? 'viewer'}
                           allowDeselect={false}
                           disabled={roleSavingUserId === grant.userId}
                           comboboxProps={{ withinPortal: true }}
-                          aria-label={`Role for ${grant.user?.displayName ?? `user ${grant.userId}`}`}
+                          aria-label={t('admin_space_role_for', 'Role for {{name}}', { name: grant.user?.displayName ?? t('admin_space_user_lc', 'user {{id}}', { id: grant.userId }) })}
                           onChange={(v) => {
                             if (v && v !== (grant.access_level ?? 'viewer')) {
                               void handleChangeRole(grant.userId, v);
@@ -461,13 +460,13 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                         </Text>
                       </Table.Td>
                       <Table.Td>
-                        <Tooltip label="Revoke access">
+                        <Tooltip label={t('admin_space_revoke_tt', 'Revoke access')}>
                           <ActionIcon
                             variant="subtle"
                             color="red"
                             size="sm"
                             onClick={() => void handleRevokeAccess(grant.userId)}
-                            aria-label="Revoke access"
+                            aria-label={t('admin_space_revoke_aria', 'Revoke access')}
                           >
                             <IconTrash size={14} />
                           </ActionIcon>
@@ -478,23 +477,23 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                 </Table.Tbody>
               </Table>
             ) : (
-              <Text size="sm" c="dimmed">No access grants. Everyone with the manage_wpsg capability can access this space.</Text>
+              <Text size="sm" c="dimmed">{t('admin_space_no_grants', 'No access grants. Everyone with the manage_wpsg capability can access this space.')}</Text>
             )}
 
-            <Divider label="Grant access" labelPosition="center" />
+            <Divider label={t('admin_space_grant_divider', 'Grant access')} labelPosition="center" />
 
             <Group align="flex-end" gap="sm">
               <TextInput
-                label="User email"
-                placeholder="user@example.com"
+                label={t('admin_space_email_label', 'User email')}
+                placeholder={t('admin_space_email_ph', 'user@example.com')}
                 value={grantEmail}
                 onChange={(e) => setGrantEmail(e.currentTarget.value)}
                 size="sm"
                 style={{ flex: 1 }}
               />
               <Select
-                label="Role"
-                data={SPACE_ROLE_OPTIONS}
+                label={t('admin_space_role_label', 'Role')}
+                data={spaceRoleOptions}
                 value={grantRole}
                 onChange={(v) => setGrantRole(v ?? 'editor')}
                 size="sm"
@@ -508,35 +507,33 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                 disabled={!grantEmail.trim()}
                 size="sm"
               >
-                Grant
+                {t('admin_space_grant_btn', 'Grant')}
               </Button>
             </Group>
           </Stack>
         ) : (
-          <Text c="dimmed" size="sm">Select a space from the Spaces tab to manage access.</Text>
+          <Text c="dimmed" size="sm">{t('admin_space_access_empty', 'Select a space from the Spaces tab to manage access.')}</Text>
         )}
       </Tabs.Panel>
 
       <Tabs.Panel value="library" pt="md">
         {!selectedSpace ? (
-          <Text c="dimmed" size="sm">Select a space from the Spaces tab to manage its shared library.</Text>
+          <Text c="dimmed" size="sm">{t('admin_space_library_empty', 'Select a space from the Spaces tab to manage its shared library.')}</Text>
         ) : !isDelegated ? (
           <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-            <Text size="sm" fw={500} mb={2}>{selectedSpace.name} is an open space.</Text>
+            <Text size="sm" fw={500} mb={2}>{t('admin_space_open_title', '{{name}} is an open space.', { name: selectedSpace.name })}</Text>
             <Text size="sm">
-              Open spaces can use every asset in the library — per-space selection only applies to
-              delegated spaces. Switch this space to delegated isolation mode to restrict its assets.
+              {t('admin_space_open_desc', 'Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets.')}
             </Text>
           </Alert>
         ) : (
           <Stack gap="lg">
             <Text size="sm" c="dimmed">
-              Select the assets <Text span fw={500}>{selectedSpace.name}</Text> is allowed to use.
-              Unselected assets are hidden in this space.
+              {t('admin_space_lib_pre', 'Select the assets ')}<Text span fw={500}>{selectedSpace.name}</Text>{t('admin_space_lib_post', ' is allowed to use. Unselected assets are hidden in this space.')}
             </Text>
 
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Assets</Text>
+              <Text size="sm" fw={500}>{t('admin_space_assets', 'Assets')}</Text>
               <SpaceAssetLibrary
                 assets={allAssets ?? []}
                 associatedIds={spaceLibrary?.asset ?? []}
@@ -547,11 +544,11 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
             </Stack>
 
             <Stack gap="xs">
-              <Text size="sm" fw={500}>Fonts</Text>
+              <Text size="sm" fw={500}>{t('admin_space_fonts', 'Fonts')}</Text>
               {fontsLoading || libraryLoading ? (
                 <Center py="xs"><Loader size="sm" /></Center>
               ) : !allFonts?.length ? (
-                <Text size="xs" c="dimmed">No fonts in the global library.</Text>
+                <Text size="xs" c="dimmed">{t('admin_space_no_fonts', 'No fonts in the global library.')}</Text>
               ) : (
                 allFonts.map((font) => (
                   <Checkbox

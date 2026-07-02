@@ -1,4 +1,5 @@
 import { Alert, Box, Checkbox, ScrollArea, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -30,28 +31,29 @@ export function ArchiveCompanyModal({
   onConfirm,
   accessSaving,
 }: ArchiveCompanyModalProps) {
+  const { t } = useTranslation('wpsg');
   const campaignsToArchive = (Array.isArray(company?.campaigns) ? company.campaigns : []).filter((c) => c.status !== 'archived');
+  const activeCount = company?.activeCampaigns ?? 0;
 
   return (
     <ConfirmModal
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Archive all company campaigns"
+      title={t('admin_archco_title', 'Archive all company campaigns')}
       message={
         <Text>
-          Archive all campaigns for <strong>{company?.name}</strong>?{' '}
-          This will archive {company?.activeCampaigns} active campaign{company?.activeCampaigns !== 1 ? 's' : ''}.
+          {t('admin_archco_msg_pre', 'Archive all campaigns for ')}<strong>{company?.name}</strong>{t('admin_archco_msg_post', '? This will archive {{count}} active campaign.', { count: activeCount })}
         </Text>
       }
-      confirmLabel={`Archive ${company?.activeCampaigns} Campaign${company?.activeCampaigns !== 1 ? 's' : ''}`}
+      confirmLabel={t('admin_archco_confirm', 'Archive {{count}} Campaign', { count: activeCount })}
       confirmColor="red"
-      confirmAriaLabel={`Archive ${company?.activeCampaigns ?? 0} campaign${company?.activeCampaigns === 1 ? '' : 's'} for ${company?.name ?? 'company'}`}
+      confirmAriaLabel={t('admin_archco_confirm_aria', 'Archive {{count}} campaign for {{name}}', { count: activeCount, name: company?.name ?? t('admin_archco_company', 'company') })}
       loading={accessSaving}
     >
       {campaignsToArchive.length > 0 && (
         <Box {...getWpsgDebugProps('ArchiveCompanyModal', 'campaign-list')}>
-          <Text size="sm" fw={500} mb="xs">Campaigns to be archived:</Text>
+          <Text size="sm" fw={500} mb="xs">{t('admin_archco_list_heading', 'Campaigns to be archived:')}</Text>
           <ScrollArea {...getWpsgDebugProps('ArchiveCompanyModal', 'campaign-scroll')} style={{ maxHeight: 150 }}>
             <Stack gap={4}>
               {campaignsToArchive.map((c) => (
@@ -64,13 +66,13 @@ export function ArchiveCompanyModal({
 
       <Checkbox
         {...getWpsgDebugProps('ArchiveCompanyModal', 'revoke-access')}
-        label="Also revoke all company-level access grants"
+        label={t('admin_archco_revoke', 'Also revoke all company-level access grants')}
         checked={archiveRevokeAccess}
         onChange={(e) => onArchiveRevokeAccessChange(e.currentTarget.checked)}
       />
 
       <Alert {...getWpsgDebugProps('ArchiveCompanyModal', 'warning')} color="yellow" variant="light">
-        <Text size="sm">Access grants for individual campaigns will be preserved but become inactive.</Text>
+        <Text size="sm">{t('admin_archco_warning', 'Access grants for individual campaigns will be preserved but become inactive.')}</Text>
       </Alert>
     </ConfirmModal>
   );

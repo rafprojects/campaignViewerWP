@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T22:15:14+00:00\n"
+"POT-Creation-Date: 2026-07-02T22:22:23+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -34,6 +34,7 @@ msgstr ""
 #: includes/class-wpsg-asset-admin-renderer.php:37
 #: includes/class-wpsg-asset-admin-renderer.php:38
 #: includes/class-wpsg-asset-admin-renderer.php:72
+#: includes/i18n/class-wpsg-frontend-strings.php:1702
 msgid "Asset Library"
 msgstr ""
 
@@ -193,6 +194,7 @@ msgid "+ New Space"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:499
+#: includes/i18n/class-wpsg-frontend-strings.php:1647
 msgid "Space name"
 msgstr ""
 
@@ -214,6 +216,7 @@ msgid "Gallery Spaces"
 msgstr ""
 
 #: includes/class-wpsg-space-admin-renderer.php:36
+#: includes/i18n/class-wpsg-frontend-strings.php:1635
 msgid "Spaces"
 msgstr ""
 
@@ -246,6 +249,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:34
 #: includes/i18n/class-wpsg-frontend-strings.php:277
 #: includes/i18n/class-wpsg-frontend-strings.php:476
+#: includes/i18n/class-wpsg-frontend-strings.php:1636
 #: includes/settings/class-wpsg-settings-renderer.php:46
 msgid "Settings"
 msgstr ""
@@ -618,6 +622,7 @@ msgid "Pick a space first"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:128
+#: includes/i18n/class-wpsg-frontend-strings.php:1683
 msgid "Manage spaces"
 msgstr ""
 
@@ -649,10 +654,12 @@ msgid "Templates"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:137
+#: includes/i18n/class-wpsg-frontend-strings.php:1680
 msgid "Assets"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:138
+#: includes/i18n/class-wpsg-frontend-strings.php:1637
 msgid "Access"
 msgstr ""
 
@@ -800,11 +807,13 @@ msgid "Restore"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:178
+#: includes/i18n/class-wpsg-frontend-strings.php:1699
 msgid "Delete"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:179
 #: includes/i18n/class-wpsg-frontend-strings.php:1617
+#: includes/i18n/class-wpsg-frontend-strings.php:1700
 msgid "Cancel"
 msgstr ""
 
@@ -1021,6 +1030,7 @@ msgid "Campaign list"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:234
+#: includes/i18n/class-wpsg-frontend-strings.php:1712
 msgid "Select all"
 msgstr ""
 
@@ -1774,6 +1784,7 @@ msgid "{{count}} files queued"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:443
+#: includes/i18n/class-wpsg-frontend-strings.php:1713
 msgid "Clear all"
 msgstr ""
 
@@ -2213,10 +2224,12 @@ msgid "Media removed"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:550
+#: includes/i18n/class-wpsg-frontend-strings.php:1629
 msgid "Access granted"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:551
+#: includes/i18n/class-wpsg-frontend-strings.php:1631
 msgid "Access revoked"
 msgstr ""
 
@@ -5446,6 +5459,7 @@ msgid "{{count}} users"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1506
+#: includes/i18n/class-wpsg-frontend-strings.php:1660
 msgid "User"
 msgstr ""
 
@@ -5455,6 +5469,8 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1508
 #: includes/i18n/class-wpsg-frontend-strings.php:1609
+#: includes/i18n/class-wpsg-frontend-strings.php:1661
+#: includes/i18n/class-wpsg-frontend-strings.php:1672
 msgid "Role"
 msgstr ""
 
@@ -5801,6 +5817,7 @@ msgid "Close"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1604
+#: includes/i18n/class-wpsg-frontend-strings.php:1671
 msgid "user@example.com"
 msgstr ""
 
@@ -5850,6 +5867,312 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1618
 msgid "Create User"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1620
+msgid "Viewer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1621
+msgid "Editor"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1622
+msgid "Owner"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1623
+msgid "Failed to update library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1624
+msgid "Space \"{{name}}\" created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1625
+msgid "Failed to create space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1626
+msgid "Space \"{{name}}\" archived"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1627
+msgid "Failed to archive space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1628
+msgid "No WordPress user found with that email"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1630
+msgid "Failed to grant access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1632
+msgid "Failed to revoke access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1633
+msgid "Role updated"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1634
+msgid "Failed to update role"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1638
+msgid "Library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1639
+msgid "Name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1640
+#: includes/i18n/class-wpsg-frontend-strings.php:1649
+msgid "Slug"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1641
+msgid "Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1642
+msgid "open"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1643
+msgid "delegated"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1644
+msgid "Archive space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1645
+msgid "Archive {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1646
+msgid "Create new space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1648
+msgid "My Gallery Space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1650
+msgid "my-gallery-space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1651
+msgid "Delegated isolation mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1652
+msgid "Only explicit grantees can access this space. Admins without a grant are denied."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1653
+msgid "In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1654
+msgid "Create space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1655
+msgid "Configure display settings for "
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1656
+msgid ". Unset fields inherit the global defaults."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1657
+msgid "Configure display settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1658
+msgid "Select a space from the Spaces tab to edit its settings."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1659
+msgid "Access grants for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1662
+msgid "Granted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1663
+msgid "User #{{id}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1664
+msgid "user {{id}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1665
+msgid "Role for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1666
+#: includes/i18n/class-wpsg-frontend-strings.php:1667
+msgid "Revoke access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1668
+msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1669
+msgid "Grant access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1670
+msgid "User email"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1673
+msgid "Grant"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1674
+msgid "Select a space from the Spaces tab to manage access."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1675
+msgid "Select a space from the Spaces tab to manage its shared library."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1676
+msgid "{{name}} is an open space."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1677
+msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1678
+msgid "Select the assets "
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1679
+msgid " is allowed to use. Unselected assets are hidden in this space."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1681
+msgid "Fonts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1682
+msgid "No fonts in the global library."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1684
+msgid "Archive all company campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1685
+msgid "Archive all campaigns for "
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1686
+msgid "? This will archive {{count}} active campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1687
+msgid "? This will archive {{count}} active campaigns."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1688
+msgid "Archive {{count}} Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1689
+msgid "Archive {{count}} Campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1690
+msgid "Archive {{count}} campaign for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1691
+msgid "Archive {{count}} campaigns for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1692
+msgid "company"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1693
+msgid "Campaigns to be archived:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1694
+msgid "Also revoke all company-level access grants"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1695
+msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1696
+msgid "Asset uploaded."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1697
+msgid "Delete asset?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1698
+msgid "Delete \"{{name}}\"? This cannot be undone."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1701
+msgid "Deleted \"{{name}}\"."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1703
+msgid "Upload asset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1704
+msgid "Upload asset to library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1705
+msgid "Asset is in use"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1706
+msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1707
+msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1708
+msgid "Delete anyway"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1709
+msgid "No assets in the global library yet. Upload assets from the Layout Builder."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1710
+msgid "Search assets…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1711
+msgid "Search assets"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1714
+msgid "No assets match the current filter."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

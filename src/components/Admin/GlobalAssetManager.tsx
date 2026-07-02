@@ -14,6 +14,7 @@
 import { useCallback, useState } from 'react';
 import { Center, Group, Loader, Title } from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { useTranslation } from 'react-i18next';
 
 import type { ApiClient } from '@/services/apiClient';
 import { ApiError } from '@/services/apiClient';
@@ -35,6 +36,7 @@ interface GlobalAssetManagerProps {
 }
 
 export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerProps) {
+  const { t } = useTranslation('wpsg');
   const { data: assets, isLoading } = useAssetLibrary(apiClient);
   const uploadAsset = useUploadGlobalAsset(apiClient);
   const updateAsset = useUpdateGlobalAsset(apiClient);
@@ -51,11 +53,11 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
         { file },
         {
           onError: (err) => onNotify({ type: 'error', text: (err as Error).message }),
-          onSuccess: () => onNotify({ type: 'success', text: 'Asset uploaded.' }),
+          onSuccess: () => onNotify({ type: 'success', text: t('admin_asset_uploaded', 'Asset uploaded.') }),
         },
       );
     },
-    [uploadAsset, onNotify],
+    [uploadAsset, onNotify, t],
   );
 
   const handleDeleteRequest = useCallback(
@@ -63,14 +65,14 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
       const item = assets?.find((a) => a.id === id);
       if (!item) return;
       modals.openConfirmModal({
-        title: 'Delete asset?',
-        children: `Delete "${item.name}"? This cannot be undone.`,
-        labels: { confirm: 'Delete', cancel: 'Cancel' },
+        title: t('admin_asset_delete_title', 'Delete asset?'),
+        children: t('admin_asset_delete_confirm', 'Delete "{{name}}"? This cannot be undone.', { name: item.name }),
+        labels: { confirm: t('admin_asset_delete', 'Delete'), cancel: t('admin_asset_cancel', 'Cancel') },
         confirmProps: { color: 'red' },
         onConfirm: async () => {
           try {
             await deleteAsset.mutateAsync({ id });
-            onNotify({ type: 'success', text: `Deleted "${item.name}".` });
+            onNotify({ type: 'success', text: t('admin_asset_deleted', 'Deleted "{{name}}".', { name: item.name }) });
           } catch (err) {
             // P52-A5c: 409 means the asset is still linked to one or more spaces.
             if (err instanceof ApiError && err.status === 409) {
@@ -85,7 +87,7 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
         },
       });
     },
-    [assets, deleteAsset, onNotify],
+    [assets, deleteAsset, onNotify, t],
   );
 
   const handleForceDelete = useCallback(async () => {
@@ -93,14 +95,14 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
     setForceDeleting(true);
     try {
       await deleteAsset.mutateAsync({ id: forceDelete.item.id, force: true });
-      onNotify({ type: 'success', text: `Deleted "${forceDelete.item.name}".` });
+      onNotify({ type: 'success', text: t('admin_asset_deleted', 'Deleted "{{name}}".', { name: forceDelete.item.name }) });
       setForceDelete(null);
     } catch (err) {
       onNotify({ type: 'error', text: (err as Error).message });
     } finally {
       setForceDeleting(false);
     }
-  }, [deleteAsset, forceDelete, onNotify]);
+  }, [deleteAsset, forceDelete, onNotify, t]);
 
   const handleSetUniversal = useCallback(
     (id: string, universal: boolean) => {
@@ -125,13 +127,13 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
   return (
     <>
       <Group justify="space-between" align="center" mb="md">
-        <Title order={5}>Asset Library</Title>
+        <Title order={5}>{t('admin_asset_library_title', 'Asset Library')}</Title>
         <AssetUploader
           onFileSelect={handleFileSelect}
           isUploading={uploadAsset.isPending}
           accept="image/*"
-          uploadLabel="Upload asset"
-          uploadAriaLabel="Upload asset to library"
+          uploadLabel={t('admin_asset_upload', 'Upload asset')}
+          uploadAriaLabel={t('admin_asset_upload_aria', 'Upload asset to library')}
         />
       </Group>
 
@@ -153,13 +155,9 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
         opened={!!forceDelete}
         onClose={() => setForceDelete(null)}
         onConfirm={handleForceDelete}
-        title="Asset is in use"
-        message={
-          `"${forceDelete?.item.name ?? ''}" is associated with ` +
-          `${forceDelete?.inUse ?? 0} space${(forceDelete?.inUse ?? 0) !== 1 ? 's' : ''}. ` +
-          `Removing it will unlink it from all spaces. Delete anyway?`
-        }
-        confirmLabel="Delete anyway"
+        title={t('admin_asset_inuse_title', 'Asset is in use')}
+        message={t('admin_asset_inuse_msg', '"{{name}}" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?', { name: forceDelete?.item.name ?? '', count: forceDelete?.inUse ?? 0 })}
+        confirmLabel={t('admin_asset_delete_anyway', 'Delete anyway')}
         confirmColor="red"
         loading={forceDeleting}
       />

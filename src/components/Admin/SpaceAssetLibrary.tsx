@@ -12,6 +12,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Text, TextInput, Group, Button, Chip, Badge, Center, Loader } from '@mantine/core';
 import { IconSearch, IconCheck } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
 import { CHECKERED_BG } from '@/utils/checkeredBg';
 import { getAssetFileType } from '@/utils/assetFileType';
@@ -35,6 +36,7 @@ export function SpaceAssetLibrary({
   onBulkToggle,
   loading = false,
 }: SpaceAssetLibraryProps) {
+  const { t } = useTranslation('wpsg');
   const [search, setSearch] = useState('');
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
@@ -68,7 +70,7 @@ export function SpaceAssetLibrary({
   }
 
   if (!assets.length) {
-    return <Text size="xs" c="dimmed">No assets in the global library yet. Upload assets from the Layout Builder.</Text>;
+    return <Text size="xs" c="dimmed">{t('admin_sal_empty', 'No assets in the global library yet. Upload assets from the Layout Builder.')}</Text>;
   }
 
   return (
@@ -76,12 +78,12 @@ export function SpaceAssetLibrary({
       <Group gap="xs" mb="xs" wrap="wrap">
         <TextInput
           size="xs"
-          placeholder="Search assets…"
+          placeholder={t('admin_sal_search_ph', 'Search assets…')}
           value={search}
           onChange={(e) => setSearch(e.currentTarget.value)}
           leftSection={<IconSearch size={13} />}
           style={{ flex: 1, minWidth: 160 }}
-          aria-label="Search assets"
+          aria-label={t('admin_sal_search_aria', 'Search assets')}
         />
         <Button
           size="xs"
@@ -89,7 +91,7 @@ export function SpaceAssetLibrary({
           disabled={filtered.length === 0 || allFilteredAssociated}
           onClick={() => onBulkToggle(filteredIds, true)}
         >
-          Select all
+          {t('admin_sal_select_all', 'Select all')}
         </Button>
         <Button
           size="xs"
@@ -98,7 +100,7 @@ export function SpaceAssetLibrary({
           disabled={filtered.every((a) => !associated.has(a.id))}
           onClick={() => onBulkToggle(filteredIds, false)}
         >
-          Clear all
+          {t('admin_sal_clear_all', 'Clear all')}
         </Button>
       </Group>
 
@@ -113,7 +115,7 @@ export function SpaceAssetLibrary({
       )}
 
       {filtered.length === 0 ? (
-        <Text size="xs" c="dimmed" py="sm">No assets match the current filter.</Text>
+        <Text size="xs" c="dimmed" py="sm">{t('admin_sal_no_match', 'No assets match the current filter.')}</Text>
       ) : (
         <div
           style={{
