@@ -92,8 +92,12 @@ Prerequisites: [WP-CLI](https://wp-cli.org/) with the i18n command
    the new locale and loading a gallery + the admin panel. Untranslated strings
    should show English.
 
-See `wp-super-gallery-fr_FR.po` for a worked example (a representative subset is
-translated; the rest intentionally falls back to English).
+Two complete reference locales already ship: **French (`fr_FR`)** and
+**Spanish (`es_ES`)** — all ~249 strings translated across both the PHP and React
+surfaces. Use either `.po` as a worked example.
+
+> These reference locales are AI-authored for QA and a translation head-start;
+> have a native speaker review them before relying on them in production.
 
 ---
 

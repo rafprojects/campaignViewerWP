@@ -1,0 +1,759 @@
+# WP Super Gallery — es_ES translation.
+# AI-authored for QA; review by a native speaker before release.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Language: es_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: wp-super-gallery\n"
+
+msgid "WP Super Gallery"
+msgstr "WP Super Gallery"
+
+msgid "https://github.com/rafprojects/wp-super-gallery"
+msgstr "https://github.com/rafprojects/wp-super-gallery"
+
+msgid "Embeddable campaign gallery with Shadow DOM rendering."
+msgstr "Galería de campañas insertable con renderizado Shadow DOM."
+
+msgid "Asset Library"
+msgstr "Biblioteca de recursos"
+
+msgid "Upload and manage global overlay/graphic assets available across all spaces."
+msgstr "Sube y gestiona recursos gráficos/superposiciones globales disponibles en todos los espacios."
+
+msgid "Campaigns"
+msgstr "Campañas"
+
+msgid "Campaign"
+msgstr "Campaña"
+
+msgid "SuperGallery"
+msgstr "SuperGallery"
+
+msgid "Add New"
+msgstr "Añadir"
+
+msgid "Add New Campaign"
+msgstr "Añadir campaña"
+
+msgid "Edit Campaign"
+msgstr "Editar campaña"
+
+msgid "New Campaign"
+msgstr "Nueva campaña"
+
+msgid "View Campaign"
+msgstr "Ver campaña"
+
+msgid "View Campaigns"
+msgstr "Ver campañas"
+
+msgid "Search Campaigns"
+msgstr "Buscar campañas"
+
+msgid "No campaigns found"
+msgstr "No se encontraron campañas"
+
+msgid "No campaigns found in Trash"
+msgstr "No se encontraron campañas en la papelera"
+
+msgid "Companies"
+msgstr "Empresas"
+
+msgid "Company"
+msgstr "Empresa"
+
+msgid "All Companies"
+msgstr "Todas las empresas"
+
+msgid "Edit Company"
+msgstr "Editar empresa"
+
+msgid "View Company"
+msgstr "Ver empresa"
+
+msgid "Update Company"
+msgstr "Actualizar empresa"
+
+msgid "Add New Company"
+msgstr "Añadir empresa"
+
+msgid "New Company Name"
+msgstr "Nombre de la nueva empresa"
+
+msgid "Search Companies"
+msgstr "Buscar empresas"
+
+msgid "Popular Companies"
+msgstr "Empresas populares"
+
+msgid "No companies found"
+msgstr "No se encontraron empresas"
+
+msgid "← Back to Companies"
+msgstr "← Volver a empresas"
+
+msgid "Separate companies with commas"
+msgstr "Separa las empresas con comas"
+
+msgid "Add or remove companies"
+msgstr "Añadir o quitar empresas"
+
+msgid "Choose from the most used companies"
+msgstr "Elegir entre las empresas más usadas"
+
+msgid "Campaign Tags"
+msgstr "Etiquetas de campaña"
+
+msgid "Campaign Categories"
+msgstr "Categorías de campaña"
+
+msgid "Media Tags"
+msgstr "Etiquetas de medios"
+
+msgid "Layout Templates"
+msgstr "Plantillas de diseño"
+
+msgid "Space"
+msgstr "Espacio"
+
+msgid "All spaces"
+msgstr "Todos los espacios"
+
+msgid "+ New Space"
+msgstr "+ Nuevo espacio"
+
+msgid "Space name"
+msgstr "Nombre del espacio"
+
+msgid "Slug (auto)"
+msgstr "Slug (auto)"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "Forbidden"
+msgstr "Prohibido"
+
+msgid "Gallery Spaces"
+msgstr "Espacios de galería"
+
+msgid "Spaces"
+msgstr "Espacios"
+
+msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr "Crea espacios, edita los ajustes por espacio y gestiona las concesiones de acceso."
+
+msgid "Admin menu"
+msgstr "Menú de administración"
+
+msgid "User navigation"
+msgstr "Navegación de usuario"
+
+msgid "User menu"
+msgstr "Menú de usuario"
+
+msgid "Signed in as {{email}}"
+msgstr "Sesión iniciada como {{email}}"
+
+msgid "Admin Panel"
+msgstr "Panel de administración"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Edit {{title}}"
+msgstr "Editar {{title}}"
+
+msgid "Edit Gallery Config"
+msgstr "Editar configuración de la galería"
+
+msgid "Edit gallery config for {{title}}"
+msgstr "Editar la configuración de la galería para {{title}}"
+
+msgid "Manage Media"
+msgstr "Gestionar medios"
+
+msgid "Manage media for {{title}}"
+msgstr "Gestionar los medios de {{title}}"
+
+msgid "Archive"
+msgstr "Archivar"
+
+msgid "Archive {{title}}"
+msgstr "Archivar {{title}}"
+
+msgid "Sign out"
+msgstr "Cerrar sesión"
+
+msgid "Sign in"
+msgstr "Iniciar sesión"
+
+msgid "Sign in to access private campaigns."
+msgstr "Inicia sesión para acceder a las campañas privadas."
+
+msgid "Switch targeted gallery space"
+msgstr "Cambiar el espacio de galería objetivo"
+
+msgid "Target space"
+msgstr "Espacio objetivo"
+
+msgid "Access private campaigns with your WordPress account."
+msgstr "Accede a las campañas privadas con tu cuenta de WordPress."
+
+msgid "Email"
+msgstr "Correo electrónico"
+
+msgid "you@example.com"
+msgstr "tu@ejemplo.com"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Enter your password"
+msgstr "Introduce tu contraseña"
+
+msgid "Enter a valid email"
+msgstr "Introduce un correo electrónico válido"
+
+msgid "Password must be at least {{count}} character"
+msgstr "La contraseña debe tener al menos {{count}} carácter"
+
+msgid "Password must be at least {{count}} characters"
+msgstr "La contraseña debe tener al menos {{count}} caracteres"
+
+msgid "Error"
+msgstr "Error"
+
+msgid "Login failed. Check your credentials."
+msgstr "Error al iniciar sesión. Comprueba tus credenciales."
+
+msgid "Signing in..."
+msgstr "Iniciando sesión…"
+
+msgid "Media lightbox"
+msgstr "Visor de medios"
+
+msgid "Close lightbox"
+msgstr "Cerrar el visor"
+
+msgid "Previous image (lightbox)"
+msgstr "Imagen anterior (visor)"
+
+msgid "Next image (lightbox)"
+msgstr "Imagen siguiente (visor)"
+
+msgid "Campaign video"
+msgstr "Vídeo de campaña"
+
+msgid "Campaign image"
+msgstr "Imagen de campaña"
+
+msgid "{{current}} / {{total}}"
+msgstr "{{current}} / {{total}}"
+
+msgid "←"
+msgstr "←"
+
+msgid "→"
+msgstr "→"
+
+msgid "Esc"
+msgstr "Esc"
+
+msgid "navigate"
+msgstr "navegar"
+
+msgid "·"
+msgstr "·"
+
+msgid "close"
+msgstr "cerrar"
+
+msgid "VIDEO"
+msgstr "VÍDEO"
+
+msgid "No media"
+msgstr "Sin medios"
+
+msgid "Video"
+msgstr "Vídeo"
+
+msgid "Image"
+msgstr "Imagen"
+
+msgid "{{type}} {{index}}"
+msgstr "{{type}} {{index}}"
+
+msgid "Item {{index}} of {{total}}"
+msgstr "Elemento {{index}} de {{total}}"
+
+msgid "Item {{index}}"
+msgstr "Elemento {{index}}"
+
+msgid "Play: {{caption}}"
+msgstr "Reproducir: {{caption}}"
+
+msgid "View: {{caption}}"
+msgstr "Ver: {{caption}}"
+
+msgid "Play video {{index}}"
+msgstr "Reproducir vídeo {{index}}"
+
+msgid "View image {{index}}"
+msgstr "Ver imagen {{index}}"
+
+msgid "Open in lightbox"
+msgstr "Abrir en el visor"
+
+msgid "Empty"
+msgstr "Vacío"
+
+msgid "Slide {{index}} of {{total}}"
+msgstr "Diapositiva {{index}} de {{total}}"
+
+msgid "View image {{index}} of {{total}}"
+msgstr "Ver imagen {{index}} de {{total}}"
+
+msgid "Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play."
+msgstr "Vídeo {{index}} de {{total}}: {{caption}}. Usa las teclas de flecha para navegar, Intro o Espacio para reproducir."
+
+msgid "Video player: {{caption}}"
+msgstr "Reproductor de vídeo: {{caption}}"
+
+msgid "Untitled video"
+msgstr "Vídeo sin título"
+
+msgid "Untitled image"
+msgstr "Imagen sin título"
+
+msgid "Open lightbox"
+msgstr "Abrir el visor"
+
+msgid "Previous video (overlay)"
+msgstr "Vídeo anterior (superposición)"
+
+msgid "Next video (overlay)"
+msgstr "Vídeo siguiente (superposición)"
+
+msgid "Previous image (overlay)"
+msgstr "Imagen anterior (superposición)"
+
+msgid "Next image (overlay)"
+msgstr "Imagen siguiente (superposición)"
+
+msgid "Campaign listing"
+msgstr "Listado de campañas"
+
+msgid "Previous campaigns"
+msgstr "Campañas anteriores"
+
+msgid "Next campaigns"
+msgstr "Campañas siguientes"
+
+msgid "All"
+msgstr "Todo"
+
+msgid "Default order"
+msgstr "Orden predeterminado"
+
+msgid "Newest first"
+msgstr "Más recientes primero"
+
+msgid "Oldest first"
+msgstr "Más antiguas primero"
+
+msgid "Sort order"
+msgstr "Orden de clasificación"
+
+msgid "Loading layout template"
+msgstr "Cargando plantilla de diseño"
+
+msgid "Loading gallery…"
+msgstr "Cargando galería…"
+
+msgid "Layout template not found"
+msgstr "Plantilla de diseño no encontrada"
+
+msgid "View {{title}} in lightbox"
+msgstr "Ver {{title}} en el visor"
+
+msgid "media"
+msgstr "medios"
+
+msgid "{{count}} media item(s) have no slot — they won't be displayed."
+msgstr "{{count}} elemento(s) multimedia no tienen espacio — no se mostrarán."
+
+msgid "{{count}} slot(s) have no media — they'll appear as placeholders."
+msgstr "{{count}} espacio(s) no tienen medios — aparecerán como marcadores de posición."
+
+msgid "Slot assignment info"
+msgstr "Información de asignación de espacios"
+
+msgid "Kept bindings: {{summary}}"
+msgstr "Vínculos conservados: {{summary}}"
+
+msgid "Cleared (media not in campaign): {{summary}}"
+msgstr "Borrados (medios ausentes de la campaña): {{summary}}"
+
+msgid "Auto-filled from remaining media: {{summary}}"
+msgstr "Rellenados automáticamente con los medios restantes: {{summary}}"
+
+msgid "Empty (no media remaining): slot{{suffix}} {{summary}}"
+msgstr "Vacíos (sin medios restantes): espacio{{suffix}} {{summary}}"
+
+msgid "Layout gallery: {{name}}"
+msgstr "Galería de diseño: {{name}}"
+
+msgid "Configure how the gallery authenticates with the WordPress REST API."
+msgstr "Configura cómo se autentica la galería con la API REST de WordPress."
+
+msgid "Configure default display settings for galleries."
+msgstr "Configura los ajustes de visualización predeterminados de las galerías."
+
+msgid "Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute."
+msgstr "Apariencia global de la barra de autenticación. Anula por página con el atributo de shortcode auth_bar_mode."
+
+msgid "Floating (circular icon, bottom-right)"
+msgstr "Flotante (icono circular, abajo a la derecha)"
+
+msgid "Draggable (movable floating icon)"
+msgstr "Arrastrable (icono flotante móvil)"
+
+msgid "Bar (full-width sticky bar)"
+msgstr "Barra (barra fija de ancho completo)"
+
+msgid "Auto-hide (bar hides on scroll)"
+msgstr "Ocultar automáticamente (la barra se oculta al desplazar)"
+
+msgid "Minimal (thin strip, ≤32px)"
+msgstr "Mínima (franja fina, ≤32px)"
+
+msgid "How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page."
+msgstr "Cómo aparece la barra de autenticación en todas las páginas de galería. Usa el atributo de shortcode auth_bar_mode para anularla en una página específica."
+
+msgid "Minimum distance from viewport edges when dragging (draggable mode only)."
+msgstr "Distancia mínima desde los bordes de la ventana al arrastrar (solo modo arrastrable)."
+
+msgid "Configure caching and performance settings."
+msgstr "Configura los ajustes de caché y rendimiento."
+
+msgid "WordPress JWT (Recommended)"
+msgstr "JWT de WordPress (recomendado)"
+
+msgid "None (Public Access Only)"
+msgstr "Ninguno (solo acceso público)"
+
+msgid "Select the authentication method for REST API access."
+msgstr "Selecciona el método de autenticación para el acceso a la API REST."
+
+msgid "Test Connection"
+msgstr "Probar conexión"
+
+msgid "Leave empty to use the current site URL. Only change this for multi-site or headless setups."
+msgstr "Déjalo vacío para usar la URL del sitio actual. Cámbialo solo para configuraciones multisitio o headless."
+
+msgid "Default"
+msgstr "Predeterminado"
+
+msgid "Default Dark"
+msgstr "Oscuro predeterminado"
+
+msgid "Default Light"
+msgstr "Claro predeterminado"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "Material Dark"
+msgstr "Material oscuro"
+
+msgid "Material Light"
+msgstr "Material claro"
+
+msgid "Classic"
+msgstr "Clásico"
+
+msgid "Darcula"
+msgstr "Darcula"
+
+msgid "Nord"
+msgstr "Nord"
+
+msgid "Solarized"
+msgstr "Solarized"
+
+msgid "Solarized Dark"
+msgstr "Solarized oscuro"
+
+msgid "Solarized Light"
+msgstr "Solarized claro"
+
+msgid "Accessibility"
+msgstr "Accesibilidad"
+
+msgid "High Contrast"
+msgstr "Alto contraste"
+
+msgid "Community"
+msgstr "Comunidad"
+
+msgid "Catppuccin Mocha"
+msgstr "Catppuccin Mocha"
+
+msgid "Catppuccin Latte"
+msgstr "Catppuccin Latte"
+
+msgid "Tokyo Night"
+msgstr "Tokyo Night"
+
+msgid "Gruvbox Dark"
+msgstr "Gruvbox Dark"
+
+msgid "GitHub Light"
+msgstr "GitHub Light"
+
+msgid "Neon"
+msgstr "Neón"
+
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+msgid "Synthwave '84"
+msgstr "Synthwave '84"
+
+msgid "Artistic"
+msgstr "Artístico"
+
+msgid "Sunset Boulevard"
+msgstr "Sunset Boulevard"
+
+msgid "Ocean Breeze"
+msgstr "Ocean Breeze"
+
+msgid "Crimson Canvas"
+msgstr "Crimson Canvas"
+
+msgid "Forest Whisper"
+msgstr "Forest Whisper"
+
+msgid "Midnight Rose"
+msgstr "Midnight Rose"
+
+msgid "Seasonal"
+msgstr "Estacional"
+
+msgid "Halloween"
+msgstr "Halloween"
+
+msgid "Reverse Halloween"
+msgstr "Halloween inverso"
+
+msgid "Default color theme for gallery display. Users can override this if allowed below."
+msgstr "Tema de color predeterminado para la visualización de la galería. Los usuarios pueden anularlo si se permite a continuación."
+
+msgid "Allow visitors to switch themes via the gallery UI."
+msgstr "Permitir que los visitantes cambien de tema mediante la interfaz de la galería."
+
+msgid "When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors."
+msgstr "Cuando está desactivado, la galería siempre usará el tema seleccionado arriba y ocultará el selector de temas a los visitantes."
+
+msgid "Keep React DevTools names and emit DOM component markers in deployed builds."
+msgstr "Conservar los nombres de React DevTools y emitir marcadores de componentes DOM en las versiones desplegadas."
+
+msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "Añade nombres de componentes explícitos para React DevTools en las versiones de producción e inyecta los atributos data-wpsg-component/data-wpsg-slot para la inspección de elementos del navegador, los selectores de QA y la depuración de la interfaz."
+
+msgid "Grid"
+msgstr "Cuadrícula"
+
+msgid "Masonry"
+msgstr "Mampostería"
+
+msgid "Carousel"
+msgstr "Carrusel"
+
+msgid "Default layout for displaying gallery items."
+msgstr "Diseño predeterminado para mostrar los elementos de la galería."
+
+msgid "Number of items to display per page (1-100)."
+msgstr "Número de elementos a mostrar por página (1-100)."
+
+msgid "Enable fullscreen lightbox when clicking gallery items."
+msgstr "Activar el visor a pantalla completa al hacer clic en los elementos de la galería."
+
+msgid "Enable smooth animations and transitions."
+msgstr "Activar animaciones y transiciones suaves."
+
+msgid "Disable for better performance on low-end devices."
+msgstr "Desactívalo para mejorar el rendimiento en dispositivos de gama baja."
+
+msgid "Disabled"
+msgstr "Desactivado"
+
+msgid "10 seconds"
+msgstr "10 segundos"
+
+msgid "30 seconds"
+msgstr "30 segundos"
+
+msgid "1 minute"
+msgstr "1 minuto"
+
+msgid "5 minutes"
+msgstr "5 minutos"
+
+msgid "15 minutes"
+msgstr "15 minutos"
+
+msgid "20 minutes"
+msgstr "20 minutos"
+
+msgid "30 minutes"
+msgstr "30 minutos"
+
+msgid "45 minutes"
+msgstr "45 minutos"
+
+msgid "1 hour"
+msgstr "1 hora"
+
+msgid "2 hours"
+msgstr "2 horas"
+
+msgid "4 hours"
+msgstr "4 horas"
+
+msgid "8 hours"
+msgstr "8 horas"
+
+msgid "12 hours"
+msgstr "12 horas"
+
+msgid "1 day"
+msgstr "1 día"
+
+msgid "3 days"
+msgstr "3 días"
+
+msgid "1 week"
+msgstr "1 semana"
+
+msgid "How long to cache API responses. Higher values improve performance but show stale data."
+msgstr "Cuánto tiempo almacenar en caché las respuestas de la API. Los valores más altos mejoran el rendimiento pero muestran datos obsoletos."
+
+msgid "Super Gallery Settings"
+msgstr "Ajustes de Super Gallery"
+
+msgid "Testing..."
+msgstr "Probando…"
+
+msgid "Connection failed"
+msgstr "Error de conexión"
+
+msgid "Request failed"
+msgstr "Error en la solicitud"
+
+msgid "Authentication test was rejected. Refresh the page and try again."
+msgstr "Se rechazó la prueba de autenticación. Actualiza la página e inténtalo de nuevo."
+
+msgid "Unexpected server response while testing authentication."
+msgstr "Respuesta inesperada del servidor al probar la autenticación."
+
+msgid "Authentication"
+msgstr "Autenticación"
+
+msgid "Auth Provider"
+msgstr "Proveedor de autenticación"
+
+msgid "API Base URL"
+msgstr "URL base de la API"
+
+msgid "Display Settings"
+msgstr "Ajustes de visualización"
+
+msgid "Theme"
+msgstr "Tema"
+
+msgid "Allow User Theme Override"
+msgstr "Permitir anulación del tema por el usuario"
+
+msgid "Component Debug Names & Markers"
+msgstr "Nombres y marcadores de depuración de componentes"
+
+msgid "Default Layout"
+msgstr "Diseño predeterminado"
+
+msgid "Items Per Page"
+msgstr "Elementos por página"
+
+msgid "Enable Lightbox"
+msgstr "Activar el visor"
+
+msgid "Enable Animations"
+msgstr "Activar animaciones"
+
+msgid "Auth Bar"
+msgstr "Barra de autenticación"
+
+msgid "Display Mode"
+msgstr "Modo de visualización"
+
+msgid "Drag Margin (px)"
+msgstr "Margen de arrastre (px)"
+
+msgid "Performance"
+msgstr "Rendimiento"
+
+msgid "Cache Duration"
+msgstr "Duración de la caché"
+
+msgid "Save Settings"
+msgstr "Guardar ajustes"
+
+msgid "Shortcode Usage"
+msgstr "Uso del shortcode"
+
+msgid "Embed a gallery using the following shortcode:"
+msgstr "Inserta una galería con el siguiente shortcode:"
+
+msgid "Shortcode Attributes"
+msgstr "Atributos del shortcode"
+
+msgid "Attribute"
+msgstr "Atributo"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Campaign slug or ID to display"
+msgstr "Slug o ID de campaña a mostrar"
+
+msgid "Filter by company slug"
+msgstr "Filtrar por slug de empresa"
+
+msgid "Use compact display mode"
+msgstr "Usar modo de visualización compacto"
+
+msgid "Permission denied."
+msgstr "Permiso denegado."
+
+msgid "Connection failed: %s"
+msgstr "Error de conexión: %s"
+
+msgid "API connection successful!"
+msgstr "¡Conexión con la API correcta!"
+
+msgid "API reachable. Authentication required for protected endpoints."
+msgstr "API accesible. Se requiere autenticación para los puntos de conexión protegidos."
+
+msgid "Unexpected response: HTTP %d"
+msgstr "Respuesta inesperada: HTTP %d"
+
+msgid "Gallery Editor"
+msgstr "Editor de galería"

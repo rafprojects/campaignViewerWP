@@ -15,6 +15,7 @@
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | Planned | Small-Medium |
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
+| P60-H | Localization — shipped language packs (fr_FR, es_ES done; de/ru/zh planned) | 🚧 In progress (fr_FR + es_ES done, 2026-07-01) | Medium |
 
 ---
 
@@ -285,6 +286,44 @@ Net effect: a translator **cannot** ship a non-English React UI today, even thou
 - Manifest and edited PHP are syntax-clean; `i18n:check` idempotent.
 
 **Scope boundary (unchanged).** Enforcement of `i18next/no-literal-string` was *not* broadened to the whole app: the 91 already-harvested customer-facing strings are the complete front-end set for this release, and the full **admin-panel** harvest + global lint flip remains the WP.org-tier Follow-On (Key Decision B). P60-G delivered the *runtime pipeline + pilot + docs*, not new string coverage.
+
+## Track P60-H - Localization: shipped language packs
+
+### Problem
+
+P60-G delivered the *pipeline* and a minimal `fr_FR` pilot, but a paid product marketed to international buyers should ship at least a few complete, ready-to-use language packs — not just the machinery to make them. Each pack must cover the full string surface (PHP + React) uncovered by the P60-B/`.pot` work.
+
+### Fix
+
+- Produce **complete** `.po`/`.mo`/`.l10n.php` packs (all ~249 msgids) for a prioritized set of common languages, driven off the canonical `.pot`.
+- Preserve every interpolation placeholder (`{{…}}`) and printf token (`%s`, `%d`); keep theme brand-names (Nord, Solarized, Catppuccin, …) untranslated.
+- Ship the packs in `languages/` (they ride the release ZIP automatically).
+
+### Acceptance criteria
+
+- Each shipped locale resolves translated strings across both surfaces with English per-key fallback for anything omitted.
+- Placeholder/printf integrity holds for every string in every shipped locale.
+- Packs are committed as `.po` (source) + compiled `.mo` + `.l10n.php`.
+
+### Validation
+
+- Automated placeholder-integrity + resolution check over each locale's compiled `.l10n.php`; manual spot-check in wp-env under each locale (see `docs/guides/TRANSLATING.md`).
+
+### Implementation (2026-07-01) — fr_FR + es_ES done
+
+- **French (`fr_FR`)** completed (was the P60-G pilot at ~12 strings) and **Spanish (`es_ES`)** added — **all 249 msgids** translated in each, assembled from the `.pot` so coverage is exhaustive by construction.
+- Verified: **0 placeholder/printf mismatches** across all 249 strings in both locales; ~85/91 React keys translated (remainder are brand-names/symbols that correctly stay identical); every `.l10n.php` is syntax-clean; the front-end manifest remains in sync.
+- **Caveat recorded:** both packs are **AI-authored for QA and a translation head-start**; a native-speaker review is required before they are relied upon in production. This is noted in the `.po` headers and `TRANSLATING.md`.
+
+### Planned (next languages)
+
+| Locale | Language | Notes |
+|--------|----------|-------|
+| `de_DE` | German | `Plural-Forms: nplurals=2; plural=(n != 1);`. Longer compounds — watch UI truncation in the auth bar / buttons. |
+| `ru_RU` | Russian | **3 plural forms.** The i18next plural keys (`_one`/`_other`) only express 2; Russian's `_few`/`_many` forms for the React plural pair would need added keys in `src/i18n-strings.en.json` (a P60-G-adjacent enhancement) for full correctness — the gettext/PHP side is unaffected. |
+| `zh_CN` | Mandarin (Simplified) | **No plural forms** (`nplurals=1`). No spacing before punctuation; the `Play: {{caption}}`-style colons should use fullwidth `：`. |
+
+> Each additional pack is the same mechanical process as fr/es (translate the `.po`, compile). The Russian plural nuance is the only item that may reach back into the i18next source.
 
 ## Follow-On Candidates
 
