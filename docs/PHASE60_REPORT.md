@@ -16,6 +16,7 @@
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
 | P60-H | Localization — shipped language packs (fr_FR, es_ES done; de/ru/zh planned) | 🚧 In progress (fr_FR + es_ES done, 2026-07-01) | Medium |
+| P60-I | Admin-panel internationalization (harvest ~500–800 strings → t(), translate) | 🚧 In progress (batched) | XL (phase-sized) |
 
 ---
 
@@ -325,11 +326,62 @@ P60-G delivered the *pipeline* and a minimal `fr_FR` pilot, but a paid product m
 
 > Each additional pack is the same mechanical process as fr/es (translate the `.po`, compile). The Russian plural nuance is the only item that may reach back into the i18next source.
 
+## Track P60-I - Admin-panel internationalization
+
+### Problem
+
+P54-B/P60-G internationalized only the **customer-facing front-end** (auth bar, login, lightbox, all gallery/carousel/layout **adapters**). The **admin panel React UI** — campaign management, settings, media manager, the entire LayoutBuilder, and dozens of modals — was never harvested (`grep useTranslation src/components/Admin/` → none). This was Key Decision B's deferral. QA under a non-English locale therefore shows only the shared `AuthBar` translated and everything else in English, which is not acceptable for a fully-localized product. **This track promotes that deferred item to active work** (user direction, 2026-07-01).
+
+### Scale (measured 2026-07-01)
+
+- `src/components/Admin/**`: **78 components**, ~744 candidate literals.
+- `src/components/Admin/LayoutBuilder/**`: **34 components**, ~327 candidate literals.
+- `src/components/Campaign/**`: 4 components, ~70 candidate literals.
+- Rough net after removing false positives (test-ids, enum values, numeric): **~500–800 real user-facing strings**. This rivals a full phase; it is tracked here per user direction but may be promoted to its own phase.
+
+### Fix (method — same unified gettext bridge as P60-G)
+
+Executed **in area-batches**; each batch is self-contained and independently shippable:
+
+1. Wrap each user-facing literal in `t('area_key', 'English default', vars?)` via `useTranslation('wpsg')`; leave test-ids / enum values / debug attrs alone.
+2. Append new key → English pairs to `src/i18n-strings.en.json` (the single source).
+3. `npm run i18n:generate` (regenerate the PHP manifest) → `wp i18n make-pot` (harvest).
+4. Translate the new keys into `fr_FR` + `es_ES`; rebuild `.po` and recompile `.mo`/`.l10n.php`.
+5. Flip `i18next/no-literal-string` to `error` for the completed area's glob in `eslint.config.js` so it can't regress.
+6. `npm run lint` + `tsc` + `vitest` green; commit the batch.
+
+### Batch plan
+
+| Batch | Area | Files (approx) | Status |
+|-------|------|----------------|--------|
+| I-1 | Admin shell + navigation (`AdminPanel`, tabs, header actions, bulk bar) | ~4 | Planned |
+| I-2 | Campaign management (`CampaignsTab`, mobile list, campaign modals, `UnifiedCampaignModal`) | ~12 | Planned |
+| I-3 | Media (`MediaTab`, add/edit/delete modals, upload controller, cards) | ~12 | Planned |
+| I-4 | Settings (`SettingsPanel` + all tab sections, tooltips) | ~6 | Planned |
+| I-5 | Access / audit / analytics / assets / spaces / taxonomy / templates | ~20 | Planned |
+| I-6 | LayoutBuilder (toolbar, canvas, layers, all property panels, menus) | ~34 | Planned |
+| I-7 | Final lint flip (whole admin), full fr/es translation sweep, wp-env QA | — | Planned |
+
+### Acceptance criteria
+
+- Every user-facing admin string renders translated under a shipped locale, with per-key English fallback.
+- `i18next/no-literal-string` enforced (`error`) across `src/components/Admin/**` (customer-relevant literals; documented exceptions allowed).
+- `fr_FR` + `es_ES` cover the new admin keys; placeholder integrity holds.
+- vitest/lint/tsc green; manual wp-env QA per major area.
+
+### Validation
+
+- Per batch: `i18n:check`, lint, tsc, vitest; placeholder-integrity check over new keys; wp-env spot-check under `fr_FR`.
+
+### Notes
+
+- Given the ~500–800-string volume, this is a multi-session effort. Progress is recorded per batch here as each lands.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| Full admin-panel i18n + lint flip to `'error'` | WP.org public-listing gate, not required for the Freemius premium launch. Stays in [FUTURE_TASKS.md](FUTURE_TASKS.md). |
+| ~~Full admin-panel i18n + lint flip to `'error'`~~ | **Promoted to active work as Track P60-I** (user direction, 2026-07-01) — no longer deferred. |
 | Full WCAG AA audit | WP.org public-listing gate; P60-D covers the premium-tier critical/serious bar. Stays in FUTURE_TASKS. |
 | CodeCanyon / Envato submission pass | Only if a second marketplace beyond Freemius is pursued. |
 | Free WP.org "lite" tier | Top-of-funnel step from MONETIZATION §7, gated on the full public-readiness work above; revisit after the pro tier proves out. |
