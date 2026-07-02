@@ -3,6 +3,7 @@ import { Image, Text, Group, Badge, Table, ActionIcon, Grid, Box, Skeleton } fro
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { IconGripVertical, IconPhoto, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { MediaCard } from './MediaCard';
 import { MediaUsageBadge } from './MediaUsageBadge';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
@@ -27,6 +28,7 @@ export function SortableListRow({
   item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
   usageSummaryLoading, usageSummary, apiClient, dragDisabled,
 }: SharedSortableProps) {
+  const { t } = useTranslation('wpsg');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
     listeners?.onKeyDown?.(event);
@@ -45,8 +47,8 @@ export function SortableListRow({
     opacity: isDragging ? 0.2 : 1,
     ...getInsertionStyle(item.id, 'vertical'),
   };
-  const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
-  const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+  const mediaTypeLabel = item.type === 'video' ? t('admin_media_type_video', 'Video') : t('admin_media_type_image', 'Image');
+  const sourceLabel = item.source === 'external' ? t('admin_media_source_external', 'External') : t('admin_media_source_upload', 'Upload');
   const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
   const sourceColor = item.source === 'external' ? 'grape' : 'teal';
 
@@ -55,7 +57,7 @@ export function SortableListRow({
       <Table.Td>
         <Image
           src={item.thumbnail ?? item.url}
-          alt={item.caption || 'Media thumbnail'}
+          alt={item.caption || t('admin_media_thumb_alt', 'Media thumbnail')}
           w={50}
           h={50}
           fit="cover"
@@ -67,7 +69,7 @@ export function SortableListRow({
           tabIndex={item.type === 'image' ? 0 : -1}
           aria-label={
             item.type === 'image'
-              ? `Open image preview for ${item.caption || item.url}`
+              ? t('admin_media_open_preview', 'Open image preview for {{label}}', { label: item.caption || item.url })
               : undefined
           }
           onKeyDown={(event) => {
@@ -100,7 +102,7 @@ export function SortableListRow({
           {!dragDisabled && (
             <ActionIcon
               variant="subtle"
-              aria-label="Drag media to reorder"
+              aria-label={t('admin_media_drag_reorder', 'Drag media to reorder')}
               style={{ cursor: 'grab' }}
               {...attributes}
               {...listeners}
@@ -109,8 +111,8 @@ export function SortableListRow({
               <IconGripVertical size={16} />
             </ActionIcon>
           )}
-          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+          <ActionIcon variant="subtle" onClick={() => openEdit(item)} aria-label={t('admin_media_edit_aria', 'Edit')}><IconPhoto size={16} /></ActionIcon>
+          <ActionIcon variant="subtle" color="red" onClick={() => handleDelete(item)} aria-label={t('admin_media_delete_aria', 'Delete media')}><IconTrash size={16} /></ActionIcon>
         </Group>
       </Table.Td>
     </Table.Tr>

@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Checkbox, Stack, TagsInput } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { MediaAddModal } from './MediaAddModal';
 import type { ApiClient } from '@/services/apiClient';
 import type {
@@ -57,9 +58,10 @@ export function MediaUploadController({
   defaultTarget,
   allowGeneral = true,
   onUploaded,
-  title = 'Add Media',
+  title,
   zIndex,
 }: MediaUploadControllerProps) {
+  const { t } = useTranslation('wpsg');
   const queryClient = useQueryClient();
   const dropRef = useRef<HTMLDivElement>(null);
   const { uploadMany, batchProgress, isUploading } = useXhrUpload();
@@ -88,7 +90,7 @@ export function MediaUploadController({
   const isGeneral = target === GENERAL_LIBRARY_TARGET;
 
   const targetOptions = [
-    ...(allowGeneral ? [{ value: GENERAL_LIBRARY_TARGET, label: 'General library (all campaigns)' }] : []),
+    ...(allowGeneral ? [{ value: GENERAL_LIBRARY_TARGET, label: t('admin_upload_general_lib', 'General library (all campaigns)') }] : []),
     ...campaigns.map((c) => ({ value: String(c.id), label: c.title })),
   ];
 
@@ -187,7 +189,9 @@ export function MediaUploadController({
       const succeeded = total - failures;
       if (succeeded > 0) {
         notifications.show({
-          message: `${succeeded} file${succeeded !== 1 ? 's' : ''} added${isGeneral ? ' to the asset library' : ''}`,
+          message: isGeneral
+            ? t('admin_upload_added_lib', '{{count}} file added to the asset library', { count: succeeded })
+            : t('admin_upload_added', '{{count}} file added', { count: succeeded }),
           color: 'green',
           autoClose: 3000,
         });
@@ -195,8 +199,8 @@ export function MediaUploadController({
       }
       if (failures > 0) {
         notifications.show({
-          title: 'Some uploads failed',
-          message: `${failures} of ${total} file${total !== 1 ? 's' : ''} could not be uploaded.`,
+          title: t('admin_upload_some_failed_title', 'Some uploads failed'),
+          message: t('admin_upload_failed_msg', '{{failures}} of {{total}} file could not be uploaded.', { failures, total, count: total }),
           color: 'red',
           autoClose: 5000,
         });
@@ -206,25 +210,25 @@ export function MediaUploadController({
       }
     } catch (err) {
       notifications.show({
-        title: 'Upload failed',
-        message: err instanceof Error ? err.message : 'Upload failed.',
+        title: t('admin_upload_failed_title', 'Upload failed'),
+        message: err instanceof Error ? err.message : t('admin_upload_failed_generic', 'Upload failed.'),
         color: 'red',
         autoClose: 5000,
       });
     } finally {
       setBusy(false);
     }
-  }, [selectedFiles, target, isGeneral, uploadToGeneral, uploadToCampaign, onUploaded, resetState, onClose]);
+  }, [selectedFiles, target, isGeneral, uploadToGeneral, uploadToCampaign, onUploaded, resetState, onClose, t]);
 
   // ── External URL (direct image registration) ─────────────────────────
   const handleFetchExternal = useCallback(() => {
     setExternalError(null);
     if (!externalUrl.trim()) {
-      setExternalError('Enter a URL to preview.');
+      setExternalError(t('admin_upload_enter_url', 'Enter a URL to preview.'));
       return;
     }
     setExternalPreview({ type: 'photo', thumbnail_url: externalUrl.trim(), title: externalUrl.trim() });
-  }, [externalUrl]);
+  }, [externalUrl, t]);
 
   const handleAddExternal = useCallback(async () => {
     const url = externalUrl.trim();
@@ -249,22 +253,22 @@ export function MediaUploadController({
         }]);
         await queryClient.invalidateQueries({ queryKey: getMediaItemsQueryKey(apiClient, target) });
       }
-      notifications.show({ message: 'External asset added', color: 'green', autoClose: 3000 });
+      notifications.show({ message: t('admin_upload_ext_added', 'External asset added'), color: 'green', autoClose: 3000 });
       onUploaded?.(target);
       resetState();
       onClose();
     } catch (err) {
-      setExternalError(err instanceof Error ? err.message : 'Failed to add external asset.');
+      setExternalError(err instanceof Error ? err.message : t('admin_upload_ext_fail', 'Failed to add external asset.'));
     } finally {
       setBusy(false);
     }
-  }, [externalUrl, target, isGeneral, markUniversal, tags, apiClient, queryClient, onUploaded, resetState, onClose]);
+  }, [externalUrl, target, isGeneral, markUniversal, tags, apiClient, queryClient, onUploaded, resetState, onClose, t]);
 
   return (
     <MediaAddModal
       opened={opened}
       onClose={handleClose}
-      title={title}
+      {...(title !== undefined ? { title } : {})}
       {...(zIndex !== undefined ? { zIndex } : {})}
       dropRef={dropRef}
       selectedFiles={selectedFiles}
@@ -294,14 +298,14 @@ export function MediaUploadController({
           <Stack gap={6}>
             <Checkbox
               size="xs"
-              label="Make available to all spaces (universal)"
+              label={t('admin_upload_universal', 'Make available to all spaces (universal)')}
               checked={markUniversal}
               onChange={(e) => setMarkUniversal(e.currentTarget.checked)}
             />
             <TagsInput
               size="xs"
-              label="Tags"
-              placeholder="Add tags for filtering…"
+              label={t('admin_camp_tags_label', 'Tags')}
+              placeholder={t('admin_upload_tags_ph', 'Add tags for filtering…')}
               value={tags}
               onChange={setTags}
               clearable

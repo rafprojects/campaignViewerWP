@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T10:47:26+00:00\n"
+"POT-Creation-Date: 2026-07-02T10:54:56+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1651,6 +1651,7 @@ msgid "External"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:415
+#: includes/i18n/class-wpsg-frontend-strings.php:447
 msgid "Upload"
 msgstr ""
 
@@ -1716,6 +1717,162 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:435
 msgid "Next image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:436
+msgid "Add to"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:437
+msgid "File drop zone"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:438
+msgid "Choose files"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:439
+msgid "Drop files here"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:440
+msgid "or drag & drop files here"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:441
+msgid "{{count}} file queued"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:442
+msgid "{{count}} files queued"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:443
+msgid "Clear all"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:444
+msgid "Remove {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:445
+msgid "Enter a caption or description (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:446
+msgid "When uploading multiple files, each item uses its filename as the default caption."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:448
+msgid "Upload {{count}} files"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:449
+msgid "{{count}} file uploaded successfully"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:450
+msgid "{{count}} files uploaded successfully"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:451
+msgid "Uploading {{count}} file…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:452
+msgid "Uploading {{count}} files…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:453
+msgid "External URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:454
+msgid "https://youtube.com/..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:455
+msgid "External media URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:456
+msgid "Preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:457
+msgid "Preview external media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:458
+msgid "Add"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:459
+msgid "Add external media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:460
+msgid "External media preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:461
+msgid "General library (all campaigns)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:462
+msgid "{{count}} file added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:463
+msgid "{{count}} files added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:464
+msgid "{{count}} file added to the asset library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:465
+msgid "{{count}} files added to the asset library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:466
+msgid "Some uploads failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:467
+msgid "{{failures}} of {{total}} file could not be uploaded."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:468
+msgid "{{failures}} of {{total}} files could not be uploaded."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:469
+msgid "Upload failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:470
+msgid "Upload failed."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:471
+msgid "Enter a URL to preview."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:472
+msgid "External asset added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:473
+msgid "Failed to add external asset."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:474
+msgid "Make available to all spaces (universal)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:475
+msgid "Add tags for filtering…"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

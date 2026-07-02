@@ -16,6 +16,7 @@ import {
   Textarea,
 } from '@mantine/core';
 import { IconUpload, IconX, IconFile, IconVideo } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { OEmbedResponse } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -60,7 +61,7 @@ interface MediaAddModalProps {
 export function MediaAddModal({
   opened,
   onClose,
-  title = 'Add Media',
+  title,
   zIndex,
   dropRef,
   selectedFiles,
@@ -85,9 +86,10 @@ export function MediaAddModal({
   targetOptions,
   targetValue,
   onTargetChange,
-  targetLabel = 'Add to',
+  targetLabel,
   targetExtra,
 }: MediaAddModalProps) {
+  const { t } = useTranslation('wpsg');
   const hasFiles = selectedFiles.length > 0;
   const showTargetSelect = Array.isArray(targetOptions) && targetOptions.length > 0;
   const isBatchSelection = selectedFiles.length > 1;
@@ -138,7 +140,7 @@ export function MediaAddModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      title={title}
+      title={title ?? t('admin_media_add', 'Add Media')}
       padding="md"
       size={hasFiles ? 'lg' : 'md'}
       {...(zIndex !== undefined ? { zIndex } : {})}
@@ -148,7 +150,7 @@ export function MediaAddModal({
         {showTargetSelect && (
           <Stack gap={6}>
             <Select
-              label={targetLabel}
+              label={targetLabel ?? t('admin_media_add_to', 'Add to')}
               data={targetOptions}
               value={targetValue ?? null}
               onChange={(value) => onTargetChange?.(value)}
@@ -161,7 +163,7 @@ export function MediaAddModal({
           ref={dropRef}
           p="md"
           role="region"
-          aria-label="File drop zone"
+          aria-label={t('admin_media_dropzone_aria', 'File drop zone')}
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -187,15 +189,15 @@ export function MediaAddModal({
                   accept="image/*,video/*"
                   multiple
                 >
-                  {(props) => <Button leftSection={<IconUpload />} {...props}>Choose files</Button>}
+                  {(props) => <Button leftSection={<IconUpload />} {...props}>{t('admin_media_choose_files', 'Choose files')}</Button>}
                 </FileButton>
                 <Text size="sm" c={isDragOver ? 'blue' : 'dimmed'} fw={isDragOver ? 600 : undefined}>
-                  {isDragOver ? 'Drop files here' : 'or drag & drop files here'}
+                  {isDragOver ? t('admin_media_drop_here', 'Drop files here') : t('admin_media_drag_drop', 'or drag & drop files here')}
                 </Text>
               </Group>
               {hasFiles && (
                 <Text size="sm" c="dimmed">
-                  {isBatchSelection ? `${selectedFiles.length} files queued` : selectedFiles[0]?.name}
+                  {isBatchSelection ? t('admin_media_queued', '{{count}} file queued', { count: selectedFiles.length }) : selectedFiles[0]?.name}
                 </Text>
               )}
             </Group>
@@ -204,11 +206,11 @@ export function MediaAddModal({
               <Stack gap="xs">
                 <Group justify="space-between">
                   <Text size="sm" fw={500}>
-                    {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} queued
+                    {t('admin_media_queued', '{{count}} file queued', { count: selectedFiles.length })}
                   </Text>
                   {onClearFiles && (
                     <Button variant="subtle" color="red" size="xs" onClick={onClearFiles} disabled={uploading}>
-                      Clear all
+                      {t('admin_media_clear_all', 'Clear all')}
                     </Button>
                   )}
                 </Group>
@@ -250,7 +252,7 @@ export function MediaAddModal({
                             style={{ position: 'absolute', top: 2, right: 2 }}
                             onClick={() => onRemoveFile(index)}
                             disabled={uploading}
-                            aria-label={`Remove ${file.name}`}
+                            aria-label={t('admin_media_remove_file', 'Remove {{name}}', { name: file.name })}
                           >
                             <IconX size={10} />
                           </ActionIcon>
@@ -270,14 +272,14 @@ export function MediaAddModal({
             {selectedFiles.length === 1 && (
               <Stack gap="xs">
                 <TextInput
-                  label="Title"
-                  placeholder="Enter a title (optional)"
+                  label={t('admin_media_edit_title_label', 'Title')}
+                  placeholder={t('admin_media_edit_title_ph', 'Enter a title (optional)')}
                   value={uploadTitle}
                   onChange={(e) => onUploadTitleChange(e.currentTarget.value)}
                 />
                 <Textarea
-                  label="Caption"
-                  placeholder="Enter a caption or description (optional)"
+                  label={t('admin_media_edit_caption_label', 'Caption')}
+                  placeholder={t('admin_media_add_caption_ph', 'Enter a caption or description (optional)')}
                   value={uploadCaption}
                   onChange={(e) => onUploadCaptionChange(e.currentTarget.value)}
                   autosize
@@ -289,7 +291,7 @@ export function MediaAddModal({
 
             {isBatchSelection && (
               <Text size="xs" c="dimmed">
-                When uploading multiple files, each item uses its filename as the default caption.
+                {t('admin_media_batch_hint', 'When uploading multiple files, each item uses its filename as the default caption.')}
               </Text>
             )}
             <Group justify="flex-end">
@@ -301,7 +303,7 @@ export function MediaAddModal({
                 color="blue"
                 leftSection={<IconUpload size={16} />}
               >
-                {isBatchSelection ? `Upload ${selectedFiles.length} files` : 'Upload'}
+                {isBatchSelection ? t('admin_media_upload_n', 'Upload {{count}} files', { count: selectedFiles.length }) : t('admin_media_upload', 'Upload')}
               </Button>
             </Group>
             <div
@@ -311,30 +313,30 @@ export function MediaAddModal({
               style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}
             >
               {uploading && uploadProgresses && uploadProgresses.every((p) => p >= 100)
-                ? `${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''} uploaded successfully`
+                ? t('admin_media_uploaded_status', '{{count}} file uploaded successfully', { count: selectedFiles.length })
                 : uploading
-                  ? `Uploading ${selectedFiles.length} file${selectedFiles.length !== 1 ? 's' : ''}…`
+                  ? t('admin_media_uploading_status', 'Uploading {{count}} file…', { count: selectedFiles.length })
                   : null}
             </div>
           </Stack>
         </Paper>
 
-        <Text fw={600}>Add External URL</Text>
+        <Text fw={600}>{t('admin_camp_add_url', 'Add External URL')}</Text>
         <Stack gap="sm">
           <TextInput
-            label="External URL"
+            label={t('admin_media_ext_url_label', 'External URL')}
             value={externalUrl}
             onChange={(e) => onExternalUrlChange(e.currentTarget.value)}
-            placeholder="https://youtube.com/..."
+            placeholder={t('admin_media_ext_url_ph', 'https://youtube.com/...')}
             error={externalError}
-            aria-label="External media URL"
+            aria-label={t('admin_media_ext_url_aria', 'External media URL')}
           />
           <Group gap="sm">
-            <Button onClick={onFetchOEmbed} loading={externalLoading} aria-label="Preview external media">
-              Preview
+            <Button onClick={onFetchOEmbed} loading={externalLoading} aria-label={t('admin_media_preview_aria', 'Preview external media')}>
+              {t('admin_media_preview', 'Preview')}
             </Button>
-            <Button onClick={onAddExternal} disabled={!externalUrl} aria-label="Add external media">
-              Add
+            <Button onClick={onAddExternal} disabled={!externalUrl} aria-label={t('admin_media_add_ext_aria', 'Add external media')}>
+              {t('admin_media_add_btn', 'Add')}
             </Button>
           </Group>
         </Stack>
@@ -362,7 +364,7 @@ export function MediaAddModal({
                     <img
                       src={externalPreview.thumbnail_url}
                       style={{ height: 100, objectFit: 'cover', borderRadius: 4 }}
-                      alt={externalPreview.title || 'External media preview'}
+                      alt={externalPreview.title || t('admin_media_ext_preview_alt', 'External media preview')}
                     />
                   )}
                   <div>
@@ -377,7 +379,7 @@ export function MediaAddModal({
 
         <Group justify="flex-end">
           <Button variant="default" onClick={onClose}>
-            Cancel
+            {t('admin_cancel', 'Cancel')}
           </Button>
         </Group>
       </Stack>
