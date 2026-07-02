@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T15:32:49+00:00\n"
+"POT-Creation-Date: 2026-07-02T15:41:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -238,6 +238,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:33
 #: includes/i18n/class-wpsg-frontend-strings.php:120
+#: includes/i18n/class-wpsg-frontend-strings.php:593
 msgid "Admin Panel"
 msgstr ""
 
@@ -1226,6 +1227,7 @@ msgid "Draft"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:292
+#: includes/i18n/class-wpsg-frontend-strings.php:673
 msgid "Active"
 msgstr ""
 
@@ -2295,6 +2297,410 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:580
 msgid "The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:581
+msgid "Fine-grained controls for power users. These settings override internal defaults across all gallery components. Change with care."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:582
+msgid "Settings Drawer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:583
+msgid "Settings Panel Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:584
+msgid "Width of the settings panel drawer on medium and large screens. On small screens it is always 100%."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:585
+msgid "Settings Drawer Backdrop Blur"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:586
+msgid "When enabled, content behind open settings drawers is blurred."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:587
+msgid "Settings Panel Animation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:588
+msgid "Open/close transition for the settings panel drawer. Choose None to disable animation."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:589
+msgid "Slide"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:590
+msgid "Fade"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:591
+msgid "Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:592
+msgid "None"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:594
+msgid "Admin Panel Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:595
+msgid "Maximum width of the admin panel container. Set to 0 for full width (no constraint)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:596
+msgid "Upload / Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:597
+msgid "Upload Max Size (MB)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:598
+msgid "Max Batch Upload Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:599
+msgid "Allowed Upload Types"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:600
+msgid "Comma-separated MIME patterns (e.g. image/*,video/*)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:601
+msgid "Library Page Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:602
+msgid "Media List Page Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:603
+msgid "Compact Card Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:604
+msgid "Small Card Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:605
+msgid "Medium Card Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:606
+msgid "Large Card Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:607
+msgid "Media List Min Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:608
+msgid "Notification Dismiss (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:609
+msgid "Image Optimization"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:610
+msgid "Optimize on Upload"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:611
+msgid "Automatically resize and compress images on upload."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:612
+msgid "Max Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:613
+msgid "Max Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:614
+msgid "Quality (%)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:615
+msgid "WebP Conversion"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:616
+msgid "Generate WebP copies alongside originals."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:617
+msgid "Thumbnail Cache TTL (s)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:618
+msgid "How long cached external thumbnails are kept (seconds)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:619
+msgid "Tile / Adapter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:620
+msgid "Hover Overlay Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:621
+msgid "Bounce Scale (Hover)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:622
+msgid "Bounce Scale (Active)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:623
+msgid "Bounce Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:624
+msgid "Base Transition Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:625
+msgid "Tile Transition Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:626
+msgid "Hex Vertical Overlap Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:627
+msgid "Diamond Vertical Overlap Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:628
+msgid "Hex Clip Path"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:629
+msgid "Diamond Clip Path"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:630
+msgid "Default Per Row"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:631
+msgid "Masonry Auto Column Breakpoints"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:632
+msgid "Format: 480:2,768:3,1024:4,1280:5"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:633
+msgid "Grid Card Hover Shadow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:634
+msgid "Grid Card Default Shadow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:635
+msgid "Grid Card Hover Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:636
+msgid "Lightbox"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:637
+msgid "Transition Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:638
+msgid "Backdrop Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:639
+msgid "Entry Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:640
+msgid "Video Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:641
+msgid "Video Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:642
+msgid "Media Max Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:643
+msgid "CSS value, e.g. 85vh"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:644
+msgid "Z-Index"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:645
+msgid "Navigation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:646
+msgid "Max Visible Dots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:647
+msgid "Arrow Edge Inset (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:648
+msgid "Arrow Min Hit Target (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:649
+msgid "Arrow Fade Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:650
+msgid "Arrow Scale Transition (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:651
+msgid "Viewport Height Mobile Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:652
+msgid "Viewport Height Tablet Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:653
+msgid "Search Input Min Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:654
+msgid "Search Input Max Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:655
+msgid "System"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:656
+msgid "Admin Search Debounce (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:657
+msgid "Min Password Length"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:658
+msgid "Login Form Max Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:659
+msgid "Developer & Debugging"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:660
+msgid "Enable Component Debug Names & Markers"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:661
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:662
+msgid "Data Maintenance"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:663
+msgid "Archive Purge After (days)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:664
+msgid "Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:665
+msgid "Trash Grace Period (days)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:666
+msgid "Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:667
+msgid "Analytics Retention (days)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:668
+msgid "Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:669
+msgid "Object Cache"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:670
+msgid "Health data unavailable"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:671
+msgid "Could not load object-cache status from the server."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:672
+msgid "Persistent cache"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:674
+msgid "Not detected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:675
+msgid "No persistent object cache"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:676
+msgid "WordPress is using its default in-memory cache, which is discarded on every request. For higher-traffic deployments consider adding a Redis or Memcached drop-in. See docs/object-cache-setup.md for setup instructions."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:677
+msgid "Cache backend detected but no runtime stats are exposed by this drop-in."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:678
+msgid "Backend stats"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:679
+msgid "Danger Zone"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:680
+msgid "Irreversible data deletion"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:681
+msgid "When preservation is disabled, deleting this plugin permanently removes all campaigns, layout templates, overlay library, analytics events, access grants, and uploaded thumbnail files. This cannot be undone."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:682
+msgid "Preserve data on plugin removal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:683
+msgid "When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
