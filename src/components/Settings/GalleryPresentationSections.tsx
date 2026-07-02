@@ -1,4 +1,5 @@
 import { Accordion, Stack, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { getScopeGalleryCommonSetting, resolveGalleryConfig, setScopeGalleryCommonSetting } from '@/utils/galleryConfig';
@@ -32,6 +33,7 @@ function GalleryBackgroundFields({
   onBgGradientChange,
   onBgImageChange,
 }: GalleryBackgroundFieldsProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <>
       <ModalSelect
@@ -40,32 +42,32 @@ function GalleryBackgroundFields({
         value={bgType}
         onChange={(value) => onBgTypeChange((value as ViewportBgType) ?? 'none')}
         data={[
-          { value: 'none', label: 'None' },
-          { value: 'solid', label: 'Solid Color' },
-          { value: 'gradient', label: 'Gradient' },
-          { value: 'image', label: 'Background Image' },
+          { value: 'none', label: t('set_pr_bg_none', 'None') },
+          { value: 'solid', label: t('set_pr_bg_solid', 'Solid Color') },
+          { value: 'gradient', label: t('set_pr_bg_gradient', 'Gradient') },
+          { value: 'image', label: t('set_pr_bg_image', 'Background Image') },
         ]}
       />
       {bgType === 'solid' && (
         <ColorInput
-          label="Background Color"
-          description="Solid background color behind the viewport"
+          label={t('set_pr_bg_color_label', 'Background Color')}
+          description={t('set_pr_bg_color_desc', 'Solid background color behind the viewport')}
           value={bgColor}
           onChange={onBgColorChange}
         />
       )}
       {bgType === 'gradient' && (
         <TextInput
-          label="Background Gradient"
-          description="CSS gradient string used behind the viewport"
+          label={t('set_pr_bg_gradient_label', 'Background Gradient')}
+          description={t('set_pr_bg_gradient_desc', 'CSS gradient string used behind the viewport')}
           value={bgGradient}
           onChange={(event) => onBgGradientChange(event.currentTarget.value)}
         />
       )}
       {bgType === 'image' && (
         <TextInput
-          label="Background Image URL"
-          description="Image shown behind the viewport"
+          label={t('set_pr_bg_image_label', 'Background Image URL')}
+          description={t('set_pr_bg_image_desc', 'Image shown behind the viewport')}
           value={bgImageUrl}
           onChange={(event) => onBgImageChange(event.currentTarget.value)}
         />
@@ -81,6 +83,7 @@ interface GalleryPresentationSectionsProps {
 }
 
 export function GalleryPresentationSections({ settings, updateSetting, mountedPanels }: GalleryPresentationSectionsProps) {
+  const { t } = useTranslation('wpsg');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
 
   const updateScopeBackground = (
@@ -94,12 +97,12 @@ export function GalleryPresentationSections({ settings, updateSetting, mountedPa
   return (
     <>
       <Accordion.Item value="backgrounds">
-        <Accordion.Control>Viewport Backgrounds</Accordion.Control>
+        <Accordion.Control>{t('set_pr_backgrounds_title', 'Viewport Backgrounds')}</Accordion.Control>
         <Accordion.Panel>
           {(!mountedPanels || mountedPanels.has('backgrounds')) && <Stack gap="md">
             <GalleryBackgroundFields
-              label="Image Gallery Background"
-              description="Background applied behind image gallery viewports"
+              label={t('set_pr_image_bg_label', 'Image Gallery Background')}
+              description={t('set_pr_image_bg_desc', 'Background applied behind image gallery viewports')}
               bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgType') as ViewportBgType | undefined) ?? settings.imageBgType}
               bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgColor') ?? settings.imageBgColor}
               bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'image', 'viewportBgGradient') ?? settings.imageBgGradient}
@@ -111,8 +114,8 @@ export function GalleryPresentationSections({ settings, updateSetting, mountedPa
             />
 
             <GalleryBackgroundFields
-              label="Video Gallery Background"
-              description="Background applied behind video gallery viewports"
+              label={t('set_pr_video_bg_label', 'Video Gallery Background')}
+              description={t('set_pr_video_bg_desc', 'Background applied behind video gallery viewports')}
               bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgType') as ViewportBgType | undefined) ?? settings.videoBgType}
               bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgColor') ?? settings.videoBgColor}
               bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'video', 'viewportBgGradient') ?? settings.videoBgGradient}
@@ -124,8 +127,8 @@ export function GalleryPresentationSections({ settings, updateSetting, mountedPa
             />
 
             <GalleryBackgroundFields
-              label="Unified Gallery Background"
-              description="Background applied when unified gallery mode is active"
+              label={t('set_pr_unified_bg_label', 'Unified Gallery Background')}
+              description={t('set_pr_unified_bg_desc', 'Background applied when unified gallery mode is active')}
               bgType={(getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgType') as ViewportBgType | undefined) ?? settings.unifiedBgType}
               bgColor={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgColor') ?? settings.unifiedBgColor}
               bgGradient={getScopeGalleryCommonSetting(resolvedGalleryConfig, 'unified', 'viewportBgGradient') ?? settings.unifiedBgGradient}

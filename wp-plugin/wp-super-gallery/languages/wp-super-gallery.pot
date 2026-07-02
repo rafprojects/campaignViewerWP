@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T16:37:21+00:00\n"
+"POT-Creation-Date: 2026-07-02T21:24:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -2077,6 +2077,7 @@ msgid "Custom gradient"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:523
+#: includes/i18n/class-wpsg-frontend-strings.php:1130
 msgid "Background Color"
 msgstr ""
 
@@ -2355,6 +2356,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:592
 #: includes/i18n/class-wpsg-frontend-strings.php:701
 #: includes/i18n/class-wpsg-frontend-strings.php:925
+#: includes/i18n/class-wpsg-frontend-strings.php:1126
 msgid "None"
 msgstr ""
 
@@ -2973,24 +2975,29 @@ msgid "How cards distribute when a row does not fill the full available width."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:749
+#: includes/i18n/class-wpsg-frontend-strings.php:1119
 msgid "Start"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:750
 #: includes/i18n/class-wpsg-frontend-strings.php:882
 #: includes/i18n/class-wpsg-frontend-strings.php:995
+#: includes/i18n/class-wpsg-frontend-strings.php:1077
 msgid "Center"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:751
+#: includes/i18n/class-wpsg-frontend-strings.php:1120
 msgid "End"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:752
+#: includes/i18n/class-wpsg-frontend-strings.php:1121
 msgid "Space Between"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:753
+#: includes/i18n/class-wpsg-frontend-strings.php:1122
 msgid "Space Evenly"
 msgstr ""
 
@@ -3004,11 +3011,13 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:756
 #: includes/i18n/class-wpsg-frontend-strings.php:994
+#: includes/i18n/class-wpsg-frontend-strings.php:1081
 msgid "Top"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:757
 #: includes/i18n/class-wpsg-frontend-strings.php:996
+#: includes/i18n/class-wpsg-frontend-strings.php:1082
 msgid "Bottom"
 msgstr ""
 
@@ -3499,10 +3508,12 @@ msgid "Horizontal alignment for gallery section labels"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:881
+#: includes/i18n/class-wpsg-frontend-strings.php:1076
 msgid "Left"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:883
+#: includes/i18n/class-wpsg-frontend-strings.php:1078
 msgid "Right"
 msgstr ""
 
@@ -4023,6 +4034,408 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1029
 msgid "Active Dot Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1030
+msgid "Carousel Settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1031
+msgid "Visible Cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1032
+msgid "Number of slides visible at once in the carousel."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1033
+msgid "Slide Gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1034
+msgid "Space between carousel slides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1035
+msgid "Loop"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1036
+msgid "Continuously loop slides when reaching the end."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1037
+msgid "Drag Enabled"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1038
+msgid "Allow dragging/swiping to navigate slides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1039
+#: includes/i18n/class-wpsg-frontend-strings.php:1040
+msgid "Autoplay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1041
+msgid "Automatically advance slides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1042
+msgid "Autoplay Speed (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1043
+msgid "Delay between automatic slide transitions."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1044
+msgid "Pause on Hover"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1045
+msgid "Pause autoplay when the mouse hovers over the carousel."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1046
+msgid "Autoplay Direction"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1047
+msgid "Direction autoplay advances slides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1048
+msgid "Left to Right"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1049
+msgid "Right to Left"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1050
+msgid "Visual Effects"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1051
+msgid "Darken Unfocused Slides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1052
+msgid "Apply a dark overlay on slides that are not currently selected."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1053
+msgid "Darken Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1054
+msgid "Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1055
+msgid "Edge Fade"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1056
+msgid "Fade slides at the edges of the carousel viewport."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1057
+msgid "Section Sizing & Spacing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1058
+msgid "Gallery Section Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1059
+msgid "Maximum width for each gallery section. 0 = fill available space."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1060
+msgid "Gallery Section Min Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1061
+msgid "Minimum width floor for gallery sections."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1062
+msgid "Section Height Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1063
+msgid "How section height is determined. Auto = content-driven (recommended for masonry/justified)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1064
+msgid "Auto (content-driven)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1065
+msgid "Manual (fixed max height)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1066
+msgid "Viewport (% of screen)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1067
+msgid "Gallery Section Max Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1068
+msgid "Maximum height for gallery sections in manual mode."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1069
+msgid "Gallery Section Min Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1070
+msgid "Minimum height floor for gallery sections."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1071
+msgid "Section Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1072
+msgid "Primary sizing multiplier for gallery sections. Scales min/max width, min/max height, and padding proportionally. 1 = default size."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1073
+msgid "Section Content Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1074
+msgid "Content Horizontal Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1075
+msgid "Horizontal alignment of adapter content within each gallery section."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1079
+#: includes/i18n/class-wpsg-frontend-strings.php:1093
+msgid "Content Vertical Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1080
+msgid "Vertical alignment of adapter content within each gallery section."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1083
+msgid "Content Horizontal Offset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1084
+msgid "Fine-tune horizontal position of section content. Negative = left, positive = right."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1085
+msgid "Content Vertical Offset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1086
+msgid "Fine-tune vertical position of section content. Negative = up, positive = down."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1087
+msgid "Equal Height Sections (Per-Type)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1088
+msgid "When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1089
+msgid "Gallery Section Padding"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1090
+msgid "Inner padding within each gallery section wrapper."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1091
+msgid "Adapter Content Padding"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1092
+msgid "Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1094
+msgid "Vertical alignment of content within the modal."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1095
+msgid "Gallery Spacing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1096
+msgid "Gallery Shell Vertical Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1097
+msgid "Vertical alignment of the gallery sections within the viewer shell."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1098
+msgid "Gallery Shell Vertical Offset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1099
+msgid "Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1100
+msgid "Gallery Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1101
+msgid "Maximum width of the gallery container. 0 = full responsive width."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1102
+msgid "Gallery Section Gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1103
+msgid "Vertical gap between gallery sections."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1104
+msgid "Gallery Edge Margin"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1105
+msgid "Horizontal margin on gallery edges."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1106
+msgid "Adapter Sizing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1107
+msgid "Adapter Sizing Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1108
+msgid "How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1109
+msgid "Fill (100%)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1110
+msgid "Manual (custom %)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1111
+msgid "Adapter Max Width (%)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1112
+msgid "Adapter width as percentage of its gallery section."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1113
+msgid "Adapter Max Height (%)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1114
+msgid "Adapter height as percentage of its gallery section."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1115
+msgid "Adapter Item Gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1116
+msgid "Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1117
+msgid "Adapter Justification"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1118
+msgid "How adapter items distribute within the container (Compact Grid, Circular)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1123
+msgid "Stretch"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1124
+msgid "Item Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1125
+msgid "Primary sizing multiplier for gallery items. Scales card width/height (Compact Grid), row height (Justified), and tile size (Shape adapters) proportionally. 1 = default size. Does not apply to Carousel."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1127
+msgid "Solid Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1128
+msgid "Gradient"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1129
+msgid "Background Image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1131
+msgid "Solid background color behind the viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1132
+msgid "Background Gradient"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1133
+msgid "CSS gradient string used behind the viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1134
+msgid "Background Image URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1135
+msgid "Image shown behind the viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1136
+msgid "Viewport Backgrounds"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1137
+msgid "Image Gallery Background"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1138
+msgid "Background applied behind image gallery viewports"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1139
+msgid "Video Gallery Background"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1140
+msgid "Background applied behind video gallery viewports"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1141
+msgid "Unified Gallery Background"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1142
+msgid "Background applied when unified gallery mode is active"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
