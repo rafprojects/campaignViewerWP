@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T21:44:38+00:00\n"
+"POT-Creation-Date: 2026-07-02T22:15:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -51,6 +51,7 @@ msgstr ""
 
 #: includes/class-wpsg-cpt.php:70
 #: includes/i18n/class-wpsg-frontend-strings.php:35
+#: includes/i18n/class-wpsg-frontend-strings.php:1590
 msgid "Campaign"
 msgstr ""
 
@@ -306,6 +307,8 @@ msgid "Access private campaigns with your WordPress account."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:51
+#: includes/i18n/class-wpsg-frontend-strings.php:1547
+#: includes/i18n/class-wpsg-frontend-strings.php:1603
 msgid "Email"
 msgstr ""
 
@@ -334,6 +337,7 @@ msgid "Password must be at least {{count}} characters"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:58
+#: includes/i18n/class-wpsg-frontend-strings.php:1594
 msgid "Error"
 msgstr ""
 
@@ -653,10 +657,12 @@ msgid "Access"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:139
+#: includes/i18n/class-wpsg-frontend-strings.php:1558
 msgid "Campaign Activity"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:140
+#: includes/i18n/class-wpsg-frontend-strings.php:1580
 msgid "System Audit"
 msgstr ""
 
@@ -798,6 +804,7 @@ msgid "Delete"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:179
+#: includes/i18n/class-wpsg-frontend-strings.php:1617
 msgid "Cancel"
 msgstr ""
 
@@ -1029,6 +1036,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:237
 #: includes/i18n/class-wpsg-frontend-strings.php:290
+#: includes/i18n/class-wpsg-frontend-strings.php:1553
 msgid "Status"
 msgstr ""
 
@@ -1052,6 +1060,7 @@ msgid "Categories"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:243
+#: includes/i18n/class-wpsg-frontend-strings.php:1549
 msgid "Actions"
 msgstr ""
 
@@ -1180,6 +1189,7 @@ msgid "Delete {{title}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:275
+#: includes/i18n/class-wpsg-frontend-strings.php:1576
 msgid "Details"
 msgstr ""
 
@@ -2378,6 +2388,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1244
 #: includes/i18n/class-wpsg-frontend-strings.php:1254
 #: includes/i18n/class-wpsg-frontend-strings.php:1372
+#: includes/i18n/class-wpsg-frontend-strings.php:1491
 msgid "None"
 msgstr ""
 
@@ -5332,6 +5343,513 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1479
 msgid "Choose which layout this gallery uses with the \"Layout Template\" picker in the campaign's Settings tab (Edit Campaign). These options only style the chosen layout."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1480
+msgid "View By"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1481
+msgid "📋 Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1482
+msgid "🏢 Company"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1483
+msgid "📊 All"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1484
+msgid "Access view mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1485
+msgid "Select Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1486
+msgid "Choose a campaign..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1487
+msgid "Select Company"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1488
+msgid "Loading..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1489
+msgid "Choose a company..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1490
+msgid "Company:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1492
+msgid "Archived campaign - grants inactive"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1493
+msgid "Total users:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1494
+msgid "Access {{count}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1495
+msgid "Campaigns:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1496
+msgid "{{count}} active"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1497
+msgid "{{count}} archived"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1498
+msgid "Archive All Campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1499
+msgid "Select a campaign to manage access permissions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1500
+msgid "Select a company to manage access permissions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1501
+msgid "Current Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1502
+msgid "Company-Wide Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1503
+msgid "All Access (Company + Campaigns)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1504
+msgid "Show expired"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1505
+msgid "{{count}} users"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1506
+msgid "User"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1507
+msgid "Access Type"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1508
+#: includes/i18n/class-wpsg-frontend-strings.php:1609
+msgid "Role"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1509
+msgid "Granted / Expires"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1510
+msgid "Revoke"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1511
+msgid "Loading access entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1512
+msgid "No users have access to this campaign yet. Add users below."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1513
+msgid "No company-wide access grants. Add users below."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1514
+msgid "No access grants found for this company or its campaigns."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1515
+msgid "Current access entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1516
+msgid "Grant New Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1517
+msgid "Grant Company-Wide Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1518
+msgid "Search name, email, or enter ID..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1519
+msgid "No users found"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1520
+msgid "Using User ID: {{id}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1521
+msgid "Type name/email or enter user ID"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1522
+msgid "Admin"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1523
+msgid "Scope"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1524
+msgid "📋 This Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1525
+msgid "🏢 All Company Campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1526
+msgid "Action"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1527
+msgid "✅ Grant Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1528
+msgid "❌ Deny Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1529
+msgid "👁 Viewer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1530
+msgid "Access role level"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1531
+msgid "Expires at"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1532
+msgid "(optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1533
+msgid "Access expiry date and time"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1534
+msgid "Apply"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1535
+msgid "Create a new user"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1536
+msgid "Quick add a new user"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1537
+#: includes/i18n/class-wpsg-frontend-strings.php:1619
+msgid "Quick Add User"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1538
+msgid "Company-level grants give access to all campaigns under the same company."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1539
+msgid "Grants apply to all current and future campaigns for this company."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1540
+msgid "Failed to approve request"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1541
+msgid "Failed to deny request"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1542
+msgid "Select a campaign to see access requests."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1543
+msgid "Access Requests"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1544
+msgid "{{count}} pending"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1545
+msgid "No access requests for this campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1546
+msgid "Pending"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1548
+msgid "Requested"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1550
+msgid "Approve"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1551
+msgid "Deny"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1552
+#: includes/i18n/class-wpsg-frontend-strings.php:1554
+msgid "Resolved"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1555
+msgid "approved"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1556
+msgid "denied"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1557
+msgid "expired"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1559
+msgid "All activity recorded for the selected campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1560
+msgid "Select campaign for audit log"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1561
+msgid "From (YYYY-MM-DD)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1562
+msgid "Audit log from date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1563
+msgid "To (YYYY-MM-DD)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1564
+msgid "Audit log to date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1565
+msgid "Action filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1566
+msgid "Audit log action filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1567
+msgid "Export CSV"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1568
+msgid "Export audit log as CSV"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1569
+msgid "Download ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1570
+msgid "Export audit log as ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1571
+msgid "Loading audit entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1572
+msgid "When"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1573
+msgid "Summary"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1574
+msgid "Severity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1575
+msgid "Actor"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1577
+msgid "Failed to load audit entries: {{message}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1578
+msgid "No audit entries yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1579
+msgid "Audit entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1581
+msgid "Cross-campaign and plugin-wide admin events."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1582
+msgid "Campaign ID"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1583
+msgid "Filter by campaign ID"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1584
+msgid "Global audit from date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1585
+msgid "Global audit to date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1586
+msgid "Global audit action filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1587
+msgid "Export global audit log as CSV"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1588
+msgid "Export global audit log as ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1589
+msgid "Loading system audit entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1591
+msgid "No audit entries found."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1592
+msgid "System audit entries"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1593
+msgid "Success"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1595
+msgid "Password Reset Link:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1596
+msgid "Password reset link"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1597
+msgid "Click to select"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1598
+msgid "Open Reset Link"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1599
+msgid "Reset URL copied to clipboard"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1600
+msgid "Copy Link"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1601
+msgid "Share this link securely with the user. They can use it to set their own password."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1602
+msgid "Close"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1604
+msgid "user@example.com"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1605
+msgid "User's WordPress login email address"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1606
+msgid "Display Name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1607
+msgid "John Doe"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1608
+msgid "Full name for display purposes"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1610
+msgid "👁 Viewer - Can view granted campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1611
+msgid "⚙️ Gallery Editor - Can manage this plugin"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1612
+msgid "WordPress role determines plugin permissions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1613
+msgid "Grant Access To (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1614
+msgid "No initial access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1615
+msgid "🧪 Test mode: Simulate email failure"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1616
+msgid "Enable to test the password reset link UI without actually sending email"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1618
+msgid "Create User"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

@@ -13,6 +13,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type AdminCampaign = {
@@ -55,25 +56,26 @@ interface QuickAddUserSuccessStateProps {
 }
 
 function QuickAddUserSuccessState({ quickAddResult, onClose, onNotify }: QuickAddUserSuccessStateProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <>
       <Alert
         color={quickAddResult.success ? 'teal' : 'red'}
-        title={quickAddResult.success ? 'Success' : 'Error'}
+        title={quickAddResult.success ? t('admin_qau_success', 'Success') : t('admin_qau_error', 'Error')}
         role={quickAddResult.success ? 'status' : 'alert'}
         aria-live={quickAddResult.success ? 'polite' : 'assertive'}
       >
         <Text size="sm">{quickAddResult.message}</Text>
         {quickAddResult.resetUrl && (
           <Box mt="sm">
-            <Text size="sm" fw={500}>Password Reset Link:</Text>
+            <Text size="sm" fw={500}>{t('admin_qau_reset_link_label', 'Password Reset Link:')}</Text>
             <TextInput
-              label="Password reset link"
+              label={t('admin_qau_reset_link_input', 'Password reset link')}
               value={quickAddResult.resetUrl}
               readOnly
               onClick={(e) => (e.target as HTMLInputElement).select()}
               rightSection={(
-                <Tooltip label="Click to select">
+                <Tooltip label={t('admin_qau_click_select', 'Click to select')}>
                   <IconAlertCircle size={16} />
                 </Tooltip>
               )}
@@ -87,27 +89,27 @@ function QuickAddUserSuccessState({ quickAddResult, onClose, onNotify }: QuickAd
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Open Reset Link
+                {t('admin_qau_open_reset', 'Open Reset Link')}
               </Button>
               <Button
                 size="xs"
                 variant="subtle"
                 onClick={() => {
                   navigator.clipboard.writeText(quickAddResult.resetUrl!);
-                  onNotify({ type: 'success', text: 'Reset URL copied to clipboard' });
+                  onNotify({ type: 'success', text: t('admin_qau_url_copied', 'Reset URL copied to clipboard') });
                 }}
               >
-                Copy Link
+                {t('admin_qau_copy_link', 'Copy Link')}
               </Button>
             </Group>
             <Text size="xs" c="dimmed" mt="xs">
-              Share this link securely with the user. They can use it to set their own password.
+              {t('admin_qau_share_note', 'Share this link securely with the user. They can use it to set their own password.')}
             </Text>
           </Box>
         )}
       </Alert>
       <Group {...getWpsgDebugProps('QuickAddUserModal', 'success-actions')} justify="flex-end" wrap="wrap" gap="sm">
-        <Button onClick={onClose}>Close</Button>
+        <Button onClick={onClose}>{t('admin_qau_close', 'Close')}</Button>
       </Group>
     </>
   );
@@ -148,42 +150,43 @@ function QuickAddUserFormState({
   onClose,
   quickAddSaving,
 }: QuickAddUserFormStateProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <>
       <TextInput
-        label="Email"
-        placeholder="user@example.com"
+        label={t('admin_qau_email', 'Email')}
+        placeholder={t('admin_qau_email_ph', 'user@example.com')}
         required
         value={quickAddEmail}
         onChange={(e) => setQuickAddEmail(e.currentTarget.value)}
-        description="User's WordPress login email address"
+        description={t('admin_qau_email_desc', "User's WordPress login email address")}
       />
 
       <TextInput
-        label="Display Name"
-        placeholder="John Doe"
+        label={t('admin_qau_name', 'Display Name')}
+        placeholder={t('admin_qau_name_ph', 'John Doe')}
         required
         value={quickAddName}
         onChange={(e) => setQuickAddName(e.currentTarget.value)}
-        description="Full name for display purposes"
+        description={t('admin_qau_name_desc', 'Full name for display purposes')}
       />
 
       <Select
-        label="Role"
+        label={t('admin_qau_role', 'Role')}
         data={[
-          { value: 'subscriber', label: '👁 Viewer - Can view granted campaigns' },
-          { value: 'wpsg_editor', label: '⚙️ Gallery Editor - Can manage this plugin' },
+          { value: 'subscriber', label: t('admin_qau_role_viewer', '👁 Viewer - Can view granted campaigns') },
+          { value: 'wpsg_editor', label: t('admin_qau_role_editor', '⚙️ Gallery Editor - Can manage this plugin') },
         ]}
         value={quickAddRole}
         onChange={(value) => setQuickAddRole(value ?? 'subscriber')}
-        description="WordPress role determines plugin permissions"
+        description={t('admin_qau_role_desc', 'WordPress role determines plugin permissions')}
       />
 
       <Select
-        label="Grant Access To (optional)"
-        placeholder="No initial access"
+        label={t('admin_qau_grant', 'Grant Access To (optional)')}
+        placeholder={t('admin_qau_no_access', 'No initial access')}
         data={[
-          { value: '', label: 'No initial access' },
+          { value: '', label: t('admin_qau_no_access', 'No initial access') },
           ...activeCampaigns.map((campaign) => ({
             value: campaign.id,
             label: campaign.companyId ? `${campaign.title} (${campaign.companyId})` : campaign.title,
@@ -195,21 +198,21 @@ function QuickAddUserFormState({
       />
 
       <Checkbox
-        label="🧪 Test mode: Simulate email failure"
+        label={t('admin_qau_test_mode', '🧪 Test mode: Simulate email failure')}
         checked={quickAddTestMode}
         onChange={(e) => setQuickAddTestMode(e.currentTarget.checked)}
-        description="Enable to test the password reset link UI without actually sending email"
+        description={t('admin_qau_test_mode_desc', 'Enable to test the password reset link UI without actually sending email')}
       />
 
       <Group {...getWpsgDebugProps('QuickAddUserModal', 'actions')} justify="flex-end" mt="md" wrap="wrap" gap="sm">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
+        <Button variant="default" onClick={onClose}>{t('admin_qau_cancel', 'Cancel')}</Button>
         <Button
           onClick={onSubmit}
           loading={quickAddSaving}
           disabled={!quickAddEmail || !quickAddName}
           leftSection={<IconUserPlus size={16} />}
         >
-          Create User
+          {t('admin_qau_create', 'Create User')}
         </Button>
       </Group>
     </>
@@ -237,6 +240,7 @@ export function QuickAddUserModal({
   quickAddSaving,
   onNotify,
 }: QuickAddUserModalProps) {
+  const { t } = useTranslation('wpsg');
   const activeCampaigns = campaigns.filter((c) => c.status === 'active');
 
   return (
@@ -244,7 +248,7 @@ export function QuickAddUserModal({
       {...getWpsgDebugProps('QuickAddUserModal')}
       opened={opened}
       onClose={onClose}
-      title={<span {...getWpsgDebugProps('QuickAddUserModal', 'title')}>Quick Add User</span>}
+      title={<span {...getWpsgDebugProps('QuickAddUserModal', 'title')}>{t('admin_qau_title', 'Quick Add User')}</span>}
       size="md"
       padding="md"
       closeButtonProps={getWpsgDebugProps('QuickAddUserModal', 'close')}
