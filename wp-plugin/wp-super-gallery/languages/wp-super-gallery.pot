@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T10:28:01+00:00\n"
+"POT-Creation-Date: 2026-07-02T10:37:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -68,11 +68,13 @@ msgstr ""
 
 #: includes/class-wpsg-cpt.php:75
 #: includes/i18n/class-wpsg-frontend-strings.php:36
+#: includes/i18n/class-wpsg-frontend-strings.php:342
 msgid "Edit Campaign"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:76
 #: includes/i18n/class-wpsg-frontend-strings.php:123
+#: includes/i18n/class-wpsg-frontend-strings.php:343
 msgid "New Campaign"
 msgstr ""
 
@@ -104,6 +106,7 @@ msgstr ""
 
 #: includes/class-wpsg-cpt.php:98
 #: includes/i18n/class-wpsg-frontend-strings.php:239
+#: includes/i18n/class-wpsg-frontend-strings.php:282
 msgid "Company"
 msgstr ""
 
@@ -239,6 +242,7 @@ msgid "Admin Panel"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:34
+#: includes/i18n/class-wpsg-frontend-strings.php:277
 #: includes/settings/class-wpsg-settings-renderer.php:46
 msgid "Settings"
 msgstr ""
@@ -400,10 +404,14 @@ msgid "No media"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:77
+#: includes/i18n/class-wpsg-frontend-strings.php:325
+#: includes/i18n/class-wpsg-frontend-strings.php:366
 msgid "Video"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:78
+#: includes/i18n/class-wpsg-frontend-strings.php:324
+#: includes/i18n/class-wpsg-frontend-strings.php:367
 msgid "Image"
 msgstr ""
 
@@ -615,6 +623,8 @@ msgid "{{name}} (default)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:134
+#: includes/i18n/class-wpsg-frontend-strings.php:276
+#: includes/i18n/class-wpsg-frontend-strings.php:358
 msgid "Media"
 msgstr ""
 
@@ -1003,14 +1013,17 @@ msgid "Select all campaigns"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:236
+#: includes/i18n/class-wpsg-frontend-strings.php:278
 msgid "Title"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:237
+#: includes/i18n/class-wpsg-frontend-strings.php:290
 msgid "Status"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:238
+#: includes/i18n/class-wpsg-frontend-strings.php:294
 msgid "Visibility"
 msgstr ""
 
@@ -1019,10 +1032,12 @@ msgid "Grants"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:241
+#: includes/i18n/class-wpsg-frontend-strings.php:297
 msgid "Tags"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:242
+#: includes/i18n/class-wpsg-frontend-strings.php:300
 msgid "Categories"
 msgstr ""
 
@@ -1103,6 +1118,7 @@ msgid "Nested overrides"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:262
+#: includes/i18n/class-wpsg-frontend-strings.php:330
 msgid "Custom gallery overrides"
 msgstr ""
 
@@ -1149,6 +1165,335 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:274
 msgid "Delete {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:275
+msgid "Details"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:279
+msgid "Campaign title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:280
+#: includes/settings/class-wpsg-settings-renderer.php:261
+msgid "Description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:281
+msgid "Campaign description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:283
+msgid "Campaign Thumbnail (Card Image)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:284
+msgid "Campaign thumbnail preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:285
+msgid "Use existing campaign media as thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:286
+msgid "Choose media image/thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:287
+msgid "{{type}} #{{id}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:288
+msgid "No campaign media available"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:289
+msgid "Upload Custom Thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:291
+msgid "Draft"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:292
+msgid "Active"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:293
+msgid "Archived"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:295
+msgid "Private"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:296
+msgid "Public"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:298
+msgid "Add tags…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:299
+msgid "Type a tag and press Enter or comma to add"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:301
+msgid "Select categories"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:302
+msgid "Assign this campaign to one or more categories"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:303
+msgid "Publish At"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:304
+msgid "Campaign becomes visible at this date/time"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:305
+msgid "Unpublish At"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:306
+msgid "Campaign is hidden after this date/time"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:307
+msgid "Card Border Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:308
+msgid "Custom accent border color for this campaign card"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:309
+msgid "Auto (company brand color)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:310
+msgid "Gallery Mode Override"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:311
+msgid "Override the global gallery mode for this campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:312
+msgid "Default (from settings)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:313
+msgid "Unified"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:314
+msgid "Per-Type"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:315
+msgid "Unified Breakpoint Adapters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:316
+msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:317
+msgid "Desktop"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:318
+msgid "Tablet"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:319
+msgid "Mobile"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:320
+msgid "{{bp}} Unified Gallery Adapter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:321
+msgid "Inherited"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:322
+msgid "Per-Type Breakpoint Adapters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:323
+msgid "Clear any cell to inherit that breakpoint's global adapter selection."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:326
+msgid "{{bp}} Image Gallery Adapter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:327
+msgid "{{bp}} Video Gallery Adapter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:328
+msgid "Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:329
+msgid "Edit Responsive Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:331
+msgid "Inheriting global gallery settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:332
+msgid "Clear the campaign-specific gallery override state here to fall back to the global gallery configuration."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:333
+msgid "Use Inherited Gallery Settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:334
+msgid "Layout Template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:335
+msgid "Layout Builder is your selected gallery adapter — choose the template it renders."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:336
+msgid "Assign a layout template to use the Layout Builder adapter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:337
+msgid "None (use default adapter)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:338
+msgid "{{name}} ({{count}} slots)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:339
+msgid "Edit Layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:340
+msgid "Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:341
+msgid "Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:344
+msgid "Save Changes"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:345
+msgid "Create Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:346
+msgid "Campaign modal tabs"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:347
+msgid "Discard changes?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:348
+msgid "You have unsaved changes. Are you sure you want to discard them?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:349
+msgid "Discard"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:350
+msgid "Campaign Responsive Gallery Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:351
+msgid "This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:352
+msgid "This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:353
+msgid "Apply Campaign Gallery Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:354
+msgid "Clear Campaign Overrides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:355
+msgid "Adapter applied when this campaign renders images and videos together."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:356
+msgid "No media attached to this campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:357
+msgid "Media item {{label}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:359
+msgid "Remove from campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:360
+msgid "Upload New File"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:361
+msgid "Uploading..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:362
+msgid "Choose up to {{count}} files"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:363
+msgid "Uploaded files use their filenames as captions in this modal."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:364
+msgid "Add External URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:365
+msgid "Type"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:368
+msgid "URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:369
+msgid "https://youtube.com/watch?v=... or image URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:370
+msgid "Caption (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:371
+msgid "Describe this media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:372
+msgid "Add External Media"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
@@ -1574,10 +1919,6 @@ msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:260
 msgid "Attribute"
-msgstr ""
-
-#: includes/settings/class-wpsg-settings-renderer.php:261
-msgid "Description"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:268
