@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T15:41:33+00:00\n"
+"POT-Creation-Date: 2026-07-02T16:00:27+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1284,6 +1284,7 @@ msgid "Custom accent border color for this campaign card"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:309
+#: includes/i18n/class-wpsg-frontend-strings.php:694
 msgid "Auto (company brand color)"
 msgstr ""
 
@@ -2344,6 +2345,7 @@ msgid "Scale"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:592
+#: includes/i18n/class-wpsg-frontend-strings.php:701
 msgid "None"
 msgstr ""
 
@@ -2703,6 +2705,555 @@ msgstr ""
 msgid "When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
 msgstr ""
 
+#: includes/i18n/class-wpsg-frontend-strings.php:684
+msgid "{{base}} — Override for {{bp}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:685
+msgid "{{base}} — Inherited from {{bp}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:686
+msgid "↻ Reset to inherited"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:687
+msgid "Card Appearance"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:688
+msgid "Border Radius"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:689
+msgid "Corner rounding for campaign cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:690
+msgid "Border Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:691
+msgid "Left accent border thickness"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:692
+msgid "Border Color Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:693
+msgid "How card accent border colors are determined"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:695
+msgid "Single color for all cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Per-card color (set in Edit Campaign)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Border Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Accent border color applied to all campaign cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Card Shadow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:700
+msgid "Depth effect for campaign cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:702
+msgid "Subtle"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:703
+msgid "Medium"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:704
+msgid "Dramatic"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:705
+msgid "Thumbnail Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:706
+msgid "Height of the card thumbnail area"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:707
+msgid "Thumbnail Fit"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:708
+msgid "How the thumbnail image fills the card"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:709
+msgid "Cover (fill)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:710
+msgid "Contain (fit)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:711
+msgid "Element Visibility"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:712
+msgid "Show company name badge"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:713
+msgid "Company badge overlay on card thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:714
+msgid "Show access badge"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:715
+msgid "Green 'Access' badge on accessible cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:716
+msgid "Show card title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:717
+msgid "Show the campaign title in the card info panel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:718
+msgid "Show card description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:719
+msgid "Show the campaign description in the card info panel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:720
+msgid "Show media counts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:721
+msgid "Video and image count below description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:722
+msgid "Show card border"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:723
+msgid "Accent border and hover border effect"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:724
+msgid "Show thumbnail fade"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:725
+msgid "Gradient overlay at bottom of thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:726
+msgid "Show card info panel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:727
+msgid "Show title, description, tags & media counts below thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:728
+msgid "Card Grid & Pagination"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:729
+msgid "Cards Per Row"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:730
+msgid "Number of columns in the card grid (Auto = responsive)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:731
+msgid "Auto (responsive)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:732
+msgid "2 columns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:733
+msgid "3 columns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:734
+msgid "4 columns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:735
+msgid "5 columns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:736
+msgid "6 columns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:737
+msgid "Max Columns (auto mode)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:738
+msgid "Cap the number of columns when using Auto layout. 0 = unlimited."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:739
+msgid "Horizontal Gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:740
+msgid "Horizontal spacing between campaign cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:741
+msgid "Vertical Gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:742
+msgid "Vertical spacing between campaign card rows"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:743
+msgid "Card Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:744
+msgid "Limit individual card width. 0 = no limit (fill column)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:745
+msgid "Card Scale"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:746
+msgid "Primary sizing multiplier for cards. 1 = default size."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:747
+msgid "Card Justification"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:748
+msgid "How cards distribute when a row does not fill the full available width."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:749
+msgid "Start"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:750
+msgid "Center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:751
+msgid "End"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:752
+msgid "Space Between"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:753
+msgid "Space Evenly"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:754
+msgid "Vertical Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:755
+msgid "How the card grid aligns vertically when minimum height exceeds content height."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:756
+msgid "Top"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:757
+msgid "Bottom"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:758
+msgid "Grid Minimum Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:759
+msgid "Minimum height for the card grid container."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:760
+msgid "Grid Maximum Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:761
+msgid "Maximum height for the card grid area. 0 = no limit."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:762
+msgid "Grid Horizontal Offset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:763
+msgid "Fine-tune horizontal position of the card grid."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:764
+msgid "Grid Vertical Offset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:765
+msgid "Fine-tune vertical position of the card grid."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:766
+msgid "Card Aspect Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:767
+msgid "Lock cards to a fixed aspect ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:768
+msgid "Auto (natural)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:769
+msgid "16:9 (widescreen)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:770
+msgid "4:3 (standard)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:771
+msgid "1:1 (square)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:772
+msgid "3:4 (portrait)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:773
+msgid "9:16 (tall portrait)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:774
+msgid "2:3 (photo portrait)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:775
+msgid "3:2 (photo landscape)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:776
+msgid "21:9 (ultrawide)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:777
+msgid "Card Min Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:778
+msgid "Minimum height for each card. 0 = no minimum."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:779
+msgid "Pagination"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:780
+#: includes/settings/class-wpsg-settings-renderer.php:200
+msgid "Display Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:781
+msgid "How cards are displayed: all at once, progressively loaded, or paginated with arrows"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:782
+msgid "Show All"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:783
+msgid "Load More (progressive)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:784
+msgid "Paginated (arrows)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:785
+msgid "Rows Per Page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:786
+msgid "Number of card rows visible per page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:787
+msgid "Dot Navigator"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:788
+msgid "Show dot navigator below the card grid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:789
+msgid "Page Transition Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:790
+msgid "Slide animation speed between pages"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:791
+msgid "Card Internals"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:792
+msgid "Locked Card Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:793
+msgid "Gradient Start Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:794
+msgid "Gradient End Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:795
+msgid "Lock Icon Size (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:796
+msgid "Size of the lock icon shown on inaccessible cards"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:797
+msgid "Access Icon Size (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:798
+msgid "Size of the icon inside the access badge"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:799
+msgid "Badge Offset Y (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:800
+msgid "Vertical offset from the top edge for access and company badges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:801
+msgid "Company Badge Max Width (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:802
+msgid "Maximum width of the company badge before truncation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:803
+msgid "Thumbnail Hover Transition (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:804
+msgid "Duration of the thumbnail hover zoom effect"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:805
+msgid "Page Transition Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:806
+msgid "Auto Columns Breakpoints"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:807
+msgid "Format: 480:1,768:2,1024:3,1280:4"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:808
+msgid "Campaign Listing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:809
+msgid "Choose the layout adapter used to render the public campaign listing. Adapter-specific knobs (gap, columns, target row height) are shared with per-campaign galleries in Phase 1."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:810
+msgid "Listing Layout (Desktop)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:811
+msgid "Layout adapter for the campaign listing on desktop."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:812
+msgid "Listing Layout (Tablet)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:813
+msgid "Optional override for tablet. Leave unset to inherit the desktop selection."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:814
+msgid "Inherit from desktop"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:815
+msgid "Listing Layout (Mobile)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:816
+msgid "Optional override for mobile. Leave unset to inherit the desktop selection."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:817
+msgid "Listing Layout Template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:818
+msgid "The template whose slots define the positioned containers for campaign cards."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:819
+msgid "No template selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:820
+msgid "0 = unlimited"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:821
+msgid "0 = no minimum"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:822
+msgid "0 = no maximum"
+msgstr ""
+
 #: includes/settings/class-wpsg-settings-core-fields.php:23
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr ""
@@ -3058,10 +3609,6 @@ msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:185
 msgid "Enable Animations"
-msgstr ""
-
-#: includes/settings/class-wpsg-settings-renderer.php:200
-msgid "Display Mode"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:208
