@@ -354,13 +354,21 @@ Executed **in area-batches**; each batch is self-contained and independently shi
 
 | Batch | Area | Files (approx) | Status |
 |-------|------|----------------|--------|
-| I-1 | Admin shell + navigation (`AdminPanel`, tabs, header actions, bulk bar) | ~4 | Planned |
-| I-2 | Campaign management (`CampaignsTab`, mobile list, campaign modals, `UnifiedCampaignModal`) | ~12 | Planned |
-| I-3 | Media (`MediaTab`, add/edit/delete modals, upload controller, cards) | ~12 | Planned |
-| I-4 | Settings (`SettingsPanel` + all tab sections, tooltips) | ~6 | Planned |
-| I-5 | Access / audit / analytics / assets / spaces / taxonomy / templates | ~20 | Planned |
+| I-1 | Admin shell + navigation (`AdminPanel`, tabs, header actions, bulk bar) | ~4 | ✅ Done |
+| I-2 | Campaign management (`CampaignsTab`, mobile list, campaign modals, `UnifiedCampaignModal`) | ~12 | ✅ Done |
+| I-3 | Media (`MediaTab`, add/edit/delete modals, upload controller, cards) | ~12 | ✅ Done |
+| I-4 | Settings (`SettingsPanel` + all tab sections, tooltips) — sub-batches a–j | ~14 | ✅ Done |
+| I-4k | Adapter setting-group **schema** labels — render-time resolver (`utils/adapterSchemaI18n.ts`), wired at both consumption sites (`GalleryAdapterSettingsSection`, `GalleryConfigEditorModal`) + adapter option labels in the registry | 5 | ✅ Done |
+| I-5 | Access / audit / analytics / assets / spaces / taxonomy / templates | ~20 | 🚧 Next |
 | I-6 | LayoutBuilder (toolbar, canvas, layers, all property panels, menus) | ~34 | Planned |
 | I-7 | Final lint flip (whole admin), full fr/es translation sweep, wp-env QA | — | Planned |
+
+### Progress log
+
+- **I-1 → I-3** — admin shell, full campaign-management surface (incl. `UnifiedCampaignModal`), and media manager harvested; bulk-count strings converted to i18next `base + _other` plurals to satisfy existing tests.
+- **I-4 (a–j)** — the entire **Settings component surface** internationalized: General, Webhook, Advanced, CampaignCard, CampaignViewer, MediaDisplay (style + navigation), GalleryLayoutDetail + Presentation, GalleryAdapter chrome + GalleryLayout wrapper, Cards + SystemAdmin tab wrappers, Typography. A scan of `src/components/Settings/**` (excl. tests) now reports **zero** hardcoded JSX/label literals. Module-level helper functions that can't call the `useTranslation` hook resolve through the `i18n` singleton (`i18n.t(key, default, { ns: 'wpsg' })`) with the parent component subscribed so locale switches cascade. Breakpoint labels reuse the existing `admin_bp_*` keys.
+- **I-4k (schema layer)** — adapter setting-group field labels/descriptions/placeholders/select-options and adapter option-labels come from the pure-data module `src/data/adapterSettingGroups.ts` (evaluated once at import, no locale reactivity). Rather than mutate the schema shape, translation happens at **render time** via `src/utils/adapterSchemaI18n.ts` using deterministic keys (`set_sg_<group>_<fieldKey>[_desc|_ph|_opt_<value>]`, `set_sg_group_<group>`, `set_sg_note_<group>`, `set_adp_<id>[_<context>]`). Keys were harvested by a throwaway vitest extractor (imported the real definitions through the vite resolver, dumped to JSON, then removed). Both consumption sites and the registry's option-label builders were wired; 78 adapter tests remain green.
+- **Catalogue growth this stretch:** `src/i18n-strings.en.json` **794 → 1,451 keys**; `.pot` **899 → 1,368 msgids**. English-first (per user direction: translate in the final sweep, I-7). All batches: eslint `--max-warnings 0`, `tsc`, and every touched test suite green (test execution delegated to Haiku).
 
 ### Acceptance criteria
 
