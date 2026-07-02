@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-01T21:10:43+00:00\n"
+"POT-Creation-Date: 2026-07-02T05:25:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -45,6 +45,7 @@ msgstr ""
 #: includes/class-wpsg-cpt.php:69
 #: includes/class-wpsg-cpt.php:72
 #: includes/class-wpsg-cpt.php:411
+#: includes/i18n/class-wpsg-frontend-strings.php:133
 msgid "Campaigns"
 msgstr ""
 
@@ -71,6 +72,7 @@ msgid "Edit Campaign"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:76
+#: includes/i18n/class-wpsg-frontend-strings.php:123
 msgid "New Campaign"
 msgstr ""
 
@@ -177,6 +179,7 @@ msgid "Space"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:456
+#: includes/i18n/class-wpsg-frontend-strings.php:131
 msgid "All spaces"
 msgstr ""
 
@@ -230,6 +233,7 @@ msgid "Signed in as {{email}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:33
+#: includes/i18n/class-wpsg-frontend-strings.php:120
 msgid "Admin Panel"
 msgstr ""
 
@@ -259,6 +263,7 @@ msgid "Manage media for {{title}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:42
+#: includes/i18n/class-wpsg-frontend-strings.php:176
 msgid "Archive"
 msgstr ""
 
@@ -493,6 +498,7 @@ msgid "Next campaigns"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:102
+#: includes/i18n/class-wpsg-frontend-strings.php:146
 msgid "All"
 msgstr ""
 
@@ -501,10 +507,12 @@ msgid "Default order"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:104
+#: includes/i18n/class-wpsg-frontend-strings.php:148
 msgid "Newest first"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:105
+#: includes/i18n/class-wpsg-frontend-strings.php:149
 msgid "Oldest first"
 msgstr ""
 
@@ -562,6 +570,210 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:119
 msgid "Layout gallery: {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:121
+msgid "Back to gallery"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:122
+msgid "Actions menu"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:124
+msgid "Create new campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:125
+msgid "Import"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:126
+msgid "Import campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:127
+msgid "Pick a space first"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:128
+msgid "Manage spaces"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:129
+msgid "Keyboard shortcuts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:130
+msgid "Keyboard shortcuts (?)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:132
+msgid "{{name}} (default)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:134
+msgid "Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:135
+msgid "Layouts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:136
+msgid "Templates"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:137
+msgid "Assets"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:138
+msgid "Access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:139
+msgid "Campaign Activity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:140
+msgid "System Audit"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:141
+msgid "Analytics"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:142
+msgid "Select admin panel tab"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:143
+msgid "Hide filters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:144
+msgid "Filters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:145
+msgid "Filters ({{count}})"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:147
+msgid "Tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:150
+msgid "Title A–Z"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:151
+msgid "Title Z–A"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:152
+msgid "Recently updated"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:153
+msgid "Include archived"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:154
+msgid "Manage categories & tags"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:155
+msgid "Manage taxonomy"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:156
+msgid "Export ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:157
+msgid "Export media library as ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:158
+msgid "Import ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:159
+msgid "Import media library from ZIP"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:160
+msgid "Rescan All"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:161
+msgid "Rescanned: {{media}} media items updated across {{campaigns}} campaigns."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:162
+msgid "All media types are correct."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:163
+msgid "Building audit log ZIP — this may take a moment."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:164
+msgid "Building media library ZIP — this may take a moment."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:165
+msgid "Export timed out after 5 minutes."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:166
+msgid "Export failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:167
+msgid "Audit ZIP export failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:168
+msgid "Media ZIP export failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:169
+msgid "Media ZIP import failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:170
+msgid "Imported {{count}} media item(s)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:171
+msgid "Imported {{count}} media item(s) ({{skipped}} skipped)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:172
+msgid "Add media — {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:173
+msgid "Clear selection"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:174
+msgid "{{count}} campaign selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:175
+msgid "{{count}} campaigns selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:177
+msgid "Restore"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:178
+msgid "Delete"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
