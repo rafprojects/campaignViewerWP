@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T10:19:09+00:00\n"
+"POT-Creation-Date: 2026-07-02T10:28:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -103,6 +103,7 @@ msgid "Companies"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:98
+#: includes/i18n/class-wpsg-frontend-strings.php:239
 msgid "Company"
 msgstr ""
 
@@ -983,6 +984,171 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:231
 msgid "Move"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:232
+msgid "Add Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:233
+msgid "Campaign list"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:234
+msgid "Select all"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:235
+msgid "Select all campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:236
+msgid "Title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:237
+msgid "Status"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:238
+msgid "Visibility"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:240
+msgid "Grants"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:241
+msgid "Tags"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:242
+msgid "Categories"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:243
+msgid "Actions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:244
+msgid "{{count}} campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:245
+msgid "Import Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:246
+msgid "Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:247
+msgid "Change file"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:248
+msgid "Select .json or .zip file"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:249
+msgid "Ready to import:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:250
+msgid " ({{count}} media reference)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:251
+msgid " ({{count}} media references)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:252
+msgid "Invalid export file: missing version or campaign key."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:253
+msgid "Unsupported export version: {{version}}. Expected 1."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:254
+msgid "Could not parse JSON. Make sure the file is a valid campaign export."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:255
+msgid "Untitled"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:256
+msgid "Scheduled"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:257
+msgid "Expired"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:258
+msgid "Expiring soon"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:259
+msgid "Select {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:260
+msgid "Custom gallery: {{summary}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:261
+msgid "Nested overrides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:262
+msgid "Custom gallery overrides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:263
+msgid "{{count}} grant"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:264
+#: includes/i18n/class-wpsg-frontend-strings.php:265
+msgid "{{count}} grants"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:266
+msgid "Edit"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:267
+msgid "Clone"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:268
+msgid "Duplicate {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:269
+msgid "Export {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:270
+msgid "Export"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:271
+msgid "Export as ZIP (includes media)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:272
+msgid "Export as JSON (data only)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:273
+msgid "Permanently delete"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:274
+msgid "Delete {{title}}"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

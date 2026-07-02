@@ -1,6 +1,7 @@
 import { Button, Group, Pagination, Skeleton, Table, Text, Checkbox } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 /** P13-C: Skeleton rows displayed while campaign list loads. */
@@ -70,6 +71,7 @@ export function CampaignsTab({
   onPageChange,
   onAddCampaign,
 }: CampaignsTabProps) {
+  const { t } = useTranslation('wpsg');
   if (error) {
     return <Text c="red" role="alert" aria-live="assertive">{error}</Text>;
   }
@@ -82,30 +84,30 @@ export function CampaignsTab({
       {onAddCampaign && (
         <Group justify="flex-end" mb="xs">
           <Button size="sm" leftSection={<IconPlus size={14} />} onClick={onAddCampaign}>
-            Add Campaign
+            {t('admin_add_campaign', 'Add Campaign')}
           </Button>
         </Group>
       )}
       <Table.ScrollContainer minWidth={720}>
-        <Table verticalSpacing="sm" highlightOnHover aria-label="Campaign list">
+        <Table verticalSpacing="sm" highlightOnHover aria-label={t('admin_campaign_list_aria', 'Campaign list')}>
           <Table.Thead>
             <Table.Tr>
-              <Table.Th w={36} aria-label="Select all">
+              <Table.Th w={36} aria-label={t('admin_select_all', 'Select all')}>
                 <Checkbox
                   checked={allSelected}
                   indeterminate={someSelected}
                   onChange={allSelected ? onDeselectAll : onSelectAll}
-                  aria-label="Select all campaigns"
+                  aria-label={t('admin_select_all_campaigns', 'Select all campaigns')}
                 />
               </Table.Th>
-              <Table.Th>Title</Table.Th>
-              <Table.Th>Status</Table.Th>
-              <Table.Th>Visibility</Table.Th>
-              <Table.Th>Company</Table.Th>
-              <Table.Th>Grants</Table.Th>
-              <Table.Th>Tags</Table.Th>
-              <Table.Th>Categories</Table.Th>
-              <Table.Th>Actions</Table.Th>
+              <Table.Th>{t('admin_col_title', 'Title')}</Table.Th>
+              <Table.Th>{t('admin_col_status', 'Status')}</Table.Th>
+              <Table.Th>{t('admin_col_visibility', 'Visibility')}</Table.Th>
+              <Table.Th>{t('admin_col_company', 'Company')}</Table.Th>
+              <Table.Th>{t('admin_col_grants', 'Grants')}</Table.Th>
+              <Table.Th>{t('admin_col_tags', 'Tags')}</Table.Th>
+              <Table.Th>{t('admin_col_categories', 'Categories')}</Table.Th>
+              <Table.Th>{t('admin_col_actions', 'Actions')}</Table.Th>
             </Table.Tr>
           </Table.Thead>
           <Table.Tbody>
@@ -116,7 +118,7 @@ export function CampaignsTab({
 
       {totalPages > 1 && (
         <Group justify="space-between" mt="md">
-          <Text size="sm" c="dimmed">{total} campaigns</Text>
+          <Text size="sm" c="dimmed">{t('admin_campaign_count', '{{count}} campaigns', { count: total })}</Text>
           <Pagination value={page} onChange={onPageChange} total={totalPages} size="sm" />
         </Group>
       )}
