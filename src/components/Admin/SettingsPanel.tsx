@@ -52,6 +52,7 @@ import { SettingsViewerTab } from '../Settings/tabs/SettingsViewerTab';
 import { SettingsTypographyTab } from '../Settings/tabs/SettingsTypographyTab';
 import { SettingsIntegrationsTab } from '../Settings/tabs/SettingsIntegrationsTab';
 import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -339,6 +340,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
+  const { t } = useTranslation('wpsg');
   const color = instanceId ? spaceColor(instanceId) : undefined;
   // P57-B: Read the exact badge/accent colors from the shadow host element.
   // The Drawer portals to document.body, where `:host`-scoped Mantine CSS
@@ -604,7 +606,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">
             <IconSettings size={22} />
-            <Title order={3}>Settings</Title>
+            <Title order={3}>{t('set_panel_title', 'Settings')}</Title>
             {spaceId != null && (
               <Badge
                 size="sm"
@@ -612,17 +614,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 variant="light"
                 {...(badgeBg ? { style: { backgroundColor: badgeBg, color: badgeText } } : {})}
               >
-                {spaceName ?? `Space ${spaceId}`}
+                {spaceName ?? t('set_space_fallback', 'Space {{id}}', { id: spaceId })}
               </Badge>
             )}
           </Group>
           <Group gap="xs" wrap="nowrap">
-            <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>
+            <Button variant="default" size="sm" onClick={handleClose}>{t('admin_cancel', 'Cancel')}</Button>
             {hasChanges && (
-              <Button variant="subtle" size="sm" onClick={handleReset} disabled={isSaving}>Reset</Button>
+              <Button variant="subtle" size="sm" onClick={handleReset} disabled={isSaving}>{t('set_reset', 'Reset')}</Button>
             )}
             <Button size="sm" onClick={() => { void handleSave(); }} loading={isSaving} disabled={!hasChanges}>
-              Save Changes
+              {t('admin_camp_save', 'Save Changes')}
             </Button>
           </Group>
         </Group>
@@ -676,7 +678,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               <LazyGalleryConfigEditorModal
                 opened={galleryConfigEditorOpen}
                 onClose={() => setGalleryConfigEditorOpen(false)}
-                title="Responsive Gallery Config"
+                title={t('set_responsive_config', 'Responsive Gallery Config')}
                 value={buildGalleryConfigEditorSeed(settings)}
                 onSave={(galleryConfig) => {
                   if (!galleryConfig) {
