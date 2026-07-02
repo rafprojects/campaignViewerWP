@@ -1186,6 +1186,16 @@ class WPSG_Frontend_Strings {
             'set_gl_adapters_title' => __('Gallery Adapters', 'wp-super-gallery'),
             'set_gl_adapters_desc' => __('Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes.', 'wp-super-gallery'),
             'set_gl_edit_responsive' => __('Edit Responsive Config', 'wp-super-gallery'),
+            'set_cards_tab_intro' => __('Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.', 'wp-super-gallery'),
+            'set_cards_tab_bp_aria' => __('Card settings breakpoint', 'wp-super-gallery'),
+            'set_sys_magic_none' => __('— None (use inline HTML fallback) —', 'wp-super-gallery'),
+            'set_sys_page_fallback' => __('Page #{{id}}', 'wp-super-gallery'),
+            'set_sys_magic_title' => __('Access Request Magic-Link', 'wp-super-gallery'),
+            'set_sys_magic_desc_pre' => __('When an admin clicks a one-click approval link, the result is shown on this page (via ', 'wp-super-gallery'),
+            'set_sys_magic_desc_post' => __('). If no page is selected, a minimal inline HTML page is returned instead.', 'wp-super-gallery'),
+            'set_sys_magic_label' => __('Magic-link landing page', 'wp-super-gallery'),
+            'set_sys_loading_pages' => __('Loading pages…', 'wp-super-gallery'),
+            'set_sys_select_page' => __('Select a page', 'wp-super-gallery'),
         ];
     }
 }

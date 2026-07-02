@@ -1,5 +1,6 @@
 import { memo, type ReactNode } from 'react';
 import { Paper, Select, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import type { ApiClient } from '@/services/apiClient';
 import type { SettingsData } from '@/contexts/SettingsStore';
@@ -16,6 +17,7 @@ function MagicLinkPageSelector({
   value: number;
   onChange: (id: number) => void;
 }) {
+  const { t } = useTranslation('wpsg');
   const { data: pages, isLoading } = useQuery({
     queryKey: ['wpPages', apiClient.getBaseUrl()],
     queryFn: () => apiClient.listWpPages(),
@@ -23,25 +25,25 @@ function MagicLinkPageSelector({
   });
 
   const selectData = [
-    { value: '0', label: '— None (use inline HTML fallback) —' },
+    { value: '0', label: t('set_sys_magic_none', '— None (use inline HTML fallback) —') },
     ...(pages ?? []).map((p) => ({
       value: String(p.id),
-      label: p.title.rendered || `Page #${p.id}`,
+      label: p.title.rendered || t('set_sys_page_fallback', 'Page #{{id}}', { id: p.id }),
     })),
   ];
 
   return (
     <Paper withBorder p="md" radius="md">
       <Stack gap="xs">
-        <Text size="sm" fw={600}>Access Request Magic-Link</Text>
+        <Text size="sm" fw={600}>{t('set_sys_magic_title', 'Access Request Magic-Link')}</Text>
         <Text size="xs" c="dimmed">
-          When an admin clicks a one-click approval link, the result is shown on this page
-          (via <code>?wpsg_result=approved|expired|used|invalid</code>). If no page is selected,
-          a minimal inline HTML page is returned instead.
+          {t('set_sys_magic_desc_pre', 'When an admin clicks a one-click approval link, the result is shown on this page (via ')}
+          <code>?wpsg_result=approved|expired|used|invalid</code>
+          {t('set_sys_magic_desc_post', '). If no page is selected, a minimal inline HTML page is returned instead.')}
         </Text>
         <Select
-          label="Magic-link landing page"
-          placeholder={isLoading ? 'Loading pages…' : 'Select a page'}
+          label={t('set_sys_magic_label', 'Magic-link landing page')}
+          placeholder={isLoading ? t('set_sys_loading_pages', 'Loading pages…') : t('set_sys_select_page', 'Select a page')}
           data={selectData}
           value={String(value)}
           onChange={(v) => onChange(v ? parseInt(v, 10) : 0)}

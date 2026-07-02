@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T21:30:17+00:00\n"
+"POT-Creation-Date: 2026-07-02T21:33:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -4578,6 +4578,46 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1187
 msgid "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1189
+msgid "Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1190
+msgid "Card settings breakpoint"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1191
+msgid "— None (use inline HTML fallback) —"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1192
+msgid "Page #{{id}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1193
+msgid "Access Request Magic-Link"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1194
+msgid "When an admin clicks a one-click approval link, the result is shown on this page (via "
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1195
+msgid "). If no page is selected, a minimal inline HTML page is returned instead."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1196
+msgid "Magic-link landing page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1197
+msgid "Loading pages…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1198
+msgid "Select a page"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

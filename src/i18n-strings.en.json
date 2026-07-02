@@ -1158,5 +1158,15 @@
   "set_ad_reset_all_btn": "Reset all adapter settings to defaults",
   "set_gl_adapters_title": "Gallery Adapters",
   "set_gl_adapters_desc": "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes.",
-  "set_gl_edit_responsive": "Edit Responsive Config"
+  "set_gl_edit_responsive": "Edit Responsive Config",
+  "set_cards_tab_intro": "Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.",
+  "set_cards_tab_bp_aria": "Card settings breakpoint",
+  "set_sys_magic_none": "— None (use inline HTML fallback) —",
+  "set_sys_page_fallback": "Page #{{id}}",
+  "set_sys_magic_title": "Access Request Magic-Link",
+  "set_sys_magic_desc_pre": "When an admin clicks a one-click approval link, the result is shown on this page (via ",
+  "set_sys_magic_desc_post": "). If no page is selected, a minimal inline HTML page is returned instead.",
+  "set_sys_magic_label": "Magic-link landing page",
+  "set_sys_loading_pages": "Loading pages…",
+  "set_sys_select_page": "Select a page"
 }
