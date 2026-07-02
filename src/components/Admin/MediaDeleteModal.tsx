@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import type { MediaItem } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -18,11 +19,11 @@ export function MediaDeleteModal({
   onConfirm,
   usageCount = 0,
 }: MediaDeleteModalProps) {
-  const baseMessage =
-    'Remove this item from the campaign? The file stays in your media library and can be added to other campaigns.';
+  const { t } = useTranslation('wpsg');
+  const baseMessage = t('admin_media_del_msg', 'Remove this item from the campaign? The file stays in your media library and can be added to other campaigns.');
   const usageWarning =
     usageCount > 0
-      ? ` It is currently used in ${usageCount} other campaign${usageCount === 1 ? '' : 's'} — those associations are not affected.`
+      ? t('admin_media_del_usage', ' It is currently used in {{count}} other campaign — those associations are not affected.', { count: usageCount })
       : '';
 
   return (
@@ -30,11 +31,11 @@ export function MediaDeleteModal({
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Remove from Campaign"
+      title={t('admin_media_del_title', 'Remove from Campaign')}
       message={baseMessage + usageWarning}
-      confirmLabel="Remove"
+      confirmLabel={t('admin_media_remove', 'Remove')}
       confirmColor="red"
-      confirmAriaLabel={`Remove media ${deleteItem?.caption || deleteItem?.url || ''}`.trim()}
+      confirmAriaLabel={t('admin_media_remove_aria', 'Remove media {{label}}', { label: deleteItem?.caption || deleteItem?.url || '' }).trim()}
     />
   );
 }

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T10:37:08+00:00\n"
+"POT-Creation-Date: 2026-07-02T10:47:26+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -348,6 +348,7 @@ msgid "Media lightbox"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:63
+#: includes/i18n/class-wpsg-frontend-strings.php:433
 msgid "Close lightbox"
 msgstr ""
 
@@ -406,12 +407,14 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:77
 #: includes/i18n/class-wpsg-frontend-strings.php:325
 #: includes/i18n/class-wpsg-frontend-strings.php:366
+#: includes/i18n/class-wpsg-frontend-strings.php:412
 msgid "Video"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:78
 #: includes/i18n/class-wpsg-frontend-strings.php:324
 #: includes/i18n/class-wpsg-frontend-strings.php:367
+#: includes/i18n/class-wpsg-frontend-strings.php:413
 msgid "Image"
 msgstr ""
 
@@ -625,6 +628,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:134
 #: includes/i18n/class-wpsg-frontend-strings.php:276
 #: includes/i18n/class-wpsg-frontend-strings.php:358
+#: includes/i18n/class-wpsg-frontend-strings.php:374
 msgid "Media"
 msgstr ""
 
@@ -677,6 +681,7 @@ msgid "Tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:150
+#: includes/i18n/class-wpsg-frontend-strings.php:385
 msgid "Title A–Z"
 msgstr ""
 
@@ -1014,6 +1019,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:236
 #: includes/i18n/class-wpsg-frontend-strings.php:278
+#: includes/i18n/class-wpsg-frontend-strings.php:422
 msgid "Title"
 msgstr ""
 
@@ -1046,6 +1052,7 @@ msgid "Actions"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:244
+#: includes/i18n/class-wpsg-frontend-strings.php:410
 msgid "{{count}} campaigns"
 msgstr ""
 
@@ -1132,6 +1139,7 @@ msgid "{{count}} grants"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:266
+#: includes/i18n/class-wpsg-frontend-strings.php:419
 msgid "Edit"
 msgstr ""
 
@@ -1473,6 +1481,7 @@ msgid "Add External URL"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:365
+#: includes/i18n/class-wpsg-frontend-strings.php:394
 msgid "Type"
 msgstr ""
 
@@ -1494,6 +1503,219 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:372
 msgid "Add External Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:373
+msgid "Save"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:375
+msgid "items"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:376
+msgid "Add Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:377
+msgid "Rescan Types"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:378
+msgid "Media view mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:379
+msgid "Media card size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:380
+msgid "Media sort mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:381
+msgid "Grid View"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:382
+msgid "Compact Grid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:383
+msgid "List View"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:384
+msgid "Order"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:386
+msgid "Date uploaded"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:387
+msgid "File size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:388
+msgid "Usage count"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:389
+msgid "Exclusive only"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:390
+msgid "Show only items exclusive to this campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:391
+msgid "Show only media exclusive to this campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:392
+msgid "Thumb"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:393
+#: includes/i18n/class-wpsg-frontend-strings.php:425
+msgid "Caption"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:395
+msgid "Source"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:396
+msgid "Usage"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:397
+msgid "Media list pages"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:398
+msgid "media item"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:399
+msgid "Remove from Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:400
+msgid "Remove this item from the campaign? The file stays in your media library and can be added to other campaigns."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:401
+msgid " It is currently used in {{count}} other campaign — those associations are not affected."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:402
+msgid " It is currently used in {{count}} other campaigns — those associations are not affected."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:403
+msgid "Remove"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:404
+msgid "Remove media {{label}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:405
+msgid "Not used in any campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:406
+msgid "Used in campaigns:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:407
+msgid "Failed to load usage detail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:408
+msgid "Unused"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:409
+msgid "{{count}} campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:411
+msgid "Media used in {{label}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:414
+msgid "External"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:415
+msgid "Upload"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:416
+msgid "Open image preview for {{label}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:417
+msgid "Media thumbnail"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:418
+msgid "Drag media to reorder"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:420
+msgid "Delete media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:421
+msgid "Edit Media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:423
+msgid "Enter a title (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:424
+msgid "Optional display title for this media item"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:426
+msgid "Enter a caption or description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:427
+msgid "Descriptive text shown with the media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:428
+msgid "Thumbnail URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:429
+msgid "https://..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:430
+msgid "Custom preview image URL (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:431
+msgid "Media lightbox: {{caption}} ({{index}} of {{total}})"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:432
+msgid "Media preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:434
+msgid "Previous image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:435
+msgid "Next image"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
