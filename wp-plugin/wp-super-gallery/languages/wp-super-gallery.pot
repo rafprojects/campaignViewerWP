@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T16:00:27+00:00\n"
+"POT-Creation-Date: 2026-07-02T16:33:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1948,6 +1948,7 @@ msgid "Maximum width of the gallery container. Set to 0 for full-width (edge-to-
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:492
+#: includes/i18n/class-wpsg-frontend-strings.php:832
 msgid "0 = full width"
 msgstr ""
 
@@ -2056,18 +2057,22 @@ msgid "Gallery container background style"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:519
+#: includes/i18n/class-wpsg-frontend-strings.php:889
 msgid "Default Theme"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:520
+#: includes/i18n/class-wpsg-frontend-strings.php:890
 msgid "Transparent"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:521
+#: includes/i18n/class-wpsg-frontend-strings.php:891
 msgid "Solid color"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:522
+#: includes/i18n/class-wpsg-frontend-strings.php:892
 msgid "Custom gradient"
 msgstr ""
 
@@ -2337,6 +2342,7 @@ msgid "Slide"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:590
+#: includes/i18n/class-wpsg-frontend-strings.php:845
 msgid "Fade"
 msgstr ""
 
@@ -2962,6 +2968,7 @@ msgid "Start"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:750
+#: includes/i18n/class-wpsg-frontend-strings.php:882
 msgid "Center"
 msgstr ""
 
@@ -3252,6 +3259,302 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:822
 msgid "0 = no maximum"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:823
+msgid "Open Mode & Sizing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:824
+msgid "Fullscreen Campaign Modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:825
+msgid "Open campaign viewer in fullscreen mode instead of the default modal."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:826
+msgid "Campaign Open Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:827
+msgid "What to show when a campaign is opened."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:828
+msgid "Full (cover, about, galleries, stats)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:829
+msgid "Galleries only (skip header/about/stats)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:830
+msgid "Fullscreen Content Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:831
+msgid "Limit content width in fullscreen mode. 0 = full responsive width."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:833
+msgid "Modal Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:834
+msgid "Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:835
+msgid "Content Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:836
+msgid "Maximum width of the content area inside the modal. 0 = full width."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:837
+msgid "Modal Inner Padding"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:838
+msgid "Padding inside the modal content area (clamped 0-48)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:839
+msgid "Modal Appearance"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:840
+msgid "Cover Image Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:841
+msgid "Height of the cover image in the campaign modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:842
+msgid "Modal Transition"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:843
+msgid "Animation style when opening the campaign modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:844
+msgid "Pop (scale up)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:846
+msgid "Slide Up"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:847
+msgid "Modal Transition Duration (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:848
+msgid "Length of the modal open/close animation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:849
+msgid "Modal Max Height (vh%)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:850
+msgid "Maximum height of the campaign modal as a percentage of viewport (clamped 50-95)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:851
+msgid "Content Visibility"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:852
+msgid "Show Company Name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:853
+msgid "Show the company badge on the campaign cover image."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:854
+msgid "Show Date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:855
+msgid "Show the creation date under the campaign title."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:856
+msgid "Show About Section"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:857
+msgid "Show the \"About this Campaign\" heading and description."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:858
+msgid "About Section Heading"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:859
+msgid "Heading for the campaign description section (default \"About\")."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:860
+msgid "Show Description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:861
+msgid "Show the campaign description text within the About section."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:862
+msgid "Show Campaign Stats"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:863
+msgid "Show the statistics block (video count, image count, tags, visibility)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:864
+msgid "Stats Admin-Only"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:865
+msgid "When enabled, only admins can see the statistics block."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:866
+msgid "Show Cover Image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:867
+msgid "Show the campaign cover image at the top of the viewer."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:868
+msgid "Show Tags"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:869
+msgid "Show tags section in the campaign viewer."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:870
+msgid "Show Admin Actions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:871
+msgid "Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:872
+msgid "Show Gallery Labels"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:873
+msgid "Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:874
+msgid "Gallery Labels"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:875
+msgid "Image Gallery Label"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:876
+msgid "Custom label for image gallery sections. Count is appended automatically."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:877
+msgid "Video Gallery Label"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:878
+msgid "Custom label for video gallery sections. Count is appended automatically."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:879
+msgid "Label Justification"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:880
+msgid "Horizontal alignment for gallery section labels"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:881
+msgid "Left"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:883
+msgid "Right"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:884
+msgid "Show Gallery Label Icon"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:885
+msgid "Display an icon prefix before each gallery section label"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:886
+msgid "Modal Background"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:887
+msgid "Modal Background Type"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:888
+msgid "Background style for the fullscreen campaign modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:893
+msgid "Modal Background Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:894
+msgid "Solid background color for the fullscreen modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:895
+msgid "Cover Image & Responsive"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:896
+msgid "Cover Mobile Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:897
+msgid "Cover Tablet Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:898
+msgid "Close Button Size (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:899
+msgid "Close Button Background"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:900
+msgid "CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:901
+msgid "Mobile Breakpoint (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:902
+msgid "Viewport width below which the campaign viewer switches to mobile layout."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:903
+msgid "Description Line Height"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

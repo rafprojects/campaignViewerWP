@@ -1,4 +1,5 @@
 import { Accordion, Box, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 
 import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
@@ -21,6 +22,7 @@ interface CampaignViewerSettingsSectionProps {
 }
 
 export function CampaignViewerSettingsSection({ settings, updateSetting }: CampaignViewerSettingsSectionProps) {
+  const { t } = useTranslation('wpsg');
   const { mounted, value, onChange } = usePersistentAccordion('campaign-viewer', 'cv-open-mode');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'showCampaignGalleryLabels') as boolean | undefined;
@@ -46,29 +48,29 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
   return (
     <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="cv-open-mode">
-        <Accordion.Control>Open Mode &amp; Sizing</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_openmode_title', 'Open Mode & Sizing')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-open-mode') ? (
             <Stack gap="md">
               <Switch
-                label="Fullscreen Campaign Modal"
-                description="Open campaign viewer in fullscreen mode instead of the default modal."
+                label={t('set_viewer_fullscreen_label', 'Fullscreen Campaign Modal')}
+                description={t('set_viewer_fullscreen_desc', 'Open campaign viewer in fullscreen mode instead of the default modal.')}
                 checked={settings.campaignModalFullscreen ?? false}
                 onChange={(event) => updateSetting('campaignModalFullscreen', event.currentTarget.checked)}
               />
               <ModalSelect
-                label="Campaign Open Mode"
-                description="What to show when a campaign is opened."
+                label={t('set_viewer_openmode_label', 'Campaign Open Mode')}
+                description={t('set_viewer_openmode_desc', 'What to show when a campaign is opened.')}
                 data={[
-                  { value: 'full', label: 'Full (cover, about, galleries, stats)' },
-                  { value: 'galleries-only', label: 'Galleries only (skip header/about/stats)' },
+                  { value: 'full', label: t('set_viewer_openmode_full', 'Full (cover, about, galleries, stats)') },
+                  { value: 'galleries-only', label: t('set_viewer_openmode_galleries', 'Galleries only (skip header/about/stats)') },
                 ]}
                 value={settings.campaignOpenMode ?? 'full'}
                 onChange={(value) => updateSetting('campaignOpenMode', (value ?? 'full') as GalleryBehaviorSettings['campaignOpenMode'])}
               />
               <DimensionInput
-                label="Fullscreen Content Max Width"
-                description="Limit content width in fullscreen mode. 0 = full responsive width."
+                label={t('set_viewer_fs_maxwidth_label', 'Fullscreen Content Max Width')}
+                description={t('set_viewer_fs_maxwidth_desc', 'Limit content width in fullscreen mode. 0 = full responsive width.')}
                 value={settings.fullscreenContentMaxWidth ?? 0}
                 unit={settings.fullscreenContentMaxWidthUnit ?? 'px'}
                 onValueChange={(value) => updateSetting('fullscreenContentMaxWidth', value)}
@@ -76,14 +78,14 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 allowedUnits={CSS_WIDTH_UNITS}
                 max={3000}
                 step={50}
-                placeholder="0 = full width"
+                placeholder={t('set_viewer_fs_maxwidth_ph', '0 = full width')}
                 numberInputProps={{ disabled: !settings.campaignModalFullscreen, style: !settings.campaignModalFullscreen ? { opacity: 0.4 } : undefined }}
               />
               <Box style={settings.campaignModalFullscreen ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
                 <Stack gap="md">
                   <DimensionInput
-                    label="Modal Max Width"
-                    description="Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
+                    label={t('set_viewer_modal_maxwidth_label', 'Modal Max Width')}
+                    description={t('set_viewer_modal_maxwidth_desc', 'Maximum width of the campaign modal when not fullscreen (clamped 600-1600).')}
                     value={settings.modalMaxWidth ?? 1200}
                     unit={settings.modalMaxWidthUnit ?? 'px'}
                     onValueChange={(value) => updateSetting('modalMaxWidth', value)}
@@ -97,8 +99,8 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 </Stack>
               </Box>
               <DimensionInput
-                label="Content Max Width"
-                description="Maximum width of the content area inside the modal. 0 = full width."
+                label={t('set_viewer_content_maxwidth_label', 'Content Max Width')}
+                description={t('set_viewer_content_maxwidth_desc', 'Maximum width of the content area inside the modal. 0 = full width.')}
                 value={settings.modalContentMaxWidth ?? 900}
                 unit={settings.modalContentMaxWidthUnit ?? 'px'}
                 onValueChange={(value) => updateSetting('modalContentMaxWidth', value)}
@@ -109,8 +111,8 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 placeholder="900"
               />
               <DimensionInput
-                label="Modal Inner Padding"
-                description="Padding inside the modal content area (clamped 0-48)."
+                label={t('set_viewer_inner_padding_label', 'Modal Inner Padding')}
+                description={t('set_viewer_inner_padding_desc', 'Padding inside the modal content area (clamped 0-48).')}
                 value={settings.modalInnerPadding ?? 16}
                 unit={settings.modalInnerPaddingUnit ?? 'px'}
                 onValueChange={(value) => updateSetting('modalInnerPadding', value)}
@@ -125,13 +127,13 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
       </Accordion.Item>
 
       <Accordion.Item value="cv-appearance">
-        <Accordion.Control>Modal Appearance</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_appearance_title', 'Modal Appearance')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-appearance') ? (
             <Stack gap="md">
               <DimensionInput
-                label="Cover Image Height"
-                description="Height of the cover image in the campaign modal"
+                label={t('set_viewer_cover_height_label', 'Cover Image Height')}
+                description={t('set_viewer_cover_height_desc', 'Height of the cover image in the campaign modal')}
                 value={settings.modalCoverHeight}
                 unit={settings.modalCoverHeightUnit ?? 'px'}
                 onValueChange={(value) => updateSetting('modalCoverHeight', value)}
@@ -141,19 +143,19 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 step={10}
               />
               <ModalSelect
-                label="Modal Transition"
-                description="Animation style when opening the campaign modal"
+                label={t('set_viewer_transition_label', 'Modal Transition')}
+                description={t('set_viewer_transition_desc', 'Animation style when opening the campaign modal')}
                 data={[
-                  { value: 'pop', label: 'Pop (scale up)' },
-                  { value: 'fade', label: 'Fade' },
-                  { value: 'slide-up', label: 'Slide Up' },
+                  { value: 'pop', label: t('set_viewer_transition_pop', 'Pop (scale up)') },
+                  { value: 'fade', label: t('set_viewer_transition_fade', 'Fade') },
+                  { value: 'slide-up', label: t('set_viewer_transition_slideup', 'Slide Up') },
                 ]}
                 value={settings.modalTransition}
                 onChange={(value) => updateSetting('modalTransition', value ?? 'pop')}
               />
               <NumberInput
-                label="Modal Transition Duration (ms)"
-                description="Length of the modal open/close animation"
+                label={t('set_viewer_transition_dur_label', 'Modal Transition Duration (ms)')}
+                description={t('set_viewer_transition_dur_desc', 'Length of the modal open/close animation')}
                 value={settings.modalTransitionDuration}
                 onChange={(value) => updateSetting('modalTransitionDuration', typeof value === 'number' ? value : 300)}
                 min={100}
@@ -161,8 +163,8 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 step={50}
               />
               <NumberInput
-                label="Modal Max Height (vh%)"
-                description="Maximum height of the campaign modal as a percentage of viewport (clamped 50-95)."
+                label={t('set_viewer_maxheight_label', 'Modal Max Height (vh%)')}
+                description={t('set_viewer_maxheight_desc', 'Maximum height of the campaign modal as a percentage of viewport (clamped 50-95).')}
                 value={settings.modalMaxHeight}
                 onChange={(value) => updateSetting('modalMaxHeight', typeof value === 'number' ? value : 90)}
                 min={50}
@@ -177,71 +179,71 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
       </Accordion.Item>
 
       <Accordion.Item value="cv-visibility">
-        <Accordion.Control>Content Visibility</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_visibility_title', 'Content Visibility')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-visibility') ? (
             <Stack gap="md">
               <Box style={settings.campaignOpenMode === 'galleries-only' ? { opacity: 0.4, pointerEvents: 'none' as const } : undefined}>
                 <Stack gap="md">
                   <Switch
-                    label="Show Company Name"
-                    description="Show the company badge on the campaign cover image."
+                    label={t('set_viewer_show_company_label', 'Show Company Name')}
+                    description={t('set_viewer_show_company_desc', 'Show the company badge on the campaign cover image.')}
                     checked={settings.showCampaignCompanyName ?? true}
                     onChange={(event) => updateSetting('showCampaignCompanyName', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show Date"
-                    description="Show the creation date under the campaign title."
+                    label={t('set_viewer_show_date_label', 'Show Date')}
+                    description={t('set_viewer_show_date_desc', 'Show the creation date under the campaign title.')}
                     checked={settings.showCampaignDate ?? true}
                     onChange={(event) => updateSetting('showCampaignDate', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show About Section"
-                    description='Show the "About this Campaign" heading and description.'
+                    label={t('set_viewer_show_about_label', 'Show About Section')}
+                    description={t('set_viewer_show_about_desc', 'Show the "About this Campaign" heading and description.')}
                     checked={settings.showCampaignAbout ?? true}
                     onChange={(event) => updateSetting('showCampaignAbout', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <TextInput
-                    label="About Section Heading"
-                    description='Heading for the campaign description section (default "About").'
+                    label={t('set_viewer_about_heading_label', 'About Section Heading')}
+                    description={t('set_viewer_about_heading_desc', 'Heading for the campaign description section (default "About").')}
                     value={settings.campaignAboutHeadingText}
                     onChange={(event) => updateSetting('campaignAboutHeadingText', event.currentTarget.value)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show Description"
-                    description="Show the campaign description text within the About section."
+                    label={t('set_viewer_show_desc_label', 'Show Description')}
+                    description={t('set_viewer_show_desc_desc', 'Show the campaign description text within the About section.')}
                     checked={settings.showCampaignDescription ?? true}
                     onChange={(event) => updateSetting('showCampaignDescription', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show Campaign Stats"
-                    description="Show the statistics block (video count, image count, tags, visibility)."
+                    label={t('set_viewer_show_stats_label', 'Show Campaign Stats')}
+                    description={t('set_viewer_show_stats_desc', 'Show the statistics block (video count, image count, tags, visibility).')}
                     checked={settings.showCampaignStats ?? true}
                     onChange={(event) => updateSetting('showCampaignStats', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Stats Admin-Only"
-                    description="When enabled, only admins can see the statistics block."
+                    label={t('set_viewer_stats_admin_label', 'Stats Admin-Only')}
+                    description={t('set_viewer_stats_admin_desc', 'When enabled, only admins can see the statistics block.')}
                     checked={settings.campaignStatsAdminOnly ?? true}
                     onChange={(event) => updateSetting('campaignStatsAdminOnly', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show Cover Image"
-                    description="Show the campaign cover image at the top of the viewer."
+                    label={t('set_viewer_show_cover_label', 'Show Cover Image')}
+                    description={t('set_viewer_show_cover_desc', 'Show the campaign cover image at the top of the viewer.')}
                     checked={settings.showCampaignCoverImage ?? true}
                     onChange={(event) => updateSetting('showCampaignCoverImage', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
                   />
                   <Switch
-                    label="Show Tags"
-                    description="Show tags section in the campaign viewer."
+                    label={t('set_viewer_show_tags_label', 'Show Tags')}
+                    description={t('set_viewer_show_tags_desc', 'Show tags section in the campaign viewer.')}
                     checked={settings.showCampaignTags ?? true}
                     onChange={(event) => updateSetting('showCampaignTags', event.currentTarget.checked)}
                     disabled={settings.campaignOpenMode === 'galleries-only'}
@@ -249,14 +251,14 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 </Stack>
               </Box>
               <Switch
-                label="Show Admin Actions"
-                description="Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+                label={t('set_viewer_show_admin_actions_label', 'Show Admin Actions')}
+                description={t('set_viewer_show_admin_actions_desc', 'Show admin action buttons (edit, archive, etc.) in the campaign viewer.')}
                 checked={settings.showCampaignAdminActions ?? true}
                 onChange={(event) => updateSetting('showCampaignAdminActions', event.currentTarget.checked)}
               />
               <Switch
-                label="Show Gallery Labels"
-                description="Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+                label={t('set_viewer_show_gallery_labels_label', 'Show Gallery Labels')}
+                description={t('set_viewer_show_gallery_labels_desc', "Show 'Images' and 'Videos' heading labels above galleries in the viewer.")}
                 checked={showCampaignGalleryLabels ?? true}
                 onChange={(event) => updateViewerCommonSetting('showCampaignGalleryLabels', event.currentTarget.checked)}
               />
@@ -266,36 +268,36 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
       </Accordion.Item>
 
       <Accordion.Item value="cv-labels">
-        <Accordion.Control>Gallery Labels</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_labels_title', 'Gallery Labels')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-labels') ? (
             <Stack gap="md">
               <TextInput
-                label="Image Gallery Label"
-                description="Custom label for image gallery sections. Count is appended automatically."
+                label={t('set_viewer_image_label_label', 'Image Gallery Label')}
+                description={t('set_viewer_image_label_desc', 'Custom label for image gallery sections. Count is appended automatically.')}
                 value={galleryImageLabel ?? 'Images'}
                 onChange={(event) => updateViewerCommonSetting('galleryImageLabel', event.currentTarget.value)}
               />
               <TextInput
-                label="Video Gallery Label"
-                description="Custom label for video gallery sections. Count is appended automatically."
+                label={t('set_viewer_video_label_label', 'Video Gallery Label')}
+                description={t('set_viewer_video_label_desc', 'Custom label for video gallery sections. Count is appended automatically.')}
                 value={galleryVideoLabel ?? 'Videos'}
                 onChange={(event) => updateViewerCommonSetting('galleryVideoLabel', event.currentTarget.value)}
               />
               <ModalSelect
-                label="Label Justification"
-                description="Horizontal alignment for gallery section labels"
+                label={t('set_viewer_justification_label', 'Label Justification')}
+                description={t('set_viewer_justification_desc', 'Horizontal alignment for gallery section labels')}
                 data={[
-                  { value: 'left', label: 'Left' },
-                  { value: 'center', label: 'Center' },
-                  { value: 'right', label: 'Right' },
+                  { value: 'left', label: t('set_viewer_justification_left', 'Left') },
+                  { value: 'center', label: t('set_viewer_justification_center', 'Center') },
+                  { value: 'right', label: t('set_viewer_justification_right', 'Right') },
                 ]}
                 value={galleryLabelJustification ?? 'left'}
                 onChange={(value) => updateViewerCommonSetting('galleryLabelJustification', (value ?? 'left') as GalleryBehaviorSettings['galleryLabelJustification'])}
               />
               <Switch
-                label="Show Gallery Label Icon"
-                description="Display an icon prefix before each gallery section label"
+                label={t('set_viewer_label_icon_label', 'Show Gallery Label Icon')}
+                description={t('set_viewer_label_icon_desc', 'Display an icon prefix before each gallery section label')}
                 checked={showGalleryLabelIcon ?? false}
                 onChange={(event) => updateViewerCommonSetting('showGalleryLabelIcon', event.currentTarget.checked)}
               />
@@ -305,26 +307,26 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
       </Accordion.Item>
 
       <Accordion.Item value="cv-modal-bg">
-        <Accordion.Control>Modal Background</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_modalbg_title', 'Modal Background')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-modal-bg') ? (
             <Stack gap="md">
               <ModalSelect
-                label="Modal Background Type"
-                description="Background style for the fullscreen campaign modal"
+                label={t('set_viewer_modalbg_type_label', 'Modal Background Type')}
+                description={t('set_viewer_modalbg_type_desc', 'Background style for the fullscreen campaign modal')}
                 data={[
-                  { value: 'theme', label: 'Default Theme' },
-                  { value: 'transparent', label: 'Transparent' },
-                  { value: 'solid', label: 'Solid color' },
-                  { value: 'gradient', label: 'Custom gradient' },
+                  { value: 'theme', label: t('set_viewer_modalbg_theme', 'Default Theme') },
+                  { value: 'transparent', label: t('set_viewer_modalbg_transparent', 'Transparent') },
+                  { value: 'solid', label: t('set_viewer_modalbg_solid', 'Solid color') },
+                  { value: 'gradient', label: t('set_viewer_modalbg_gradient', 'Custom gradient') },
                 ]}
                 value={settings.modalBgType ?? 'theme'}
                 onChange={(value) => updateSetting('modalBgType', (value ?? 'theme') as GalleryBehaviorSettings['modalBgType'])}
               />
               {settings.modalBgType === 'solid' && (
                 <ColorInput
-                  label="Modal Background Color"
-                  description="Solid background color for the fullscreen modal"
+                  label={t('set_viewer_modalbg_color_label', 'Modal Background Color')}
+                  description={t('set_viewer_modalbg_color_desc', 'Solid background color for the fullscreen modal')}
                   value={settings.modalBgColor}
                   onChange={(value) => updateSetting('modalBgColor', value)}
                 />
@@ -341,11 +343,11 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
       </Accordion.Item>
 
       <Accordion.Item value="cv-cover">
-        <Accordion.Control>Cover Image &amp; Responsive</Accordion.Control>
+        <Accordion.Control>{t('set_viewer_cover_title', 'Cover Image & Responsive')}</Accordion.Control>
         <Accordion.Panel>
           {mounted.has('cv-cover') ? (
             <Stack gap="md">
-              <Text size="sm" fw={500}>Cover Mobile Ratio</Text>
+              <Text size="sm" fw={500}>{t('set_viewer_cover_mobile_ratio', 'Cover Mobile Ratio')}</Text>
               <Slider
                 value={settings.modalCoverMobileRatio}
                 onChange={(value) => updateSetting('modalCoverMobileRatio', value)}
@@ -353,7 +355,7 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 max={1}
                 step={0.05}
               />
-              <Text size="sm" fw={500}>Cover Tablet Ratio</Text>
+              <Text size="sm" fw={500}>{t('set_viewer_cover_tablet_ratio', 'Cover Tablet Ratio')}</Text>
               <Slider
                 value={settings.modalCoverTabletRatio}
                 onChange={(value) => updateSetting('modalCoverTabletRatio', value)}
@@ -362,27 +364,27 @@ export function CampaignViewerSettingsSection({ settings, updateSetting }: Campa
                 step={0.05}
               />
               <NumberInput
-                label="Close Button Size (px)"
+                label={t('set_viewer_close_size_label', 'Close Button Size (px)')}
                 value={settings.modalCloseButtonSize}
                 onChange={(value) => updateSetting('modalCloseButtonSize', typeof value === 'number' ? value : 36)}
                 min={20}
                 max={64}
               />
               <TextInput
-                label="Close Button Background"
-                description="CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+                label={t('set_viewer_close_bg_label', 'Close Button Background')}
+                description={t('set_viewer_close_bg_desc', 'CSS color for the close button background (e.g. rgba(0,0,0,0.5)).')}
                 value={settings.modalCloseButtonBgColor}
                 onChange={(event) => updateSetting('modalCloseButtonBgColor', event.currentTarget.value)}
               />
               <NumberInput
-                label="Mobile Breakpoint (px)"
-                description="Viewport width below which the campaign viewer switches to mobile layout."
+                label={t('set_viewer_mobile_bp_label', 'Mobile Breakpoint (px)')}
+                description={t('set_viewer_mobile_bp_desc', 'Viewport width below which the campaign viewer switches to mobile layout.')}
                 value={settings.modalMobileBreakpoint}
                 onChange={(value) => updateSetting('modalMobileBreakpoint', typeof value === 'number' ? value : 768)}
                 min={320}
                 max={1280}
               />
-              <Text size="sm" fw={500}>Description Line Height</Text>
+              <Text size="sm" fw={500}>{t('set_viewer_desc_lineheight', 'Description Line Height')}</Text>
               <Slider
                 value={settings.campaignDescriptionLineHeight}
                 onChange={(value) => updateSetting('campaignDescriptionLineHeight', value)}
