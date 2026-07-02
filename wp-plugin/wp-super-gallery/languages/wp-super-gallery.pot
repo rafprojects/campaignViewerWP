@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T11:09:18+00:00\n"
+"POT-Creation-Date: 2026-07-02T15:32:49+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1487,6 +1487,7 @@ msgid "Type"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:368
+#: includes/i18n/class-wpsg-frontend-strings.php:572
 msgid "URL"
 msgstr ""
 
@@ -2146,6 +2147,154 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:542
 msgid "Display info icons next to Advanced-tab labels that explain each setting on hover."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:543
+msgid "Campaign created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:544
+msgid "Campaign updated"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:545
+msgid "Campaign archived"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:546
+msgid "Campaign restored"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:547
+msgid "Campaign deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:548
+msgid "Media added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:549
+msgid "Media removed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:550
+msgid "Access granted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:551
+msgid "Access revoked"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:552
+msgid "Copied!"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:553
+msgid "Copy secret"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:554
+msgid "On"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:555
+msgid "Off"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:556
+msgid "Rotate secret"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:557
+msgid "Rotate secret for {{url}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:558
+msgid "Delete endpoint"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:559
+msgid "Delete endpoint {{url}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:560
+msgid "All events"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:561
+msgid "Hide filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:562
+msgid "Edit filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:563
+msgid "All events (leave empty to receive all)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:564
+msgid "Failed to create webhook endpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:565
+msgid "Failed to delete webhook endpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:566
+msgid "Failed to update webhook endpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:567
+msgid "Failed to rotate webhook secret."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:568
+msgid "Endpoint {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:569
+msgid "Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:570
+msgid "No webhook endpoints configured."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:571
+msgid "Add endpoint"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:573
+msgid "Events (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:574
+msgid "Leave empty to receive all events."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:575
+msgid "Enabled"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:576
+msgid "Webhook secret — save this now"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:577
+msgid "This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:578
+msgid "Done"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:579
+msgid "New webhook secret — save this now"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:580
+msgid "The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
