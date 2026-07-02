@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Checkbox, Group, Modal, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AdminCampaignBulkDeleteModalProps {
@@ -17,35 +18,33 @@ export function AdminCampaignBulkDeleteModal({
   onClose,
   onConfirm,
 }: AdminCampaignBulkDeleteModalProps) {
+  const { t } = useTranslation('wpsg');
   const [purgeAnalytics, setPurgeAnalytics] = useState(false);
 
   useEffect(() => {
     if (!opened) setPurgeAnalytics(false);
   }, [opened]);
 
-  const label = `${count} campaign${count !== 1 ? 's' : ''}`;
-
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title={`Delete ${label}?`}
+      title={t('admin_bulk_delete_title', 'Delete {{count}} campaign?', { count })}
       withinPortal={false}
       padding="md"
     >
       <Stack gap="sm">
         <Text>
-          This will permanently delete all {count} selected campaigns, their media references,
-          and pending access requests. This cannot be undone.
+          {t('admin_bulk_delete_msg', 'This will permanently delete all {{count}} selected campaigns, their media references, and pending access requests. This cannot be undone.', { count })}
         </Text>
         <Checkbox
           checked={purgeAnalytics}
           onChange={(e) => setPurgeAnalytics(e.currentTarget.checked)}
-          label="Also purge all analytics data for these campaigns"
+          label={t('admin_bulk_delete_purge', 'Also purge all analytics data for these campaigns')}
         />
         <Group justify="flex-end" mt="sm">
           <Button variant="default" onClick={onClose} disabled={loading}>
-            Cancel
+            {t('admin_cancel', 'Cancel')}
           </Button>
           <Button
             color="red"
@@ -53,7 +52,7 @@ export function AdminCampaignBulkDeleteModal({
             disabled={loading}
             onClick={() => onConfirm({ purgeAnalytics })}
           >
-            Delete {label}
+            {t('admin_bulk_delete_confirm', 'Delete {{count}} campaign', { count })}
           </Button>
         </Group>
       </Stack>

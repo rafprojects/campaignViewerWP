@@ -9,6 +9,7 @@ import {
   Alert,
 } from '@mantine/core';
 import { IconArrowsExchange, IconInfoCircle } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { AdminCampaign, SpaceInfo } from '@/services/adminQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -36,6 +37,7 @@ export function CampaignMoveSpaceModal({
   onConfirm,
   onClose,
 }: CampaignMoveSpaceModalProps) {
+  const { t } = useTranslation('wpsg');
   const [targetId, setTargetId] = useState<string | null>(null);
 
   const targetOptions = useMemo(
@@ -62,24 +64,24 @@ export function CampaignMoveSpaceModal({
       {...getWpsgDebugProps('CampaignMoveSpaceModal')}
       opened={source !== null}
       onClose={onClose}
-      title={<span {...getWpsgDebugProps('CampaignMoveSpaceModal', 'title')}>Move Campaign to Space</span>}
+      title={<span {...getWpsgDebugProps('CampaignMoveSpaceModal', 'title')}>{t('admin_move_title', 'Move Campaign to Space')}</span>}
       size="sm"
-      aria-label="Move campaign to space"
+      aria-label={t('admin_move_aria', 'Move campaign to space')}
       closeButtonProps={getWpsgDebugProps('CampaignMoveSpaceModal', 'close')}
       overlayProps={getWpsgDebugProps('CampaignMoveSpaceModal', 'overlay')}
     >
       <Stack {...getWpsgDebugProps('CampaignMoveSpaceModal', 'stack')} gap="md">
         <div>
-          <Text size="sm" c="dimmed" mb={4}>Campaign:</Text>
+          <Text size="sm" c="dimmed" mb={4}>{t('admin_move_campaign_label', 'Campaign:')}</Text>
           <Text fw={600}>{source?.title}</Text>
           <Text size="sm" c="dimmed" mt={4}>
-            From space: <Text component="span" fw={600} c="inherit">{sourceSpace?.name ?? '—'}</Text>
+            {t('admin_move_from_space', 'From space:')} <Text component="span" fw={600} c="inherit">{sourceSpace?.name ?? '—'}</Text>
           </Text>
         </div>
 
         <Select
-          label="Target space"
-          placeholder={targetOptions.length > 0 ? 'Pick a space' : 'No other spaces you own'}
+          label={t('admin_move_target_space', 'Target space')}
+          placeholder={targetOptions.length > 0 ? t('admin_move_pick_space', 'Pick a space') : t('admin_move_no_spaces', 'No other spaces you own')}
           data={targetOptions}
           value={targetId}
           onChange={setTargetId}
@@ -89,13 +91,12 @@ export function CampaignMoveSpaceModal({
         />
 
         <Alert icon={<IconInfoCircle size={16} />} color="blue" variant="light">
-          All analytics, audit history, media references, and access requests
-          move with the campaign. The source space will no longer list it.
+          {t('admin_move_info', 'All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it.')}
         </Alert>
 
         <Group {...getWpsgDebugProps('CampaignMoveSpaceModal', 'actions')} justify="flex-end" mt="xs">
           <Button variant="subtle" onClick={onClose} disabled={isSaving}>
-            Cancel
+            {t('admin_cancel', 'Cancel')}
           </Button>
           <Button
             leftSection={<IconArrowsExchange size={16} />}
@@ -103,7 +104,7 @@ export function CampaignMoveSpaceModal({
             loading={isSaving}
             disabled={!targetId}
           >
-            Move
+            {t('admin_move', 'Move')}
           </Button>
         </Group>
       </Stack>

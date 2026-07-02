@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T05:25:52+00:00\n"
+"POT-Creation-Date: 2026-07-02T10:19:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -290,6 +290,7 @@ msgid "Switch targeted gallery space"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:48
+#: includes/i18n/class-wpsg-frontend-strings.php:227
 msgid "Target space"
 msgstr ""
 
@@ -774,6 +775,214 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:178
 msgid "Delete"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:179
+msgid "Cancel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:180
+msgid "Archive campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:181
+msgid "Archive this campaign? This action will mark it archived."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:182
+msgid "Archive campaign {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:183
+msgid "Restore campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:184
+msgid "Restore this campaign? This will make it active again and enable any associated access grants."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:185
+msgid "Restore campaign {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:186
+msgid "Archive {{count}} campaign?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:187
+msgid "Archive {{count}} campaigns?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:188
+msgid "This will mark all {{count}} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:189
+msgid "Archive {{count}} campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:190
+msgid "Archive {{count}} campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:191
+msgid "Restore {{count}} campaign?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:192
+msgid "Restore {{count}} campaigns?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:193
+msgid "This will restore all {{count}} selected campaigns and make them active again. Any associated access grants will be re-enabled."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:194
+msgid "Restore {{count}} campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:195
+msgid "Restore {{count}} campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:196
+msgid "Delete campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:197
+msgid "This permanently deletes \"{{title}}\", its media references, and pending access requests. This cannot be undone."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:198
+msgid "this campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:199
+msgid "Type {{token}} to confirm."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:200
+msgid "Type {{token}} to confirm"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:201
+msgid "Also purge analytics events for this campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:202
+msgid "Delete campaign {{title}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:203
+msgid "Delete permanently"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:204
+msgid "Delete {{count}} campaign?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:205
+msgid "Delete {{count}} campaigns?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:206
+msgid "This will permanently delete all {{count}} selected campaigns, their media references, and pending access requests. This cannot be undone."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:207
+msgid "Also purge all analytics data for these campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:208
+msgid "Delete {{count}} campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:209
+msgid "Delete {{count}} campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:210
+msgid "Duplicate Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:211
+msgid "Duplicate campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:212
+msgid "Source:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:213
+msgid "New name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:214
+msgid "Campaign name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:215
+msgid "Copy media associations"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:216
+msgid "Media items will appear in both campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:217
+msgid "The duplicate will start with an empty media library."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:218
+msgid "Duplicate linked layout template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:219
+msgid "The copied campaign gets its own editable layout instead of sharing the original template."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:220
+msgid "The duplicate will keep pointing at the original layout template."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:221
+msgid "{{title}} (Copy)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:222
+msgid "Duplicate"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:223
+msgid "Move Campaign to Space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:224
+msgid "Move campaign to space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:225
+msgid "Campaign:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:226
+msgid "From space:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:228
+msgid "Pick a space"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:229
+msgid "No other spaces you own"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:230
+msgid "All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:231
+msgid "Move"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -19,16 +20,17 @@ export function AdminCampaignRestoreModal({
   onClose,
   onConfirm,
 }: AdminCampaignRestoreModalProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <ConfirmModal
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Restore campaign"
-      message="Restore this campaign? This will make it active again and enable any associated access grants."
-      confirmLabel="Restore"
+      title={t('admin_restore_campaign_title', 'Restore campaign')}
+      message={t('admin_restore_campaign_msg', 'Restore this campaign? This will make it active again and enable any associated access grants.')}
+      confirmLabel={t('admin_restore', 'Restore')}
       confirmColor="teal"
-      confirmAriaLabel={`Restore campaign ${campaign?.title ?? ''}`.trim()}
+      confirmAriaLabel={t('admin_restore_campaign_aria', 'Restore campaign {{title}}', { title: campaign?.title ?? '' }).trim()}
     />
   );
 }

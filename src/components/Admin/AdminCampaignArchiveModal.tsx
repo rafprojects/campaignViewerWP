@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -19,16 +20,17 @@ export function AdminCampaignArchiveModal({
   onClose,
   onConfirm,
 }: AdminCampaignArchiveModalProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <ConfirmModal
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Archive campaign"
-      message="Archive this campaign? This action will mark it archived."
-      confirmLabel="Archive"
+      title={t('admin_archive_campaign_title', 'Archive campaign')}
+      message={t('admin_archive_campaign_msg', 'Archive this campaign? This action will mark it archived.')}
+      confirmLabel={t('admin_archive', 'Archive')}
       confirmColor="red"
-      confirmAriaLabel={`Archive campaign ${campaign?.title ?? ''}`.trim()}
+      confirmAriaLabel={t('admin_archive_campaign_aria', 'Archive campaign {{title}}', { title: campaign?.title ?? '' }).trim()}
     />
   );
 }

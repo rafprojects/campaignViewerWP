@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button, Checkbox, Group, Modal, Stack, Text, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type CampaignSummary = {
@@ -24,6 +25,7 @@ export function AdminCampaignDeleteModal({
   onConfirm,
   loading = false,
 }: AdminCampaignDeleteModalProps) {
+  const { t } = useTranslation('wpsg');
   const [typed, setTyped] = useState('');
   const [purgeAnalytics, setPurgeAnalytics] = useState(false);
 
@@ -40,41 +42,39 @@ export function AdminCampaignDeleteModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Delete campaign"
+      title={t('admin_delete_campaign_title', 'Delete campaign')}
       withinPortal={false}
       padding="md"
     >
       <Stack gap="sm">
         <Text>
-          This permanently deletes <strong>{campaign?.title ?? 'this campaign'}</strong>,
-          its media references, and pending access requests.
-          This cannot be undone.
+          {t('admin_delete_campaign_msg', 'This permanently deletes "{{title}}", its media references, and pending access requests. This cannot be undone.', { title: campaign?.title ?? t('admin_delete_this_campaign', 'this campaign') })}
         </Text>
         <Text size="sm" c="dimmed">
-          Type <strong>{CONFIRM_TOKEN}</strong> to confirm.
+          {t('admin_delete_type_confirm', 'Type {{token}} to confirm.', { token: CONFIRM_TOKEN })}
         </Text>
         <TextInput
           value={typed}
           onChange={(e) => setTyped(e.currentTarget.value)}
           placeholder={CONFIRM_TOKEN}
-          aria-label="Type DELETE to confirm"
+          aria-label={t('admin_delete_type_aria', 'Type {{token}} to confirm', { token: CONFIRM_TOKEN })}
           autoFocus
         />
         <Checkbox
           checked={purgeAnalytics}
           onChange={(e) => setPurgeAnalytics(e.currentTarget.checked)}
-          label="Also purge analytics events for this campaign"
+          label={t('admin_delete_purge_analytics', 'Also purge analytics events for this campaign')}
         />
         <Group justify="flex-end" mt="sm">
-          <Button variant="default" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button variant="default" onClick={onClose} disabled={loading}>{t('admin_cancel', 'Cancel')}</Button>
           <Button
             color="red"
             disabled={!canDelete}
             loading={loading}
             onClick={() => onConfirm({ purgeAnalytics })}
-            aria-label={`Delete campaign ${campaign?.title ?? ''}`.trim()}
+            aria-label={t('admin_delete_campaign_aria', 'Delete campaign {{title}}', { title: campaign?.title ?? '' }).trim()}
           >
-            Delete permanently
+            {t('admin_delete_permanently', 'Delete permanently')}
           </Button>
         </Group>
       </Stack>
