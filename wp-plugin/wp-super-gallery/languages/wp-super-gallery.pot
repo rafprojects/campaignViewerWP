@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T21:33:24+00:00\n"
+"POT-Creation-Date: 2026-07-02T21:35:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -4618,6 +4618,82 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1198
 msgid "Select a page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1199
+msgid "Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1200
+msgid "Element Overrides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1201
+msgid "Reset all typography"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1202
+msgid "Viewer Title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1203
+msgid "Viewer Subtitle"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1204
+msgid "Card Title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1205
+msgid "Card Description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1206
+msgid "Card Company Name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1207
+msgid "Card Media Counts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1208
+msgid "Campaign Title"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1209
+msgid "Campaign Description"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1210
+msgid "Campaign Date"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1211
+msgid "Campaign About Heading"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1212
+msgid "Campaign Stats Value"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1213
+msgid "Campaign Stats Label"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1214
+msgid "Gallery Label"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1215
+msgid "Media Caption"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1216
+msgid "Auth Bar Text"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1217
+msgid "Access Badge Text"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

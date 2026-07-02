@@ -1,4 +1,5 @@
 import { Accordion, Button, Divider, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 
 import { TypographyEditor, type CustomFontEntry } from '@/components/Common/TypographyEditor';
@@ -46,12 +47,13 @@ export function TypographySettingsSection({
   onOverrideChange,
   isSystemAdmin = false,
 }: TypographySettingsSectionProps) {
+  const { t } = useTranslation('wpsg');
   const { value: accordionValue, onChange: onAccordionChange } = usePersistentAccordion('typography', null);
 
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.
+        {t('set_typo_intro', 'Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults.')}
       </Text>
       <FontLibraryManager
         apiClient={apiClient}
@@ -62,7 +64,7 @@ export function TypographySettingsSection({
         })))}
       />
 
-      <Divider label="Element Overrides" labelPosition="left" />
+      <Divider label={t('set_typo_element_overrides', 'Element Overrides')} labelPosition="left" />
 
       <Button
         variant="subtle"
@@ -71,13 +73,13 @@ export function TypographySettingsSection({
         disabled={Object.keys(typographyOverrides).length === 0}
         onClick={onResetAll}
       >
-        Reset all typography
+        {t('set_typo_reset_all', 'Reset all typography')}
       </Button>
 
       <Accordion variant="separated" chevronPosition="left" value={accordionValue} onChange={onAccordionChange}>
         {TYPOGRAPHY_SECTIONS.map((section) => (
           <Accordion.Item key={section.id} value={section.id}>
-            <Accordion.Control>{section.label}</Accordion.Control>
+            <Accordion.Control>{t(`set_typo_${section.id}`, section.label)}</Accordion.Control>
             <Accordion.Panel>
               <TypographyEditor
                 value={typographyOverrides[section.id] ?? {}}
