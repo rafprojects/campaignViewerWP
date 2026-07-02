@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T21:24:45+00:00\n"
+"POT-Creation-Date: 2026-07-02T21:30:17+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -410,6 +410,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:325
 #: includes/i18n/class-wpsg-frontend-strings.php:366
 #: includes/i18n/class-wpsg-frontend-strings.php:412
+#: includes/i18n/class-wpsg-frontend-strings.php:1169
 msgid "Video"
 msgstr ""
 
@@ -417,6 +418,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:324
 #: includes/i18n/class-wpsg-frontend-strings.php:367
 #: includes/i18n/class-wpsg-frontend-strings.php:413
+#: includes/i18n/class-wpsg-frontend-strings.php:1168
 msgid "Image"
 msgstr ""
 
@@ -1301,6 +1303,7 @@ msgid "Default (from settings)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:313
+#: includes/i18n/class-wpsg-frontend-strings.php:1163
 msgid "Unified"
 msgstr ""
 
@@ -1309,6 +1312,7 @@ msgid "Per-Type"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:315
+#: includes/i18n/class-wpsg-frontend-strings.php:1161
 msgid "Unified Breakpoint Adapters"
 msgstr ""
 
@@ -1329,6 +1333,7 @@ msgid "Mobile"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:320
+#: includes/i18n/class-wpsg-frontend-strings.php:1164
 msgid "{{bp}} Unified Gallery Adapter"
 msgstr ""
 
@@ -1337,6 +1342,7 @@ msgid "Inherited"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:322
+#: includes/i18n/class-wpsg-frontend-strings.php:1166
 msgid "Per-Type Breakpoint Adapters"
 msgstr ""
 
@@ -1345,10 +1351,12 @@ msgid "Clear any cell to inherit that breakpoint's global adapter selection."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:326
+#: includes/i18n/class-wpsg-frontend-strings.php:1170
 msgid "{{bp}} Image Gallery Adapter"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:327
+#: includes/i18n/class-wpsg-frontend-strings.php:1171
 msgid "{{bp}} Video Gallery Adapter"
 msgstr ""
 
@@ -1357,6 +1365,7 @@ msgid "Quick per-breakpoint overrides stay inline here. Use the shared responsiv
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:329
+#: includes/i18n/class-wpsg-frontend-strings.php:1188
 msgid "Edit Responsive Config"
 msgstr ""
 
@@ -1911,6 +1920,7 @@ msgid "Default layout for displaying gallery items."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:484
+#: includes/i18n/class-wpsg-frontend-strings.php:1146
 #: includes/settings/class-wpsg-settings-core-fields.php:315
 msgid "Grid"
 msgstr ""
@@ -1921,6 +1931,7 @@ msgid "Masonry"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:486
+#: includes/i18n/class-wpsg-frontend-strings.php:1147
 #: includes/settings/class-wpsg-settings-core-fields.php:317
 msgid "Carousel"
 msgstr ""
@@ -2203,10 +2214,12 @@ msgid "Copy secret"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:554
+#: includes/i18n/class-wpsg-frontend-strings.php:1154
 msgid "On"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:555
+#: includes/i18n/class-wpsg-frontend-strings.php:1155
 msgid "Off"
 msgstr ""
 
@@ -2529,6 +2542,7 @@ msgid "Grid Card Hover Scale"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:636
+#: includes/i18n/class-wpsg-frontend-strings.php:1143
 msgid "Lightbox"
 msgstr ""
 
@@ -4436,6 +4450,134 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1142
 msgid "Background applied when unified gallery mode is active"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1144
+msgid "Drag scroll"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1145
+msgid "Infinite scroll"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1148
+msgid "Keyboard nav"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1149
+msgid "Touch swipe"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1150
+msgid "Layout builder"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1151
+msgid "Listing"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1152
+msgid "Reset to default"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1153
+msgid "Reset {{label}} to default"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1156
+msgid "Enter a value between {{min}} and {{max}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1157
+msgid "Value exceeds maximum of {{max}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1158
+msgid "Stored value \"{{value}}\" is not a valid option"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1159
+msgid "Unified Gallery Mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1160
+msgid "When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1162
+msgid "Choose the unified gallery adapter used at each breakpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1165
+msgid "Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1167
+msgid "Choose separate image and video adapters for each breakpoint."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1172
+msgid "Breakpoint Pixel Thresholds"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1173
+msgid "Width thresholds (px) used by the classic carousel adapter to determine the active breakpoint. Defaults match Mantine (768 / 1200)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1174
+msgid "Mobile max (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1175
+msgid "Max container width considered mobile. (320–1440, default: 768)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1176
+msgid "Enter a value between 320 and 1440"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1177
+msgid "Mobile threshold must be less than tablet threshold"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1178
+msgid "Tablet max (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1179
+msgid "Max container width considered tablet. (320–1920, default: 1200)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1180
+msgid "Enter a value between 320 and 1920"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1181
+msgid "Tablet threshold must be greater than mobile threshold"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1182
+msgid "Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1183
+msgid "Export adapter settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1184
+msgid "Import adapter settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1185
+msgid "Reset all adapter settings to defaults"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1186
+msgid "Gallery Adapters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1187
+msgid "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

@@ -1,4 +1,5 @@
 import { Accordion, Button, Group, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 
 import type { GalleryBehaviorSettings } from '@/types';
@@ -18,19 +19,20 @@ export function GalleryLayoutSettingsSection({
   updateSetting,
   onOpenResponsiveConfig,
 }: GalleryLayoutSettingsSectionProps) {
+  const { t } = useTranslation('wpsg');
   const { mounted, value, onChange } = usePersistentAccordion('gallery-layout', 'adapters');
 
   return (
     <Accordion variant="separated" value={value} onChange={onChange}>
       <Accordion.Item value="adapters">
-        <Accordion.Control>Gallery Adapters</Accordion.Control>
+        <Accordion.Control>{t('set_gl_adapters_title', 'Gallery Adapters')}</Accordion.Control>
         <Accordion.Panel>
           <Group justify="space-between" align="flex-start" mb="md">
             <Text size="sm" c="dimmed" maw={560}>
-              Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes.
+              {t('set_gl_adapters_desc', 'Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes.')}
             </Text>
             <Button variant="light" onClick={onOpenResponsiveConfig}>
-              Edit Responsive Config
+              {t('set_gl_edit_responsive', 'Edit Responsive Config')}
             </Button>
           </Group>
           <GalleryAdapterSettingsSection
