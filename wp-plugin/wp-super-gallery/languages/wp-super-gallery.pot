@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T21:35:31+00:00\n"
+"POT-Creation-Date: 2026-07-02T21:44:38+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1552,6 +1552,8 @@ msgid "Grid View"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:382
+#: includes/i18n/class-wpsg-frontend-strings.php:1430
+#: includes/i18n/class-wpsg-frontend-strings.php:1472
 msgid "Compact Grid"
 msgstr ""
 
@@ -1926,12 +1928,15 @@ msgid "Grid"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:485
+#: includes/i18n/class-wpsg-frontend-strings.php:1435
+#: includes/i18n/class-wpsg-frontend-strings.php:1474
 #: includes/settings/class-wpsg-settings-core-fields.php:316
 msgid "Masonry"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:486
 #: includes/i18n/class-wpsg-frontend-strings.php:1147
+#: includes/i18n/class-wpsg-frontend-strings.php:1471
 #: includes/settings/class-wpsg-settings-core-fields.php:317
 msgid "Carousel"
 msgstr ""
@@ -2370,6 +2375,9 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:701
 #: includes/i18n/class-wpsg-frontend-strings.php:925
 #: includes/i18n/class-wpsg-frontend-strings.php:1126
+#: includes/i18n/class-wpsg-frontend-strings.php:1244
+#: includes/i18n/class-wpsg-frontend-strings.php:1254
+#: includes/i18n/class-wpsg-frontend-strings.php:1372
 msgid "None"
 msgstr ""
 
@@ -2547,6 +2555,7 @@ msgid "Lightbox"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:637
+#: includes/i18n/class-wpsg-frontend-strings.php:1385
 msgid "Transition Duration (ms)"
 msgstr ""
 
@@ -2584,30 +2593,37 @@ msgid "Navigation"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:646
+#: includes/i18n/class-wpsg-frontend-strings.php:1322
 msgid "Max Visible Dots"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:647
+#: includes/i18n/class-wpsg-frontend-strings.php:1305
 msgid "Arrow Edge Inset (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:648
+#: includes/i18n/class-wpsg-frontend-strings.php:1307
 msgid "Arrow Min Hit Target (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:649
+#: includes/i18n/class-wpsg-frontend-strings.php:1309
 msgid "Arrow Fade Duration (ms)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:650
+#: includes/i18n/class-wpsg-frontend-strings.php:1311
 msgid "Arrow Scale Transition (ms)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:651
+#: includes/i18n/class-wpsg-frontend-strings.php:1339
 msgid "Viewport Height Mobile Ratio"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:652
+#: includes/i18n/class-wpsg-frontend-strings.php:1341
 msgid "Viewport Height Tablet Ratio"
 msgstr ""
 
@@ -2758,6 +2774,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:690
 #: includes/i18n/class-wpsg-frontend-strings.php:940
+#: includes/i18n/class-wpsg-frontend-strings.php:1224
 msgid "Border Width (px)"
 msgstr ""
 
@@ -2783,6 +2800,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:697
 #: includes/i18n/class-wpsg-frontend-strings.php:942
+#: includes/i18n/class-wpsg-frontend-strings.php:1226
 msgid "Border Color"
 msgstr ""
 
@@ -2800,11 +2818,15 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:702
 #: includes/i18n/class-wpsg-frontend-strings.php:926
+#: includes/i18n/class-wpsg-frontend-strings.php:1245
+#: includes/i18n/class-wpsg-frontend-strings.php:1255
 msgid "Subtle"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:703
 #: includes/i18n/class-wpsg-frontend-strings.php:927
+#: includes/i18n/class-wpsg-frontend-strings.php:1246
+#: includes/i18n/class-wpsg-frontend-strings.php:1256
 msgid "Medium"
 msgstr ""
 
@@ -2990,6 +3012,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:749
 #: includes/i18n/class-wpsg-frontend-strings.php:1119
+#: includes/i18n/class-wpsg-frontend-strings.php:1400
 msgid "Start"
 msgstr ""
 
@@ -2997,11 +3020,15 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:882
 #: includes/i18n/class-wpsg-frontend-strings.php:995
 #: includes/i18n/class-wpsg-frontend-strings.php:1077
+#: includes/i18n/class-wpsg-frontend-strings.php:1289
+#: includes/i18n/class-wpsg-frontend-strings.php:1396
+#: includes/i18n/class-wpsg-frontend-strings.php:1401
 msgid "Center"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:751
 #: includes/i18n/class-wpsg-frontend-strings.php:1120
+#: includes/i18n/class-wpsg-frontend-strings.php:1402
 msgid "End"
 msgstr ""
 
@@ -3026,12 +3053,14 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:756
 #: includes/i18n/class-wpsg-frontend-strings.php:994
 #: includes/i18n/class-wpsg-frontend-strings.php:1081
+#: includes/i18n/class-wpsg-frontend-strings.php:1288
 msgid "Top"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:757
 #: includes/i18n/class-wpsg-frontend-strings.php:996
 #: includes/i18n/class-wpsg-frontend-strings.php:1082
+#: includes/i18n/class-wpsg-frontend-strings.php:1290
 msgid "Bottom"
 msgstr ""
 
@@ -3068,6 +3097,7 @@ msgid "Fine-tune vertical position of the card grid."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:766
+#: includes/i18n/class-wpsg-frontend-strings.php:1345
 msgid "Card Aspect Ratio"
 msgstr ""
 
@@ -3080,34 +3110,47 @@ msgid "Auto (natural)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:769
+#: includes/i18n/class-wpsg-frontend-strings.php:1349
+#: includes/i18n/class-wpsg-frontend-strings.php:1378
 msgid "16:9 (widescreen)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:770
+#: includes/i18n/class-wpsg-frontend-strings.php:1350
+#: includes/i18n/class-wpsg-frontend-strings.php:1379
 msgid "4:3 (standard)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:771
+#: includes/i18n/class-wpsg-frontend-strings.php:1351
+#: includes/i18n/class-wpsg-frontend-strings.php:1381
 msgid "1:1 (square)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:772
+#: includes/i18n/class-wpsg-frontend-strings.php:1352
+#: includes/i18n/class-wpsg-frontend-strings.php:1382
 msgid "3:4 (portrait)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:773
+#: includes/i18n/class-wpsg-frontend-strings.php:1353
 msgid "9:16 (tall portrait)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:774
+#: includes/i18n/class-wpsg-frontend-strings.php:1354
 msgid "2:3 (photo portrait)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:775
+#: includes/i18n/class-wpsg-frontend-strings.php:1355
+#: includes/i18n/class-wpsg-frontend-strings.php:1380
 msgid "3:2 (photo landscape)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:776
+#: includes/i18n/class-wpsg-frontend-strings.php:1356
 msgid "21:9 (ultrawide)"
 msgstr ""
 
@@ -3651,6 +3694,7 @@ msgid "Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:918
+#: includes/i18n/class-wpsg-frontend-strings.php:1218
 msgid "Image Border Radius"
 msgstr ""
 
@@ -3659,6 +3703,7 @@ msgid "Corner rounding for image gallery viewport and thumbnails."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:920
+#: includes/i18n/class-wpsg-frontend-strings.php:1220
 msgid "Video Border Radius"
 msgstr ""
 
@@ -3671,6 +3716,7 @@ msgid "Shadow & Depth"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:923
+#: includes/i18n/class-wpsg-frontend-strings.php:1242
 msgid "Image Shadow Preset"
 msgstr ""
 
@@ -3679,14 +3725,19 @@ msgid "Box-shadow depth effect for image gallery viewport."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:928
+#: includes/i18n/class-wpsg-frontend-strings.php:1247
+#: includes/i18n/class-wpsg-frontend-strings.php:1257
 msgid "Strong"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:929
+#: includes/i18n/class-wpsg-frontend-strings.php:1248
+#: includes/i18n/class-wpsg-frontend-strings.php:1258
 msgid "Custom"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:930
+#: includes/i18n/class-wpsg-frontend-strings.php:1249
 msgid "Image Custom Shadow"
 msgstr ""
 
@@ -3695,6 +3746,7 @@ msgid "CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:932
+#: includes/i18n/class-wpsg-frontend-strings.php:1252
 msgid "Video Shadow Preset"
 msgstr ""
 
@@ -3703,14 +3755,17 @@ msgid "Box-shadow depth effect for video gallery viewport."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:934
+#: includes/i18n/class-wpsg-frontend-strings.php:1259
 msgid "Video Custom Shadow"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:935
+#: includes/i18n/class-wpsg-frontend-strings.php:1470
 msgid "Tile Appearance"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:936
+#: includes/i18n/class-wpsg-frontend-strings.php:1413
 msgid "Gap X"
 msgstr ""
 
@@ -3719,6 +3774,7 @@ msgid "Horizontal gap between tiles."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:938
+#: includes/i18n/class-wpsg-frontend-strings.php:1415
 msgid "Gap Y"
 msgstr ""
 
@@ -3731,14 +3787,17 @@ msgid "Tile border thickness. 0 = no border."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:943
+#: includes/i18n/class-wpsg-frontend-strings.php:1229
 msgid "Hover Bounce"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:944
+#: includes/i18n/class-wpsg-frontend-strings.php:1230
 msgid "Scale-up spring animation when hovering over a tile."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:945
+#: includes/i18n/class-wpsg-frontend-strings.php:1231
 msgid "Hover Glow"
 msgstr ""
 
@@ -3747,14 +3806,17 @@ msgid "Drop-shadow glow on hover (works with clip-path shapes)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:947
+#: includes/i18n/class-wpsg-frontend-strings.php:1233
 msgid "Glow Color"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:948
+#: includes/i18n/class-wpsg-frontend-strings.php:1236
 msgid "Glow Spread (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:949
+#: includes/i18n/class-wpsg-frontend-strings.php:1237
 msgid "Radius of the glow effect."
 msgstr ""
 
@@ -3871,6 +3933,7 @@ msgid "Height of image thumbnail items."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:980
+#: includes/i18n/class-wpsg-frontend-strings.php:1222
 msgid "Thumbnail Gap (px)"
 msgstr ""
 
@@ -3915,22 +3978,27 @@ msgid "Overlay Arrows"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:992
+#: includes/i18n/class-wpsg-frontend-strings.php:1286
 msgid "Arrow Vertical Position"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:993
+#: includes/i18n/class-wpsg-frontend-strings.php:1287
 msgid "Vertical alignment of the overlay prev/next arrows."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:997
+#: includes/i18n/class-wpsg-frontend-strings.php:1291
 msgid "Arrow Size (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:998
+#: includes/i18n/class-wpsg-frontend-strings.php:1292
 msgid "Diameter of the overlay navigation arrows."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:999
+#: includes/i18n/class-wpsg-frontend-strings.php:1293
 msgid "Arrow Color"
 msgstr ""
 
@@ -3939,6 +4007,7 @@ msgid "Icon color for the overlay arrows."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1001
+#: includes/i18n/class-wpsg-frontend-strings.php:1296
 msgid "Arrow Background Color"
 msgstr ""
 
@@ -3947,18 +4016,22 @@ msgid "Background color (supports rgba for transparency)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1003
+#: includes/i18n/class-wpsg-frontend-strings.php:1299
 msgid "Arrow Border Width (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1004
+#: includes/i18n/class-wpsg-frontend-strings.php:1300
 msgid "Border thickness around the arrows (0 = none)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1005
+#: includes/i18n/class-wpsg-frontend-strings.php:1301
 msgid "Hover Scale Factor"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1006
+#: includes/i18n/class-wpsg-frontend-strings.php:1303
 msgid "Auto-hide Delay (ms)"
 msgstr ""
 
@@ -3967,62 +4040,77 @@ msgid "Show arrows on hover/interaction. 0 = always visible."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1009
+#: includes/i18n/class-wpsg-frontend-strings.php:1313
 msgid "Enable Dot Navigator"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1010
+#: includes/i18n/class-wpsg-frontend-strings.php:1314
 msgid "Show a dot-style page indicator."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1011
+#: includes/i18n/class-wpsg-frontend-strings.php:1315
 msgid "Dot Position"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1012
+#: includes/i18n/class-wpsg-frontend-strings.php:1316
 msgid "Where to render the dot navigator relative to the viewport."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1013
+#: includes/i18n/class-wpsg-frontend-strings.php:1317
 msgid "Below Viewport"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1014
+#: includes/i18n/class-wpsg-frontend-strings.php:1318
 msgid "Overlay Bottom"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1015
+#: includes/i18n/class-wpsg-frontend-strings.php:1319
 msgid "Overlay Top"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1016
+#: includes/i18n/class-wpsg-frontend-strings.php:1320
 msgid "Dot Size (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1017
+#: includes/i18n/class-wpsg-frontend-strings.php:1321
 msgid "Diameter of each dot."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1018
+#: includes/i18n/class-wpsg-frontend-strings.php:1330
 msgid "Dot Shape"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1019
+#: includes/i18n/class-wpsg-frontend-strings.php:1331
 msgid "Shape of the navigation dots."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1020
+#: includes/i18n/class-wpsg-frontend-strings.php:1332
 msgid "Circle"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1021
+#: includes/i18n/class-wpsg-frontend-strings.php:1333
 msgid "Pill"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1022
+#: includes/i18n/class-wpsg-frontend-strings.php:1334
 msgid "Square"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1023
+#: includes/i18n/class-wpsg-frontend-strings.php:1324
 msgid "Active Dot Color"
 msgstr ""
 
@@ -4031,6 +4119,7 @@ msgid "Color for the currently active dot (CSS value)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1025
+#: includes/i18n/class-wpsg-frontend-strings.php:1327
 msgid "Inactive Dot Color"
 msgstr ""
 
@@ -4039,14 +4128,17 @@ msgid "Color for inactive dots (CSS value)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1027
+#: includes/i18n/class-wpsg-frontend-strings.php:1335
 msgid "Dot Spacing (px)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1028
+#: includes/i18n/class-wpsg-frontend-strings.php:1336
 msgid "Gap between dots."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1029
+#: includes/i18n/class-wpsg-frontend-strings.php:1337
 msgid "Active Dot Scale"
 msgstr ""
 
@@ -4055,30 +4147,37 @@ msgid "Carousel Settings"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1031
+#: includes/i18n/class-wpsg-frontend-strings.php:1262
 msgid "Visible Cards"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1032
+#: includes/i18n/class-wpsg-frontend-strings.php:1263
 msgid "Number of slides visible at once in the carousel."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1033
+#: includes/i18n/class-wpsg-frontend-strings.php:1264
 msgid "Slide Gap"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1034
+#: includes/i18n/class-wpsg-frontend-strings.php:1265
 msgid "Space between carousel slides."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1035
+#: includes/i18n/class-wpsg-frontend-strings.php:1266
 msgid "Loop"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1036
+#: includes/i18n/class-wpsg-frontend-strings.php:1267
 msgid "Continuously loop slides when reaching the end."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1037
+#: includes/i18n/class-wpsg-frontend-strings.php:1268
 msgid "Drag Enabled"
 msgstr ""
 
@@ -4088,42 +4187,52 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1039
 #: includes/i18n/class-wpsg-frontend-strings.php:1040
+#: includes/i18n/class-wpsg-frontend-strings.php:1270
 msgid "Autoplay"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1041
+#: includes/i18n/class-wpsg-frontend-strings.php:1271
 msgid "Automatically advance slides."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1042
+#: includes/i18n/class-wpsg-frontend-strings.php:1272
 msgid "Autoplay Speed (ms)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1043
+#: includes/i18n/class-wpsg-frontend-strings.php:1273
 msgid "Delay between automatic slide transitions."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1044
+#: includes/i18n/class-wpsg-frontend-strings.php:1274
 msgid "Pause on Hover"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1045
+#: includes/i18n/class-wpsg-frontend-strings.php:1275
 msgid "Pause autoplay when the mouse hovers over the carousel."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1046
+#: includes/i18n/class-wpsg-frontend-strings.php:1276
 msgid "Autoplay Direction"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1047
+#: includes/i18n/class-wpsg-frontend-strings.php:1277
 msgid "Direction autoplay advances slides."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1048
+#: includes/i18n/class-wpsg-frontend-strings.php:1278
 msgid "Left to Right"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1049
+#: includes/i18n/class-wpsg-frontend-strings.php:1279
 msgid "Right to Left"
 msgstr ""
 
@@ -4132,26 +4241,32 @@ msgid "Visual Effects"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1051
+#: includes/i18n/class-wpsg-frontend-strings.php:1280
 msgid "Darken Unfocused Slides"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1052
+#: includes/i18n/class-wpsg-frontend-strings.php:1281
 msgid "Apply a dark overlay on slides that are not currently selected."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1053
+#: includes/i18n/class-wpsg-frontend-strings.php:1282
 msgid "Darken Opacity"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1054
+#: includes/i18n/class-wpsg-frontend-strings.php:1283
 msgid "Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1055
+#: includes/i18n/class-wpsg-frontend-strings.php:1284
 msgid "Edge Fade"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1056
+#: includes/i18n/class-wpsg-frontend-strings.php:1285
 msgid "Fade slides at the edges of the carousel viewport."
 msgstr ""
 
@@ -4696,6 +4811,529 @@ msgstr ""
 msgid "Access Badge Text"
 msgstr ""
 
+#: includes/i18n/class-wpsg-frontend-strings.php:1219
+msgid "Rounded-corner radius for image media surfaces in supported adapters."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1221
+msgid "Rounded-corner radius for video media surfaces in supported adapters."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1223
+msgid "Space between items in justified and masonry gallery layouts."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1225
+msgid "Tile border thickness. Set 0 to disable borders."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1227
+msgid "CSS color used for tile borders when border width is greater than 0."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1228
+#: includes/i18n/class-wpsg-frontend-strings.php:1295
+msgid "#ffffff"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1232
+msgid "Drop-shadow glow on hover for supported tile-based adapters."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1234
+msgid "CSS color used for the hover glow effect."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1235
+msgid "#7c9ef8"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1238
+msgid "Image Viewport Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1239
+msgid "Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1240
+msgid "Video Viewport Height"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1241
+msgid "Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1243
+msgid "Box-shadow depth effect for image-dominant classic galleries."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1250
+msgid "CSS box-shadow value used when the image shadow preset is custom."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1251
+#: includes/i18n/class-wpsg-frontend-strings.php:1261
+msgid "0 4px 16px rgba(0,0,0,0.25)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1253
+msgid "Box-shadow depth effect for video-dominant classic galleries."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1260
+msgid "CSS box-shadow value used when the video shadow preset is custom."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1269
+msgid "Allow dragging or swiping to navigate slides."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1294
+msgid "Foreground color used for the overlay arrow icon and border."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1297
+msgid "Background fill applied behind the overlay arrows."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1298
+msgid "rgba(0,0,0,0.45)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1302
+msgid "Scale factor applied when hovering the overlay arrows."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1304
+msgid "Show arrows on hover or interaction. 0 keeps them always visible."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1306
+msgid "Distance between the overlay arrows and the carousel edge."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1308
+msgid "Minimum touch and click target size for the overlay arrows."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1310
+msgid "Fade-in and fade-out duration used when arrows auto-hide."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1312
+msgid "Hover-scale transition duration for the overlay arrows."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1323
+msgid "Maximum number of dot buttons shown before truncation inserts ellipses."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1325
+msgid "Fill color used for the active dot."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1326
+msgid "var(--wpsg-color-primary)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1328
+msgid "Fill color used for inactive dots."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1329
+msgid "rgba(128,128,128,0.4)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1338
+msgid "Scale multiplier applied to the active dot."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1340
+msgid "Fraction of the viewport height reserved for the carousel on mobile."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1342
+msgid "Fraction of the viewport height reserved for the carousel on tablet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1343
+msgid "Card Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1344
+msgid "Primary width target for each compact-grid card. The grid wraps responsively around this width."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1346
+msgid "Locks card proportions without requiring a separate height control. Auto keeps legacy height-derived behavior."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1347
+msgid "Auto (legacy height-derived)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1348
+msgid "5:7 (playing card)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1357
+msgid "Max Columns (0 = auto)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1358
+msgid "Caps the number of compact-grid columns while preserving responsive wrapping."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1359
+msgid "Card Min Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1360
+msgid "Optional guard that prevents extremely thin cards on narrow containers. Set 0 to disable."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1361
+msgid "Target Row Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1362
+msgid "Ideal pixel height for each justified row. This is an algorithm input for react-photo-album, not a CSS value."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1363
+msgid "Photo Normalize Height (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1364
+msgid "Normalization pixel height for aspect-ratio scaling before layout. Lower values produce smaller tiles."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1365
+msgid "Masonry Columns (0 = auto)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1366
+msgid "Number of masonry columns. Set 0 to let the layout choose responsively (1-4 based on width)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1367
+msgid "Auto Column Breakpoints"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1368
+msgid "Comma-separated width:columns pairs used when masonry columns are set to auto."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1369
+msgid "480:2,768:3,1024:4,1280:5"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1370
+msgid "Entrance Animation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1371
+msgid "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1373
+msgid "Waterfall (stagger in)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1374
+msgid "Entrance Stagger (ms)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1375
+msgid "Delay in milliseconds between successive tile animations in Waterfall mode."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1376
+msgid "Hero Aspect Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1377
+msgid "Fixed aspect ratio of the hero display area."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1383
+msgid "Thumbnail Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1384
+msgid "Width and height of each thumbnail strip item."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1386
+msgid "Duration of the hero swap and thumbnail highlight transitions."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1387
+msgid "Strip Position"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1388
+msgid "Position of the thumbnail strip. 'Right' falls back to 'Below' on narrow containers."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1389
+msgid "Below"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1390
+msgid "Right (wide containers)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1391
+msgid "Hero Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1392
+msgid "Maximum width of the spotlight layout. Set 0 to disable (full container width)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1393
+msgid "Hero Justification"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1394
+msgid "Horizontal alignment of the hero block within the container when Hero Max Width makes it narrower than the container."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1395
+msgid "Start (left)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1397
+msgid "End (right)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1398
+msgid "Snap Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1399
+msgid "CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1403
+msgid "Page Indicator"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1404
+msgid "Show a slide counter (n / total) in the lower-right corner of each slide."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1405
+msgid "Container Max Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1406
+msgid "Maximum width of the scroll-snap container. Set 0 to disable (full container width)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1407
+msgid "Tile Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1408
+msgid "Width and height of each shape tile (unified gallery)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1409
+msgid "Image Tile Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1410
+msgid "Shape tile size for the image gallery."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1411
+msgid "Video Tile Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1412
+msgid "Shape tile size for the video gallery."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1414
+msgid "Horizontal gap between shape tiles."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1416
+msgid "Vertical gap between shape-tile rows."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1417
+msgid "Layout Builder Scope"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1418
+msgid "Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1419
+msgid "Full Gallery"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1420
+msgid "Viewport Only"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1421
+msgid "Default Glow Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1422
+msgid "Fallback glow color for slots using Hover = Glow when the slot does not override it."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1423
+msgid "Default Glow Spread (px)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1424
+msgid "Fallback glow radius for slots using Hover = Glow when the slot does not override it."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1425
+#: includes/i18n/class-wpsg-frontend-strings.php:1428
+#: includes/settings/class-wpsg-settings-core-fields.php:200
+msgid "Classic"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1426
+#: includes/i18n/class-wpsg-frontend-strings.php:1427
+msgid "Classic (Carousel)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1429
+msgid "Classic Carousel"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1431
+#: includes/i18n/class-wpsg-frontend-strings.php:1434
+#: includes/i18n/class-wpsg-frontend-strings.php:1473
+msgid "Justified"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1432
+#: includes/i18n/class-wpsg-frontend-strings.php:1433
+msgid "Justified Rows (Flickr-style)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1436
+msgid "Hexagonal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1437
+msgid "Circular"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1438
+msgid "Diamond"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1439
+#: includes/i18n/class-wpsg-frontend-strings.php:1442
+msgid "Scroll Snap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1440
+#: includes/i18n/class-wpsg-frontend-strings.php:1441
+msgid "Scroll Snap (vertical)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1443
+#: includes/i18n/class-wpsg-frontend-strings.php:1446
+msgid "Coverflow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1444
+#: includes/i18n/class-wpsg-frontend-strings.php:1445
+msgid "Coverflow (3D Carousel)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1447
+#: includes/i18n/class-wpsg-frontend-strings.php:1450
+msgid "Pinterest"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1448
+#: includes/i18n/class-wpsg-frontend-strings.php:1449
+msgid "Pinterest (Mosaic Grid)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1451
+#: includes/i18n/class-wpsg-frontend-strings.php:1454
+msgid "Stacked"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1452
+#: includes/i18n/class-wpsg-frontend-strings.php:1453
+msgid "Stacked (Deck of Cards)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1455
+#: includes/i18n/class-wpsg-frontend-strings.php:1457
+#: includes/i18n/class-wpsg-frontend-strings.php:1458
+msgid "Filterable Grid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1456
+msgid "Filterable Grid (Isotope)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1459
+#: includes/i18n/class-wpsg-frontend-strings.php:1462
+#: includes/i18n/class-wpsg-frontend-strings.php:1475
+msgid "Spotlight"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1460
+#: includes/i18n/class-wpsg-frontend-strings.php:1461
+msgid "Spotlight (Hero + Strip)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1463
+#: includes/i18n/class-wpsg-frontend-strings.php:1465
+#: includes/i18n/class-wpsg-frontend-strings.php:1478
+msgid "Layout Builder"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1464
+msgid "Layout Builder -> per-breakpoint"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1466
+msgid "{{desc}} ({{min}}–{{max}}, default: {{fallback}})"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1467
+msgid "{{desc}} (max: {{max}}, default: {{fallback}})"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1468
+msgid "Media Frame"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1469
+msgid "Photo Grid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1476
+msgid "Scroll-snap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1477
+msgid "Shape Layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1479
+msgid "Choose which layout this gallery uses with the \"Layout Template\" picker in the campaign's Settings tab (Edit Campaign). These options only style the chosen layout."
+msgstr ""
+
 #: includes/settings/class-wpsg-settings-core-fields.php:23
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr ""
@@ -4783,10 +5421,6 @@ msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:198
 msgid "Material Light"
-msgstr ""
-
-#: includes/settings/class-wpsg-settings-core-fields.php:200
-msgid "Classic"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:201

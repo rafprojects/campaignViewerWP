@@ -8,6 +8,7 @@ import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInp
 import type { GalleryBehaviorSettings, GalleryConfig, GalleryConfigBreakpoint, GalleryConfigScope } from '@/types';
 import type { AdapterCapability, AdapterSettingFieldAppliesTo, AdapterSettingGroupDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 import { anyAdapterUsesSettingGroup, getActiveSettingGroupDefinitions, getAdapterRegistration, getAdapterSelectOptions, getSettingGroupFieldDefinitions } from '@/components/Galleries/Adapters/adapterRegistry';
+import { tFieldLabel, tFieldDescription, tFieldPlaceholder, tFieldOptions } from '@/utils/adapterSchemaI18n';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { cloneGalleryConfig, collectGalleryAdapterSettingValues, GALLERY_BREAKPOINTS, getGalleryConfigScopeAdapterIds, resolveGalleryConfig, setGalleryAdapterSetting } from '@/utils/galleryConfig';
 import { DimensionInput } from './DimensionInput';
@@ -165,8 +166,8 @@ function renderSettingFields(
         return (
           <NumberInput
             key={`${group}-${String(field.key)}`}
-            label={fieldLabel(field.label, reset)}
-            description={`${field.description} (${field.min}–${field.max}, default: ${field.fallback})`}
+            label={fieldLabel(tFieldLabel(group, field), reset)}
+            description={i18n.t('set_sg_num_hint', '{{desc}} ({{min}}–{{max}}, default: {{fallback}})', { ns: 'wpsg', desc: tFieldDescription(group, field), min: field.min, max: field.max, fallback: field.fallback })}
             {...(numValue !== undefined ? { value: numValue } : {})}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
@@ -194,8 +195,8 @@ function renderSettingFields(
         return (
           <DimensionInput
             key={`${group}-${String(field.key)}`}
-            label={fieldLabel(field.label, reset)}
-            description={`${field.description} (max: ${field.max}, default: ${field.fallback})`}
+            label={fieldLabel(tFieldLabel(group, field), reset)}
+            description={i18n.t('set_sg_dim_hint', '{{desc}} (max: {{max}}, default: {{fallback}})', { ns: 'wpsg', desc: tFieldDescription(group, field), max: field.max, fallback: field.fallback })}
             value={(dimValue ?? field.fallback)}
             unit={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.unitKey) as string | undefined) ?? 'px'}
             onValueChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
@@ -213,8 +214,8 @@ function renderSettingFields(
         return (
           <ModalSelect
             key={`${group}-${String(field.key)}`}
-            label={fieldLabel(field.label, reset)}
-            description={field.description}
+            label={fieldLabel(tFieldLabel(group, field), reset)}
+            description={tFieldDescription(group, field)}
             value={String((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as boolean | undefined) ?? field.fallback)}
             onChange={(value) => updateSetting(field.key, ((value ?? String(field.fallback)) === 'true') as GalleryBehaviorSettings[typeof field.key])}
             data={[
@@ -230,10 +231,10 @@ function renderSettingFields(
         return (
           <TextInput
             key={`${group}-${String(field.key)}`}
-            label={fieldLabel(field.label, reset)}
-            description={field.description}
+            label={fieldLabel(tFieldLabel(group, field), reset)}
+            description={tFieldDescription(group, field)}
             value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
-            placeholder={field.placeholder}
+            placeholder={tFieldPlaceholder(group, field)}
             onChange={(event) => updateSetting(field.key, event.currentTarget.value as GalleryBehaviorSettings[typeof field.key])}
           />
         );
@@ -244,8 +245,8 @@ function renderSettingFields(
         return (
           <ColorInput
             key={`${group}-${String(field.key)}`}
-            label={fieldLabel(field.label, reset)}
-            description={field.description}
+            label={fieldLabel(tFieldLabel(group, field), reset)}
+            description={tFieldDescription(group, field)}
             value={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined) ?? field.fallback}
             onChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
           />
@@ -261,12 +262,12 @@ function renderSettingFields(
       return (
         <ModalSelect
           key={`${group}-${String(field.key)}`}
-          label={fieldLabel(field.label, reset)}
-          description={field.description}
+          label={fieldLabel(tFieldLabel(group, field), reset)}
+          description={tFieldDescription(group, field)}
           {...(field.size !== undefined ? { size: field.size } : {})}
           {...(selectValue !== undefined ? { value: selectValue } : {})}
           onChange={(value) => updateSetting(field.key, (value ?? field.fallback) as GalleryBehaviorSettings[typeof field.key])}
-          data={field.options}
+          data={tFieldOptions(group, field)}
           error={selectError}
         />
       );

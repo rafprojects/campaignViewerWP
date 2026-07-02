@@ -21,6 +21,7 @@ import type {
   GalleryAdapterProps,
 } from './GalleryAdapter';
 import { BUILTIN_ADAPTERS, SETTING_GROUP_DEFINITIONS } from '@/data/adapterSettingGroups';
+import { tAdapterLabel } from '@/utils/adapterSchemaI18n';
 
 export interface AdapterSelectOption {
   value: GalleryAdapterId;
@@ -103,7 +104,8 @@ export function getAdapterSelectOptions(options: {
 
   return getRegisteredAdapters().map((adapter) => {
     const disabled = breakpoint ? !isAdapterSupportedAtBreakpoint(adapter.id, breakpoint) : false;
-    const label = adapter.optionLabels?.[context] ?? adapter.label;
+    const ctxLabel = adapter.optionLabels?.[context];
+    const label = tAdapterLabel(adapter.id, ctxLabel ?? adapter.label, ctxLabel !== undefined ? context : undefined);
 
     return {
       value: adapter.id,
@@ -122,10 +124,13 @@ export function getListingAdapterSelectOptions(breakpoint?: Breakpoint): Adapter
   return getRegisteredAdapters()
     .filter((adapter) => adapter.capabilities.includes('listing-compatible'))
     .filter((adapter) => breakpoint === undefined || isAdapterSupportedAtBreakpoint(adapter.id, breakpoint))
-    .map((adapter) => ({
-      value: adapter.id,
-      label: adapter.optionLabels?.['campaign-listing'] ?? adapter.label,
-    }));
+    .map((adapter) => {
+      const ctxLabel = adapter.optionLabels?.['campaign-listing'];
+      return {
+        value: adapter.id,
+        label: tAdapterLabel(adapter.id, ctxLabel ?? adapter.label, ctxLabel !== undefined ? 'campaign-listing' : undefined),
+      };
+    });
 }
 
 /**
