@@ -11,6 +11,7 @@
  * the shared GraphicLayerContent component.
  */
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Accordion,
   ActionIcon,
@@ -108,26 +109,27 @@ function FilterEffectsControls({
   effects: SlotFilterEffects;
   set: (patch: Partial<SlotFilterEffects>) => void;
 }) {
+  const { t } = useTranslation('wpsg');
   return (
     <Stack gap={4}>
-      <Text size="xs" c="dimmed">Brightness</Text>
+      <Text size="xs" c="dimmed">{t('lb_gl_brightness', 'Brightness')}</Text>
       <Slider value={effects.brightness ?? 100} onChange={(v) => set({ brightness: v })}
-        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label="Brightness" />
-      <Text size="xs" c="dimmed">Contrast</Text>
+        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label={t('lb_gl_brightness', 'Brightness')} />
+      <Text size="xs" c="dimmed">{t('lb_gl_contrast', 'Contrast')}</Text>
       <Slider value={effects.contrast ?? 100} onChange={(v) => set({ contrast: v })}
-        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label="Contrast" />
-      <Text size="xs" c="dimmed">Saturate</Text>
+        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label={t('lb_gl_contrast', 'Contrast')} />
+      <Text size="xs" c="dimmed">{t('lb_gl_saturate', 'Saturate')}</Text>
       <Slider value={effects.saturate ?? 100} onChange={(v) => set({ saturate: v })}
-        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label="Saturate" />
-      <Text size="xs" c="dimmed">Blur</Text>
+        min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} aria-label={t('lb_gl_saturate', 'Saturate')} />
+      <Text size="xs" c="dimmed">{t('lb_gl_blur', 'Blur')}</Text>
       <Slider value={effects.blur ?? 0} onChange={(v) => set({ blur: v })}
-        min={0} max={20} step={0.5} size="xs" label={(v) => `${v}px`} aria-label="Blur" />
-      <Text size="xs" c="dimmed">Grayscale</Text>
+        min={0} max={20} step={0.5} size="xs" label={(v) => `${v}px`} aria-label={t('lb_gl_blur', 'Blur')} />
+      <Text size="xs" c="dimmed">{t('lb_gl_grayscale', 'Grayscale')}</Text>
       <Slider value={effects.grayscale ?? 0} onChange={(v) => set({ grayscale: v })}
-        min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} aria-label="Grayscale" />
-      <Text size="xs" c="dimmed">Hue rotate</Text>
+        min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} aria-label={t('lb_gl_grayscale', 'Grayscale')} />
+      <Text size="xs" c="dimmed">{t('lb_gl_hue_rotate', 'Hue rotate')}</Text>
       <Slider value={effects.hueRotate ?? 0} onChange={(v) => set({ hueRotate: v })}
-        min={0} max={360} step={1} size="xs" label={(v) => `${v}°`} aria-label="Hue rotate" />
+        min={0} max={360} step={1} size="xs" label={(v) => `${v}°`} aria-label={t('lb_gl_hue_rotate', 'Hue rotate')} />
     </Stack>
   );
 }
@@ -141,29 +143,30 @@ function ShadowControls({
   onToggle: (on: boolean) => void;
   set: (patch: Partial<SlotShadow>) => void;
 }) {
+  const { t } = useTranslation('wpsg');
   const sh = shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
   const enabled = Boolean(shadow);
   return (
     <Stack gap={4}>
       <SegmentedControl
         size="xs" fullWidth
-        data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
+        data={[{ label: t('lb_slot_off', 'Off'), value: 'off' }, { label: t('lb_slot_on', 'On'), value: 'on' }]}
         value={enabled ? 'on' : 'off'}
         onChange={(v) => onToggle(v === 'on')}
-        aria-label="Drop shadow"
+        aria-label={t('lb_gl_drop_shadow', 'Drop shadow')}
       />
       {enabled && (
         <>
           <Group grow gap={6}>
-            <NumberInput label="Off X" value={sh.offsetX} onChange={(v) => set({ offsetX: Number(v) || 0 })}
+            <NumberInput label={t('lb_slot_offx', 'Off X')} value={sh.offsetX} onChange={(v) => set({ offsetX: Number(v) || 0 })}
               min={-50} max={50} size="xs" suffix=" px" />
-            <NumberInput label="Off Y" value={sh.offsetY} onChange={(v) => set({ offsetY: Number(v) || 0 })}
+            <NumberInput label={t('lb_slot_offy', 'Off Y')} value={sh.offsetY} onChange={(v) => set({ offsetY: Number(v) || 0 })}
               min={-50} max={50} size="xs" suffix=" px" />
           </Group>
-          <Text size="xs" c="dimmed">Blur</Text>
+          <Text size="xs" c="dimmed">{t('lb_gl_blur', 'Blur')}</Text>
           <Slider value={sh.blur} onChange={(v) => set({ blur: v })}
-            min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} aria-label="Shadow blur" />
-          <ColorInput label="Color" value={sh.color} onChange={(v) => set({ color: v })}
+            min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} aria-label={t('lb_gl_shadow_blur', 'Shadow blur')} />
+          <ColorInput label={t('lb_slot_color', 'Color')} value={sh.color} onChange={(v) => set({ color: v })}
             size="xs" format="rgba" />
         </>
       )}
@@ -184,7 +187,10 @@ export function GraphicLayerPropertiesPanel({
   onBringForward,
   onSendBackward,
 }: GraphicLayerPropertiesPanelProps) {
-  const displayName = overlay.name || `Graphic Layer ${overlayIndex}`;
+  const { t } = useTranslation('wpsg');
+  const shapeOptions = SHAPE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_shape_${o.value}`, o.label) }));
+  const blendOptions = BLEND_MODE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_blend_${o.value}`, o.label) }));
+  const displayName = overlay.name || t('lb_gl_default_name', 'Graphic Layer {{index}}', { index: overlayIndex });
   const [nameValue, setNameValue] = useState(displayName);
 
   // Inline confirm state for the destructive Remove action
@@ -210,7 +216,7 @@ export function GraphicLayerPropertiesPanel({
 
       {/* ── Name ── */}
       <TextInput
-        label="Name"
+        label={t('lb_gl_name', 'Name')}
         size="xs"
         value={nameValue}
         onChange={(e) => setNameValue(e.currentTarget.value)}
@@ -218,7 +224,7 @@ export function GraphicLayerPropertiesPanel({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        aria-label="Graphic layer name"
+        aria-label={t('lb_gl_name_aria', 'Graphic layer name')}
       />
 
       {/* ── Preview ── */}
@@ -233,17 +239,17 @@ export function GraphicLayerPropertiesPanel({
         >
           <img
             src={overlay.imageUrl}
-            alt="Graphic layer preview"
+            alt={t('lb_gl_preview_alt', 'Graphic layer preview')}
             style={{ maxHeight: 64, maxWidth: '100%', objectFit: 'contain' }}
           />
         </Box>
       )}
 
       {/* ── Position ── */}
-      <Divider label="Position" labelPosition="left" />
+      <Divider label={t('lb_gl_position', 'Position')} labelPosition="left" />
       <Group grow gap="xs">
         <NumberInput
-          label="X %"
+          label={t('lb_slot_x', 'X %')}
           value={overlay.x}
           onChange={(val) => set({ x: Number(val) || 0 })}
           min={0}
@@ -252,7 +258,7 @@ export function GraphicLayerPropertiesPanel({
           size="xs"
         />
         <NumberInput
-          label="Y %"
+          label={t('lb_slot_y', 'Y %')}
           value={overlay.y}
           onChange={(val) => set({ y: Number(val) || 0 })}
           min={0}
@@ -263,10 +269,10 @@ export function GraphicLayerPropertiesPanel({
       </Group>
 
       {/* ── Size ── */}
-      <Divider label="Size" labelPosition="left" />
+      <Divider label={t('lb_gl_size', 'Size')} labelPosition="left" />
       <Group grow gap="xs">
         <NumberInput
-          label="W %"
+          label={t('lb_gl_w', 'W %')}
           value={overlay.width}
           onChange={(val) => set({ width: Math.max(1, Number(val) || 1) })}
           min={1}
@@ -275,7 +281,7 @@ export function GraphicLayerPropertiesPanel({
           size="xs"
         />
         <NumberInput
-          label="H %"
+          label={t('lb_gl_h', 'H %')}
           value={overlay.height}
           onChange={(val) => set({ height: Math.max(1, Number(val) || 1) })}
           min={1}
@@ -291,12 +297,12 @@ export function GraphicLayerPropertiesPanel({
         fullWidth
         onClick={() => set({ x: 0, y: 0, width: 100, height: 100 })}
       >
-        Fill canvas
+        {t('lb_gl_fill_canvas', 'Fill canvas')}
       </Button>
 
       {/* ── Transform ── */}
-      <Divider label="Transform" labelPosition="left" />
-      <Text size="xs" c="dimmed">Rotation</Text>
+      <Divider label={t('lb_gl_transform', 'Transform')} labelPosition="left" />
+      <Text size="xs" c="dimmed">{t('lb_gl_rotation', 'Rotation')}</Text>
       <Slider
         value={overlay.rotation ?? 0}
         onChange={(val) => set({ rotation: val })}
@@ -305,7 +311,7 @@ export function GraphicLayerPropertiesPanel({
         step={1}
         size="xs"
         label={(v) => `${v}°`}
-        aria-label="Rotation"
+        aria-label={t('lb_gl_rotation', 'Rotation')}
       />
       <Group gap="xs" grow>
         <Button
@@ -313,24 +319,24 @@ export function GraphicLayerPropertiesPanel({
           variant={overlay.flipH ? 'filled' : 'light'}
           leftSection={<IconFlipHorizontal size={14} />}
           onClick={() => set({ flipH: !overlay.flipH })}
-          aria-label="Flip horizontal"
+          aria-label={t('lb_gl_flip_h_aria', 'Flip horizontal')}
         >
-          Flip H
+          {t('lb_gl_flip_h', 'Flip H')}
         </Button>
         <Button
           size="xs"
           variant={overlay.flipV ? 'filled' : 'light'}
           leftSection={<IconFlipVertical size={14} />}
           onClick={() => set({ flipV: !overlay.flipV })}
-          aria-label="Flip vertical"
+          aria-label={t('lb_gl_flip_v_aria', 'Flip vertical')}
         >
-          Flip V
+          {t('lb_gl_flip_v', 'Flip V')}
         </Button>
       </Group>
 
       {/* ── Opacity ── */}
-      <Divider label="Appearance" labelPosition="left" />
-      <Text size="xs" c="dimmed">Opacity</Text>
+      <Divider label={t('lb_gl_appearance', 'Appearance')} labelPosition="left" />
+      <Text size="xs" c="dimmed">{t('lb_gl_opacity', 'Opacity')}</Text>
       <Slider
         value={overlay.opacity}
         onChange={(val) => set({ opacity: val })}
@@ -339,13 +345,13 @@ export function GraphicLayerPropertiesPanel({
         step={0.05}
         size="xs"
         label={(v) => `${Math.round(v * 100)}%`}
-        aria-label="Graphic layer opacity"
+        aria-label={t('lb_gl_opacity_aria', 'Graphic layer opacity')}
       />
 
       <Switch
         size="xs"
-        label="Click-through"
-        description="Pointer events pass through to layers below"
+        label={t('lb_gl_click_through', 'Click-through')}
+        description={t('lb_gl_click_through_desc', 'Pointer events pass through to layers below')}
         checked={!overlay.pointerEvents}
         onChange={(e) => set({ pointerEvents: !e.currentTarget.checked })}
       />
@@ -354,14 +360,14 @@ export function GraphicLayerPropertiesPanel({
       <Accordion variant="separated" multiple chevronPosition="right" defaultValue={[]}>
         <Accordion.Item value="shape">
           <Accordion.Control>
-            <Text size="xs" fw={600}>Shape &amp; Border</Text>
+            <Text size="xs" fw={600}>{t('lb_gl_shape_border', 'Shape & Border')}</Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap="xs">
               <Select
-                label="Shape"
+                label={t('lb_gl_shape', 'Shape')}
                 size="xs"
-                data={SHAPE_OPTIONS}
+                data={shapeOptions}
                 value={shape}
                 onChange={(val) => set({ shape: (val as LayoutSlotShape) ?? 'rectangle' })}
                 allowDeselect={false}
@@ -369,9 +375,9 @@ export function GraphicLayerPropertiesPanel({
               />
               {shape === 'custom' && (
                 <TextInput
-                  label="Custom clip-path"
+                  label={t('lb_gl_custom_clip', 'Custom clip-path')}
                   size="xs"
-                  placeholder="polygon(50% 0%, 100% 100%, 0% 100%)"
+                  placeholder={t('lb_gl_custom_clip_ph', 'polygon(50% 0%, 100% 100%, 0% 100%)')}
                   value={overlay.clipPath ?? ''}
                   onChange={(e) => set({ clipPath: e.currentTarget.value })}
                 />
@@ -379,7 +385,7 @@ export function GraphicLayerPropertiesPanel({
               <Group grow gap="xs">
                 {shape === 'rectangle' && (
                   <NumberInput
-                    label="Radius"
+                    label={t('lb_gl_radius', 'Radius')}
                     size="xs"
                     value={overlay.borderRadius ?? 0}
                     onChange={(v) => set({ borderRadius: Number(v) || 0 })}
@@ -389,7 +395,7 @@ export function GraphicLayerPropertiesPanel({
                   />
                 )}
                 <NumberInput
-                  label="Border"
+                  label={t('lb_gl_border', 'Border')}
                   size="xs"
                   value={overlay.borderWidth ?? 0}
                   onChange={(v) => set({ borderWidth: Math.max(0, Number(v) || 0) })}
@@ -400,7 +406,7 @@ export function GraphicLayerPropertiesPanel({
               </Group>
               {(overlay.borderWidth ?? 0) > 0 && (
                 <ColorInput
-                  label="Border color"
+                  label={t('lb_gl_border_color', 'Border color')}
                   size="xs"
                   format="rgba"
                   value={overlay.borderColor ?? '#ffffff'}
@@ -413,14 +419,14 @@ export function GraphicLayerPropertiesPanel({
 
         <Accordion.Item value="mask">
           <Accordion.Control>
-            <Text size="xs" fw={600}>Mask</Text>
+            <Text size="xs" fw={600}>{t('lb_gl_mask', 'Mask')}</Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap="xs">
               <TextInput
-                label="Mask image URL"
+                label={t('lb_gl_mask_url', 'Mask image URL')}
                 size="xs"
-                placeholder="https://… (SVG/PNG)"
+                placeholder={t('lb_gl_mask_url_ph', 'https://… (SVG/PNG)')}
                 value={mask?.url ?? ''}
                 onChange={(e) => {
                   const url = e.currentTarget.value;
@@ -437,32 +443,32 @@ export function GraphicLayerPropertiesPanel({
                     size="xs"
                     fullWidth
                     data={[
-                      { label: 'Luminance', value: 'luminance' },
-                      { label: 'Alpha', value: 'alpha' },
+                      { label: t('lb_gl_luminance', 'Luminance'), value: 'luminance' },
+                      { label: t('lb_gl_alpha', 'Alpha'), value: 'alpha' },
                     ]}
                     value={mask.mode}
                     onChange={(v) =>
                       set({ maskLayer: { ...mask, mode: v as 'luminance' | 'alpha' } })
                     }
-                    aria-label="Mask mode"
+                    aria-label={t('lb_gl_mask_mode', 'Mask mode')}
                   />
                   <Group grow gap="xs">
-                    <NumberInput label="X %" size="xs" value={mask.x}
+                    <NumberInput label={t('lb_slot_x', 'X %')} size="xs" value={mask.x}
                       onChange={(v) => set({ maskLayer: { ...mask, x: Number(v) || 0 } })} />
-                    <NumberInput label="Y %" size="xs" value={mask.y}
+                    <NumberInput label={t('lb_slot_y', 'Y %')} size="xs" value={mask.y}
                       onChange={(v) => set({ maskLayer: { ...mask, y: Number(v) || 0 } })} />
                   </Group>
                   <Group grow gap="xs">
-                    <NumberInput label="W %" size="xs" value={mask.width} min={1}
+                    <NumberInput label={t('lb_gl_w', 'W %')} size="xs" value={mask.width} min={1}
                       onChange={(v) => set({ maskLayer: { ...mask, width: Math.max(1, Number(v) || 1) } })} />
-                    <NumberInput label="H %" size="xs" value={mask.height} min={1}
+                    <NumberInput label={t('lb_gl_h', 'H %')} size="xs" value={mask.height} min={1}
                       onChange={(v) => set({ maskLayer: { ...mask, height: Math.max(1, Number(v) || 1) } })} />
                   </Group>
-                  <Text size="xs" c="dimmed">Feather</Text>
+                  <Text size="xs" c="dimmed">{t('lb_gl_feather', 'Feather')}</Text>
                   <Slider value={mask.feather} onChange={(v) => set({ maskLayer: { ...mask, feather: v } })}
-                    min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} aria-label="Mask feather" />
+                    min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} aria-label={t('lb_gl_mask_feather', 'Mask feather')} />
                   <Button size="xs" variant="subtle" color="red" onClick={() => set({ maskLayer: undefined })}>
-                    Clear mask
+                    {t('lb_gl_clear_mask', 'Clear mask')}
                   </Button>
                 </>
               )}
@@ -472,25 +478,25 @@ export function GraphicLayerPropertiesPanel({
 
         <Accordion.Item value="effects">
           <Accordion.Control>
-            <Text size="xs" fw={600}>Effects</Text>
+            <Text size="xs" fw={600}>{t('lb_gl_effects', 'Effects')}</Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap="sm">
               <Select
-                label="Blend mode"
+                label={t('lb_gl_blend_mode', 'Blend mode')}
                 size="xs"
-                data={BLEND_MODE_OPTIONS}
+                data={blendOptions}
                 value={overlay.blendMode ?? 'normal'}
                 onChange={(val) => set({ blendMode: (val as SlotBlendMode) ?? 'normal' })}
                 allowDeselect={false}
                 comboboxProps={{ withinPortal: true }}
               />
-              <Divider label="Filters" labelPosition="left" />
+              <Divider label={t('lb_gl_filters', 'Filters')} labelPosition="left" />
               <FilterEffectsControls
                 effects={overlay.filterEffects ?? {}}
                 set={(patch) => set({ filterEffects: { ...(overlay.filterEffects ?? {}), ...patch } })}
               />
-              <Divider label="Drop shadow" labelPosition="left" />
+              <Divider label={t('lb_gl_drop_shadow', 'Drop shadow')} labelPosition="left" />
               <ShadowControls
                 shadow={overlay.shadow}
                 onToggle={(on) =>
@@ -506,44 +512,44 @@ export function GraphicLayerPropertiesPanel({
       </Accordion>
 
       {/* ── Stacking ── */}
-      <Divider label="Stacking" labelPosition="left" />
+      <Divider label={t('lb_gl_stacking', 'Stacking')} labelPosition="left" />
       <Group gap={4} justify="center">
-        <Tooltip label="Send to Back (Shift+[)">
+        <Tooltip label={t('lb_slot_send_back_tt', 'Send to Back (Shift+[)')}>
           <ActionIcon
             size="sm"
             variant="subtle"
             onClick={() => onSendToBack(overlay.id)}
-            aria-label="Send to back"
+            aria-label={t('lb_slot_send_back_aria', 'Send to back')}
           >
             <IconArrowBigDownLine size={16} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Send Backward ([)">
+        <Tooltip label={t('lb_slot_send_bwd_tt', 'Send Backward ([)')}>
           <ActionIcon
             size="sm"
             variant="subtle"
             onClick={() => onSendBackward(overlay.id)}
-            aria-label="Send backward"
+            aria-label={t('lb_slot_send_bwd_aria', 'Send backward')}
           >
             <IconArrowDown size={16} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Bring Forward (])">
+        <Tooltip label={t('lb_slot_bring_fwd_tt', 'Bring Forward (])')}>
           <ActionIcon
             size="sm"
             variant="subtle"
             onClick={() => onBringForward(overlay.id)}
-            aria-label="Bring forward"
+            aria-label={t('lb_slot_bring_fwd_aria', 'Bring forward')}
           >
             <IconArrowUp size={16} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Bring to Front (Shift+])">
+        <Tooltip label={t('lb_slot_bring_front_tt', 'Bring to Front (Shift+])')}>
           <ActionIcon
             size="sm"
             variant="subtle"
             onClick={() => onBringToFront(overlay.id)}
-            aria-label="Bring to front"
+            aria-label={t('lb_slot_bring_front_aria', 'Bring to front')}
           >
             <IconArrowBigUpLine size={16} />
           </ActionIcon>
@@ -551,13 +557,13 @@ export function GraphicLayerPropertiesPanel({
       </Group>
 
       {/* ── Remove ── */}
-      <Divider label="Danger zone" labelPosition="left" />
+      <Divider label={t('lb_gl_danger_zone', 'Danger zone')} labelPosition="left" />
       {confirmOpen ? (
         <Stack gap={4}>
-          <Text size="xs" c="dimmed">Remove this graphic layer?</Text>
+          <Text size="xs" c="dimmed">{t('lb_gl_remove_confirm', 'Remove this graphic layer?')}</Text>
           <Group gap={4}>
             <Button size="xs" variant="subtle" onClick={closeConfirm} flex={1}>
-              Cancel
+              {t('lb_gl_cancel', 'Cancel')}
             </Button>
             <Button
               size="xs"
@@ -565,9 +571,9 @@ export function GraphicLayerPropertiesPanel({
               onClick={() => { closeConfirm(); onRemove(overlay.id); }}
               leftSection={<IconTrash size={12} />}
               flex={1}
-              aria-label="Confirm remove"
+              aria-label={t('lb_gl_confirm_remove', 'Confirm remove')}
             >
-              Remove
+              {t('lb_gl_remove', 'Remove')}
             </Button>
           </Group>
         </Stack>
@@ -579,9 +585,9 @@ export function GraphicLayerPropertiesPanel({
           fullWidth
           leftSection={<IconTrash size={12} />}
           onClick={openConfirm}
-          aria-label="Remove layer"
+          aria-label={t('lb_gl_remove_layer', 'Remove layer')}
         >
-          Remove layer
+          {t('lb_gl_remove_layer', 'Remove layer')}
         </Button>
       )}
     </Stack>
