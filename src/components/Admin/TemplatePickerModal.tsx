@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Modal, SimpleGrid, Card, Text, Badge, Stack, Group, Loader, Center } from '@mantine/core';
 import { IconLayoutGrid } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import classes from './TemplatePickerModal.module.scss';
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Props) {
+  const { t } = useTranslation('wpsg');
   const [templates, setTemplates] = useState<CampaignTemplate[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +45,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Choose a starting point"
+      title={t('admin_tpick_title', 'Choose a starting point')}
       size="lg"
       centered
     >
@@ -63,9 +65,9 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
             <Stack gap={4}>
               <Group gap="xs" wrap="nowrap">
                 <IconLayoutGrid size={16} />
-                <Text fw={600} size="sm" truncate>Start Blank</Text>
+                <Text fw={600} size="sm" truncate>{t('admin_tpick_start_blank', 'Start Blank')}</Text>
               </Group>
-              <Text size="xs" c="dimmed">No pre-configured settings.</Text>
+              <Text size="xs" c="dimmed">{t('admin_tpick_no_settings', 'No pre-configured settings.')}</Text>
             </Stack>
           </Card>
 
@@ -88,7 +90,7 @@ export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Pr
                   <Group gap="xs" wrap="nowrap" justify="space-between">
                     <Text fw={600} size="sm" truncate style={{ flex: 1 }}>{tpl.name}</Text>
                     <Badge size="xs" variant="light" color={tpl.source === 'builtin' ? 'blue' : 'gray'}>
-                      {tpl.source === 'builtin' ? 'Built-in' : 'Custom'}
+                      {tpl.source === 'builtin' ? t('admin_tpick_builtin', 'Built-in') : t('admin_tpick_custom', 'Custom')}
                     </Badge>
                   </Group>
                   {tpl.description && (

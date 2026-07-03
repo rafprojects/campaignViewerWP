@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-02T22:22:23+00:00\n"
+"POT-Creation-Date: 2026-07-03T02:23:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -53,6 +53,7 @@ msgstr ""
 #: includes/class-wpsg-cpt.php:70
 #: includes/i18n/class-wpsg-frontend-strings.php:35
 #: includes/i18n/class-wpsg-frontend-strings.php:1590
+#: includes/i18n/class-wpsg-frontend-strings.php:1740
 msgid "Campaign"
 msgstr ""
 
@@ -165,6 +166,7 @@ msgid "Choose from the most used companies"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:122
+#: includes/i18n/class-wpsg-frontend-strings.php:1765
 msgid "Campaign Tags"
 msgstr ""
 
@@ -173,6 +175,7 @@ msgid "Campaign Categories"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:143
+#: includes/i18n/class-wpsg-frontend-strings.php:1766
 msgid "Media Tags"
 msgstr ""
 
@@ -610,6 +613,7 @@ msgid "Create new campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:125
+#: includes/i18n/class-wpsg-frontend-strings.php:1802
 msgid "Import"
 msgstr ""
 
@@ -808,12 +812,14 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:178
 #: includes/i18n/class-wpsg-frontend-strings.php:1699
+#: includes/i18n/class-wpsg-frontend-strings.php:1823
 msgid "Delete"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:179
 #: includes/i18n/class-wpsg-frontend-strings.php:1617
 #: includes/i18n/class-wpsg-frontend-strings.php:1700
+#: includes/i18n/class-wpsg-frontend-strings.php:1749
 msgid "Cancel"
 msgstr ""
 
@@ -986,6 +992,7 @@ msgid "{{title}} (Copy)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:222
+#: includes/i18n/class-wpsg-frontend-strings.php:1819
 msgid "Duplicate"
 msgstr ""
 
@@ -1061,16 +1068,19 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:241
 #: includes/i18n/class-wpsg-frontend-strings.php:297
+#: includes/i18n/class-wpsg-frontend-strings.php:1813
 msgid "Tags"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:242
 #: includes/i18n/class-wpsg-frontend-strings.php:300
+#: includes/i18n/class-wpsg-frontend-strings.php:1764
 msgid "Categories"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:243
 #: includes/i18n/class-wpsg-frontend-strings.php:1549
+#: includes/i18n/class-wpsg-frontend-strings.php:1814
 msgid "Actions"
 msgstr ""
 
@@ -1163,6 +1173,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:266
 #: includes/i18n/class-wpsg-frontend-strings.php:419
+#: includes/i18n/class-wpsg-frontend-strings.php:1817
 msgid "Edit"
 msgstr ""
 
@@ -1540,6 +1551,7 @@ msgid "Add External Media"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:373
+#: includes/i18n/class-wpsg-frontend-strings.php:1748
 msgid "Save"
 msgstr ""
 
@@ -1841,6 +1853,7 @@ msgid "Preview external media"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:458
+#: includes/i18n/class-wpsg-frontend-strings.php:1752
 msgid "Add"
 msgstr ""
 
@@ -3757,6 +3770,8 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:929
 #: includes/i18n/class-wpsg-frontend-strings.php:1248
 #: includes/i18n/class-wpsg-frontend-strings.php:1258
+#: includes/i18n/class-wpsg-frontend-strings.php:1781
+#: includes/i18n/class-wpsg-frontend-strings.php:1837
 msgid "Custom"
 msgstr ""
 
@@ -5926,6 +5941,7 @@ msgid "Library"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1639
+#: includes/i18n/class-wpsg-frontend-strings.php:1809
 msgid "Name"
 msgstr ""
 
@@ -6156,6 +6172,7 @@ msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1708
+#: includes/i18n/class-wpsg-frontend-strings.php:1830
 msgid "Delete anyway"
 msgstr ""
 
@@ -6173,6 +6190,421 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1714
 msgid "No assets match the current filter."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1715
+msgid "Total Views (all campaigns)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1716
+msgid "Unique Visitors (all campaigns)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1717
+msgid "Views (selected campaign)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1718
+msgid "Unique (selected campaign)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1719
+msgid "Campaign Analytics"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1720
+msgid "Browser is offline — polling paused"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1721
+msgid "Offline"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1722
+msgid "Updated {{time}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1723
+msgid "Refresh analytics"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1724
+msgid "Select campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1725
+msgid "Last 7d"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1726
+msgid "Last 30d"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1727
+msgid "Last 90d"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1728
+msgid "Select a campaign to view per-campaign analytics."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1729
+msgid "Failed to load analytics data."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1730
+msgid "No view events recorded for this period."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1731
+msgid "Make sure "
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1732
+msgid "Enable Analytics"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1733
+msgid " is turned on in Settings → Advanced."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1734
+msgid "Media Performance"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1735
+msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1736
+msgid "Media ID"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1737
+#: includes/i18n/class-wpsg-frontend-strings.php:1741
+msgid "Views"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1738
+msgid "Lightbox Opens"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1739
+msgid "Top Campaigns by Views"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1742
+msgid "Unique"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1743
+msgid "Category renamed to \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1744
+msgid "Failed to rename category"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1745
+msgid "Category \"{{name}}\" deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1746
+msgid "Failed to delete category"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1747
+msgid "Edit category name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1750
+msgid "Rename {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1751
+#: includes/i18n/class-wpsg-frontend-strings.php:1824
+msgid "Delete {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1753
+msgid "Category \"{{name}}\" created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1754
+msgid "Failed to create category"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1755
+msgid "Tag \"{{name}}\" created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1756
+msgid "Failed to create tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1757
+msgid "Tag deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1758
+msgid "Failed to delete tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1759
+msgid "Media tag \"{{name}}\" created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1760
+msgid "Failed to create media tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1761
+msgid "Media tag deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1762
+msgid "Failed to delete media tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1763
+msgid "Manage Taxonomy"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1767
+msgid "No categories yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1768
+msgid "New category name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1769
+msgid "No campaign tags yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1770
+msgid "New campaign tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1771
+msgid "No media tags yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1772
+msgid "New media tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1773
+msgid "Failed to load templates."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1774
+msgid "Template \"{{name}}\" deleted."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1775
+msgid "Failed to delete template."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1776
+msgid "Template created."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1777
+msgid "Failed to create template."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1778
+msgid "Campaign Templates"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1779
+msgid "New Template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1780
+#: includes/i18n/class-wpsg-frontend-strings.php:1836
+msgid "Built-in"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1782
+msgid "No custom templates yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1783
+msgid "Template name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1784
+msgid "e.g. Weddings default"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1785
+msgid "Description (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1786
+msgid "e.g. Our standard wedding campaign layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1787
+msgid "{{count}} character"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1788
+msgid "{{count}} characters"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1789
+msgid "Copy settings from campaign (optional)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1790
+msgid "Start blank"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1791
+msgid "Create Template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1792
+msgid "Delete template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1793
+msgid "Delete template {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1794
+msgid "Duplicated \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1795
+msgid "Deleted \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1796
+msgid "Invalid template JSON — missing required fields."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1797
+msgid "Imported \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1798
+msgid "Import failed: {{message}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1799
+msgid "Search layouts…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1800
+msgid "Search layout templates"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1801
+msgid "View mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1803
+msgid "New Layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1804
+msgid "From Preset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1805
+msgid "No layouts match your search."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1806
+msgid "No layout templates yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1807
+msgid "Create your first layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1808
+msgid "Layout template list"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1810
+msgid "Slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1811
+msgid "Aspect"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1812
+msgid "Updated"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1815
+msgid "{{count}} slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1816
+msgid "{{count}} slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1818
+msgid "Edit {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1820
+msgid "Duplicate {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1821
+msgid "Export JSON"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1822
+msgid "Export {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1825
+msgid "Delete layout template?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1826
+msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1827
+msgid "Template in use"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1828
+msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1829
+msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1831
+msgid "Edit layout {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1832
+msgid "Actions for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1833
+msgid "Choose a starting point"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1834
+msgid "Start Blank"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1835
+msgid "No pre-configured settings."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

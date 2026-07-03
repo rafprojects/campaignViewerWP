@@ -142,7 +142,7 @@ describe('LayoutTemplateList', () => {
     // First delete attempt fires without force…
     await waitFor(() => expect(deleteLayoutTemplate).toHaveBeenNthCalledWith(1, 'tpl-1'));
     // …and the in-use escalation modal appears (no error notification).
-    expect(await screen.findByText(/in use by 3 campaign\(s\)/i)).toBeInTheDocument();
+    expect(await screen.findByText(/in use by 3 campaigns/i)).toBeInTheDocument();
     expect(onNotify).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
 
     // Confirm the forced delete → resends with force=true.
