@@ -93,8 +93,10 @@ Prerequisites: [WP-CLI](https://wp-cli.org/) with the i18n command
    should show English.
 
 Two complete reference locales already ship: **French (`fr_FR`)** and
-**Spanish (`es_ES`)** — all ~249 strings translated across both the PHP and React
-surfaces. Use either `.po` as a worked example.
+**Spanish (`es_ES`)** — all ~2,160 strings translated across the PHP surface, the
+customer-facing React front-end, **and the full React admin panel** (campaigns,
+media, settings, access, audit, analytics, spaces, taxonomy, templates, and the
+Layout Builder). Use either `.po` as a worked example.
 
 > These reference locales are AI-authored for QA and a translation head-start;
 > have a native speaker review them before relying on them in production.
@@ -112,6 +114,10 @@ surfaces. Use either `.po` as a worked example.
   `login_password_error_other`); i18next chooses between them client-side by
   `{{count}}`. Translate each variant as an independent string.
 - **Admin panel.** The React **admin panel** strings (`src/components/Admin/**`)
-  are not yet harvested — that is a separate follow-on (see
-  `docs/PHASE60_REPORT.md`, Key Decision B). This guide covers the customer-facing
-  front-end and the PHP surface.
+  are fully harvested and translated as of Phase 60 track I (see
+  `docs/PHASE60_REPORT.md`). The `i18next/no-literal-string` lint rule is enforced
+  as an error across `src/components/Admin/**`, so new admin UI cannot ship an
+  untranslated literal.
+- **Lint enforcement.** Because the rule runs in `jsx-text-only` mode, it flags
+  hardcoded JSX **text children** but not attribute strings (`title`, `aria-label`,
+  `placeholder`, …). Wrap those by hand — the reference locales already do.
