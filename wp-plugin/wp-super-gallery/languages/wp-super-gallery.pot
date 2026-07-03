@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T02:57:53+00:00\n"
+"POT-Creation-Date: 2026-07-03T03:02:33+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -35,6 +35,7 @@ msgstr ""
 #: includes/class-wpsg-asset-admin-renderer.php:38
 #: includes/class-wpsg-asset-admin-renderer.php:72
 #: includes/i18n/class-wpsg-frontend-strings.php:1702
+#: includes/i18n/class-wpsg-frontend-strings.php:2090
 msgid "Asset Library"
 msgstr ""
 
@@ -433,6 +434,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:413
 #: includes/i18n/class-wpsg-frontend-strings.php:1168
 #: includes/i18n/class-wpsg-frontend-strings.php:1978
+#: includes/i18n/class-wpsg-frontend-strings.php:2089
 msgid "Image"
 msgstr ""
 
@@ -1634,6 +1636,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:393
 #: includes/i18n/class-wpsg-frontend-strings.php:425
+#: includes/i18n/class-wpsg-frontend-strings.php:2075
 msgid "Caption"
 msgstr ""
 
@@ -1708,6 +1711,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:415
 #: includes/i18n/class-wpsg-frontend-strings.php:447
+#: includes/i18n/class-wpsg-frontend-strings.php:2130
 msgid "Upload"
 msgstr ""
 
@@ -2419,6 +2423,7 @@ msgid "Fade"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:591
+#: includes/i18n/class-wpsg-frontend-strings.php:2124
 msgid "Scale"
 msgstr ""
 
@@ -2434,6 +2439,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1887
 #: includes/i18n/class-wpsg-frontend-strings.php:1929
 #: includes/i18n/class-wpsg-frontend-strings.php:1940
+#: includes/i18n/class-wpsg-frontend-strings.php:2086
 msgid "None"
 msgstr ""
 
@@ -3072,6 +3078,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:749
 #: includes/i18n/class-wpsg-frontend-strings.php:1119
 #: includes/i18n/class-wpsg-frontend-strings.php:1400
+#: includes/i18n/class-wpsg-frontend-strings.php:2112
 msgid "Start"
 msgstr ""
 
@@ -3089,6 +3096,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:751
 #: includes/i18n/class-wpsg-frontend-strings.php:1120
 #: includes/i18n/class-wpsg-frontend-strings.php:1402
+#: includes/i18n/class-wpsg-frontend-strings.php:2113
 msgid "End"
 msgstr ""
 
@@ -3946,6 +3954,7 @@ msgid "Ease"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:967
+#: includes/i18n/class-wpsg-frontend-strings.php:2092
 msgid "Linear"
 msgstr ""
 
@@ -4161,6 +4170,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1020
 #: includes/i18n/class-wpsg-frontend-strings.php:1332
+#: includes/i18n/class-wpsg-frontend-strings.php:2103
 msgid "Circle"
 msgstr ""
 
@@ -4577,6 +4587,7 @@ msgid "Solid Color"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1128
+#: includes/i18n/class-wpsg-frontend-strings.php:2088
 msgid "Gradient"
 msgstr ""
 
@@ -5971,6 +5982,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1809
 #: includes/i18n/class-wpsg-frontend-strings.php:1958
 #: includes/i18n/class-wpsg-frontend-strings.php:2020
+#: includes/i18n/class-wpsg-frontend-strings.php:2066
 msgid "Name"
 msgstr ""
 
@@ -6563,6 +6575,7 @@ msgid "Layout template list"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1810
+#: includes/i18n/class-wpsg-frontend-strings.php:2140
 msgid "Slots"
 msgstr ""
 
@@ -6862,6 +6875,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1902
 #: includes/i18n/class-wpsg-frontend-strings.php:1927
+#: includes/i18n/class-wpsg-frontend-strings.php:2087
 msgid "Color"
 msgstr ""
 
@@ -7087,6 +7101,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1973
 #: includes/i18n/class-wpsg-frontend-strings.php:2040
+#: includes/i18n/class-wpsg-frontend-strings.php:2101
 msgid "Shape"
 msgstr ""
 
@@ -7327,6 +7342,7 @@ msgid "Luminance"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2050
+#: includes/i18n/class-wpsg-frontend-strings.php:2121
 msgid "Alpha"
 msgstr ""
 
@@ -7364,6 +7380,276 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2064
 msgid "Remove layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2065
+msgid "Text Layer {{index}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2067
+msgid "Text layer name"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2068
+#: includes/i18n/class-wpsg-frontend-strings.php:2070
+msgid "Text"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2069
+msgid "Text content"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2071
+msgid "Style"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2072
+msgid "Heading (H2)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2073
+msgid "Subheading (H3)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2074
+msgid "Paragraph"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2076
+msgid "Alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2077
+msgid "Text alignment"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2078
+msgid "Typography"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2079
+msgid "Send to Back"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2080
+msgid "Send Backward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2081
+msgid "Bring Forward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2082
+msgid "Bring to Front"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2083
+msgid "Remove this text layer?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2084
+#: includes/i18n/class-wpsg-frontend-strings.php:2085
+msgid "Remove text layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2091
+msgid "Transparent background — no fill applied."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2093
+msgid "Radial"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2094
+msgid "Conic"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2095
+msgid "Dir"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2096
+msgid "Horizontal (90°)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2097
+msgid "Vertical (180°)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2098
+msgid "45° right"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2099
+msgid "135° left"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2100
+msgid "auto"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2102
+msgid "Ellipse"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2104
+msgid "Farthest corner"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2105
+msgid "Farthest side"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2106
+msgid "Closest corner"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2107
+msgid "Closest side"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2108
+msgid "Ctr X"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2109
+msgid "Ctr Y"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2110
+msgid "Angle"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2111
+msgid "Stops"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2114
+msgid "Mid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2115
+msgid "Pos"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2116
+msgid "Background preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2117
+msgid "Remove image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2118
+msgid "No background image set."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2119
+msgid "Upload image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2120
+msgid "Upload background image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2122
+msgid "No mask layer on this slot. Add a mask from the Layers panel first."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2123
+msgid "No mask image — drag here or pick below"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2125
+msgid "Auto-fit to slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2126
+msgid "Soften the mask edges. Higher values create a more gradual fade."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2127
+msgid "Design Assets"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2128
+msgid "Mask Image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2129
+msgid "Replace"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2131
+msgid "Clear image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2132
+msgid "Remove mask layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2133
+msgid "Properties are unavailable in preview mode."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2134
+msgid "BACKGROUND"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2135
+msgid "MASK PROPERTIES"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2136
+msgid "SLOT PROPERTIES"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2137
+msgid "GRAPHIC LAYER"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2138
+msgid "TEXT LAYER"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2139
+msgid "CANVAS"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2141
+msgid "Graphic layers"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2142
+msgid "Aspect ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2143
+msgid "Height mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2144
+msgid "Ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2145
+msgid "vh"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2146
+msgid "Canvas height mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2147
+msgid "Canvas height in viewport units"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2148
+msgid "Add Slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2149
+msgid "Recent actions"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

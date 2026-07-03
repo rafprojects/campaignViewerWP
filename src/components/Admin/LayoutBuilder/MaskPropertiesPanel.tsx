@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import {
   Stack,
@@ -39,13 +40,14 @@ export interface MaskPropertiesPanelProps {
 // ── Inline helpers (shared with SlotPropertiesPanel) ─────────
 
 function PropRow({ label, children, tooltip }: { label: string; children: React.ReactNode; tooltip?: string }) {
+  const { t } = useTranslation('wpsg');
   return (
     <Group gap={6} align="center" wrap="nowrap" style={{ minHeight: 28 }}>
       <Group gap={2} align="center" wrap="nowrap" style={{ width: 70, flexShrink: 0 }}>
         <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{label}</Text>
         {tooltip && (
           <Tooltip label={tooltip} multiline w={240} position="left" withArrow>
-            <ActionIcon size={14} variant="transparent" c="dimmed" aria-label={`${label} info`}>
+            <ActionIcon size={14} variant="transparent" c="dimmed" aria-label={t('lb_slot_prop_info', '{{label}} info', { label })}>
               <IconInfoCircle size={12} />
             </ActionIcon>
           </Tooltip>
@@ -83,6 +85,7 @@ export function MaskPropertiesPanel({
   onUploadMask,
   assetLibrary,
 }: MaskPropertiesPanelProps) {
+  const { t } = useTranslation('wpsg');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const resetRef = useRef<() => void>(null);
@@ -96,7 +99,7 @@ export function MaskPropertiesPanel({
     return (
       <Stack gap={8} p={4}>
         <Text size="xs" c="dimmed">
-          No mask layer on this slot. Add a mask from the Layers panel first.
+          {t('lb_mask_no_mask', 'No mask layer on this slot. Add a mask from the Layers panel first.')}
         </Text>
       </Stack>
     );
@@ -158,19 +161,19 @@ export function MaskPropertiesPanel({
         }}
       >
         {!hasImage && (
-          <Text size="xs" c="dimmed">No mask image — drag here or pick below</Text>
+          <Text size="xs" c="dimmed">{t('lb_mask_no_image', 'No mask image — drag here or pick below')}</Text>
         )}
       </Box>
 
       {/* ── Mode ── */}
-      <SectionHeader label="Mode" />
-      <PropRow label="Type">
+      <SectionHeader label={t('lb_slot_mode', 'Mode')} />
+      <PropRow label={t('lb_slot_type', 'Type')}>
         <SegmentedControl
           size="xs"
           fullWidth
           data={[
-            { label: 'Luminance', value: 'luminance' },
-            { label: 'Alpha', value: 'alpha' },
+            { label: t('lb_gl_luminance', 'Luminance'), value: 'luminance' },
+            { label: t('lb_gl_alpha', 'Alpha'), value: 'alpha' },
           ]}
           value={ml.mode}
           onChange={(v) => setMask({ mode: v as 'luminance' | 'alpha' })}
@@ -181,9 +184,9 @@ export function MaskPropertiesPanel({
       {hasImage && (
         <>
           {/* ── Position ── */}
-          <SectionHeader label="Position" />
+          <SectionHeader label={t('lb_gl_position', 'Position')} />
           <Group grow gap={6}>
-            <PropRow label="X %">
+            <PropRow label={t('lb_slot_x', 'X %')}>
               <NumberInput
                 value={ml.x}
                 onChange={(v) => setMask({ x: Number(v) || 0 })}
@@ -192,7 +195,7 @@ export function MaskPropertiesPanel({
                 variant="filled"
               />
             </PropRow>
-            <PropRow label="Y %">
+            <PropRow label={t('lb_slot_y', 'Y %')}>
               <NumberInput
                 value={ml.y}
                 onChange={(v) => setMask({ y: Number(v) || 0 })}
@@ -204,9 +207,9 @@ export function MaskPropertiesPanel({
           </Group>
 
           {/* ── Scale ── */}
-          <SectionHeader label="Scale" />
+          <SectionHeader label={t('lb_mask_scale', 'Scale')} />
           <Group grow gap={6}>
-            <PropRow label="W %">
+            <PropRow label={t('lb_gl_w', 'W %')}>
               <NumberInput
                 value={ml.width}
                 onChange={(v) => setMask({ width: Number(v) || 100 })}
@@ -217,7 +220,7 @@ export function MaskPropertiesPanel({
                 variant="filled"
               />
             </PropRow>
-            <PropRow label="H %">
+            <PropRow label={t('lb_gl_h', 'H %')}>
               <NumberInput
                 value={ml.height}
                 onChange={(v) => setMask({ height: Number(v) || 100 })}
@@ -238,12 +241,12 @@ export function MaskPropertiesPanel({
             leftSection={<IconFocusCentered size={12} />}
             onClick={() => setMask({ x: 0, y: 0, width: 100, height: 100 })}
           >
-            Auto-fit to slot
+            {t('lb_mask_autofit', 'Auto-fit to slot')}
           </Button>
 
           {/* ── Feather ── */}
-          <SectionHeader label="Feather" />
-          <PropRow label="Radius" tooltip="Soften the mask edges. Higher values create a more gradual fade.">
+          <SectionHeader label={t('lb_gl_feather', 'Feather')} />
+          <PropRow label={t('lb_gl_radius', 'Radius')} tooltip={t('lb_mask_feather_tt', 'Soften the mask edges. Higher values create a more gradual fade.')}>
             <Slider
               value={ml.feather}
               onChange={(v) => setMask({ feather: v })}
@@ -260,7 +263,7 @@ export function MaskPropertiesPanel({
       {/* ── Pick from Design Assets ── */}
       {(assetLibrary ?? []).length > 0 && (
         <>
-          <SectionHeader label="Design Assets" />
+          <SectionHeader label={t('lb_mask_design_assets', 'Design Assets')} />
           <DesignAssetsGrid
             items={assetLibrary ?? []}
             onSelect={(url) => setMask({ url })}
@@ -271,7 +274,7 @@ export function MaskPropertiesPanel({
       )}
 
       {/* ── Image actions ── */}
-      <SectionHeader label="Mask Image" />
+      <SectionHeader label={t('lb_mask_mask_image', 'Mask Image')} />
       <Group gap={4} grow>
         {onUploadMask && (
           <FileButton
@@ -297,7 +300,7 @@ export function MaskPropertiesPanel({
                 disabled={isUploading}
                 {...props}
               >
-                {hasImage ? 'Replace' : 'Upload'}
+                {hasImage ? t('lb_mask_replace', 'Replace') : t('lb_mask_upload', 'Upload')}
               </Button>
             )}
           </FileButton>
@@ -309,7 +312,7 @@ export function MaskPropertiesPanel({
             color="red"
             onClick={() => setMask({ url: '' })}
           >
-            Clear image
+            {t('lb_mask_clear_image', 'Clear image')}
           </Button>
         )}
       </Group>
@@ -323,7 +326,7 @@ export function MaskPropertiesPanel({
           onUpdate({ maskLayer: undefined, maskUrl: undefined, maskMode: undefined })
         }
       >
-        Remove mask layer
+        {t('lb_mask_remove', 'Remove mask layer')}
       </Button>
     </Stack>
   );
