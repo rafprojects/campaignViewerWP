@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T03:21:33+00:00\n"
+"POT-Creation-Date: 2026-07-03T03:27:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -36,6 +36,7 @@ msgstr ""
 #: includes/class-wpsg-asset-admin-renderer.php:72
 #: includes/i18n/class-wpsg-frontend-strings.php:1702
 #: includes/i18n/class-wpsg-frontend-strings.php:2090
+#: includes/i18n/class-wpsg-frontend-strings.php:2410
 msgid "Asset Library"
 msgstr ""
 
@@ -821,6 +822,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1699
 #: includes/i18n/class-wpsg-frontend-strings.php:1823
 #: includes/i18n/class-wpsg-frontend-strings.php:2331
+#: includes/i18n/class-wpsg-frontend-strings.php:2420
 msgid "Delete"
 msgstr ""
 
@@ -1081,6 +1083,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:241
 #: includes/i18n/class-wpsg-frontend-strings.php:297
 #: includes/i18n/class-wpsg-frontend-strings.php:1813
+#: includes/i18n/class-wpsg-frontend-strings.php:2418
 msgid "Tags"
 msgstr ""
 
@@ -6383,6 +6386,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1751
 #: includes/i18n/class-wpsg-frontend-strings.php:1824
 #: includes/i18n/class-wpsg-frontend-strings.php:1866
+#: includes/i18n/class-wpsg-frontend-strings.php:2421
 msgid "Delete {{name}}"
 msgstr ""
 
@@ -6610,6 +6614,7 @@ msgid "{{count}} slot"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1816
+#: includes/i18n/class-wpsg-frontend-strings.php:2427
 msgid "{{count}} slots"
 msgstr ""
 
@@ -7573,6 +7578,7 @@ msgid "No background image set."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2119
+#: includes/i18n/class-wpsg-frontend-strings.php:2422
 msgid "Upload image"
 msgstr ""
 
@@ -8478,6 +8484,134 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2386
 msgid "Exit preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2390
+msgid "Auto"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2391
+msgid "Auto-fill (forward)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2392
+msgid "Auto-fill (reverse)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2393
+msgid "Shuffle & fill"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2394
+msgid "Clear all assigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2395
+msgid "Search media…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2396
+msgid "Search media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2397
+msgid "List view"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2398
+msgid "Grid view"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2399
+msgid "Click or drag a media item to assign it to the selected slot."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2400
+msgid "Select a slot first, then choose media to assign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2401
+msgid "Assignments"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2402
+msgid "Slot {{n}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2403
+msgid "Unassign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2404
+msgid "Unassign media from slot {{n}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2405
+msgid "No results."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2406
+msgid "No media items available."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2407
+msgid "Choose a campaign…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2408
+msgid "Select campaign for media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2409
+msgid "Add media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2411
+msgid "Decorative assets, shared across campaigns. Drag onto the canvas to place."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2412
+msgid "Upload to library"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2413
+msgid "No design assets in library yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2414
+msgid "File type: {{type}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2415
+msgid "Tags: {{tags}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2416
+msgid "Add tags"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2417
+msgid "Edit tags for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2419
+msgid "Add a tag…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2423
+msgid "Or paste image URL…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2424
+msgid "Image URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2425
+msgid "Start from Template"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2426
+msgid "Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   Text,
@@ -17,6 +18,7 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
+  const { t } = useTranslation('wpsg');
   const {
     builder,
     apiClient,
@@ -50,7 +52,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
       <Select
         size="xs"
         mb="sm"
-        placeholder="Choose a campaign…"
+        placeholder={t('lb_mp_choose_campaign', 'Choose a campaign…')}
         value={selectedCampaignId}
         onChange={setSelectedCampaignId}
         data={(campaigns ?? []).map((c) => ({
@@ -59,7 +61,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         }))}
         clearable
         searchable
-        aria-label="Select campaign for media"
+        aria-label={t('lb_mp_select_campaign_aria', 'Select campaign for media')}
       />
 
       {/* Always-visible primary entry point — never gated behind the accordion. */}
@@ -71,7 +73,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         fullWidth
         mb="sm"
       >
-        Add media
+        {t('lb_mp_add_media', 'Add media')}
       </Button>
 
       {/* Campaign media list — flexes to fill remaining space, scrolls internally. */}
@@ -100,11 +102,11 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         style={{ flexShrink: 0 }}
       >
         <Accordion.Item value="asset-library">
-          <Accordion.Control>Asset Library</Accordion.Control>
+          <Accordion.Control>{t('lb_mp_asset_library', 'Asset Library')}</Accordion.Control>
           <Accordion.Panel>
             <Group justify="space-between" align="center" mb={6}>
               <Text size="xs" c="dimmed">
-                Decorative assets, shared across campaigns. Drag onto the canvas to place.
+                {t('lb_mp_asset_desc', 'Decorative assets, shared across campaigns. Drag onto the canvas to place.')}
               </Text>
             </Group>
             <DesignAssetsGrid
@@ -122,7 +124,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
                 onClick={() => setUploadOpen(true)}
                 fullWidth
               >
-                Upload to library
+                {t('lb_mp_upload_library', 'Upload to library')}
               </Button>
             </Box>
           </Accordion.Panel>
@@ -135,7 +137,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         apiClient={apiClient}
         campaigns={campaigns ?? []}
         defaultTarget={GENERAL_LIBRARY_TARGET}
-        title="Add media"
+        title={t('lb_mp_add_media', 'Add media')}
       />
     </div>
   );

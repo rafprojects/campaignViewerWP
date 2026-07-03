@@ -1,4 +1,5 @@
 import { Box, Text, ActionIcon, Tooltip, Badge, Popover, TagsInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { IconX, IconWorld, IconWorldOff, IconTag } from '@tabler/icons-react';
 import type { AssetLibraryItem } from './BuilderDockContext';
 import { getAssetFileType } from '@/utils/assetFileType';
@@ -36,8 +37,9 @@ export function DesignAssetsGrid({
   maxHeight = 180,
   columns = 2,
 }: DesignAssetsGridProps) {
+  const { t } = useTranslation('wpsg');
   if (!items.length) {
-    return <Text size="xs" c="dimmed">No design assets in library yet.</Text>;
+    return <Text size="xs" c="dimmed">{t('lb_dag_empty', 'No design assets in library yet.')}</Text>;
   }
 
   return (
@@ -107,7 +109,7 @@ export function DesignAssetsGrid({
                   opacity: 0.78,
                   pointerEvents: 'none',
                 }}
-                aria-label={`File type: ${fileType}`}
+                aria-label={t('lb_dag_file_type', 'File type: {{type}}', { type: fileType })}
               >
                 {fileType}
               </Badge>
@@ -137,8 +139,8 @@ export function DesignAssetsGrid({
                     }}
                     aria-label={
                       item.isUniversal
-                        ? `Make ${item.name} space-specific`
-                        : `Make ${item.name} available to all spaces`
+                        ? t('admin_font_make_specific', 'Make {{name}} space-specific', { name: item.name })
+                        : t('admin_font_make_universal', 'Make {{name}} available to all spaces', { name: item.name })
                     }
                     aria-pressed={item.isUniversal}
                   >
@@ -151,7 +153,7 @@ export function DesignAssetsGrid({
               {onSetTags && (
                 <Popover position="bottom-start" withArrow shadow="md" width={220} withinPortal>
                   <Popover.Target>
-                    <Tooltip label={item.tags?.length ? `Tags: ${item.tags.join(', ')}` : 'Add tags'} withArrow position="top">
+                    <Tooltip label={item.tags?.length ? t('lb_dag_tags_list', 'Tags: {{tags}}', { tags: item.tags.join(', ') }) : t('lb_dag_add_tags', 'Add tags')} withArrow position="top">
                       <ActionIcon
                         size={16}
                         variant={item.tags?.length ? 'filled' : 'light'}
@@ -159,7 +161,7 @@ export function DesignAssetsGrid({
                         radius="xl"
                         style={{ position: 'absolute', top: 2, left: 2, zIndex: 1, opacity: item.tags?.length ? 1 : 0.7 }}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                        aria-label={`Edit tags for ${item.name}`}
+                        aria-label={t('lb_dag_edit_tags', 'Edit tags for {{name}}', { name: item.name })}
                       >
                         <IconTag size={10} />
                       </ActionIcon>
@@ -168,8 +170,8 @@ export function DesignAssetsGrid({
                   <Popover.Dropdown onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                     <TagsInput
                       size="xs"
-                      label="Tags"
-                      placeholder="Add a tag…"
+                      label={t('lb_dag_tags', 'Tags')}
+                      placeholder={t('lb_dag_add_tag_ph', 'Add a tag…')}
                       value={item.tags ?? []}
                       onChange={(tags) => onSetTags(item.id, tags)}
                       clearable
@@ -180,7 +182,7 @@ export function DesignAssetsGrid({
 
               {/* X delete overlay */}
               {onDelete && (
-                <Tooltip label="Delete" withArrow position="top">
+                <Tooltip label={t('lb_dag_delete', 'Delete')} withArrow position="top">
                   <ActionIcon
                     size={16}
                     variant="filled"
@@ -197,7 +199,7 @@ export function DesignAssetsGrid({
                       e.stopPropagation();
                       onDelete(item.id);
                     }}
-                    aria-label={`Delete ${item.name}`}
+                    aria-label={t('lb_dag_delete_name', 'Delete {{name}}', { name: item.name })}
                   >
                     <IconX size={10} />
                   </ActionIcon>
