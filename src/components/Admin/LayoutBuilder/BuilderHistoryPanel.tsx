@@ -63,7 +63,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
               onClick={undo}
               aria-label={t('lb_hist_undo', 'Undo')}
             >
-              &#8630;
+              {'↶'}
             </ActionIcon>
           </Tooltip>
           <Tooltip label={t('lb_hist_redo_tt', 'Redo (Ctrl+Shift+Z)')}>
@@ -74,7 +74,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
               onClick={redo}
               aria-label={t('lb_hist_redo', 'Redo')}
             >
-              &#8631;
+              {'↷'}
             </ActionIcon>
           </Tooltip>
         </Group>

@@ -184,7 +184,7 @@ export function MediaPickerSidebar({
     <Stack gap="sm" h="100%">
       <Group justify="space-between" wrap="nowrap">
         <Text size="sm" fw={600}>
-          Media ({media.length})
+          {t('lb_mps_media_count', 'Media ({{count}})', { count: media.length })}
         </Text>
         <Menu shadow="md" width={190} withinPortal>
           <Menu.Target>

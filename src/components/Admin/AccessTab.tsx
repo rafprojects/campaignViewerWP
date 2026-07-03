@@ -294,11 +294,11 @@ export function AccessTab({
                   >
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Th>User</Table.Th>
-                        <Table.Th>Access Type</Table.Th>
-                        <Table.Th>Role</Table.Th>
-                        <Table.Th>Granted / Expires</Table.Th>
-                        <Table.Th w={80}>Revoke</Table.Th>
+                        <Table.Th>{t('admin_access_th_user', 'User')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_type', 'Access Type')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_role', 'Role')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_granted', 'Granted / Expires')}</Table.Th>
+                        <Table.Th w={80}>{t('admin_access_th_revoke', 'Revoke')}</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>{accessRows}</Table.Tbody>

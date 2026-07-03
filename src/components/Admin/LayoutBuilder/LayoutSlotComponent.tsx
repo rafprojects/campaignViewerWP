@@ -376,6 +376,7 @@ export function LayoutSlotComponent({
   showSlotIndices = true,
   isInMultiSelect = false,
 }: LayoutSlotComponentProps) {
+  const { t } = useTranslation('wpsg');
   const rndRef = useRef<Rnd>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   // Tracks whether this slot was part of a multi-select at mousedown, so dragStop
@@ -593,7 +594,7 @@ export function LayoutSlotComponent({
         }}
       >
         <Text size="xs" c="dimmed">
-          Empty
+          {t('lb_slotc_empty', 'Empty')}
         </Text>
       </div>
     );

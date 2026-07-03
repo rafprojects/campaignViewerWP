@@ -218,6 +218,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   spaceId,
   isSystemAdmin = false,
 }) => {
+  const { t } = useTranslation('wpsg');
   const isSpaceMode = spaceId != null;
   return <Stack gap="md">
     <Tabs
@@ -238,34 +239,34 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
     >
       <Tabs.List>
         <Tabs.Tab value="appearance" leftSection={<IconSettings size={16} />}>
-          Appearance
+          {t('set_tab_appearance', 'Appearance')}
         </Tabs.Tab>
         <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
-          Campaign Cards
+          {t('set_tab_cards', 'Campaign Cards')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-layout" leftSection={<IconPhoto size={16} />}>
-          Gallery Layout
+          {t('set_tab_gallery_layout', 'Gallery Layout')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-style" leftSection={<IconPalette size={16} />}>
-          Gallery Style
+          {t('set_tab_gallery_style', 'Gallery Style')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-navigation" leftSection={<IconArrowsHorizontal size={16} />}>
-          Gallery Navigation
+          {t('set_tab_gallery_nav', 'Gallery Navigation')}
         </Tabs.Tab>
         <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
-          Campaign Viewer
+          {t('set_tab_viewer', 'Campaign Viewer')}
         </Tabs.Tab>
         <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
-          Typography
+          {t('set_tab_typography', 'Typography')}
         </Tabs.Tab>
         {!isSpaceMode && isSystemAdmin && (
           <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
-            Integrations
+            {t('set_tab_integrations', 'Integrations')}
           </Tabs.Tab>
         )}
         {isSystemAdmin && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
-            System & Admin
+            {t('set_tab_system_admin', 'System & Admin')}
           </Tabs.Tab>
         )}
       </Tabs.List>
@@ -437,15 +438,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     if (!opened || !persistedDraft || draftPromptShownRef.current) return;
     draftPromptShownRef.current = true;
     const draftAge = Math.round((Date.now() - persistedDraft.savedAt) / 60_000);
-    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+    const ageLabel = draftAge < 1 ? t('set_age_now', 'just now') : t('set_age_min', '{{count}} minute ago', { count: draftAge });
     modals.openConfirmModal({
-      title: 'Unsaved settings found',
+      title: t('set_restore_title', 'Unsaved settings found'),
       children: (
         <Text size="sm">
-          You have unsaved settings changes from {ageLabel}. Would you like to restore them?
+          {t('set_restore_body', 'You have unsaved settings changes from {{age}}. Would you like to restore them?', { age: ageLabel })}
         </Text>
       ),
-      labels: { confirm: 'Restore', cancel: 'Discard' },
+      labels: { confirm: t('set_restore_confirm', 'Restore'), cancel: t('set_restore_cancel', 'Discard') },
       confirmProps: { color: 'blue' },
       onConfirm: () => {
         applySettingsUpdate(() => persistedDraft!.settings);

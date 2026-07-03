@@ -101,6 +101,7 @@ function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: 
   return (
     <Group gap="xs" justify="space-between" pl={depth * 16}>
       <Group gap="xs">
+        {/* eslint-disable-next-line i18next/no-literal-string -- tree-indent glyph, not translatable text */}
         {depth > 0 && <Text size="xs" c="dimmed">↳</Text>}
         <Text size="sm">{cat.name}</Text>
         {parentName && <Badge size="xs" variant="light" color="gray">{parentName}</Badge>}

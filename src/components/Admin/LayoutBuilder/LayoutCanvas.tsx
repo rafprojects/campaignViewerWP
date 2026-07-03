@@ -593,11 +593,11 @@ export function LayoutCanvas({
               whiteSpace: 'nowrap',
             }}
           >
-            <span>{canvasWidth} × {canvasHeight}px</span>
+            <span>{t('lb_lc_dims', '{{w}} × {{h}}px', { w: canvasWidth, h: canvasHeight })}</span>
             <span style={{ opacity: 0.4 }}>·</span>
             <span>{formatAspectRatio(template.canvasAspectRatio)}</span>
             <span style={{ opacity: 0.4 }}>·</span>
-            <span>{template.slots.length} slot{template.slots.length !== 1 ? 's' : ''}</span>
+            <span>{t('lb_lc_n_slots', '{{count}} slot', { count: template.slots.length })}</span>
           </div>
         </div>
       )}
@@ -710,10 +710,10 @@ export function LayoutCanvas({
             }}
           >
             <Text size="sm" c="dimmed" ta="center" style={{ opacity: 0.55 }}>
-              Double-click to add a slot
+              {t('lb_lc_dblclick', 'Double-click to add a slot')}
             </Text>
             <Text size="xs" c="dimmed" ta="center" style={{ opacity: 0.35 }}>
-              or drag media from the panel
+              {t('lb_lc_drag_media', 'or drag media from the panel')}
             </Text>
           </div>
         )}

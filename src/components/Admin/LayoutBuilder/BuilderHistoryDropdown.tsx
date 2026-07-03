@@ -97,7 +97,7 @@ export function BuilderHistoryDropdown({
         {/* Header */}
         <Box px="sm" pt="xs" pb={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           <Text size="xs" fw={600} c="dimmed" tt="uppercase">
-            History ({count})
+            {t('lb_hist_title', 'History ({{count}})', { count })}
           </Text>
         </Box>
 
@@ -106,9 +106,9 @@ export function BuilderHistoryDropdown({
           <Box p="md" ta="center">
             <IconClockHour4 size={24} style={{ opacity: 0.4, marginBottom: 6 }} />
             <Text size="sm" c="dimmed">
-              No history yet.
+              {t('lb_hist_none', 'No history yet.')}
               <br />
-              Make a change to see history.
+              {t('lb_histd_none_hint', 'Make a change to see history.')}
             </Text>
           </Box>
         ) : (

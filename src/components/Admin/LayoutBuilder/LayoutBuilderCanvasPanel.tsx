@@ -330,11 +330,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             style={{ flexShrink: 0, borderBottom: '1px solid var(--wpsg-builder-border)' }}
           >
             <Text size="xs" ta="center">
-              Editing{' '}
+              {tr('lb_canvas_editing_pre', 'Editing ')}
               <strong>
-                {builder.activeBreakpoint.charAt(0).toUpperCase() + builder.activeBreakpoint.slice(1)}
-              </strong>{' '}
-              layout — moves and resizes apply to this breakpoint only
+                {tr(`admin_bp_${builder.activeBreakpoint}`, builder.activeBreakpoint.charAt(0).toUpperCase() + builder.activeBreakpoint.slice(1))}
+              </strong>
+              {tr('lb_canvas_editing_post', ' layout — moves and resizes apply to this breakpoint only')}
             </Text>
           </Alert>
         )}

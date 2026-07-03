@@ -289,7 +289,7 @@ export function LayerPanel({
           color: 'var(--wpsg-builder-text-muted)',
         }}
       >
-        Layers
+        {t('lb_lp_layers', 'Layers')}
       </Text>
 
       <ScrollArea.Autosize
