@@ -1,0 +1,6498 @@
+# WP Super Gallery — zh_CN translation.
+# AI-authored for QA; review by a native speaker before release.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Domain: wp-super-gallery\n"
+
+msgid "WP Super Gallery"
+msgstr "WP Super Gallery"
+
+msgid "https://github.com/rafprojects/wp-super-gallery"
+msgstr "https://github.com/rafprojects/wp-super-gallery"
+
+msgid "Embeddable campaign gallery with Shadow DOM rendering."
+msgstr "可嵌入的活动图库，采用 Shadow DOM 渲染。"
+
+msgid "Asset Library"
+msgstr "素材库"
+
+msgid "Upload and manage global overlay/graphic assets available across all spaces."
+msgstr "上传和管理可在所有空间中使用的全局叠加层/图形素材。"
+
+msgid "Campaigns"
+msgstr "活动"
+
+msgid "Campaign"
+msgstr "活动"
+
+msgid "SuperGallery"
+msgstr "SuperGallery"
+
+msgid "Add New"
+msgstr "新增"
+
+msgid "Add New Campaign"
+msgstr "新增活动"
+
+msgid "Edit Campaign"
+msgstr "编辑活动"
+
+msgid "New Campaign"
+msgstr "新建活动"
+
+msgid "View Campaign"
+msgstr "查看活动"
+
+msgid "View Campaigns"
+msgstr "查看活动"
+
+msgid "Search Campaigns"
+msgstr "搜索活动"
+
+msgid "No campaigns found"
+msgstr "未找到活动"
+
+msgid "No campaigns found in Trash"
+msgstr "回收站中未找到活动"
+
+msgid "Companies"
+msgstr "公司"
+
+msgid "Company"
+msgstr "公司"
+
+msgid "All Companies"
+msgstr "所有公司"
+
+msgid "Edit Company"
+msgstr "编辑公司"
+
+msgid "View Company"
+msgstr "查看公司"
+
+msgid "Update Company"
+msgstr "更新公司"
+
+msgid "Add New Company"
+msgstr "新增公司"
+
+msgid "New Company Name"
+msgstr "新公司名称"
+
+msgid "Search Companies"
+msgstr "搜索公司"
+
+msgid "Popular Companies"
+msgstr "热门公司"
+
+msgid "No companies found"
+msgstr "未找到公司"
+
+msgid "← Back to Companies"
+msgstr "← 返回公司"
+
+msgid "Separate companies with commas"
+msgstr "用逗号分隔多个公司"
+
+msgid "Add or remove companies"
+msgstr "添加或移除公司"
+
+msgid "Choose from the most used companies"
+msgstr "从最常用的公司中选择"
+
+msgid "Campaign Tags"
+msgstr "活动标签"
+
+msgid "Campaign Categories"
+msgstr "活动分类"
+
+msgid "Media Tags"
+msgstr "媒体标签"
+
+msgid "Layout Templates"
+msgstr "布局模板"
+
+msgid "Space"
+msgstr "空间"
+
+msgid "All spaces"
+msgstr "所有空间"
+
+msgid "+ New Space"
+msgstr "+ 新建空间"
+
+msgid "Space name"
+msgstr "空间名称"
+
+msgid "Slug (auto)"
+msgstr "别名（自动）"
+
+msgid "Create"
+msgstr "创建"
+
+msgid "Forbidden"
+msgstr "禁止访问"
+
+msgid "Gallery Spaces"
+msgstr "图库空间"
+
+msgid "Spaces"
+msgstr "空间"
+
+msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr "创建空间、编辑各空间的设置并管理访问授权。"
+
+msgid "Admin menu"
+msgstr "管理菜单"
+
+msgid "User navigation"
+msgstr "用户导航"
+
+msgid "User menu"
+msgstr "用户菜单"
+
+msgid "Signed in as {{email}}"
+msgstr "已登录为 {{email}}"
+
+msgid "Admin Panel"
+msgstr "管理面板"
+
+msgid "Settings"
+msgstr "设置"
+
+msgid "Edit {{title}}"
+msgstr "编辑 {{title}}"
+
+msgid "Edit Gallery Config"
+msgstr "编辑图库配置"
+
+msgid "Edit gallery config for {{title}}"
+msgstr "编辑 {{title}} 的图库配置"
+
+msgid "Manage Media"
+msgstr "管理媒体"
+
+msgid "Manage media for {{title}}"
+msgstr "管理 {{title}} 的媒体"
+
+msgid "Archive"
+msgstr "归档"
+
+msgid "Archive {{title}}"
+msgstr "归档 {{title}}"
+
+msgid "Sign out"
+msgstr "退出登录"
+
+msgid "Sign in"
+msgstr "登录"
+
+msgid "Sign in to access private campaigns."
+msgstr "登录以访问私密活动。"
+
+msgid "Switch targeted gallery space"
+msgstr "切换目标图库空间"
+
+msgid "Target space"
+msgstr "目标空间"
+
+msgid "Access private campaigns with your WordPress account."
+msgstr "使用您的 WordPress 账户访问私密活动。"
+
+msgid "Email"
+msgstr "电子邮件"
+
+msgid "you@example.com"
+msgstr "you@example.com"
+
+msgid "Password"
+msgstr "密码"
+
+msgid "Enter your password"
+msgstr "请输入您的密码"
+
+msgid "Enter a valid email"
+msgstr "请输入有效的电子邮件地址"
+
+msgid "Password must be at least {{count}} character"
+msgstr "密码长度至少为 {{count}} 个字符"
+
+msgid "Password must be at least {{count}} characters"
+msgstr "密码长度至少为 {{count}} 个字符"
+
+msgid "Error"
+msgstr "错误"
+
+msgid "Login failed. Check your credentials."
+msgstr "登录失败。请检查您的凭据。"
+
+msgid "Signing in..."
+msgstr "正在登录…"
+
+msgid "Media lightbox"
+msgstr "媒体灯箱"
+
+msgid "Close lightbox"
+msgstr "关闭灯箱"
+
+msgid "Previous image (lightbox)"
+msgstr "上一张图片（灯箱）"
+
+msgid "Next image (lightbox)"
+msgstr "下一张图片（灯箱）"
+
+msgid "Campaign video"
+msgstr "活动视频"
+
+msgid "Campaign image"
+msgstr "活动图片"
+
+msgid "{{current}} / {{total}}"
+msgstr "{{current}} / {{total}}"
+
+msgid "←"
+msgstr "←"
+
+msgid "→"
+msgstr "→"
+
+msgid "Esc"
+msgstr "Esc"
+
+msgid "navigate"
+msgstr "导航"
+
+msgid "·"
+msgstr "·"
+
+msgid "close"
+msgstr "关闭"
+
+msgid "VIDEO"
+msgstr "视频"
+
+msgid "No media"
+msgstr "无媒体"
+
+msgid "Video"
+msgstr "视频"
+
+msgid "Image"
+msgstr "图片"
+
+msgid "{{type}} {{index}}"
+msgstr "{{type}} {{index}}"
+
+msgid "Item {{index}} of {{total}}"
+msgstr "第 {{index}} 项，共 {{total}} 项"
+
+msgid "Item {{index}}"
+msgstr "第 {{index}} 项"
+
+msgid "Play: {{caption}}"
+msgstr "播放：{{caption}}"
+
+msgid "View: {{caption}}"
+msgstr "查看：{{caption}}"
+
+msgid "Play video {{index}}"
+msgstr "播放视频 {{index}}"
+
+msgid "View image {{index}}"
+msgstr "查看图片 {{index}}"
+
+msgid "Open in lightbox"
+msgstr "在灯箱中打开"
+
+msgid "Empty"
+msgstr "空"
+
+msgid "Slide {{index}} of {{total}}"
+msgstr "第 {{index}} 张幻灯片，共 {{total}} 张"
+
+msgid "View image {{index}} of {{total}}"
+msgstr "查看第 {{index}} 张图片，共 {{total}} 张"
+
+msgid "Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play."
+msgstr "第 {{index}} 个视频，共 {{total}} 个：{{caption}}。使用方向键导航，按 Enter 或空格键播放。"
+
+msgid "Video player: {{caption}}"
+msgstr "视频播放器：{{caption}}"
+
+msgid "Untitled video"
+msgstr "无标题视频"
+
+msgid "Untitled image"
+msgstr "无标题图片"
+
+msgid "Open lightbox"
+msgstr "打开灯箱"
+
+msgid "Previous video (overlay)"
+msgstr "上一个视频（叠加层）"
+
+msgid "Next video (overlay)"
+msgstr "下一个视频（叠加层）"
+
+msgid "Previous image (overlay)"
+msgstr "上一张图片（叠加层）"
+
+msgid "Next image (overlay)"
+msgstr "下一张图片（叠加层）"
+
+msgid "Campaign listing"
+msgstr "活动列表"
+
+msgid "Previous campaigns"
+msgstr "上一批活动"
+
+msgid "Next campaigns"
+msgstr "下一批活动"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Default order"
+msgstr "默认排序"
+
+msgid "Newest first"
+msgstr "最新优先"
+
+msgid "Oldest first"
+msgstr "最早优先"
+
+msgid "Sort order"
+msgstr "排序方式"
+
+msgid "Loading layout template"
+msgstr "正在加载布局模板"
+
+msgid "Loading gallery…"
+msgstr "正在加载图库…"
+
+msgid "Layout template not found"
+msgstr "未找到布局模板"
+
+msgid "View {{title}} in lightbox"
+msgstr "在灯箱中查看 {{title}}"
+
+msgid "media"
+msgstr "媒体"
+
+msgid "{{count}} media item(s) have no slot — they won't be displayed."
+msgstr "{{count}} 个媒体项没有插槽 — 它们将不会显示。"
+
+msgid "{{count}} slot(s) have no media — they'll appear as placeholders."
+msgstr "{{count}} 个插槽没有媒体 — 它们将显示为占位符。"
+
+msgid "Slot assignment info"
+msgstr "插槽分配信息"
+
+msgid "Kept bindings: {{summary}}"
+msgstr "保留的绑定：{{summary}}"
+
+msgid "Cleared (media not in campaign): {{summary}}"
+msgstr "已清除（媒体不在活动中）：{{summary}}"
+
+msgid "Auto-filled from remaining media: {{summary}}"
+msgstr "从剩余媒体自动填充：{{summary}}"
+
+msgid "Empty (no media remaining): slot{{suffix}} {{summary}}"
+msgstr "空（无剩余媒体）：插槽{{suffix}} {{summary}}"
+
+msgid "Layout gallery: {{name}}"
+msgstr "布局图库：{{name}}"
+
+msgid "Back to gallery"
+msgstr "返回图库"
+
+msgid "Actions menu"
+msgstr "操作菜单"
+
+msgid "Create new campaign"
+msgstr "创建新活动"
+
+msgid "Import"
+msgstr "导入"
+
+msgid "Import campaigns"
+msgstr "导入活动"
+
+msgid "Pick a space first"
+msgstr "请先选择一个空间"
+
+msgid "Manage spaces"
+msgstr "管理空间"
+
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
+msgid "Keyboard shortcuts (?)"
+msgstr "键盘快捷键 (?)"
+
+msgid "{{name}} (default)"
+msgstr "{{name}}（默认）"
+
+msgid "Media"
+msgstr "媒体"
+
+msgid "Layouts"
+msgstr "布局"
+
+msgid "Templates"
+msgstr "模板"
+
+msgid "Assets"
+msgstr "素材"
+
+msgid "Access"
+msgstr "访问"
+
+msgid "Campaign Activity"
+msgstr "活动动态"
+
+msgid "System Audit"
+msgstr "系统审计"
+
+msgid "Analytics"
+msgstr "分析"
+
+msgid "Select admin panel tab"
+msgstr "选择管理面板选项卡"
+
+msgid "Hide filters"
+msgstr "隐藏筛选器"
+
+msgid "Filters"
+msgstr "筛选器"
+
+msgid "Filters ({{count}})"
+msgstr "筛选器 ({{count}})"
+
+msgid "Tag"
+msgstr "标签"
+
+msgid "Title A–Z"
+msgstr "标题 A–Z"
+
+msgid "Title Z–A"
+msgstr "标题 Z–A"
+
+msgid "Recently updated"
+msgstr "最近更新"
+
+msgid "Include archived"
+msgstr "包含已归档"
+
+msgid "Manage categories & tags"
+msgstr "管理分类和标签"
+
+msgid "Manage taxonomy"
+msgstr "管理分类法"
+
+msgid "Export ZIP"
+msgstr "导出 ZIP"
+
+msgid "Export media library as ZIP"
+msgstr "将媒体库导出为 ZIP"
+
+msgid "Import ZIP"
+msgstr "导入 ZIP"
+
+msgid "Import media library from ZIP"
+msgstr "从 ZIP 导入媒体库"
+
+msgid "Rescan All"
+msgstr "重新扫描全部"
+
+msgid "Rescanned: {{media}} media items updated across {{campaigns}} campaigns."
+msgstr "已重新扫描：在 {{campaigns}} 个活动中更新了 {{media}} 个媒体项。"
+
+msgid "All media types are correct."
+msgstr "所有媒体类型均正确。"
+
+msgid "Building audit log ZIP — this may take a moment."
+msgstr "正在生成审计日志 ZIP — 这可能需要一些时间。"
+
+msgid "Building media library ZIP — this may take a moment."
+msgstr "正在生成媒体库 ZIP — 这可能需要一些时间。"
+
+msgid "Export timed out after 5 minutes."
+msgstr "导出在 5 分钟后超时。"
+
+msgid "Export failed"
+msgstr "导出失败"
+
+msgid "Audit ZIP export failed"
+msgstr "审计 ZIP 导出失败"
+
+msgid "Media ZIP export failed"
+msgstr "媒体 ZIP 导出失败"
+
+msgid "Media ZIP import failed"
+msgstr "媒体 ZIP 导入失败"
+
+msgid "Imported {{count}} media item(s)."
+msgstr "已导入 {{count}} 个媒体项。"
+
+msgid "Imported {{count}} media item(s) ({{skipped}} skipped)."
+msgstr "已导入 {{count}} 个媒体项（跳过 {{skipped}} 个）。"
+
+msgid "Add media — {{title}}"
+msgstr "添加媒体 — {{title}}"
+
+msgid "Clear selection"
+msgstr "清除选择"
+
+msgid "{{count}} campaign selected"
+msgstr "已选择 {{count}} 个活动"
+
+msgid "{{count}} campaigns selected"
+msgstr "已选择 {{count}} 个活动"
+
+msgid "Restore"
+msgstr "恢复"
+
+msgid "Delete"
+msgstr "删除"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Archive campaign"
+msgstr "归档活动"
+
+msgid "Archive this campaign? This action will mark it archived."
+msgstr "归档此活动？此操作会将其标记为已归档。"
+
+msgid "Archive campaign {{title}}"
+msgstr "归档活动 {{title}}"
+
+msgid "Restore campaign"
+msgstr "恢复活动"
+
+msgid "Restore this campaign? This will make it active again and enable any associated access grants."
+msgstr "恢复此活动？这将使其重新激活并启用任何相关的访问授权。"
+
+msgid "Restore campaign {{title}}"
+msgstr "恢复活动 {{title}}"
+
+msgid "Archive {{count}} campaign?"
+msgstr "归档 {{count}} 个活动？"
+
+msgid "Archive {{count}} campaigns?"
+msgstr "归档 {{count}} 个活动？"
+
+msgid "This will mark all {{count}} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time."
+msgstr "这会将全部 {{count}} 个所选活动标记为已归档。已归档的活动会从图库中隐藏，但可随时恢复。"
+
+msgid "Archive {{count}} campaign"
+msgstr "归档 {{count}} 个活动"
+
+msgid "Archive {{count}} campaigns"
+msgstr "归档 {{count}} 个活动"
+
+msgid "Restore {{count}} campaign?"
+msgstr "恢复 {{count}} 个活动？"
+
+msgid "Restore {{count}} campaigns?"
+msgstr "恢复 {{count}} 个活动？"
+
+msgid "This will restore all {{count}} selected campaigns and make them active again. Any associated access grants will be re-enabled."
+msgstr "这将恢复全部 {{count}} 个所选活动并使其重新激活。任何相关的访问授权都将重新启用。"
+
+msgid "Restore {{count}} campaign"
+msgstr "恢复 {{count}} 个活动"
+
+msgid "Restore {{count}} campaigns"
+msgstr "恢复 {{count}} 个活动"
+
+msgid "Delete campaign"
+msgstr "删除活动"
+
+msgid "This permanently deletes \"{{title}}\", its media references, and pending access requests. This cannot be undone."
+msgstr "这将永久删除“{{title}}”、其媒体引用和待处理的访问请求。此操作无法撤销。"
+
+msgid "this campaign"
+msgstr "此活动"
+
+msgid "Type {{token}} to confirm."
+msgstr "输入 {{token}} 以确认。"
+
+msgid "Type {{token}} to confirm"
+msgstr "输入 {{token}} 以确认"
+
+msgid "Also purge analytics events for this campaign"
+msgstr "同时清除此活动的分析事件"
+
+msgid "Delete campaign {{title}}"
+msgstr "删除活动 {{title}}"
+
+msgid "Delete permanently"
+msgstr "永久删除"
+
+msgid "Delete {{count}} campaign?"
+msgstr "删除 {{count}} 个活动？"
+
+msgid "Delete {{count}} campaigns?"
+msgstr "删除 {{count}} 个活动？"
+
+msgid "This will permanently delete all {{count}} selected campaigns, their media references, and pending access requests. This cannot be undone."
+msgstr "这将永久删除全部 {{count}} 个所选活动、它们的媒体引用和待处理的访问请求。此操作无法撤销。"
+
+msgid "Also purge all analytics data for these campaigns"
+msgstr "同时清除这些活动的所有分析数据"
+
+msgid "Delete {{count}} campaign"
+msgstr "删除 {{count}} 个活动"
+
+msgid "Delete {{count}} campaigns"
+msgstr "删除 {{count}} 个活动"
+
+msgid "Duplicate Campaign"
+msgstr "复制活动"
+
+msgid "Duplicate campaign"
+msgstr "复制活动"
+
+msgid "Source:"
+msgstr "来源："
+
+msgid "New name"
+msgstr "新名称"
+
+msgid "Campaign name"
+msgstr "活动名称"
+
+msgid "Copy media associations"
+msgstr "复制媒体关联"
+
+msgid "Media items will appear in both campaigns"
+msgstr "媒体项将出现在两个活动中"
+
+msgid "The duplicate will start with an empty media library."
+msgstr "副本将以空的媒体库开始。"
+
+msgid "Duplicate linked layout template"
+msgstr "复制关联的布局模板"
+
+msgid "The copied campaign gets its own editable layout instead of sharing the original template."
+msgstr "复制的活动将获得自己的可编辑布局，而不是共享原始模板。"
+
+msgid "The duplicate will keep pointing at the original layout template."
+msgstr "副本将继续指向原始布局模板。"
+
+msgid "{{title}} (Copy)"
+msgstr "{{title}}（副本）"
+
+msgid "Duplicate"
+msgstr "复制"
+
+msgid "Move Campaign to Space"
+msgstr "将活动移动到空间"
+
+msgid "Move campaign to space"
+msgstr "将活动移动到空间"
+
+msgid "Campaign:"
+msgstr "活动："
+
+msgid "From space:"
+msgstr "来自空间："
+
+msgid "Pick a space"
+msgstr "选择一个空间"
+
+msgid "No other spaces you own"
+msgstr "您没有其他拥有的空间"
+
+msgid "All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it."
+msgstr "所有分析数据、审计历史、媒体引用和访问请求都会随活动一起移动。源空间将不再列出该活动。"
+
+msgid "Move"
+msgstr "移动"
+
+msgid "Add Campaign"
+msgstr "添加活动"
+
+msgid "Campaign list"
+msgstr "活动列表"
+
+msgid "Select all"
+msgstr "全选"
+
+msgid "Select all campaigns"
+msgstr "选择所有活动"
+
+msgid "Title"
+msgstr "标题"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Visibility"
+msgstr "可见性"
+
+msgid "Grants"
+msgstr "授权"
+
+msgid "Tags"
+msgstr "标签"
+
+msgid "Categories"
+msgstr "分类"
+
+msgid "Actions"
+msgstr "操作"
+
+msgid "{{count}} campaigns"
+msgstr "{{count}} 个活动"
+
+msgid "Import Campaign"
+msgstr "导入活动"
+
+msgid "Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value."
+msgstr "选择从 WP Super Gallery 导出的 {{json}} 或 {{zip}} 文件。活动将创建为草稿 — 媒体和布局模板按值导入。"
+
+msgid "Change file"
+msgstr "更改文件"
+
+msgid "Select .json or .zip file"
+msgstr "选择 .json 或 .zip 文件"
+
+msgid "Ready to import:"
+msgstr "准备导入："
+
+msgid " ({{count}} media reference)"
+msgstr " （{{count}} 个媒体引用）"
+
+msgid " ({{count}} media references)"
+msgstr " （{{count}} 个媒体引用）"
+
+msgid "Invalid export file: missing version or campaign key."
+msgstr "无效的导出文件：缺少版本或活动键。"
+
+msgid "Unsupported export version: {{version}}. Expected 1."
+msgstr "不支持的导出版本：{{version}}。应为 1。"
+
+msgid "Could not parse JSON. Make sure the file is a valid campaign export."
+msgstr "无法解析 JSON。请确保该文件是有效的活动导出文件。"
+
+msgid "Untitled"
+msgstr "无标题"
+
+msgid "Scheduled"
+msgstr "已排期"
+
+msgid "Expired"
+msgstr "已过期"
+
+msgid "Expiring soon"
+msgstr "即将过期"
+
+msgid "Select {{title}}"
+msgstr "选择 {{title}}"
+
+msgid "Custom gallery: {{summary}}"
+msgstr "自定义图库：{{summary}}"
+
+msgid "Nested overrides"
+msgstr "嵌套覆盖"
+
+msgid "Custom gallery overrides"
+msgstr "自定义图库覆盖"
+
+msgid "{{count}} grant"
+msgstr "{{count}} 个授权"
+
+msgid "{{count}} grants"
+msgstr "{{count}} 个授权"
+
+msgid "Edit"
+msgstr "编辑"
+
+msgid "Clone"
+msgstr "克隆"
+
+msgid "Duplicate {{title}}"
+msgstr "复制 {{title}}"
+
+msgid "Export {{title}}"
+msgstr "导出 {{title}}"
+
+msgid "Export"
+msgstr "导出"
+
+msgid "Export as ZIP (includes media)"
+msgstr "导出为 ZIP（包含媒体）"
+
+msgid "Export as JSON (data only)"
+msgstr "导出为 JSON（仅数据）"
+
+msgid "Permanently delete"
+msgstr "永久删除"
+
+msgid "Delete {{title}}"
+msgstr "删除 {{title}}"
+
+msgid "Details"
+msgstr "详情"
+
+msgid "Campaign title"
+msgstr "活动标题"
+
+msgid "Description"
+msgstr "描述"
+
+msgid "Campaign description"
+msgstr "活动描述"
+
+msgid "Campaign Thumbnail (Card Image)"
+msgstr "活动缩略图（卡片图片）"
+
+msgid "Campaign thumbnail preview"
+msgstr "活动缩略图预览"
+
+msgid "Use existing campaign media as thumbnail"
+msgstr "使用现有活动媒体作为缩略图"
+
+msgid "Choose media image/thumbnail"
+msgstr "选择媒体图片/缩略图"
+
+msgid "{{type}} #{{id}}"
+msgstr "{{type}} #{{id}}"
+
+msgid "No campaign media available"
+msgstr "无可用的活动媒体"
+
+msgid "Upload Custom Thumbnail"
+msgstr "上传自定义缩略图"
+
+msgid "Draft"
+msgstr "草稿"
+
+msgid "Active"
+msgstr "活跃"
+
+msgid "Archived"
+msgstr "已归档"
+
+msgid "Private"
+msgstr "私密"
+
+msgid "Public"
+msgstr "公开"
+
+msgid "Add tags…"
+msgstr "添加标签…"
+
+msgid "Type a tag and press Enter or comma to add"
+msgstr "输入标签并按 Enter 或逗号以添加"
+
+msgid "Select categories"
+msgstr "选择分类"
+
+msgid "Assign this campaign to one or more categories"
+msgstr "将此活动分配到一个或多个分类"
+
+msgid "Publish At"
+msgstr "发布时间"
+
+msgid "Campaign becomes visible at this date/time"
+msgstr "活动将在此日期/时间变为可见"
+
+msgid "Unpublish At"
+msgstr "取消发布时间"
+
+msgid "Campaign is hidden after this date/time"
+msgstr "活动将在此日期/时间之后隐藏"
+
+msgid "Card Border Color"
+msgstr "卡片边框颜色"
+
+msgid "Custom accent border color for this campaign card"
+msgstr "此活动卡片的自定义强调边框颜色"
+
+msgid "Auto (company brand color)"
+msgstr "自动（公司品牌颜色）"
+
+msgid "Gallery Mode Override"
+msgstr "图库模式覆盖"
+
+msgid "Override the global gallery mode for this campaign"
+msgstr "为此活动覆盖全局图库模式"
+
+msgid "Default (from settings)"
+msgstr "默认（来自设置）"
+
+msgid "Unified"
+msgstr "统一"
+
+msgid "Per-Type"
+msgstr "按类型"
+
+msgid "Unified Breakpoint Adapters"
+msgstr "统一断点适配器"
+
+msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
+msgstr "清空单元格以继承该断点的全局统一适配器。"
+
+msgid "Desktop"
+msgstr "桌面"
+
+msgid "Tablet"
+msgstr "平板"
+
+msgid "Mobile"
+msgstr "移动"
+
+msgid "{{bp}} Unified Gallery Adapter"
+msgstr "{{bp}} 统一图库适配器"
+
+msgid "Inherited"
+msgstr "已继承"
+
+msgid "Per-Type Breakpoint Adapters"
+msgstr "按类型断点适配器"
+
+msgid "Clear any cell to inherit that breakpoint's global adapter selection."
+msgstr "清空任意单元格以继承该断点的全局适配器选择。"
+
+msgid "{{bp}} Image Gallery Adapter"
+msgstr "{{bp}} 图片图库适配器"
+
+msgid "{{bp}} Video Gallery Adapter"
+msgstr "{{bp}} 视频图库适配器"
+
+msgid "Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields."
+msgstr "各断点的快速覆盖保留在此处的内联位置。对于模式更改、共享响应式设置和适配器专用字段，请使用共享的响应式编辑器。"
+
+msgid "Edit Responsive Config"
+msgstr "编辑响应式配置"
+
+msgid "Inheriting global gallery settings"
+msgstr "正在继承全局图库设置"
+
+msgid "Clear the campaign-specific gallery override state here to fall back to the global gallery configuration."
+msgstr "在此清除活动专用的图库覆盖状态，以回退到全局图库配置。"
+
+msgid "Use Inherited Gallery Settings"
+msgstr "使用继承的图库设置"
+
+msgid "Layout Template"
+msgstr "布局模板"
+
+msgid "Layout Builder is your selected gallery adapter — choose the template it renders."
+msgstr "布局构建器是您选择的图库适配器 — 请选择它渲染的模板。"
+
+msgid "Assign a layout template to use the Layout Builder adapter"
+msgstr "分配布局模板以使用布局构建器适配器"
+
+msgid "None (use default adapter)"
+msgstr "无（使用默认适配器）"
+
+msgid "{{name}} ({{count}} slots)"
+msgstr "{{name}}（{{count}} 个插槽）"
+
+msgid "Edit Layout"
+msgstr "编辑布局"
+
+msgid "Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter."
+msgstr "已选择布局构建器作为图库适配器，但未分配模板 — 请在上方选择一个，否则图库将回退到默认适配器。"
+
+msgid "Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first."
+msgstr "已选择布局构建器作为图库适配器，但尚不存在任何布局模板。请先在布局构建器中创建一个。"
+
+msgid "Save Changes"
+msgstr "保存更改"
+
+msgid "Create Campaign"
+msgstr "创建活动"
+
+msgid "Campaign modal tabs"
+msgstr "活动窗口选项卡"
+
+msgid "Discard changes?"
+msgstr "放弃更改？"
+
+msgid "You have unsaved changes. Are you sure you want to discard them?"
+msgstr "您有未保存的更改。确定要放弃吗？"
+
+msgid "Discard"
+msgstr "放弃"
+
+msgid "Campaign Responsive Gallery Config"
+msgstr "活动响应式图库配置"
+
+msgid "This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings."
+msgstr "此活动当前存储了自定义图库覆盖。使用“清除活动覆盖”以返回到继承的全局图库设置。"
+
+msgid "This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides."
+msgstr "此活动当前正在继承全局图库设置。在此保存的任何更改都将创建活动专用的覆盖。"
+
+msgid "Apply Campaign Gallery Config"
+msgstr "应用活动图库配置"
+
+msgid "Clear Campaign Overrides"
+msgstr "清除活动覆盖"
+
+msgid "Adapter applied when this campaign renders images and videos together."
+msgstr "此活动同时渲染图片和视频时应用的适配器。"
+
+msgid "No media attached to this campaign."
+msgstr "此活动未附加任何媒体。"
+
+msgid "Media item {{label}}"
+msgstr "媒体项 {{label}}"
+
+msgid "Remove from campaign"
+msgstr "从活动中移除"
+
+msgid "Upload New File"
+msgstr "上传新文件"
+
+msgid "Uploading..."
+msgstr "正在上传…"
+
+msgid "Choose up to {{count}} files"
+msgstr "最多选择 {{count}} 个文件"
+
+msgid "Uploaded files use their filenames as captions in this modal."
+msgstr "上传的文件在此窗口中使用其文件名作为标题。"
+
+msgid "Add External URL"
+msgstr "添加外部 URL"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "https://youtube.com/watch?v=... or image URL"
+msgstr "https://youtube.com/watch?v=... 或图片 URL"
+
+msgid "Caption (optional)"
+msgstr "标题（可选）"
+
+msgid "Describe this media"
+msgstr "描述此媒体"
+
+msgid "Add External Media"
+msgstr "添加外部媒体"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "items"
+msgstr "项"
+
+msgid "Add Media"
+msgstr "添加媒体"
+
+msgid "Rescan Types"
+msgstr "重新扫描类型"
+
+msgid "Media view mode"
+msgstr "媒体视图模式"
+
+msgid "Media card size"
+msgstr "媒体卡片大小"
+
+msgid "Media sort mode"
+msgstr "媒体排序模式"
+
+msgid "Grid View"
+msgstr "网格视图"
+
+msgid "Compact Grid"
+msgstr "紧凑网格"
+
+msgid "List View"
+msgstr "列表视图"
+
+msgid "Order"
+msgstr "顺序"
+
+msgid "Date uploaded"
+msgstr "上传日期"
+
+msgid "File size"
+msgstr "文件大小"
+
+msgid "Usage count"
+msgstr "使用次数"
+
+msgid "Exclusive only"
+msgstr "仅限专属"
+
+msgid "Show only items exclusive to this campaign"
+msgstr "仅显示此活动专属的项"
+
+msgid "Show only media exclusive to this campaign"
+msgstr "仅显示此活动专属的媒体"
+
+msgid "Thumb"
+msgstr "缩略图"
+
+msgid "Caption"
+msgstr "标题"
+
+msgid "Source"
+msgstr "来源"
+
+msgid "Usage"
+msgstr "使用情况"
+
+msgid "Media list pages"
+msgstr "媒体列表页"
+
+msgid "media item"
+msgstr "媒体项"
+
+msgid "Remove from Campaign"
+msgstr "从活动中移除"
+
+msgid "Remove this item from the campaign? The file stays in your media library and can be added to other campaigns."
+msgstr "从活动中移除此项？该文件将保留在您的媒体库中，并可添加到其他活动。"
+
+msgid " It is currently used in {{count}} other campaign — those associations are not affected."
+msgstr " 它当前在另外 {{count}} 个活动中使用 — 这些关联不受影响。"
+
+msgid " It is currently used in {{count}} other campaigns — those associations are not affected."
+msgstr " 它当前在另外 {{count}} 个活动中使用 — 这些关联不受影响。"
+
+msgid "Remove"
+msgstr "移除"
+
+msgid "Remove media {{label}}"
+msgstr "移除媒体 {{label}}"
+
+msgid "Not used in any campaign."
+msgstr "未在任何活动中使用。"
+
+msgid "Used in campaigns:"
+msgstr "在以下活动中使用："
+
+msgid "Failed to load usage detail"
+msgstr "无法加载使用详情"
+
+msgid "Unused"
+msgstr "未使用"
+
+msgid "{{count}} campaign"
+msgstr "{{count}} 个活动"
+
+msgid "Media used in {{label}}"
+msgstr "在 {{label}} 中使用的媒体"
+
+msgid "External"
+msgstr "外部"
+
+msgid "Upload"
+msgstr "上传"
+
+msgid "Open image preview for {{label}}"
+msgstr "打开 {{label}} 的图片预览"
+
+msgid "Media thumbnail"
+msgstr "媒体缩略图"
+
+msgid "Drag media to reorder"
+msgstr "拖动媒体以重新排序"
+
+msgid "Delete media"
+msgstr "删除媒体"
+
+msgid "Edit Media"
+msgstr "编辑媒体"
+
+msgid "Enter a title (optional)"
+msgstr "输入标题（可选）"
+
+msgid "Optional display title for this media item"
+msgstr "此媒体项的可选显示标题"
+
+msgid "Enter a caption or description"
+msgstr "输入标题或描述"
+
+msgid "Descriptive text shown with the media"
+msgstr "与媒体一起显示的描述性文本"
+
+msgid "Thumbnail URL"
+msgstr "缩略图 URL"
+
+msgid "https://..."
+msgstr "https://..."
+
+msgid "Custom preview image URL (optional)"
+msgstr "自定义预览图片 URL（可选）"
+
+msgid "Media lightbox: {{caption}} ({{index}} of {{total}})"
+msgstr "媒体灯箱：{{caption}}（第 {{index}} 个，共 {{total}} 个）"
+
+msgid "Media preview"
+msgstr "媒体预览"
+
+msgid "Previous image"
+msgstr "上一张图片"
+
+msgid "Next image"
+msgstr "下一张图片"
+
+msgid "Add to"
+msgstr "添加到"
+
+msgid "File drop zone"
+msgstr "文件拖放区"
+
+msgid "Choose files"
+msgstr "选择文件"
+
+msgid "Drop files here"
+msgstr "将文件拖放到此处"
+
+msgid "or drag & drop files here"
+msgstr "或将文件拖放到此处"
+
+msgid "{{count}} file queued"
+msgstr "{{count}} 个文件已排队"
+
+msgid "{{count}} files queued"
+msgstr "{{count}} 个文件已排队"
+
+msgid "Clear all"
+msgstr "全部清除"
+
+msgid "Remove {{name}}"
+msgstr "移除 {{name}}"
+
+msgid "Enter a caption or description (optional)"
+msgstr "输入标题或描述（可选）"
+
+msgid "When uploading multiple files, each item uses its filename as the default caption."
+msgstr "上传多个文件时，每个项使用其文件名作为默认标题。"
+
+msgid "Upload {{count}} files"
+msgstr "上传 {{count}} 个文件"
+
+msgid "{{count}} file uploaded successfully"
+msgstr "已成功上传 {{count}} 个文件"
+
+msgid "{{count}} files uploaded successfully"
+msgstr "已成功上传 {{count}} 个文件"
+
+msgid "Uploading {{count}} file…"
+msgstr "正在上传 {{count}} 个文件…"
+
+msgid "Uploading {{count}} files…"
+msgstr "正在上传 {{count}} 个文件…"
+
+msgid "External URL"
+msgstr "外部 URL"
+
+msgid "https://youtube.com/..."
+msgstr "https://youtube.com/..."
+
+msgid "External media URL"
+msgstr "外部媒体 URL"
+
+msgid "Preview"
+msgstr "预览"
+
+msgid "Preview external media"
+msgstr "预览外部媒体"
+
+msgid "Add"
+msgstr "添加"
+
+msgid "Add external media"
+msgstr "添加外部媒体"
+
+msgid "External media preview"
+msgstr "外部媒体预览"
+
+msgid "General library (all campaigns)"
+msgstr "通用库（所有活动）"
+
+msgid "{{count}} file added"
+msgstr "已添加 {{count}} 个文件"
+
+msgid "{{count}} files added"
+msgstr "已添加 {{count}} 个文件"
+
+msgid "{{count}} file added to the asset library"
+msgstr "已将 {{count}} 个文件添加到素材库"
+
+msgid "{{count}} files added to the asset library"
+msgstr "已将 {{count}} 个文件添加到素材库"
+
+msgid "Some uploads failed"
+msgstr "部分上传失败"
+
+msgid "{{failures}} of {{total}} file could not be uploaded."
+msgstr "{{total}} 个文件中有 {{failures}} 个无法上传。"
+
+msgid "{{failures}} of {{total}} files could not be uploaded."
+msgstr "{{total}} 个文件中有 {{failures}} 个无法上传。"
+
+msgid "Upload failed"
+msgstr "上传失败"
+
+msgid "Upload failed."
+msgstr "上传失败。"
+
+msgid "Enter a URL to preview."
+msgstr "输入 URL 以预览。"
+
+msgid "External asset added"
+msgstr "已添加外部素材"
+
+msgid "Failed to add external asset."
+msgstr "无法添加外部素材。"
+
+msgid "Make available to all spaces (universal)"
+msgstr "使其对所有空间可用（通用）"
+
+msgid "Add tags for filtering…"
+msgstr "添加用于筛选的标签…"
+
+msgid "Space {{id}}"
+msgstr "空间 {{id}}"
+
+msgid "Reset"
+msgstr "重置"
+
+msgid "Responsive Gallery Config"
+msgstr "响应式图库配置"
+
+msgid "Theme & Layout"
+msgstr "主题和布局"
+
+msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
+msgstr "选择一个颜色主题。预览会立即应用；单击“保存”时才会保存。"
+
+msgid "Default Layout"
+msgstr "默认布局"
+
+msgid "Default layout for displaying gallery items."
+msgstr "用于显示图库项的默认布局。"
+
+msgid "Grid"
+msgstr "网格"
+
+msgid "Masonry"
+msgstr "瀑布流"
+
+msgid "Carousel"
+msgstr "轮播"
+
+msgid "Items Per Page"
+msgstr "每页项数"
+
+msgid "Number of items to display per page (1-100)."
+msgstr "每页显示的项数（1-100）。"
+
+msgid "Page Container"
+msgstr "页面容器"
+
+msgid "App Max Width"
+msgstr "应用最大宽度"
+
+msgid "Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
+msgstr "图库容器的最大宽度。设为 0 表示全宽（边到边）。默认 1200px。"
+
+msgid "0 = full width"
+msgstr "0 = 全宽"
+
+msgid "Container Padding"
+msgstr "容器内边距"
+
+msgid "Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
+msgstr "容器内的水平内边距。设为 0 表示真正的边到边内容。默认 16px。"
+
+msgid "WP Full Bleed — Desktop (≥ 1024px)"
+msgstr "WP 满版 — 桌面（≥ 1024px）"
+
+msgid "Break out of the WordPress page container padding on desktop viewports. Requires page refresh."
+msgstr "在桌面视口上突破 WordPress 页面容器的内边距。需要刷新页面。"
+
+msgid "WP Full Bleed — Tablet (768-1023px)"
+msgstr "WP 满版 — 平板（768-1023px）"
+
+msgid "Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
+msgstr "在平板视口上突破 WordPress 页面容器的内边距。需要刷新页面。"
+
+msgid "WP Full Bleed — Mobile (< 768px)"
+msgstr "WP 满版 — 移动（< 768px）"
+
+msgid "Break out of the WordPress page container padding on mobile viewports. Requires page refresh."
+msgstr "在移动视口上突破 WordPress 页面容器的内边距。需要刷新页面。"
+
+msgid "Page Header"
+msgstr "页面页眉"
+
+msgid "Show Gallery Title"
+msgstr "显示图库标题"
+
+msgid "Show the \"Campaign Gallery\" heading."
+msgstr "显示“活动图库”标题。"
+
+msgid "Gallery Title Text"
+msgstr "图库标题文本"
+
+msgid "Main heading text shown above the gallery."
+msgstr "显示在图库上方的主标题文本。"
+
+msgid "Show Gallery Subtitle"
+msgstr "显示图库副标题"
+
+msgid "Show the subtitle text beneath the title."
+msgstr "在标题下方显示副标题文本。"
+
+msgid "Gallery Subtitle Text"
+msgstr "图库副标题文本"
+
+msgid "Subtitle text shown beneath the title."
+msgstr "显示在标题下方的副标题文本。"
+
+msgid "Show Access Mode"
+msgstr "显示访问模式"
+
+msgid "Show the Lock / Hide access-mode toggle (admin only)."
+msgstr "显示锁定/隐藏访问模式切换（仅限管理员）。"
+
+msgid "Show Filter Tabs"
+msgstr "显示筛选选项卡"
+
+msgid "Show the campaign filter tab strip."
+msgstr "显示活动筛选选项卡栏。"
+
+msgid "Show Search Box"
+msgstr "显示搜索框"
+
+msgid "Show the campaign search input."
+msgstr "显示活动搜索输入框。"
+
+msgid "Page Background"
+msgstr "页面背景"
+
+msgid "Page Background Type"
+msgstr "页面背景类型"
+
+msgid "Gallery container background style"
+msgstr "图库容器背景样式"
+
+msgid "Default Theme"
+msgstr "默认主题"
+
+msgid "Transparent"
+msgstr "透明"
+
+msgid "Solid color"
+msgstr "纯色"
+
+msgid "Custom gradient"
+msgstr "自定义渐变"
+
+msgid "Background Color"
+msgstr "背景颜色"
+
+msgid "Solid background color for the gallery"
+msgstr "图库的纯色背景颜色"
+
+msgid "Show Header Border"
+msgstr "显示页眉边框"
+
+msgid "Show border, shadow, and backdrop blur on the sticky gallery header."
+msgstr "在固定的图库页眉上显示边框、阴影和背景模糊。"
+
+msgid "Auth Bar"
+msgstr "认证栏"
+
+msgid "Auth Bar Backdrop Blur (px)"
+msgstr "认证栏背景模糊 (px)"
+
+msgid "Blur intensity for the auth bar backdrop."
+msgstr "认证栏背景的模糊强度。"
+
+msgid "Auth Bar Mobile Breakpoint (px)"
+msgstr "认证栏移动断点 (px)"
+
+msgid "Viewport width below which the auth bar uses mobile layout."
+msgstr "认证栏在此视口宽度以下使用移动布局。"
+
+msgid "Security & Login"
+msgstr "安全与登录"
+
+msgid "Session Idle Timeout (minutes)"
+msgstr "会话空闲超时（分钟）"
+
+msgid "Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
+msgstr "在用户不活动这么多分钟后自动将其退出登录。设为 0 以禁用。"
+
+msgid "0 = disabled"
+msgstr "0 = 已禁用"
+
+msgid "Idle Timeout Warning (seconds before)"
+msgstr "空闲超时警告（提前秒数）"
+
+msgid "Show a 'Stay signed in' prompt this many seconds before signing out. Set to 0 to sign out without warning."
+msgstr "在退出登录前这么多秒显示“保持登录”提示。设为 0 则不发出警告直接退出登录。"
+
+msgid "0 = no warning"
+msgstr "0 = 无警告"
+
+msgid "Enable Advanced Settings"
+msgstr "启用高级设置"
+
+msgid "Unlock the System & Admin tab with granular control over panel behavior, cache, drawer settings, and more."
+msgstr "解锁“系统与管理”选项卡，对面板行为、缓存、抽屉设置等进行精细控制。"
+
+msgid "Show Settings Tooltips"
+msgstr "显示设置工具提示"
+
+msgid "Display info icons next to Advanced-tab labels that explain each setting on hover."
+msgstr "在“高级”选项卡标签旁显示信息图标，悬停时说明每项设置。"
+
+msgid "Campaign created"
+msgstr "活动已创建"
+
+msgid "Campaign updated"
+msgstr "活动已更新"
+
+msgid "Campaign archived"
+msgstr "活动已归档"
+
+msgid "Campaign restored"
+msgstr "活动已恢复"
+
+msgid "Campaign deleted"
+msgstr "活动已删除"
+
+msgid "Media added"
+msgstr "已添加媒体"
+
+msgid "Media removed"
+msgstr "已移除媒体"
+
+msgid "Access granted"
+msgstr "已授予访问权限"
+
+msgid "Access revoked"
+msgstr "已撤销访问权限"
+
+msgid "Copied!"
+msgstr "已复制！"
+
+msgid "Copy secret"
+msgstr "复制密钥"
+
+msgid "On"
+msgstr "开"
+
+msgid "Off"
+msgstr "关"
+
+msgid "Rotate secret"
+msgstr "轮换密钥"
+
+msgid "Rotate secret for {{url}}"
+msgstr "轮换 {{url}} 的密钥"
+
+msgid "Delete endpoint"
+msgstr "删除端点"
+
+msgid "Delete endpoint {{url}}"
+msgstr "删除端点 {{url}}"
+
+msgid "All events"
+msgstr "所有事件"
+
+msgid "Hide filter"
+msgstr "隐藏筛选器"
+
+msgid "Edit filter"
+msgstr "编辑筛选器"
+
+msgid "All events (leave empty to receive all)"
+msgstr "所有事件（留空以接收全部）"
+
+msgid "Failed to create webhook endpoint."
+msgstr "无法创建 webhook 端点。"
+
+msgid "Failed to delete webhook endpoint."
+msgstr "无法删除 webhook 端点。"
+
+msgid "Failed to update webhook endpoint."
+msgstr "无法更新 webhook 端点。"
+
+msgid "Failed to rotate webhook secret."
+msgstr "无法轮换 webhook 密钥。"
+
+msgid "Endpoint {{index}}"
+msgstr "端点 {{index}}"
+
+msgid "Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity."
+msgstr "当活动事件发生时，webhook 端点会接收经过签名的 HMAC-SHA256 POST 请求。有效负载包括事件类型、ISO 时间戳和事件数据。使用 {{header}} 标头验证传递的真实性。"
+
+msgid "No webhook endpoints configured."
+msgstr "未配置 webhook 端点。"
+
+msgid "Add endpoint"
+msgstr "添加端点"
+
+msgid "Events (optional)"
+msgstr "事件（可选）"
+
+msgid "Leave empty to receive all events."
+msgstr "留空以接收所有事件。"
+
+msgid "Enabled"
+msgstr "已启用"
+
+msgid "Webhook secret — save this now"
+msgstr "Webhook 密钥 — 请立即保存"
+
+msgid "This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256."
+msgstr "这是唯一一次显示完整密钥。请复制它并配置您的端点，使用 HMAC-SHA256 验证 {{header}} 标头。"
+
+msgid "Done"
+msgstr "完成"
+
+msgid "New webhook secret — save this now"
+msgstr "新的 webhook 密钥 — 请立即保存"
+
+msgid "The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing."
+msgstr "{{label}} 的密钥已轮换。请在关闭前使用此新值更新您的端点接收器。"
+
+msgid "Fine-grained controls for power users. These settings override internal defaults across all gallery components. Change with care."
+msgstr "面向高级用户的精细控制。这些设置会覆盖所有图库组件的内部默认值。请谨慎更改。"
+
+msgid "Settings Drawer"
+msgstr "设置抽屉"
+
+msgid "Settings Panel Width"
+msgstr "设置面板宽度"
+
+msgid "Width of the settings panel drawer on medium and large screens. On small screens it is always 100%."
+msgstr "设置面板抽屉在中型和大型屏幕上的宽度。在小型屏幕上始终为 100%。"
+
+msgid "Settings Drawer Backdrop Blur"
+msgstr "设置抽屉背景模糊"
+
+msgid "When enabled, content behind open settings drawers is blurred."
+msgstr "启用后，打开的设置抽屉后面的内容会被模糊处理。"
+
+msgid "Settings Panel Animation"
+msgstr "设置面板动画"
+
+msgid "Open/close transition for the settings panel drawer. Choose None to disable animation."
+msgstr "设置面板抽屉的打开/关闭过渡。选择“无”以禁用动画。"
+
+msgid "Slide"
+msgstr "滑动"
+
+msgid "Fade"
+msgstr "淡入淡出"
+
+msgid "Scale"
+msgstr "缩放"
+
+msgid "None"
+msgstr "无"
+
+msgid "Admin Panel Max Width"
+msgstr "管理面板最大宽度"
+
+msgid "Maximum width of the admin panel container. Set to 0 for full width (no constraint)."
+msgstr "管理面板容器的最大宽度。设为 0 表示全宽（无约束）。"
+
+msgid "Upload / Media"
+msgstr "上传 / 媒体"
+
+msgid "Upload Max Size (MB)"
+msgstr "上传最大大小 (MB)"
+
+msgid "Max Batch Upload Size"
+msgstr "批量上传最大大小"
+
+msgid "Allowed Upload Types"
+msgstr "允许的上传类型"
+
+msgid "Comma-separated MIME patterns (e.g. image/*,video/*)"
+msgstr "以逗号分隔的 MIME 模式（例如 image/*,video/*）"
+
+msgid "Library Page Size"
+msgstr "库页面大小"
+
+msgid "Media List Page Size"
+msgstr "媒体列表页面大小"
+
+msgid "Compact Card Height (px)"
+msgstr "紧凑卡片高度 (px)"
+
+msgid "Small Card Height (px)"
+msgstr "小卡片高度 (px)"
+
+msgid "Medium Card Height (px)"
+msgstr "中卡片高度 (px)"
+
+msgid "Large Card Height (px)"
+msgstr "大卡片高度 (px)"
+
+msgid "Media List Min Width (px)"
+msgstr "媒体列表最小宽度 (px)"
+
+msgid "Notification Dismiss (ms)"
+msgstr "通知消失时间 (ms)"
+
+msgid "Image Optimization"
+msgstr "图片优化"
+
+msgid "Optimize on Upload"
+msgstr "上传时优化"
+
+msgid "Automatically resize and compress images on upload."
+msgstr "上传时自动调整图片大小并压缩。"
+
+msgid "Max Width (px)"
+msgstr "最大宽度 (px)"
+
+msgid "Max Height (px)"
+msgstr "最大高度 (px)"
+
+msgid "Quality (%)"
+msgstr "质量 (%)"
+
+msgid "WebP Conversion"
+msgstr "WebP 转换"
+
+msgid "Generate WebP copies alongside originals."
+msgstr "在原始文件之外生成 WebP 副本。"
+
+msgid "Thumbnail Cache TTL (s)"
+msgstr "缩略图缓存 TTL (s)"
+
+msgid "How long cached external thumbnails are kept (seconds)."
+msgstr "缓存的外部缩略图保留的时长（秒）。"
+
+msgid "Tile / Adapter"
+msgstr "图块 / 适配器"
+
+msgid "Hover Overlay Opacity"
+msgstr "悬停叠加层不透明度"
+
+msgid "Bounce Scale (Hover)"
+msgstr "弹跳缩放（悬停）"
+
+msgid "Bounce Scale (Active)"
+msgstr "弹跳缩放（激活）"
+
+msgid "Bounce Duration (ms)"
+msgstr "弹跳持续时间 (ms)"
+
+msgid "Base Transition Duration (ms)"
+msgstr "基础过渡持续时间 (ms)"
+
+msgid "Tile Transition Duration (ms)"
+msgstr "图块过渡持续时间 (ms)"
+
+msgid "Hex Vertical Overlap Ratio"
+msgstr "六边形垂直重叠比例"
+
+msgid "Diamond Vertical Overlap Ratio"
+msgstr "菱形垂直重叠比例"
+
+msgid "Hex Clip Path"
+msgstr "六边形裁剪路径"
+
+msgid "Diamond Clip Path"
+msgstr "菱形裁剪路径"
+
+msgid "Default Per Row"
+msgstr "每行默认数"
+
+msgid "Masonry Auto Column Breakpoints"
+msgstr "瀑布流自动列断点"
+
+msgid "Format: 480:2,768:3,1024:4,1280:5"
+msgstr "格式：480:2,768:3,1024:4,1280:5"
+
+msgid "Grid Card Hover Shadow"
+msgstr "网格卡片悬停阴影"
+
+msgid "Grid Card Default Shadow"
+msgstr "网格卡片默认阴影"
+
+msgid "Grid Card Hover Scale"
+msgstr "网格卡片悬停缩放"
+
+msgid "Lightbox"
+msgstr "灯箱"
+
+msgid "Transition Duration (ms)"
+msgstr "过渡持续时间 (ms)"
+
+msgid "Backdrop Color"
+msgstr "背景颜色"
+
+msgid "Entry Scale"
+msgstr "进入缩放"
+
+msgid "Video Max Width"
+msgstr "视频最大宽度"
+
+msgid "Video Height"
+msgstr "视频高度"
+
+msgid "Media Max Height"
+msgstr "媒体最大高度"
+
+msgid "CSS value, e.g. 85vh"
+msgstr "CSS 值，例如 85vh"
+
+msgid "Z-Index"
+msgstr "Z 轴层级"
+
+msgid "Navigation"
+msgstr "导航"
+
+msgid "Max Visible Dots"
+msgstr "最多可见圆点数"
+
+msgid "Arrow Edge Inset (px)"
+msgstr "箭头边缘内嵌 (px)"
+
+msgid "Arrow Min Hit Target (px)"
+msgstr "箭头最小点击目标 (px)"
+
+msgid "Arrow Fade Duration (ms)"
+msgstr "箭头淡出持续时间 (ms)"
+
+msgid "Arrow Scale Transition (ms)"
+msgstr "箭头缩放过渡 (ms)"
+
+msgid "Viewport Height Mobile Ratio"
+msgstr "视口高度移动比例"
+
+msgid "Viewport Height Tablet Ratio"
+msgstr "视口高度平板比例"
+
+msgid "Search Input Min Width (px)"
+msgstr "搜索输入框最小宽度 (px)"
+
+msgid "Search Input Max Width (px)"
+msgstr "搜索输入框最大宽度 (px)"
+
+msgid "System"
+msgstr "系统"
+
+msgid "Admin Search Debounce (ms)"
+msgstr "管理搜索防抖 (ms)"
+
+msgid "Min Password Length"
+msgstr "最小密码长度"
+
+msgid "Login Form Max Width (px)"
+msgstr "登录表单最大宽度 (px)"
+
+msgid "Developer & Debugging"
+msgstr "开发者与调试"
+
+msgid "Enable Component Debug Names & Markers"
+msgstr "启用组件调试名称和标记"
+
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr "启用后，已部署的构建会保留明确的 React DevTools 组件名称，并将 data-wpsg-component/data-wpsg-slot 属性注入到 DOM 中，用于元素检查和 QA 选择器。即使关闭此项，本地开发环境仍可能显示源组件名称。"
+
+msgid "Data Maintenance"
+msgstr "数据维护"
+
+msgid "Archive Purge After (days)"
+msgstr "归档清除时间（天）"
+
+msgid "Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
+msgstr "超过此时长的已归档活动将被移至回收站。设为 0 以禁用自动清除。"
+
+msgid "Trash Grace Period (days)"
+msgstr "回收站宽限期（天）"
+
+msgid "Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
+msgstr "回收站中的活动将在这么多天后被永久删除。最少 7 天。"
+
+msgid "Analytics Retention (days)"
+msgstr "分析数据保留（天）"
+
+msgid "Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "超过此时长的分析事件将每周清除。设为 0 则无限期保留。"
+
+msgid "Object Cache"
+msgstr "对象缓存"
+
+msgid "Health data unavailable"
+msgstr "健康数据不可用"
+
+msgid "Could not load object-cache status from the server."
+msgstr "无法从服务器加载对象缓存状态。"
+
+msgid "Persistent cache"
+msgstr "持久缓存"
+
+msgid "Not detected"
+msgstr "未检测到"
+
+msgid "No persistent object cache"
+msgstr "无持久对象缓存"
+
+msgid "WordPress is using its default in-memory cache, which is discarded on every request. For higher-traffic deployments consider adding a Redis or Memcached drop-in. See docs/object-cache-setup.md for setup instructions."
+msgstr "WordPress 正在使用其默认的内存缓存，该缓存会在每次请求时被丢弃。对于流量较高的部署，请考虑添加 Redis 或 Memcached drop-in。有关设置说明，请参阅 docs/object-cache-setup.md。"
+
+msgid "Cache backend detected but no runtime stats are exposed by this drop-in."
+msgstr "已检测到缓存后端，但此 drop-in 未公开运行时统计信息。"
+
+msgid "Backend stats"
+msgstr "后端统计"
+
+msgid "Danger Zone"
+msgstr "危险区域"
+
+msgid "Irreversible data deletion"
+msgstr "不可逆的数据删除"
+
+msgid "When preservation is disabled, deleting this plugin permanently removes all campaigns, layout templates, overlay library, analytics events, access grants, and uploaded thumbnail files. This cannot be undone."
+msgstr "禁用保留后，删除此插件将永久移除所有活动、布局模板、叠加层库、分析事件、访问授权和已上传的缩略图文件。此操作无法撤销。"
+
+msgid "Preserve data on plugin removal"
+msgstr "移除插件时保留数据"
+
+msgid "When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
+msgstr "启用后（推荐），如果您移除插件，所有插件数据都会保留。仅当您打算在卸载时清除所有图库数据时才禁用。"
+
+msgid "{{base}} — Override for {{bp}}"
+msgstr "{{base}} — {{bp}} 的覆盖"
+
+msgid "{{base}} — Inherited from {{bp}}"
+msgstr "{{base}} — 继承自 {{bp}}"
+
+msgid "↻ Reset to inherited"
+msgstr "↻ 重置为继承"
+
+msgid "Card Appearance"
+msgstr "卡片外观"
+
+msgid "Border Radius"
+msgstr "边框圆角"
+
+msgid "Corner rounding for campaign cards"
+msgstr "活动卡片的圆角"
+
+msgid "Border Width (px)"
+msgstr "边框宽度 (px)"
+
+msgid "Left accent border thickness"
+msgstr "左侧强调边框粗细"
+
+msgid "Border Color Mode"
+msgstr "边框颜色模式"
+
+msgid "How card accent border colors are determined"
+msgstr "如何确定卡片强调边框颜色"
+
+msgid "Single color for all cards"
+msgstr "所有卡片使用单一颜色"
+
+msgid "Per-card color (set in Edit Campaign)"
+msgstr "每张卡片单独设置颜色（在“编辑活动”中设置）"
+
+msgid "Border Color"
+msgstr "边框颜色"
+
+msgid "Accent border color applied to all campaign cards"
+msgstr "应用于所有活动卡片的强调边框颜色"
+
+msgid "Card Shadow"
+msgstr "卡片阴影"
+
+msgid "Depth effect for campaign cards"
+msgstr "活动卡片的深度效果"
+
+msgid "Subtle"
+msgstr "轻微"
+
+msgid "Medium"
+msgstr "中等"
+
+msgid "Dramatic"
+msgstr "强烈"
+
+msgid "Thumbnail Height"
+msgstr "缩略图高度"
+
+msgid "Height of the card thumbnail area"
+msgstr "卡片缩略图区域的高度"
+
+msgid "Thumbnail Fit"
+msgstr "缩略图适应"
+
+msgid "How the thumbnail image fills the card"
+msgstr "缩略图如何填充卡片"
+
+msgid "Cover (fill)"
+msgstr "覆盖（填充）"
+
+msgid "Contain (fit)"
+msgstr "包含（适应）"
+
+msgid "Element Visibility"
+msgstr "元素可见性"
+
+msgid "Show company name badge"
+msgstr "显示公司名称徽章"
+
+msgid "Company badge overlay on card thumbnail"
+msgstr "卡片缩略图上的公司徽章叠加层"
+
+msgid "Show access badge"
+msgstr "显示访问徽章"
+
+msgid "Green 'Access' badge on accessible cards"
+msgstr "可访问卡片上的绿色“访问”徽章"
+
+msgid "Show card title"
+msgstr "显示卡片标题"
+
+msgid "Show the campaign title in the card info panel"
+msgstr "在卡片信息面板中显示活动标题"
+
+msgid "Show card description"
+msgstr "显示卡片描述"
+
+msgid "Show the campaign description in the card info panel"
+msgstr "在卡片信息面板中显示活动描述"
+
+msgid "Show media counts"
+msgstr "显示媒体数量"
+
+msgid "Video and image count below description"
+msgstr "描述下方的视频和图片数量"
+
+msgid "Show card border"
+msgstr "显示卡片边框"
+
+msgid "Accent border and hover border effect"
+msgstr "强调边框和悬停边框效果"
+
+msgid "Show thumbnail fade"
+msgstr "显示缩略图渐变"
+
+msgid "Gradient overlay at bottom of thumbnail"
+msgstr "缩略图底部的渐变叠加层"
+
+msgid "Show card info panel"
+msgstr "显示卡片信息面板"
+
+msgid "Show title, description, tags & media counts below thumbnail"
+msgstr "在缩略图下方显示标题、描述、标签和媒体数量"
+
+msgid "Card Grid & Pagination"
+msgstr "卡片网格与分页"
+
+msgid "Cards Per Row"
+msgstr "每行卡片数"
+
+msgid "Number of columns in the card grid (Auto = responsive)"
+msgstr "卡片网格中的列数（自动 = 响应式）"
+
+msgid "Auto (responsive)"
+msgstr "自动（响应式）"
+
+msgid "2 columns"
+msgstr "2 列"
+
+msgid "3 columns"
+msgstr "3 列"
+
+msgid "4 columns"
+msgstr "4 列"
+
+msgid "5 columns"
+msgstr "5 列"
+
+msgid "6 columns"
+msgstr "6 列"
+
+msgid "Max Columns (auto mode)"
+msgstr "最大列数（自动模式）"
+
+msgid "Cap the number of columns when using Auto layout. 0 = unlimited."
+msgstr "使用自动布局时限制列数。0 = 无限制。"
+
+msgid "Horizontal Gap"
+msgstr "水平间距"
+
+msgid "Horizontal spacing between campaign cards"
+msgstr "活动卡片之间的水平间距"
+
+msgid "Vertical Gap"
+msgstr "垂直间距"
+
+msgid "Vertical spacing between campaign card rows"
+msgstr "活动卡片行之间的垂直间距"
+
+msgid "Card Max Width"
+msgstr "卡片最大宽度"
+
+msgid "Limit individual card width. 0 = no limit (fill column)."
+msgstr "限制单张卡片的宽度。0 = 无限制（填充列）。"
+
+msgid "Card Scale"
+msgstr "卡片缩放"
+
+msgid "Primary sizing multiplier for cards. 1 = default size."
+msgstr "卡片的主要尺寸倍数。1 = 默认大小。"
+
+msgid "Card Justification"
+msgstr "卡片对齐方式"
+
+msgid "How cards distribute when a row does not fill the full available width."
+msgstr "当一行未填满全部可用宽度时卡片如何分布。"
+
+msgid "Start"
+msgstr "起始"
+
+msgid "Center"
+msgstr "居中"
+
+msgid "End"
+msgstr "末尾"
+
+msgid "Space Between"
+msgstr "两端对齐"
+
+msgid "Space Evenly"
+msgstr "均匀分布"
+
+msgid "Vertical Alignment"
+msgstr "垂直对齐"
+
+msgid "How the card grid aligns vertically when minimum height exceeds content height."
+msgstr "当最小高度超过内容高度时卡片网格如何垂直对齐。"
+
+msgid "Top"
+msgstr "顶部"
+
+msgid "Bottom"
+msgstr "底部"
+
+msgid "Grid Minimum Height"
+msgstr "网格最小高度"
+
+msgid "Minimum height for the card grid container."
+msgstr "卡片网格容器的最小高度。"
+
+msgid "Grid Maximum Height"
+msgstr "网格最大高度"
+
+msgid "Maximum height for the card grid area. 0 = no limit."
+msgstr "卡片网格区域的最大高度。0 = 无限制。"
+
+msgid "Grid Horizontal Offset"
+msgstr "网格水平偏移"
+
+msgid "Fine-tune horizontal position of the card grid."
+msgstr "微调卡片网格的水平位置。"
+
+msgid "Grid Vertical Offset"
+msgstr "网格垂直偏移"
+
+msgid "Fine-tune vertical position of the card grid."
+msgstr "微调卡片网格的垂直位置。"
+
+msgid "Card Aspect Ratio"
+msgstr "卡片宽高比"
+
+msgid "Lock cards to a fixed aspect ratio"
+msgstr "将卡片锁定为固定宽高比"
+
+msgid "Auto (natural)"
+msgstr "自动（自然）"
+
+msgid "16:9 (widescreen)"
+msgstr "16:9（宽屏）"
+
+msgid "4:3 (standard)"
+msgstr "4:3（标准）"
+
+msgid "1:1 (square)"
+msgstr "1:1（正方形）"
+
+msgid "3:4 (portrait)"
+msgstr "3:4（竖向）"
+
+msgid "9:16 (tall portrait)"
+msgstr "9:16（高竖向）"
+
+msgid "2:3 (photo portrait)"
+msgstr "2:3（照片竖向）"
+
+msgid "3:2 (photo landscape)"
+msgstr "3:2（照片横向）"
+
+msgid "21:9 (ultrawide)"
+msgstr "21:9（超宽）"
+
+msgid "Card Min Height"
+msgstr "卡片最小高度"
+
+msgid "Minimum height for each card. 0 = no minimum."
+msgstr "每张卡片的最小高度。0 = 无最小值。"
+
+msgid "Pagination"
+msgstr "分页"
+
+msgid "Display Mode"
+msgstr "显示模式"
+
+msgid "How cards are displayed: all at once, progressively loaded, or paginated with arrows"
+msgstr "卡片的显示方式：一次全部显示、逐步加载或使用箭头分页"
+
+msgid "Show All"
+msgstr "显示全部"
+
+msgid "Load More (progressive)"
+msgstr "加载更多（逐步）"
+
+msgid "Paginated (arrows)"
+msgstr "分页（箭头）"
+
+msgid "Rows Per Page"
+msgstr "每页行数"
+
+msgid "Number of card rows visible per page"
+msgstr "每页可见的卡片行数"
+
+msgid "Dot Navigator"
+msgstr "圆点导航器"
+
+msgid "Show dot navigator below the card grid"
+msgstr "在卡片网格下方显示圆点导航器"
+
+msgid "Page Transition Duration (ms)"
+msgstr "页面过渡持续时间 (ms)"
+
+msgid "Slide animation speed between pages"
+msgstr "页面之间的滑动动画速度"
+
+msgid "Card Internals"
+msgstr "卡片内部"
+
+msgid "Locked Card Opacity"
+msgstr "锁定卡片不透明度"
+
+msgid "Gradient Start Opacity"
+msgstr "渐变起始不透明度"
+
+msgid "Gradient End Opacity"
+msgstr "渐变结束不透明度"
+
+msgid "Lock Icon Size (px)"
+msgstr "锁定图标大小 (px)"
+
+msgid "Size of the lock icon shown on inaccessible cards"
+msgstr "在不可访问卡片上显示的锁定图标大小"
+
+msgid "Access Icon Size (px)"
+msgstr "访问图标大小 (px)"
+
+msgid "Size of the icon inside the access badge"
+msgstr "访问徽章内图标的大小"
+
+msgid "Badge Offset Y (px)"
+msgstr "徽章 Y 偏移 (px)"
+
+msgid "Vertical offset from the top edge for access and company badges"
+msgstr "访问徽章和公司徽章相对于顶部边缘的垂直偏移"
+
+msgid "Company Badge Max Width (px)"
+msgstr "公司徽章最大宽度 (px)"
+
+msgid "Maximum width of the company badge before truncation"
+msgstr "公司徽章截断前的最大宽度"
+
+msgid "Thumbnail Hover Transition (ms)"
+msgstr "缩略图悬停过渡 (ms)"
+
+msgid "Duration of the thumbnail hover zoom effect"
+msgstr "缩略图悬停缩放效果的持续时间"
+
+msgid "Page Transition Opacity"
+msgstr "页面过渡不透明度"
+
+msgid "Auto Columns Breakpoints"
+msgstr "自动列断点"
+
+msgid "Format: 480:1,768:2,1024:3,1280:4"
+msgstr "格式：480:1,768:2,1024:3,1280:4"
+
+msgid "Campaign Listing"
+msgstr "活动列表"
+
+msgid "Choose the layout adapter used to render the public campaign listing. Adapter-specific knobs (gap, columns, target row height) are shared with per-campaign galleries in Phase 1."
+msgstr "选择用于渲染公开活动列表的布局适配器。适配器专用的调节项（间距、列数、目标行高）在第 1 阶段与各活动图库共享。"
+
+msgid "Listing Layout (Desktop)"
+msgstr "列表布局（桌面）"
+
+msgid "Layout adapter for the campaign listing on desktop."
+msgstr "桌面上活动列表的布局适配器。"
+
+msgid "Listing Layout (Tablet)"
+msgstr "列表布局（平板）"
+
+msgid "Optional override for tablet. Leave unset to inherit the desktop selection."
+msgstr "平板的可选覆盖。留空则继承桌面选择。"
+
+msgid "Inherit from desktop"
+msgstr "从桌面继承"
+
+msgid "Listing Layout (Mobile)"
+msgstr "列表布局（移动）"
+
+msgid "Optional override for mobile. Leave unset to inherit the desktop selection."
+msgstr "移动的可选覆盖。留空则继承桌面选择。"
+
+msgid "Listing Layout Template"
+msgstr "列表布局模板"
+
+msgid "The template whose slots define the positioned containers for campaign cards."
+msgstr "其插槽定义活动卡片定位容器的模板。"
+
+msgid "No template selected"
+msgstr "未选择模板"
+
+msgid "0 = unlimited"
+msgstr "0 = 无限制"
+
+msgid "0 = no minimum"
+msgstr "0 = 无最小值"
+
+msgid "0 = no maximum"
+msgstr "0 = 无最大值"
+
+msgid "Open Mode & Sizing"
+msgstr "打开模式与尺寸"
+
+msgid "Fullscreen Campaign Modal"
+msgstr "全屏活动窗口"
+
+msgid "Open campaign viewer in fullscreen mode instead of the default modal."
+msgstr "以全屏模式打开活动查看器，而不是默认窗口。"
+
+msgid "Campaign Open Mode"
+msgstr "活动打开模式"
+
+msgid "What to show when a campaign is opened."
+msgstr "打开活动时显示的内容。"
+
+msgid "Full (cover, about, galleries, stats)"
+msgstr "完整（封面、关于、图库、统计）"
+
+msgid "Galleries only (skip header/about/stats)"
+msgstr "仅图库（跳过页眉/关于/统计）"
+
+msgid "Fullscreen Content Max Width"
+msgstr "全屏内容最大宽度"
+
+msgid "Limit content width in fullscreen mode. 0 = full responsive width."
+msgstr "在全屏模式下限制内容宽度。0 = 完整响应式宽度。"
+
+msgid "Modal Max Width"
+msgstr "窗口最大宽度"
+
+msgid "Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
+msgstr "非全屏时活动窗口的最大宽度（限制在 600-1600）。"
+
+msgid "Content Max Width"
+msgstr "内容最大宽度"
+
+msgid "Maximum width of the content area inside the modal. 0 = full width."
+msgstr "窗口内内容区域的最大宽度。0 = 全宽。"
+
+msgid "Modal Inner Padding"
+msgstr "窗口内边距"
+
+msgid "Padding inside the modal content area (clamped 0-48)."
+msgstr "窗口内容区域内的内边距（限制在 0-48）。"
+
+msgid "Modal Appearance"
+msgstr "窗口外观"
+
+msgid "Cover Image Height"
+msgstr "封面图片高度"
+
+msgid "Height of the cover image in the campaign modal"
+msgstr "活动窗口中封面图片的高度"
+
+msgid "Modal Transition"
+msgstr "窗口过渡"
+
+msgid "Animation style when opening the campaign modal"
+msgstr "打开活动窗口时的动画样式"
+
+msgid "Pop (scale up)"
+msgstr "弹出（放大）"
+
+msgid "Slide Up"
+msgstr "向上滑动"
+
+msgid "Modal Transition Duration (ms)"
+msgstr "窗口过渡持续时间 (ms)"
+
+msgid "Length of the modal open/close animation"
+msgstr "窗口打开/关闭动画的时长"
+
+msgid "Modal Max Height (vh%)"
+msgstr "窗口最大高度 (vh%)"
+
+msgid "Maximum height of the campaign modal as a percentage of viewport (clamped 50-95)."
+msgstr "活动窗口的最大高度，以视口的百分比表示（限制在 50-95）。"
+
+msgid "Content Visibility"
+msgstr "内容可见性"
+
+msgid "Show Company Name"
+msgstr "显示公司名称"
+
+msgid "Show the company badge on the campaign cover image."
+msgstr "在活动封面图片上显示公司徽章。"
+
+msgid "Show Date"
+msgstr "显示日期"
+
+msgid "Show the creation date under the campaign title."
+msgstr "在活动标题下方显示创建日期。"
+
+msgid "Show About Section"
+msgstr "显示关于部分"
+
+msgid "Show the \"About this Campaign\" heading and description."
+msgstr "显示“关于此活动”标题和描述。"
+
+msgid "About Section Heading"
+msgstr "关于部分标题"
+
+msgid "Heading for the campaign description section (default \"About\")."
+msgstr "活动描述部分的标题（默认“关于”）。"
+
+msgid "Show Description"
+msgstr "显示描述"
+
+msgid "Show the campaign description text within the About section."
+msgstr "在关于部分内显示活动描述文本。"
+
+msgid "Show Campaign Stats"
+msgstr "显示活动统计"
+
+msgid "Show the statistics block (video count, image count, tags, visibility)."
+msgstr "显示统计块（视频数量、图片数量、标签、可见性）。"
+
+msgid "Stats Admin-Only"
+msgstr "统计仅限管理员"
+
+msgid "When enabled, only admins can see the statistics block."
+msgstr "启用后，只有管理员可以查看统计块。"
+
+msgid "Show Cover Image"
+msgstr "显示封面图片"
+
+msgid "Show the campaign cover image at the top of the viewer."
+msgstr "在查看器顶部显示活动封面图片。"
+
+msgid "Show Tags"
+msgstr "显示标签"
+
+msgid "Show tags section in the campaign viewer."
+msgstr "在活动查看器中显示标签部分。"
+
+msgid "Show Admin Actions"
+msgstr "显示管理操作"
+
+msgid "Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+msgstr "在活动查看器中显示管理操作按钮（编辑、归档等）。"
+
+msgid "Show Gallery Labels"
+msgstr "显示图库标签"
+
+msgid "Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+msgstr "在查看器中图库上方显示“图片”和“视频”标题标签。"
+
+msgid "Gallery Labels"
+msgstr "图库标签"
+
+msgid "Image Gallery Label"
+msgstr "图片图库标签"
+
+msgid "Custom label for image gallery sections. Count is appended automatically."
+msgstr "图片图库部分的自定义标签。数量会自动附加。"
+
+msgid "Video Gallery Label"
+msgstr "视频图库标签"
+
+msgid "Custom label for video gallery sections. Count is appended automatically."
+msgstr "视频图库部分的自定义标签。数量会自动附加。"
+
+msgid "Label Justification"
+msgstr "标签对齐方式"
+
+msgid "Horizontal alignment for gallery section labels"
+msgstr "图库部分标签的水平对齐"
+
+msgid "Left"
+msgstr "左"
+
+msgid "Right"
+msgstr "右"
+
+msgid "Show Gallery Label Icon"
+msgstr "显示图库标签图标"
+
+msgid "Display an icon prefix before each gallery section label"
+msgstr "在每个图库部分标签前显示图标前缀"
+
+msgid "Modal Background"
+msgstr "窗口背景"
+
+msgid "Modal Background Type"
+msgstr "窗口背景类型"
+
+msgid "Background style for the fullscreen campaign modal"
+msgstr "全屏活动窗口的背景样式"
+
+msgid "Modal Background Color"
+msgstr "窗口背景颜色"
+
+msgid "Solid background color for the fullscreen modal"
+msgstr "全屏窗口的纯色背景颜色"
+
+msgid "Cover Image & Responsive"
+msgstr "封面图片与响应式"
+
+msgid "Cover Mobile Ratio"
+msgstr "封面移动比例"
+
+msgid "Cover Tablet Ratio"
+msgstr "封面平板比例"
+
+msgid "Close Button Size (px)"
+msgstr "关闭按钮大小 (px)"
+
+msgid "Close Button Background"
+msgstr "关闭按钮背景"
+
+msgid "CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+msgstr "关闭按钮背景的 CSS 颜色（例如 rgba(0,0,0,0.5)）。"
+
+msgid "Mobile Breakpoint (px)"
+msgstr "移动断点 (px)"
+
+msgid "Viewport width below which the campaign viewer switches to mobile layout."
+msgstr "活动查看器在此视口宽度以下切换到移动布局。"
+
+msgid "Description Line Height"
+msgstr "描述行高"
+
+msgid "Viewport & Layout"
+msgstr "视口与布局"
+
+msgid "Enable Lightbox"
+msgstr "启用灯箱"
+
+msgid "Enable fullscreen lightbox when clicking gallery items."
+msgstr "单击图库项时启用全屏灯箱。"
+
+msgid "Enable Animations"
+msgstr "启用动画"
+
+msgid "Enable smooth animations and transitions. Disable for better performance on low-end devices."
+msgstr "启用流畅的动画和过渡。在低端设备上禁用可获得更好的性能。"
+
+msgid "Viewport Dimensions"
+msgstr "视口尺寸"
+
+msgid "Height Constraint"
+msgstr "高度约束"
+
+msgid "Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+msgstr "选择经典图库是可以溢出、保持在可见屏幕内，还是使用手动 CSS 高度。"
+
+msgid "No restraint"
+msgstr "无约束"
+
+msgid "Restrain to view"
+msgstr "限制在视图内"
+
+msgid "Manually control height"
+msgstr "手动控制高度"
+
+msgid "Manual Gallery Height"
+msgstr "手动图库高度"
+
+msgid "Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+msgstr "可接受的单位：px、em、rem、vh、dvh、vw、%。示例：75vh 或 420px"
+
+msgid "Image Border Radius"
+msgstr "图片边框圆角"
+
+msgid "Corner rounding for image gallery viewport and thumbnails."
+msgstr "图片图库视口和缩略图的圆角。"
+
+msgid "Video Border Radius"
+msgstr "视频边框圆角"
+
+msgid "Corner rounding for video gallery viewport and thumbnails."
+msgstr "视频图库视口和缩略图的圆角。"
+
+msgid "Shadow & Depth"
+msgstr "阴影与深度"
+
+msgid "Image Shadow Preset"
+msgstr "图片阴影预设"
+
+msgid "Box-shadow depth effect for image gallery viewport."
+msgstr "图片图库视口的盒阴影深度效果。"
+
+msgid "Strong"
+msgstr "强"
+
+msgid "Custom"
+msgstr "自定义"
+
+msgid "Image Custom Shadow"
+msgstr "图片自定义阴影"
+
+msgid "CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
+msgstr "CSS 盒阴影值（例如“0 4px 16px rgba(0,0,0,0.25)”）。"
+
+msgid "Video Shadow Preset"
+msgstr "视频阴影预设"
+
+msgid "Box-shadow depth effect for video gallery viewport."
+msgstr "视频图库视口的盒阴影深度效果。"
+
+msgid "Video Custom Shadow"
+msgstr "视频自定义阴影"
+
+msgid "Tile Appearance"
+msgstr "图块外观"
+
+msgid "Gap X"
+msgstr "间距 X"
+
+msgid "Horizontal gap between tiles."
+msgstr "图块之间的水平间距。"
+
+msgid "Gap Y"
+msgstr "间距 Y"
+
+msgid "Vertical gap between tile rows."
+msgstr "图块行之间的垂直间距。"
+
+msgid "Tile border thickness. 0 = no border."
+msgstr "图块边框粗细。0 = 无边框。"
+
+msgid "Hover Bounce"
+msgstr "悬停弹跳"
+
+msgid "Scale-up spring animation when hovering over a tile."
+msgstr "悬停在图块上时的放大弹簧动画。"
+
+msgid "Hover Glow"
+msgstr "悬停发光"
+
+msgid "Drop-shadow glow on hover (works with clip-path shapes)."
+msgstr "悬停时的投影发光（适用于 clip-path 形状）。"
+
+msgid "Glow Color"
+msgstr "发光颜色"
+
+msgid "Glow Spread (px)"
+msgstr "发光扩散 (px)"
+
+msgid "Radius of the glow effect."
+msgstr "发光效果的半径。"
+
+msgid "Transitions"
+msgstr "过渡"
+
+msgid "Transition Fade"
+msgstr "过渡淡入淡出"
+
+msgid "Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
+msgstr "在过渡期间卡片进入和退出时应用不透明度淡入淡出，柔化突兀的边缘。"
+
+msgid "Transition Type"
+msgstr "过渡类型"
+
+msgid "How gallery media slides between items: fade only, slide only, or combined slide-fade."
+msgstr "图库媒体在项之间切换的方式：仅淡入淡出、仅滑动或滑动淡入淡出组合。"
+
+msgid "Slide + Fade"
+msgstr "滑动 + 淡入淡出"
+
+msgid "Scroll Animation Style"
+msgstr "滚动动画样式"
+
+msgid "Navigation scroll behavior for gallery thumbnail strips."
+msgstr "图库缩略图条的导航滚动行为。"
+
+msgid "Smooth"
+msgstr "平滑"
+
+msgid "Instant"
+msgstr "即时"
+
+msgid "Animation Duration (ms)"
+msgstr "动画持续时间 (ms)"
+
+msgid "Duration for gallery transition and thumbnail highlight animations."
+msgstr "图库过渡和缩略图高亮动画的持续时间。"
+
+msgid "Animation Easing"
+msgstr "动画缓动"
+
+msgid "Timing function used for gallery transitions."
+msgstr "用于图库过渡的计时函数。"
+
+msgid "Ease"
+msgstr "缓动 (ease)"
+
+msgid "Linear"
+msgstr "线性"
+
+msgid "Ease In"
+msgstr "缓入"
+
+msgid "Ease Out"
+msgstr "缓出"
+
+msgid "Ease In Out"
+msgstr "缓入缓出"
+
+msgid "Thumbnail Strip"
+msgstr "缩略图条"
+
+msgid "Video Thumb Width (px)"
+msgstr "视频缩略图宽度 (px)"
+
+msgid "Width of video thumbnail items."
+msgstr "视频缩略图项的宽度。"
+
+msgid "Video Thumb Height (px)"
+msgstr "视频缩略图高度 (px)"
+
+msgid "Height of video thumbnail items."
+msgstr "视频缩略图项的高度。"
+
+msgid "Image Thumb Width (px)"
+msgstr "图片缩略图宽度 (px)"
+
+msgid "Width of image thumbnail items."
+msgstr "图片缩略图项的宽度。"
+
+msgid "Image Thumb Height (px)"
+msgstr "图片缩略图高度 (px)"
+
+msgid "Height of image thumbnail items."
+msgstr "图片缩略图项的高度。"
+
+msgid "Thumbnail Gap (px)"
+msgstr "缩略图间距 (px)"
+
+msgid "Spacing between thumbnail items in the strip."
+msgstr "条中缩略图项之间的间距。"
+
+msgid "Wheel Scroll"
+msgstr "滚轮滚动"
+
+msgid "Allow mouse wheel to scroll the thumbnail strip horizontally."
+msgstr "允许鼠标滚轮水平滚动缩略图条。"
+
+msgid "Drag Scroll"
+msgstr "拖动滚动"
+
+msgid "Allow click-and-drag to scroll the thumbnail strip."
+msgstr "允许单击并拖动来滚动缩略图条。"
+
+msgid "Strip Scroll Buttons"
+msgstr "条滚动按钮"
+
+msgid "Show left/right scroll buttons on the thumbnail strip edges."
+msgstr "在缩略图条边缘显示左/右滚动按钮。"
+
+msgid "Thumbnail Scroll Speed"
+msgstr "缩略图滚动速度"
+
+msgid "Multiplier for thumbnail-strip wheel scroll speed."
+msgstr "缩略图条滚轮滚动速度的倍数。"
+
+msgid "Overlay Arrows"
+msgstr "叠加箭头"
+
+msgid "Arrow Vertical Position"
+msgstr "箭头垂直位置"
+
+msgid "Vertical alignment of the overlay prev/next arrows."
+msgstr "叠加的上一个/下一个箭头的垂直对齐。"
+
+msgid "Arrow Size (px)"
+msgstr "箭头大小 (px)"
+
+msgid "Diameter of the overlay navigation arrows."
+msgstr "叠加导航箭头的直径。"
+
+msgid "Arrow Color"
+msgstr "箭头颜色"
+
+msgid "Icon color for the overlay arrows."
+msgstr "叠加箭头的图标颜色。"
+
+msgid "Arrow Background Color"
+msgstr "箭头背景颜色"
+
+msgid "Background color (supports rgba for transparency)."
+msgstr "背景颜色（支持 rgba 实现透明度）。"
+
+msgid "Arrow Border Width (px)"
+msgstr "箭头边框宽度 (px)"
+
+msgid "Border thickness around the arrows (0 = none)."
+msgstr "箭头周围的边框粗细（0 = 无）。"
+
+msgid "Hover Scale Factor"
+msgstr "悬停缩放系数"
+
+msgid "Auto-hide Delay (ms)"
+msgstr "自动隐藏延迟 (ms)"
+
+msgid "Show arrows on hover/interaction. 0 = always visible."
+msgstr "在悬停/交互时显示箭头。0 = 始终可见。"
+
+msgid "Enable Dot Navigator"
+msgstr "启用圆点导航器"
+
+msgid "Show a dot-style page indicator."
+msgstr "显示圆点式页面指示器。"
+
+msgid "Dot Position"
+msgstr "圆点位置"
+
+msgid "Where to render the dot navigator relative to the viewport."
+msgstr "圆点导航器相对于视口的渲染位置。"
+
+msgid "Below Viewport"
+msgstr "视口下方"
+
+msgid "Overlay Bottom"
+msgstr "叠加底部"
+
+msgid "Overlay Top"
+msgstr "叠加顶部"
+
+msgid "Dot Size (px)"
+msgstr "圆点大小 (px)"
+
+msgid "Diameter of each dot."
+msgstr "每个圆点的直径。"
+
+msgid "Dot Shape"
+msgstr "圆点形状"
+
+msgid "Shape of the navigation dots."
+msgstr "导航圆点的形状。"
+
+msgid "Circle"
+msgstr "圆形"
+
+msgid "Pill"
+msgstr "胶囊形"
+
+msgid "Square"
+msgstr "方形"
+
+msgid "Active Dot Color"
+msgstr "活动圆点颜色"
+
+msgid "Color for the currently active dot (CSS value)."
+msgstr "当前活动圆点的颜色（CSS 值）。"
+
+msgid "Inactive Dot Color"
+msgstr "非活动圆点颜色"
+
+msgid "Color for inactive dots (CSS value)."
+msgstr "非活动圆点的颜色（CSS 值）。"
+
+msgid "Dot Spacing (px)"
+msgstr "圆点间距 (px)"
+
+msgid "Gap between dots."
+msgstr "圆点之间的间距。"
+
+msgid "Active Dot Scale"
+msgstr "活动圆点缩放"
+
+msgid "Carousel Settings"
+msgstr "轮播设置"
+
+msgid "Visible Cards"
+msgstr "可见卡片数"
+
+msgid "Number of slides visible at once in the carousel."
+msgstr "轮播中一次可见的幻灯片数量。"
+
+msgid "Slide Gap"
+msgstr "幻灯片间距"
+
+msgid "Space between carousel slides."
+msgstr "轮播幻灯片之间的间距。"
+
+msgid "Loop"
+msgstr "循环"
+
+msgid "Continuously loop slides when reaching the end."
+msgstr "到达末尾时连续循环幻灯片。"
+
+msgid "Drag Enabled"
+msgstr "启用拖动"
+
+msgid "Allow dragging/swiping to navigate slides."
+msgstr "允许拖动/滑动来浏览幻灯片。"
+
+msgid "Autoplay"
+msgstr "自动播放"
+
+msgid "Automatically advance slides."
+msgstr "自动切换幻灯片。"
+
+msgid "Autoplay Speed (ms)"
+msgstr "自动播放速度 (ms)"
+
+msgid "Delay between automatic slide transitions."
+msgstr "自动幻灯片过渡之间的延迟。"
+
+msgid "Pause on Hover"
+msgstr "悬停时暂停"
+
+msgid "Pause autoplay when the mouse hovers over the carousel."
+msgstr "当鼠标悬停在轮播上时暂停自动播放。"
+
+msgid "Autoplay Direction"
+msgstr "自动播放方向"
+
+msgid "Direction autoplay advances slides."
+msgstr "自动播放切换幻灯片的方向。"
+
+msgid "Left to Right"
+msgstr "从左到右"
+
+msgid "Right to Left"
+msgstr "从右到左"
+
+msgid "Visual Effects"
+msgstr "视觉效果"
+
+msgid "Darken Unfocused Slides"
+msgstr "使未聚焦的幻灯片变暗"
+
+msgid "Apply a dark overlay on slides that are not currently selected."
+msgstr "在当前未选中的幻灯片上应用深色叠加层。"
+
+msgid "Darken Opacity"
+msgstr "变暗不透明度"
+
+msgid "Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+msgstr "变暗叠加层的不透明度（0 = 透明，1 = 完全变暗）。"
+
+msgid "Edge Fade"
+msgstr "边缘淡化"
+
+msgid "Fade slides at the edges of the carousel viewport."
+msgstr "在轮播视口的边缘淡化幻灯片。"
+
+msgid "Section Sizing & Spacing"
+msgstr "部分尺寸与间距"
+
+msgid "Gallery Section Max Width"
+msgstr "图库部分最大宽度"
+
+msgid "Maximum width for each gallery section. 0 = fill available space."
+msgstr "每个图库部分的最大宽度。0 = 填充可用空间。"
+
+msgid "Gallery Section Min Width"
+msgstr "图库部分最小宽度"
+
+msgid "Minimum width floor for gallery sections."
+msgstr "图库部分的最小宽度下限。"
+
+msgid "Section Height Mode"
+msgstr "部分高度模式"
+
+msgid "How section height is determined. Auto = content-driven (recommended for masonry/justified)."
+msgstr "部分高度的确定方式。自动 = 由内容驱动（推荐用于瀑布流/两端对齐）。"
+
+msgid "Auto (content-driven)"
+msgstr "自动（内容驱动）"
+
+msgid "Manual (fixed max height)"
+msgstr "手动（固定最大高度）"
+
+msgid "Viewport (% of screen)"
+msgstr "视口（屏幕百分比）"
+
+msgid "Gallery Section Max Height"
+msgstr "图库部分最大高度"
+
+msgid "Maximum height for gallery sections in manual mode."
+msgstr "手动模式下图库部分的最大高度。"
+
+msgid "Gallery Section Min Height"
+msgstr "图库部分最小高度"
+
+msgid "Minimum height floor for gallery sections."
+msgstr "图库部分的最小高度下限。"
+
+msgid "Section Scale"
+msgstr "部分缩放"
+
+msgid "Primary sizing multiplier for gallery sections. Scales min/max width, min/max height, and padding proportionally. 1 = default size."
+msgstr "图库部分的主要尺寸倍数。按比例缩放最小/最大宽度、最小/最大高度和内边距。1 = 默认大小。"
+
+msgid "Section Content Alignment"
+msgstr "部分内容对齐"
+
+msgid "Content Horizontal Alignment"
+msgstr "内容水平对齐"
+
+msgid "Horizontal alignment of adapter content within each gallery section."
+msgstr "每个图库部分内适配器内容的水平对齐。"
+
+msgid "Content Vertical Alignment"
+msgstr "内容垂直对齐"
+
+msgid "Vertical alignment of adapter content within each gallery section."
+msgstr "每个图库部分内适配器内容的垂直对齐。"
+
+msgid "Content Horizontal Offset"
+msgstr "内容水平偏移"
+
+msgid "Fine-tune horizontal position of section content. Negative = left, positive = right."
+msgstr "微调部分内容的水平位置。负值 = 左，正值 = 右。"
+
+msgid "Content Vertical Offset"
+msgstr "内容垂直偏移"
+
+msgid "Fine-tune vertical position of section content. Negative = up, positive = down."
+msgstr "微调部分内容的垂直位置。负值 = 上，正值 = 下。"
+
+msgid "Equal Height Sections (Per-Type)"
+msgstr "等高部分（按类型）"
+
+msgid "When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
+msgstr "使用按类型图库时，在平板及更大视口上以等高并排显示图片和视频部分。"
+
+msgid "Gallery Section Padding"
+msgstr "图库部分内边距"
+
+msgid "Inner padding within each gallery section wrapper."
+msgstr "每个图库部分包装器内的内边距。"
+
+msgid "Adapter Content Padding"
+msgstr "适配器内容内边距"
+
+msgid "Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+msgstr "每个适配器（图库网格）内的内边距。0 = 边缘与部分边界相接。"
+
+msgid "Vertical alignment of content within the modal."
+msgstr "窗口内内容的垂直对齐。"
+
+msgid "Gallery Spacing"
+msgstr "图库间距"
+
+msgid "Gallery Shell Vertical Alignment"
+msgstr "图库外壳垂直对齐"
+
+msgid "Vertical alignment of the gallery sections within the viewer shell."
+msgstr "查看器外壳内图库部分的垂直对齐。"
+
+msgid "Gallery Shell Vertical Offset"
+msgstr "图库外壳垂直偏移"
+
+msgid "Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
+msgstr "微调图库部分的垂直位置。负值 = 上，正值 = 下。"
+
+msgid "Gallery Max Width"
+msgstr "图库最大宽度"
+
+msgid "Maximum width of the gallery container. 0 = full responsive width."
+msgstr "图库容器的最大宽度。0 = 完整响应式宽度。"
+
+msgid "Gallery Section Gap"
+msgstr "图库部分间距"
+
+msgid "Vertical gap between gallery sections."
+msgstr "图库部分之间的垂直间距。"
+
+msgid "Gallery Edge Margin"
+msgstr "图库边缘外边距"
+
+msgid "Horizontal margin on gallery edges."
+msgstr "图库边缘的水平外边距。"
+
+msgid "Adapter Sizing"
+msgstr "适配器尺寸"
+
+msgid "Adapter Sizing Mode"
+msgstr "适配器尺寸模式"
+
+msgid "How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
+msgstr "适配器如何填充其图库部分。填充 = 部分的 100%，手动 = 自定义百分比。"
+
+msgid "Fill (100%)"
+msgstr "填充（100%）"
+
+msgid "Manual (custom %)"
+msgstr "手动（自定义 %）"
+
+msgid "Adapter Max Width (%)"
+msgstr "适配器最大宽度 (%)"
+
+msgid "Adapter width as percentage of its gallery section."
+msgstr "适配器宽度占其图库部分的百分比。"
+
+msgid "Adapter Max Height (%)"
+msgstr "适配器最大高度 (%)"
+
+msgid "Adapter height as percentage of its gallery section."
+msgstr "适配器高度占其图库部分的百分比。"
+
+msgid "Adapter Item Gap"
+msgstr "适配器项间距"
+
+msgid "Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+msgstr "网格适配器（紧凑网格）中项之间的间距。0 = 无间距。"
+
+msgid "Adapter Justification"
+msgstr "适配器对齐方式"
+
+msgid "How adapter items distribute within the container (Compact Grid, Circular)."
+msgstr "适配器项在容器内的分布方式（紧凑网格、环形）。"
+
+msgid "Stretch"
+msgstr "拉伸"
+
+msgid "Item Scale"
+msgstr "项缩放"
+
+msgid "Primary sizing multiplier for gallery items. Scales card width/height (Compact Grid), row height (Justified), and tile size (Shape adapters) proportionally. 1 = default size. Does not apply to Carousel."
+msgstr "图库项的主要尺寸倍数。按比例缩放卡片宽度/高度（紧凑网格）、行高（两端对齐）和图块大小（形状适配器）。1 = 默认大小。不适用于轮播。"
+
+msgid "Solid Color"
+msgstr "纯色"
+
+msgid "Gradient"
+msgstr "渐变"
+
+msgid "Background Image"
+msgstr "背景图片"
+
+msgid "Solid background color behind the viewport"
+msgstr "视口后面的纯色背景颜色"
+
+msgid "Background Gradient"
+msgstr "背景渐变"
+
+msgid "CSS gradient string used behind the viewport"
+msgstr "视口后面使用的 CSS 渐变字符串"
+
+msgid "Background Image URL"
+msgstr "背景图片 URL"
+
+msgid "Image shown behind the viewport"
+msgstr "视口后面显示的图片"
+
+msgid "Viewport Backgrounds"
+msgstr "视口背景"
+
+msgid "Image Gallery Background"
+msgstr "图片图库背景"
+
+msgid "Background applied behind image gallery viewports"
+msgstr "应用于图片图库视口后面的背景"
+
+msgid "Video Gallery Background"
+msgstr "视频图库背景"
+
+msgid "Background applied behind video gallery viewports"
+msgstr "应用于视频图库视口后面的背景"
+
+msgid "Unified Gallery Background"
+msgstr "统一图库背景"
+
+msgid "Background applied when unified gallery mode is active"
+msgstr "统一图库模式激活时应用的背景"
+
+msgid "Drag scroll"
+msgstr "拖动滚动"
+
+msgid "Infinite scroll"
+msgstr "无限滚动"
+
+msgid "Keyboard nav"
+msgstr "键盘导航"
+
+msgid "Touch swipe"
+msgstr "触摸滑动"
+
+msgid "Layout builder"
+msgstr "布局构建器"
+
+msgid "Listing"
+msgstr "列表"
+
+msgid "Reset to default"
+msgstr "重置为默认"
+
+msgid "Reset {{label}} to default"
+msgstr "将 {{label}} 重置为默认"
+
+msgid "Enter a value between {{min}} and {{max}}"
+msgstr "输入介于 {{min}} 和 {{max}} 之间的值"
+
+msgid "Value exceeds maximum of {{max}}"
+msgstr "值超过最大值 {{max}}"
+
+msgid "Stored value \"{{value}}\" is not a valid option"
+msgstr "存储的值“{{value}}”不是有效的选项"
+
+msgid "Unified Gallery Mode"
+msgstr "统一图库模式"
+
+msgid "When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+msgstr "启用后，图片和视频合并在单个图库视图中。禁用后，每种媒体类型独立使用自己的布局。"
+
+msgid "Choose the unified gallery adapter used at each breakpoint."
+msgstr "选择每个断点使用的统一图库适配器。"
+
+msgid "Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above)."
+msgstr "某些适配器在移动设备上不可用 — 它们需要更大的屏幕（上方显示为灰色）。"
+
+msgid "Choose separate image and video adapters for each breakpoint."
+msgstr "为每个断点选择单独的图片和视频适配器。"
+
+msgid "Breakpoint Pixel Thresholds"
+msgstr "断点像素阈值"
+
+msgid "Width thresholds (px) used by the classic carousel adapter to determine the active breakpoint. Defaults match Mantine (768 / 1200)."
+msgstr "经典轮播适配器用于确定活动断点的宽度阈值 (px)。默认值与 Mantine 一致（768 / 1200）。"
+
+msgid "Mobile max (px)"
+msgstr "移动最大值 (px)"
+
+msgid "Max container width considered mobile. (320–1440, default: 768)"
+msgstr "视为移动的最大容器宽度。（320–1440，默认：768）"
+
+msgid "Enter a value between 320 and 1440"
+msgstr "输入介于 320 和 1440 之间的值"
+
+msgid "Mobile threshold must be less than tablet threshold"
+msgstr "移动阈值必须小于平板阈值"
+
+msgid "Tablet max (px)"
+msgstr "平板最大值 (px)"
+
+msgid "Max container width considered tablet. (320–1920, default: 1200)"
+msgstr "视为平板的最大容器宽度。（320–1920，默认：1200）"
+
+msgid "Enter a value between 320 and 1920"
+msgstr "输入介于 320 和 1920 之间的值"
+
+msgid "Tablet threshold must be greater than mobile threshold"
+msgstr "平板阈值必须大于移动阈值"
+
+msgid "Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included."
+msgstr "导出适配器配置和轮播/媒体设置。不包括全局导航、断点和呈现设置。"
+
+msgid "Export adapter settings"
+msgstr "导出适配器设置"
+
+msgid "Import adapter settings"
+msgstr "导入适配器设置"
+
+msgid "Reset all adapter settings to defaults"
+msgstr "将所有适配器设置重置为默认"
+
+msgid "Gallery Adapters"
+msgstr "图库适配器"
+
+msgid "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes."
+msgstr "快速断点选择器保留在此处的内联位置。当您需要共享布局设置、适配器专用字段或更深层的嵌套配置更改时，请使用响应式编辑器。"
+
+msgid "Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline."
+msgstr "桌面编辑基础卡片设置。平板和移动可以覆盖选定的布局和外观字段，而不更改桌面基线。"
+
+msgid "Card settings breakpoint"
+msgstr "卡片设置断点"
+
+msgid "— None (use inline HTML fallback) —"
+msgstr "— 无（使用内联 HTML 回退）—"
+
+msgid "Page #{{id}}"
+msgstr "页面 #{{id}}"
+
+msgid "Access Request Magic-Link"
+msgstr "访问请求魔法链接"
+
+msgid "When an admin clicks a one-click approval link, the result is shown on this page (via "
+msgstr "当管理员单击一键批准链接时，结果会显示在此页面上（通过 "
+
+msgid "). If no page is selected, a minimal inline HTML page is returned instead."
+msgstr "）。如果未选择页面，则会改为返回一个最小的内联 HTML 页面。"
+
+msgid "Magic-link landing page"
+msgstr "魔法链接登录页"
+
+msgid "Loading pages…"
+msgstr "正在加载页面…"
+
+msgid "Select a page"
+msgstr "选择一个页面"
+
+msgid "Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults."
+msgstr "为各个文本元素自定义字体、大小、颜色和效果。空字段使用主题默认值。"
+
+msgid "Element Overrides"
+msgstr "元素覆盖"
+
+msgid "Reset all typography"
+msgstr "重置所有排版"
+
+msgid "Viewer Title"
+msgstr "查看器标题"
+
+msgid "Viewer Subtitle"
+msgstr "查看器副标题"
+
+msgid "Card Title"
+msgstr "卡片标题"
+
+msgid "Card Description"
+msgstr "卡片描述"
+
+msgid "Card Company Name"
+msgstr "卡片公司名称"
+
+msgid "Card Media Counts"
+msgstr "卡片媒体数量"
+
+msgid "Campaign Title"
+msgstr "活动标题"
+
+msgid "Campaign Description"
+msgstr "活动描述"
+
+msgid "Campaign Date"
+msgstr "活动日期"
+
+msgid "Campaign About Heading"
+msgstr "活动关于标题"
+
+msgid "Campaign Stats Value"
+msgstr "活动统计值"
+
+msgid "Campaign Stats Label"
+msgstr "活动统计标签"
+
+msgid "Gallery Label"
+msgstr "图库标签"
+
+msgid "Media Caption"
+msgstr "媒体标题"
+
+msgid "Auth Bar Text"
+msgstr "认证栏文本"
+
+msgid "Access Badge Text"
+msgstr "访问徽章文本"
+
+msgid "Rounded-corner radius for image media surfaces in supported adapters."
+msgstr "受支持适配器中图片媒体表面的圆角半径。"
+
+msgid "Rounded-corner radius for video media surfaces in supported adapters."
+msgstr "受支持适配器中视频媒体表面的圆角半径。"
+
+msgid "Space between items in justified and masonry gallery layouts."
+msgstr "两端对齐和瀑布流图库布局中项之间的间距。"
+
+msgid "Tile border thickness. Set 0 to disable borders."
+msgstr "图块边框粗细。设为 0 以禁用边框。"
+
+msgid "CSS color used for tile borders when border width is greater than 0."
+msgstr "当边框宽度大于 0 时用于图块边框的 CSS 颜色。"
+
+msgid "#ffffff"
+msgstr "#ffffff"
+
+msgid "Drop-shadow glow on hover for supported tile-based adapters."
+msgstr "受支持的基于图块的适配器在悬停时的投影发光。"
+
+msgid "CSS color used for the hover glow effect."
+msgstr "用于悬停发光效果的 CSS 颜色。"
+
+msgid "#7c9ef8"
+msgstr "#7c9ef8"
+
+msgid "Image Viewport Height"
+msgstr "图片视口高度"
+
+msgid "Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "在断点缩放之前用于以图片为主的经典图库的基础高度。当共享高度模式设为手动时，手动图库高度会覆盖此项。"
+
+msgid "Video Viewport Height"
+msgstr "视频视口高度"
+
+msgid "Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "在断点缩放之前用于以视频为主的经典图库的基础高度。当共享高度模式设为手动时，手动图库高度会覆盖此项。"
+
+msgid "Box-shadow depth effect for image-dominant classic galleries."
+msgstr "以图片为主的经典图库的盒阴影深度效果。"
+
+msgid "CSS box-shadow value used when the image shadow preset is custom."
+msgstr "当图片阴影预设为自定义时使用的 CSS 盒阴影值。"
+
+msgid "0 4px 16px rgba(0,0,0,0.25)"
+msgstr "0 4px 16px rgba(0,0,0,0.25)"
+
+msgid "Box-shadow depth effect for video-dominant classic galleries."
+msgstr "以视频为主的经典图库的盒阴影深度效果。"
+
+msgid "CSS box-shadow value used when the video shadow preset is custom."
+msgstr "当视频阴影预设为自定义时使用的 CSS 盒阴影值。"
+
+msgid "Allow dragging or swiping to navigate slides."
+msgstr "允许拖动或滑动来浏览幻灯片。"
+
+msgid "Foreground color used for the overlay arrow icon and border."
+msgstr "用于叠加箭头图标和边框的前景色。"
+
+msgid "Background fill applied behind the overlay arrows."
+msgstr "应用于叠加箭头后面的背景填充。"
+
+msgid "rgba(0,0,0,0.45)"
+msgstr "rgba(0,0,0,0.45)"
+
+msgid "Scale factor applied when hovering the overlay arrows."
+msgstr "悬停叠加箭头时应用的缩放系数。"
+
+msgid "Show arrows on hover or interaction. 0 keeps them always visible."
+msgstr "在悬停或交互时显示箭头。0 使其始终可见。"
+
+msgid "Distance between the overlay arrows and the carousel edge."
+msgstr "叠加箭头与轮播边缘之间的距离。"
+
+msgid "Minimum touch and click target size for the overlay arrows."
+msgstr "叠加箭头的最小触摸和单击目标大小。"
+
+msgid "Fade-in and fade-out duration used when arrows auto-hide."
+msgstr "箭头自动隐藏时使用的淡入和淡出持续时间。"
+
+msgid "Hover-scale transition duration for the overlay arrows."
+msgstr "叠加箭头的悬停缩放过渡持续时间。"
+
+msgid "Maximum number of dot buttons shown before truncation inserts ellipses."
+msgstr "在截断插入省略号之前显示的圆点按钮的最大数量。"
+
+msgid "Fill color used for the active dot."
+msgstr "用于活动圆点的填充颜色。"
+
+msgid "var(--wpsg-color-primary)"
+msgstr "var(--wpsg-color-primary)"
+
+msgid "Fill color used for inactive dots."
+msgstr "用于非活动圆点的填充颜色。"
+
+msgid "rgba(128,128,128,0.4)"
+msgstr "rgba(128,128,128,0.4)"
+
+msgid "Scale multiplier applied to the active dot."
+msgstr "应用于活动圆点的缩放倍数。"
+
+msgid "Fraction of the viewport height reserved for the carousel on mobile."
+msgstr "在移动设备上为轮播保留的视口高度比例。"
+
+msgid "Fraction of the viewport height reserved for the carousel on tablet."
+msgstr "在平板上为轮播保留的视口高度比例。"
+
+msgid "Card Width"
+msgstr "卡片宽度"
+
+msgid "Primary width target for each compact-grid card. The grid wraps responsively around this width."
+msgstr "每张紧凑网格卡片的主要目标宽度。网格会围绕此宽度进行响应式换行。"
+
+msgid "Locks card proportions without requiring a separate height control. Auto keeps legacy height-derived behavior."
+msgstr "锁定卡片比例，无需单独的高度控制。自动保留旧版基于高度的行为。"
+
+msgid "Auto (legacy height-derived)"
+msgstr "自动（旧版，基于高度）"
+
+msgid "5:7 (playing card)"
+msgstr "5:7（扑克牌）"
+
+msgid "Max Columns (0 = auto)"
+msgstr "最大列数（0 = 自动）"
+
+msgid "Caps the number of compact-grid columns while preserving responsive wrapping."
+msgstr "在保留响应式换行的同时限制紧凑网格列数。"
+
+msgid "Card Min Height (px)"
+msgstr "卡片最小高度 (px)"
+
+msgid "Optional guard that prevents extremely thin cards on narrow containers. Set 0 to disable."
+msgstr "可选保护，防止在窄容器上出现极薄的卡片。设为 0 以禁用。"
+
+msgid "Target Row Height (px)"
+msgstr "目标行高 (px)"
+
+msgid "Ideal pixel height for each justified row. This is an algorithm input for react-photo-album, not a CSS value."
+msgstr "每个两端对齐行的理想像素高度。这是 react-photo-album 的算法输入，而非 CSS 值。"
+
+msgid "Photo Normalize Height (px)"
+msgstr "照片归一化高度 (px)"
+
+msgid "Normalization pixel height for aspect-ratio scaling before layout. Lower values produce smaller tiles."
+msgstr "布局前用于宽高比缩放的归一化像素高度。较低的值会产生较小的图块。"
+
+msgid "Masonry Columns (0 = auto)"
+msgstr "瀑布流列数（0 = 自动）"
+
+msgid "Number of masonry columns. Set 0 to let the layout choose responsively (1-4 based on width)."
+msgstr "瀑布流列数。设为 0 让布局响应式选择（根据宽度为 1-4）。"
+
+msgid "Auto Column Breakpoints"
+msgstr "自动列断点"
+
+msgid "Comma-separated width:columns pairs used when masonry columns are set to auto."
+msgstr "当瀑布流列数设为自动时使用的以逗号分隔的宽度:列数对。"
+
+msgid "480:2,768:3,1024:4,1280:5"
+msgstr "480:2,768:3,1024:4,1280:5"
+
+msgid "Entrance Animation"
+msgstr "进入动画"
+
+msgid "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion."
+msgstr "瀑布流图块的可选首次渲染动画。“瀑布”让每个图块从下方错开进入视图。遵循 prefers-reduced-motion。"
+
+msgid "Waterfall (stagger in)"
+msgstr "瀑布（错开进入）"
+
+msgid "Entrance Stagger (ms)"
+msgstr "进入错开 (ms)"
+
+msgid "Delay in milliseconds between successive tile animations in Waterfall mode."
+msgstr "瀑布模式下连续图块动画之间的延迟（毫秒）。"
+
+msgid "Hero Aspect Ratio"
+msgstr "主图宽高比"
+
+msgid "Fixed aspect ratio of the hero display area."
+msgstr "主图显示区域的固定宽高比。"
+
+msgid "Thumbnail Size"
+msgstr "缩略图大小"
+
+msgid "Width and height of each thumbnail strip item."
+msgstr "每个缩略图条项的宽度和高度。"
+
+msgid "Duration of the hero swap and thumbnail highlight transitions."
+msgstr "主图切换和缩略图高亮过渡的持续时间。"
+
+msgid "Strip Position"
+msgstr "条位置"
+
+msgid "Position of the thumbnail strip. 'Right' falls back to 'Below' on narrow containers."
+msgstr "缩略图条的位置。在窄容器上，“右侧”会回退到“下方”。"
+
+msgid "Below"
+msgstr "下方"
+
+msgid "Right (wide containers)"
+msgstr "右侧（宽容器）"
+
+msgid "Hero Max Width"
+msgstr "主图最大宽度"
+
+msgid "Maximum width of the spotlight layout. Set 0 to disable (full container width)."
+msgstr "聚光灯布局的最大宽度。设为 0 以禁用（完整容器宽度）。"
+
+msgid "Hero Justification"
+msgstr "主图对齐方式"
+
+msgid "Horizontal alignment of the hero block within the container when Hero Max Width makes it narrower than the container."
+msgstr "当主图最大宽度使其比容器更窄时，主图块在容器内的水平对齐。"
+
+msgid "Start (left)"
+msgstr "起始（左）"
+
+msgid "End (right)"
+msgstr "末尾（右）"
+
+msgid "Snap Alignment"
+msgstr "吸附对齐"
+
+msgid "CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container."
+msgstr "应用于每张幻灯片的 CSS scroll-snap-align 值。控制每张幻灯片相对于滚动容器的吸附位置。"
+
+msgid "Page Indicator"
+msgstr "页面指示器"
+
+msgid "Show a slide counter (n / total) in the lower-right corner of each slide."
+msgstr "在每张幻灯片的右下角显示幻灯片计数器（n / 总数）。"
+
+msgid "Container Max Width"
+msgstr "容器最大宽度"
+
+msgid "Maximum width of the scroll-snap container. Set 0 to disable (full container width)."
+msgstr "滚动吸附容器的最大宽度。设为 0 以禁用（完整容器宽度）。"
+
+msgid "Tile Size"
+msgstr "图块大小"
+
+msgid "Width and height of each shape tile (unified gallery)."
+msgstr "每个形状图块的宽度和高度（统一图库）。"
+
+msgid "Image Tile Size"
+msgstr "图片图块大小"
+
+msgid "Shape tile size for the image gallery."
+msgstr "图片图库的形状图块大小。"
+
+msgid "Video Tile Size"
+msgstr "视频图块大小"
+
+msgid "Shape tile size for the video gallery."
+msgstr "视频图库的形状图块大小。"
+
+msgid "Horizontal gap between shape tiles."
+msgstr "形状图块之间的水平间距。"
+
+msgid "Vertical gap between shape-tile rows."
+msgstr "形状图块行之间的垂直间距。"
+
+msgid "Layout Builder Scope"
+msgstr "布局构建器范围"
+
+msgid "Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+msgstr "完整：替换整个图库（无缩略图条）。视口：仅替换视口区域。"
+
+msgid "Full Gallery"
+msgstr "完整图库"
+
+msgid "Viewport Only"
+msgstr "仅视口"
+
+msgid "Default Glow Color"
+msgstr "默认发光颜色"
+
+msgid "Fallback glow color for slots using Hover = Glow when the slot does not override it."
+msgstr "当插槽未覆盖时，使用悬停 = 发光的插槽的回退发光颜色。"
+
+msgid "Default Glow Spread (px)"
+msgstr "默认发光扩散 (px)"
+
+msgid "Fallback glow radius for slots using Hover = Glow when the slot does not override it."
+msgstr "当插槽未覆盖时，使用悬停 = 发光的插槽的回退发光半径。"
+
+msgid "Classic"
+msgstr "经典"
+
+msgid "Classic (Carousel)"
+msgstr "经典（轮播）"
+
+msgid "Classic Carousel"
+msgstr "经典轮播"
+
+msgid "Justified"
+msgstr "两端对齐"
+
+msgid "Justified Rows (Flickr-style)"
+msgstr "两端对齐行（Flickr 风格）"
+
+msgid "Hexagonal"
+msgstr "六边形"
+
+msgid "Circular"
+msgstr "环形"
+
+msgid "Diamond"
+msgstr "菱形"
+
+msgid "Scroll Snap"
+msgstr "滚动吸附"
+
+msgid "Scroll Snap (vertical)"
+msgstr "滚动吸附（垂直）"
+
+msgid "Coverflow"
+msgstr "Coverflow"
+
+msgid "Coverflow (3D Carousel)"
+msgstr "Coverflow（3D 轮播）"
+
+msgid "Pinterest"
+msgstr "Pinterest"
+
+msgid "Pinterest (Mosaic Grid)"
+msgstr "Pinterest（马赛克网格）"
+
+msgid "Stacked"
+msgstr "堆叠"
+
+msgid "Stacked (Deck of Cards)"
+msgstr "堆叠（一叠卡片）"
+
+msgid "Filterable Grid"
+msgstr "可筛选网格"
+
+msgid "Filterable Grid (Isotope)"
+msgstr "可筛选网格（Isotope）"
+
+msgid "Spotlight"
+msgstr "聚光灯"
+
+msgid "Spotlight (Hero + Strip)"
+msgstr "聚光灯（主图 + 条）"
+
+msgid "Layout Builder"
+msgstr "布局构建器"
+
+msgid "Layout Builder -> per-breakpoint"
+msgstr "布局构建器 -> 按断点"
+
+msgid "{{desc}} ({{min}}–{{max}}, default: {{fallback}})"
+msgstr "{{desc}}（{{min}}–{{max}}，默认：{{fallback}}）"
+
+msgid "{{desc}} (max: {{max}}, default: {{fallback}})"
+msgstr "{{desc}}（最大：{{max}}，默认：{{fallback}}）"
+
+msgid "Media Frame"
+msgstr "媒体框架"
+
+msgid "Photo Grid"
+msgstr "照片网格"
+
+msgid "Scroll-snap"
+msgstr "滚动吸附"
+
+msgid "Shape Layout"
+msgstr "形状布局"
+
+msgid "Choose which layout this gallery uses with the \"Layout Template\" picker in the campaign's Settings tab (Edit Campaign). These options only style the chosen layout."
+msgstr "使用活动“设置”选项卡（编辑活动）中的“布局模板”选择器选择此图库使用的布局。这些选项仅设置所选布局的样式。"
+
+msgid "View By"
+msgstr "查看方式"
+
+msgid "📋 Campaign"
+msgstr "📋 活动"
+
+msgid "🏢 Company"
+msgstr "🏢 公司"
+
+msgid "📊 All"
+msgstr "📊 全部"
+
+msgid "Access view mode"
+msgstr "访问视图模式"
+
+msgid "Select Campaign"
+msgstr "选择活动"
+
+msgid "Choose a campaign..."
+msgstr "选择一个活动..."
+
+msgid "Select Company"
+msgstr "选择公司"
+
+msgid "Loading..."
+msgstr "正在加载…"
+
+msgid "Choose a company..."
+msgstr "选择一个公司..."
+
+msgid "Company:"
+msgstr "公司："
+
+msgid "Archived campaign - grants inactive"
+msgstr "已归档活动 - 授权不活跃"
+
+msgid "Total users:"
+msgstr "用户总数："
+
+msgid "Access {{count}}"
+msgstr "访问 {{count}}"
+
+msgid "Campaigns:"
+msgstr "活动："
+
+msgid "{{count}} active"
+msgstr "{{count}} 个活跃"
+
+msgid "{{count}} archived"
+msgstr "{{count}} 个已归档"
+
+msgid "Archive All Campaigns"
+msgstr "归档所有活动"
+
+msgid "Select a campaign to manage access permissions"
+msgstr "选择一个活动以管理访问权限"
+
+msgid "Select a company to manage access permissions"
+msgstr "选择一个公司以管理访问权限"
+
+msgid "Current Access"
+msgstr "当前访问权限"
+
+msgid "Company-Wide Access"
+msgstr "公司范围访问权限"
+
+msgid "All Access (Company + Campaigns)"
+msgstr "所有访问权限（公司 + 活动）"
+
+msgid "Show expired"
+msgstr "显示已过期"
+
+msgid "{{count}} users"
+msgstr "{{count}} 个用户"
+
+msgid "User"
+msgstr "用户"
+
+msgid "Access Type"
+msgstr "访问类型"
+
+msgid "Role"
+msgstr "角色"
+
+msgid "Granted / Expires"
+msgstr "授予 / 过期"
+
+msgid "Revoke"
+msgstr "撤销"
+
+msgid "Loading access entries"
+msgstr "正在加载访问条目"
+
+msgid "No users have access to this campaign yet. Add users below."
+msgstr "尚无用户可访问此活动。请在下方添加用户。"
+
+msgid "No company-wide access grants. Add users below."
+msgstr "无公司范围的访问授权。请在下方添加用户。"
+
+msgid "No access grants found for this company or its campaigns."
+msgstr "未找到此公司或其活动的访问授权。"
+
+msgid "Current access entries"
+msgstr "当前访问条目"
+
+msgid "Grant New Access"
+msgstr "授予新访问权限"
+
+msgid "Grant Company-Wide Access"
+msgstr "授予公司范围访问权限"
+
+msgid "Search name, email, or enter ID..."
+msgstr "搜索姓名、电子邮件或输入 ID..."
+
+msgid "No users found"
+msgstr "未找到用户"
+
+msgid "Using User ID: {{id}}"
+msgstr "使用用户 ID：{{id}}"
+
+msgid "Type name/email or enter user ID"
+msgstr "输入姓名/电子邮件或输入用户 ID"
+
+msgid "Admin"
+msgstr "管理员"
+
+msgid "Scope"
+msgstr "范围"
+
+msgid "📋 This Campaign"
+msgstr "📋 此活动"
+
+msgid "🏢 All Company Campaigns"
+msgstr "🏢 所有公司活动"
+
+msgid "Action"
+msgstr "操作"
+
+msgid "✅ Grant Access"
+msgstr "✅ 授予访问权限"
+
+msgid "❌ Deny Access"
+msgstr "❌ 拒绝访问"
+
+msgid "👁 Viewer"
+msgstr "👁 查看者"
+
+msgid "Access role level"
+msgstr "访问角色级别"
+
+msgid "Expires at"
+msgstr "过期时间"
+
+msgid "(optional)"
+msgstr "（可选）"
+
+msgid "Access expiry date and time"
+msgstr "访问过期日期和时间"
+
+msgid "Apply"
+msgstr "应用"
+
+msgid "Create a new user"
+msgstr "创建新用户"
+
+msgid "Quick add a new user"
+msgstr "快速添加新用户"
+
+msgid "Quick Add User"
+msgstr "快速添加用户"
+
+msgid "Company-level grants give access to all campaigns under the same company."
+msgstr "公司级授权授予对同一公司下所有活动的访问权限。"
+
+msgid "Grants apply to all current and future campaigns for this company."
+msgstr "授权适用于此公司的所有当前和未来活动。"
+
+msgid "Failed to approve request"
+msgstr "无法批准请求"
+
+msgid "Failed to deny request"
+msgstr "无法拒绝请求"
+
+msgid "Select a campaign to see access requests."
+msgstr "选择一个活动以查看访问请求。"
+
+msgid "Access Requests"
+msgstr "访问请求"
+
+msgid "{{count}} pending"
+msgstr "{{count}} 个待处理"
+
+msgid "No access requests for this campaign."
+msgstr "此活动没有访问请求。"
+
+msgid "Pending"
+msgstr "待处理"
+
+msgid "Requested"
+msgstr "已请求"
+
+msgid "Approve"
+msgstr "批准"
+
+msgid "Deny"
+msgstr "拒绝"
+
+msgid "Resolved"
+msgstr "已解决"
+
+msgid "approved"
+msgstr "已批准"
+
+msgid "denied"
+msgstr "已拒绝"
+
+msgid "expired"
+msgstr "已过期"
+
+msgid "All activity recorded for the selected campaign."
+msgstr "为所选活动记录的所有动态。"
+
+msgid "Select campaign for audit log"
+msgstr "选择用于审计日志的活动"
+
+msgid "From (YYYY-MM-DD)"
+msgstr "从（YYYY-MM-DD）"
+
+msgid "Audit log from date"
+msgstr "审计日志起始日期"
+
+msgid "To (YYYY-MM-DD)"
+msgstr "至（YYYY-MM-DD）"
+
+msgid "Audit log to date"
+msgstr "审计日志结束日期"
+
+msgid "Action filter"
+msgstr "操作筛选器"
+
+msgid "Audit log action filter"
+msgstr "审计日志操作筛选器"
+
+msgid "Export CSV"
+msgstr "导出 CSV"
+
+msgid "Export audit log as CSV"
+msgstr "将审计日志导出为 CSV"
+
+msgid "Download ZIP"
+msgstr "下载 ZIP"
+
+msgid "Export audit log as ZIP"
+msgstr "将审计日志导出为 ZIP"
+
+msgid "Loading audit entries"
+msgstr "正在加载审计条目"
+
+msgid "When"
+msgstr "时间"
+
+msgid "Summary"
+msgstr "摘要"
+
+msgid "Severity"
+msgstr "严重程度"
+
+msgid "Actor"
+msgstr "操作者"
+
+msgid "Failed to load audit entries: {{message}}"
+msgstr "无法加载审计条目：{{message}}"
+
+msgid "No audit entries yet."
+msgstr "尚无审计条目。"
+
+msgid "Audit entries"
+msgstr "审计条目"
+
+msgid "Cross-campaign and plugin-wide admin events."
+msgstr "跨活动和插件范围的管理事件。"
+
+msgid "Campaign ID"
+msgstr "活动 ID"
+
+msgid "Filter by campaign ID"
+msgstr "按活动 ID 筛选"
+
+msgid "Global audit from date"
+msgstr "全局审计起始日期"
+
+msgid "Global audit to date"
+msgstr "全局审计结束日期"
+
+msgid "Global audit action filter"
+msgstr "全局审计操作筛选器"
+
+msgid "Export global audit log as CSV"
+msgstr "将全局审计日志导出为 CSV"
+
+msgid "Export global audit log as ZIP"
+msgstr "将全局审计日志导出为 ZIP"
+
+msgid "Loading system audit entries"
+msgstr "正在加载系统审计条目"
+
+msgid "No audit entries found."
+msgstr "未找到审计条目。"
+
+msgid "System audit entries"
+msgstr "系统审计条目"
+
+msgid "Success"
+msgstr "成功"
+
+msgid "Password Reset Link:"
+msgstr "密码重置链接："
+
+msgid "Password reset link"
+msgstr "密码重置链接"
+
+msgid "Click to select"
+msgstr "单击以选择"
+
+msgid "Open Reset Link"
+msgstr "打开重置链接"
+
+msgid "Reset URL copied to clipboard"
+msgstr "重置 URL 已复制到剪贴板"
+
+msgid "Copy Link"
+msgstr "复制链接"
+
+msgid "Share this link securely with the user. They can use it to set their own password."
+msgstr "安全地与用户共享此链接。他们可以使用它来设置自己的密码。"
+
+msgid "Close"
+msgstr "关闭"
+
+msgid "user@example.com"
+msgstr "user@example.com"
+
+msgid "User's WordPress login email address"
+msgstr "用户的 WordPress 登录电子邮件地址"
+
+msgid "Display Name"
+msgstr "显示名称"
+
+msgid "John Doe"
+msgstr "张三"
+
+msgid "Full name for display purposes"
+msgstr "用于显示的全名"
+
+msgid "👁 Viewer - Can view granted campaigns"
+msgstr "👁 查看者 - 可以查看已授权的活动"
+
+msgid "⚙️ Gallery Editor - Can manage this plugin"
+msgstr "⚙️ 图库编辑者 - 可以管理此插件"
+
+msgid "WordPress role determines plugin permissions"
+msgstr "WordPress 角色决定插件权限"
+
+msgid "Grant Access To (optional)"
+msgstr "授予访问权限给（可选）"
+
+msgid "No initial access"
+msgstr "无初始访问权限"
+
+msgid "🧪 Test mode: Simulate email failure"
+msgstr "🧪 测试模式：模拟电子邮件失败"
+
+msgid "Enable to test the password reset link UI without actually sending email"
+msgstr "启用以测试密码重置链接界面，而不实际发送电子邮件"
+
+msgid "Create User"
+msgstr "创建用户"
+
+msgid "Viewer"
+msgstr "查看者"
+
+msgid "Editor"
+msgstr "编辑者"
+
+msgid "Owner"
+msgstr "所有者"
+
+msgid "Failed to update library"
+msgstr "无法更新库"
+
+msgid "Space \"{{name}}\" created"
+msgstr "已创建空间“{{name}}”"
+
+msgid "Failed to create space"
+msgstr "无法创建空间"
+
+msgid "Space \"{{name}}\" archived"
+msgstr "已归档空间“{{name}}”"
+
+msgid "Failed to archive space"
+msgstr "无法归档空间"
+
+msgid "No WordPress user found with that email"
+msgstr "未找到使用该电子邮件的 WordPress 用户"
+
+msgid "Failed to grant access"
+msgstr "无法授予访问权限"
+
+msgid "Failed to revoke access"
+msgstr "无法撤销访问权限"
+
+msgid "Role updated"
+msgstr "角色已更新"
+
+msgid "Failed to update role"
+msgstr "无法更新角色"
+
+msgid "Library"
+msgstr "库"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "Slug"
+msgstr "别名"
+
+msgid "Mode"
+msgstr "模式"
+
+msgid "open"
+msgstr "开放"
+
+msgid "delegated"
+msgstr "委派"
+
+msgid "Archive space"
+msgstr "归档空间"
+
+msgid "Archive {{name}}"
+msgstr "归档 {{name}}"
+
+msgid "Create new space"
+msgstr "创建新空间"
+
+msgid "My Gallery Space"
+msgstr "我的图库空间"
+
+msgid "my-gallery-space"
+msgstr "my-gallery-space"
+
+msgid "Delegated isolation mode"
+msgstr "委派隔离模式"
+
+msgid "Only explicit grantees can access this space. Admins without a grant are denied."
+msgstr "只有明确的被授权者才能访问此空间。没有授权的管理员将被拒绝。"
+
+msgid "In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving."
+msgstr "在委派模式下，没有明确授权的 WordPress 管理员无法访问此空间。请确保在保存前将自己添加为所有者。"
+
+msgid "Create space"
+msgstr "创建空间"
+
+msgid "Configure display settings for "
+msgstr "为 "
+
+msgid ". Unset fields inherit the global defaults."
+msgstr " 配置显示设置。未设置的字段继承全局默认值。"
+
+msgid "Configure display settings"
+msgstr "配置显示设置"
+
+msgid "Select a space from the Spaces tab to edit its settings."
+msgstr "从“空间”选项卡中选择一个空间以编辑其设置。"
+
+msgid "Access grants for {{name}}"
+msgstr "{{name}} 的访问授权"
+
+msgid "Granted"
+msgstr "已授予"
+
+msgid "User #{{id}}"
+msgstr "用户 #{{id}}"
+
+msgid "user {{id}}"
+msgstr "用户 {{id}}"
+
+msgid "Role for {{name}}"
+msgstr "{{name}} 的角色"
+
+msgid "Revoke access"
+msgstr "撤销访问权限"
+
+msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgstr "无访问授权。任何拥有 manage_wpsg 能力的人都可以访问此空间。"
+
+msgid "Grant access"
+msgstr "授予访问权限"
+
+msgid "User email"
+msgstr "用户电子邮件"
+
+msgid "Grant"
+msgstr "授予"
+
+msgid "Select a space from the Spaces tab to manage access."
+msgstr "从“空间”选项卡中选择一个空间以管理访问权限。"
+
+msgid "Select a space from the Spaces tab to manage its shared library."
+msgstr "从“空间”选项卡中选择一个空间以管理其共享库。"
+
+msgid "{{name}} is an open space."
+msgstr "{{name}} 是一个开放空间。"
+
+msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
+msgstr "开放空间可以使用库中的每个素材 — 按空间选择仅适用于委派空间。将此空间切换到委派隔离模式以限制其素材。"
+
+msgid "Select the assets "
+msgstr "选择允许 "
+
+msgid " is allowed to use. Unselected assets are hidden in this space."
+msgstr " 使用的素材。未选中的素材在此空间中隐藏。"
+
+msgid "Fonts"
+msgstr "字体"
+
+msgid "No fonts in the global library."
+msgstr "全局库中没有字体。"
+
+msgid "Archive all company campaigns"
+msgstr "归档所有公司活动"
+
+msgid "Archive all campaigns for "
+msgstr "归档 "
+
+msgid "? This will archive {{count}} active campaign."
+msgstr " 的所有活动？这将归档 {{count}} 个活跃活动。"
+
+msgid "? This will archive {{count}} active campaigns."
+msgstr " 的所有活动？这将归档 {{count}} 个活跃活动。"
+
+msgid "Archive {{count}} Campaign"
+msgstr "归档 {{count}} 个活动"
+
+msgid "Archive {{count}} Campaigns"
+msgstr "归档 {{count}} 个活动"
+
+msgid "Archive {{count}} campaign for {{name}}"
+msgstr "为 {{name}} 归档 {{count}} 个活动"
+
+msgid "Archive {{count}} campaigns for {{name}}"
+msgstr "为 {{name}} 归档 {{count}} 个活动"
+
+msgid "company"
+msgstr "公司"
+
+msgid "Campaigns to be archived:"
+msgstr "将被归档的活动："
+
+msgid "Also revoke all company-level access grants"
+msgstr "同时撤销所有公司级访问授权"
+
+msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgstr "单个活动的访问授权将被保留，但会变为不活跃。"
+
+msgid "Asset uploaded."
+msgstr "素材已上传。"
+
+msgid "Delete asset?"
+msgstr "删除素材？"
+
+msgid "Delete \"{{name}}\"? This cannot be undone."
+msgstr "删除“{{name}}”？此操作无法撤销。"
+
+msgid "Deleted \"{{name}}\"."
+msgstr "已删除“{{name}}”。"
+
+msgid "Upload asset"
+msgstr "上传素材"
+
+msgid "Upload asset to library"
+msgstr "将素材上传到库"
+
+msgid "Asset is in use"
+msgstr "素材正在使用中"
+
+msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "“{{name}}”与 {{count}} 个空间关联。移除它会将其与所有空间解除关联。仍要删除吗？"
+
+msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "“{{name}}”与 {{count}} 个空间关联。移除它会将其与所有空间解除关联。仍要删除吗？"
+
+msgid "Delete anyway"
+msgstr "仍要删除"
+
+msgid "No assets in the global library yet. Upload assets from the Layout Builder."
+msgstr "全局库中尚无素材。请从布局构建器上传素材。"
+
+msgid "Search assets…"
+msgstr "搜索素材…"
+
+msgid "Search assets"
+msgstr "搜索素材"
+
+msgid "No assets match the current filter."
+msgstr "没有素材匹配当前筛选器。"
+
+msgid "Total Views (all campaigns)"
+msgstr "总浏览量（所有活动）"
+
+msgid "Unique Visitors (all campaigns)"
+msgstr "独立访客（所有活动）"
+
+msgid "Views (selected campaign)"
+msgstr "浏览量（所选活动）"
+
+msgid "Unique (selected campaign)"
+msgstr "独立（所选活动）"
+
+msgid "Campaign Analytics"
+msgstr "活动分析"
+
+msgid "Browser is offline — polling paused"
+msgstr "浏览器离线 — 轮询已暂停"
+
+msgid "Offline"
+msgstr "离线"
+
+msgid "Updated {{time}}"
+msgstr "已更新 {{time}}"
+
+msgid "Refresh analytics"
+msgstr "刷新分析"
+
+msgid "Select campaign"
+msgstr "选择活动"
+
+msgid "Last 7d"
+msgstr "最近 7 天"
+
+msgid "Last 30d"
+msgstr "最近 30 天"
+
+msgid "Last 90d"
+msgstr "最近 90 天"
+
+msgid "Select a campaign to view per-campaign analytics."
+msgstr "选择一个活动以查看各活动分析。"
+
+msgid "Failed to load analytics data."
+msgstr "无法加载分析数据。"
+
+msgid "No view events recorded for this period."
+msgstr "此期间未记录浏览事件。"
+
+msgid "Make sure "
+msgstr "请确保 "
+
+msgid "Enable Analytics"
+msgstr "启用分析"
+
+msgid " is turned on in Settings → Advanced."
+msgstr " 在设置 → 高级中已开启。"
+
+msgid "Media Performance"
+msgstr "媒体表现"
+
+msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgstr "此期间未记录各媒体事件。带有媒体 ID 的灯箱交互将显示在此处。"
+
+msgid "Media ID"
+msgstr "媒体 ID"
+
+msgid "Views"
+msgstr "浏览量"
+
+msgid "Lightbox Opens"
+msgstr "灯箱打开次数"
+
+msgid "Top Campaigns by Views"
+msgstr "按浏览量排名的热门活动"
+
+msgid "Unique"
+msgstr "独立"
+
+msgid "Category renamed to \"{{name}}\""
+msgstr "分类已重命名为“{{name}}”"
+
+msgid "Failed to rename category"
+msgstr "无法重命名分类"
+
+msgid "Category \"{{name}}\" deleted"
+msgstr "已删除分类“{{name}}”"
+
+msgid "Failed to delete category"
+msgstr "无法删除分类"
+
+msgid "Edit category name"
+msgstr "编辑分类名称"
+
+msgid "Rename {{name}}"
+msgstr "重命名 {{name}}"
+
+msgid "Delete {{name}}"
+msgstr "删除 {{name}}"
+
+msgid "Category \"{{name}}\" created"
+msgstr "已创建分类“{{name}}”"
+
+msgid "Failed to create category"
+msgstr "无法创建分类"
+
+msgid "Tag \"{{name}}\" created"
+msgstr "已创建标签“{{name}}”"
+
+msgid "Failed to create tag"
+msgstr "无法创建标签"
+
+msgid "Tag deleted"
+msgstr "标签已删除"
+
+msgid "Failed to delete tag"
+msgstr "无法删除标签"
+
+msgid "Media tag \"{{name}}\" created"
+msgstr "已创建媒体标签“{{name}}”"
+
+msgid "Failed to create media tag"
+msgstr "无法创建媒体标签"
+
+msgid "Media tag deleted"
+msgstr "媒体标签已删除"
+
+msgid "Failed to delete media tag"
+msgstr "无法删除媒体标签"
+
+msgid "Manage Taxonomy"
+msgstr "管理分类法"
+
+msgid "No categories yet."
+msgstr "尚无分类。"
+
+msgid "New category name"
+msgstr "新分类名称"
+
+msgid "No campaign tags yet."
+msgstr "尚无活动标签。"
+
+msgid "New campaign tag"
+msgstr "新活动标签"
+
+msgid "No media tags yet."
+msgstr "尚无媒体标签。"
+
+msgid "New media tag"
+msgstr "新媒体标签"
+
+msgid "Failed to load templates."
+msgstr "无法加载模板。"
+
+msgid "Template \"{{name}}\" deleted."
+msgstr "已删除模板“{{name}}”。"
+
+msgid "Failed to delete template."
+msgstr "无法删除模板。"
+
+msgid "Template created."
+msgstr "模板已创建。"
+
+msgid "Failed to create template."
+msgstr "无法创建模板。"
+
+msgid "Campaign Templates"
+msgstr "活动模板"
+
+msgid "New Template"
+msgstr "新模板"
+
+msgid "Built-in"
+msgstr "内置"
+
+msgid "No custom templates yet."
+msgstr "尚无自定义模板。"
+
+msgid "Template name"
+msgstr "模板名称"
+
+msgid "e.g. Weddings default"
+msgstr "例如：婚礼默认"
+
+msgid "Description (optional)"
+msgstr "描述（可选）"
+
+msgid "e.g. Our standard wedding campaign layout"
+msgstr "例如：我们的标准婚礼活动布局"
+
+msgid "{{count}} character"
+msgstr "{{count}} 个字符"
+
+msgid "{{count}} characters"
+msgstr "{{count}} 个字符"
+
+msgid "Copy settings from campaign (optional)"
+msgstr "从活动复制设置（可选）"
+
+msgid "Start blank"
+msgstr "从空白开始"
+
+msgid "Create Template"
+msgstr "创建模板"
+
+msgid "Delete template"
+msgstr "删除模板"
+
+msgid "Delete template {{name}}"
+msgstr "删除模板 {{name}}"
+
+msgid "Duplicated \"{{name}}\""
+msgstr "已复制“{{name}}”"
+
+msgid "Deleted \"{{name}}\""
+msgstr "已删除“{{name}}”"
+
+msgid "Invalid template JSON — missing required fields."
+msgstr "无效的模板 JSON — 缺少必填字段。"
+
+msgid "Imported \"{{name}}\""
+msgstr "已导入“{{name}}”"
+
+msgid "Import failed: {{message}}"
+msgstr "导入失败：{{message}}"
+
+msgid "Search layouts…"
+msgstr "搜索布局…"
+
+msgid "Search layout templates"
+msgstr "搜索布局模板"
+
+msgid "View mode"
+msgstr "视图模式"
+
+msgid "New Layout"
+msgstr "新布局"
+
+msgid "From Preset"
+msgstr "从预设"
+
+msgid "No layouts match your search."
+msgstr "没有布局匹配您的搜索。"
+
+msgid "No layout templates yet."
+msgstr "尚无布局模板。"
+
+msgid "Create your first layout"
+msgstr "创建您的第一个布局"
+
+msgid "Layout template list"
+msgstr "布局模板列表"
+
+msgid "Slots"
+msgstr "插槽"
+
+msgid "Aspect"
+msgstr "宽高比"
+
+msgid "Updated"
+msgstr "已更新"
+
+msgid "{{count}} slot"
+msgstr "{{count}} 个插槽"
+
+msgid "{{count}} slots"
+msgstr "{{count}} 个插槽"
+
+msgid "Edit {{name}}"
+msgstr "编辑 {{name}}"
+
+msgid "Duplicate {{name}}"
+msgstr "复制 {{name}}"
+
+msgid "Export JSON"
+msgstr "导出 JSON"
+
+msgid "Export {{name}}"
+msgstr "导出 {{name}}"
+
+msgid "Delete layout template?"
+msgstr "删除布局模板？"
+
+msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
+msgstr "确定要删除“{{name}}”吗？此操作无法撤销。"
+
+msgid "Template in use"
+msgstr "模板正在使用中"
+
+msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "“{{name}}”正被 {{count}} 个活动使用。删除它会解除这些活动的绑定。仍要删除吗？"
+
+msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "“{{name}}”正被 {{count}} 个活动使用。删除它会解除这些活动的绑定。仍要删除吗？"
+
+msgid "Edit layout {{name}}"
+msgstr "编辑布局 {{name}}"
+
+msgid "Actions for {{name}}"
+msgstr "{{name}} 的操作"
+
+msgid "Choose a starting point"
+msgstr "选择一个起点"
+
+msgid "Start Blank"
+msgstr "从空白开始"
+
+msgid "No pre-configured settings."
+msgstr "无预配置设置。"
+
+msgid "Press a key combo…"
+msgstr "按下组合键…"
+
+msgid "Confirm key binding"
+msgstr "确认按键绑定"
+
+msgid "Cancel key recording"
+msgstr "取消按键录制"
+
+msgid "Press any key combo, then ✓ to confirm"
+msgstr "按任意组合键，然后按 ✓ 确认"
+
+msgid "custom"
+msgstr "自定义"
+
+msgid "Remap"
+msgstr "重新映射"
+
+msgid "Remap {{name}}"
+msgstr "重新映射 {{name}}"
+
+msgid "Reset {{name}} to default"
+msgstr "将 {{name}} 重置为默认"
+
+msgid "Close active modal"
+msgstr "关闭活动窗口"
+
+msgid "Keyboard Shortcuts"
+msgstr "键盘快捷键"
+
+msgid "Edit shortcuts"
+msgstr "编辑快捷键"
+
+msgid "Open keyboard shortcuts help (this modal)"
+msgstr "打开键盘快捷键帮助（此窗口）"
+
+msgid "customized"
+msgstr "已自定义"
+
+msgid "Reset all to defaults"
+msgstr "全部重置为默认"
+
+msgid "macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input."
+msgstr "macOS：⌘ 替代 Ctrl。当焦点位于文本输入框内时，快捷键会被禁用。"
+
+msgid "Theme"
+msgstr "主题"
+
+msgid "Dark theme"
+msgstr "深色主题"
+
+msgid "Light theme"
+msgstr "浅色主题"
+
+msgid "Custom Fonts"
+msgstr "自定义字体"
+
+msgid "Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors."
+msgstr "上传 .woff2、.woff、.ttf 或 .otf 字体文件。上传的字体会出现在所有排版编辑器的字体选择器中。"
+
+msgid "Make {{name}} space-specific"
+msgstr "将 {{name}} 设为空间专属"
+
+msgid "Make {{name}} available to all spaces"
+msgstr "使 {{name}} 对所有空间可用"
+
+msgid "Uploading…"
+msgstr "正在上传…"
+
+msgid "Upload font"
+msgstr "上传字体"
+
+msgid "▬ Rectangle"
+msgstr "▬ 矩形"
+
+msgid "● Circle"
+msgstr "● 圆形"
+
+msgid "⬭ Ellipse"
+msgstr "⬭ 椭圆"
+
+msgid "⬢ Hexagon"
+msgstr "⬢ 六边形"
+
+msgid "◆ Diamond"
+msgstr "◆ 菱形"
+
+msgid "▱ Parallelogram ←"
+msgstr "▱ 平行四边形 ←"
+
+msgid "▱ Parallelogram →"
+msgstr "▱ 平行四边形 →"
+
+msgid "❯ Chevron"
+msgstr "❯ V 形"
+
+msgid "➤ Arrow"
+msgstr "➤ 箭头"
+
+msgid "⬟ Trapezoid"
+msgstr "⬟ 梯形"
+
+msgid "❂ Custom"
+msgstr "❂ 自定义"
+
+msgid "Cover"
+msgstr "覆盖"
+
+msgid "Contain"
+msgstr "包含"
+
+msgid "Fill"
+msgstr "填充"
+
+msgid "Pop"
+msgstr "弹出"
+
+msgid "Glow"
+msgstr "发光"
+
+msgid "Normal"
+msgstr "正常"
+
+msgid "Multiply"
+msgstr "正片叠底"
+
+msgid "Screen"
+msgstr "滤色"
+
+msgid "Overlay"
+msgstr "叠加"
+
+msgid "Darken"
+msgstr "变暗"
+
+msgid "Lighten"
+msgstr "变亮"
+
+msgid "Color Dodge"
+msgstr "颜色减淡"
+
+msgid "Color Burn"
+msgstr "颜色加深"
+
+msgid "Hard Light"
+msgstr "强光"
+
+msgid "Soft Light"
+msgstr "柔光"
+
+msgid "Difference"
+msgstr "差值"
+
+msgid "Exclusion"
+msgstr "排除"
+
+msgid "Hue"
+msgstr "色相"
+
+msgid "Saturation"
+msgstr "饱和度"
+
+msgid "Color"
+msgstr "颜色"
+
+msgid "Luminosity"
+msgstr "明度"
+
+msgid "Top left"
+msgstr "左上"
+
+msgid "Top center"
+msgstr "顶部居中"
+
+msgid "Top right"
+msgstr "右上"
+
+msgid "Left center"
+msgstr "左侧居中"
+
+msgid "Right center"
+msgstr "右侧居中"
+
+msgid "Bottom left"
+msgstr "左下"
+
+msgid "Bottom center"
+msgstr "底部居中"
+
+msgid "Bottom right"
+msgstr "右下"
+
+msgid "{{label}} info"
+msgstr "{{label}} 信息"
+
+msgid "Bright"
+msgstr "亮度"
+
+msgid "Contrast"
+msgstr "对比度"
+
+msgid "Saturate"
+msgstr "饱和"
+
+msgid "Blur"
+msgstr "模糊"
+
+msgid "Gray"
+msgstr "灰度"
+
+msgid "Sepia"
+msgstr "棕褐色"
+
+msgid "Invert"
+msgstr "反相"
+
+msgid "Enable"
+msgstr "启用"
+
+msgid "Off X"
+msgstr "偏移 X"
+
+msgid "Off Y"
+msgstr "偏移 Y"
+
+msgid "Intensity"
+msgstr "强度"
+
+msgid "Hover only"
+msgstr "仅悬停"
+
+msgid "Always"
+msgstr "始终"
+
+msgid "Hover"
+msgstr "悬停"
+
+msgid "Max °"
+msgstr "最大 °"
+
+msgid "Persp."
+msgstr "透视"
+
+msgid "Zoom"
+msgstr "缩放"
+
+msgid "Entrance animation type"
+msgstr "进入动画类型"
+
+msgid "Direction"
+msgstr "方向"
+
+msgid "Up"
+msgstr "上"
+
+msgid "Down"
+msgstr "下"
+
+msgid "Slide direction"
+msgstr "滑动方向"
+
+msgid "Duration"
+msgstr "持续时间"
+
+msgid "Entrance duration"
+msgstr "进入持续时间"
+
+msgid "Delay"
+msgstr "延迟"
+
+msgid "Entrance delay"
+msgstr "进入延迟"
+
+msgid "Play preview"
+msgstr "播放预览"
+
+msgid "Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden."
+msgstr "列表模式：容器效果（倾斜、边框、叠加、混合）应用于卡片包装器。图片专用控件已隐藏。"
+
+msgid "Layout"
+msgstr "布局"
+
+msgid "Slot"
+msgstr "插槽"
+
+msgid "Position"
+msgstr "位置"
+
+msgid "X %"
+msgstr "X %"
+
+msgid "Y %"
+msgstr "Y %"
+
+msgid "Size"
+msgstr "大小"
+
+msgid "Width %"
+msgstr "宽度 %"
+
+msgid "Unlock aspect ratio"
+msgstr "解锁宽高比"
+
+msgid "Lock aspect ratio"
+msgstr "锁定宽高比"
+
+msgid "Height %"
+msgstr "高度 %"
+
+msgid "Rotation"
+msgstr "旋转"
+
+msgid "Rotation degrees"
+msgstr "旋转角度"
+
+msgid "Reset rotation"
+msgstr "重置旋转"
+
+msgid "Opacity"
+msgstr "不透明度"
+
+msgid "Slot opacity"
+msgstr "插槽不透明度"
+
+msgid "Shape"
+msgstr "形状"
+
+msgid "Preset"
+msgstr "预设"
+
+msgid "Clip-path"
+msgstr "裁剪路径"
+
+msgid "polygon(50% 0%, 100% 50%, …)"
+msgstr "polygon(50% 0%, 100% 50%, …)"
+
+msgid "Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards."
+msgstr "图片适应和焦点设置在列表模式下不适用 — 插槽充当活动卡片的定位容器。"
+
+msgid "Fit"
+msgstr "适应"
+
+msgid "Focus"
+msgstr "焦点"
+
+msgid "Click a position to set which part of the image stays in frame."
+msgstr "单击某个位置以设置图片的哪一部分保留在画框内。"
+
+msgid "50% 50%"
+msgstr "50% 50%"
+
+msgid "Border"
+msgstr "边框"
+
+msgid "Radius"
+msgstr "圆角"
+
+msgid "Width"
+msgstr "宽度"
+
+msgid "Effects"
+msgstr "效果"
+
+msgid "Shadow"
+msgstr "阴影"
+
+msgid "Blend"
+msgstr "混合"
+
+msgid "3D Tilt"
+msgstr "3D 倾斜"
+
+msgid "Entrance"
+msgstr "进入"
+
+msgid "Stacking & Interaction"
+msgstr "堆叠与交互"
+
+msgid "Stacking"
+msgstr "堆叠"
+
+msgid "Send to Back (Shift+[)"
+msgstr "置于底层 (Shift+[)"
+
+msgid "Send to back"
+msgstr "置于底层"
+
+msgid "Send Backward ([)"
+msgstr "下移一层 ([)"
+
+msgid "Send backward"
+msgstr "下移一层"
+
+msgid "Bring Forward (])"
+msgstr "上移一层 (])"
+
+msgid "Bring forward"
+msgstr "上移一层"
+
+msgid "Bring to Front (Shift+])"
+msgstr "置于顶层 (Shift+])"
+
+msgid "Bring to front"
+msgstr "置于顶层"
+
+msgid "Interaction"
+msgstr "交互"
+
+msgid "Card click is controlled by the campaign card component."
+msgstr "卡片单击由活动卡片组件控制。"
+
+msgid "Click"
+msgstr "单击"
+
+msgid "Spread"
+msgstr "扩散"
+
+msgid "Graphic Layer {{index}}"
+msgstr "图形图层 {{index}}"
+
+msgid "Brightness"
+msgstr "亮度"
+
+msgid "Grayscale"
+msgstr "灰度"
+
+msgid "Hue rotate"
+msgstr "色相旋转"
+
+msgid "Drop shadow"
+msgstr "投影"
+
+msgid "Shadow blur"
+msgstr "阴影模糊"
+
+msgid "Graphic layer name"
+msgstr "图形图层名称"
+
+msgid "Graphic layer preview"
+msgstr "图形图层预览"
+
+msgid "W %"
+msgstr "宽 %"
+
+msgid "H %"
+msgstr "高 %"
+
+msgid "Fill canvas"
+msgstr "填充画布"
+
+msgid "Transform"
+msgstr "变换"
+
+msgid "Flip H"
+msgstr "水平翻转"
+
+msgid "Flip horizontal"
+msgstr "水平翻转"
+
+msgid "Flip V"
+msgstr "垂直翻转"
+
+msgid "Flip vertical"
+msgstr "垂直翻转"
+
+msgid "Appearance"
+msgstr "外观"
+
+msgid "Graphic layer opacity"
+msgstr "图形图层不透明度"
+
+msgid "Click-through"
+msgstr "点击穿透"
+
+msgid "Pointer events pass through to layers below"
+msgstr "指针事件会穿透到下方图层"
+
+msgid "Shape & Border"
+msgstr "形状与边框"
+
+msgid "Custom clip-path"
+msgstr "自定义裁剪路径"
+
+msgid "polygon(50% 0%, 100% 100%, 0% 100%)"
+msgstr "polygon(50% 0%, 100% 100%, 0% 100%)"
+
+msgid "Border color"
+msgstr "边框颜色"
+
+msgid "Mask"
+msgstr "蒙版"
+
+msgid "Mask image URL"
+msgstr "蒙版图片 URL"
+
+msgid "https://… (SVG/PNG)"
+msgstr "https://… (SVG/PNG)"
+
+msgid "Luminance"
+msgstr "亮度"
+
+msgid "Alpha"
+msgstr "Alpha"
+
+msgid "Mask mode"
+msgstr "蒙版模式"
+
+msgid "Feather"
+msgstr "羽化"
+
+msgid "Mask feather"
+msgstr "蒙版羽化"
+
+msgid "Clear mask"
+msgstr "清除蒙版"
+
+msgid "Blend mode"
+msgstr "混合模式"
+
+msgid "Danger zone"
+msgstr "危险区域"
+
+msgid "Remove this graphic layer?"
+msgstr "移除此图形图层？"
+
+msgid "Confirm remove"
+msgstr "确认移除"
+
+msgid "Remove layer"
+msgstr "移除图层"
+
+msgid "Text Layer {{index}}"
+msgstr "文本图层 {{index}}"
+
+msgid "Text layer name"
+msgstr "文本图层名称"
+
+msgid "Text"
+msgstr "文本"
+
+msgid "Text content"
+msgstr "文本内容"
+
+msgid "Style"
+msgstr "样式"
+
+msgid "Heading (H2)"
+msgstr "标题 (H2)"
+
+msgid "Subheading (H3)"
+msgstr "副标题 (H3)"
+
+msgid "Paragraph"
+msgstr "段落"
+
+msgid "Alignment"
+msgstr "对齐"
+
+msgid "Text alignment"
+msgstr "文本对齐"
+
+msgid "Typography"
+msgstr "排版"
+
+msgid "Send to Back"
+msgstr "置于底层"
+
+msgid "Send Backward"
+msgstr "下移一层"
+
+msgid "Bring Forward"
+msgstr "上移一层"
+
+msgid "Bring to Front"
+msgstr "置于顶层"
+
+msgid "Remove this text layer?"
+msgstr "移除此文本图层？"
+
+msgid "Remove text layer"
+msgstr "移除文本图层"
+
+msgid "Transparent background — no fill applied."
+msgstr "透明背景 — 未应用填充。"
+
+msgid "Radial"
+msgstr "径向"
+
+msgid "Conic"
+msgstr "锥形"
+
+msgid "Dir"
+msgstr "方向"
+
+msgid "Horizontal (90°)"
+msgstr "水平 (90°)"
+
+msgid "Vertical (180°)"
+msgstr "垂直 (180°)"
+
+msgid "45° right"
+msgstr "45° 向右"
+
+msgid "135° left"
+msgstr "135° 向左"
+
+msgid "auto"
+msgstr "自动"
+
+msgid "Ellipse"
+msgstr "椭圆"
+
+msgid "Farthest corner"
+msgstr "最远角"
+
+msgid "Farthest side"
+msgstr "最远边"
+
+msgid "Closest corner"
+msgstr "最近角"
+
+msgid "Closest side"
+msgstr "最近边"
+
+msgid "Ctr X"
+msgstr "中心 X"
+
+msgid "Ctr Y"
+msgstr "中心 Y"
+
+msgid "Angle"
+msgstr "角度"
+
+msgid "Stops"
+msgstr "色标"
+
+msgid "Mid"
+msgstr "中间"
+
+msgid "Pos"
+msgstr "位置"
+
+msgid "Background preview"
+msgstr "背景预览"
+
+msgid "Remove image"
+msgstr "移除图片"
+
+msgid "No background image set."
+msgstr "未设置背景图片。"
+
+msgid "Upload image"
+msgstr "上传图片"
+
+msgid "Upload background image"
+msgstr "上传背景图片"
+
+msgid "No mask layer on this slot. Add a mask from the Layers panel first."
+msgstr "此插槽上没有蒙版图层。请先从图层面板添加蒙版。"
+
+msgid "No mask image — drag here or pick below"
+msgstr "无蒙版图片 — 拖放到此处或在下方选择"
+
+msgid "Auto-fit to slot"
+msgstr "自动适应插槽"
+
+msgid "Soften the mask edges. Higher values create a more gradual fade."
+msgstr "柔化蒙版边缘。较高的值会产生更渐进的淡化。"
+
+msgid "Design Assets"
+msgstr "设计素材"
+
+msgid "Mask Image"
+msgstr "蒙版图片"
+
+msgid "Replace"
+msgstr "替换"
+
+msgid "Clear image"
+msgstr "清除图片"
+
+msgid "Remove mask layer"
+msgstr "移除蒙版图层"
+
+msgid "Properties are unavailable in preview mode."
+msgstr "属性在预览模式下不可用。"
+
+msgid "BACKGROUND"
+msgstr "背景"
+
+msgid "MASK PROPERTIES"
+msgstr "蒙版属性"
+
+msgid "SLOT PROPERTIES"
+msgstr "插槽属性"
+
+msgid "GRAPHIC LAYER"
+msgstr "图形图层"
+
+msgid "TEXT LAYER"
+msgstr "文本图层"
+
+msgid "CANVAS"
+msgstr "画布"
+
+msgid "Graphic layers"
+msgstr "图形图层"
+
+msgid "Aspect ratio"
+msgstr "宽高比"
+
+msgid "Height mode"
+msgstr "高度模式"
+
+msgid "Ratio"
+msgstr "比例"
+
+msgid "vh"
+msgstr "vh"
+
+msgid "Canvas height mode"
+msgstr "画布高度模式"
+
+msgid "Canvas height in viewport units"
+msgstr "以视口单位表示的画布高度"
+
+msgid "Add Slot"
+msgstr "添加插槽"
+
+msgid "Recent actions"
+msgstr "最近操作"
+
+msgid "Full"
+msgstr "完整"
+
+msgid "Laptop"
+msgstr "笔记本电脑"
+
+msgid "New slot added at cursor position"
+msgstr "已在光标位置添加新插槽"
+
+msgid "Graphic layer added to canvas"
+msgstr "已将图形图层添加到画布"
+
+msgid "New slot created with assigned media"
+msgstr "已创建带有分配媒体的新插槽"
+
+msgid "Fit to viewport"
+msgstr "适应视口"
+
+msgid "Fit to canvas"
+msgstr "适应画布"
+
+msgid "{{bp}} viewport"
+msgstr "{{bp}} 视口"
+
+msgid "canvas"
+msgstr "画布"
+
+msgid "Fit {{count}} slot into the {{where}}"
+msgstr "将 {{count}} 个插槽适应到{{where}}中"
+
+msgid "Fit {{count}} slots into the {{where}}"
+msgstr "将 {{count}} 个插槽适应到{{where}}中"
+
+msgid "Slots already fit the {{where}}"
+msgstr "插槽已适应{{where}}"
+
+msgid "Max width:"
+msgstr "最大宽度："
+
+msgid "Canvas max width"
+msgstr "画布最大宽度"
+
+msgid "Fit to container"
+msgstr "适应容器"
+
+msgid "Snap:"
+msgstr "吸附："
+
+msgid "Snap mode"
+msgstr "吸附模式"
+
+msgid "Sensitivity:"
+msgstr "灵敏度："
+
+msgid "Snap sensitivity"
+msgstr "吸附灵敏度"
+
+msgid "Toggle grid overlay"
+msgstr "切换网格叠加层"
+
+msgid "Grid cell size"
+msgstr "网格单元格大小"
+
+msgid "Rulers"
+msgstr "标尺"
+
+msgid "Toggle canvas rulers"
+msgstr "切换画布标尺"
+
+msgid "Measure"
+msgstr "测量"
+
+msgid "Toggle measurement overlay"
+msgstr "切换测量叠加层"
+
+msgid "Guides:"
+msgstr "参考线："
+
+msgid "Add vertical guide"
+msgstr "添加垂直参考线"
+
+msgid "Add horizontal guide"
+msgstr "添加水平参考线"
+
+msgid "Breakpoint:"
+msgstr "断点："
+
+msgid "Breakpoint edit mode"
+msgstr "断点编辑模式"
+
+msgid "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
+msgstr "移动/缩放所选插槽（或所有插槽）以适应此设备的视口 — 仅适用于此断点"
+
+msgid "Move/scale the selected slots (or all slots) back inside the canvas bounds"
+msgstr "将所选插槽（或所有插槽）移动/缩放回画布边界内"
+
+msgid "Fit slots to viewport"
+msgstr "将插槽适应视口"
+
+msgid "Fit slots to canvas"
+msgstr "将插槽适应画布"
+
+msgid "Indices"
+msgstr "索引"
+
+msgid "Toggle slot index badges"
+msgstr "切换插槽索引徽章"
+
+msgid "Switch to select tool"
+msgstr "切换到选择工具"
+
+msgid "Hand tool — pan canvas (H)"
+msgstr "抓手工具 — 平移画布 (H)"
+
+msgid "Hand tool"
+msgstr "抓手工具"
+
+msgid "Fit canvas to viewport (F)"
+msgstr "将画布适应视口 (F)"
+
+msgid "Fit canvas to viewport"
+msgstr "将画布适应视口"
+
+msgid "Reset zoom to 100%"
+msgstr "将缩放重置为 100%"
+
+msgid "Zoom {{pct}}%, click to reset"
+msgstr "缩放 {{pct}}%，单击以重置"
+
+msgid "Preview:"
+msgstr "预览："
+
+msgid "Device preview preset"
+msgstr "设备预览预设"
+
+msgid "Custom preview width"
+msgstr "自定义预览宽度"
+
+msgid "Device frame"
+msgstr "设备框架"
+
+msgid "Toggle device frame chrome"
+msgstr "切换设备框架外框"
+
+msgid "Align slots"
+msgstr "对齐插槽"
+
+msgid "Add slot"
+msgstr "添加插槽"
+
+msgid "Add text"
+msgstr "添加文本"
+
+msgid "Add mask to selected slot"
+msgstr "为所选插槽添加蒙版"
+
+msgid "Delete selected"
+msgstr "删除所选"
+
+msgid "Delete selected slots"
+msgstr "删除所选插槽"
+
+msgid "Duplicate selected"
+msgstr "复制所选"
+
+msgid "Duplicate selected slots"
+msgstr "复制所选插槽"
+
+msgid "Align left edges"
+msgstr "对齐左边缘"
+
+msgid "Center horizontally"
+msgstr "水平居中"
+
+msgid "Align right edges"
+msgstr "对齐右边缘"
+
+msgid "Distribute by center (horizontal)"
+msgstr "按中心分布（水平）"
+
+msgid "Distribute horizontally by center"
+msgstr "按中心水平分布"
+
+msgid "Distribute by gap (horizontal)"
+msgstr "按间距分布（水平）"
+
+msgid "Distribute horizontally by gap"
+msgstr "按间距水平分布"
+
+msgid "Align top edges"
+msgstr "对齐上边缘"
+
+msgid "Center vertically"
+msgstr "垂直居中"
+
+msgid "Align bottom edges"
+msgstr "对齐下边缘"
+
+msgid "Distribute by center (vertical)"
+msgstr "按中心分布（垂直）"
+
+msgid "Distribute vertically by center"
+msgstr "按中心垂直分布"
+
+msgid "Distribute by gap (vertical)"
+msgstr "按间距分布（垂直）"
+
+msgid "Distribute vertically by gap"
+msgstr "按间距垂直分布"
+
+msgid "Filter layers…"
+msgstr "筛选图层…"
+
+msgid "Clear filter"
+msgstr "清除筛选器"
+
+msgid "Hide layer"
+msgstr "隐藏图层"
+
+msgid "Show layer"
+msgstr "显示图层"
+
+msgid "Unlock layer"
+msgstr "解锁图层"
+
+msgid "Lock layer"
+msgstr "锁定图层"
+
+msgid "Layer options"
+msgstr "图层选项"
+
+msgid "Add Mask"
+msgstr "添加蒙版"
+
+msgid "Delete layer"
+msgstr "删除图层"
+
+msgid "Expand group"
+msgstr "展开组"
+
+msgid "Collapse group"
+msgstr "折叠组"
+
+msgid "Group"
+msgstr "组合"
+
+msgid "Ungroup"
+msgstr "取消组合"
+
+msgid "Layout canvas"
+msgstr "布局画布"
+
+msgid "Drag to reposition mask"
+msgstr "拖动以重新定位蒙版"
+
+msgid "Toggle guide lock"
+msgstr "切换参考线锁定"
+
+msgid "Delete guide"
+msgstr "删除参考线"
+
+msgid "Rename group"
+msgstr "重命名组"
+
+msgid "Group name"
+msgstr "组名称"
+
+msgid "Rename"
+msgstr "重命名"
+
+msgid "Selection actions"
+msgstr "选择操作"
+
+msgid "Ungroup (Ctrl+Shift+G)"
+msgstr "取消组合 (Ctrl+Shift+G)"
+
+msgid "Unlock group"
+msgstr "解锁组"
+
+msgid "Lock group"
+msgstr "锁定组"
+
+msgid "Show group"
+msgstr "显示组"
+
+msgid "Hide group"
+msgstr "隐藏组"
+
+msgid "Bring forward (])"
+msgstr "上移一层 (])"
+
+msgid "Send backward ([)"
+msgstr "下移一层 ([)"
+
+msgid "Group (Ctrl+G)"
+msgstr "组合 (Ctrl+G)"
+
+msgid "Group selected slots"
+msgstr "组合所选插槽"
+
+msgid "Duplicate (Ctrl+D)"
+msgstr "复制 (Ctrl+D)"
+
+msgid "Duplicate slot"
+msgstr "复制插槽"
+
+msgid "Delete (Del)"
+msgstr "删除 (Del)"
+
+msgid "Delete slot"
+msgstr "删除插槽"
+
+msgid "Builder Keyboard Shortcuts"
+msgstr "构建器键盘快捷键"
+
+msgid "Builder keyboard shortcuts reference"
+msgstr "构建器键盘快捷键参考"
+
+msgid "File"
+msgstr "文件"
+
+msgid "History"
+msgstr "历史记录"
+
+msgid "Selection"
+msgstr "选择"
+
+msgid "Nudge"
+msgstr "微移"
+
+msgid "Z-order"
+msgstr "Z 轴顺序"
+
+msgid "Canvas"
+msgstr "画布"
+
+msgid "Help"
+msgstr "帮助"
+
+msgid "Save template"
+msgstr "保存模板"
+
+msgid "Undo"
+msgstr "撤销"
+
+msgid "Redo"
+msgstr "重做"
+
+msgid "Remove selected slot(s)"
+msgstr "移除所选插槽"
+
+msgid "Deselect all"
+msgstr "取消全选"
+
+msgid "Duplicate selected slot(s)"
+msgstr "复制所选插槽"
+
+msgid "Copy selected slot(s)"
+msgstr "拷贝所选插槽"
+
+msgid "Paste slot(s)"
+msgstr "粘贴插槽"
+
+msgid "Group selected (2+) · or select all in group when already grouped"
+msgstr "组合所选（2+） · 或在已组合时选择组内全部"
+
+msgid "Ungroup selected group"
+msgstr "取消组合所选的组"
+
+msgid "Toggle slot in selection (layers panel)"
+msgstr "在选择中切换插槽（图层面板）"
+
+msgid "Range select (layers panel)"
+msgstr "范围选择（图层面板）"
+
+msgid "Move selected slot 1%"
+msgstr "将所选插槽移动 1%"
+
+msgid "Move selected slot 10% (large)"
+msgstr "将所选插槽移动 10%（大）"
+
+msgid "Move selected slot 0.1% (fine)"
+msgstr "将所选插槽移动 0.1%（精细）"
+
+msgid "Add new slot"
+msgstr "添加新插槽"
+
+msgid "Toggle hand / pan tool"
+msgstr "切换抓手/平移工具"
+
+msgid "Return to select tool"
+msgstr "返回选择工具"
+
+msgid "Zoom in"
+msgstr "放大"
+
+msgid "Zoom out"
+msgstr "缩小"
+
+msgid "Show this keyboard shortcuts reference"
+msgstr "显示此键盘快捷键参考"
+
+msgid "Generate grid"
+msgstr "生成网格"
+
+msgid "Auto-grid generator"
+msgstr "自动网格生成器"
+
+msgid "Rows"
+msgstr "行"
+
+msgid "Columns"
+msgstr "列"
+
+msgid "Gap (%)"
+msgstr "间距 (%)"
+
+msgid "Margin (%)"
+msgstr "外边距 (%)"
+
+msgid "Replace existing slots"
+msgstr "替换现有插槽"
+
+msgid "Preview ({{count}} slot)"
+msgstr "预览（{{count}} 个插槽）"
+
+msgid "Preview ({{count}} slots)"
+msgstr "预览（{{count}} 个插槽）"
+
+msgid "These settings leave no room for cells — reduce the gap or margin."
+msgstr "这些设置没有为单元格留出空间 — 请减小间距或外边距。"
+
+msgid "Generate"
+msgstr "生成"
+
+msgid "Layers"
+msgstr "图层"
+
+msgid "Media & Assets"
+msgstr "媒体与素材"
+
+msgid "Properties"
+msgstr "属性"
+
+msgid "Options"
+msgstr "选项"
+
+msgid "Export template…"
+msgstr "导出模板…"
+
+msgid "Import from file…"
+msgstr "从文件导入…"
+
+msgid "Close editor"
+msgstr "关闭编辑器"
+
+msgid "Generate grid…"
+msgstr "生成网格…"
+
+msgid "History…"
+msgstr "历史记录…"
+
+msgid "View"
+msgstr "视图"
+
+msgid "Panels"
+msgstr "面板"
+
+msgid "Show grid"
+msgstr "显示网格"
+
+msgid "Show rulers"
+msgstr "显示标尺"
+
+msgid "Show measurements"
+msgstr "显示测量"
+
+msgid "Clear guides"
+msgstr "清除参考线"
+
+msgid "Reset layout"
+msgstr "重置布局"
+
+msgid "Layout workspace"
+msgstr "布局工作区"
+
+msgid "Shared across all templates"
+msgstr "在所有模板间共享"
+
+msgid "Save per template"
+msgstr "按模板保存"
+
+msgid "No history yet."
+msgstr "尚无历史记录。"
+
+msgid "Make a change to see the history."
+msgstr "进行更改以查看历史记录。"
+
+msgid "History ({{count}})"
+msgstr "历史记录 ({{count}})"
+
+msgid "Undo (Ctrl+Z)"
+msgstr "撤销 (Ctrl+Z)"
+
+msgid "Redo (Ctrl+Shift+Z)"
+msgstr "重做 (Ctrl+Shift+Z)"
+
+msgid "Jump to: {{label}}"
+msgstr "跳转到：{{label}}"
+
+msgid "Jump to initial state"
+msgstr "跳转到初始状态"
+
+msgid "Oldest state"
+msgstr "最早状态"
+
+msgid "Initial state"
+msgstr "初始状态"
+
+msgid "Open history"
+msgstr "打开历史记录"
+
+msgid "You have unsaved changes. Discard them?"
+msgstr "您有未保存的更改。要放弃吗？"
+
+msgid "Keep editing"
+msgstr "继续编辑"
+
+msgid "Layout \"{{name}}\" saved"
+msgstr "布局“{{name}}”已保存"
+
+msgid "Save failed"
+msgstr "保存失败"
+
+msgid "Guide deleted"
+msgstr "参考线已删除"
+
+msgid "{{count}} slot deleted"
+msgstr "已删除 {{count}} 个插槽"
+
+msgid "{{count}} slots deleted"
+msgstr "已删除 {{count}} 个插槽"
+
+msgid "{{count}} slot duplicated"
+msgstr "已复制 {{count}} 个插槽"
+
+msgid "{{count}} slots duplicated"
+msgstr "已复制 {{count}} 个插槽"
+
+msgid "Group created ({{count}} slots)"
+msgstr "已创建组（{{count}} 个插槽）"
+
+msgid "Ungrouped"
+msgstr "已取消组合"
+
+msgid "{{count}} media item assigned"
+msgstr "已分配 {{count}} 个媒体项"
+
+msgid "{{count}} media items assigned"
+msgstr "已分配 {{count}} 个媒体项"
+
+msgid "Generated {{count}} slot"
+msgstr "已生成 {{count}} 个插槽"
+
+msgid "Generated {{count}} slots"
+msgstr "已生成 {{count}} 个插槽"
+
+msgid "Something went wrong in the Layout Editor"
+msgstr "布局编辑器中出现问题"
+
+msgid "An unexpected error occurred. Close the editor and try again."
+msgstr "发生了意外错误。请关闭编辑器并重试。"
+
+msgid "Close Editor"
+msgstr "关闭编辑器"
+
+msgid "Unsaved changes"
+msgstr "未保存的更改"
+
+msgid "Edit mode"
+msgstr "编辑模式"
+
+msgid "Preview mode"
+msgstr "预览模式"
+
+msgid "Exit preview"
+msgstr "退出预览"
+
+msgid "Auto"
+msgstr "自动"
+
+msgid "Auto-fill (forward)"
+msgstr "自动填充（正向）"
+
+msgid "Auto-fill (reverse)"
+msgstr "自动填充（反向）"
+
+msgid "Shuffle & fill"
+msgstr "打乱并填充"
+
+msgid "Clear all assigns"
+msgstr "清除所有分配"
+
+msgid "Search media…"
+msgstr "搜索媒体…"
+
+msgid "Search media"
+msgstr "搜索媒体"
+
+msgid "List view"
+msgstr "列表视图"
+
+msgid "Grid view"
+msgstr "网格视图"
+
+msgid "Click or drag a media item to assign it to the selected slot."
+msgstr "单击或拖动媒体项以将其分配到所选插槽。"
+
+msgid "Select a slot first, then choose media to assign."
+msgstr "请先选择一个插槽，然后选择要分配的媒体。"
+
+msgid "Assignments"
+msgstr "分配"
+
+msgid "Slot {{n}}"
+msgstr "插槽 {{n}}"
+
+msgid "Unassign"
+msgstr "取消分配"
+
+msgid "Unassign media from slot {{n}}"
+msgstr "从插槽 {{n}} 取消分配媒体"
+
+msgid "No results."
+msgstr "无结果。"
+
+msgid "No media items available."
+msgstr "无可用的媒体项。"
+
+msgid "Choose a campaign…"
+msgstr "选择一个活动…"
+
+msgid "Select campaign for media"
+msgstr "选择用于媒体的活动"
+
+msgid "Add media"
+msgstr "添加媒体"
+
+msgid "Decorative assets, shared across campaigns. Drag onto the canvas to place."
+msgstr "装饰性素材，在活动间共享。拖放到画布上以放置。"
+
+msgid "Upload to library"
+msgstr "上传到库"
+
+msgid "No design assets in library yet."
+msgstr "库中尚无设计素材。"
+
+msgid "File type: {{type}}"
+msgstr "文件类型：{{type}}"
+
+msgid "Tags: {{tags}}"
+msgstr "标签：{{tags}}"
+
+msgid "Add tags"
+msgstr "添加标签"
+
+msgid "Edit tags for {{name}}"
+msgstr "编辑 {{name}} 的标签"
+
+msgid "Add a tag…"
+msgstr "添加标签…"
+
+msgid "Or paste image URL…"
+msgstr "或粘贴图片 URL…"
+
+msgid "Image URL"
+msgstr "图片 URL"
+
+msgid "Start from Template"
+msgstr "从模板开始"
+
+msgid "Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation."
+msgstr "选择一个预设布局作为起点。创建后您可以自定义插槽、形状和属性。"
+
+msgid "Campaign Cards"
+msgstr "活动卡片"
+
+msgid "Gallery Layout"
+msgstr "图库布局"
+
+msgid "Gallery Style"
+msgstr "图库样式"
+
+msgid "Gallery Navigation"
+msgstr "图库导航"
+
+msgid "Campaign Viewer"
+msgstr "活动查看器"
+
+msgid "Integrations"
+msgstr "集成"
+
+msgid "System & Admin"
+msgstr "系统与管理"
+
+msgid "just now"
+msgstr "刚刚"
+
+msgid "{{count}} minute ago"
+msgstr "{{count}} 分钟前"
+
+msgid "{{count}} minutes ago"
+msgstr "{{count}} 分钟前"
+
+msgid "Unsaved settings found"
+msgstr "发现未保存的设置"
+
+msgid "You have unsaved settings changes from {{age}}. Would you like to restore them?"
+msgstr "您有来自 {{age}} 的未保存设置更改。是否要恢复它们？"
+
+msgid "Make a change to see history."
+msgstr "进行更改以查看历史记录。"
+
+msgid "Editing "
+msgstr "正在编辑 "
+
+msgid " layout — moves and resizes apply to this breakpoint only"
+msgstr " 布局 — 移动和调整大小仅适用于此断点"
+
+msgid "{{w}} × {{h}}px"
+msgstr "{{w}} × {{h}}px"
+
+msgid "Double-click to add a slot"
+msgstr "双击以添加插槽"
+
+msgid "or drag media from the panel"
+msgstr "或从面板拖动媒体"
+
+msgid "Media ({{count}})"
+msgstr "媒体 ({{count}})"
+
+msgid "Configure how the gallery authenticates with the WordPress REST API."
+msgstr "配置图库如何向 WordPress REST API 进行身份验证。"
+
+msgid "Configure default display settings for galleries."
+msgstr "配置图库的默认显示设置。"
+
+msgid "Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute."
+msgstr "全局认证栏外观。使用 auth_bar_mode 短代码属性按页面覆盖。"
+
+msgid "Floating (circular icon, bottom-right)"
+msgstr "浮动（圆形图标，右下角）"
+
+msgid "Draggable (movable floating icon)"
+msgstr "可拖动（可移动的浮动图标）"
+
+msgid "Bar (full-width sticky bar)"
+msgstr "栏（全宽固定栏）"
+
+msgid "Auto-hide (bar hides on scroll)"
+msgstr "自动隐藏（滚动时栏隐藏）"
+
+msgid "Minimal (thin strip, ≤32px)"
+msgstr "极简（细条，≤32px）"
+
+msgid "How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page."
+msgstr "认证栏在所有图库页面上的显示方式。使用 auth_bar_mode 短代码属性在特定页面上覆盖。"
+
+msgid "Minimum distance from viewport edges when dragging (draggable mode only)."
+msgstr "拖动时与视口边缘的最小距离（仅限可拖动模式）。"
+
+msgid "Configure caching and performance settings."
+msgstr "配置缓存和性能设置。"
+
+msgid "WordPress JWT (Recommended)"
+msgstr "WordPress JWT（推荐）"
+
+msgid "None (Public Access Only)"
+msgstr "无（仅公开访问）"
+
+msgid "Select the authentication method for REST API access."
+msgstr "选择 REST API 访问的身份验证方法。"
+
+msgid "Test Connection"
+msgstr "测试连接"
+
+msgid "Leave empty to use the current site URL. Only change this for multi-site or headless setups."
+msgstr "留空以使用当前站点 URL。仅在多站点或无头设置时才更改此项。"
+
+msgid "Default"
+msgstr "默认"
+
+msgid "Default Dark"
+msgstr "默认深色"
+
+msgid "Default Light"
+msgstr "默认浅色"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "Material Dark"
+msgstr "Material 深色"
+
+msgid "Material Light"
+msgstr "Material 浅色"
+
+msgid "Darcula"
+msgstr "Darcula"
+
+msgid "Nord"
+msgstr "Nord"
+
+msgid "Solarized"
+msgstr "Solarized"
+
+msgid "Solarized Dark"
+msgstr "Solarized 深色"
+
+msgid "Solarized Light"
+msgstr "Solarized 浅色"
+
+msgid "Accessibility"
+msgstr "无障碍"
+
+msgid "High Contrast"
+msgstr "高对比度"
+
+msgid "Community"
+msgstr "社区"
+
+msgid "Catppuccin Mocha"
+msgstr "Catppuccin Mocha"
+
+msgid "Catppuccin Latte"
+msgstr "Catppuccin Latte"
+
+msgid "Tokyo Night"
+msgstr "Tokyo Night"
+
+msgid "Gruvbox Dark"
+msgstr "Gruvbox Dark"
+
+msgid "GitHub Light"
+msgstr "GitHub Light"
+
+msgid "Neon"
+msgstr "霓虹"
+
+msgid "Cyberpunk"
+msgstr "赛博朋克"
+
+msgid "Synthwave '84"
+msgstr "Synthwave '84"
+
+msgid "Artistic"
+msgstr "艺术"
+
+msgid "Sunset Boulevard"
+msgstr "Sunset Boulevard"
+
+msgid "Ocean Breeze"
+msgstr "Ocean Breeze"
+
+msgid "Crimson Canvas"
+msgstr "Crimson Canvas"
+
+msgid "Forest Whisper"
+msgstr "Forest Whisper"
+
+msgid "Midnight Rose"
+msgstr "Midnight Rose"
+
+msgid "Seasonal"
+msgstr "季节性"
+
+msgid "Halloween"
+msgstr "万圣节"
+
+msgid "Reverse Halloween"
+msgstr "反向万圣节"
+
+msgid "Default color theme for gallery display. Users can override this if allowed below."
+msgstr "图库显示的默认颜色主题。如果下方允许，用户可以覆盖此项。"
+
+msgid "Allow visitors to switch themes via the gallery UI."
+msgstr "允许访客通过图库界面切换主题。"
+
+msgid "When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors."
+msgstr "禁用后，图库将始终使用上方选择的主题，并向访客隐藏主题选择器。"
+
+msgid "Keep React DevTools names and emit DOM component markers in deployed builds."
+msgstr "在已部署的构建中保留 React DevTools 名称并发出 DOM 组件标记。"
+
+msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "在生产构建中为 React DevTools 添加明确的组件名称，并注入 data-wpsg-component/data-wpsg-slot 属性，用于浏览器元素检查、QA 选择器和 UI 表面调试。"
+
+msgid "Enable smooth animations and transitions."
+msgstr "启用流畅的动画和过渡。"
+
+msgid "Disable for better performance on low-end devices."
+msgstr "在低端设备上禁用以获得更好的性能。"
+
+msgid "Disabled"
+msgstr "已禁用"
+
+msgid "10 seconds"
+msgstr "10 秒"
+
+msgid "30 seconds"
+msgstr "30 秒"
+
+msgid "1 minute"
+msgstr "1 分钟"
+
+msgid "5 minutes"
+msgstr "5 分钟"
+
+msgid "15 minutes"
+msgstr "15 分钟"
+
+msgid "20 minutes"
+msgstr "20 分钟"
+
+msgid "30 minutes"
+msgstr "30 分钟"
+
+msgid "45 minutes"
+msgstr "45 分钟"
+
+msgid "1 hour"
+msgstr "1 小时"
+
+msgid "2 hours"
+msgstr "2 小时"
+
+msgid "4 hours"
+msgstr "4 小时"
+
+msgid "8 hours"
+msgstr "8 小时"
+
+msgid "12 hours"
+msgstr "12 小时"
+
+msgid "1 day"
+msgstr "1 天"
+
+msgid "3 days"
+msgstr "3 天"
+
+msgid "1 week"
+msgstr "1 周"
+
+msgid "How long to cache API responses. Higher values improve performance but show stale data."
+msgstr "缓存 API 响应的时长。较高的值可提高性能，但会显示过时的数据。"
+
+msgid "Super Gallery Settings"
+msgstr "Super Gallery 设置"
+
+msgid "Testing..."
+msgstr "正在测试…"
+
+msgid "Connection failed"
+msgstr "连接失败"
+
+msgid "Request failed"
+msgstr "请求失败"
+
+msgid "Authentication test was rejected. Refresh the page and try again."
+msgstr "身份验证测试被拒绝。请刷新页面并重试。"
+
+msgid "Unexpected server response while testing authentication."
+msgstr "测试身份验证时服务器响应异常。"
+
+msgid "Authentication"
+msgstr "身份验证"
+
+msgid "Auth Provider"
+msgstr "认证提供程序"
+
+msgid "API Base URL"
+msgstr "API 基础 URL"
+
+msgid "Display Settings"
+msgstr "显示设置"
+
+msgid "Allow User Theme Override"
+msgstr "允许用户覆盖主题"
+
+msgid "Component Debug Names & Markers"
+msgstr "组件调试名称和标记"
+
+msgid "Drag Margin (px)"
+msgstr "拖动边距 (px)"
+
+msgid "Performance"
+msgstr "性能"
+
+msgid "Cache Duration"
+msgstr "缓存时长"
+
+msgid "Save Settings"
+msgstr "保存设置"
+
+msgid "Shortcode Usage"
+msgstr "短代码用法"
+
+msgid "Embed a gallery using the following shortcode:"
+msgstr "使用以下短代码嵌入图库："
+
+msgid "Shortcode Attributes"
+msgstr "短代码属性"
+
+msgid "Attribute"
+msgstr "属性"
+
+msgid "Campaign slug or ID to display"
+msgstr "要显示的活动别名或 ID"
+
+msgid "Filter by company slug"
+msgstr "按公司别名筛选"
+
+msgid "Use compact display mode"
+msgstr "使用紧凑显示模式"
+
+msgid "Permission denied."
+msgstr "权限被拒绝。"
+
+msgid "Connection failed: %s"
+msgstr "连接失败：%s"
+
+msgid "API connection successful!"
+msgstr "API 连接成功！"
+
+msgid "API reachable. Authentication required for protected endpoints."
+msgstr "API 可访问。受保护的端点需要身份验证。"
+
+msgid "Unexpected response: HTTP %d"
+msgstr "响应异常：HTTP %d"
+
+msgid "Gallery Editor"
+msgstr "图库编辑者"
