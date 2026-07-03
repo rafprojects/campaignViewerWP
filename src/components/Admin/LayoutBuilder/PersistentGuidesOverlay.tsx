@@ -1,4 +1,5 @@
 import { type RefObject } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PersistentGuide } from '@/types';
 
 export interface PersistentGuidesOverlayProps {
@@ -31,6 +32,7 @@ export function PersistentGuidesOverlay({
   onToggleGuideLock,
   onSelectGuide,
 }: PersistentGuidesOverlayProps) {
+  const { t } = useTranslation('wpsg');
   function startGuideDrag(e: React.MouseEvent, guide: PersistentGuide) {
     e.stopPropagation();
 
@@ -159,7 +161,7 @@ export function PersistentGuidesOverlay({
                 {/* Lock / unlock icon — click to toggle */}
                 <g
                   role="button"
-                  aria-label="Toggle guide lock"
+                  aria-label={t('lb_guides_toggle_lock', 'Toggle guide lock')}
                   transform={`translate(${iconX}, ${iconY})`}
                   style={{ pointerEvents: 'all', cursor: 'pointer' }}
                   onClick={(e) => {
@@ -205,7 +207,7 @@ export function PersistentGuidesOverlay({
                 {/* Delete icon — the discoverable way to remove a guide, once selected. */}
                 <g
                   role="button"
-                  aria-label="Delete guide"
+                  aria-label={t('lb_guides_delete', 'Delete guide')}
                   transform={`translate(${deleteIconX}, ${deleteIconY})`}
                   style={{ pointerEvents: 'all', cursor: 'pointer' }}
                   onClick={(e) => {
@@ -213,7 +215,7 @@ export function PersistentGuidesOverlay({
                     onRemoveGuide(guide.id);
                   }}
                 >
-                  <title>Delete guide</title>
+                  <title>{t('lb_guides_delete', 'Delete guide')}</title>
                   {/* Background pill for readability */}
                   <rect
                     x={-2}

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Group, Tooltip, ActionIcon, Divider, TextInput } from '@mantine/core';
 import { IconSearch, IconX } from '@tabler/icons-react';
 import {
@@ -24,6 +25,7 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
+  const { t: tr } = useTranslation('wpsg');
   const [filterQuery, setFilterQuery] = useState('');
 
   const {
@@ -104,9 +106,9 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
 
   const applyAlignment = useCallback(
     (updates: Record<string, Partial<import('@/types').LayoutSlot>>) => {
-      builder.updateSlots(updates, 'Align slots');
+      builder.updateSlots(updates, tr('lb_layers_align_slots', 'Align slots'));
     },
-    [builder],
+    [builder, tr],
   );
 
   // Group-aware alignment: groups where ALL members are selected move as a unit.
@@ -168,9 +170,9 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         }
       }
 
-      builder.updateSlots(finalUpdates, 'Align slots');
+      builder.updateSlots(finalUpdates, tr('lb_layers_align_slots', 'Align slots'));
     },
-    [builder, selectedSlots, applyAlignment],
+    [builder, selectedSlots, applyAlignment, tr],
   );
 
   /** Add an empty mask sublayer to an arbitrary slot by ID — used from the layer row context menu. */
@@ -208,17 +210,17 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             flexShrink: 0,
           }}
         >
-          <Tooltip label="Add slot">
+          <Tooltip label={tr('lb_layers_add_slot', 'Add slot')}>
             <ActionIcon
               size="sm"
               variant="light"
               onClick={() => builder.addSlot()}
-              aria-label="Add slot"
+              aria-label={tr('lb_layers_add_slot', 'Add slot')}
             >
               <IconPlus size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Add text">
+          <Tooltip label={tr('lb_layers_add_text', 'Add text')}>
             <ActionIcon
               size="sm"
               variant="light"
@@ -231,41 +233,41 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
                 builder.clearSelection();
                 setSelectedTextId(id);
               }}
-              aria-label="Add text"
+              aria-label={tr('lb_layers_add_text', 'Add text')}
             >
               <IconLetterT size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Add mask to selected slot">
+          <Tooltip label={tr('lb_layers_add_mask', 'Add mask to selected slot')}>
             <ActionIcon
               size="sm"
               variant="light"
               onClick={handleAddMask}
               disabled={!canAddMask}
-              aria-label="Add mask to selected slot"
+              aria-label={tr('lb_layers_add_mask', 'Add mask to selected slot')}
             >
               <IconMask size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Delete selected">
+          <Tooltip label={tr('lb_layers_delete_sel', 'Delete selected')}>
             <ActionIcon
               size="sm"
               variant="light"
               color="red"
               onClick={handleDeleteSelected}
               disabled={builder.selectedSlotIds.size === 0}
-              aria-label="Delete selected slots"
+              aria-label={tr('lb_layers_delete_sel_aria', 'Delete selected slots')}
             >
               <IconTrash size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Duplicate selected">
+          <Tooltip label={tr('lb_layers_dup_sel', 'Duplicate selected')}>
             <ActionIcon
               size="sm"
               variant="light"
               onClick={handleDuplicateSelected}
               disabled={builder.selectedSlotIds.size === 0}
-              aria-label="Duplicate selected slots"
+              aria-label={tr('lb_layers_dup_sel_aria', 'Duplicate selected slots')}
             >
               <IconCopy size={14} />
             </ActionIcon>
@@ -284,54 +286,54 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             flexShrink: 0,
           }}
         >
-          <Tooltip label="Align left edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsLeft)} aria-label="Align left edges">
+          <Tooltip label={tr('lb_layers_align_left', 'Align left edges')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsLeft)} aria-label={tr('lb_layers_align_left', 'Align left edges')}>
               <IconAlignBoxLeftMiddle size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Center horizontally">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsHorizontally)} aria-label="Center horizontally">
+          <Tooltip label={tr('lb_layers_center_h', 'Center horizontally')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsHorizontally)} aria-label={tr('lb_layers_center_h', 'Center horizontally')}>
               <IconAlignBoxCenterMiddle size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Align right edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsRight)} aria-label="Align right edges">
+          <Tooltip label={tr('lb_layers_align_right', 'Align right edges')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsRight)} aria-label={tr('lb_layers_align_right', 'Align right edges')}>
               <IconAlignBoxRightMiddle size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute by center (horizontal)">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontally)} aria-label="Distribute horizontally by center">
+          <Tooltip label={tr('lb_layers_dist_hc_tt', 'Distribute by center (horizontal)')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontally)} aria-label={tr('lb_layers_dist_hc_aria', 'Distribute horizontally by center')}>
               <IconLayoutDistributeHorizontal size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute by gap (horizontal)">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontallyByGap)} aria-label="Distribute horizontally by gap">
+          <Tooltip label={tr('lb_layers_dist_hg_tt', 'Distribute by gap (horizontal)')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsHorizontallyByGap)} aria-label={tr('lb_layers_dist_hg_aria', 'Distribute horizontally by gap')}>
               <IconLayoutDistributeHorizontalFilled size={13} />
             </ActionIcon>
           </Tooltip>
           <Divider orientation="vertical" />
-          <Tooltip label="Align top edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsTop)} aria-label="Align top edges">
+          <Tooltip label={tr('lb_layers_align_top', 'Align top edges')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsTop)} aria-label={tr('lb_layers_align_top', 'Align top edges')}>
               <IconAlignBoxTopCenter size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Center vertically">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsVertically)} aria-label="Center vertically">
+          <Tooltip label={tr('lb_layers_center_v', 'Center vertically')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(centerSlotsVertically)} aria-label={tr('lb_layers_center_v', 'Center vertically')}>
               <IconAlignBoxCenterTop size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Align bottom edges">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsBottom)} aria-label="Align bottom edges">
+          <Tooltip label={tr('lb_layers_align_bottom', 'Align bottom edges')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(alignSlotsBottom)} aria-label={tr('lb_layers_align_bottom', 'Align bottom edges')}>
               <IconAlignBoxBottomCenter size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute by center (vertical)">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVertically)} aria-label="Distribute vertically by center">
+          <Tooltip label={tr('lb_layers_dist_vc_tt', 'Distribute by center (vertical)')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVertically)} aria-label={tr('lb_layers_dist_vc_aria', 'Distribute vertically by center')}>
               <IconLayoutDistributeVertical size={13} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Distribute by gap (vertical)">
-            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVerticallyByGap)} aria-label="Distribute vertically by gap">
+          <Tooltip label={tr('lb_layers_dist_vg_tt', 'Distribute by gap (vertical)')}>
+            <ActionIcon size="xs" variant="subtle" onClick={() => applyAlignmentGroupAware(distributeSlotsVerticallyByGap)} aria-label={tr('lb_layers_dist_vg_aria', 'Distribute vertically by gap')}>
               <IconLayoutDistributeVerticalFilled size={13} />
             </ActionIcon>
           </Tooltip>
@@ -342,14 +344,14 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
       <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--wpsg-builder-border)', flexShrink: 0 }}>
         <TextInput
           size="xs"
-          placeholder="Filter layers…"
+          placeholder={tr('lb_layers_filter_ph', 'Filter layers…')}
           value={filterQuery}
           onChange={(e) => setFilterQuery(e.currentTarget.value)}
           leftSection={<IconSearch size={12} />}
           rightSection={
             filterQuery
               ? (
-                <ActionIcon size="xs" variant="transparent" onClick={() => setFilterQuery('')} aria-label="Clear filter">
+                <ActionIcon size="xs" variant="transparent" onClick={() => setFilterQuery('')} aria-label={tr('lb_layers_clear_filter', 'Clear filter')}>
                   <IconX size={12} />
                 </ActionIcon>
               )

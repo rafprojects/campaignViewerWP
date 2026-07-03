@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T03:02:33+00:00\n"
+"POT-Creation-Date: 2026-07-03T03:12:28+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -1360,14 +1360,17 @@ msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:317
+#: includes/i18n/class-wpsg-frontend-strings.php:2151
 msgid "Desktop"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:318
+#: includes/i18n/class-wpsg-frontend-strings.php:2153
 msgid "Tablet"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:319
+#: includes/i18n/class-wpsg-frontend-strings.php:2154
 msgid "Mobile"
 msgstr ""
 
@@ -1971,6 +1974,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:484
 #: includes/i18n/class-wpsg-frontend-strings.php:1146
+#: includes/i18n/class-wpsg-frontend-strings.php:2173
 #: includes/settings/class-wpsg-settings-core-fields.php:315
 msgid "Grid"
 msgstr ""
@@ -3806,6 +3810,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1781
 #: includes/i18n/class-wpsg-frontend-strings.php:1837
 #: includes/i18n/class-wpsg-frontend-strings.php:1982
+#: includes/i18n/class-wpsg-frontend-strings.php:2155
 msgid "Custom"
 msgstr ""
 
@@ -7428,18 +7433,22 @@ msgid "Typography"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2079
+#: includes/i18n/class-wpsg-frontend-strings.php:2235
 msgid "Send to Back"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2080
+#: includes/i18n/class-wpsg-frontend-strings.php:2234
 msgid "Send Backward"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2081
+#: includes/i18n/class-wpsg-frontend-strings.php:2233
 msgid "Bring Forward"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2082
+#: includes/i18n/class-wpsg-frontend-strings.php:2232
 msgid "Bring to Front"
 msgstr ""
 
@@ -7650,6 +7659,354 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2149
 msgid "Recent actions"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2150
+msgid "Full"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2152
+msgid "Laptop"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2156
+msgid "New slot added at cursor position"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2157
+msgid "Graphic layer added to canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2158
+msgid "New slot created with assigned media"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2159
+msgid "Fit to viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2160
+msgid "Fit to canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2161
+msgid "{{bp}} viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2162
+msgid "canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2163
+msgid "Fit {{count}} slot into the {{where}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2164
+msgid "Fit {{count}} slots into the {{where}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2165
+msgid "Slots already fit the {{where}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2166
+msgid "Max width:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2167
+msgid "Canvas max width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2168
+msgid "Fit to container"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2169
+msgid "Snap:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2170
+msgid "Snap mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2171
+msgid "Sensitivity:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2172
+msgid "Snap sensitivity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2174
+msgid "Toggle grid overlay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2175
+msgid "Grid cell size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2176
+msgid "Rulers"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2177
+msgid "Toggle canvas rulers"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2178
+msgid "Measure"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2179
+msgid "Toggle measurement overlay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2180
+msgid "Guides:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2181
+msgid "Add vertical guide"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2182
+msgid "Add horizontal guide"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2183
+msgid "Breakpoint:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2184
+msgid "Breakpoint edit mode"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2185
+msgid "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2186
+msgid "Move/scale the selected slots (or all slots) back inside the canvas bounds"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2187
+msgid "Fit slots to viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2188
+msgid "Fit slots to canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2189
+msgid "Indices"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2190
+msgid "Toggle slot index badges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2191
+msgid "Switch to select tool"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2192
+msgid "Hand tool — pan canvas (H)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2193
+msgid "Hand tool"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2194
+msgid "Fit canvas to viewport (F)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2195
+msgid "Fit canvas to viewport"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2196
+msgid "Reset zoom to 100%"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2197
+msgid "Zoom {{pct}}%, click to reset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2198
+msgid "Preview:"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2199
+msgid "Device preview preset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2200
+msgid "Custom preview width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2201
+msgid "Device frame"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2202
+msgid "Toggle device frame chrome"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2203
+msgid "Align slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2204
+msgid "Add slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2205
+msgid "Add text"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2206
+msgid "Add mask to selected slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2207
+msgid "Delete selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2208
+msgid "Delete selected slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2209
+msgid "Duplicate selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2210
+msgid "Duplicate selected slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2211
+msgid "Align left edges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2212
+msgid "Center horizontally"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2213
+msgid "Align right edges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2214
+msgid "Distribute by center (horizontal)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2215
+msgid "Distribute horizontally by center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2216
+msgid "Distribute by gap (horizontal)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2217
+msgid "Distribute horizontally by gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2218
+msgid "Align top edges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2219
+msgid "Center vertically"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2220
+msgid "Align bottom edges"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2221
+msgid "Distribute by center (vertical)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2222
+msgid "Distribute vertically by center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2223
+msgid "Distribute by gap (vertical)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2224
+msgid "Distribute vertically by gap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2225
+msgid "Filter layers…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2226
+msgid "Clear filter"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2227
+msgid "Hide layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2228
+msgid "Show layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2229
+msgid "Unlock layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2230
+msgid "Lock layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2231
+msgid "Layer options"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2236
+msgid "Add Mask"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2237
+msgid "Delete layer"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2238
+msgid "Expand group"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2239
+msgid "Collapse group"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2240
+msgid "Group"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2241
+msgid "Ungroup"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2242
+msgid "Layout canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2243
+msgid "Drag to reposition mask"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2244
+msgid "Toggle guide lock"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2245
+msgid "Delete guide"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

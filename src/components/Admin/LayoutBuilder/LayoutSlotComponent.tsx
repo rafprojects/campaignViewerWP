@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Rnd } from 'react-rnd';
 import { Text } from '@mantine/core';
 import { IconLock } from '@tabler/icons-react';
@@ -25,6 +26,7 @@ interface MaskDragOverlayProps {
  * and allows dragging to adjust mask position (maskLayer.x / y).
  */
 function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }: MaskDragOverlayProps) {
+  const { t } = useTranslation('wpsg');
   const ref = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
   const liveRef = useRef<{ x: number; y: number } | null>(null);
@@ -182,7 +184,7 @@ function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }
         pointerEvents: 'auto',
         boxSizing: 'border-box',
       }}
-      title="Drag to reposition mask"
+      title={t('lb_slotc_drag_mask', 'Drag to reposition mask')}
     >
       {/* Corner resize handles */}
       <div onMouseDown={(e) => handleResizeMouseDown(e, 'top-left')} style={{ ...handleStyle, top: -4, left: -4, cursor: 'nwse-resize' }} />

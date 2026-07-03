@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent, type DragEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Group,
   Text,
@@ -97,6 +98,7 @@ export function LayerRow({
   const locked = (item.kind !== 'background' && item.kind !== 'mask') ? (item.locked ?? false) : false;
   const displayName = getLayerName(item, template);
 
+  const { t } = useTranslation('wpsg');
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -219,12 +221,12 @@ export function LayerRow({
 
       {/* Visibility toggle */}
       {!isBackground && (
-        <Tooltip label={visible ? 'Hide layer' : 'Show layer'} withArrow openDelay={400}>
+        <Tooltip label={visible ? t('lb_row_hide', 'Hide layer') : t('lb_row_show', 'Show layer')} withArrow openDelay={400}>
           <ActionIcon
             size="xs"
             variant="subtle"
             color={visible ? 'gray' : 'blue'}
-            aria-label={visible ? 'Hide layer' : 'Show layer'}
+            aria-label={visible ? t('lb_row_hide', 'Hide layer') : t('lb_row_show', 'Show layer')}
             onClick={(e) => { e.stopPropagation(); onToggleVisible(item.id); }}
           >
             {visible ? <IconEye size={12} /> : <IconEyeOff size={12} />}
@@ -234,12 +236,12 @@ export function LayerRow({
 
       {/* Lock toggle */}
       {!isNonInteractive && (
-        <Tooltip label={locked ? 'Unlock layer' : 'Lock layer'} withArrow openDelay={400}>
+        <Tooltip label={locked ? t('lb_row_unlock', 'Unlock layer') : t('lb_row_lock', 'Lock layer')} withArrow openDelay={400}>
           <ActionIcon
             size="xs"
             variant="subtle"
             color={locked ? 'orange' : 'gray'}
-            aria-label={locked ? 'Unlock layer' : 'Lock layer'}
+            aria-label={locked ? t('lb_row_unlock', 'Unlock layer') : t('lb_row_lock', 'Lock layer')}
             onClick={(e) => { e.stopPropagation(); onToggleLocked(item.id); }}
           >
             {locked ? <IconLock size={12} /> : <IconLockOpen size={12} />}
@@ -255,7 +257,7 @@ export function LayerRow({
               size="xs"
               variant="subtle"
               color="gray"
-              aria-label="Layer options"
+              aria-label={t('lb_row_options', 'Layer options')}
               onClick={(e) => e.stopPropagation()}
             >
               <IconDots size={12} />
@@ -266,25 +268,25 @@ export function LayerRow({
               leftSection={<IconLayoutAlignTop size={12} />}
               onClick={() => onBringToFront(item.id)}
             >
-              Bring to Front
+              {t('lb_row_bring_front', 'Bring to Front')}
             </Menu.Item>
             <Menu.Item
               leftSection={<IconArrowUp size={12} />}
               onClick={() => onBringForward(item.id)}
             >
-              Bring Forward
+              {t('lb_row_bring_fwd', 'Bring Forward')}
             </Menu.Item>
             <Menu.Item
               leftSection={<IconArrowDown size={12} />}
               onClick={() => onSendBackward(item.id)}
             >
-              Send Backward
+              {t('lb_row_send_bwd', 'Send Backward')}
             </Menu.Item>
             <Menu.Item
               leftSection={<IconLayoutAlignBottom size={12} />}
               onClick={() => onSendToBack(item.id)}
             >
-              Send to Back
+              {t('lb_row_send_back', 'Send to Back')}
             </Menu.Item>
             {item.kind === 'slot' && onAddMask && (() => {
               const slot = template.slots.find((s) => s.id === item.id);
@@ -296,7 +298,7 @@ export function LayerRow({
                     leftSection={<IconMask size={12} />}
                     onClick={() => onAddMask(item.id)}
                   >
-                    Add Mask
+                    {t('lb_row_add_mask', 'Add Mask')}
                   </Menu.Item>
                 </>
               ) : null;
@@ -307,14 +309,14 @@ export function LayerRow({
 
       {/* ── Delete button — separated from other controls to prevent accidental clicks ── */}
       {!isBackground && onDelete && (
-        <Tooltip label="Delete layer" withArrow openDelay={400}>
+        <Tooltip label={t('lb_row_delete', 'Delete layer')} withArrow openDelay={400}>
           <ActionIcon
             size="xs"
             variant="subtle"
             color="red"
             style={{ marginLeft: 4 }}
             onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-            aria-label="Delete layer"
+            aria-label={t('lb_row_delete', 'Delete layer')}
           >
             <IconTrash size={11} />
           </ActionIcon>

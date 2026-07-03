@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stack, Text, ScrollArea, ActionIcon, Tooltip } from '@mantine/core';
 import { IconChevronDown, IconChevronRight, IconLayersLinked, IconLayersOff } from '@tabler/icons-react';
 import { buildLayerList, getLayerName, type GroupLayerItem } from '@/utils/layerList';
@@ -112,6 +113,7 @@ export function LayerPanel({
   onReparentGroup,
   filterText,
 }: LayerPanelProps) {
+  const { t } = useTranslation('wpsg');
   const layers = buildLayerList(template);
 
   // ── Filter layers ─────────────────────────────────────────
@@ -357,18 +359,18 @@ export function LayerPanel({
                       });
                       onToggleGroupCollapsed?.(groupItem.id, !isCollapsed);
                     }}
-                    aria-label={isCollapsed ? 'Expand group' : 'Collapse group'}
+                    aria-label={isCollapsed ? t('lb_lp_expand_group', 'Expand group') : t('lb_lp_collapse_group', 'Collapse group')}
                   >
                     {isCollapsed ? <IconChevronRight size={12} /> : <IconChevronDown size={12} />}
                   </ActionIcon>
                   <IconLayersLinked size={13} style={{ flexShrink: 0, color: 'var(--mantine-color-blue-5)' }} />
                   <Text size="xs" fw={500} style={{ flex: 1 }} truncate>
-                    {groupItem.name || 'Group'}
+                    {groupItem.name || t('lb_lp_group', 'Group')}
                   </Text>
                   {/* P30-G: show total descendant count (not just direct members) */}
                   <Text size="xs" c="dimmed">{groupItem.totalDescendantCount}</Text>
                   {onDissolveGroup && (
-                    <Tooltip label="Ungroup">
+                    <Tooltip label={t('lb_lp_ungroup', 'Ungroup')}>
                       <ActionIcon
                         size="xs"
                         variant="transparent"
@@ -377,7 +379,7 @@ export function LayerPanel({
                           e.stopPropagation();
                           onDissolveGroup(groupItem.id);
                         }}
-                        aria-label="Ungroup"
+                        aria-label={t('lb_lp_ungroup', 'Ungroup')}
                       >
                         <IconLayersOff size={12} />
                       </ActionIcon>

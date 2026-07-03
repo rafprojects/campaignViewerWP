@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
@@ -174,6 +175,7 @@ export function LayoutCanvas({
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
+  const { t } = useTranslation('wpsg');
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
   const viewportHeight = useViewportHeight();
@@ -608,7 +610,7 @@ export function LayoutCanvas({
         onDragOver={handleCanvasDragOver}
         onDrop={handleCanvasDrop}
         role="application"
-        aria-label="Layout canvas"
+        aria-label={t('lb_canvas_layout_aria', 'Layout canvas')}
         style={{
           position: 'relative',
           width: canvasWidth,
