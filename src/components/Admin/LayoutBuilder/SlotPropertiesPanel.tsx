@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Stack,
   Text,
@@ -125,13 +126,14 @@ const FOCAL_PRESETS: Array<{ pos: string; label: string; dotX: string; dotY: str
 // ── Inline property row ──────────────────────────────────────
 
 function PropRow({ label, children, tooltip }: { label: string; children: React.ReactNode; tooltip?: string }) {
+  const { t } = useTranslation('wpsg');
   return (
     <Group gap={6} align="center" wrap="nowrap" style={{ minHeight: 28 }}>
       <Group gap={2} align="center" wrap="nowrap" style={{ width: 70, flexShrink: 0 }}>
         <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{label}</Text>
         {tooltip && (
           <Tooltip label={tooltip} multiline w={240} position="left" withArrow>
-            <ActionIcon size={14} variant="transparent" c="dimmed" aria-label={`${label} info`}>
+            <ActionIcon size={14} variant="transparent" c="dimmed" aria-label={t('lb_slot_prop_info', '{{label}} info', { label })}>
               <IconInfoCircle size={12} />
             </ActionIcon>
           </Tooltip>
@@ -168,40 +170,41 @@ setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SlotPropertiesPanel:Sectio
 type EffectSectionProps = Pick<SlotPropertiesPanelProps, 'slot' | 'onUpdate'>;
 
 function FilterEffectsSection({ slot, onUpdate }: EffectSectionProps) {
+  const { t } = useTranslation('wpsg');
   const fe: SlotFilterEffects = slot.filterEffects ?? {};
   const setFe = (patch: Partial<SlotFilterEffects>) =>
     onUpdate({ filterEffects: { ...fe, ...patch } });
   return (
     <Stack gap={4}>
-      <PropRow label="Bright">
+      <PropRow label={t('lb_slot_bright', 'Bright')}>
         <Slider value={fe.brightness ?? 100} onChange={(v) => setFe({ brightness: v })}
           min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
-      <PropRow label="Contrast">
+      <PropRow label={t('lb_slot_contrast', 'Contrast')}>
         <Slider value={fe.contrast ?? 100} onChange={(v) => setFe({ contrast: v })}
           min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
-      <PropRow label="Saturate">
+      <PropRow label={t('lb_slot_saturate', 'Saturate')}>
         <Slider value={fe.saturate ?? 100} onChange={(v) => setFe({ saturate: v })}
           min={0} max={200} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
-      <PropRow label="Blur">
+      <PropRow label={t('lb_slot_blur', 'Blur')}>
         <Slider value={fe.blur ?? 0} onChange={(v) => setFe({ blur: v })}
           min={0} max={20} step={0.5} size="xs" label={(v) => `${v}px`} />
       </PropRow>
-      <PropRow label="Gray">
+      <PropRow label={t('lb_slot_gray', 'Gray')}>
         <Slider value={fe.grayscale ?? 0} onChange={(v) => setFe({ grayscale: v })}
           min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
-      <PropRow label="Sepia">
+      <PropRow label={t('lb_slot_sepia', 'Sepia')}>
         <Slider value={fe.sepia ?? 0} onChange={(v) => setFe({ sepia: v })}
           min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
-      <PropRow label="Hue">
+      <PropRow label={t('lb_slot_hue', 'Hue')}>
         <Slider value={fe.hueRotate ?? 0} onChange={(v) => setFe({ hueRotate: v })}
           min={0} max={360} step={1} size="xs" label={(v) => `${v}°`} />
       </PropRow>
-      <PropRow label="Invert">
+      <PropRow label={t('lb_slot_invert', 'Invert')}>
         <Slider value={fe.invert ?? 0} onChange={(v) => setFe({ invert: v })}
           min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
       </PropRow>
@@ -210,16 +213,17 @@ function FilterEffectsSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
+  const { t } = useTranslation('wpsg');
   const sh: SlotShadow = slot.shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
   const hasShadow = Boolean(slot.shadow);
   const setSh = (patch: Partial<SlotShadow>) =>
     onUpdate({ shadow: { ...sh, ...patch } });
   return (
     <Stack gap={4}>
-      <PropRow label="Enable">
+      <PropRow label={t('lb_slot_enable', 'Enable')}>
         <SegmentedControl
           size="xs" fullWidth
-          data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
+          data={[{ label: t('lb_slot_off', 'Off'), value: 'off' }, { label: t('lb_slot_on', 'On'), value: 'on' }]}
           value={hasShadow ? 'on' : 'off'}
           onChange={(v) =>
             v === 'on' ? onUpdate({ shadow: sh }) : onUpdate({ shadow: undefined })
@@ -229,20 +233,20 @@ function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
       {hasShadow && (
         <>
           <Group grow gap={6}>
-            <PropRow label="Off X">
+            <PropRow label={t('lb_slot_offx', 'Off X')}>
               <NumberInput value={sh.offsetX} onChange={(v) => setSh({ offsetX: Number(v) || 0 })}
                 min={-50} max={50} size="xs" variant="filled" suffix=" px" />
             </PropRow>
-            <PropRow label="Off Y">
+            <PropRow label={t('lb_slot_offy', 'Off Y')}>
               <NumberInput value={sh.offsetY} onChange={(v) => setSh({ offsetY: Number(v) || 0 })}
                 min={-50} max={50} size="xs" variant="filled" suffix=" px" />
             </PropRow>
           </Group>
-          <PropRow label="Blur">
+          <PropRow label={t('lb_slot_blur', 'Blur')}>
             <Slider value={sh.blur} onChange={(v) => setSh({ blur: v })}
               min={0} max={50} step={1} size="xs" label={(v) => `${v}px`} />
           </PropRow>
-          <PropRow label="Color">
+          <PropRow label={t('lb_slot_color', 'Color')}>
             <ColorInput value={sh.color} onChange={(v) => setSh({ color: v })}
               size="xs" format="rgba" variant="filled" />
           </PropRow>
@@ -253,18 +257,19 @@ function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
+  const { t } = useTranslation('wpsg');
   const ov: SlotOverlayEffect = slot.overlayEffect ?? { mode: 'none', intensity: 30, onHoverOnly: false };
   const setOv = (patch: Partial<SlotOverlayEffect>) =>
     onUpdate({ overlayEffect: { ...ov, ...patch } });
   return (
     <Stack gap={4}>
-      <PropRow label="Mode">
+      <PropRow label={t('lb_slot_mode', 'Mode')}>
         <SegmentedControl
           size="xs" fullWidth
           data={[
-            { label: 'None', value: 'none' },
-            { label: 'Darken', value: 'darken' },
-            { label: 'Lighten', value: 'lighten' },
+            { label: t('lb_slot_none', 'None'), value: 'none' },
+            { label: t('lb_slot_darken', 'Darken'), value: 'darken' },
+            { label: t('lb_slot_lighten', 'Lighten'), value: 'lighten' },
           ]}
           value={ov.mode}
           onChange={(v) => setOv({ mode: v as SlotOverlayEffect['mode'] })}
@@ -272,14 +277,14 @@ function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
       </PropRow>
       {ov.mode !== 'none' && (
         <>
-          <PropRow label="Intensity">
+          <PropRow label={t('lb_slot_intensity', 'Intensity')}>
             <Slider value={ov.intensity} onChange={(v) => setOv({ intensity: v })}
               min={0} max={100} step={1} size="xs" label={(v) => `${v}%`} />
           </PropRow>
-          <PropRow label="Hover only">
+          <PropRow label={t('lb_slot_hover_only', 'Hover only')}>
             <SegmentedControl
               size="xs" fullWidth
-              data={[{ label: 'Always', value: 'always' }, { label: 'Hover', value: 'hover' }]}
+              data={[{ label: t('lb_slot_always', 'Always'), value: 'always' }, { label: t('lb_slot_hover_opt', 'Hover'), value: 'hover' }]}
               value={ov.onHoverOnly ? 'hover' : 'always'}
               onChange={(v) => setOv({ onHoverOnly: v === 'hover' })}
             />
@@ -291,30 +296,31 @@ function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
+  const { t } = useTranslation('wpsg');
   const tilt: SlotTiltEffect = slot.tilt ?? { enabled: false, maxAngle: 15, perspective: 1000, resetSpeed: 300 };
   const setTilt = (patch: Partial<SlotTiltEffect>) =>
     onUpdate({ tilt: { ...tilt, ...patch } });
   return (
     <Stack gap={4}>
-      <PropRow label="Enable">
+      <PropRow label={t('lb_slot_enable', 'Enable')}>
         <SegmentedControl
           size="xs" fullWidth
-          data={[{ label: 'Off', value: 'off' }, { label: 'On', value: 'on' }]}
+          data={[{ label: t('lb_slot_off', 'Off'), value: 'off' }, { label: t('lb_slot_on', 'On'), value: 'on' }]}
           value={tilt.enabled ? 'on' : 'off'}
           onChange={(v) => setTilt({ enabled: v === 'on' })}
         />
       </PropRow>
       {tilt.enabled && (
         <>
-          <PropRow label="Max °">
+          <PropRow label={t('lb_slot_max_angle', 'Max °')}>
             <Slider value={tilt.maxAngle} onChange={(v) => setTilt({ maxAngle: v })}
               min={1} max={45} step={1} size="xs" label={(v) => `${v}°`} />
           </PropRow>
-          <PropRow label="Persp.">
+          <PropRow label={t('lb_slot_persp', 'Persp.')}>
             <NumberInput value={tilt.perspective} onChange={(v) => setTilt({ perspective: Number(v) || 1000 })}
               min={200} max={5000} step={50} size="xs" variant="filled" suffix=" px" />
           </PropRow>
-          <PropRow label="Reset">
+          <PropRow label={t('lb_slot_reset', 'Reset')}>
             <NumberInput value={tilt.resetSpeed} onChange={(v) => setTilt({ resetSpeed: Number(v) || 300 })}
               min={50} max={2000} step={50} size="xs" variant="filled" suffix=" ms" />
           </PropRow>
@@ -325,6 +331,7 @@ function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
+  const { t } = useTranslation('wpsg');
   // P58-E: scroll-reveal entrance animation, previewed in-panel (the live builder
   // canvas uses LayoutSlotComponent; entrance only runs in the rendered gallery).
   const anim = slot.entranceAnimation;
@@ -346,13 +353,13 @@ function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
 
   return (
     <Stack gap={4}>
-      <PropRow label="Type">
+      <PropRow label={t('lb_slot_type', 'Type')}>
         <Select
           data={[
-            { value: 'none', label: 'None' },
-            { value: 'fade', label: 'Fade' },
-            { value: 'slide', label: 'Slide' },
-            { value: 'zoom', label: 'Zoom' },
+            { value: 'none', label: t('lb_slot_ent_none', 'None') },
+            { value: 'fade', label: t('lb_slot_ent_fade', 'Fade') },
+            { value: 'slide', label: t('lb_slot_ent_slide', 'Slide') },
+            { value: 'zoom', label: t('lb_slot_ent_zoom', 'Zoom') },
           ]}
           value={anim?.type ?? 'none'}
           onChange={(val) => {
@@ -360,42 +367,42 @@ function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
             onUpdate({ entranceAnimation: { ...(anim ?? {}), type: val as SlotEntranceType } });
           }}
           size="xs" variant="filled"
-          aria-label="Entrance animation type"
+          aria-label={t('lb_slot_ent_type_aria', 'Entrance animation type')}
         />
       </PropRow>
 
       {anim && (
         <>
           {anim.type === 'slide' && (
-            <PropRow label="Direction">
+            <PropRow label={t('lb_slot_direction', 'Direction')}>
               <Select
                 data={[
-                  { value: 'up', label: 'Up' },
-                  { value: 'down', label: 'Down' },
-                  { value: 'left', label: 'Left' },
-                  { value: 'right', label: 'Right' },
+                  { value: 'up', label: t('lb_slot_dir_up', 'Up') },
+                  { value: 'down', label: t('lb_slot_dir_down', 'Down') },
+                  { value: 'left', label: t('lb_slot_dir_left', 'Left') },
+                  { value: 'right', label: t('lb_slot_dir_right', 'Right') },
                 ]}
                 value={anim.direction ?? 'up'}
                 onChange={(val) => val && setAnim({ direction: val as SlotEntranceDirection })}
                 size="xs" variant="filled"
-                aria-label="Slide direction"
+                aria-label={t('lb_slot_slide_dir_aria', 'Slide direction')}
               />
             </PropRow>
           )}
-          <PropRow label="Duration">
+          <PropRow label={t('lb_slot_duration', 'Duration')}>
             <NumberInput
               value={anim.durationMs ?? 600}
               onChange={(v) => setAnim({ durationMs: typeof v === 'number' ? v : 600 })}
               min={50} max={5000} step={50} size="xs" variant="filled" suffix=" ms"
-              aria-label="Entrance duration"
+              aria-label={t('lb_slot_ent_dur_aria', 'Entrance duration')}
             />
           </PropRow>
-          <PropRow label="Delay">
+          <PropRow label={t('lb_slot_delay', 'Delay')}>
             <NumberInput
               value={anim.delayMs ?? 0}
               onChange={(v) => setAnim({ delayMs: typeof v === 'number' ? v : 0 })}
               min={0} max={5000} step={50} size="xs" variant="filled" suffix=" ms"
-              aria-label="Entrance delay"
+              aria-label={t('lb_slot_ent_delay_aria', 'Entrance delay')}
             />
           </PropRow>
           <Group gap={8} align="center" mt={2}>
@@ -419,7 +426,7 @@ function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
               leftSection={<IconPlayerPlay size={12} />}
               onClick={() => setPlayNonce((n) => n + 1)}
             >
-              Play preview
+              {t('lb_slot_play_preview', 'Play preview')}
             </Button>
           </Group>
         </>
@@ -440,6 +447,12 @@ export function SlotPropertiesPanel({
   onSendBackward,
   listingMode = false,
 }: SlotPropertiesPanelProps) {
+  const { t } = useTranslation('wpsg');
+  const shapeOptions = SHAPE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_shape_${o.value}`, o.label) }));
+  const fitOptions = FIT_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_fit_${o.value}`, o.label) }));
+  const clickOptions = CLICK_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_click_${o.value}`, o.label) }));
+  const hoverOptions = HOVER_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_hover_${o.value}`, o.label) }));
+  const blendOptions = BLEND_MODE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_blend_${o.value}`, o.label) }));
   const lockSizeRatio = slot.lockAspectRatio ?? false;
   const rotScrubRef = useRef<{ startX: number; startRot: number } | null>(null);
   const aspectRatio = useMemo(() => {
@@ -469,8 +482,7 @@ export function SlotPropertiesPanel({
         >
           <IconAlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
           <span>
-            Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper.
-            Image-specific controls are hidden.
+            {t('lb_slot_listing_note', 'Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden.')}
           </span>
         </Box>
       )}
@@ -488,30 +500,30 @@ export function SlotPropertiesPanel({
       {/* ── Layout ─────────────────────────────────────────── */}
       <Accordion.Item value="layout">
         <Accordion.Control>
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>Layout</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>{t('lb_slot_acc_layout', 'Layout')}</Text>
         </Accordion.Control>
         <Accordion.Panel>
           <Stack gap={4}>
-            <PropRow label="Name">
+            <PropRow label={t('lb_slot_name', 'Name')}>
               <TextInput
                 value={slot.name ?? ''}
                 onChange={(e) => onUpdate({ name: e.currentTarget.value || undefined })}
-                placeholder="Slot"
+                placeholder={t('lb_slot_name_ph', 'Slot')}
                 size="xs"
                 variant="filled"
               />
             </PropRow>
 
-            <SectionHeader label="Position" />
+            <SectionHeader label={t('lb_slot_sh_position', 'Position')} />
             <Group grow gap={6}>
-              <PropRow label="X %">
+              <PropRow label={t('lb_slot_x', 'X %')}>
                 <NumberInput
                   value={slot.x}
                   onChange={(val) => onUpdate({ x: Number(val) || 0 })}
                   min={0} max={100} step={0.5} size="xs" decimalScale={2} variant="filled"
                 />
               </PropRow>
-              <PropRow label="Y %">
+              <PropRow label={t('lb_slot_y', 'Y %')}>
                 <NumberInput
                   value={slot.y}
                   onChange={(val) => onUpdate({ y: Number(val) || 0 })}
@@ -520,7 +532,7 @@ export function SlotPropertiesPanel({
               </PropRow>
             </Group>
 
-            <SectionHeader label="Size" />
+            <SectionHeader label={t('lb_slot_sh_size', 'Size')} />
             <Group gap={4} align="center" wrap="nowrap">
               <Box style={{ flex: 1 }}>
                 <NumberInput
@@ -532,17 +544,17 @@ export function SlotPropertiesPanel({
                     onUpdate({ width, height });
                   }}
                   min={1} max={100} step={0.5} size="xs" decimalScale={2} variant="filled"
-                  aria-label="Width %"
+                  aria-label={t('lb_slot_width_aria', 'Width %')}
                   leftSection={<Text size="10px" c="dimmed">W</Text>}
                 />
               </Box>
-              <Tooltip label={lockSizeRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'} position="top">
+              <Tooltip label={lockSizeRatio ? t('lb_slot_unlock', 'Unlock aspect ratio') : t('lb_slot_lock', 'Lock aspect ratio')} position="top">
                 <ActionIcon
                   size="sm"
                   variant={lockSizeRatio ? 'filled' : 'subtle'}
                   color={lockSizeRatio ? 'blue' : 'gray'}
                   onClick={() => onUpdate({ lockAspectRatio: !lockSizeRatio })}
-                  aria-label={lockSizeRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
+                  aria-label={lockSizeRatio ? t('lb_slot_unlock', 'Unlock aspect ratio') : t('lb_slot_lock', 'Lock aspect ratio')}
                   style={{ flexShrink: 0 }}
                 >
                   {lockSizeRatio ? <IconLink size={14} /> : <IconUnlink size={14} />}
@@ -558,7 +570,7 @@ export function SlotPropertiesPanel({
                     onUpdate({ width, height });
                   }}
                   min={1} max={100} step={0.5} size="xs" decimalScale={2} variant="filled"
-                  aria-label="Height %"
+                  aria-label={t('lb_slot_height_aria', 'Height %')}
                   leftSection={<Text size="10px" c="dimmed">H</Text>}
                 />
               </Box>
@@ -589,7 +601,7 @@ export function SlotPropertiesPanel({
               onPointerUp={() => { rotScrubRef.current = null; }}
               onPointerCancel={() => { rotScrubRef.current = null; }}
             >
-              <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>Rotation</Text>
+              <Text size="xs" fw={700} tt="uppercase" c="dimmed" lts={0.8}>{t('lb_slot_rotation', 'Rotation')}</Text>
             </div>
             <Group gap={6} align="center" wrap="nowrap">
               <NumberInput
@@ -599,20 +611,20 @@ export function SlotPropertiesPanel({
                   onUpdate({ rotation: deg === 0 ? undefined : deg });
                 }}
                 min={0} max={359} step={1} size="xs" variant="filled"
-                aria-label="Rotation degrees"
+                aria-label={t('lb_slot_rot_aria', 'Rotation degrees')}
                 rightSection={<Text size="10px" c="dimmed">°</Text>}
                 style={{ flex: 1 }}
               />
               {(slot.rotation ?? 0) !== 0 && (
-                <Tooltip label="Reset rotation">
-                  <ActionIcon size="sm" variant="subtle" onClick={() => onUpdate({ rotation: undefined })} aria-label="Reset rotation">
+                <Tooltip label={t('lb_slot_reset_rot', 'Reset rotation')}>
+                  <ActionIcon size="sm" variant="subtle" onClick={() => onUpdate({ rotation: undefined })} aria-label={t('lb_slot_reset_rot', 'Reset rotation')}>
                     <IconRefresh size={14} />
                   </ActionIcon>
                 </Tooltip>
               )}
             </Group>
 
-            <SectionHeader label="Opacity" />
+            <SectionHeader label={t('lb_slot_sh_opacity', 'Opacity')} />
             <Slider
               value={slot.opacity ?? 1}
               onChange={(v) => onUpdate({ opacity: v >= 1 ? undefined : v })}
@@ -621,13 +633,13 @@ export function SlotPropertiesPanel({
               step={0.05}
               size="xs"
               label={(v) => `${Math.round(v * 100)}%`}
-              aria-label="Slot opacity"
+              aria-label={t('lb_slot_opacity_aria', 'Slot opacity')}
             />
 
-            <SectionHeader label="Shape" />
-            <PropRow label="Preset">
+            <SectionHeader label={t('lb_slot_sh_shape', 'Shape')} />
+            <PropRow label={t('lb_slot_preset', 'Preset')}>
               <Select
-                data={SHAPE_OPTIONS}
+                data={shapeOptions}
                 value={slot.shape}
                 onChange={(val) => val && onUpdate({ shape: val as LayoutSlotShape })}
                 size="xs"
@@ -635,11 +647,11 @@ export function SlotPropertiesPanel({
               />
             </PropRow>
             {slot.shape === 'custom' && (
-              <PropRow label="Clip-path">
+              <PropRow label={t('lb_slot_clippath', 'Clip-path')}>
                 <TextInput
                   value={slot.clipPath ?? ''}
                   onChange={(e) => onUpdate({ clipPath: e.currentTarget.value })}
-                  placeholder="polygon(50% 0%, 100% 50%, …)"
+                  placeholder={t('lb_slot_clippath_ph', 'polygon(50% 0%, 100% 50%, …)')}
                   size="xs"
                   variant="filled"
                 />
@@ -663,18 +675,18 @@ export function SlotPropertiesPanel({
           }}
         >
           <IconInfoCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-          <span>Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards.</span>
+          <span>{t('lb_slot_listing_image_note', 'Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards.')}</span>
         </Box>
       ) : (
       <Accordion.Item value="image">
         <Accordion.Control>
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>Image</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>{t('lb_slot_acc_image', 'Image')}</Text>
         </Accordion.Control>
         <Accordion.Panel>
           <Stack gap={4}>
-            <PropRow label="Fit">
+            <PropRow label={t('lb_slot_fit', 'Fit')}>
               <Select
-                data={FIT_OPTIONS}
+                data={fitOptions}
                 value={slot.objectFit}
                 onChange={(val) =>
                   val && onUpdate({ objectFit: val as LayoutSlot['objectFit'] })
@@ -684,9 +696,9 @@ export function SlotPropertiesPanel({
               />
             </PropRow>
 
-            <PropRow label="Focus">
+            <PropRow label={t('lb_slot_focus', 'Focus')}>
               <div
-                title="Click a position to set which part of the image stays in frame."
+                title={t('lb_slot_focus_title', 'Click a position to set which part of the image stays in frame.')}
                 style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)',
@@ -700,7 +712,7 @@ export function SlotPropertiesPanel({
                     <button
                       key={pos}
                       type="button"
-                      title={label}
+                      title={t(`lb_slot_focal_${pos.replace(/[^0-9]+/g, '_').replace(/^_|_$/g, '')}`, label)}
                       onClick={() => onUpdate({ objectPosition: pos })}
                       style={{
                         width: 24,
@@ -717,7 +729,7 @@ export function SlotPropertiesPanel({
                         position: 'relative',
                         overflow: 'hidden',
                       }}
-                      aria-label={label}
+                      aria-label={t(`lb_slot_focal_${pos.replace(/[^0-9]+/g, '_').replace(/^_|_$/g, '')}`, label)}
                       aria-pressed={isActive}
                     >
                       <span
@@ -740,19 +752,19 @@ export function SlotPropertiesPanel({
                 })}
               </div>
             </PropRow>
-            <PropRow label="Custom">
+            <PropRow label={t('lb_slot_custom', 'Custom')}>
               <TextInput
                 value={slot.objectPosition}
                 onChange={(e) => onUpdate({ objectPosition: e.currentTarget.value })}
-                placeholder="50% 50%"
+                placeholder={t('lb_slot_custom_ph', '50% 50%')}
                 size="xs"
                 variant="filled"
               />
             </PropRow>
 
-            <SectionHeader label="Border" />
+            <SectionHeader label={t('lb_slot_sh_border', 'Border')} />
             {slot.shape === 'rectangle' && (
-              <PropRow label="Radius">
+              <PropRow label={t('lb_slot_radius', 'Radius')}>
                 <NumberInput
                   value={slot.borderRadius}
                   onChange={(val) => onUpdate({ borderRadius: Number(val) || 0 })}
@@ -762,7 +774,7 @@ export function SlotPropertiesPanel({
               </PropRow>
             )}
             <Group grow gap={6}>
-              <PropRow label="Width">
+              <PropRow label={t('lb_slot_bwidth', 'Width')}>
                 <NumberInput
                   value={slot.borderWidth}
                   onChange={(val) => onUpdate({ borderWidth: Number(val) || 0 })}
@@ -770,7 +782,7 @@ export function SlotPropertiesPanel({
                   suffix=" px"
                 />
               </PropRow>
-              <PropRow label="Color">
+              <PropRow label={t('lb_slot_color', 'Color')}>
                 <ColorInput
                   value={slot.borderColor}
                   onChange={(val) => onUpdate({ borderColor: val })}
@@ -786,33 +798,33 @@ export function SlotPropertiesPanel({
       {/* ── Effects ────────────────────────────────────────── */}
       <Accordion.Item value="effects">
         <Accordion.Control>
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>Effects</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>{t('lb_slot_acc_effects', 'Effects')}</Text>
         </Accordion.Control>
         <Accordion.Panel>
           <Stack gap={4}>
-            <SectionHeader label="Filters" />
+            <SectionHeader label={t('lb_slot_sh_filters', 'Filters')} />
             <FilterEffectsSection slot={slot} onUpdate={onUpdate} />
 
-            <SectionHeader label="Shadow" />
+            <SectionHeader label={t('lb_slot_sh_shadow', 'Shadow')} />
             <ShadowSection slot={slot} onUpdate={onUpdate} />
 
-            <SectionHeader label="Blend" />
-            <PropRow label="Mode">
+            <SectionHeader label={t('lb_slot_sh_blend', 'Blend')} />
+            <PropRow label={t('lb_slot_mode', 'Mode')}>
               <Select
                 size="xs" variant="filled"
-                data={BLEND_MODE_OPTIONS}
+                data={blendOptions}
                 value={slot.blendMode ?? 'normal'}
                 onChange={(v) => onUpdate({ blendMode: (v ?? 'normal') as SlotBlendMode })}
               />
             </PropRow>
 
-            <SectionHeader label="Overlay" />
+            <SectionHeader label={t('lb_slot_sh_overlay', 'Overlay')} />
             <OverlayEffectSection slot={slot} onUpdate={onUpdate} />
 
-            <SectionHeader label="3D Tilt" />
+            <SectionHeader label={t('lb_slot_sh_tilt', '3D Tilt')} />
             <TiltEffectSection slot={slot} onUpdate={onUpdate} />
 
-            <SectionHeader label="Entrance" />
+            <SectionHeader label={t('lb_slot_sh_entrance', 'Entrance')} />
             <EntranceSection slot={slot} onUpdate={onUpdate} />
           </Stack>
         </Accordion.Panel>
@@ -821,13 +833,13 @@ export function SlotPropertiesPanel({
       {/* ── Stacking & Interaction ─────────────────────────── */}
       <Accordion.Item value="stacking">
         <Accordion.Control>
-          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>Stacking & Interaction</Text>
+          <Text size="xs" fw={600} tt="uppercase" c="dimmed" lts={0.8}>{t('lb_slot_acc_stacking', 'Stacking & Interaction')}</Text>
         </Accordion.Control>
         <Accordion.Panel>
           <Stack gap={4}>
-            <SectionHeader label="Stacking" />
+            <SectionHeader label={t('lb_slot_sh_stacking', 'Stacking')} />
             <Group gap={6} align="center" wrap="nowrap">
-              <PropRow label="Z-Index">
+              <PropRow label={t('lb_slot_zindex', 'Z-Index')}>
                 <NumberInput
                   value={slot.zIndex}
                   onChange={(val) => onUpdate({ zIndex: Number(val) || 0 })}
@@ -835,30 +847,30 @@ export function SlotPropertiesPanel({
                 />
               </PropRow>
               <Group gap={2} style={{ flexShrink: 0 }}>
-                <Tooltip label="Send to Back (Shift+[)">
-                  <ActionIcon size="xs" variant="subtle" onClick={onSendToBack} aria-label="Send to back">
+                <Tooltip label={t('lb_slot_send_back_tt', 'Send to Back (Shift+[)')}>
+                  <ActionIcon size="xs" variant="subtle" onClick={onSendToBack} aria-label={t('lb_slot_send_back_aria', 'Send to back')}>
                     <IconArrowBigDownLine size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Send Backward ([)">
-                  <ActionIcon size="xs" variant="subtle" onClick={onSendBackward} aria-label="Send backward">
+                <Tooltip label={t('lb_slot_send_bwd_tt', 'Send Backward ([)')}>
+                  <ActionIcon size="xs" variant="subtle" onClick={onSendBackward} aria-label={t('lb_slot_send_bwd_aria', 'Send backward')}>
                     <IconArrowDown size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Bring Forward (])">
-                  <ActionIcon size="xs" variant="subtle" onClick={onBringForward} aria-label="Bring forward">
+                <Tooltip label={t('lb_slot_bring_fwd_tt', 'Bring Forward (])')}>
+                  <ActionIcon size="xs" variant="subtle" onClick={onBringForward} aria-label={t('lb_slot_bring_fwd_aria', 'Bring forward')}>
                     <IconArrowUp size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Bring to Front (Shift+])">
-                  <ActionIcon size="xs" variant="subtle" onClick={onBringToFront} aria-label="Bring to front">
+                <Tooltip label={t('lb_slot_bring_front_tt', 'Bring to Front (Shift+])')}>
+                  <ActionIcon size="xs" variant="subtle" onClick={onBringToFront} aria-label={t('lb_slot_bring_front_aria', 'Bring to front')}>
                     <IconArrowBigUpLine size={14} />
                   </ActionIcon>
                 </Tooltip>
               </Group>
             </Group>
 
-            <SectionHeader label="Interaction" />
+            <SectionHeader label={t('lb_slot_sh_interaction', 'Interaction')} />
             {listingMode ? (
               <Box
                 style={{
@@ -871,12 +883,12 @@ export function SlotPropertiesPanel({
                 }}
               >
                 <IconInfoCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} />
-                <span>Card click is controlled by the campaign card component.</span>
+                <span>{t('lb_slot_listing_click_note', 'Card click is controlled by the campaign card component.')}</span>
               </Box>
             ) : (
-              <PropRow label="Click">
+              <PropRow label={t('lb_slot_click', 'Click')}>
                 <SegmentedControl
-                  data={CLICK_OPTIONS}
+                  data={clickOptions}
                   value={slot.clickAction}
                   onChange={(val) =>
                     onUpdate({ clickAction: val as LayoutSlot['clickAction'] })
@@ -886,9 +898,9 @@ export function SlotPropertiesPanel({
                 />
               </PropRow>
             )}
-            <PropRow label="Hover">
+            <PropRow label={t('lb_slot_hover', 'Hover')}>
               <SegmentedControl
-                data={HOVER_OPTIONS}
+                data={hoverOptions}
                 value={slot.hoverEffect}
                 onChange={(val) =>
                   onUpdate({ hoverEffect: val as LayoutSlot['hoverEffect'] })
@@ -899,14 +911,14 @@ export function SlotPropertiesPanel({
             </PropRow>
             {slot.hoverEffect === 'glow' && (
               <>
-                <PropRow label="Glow">
+                <PropRow label={t('lb_slot_glow', 'Glow')}>
                   <ColorInput
                     value={slot.glowColor || '#7c9ef8'}
                     onChange={(v) => onUpdate({ glowColor: v })}
                     size="xs" format="hex" variant="filled"
                   />
                 </PropRow>
-                <PropRow label="Spread">
+                <PropRow label={t('lb_slot_spread', 'Spread')}>
                   <Slider
                     value={slot.glowSpread ?? 12}
                     onChange={(v) => onUpdate({ glowSpread: v })}

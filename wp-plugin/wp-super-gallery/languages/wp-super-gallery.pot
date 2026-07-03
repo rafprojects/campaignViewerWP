@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T02:28:55+00:00\n"
+"POT-Creation-Date: 2026-07-03T02:54:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -432,6 +432,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:367
 #: includes/i18n/class-wpsg-frontend-strings.php:413
 #: includes/i18n/class-wpsg-frontend-strings.php:1168
+#: includes/i18n/class-wpsg-frontend-strings.php:1978
 msgid "Image"
 msgstr ""
 
@@ -692,6 +693,7 @@ msgid "Hide filters"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:144
+#: includes/i18n/class-wpsg-frontend-strings.php:1988
 msgid "Filters"
 msgstr ""
 
@@ -1528,6 +1530,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:365
 #: includes/i18n/class-wpsg-frontend-strings.php:394
+#: includes/i18n/class-wpsg-frontend-strings.php:1939
 msgid "Type"
 msgstr ""
 
@@ -1932,6 +1935,7 @@ msgid "Space {{id}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:478
+#: includes/i18n/class-wpsg-frontend-strings.php:1938
 msgid "Reset"
 msgstr ""
 
@@ -2259,11 +2263,13 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:554
 #: includes/i18n/class-wpsg-frontend-strings.php:1154
+#: includes/i18n/class-wpsg-frontend-strings.php:1923
 msgid "On"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:555
 #: includes/i18n/class-wpsg-frontend-strings.php:1155
+#: includes/i18n/class-wpsg-frontend-strings.php:1922
 msgid "Off"
 msgstr ""
 
@@ -2398,12 +2404,14 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:589
 #: includes/i18n/class-wpsg-frontend-strings.php:956
+#: includes/i18n/class-wpsg-frontend-strings.php:1942
 msgid "Slide"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:590
 #: includes/i18n/class-wpsg-frontend-strings.php:845
 #: includes/i18n/class-wpsg-frontend-strings.php:957
+#: includes/i18n/class-wpsg-frontend-strings.php:1941
 msgid "Fade"
 msgstr ""
 
@@ -2419,6 +2427,10 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1254
 #: includes/i18n/class-wpsg-frontend-strings.php:1372
 #: includes/i18n/class-wpsg-frontend-strings.php:1491
+#: includes/i18n/class-wpsg-frontend-strings.php:1884
+#: includes/i18n/class-wpsg-frontend-strings.php:1887
+#: includes/i18n/class-wpsg-frontend-strings.php:1929
+#: includes/i18n/class-wpsg-frontend-strings.php:1940
 msgid "None"
 msgstr ""
 
@@ -2592,6 +2604,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:636
 #: includes/i18n/class-wpsg-frontend-strings.php:1143
+#: includes/i18n/class-wpsg-frontend-strings.php:1883
 msgid "Lightbox"
 msgstr ""
 
@@ -2625,6 +2638,7 @@ msgid "CSS value, e.g. 85vh"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:644
+#: includes/i18n/class-wpsg-frontend-strings.php:1996
 msgid "Z-Index"
 msgstr ""
 
@@ -3065,6 +3079,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1289
 #: includes/i18n/class-wpsg-frontend-strings.php:1396
 #: includes/i18n/class-wpsg-frontend-strings.php:1401
+#: includes/i18n/class-wpsg-frontend-strings.php:1908
 msgid "Center"
 msgstr ""
 
@@ -3608,11 +3623,13 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:881
 #: includes/i18n/class-wpsg-frontend-strings.php:1076
+#: includes/i18n/class-wpsg-frontend-strings.php:1948
 msgid "Left"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:883
 #: includes/i18n/class-wpsg-frontend-strings.php:1078
+#: includes/i18n/class-wpsg-frontend-strings.php:1949
 msgid "Right"
 msgstr ""
 
@@ -3777,6 +3794,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1258
 #: includes/i18n/class-wpsg-frontend-strings.php:1781
 #: includes/i18n/class-wpsg-frontend-strings.php:1837
+#: includes/i18n/class-wpsg-frontend-strings.php:1982
 msgid "Custom"
 msgstr ""
 
@@ -5948,6 +5966,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1639
 #: includes/i18n/class-wpsg-frontend-strings.php:1809
+#: includes/i18n/class-wpsg-frontend-strings.php:1958
 msgid "Name"
 msgstr ""
 
@@ -5957,6 +5976,7 @@ msgid "Slug"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1641
+#: includes/i18n/class-wpsg-frontend-strings.php:1928
 msgid "Mode"
 msgstr ""
 
@@ -6709,6 +6729,473 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1868
 msgid "Upload font"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1869
+msgid "▬ Rectangle"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1870
+msgid "● Circle"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1871
+msgid "⬭ Ellipse"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1872
+msgid "⬢ Hexagon"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1873
+msgid "◆ Diamond"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1874
+msgid "▱ Parallelogram ←"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1875
+msgid "▱ Parallelogram →"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1876
+msgid "❯ Chevron"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1877
+msgid "➤ Arrow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1878
+msgid "⬟ Trapezoid"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1879
+msgid "❂ Custom"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1880
+msgid "Cover"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1881
+msgid "Contain"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1882
+msgid "Fill"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1885
+msgid "Pop"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1886
+#: includes/i18n/class-wpsg-frontend-strings.php:2009
+msgid "Glow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1888
+msgid "Normal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1889
+msgid "Multiply"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1890
+msgid "Screen"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1891
+#: includes/i18n/class-wpsg-frontend-strings.php:1991
+msgid "Overlay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1892
+#: includes/i18n/class-wpsg-frontend-strings.php:1930
+msgid "Darken"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1893
+#: includes/i18n/class-wpsg-frontend-strings.php:1931
+msgid "Lighten"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1894
+msgid "Color Dodge"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1895
+msgid "Color Burn"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1896
+msgid "Hard Light"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1897
+msgid "Soft Light"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1898
+msgid "Difference"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1899
+msgid "Exclusion"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1900
+#: includes/i18n/class-wpsg-frontend-strings.php:1920
+msgid "Hue"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1901
+msgid "Saturation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1902
+#: includes/i18n/class-wpsg-frontend-strings.php:1927
+msgid "Color"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1903
+msgid "Luminosity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1904
+msgid "Top left"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1905
+msgid "Top center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1906
+msgid "Top right"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1907
+msgid "Left center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1909
+msgid "Right center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1910
+msgid "Bottom left"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1911
+msgid "Bottom center"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1912
+msgid "Bottom right"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1913
+msgid "{{label}} info"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1914
+msgid "Bright"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1915
+msgid "Contrast"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1916
+msgid "Saturate"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1917
+msgid "Blur"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1918
+msgid "Gray"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1919
+msgid "Sepia"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1921
+msgid "Invert"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1924
+msgid "Enable"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1925
+msgid "Off X"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1926
+msgid "Off Y"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1932
+msgid "Intensity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1933
+msgid "Hover only"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1934
+msgid "Always"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1935
+#: includes/i18n/class-wpsg-frontend-strings.php:2008
+msgid "Hover"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1936
+msgid "Max °"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1937
+msgid "Persp."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1943
+msgid "Zoom"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1944
+msgid "Entrance animation type"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1945
+msgid "Direction"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1946
+msgid "Up"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1947
+msgid "Down"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1950
+msgid "Slide direction"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1951
+msgid "Duration"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1952
+msgid "Entrance duration"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1953
+msgid "Delay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1954
+msgid "Entrance delay"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1955
+msgid "Play preview"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1956
+msgid "Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1957
+msgid "Layout"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1959
+msgid "Slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1960
+msgid "Position"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1961
+msgid "X %"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1962
+msgid "Y %"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1963
+msgid "Size"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1964
+msgid "Width %"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1965
+msgid "Unlock aspect ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1966
+msgid "Lock aspect ratio"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1967
+msgid "Height %"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1968
+msgid "Rotation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1969
+msgid "Rotation degrees"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1970
+msgid "Reset rotation"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1971
+msgid "Opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1972
+msgid "Slot opacity"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1973
+msgid "Shape"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1974
+msgid "Preset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1975
+msgid "Clip-path"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1976
+msgid "polygon(50% 0%, 100% 50%, …)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1977
+msgid "Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1979
+msgid "Fit"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1980
+msgid "Focus"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1981
+msgid "Click a position to set which part of the image stays in frame."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1983
+msgid "50% 50%"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1984
+msgid "Border"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1985
+msgid "Radius"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1986
+msgid "Width"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1987
+msgid "Effects"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1989
+msgid "Shadow"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1990
+msgid "Blend"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1992
+msgid "3D Tilt"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1993
+msgid "Entrance"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1994
+msgid "Stacking & Interaction"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1995
+msgid "Stacking"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1997
+msgid "Send to Back (Shift+[)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1998
+msgid "Send to back"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1999
+msgid "Send Backward ([)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2000
+msgid "Send backward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2001
+msgid "Bring Forward (])"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2002
+msgid "Bring forward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2003
+msgid "Bring to Front (Shift+])"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2004
+msgid "Bring to front"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2005
+msgid "Interaction"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2006
+msgid "Card click is controlled by the campaign card component."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2007
+msgid "Click"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2010
+msgid "Spread"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
