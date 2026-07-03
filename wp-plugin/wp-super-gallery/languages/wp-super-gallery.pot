@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T02:23:57+00:00\n"
+"POT-Creation-Date: 2026-07-03T02:28:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -47,6 +47,7 @@ msgstr ""
 #: includes/class-wpsg-cpt.php:72
 #: includes/class-wpsg-cpt.php:411
 #: includes/i18n/class-wpsg-frontend-strings.php:133
+#: includes/i18n/class-wpsg-frontend-strings.php:1853
 msgid "Campaigns"
 msgstr ""
 
@@ -189,6 +190,7 @@ msgstr ""
 
 #: includes/class-wpsg-cpt.php:456
 #: includes/i18n/class-wpsg-frontend-strings.php:131
+#: includes/i18n/class-wpsg-frontend-strings.php:1863
 msgid "All spaces"
 msgstr ""
 
@@ -1942,6 +1944,7 @@ msgid "Theme & Layout"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:481
+#: includes/i18n/class-wpsg-frontend-strings.php:1858
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr ""
 
@@ -2349,6 +2352,7 @@ msgid "This is the only time the full secret will be shown. Copy it and configur
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:578
+#: includes/i18n/class-wpsg-frontend-strings.php:1849
 msgid "Done"
 msgstr ""
 
@@ -2626,6 +2630,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:645
 #: includes/i18n/class-wpsg-frontend-strings.php:988
+#: includes/i18n/class-wpsg-frontend-strings.php:1851
 msgid "Navigation"
 msgstr ""
 
@@ -4631,6 +4636,7 @@ msgid "Listing"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1152
+#: includes/i18n/class-wpsg-frontend-strings.php:1845
 msgid "Reset to default"
 msgstr ""
 
@@ -6323,6 +6329,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1751
 #: includes/i18n/class-wpsg-frontend-strings.php:1824
+#: includes/i18n/class-wpsg-frontend-strings.php:1866
 msgid "Delete {{name}}"
 msgstr ""
 
@@ -6605,6 +6612,103 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1835
 msgid "No pre-configured settings."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1838
+msgid "Press a key combo…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1839
+msgid "Confirm key binding"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1840
+msgid "Cancel key recording"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1841
+msgid "Press any key combo, then ✓ to confirm"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1842
+msgid "custom"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1843
+msgid "Remap"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1844
+msgid "Remap {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1846
+msgid "Reset {{name}} to default"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1847
+msgid "Close active modal"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1848
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1850
+msgid "Edit shortcuts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1852
+msgid "Open keyboard shortcuts help (this modal)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1854
+msgid "customized"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1855
+msgid "Reset all to defaults"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1856
+msgid "macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1857
+#: includes/settings/class-wpsg-settings-renderer.php:137
+msgid "Theme"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1859
+msgid "Dark theme"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1860
+msgid "Light theme"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1861
+msgid "Custom Fonts"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1862
+msgid "Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1864
+msgid "Make {{name}} space-specific"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1865
+msgid "Make {{name}} available to all spaces"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1867
+msgid "Uploading…"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1868
+msgid "Upload font"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23
@@ -6934,10 +7038,6 @@ msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:130
 msgid "Display Settings"
-msgstr ""
-
-#: includes/settings/class-wpsg-settings-renderer.php:137
-msgid "Theme"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-renderer.php:145

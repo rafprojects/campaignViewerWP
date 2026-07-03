@@ -10,6 +10,7 @@ import {
   Text,
 } from '@mantine/core';
 import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { type FontLibraryEntry, loadCustomFonts } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = false }: Props) {
+  const { t } = useTranslation('wpsg');
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -95,9 +97,9 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
 
   return (
     <Stack gap="xs">
-      <Text size="sm" fw={500}>Custom Fonts</Text>
+      <Text size="sm" fw={500}>{t('admin_font_title', 'Custom Fonts')}</Text>
       <Text size="xs" c="dimmed">
-        Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors.
+        {t('admin_font_desc', 'Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors.')}
       </Text>
 
       {fonts.length > 0 && (
@@ -108,7 +110,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
                 <Text size="xs" truncate style={{ maxWidth: 150 }}>{f.name}</Text>
                 <Badge size="xs" variant="light" color="gray">{f.format}</Badge>
                 {f.isUniversal && (
-                  <Badge size="xs" variant="light" color="blue">All spaces</Badge>
+                  <Badge size="xs" variant="light" color="blue">{t('admin_font_all_spaces', 'All spaces')}</Badge>
                 )}
               </Group>
               <Group gap={2} wrap="nowrap">
@@ -117,8 +119,8 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
                   color={f.isUniversal ? 'blue' : 'gray'}
                   size="sm"
                   onClick={() => handleToggleUniversal(f.id, !f.isUniversal)}
-                  title={f.isUniversal ? `Make ${f.name} space-specific` : `Make ${f.name} available to all spaces`}
-                  aria-label={f.isUniversal ? `Make ${f.name} space-specific` : `Make ${f.name} available to all spaces`}
+                  title={f.isUniversal ? t('admin_font_make_specific', 'Make {{name}} space-specific', { name: f.name }) : t('admin_font_make_universal', 'Make {{name}} available to all spaces', { name: f.name })}
+                  aria-label={f.isUniversal ? t('admin_font_make_specific', 'Make {{name}} space-specific', { name: f.name }) : t('admin_font_make_universal', 'Make {{name}} available to all spaces', { name: f.name })}
                 >
                   {f.isUniversal ? <IconWorld size={14} /> : <IconWorldOff size={14} />}
                 </ActionIcon>
@@ -128,8 +130,8 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
                     color="red"
                     size="sm"
                     onClick={() => handleDelete(f.id)}
-                    title={`Delete ${f.name}`}
-                    aria-label={`Delete ${f.name}`}
+                    title={t('admin_font_delete', 'Delete {{name}}', { name: f.name })}
+                    aria-label={t('admin_font_delete', 'Delete {{name}}', { name: f.name })}
                   >
                     <IconTrash size={14} />
                   </ActionIcon>
@@ -149,7 +151,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
             leftSection={isUploading ? <Loader size={14} /> : <IconUpload size={14} />}
             disabled={isUploading}
           >
-            {isUploading ? 'Uploading…' : 'Upload font'}
+            {isUploading ? t('admin_font_uploading', 'Uploading…') : t('admin_font_upload', 'Upload font')}
           </Button>
         )}
       </FileButton>

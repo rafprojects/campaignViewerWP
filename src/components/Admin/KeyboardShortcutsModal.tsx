@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Modal, Table, Text, Stack, Badge, Group, Button, ActionIcon, Tooltip, TextInput } from '@mantine/core';
 import { IconEdit, IconCheck, IconX, IconRotateClockwise } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { ACTION_IDS, ACTION_DEFAULTS, type ShortcutActionId, type ShortcutConfigHandle } from '@/hooks/useShortcutConfig';
 
@@ -73,6 +74,7 @@ interface EditRowProps {
 }
 
 function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
+  const { t } = useTranslation('wpsg');
   const [recording, setRecording] = useState(false);
   const [pendingKey, setPendingKey] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -116,7 +118,7 @@ function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
             <TextInput
               ref={inputRef}
               value={pendingKey ? formatKeyParts(pendingKey).join('+') : ''}
-              placeholder="Press a key combo…"
+              placeholder={t('admin_ksc_press_combo_ph', 'Press a key combo…')}
               readOnly
               size="xs"
               error={!!error}
@@ -131,24 +133,24 @@ function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
               onBlur={cancelRecording}
               rightSection={
                 pendingKey ? (
-                  <ActionIcon size="xs" variant="subtle" color="green" aria-label="Confirm key binding" onMouseDown={(e) => { e.preventDefault(); commitKey(pendingKey); }}>
+                  <ActionIcon size="xs" variant="subtle" color="green" aria-label={t('admin_ksc_confirm_aria', 'Confirm key binding')} onMouseDown={(e) => { e.preventDefault(); commitKey(pendingKey); }}>
                     <IconCheck size={12} />
                   </ActionIcon>
                 ) : (
-                  <ActionIcon size="xs" variant="subtle" color="gray" aria-label="Cancel key recording" onMouseDown={(e) => { e.preventDefault(); cancelRecording(); }}>
+                  <ActionIcon size="xs" variant="subtle" color="gray" aria-label={t('admin_ksc_cancel_aria', 'Cancel key recording')} onMouseDown={(e) => { e.preventDefault(); cancelRecording(); }}>
                     <IconX size={12} />
                   </ActionIcon>
                 )
               }
             />
             {error && <Text size="xs" c="red">{error}</Text>}
-            <Text size="xs" c="dimmed">Press any key combo, then ✓ to confirm</Text>
+            <Text size="xs" c="dimmed">{t('admin_ksc_press_hint', 'Press any key combo, then ✓ to confirm')}</Text>
           </Stack>
         ) : (
           <Group gap={6} wrap="nowrap">
             <Keys keys={formatKeyParts(currentKey)} />
             {isCustomized && (
-              <Badge size="xs" variant="dot" color="blue">custom</Badge>
+              <Badge size="xs" variant="dot" color="blue">{t('admin_ksc_custom', 'custom')}</Badge>
             )}
           </Group>
         )}
@@ -159,15 +161,15 @@ function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
       <Table.Td w={80}>
         <Group gap={4} wrap="nowrap">
           {!recording && (
-            <Tooltip label="Remap" withArrow>
-              <ActionIcon size="xs" variant="subtle" onClick={startRecording} aria-label={`Remap ${ACTION_DEFAULTS[id].label}`}>
+            <Tooltip label={t('admin_ksc_remap', 'Remap')} withArrow>
+              <ActionIcon size="xs" variant="subtle" onClick={startRecording} aria-label={t('admin_ksc_remap_name', 'Remap {{name}}', { name: ACTION_DEFAULTS[id].label })}>
                 <IconEdit size={13} />
               </ActionIcon>
             </Tooltip>
           )}
           {isCustomized && !recording && (
-            <Tooltip label="Reset to default" withArrow>
-              <ActionIcon size="xs" variant="subtle" color="orange" onClick={resetRow} aria-label={`Reset ${ACTION_DEFAULTS[id].label} to default`}>
+            <Tooltip label={t('admin_ksc_reset_default', 'Reset to default')} withArrow>
+              <ActionIcon size="xs" variant="subtle" color="orange" onClick={resetRow} aria-label={t('admin_ksc_reset_name', 'Reset {{name}} to default', { name: ACTION_DEFAULTS[id].label })}>
                 <IconRotateClockwise size={13} />
               </ActionIcon>
             </Tooltip>
@@ -184,7 +186,7 @@ setWpsgDebugDisplayName(EditRow, 'AdminPanel:ShortcutEditRow');
 
 // Navigation group actions that are always displayed but cannot be customized via hotkeys
 const STATIC_ITEMS = [
-  { keys: ['Escape'], description: 'Close active modal' },
+  { keys: ['Escape'], descKey: 'admin_ksc_close_modal', description: 'Close active modal' },
 ];
 
 // Configurable action IDs rendered in order
@@ -197,6 +199,7 @@ interface KeyboardShortcutsModalProps {
 }
 
 export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShortcutsModalProps) {
+  const { t } = useTranslation('wpsg');
   const [editMode, setEditMode] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -210,14 +213,14 @@ export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShor
       onClose={handleClose}
       title={
         <Group gap="sm">
-          <Text fw={500}>Keyboard Shortcuts</Text>
+          <Text fw={500}>{t('admin_ksc_title', 'Keyboard Shortcuts')}</Text>
           {config && (
             <Button
               size="compact-xs"
               variant={editMode ? 'filled' : 'light'}
               onClick={() => setEditMode((v) => !v)}
             >
-              {editMode ? 'Done' : 'Edit shortcuts'}
+              {editMode ? t('admin_ksc_done', 'Done') : t('admin_ksc_edit', 'Edit shortcuts')}
             </Button>
           )}
         </Group>
@@ -229,19 +232,19 @@ export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShor
         {/* Navigation section — static entries */}
         <Stack gap="xs">
           <Group gap="xs" align="center">
-            <Badge variant="light" size="sm">Navigation</Badge>
+            <Badge variant="light" size="sm">{t('admin_ksc_navigation', 'Navigation')}</Badge>
           </Group>
           <Table striped withTableBorder fz="sm">
             <Table.Tbody>
               <Table.Tr>
                 <Table.Td w={180}><Keys keys={['?']} /></Table.Td>
-                <Table.Td><Text size="sm">Open keyboard shortcuts help (this modal)</Text></Table.Td>
+                <Table.Td><Text size="sm">{t('admin_ksc_open_help', 'Open keyboard shortcuts help (this modal)')}</Text></Table.Td>
                 {editMode && <Table.Td w={80} />}
               </Table.Tr>
               {STATIC_ITEMS.map((item) => (
                 <Table.Tr key={item.description}>
                   <Table.Td w={180}><Keys keys={item.keys} /></Table.Td>
-                  <Table.Td><Text size="sm">{item.description}</Text></Table.Td>
+                  <Table.Td><Text size="sm">{t(item.descKey, item.description)}</Text></Table.Td>
                   {editMode && <Table.Td w={80} />}
                 </Table.Tr>
               ))}
@@ -252,9 +255,9 @@ export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShor
         {/* Campaigns section — configurable */}
         <Stack gap="xs">
           <Group gap="xs" align="center">
-            <Badge variant="light" size="sm">Campaigns</Badge>
+            <Badge variant="light" size="sm">{t('admin_ksc_campaigns', 'Campaigns')}</Badge>
             {config?.hasCustomizations && !editMode && (
-              <Badge size="xs" variant="dot" color="blue">customized</Badge>
+              <Badge size="xs" variant="dot" color="blue">{t('admin_ksc_customized', 'customized')}</Badge>
             )}
           </Group>
           {editMode && config ? (
@@ -294,13 +297,13 @@ export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShor
               leftSection={<IconRotateClockwise size={13} />}
               onClick={() => config.resetToDefaults()}
             >
-              Reset all to defaults
+              {t('admin_ksc_reset_all', 'Reset all to defaults')}
             </Button>
           )}
         </Stack>
 
         <Text size="xs" c="dimmed">
-          macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input.
+          {t('admin_ksc_footer', 'macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input.')}
         </Text>
       </Stack>
     </Modal>
