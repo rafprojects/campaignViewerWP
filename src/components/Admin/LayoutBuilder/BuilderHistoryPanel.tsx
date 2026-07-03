@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Stack, Text, Box, ActionIcon, Tooltip, Group, ScrollArea, UnstyledButton } from '@mantine/core';
 import { IconClockHour4, IconTrash } from '@tabler/icons-react';
 import type { IDockviewPanelProps } from 'dockview';
@@ -8,6 +9,7 @@ import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 // ── Component ────────────────────────────────────────────────
 
 export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
+  const { t } = useTranslation('wpsg');
   const { builder } = useBuilderDock();
   const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo, jumpToHistoryIndex, isHistoryTrimmed } =
     builder;
@@ -37,9 +39,9 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
           style={{ opacity: 0.5, marginBottom: 8 }}
         />
         <Text size="sm" c="dimmed" ta="center">
-          No history yet.
+          {t('lb_hist_none', 'No history yet.')}
           <br />
-          Make a change to see the history.
+          {t('lb_hist_none_hint', 'Make a change to see the history.')}
         </Text>
       </Box>
     );
@@ -50,27 +52,27 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
       {/* Header */}
       <Group justify="space-between" mb="xs" px={4}>
         <Text size="xs" fw={600} c="dimmed" tt="uppercase">
-          History ({historyEntries.length})
+          {t('lb_hist_title', 'History ({{count}})', { count: historyEntries.length })}
         </Text>
         <Group gap={4}>
-          <Tooltip label="Undo (Ctrl+Z)">
+          <Tooltip label={t('lb_hist_undo_tt', 'Undo (Ctrl+Z)')}>
             <ActionIcon
               size="sm"
               variant="subtle"
               disabled={!canUndo}
               onClick={undo}
-              aria-label="Undo"
+              aria-label={t('lb_hist_undo', 'Undo')}
             >
               &#8630;
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Redo (Ctrl+Shift+Z)">
+          <Tooltip label={t('lb_hist_redo_tt', 'Redo (Ctrl+Shift+Z)')}>
             <ActionIcon
               size="sm"
               variant="subtle"
               disabled={!canRedo}
               onClick={redo}
-              aria-label="Redo"
+              aria-label={t('lb_hist_redo', 'Redo')}
             >
               &#8631;
             </ActionIcon>
@@ -104,7 +106,7 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
                     : 'transparent',
                   opacity: isFuture ? 0.45 : 1,
                 }}
-                aria-label={`Jump to: ${entry.label}`}
+                aria-label={t('lb_hist_jump_to', 'Jump to: {{label}}', { label: entry.label })}
               >
                 <Text
                   size="xs"
@@ -139,10 +141,10 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
               width: '100%',
               opacity: historyCurrentIndex === -1 ? 1 : 0.45,
             }}
-            aria-label="Jump to initial state"
+            aria-label={t('lb_hist_jump_initial', 'Jump to initial state')}
           >
             <Text size="xs" c="dimmed" fs="italic" style={{ flex: 1 }}>
-              {isHistoryTrimmed ? 'Oldest state' : 'Initial state'}
+              {isHistoryTrimmed ? t('lb_hist_oldest', 'Oldest state') : t('lb_hist_initial', 'Initial state')}
             </Text>
             <IconTrash size={12} style={{ opacity: 0.5 }} />
           </UnstyledButton>

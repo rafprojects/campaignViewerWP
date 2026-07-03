@@ -1,4 +1,5 @@
 import { Modal, Table, Text, Kbd, Group, Stack } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface BuilderKeyboardShortcutsModalProps {
@@ -8,67 +9,68 @@ interface BuilderKeyboardShortcutsModalProps {
 
 interface ShortcutRow {
   keys: string[];
+  dkey: string;
   description: string;
 }
 
-const SECTIONS: Array<{ heading: string; rows: ShortcutRow[] }> = [
+const SECTIONS: Array<{ hkey: string; heading: string; rows: ShortcutRow[] }> = [
   {
-    heading: 'File',
-    rows: [{ keys: ['Ctrl / ⌘', 'S'], description: 'Save template' }],
+    hkey: 'lb_bksc_h_file', heading: 'File',
+    rows: [{ keys: ['Ctrl / ⌘', 'S'], dkey: 'lb_bksc_save', description: 'Save template' }],
   },
   {
-    heading: 'History',
+    hkey: 'lb_bksc_h_history', heading: 'History',
     rows: [
-      { keys: ['Ctrl / ⌘', 'Z'], description: 'Undo' },
-      { keys: ['Ctrl / ⌘', 'Shift', 'Z'], description: 'Redo' },
+      { keys: ['Ctrl / ⌘', 'Z'], dkey: 'lb_bksc_undo', description: 'Undo' },
+      { keys: ['Ctrl / ⌘', 'Shift', 'Z'], dkey: 'lb_bksc_redo', description: 'Redo' },
     ],
   },
   {
-    heading: 'Selection',
+    hkey: 'lb_bksc_h_selection', heading: 'Selection',
     rows: [
-      { keys: ['Delete'], description: 'Remove selected slot(s)' },
-      { keys: ['Escape'], description: 'Deselect all' },
-      { keys: ['Ctrl / ⌘', 'D'], description: 'Duplicate selected slot(s)' },
-      { keys: ['Ctrl / ⌘', 'C'], description: 'Copy selected slot(s)' },
-      { keys: ['Ctrl / ⌘', 'V'], description: 'Paste slot(s)' },
-      { keys: ['Ctrl / ⌘', 'G'], description: 'Group selected (2+) · or select all in group when already grouped' },
-      { keys: ['Ctrl / ⌘', 'Shift', 'G'], description: 'Ungroup selected group' },
-      { keys: ['Ctrl / ⌘', 'click'], description: 'Toggle slot in selection (layers panel)' },
-      { keys: ['Shift', 'click'], description: 'Range select (layers panel)' },
+      { keys: ['Delete'], dkey: 'lb_bksc_remove', description: 'Remove selected slot(s)' },
+      { keys: ['Escape'], dkey: 'lb_bksc_deselect', description: 'Deselect all' },
+      { keys: ['Ctrl / ⌘', 'D'], dkey: 'lb_bksc_duplicate', description: 'Duplicate selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'C'], dkey: 'lb_bksc_copy', description: 'Copy selected slot(s)' },
+      { keys: ['Ctrl / ⌘', 'V'], dkey: 'lb_bksc_paste', description: 'Paste slot(s)' },
+      { keys: ['Ctrl / ⌘', 'G'], dkey: 'lb_bksc_group', description: 'Group selected (2+) · or select all in group when already grouped' },
+      { keys: ['Ctrl / ⌘', 'Shift', 'G'], dkey: 'lb_bksc_ungroup', description: 'Ungroup selected group' },
+      { keys: ['Ctrl / ⌘', 'click'], dkey: 'lb_bksc_toggle', description: 'Toggle slot in selection (layers panel)' },
+      { keys: ['Shift', 'click'], dkey: 'lb_bksc_range', description: 'Range select (layers panel)' },
     ],
   },
   {
-    heading: 'Nudge',
+    hkey: 'lb_bksc_h_nudge', heading: 'Nudge',
     rows: [
-      { keys: ['↑ ↓ ← →'], description: 'Move selected slot 1%' },
-      { keys: ['Shift', '↑ ↓ ← →'], description: 'Move selected slot 10% (large)' },
-      { keys: ['Alt', '↑ ↓ ← →'], description: 'Move selected slot 0.1% (fine)' },
+      { keys: ['↑ ↓ ← →'], dkey: 'lb_bksc_nudge1', description: 'Move selected slot 1%' },
+      { keys: ['Shift', '↑ ↓ ← →'], dkey: 'lb_bksc_nudge10', description: 'Move selected slot 10% (large)' },
+      { keys: ['Alt', '↑ ↓ ← →'], dkey: 'lb_bksc_nudge01', description: 'Move selected slot 0.1% (fine)' },
     ],
   },
   {
-    heading: 'Z-order',
+    hkey: 'lb_bksc_h_zorder', heading: 'Z-order',
     rows: [
-      { keys: [']'], description: 'Bring forward' },
-      { keys: ['['], description: 'Send backward' },
-      { keys: ['Shift', ']'], description: 'Bring to front' },
-      { keys: ['Shift', '['], description: 'Send to back' },
+      { keys: [']'], dkey: 'lb_bksc_bring_fwd', description: 'Bring forward' },
+      { keys: ['['], dkey: 'lb_bksc_send_bwd', description: 'Send backward' },
+      { keys: ['Shift', ']'], dkey: 'lb_bksc_bring_front', description: 'Bring to front' },
+      { keys: ['Shift', '['], dkey: 'lb_bksc_send_back', description: 'Send to back' },
     ],
   },
   {
-    heading: 'Canvas',
+    hkey: 'lb_bksc_h_canvas', heading: 'Canvas',
     rows: [
-      { keys: ['N'], description: 'Add new slot' },
-      { keys: ['H'], description: 'Toggle hand / pan tool' },
-      { keys: ['V'], description: 'Return to select tool' },
-      { keys: ['F'], description: 'Fit canvas to viewport' },
-      { keys: ['0'], description: 'Reset zoom to 100%' },
-      { keys: ['+'], description: 'Zoom in' },
-      { keys: ['-'], description: 'Zoom out' },
+      { keys: ['N'], dkey: 'lb_bksc_add_slot', description: 'Add new slot' },
+      { keys: ['H'], dkey: 'lb_bksc_hand', description: 'Toggle hand / pan tool' },
+      { keys: ['V'], dkey: 'lb_bksc_select', description: 'Return to select tool' },
+      { keys: ['F'], dkey: 'lb_bksc_fit', description: 'Fit canvas to viewport' },
+      { keys: ['0'], dkey: 'lb_bksc_reset_zoom', description: 'Reset zoom to 100%' },
+      { keys: ['+'], dkey: 'lb_bksc_zoom_in', description: 'Zoom in' },
+      { keys: ['-'], dkey: 'lb_bksc_zoom_out', description: 'Zoom out' },
     ],
   },
   {
-    heading: 'Help',
-    rows: [{ keys: ['?'], description: 'Show this keyboard shortcuts reference' }],
+    hkey: 'lb_bksc_h_help', heading: 'Help',
+    rows: [{ keys: ['?'], dkey: 'lb_bksc_help_desc', description: 'Show this keyboard shortcuts reference' }],
   },
 ];
 
@@ -76,19 +78,20 @@ export function BuilderKeyboardShortcutsModal({
   opened,
   onClose,
 }: BuilderKeyboardShortcutsModalProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Builder Keyboard Shortcuts"
+      title={t('lb_bksc_title', 'Builder Keyboard Shortcuts')}
       size="md"
-      aria-label="Builder keyboard shortcuts reference"
+      aria-label={t('lb_bksc_aria', 'Builder keyboard shortcuts reference')}
     >
       <Stack gap="lg">
         {SECTIONS.map((section) => (
           <div key={section.heading}>
             <Text fw={600} mb="xs" size="sm" c="dimmed" tt="uppercase">
-              {section.heading}
+              {t(section.hkey, section.heading)}
             </Text>
             <Table
               striped
@@ -112,7 +115,7 @@ export function BuilderKeyboardShortcutsModal({
                         ))}
                       </Group>
                     </Table.Td>
-                    <Table.Td>{row.description}</Table.Td>
+                    <Table.Td>{t(row.dkey, row.description)}</Table.Td>
                   </Table.Tr>
                 ))}
               </Table.Tbody>

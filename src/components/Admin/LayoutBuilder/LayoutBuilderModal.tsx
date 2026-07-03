@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Modal,
   Group,
@@ -101,6 +102,7 @@ export function LayoutBuilderModal({
   listingMode = false,
   spaceId,
 }: LayoutBuilderModalProps) {
+  const { t: tr } = useTranslation('wpsg');
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
   const { colorScheme } = useTheme();
@@ -207,11 +209,11 @@ export function LayoutBuilderModal({
   const handleClose = useCallback(() => {
     if (builder.isDirty) {
       modals.openConfirmModal({
-        title: 'Discard changes?',
-        children: <Text size="sm">You have unsaved changes. Discard them?</Text>,
+        title: tr('lb_mod_discard_title', 'Discard changes?'),
+        children: <Text size="sm">{tr('lb_mod_discard_body', 'You have unsaved changes. Discard them?')}</Text>,
         labels: {
-          confirm: 'Discard',
-          cancel: 'Keep editing',
+          confirm: tr('lb_mod_discard', 'Discard'),
+          cancel: tr('lb_mod_keep_editing', 'Keep editing'),
         },
         confirmProps: { color: 'red' },
         onConfirm: () => { builder.clearDraft(); onClose(); },
@@ -221,7 +223,7 @@ export function LayoutBuilderModal({
 
     builder.clearDraft();
     onClose();
-  }, [builder, onClose]);
+  }, [builder, onClose, tr]);
 
   // ── Save ──
   const handleSave = useCallback(async () => {
@@ -253,38 +255,38 @@ export function LayoutBuilderModal({
       builder.markSaved();
       builder.clearDraft();
       onSaved?.(saved);
-      onNotify?.({ type: 'success', text: `Layout "${saved.name}" saved` });
-      notifications.show({ message: `Layout "${saved.name}" saved`, color: 'green', autoClose: 3000 });
+      onNotify?.({ type: 'success', text: tr('lb_mod_saved', 'Layout "{{name}}" saved', { name: saved.name }) });
+      notifications.show({ message: tr('lb_mod_saved', 'Layout "{{name}}" saved', { name: saved.name }), color: 'green', autoClose: 3000 });
       // P30-D: Notify other tabs that this template was saved
       postSaved(saved.id);
       return true;
     } catch (err) {
       const errMsg = err instanceof Error ? err.message : 'Failed to save layout';
       onNotify?.({ type: 'error', text: errMsg });
-      notifications.show({ title: 'Save failed', message: errMsg, color: 'red', autoClose: 5000 });
+      notifications.show({ title: tr('lb_mod_save_failed', 'Save failed'), message: errMsg, color: 'red', autoClose: 5000 });
       return false;
     } finally {
       setIsSaving(false);
     }
-  }, [builder, apiClient, onSaved, onNotify, postSaved]);
+  }, [builder, apiClient, onSaved, onNotify, postSaved, tr]);
 
   // ── Delete selected slots (or the selected guide — P59-F) ──
   const handleDeleteSelected = useCallback(() => {
     if (selectedGuideId) {
       builder.removeGuide(selectedGuideId);
       setSelectedGuideId(null);
-      notifications.show({ message: 'Guide deleted', color: 'gray', autoClose: 2500 });
+      notifications.show({ message: tr('lb_mod_guide_deleted', 'Guide deleted'), color: 'gray', autoClose: 2500 });
       return;
     }
     const ids = Array.from(builder.selectedSlotIds);
     if (ids.length === 0) return;
     builder.removeSlots(ids);
     notifications.show({
-      message: `${ids.length} slot${ids.length !== 1 ? 's' : ''} deleted`,
+      message: tr('lb_mod_slots_deleted', '{{count}} slot deleted', { count: ids.length }),
       color: 'gray',
       autoClose: 2500,
     });
-  }, [builder, selectedGuideId]);
+  }, [builder, selectedGuideId, tr]);
 
   // ── Duplicate selected slots ──
   const handleDuplicateSelected = useCallback(() => {
@@ -292,11 +294,11 @@ export function LayoutBuilderModal({
     if (ids.length === 0) return;
     builder.duplicateSlots(ids);
     notifications.show({
-      message: `${ids.length} slot${ids.length !== 1 ? 's' : ''} duplicated`,
+      message: tr('lb_mod_slots_duplicated', '{{count}} slot duplicated', { count: ids.length }),
       color: 'blue',
       autoClose: 2500,
     });
-  }, [builder]);
+  }, [builder, tr]);
 
   // ── JSON file I/O ──
   const { importFileRef, handleExportJson, handleImportJson } = useLayoutBuilderFileIO({ builder });
@@ -314,8 +316,8 @@ export function LayoutBuilderModal({
     if (ids.length < 2) return;
     builder.createGroup(ids);
     announce(`Group created (${ids.length} slots)`);
-    notifications.show({ message: `Group created (${ids.length} slots)`, color: 'blue', autoClose: 2500 });
-  }, [builder, announce]);
+    notifications.show({ message: tr('lb_mod_group_created', 'Group created ({{count}} slots)', { count: ids.length }), color: 'blue', autoClose: 2500 });
+  }, [builder, announce, tr]);
 
   // The toolbar always resolves the target group before calling this and passes
   // the explicit groupId — no need to re-derive from selection here.
@@ -323,8 +325,8 @@ export function LayoutBuilderModal({
   const handleUngroupSelected = useCallback((groupId: string) => {
     builder.dissolveGroup(groupId);
     announce('Ungrouped');
-    notifications.show({ message: 'Ungrouped', color: 'gray', autoClose: 2500 });
-  }, [builder, announce]);
+    notifications.show({ message: tr('lb_mod_ungrouped', 'Ungrouped'), color: 'gray', autoClose: 2500 });
+  }, [builder, announce, tr]);
 
   const handleGroupLockToggle = useCallback(
     (groupId: string, locked: boolean) => {
@@ -375,11 +377,11 @@ export function LayoutBuilderModal({
     const assignedCount = Math.min(mediaIds.length, builder.template.slots.length);
     announce(`Auto-assigned ${assignedCount} media items`);
     notifications.show({
-      message: `${assignedCount} media item${assignedCount !== 1 ? 's' : ''} assigned`,
+      message: tr('lb_mod_media_assigned', '{{count}} media item assigned', { count: assignedCount }),
       color: 'blue',
       autoClose: 3000,
     });
-  }, [builder, media, announce]);
+  }, [builder, media, announce, tr]);
 
   // ── Keyboard shortcuts ──
   useLayoutBuilderKeyboardHandlers({
@@ -467,7 +469,7 @@ export function LayoutBuilderModal({
         body: { height: '100vh', display: 'flex', flexDirection: 'column' },
         content: { overflow: 'hidden' },
       }}
-      aria-label="Layout Builder"
+      aria-label={tr('lb_mod_aria', 'Layout Builder')}
     >
       <ErrorBoundary
         fallback={
@@ -482,12 +484,12 @@ export function LayoutBuilderModal({
               padding: 32,
             }}
           >
-            <Text fw={600} size="lg">Something went wrong in the Layout Editor</Text>
+            <Text fw={600} size="lg">{tr('lb_mod_err_title', 'Something went wrong in the Layout Editor')}</Text>
             <Text size="sm" c="dimmed" ta="center">
-              An unexpected error occurred. Close the editor and try again.
+              {tr('lb_mod_err_body', 'An unexpected error occurred. Close the editor and try again.')}
             </Text>
             <Button variant="light" color="red" onClick={onClose}>
-              Close Editor
+              {tr('lb_mod_close_editor', 'Close Editor')}
             </Button>
           </Box>
         }
@@ -526,7 +528,7 @@ export function LayoutBuilderModal({
                       background: 'var(--mantine-color-yellow-5)',
                       flexShrink: 0,
                     }}
-                    aria-label="Unsaved changes"
+                    aria-label={tr('lb_mod_unsaved', 'Unsaved changes')}
                   />
                 )}
                 <TextInput
@@ -542,26 +544,26 @@ export function LayoutBuilderModal({
                       height: 'auto',
                     },
                   }}
-                  aria-label="Template name"
+                  aria-label={tr('lb_mod_template_name', 'Template name')}
                 />
               </Group>
               <Divider orientation="vertical" />
-              <Tooltip label="Undo (Ctrl+Z)">
+              <Tooltip label={tr('lb_mod_undo_tt', 'Undo (Ctrl+Z)')}>
                 <ActionIcon
                   variant="subtle"
                   disabled={!builder.canUndo}
                   onClick={builder.undo}
-                  aria-label="Undo"
+                  aria-label={tr('lb_mod_undo', 'Undo')}
                 >
                   <IconArrowBackUp size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="Redo (Ctrl+Shift+Z)">
+              <Tooltip label={tr('lb_mod_redo_tt', 'Redo (Ctrl+Shift+Z)')}>
                 <ActionIcon
                   variant="subtle"
                   disabled={!builder.canRedo}
                   onClick={builder.redo}
-                  aria-label="Redo"
+                  aria-label={tr('lb_mod_redo', 'Redo')}
                 >
                   <IconArrowForwardUp size={18} />
                 </ActionIcon>
@@ -609,11 +611,11 @@ export function LayoutBuilderModal({
 
             {/* Right: preview + save + close */}
             <Group gap="sm" wrap="nowrap">
-              <Tooltip label={builder.isPreview ? 'Edit mode' : 'Preview mode'}>
+              <Tooltip label={builder.isPreview ? tr('lb_mod_edit_mode', 'Edit mode') : tr('lb_mod_preview_mode', 'Preview mode')}>
                 <ActionIcon
                   variant={builder.isPreview ? 'filled' : 'subtle'}
                   onClick={builder.togglePreview}
-                  aria-label={builder.isPreview ? 'Exit preview' : 'Preview'}
+                  aria-label={builder.isPreview ? tr('lb_mod_exit_preview', 'Exit preview') : tr('lb_mod_preview', 'Preview')}
                 >
                   {builder.isPreview ? (
                     <IconEyeOff size={18} />
@@ -629,10 +631,10 @@ export function LayoutBuilderModal({
                 disabled={!builder.isDirty}
                 size="sm"
               >
-                Save
+                {tr('lb_mod_save', 'Save')}
               </Button>
               <Button variant="subtle" onClick={handleClose} size="sm">
-                Close
+                {tr('lb_mod_close', 'Close')}
               </Button>
             </Group>
           </Group>
@@ -666,7 +668,7 @@ export function LayoutBuilderModal({
               setSelectedOverlayId(null);
               setIsBackgroundSelected(false);
               setSelectedGuideId(null);
-              announce(`Generated ${ids.length} slot${ids.length !== 1 ? 's' : ''}`);
+              announce(tr('lb_mod_generated', 'Generated {{count}} slot', { count: ids.length }));
             }
           }}
           hasExistingSlots={builder.template.slots.length > 0}
