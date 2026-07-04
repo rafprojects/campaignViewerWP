@@ -1,0 +1,6498 @@
+# WP Super Gallery — ru_RU translation.
+# AI-authored for QA; review by a native speaker before release.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+"X-Domain: wp-super-gallery\n"
+
+msgid "WP Super Gallery"
+msgstr "WP Super Gallery"
+
+msgid "https://github.com/rafprojects/wp-super-gallery"
+msgstr "https://github.com/rafprojects/wp-super-gallery"
+
+msgid "Embeddable campaign gallery with Shadow DOM rendering."
+msgstr "Встраиваемая галерея кампаний с рендерингом через Shadow DOM."
+
+msgid "Asset Library"
+msgstr "Библиотека ресурсов"
+
+msgid "Upload and manage global overlay/graphic assets available across all spaces."
+msgstr "Загружайте и управляйте глобальными графическими ресурсами и наложениями, доступными во всех пространствах."
+
+msgid "Campaigns"
+msgstr "Кампании"
+
+msgid "Campaign"
+msgstr "Кампания"
+
+msgid "SuperGallery"
+msgstr "SuperGallery"
+
+msgid "Add New"
+msgstr "Добавить"
+
+msgid "Add New Campaign"
+msgstr "Добавить кампанию"
+
+msgid "Edit Campaign"
+msgstr "Редактировать кампанию"
+
+msgid "New Campaign"
+msgstr "Новая кампания"
+
+msgid "View Campaign"
+msgstr "Просмотреть кампанию"
+
+msgid "View Campaigns"
+msgstr "Просмотреть кампании"
+
+msgid "Search Campaigns"
+msgstr "Поиск кампаний"
+
+msgid "No campaigns found"
+msgstr "Кампании не найдены"
+
+msgid "No campaigns found in Trash"
+msgstr "В корзине кампании не найдены"
+
+msgid "Companies"
+msgstr "Компании"
+
+msgid "Company"
+msgstr "Компания"
+
+msgid "All Companies"
+msgstr "Все компании"
+
+msgid "Edit Company"
+msgstr "Редактировать компанию"
+
+msgid "View Company"
+msgstr "Просмотреть компанию"
+
+msgid "Update Company"
+msgstr "Обновить компанию"
+
+msgid "Add New Company"
+msgstr "Добавить компанию"
+
+msgid "New Company Name"
+msgstr "Название новой компании"
+
+msgid "Search Companies"
+msgstr "Поиск компаний"
+
+msgid "Popular Companies"
+msgstr "Популярные компании"
+
+msgid "No companies found"
+msgstr "Компании не найдены"
+
+msgid "← Back to Companies"
+msgstr "← Назад к компаниям"
+
+msgid "Separate companies with commas"
+msgstr "Разделяйте компании запятыми"
+
+msgid "Add or remove companies"
+msgstr "Добавить или удалить компании"
+
+msgid "Choose from the most used companies"
+msgstr "Выберите из наиболее используемых компаний"
+
+msgid "Campaign Tags"
+msgstr "Метки кампаний"
+
+msgid "Campaign Categories"
+msgstr "Категории кампаний"
+
+msgid "Media Tags"
+msgstr "Метки медиа"
+
+msgid "Layout Templates"
+msgstr "Шаблоны макетов"
+
+msgid "Space"
+msgstr "Пространство"
+
+msgid "All spaces"
+msgstr "Все пространства"
+
+msgid "+ New Space"
+msgstr "+ Новое пространство"
+
+msgid "Space name"
+msgstr "Название пространства"
+
+msgid "Slug (auto)"
+msgstr "Ярлык (авто)"
+
+msgid "Create"
+msgstr "Создать"
+
+msgid "Forbidden"
+msgstr "Запрещено"
+
+msgid "Gallery Spaces"
+msgstr "Пространства галереи"
+
+msgid "Spaces"
+msgstr "Пространства"
+
+msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr "Создавайте пространства, редактируйте настройки для каждого пространства и управляйте разрешениями доступа."
+
+msgid "Admin menu"
+msgstr "Меню администратора"
+
+msgid "User navigation"
+msgstr "Навигация пользователя"
+
+msgid "User menu"
+msgstr "Меню пользователя"
+
+msgid "Signed in as {{email}}"
+msgstr "Вы вошли как {{email}}"
+
+msgid "Admin Panel"
+msgstr "Панель администратора"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Edit {{title}}"
+msgstr "Редактировать {{title}}"
+
+msgid "Edit Gallery Config"
+msgstr "Редактировать конфигурацию галереи"
+
+msgid "Edit gallery config for {{title}}"
+msgstr "Редактировать конфигурацию галереи для {{title}}"
+
+msgid "Manage Media"
+msgstr "Управление медиа"
+
+msgid "Manage media for {{title}}"
+msgstr "Управление медиа для {{title}}"
+
+msgid "Archive"
+msgstr "Архивировать"
+
+msgid "Archive {{title}}"
+msgstr "Архивировать {{title}}"
+
+msgid "Sign out"
+msgstr "Выйти"
+
+msgid "Sign in"
+msgstr "Войти"
+
+msgid "Sign in to access private campaigns."
+msgstr "Войдите, чтобы получить доступ к приватным кампаниям."
+
+msgid "Switch targeted gallery space"
+msgstr "Переключить целевое пространство галереи"
+
+msgid "Target space"
+msgstr "Целевое пространство"
+
+msgid "Access private campaigns with your WordPress account."
+msgstr "Получите доступ к приватным кампаниям с помощью вашей учётной записи WordPress."
+
+msgid "Email"
+msgstr "Электронная почта"
+
+msgid "you@example.com"
+msgstr "you@example.com"
+
+msgid "Password"
+msgstr "Пароль"
+
+msgid "Enter your password"
+msgstr "Введите ваш пароль"
+
+msgid "Enter a valid email"
+msgstr "Введите действительный адрес электронной почты"
+
+msgid "Password must be at least {{count}} character"
+msgstr "Пароль должен содержать не менее {{count}} символа"
+
+msgid "Password must be at least {{count}} characters"
+msgstr "Пароль должен содержать не менее {{count}} символов"
+
+msgid "Error"
+msgstr "Ошибка"
+
+msgid "Login failed. Check your credentials."
+msgstr "Не удалось войти. Проверьте ваши учётные данные."
+
+msgid "Signing in..."
+msgstr "Вход…"
+
+msgid "Media lightbox"
+msgstr "Лайтбокс медиа"
+
+msgid "Close lightbox"
+msgstr "Закрыть лайтбокс"
+
+msgid "Previous image (lightbox)"
+msgstr "Предыдущее изображение (лайтбокс)"
+
+msgid "Next image (lightbox)"
+msgstr "Следующее изображение (лайтбокс)"
+
+msgid "Campaign video"
+msgstr "Видео кампании"
+
+msgid "Campaign image"
+msgstr "Изображение кампании"
+
+msgid "{{current}} / {{total}}"
+msgstr "{{current}} / {{total}}"
+
+msgid "←"
+msgstr "←"
+
+msgid "→"
+msgstr "→"
+
+msgid "Esc"
+msgstr "Esc"
+
+msgid "navigate"
+msgstr "навигация"
+
+msgid "·"
+msgstr "·"
+
+msgid "close"
+msgstr "закрыть"
+
+msgid "VIDEO"
+msgstr "ВИДЕО"
+
+msgid "No media"
+msgstr "Нет медиа"
+
+msgid "Video"
+msgstr "Видео"
+
+msgid "Image"
+msgstr "Изображение"
+
+msgid "{{type}} {{index}}"
+msgstr "{{type}} {{index}}"
+
+msgid "Item {{index}} of {{total}}"
+msgstr "Элемент {{index}} из {{total}}"
+
+msgid "Item {{index}}"
+msgstr "Элемент {{index}}"
+
+msgid "Play: {{caption}}"
+msgstr "Воспроизвести: {{caption}}"
+
+msgid "View: {{caption}}"
+msgstr "Просмотреть: {{caption}}"
+
+msgid "Play video {{index}}"
+msgstr "Воспроизвести видео {{index}}"
+
+msgid "View image {{index}}"
+msgstr "Просмотреть изображение {{index}}"
+
+msgid "Open in lightbox"
+msgstr "Открыть в лайтбоксе"
+
+msgid "Empty"
+msgstr "Пусто"
+
+msgid "Slide {{index}} of {{total}}"
+msgstr "Слайд {{index}} из {{total}}"
+
+msgid "View image {{index}} of {{total}}"
+msgstr "Просмотреть изображение {{index}} из {{total}}"
+
+msgid "Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play."
+msgstr "Видео {{index}} из {{total}}: {{caption}}. Используйте клавиши со стрелками для навигации, Enter или Пробел для воспроизведения."
+
+msgid "Video player: {{caption}}"
+msgstr "Видеоплеер: {{caption}}"
+
+msgid "Untitled video"
+msgstr "Видео без названия"
+
+msgid "Untitled image"
+msgstr "Изображение без названия"
+
+msgid "Open lightbox"
+msgstr "Открыть лайтбокс"
+
+msgid "Previous video (overlay)"
+msgstr "Предыдущее видео (наложение)"
+
+msgid "Next video (overlay)"
+msgstr "Следующее видео (наложение)"
+
+msgid "Previous image (overlay)"
+msgstr "Предыдущее изображение (наложение)"
+
+msgid "Next image (overlay)"
+msgstr "Следующее изображение (наложение)"
+
+msgid "Campaign listing"
+msgstr "Список кампаний"
+
+msgid "Previous campaigns"
+msgstr "Предыдущие кампании"
+
+msgid "Next campaigns"
+msgstr "Следующие кампании"
+
+msgid "All"
+msgstr "Все"
+
+msgid "Default order"
+msgstr "Порядок по умолчанию"
+
+msgid "Newest first"
+msgstr "Сначала новые"
+
+msgid "Oldest first"
+msgstr "Сначала старые"
+
+msgid "Sort order"
+msgstr "Порядок сортировки"
+
+msgid "Loading layout template"
+msgstr "Загрузка шаблона макета"
+
+msgid "Loading gallery…"
+msgstr "Загрузка галереи…"
+
+msgid "Layout template not found"
+msgstr "Шаблон макета не найден"
+
+msgid "View {{title}} in lightbox"
+msgstr "Просмотреть {{title}} в лайтбоксе"
+
+msgid "media"
+msgstr "медиа"
+
+msgid "{{count}} media item(s) have no slot — they won't be displayed."
+msgstr "{{count}} медиаэлемент(ов) не имеют слота — они не будут отображены."
+
+msgid "{{count}} slot(s) have no media — they'll appear as placeholders."
+msgstr "{{count}} слот(ов) не имеют медиа — они будут отображаться как заполнители."
+
+msgid "Slot assignment info"
+msgstr "Информация о назначении слотов"
+
+msgid "Kept bindings: {{summary}}"
+msgstr "Сохранённые привязки: {{summary}}"
+
+msgid "Cleared (media not in campaign): {{summary}}"
+msgstr "Очищено (медиа не в кампании): {{summary}}"
+
+msgid "Auto-filled from remaining media: {{summary}}"
+msgstr "Автоматически заполнено из оставшихся медиа: {{summary}}"
+
+msgid "Empty (no media remaining): slot{{suffix}} {{summary}}"
+msgstr "Пусто (медиа не осталось): слот{{suffix}} {{summary}}"
+
+msgid "Layout gallery: {{name}}"
+msgstr "Галерея макета: {{name}}"
+
+msgid "Back to gallery"
+msgstr "Назад к галерее"
+
+msgid "Actions menu"
+msgstr "Меню действий"
+
+msgid "Create new campaign"
+msgstr "Создать новую кампанию"
+
+msgid "Import"
+msgstr "Импорт"
+
+msgid "Import campaigns"
+msgstr "Импортировать кампании"
+
+msgid "Pick a space first"
+msgstr "Сначала выберите пространство"
+
+msgid "Manage spaces"
+msgstr "Управление пространствами"
+
+msgid "Keyboard shortcuts"
+msgstr "Сочетания клавиш"
+
+msgid "Keyboard shortcuts (?)"
+msgstr "Сочетания клавиш (?)"
+
+msgid "{{name}} (default)"
+msgstr "{{name}} (по умолчанию)"
+
+msgid "Media"
+msgstr "Медиа"
+
+msgid "Layouts"
+msgstr "Макеты"
+
+msgid "Templates"
+msgstr "Шаблоны"
+
+msgid "Assets"
+msgstr "Ресурсы"
+
+msgid "Access"
+msgstr "Доступ"
+
+msgid "Campaign Activity"
+msgstr "Активность кампании"
+
+msgid "System Audit"
+msgstr "Аудит системы"
+
+msgid "Analytics"
+msgstr "Аналитика"
+
+msgid "Select admin panel tab"
+msgstr "Выберите вкладку панели администратора"
+
+msgid "Hide filters"
+msgstr "Скрыть фильтры"
+
+msgid "Filters"
+msgstr "Фильтры"
+
+msgid "Filters ({{count}})"
+msgstr "Фильтры ({{count}})"
+
+msgid "Tag"
+msgstr "Метка"
+
+msgid "Title A–Z"
+msgstr "Название А–Я"
+
+msgid "Title Z–A"
+msgstr "Название Я–А"
+
+msgid "Recently updated"
+msgstr "Недавно обновлённые"
+
+msgid "Include archived"
+msgstr "Включая архивные"
+
+msgid "Manage categories & tags"
+msgstr "Управление категориями и метками"
+
+msgid "Manage taxonomy"
+msgstr "Управление таксономией"
+
+msgid "Export ZIP"
+msgstr "Экспорт ZIP"
+
+msgid "Export media library as ZIP"
+msgstr "Экспортировать библиотеку медиа как ZIP"
+
+msgid "Import ZIP"
+msgstr "Импорт ZIP"
+
+msgid "Import media library from ZIP"
+msgstr "Импортировать библиотеку медиа из ZIP"
+
+msgid "Rescan All"
+msgstr "Пересканировать всё"
+
+msgid "Rescanned: {{media}} media items updated across {{campaigns}} campaigns."
+msgstr "Пересканировано: {{media}} медиаэлементов обновлено в {{campaigns}} кампаниях."
+
+msgid "All media types are correct."
+msgstr "Все типы медиа корректны."
+
+msgid "Building audit log ZIP — this may take a moment."
+msgstr "Создание ZIP журнала аудита — это может занять некоторое время."
+
+msgid "Building media library ZIP — this may take a moment."
+msgstr "Создание ZIP библиотеки медиа — это может занять некоторое время."
+
+msgid "Export timed out after 5 minutes."
+msgstr "Время экспорта истекло через 5 минут."
+
+msgid "Export failed"
+msgstr "Не удалось экспортировать"
+
+msgid "Audit ZIP export failed"
+msgstr "Не удалось экспортировать ZIP аудита"
+
+msgid "Media ZIP export failed"
+msgstr "Не удалось экспортировать ZIP медиа"
+
+msgid "Media ZIP import failed"
+msgstr "Не удалось импортировать ZIP медиа"
+
+msgid "Imported {{count}} media item(s)."
+msgstr "Импортировано {{count}} медиаэлемент(ов)."
+
+msgid "Imported {{count}} media item(s) ({{skipped}} skipped)."
+msgstr "Импортировано {{count}} медиаэлемент(ов) (пропущено {{skipped}})."
+
+msgid "Add media — {{title}}"
+msgstr "Добавить медиа — {{title}}"
+
+msgid "Clear selection"
+msgstr "Очистить выбор"
+
+msgid "{{count}} campaign selected"
+msgstr "Выбрана {{count}} кампания"
+
+msgid "{{count}} campaigns selected"
+msgstr "Выбрано {{count}} кампаний"
+
+msgid "Restore"
+msgstr "Восстановить"
+
+msgid "Delete"
+msgstr "Удалить"
+
+msgid "Cancel"
+msgstr "Отмена"
+
+msgid "Archive campaign"
+msgstr "Архивировать кампанию"
+
+msgid "Archive this campaign? This action will mark it archived."
+msgstr "Архивировать эту кампанию? Это действие пометит её как архивную."
+
+msgid "Archive campaign {{title}}"
+msgstr "Архивировать кампанию {{title}}"
+
+msgid "Restore campaign"
+msgstr "Восстановить кампанию"
+
+msgid "Restore this campaign? This will make it active again and enable any associated access grants."
+msgstr "Восстановить эту кампанию? Это снова сделает её активной и включит все связанные разрешения доступа."
+
+msgid "Restore campaign {{title}}"
+msgstr "Восстановить кампанию {{title}}"
+
+msgid "Archive {{count}} campaign?"
+msgstr "Архивировать {{count}} кампанию?"
+
+msgid "Archive {{count}} campaigns?"
+msgstr "Архивировать {{count}} кампаний?"
+
+msgid "This will mark all {{count}} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time."
+msgstr "Это пометит все {{count}} выбранных кампаний как архивные. Архивные кампании скрыты из галереи, но могут быть восстановлены в любое время."
+
+msgid "Archive {{count}} campaign"
+msgstr "Архивировать {{count}} кампанию"
+
+msgid "Archive {{count}} campaigns"
+msgstr "Архивировать {{count}} кампаний"
+
+msgid "Restore {{count}} campaign?"
+msgstr "Восстановить {{count}} кампанию?"
+
+msgid "Restore {{count}} campaigns?"
+msgstr "Восстановить {{count}} кампаний?"
+
+msgid "This will restore all {{count}} selected campaigns and make them active again. Any associated access grants will be re-enabled."
+msgstr "Это восстановит все {{count}} выбранных кампаний и снова сделает их активными. Все связанные разрешения доступа будут повторно включены."
+
+msgid "Restore {{count}} campaign"
+msgstr "Восстановить {{count}} кампанию"
+
+msgid "Restore {{count}} campaigns"
+msgstr "Восстановить {{count}} кампаний"
+
+msgid "Delete campaign"
+msgstr "Удалить кампанию"
+
+msgid "This permanently deletes \"{{title}}\", its media references, and pending access requests. This cannot be undone."
+msgstr "Это навсегда удалит «{{title}}», её ссылки на медиа и ожидающие запросы доступа. Это нельзя отменить."
+
+msgid "this campaign"
+msgstr "эту кампанию"
+
+msgid "Type {{token}} to confirm."
+msgstr "Введите {{token}} для подтверждения."
+
+msgid "Type {{token}} to confirm"
+msgstr "Введите {{token}} для подтверждения"
+
+msgid "Also purge analytics events for this campaign"
+msgstr "Также очистить события аналитики для этой кампании"
+
+msgid "Delete campaign {{title}}"
+msgstr "Удалить кампанию {{title}}"
+
+msgid "Delete permanently"
+msgstr "Удалить навсегда"
+
+msgid "Delete {{count}} campaign?"
+msgstr "Удалить {{count}} кампанию?"
+
+msgid "Delete {{count}} campaigns?"
+msgstr "Удалить {{count}} кампаний?"
+
+msgid "This will permanently delete all {{count}} selected campaigns, their media references, and pending access requests. This cannot be undone."
+msgstr "Это навсегда удалит все {{count}} выбранных кампаний, их ссылки на медиа и ожидающие запросы доступа. Это нельзя отменить."
+
+msgid "Also purge all analytics data for these campaigns"
+msgstr "Также очистить все данные аналитики для этих кампаний"
+
+msgid "Delete {{count}} campaign"
+msgstr "Удалить {{count}} кампанию"
+
+msgid "Delete {{count}} campaigns"
+msgstr "Удалить {{count}} кампаний"
+
+msgid "Duplicate Campaign"
+msgstr "Дублировать кампанию"
+
+msgid "Duplicate campaign"
+msgstr "Дублировать кампанию"
+
+msgid "Source:"
+msgstr "Источник:"
+
+msgid "New name"
+msgstr "Новое название"
+
+msgid "Campaign name"
+msgstr "Название кампании"
+
+msgid "Copy media associations"
+msgstr "Копировать связи медиа"
+
+msgid "Media items will appear in both campaigns"
+msgstr "Медиаэлементы появятся в обеих кампаниях"
+
+msgid "The duplicate will start with an empty media library."
+msgstr "Дубликат начнётся с пустой библиотекой медиа."
+
+msgid "Duplicate linked layout template"
+msgstr "Дублировать связанный шаблон макета"
+
+msgid "The copied campaign gets its own editable layout instead of sharing the original template."
+msgstr "Скопированная кампания получает свой собственный редактируемый макет вместо совместного использования исходного шаблона."
+
+msgid "The duplicate will keep pointing at the original layout template."
+msgstr "Дубликат продолжит ссылаться на исходный шаблон макета."
+
+msgid "{{title}} (Copy)"
+msgstr "{{title}} (копия)"
+
+msgid "Duplicate"
+msgstr "Дублировать"
+
+msgid "Move Campaign to Space"
+msgstr "Переместить кампанию в пространство"
+
+msgid "Move campaign to space"
+msgstr "Переместить кампанию в пространство"
+
+msgid "Campaign:"
+msgstr "Кампания:"
+
+msgid "From space:"
+msgstr "Из пространства:"
+
+msgid "Pick a space"
+msgstr "Выберите пространство"
+
+msgid "No other spaces you own"
+msgstr "У вас нет других пространств"
+
+msgid "All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it."
+msgstr "Вся аналитика, история аудита, ссылки на медиа и запросы доступа перемещаются вместе с кампанией. Исходное пространство больше не будет её отображать."
+
+msgid "Move"
+msgstr "Переместить"
+
+msgid "Add Campaign"
+msgstr "Добавить кампанию"
+
+msgid "Campaign list"
+msgstr "Список кампаний"
+
+msgid "Select all"
+msgstr "Выбрать всё"
+
+msgid "Select all campaigns"
+msgstr "Выбрать все кампании"
+
+msgid "Title"
+msgstr "Название"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Visibility"
+msgstr "Видимость"
+
+msgid "Grants"
+msgstr "Разрешения"
+
+msgid "Tags"
+msgstr "Метки"
+
+msgid "Categories"
+msgstr "Категории"
+
+msgid "Actions"
+msgstr "Действия"
+
+msgid "{{count}} campaigns"
+msgstr "{{count}} кампаний"
+
+msgid "Import Campaign"
+msgstr "Импортировать кампанию"
+
+msgid "Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value."
+msgstr "Выберите файл {{json}} или {{zip}}, экспортированный из WP Super Gallery. Кампании будут созданы как черновики — медиа и шаблоны макетов импортируются по значению."
+
+msgid "Change file"
+msgstr "Изменить файл"
+
+msgid "Select .json or .zip file"
+msgstr "Выберите файл .json или .zip"
+
+msgid "Ready to import:"
+msgstr "Готово к импорту:"
+
+msgid " ({{count}} media reference)"
+msgstr " ({{count}} ссылка на медиа)"
+
+msgid " ({{count}} media references)"
+msgstr " ({{count}} ссылок на медиа)"
+
+msgid "Invalid export file: missing version or campaign key."
+msgstr "Недействительный файл экспорта: отсутствует версия или ключ кампании."
+
+msgid "Unsupported export version: {{version}}. Expected 1."
+msgstr "Неподдерживаемая версия экспорта: {{version}}. Ожидается 1."
+
+msgid "Could not parse JSON. Make sure the file is a valid campaign export."
+msgstr "Не удалось разобрать JSON. Убедитесь, что файл является действительным экспортом кампании."
+
+msgid "Untitled"
+msgstr "Без названия"
+
+msgid "Scheduled"
+msgstr "Запланировано"
+
+msgid "Expired"
+msgstr "Истекло"
+
+msgid "Expiring soon"
+msgstr "Скоро истекает"
+
+msgid "Select {{title}}"
+msgstr "Выбрать {{title}}"
+
+msgid "Custom gallery: {{summary}}"
+msgstr "Пользовательская галерея: {{summary}}"
+
+msgid "Nested overrides"
+msgstr "Вложенные переопределения"
+
+msgid "Custom gallery overrides"
+msgstr "Пользовательские переопределения галереи"
+
+msgid "{{count}} grant"
+msgstr "{{count}} разрешение"
+
+msgid "{{count}} grants"
+msgstr "{{count}} разрешений"
+
+msgid "Edit"
+msgstr "Редактировать"
+
+msgid "Clone"
+msgstr "Клонировать"
+
+msgid "Duplicate {{title}}"
+msgstr "Дублировать {{title}}"
+
+msgid "Export {{title}}"
+msgstr "Экспортировать {{title}}"
+
+msgid "Export"
+msgstr "Экспорт"
+
+msgid "Export as ZIP (includes media)"
+msgstr "Экспортировать как ZIP (включает медиа)"
+
+msgid "Export as JSON (data only)"
+msgstr "Экспортировать как JSON (только данные)"
+
+msgid "Permanently delete"
+msgstr "Удалить навсегда"
+
+msgid "Delete {{title}}"
+msgstr "Удалить {{title}}"
+
+msgid "Details"
+msgstr "Подробности"
+
+msgid "Campaign title"
+msgstr "Название кампании"
+
+msgid "Description"
+msgstr "Описание"
+
+msgid "Campaign description"
+msgstr "Описание кампании"
+
+msgid "Campaign Thumbnail (Card Image)"
+msgstr "Миниатюра кампании (изображение карточки)"
+
+msgid "Campaign thumbnail preview"
+msgstr "Предпросмотр миниатюры кампании"
+
+msgid "Use existing campaign media as thumbnail"
+msgstr "Использовать существующее медиа кампании в качестве миниатюры"
+
+msgid "Choose media image/thumbnail"
+msgstr "Выберите изображение/миниатюру медиа"
+
+msgid "{{type}} #{{id}}"
+msgstr "{{type}} №{{id}}"
+
+msgid "No campaign media available"
+msgstr "Нет доступного медиа кампании"
+
+msgid "Upload Custom Thumbnail"
+msgstr "Загрузить пользовательскую миниатюру"
+
+msgid "Draft"
+msgstr "Черновик"
+
+msgid "Active"
+msgstr "Активна"
+
+msgid "Archived"
+msgstr "Архивирована"
+
+msgid "Private"
+msgstr "Приватная"
+
+msgid "Public"
+msgstr "Публичная"
+
+msgid "Add tags…"
+msgstr "Добавить метки…"
+
+msgid "Type a tag and press Enter or comma to add"
+msgstr "Введите метку и нажмите Enter или запятую для добавления"
+
+msgid "Select categories"
+msgstr "Выберите категории"
+
+msgid "Assign this campaign to one or more categories"
+msgstr "Назначьте этой кампании одну или несколько категорий"
+
+msgid "Publish At"
+msgstr "Опубликовать в"
+
+msgid "Campaign becomes visible at this date/time"
+msgstr "Кампания становится видимой в эту дату/время"
+
+msgid "Unpublish At"
+msgstr "Снять с публикации в"
+
+msgid "Campaign is hidden after this date/time"
+msgstr "Кампания скрывается после этой даты/времени"
+
+msgid "Card Border Color"
+msgstr "Цвет границы карточки"
+
+msgid "Custom accent border color for this campaign card"
+msgstr "Пользовательский акцентный цвет границы для этой карточки кампании"
+
+msgid "Auto (company brand color)"
+msgstr "Авто (фирменный цвет компании)"
+
+msgid "Gallery Mode Override"
+msgstr "Переопределение режима галереи"
+
+msgid "Override the global gallery mode for this campaign"
+msgstr "Переопределить глобальный режим галереи для этой кампании"
+
+msgid "Default (from settings)"
+msgstr "По умолчанию (из настроек)"
+
+msgid "Unified"
+msgstr "Единый"
+
+msgid "Per-Type"
+msgstr "По типу"
+
+msgid "Unified Breakpoint Adapters"
+msgstr "Единые адаптеры контрольных точек"
+
+msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
+msgstr "Очистите ячейку, чтобы унаследовать глобальный единый адаптер для этой контрольной точки."
+
+msgid "Desktop"
+msgstr "Компьютер"
+
+msgid "Tablet"
+msgstr "Планшет"
+
+msgid "Mobile"
+msgstr "Мобильный"
+
+msgid "{{bp}} Unified Gallery Adapter"
+msgstr "Единый адаптер галереи {{bp}}"
+
+msgid "Inherited"
+msgstr "Унаследовано"
+
+msgid "Per-Type Breakpoint Adapters"
+msgstr "Адаптеры контрольных точек по типу"
+
+msgid "Clear any cell to inherit that breakpoint's global adapter selection."
+msgstr "Очистите любую ячейку, чтобы унаследовать глобальный выбор адаптера для этой контрольной точки."
+
+msgid "{{bp}} Image Gallery Adapter"
+msgstr "Адаптер галереи изображений {{bp}}"
+
+msgid "{{bp}} Video Gallery Adapter"
+msgstr "Адаптер видеогалереи {{bp}}"
+
+msgid "Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields."
+msgstr "Быстрые переопределения по контрольным точкам остаются здесь встроенными. Используйте общий адаптивный редактор для изменения режимов, общих адаптивных настроек и полей, специфичных для адаптера."
+
+msgid "Edit Responsive Config"
+msgstr "Редактировать адаптивную конфигурацию"
+
+msgid "Inheriting global gallery settings"
+msgstr "Наследование глобальных настроек галереи"
+
+msgid "Clear the campaign-specific gallery override state here to fall back to the global gallery configuration."
+msgstr "Очистите здесь состояние переопределения галереи для конкретной кампании, чтобы вернуться к глобальной конфигурации галереи."
+
+msgid "Use Inherited Gallery Settings"
+msgstr "Использовать унаследованные настройки галереи"
+
+msgid "Layout Template"
+msgstr "Шаблон макета"
+
+msgid "Layout Builder is your selected gallery adapter — choose the template it renders."
+msgstr "Конструктор макетов — это выбранный вами адаптер галереи — выберите шаблон, который он отображает."
+
+msgid "Assign a layout template to use the Layout Builder adapter"
+msgstr "Назначьте шаблон макета, чтобы использовать адаптер «Конструктор макетов»"
+
+msgid "None (use default adapter)"
+msgstr "Нет (использовать адаптер по умолчанию)"
+
+msgid "{{name}} ({{count}} slots)"
+msgstr "{{name}} ({{count}} слотов)"
+
+msgid "Edit Layout"
+msgstr "Редактировать макет"
+
+msgid "Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter."
+msgstr "«Конструктор макетов» выбран в качестве адаптера галереи, но шаблон не назначен — выберите один выше, иначе галерея вернётся к адаптеру по умолчанию."
+
+msgid "Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first."
+msgstr "«Конструктор макетов» выбран в качестве адаптера галереи, но шаблонов макетов пока нет. Сначала создайте один в «Конструкторе макетов»."
+
+msgid "Save Changes"
+msgstr "Сохранить изменения"
+
+msgid "Create Campaign"
+msgstr "Создать кампанию"
+
+msgid "Campaign modal tabs"
+msgstr "Вкладки окна кампании"
+
+msgid "Discard changes?"
+msgstr "Отменить изменения?"
+
+msgid "You have unsaved changes. Are you sure you want to discard them?"
+msgstr "У вас есть несохранённые изменения. Вы уверены, что хотите их отменить?"
+
+msgid "Discard"
+msgstr "Отменить"
+
+msgid "Campaign Responsive Gallery Config"
+msgstr "Адаптивная конфигурация галереи кампании"
+
+msgid "This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings."
+msgstr "Эта кампания в настоящее время хранит пользовательские переопределения галереи. Используйте «Очистить переопределения кампании», чтобы вернуться к унаследованным глобальным настройкам галереи."
+
+msgid "This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides."
+msgstr "Эта кампания в настоящее время наследует глобальные настройки галереи. Любые изменения, сохранённые здесь, создадут переопределения для конкретной кампании."
+
+msgid "Apply Campaign Gallery Config"
+msgstr "Применить конфигурацию галереи кампании"
+
+msgid "Clear Campaign Overrides"
+msgstr "Очистить переопределения кампании"
+
+msgid "Adapter applied when this campaign renders images and videos together."
+msgstr "Адаптер, применяемый, когда эта кампания отображает изображения и видео вместе."
+
+msgid "No media attached to this campaign."
+msgstr "К этой кампании не прикреплено медиа."
+
+msgid "Media item {{label}}"
+msgstr "Медиаэлемент {{label}}"
+
+msgid "Remove from campaign"
+msgstr "Убрать из кампании"
+
+msgid "Upload New File"
+msgstr "Загрузить новый файл"
+
+msgid "Uploading..."
+msgstr "Загрузка…"
+
+msgid "Choose up to {{count}} files"
+msgstr "Выберите до {{count}} файлов"
+
+msgid "Uploaded files use their filenames as captions in this modal."
+msgstr "Загруженные файлы используют свои имена файлов в качестве подписей в этом окне."
+
+msgid "Add External URL"
+msgstr "Добавить внешний URL"
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "https://youtube.com/watch?v=... or image URL"
+msgstr "https://youtube.com/watch?v=... или URL изображения"
+
+msgid "Caption (optional)"
+msgstr "Подпись (необязательно)"
+
+msgid "Describe this media"
+msgstr "Опишите это медиа"
+
+msgid "Add External Media"
+msgstr "Добавить внешнее медиа"
+
+msgid "Save"
+msgstr "Сохранить"
+
+msgid "items"
+msgstr "элементы"
+
+msgid "Add Media"
+msgstr "Добавить медиа"
+
+msgid "Rescan Types"
+msgstr "Пересканировать типы"
+
+msgid "Media view mode"
+msgstr "Режим просмотра медиа"
+
+msgid "Media card size"
+msgstr "Размер карточки медиа"
+
+msgid "Media sort mode"
+msgstr "Режим сортировки медиа"
+
+msgid "Grid View"
+msgstr "Вид сеткой"
+
+msgid "Compact Grid"
+msgstr "Компактная сетка"
+
+msgid "List View"
+msgstr "Вид списком"
+
+msgid "Order"
+msgstr "Порядок"
+
+msgid "Date uploaded"
+msgstr "Дата загрузки"
+
+msgid "File size"
+msgstr "Размер файла"
+
+msgid "Usage count"
+msgstr "Количество использований"
+
+msgid "Exclusive only"
+msgstr "Только эксклюзивные"
+
+msgid "Show only items exclusive to this campaign"
+msgstr "Показывать только элементы, эксклюзивные для этой кампании"
+
+msgid "Show only media exclusive to this campaign"
+msgstr "Показывать только медиа, эксклюзивные для этой кампании"
+
+msgid "Thumb"
+msgstr "Миниатюра"
+
+msgid "Caption"
+msgstr "Подпись"
+
+msgid "Source"
+msgstr "Источник"
+
+msgid "Usage"
+msgstr "Использование"
+
+msgid "Media list pages"
+msgstr "Страницы списка медиа"
+
+msgid "media item"
+msgstr "медиаэлемент"
+
+msgid "Remove from Campaign"
+msgstr "Убрать из кампании"
+
+msgid "Remove this item from the campaign? The file stays in your media library and can be added to other campaigns."
+msgstr "Убрать этот элемент из кампании? Файл останется в вашей библиотеке медиа и может быть добавлен в другие кампании."
+
+msgid " It is currently used in {{count}} other campaign — those associations are not affected."
+msgstr " В настоящее время он используется в {{count}} другой кампании — эти связи не затрагиваются."
+
+msgid " It is currently used in {{count}} other campaigns — those associations are not affected."
+msgstr " В настоящее время он используется в {{count}} других кампаниях — эти связи не затрагиваются."
+
+msgid "Remove"
+msgstr "Убрать"
+
+msgid "Remove media {{label}}"
+msgstr "Убрать медиа {{label}}"
+
+msgid "Not used in any campaign."
+msgstr "Не используется ни в одной кампании."
+
+msgid "Used in campaigns:"
+msgstr "Используется в кампаниях:"
+
+msgid "Failed to load usage detail"
+msgstr "Не удалось загрузить сведения об использовании"
+
+msgid "Unused"
+msgstr "Не используется"
+
+msgid "{{count}} campaign"
+msgstr "{{count}} кампания"
+
+msgid "Media used in {{label}}"
+msgstr "Медиа, используемое в {{label}}"
+
+msgid "External"
+msgstr "Внешнее"
+
+msgid "Upload"
+msgstr "Загрузить"
+
+msgid "Open image preview for {{label}}"
+msgstr "Открыть предпросмотр изображения для {{label}}"
+
+msgid "Media thumbnail"
+msgstr "Миниатюра медиа"
+
+msgid "Drag media to reorder"
+msgstr "Перетащите медиа для изменения порядка"
+
+msgid "Delete media"
+msgstr "Удалить медиа"
+
+msgid "Edit Media"
+msgstr "Редактировать медиа"
+
+msgid "Enter a title (optional)"
+msgstr "Введите название (необязательно)"
+
+msgid "Optional display title for this media item"
+msgstr "Необязательное отображаемое название для этого медиаэлемента"
+
+msgid "Enter a caption or description"
+msgstr "Введите подпись или описание"
+
+msgid "Descriptive text shown with the media"
+msgstr "Описательный текст, отображаемый вместе с медиа"
+
+msgid "Thumbnail URL"
+msgstr "URL миниатюры"
+
+msgid "https://..."
+msgstr "https://..."
+
+msgid "Custom preview image URL (optional)"
+msgstr "URL пользовательского изображения предпросмотра (необязательно)"
+
+msgid "Media lightbox: {{caption}} ({{index}} of {{total}})"
+msgstr "Лайтбокс медиа: {{caption}} ({{index}} из {{total}})"
+
+msgid "Media preview"
+msgstr "Предпросмотр медиа"
+
+msgid "Previous image"
+msgstr "Предыдущее изображение"
+
+msgid "Next image"
+msgstr "Следующее изображение"
+
+msgid "Add to"
+msgstr "Добавить в"
+
+msgid "File drop zone"
+msgstr "Зона перетаскивания файлов"
+
+msgid "Choose files"
+msgstr "Выберите файлы"
+
+msgid "Drop files here"
+msgstr "Перетащите файлы сюда"
+
+msgid "or drag & drop files here"
+msgstr "или перетащите файлы сюда"
+
+msgid "{{count}} file queued"
+msgstr "{{count}} файл в очереди"
+
+msgid "{{count}} files queued"
+msgstr "{{count}} файлов в очереди"
+
+msgid "Clear all"
+msgstr "Очистить всё"
+
+msgid "Remove {{name}}"
+msgstr "Убрать {{name}}"
+
+msgid "Enter a caption or description (optional)"
+msgstr "Введите подпись или описание (необязательно)"
+
+msgid "When uploading multiple files, each item uses its filename as the default caption."
+msgstr "При загрузке нескольких файлов каждый элемент использует своё имя файла в качестве подписи по умолчанию."
+
+msgid "Upload {{count}} files"
+msgstr "Загрузить {{count}} файлов"
+
+msgid "{{count}} file uploaded successfully"
+msgstr "{{count}} файл успешно загружен"
+
+msgid "{{count}} files uploaded successfully"
+msgstr "{{count}} файлов успешно загружено"
+
+msgid "Uploading {{count}} file…"
+msgstr "Загрузка {{count}} файла…"
+
+msgid "Uploading {{count}} files…"
+msgstr "Загрузка {{count}} файлов…"
+
+msgid "External URL"
+msgstr "Внешний URL"
+
+msgid "https://youtube.com/..."
+msgstr "https://youtube.com/..."
+
+msgid "External media URL"
+msgstr "URL внешнего медиа"
+
+msgid "Preview"
+msgstr "Предпросмотр"
+
+msgid "Preview external media"
+msgstr "Предпросмотр внешнего медиа"
+
+msgid "Add"
+msgstr "Добавить"
+
+msgid "Add external media"
+msgstr "Добавить внешнее медиа"
+
+msgid "External media preview"
+msgstr "Предпросмотр внешнего медиа"
+
+msgid "General library (all campaigns)"
+msgstr "Общая библиотека (все кампании)"
+
+msgid "{{count}} file added"
+msgstr "{{count}} файл добавлен"
+
+msgid "{{count}} files added"
+msgstr "{{count}} файлов добавлено"
+
+msgid "{{count}} file added to the asset library"
+msgstr "{{count}} файл добавлен в библиотеку ресурсов"
+
+msgid "{{count}} files added to the asset library"
+msgstr "{{count}} файлов добавлено в библиотеку ресурсов"
+
+msgid "Some uploads failed"
+msgstr "Некоторые загрузки не удались"
+
+msgid "{{failures}} of {{total}} file could not be uploaded."
+msgstr "{{failures}} из {{total}} файла не удалось загрузить."
+
+msgid "{{failures}} of {{total}} files could not be uploaded."
+msgstr "{{failures}} из {{total}} файлов не удалось загрузить."
+
+msgid "Upload failed"
+msgstr "Не удалось загрузить"
+
+msgid "Upload failed."
+msgstr "Не удалось загрузить."
+
+msgid "Enter a URL to preview."
+msgstr "Введите URL для предпросмотра."
+
+msgid "External asset added"
+msgstr "Внешний ресурс добавлен"
+
+msgid "Failed to add external asset."
+msgstr "Не удалось добавить внешний ресурс."
+
+msgid "Make available to all spaces (universal)"
+msgstr "Сделать доступным для всех пространств (универсальный)"
+
+msgid "Add tags for filtering…"
+msgstr "Добавить метки для фильтрации…"
+
+msgid "Space {{id}}"
+msgstr "Пространство {{id}}"
+
+msgid "Reset"
+msgstr "Сбросить"
+
+msgid "Responsive Gallery Config"
+msgstr "Адаптивная конфигурация галереи"
+
+msgid "Theme & Layout"
+msgstr "Тема и макет"
+
+msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
+msgstr "Выберите цветовую тему. Предпросмотр применяется мгновенно; сохраняется при нажатии «Сохранить»."
+
+msgid "Default Layout"
+msgstr "Макет по умолчанию"
+
+msgid "Default layout for displaying gallery items."
+msgstr "Макет по умолчанию для отображения элементов галереи."
+
+msgid "Grid"
+msgstr "Сетка"
+
+msgid "Masonry"
+msgstr "Кладка"
+
+msgid "Carousel"
+msgstr "Карусель"
+
+msgid "Items Per Page"
+msgstr "Элементов на странице"
+
+msgid "Number of items to display per page (1-100)."
+msgstr "Количество элементов для отображения на странице (1-100)."
+
+msgid "Page Container"
+msgstr "Контейнер страницы"
+
+msgid "App Max Width"
+msgstr "Максимальная ширина приложения"
+
+msgid "Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
+msgstr "Максимальная ширина контейнера галереи. Установите 0 для полной ширины (от края до края). По умолчанию 1200px."
+
+msgid "0 = full width"
+msgstr "0 = полная ширина"
+
+msgid "Container Padding"
+msgstr "Отступ контейнера"
+
+msgid "Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
+msgstr "Горизонтальный внутренний отступ внутри контейнера. Установите 0 для настоящего контента от края до края. По умолчанию 16px."
+
+msgid "WP Full Bleed — Desktop (≥ 1024px)"
+msgstr "WP на всю ширину — Компьютер (≥ 1024px)"
+
+msgid "Break out of the WordPress page container padding on desktop viewports. Requires page refresh."
+msgstr "Выйти за пределы отступа контейнера страницы WordPress на компьютерных областях просмотра. Требуется обновление страницы."
+
+msgid "WP Full Bleed — Tablet (768-1023px)"
+msgstr "WP на всю ширину — Планшет (768-1023px)"
+
+msgid "Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
+msgstr "Выйти за пределы отступа контейнера страницы WordPress на планшетных областях просмотра. Требуется обновление страницы."
+
+msgid "WP Full Bleed — Mobile (< 768px)"
+msgstr "WP на всю ширину — Мобильный (< 768px)"
+
+msgid "Break out of the WordPress page container padding on mobile viewports. Requires page refresh."
+msgstr "Выйти за пределы отступа контейнера страницы WordPress на мобильных областях просмотра. Требуется обновление страницы."
+
+msgid "Page Header"
+msgstr "Заголовок страницы"
+
+msgid "Show Gallery Title"
+msgstr "Показывать заголовок галереи"
+
+msgid "Show the \"Campaign Gallery\" heading."
+msgstr "Показывать заголовок «Галерея кампаний»."
+
+msgid "Gallery Title Text"
+msgstr "Текст заголовка галереи"
+
+msgid "Main heading text shown above the gallery."
+msgstr "Текст основного заголовка, отображаемый над галереей."
+
+msgid "Show Gallery Subtitle"
+msgstr "Показывать подзаголовок галереи"
+
+msgid "Show the subtitle text beneath the title."
+msgstr "Показывать текст подзаголовка под заголовком."
+
+msgid "Gallery Subtitle Text"
+msgstr "Текст подзаголовка галереи"
+
+msgid "Subtitle text shown beneath the title."
+msgstr "Текст подзаголовка, отображаемый под заголовком."
+
+msgid "Show Access Mode"
+msgstr "Показывать режим доступа"
+
+msgid "Show the Lock / Hide access-mode toggle (admin only)."
+msgstr "Показывать переключатель режима доступа «Заблокировать / Скрыть» (только для администраторов)."
+
+msgid "Show Filter Tabs"
+msgstr "Показывать вкладки фильтров"
+
+msgid "Show the campaign filter tab strip."
+msgstr "Показывать полосу вкладок фильтров кампаний."
+
+msgid "Show Search Box"
+msgstr "Показывать поле поиска"
+
+msgid "Show the campaign search input."
+msgstr "Показывать поле ввода поиска кампаний."
+
+msgid "Page Background"
+msgstr "Фон страницы"
+
+msgid "Page Background Type"
+msgstr "Тип фона страницы"
+
+msgid "Gallery container background style"
+msgstr "Стиль фона контейнера галереи"
+
+msgid "Default Theme"
+msgstr "Тема по умолчанию"
+
+msgid "Transparent"
+msgstr "Прозрачный"
+
+msgid "Solid color"
+msgstr "Сплошной цвет"
+
+msgid "Custom gradient"
+msgstr "Пользовательский градиент"
+
+msgid "Background Color"
+msgstr "Цвет фона"
+
+msgid "Solid background color for the gallery"
+msgstr "Сплошной цвет фона для галереи"
+
+msgid "Show Header Border"
+msgstr "Показывать границу заголовка"
+
+msgid "Show border, shadow, and backdrop blur on the sticky gallery header."
+msgstr "Показывать границу, тень и размытие фона на закреплённом заголовке галереи."
+
+msgid "Auth Bar"
+msgstr "Панель аутентификации"
+
+msgid "Auth Bar Backdrop Blur (px)"
+msgstr "Размытие фона панели аутентификации (px)"
+
+msgid "Blur intensity for the auth bar backdrop."
+msgstr "Интенсивность размытия для фона панели аутентификации."
+
+msgid "Auth Bar Mobile Breakpoint (px)"
+msgstr "Мобильная контрольная точка панели аутентификации (px)"
+
+msgid "Viewport width below which the auth bar uses mobile layout."
+msgstr "Ширина области просмотра, ниже которой панель аутентификации использует мобильный макет."
+
+msgid "Security & Login"
+msgstr "Безопасность и вход"
+
+msgid "Session Idle Timeout (minutes)"
+msgstr "Тайм-аут простоя сессии (минуты)"
+
+msgid "Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
+msgstr "Автоматически выходить из системы пользователей после указанного количества минут бездействия. Установите 0 для отключения."
+
+msgid "0 = disabled"
+msgstr "0 = отключено"
+
+msgid "Idle Timeout Warning (seconds before)"
+msgstr "Предупреждение о тайм-ауте простоя (за секунды до)"
+
+msgid "Show a 'Stay signed in' prompt this many seconds before signing out. Set to 0 to sign out without warning."
+msgstr "Показывать запрос «Оставаться в системе» за указанное количество секунд до выхода. Установите 0 для выхода без предупреждения."
+
+msgid "0 = no warning"
+msgstr "0 = без предупреждения"
+
+msgid "Enable Advanced Settings"
+msgstr "Включить расширенные настройки"
+
+msgid "Unlock the System & Admin tab with granular control over panel behavior, cache, drawer settings, and more."
+msgstr "Разблокируйте вкладку «Система и администрирование» с детальным контролем над поведением панели, кешем, настройками выдвижной панели и многим другим."
+
+msgid "Show Settings Tooltips"
+msgstr "Показывать подсказки настроек"
+
+msgid "Display info icons next to Advanced-tab labels that explain each setting on hover."
+msgstr "Отображать значки информации рядом с метками вкладки «Расширенные», объясняющие каждую настройку при наведении."
+
+msgid "Campaign created"
+msgstr "Кампания создана"
+
+msgid "Campaign updated"
+msgstr "Кампания обновлена"
+
+msgid "Campaign archived"
+msgstr "Кампания архивирована"
+
+msgid "Campaign restored"
+msgstr "Кампания восстановлена"
+
+msgid "Campaign deleted"
+msgstr "Кампания удалена"
+
+msgid "Media added"
+msgstr "Медиа добавлено"
+
+msgid "Media removed"
+msgstr "Медиа убрано"
+
+msgid "Access granted"
+msgstr "Доступ предоставлен"
+
+msgid "Access revoked"
+msgstr "Доступ отозван"
+
+msgid "Copied!"
+msgstr "Скопировано!"
+
+msgid "Copy secret"
+msgstr "Копировать секрет"
+
+msgid "On"
+msgstr "Вкл"
+
+msgid "Off"
+msgstr "Выкл"
+
+msgid "Rotate secret"
+msgstr "Сменить секрет"
+
+msgid "Rotate secret for {{url}}"
+msgstr "Сменить секрет для {{url}}"
+
+msgid "Delete endpoint"
+msgstr "Удалить конечную точку"
+
+msgid "Delete endpoint {{url}}"
+msgstr "Удалить конечную точку {{url}}"
+
+msgid "All events"
+msgstr "Все события"
+
+msgid "Hide filter"
+msgstr "Скрыть фильтр"
+
+msgid "Edit filter"
+msgstr "Редактировать фильтр"
+
+msgid "All events (leave empty to receive all)"
+msgstr "Все события (оставьте пустым, чтобы получать все)"
+
+msgid "Failed to create webhook endpoint."
+msgstr "Не удалось создать конечную точку webhook."
+
+msgid "Failed to delete webhook endpoint."
+msgstr "Не удалось удалить конечную точку webhook."
+
+msgid "Failed to update webhook endpoint."
+msgstr "Не удалось обновить конечную точку webhook."
+
+msgid "Failed to rotate webhook secret."
+msgstr "Не удалось сменить секрет webhook."
+
+msgid "Endpoint {{index}}"
+msgstr "Конечная точка {{index}}"
+
+msgid "Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity."
+msgstr "Конечные точки webhook получают подписанные POST-запросы HMAC-SHA256 при возникновении событий кампании. Полезная нагрузка включает тип события, ISO-метку времени и данные события. Используйте заголовок {{header}} для проверки подлинности доставки."
+
+msgid "No webhook endpoints configured."
+msgstr "Конечные точки webhook не настроены."
+
+msgid "Add endpoint"
+msgstr "Добавить конечную точку"
+
+msgid "Events (optional)"
+msgstr "События (необязательно)"
+
+msgid "Leave empty to receive all events."
+msgstr "Оставьте пустым, чтобы получать все события."
+
+msgid "Enabled"
+msgstr "Включено"
+
+msgid "Webhook secret — save this now"
+msgstr "Секрет webhook — сохраните его сейчас"
+
+msgid "This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256."
+msgstr "Это единственный раз, когда будет показан полный секрет. Скопируйте его и настройте вашу конечную точку для проверки заголовка {{header}} с помощью HMAC-SHA256."
+
+msgid "Done"
+msgstr "Готово"
+
+msgid "New webhook secret — save this now"
+msgstr "Новый секрет webhook — сохраните его сейчас"
+
+msgid "The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing."
+msgstr "Секрет для {{label}} был изменён. Обновите приёмник вашей конечной точки этим новым значением перед закрытием."
+
+msgid "Fine-grained controls for power users. These settings override internal defaults across all gallery components. Change with care."
+msgstr "Детальные элементы управления для опытных пользователей. Эти настройки переопределяют внутренние значения по умолчанию во всех компонентах галереи. Изменяйте с осторожностью."
+
+msgid "Settings Drawer"
+msgstr "Выдвижная панель настроек"
+
+msgid "Settings Panel Width"
+msgstr "Ширина панели настроек"
+
+msgid "Width of the settings panel drawer on medium and large screens. On small screens it is always 100%."
+msgstr "Ширина выдвижной панели настроек на средних и больших экранах. На маленьких экранах она всегда 100%."
+
+msgid "Settings Drawer Backdrop Blur"
+msgstr "Размытие фона выдвижной панели настроек"
+
+msgid "When enabled, content behind open settings drawers is blurred."
+msgstr "Когда включено, контент за открытыми выдвижными панелями настроек размывается."
+
+msgid "Settings Panel Animation"
+msgstr "Анимация панели настроек"
+
+msgid "Open/close transition for the settings panel drawer. Choose None to disable animation."
+msgstr "Переход открытия/закрытия для выдвижной панели настроек. Выберите «Нет», чтобы отключить анимацию."
+
+msgid "Slide"
+msgstr "Сдвиг"
+
+msgid "Fade"
+msgstr "Затухание"
+
+msgid "Scale"
+msgstr "Масштабирование"
+
+msgid "None"
+msgstr "Нет"
+
+msgid "Admin Panel Max Width"
+msgstr "Максимальная ширина панели администратора"
+
+msgid "Maximum width of the admin panel container. Set to 0 for full width (no constraint)."
+msgstr "Максимальная ширина контейнера панели администратора. Установите 0 для полной ширины (без ограничений)."
+
+msgid "Upload / Media"
+msgstr "Загрузка / Медиа"
+
+msgid "Upload Max Size (MB)"
+msgstr "Максимальный размер загрузки (МБ)"
+
+msgid "Max Batch Upload Size"
+msgstr "Максимальный размер пакетной загрузки"
+
+msgid "Allowed Upload Types"
+msgstr "Разрешённые типы загрузки"
+
+msgid "Comma-separated MIME patterns (e.g. image/*,video/*)"
+msgstr "Шаблоны MIME, разделённые запятыми (например, image/*,video/*)"
+
+msgid "Library Page Size"
+msgstr "Размер страницы библиотеки"
+
+msgid "Media List Page Size"
+msgstr "Размер страницы списка медиа"
+
+msgid "Compact Card Height (px)"
+msgstr "Высота компактной карточки (px)"
+
+msgid "Small Card Height (px)"
+msgstr "Высота маленькой карточки (px)"
+
+msgid "Medium Card Height (px)"
+msgstr "Высота средней карточки (px)"
+
+msgid "Large Card Height (px)"
+msgstr "Высота большой карточки (px)"
+
+msgid "Media List Min Width (px)"
+msgstr "Минимальная ширина списка медиа (px)"
+
+msgid "Notification Dismiss (ms)"
+msgstr "Скрытие уведомления (мс)"
+
+msgid "Image Optimization"
+msgstr "Оптимизация изображений"
+
+msgid "Optimize on Upload"
+msgstr "Оптимизировать при загрузке"
+
+msgid "Automatically resize and compress images on upload."
+msgstr "Автоматически изменять размер и сжимать изображения при загрузке."
+
+msgid "Max Width (px)"
+msgstr "Максимальная ширина (px)"
+
+msgid "Max Height (px)"
+msgstr "Максимальная высота (px)"
+
+msgid "Quality (%)"
+msgstr "Качество (%)"
+
+msgid "WebP Conversion"
+msgstr "Конвертация в WebP"
+
+msgid "Generate WebP copies alongside originals."
+msgstr "Создавать копии WebP наряду с оригиналами."
+
+msgid "Thumbnail Cache TTL (s)"
+msgstr "TTL кеша миниатюр (с)"
+
+msgid "How long cached external thumbnails are kept (seconds)."
+msgstr "Как долго хранятся кешированные внешние миниатюры (секунды)."
+
+msgid "Tile / Adapter"
+msgstr "Плитка / Адаптер"
+
+msgid "Hover Overlay Opacity"
+msgstr "Непрозрачность наложения при наведении"
+
+msgid "Bounce Scale (Hover)"
+msgstr "Масштаб отскока (наведение)"
+
+msgid "Bounce Scale (Active)"
+msgstr "Масштаб отскока (активный)"
+
+msgid "Bounce Duration (ms)"
+msgstr "Длительность отскока (мс)"
+
+msgid "Base Transition Duration (ms)"
+msgstr "Базовая длительность перехода (мс)"
+
+msgid "Tile Transition Duration (ms)"
+msgstr "Длительность перехода плитки (мс)"
+
+msgid "Hex Vertical Overlap Ratio"
+msgstr "Коэффициент вертикального перекрытия шестиугольника"
+
+msgid "Diamond Vertical Overlap Ratio"
+msgstr "Коэффициент вертикального перекрытия ромба"
+
+msgid "Hex Clip Path"
+msgstr "Контур обрезки шестиугольника"
+
+msgid "Diamond Clip Path"
+msgstr "Контур обрезки ромба"
+
+msgid "Default Per Row"
+msgstr "По умолчанию в строке"
+
+msgid "Masonry Auto Column Breakpoints"
+msgstr "Контрольные точки авто-колонок кладки"
+
+msgid "Format: 480:2,768:3,1024:4,1280:5"
+msgstr "Формат: 480:2,768:3,1024:4,1280:5"
+
+msgid "Grid Card Hover Shadow"
+msgstr "Тень карточки сетки при наведении"
+
+msgid "Grid Card Default Shadow"
+msgstr "Тень карточки сетки по умолчанию"
+
+msgid "Grid Card Hover Scale"
+msgstr "Масштаб карточки сетки при наведении"
+
+msgid "Lightbox"
+msgstr "Лайтбокс"
+
+msgid "Transition Duration (ms)"
+msgstr "Длительность перехода (мс)"
+
+msgid "Backdrop Color"
+msgstr "Цвет фона"
+
+msgid "Entry Scale"
+msgstr "Масштаб появления"
+
+msgid "Video Max Width"
+msgstr "Максимальная ширина видео"
+
+msgid "Video Height"
+msgstr "Высота видео"
+
+msgid "Media Max Height"
+msgstr "Максимальная высота медиа"
+
+msgid "CSS value, e.g. 85vh"
+msgstr "Значение CSS, например 85vh"
+
+msgid "Z-Index"
+msgstr "Z-индекс"
+
+msgid "Navigation"
+msgstr "Навигация"
+
+msgid "Max Visible Dots"
+msgstr "Максимум видимых точек"
+
+msgid "Arrow Edge Inset (px)"
+msgstr "Отступ стрелки от края (px)"
+
+msgid "Arrow Min Hit Target (px)"
+msgstr "Минимальная область нажатия стрелки (px)"
+
+msgid "Arrow Fade Duration (ms)"
+msgstr "Длительность затухания стрелки (мс)"
+
+msgid "Arrow Scale Transition (ms)"
+msgstr "Переход масштаба стрелки (мс)"
+
+msgid "Viewport Height Mobile Ratio"
+msgstr "Коэффициент высоты области просмотра (мобильный)"
+
+msgid "Viewport Height Tablet Ratio"
+msgstr "Коэффициент высоты области просмотра (планшет)"
+
+msgid "Search Input Min Width (px)"
+msgstr "Минимальная ширина поля поиска (px)"
+
+msgid "Search Input Max Width (px)"
+msgstr "Максимальная ширина поля поиска (px)"
+
+msgid "System"
+msgstr "Система"
+
+msgid "Admin Search Debounce (ms)"
+msgstr "Задержка поиска администратора (мс)"
+
+msgid "Min Password Length"
+msgstr "Минимальная длина пароля"
+
+msgid "Login Form Max Width (px)"
+msgstr "Максимальная ширина формы входа (px)"
+
+msgid "Developer & Debugging"
+msgstr "Разработка и отладка"
+
+msgid "Enable Component Debug Names & Markers"
+msgstr "Включить отладочные имена и маркеры компонентов"
+
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr "Когда включено, развёрнутые сборки сохраняют явные имена компонентов React DevTools и внедряют атрибуты data-wpsg-component/data-wpsg-slot в DOM для инспекции элементов и селекторов QA. Локальная разработка может по-прежнему показывать имена исходных компонентов, даже когда это отключено."
+
+msgid "Data Maintenance"
+msgstr "Обслуживание данных"
+
+msgid "Archive Purge After (days)"
+msgstr "Очистка архива через (дни)"
+
+msgid "Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
+msgstr "Архивные кампании старше этого срока перемещаются в корзину. Установите 0 для отключения автоматической очистки."
+
+msgid "Trash Grace Period (days)"
+msgstr "Льготный период корзины (дни)"
+
+msgid "Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
+msgstr "Кампании в корзине удаляются навсегда через указанное количество дней. Минимум 7 дней."
+
+msgid "Analytics Retention (days)"
+msgstr "Хранение аналитики (дни)"
+
+msgid "Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "События аналитики старше этого срока очищаются еженедельно. Установите 0 для бессрочного хранения."
+
+msgid "Object Cache"
+msgstr "Объектный кеш"
+
+msgid "Health data unavailable"
+msgstr "Данные о состоянии недоступны"
+
+msgid "Could not load object-cache status from the server."
+msgstr "Не удалось загрузить статус объектного кеша с сервера."
+
+msgid "Persistent cache"
+msgstr "Постоянный кеш"
+
+msgid "Not detected"
+msgstr "Не обнаружено"
+
+msgid "No persistent object cache"
+msgstr "Нет постоянного объектного кеша"
+
+msgid "WordPress is using its default in-memory cache, which is discarded on every request. For higher-traffic deployments consider adding a Redis or Memcached drop-in. See docs/object-cache-setup.md for setup instructions."
+msgstr "WordPress использует свой кеш в памяти по умолчанию, который сбрасывается при каждом запросе. Для развёртываний с высоким трафиком рассмотрите возможность добавления drop-in Redis или Memcached. Инструкции по настройке см. в docs/object-cache-setup.md."
+
+msgid "Cache backend detected but no runtime stats are exposed by this drop-in."
+msgstr "Бэкенд кеша обнаружен, но этот drop-in не предоставляет статистику выполнения."
+
+msgid "Backend stats"
+msgstr "Статистика бэкенда"
+
+msgid "Danger Zone"
+msgstr "Опасная зона"
+
+msgid "Irreversible data deletion"
+msgstr "Необратимое удаление данных"
+
+msgid "When preservation is disabled, deleting this plugin permanently removes all campaigns, layout templates, overlay library, analytics events, access grants, and uploaded thumbnail files. This cannot be undone."
+msgstr "Когда сохранение отключено, удаление этого плагина навсегда удаляет все кампании, шаблоны макетов, библиотеку наложений, события аналитики, разрешения доступа и загруженные файлы миниатюр. Это нельзя отменить."
+
+msgid "Preserve data on plugin removal"
+msgstr "Сохранять данные при удалении плагина"
+
+msgid "When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
+msgstr "Когда включено (рекомендуется), все данные плагина сохраняются при удалении плагина. Отключайте только если намерены удалить все данные галереи при деинсталляции."
+
+msgid "{{base}} — Override for {{bp}}"
+msgstr "{{base}} — Переопределение для {{bp}}"
+
+msgid "{{base}} — Inherited from {{bp}}"
+msgstr "{{base}} — Унаследовано от {{bp}}"
+
+msgid "↻ Reset to inherited"
+msgstr "↻ Сбросить к унаследованному"
+
+msgid "Card Appearance"
+msgstr "Внешний вид карточки"
+
+msgid "Border Radius"
+msgstr "Радиус границы"
+
+msgid "Corner rounding for campaign cards"
+msgstr "Скругление углов для карточек кампаний"
+
+msgid "Border Width (px)"
+msgstr "Ширина границы (px)"
+
+msgid "Left accent border thickness"
+msgstr "Толщина левой акцентной границы"
+
+msgid "Border Color Mode"
+msgstr "Режим цвета границы"
+
+msgid "How card accent border colors are determined"
+msgstr "Как определяются цвета акцентных границ карточек"
+
+msgid "Single color for all cards"
+msgstr "Единый цвет для всех карточек"
+
+msgid "Per-card color (set in Edit Campaign)"
+msgstr "Цвет для каждой карточки (устанавливается в «Редактировать кампанию»)"
+
+msgid "Border Color"
+msgstr "Цвет границы"
+
+msgid "Accent border color applied to all campaign cards"
+msgstr "Акцентный цвет границы, применяемый ко всем карточкам кампаний"
+
+msgid "Card Shadow"
+msgstr "Тень карточки"
+
+msgid "Depth effect for campaign cards"
+msgstr "Эффект глубины для карточек кампаний"
+
+msgid "Subtle"
+msgstr "Тонкая"
+
+msgid "Medium"
+msgstr "Средняя"
+
+msgid "Dramatic"
+msgstr "Выраженная"
+
+msgid "Thumbnail Height"
+msgstr "Высота миниатюры"
+
+msgid "Height of the card thumbnail area"
+msgstr "Высота области миниатюры карточки"
+
+msgid "Thumbnail Fit"
+msgstr "Подгонка миниатюры"
+
+msgid "How the thumbnail image fills the card"
+msgstr "Как изображение миниатюры заполняет карточку"
+
+msgid "Cover (fill)"
+msgstr "Заполнить (по размеру)"
+
+msgid "Contain (fit)"
+msgstr "Вместить (по содержимому)"
+
+msgid "Element Visibility"
+msgstr "Видимость элементов"
+
+msgid "Show company name badge"
+msgstr "Показывать значок названия компании"
+
+msgid "Company badge overlay on card thumbnail"
+msgstr "Наложение значка компании на миниатюру карточки"
+
+msgid "Show access badge"
+msgstr "Показывать значок доступа"
+
+msgid "Green 'Access' badge on accessible cards"
+msgstr "Зелёный значок «Доступ» на доступных карточках"
+
+msgid "Show card title"
+msgstr "Показывать заголовок карточки"
+
+msgid "Show the campaign title in the card info panel"
+msgstr "Показывать заголовок кампании в информационной панели карточки"
+
+msgid "Show card description"
+msgstr "Показывать описание карточки"
+
+msgid "Show the campaign description in the card info panel"
+msgstr "Показывать описание кампании в информационной панели карточки"
+
+msgid "Show media counts"
+msgstr "Показывать количество медиа"
+
+msgid "Video and image count below description"
+msgstr "Количество видео и изображений под описанием"
+
+msgid "Show card border"
+msgstr "Показывать границу карточки"
+
+msgid "Accent border and hover border effect"
+msgstr "Акцентная граница и эффект границы при наведении"
+
+msgid "Show thumbnail fade"
+msgstr "Показывать затухание миниатюры"
+
+msgid "Gradient overlay at bottom of thumbnail"
+msgstr "Градиентное наложение внизу миниатюры"
+
+msgid "Show card info panel"
+msgstr "Показывать информационную панель карточки"
+
+msgid "Show title, description, tags & media counts below thumbnail"
+msgstr "Показывать заголовок, описание, метки и количество медиа под миниатюрой"
+
+msgid "Card Grid & Pagination"
+msgstr "Сетка карточек и пагинация"
+
+msgid "Cards Per Row"
+msgstr "Карточек в строке"
+
+msgid "Number of columns in the card grid (Auto = responsive)"
+msgstr "Количество столбцов в сетке карточек (Авто = адаптивный)"
+
+msgid "Auto (responsive)"
+msgstr "Авто (адаптивный)"
+
+msgid "2 columns"
+msgstr "2 столбца"
+
+msgid "3 columns"
+msgstr "3 столбца"
+
+msgid "4 columns"
+msgstr "4 столбца"
+
+msgid "5 columns"
+msgstr "5 столбцов"
+
+msgid "6 columns"
+msgstr "6 столбцов"
+
+msgid "Max Columns (auto mode)"
+msgstr "Максимум столбцов (авто-режим)"
+
+msgid "Cap the number of columns when using Auto layout. 0 = unlimited."
+msgstr "Ограничить количество столбцов при использовании авто-макета. 0 = без ограничений."
+
+msgid "Horizontal Gap"
+msgstr "Горизонтальный промежуток"
+
+msgid "Horizontal spacing between campaign cards"
+msgstr "Горизонтальный интервал между карточками кампаний"
+
+msgid "Vertical Gap"
+msgstr "Вертикальный промежуток"
+
+msgid "Vertical spacing between campaign card rows"
+msgstr "Вертикальный интервал между строками карточек кампаний"
+
+msgid "Card Max Width"
+msgstr "Максимальная ширина карточки"
+
+msgid "Limit individual card width. 0 = no limit (fill column)."
+msgstr "Ограничить ширину отдельной карточки. 0 = без ограничения (заполнить столбец)."
+
+msgid "Card Scale"
+msgstr "Масштаб карточки"
+
+msgid "Primary sizing multiplier for cards. 1 = default size."
+msgstr "Основной множитель размера для карточек. 1 = размер по умолчанию."
+
+msgid "Card Justification"
+msgstr "Выравнивание карточек"
+
+msgid "How cards distribute when a row does not fill the full available width."
+msgstr "Как распределяются карточки, когда строка не заполняет всю доступную ширину."
+
+msgid "Start"
+msgstr "Начало"
+
+msgid "Center"
+msgstr "Центр"
+
+msgid "End"
+msgstr "Конец"
+
+msgid "Space Between"
+msgstr "Пространство между"
+
+msgid "Space Evenly"
+msgstr "Равномерное пространство"
+
+msgid "Vertical Alignment"
+msgstr "Вертикальное выравнивание"
+
+msgid "How the card grid aligns vertically when minimum height exceeds content height."
+msgstr "Как сетка карточек выравнивается по вертикали, когда минимальная высота превышает высоту контента."
+
+msgid "Top"
+msgstr "Сверху"
+
+msgid "Bottom"
+msgstr "Снизу"
+
+msgid "Grid Minimum Height"
+msgstr "Минимальная высота сетки"
+
+msgid "Minimum height for the card grid container."
+msgstr "Минимальная высота для контейнера сетки карточек."
+
+msgid "Grid Maximum Height"
+msgstr "Максимальная высота сетки"
+
+msgid "Maximum height for the card grid area. 0 = no limit."
+msgstr "Максимальная высота для области сетки карточек. 0 = без ограничения."
+
+msgid "Grid Horizontal Offset"
+msgstr "Горизонтальное смещение сетки"
+
+msgid "Fine-tune horizontal position of the card grid."
+msgstr "Точная настройка горизонтального положения сетки карточек."
+
+msgid "Grid Vertical Offset"
+msgstr "Вертикальное смещение сетки"
+
+msgid "Fine-tune vertical position of the card grid."
+msgstr "Точная настройка вертикального положения сетки карточек."
+
+msgid "Card Aspect Ratio"
+msgstr "Соотношение сторон карточки"
+
+msgid "Lock cards to a fixed aspect ratio"
+msgstr "Зафиксировать карточки на фиксированном соотношении сторон"
+
+msgid "Auto (natural)"
+msgstr "Авто (естественное)"
+
+msgid "16:9 (widescreen)"
+msgstr "16:9 (широкоэкранный)"
+
+msgid "4:3 (standard)"
+msgstr "4:3 (стандартный)"
+
+msgid "1:1 (square)"
+msgstr "1:1 (квадрат)"
+
+msgid "3:4 (portrait)"
+msgstr "3:4 (портрет)"
+
+msgid "9:16 (tall portrait)"
+msgstr "9:16 (высокий портрет)"
+
+msgid "2:3 (photo portrait)"
+msgstr "2:3 (фото-портрет)"
+
+msgid "3:2 (photo landscape)"
+msgstr "3:2 (фото-пейзаж)"
+
+msgid "21:9 (ultrawide)"
+msgstr "21:9 (сверхширокий)"
+
+msgid "Card Min Height"
+msgstr "Минимальная высота карточки"
+
+msgid "Minimum height for each card. 0 = no minimum."
+msgstr "Минимальная высота для каждой карточки. 0 = без минимума."
+
+msgid "Pagination"
+msgstr "Пагинация"
+
+msgid "Display Mode"
+msgstr "Режим отображения"
+
+msgid "How cards are displayed: all at once, progressively loaded, or paginated with arrows"
+msgstr "Как отображаются карточки: все сразу, с постепенной загрузкой или с пагинацией стрелками"
+
+msgid "Show All"
+msgstr "Показать все"
+
+msgid "Load More (progressive)"
+msgstr "Загрузить ещё (постепенно)"
+
+msgid "Paginated (arrows)"
+msgstr "С пагинацией (стрелки)"
+
+msgid "Rows Per Page"
+msgstr "Строк на странице"
+
+msgid "Number of card rows visible per page"
+msgstr "Количество видимых строк карточек на странице"
+
+msgid "Dot Navigator"
+msgstr "Точечный навигатор"
+
+msgid "Show dot navigator below the card grid"
+msgstr "Показывать точечный навигатор под сеткой карточек"
+
+msgid "Page Transition Duration (ms)"
+msgstr "Длительность перехода страницы (мс)"
+
+msgid "Slide animation speed between pages"
+msgstr "Скорость анимации сдвига между страницами"
+
+msgid "Card Internals"
+msgstr "Внутренние элементы карточки"
+
+msgid "Locked Card Opacity"
+msgstr "Непрозрачность заблокированной карточки"
+
+msgid "Gradient Start Opacity"
+msgstr "Непрозрачность начала градиента"
+
+msgid "Gradient End Opacity"
+msgstr "Непрозрачность конца градиента"
+
+msgid "Lock Icon Size (px)"
+msgstr "Размер значка блокировки (px)"
+
+msgid "Size of the lock icon shown on inaccessible cards"
+msgstr "Размер значка блокировки, отображаемого на недоступных карточках"
+
+msgid "Access Icon Size (px)"
+msgstr "Размер значка доступа (px)"
+
+msgid "Size of the icon inside the access badge"
+msgstr "Размер значка внутри значка доступа"
+
+msgid "Badge Offset Y (px)"
+msgstr "Смещение значка по Y (px)"
+
+msgid "Vertical offset from the top edge for access and company badges"
+msgstr "Вертикальное смещение от верхнего края для значков доступа и компании"
+
+msgid "Company Badge Max Width (px)"
+msgstr "Максимальная ширина значка компании (px)"
+
+msgid "Maximum width of the company badge before truncation"
+msgstr "Максимальная ширина значка компании перед усечением"
+
+msgid "Thumbnail Hover Transition (ms)"
+msgstr "Переход миниатюры при наведении (мс)"
+
+msgid "Duration of the thumbnail hover zoom effect"
+msgstr "Длительность эффекта увеличения миниатюры при наведении"
+
+msgid "Page Transition Opacity"
+msgstr "Непрозрачность перехода страницы"
+
+msgid "Auto Columns Breakpoints"
+msgstr "Контрольные точки авто-столбцов"
+
+msgid "Format: 480:1,768:2,1024:3,1280:4"
+msgstr "Формат: 480:1,768:2,1024:3,1280:4"
+
+msgid "Campaign Listing"
+msgstr "Список кампаний"
+
+msgid "Choose the layout adapter used to render the public campaign listing. Adapter-specific knobs (gap, columns, target row height) are shared with per-campaign galleries in Phase 1."
+msgstr "Выберите адаптер макета, используемый для отображения публичного списка кампаний. Специфичные для адаптера регуляторы (промежуток, столбцы, целевая высота строки) являются общими с галереями для каждой кампании в Фазе 1."
+
+msgid "Listing Layout (Desktop)"
+msgstr "Макет списка (Компьютер)"
+
+msgid "Layout adapter for the campaign listing on desktop."
+msgstr "Адаптер макета для списка кампаний на компьютере."
+
+msgid "Listing Layout (Tablet)"
+msgstr "Макет списка (Планшет)"
+
+msgid "Optional override for tablet. Leave unset to inherit the desktop selection."
+msgstr "Необязательное переопределение для планшета. Оставьте неустановленным, чтобы унаследовать выбор для компьютера."
+
+msgid "Inherit from desktop"
+msgstr "Наследовать от компьютера"
+
+msgid "Listing Layout (Mobile)"
+msgstr "Макет списка (Мобильный)"
+
+msgid "Optional override for mobile. Leave unset to inherit the desktop selection."
+msgstr "Необязательное переопределение для мобильного. Оставьте неустановленным, чтобы унаследовать выбор для компьютера."
+
+msgid "Listing Layout Template"
+msgstr "Шаблон макета списка"
+
+msgid "The template whose slots define the positioned containers for campaign cards."
+msgstr "Шаблон, слоты которого определяют позиционированные контейнеры для карточек кампаний."
+
+msgid "No template selected"
+msgstr "Шаблон не выбран"
+
+msgid "0 = unlimited"
+msgstr "0 = без ограничений"
+
+msgid "0 = no minimum"
+msgstr "0 = без минимума"
+
+msgid "0 = no maximum"
+msgstr "0 = без максимума"
+
+msgid "Open Mode & Sizing"
+msgstr "Режим открытия и размер"
+
+msgid "Fullscreen Campaign Modal"
+msgstr "Полноэкранное окно кампании"
+
+msgid "Open campaign viewer in fullscreen mode instead of the default modal."
+msgstr "Открывать просмотрщик кампании в полноэкранном режиме вместо окна по умолчанию."
+
+msgid "Campaign Open Mode"
+msgstr "Режим открытия кампании"
+
+msgid "What to show when a campaign is opened."
+msgstr "Что показывать при открытии кампании."
+
+msgid "Full (cover, about, galleries, stats)"
+msgstr "Полный (обложка, о кампании, галереи, статистика)"
+
+msgid "Galleries only (skip header/about/stats)"
+msgstr "Только галереи (пропустить заголовок/о кампании/статистику)"
+
+msgid "Fullscreen Content Max Width"
+msgstr "Максимальная ширина контента в полноэкранном режиме"
+
+msgid "Limit content width in fullscreen mode. 0 = full responsive width."
+msgstr "Ограничить ширину контента в полноэкранном режиме. 0 = полная адаптивная ширина."
+
+msgid "Modal Max Width"
+msgstr "Максимальная ширина окна"
+
+msgid "Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
+msgstr "Максимальная ширина окна кампании, когда не в полноэкранном режиме (ограничено 600-1600)."
+
+msgid "Content Max Width"
+msgstr "Максимальная ширина контента"
+
+msgid "Maximum width of the content area inside the modal. 0 = full width."
+msgstr "Максимальная ширина области контента внутри окна. 0 = полная ширина."
+
+msgid "Modal Inner Padding"
+msgstr "Внутренний отступ окна"
+
+msgid "Padding inside the modal content area (clamped 0-48)."
+msgstr "Внутренний отступ в области контента окна (ограничено 0-48)."
+
+msgid "Modal Appearance"
+msgstr "Внешний вид окна"
+
+msgid "Cover Image Height"
+msgstr "Высота изображения обложки"
+
+msgid "Height of the cover image in the campaign modal"
+msgstr "Высота изображения обложки в окне кампании"
+
+msgid "Modal Transition"
+msgstr "Переход окна"
+
+msgid "Animation style when opening the campaign modal"
+msgstr "Стиль анимации при открытии окна кампании"
+
+msgid "Pop (scale up)"
+msgstr "Появление (увеличение)"
+
+msgid "Slide Up"
+msgstr "Сдвиг вверх"
+
+msgid "Modal Transition Duration (ms)"
+msgstr "Длительность перехода окна (мс)"
+
+msgid "Length of the modal open/close animation"
+msgstr "Длительность анимации открытия/закрытия окна"
+
+msgid "Modal Max Height (vh%)"
+msgstr "Максимальная высота окна (vh%)"
+
+msgid "Maximum height of the campaign modal as a percentage of viewport (clamped 50-95)."
+msgstr "Максимальная высота окна кампании в процентах от области просмотра (ограничено 50-95)."
+
+msgid "Content Visibility"
+msgstr "Видимость контента"
+
+msgid "Show Company Name"
+msgstr "Показывать название компании"
+
+msgid "Show the company badge on the campaign cover image."
+msgstr "Показывать значок компании на изображении обложки кампании."
+
+msgid "Show Date"
+msgstr "Показывать дату"
+
+msgid "Show the creation date under the campaign title."
+msgstr "Показывать дату создания под заголовком кампании."
+
+msgid "Show About Section"
+msgstr "Показывать раздел «О кампании»"
+
+msgid "Show the \"About this Campaign\" heading and description."
+msgstr "Показывать заголовок и описание «О этой кампании»."
+
+msgid "About Section Heading"
+msgstr "Заголовок раздела «О кампании»"
+
+msgid "Heading for the campaign description section (default \"About\")."
+msgstr "Заголовок для раздела описания кампании (по умолчанию «О кампании»)."
+
+msgid "Show Description"
+msgstr "Показывать описание"
+
+msgid "Show the campaign description text within the About section."
+msgstr "Показывать текст описания кампании в разделе «О кампании»."
+
+msgid "Show Campaign Stats"
+msgstr "Показывать статистику кампании"
+
+msgid "Show the statistics block (video count, image count, tags, visibility)."
+msgstr "Показывать блок статистики (количество видео, количество изображений, метки, видимость)."
+
+msgid "Stats Admin-Only"
+msgstr "Статистика только для администраторов"
+
+msgid "When enabled, only admins can see the statistics block."
+msgstr "Когда включено, только администраторы могут видеть блок статистики."
+
+msgid "Show Cover Image"
+msgstr "Показывать изображение обложки"
+
+msgid "Show the campaign cover image at the top of the viewer."
+msgstr "Показывать изображение обложки кампании в верхней части просмотрщика."
+
+msgid "Show Tags"
+msgstr "Показывать метки"
+
+msgid "Show tags section in the campaign viewer."
+msgstr "Показывать раздел меток в просмотрщике кампании."
+
+msgid "Show Admin Actions"
+msgstr "Показывать действия администратора"
+
+msgid "Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+msgstr "Показывать кнопки действий администратора (редактировать, архивировать и т. д.) в просмотрщике кампании."
+
+msgid "Show Gallery Labels"
+msgstr "Показывать метки галереи"
+
+msgid "Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+msgstr "Показывать метки заголовков «Изображения» и «Видео» над галереями в просмотрщике."
+
+msgid "Gallery Labels"
+msgstr "Метки галереи"
+
+msgid "Image Gallery Label"
+msgstr "Метка галереи изображений"
+
+msgid "Custom label for image gallery sections. Count is appended automatically."
+msgstr "Пользовательская метка для разделов галереи изображений. Количество добавляется автоматически."
+
+msgid "Video Gallery Label"
+msgstr "Метка видеогалереи"
+
+msgid "Custom label for video gallery sections. Count is appended automatically."
+msgstr "Пользовательская метка для разделов видеогалереи. Количество добавляется автоматически."
+
+msgid "Label Justification"
+msgstr "Выравнивание меток"
+
+msgid "Horizontal alignment for gallery section labels"
+msgstr "Горизонтальное выравнивание для меток разделов галереи"
+
+msgid "Left"
+msgstr "Слева"
+
+msgid "Right"
+msgstr "Справа"
+
+msgid "Show Gallery Label Icon"
+msgstr "Показывать значок метки галереи"
+
+msgid "Display an icon prefix before each gallery section label"
+msgstr "Отображать значок-префикс перед каждой меткой раздела галереи"
+
+msgid "Modal Background"
+msgstr "Фон окна"
+
+msgid "Modal Background Type"
+msgstr "Тип фона окна"
+
+msgid "Background style for the fullscreen campaign modal"
+msgstr "Стиль фона для полноэкранного окна кампании"
+
+msgid "Modal Background Color"
+msgstr "Цвет фона окна"
+
+msgid "Solid background color for the fullscreen modal"
+msgstr "Сплошной цвет фона для полноэкранного окна"
+
+msgid "Cover Image & Responsive"
+msgstr "Изображение обложки и адаптивность"
+
+msgid "Cover Mobile Ratio"
+msgstr "Соотношение обложки (мобильный)"
+
+msgid "Cover Tablet Ratio"
+msgstr "Соотношение обложки (планшет)"
+
+msgid "Close Button Size (px)"
+msgstr "Размер кнопки закрытия (px)"
+
+msgid "Close Button Background"
+msgstr "Фон кнопки закрытия"
+
+msgid "CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+msgstr "Цвет CSS для фона кнопки закрытия (например, rgba(0,0,0,0.5))."
+
+msgid "Mobile Breakpoint (px)"
+msgstr "Мобильная контрольная точка (px)"
+
+msgid "Viewport width below which the campaign viewer switches to mobile layout."
+msgstr "Ширина области просмотра, ниже которой просмотрщик кампании переключается на мобильный макет."
+
+msgid "Description Line Height"
+msgstr "Высота строки описания"
+
+msgid "Viewport & Layout"
+msgstr "Область просмотра и макет"
+
+msgid "Enable Lightbox"
+msgstr "Включить лайтбокс"
+
+msgid "Enable fullscreen lightbox when clicking gallery items."
+msgstr "Включить полноэкранный лайтбокс при нажатии на элементы галереи."
+
+msgid "Enable Animations"
+msgstr "Включить анимацию"
+
+msgid "Enable smooth animations and transitions. Disable for better performance on low-end devices."
+msgstr "Включить плавные анимации и переходы. Отключите для лучшей производительности на слабых устройствах."
+
+msgid "Viewport Dimensions"
+msgstr "Размеры области просмотра"
+
+msgid "Height Constraint"
+msgstr "Ограничение высоты"
+
+msgid "Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+msgstr "Выберите, могут ли классические галереи выходить за пределы, удерживаются в пределах видимого экрана или используют ручную высоту CSS."
+
+msgid "No restraint"
+msgstr "Без ограничений"
+
+msgid "Restrain to view"
+msgstr "Ограничить видимой областью"
+
+msgid "Manually control height"
+msgstr "Управлять высотой вручную"
+
+msgid "Manual Gallery Height"
+msgstr "Ручная высота галереи"
+
+msgid "Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+msgstr "Допустимые единицы: px, em, rem, vh, dvh, vw, %. Пример: 75vh или 420px"
+
+msgid "Image Border Radius"
+msgstr "Радиус границы изображения"
+
+msgid "Corner rounding for image gallery viewport and thumbnails."
+msgstr "Скругление углов для области просмотра галереи изображений и миниатюр."
+
+msgid "Video Border Radius"
+msgstr "Радиус границы видео"
+
+msgid "Corner rounding for video gallery viewport and thumbnails."
+msgstr "Скругление углов для области просмотра видеогалереи и миниатюр."
+
+msgid "Shadow & Depth"
+msgstr "Тень и глубина"
+
+msgid "Image Shadow Preset"
+msgstr "Предустановка тени изображения"
+
+msgid "Box-shadow depth effect for image gallery viewport."
+msgstr "Эффект глубины box-shadow для области просмотра галереи изображений."
+
+msgid "Strong"
+msgstr "Сильная"
+
+msgid "Custom"
+msgstr "Пользовательская"
+
+msgid "Image Custom Shadow"
+msgstr "Пользовательская тень изображения"
+
+msgid "CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
+msgstr "Значение CSS box-shadow (например, «0 4px 16px rgba(0,0,0,0.25)»)."
+
+msgid "Video Shadow Preset"
+msgstr "Предустановка тени видео"
+
+msgid "Box-shadow depth effect for video gallery viewport."
+msgstr "Эффект глубины box-shadow для области просмотра видеогалереи."
+
+msgid "Video Custom Shadow"
+msgstr "Пользовательская тень видео"
+
+msgid "Tile Appearance"
+msgstr "Внешний вид плитки"
+
+msgid "Gap X"
+msgstr "Промежуток X"
+
+msgid "Horizontal gap between tiles."
+msgstr "Горизонтальный промежуток между плитками."
+
+msgid "Gap Y"
+msgstr "Промежуток Y"
+
+msgid "Vertical gap between tile rows."
+msgstr "Вертикальный промежуток между строками плиток."
+
+msgid "Tile border thickness. 0 = no border."
+msgstr "Толщина границы плитки. 0 = без границы."
+
+msgid "Hover Bounce"
+msgstr "Отскок при наведении"
+
+msgid "Scale-up spring animation when hovering over a tile."
+msgstr "Пружинная анимация увеличения при наведении на плитку."
+
+msgid "Hover Glow"
+msgstr "Свечение при наведении"
+
+msgid "Drop-shadow glow on hover (works with clip-path shapes)."
+msgstr "Свечение отбрасываемой тени при наведении (работает с формами clip-path)."
+
+msgid "Glow Color"
+msgstr "Цвет свечения"
+
+msgid "Glow Spread (px)"
+msgstr "Распространение свечения (px)"
+
+msgid "Radius of the glow effect."
+msgstr "Радиус эффекта свечения."
+
+msgid "Transitions"
+msgstr "Переходы"
+
+msgid "Transition Fade"
+msgstr "Затухание перехода"
+
+msgid "Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
+msgstr "Применять затухание непрозрачности, когда карточки появляются и исчезают во время переходов, смягчая резкие края."
+
+msgid "Transition Type"
+msgstr "Тип перехода"
+
+msgid "How gallery media slides between items: fade only, slide only, or combined slide-fade."
+msgstr "Как медиа галереи переключается между элементами: только затухание, только сдвиг или комбинированный сдвиг-затухание."
+
+msgid "Slide + Fade"
+msgstr "Сдвиг + затухание"
+
+msgid "Scroll Animation Style"
+msgstr "Стиль анимации прокрутки"
+
+msgid "Navigation scroll behavior for gallery thumbnail strips."
+msgstr "Поведение прокрутки навигации для полос миниатюр галереи."
+
+msgid "Smooth"
+msgstr "Плавно"
+
+msgid "Instant"
+msgstr "Мгновенно"
+
+msgid "Animation Duration (ms)"
+msgstr "Длительность анимации (мс)"
+
+msgid "Duration for gallery transition and thumbnail highlight animations."
+msgstr "Длительность анимаций перехода галереи и подсветки миниатюр."
+
+msgid "Animation Easing"
+msgstr "Плавность анимации"
+
+msgid "Timing function used for gallery transitions."
+msgstr "Функция синхронизации, используемая для переходов галереи."
+
+msgid "Ease"
+msgstr "Плавно (ease)"
+
+msgid "Linear"
+msgstr "Линейно"
+
+msgid "Ease In"
+msgstr "Плавный вход"
+
+msgid "Ease Out"
+msgstr "Плавный выход"
+
+msgid "Ease In Out"
+msgstr "Плавный вход/выход"
+
+msgid "Thumbnail Strip"
+msgstr "Полоса миниатюр"
+
+msgid "Video Thumb Width (px)"
+msgstr "Ширина видео-миниатюры (px)"
+
+msgid "Width of video thumbnail items."
+msgstr "Ширина элементов видео-миниатюр."
+
+msgid "Video Thumb Height (px)"
+msgstr "Высота видео-миниатюры (px)"
+
+msgid "Height of video thumbnail items."
+msgstr "Высота элементов видео-миниатюр."
+
+msgid "Image Thumb Width (px)"
+msgstr "Ширина миниатюры изображения (px)"
+
+msgid "Width of image thumbnail items."
+msgstr "Ширина элементов миниатюр изображений."
+
+msgid "Image Thumb Height (px)"
+msgstr "Высота миниатюры изображения (px)"
+
+msgid "Height of image thumbnail items."
+msgstr "Высота элементов миниатюр изображений."
+
+msgid "Thumbnail Gap (px)"
+msgstr "Промежуток миниатюр (px)"
+
+msgid "Spacing between thumbnail items in the strip."
+msgstr "Интервал между элементами миниатюр в полосе."
+
+msgid "Wheel Scroll"
+msgstr "Прокрутка колёсиком"
+
+msgid "Allow mouse wheel to scroll the thumbnail strip horizontally."
+msgstr "Разрешить колёсику мыши прокручивать полосу миниатюр горизонтально."
+
+msgid "Drag Scroll"
+msgstr "Прокрутка перетаскиванием"
+
+msgid "Allow click-and-drag to scroll the thumbnail strip."
+msgstr "Разрешить прокрутку полосы миниатюр нажатием и перетаскиванием."
+
+msgid "Strip Scroll Buttons"
+msgstr "Кнопки прокрутки полосы"
+
+msgid "Show left/right scroll buttons on the thumbnail strip edges."
+msgstr "Показывать кнопки прокрутки влево/вправо по краям полосы миниатюр."
+
+msgid "Thumbnail Scroll Speed"
+msgstr "Скорость прокрутки миниатюр"
+
+msgid "Multiplier for thumbnail-strip wheel scroll speed."
+msgstr "Множитель скорости прокрутки колёсиком полосы миниатюр."
+
+msgid "Overlay Arrows"
+msgstr "Стрелки наложения"
+
+msgid "Arrow Vertical Position"
+msgstr "Вертикальное положение стрелок"
+
+msgid "Vertical alignment of the overlay prev/next arrows."
+msgstr "Вертикальное выравнивание стрелок «предыдущий/следующий» наложения."
+
+msgid "Arrow Size (px)"
+msgstr "Размер стрелок (px)"
+
+msgid "Diameter of the overlay navigation arrows."
+msgstr "Диаметр навигационных стрелок наложения."
+
+msgid "Arrow Color"
+msgstr "Цвет стрелок"
+
+msgid "Icon color for the overlay arrows."
+msgstr "Цвет значка для стрелок наложения."
+
+msgid "Arrow Background Color"
+msgstr "Цвет фона стрелок"
+
+msgid "Background color (supports rgba for transparency)."
+msgstr "Цвет фона (поддерживает rgba для прозрачности)."
+
+msgid "Arrow Border Width (px)"
+msgstr "Ширина границы стрелок (px)"
+
+msgid "Border thickness around the arrows (0 = none)."
+msgstr "Толщина границы вокруг стрелок (0 = нет)."
+
+msgid "Hover Scale Factor"
+msgstr "Коэффициент масштаба при наведении"
+
+msgid "Auto-hide Delay (ms)"
+msgstr "Задержка автоскрытия (мс)"
+
+msgid "Show arrows on hover/interaction. 0 = always visible."
+msgstr "Показывать стрелки при наведении/взаимодействии. 0 = всегда видимы."
+
+msgid "Enable Dot Navigator"
+msgstr "Включить точечный навигатор"
+
+msgid "Show a dot-style page indicator."
+msgstr "Показывать точечный индикатор страниц."
+
+msgid "Dot Position"
+msgstr "Положение точек"
+
+msgid "Where to render the dot navigator relative to the viewport."
+msgstr "Где отображать точечный навигатор относительно области просмотра."
+
+msgid "Below Viewport"
+msgstr "Под областью просмотра"
+
+msgid "Overlay Bottom"
+msgstr "Наложение снизу"
+
+msgid "Overlay Top"
+msgstr "Наложение сверху"
+
+msgid "Dot Size (px)"
+msgstr "Размер точки (px)"
+
+msgid "Diameter of each dot."
+msgstr "Диаметр каждой точки."
+
+msgid "Dot Shape"
+msgstr "Форма точки"
+
+msgid "Shape of the navigation dots."
+msgstr "Форма навигационных точек."
+
+msgid "Circle"
+msgstr "Круг"
+
+msgid "Pill"
+msgstr "Пилюля"
+
+msgid "Square"
+msgstr "Квадрат"
+
+msgid "Active Dot Color"
+msgstr "Цвет активной точки"
+
+msgid "Color for the currently active dot (CSS value)."
+msgstr "Цвет для текущей активной точки (значение CSS)."
+
+msgid "Inactive Dot Color"
+msgstr "Цвет неактивных точек"
+
+msgid "Color for inactive dots (CSS value)."
+msgstr "Цвет для неактивных точек (значение CSS)."
+
+msgid "Dot Spacing (px)"
+msgstr "Интервал точек (px)"
+
+msgid "Gap between dots."
+msgstr "Промежуток между точками."
+
+msgid "Active Dot Scale"
+msgstr "Масштаб активной точки"
+
+msgid "Carousel Settings"
+msgstr "Настройки карусели"
+
+msgid "Visible Cards"
+msgstr "Видимые карточки"
+
+msgid "Number of slides visible at once in the carousel."
+msgstr "Количество слайдов, видимых одновременно в карусели."
+
+msgid "Slide Gap"
+msgstr "Промежуток слайдов"
+
+msgid "Space between carousel slides."
+msgstr "Пространство между слайдами карусели."
+
+msgid "Loop"
+msgstr "Зациклить"
+
+msgid "Continuously loop slides when reaching the end."
+msgstr "Непрерывно зацикливать слайды при достижении конца."
+
+msgid "Drag Enabled"
+msgstr "Перетаскивание включено"
+
+msgid "Allow dragging/swiping to navigate slides."
+msgstr "Разрешить перетаскивание/свайп для навигации по слайдам."
+
+msgid "Autoplay"
+msgstr "Автовоспроизведение"
+
+msgid "Automatically advance slides."
+msgstr "Автоматически переключать слайды."
+
+msgid "Autoplay Speed (ms)"
+msgstr "Скорость автовоспроизведения (мс)"
+
+msgid "Delay between automatic slide transitions."
+msgstr "Задержка между автоматическими переходами слайдов."
+
+msgid "Pause on Hover"
+msgstr "Пауза при наведении"
+
+msgid "Pause autoplay when the mouse hovers over the carousel."
+msgstr "Приостанавливать автовоспроизведение, когда мышь наведена на карусель."
+
+msgid "Autoplay Direction"
+msgstr "Направление автовоспроизведения"
+
+msgid "Direction autoplay advances slides."
+msgstr "Направление, в котором автовоспроизведение переключает слайды."
+
+msgid "Left to Right"
+msgstr "Слева направо"
+
+msgid "Right to Left"
+msgstr "Справа налево"
+
+msgid "Visual Effects"
+msgstr "Визуальные эффекты"
+
+msgid "Darken Unfocused Slides"
+msgstr "Затемнять несфокусированные слайды"
+
+msgid "Apply a dark overlay on slides that are not currently selected."
+msgstr "Применять тёмное наложение на слайды, которые в данный момент не выбраны."
+
+msgid "Darken Opacity"
+msgstr "Непрозрачность затемнения"
+
+msgid "Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+msgstr "Непрозрачность наложения затемнения (0 = прозрачное, 1 = полностью тёмное)."
+
+msgid "Edge Fade"
+msgstr "Затухание краёв"
+
+msgid "Fade slides at the edges of the carousel viewport."
+msgstr "Затухание слайдов по краям области просмотра карусели."
+
+msgid "Section Sizing & Spacing"
+msgstr "Размер и интервалы разделов"
+
+msgid "Gallery Section Max Width"
+msgstr "Максимальная ширина раздела галереи"
+
+msgid "Maximum width for each gallery section. 0 = fill available space."
+msgstr "Максимальная ширина для каждого раздела галереи. 0 = заполнить доступное пространство."
+
+msgid "Gallery Section Min Width"
+msgstr "Минимальная ширина раздела галереи"
+
+msgid "Minimum width floor for gallery sections."
+msgstr "Нижняя граница минимальной ширины для разделов галереи."
+
+msgid "Section Height Mode"
+msgstr "Режим высоты раздела"
+
+msgid "How section height is determined. Auto = content-driven (recommended for masonry/justified)."
+msgstr "Как определяется высота раздела. Авто = на основе контента (рекомендуется для кладки/выровненного)."
+
+msgid "Auto (content-driven)"
+msgstr "Авто (на основе контента)"
+
+msgid "Manual (fixed max height)"
+msgstr "Ручной (фиксированная макс. высота)"
+
+msgid "Viewport (% of screen)"
+msgstr "Область просмотра (% экрана)"
+
+msgid "Gallery Section Max Height"
+msgstr "Максимальная высота раздела галереи"
+
+msgid "Maximum height for gallery sections in manual mode."
+msgstr "Максимальная высота для разделов галереи в ручном режиме."
+
+msgid "Gallery Section Min Height"
+msgstr "Минимальная высота раздела галереи"
+
+msgid "Minimum height floor for gallery sections."
+msgstr "Нижняя граница минимальной высоты для разделов галереи."
+
+msgid "Section Scale"
+msgstr "Масштаб раздела"
+
+msgid "Primary sizing multiplier for gallery sections. Scales min/max width, min/max height, and padding proportionally. 1 = default size."
+msgstr "Основной множитель размера для разделов галереи. Пропорционально масштабирует мин./макс. ширину, мин./макс. высоту и отступы. 1 = размер по умолчанию."
+
+msgid "Section Content Alignment"
+msgstr "Выравнивание контента раздела"
+
+msgid "Content Horizontal Alignment"
+msgstr "Горизонтальное выравнивание контента"
+
+msgid "Horizontal alignment of adapter content within each gallery section."
+msgstr "Горизонтальное выравнивание контента адаптера в каждом разделе галереи."
+
+msgid "Content Vertical Alignment"
+msgstr "Вертикальное выравнивание контента"
+
+msgid "Vertical alignment of adapter content within each gallery section."
+msgstr "Вертикальное выравнивание контента адаптера в каждом разделе галереи."
+
+msgid "Content Horizontal Offset"
+msgstr "Горизонтальное смещение контента"
+
+msgid "Fine-tune horizontal position of section content. Negative = left, positive = right."
+msgstr "Точная настройка горизонтального положения контента раздела. Отрицательное = влево, положительное = вправо."
+
+msgid "Content Vertical Offset"
+msgstr "Вертикальное смещение контента"
+
+msgid "Fine-tune vertical position of section content. Negative = up, positive = down."
+msgstr "Точная настройка вертикального положения контента раздела. Отрицательное = вверх, положительное = вниз."
+
+msgid "Equal Height Sections (Per-Type)"
+msgstr "Разделы равной высоты (по типу)"
+
+msgid "When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
+msgstr "При использовании галерей по типу отображать разделы изображений и видео рядом на равной высоте на планшетных и более крупных областях просмотра."
+
+msgid "Gallery Section Padding"
+msgstr "Отступ раздела галереи"
+
+msgid "Inner padding within each gallery section wrapper."
+msgstr "Внутренний отступ в каждой обёртке раздела галереи."
+
+msgid "Adapter Content Padding"
+msgstr "Отступ контента адаптера"
+
+msgid "Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+msgstr "Внутренний отступ в каждом адаптере (сетка галереи). 0 = края совпадают с границей раздела."
+
+msgid "Vertical alignment of content within the modal."
+msgstr "Вертикальное выравнивание контента внутри окна."
+
+msgid "Gallery Spacing"
+msgstr "Интервалы галереи"
+
+msgid "Gallery Shell Vertical Alignment"
+msgstr "Вертикальное выравнивание оболочки галереи"
+
+msgid "Vertical alignment of the gallery sections within the viewer shell."
+msgstr "Вертикальное выравнивание разделов галереи внутри оболочки просмотрщика."
+
+msgid "Gallery Shell Vertical Offset"
+msgstr "Вертикальное смещение оболочки галереи"
+
+msgid "Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
+msgstr "Точная настройка вертикального положения разделов галереи. Отрицательное = вверх, положительное = вниз."
+
+msgid "Gallery Max Width"
+msgstr "Максимальная ширина галереи"
+
+msgid "Maximum width of the gallery container. 0 = full responsive width."
+msgstr "Максимальная ширина контейнера галереи. 0 = полная адаптивная ширина."
+
+msgid "Gallery Section Gap"
+msgstr "Промежуток между разделами галереи"
+
+msgid "Vertical gap between gallery sections."
+msgstr "Вертикальный промежуток между разделами галереи."
+
+msgid "Gallery Edge Margin"
+msgstr "Отступ краёв галереи"
+
+msgid "Horizontal margin on gallery edges."
+msgstr "Горизонтальный отступ по краям галереи."
+
+msgid "Adapter Sizing"
+msgstr "Размер адаптера"
+
+msgid "Adapter Sizing Mode"
+msgstr "Режим размера адаптера"
+
+msgid "How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
+msgstr "Как адаптеры заполняют свой раздел галереи. Заполнить = 100% раздела, Ручной = пользовательский процент."
+
+msgid "Fill (100%)"
+msgstr "Заполнить (100%)"
+
+msgid "Manual (custom %)"
+msgstr "Ручной (пользовательский %)"
+
+msgid "Adapter Max Width (%)"
+msgstr "Максимальная ширина адаптера (%)"
+
+msgid "Adapter width as percentage of its gallery section."
+msgstr "Ширина адаптера в процентах от его раздела галереи."
+
+msgid "Adapter Max Height (%)"
+msgstr "Максимальная высота адаптера (%)"
+
+msgid "Adapter height as percentage of its gallery section."
+msgstr "Высота адаптера в процентах от его раздела галереи."
+
+msgid "Adapter Item Gap"
+msgstr "Промежуток элементов адаптера"
+
+msgid "Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+msgstr "Интервал между элементами в сеточных адаптерах (Компактная сетка). 0 = без промежутка."
+
+msgid "Adapter Justification"
+msgstr "Выравнивание адаптера"
+
+msgid "How adapter items distribute within the container (Compact Grid, Circular)."
+msgstr "Как элементы адаптера распределяются в контейнере (Компактная сетка, Круговой)."
+
+msgid "Stretch"
+msgstr "Растянуть"
+
+msgid "Item Scale"
+msgstr "Масштаб элемента"
+
+msgid "Primary sizing multiplier for gallery items. Scales card width/height (Compact Grid), row height (Justified), and tile size (Shape adapters) proportionally. 1 = default size. Does not apply to Carousel."
+msgstr "Основной множитель размера для элементов галереи. Пропорционально масштабирует ширину/высоту карточки (Компактная сетка), высоту строки (Выровненный) и размер плитки (Адаптеры форм). 1 = размер по умолчанию. Не применяется к Карусели."
+
+msgid "Solid Color"
+msgstr "Сплошной цвет"
+
+msgid "Gradient"
+msgstr "Градиент"
+
+msgid "Background Image"
+msgstr "Фоновое изображение"
+
+msgid "Solid background color behind the viewport"
+msgstr "Сплошной цвет фона за областью просмотра"
+
+msgid "Background Gradient"
+msgstr "Фоновый градиент"
+
+msgid "CSS gradient string used behind the viewport"
+msgstr "Строка градиента CSS, используемая за областью просмотра"
+
+msgid "Background Image URL"
+msgstr "URL фонового изображения"
+
+msgid "Image shown behind the viewport"
+msgstr "Изображение, отображаемое за областью просмотра"
+
+msgid "Viewport Backgrounds"
+msgstr "Фоны области просмотра"
+
+msgid "Image Gallery Background"
+msgstr "Фон галереи изображений"
+
+msgid "Background applied behind image gallery viewports"
+msgstr "Фон, применяемый за областями просмотра галереи изображений"
+
+msgid "Video Gallery Background"
+msgstr "Фон видеогалереи"
+
+msgid "Background applied behind video gallery viewports"
+msgstr "Фон, применяемый за областями просмотра видеогалереи"
+
+msgid "Unified Gallery Background"
+msgstr "Фон единой галереи"
+
+msgid "Background applied when unified gallery mode is active"
+msgstr "Фон, применяемый, когда активен режим единой галереи"
+
+msgid "Drag scroll"
+msgstr "Прокрутка перетаскиванием"
+
+msgid "Infinite scroll"
+msgstr "Бесконечная прокрутка"
+
+msgid "Keyboard nav"
+msgstr "Навигация с клавиатуры"
+
+msgid "Touch swipe"
+msgstr "Сенсорный свайп"
+
+msgid "Layout builder"
+msgstr "Конструктор макетов"
+
+msgid "Listing"
+msgstr "Список"
+
+msgid "Reset to default"
+msgstr "Сбросить к умолчанию"
+
+msgid "Reset {{label}} to default"
+msgstr "Сбросить {{label}} к умолчанию"
+
+msgid "Enter a value between {{min}} and {{max}}"
+msgstr "Введите значение между {{min}} и {{max}}"
+
+msgid "Value exceeds maximum of {{max}}"
+msgstr "Значение превышает максимум {{max}}"
+
+msgid "Stored value \"{{value}}\" is not a valid option"
+msgstr "Сохранённое значение «{{value}}» не является допустимым вариантом"
+
+msgid "Unified Gallery Mode"
+msgstr "Режим единой галереи"
+
+msgid "When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+msgstr "Когда включено, изображения и видео объединяются в едином представлении галереи. Когда отключено, каждый тип медиа использует свой собственный макет независимо."
+
+msgid "Choose the unified gallery adapter used at each breakpoint."
+msgstr "Выберите единый адаптер галереи, используемый на каждой контрольной точке."
+
+msgid "Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above)."
+msgstr "Некоторые адаптеры недоступны на мобильных устройствах — они требуют более крупного экрана (показаны серым выше)."
+
+msgid "Choose separate image and video adapters for each breakpoint."
+msgstr "Выберите отдельные адаптеры для изображений и видео для каждой контрольной точки."
+
+msgid "Breakpoint Pixel Thresholds"
+msgstr "Пиксельные пороги контрольных точек"
+
+msgid "Width thresholds (px) used by the classic carousel adapter to determine the active breakpoint. Defaults match Mantine (768 / 1200)."
+msgstr "Пороги ширины (px), используемые классическим адаптером карусели для определения активной контрольной точки. Значения по умолчанию соответствуют Mantine (768 / 1200)."
+
+msgid "Mobile max (px)"
+msgstr "Макс. мобильный (px)"
+
+msgid "Max container width considered mobile. (320–1440, default: 768)"
+msgstr "Максимальная ширина контейнера, считающаяся мобильной. (320–1440, по умолчанию: 768)"
+
+msgid "Enter a value between 320 and 1440"
+msgstr "Введите значение между 320 и 1440"
+
+msgid "Mobile threshold must be less than tablet threshold"
+msgstr "Мобильный порог должен быть меньше порога планшета"
+
+msgid "Tablet max (px)"
+msgstr "Макс. планшет (px)"
+
+msgid "Max container width considered tablet. (320–1920, default: 1200)"
+msgstr "Максимальная ширина контейнера, считающаяся планшетной. (320–1920, по умолчанию: 1200)"
+
+msgid "Enter a value between 320 and 1920"
+msgstr "Введите значение между 320 и 1920"
+
+msgid "Tablet threshold must be greater than mobile threshold"
+msgstr "Порог планшета должен быть больше мобильного порога"
+
+msgid "Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included."
+msgstr "Экспортирует конфигурацию адаптера и настройки карусели/медиа. Глобальные настройки навигации, контрольных точек и представления не включаются."
+
+msgid "Export adapter settings"
+msgstr "Экспортировать настройки адаптера"
+
+msgid "Import adapter settings"
+msgstr "Импортировать настройки адаптера"
+
+msgid "Reset all adapter settings to defaults"
+msgstr "Сбросить все настройки адаптера к умолчанию"
+
+msgid "Gallery Adapters"
+msgstr "Адаптеры галереи"
+
+msgid "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes."
+msgstr "Быстрые селекторы контрольных точек остаются здесь встроенными. Используйте адаптивный редактор, когда вам нужны общие настройки макета, поля, специфичные для адаптера, или более глубокие вложенные изменения конфигурации."
+
+msgid "Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline."
+msgstr "Компьютер редактирует базовые настройки карточки. Планшет и мобильный могут переопределять выбранные поля макета и внешнего вида без изменения базовой линии компьютера."
+
+msgid "Card settings breakpoint"
+msgstr "Контрольная точка настроек карточки"
+
+msgid "— None (use inline HTML fallback) —"
+msgstr "— Нет (использовать встроенный HTML-запасной вариант) —"
+
+msgid "Page #{{id}}"
+msgstr "Страница №{{id}}"
+
+msgid "Access Request Magic-Link"
+msgstr "Магическая ссылка запроса доступа"
+
+msgid "When an admin clicks a one-click approval link, the result is shown on this page (via "
+msgstr "Когда администратор нажимает ссылку одобрения в один клик, результат отображается на этой странице (через "
+
+msgid "). If no page is selected, a minimal inline HTML page is returned instead."
+msgstr "). Если страница не выбрана, вместо неё возвращается минимальная встроенная HTML-страница."
+
+msgid "Magic-link landing page"
+msgstr "Целевая страница магической ссылки"
+
+msgid "Loading pages…"
+msgstr "Загрузка страниц…"
+
+msgid "Select a page"
+msgstr "Выберите страницу"
+
+msgid "Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults."
+msgstr "Настройте шрифты, размеры, цвета и эффекты для отдельных текстовых элементов. Пустые поля используют значения темы по умолчанию."
+
+msgid "Element Overrides"
+msgstr "Переопределения элементов"
+
+msgid "Reset all typography"
+msgstr "Сбросить всю типографику"
+
+msgid "Viewer Title"
+msgstr "Заголовок просмотрщика"
+
+msgid "Viewer Subtitle"
+msgstr "Подзаголовок просмотрщика"
+
+msgid "Card Title"
+msgstr "Заголовок карточки"
+
+msgid "Card Description"
+msgstr "Описание карточки"
+
+msgid "Card Company Name"
+msgstr "Название компании (карточка)"
+
+msgid "Card Media Counts"
+msgstr "Количество медиа (карточка)"
+
+msgid "Campaign Title"
+msgstr "Заголовок кампании"
+
+msgid "Campaign Description"
+msgstr "Описание кампании"
+
+msgid "Campaign Date"
+msgstr "Дата кампании"
+
+msgid "Campaign About Heading"
+msgstr "Заголовок «О кампании»"
+
+msgid "Campaign Stats Value"
+msgstr "Значение статистики кампании"
+
+msgid "Campaign Stats Label"
+msgstr "Метка статистики кампании"
+
+msgid "Gallery Label"
+msgstr "Метка галереи"
+
+msgid "Media Caption"
+msgstr "Подпись медиа"
+
+msgid "Auth Bar Text"
+msgstr "Текст панели аутентификации"
+
+msgid "Access Badge Text"
+msgstr "Текст значка доступа"
+
+msgid "Rounded-corner radius for image media surfaces in supported adapters."
+msgstr "Радиус скругления углов для поверхностей медиа-изображений в поддерживаемых адаптерах."
+
+msgid "Rounded-corner radius for video media surfaces in supported adapters."
+msgstr "Радиус скругления углов для поверхностей медиа-видео в поддерживаемых адаптерах."
+
+msgid "Space between items in justified and masonry gallery layouts."
+msgstr "Пространство между элементами в выровненных и кладочных макетах галереи."
+
+msgid "Tile border thickness. Set 0 to disable borders."
+msgstr "Толщина границы плитки. Установите 0, чтобы отключить границы."
+
+msgid "CSS color used for tile borders when border width is greater than 0."
+msgstr "Цвет CSS, используемый для границ плиток, когда ширина границы больше 0."
+
+msgid "#ffffff"
+msgstr "#ffffff"
+
+msgid "Drop-shadow glow on hover for supported tile-based adapters."
+msgstr "Свечение отбрасываемой тени при наведении для поддерживаемых адаптеров на основе плиток."
+
+msgid "CSS color used for the hover glow effect."
+msgstr "Цвет CSS, используемый для эффекта свечения при наведении."
+
+msgid "#7c9ef8"
+msgstr "#7c9ef8"
+
+msgid "Image Viewport Height"
+msgstr "Высота области просмотра изображений"
+
+msgid "Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "Базовая высота, используемая для классических галерей с преобладанием изображений перед масштабированием по контрольным точкам. Ручная высота галереи переопределяет это, когда общий режим высоты установлен на ручной."
+
+msgid "Video Viewport Height"
+msgstr "Высота области просмотра видео"
+
+msgid "Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "Базовая высота, используемая для классических галерей с преобладанием видео перед масштабированием по контрольным точкам. Ручная высота галереи переопределяет это, когда общий режим высоты установлен на ручной."
+
+msgid "Box-shadow depth effect for image-dominant classic galleries."
+msgstr "Эффект глубины box-shadow для классических галерей с преобладанием изображений."
+
+msgid "CSS box-shadow value used when the image shadow preset is custom."
+msgstr "Значение CSS box-shadow, используемое, когда предустановка тени изображения является пользовательской."
+
+msgid "0 4px 16px rgba(0,0,0,0.25)"
+msgstr "0 4px 16px rgba(0,0,0,0.25)"
+
+msgid "Box-shadow depth effect for video-dominant classic galleries."
+msgstr "Эффект глубины box-shadow для классических галерей с преобладанием видео."
+
+msgid "CSS box-shadow value used when the video shadow preset is custom."
+msgstr "Значение CSS box-shadow, используемое, когда предустановка тени видео является пользовательской."
+
+msgid "Allow dragging or swiping to navigate slides."
+msgstr "Разрешить перетаскивание или свайп для навигации по слайдам."
+
+msgid "Foreground color used for the overlay arrow icon and border."
+msgstr "Цвет переднего плана, используемый для значка и границы стрелки наложения."
+
+msgid "Background fill applied behind the overlay arrows."
+msgstr "Заливка фона, применяемая за стрелками наложения."
+
+msgid "rgba(0,0,0,0.45)"
+msgstr "rgba(0,0,0,0.45)"
+
+msgid "Scale factor applied when hovering the overlay arrows."
+msgstr "Коэффициент масштаба, применяемый при наведении на стрелки наложения."
+
+msgid "Show arrows on hover or interaction. 0 keeps them always visible."
+msgstr "Показывать стрелки при наведении или взаимодействии. 0 делает их всегда видимыми."
+
+msgid "Distance between the overlay arrows and the carousel edge."
+msgstr "Расстояние между стрелками наложения и краем карусели."
+
+msgid "Minimum touch and click target size for the overlay arrows."
+msgstr "Минимальный размер области касания и нажатия для стрелок наложения."
+
+msgid "Fade-in and fade-out duration used when arrows auto-hide."
+msgstr "Длительность появления и исчезновения, используемая, когда стрелки автоматически скрываются."
+
+msgid "Hover-scale transition duration for the overlay arrows."
+msgstr "Длительность перехода масштаба при наведении для стрелок наложения."
+
+msgid "Maximum number of dot buttons shown before truncation inserts ellipses."
+msgstr "Максимальное количество точечных кнопок, отображаемых до того, как усечение вставит многоточие."
+
+msgid "Fill color used for the active dot."
+msgstr "Цвет заливки, используемый для активной точки."
+
+msgid "var(--wpsg-color-primary)"
+msgstr "var(--wpsg-color-primary)"
+
+msgid "Fill color used for inactive dots."
+msgstr "Цвет заливки, используемый для неактивных точек."
+
+msgid "rgba(128,128,128,0.4)"
+msgstr "rgba(128,128,128,0.4)"
+
+msgid "Scale multiplier applied to the active dot."
+msgstr "Множитель масштаба, применяемый к активной точке."
+
+msgid "Fraction of the viewport height reserved for the carousel on mobile."
+msgstr "Доля высоты области просмотра, зарезервированная для карусели на мобильных устройствах."
+
+msgid "Fraction of the viewport height reserved for the carousel on tablet."
+msgstr "Доля высоты области просмотра, зарезервированная для карусели на планшете."
+
+msgid "Card Width"
+msgstr "Ширина карточки"
+
+msgid "Primary width target for each compact-grid card. The grid wraps responsively around this width."
+msgstr "Основная целевая ширина для каждой карточки компактной сетки. Сетка адаптивно переносится вокруг этой ширины."
+
+msgid "Locks card proportions without requiring a separate height control. Auto keeps legacy height-derived behavior."
+msgstr "Фиксирует пропорции карточки без необходимости отдельного контроля высоты. Авто сохраняет устаревшее поведение на основе высоты."
+
+msgid "Auto (legacy height-derived)"
+msgstr "Авто (устаревшее, на основе высоты)"
+
+msgid "5:7 (playing card)"
+msgstr "5:7 (игральная карта)"
+
+msgid "Max Columns (0 = auto)"
+msgstr "Максимум столбцов (0 = авто)"
+
+msgid "Caps the number of compact-grid columns while preserving responsive wrapping."
+msgstr "Ограничивает количество столбцов компактной сетки, сохраняя адаптивный перенос."
+
+msgid "Card Min Height (px)"
+msgstr "Минимальная высота карточки (px)"
+
+msgid "Optional guard that prevents extremely thin cards on narrow containers. Set 0 to disable."
+msgstr "Необязательная защита, предотвращающая чрезмерно тонкие карточки в узких контейнерах. Установите 0, чтобы отключить."
+
+msgid "Target Row Height (px)"
+msgstr "Целевая высота строки (px)"
+
+msgid "Ideal pixel height for each justified row. This is an algorithm input for react-photo-album, not a CSS value."
+msgstr "Идеальная высота в пикселях для каждой выровненной строки. Это входные данные алгоритма для react-photo-album, а не значение CSS."
+
+msgid "Photo Normalize Height (px)"
+msgstr "Высота нормализации фото (px)"
+
+msgid "Normalization pixel height for aspect-ratio scaling before layout. Lower values produce smaller tiles."
+msgstr "Высота нормализации в пикселях для масштабирования соотношения сторон перед макетом. Меньшие значения дают меньшие плитки."
+
+msgid "Masonry Columns (0 = auto)"
+msgstr "Столбцы кладки (0 = авто)"
+
+msgid "Number of masonry columns. Set 0 to let the layout choose responsively (1-4 based on width)."
+msgstr "Количество столбцов кладки. Установите 0, чтобы макет выбирал адаптивно (1-4 в зависимости от ширины)."
+
+msgid "Auto Column Breakpoints"
+msgstr "Контрольные точки авто-столбцов"
+
+msgid "Comma-separated width:columns pairs used when masonry columns are set to auto."
+msgstr "Пары ширина:столбцы, разделённые запятыми, используемые, когда столбцы кладки установлены на авто."
+
+msgid "480:2,768:3,1024:4,1280:5"
+msgstr "480:2,768:3,1024:4,1280:5"
+
+msgid "Entrance Animation"
+msgstr "Анимация появления"
+
+msgid "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion."
+msgstr "Необязательная анимация первого рендеринга для плиток кладки. «Водопад» ступенчато выводит каждую плитку снизу. Учитывает prefers-reduced-motion."
+
+msgid "Waterfall (stagger in)"
+msgstr "Водопад (ступенчатое появление)"
+
+msgid "Entrance Stagger (ms)"
+msgstr "Ступенчатость появления (мс)"
+
+msgid "Delay in milliseconds between successive tile animations in Waterfall mode."
+msgstr "Задержка в миллисекундах между последовательными анимациями плиток в режиме «Водопад»."
+
+msgid "Hero Aspect Ratio"
+msgstr "Соотношение сторон главного изображения"
+
+msgid "Fixed aspect ratio of the hero display area."
+msgstr "Фиксированное соотношение сторон области отображения главного изображения."
+
+msgid "Thumbnail Size"
+msgstr "Размер миниатюры"
+
+msgid "Width and height of each thumbnail strip item."
+msgstr "Ширина и высота каждого элемента полосы миниатюр."
+
+msgid "Duration of the hero swap and thumbnail highlight transitions."
+msgstr "Длительность переходов смены главного изображения и подсветки миниатюр."
+
+msgid "Strip Position"
+msgstr "Положение полосы"
+
+msgid "Position of the thumbnail strip. 'Right' falls back to 'Below' on narrow containers."
+msgstr "Положение полосы миниатюр. «Справа» переходит на «Снизу» в узких контейнерах."
+
+msgid "Below"
+msgstr "Снизу"
+
+msgid "Right (wide containers)"
+msgstr "Справа (широкие контейнеры)"
+
+msgid "Hero Max Width"
+msgstr "Максимальная ширина главного изображения"
+
+msgid "Maximum width of the spotlight layout. Set 0 to disable (full container width)."
+msgstr "Максимальная ширина макета «Прожектор». Установите 0, чтобы отключить (полная ширина контейнера)."
+
+msgid "Hero Justification"
+msgstr "Выравнивание главного изображения"
+
+msgid "Horizontal alignment of the hero block within the container when Hero Max Width makes it narrower than the container."
+msgstr "Горизонтальное выравнивание блока главного изображения в контейнере, когда максимальная ширина главного изображения делает его уже контейнера."
+
+msgid "Start (left)"
+msgstr "Начало (слева)"
+
+msgid "End (right)"
+msgstr "Конец (справа)"
+
+msgid "Snap Alignment"
+msgstr "Выравнивание привязки"
+
+msgid "CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container."
+msgstr "Значение CSS scroll-snap-align, применяемое к каждому слайду. Управляет тем, где каждый слайд привязывается относительно контейнера прокрутки."
+
+msgid "Page Indicator"
+msgstr "Индикатор страниц"
+
+msgid "Show a slide counter (n / total) in the lower-right corner of each slide."
+msgstr "Показывать счётчик слайдов (n / всего) в правом нижнем углу каждого слайда."
+
+msgid "Container Max Width"
+msgstr "Максимальная ширина контейнера"
+
+msgid "Maximum width of the scroll-snap container. Set 0 to disable (full container width)."
+msgstr "Максимальная ширина контейнера scroll-snap. Установите 0, чтобы отключить (полная ширина контейнера)."
+
+msgid "Tile Size"
+msgstr "Размер плитки"
+
+msgid "Width and height of each shape tile (unified gallery)."
+msgstr "Ширина и высота каждой плитки формы (единая галерея)."
+
+msgid "Image Tile Size"
+msgstr "Размер плитки изображения"
+
+msgid "Shape tile size for the image gallery."
+msgstr "Размер плитки формы для галереи изображений."
+
+msgid "Video Tile Size"
+msgstr "Размер видео-плитки"
+
+msgid "Shape tile size for the video gallery."
+msgstr "Размер плитки формы для видеогалереи."
+
+msgid "Horizontal gap between shape tiles."
+msgstr "Горизонтальный промежуток между плитками форм."
+
+msgid "Vertical gap between shape-tile rows."
+msgstr "Вертикальный промежуток между строками плиток форм."
+
+msgid "Layout Builder Scope"
+msgstr "Область конструктора макетов"
+
+msgid "Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+msgstr "Полностью: заменяет всю галерею (без полосы миниатюр). Область просмотра: заменяет только область просмотра."
+
+msgid "Full Gallery"
+msgstr "Полная галерея"
+
+msgid "Viewport Only"
+msgstr "Только область просмотра"
+
+msgid "Default Glow Color"
+msgstr "Цвет свечения по умолчанию"
+
+msgid "Fallback glow color for slots using Hover = Glow when the slot does not override it."
+msgstr "Запасной цвет свечения для слотов, использующих Наведение = Свечение, когда слот не переопределяет его."
+
+msgid "Default Glow Spread (px)"
+msgstr "Распространение свечения по умолчанию (px)"
+
+msgid "Fallback glow radius for slots using Hover = Glow when the slot does not override it."
+msgstr "Запасной радиус свечения для слотов, использующих Наведение = Свечение, когда слот не переопределяет его."
+
+msgid "Classic"
+msgstr "Классический"
+
+msgid "Classic (Carousel)"
+msgstr "Классический (карусель)"
+
+msgid "Classic Carousel"
+msgstr "Классическая карусель"
+
+msgid "Justified"
+msgstr "Выровненный"
+
+msgid "Justified Rows (Flickr-style)"
+msgstr "Выровненные строки (в стиле Flickr)"
+
+msgid "Hexagonal"
+msgstr "Шестиугольный"
+
+msgid "Circular"
+msgstr "Круговой"
+
+msgid "Diamond"
+msgstr "Ромб"
+
+msgid "Scroll Snap"
+msgstr "Привязка прокрутки"
+
+msgid "Scroll Snap (vertical)"
+msgstr "Привязка прокрутки (вертикальная)"
+
+msgid "Coverflow"
+msgstr "Coverflow"
+
+msgid "Coverflow (3D Carousel)"
+msgstr "Coverflow (3D-карусель)"
+
+msgid "Pinterest"
+msgstr "Pinterest"
+
+msgid "Pinterest (Mosaic Grid)"
+msgstr "Pinterest (мозаичная сетка)"
+
+msgid "Stacked"
+msgstr "Стопка"
+
+msgid "Stacked (Deck of Cards)"
+msgstr "Стопка (колода карт)"
+
+msgid "Filterable Grid"
+msgstr "Фильтруемая сетка"
+
+msgid "Filterable Grid (Isotope)"
+msgstr "Фильтруемая сетка (Isotope)"
+
+msgid "Spotlight"
+msgstr "Прожектор"
+
+msgid "Spotlight (Hero + Strip)"
+msgstr "Прожектор (главное изображение + полоса)"
+
+msgid "Layout Builder"
+msgstr "Конструктор макетов"
+
+msgid "Layout Builder -> per-breakpoint"
+msgstr "Конструктор макетов -> по контрольным точкам"
+
+msgid "{{desc}} ({{min}}–{{max}}, default: {{fallback}})"
+msgstr "{{desc}} ({{min}}–{{max}}, по умолчанию: {{fallback}})"
+
+msgid "{{desc}} (max: {{max}}, default: {{fallback}})"
+msgstr "{{desc}} (макс.: {{max}}, по умолчанию: {{fallback}})"
+
+msgid "Media Frame"
+msgstr "Медиарамка"
+
+msgid "Photo Grid"
+msgstr "Фотосетка"
+
+msgid "Scroll-snap"
+msgstr "Привязка прокрутки"
+
+msgid "Shape Layout"
+msgstr "Макет форм"
+
+msgid "Choose which layout this gallery uses with the \"Layout Template\" picker in the campaign's Settings tab (Edit Campaign). These options only style the chosen layout."
+msgstr "Выберите, какой макет использует эта галерея, с помощью селектора «Шаблон макета» на вкладке «Настройки» кампании («Редактировать кампанию»). Эти параметры только стилизуют выбранный макет."
+
+msgid "View By"
+msgstr "Просмотр по"
+
+msgid "📋 Campaign"
+msgstr "📋 Кампания"
+
+msgid "🏢 Company"
+msgstr "🏢 Компания"
+
+msgid "📊 All"
+msgstr "📊 Все"
+
+msgid "Access view mode"
+msgstr "Режим просмотра доступа"
+
+msgid "Select Campaign"
+msgstr "Выберите кампанию"
+
+msgid "Choose a campaign..."
+msgstr "Выберите кампанию..."
+
+msgid "Select Company"
+msgstr "Выберите компанию"
+
+msgid "Loading..."
+msgstr "Загрузка…"
+
+msgid "Choose a company..."
+msgstr "Выберите компанию..."
+
+msgid "Company:"
+msgstr "Компания:"
+
+msgid "Archived campaign - grants inactive"
+msgstr "Архивная кампания - разрешения неактивны"
+
+msgid "Total users:"
+msgstr "Всего пользователей:"
+
+msgid "Access {{count}}"
+msgstr "Доступ {{count}}"
+
+msgid "Campaigns:"
+msgstr "Кампании:"
+
+msgid "{{count}} active"
+msgstr "{{count}} активных"
+
+msgid "{{count}} archived"
+msgstr "{{count}} архивных"
+
+msgid "Archive All Campaigns"
+msgstr "Архивировать все кампании"
+
+msgid "Select a campaign to manage access permissions"
+msgstr "Выберите кампанию для управления разрешениями доступа"
+
+msgid "Select a company to manage access permissions"
+msgstr "Выберите компанию для управления разрешениями доступа"
+
+msgid "Current Access"
+msgstr "Текущий доступ"
+
+msgid "Company-Wide Access"
+msgstr "Доступ на уровне компании"
+
+msgid "All Access (Company + Campaigns)"
+msgstr "Весь доступ (компания + кампании)"
+
+msgid "Show expired"
+msgstr "Показывать истёкшие"
+
+msgid "{{count}} users"
+msgstr "{{count}} пользователей"
+
+msgid "User"
+msgstr "Пользователь"
+
+msgid "Access Type"
+msgstr "Тип доступа"
+
+msgid "Role"
+msgstr "Роль"
+
+msgid "Granted / Expires"
+msgstr "Предоставлено / Истекает"
+
+msgid "Revoke"
+msgstr "Отозвать"
+
+msgid "Loading access entries"
+msgstr "Загрузка записей доступа"
+
+msgid "No users have access to this campaign yet. Add users below."
+msgstr "Пока ни один пользователь не имеет доступа к этой кампании. Добавьте пользователей ниже."
+
+msgid "No company-wide access grants. Add users below."
+msgstr "Нет разрешений доступа на уровне компании. Добавьте пользователей ниже."
+
+msgid "No access grants found for this company or its campaigns."
+msgstr "Для этой компании или её кампаний не найдено разрешений доступа."
+
+msgid "Current access entries"
+msgstr "Текущие записи доступа"
+
+msgid "Grant New Access"
+msgstr "Предоставить новый доступ"
+
+msgid "Grant Company-Wide Access"
+msgstr "Предоставить доступ на уровне компании"
+
+msgid "Search name, email, or enter ID..."
+msgstr "Поиск по имени, эл. почте или введите ID..."
+
+msgid "No users found"
+msgstr "Пользователи не найдены"
+
+msgid "Using User ID: {{id}}"
+msgstr "Используется ID пользователя: {{id}}"
+
+msgid "Type name/email or enter user ID"
+msgstr "Введите имя/эл. почту или ID пользователя"
+
+msgid "Admin"
+msgstr "Администратор"
+
+msgid "Scope"
+msgstr "Область"
+
+msgid "📋 This Campaign"
+msgstr "📋 Эта кампания"
+
+msgid "🏢 All Company Campaigns"
+msgstr "🏢 Все кампании компании"
+
+msgid "Action"
+msgstr "Действие"
+
+msgid "✅ Grant Access"
+msgstr "✅ Предоставить доступ"
+
+msgid "❌ Deny Access"
+msgstr "❌ Отклонить доступ"
+
+msgid "👁 Viewer"
+msgstr "👁 Наблюдатель"
+
+msgid "Access role level"
+msgstr "Уровень роли доступа"
+
+msgid "Expires at"
+msgstr "Истекает"
+
+msgid "(optional)"
+msgstr "(необязательно)"
+
+msgid "Access expiry date and time"
+msgstr "Дата и время истечения доступа"
+
+msgid "Apply"
+msgstr "Применить"
+
+msgid "Create a new user"
+msgstr "Создать нового пользователя"
+
+msgid "Quick add a new user"
+msgstr "Быстро добавить нового пользователя"
+
+msgid "Quick Add User"
+msgstr "Быстро добавить пользователя"
+
+msgid "Company-level grants give access to all campaigns under the same company."
+msgstr "Разрешения на уровне компании дают доступ ко всем кампаниям в рамках той же компании."
+
+msgid "Grants apply to all current and future campaigns for this company."
+msgstr "Разрешения применяются ко всем текущим и будущим кампаниям этой компании."
+
+msgid "Failed to approve request"
+msgstr "Не удалось одобрить запрос"
+
+msgid "Failed to deny request"
+msgstr "Не удалось отклонить запрос"
+
+msgid "Select a campaign to see access requests."
+msgstr "Выберите кампанию, чтобы увидеть запросы доступа."
+
+msgid "Access Requests"
+msgstr "Запросы доступа"
+
+msgid "{{count}} pending"
+msgstr "{{count}} ожидающих"
+
+msgid "No access requests for this campaign."
+msgstr "Нет запросов доступа для этой кампании."
+
+msgid "Pending"
+msgstr "Ожидает"
+
+msgid "Requested"
+msgstr "Запрошено"
+
+msgid "Approve"
+msgstr "Одобрить"
+
+msgid "Deny"
+msgstr "Отклонить"
+
+msgid "Resolved"
+msgstr "Решено"
+
+msgid "approved"
+msgstr "одобрено"
+
+msgid "denied"
+msgstr "отклонено"
+
+msgid "expired"
+msgstr "истекло"
+
+msgid "All activity recorded for the selected campaign."
+msgstr "Вся активность, записанная для выбранной кампании."
+
+msgid "Select campaign for audit log"
+msgstr "Выберите кампанию для журнала аудита"
+
+msgid "From (YYYY-MM-DD)"
+msgstr "С (ГГГГ-ММ-ДД)"
+
+msgid "Audit log from date"
+msgstr "Журнал аудита с даты"
+
+msgid "To (YYYY-MM-DD)"
+msgstr "По (ГГГГ-ММ-ДД)"
+
+msgid "Audit log to date"
+msgstr "Журнал аудита по дату"
+
+msgid "Action filter"
+msgstr "Фильтр действий"
+
+msgid "Audit log action filter"
+msgstr "Фильтр действий журнала аудита"
+
+msgid "Export CSV"
+msgstr "Экспорт CSV"
+
+msgid "Export audit log as CSV"
+msgstr "Экспортировать журнал аудита как CSV"
+
+msgid "Download ZIP"
+msgstr "Скачать ZIP"
+
+msgid "Export audit log as ZIP"
+msgstr "Экспортировать журнал аудита как ZIP"
+
+msgid "Loading audit entries"
+msgstr "Загрузка записей аудита"
+
+msgid "When"
+msgstr "Когда"
+
+msgid "Summary"
+msgstr "Сводка"
+
+msgid "Severity"
+msgstr "Серьёзность"
+
+msgid "Actor"
+msgstr "Инициатор"
+
+msgid "Failed to load audit entries: {{message}}"
+msgstr "Не удалось загрузить записи аудита: {{message}}"
+
+msgid "No audit entries yet."
+msgstr "Пока нет записей аудита."
+
+msgid "Audit entries"
+msgstr "Записи аудита"
+
+msgid "Cross-campaign and plugin-wide admin events."
+msgstr "Межкампанийные и общесистемные административные события плагина."
+
+msgid "Campaign ID"
+msgstr "ID кампании"
+
+msgid "Filter by campaign ID"
+msgstr "Фильтровать по ID кампании"
+
+msgid "Global audit from date"
+msgstr "Глобальный аудит с даты"
+
+msgid "Global audit to date"
+msgstr "Глобальный аудит по дату"
+
+msgid "Global audit action filter"
+msgstr "Фильтр действий глобального аудита"
+
+msgid "Export global audit log as CSV"
+msgstr "Экспортировать глобальный журнал аудита как CSV"
+
+msgid "Export global audit log as ZIP"
+msgstr "Экспортировать глобальный журнал аудита как ZIP"
+
+msgid "Loading system audit entries"
+msgstr "Загрузка записей системного аудита"
+
+msgid "No audit entries found."
+msgstr "Записи аудита не найдены."
+
+msgid "System audit entries"
+msgstr "Записи системного аудита"
+
+msgid "Success"
+msgstr "Успех"
+
+msgid "Password Reset Link:"
+msgstr "Ссылка для сброса пароля:"
+
+msgid "Password reset link"
+msgstr "Ссылка для сброса пароля"
+
+msgid "Click to select"
+msgstr "Нажмите, чтобы выделить"
+
+msgid "Open Reset Link"
+msgstr "Открыть ссылку сброса"
+
+msgid "Reset URL copied to clipboard"
+msgstr "URL сброса скопирован в буфер обмена"
+
+msgid "Copy Link"
+msgstr "Копировать ссылку"
+
+msgid "Share this link securely with the user. They can use it to set their own password."
+msgstr "Поделитесь этой ссылкой с пользователем безопасным образом. Он может использовать её для установки собственного пароля."
+
+msgid "Close"
+msgstr "Закрыть"
+
+msgid "user@example.com"
+msgstr "user@example.com"
+
+msgid "User's WordPress login email address"
+msgstr "Адрес электронной почты для входа в WordPress пользователя"
+
+msgid "Display Name"
+msgstr "Отображаемое имя"
+
+msgid "John Doe"
+msgstr "Иван Иванов"
+
+msgid "Full name for display purposes"
+msgstr "Полное имя для отображения"
+
+msgid "👁 Viewer - Can view granted campaigns"
+msgstr "👁 Наблюдатель - Может просматривать предоставленные кампании"
+
+msgid "⚙️ Gallery Editor - Can manage this plugin"
+msgstr "⚙️ Редактор галереи - Может управлять этим плагином"
+
+msgid "WordPress role determines plugin permissions"
+msgstr "Роль WordPress определяет разрешения плагина"
+
+msgid "Grant Access To (optional)"
+msgstr "Предоставить доступ к (необязательно)"
+
+msgid "No initial access"
+msgstr "Без начального доступа"
+
+msgid "🧪 Test mode: Simulate email failure"
+msgstr "🧪 Тестовый режим: имитировать сбой электронной почты"
+
+msgid "Enable to test the password reset link UI without actually sending email"
+msgstr "Включите, чтобы протестировать интерфейс ссылки сброса пароля без фактической отправки электронной почты"
+
+msgid "Create User"
+msgstr "Создать пользователя"
+
+msgid "Viewer"
+msgstr "Наблюдатель"
+
+msgid "Editor"
+msgstr "Редактор"
+
+msgid "Owner"
+msgstr "Владелец"
+
+msgid "Failed to update library"
+msgstr "Не удалось обновить библиотеку"
+
+msgid "Space \"{{name}}\" created"
+msgstr "Пространство «{{name}}» создано"
+
+msgid "Failed to create space"
+msgstr "Не удалось создать пространство"
+
+msgid "Space \"{{name}}\" archived"
+msgstr "Пространство «{{name}}» архивировано"
+
+msgid "Failed to archive space"
+msgstr "Не удалось архивировать пространство"
+
+msgid "No WordPress user found with that email"
+msgstr "Пользователь WordPress с такой эл. почтой не найден"
+
+msgid "Failed to grant access"
+msgstr "Не удалось предоставить доступ"
+
+msgid "Failed to revoke access"
+msgstr "Не удалось отозвать доступ"
+
+msgid "Role updated"
+msgstr "Роль обновлена"
+
+msgid "Failed to update role"
+msgstr "Не удалось обновить роль"
+
+msgid "Library"
+msgstr "Библиотека"
+
+msgid "Name"
+msgstr "Имя"
+
+msgid "Slug"
+msgstr "Ярлык"
+
+msgid "Mode"
+msgstr "Режим"
+
+msgid "open"
+msgstr "открытый"
+
+msgid "delegated"
+msgstr "делегированный"
+
+msgid "Archive space"
+msgstr "Архивировать пространство"
+
+msgid "Archive {{name}}"
+msgstr "Архивировать {{name}}"
+
+msgid "Create new space"
+msgstr "Создать новое пространство"
+
+msgid "My Gallery Space"
+msgstr "Моё пространство галереи"
+
+msgid "my-gallery-space"
+msgstr "my-gallery-space"
+
+msgid "Delegated isolation mode"
+msgstr "Режим делегированной изоляции"
+
+msgid "Only explicit grantees can access this space. Admins without a grant are denied."
+msgstr "Только явные получатели разрешений могут получить доступ к этому пространству. Администраторам без разрешения отказано."
+
+msgid "In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving."
+msgstr "В делегированном режиме администраторы WordPress без явного разрешения не могут получить доступ к этому пространству. Обязательно добавьте себя в качестве владельца перед сохранением."
+
+msgid "Create space"
+msgstr "Создать пространство"
+
+msgid "Configure display settings for "
+msgstr "Настроить параметры отображения для "
+
+msgid ". Unset fields inherit the global defaults."
+msgstr ". Неустановленные поля наследуют глобальные значения по умолчанию."
+
+msgid "Configure display settings"
+msgstr "Настроить параметры отображения"
+
+msgid "Select a space from the Spaces tab to edit its settings."
+msgstr "Выберите пространство на вкладке «Пространства», чтобы отредактировать его настройки."
+
+msgid "Access grants for {{name}}"
+msgstr "Разрешения доступа для {{name}}"
+
+msgid "Granted"
+msgstr "Предоставлено"
+
+msgid "User #{{id}}"
+msgstr "Пользователь №{{id}}"
+
+msgid "user {{id}}"
+msgstr "пользователь {{id}}"
+
+msgid "Role for {{name}}"
+msgstr "Роль для {{name}}"
+
+msgid "Revoke access"
+msgstr "Отозвать доступ"
+
+msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgstr "Нет разрешений доступа. Любой с возможностью manage_wpsg может получить доступ к этому пространству."
+
+msgid "Grant access"
+msgstr "Предоставить доступ"
+
+msgid "User email"
+msgstr "Эл. почта пользователя"
+
+msgid "Grant"
+msgstr "Предоставить"
+
+msgid "Select a space from the Spaces tab to manage access."
+msgstr "Выберите пространство на вкладке «Пространства», чтобы управлять доступом."
+
+msgid "Select a space from the Spaces tab to manage its shared library."
+msgstr "Выберите пространство на вкладке «Пространства», чтобы управлять его общей библиотекой."
+
+msgid "{{name}} is an open space."
+msgstr "{{name}} — это открытое пространство."
+
+msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
+msgstr "Открытые пространства могут использовать каждый ресурс в библиотеке — выбор по пространству применяется только к делегированным пространствам. Переключите это пространство в режим делегированной изоляции, чтобы ограничить его ресурсы."
+
+msgid "Select the assets "
+msgstr "Выберите ресурсы, которые "
+
+msgid " is allowed to use. Unselected assets are hidden in this space."
+msgstr " разрешено использовать. Невыбранные ресурсы скрыты в этом пространстве."
+
+msgid "Fonts"
+msgstr "Шрифты"
+
+msgid "No fonts in the global library."
+msgstr "Нет шрифтов в глобальной библиотеке."
+
+msgid "Archive all company campaigns"
+msgstr "Архивировать все кампании компании"
+
+msgid "Archive all campaigns for "
+msgstr "Архивировать все кампании для "
+
+msgid "? This will archive {{count}} active campaign."
+msgstr "? Это архивирует {{count}} активную кампанию."
+
+msgid "? This will archive {{count}} active campaigns."
+msgstr "? Это архивирует {{count}} активных кампаний."
+
+msgid "Archive {{count}} Campaign"
+msgstr "Архивировать {{count}} кампанию"
+
+msgid "Archive {{count}} Campaigns"
+msgstr "Архивировать {{count}} кампаний"
+
+msgid "Archive {{count}} campaign for {{name}}"
+msgstr "Архивировать {{count}} кампанию для {{name}}"
+
+msgid "Archive {{count}} campaigns for {{name}}"
+msgstr "Архивировать {{count}} кампаний для {{name}}"
+
+msgid "company"
+msgstr "компания"
+
+msgid "Campaigns to be archived:"
+msgstr "Кампании для архивирования:"
+
+msgid "Also revoke all company-level access grants"
+msgstr "Также отозвать все разрешения доступа на уровне компании"
+
+msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgstr "Разрешения доступа для отдельных кампаний будут сохранены, но станут неактивными."
+
+msgid "Asset uploaded."
+msgstr "Ресурс загружен."
+
+msgid "Delete asset?"
+msgstr "Удалить ресурс?"
+
+msgid "Delete \"{{name}}\"? This cannot be undone."
+msgstr "Удалить «{{name}}»? Это нельзя отменить."
+
+msgid "Deleted \"{{name}}\"."
+msgstr "«{{name}}» удалён."
+
+msgid "Upload asset"
+msgstr "Загрузить ресурс"
+
+msgid "Upload asset to library"
+msgstr "Загрузить ресурс в библиотеку"
+
+msgid "Asset is in use"
+msgstr "Ресурс используется"
+
+msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "«{{name}}» связан с {{count}} пространством. Его удаление отвяжет его от всех пространств. Всё равно удалить?"
+
+msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "«{{name}}» связан с {{count}} пространствами. Его удаление отвяжет его от всех пространств. Всё равно удалить?"
+
+msgid "Delete anyway"
+msgstr "Всё равно удалить"
+
+msgid "No assets in the global library yet. Upload assets from the Layout Builder."
+msgstr "Пока нет ресурсов в глобальной библиотеке. Загрузите ресурсы из конструктора макетов."
+
+msgid "Search assets…"
+msgstr "Поиск ресурсов…"
+
+msgid "Search assets"
+msgstr "Поиск ресурсов"
+
+msgid "No assets match the current filter."
+msgstr "Нет ресурсов, соответствующих текущему фильтру."
+
+msgid "Total Views (all campaigns)"
+msgstr "Всего просмотров (все кампании)"
+
+msgid "Unique Visitors (all campaigns)"
+msgstr "Уникальные посетители (все кампании)"
+
+msgid "Views (selected campaign)"
+msgstr "Просмотры (выбранная кампания)"
+
+msgid "Unique (selected campaign)"
+msgstr "Уникальные (выбранная кампания)"
+
+msgid "Campaign Analytics"
+msgstr "Аналитика кампании"
+
+msgid "Browser is offline — polling paused"
+msgstr "Браузер не в сети — опрос приостановлен"
+
+msgid "Offline"
+msgstr "Не в сети"
+
+msgid "Updated {{time}}"
+msgstr "Обновлено {{time}}"
+
+msgid "Refresh analytics"
+msgstr "Обновить аналитику"
+
+msgid "Select campaign"
+msgstr "Выберите кампанию"
+
+msgid "Last 7d"
+msgstr "Последние 7 дн."
+
+msgid "Last 30d"
+msgstr "Последние 30 дн."
+
+msgid "Last 90d"
+msgstr "Последние 90 дн."
+
+msgid "Select a campaign to view per-campaign analytics."
+msgstr "Выберите кампанию для просмотра аналитики по кампании."
+
+msgid "Failed to load analytics data."
+msgstr "Не удалось загрузить данные аналитики."
+
+msgid "No view events recorded for this period."
+msgstr "За этот период не записано событий просмотра."
+
+msgid "Make sure "
+msgstr "Убедитесь, что "
+
+msgid "Enable Analytics"
+msgstr "Включить аналитику"
+
+msgid " is turned on in Settings → Advanced."
+msgstr " включена в Настройки → Расширенные."
+
+msgid "Media Performance"
+msgstr "Производительность медиа"
+
+msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgstr "За этот период не записано событий по медиа. Взаимодействия с лайтбоксом с ID медиа появятся здесь."
+
+msgid "Media ID"
+msgstr "ID медиа"
+
+msgid "Views"
+msgstr "Просмотры"
+
+msgid "Lightbox Opens"
+msgstr "Открытия лайтбокса"
+
+msgid "Top Campaigns by Views"
+msgstr "Лучшие кампании по просмотрам"
+
+msgid "Unique"
+msgstr "Уникальные"
+
+msgid "Category renamed to \"{{name}}\""
+msgstr "Категория переименована в «{{name}}»"
+
+msgid "Failed to rename category"
+msgstr "Не удалось переименовать категорию"
+
+msgid "Category \"{{name}}\" deleted"
+msgstr "Категория «{{name}}» удалена"
+
+msgid "Failed to delete category"
+msgstr "Не удалось удалить категорию"
+
+msgid "Edit category name"
+msgstr "Редактировать название категории"
+
+msgid "Rename {{name}}"
+msgstr "Переименовать {{name}}"
+
+msgid "Delete {{name}}"
+msgstr "Удалить {{name}}"
+
+msgid "Category \"{{name}}\" created"
+msgstr "Категория «{{name}}» создана"
+
+msgid "Failed to create category"
+msgstr "Не удалось создать категорию"
+
+msgid "Tag \"{{name}}\" created"
+msgstr "Метка «{{name}}» создана"
+
+msgid "Failed to create tag"
+msgstr "Не удалось создать метку"
+
+msgid "Tag deleted"
+msgstr "Метка удалена"
+
+msgid "Failed to delete tag"
+msgstr "Не удалось удалить метку"
+
+msgid "Media tag \"{{name}}\" created"
+msgstr "Метка медиа «{{name}}» создана"
+
+msgid "Failed to create media tag"
+msgstr "Не удалось создать метку медиа"
+
+msgid "Media tag deleted"
+msgstr "Метка медиа удалена"
+
+msgid "Failed to delete media tag"
+msgstr "Не удалось удалить метку медиа"
+
+msgid "Manage Taxonomy"
+msgstr "Управление таксономией"
+
+msgid "No categories yet."
+msgstr "Пока нет категорий."
+
+msgid "New category name"
+msgstr "Название новой категории"
+
+msgid "No campaign tags yet."
+msgstr "Пока нет меток кампаний."
+
+msgid "New campaign tag"
+msgstr "Новая метка кампании"
+
+msgid "No media tags yet."
+msgstr "Пока нет меток медиа."
+
+msgid "New media tag"
+msgstr "Новая метка медиа"
+
+msgid "Failed to load templates."
+msgstr "Не удалось загрузить шаблоны."
+
+msgid "Template \"{{name}}\" deleted."
+msgstr "Шаблон «{{name}}» удалён."
+
+msgid "Failed to delete template."
+msgstr "Не удалось удалить шаблон."
+
+msgid "Template created."
+msgstr "Шаблон создан."
+
+msgid "Failed to create template."
+msgstr "Не удалось создать шаблон."
+
+msgid "Campaign Templates"
+msgstr "Шаблоны кампаний"
+
+msgid "New Template"
+msgstr "Новый шаблон"
+
+msgid "Built-in"
+msgstr "Встроенный"
+
+msgid "No custom templates yet."
+msgstr "Пока нет пользовательских шаблонов."
+
+msgid "Template name"
+msgstr "Название шаблона"
+
+msgid "e.g. Weddings default"
+msgstr "например, Свадьбы по умолчанию"
+
+msgid "Description (optional)"
+msgstr "Описание (необязательно)"
+
+msgid "e.g. Our standard wedding campaign layout"
+msgstr "например, Наш стандартный макет свадебной кампании"
+
+msgid "{{count}} character"
+msgstr "{{count}} символ"
+
+msgid "{{count}} characters"
+msgstr "{{count}} символов"
+
+msgid "Copy settings from campaign (optional)"
+msgstr "Копировать настройки из кампании (необязательно)"
+
+msgid "Start blank"
+msgstr "Начать с чистого листа"
+
+msgid "Create Template"
+msgstr "Создать шаблон"
+
+msgid "Delete template"
+msgstr "Удалить шаблон"
+
+msgid "Delete template {{name}}"
+msgstr "Удалить шаблон {{name}}"
+
+msgid "Duplicated \"{{name}}\""
+msgstr "«{{name}}» продублирован"
+
+msgid "Deleted \"{{name}}\""
+msgstr "«{{name}}» удалён"
+
+msgid "Invalid template JSON — missing required fields."
+msgstr "Недействительный JSON шаблона — отсутствуют обязательные поля."
+
+msgid "Imported \"{{name}}\""
+msgstr "«{{name}}» импортирован"
+
+msgid "Import failed: {{message}}"
+msgstr "Импорт не удался: {{message}}"
+
+msgid "Search layouts…"
+msgstr "Поиск макетов…"
+
+msgid "Search layout templates"
+msgstr "Поиск шаблонов макетов"
+
+msgid "View mode"
+msgstr "Режим просмотра"
+
+msgid "New Layout"
+msgstr "Новый макет"
+
+msgid "From Preset"
+msgstr "Из предустановки"
+
+msgid "No layouts match your search."
+msgstr "Нет макетов, соответствующих вашему поиску."
+
+msgid "No layout templates yet."
+msgstr "Пока нет шаблонов макетов."
+
+msgid "Create your first layout"
+msgstr "Создайте свой первый макет"
+
+msgid "Layout template list"
+msgstr "Список шаблонов макетов"
+
+msgid "Slots"
+msgstr "Слоты"
+
+msgid "Aspect"
+msgstr "Соотношение сторон"
+
+msgid "Updated"
+msgstr "Обновлено"
+
+msgid "{{count}} slot"
+msgstr "{{count}} слот"
+
+msgid "{{count}} slots"
+msgstr "{{count}} слотов"
+
+msgid "Edit {{name}}"
+msgstr "Редактировать {{name}}"
+
+msgid "Duplicate {{name}}"
+msgstr "Дублировать {{name}}"
+
+msgid "Export JSON"
+msgstr "Экспорт JSON"
+
+msgid "Export {{name}}"
+msgstr "Экспортировать {{name}}"
+
+msgid "Delete layout template?"
+msgstr "Удалить шаблон макета?"
+
+msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
+msgstr "Вы уверены, что хотите удалить «{{name}}»? Это нельзя отменить."
+
+msgid "Template in use"
+msgstr "Шаблон используется"
+
+msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "«{{name}}» используется {{count}} кампанией. Его удаление отвяжет эти кампании. Всё равно удалить?"
+
+msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "«{{name}}» используется {{count}} кампаниями. Его удаление отвяжет эти кампании. Всё равно удалить?"
+
+msgid "Edit layout {{name}}"
+msgstr "Редактировать макет {{name}}"
+
+msgid "Actions for {{name}}"
+msgstr "Действия для {{name}}"
+
+msgid "Choose a starting point"
+msgstr "Выберите отправную точку"
+
+msgid "Start Blank"
+msgstr "Начать с чистого листа"
+
+msgid "No pre-configured settings."
+msgstr "Нет предварительно настроенных параметров."
+
+msgid "Press a key combo…"
+msgstr "Нажмите комбинацию клавиш…"
+
+msgid "Confirm key binding"
+msgstr "Подтвердить привязку клавиш"
+
+msgid "Cancel key recording"
+msgstr "Отменить запись клавиш"
+
+msgid "Press any key combo, then ✓ to confirm"
+msgstr "Нажмите любую комбинацию клавиш, затем ✓ для подтверждения"
+
+msgid "custom"
+msgstr "пользовательский"
+
+msgid "Remap"
+msgstr "Переназначить"
+
+msgid "Remap {{name}}"
+msgstr "Переназначить {{name}}"
+
+msgid "Reset {{name}} to default"
+msgstr "Сбросить {{name}} к умолчанию"
+
+msgid "Close active modal"
+msgstr "Закрыть активное окно"
+
+msgid "Keyboard Shortcuts"
+msgstr "Сочетания клавиш"
+
+msgid "Edit shortcuts"
+msgstr "Редактировать сочетания"
+
+msgid "Open keyboard shortcuts help (this modal)"
+msgstr "Открыть справку по сочетаниям клавиш (это окно)"
+
+msgid "customized"
+msgstr "настроено"
+
+msgid "Reset all to defaults"
+msgstr "Сбросить всё к умолчанию"
+
+msgid "macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input."
+msgstr "macOS: ⌘ заменяет Ctrl. Сочетания клавиш отключены, когда фокус находится внутри текстового поля."
+
+msgid "Theme"
+msgstr "Тема"
+
+msgid "Dark theme"
+msgstr "Тёмная тема"
+
+msgid "Light theme"
+msgstr "Светлая тема"
+
+msgid "Custom Fonts"
+msgstr "Пользовательские шрифты"
+
+msgid "Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors."
+msgstr "Загрузите файлы шрифтов .woff2, .woff, .ttf или .otf. Загруженные шрифты появляются в селекторе шрифтов для всех редакторов типографики."
+
+msgid "Make {{name}} space-specific"
+msgstr "Сделать {{name}} специфичным для пространства"
+
+msgid "Make {{name}} available to all spaces"
+msgstr "Сделать {{name}} доступным для всех пространств"
+
+msgid "Uploading…"
+msgstr "Загрузка…"
+
+msgid "Upload font"
+msgstr "Загрузить шрифт"
+
+msgid "▬ Rectangle"
+msgstr "▬ Прямоугольник"
+
+msgid "● Circle"
+msgstr "● Круг"
+
+msgid "⬭ Ellipse"
+msgstr "⬭ Эллипс"
+
+msgid "⬢ Hexagon"
+msgstr "⬢ Шестиугольник"
+
+msgid "◆ Diamond"
+msgstr "◆ Ромб"
+
+msgid "▱ Parallelogram ←"
+msgstr "▱ Параллелограмм ←"
+
+msgid "▱ Parallelogram →"
+msgstr "▱ Параллелограмм →"
+
+msgid "❯ Chevron"
+msgstr "❯ Шеврон"
+
+msgid "➤ Arrow"
+msgstr "➤ Стрелка"
+
+msgid "⬟ Trapezoid"
+msgstr "⬟ Трапеция"
+
+msgid "❂ Custom"
+msgstr "❂ Пользовательская"
+
+msgid "Cover"
+msgstr "Заполнить"
+
+msgid "Contain"
+msgstr "Вместить"
+
+msgid "Fill"
+msgstr "Растянуть"
+
+msgid "Pop"
+msgstr "Появление"
+
+msgid "Glow"
+msgstr "Свечение"
+
+msgid "Normal"
+msgstr "Обычный"
+
+msgid "Multiply"
+msgstr "Умножение"
+
+msgid "Screen"
+msgstr "Экран"
+
+msgid "Overlay"
+msgstr "Перекрытие"
+
+msgid "Darken"
+msgstr "Затемнение"
+
+msgid "Lighten"
+msgstr "Замена светлым"
+
+msgid "Color Dodge"
+msgstr "Осветление основы"
+
+msgid "Color Burn"
+msgstr "Затемнение основы"
+
+msgid "Hard Light"
+msgstr "Жёсткий свет"
+
+msgid "Soft Light"
+msgstr "Мягкий свет"
+
+msgid "Difference"
+msgstr "Разница"
+
+msgid "Exclusion"
+msgstr "Исключение"
+
+msgid "Hue"
+msgstr "Цветовой тон"
+
+msgid "Saturation"
+msgstr "Насыщенность"
+
+msgid "Color"
+msgstr "Цветность"
+
+msgid "Luminosity"
+msgstr "Яркость"
+
+msgid "Top left"
+msgstr "Сверху слева"
+
+msgid "Top center"
+msgstr "Сверху по центру"
+
+msgid "Top right"
+msgstr "Сверху справа"
+
+msgid "Left center"
+msgstr "Слева по центру"
+
+msgid "Right center"
+msgstr "Справа по центру"
+
+msgid "Bottom left"
+msgstr "Снизу слева"
+
+msgid "Bottom center"
+msgstr "Снизу по центру"
+
+msgid "Bottom right"
+msgstr "Снизу справа"
+
+msgid "{{label}} info"
+msgstr "Информация о {{label}}"
+
+msgid "Bright"
+msgstr "Яркость"
+
+msgid "Contrast"
+msgstr "Контраст"
+
+msgid "Saturate"
+msgstr "Насыщенность"
+
+msgid "Blur"
+msgstr "Размытие"
+
+msgid "Gray"
+msgstr "Серый"
+
+msgid "Sepia"
+msgstr "Сепия"
+
+msgid "Invert"
+msgstr "Инверсия"
+
+msgid "Enable"
+msgstr "Включить"
+
+msgid "Off X"
+msgstr "Смещ. X"
+
+msgid "Off Y"
+msgstr "Смещ. Y"
+
+msgid "Intensity"
+msgstr "Интенсивность"
+
+msgid "Hover only"
+msgstr "Только при наведении"
+
+msgid "Always"
+msgstr "Всегда"
+
+msgid "Hover"
+msgstr "Наведение"
+
+msgid "Max °"
+msgstr "Макс. °"
+
+msgid "Persp."
+msgstr "Персп."
+
+msgid "Zoom"
+msgstr "Масштаб"
+
+msgid "Entrance animation type"
+msgstr "Тип анимации появления"
+
+msgid "Direction"
+msgstr "Направление"
+
+msgid "Up"
+msgstr "Вверх"
+
+msgid "Down"
+msgstr "Вниз"
+
+msgid "Slide direction"
+msgstr "Направление сдвига"
+
+msgid "Duration"
+msgstr "Длительность"
+
+msgid "Entrance duration"
+msgstr "Длительность появления"
+
+msgid "Delay"
+msgstr "Задержка"
+
+msgid "Entrance delay"
+msgstr "Задержка появления"
+
+msgid "Play preview"
+msgstr "Воспроизвести предпросмотр"
+
+msgid "Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden."
+msgstr "Режим списка: эффекты контейнера (наклон, граница, наложение, смешивание) применяются к обёртке карточки. Специфичные для изображения элементы управления скрыты."
+
+msgid "Layout"
+msgstr "Макет"
+
+msgid "Slot"
+msgstr "Слот"
+
+msgid "Position"
+msgstr "Положение"
+
+msgid "X %"
+msgstr "X %"
+
+msgid "Y %"
+msgstr "Y %"
+
+msgid "Size"
+msgstr "Размер"
+
+msgid "Width %"
+msgstr "Ширина %"
+
+msgid "Unlock aspect ratio"
+msgstr "Разблокировать соотношение сторон"
+
+msgid "Lock aspect ratio"
+msgstr "Заблокировать соотношение сторон"
+
+msgid "Height %"
+msgstr "Высота %"
+
+msgid "Rotation"
+msgstr "Поворот"
+
+msgid "Rotation degrees"
+msgstr "Градусы поворота"
+
+msgid "Reset rotation"
+msgstr "Сбросить поворот"
+
+msgid "Opacity"
+msgstr "Непрозрачность"
+
+msgid "Slot opacity"
+msgstr "Непрозрачность слота"
+
+msgid "Shape"
+msgstr "Форма"
+
+msgid "Preset"
+msgstr "Предустановка"
+
+msgid "Clip-path"
+msgstr "Контур обрезки"
+
+msgid "polygon(50% 0%, 100% 50%, …)"
+msgstr "polygon(50% 0%, 100% 50%, …)"
+
+msgid "Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards."
+msgstr "Настройки подгонки изображения и фокусной точки не применяются в режиме списка — слоты действуют как позиционированные контейнеры для карточек кампаний."
+
+msgid "Fit"
+msgstr "Подгонка"
+
+msgid "Focus"
+msgstr "Фокусная точка"
+
+msgid "Click a position to set which part of the image stays in frame."
+msgstr "Нажмите на позицию, чтобы задать, какая часть изображения остаётся в кадре."
+
+msgid "50% 50%"
+msgstr "50% 50%"
+
+msgid "Border"
+msgstr "Граница"
+
+msgid "Radius"
+msgstr "Радиус"
+
+msgid "Width"
+msgstr "Ширина"
+
+msgid "Effects"
+msgstr "Эффекты"
+
+msgid "Shadow"
+msgstr "Тень"
+
+msgid "Blend"
+msgstr "Смешивание"
+
+msgid "3D Tilt"
+msgstr "3D-наклон"
+
+msgid "Entrance"
+msgstr "Появление"
+
+msgid "Stacking & Interaction"
+msgstr "Порядок наложения и взаимодействие"
+
+msgid "Stacking"
+msgstr "Порядок наложения"
+
+msgid "Send to Back (Shift+[)"
+msgstr "На задний план (Shift+[)"
+
+msgid "Send to back"
+msgstr "На задний план"
+
+msgid "Send Backward ([)"
+msgstr "Назад ([)"
+
+msgid "Send backward"
+msgstr "Назад"
+
+msgid "Bring Forward (])"
+msgstr "Вперёд (])"
+
+msgid "Bring forward"
+msgstr "Вперёд"
+
+msgid "Bring to Front (Shift+])"
+msgstr "На передний план (Shift+])"
+
+msgid "Bring to front"
+msgstr "На передний план"
+
+msgid "Interaction"
+msgstr "Взаимодействие"
+
+msgid "Card click is controlled by the campaign card component."
+msgstr "Нажатие на карточку управляется компонентом карточки кампании."
+
+msgid "Click"
+msgstr "Нажатие"
+
+msgid "Spread"
+msgstr "Распространение"
+
+msgid "Graphic Layer {{index}}"
+msgstr "Графический слой {{index}}"
+
+msgid "Brightness"
+msgstr "Яркость"
+
+msgid "Grayscale"
+msgstr "Оттенки серого"
+
+msgid "Hue rotate"
+msgstr "Поворот цветового тона"
+
+msgid "Drop shadow"
+msgstr "Отбрасываемая тень"
+
+msgid "Shadow blur"
+msgstr "Размытие тени"
+
+msgid "Graphic layer name"
+msgstr "Имя графического слоя"
+
+msgid "Graphic layer preview"
+msgstr "Предпросмотр графического слоя"
+
+msgid "W %"
+msgstr "Ш %"
+
+msgid "H %"
+msgstr "В %"
+
+msgid "Fill canvas"
+msgstr "Заполнить холст"
+
+msgid "Transform"
+msgstr "Трансформация"
+
+msgid "Flip H"
+msgstr "Отразить Г"
+
+msgid "Flip horizontal"
+msgstr "Отразить по горизонтали"
+
+msgid "Flip V"
+msgstr "Отразить В"
+
+msgid "Flip vertical"
+msgstr "Отразить по вертикали"
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
+msgid "Graphic layer opacity"
+msgstr "Непрозрачность графического слоя"
+
+msgid "Click-through"
+msgstr "Сквозное нажатие"
+
+msgid "Pointer events pass through to layers below"
+msgstr "События указателя проходят к слоям ниже"
+
+msgid "Shape & Border"
+msgstr "Форма и граница"
+
+msgid "Custom clip-path"
+msgstr "Пользовательский контур обрезки"
+
+msgid "polygon(50% 0%, 100% 100%, 0% 100%)"
+msgstr "polygon(50% 0%, 100% 100%, 0% 100%)"
+
+msgid "Border color"
+msgstr "Цвет границы"
+
+msgid "Mask"
+msgstr "Маска"
+
+msgid "Mask image URL"
+msgstr "URL изображения маски"
+
+msgid "https://… (SVG/PNG)"
+msgstr "https://… (SVG/PNG)"
+
+msgid "Luminance"
+msgstr "Яркость"
+
+msgid "Alpha"
+msgstr "Альфа"
+
+msgid "Mask mode"
+msgstr "Режим маски"
+
+msgid "Feather"
+msgstr "Растушёвка"
+
+msgid "Mask feather"
+msgstr "Растушёвка маски"
+
+msgid "Clear mask"
+msgstr "Очистить маску"
+
+msgid "Blend mode"
+msgstr "Режим смешивания"
+
+msgid "Danger zone"
+msgstr "Опасная зона"
+
+msgid "Remove this graphic layer?"
+msgstr "Убрать этот графический слой?"
+
+msgid "Confirm remove"
+msgstr "Подтвердить удаление"
+
+msgid "Remove layer"
+msgstr "Убрать слой"
+
+msgid "Text Layer {{index}}"
+msgstr "Текстовый слой {{index}}"
+
+msgid "Text layer name"
+msgstr "Имя текстового слоя"
+
+msgid "Text"
+msgstr "Текст"
+
+msgid "Text content"
+msgstr "Содержимое текста"
+
+msgid "Style"
+msgstr "Стиль"
+
+msgid "Heading (H2)"
+msgstr "Заголовок (H2)"
+
+msgid "Subheading (H3)"
+msgstr "Подзаголовок (H3)"
+
+msgid "Paragraph"
+msgstr "Абзац"
+
+msgid "Alignment"
+msgstr "Выравнивание"
+
+msgid "Text alignment"
+msgstr "Выравнивание текста"
+
+msgid "Typography"
+msgstr "Типографика"
+
+msgid "Send to Back"
+msgstr "На задний план"
+
+msgid "Send Backward"
+msgstr "Назад"
+
+msgid "Bring Forward"
+msgstr "Вперёд"
+
+msgid "Bring to Front"
+msgstr "На передний план"
+
+msgid "Remove this text layer?"
+msgstr "Убрать этот текстовый слой?"
+
+msgid "Remove text layer"
+msgstr "Убрать текстовый слой"
+
+msgid "Transparent background — no fill applied."
+msgstr "Прозрачный фон — заливка не применена."
+
+msgid "Radial"
+msgstr "Радиальный"
+
+msgid "Conic"
+msgstr "Конический"
+
+msgid "Dir"
+msgstr "Напр."
+
+msgid "Horizontal (90°)"
+msgstr "Горизонтальный (90°)"
+
+msgid "Vertical (180°)"
+msgstr "Вертикальный (180°)"
+
+msgid "45° right"
+msgstr "45° вправо"
+
+msgid "135° left"
+msgstr "135° влево"
+
+msgid "auto"
+msgstr "авто"
+
+msgid "Ellipse"
+msgstr "Эллипс"
+
+msgid "Farthest corner"
+msgstr "Дальний угол"
+
+msgid "Farthest side"
+msgstr "Дальняя сторона"
+
+msgid "Closest corner"
+msgstr "Ближний угол"
+
+msgid "Closest side"
+msgstr "Ближняя сторона"
+
+msgid "Ctr X"
+msgstr "Центр X"
+
+msgid "Ctr Y"
+msgstr "Центр Y"
+
+msgid "Angle"
+msgstr "Угол"
+
+msgid "Stops"
+msgstr "Точки"
+
+msgid "Mid"
+msgstr "Середина"
+
+msgid "Pos"
+msgstr "Поз"
+
+msgid "Background preview"
+msgstr "Предпросмотр фона"
+
+msgid "Remove image"
+msgstr "Убрать изображение"
+
+msgid "No background image set."
+msgstr "Фоновое изображение не задано."
+
+msgid "Upload image"
+msgstr "Загрузить изображение"
+
+msgid "Upload background image"
+msgstr "Загрузить фоновое изображение"
+
+msgid "No mask layer on this slot. Add a mask from the Layers panel first."
+msgstr "На этом слоте нет слоя маски. Сначала добавьте маску из панели слоёв."
+
+msgid "No mask image — drag here or pick below"
+msgstr "Нет изображения маски — перетащите сюда или выберите ниже"
+
+msgid "Auto-fit to slot"
+msgstr "Автоподгонка к слоту"
+
+msgid "Soften the mask edges. Higher values create a more gradual fade."
+msgstr "Смягчить края маски. Более высокие значения создают более плавное затухание."
+
+msgid "Design Assets"
+msgstr "Дизайн-ресурсы"
+
+msgid "Mask Image"
+msgstr "Изображение маски"
+
+msgid "Replace"
+msgstr "Заменить"
+
+msgid "Clear image"
+msgstr "Очистить изображение"
+
+msgid "Remove mask layer"
+msgstr "Убрать слой маски"
+
+msgid "Properties are unavailable in preview mode."
+msgstr "Свойства недоступны в режиме предпросмотра."
+
+msgid "BACKGROUND"
+msgstr "ФОН"
+
+msgid "MASK PROPERTIES"
+msgstr "СВОЙСТВА МАСКИ"
+
+msgid "SLOT PROPERTIES"
+msgstr "СВОЙСТВА СЛОТА"
+
+msgid "GRAPHIC LAYER"
+msgstr "ГРАФИЧЕСКИЙ СЛОЙ"
+
+msgid "TEXT LAYER"
+msgstr "ТЕКСТОВЫЙ СЛОЙ"
+
+msgid "CANVAS"
+msgstr "ХОЛСТ"
+
+msgid "Graphic layers"
+msgstr "Графические слои"
+
+msgid "Aspect ratio"
+msgstr "Соотношение сторон"
+
+msgid "Height mode"
+msgstr "Режим высоты"
+
+msgid "Ratio"
+msgstr "Соотношение"
+
+msgid "vh"
+msgstr "vh"
+
+msgid "Canvas height mode"
+msgstr "Режим высоты холста"
+
+msgid "Canvas height in viewport units"
+msgstr "Высота холста в единицах области просмотра"
+
+msgid "Add Slot"
+msgstr "Добавить слот"
+
+msgid "Recent actions"
+msgstr "Последние действия"
+
+msgid "Full"
+msgstr "Полностью"
+
+msgid "Laptop"
+msgstr "Ноутбук"
+
+msgid "New slot added at cursor position"
+msgstr "Новый слот добавлен в позиции курсора"
+
+msgid "Graphic layer added to canvas"
+msgstr "Графический слой добавлен на холст"
+
+msgid "New slot created with assigned media"
+msgstr "Новый слот создан с назначенным медиа"
+
+msgid "Fit to viewport"
+msgstr "Подогнать к области просмотра"
+
+msgid "Fit to canvas"
+msgstr "Подогнать к холсту"
+
+msgid "{{bp}} viewport"
+msgstr "Область просмотра {{bp}}"
+
+msgid "canvas"
+msgstr "холст"
+
+msgid "Fit {{count}} slot into the {{where}}"
+msgstr "Подогнать {{count}} слот в {{where}}"
+
+msgid "Fit {{count}} slots into the {{where}}"
+msgstr "Подогнать {{count}} слотов в {{where}}"
+
+msgid "Slots already fit the {{where}}"
+msgstr "Слоты уже подходят к {{where}}"
+
+msgid "Max width:"
+msgstr "Макс. ширина:"
+
+msgid "Canvas max width"
+msgstr "Максимальная ширина холста"
+
+msgid "Fit to container"
+msgstr "Подогнать к контейнеру"
+
+msgid "Snap:"
+msgstr "Привязка:"
+
+msgid "Snap mode"
+msgstr "Режим привязки"
+
+msgid "Sensitivity:"
+msgstr "Чувствительность:"
+
+msgid "Snap sensitivity"
+msgstr "Чувствительность привязки"
+
+msgid "Toggle grid overlay"
+msgstr "Переключить наложение сетки"
+
+msgid "Grid cell size"
+msgstr "Размер ячейки сетки"
+
+msgid "Rulers"
+msgstr "Линейки"
+
+msgid "Toggle canvas rulers"
+msgstr "Переключить линейки холста"
+
+msgid "Measure"
+msgstr "Измерение"
+
+msgid "Toggle measurement overlay"
+msgstr "Переключить наложение измерений"
+
+msgid "Guides:"
+msgstr "Направляющие:"
+
+msgid "Add vertical guide"
+msgstr "Добавить вертикальную направляющую"
+
+msgid "Add horizontal guide"
+msgstr "Добавить горизонтальную направляющую"
+
+msgid "Breakpoint:"
+msgstr "Контрольная точка:"
+
+msgid "Breakpoint edit mode"
+msgstr "Режим редактирования контрольной точки"
+
+msgid "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
+msgstr "Переместить/масштабировать выбранные слоты (или все слоты), чтобы они поместились в область просмотра этого устройства — применяется только к этой контрольной точке"
+
+msgid "Move/scale the selected slots (or all slots) back inside the canvas bounds"
+msgstr "Переместить/масштабировать выбранные слоты (или все слоты) обратно в границы холста"
+
+msgid "Fit slots to viewport"
+msgstr "Подогнать слоты к области просмотра"
+
+msgid "Fit slots to canvas"
+msgstr "Подогнать слоты к холсту"
+
+msgid "Indices"
+msgstr "Индексы"
+
+msgid "Toggle slot index badges"
+msgstr "Переключить значки индексов слотов"
+
+msgid "Switch to select tool"
+msgstr "Переключиться на инструмент выбора"
+
+msgid "Hand tool — pan canvas (H)"
+msgstr "Инструмент «Рука» — панорамирование холста (H)"
+
+msgid "Hand tool"
+msgstr "Инструмент «Рука»"
+
+msgid "Fit canvas to viewport (F)"
+msgstr "Подогнать холст к области просмотра (F)"
+
+msgid "Fit canvas to viewport"
+msgstr "Подогнать холст к области просмотра"
+
+msgid "Reset zoom to 100%"
+msgstr "Сбросить масштаб на 100%"
+
+msgid "Zoom {{pct}}%, click to reset"
+msgstr "Масштаб {{pct}}%, нажмите для сброса"
+
+msgid "Preview:"
+msgstr "Предпросмотр:"
+
+msgid "Device preview preset"
+msgstr "Предустановка предпросмотра устройства"
+
+msgid "Custom preview width"
+msgstr "Пользовательская ширина предпросмотра"
+
+msgid "Device frame"
+msgstr "Рамка устройства"
+
+msgid "Toggle device frame chrome"
+msgstr "Переключить обрамление рамки устройства"
+
+msgid "Align slots"
+msgstr "Выровнять слоты"
+
+msgid "Add slot"
+msgstr "Добавить слот"
+
+msgid "Add text"
+msgstr "Добавить текст"
+
+msgid "Add mask to selected slot"
+msgstr "Добавить маску к выбранному слоту"
+
+msgid "Delete selected"
+msgstr "Удалить выбранное"
+
+msgid "Delete selected slots"
+msgstr "Удалить выбранные слоты"
+
+msgid "Duplicate selected"
+msgstr "Дублировать выбранное"
+
+msgid "Duplicate selected slots"
+msgstr "Дублировать выбранные слоты"
+
+msgid "Align left edges"
+msgstr "Выровнять левые края"
+
+msgid "Center horizontally"
+msgstr "Центрировать по горизонтали"
+
+msgid "Align right edges"
+msgstr "Выровнять правые края"
+
+msgid "Distribute by center (horizontal)"
+msgstr "Распределить по центру (горизонтально)"
+
+msgid "Distribute horizontally by center"
+msgstr "Распределить горизонтально по центру"
+
+msgid "Distribute by gap (horizontal)"
+msgstr "Распределить по промежутку (горизонтально)"
+
+msgid "Distribute horizontally by gap"
+msgstr "Распределить горизонтально по промежутку"
+
+msgid "Align top edges"
+msgstr "Выровнять верхние края"
+
+msgid "Center vertically"
+msgstr "Центрировать по вертикали"
+
+msgid "Align bottom edges"
+msgstr "Выровнять нижние края"
+
+msgid "Distribute by center (vertical)"
+msgstr "Распределить по центру (вертикально)"
+
+msgid "Distribute vertically by center"
+msgstr "Распределить вертикально по центру"
+
+msgid "Distribute by gap (vertical)"
+msgstr "Распределить по промежутку (вертикально)"
+
+msgid "Distribute vertically by gap"
+msgstr "Распределить вертикально по промежутку"
+
+msgid "Filter layers…"
+msgstr "Фильтровать слои…"
+
+msgid "Clear filter"
+msgstr "Очистить фильтр"
+
+msgid "Hide layer"
+msgstr "Скрыть слой"
+
+msgid "Show layer"
+msgstr "Показать слой"
+
+msgid "Unlock layer"
+msgstr "Разблокировать слой"
+
+msgid "Lock layer"
+msgstr "Заблокировать слой"
+
+msgid "Layer options"
+msgstr "Параметры слоя"
+
+msgid "Add Mask"
+msgstr "Добавить маску"
+
+msgid "Delete layer"
+msgstr "Удалить слой"
+
+msgid "Expand group"
+msgstr "Развернуть группу"
+
+msgid "Collapse group"
+msgstr "Свернуть группу"
+
+msgid "Group"
+msgstr "Сгруппировать"
+
+msgid "Ungroup"
+msgstr "Разгруппировать"
+
+msgid "Layout canvas"
+msgstr "Холст макета"
+
+msgid "Drag to reposition mask"
+msgstr "Перетащите, чтобы переместить маску"
+
+msgid "Toggle guide lock"
+msgstr "Переключить блокировку направляющей"
+
+msgid "Delete guide"
+msgstr "Удалить направляющую"
+
+msgid "Rename group"
+msgstr "Переименовать группу"
+
+msgid "Group name"
+msgstr "Имя группы"
+
+msgid "Rename"
+msgstr "Переименовать"
+
+msgid "Selection actions"
+msgstr "Действия с выбором"
+
+msgid "Ungroup (Ctrl+Shift+G)"
+msgstr "Разгруппировать (Ctrl+Shift+G)"
+
+msgid "Unlock group"
+msgstr "Разблокировать группу"
+
+msgid "Lock group"
+msgstr "Заблокировать группу"
+
+msgid "Show group"
+msgstr "Показать группу"
+
+msgid "Hide group"
+msgstr "Скрыть группу"
+
+msgid "Bring forward (])"
+msgstr "Вперёд (])"
+
+msgid "Send backward ([)"
+msgstr "Назад ([)"
+
+msgid "Group (Ctrl+G)"
+msgstr "Сгруппировать (Ctrl+G)"
+
+msgid "Group selected slots"
+msgstr "Сгруппировать выбранные слоты"
+
+msgid "Duplicate (Ctrl+D)"
+msgstr "Дублировать (Ctrl+D)"
+
+msgid "Duplicate slot"
+msgstr "Дублировать слот"
+
+msgid "Delete (Del)"
+msgstr "Удалить (Del)"
+
+msgid "Delete slot"
+msgstr "Удалить слот"
+
+msgid "Builder Keyboard Shortcuts"
+msgstr "Сочетания клавиш конструктора"
+
+msgid "Builder keyboard shortcuts reference"
+msgstr "Справка по сочетаниям клавиш конструктора"
+
+msgid "File"
+msgstr "Файл"
+
+msgid "History"
+msgstr "История"
+
+msgid "Selection"
+msgstr "Выбор"
+
+msgid "Nudge"
+msgstr "Сдвиг"
+
+msgid "Z-order"
+msgstr "Порядок по Z"
+
+msgid "Canvas"
+msgstr "Холст"
+
+msgid "Help"
+msgstr "Справка"
+
+msgid "Save template"
+msgstr "Сохранить шаблон"
+
+msgid "Undo"
+msgstr "Отменить"
+
+msgid "Redo"
+msgstr "Повторить"
+
+msgid "Remove selected slot(s)"
+msgstr "Убрать выбранные слоты"
+
+msgid "Deselect all"
+msgstr "Снять выбор со всего"
+
+msgid "Duplicate selected slot(s)"
+msgstr "Дублировать выбранные слоты"
+
+msgid "Copy selected slot(s)"
+msgstr "Копировать выбранные слоты"
+
+msgid "Paste slot(s)"
+msgstr "Вставить слоты"
+
+msgid "Group selected (2+) · or select all in group when already grouped"
+msgstr "Сгруппировать выбранное (2+) · или выбрать всё в группе, если уже сгруппировано"
+
+msgid "Ungroup selected group"
+msgstr "Разгруппировать выбранную группу"
+
+msgid "Toggle slot in selection (layers panel)"
+msgstr "Переключить слот в выборе (панель слоёв)"
+
+msgid "Range select (layers panel)"
+msgstr "Выбор диапазона (панель слоёв)"
+
+msgid "Move selected slot 1%"
+msgstr "Переместить выбранный слот на 1%"
+
+msgid "Move selected slot 10% (large)"
+msgstr "Переместить выбранный слот на 10% (крупно)"
+
+msgid "Move selected slot 0.1% (fine)"
+msgstr "Переместить выбранный слот на 0.1% (точно)"
+
+msgid "Add new slot"
+msgstr "Добавить новый слот"
+
+msgid "Toggle hand / pan tool"
+msgstr "Переключить инструмент «Рука» / панорамирование"
+
+msgid "Return to select tool"
+msgstr "Вернуться к инструменту выбора"
+
+msgid "Zoom in"
+msgstr "Приблизить"
+
+msgid "Zoom out"
+msgstr "Отдалить"
+
+msgid "Show this keyboard shortcuts reference"
+msgstr "Показать эту справку по сочетаниям клавиш"
+
+msgid "Generate grid"
+msgstr "Сгенерировать сетку"
+
+msgid "Auto-grid generator"
+msgstr "Генератор авто-сетки"
+
+msgid "Rows"
+msgstr "Строки"
+
+msgid "Columns"
+msgstr "Столбцы"
+
+msgid "Gap (%)"
+msgstr "Промежуток (%)"
+
+msgid "Margin (%)"
+msgstr "Отступ (%)"
+
+msgid "Replace existing slots"
+msgstr "Заменить существующие слоты"
+
+msgid "Preview ({{count}} slot)"
+msgstr "Предпросмотр ({{count}} слот)"
+
+msgid "Preview ({{count}} slots)"
+msgstr "Предпросмотр ({{count}} слотов)"
+
+msgid "These settings leave no room for cells — reduce the gap or margin."
+msgstr "Эти настройки не оставляют места для ячеек — уменьшите промежуток или отступ."
+
+msgid "Generate"
+msgstr "Сгенерировать"
+
+msgid "Layers"
+msgstr "Слои"
+
+msgid "Media & Assets"
+msgstr "Медиа и ресурсы"
+
+msgid "Properties"
+msgstr "Свойства"
+
+msgid "Options"
+msgstr "Параметры"
+
+msgid "Export template…"
+msgstr "Экспортировать шаблон…"
+
+msgid "Import from file…"
+msgstr "Импортировать из файла…"
+
+msgid "Close editor"
+msgstr "Закрыть редактор"
+
+msgid "Generate grid…"
+msgstr "Сгенерировать сетку…"
+
+msgid "History…"
+msgstr "История…"
+
+msgid "View"
+msgstr "Вид"
+
+msgid "Panels"
+msgstr "Панели"
+
+msgid "Show grid"
+msgstr "Показать сетку"
+
+msgid "Show rulers"
+msgstr "Показать линейки"
+
+msgid "Show measurements"
+msgstr "Показать измерения"
+
+msgid "Clear guides"
+msgstr "Очистить направляющие"
+
+msgid "Reset layout"
+msgstr "Сбросить макет"
+
+msgid "Layout workspace"
+msgstr "Рабочая область макета"
+
+msgid "Shared across all templates"
+msgstr "Общий для всех шаблонов"
+
+msgid "Save per template"
+msgstr "Сохранять для каждого шаблона"
+
+msgid "No history yet."
+msgstr "Пока нет истории."
+
+msgid "Make a change to see the history."
+msgstr "Внесите изменение, чтобы увидеть историю."
+
+msgid "History ({{count}})"
+msgstr "История ({{count}})"
+
+msgid "Undo (Ctrl+Z)"
+msgstr "Отменить (Ctrl+Z)"
+
+msgid "Redo (Ctrl+Shift+Z)"
+msgstr "Повторить (Ctrl+Shift+Z)"
+
+msgid "Jump to: {{label}}"
+msgstr "Перейти к: {{label}}"
+
+msgid "Jump to initial state"
+msgstr "Перейти к начальному состоянию"
+
+msgid "Oldest state"
+msgstr "Самое старое состояние"
+
+msgid "Initial state"
+msgstr "Начальное состояние"
+
+msgid "Open history"
+msgstr "Открыть историю"
+
+msgid "You have unsaved changes. Discard them?"
+msgstr "У вас есть несохранённые изменения. Отменить их?"
+
+msgid "Keep editing"
+msgstr "Продолжить редактирование"
+
+msgid "Layout \"{{name}}\" saved"
+msgstr "Макет «{{name}}» сохранён"
+
+msgid "Save failed"
+msgstr "Не удалось сохранить"
+
+msgid "Guide deleted"
+msgstr "Направляющая удалена"
+
+msgid "{{count}} slot deleted"
+msgstr "{{count}} слот удалён"
+
+msgid "{{count}} slots deleted"
+msgstr "{{count}} слотов удалено"
+
+msgid "{{count}} slot duplicated"
+msgstr "{{count}} слот продублирован"
+
+msgid "{{count}} slots duplicated"
+msgstr "{{count}} слотов продублировано"
+
+msgid "Group created ({{count}} slots)"
+msgstr "Группа создана ({{count}} слотов)"
+
+msgid "Ungrouped"
+msgstr "Разгруппировано"
+
+msgid "{{count}} media item assigned"
+msgstr "{{count}} медиаэлемент назначен"
+
+msgid "{{count}} media items assigned"
+msgstr "{{count}} медиаэлементов назначено"
+
+msgid "Generated {{count}} slot"
+msgstr "Сгенерирован {{count}} слот"
+
+msgid "Generated {{count}} slots"
+msgstr "Сгенерировано {{count}} слотов"
+
+msgid "Something went wrong in the Layout Editor"
+msgstr "Что-то пошло не так в редакторе макетов"
+
+msgid "An unexpected error occurred. Close the editor and try again."
+msgstr "Произошла непредвиденная ошибка. Закройте редактор и попробуйте снова."
+
+msgid "Close Editor"
+msgstr "Закрыть редактор"
+
+msgid "Unsaved changes"
+msgstr "Несохранённые изменения"
+
+msgid "Edit mode"
+msgstr "Режим редактирования"
+
+msgid "Preview mode"
+msgstr "Режим предпросмотра"
+
+msgid "Exit preview"
+msgstr "Выйти из предпросмотра"
+
+msgid "Auto"
+msgstr "Авто"
+
+msgid "Auto-fill (forward)"
+msgstr "Автозаполнение (вперёд)"
+
+msgid "Auto-fill (reverse)"
+msgstr "Автозаполнение (в обратном порядке)"
+
+msgid "Shuffle & fill"
+msgstr "Перемешать и заполнить"
+
+msgid "Clear all assigns"
+msgstr "Очистить все назначения"
+
+msgid "Search media…"
+msgstr "Поиск медиа…"
+
+msgid "Search media"
+msgstr "Поиск медиа"
+
+msgid "List view"
+msgstr "Вид списком"
+
+msgid "Grid view"
+msgstr "Вид сеткой"
+
+msgid "Click or drag a media item to assign it to the selected slot."
+msgstr "Нажмите или перетащите медиаэлемент, чтобы назначить его выбранному слоту."
+
+msgid "Select a slot first, then choose media to assign."
+msgstr "Сначала выберите слот, затем выберите медиа для назначения."
+
+msgid "Assignments"
+msgstr "Назначения"
+
+msgid "Slot {{n}}"
+msgstr "Слот {{n}}"
+
+msgid "Unassign"
+msgstr "Отменить назначение"
+
+msgid "Unassign media from slot {{n}}"
+msgstr "Отменить назначение медиа для слота {{n}}"
+
+msgid "No results."
+msgstr "Нет результатов."
+
+msgid "No media items available."
+msgstr "Нет доступных медиаэлементов."
+
+msgid "Choose a campaign…"
+msgstr "Выберите кампанию…"
+
+msgid "Select campaign for media"
+msgstr "Выберите кампанию для медиа"
+
+msgid "Add media"
+msgstr "Добавить медиа"
+
+msgid "Decorative assets, shared across campaigns. Drag onto the canvas to place."
+msgstr "Декоративные ресурсы, общие для всех кампаний. Перетащите на холст, чтобы разместить."
+
+msgid "Upload to library"
+msgstr "Загрузить в библиотеку"
+
+msgid "No design assets in library yet."
+msgstr "Пока нет дизайн-ресурсов в библиотеке."
+
+msgid "File type: {{type}}"
+msgstr "Тип файла: {{type}}"
+
+msgid "Tags: {{tags}}"
+msgstr "Метки: {{tags}}"
+
+msgid "Add tags"
+msgstr "Добавить метки"
+
+msgid "Edit tags for {{name}}"
+msgstr "Редактировать метки для {{name}}"
+
+msgid "Add a tag…"
+msgstr "Добавить метку…"
+
+msgid "Or paste image URL…"
+msgstr "Или вставьте URL изображения…"
+
+msgid "Image URL"
+msgstr "URL изображения"
+
+msgid "Start from Template"
+msgstr "Начать с шаблона"
+
+msgid "Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation."
+msgstr "Выберите предустановленный макет в качестве отправной точки. Вы можете настроить слоты, формы и свойства после создания."
+
+msgid "Campaign Cards"
+msgstr "Карточки кампаний"
+
+msgid "Gallery Layout"
+msgstr "Макет галереи"
+
+msgid "Gallery Style"
+msgstr "Стиль галереи"
+
+msgid "Gallery Navigation"
+msgstr "Навигация галереи"
+
+msgid "Campaign Viewer"
+msgstr "Просмотрщик кампаний"
+
+msgid "Integrations"
+msgstr "Интеграции"
+
+msgid "System & Admin"
+msgstr "Система и администрирование"
+
+msgid "just now"
+msgstr "только что"
+
+msgid "{{count}} minute ago"
+msgstr "{{count}} минуту назад"
+
+msgid "{{count}} minutes ago"
+msgstr "{{count}} минут назад"
+
+msgid "Unsaved settings found"
+msgstr "Найдены несохранённые настройки"
+
+msgid "You have unsaved settings changes from {{age}}. Would you like to restore them?"
+msgstr "У вас есть несохранённые изменения настроек от {{age}}. Хотите восстановить их?"
+
+msgid "Make a change to see history."
+msgstr "Внесите изменение, чтобы увидеть историю."
+
+msgid "Editing "
+msgstr "Редактирование макета "
+
+msgid " layout — moves and resizes apply to this breakpoint only"
+msgstr " — перемещения и изменения размера применяются только к этой контрольной точке"
+
+msgid "{{w}} × {{h}}px"
+msgstr "{{w}} × {{h}}px"
+
+msgid "Double-click to add a slot"
+msgstr "Дважды нажмите, чтобы добавить слот"
+
+msgid "or drag media from the panel"
+msgstr "или перетащите медиа с панели"
+
+msgid "Media ({{count}})"
+msgstr "Медиа ({{count}})"
+
+msgid "Configure how the gallery authenticates with the WordPress REST API."
+msgstr "Настройте, как галерея аутентифицируется с REST API WordPress."
+
+msgid "Configure default display settings for galleries."
+msgstr "Настройте параметры отображения по умолчанию для галерей."
+
+msgid "Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute."
+msgstr "Глобальный внешний вид панели аутентификации. Переопределяйте для каждой страницы с помощью атрибута шорткода auth_bar_mode."
+
+msgid "Floating (circular icon, bottom-right)"
+msgstr "Плавающая (круглый значок, справа внизу)"
+
+msgid "Draggable (movable floating icon)"
+msgstr "Перетаскиваемая (подвижный плавающий значок)"
+
+msgid "Bar (full-width sticky bar)"
+msgstr "Полоса (закреплённая полоса на всю ширину)"
+
+msgid "Auto-hide (bar hides on scroll)"
+msgstr "Автоскрытие (полоса скрывается при прокрутке)"
+
+msgid "Minimal (thin strip, ≤32px)"
+msgstr "Минимальная (тонкая полоска, ≤32px)"
+
+msgid "How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page."
+msgstr "Как панель аутентификации отображается на всех страницах галереи. Используйте атрибут шорткода auth_bar_mode для переопределения на конкретной странице."
+
+msgid "Minimum distance from viewport edges when dragging (draggable mode only)."
+msgstr "Минимальное расстояние от краёв области просмотра при перетаскивании (только в перетаскиваемом режиме)."
+
+msgid "Configure caching and performance settings."
+msgstr "Настройте параметры кеширования и производительности."
+
+msgid "WordPress JWT (Recommended)"
+msgstr "WordPress JWT (рекомендуется)"
+
+msgid "None (Public Access Only)"
+msgstr "Нет (только публичный доступ)"
+
+msgid "Select the authentication method for REST API access."
+msgstr "Выберите метод аутентификации для доступа к REST API."
+
+msgid "Test Connection"
+msgstr "Проверить соединение"
+
+msgid "Leave empty to use the current site URL. Only change this for multi-site or headless setups."
+msgstr "Оставьте пустым, чтобы использовать URL текущего сайта. Изменяйте это только для мультисайтовых или headless-установок."
+
+msgid "Default"
+msgstr "По умолчанию"
+
+msgid "Default Dark"
+msgstr "По умолчанию тёмная"
+
+msgid "Default Light"
+msgstr "По умолчанию светлая"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "Material Dark"
+msgstr "Material тёмная"
+
+msgid "Material Light"
+msgstr "Material светлая"
+
+msgid "Darcula"
+msgstr "Darcula"
+
+msgid "Nord"
+msgstr "Nord"
+
+msgid "Solarized"
+msgstr "Solarized"
+
+msgid "Solarized Dark"
+msgstr "Solarized тёмная"
+
+msgid "Solarized Light"
+msgstr "Solarized светлая"
+
+msgid "Accessibility"
+msgstr "Доступность"
+
+msgid "High Contrast"
+msgstr "Высокий контраст"
+
+msgid "Community"
+msgstr "Сообщество"
+
+msgid "Catppuccin Mocha"
+msgstr "Catppuccin Mocha"
+
+msgid "Catppuccin Latte"
+msgstr "Catppuccin Latte"
+
+msgid "Tokyo Night"
+msgstr "Tokyo Night"
+
+msgid "Gruvbox Dark"
+msgstr "Gruvbox Dark"
+
+msgid "GitHub Light"
+msgstr "GitHub Light"
+
+msgid "Neon"
+msgstr "Неон"
+
+msgid "Cyberpunk"
+msgstr "Киберпанк"
+
+msgid "Synthwave '84"
+msgstr "Synthwave '84"
+
+msgid "Artistic"
+msgstr "Художественная"
+
+msgid "Sunset Boulevard"
+msgstr "Sunset Boulevard"
+
+msgid "Ocean Breeze"
+msgstr "Ocean Breeze"
+
+msgid "Crimson Canvas"
+msgstr "Crimson Canvas"
+
+msgid "Forest Whisper"
+msgstr "Forest Whisper"
+
+msgid "Midnight Rose"
+msgstr "Midnight Rose"
+
+msgid "Seasonal"
+msgstr "Сезонная"
+
+msgid "Halloween"
+msgstr "Хеллоуин"
+
+msgid "Reverse Halloween"
+msgstr "Обратный Хеллоуин"
+
+msgid "Default color theme for gallery display. Users can override this if allowed below."
+msgstr "Цветовая тема по умолчанию для отображения галереи. Пользователи могут переопределить это, если разрешено ниже."
+
+msgid "Allow visitors to switch themes via the gallery UI."
+msgstr "Разрешить посетителям переключать темы через интерфейс галереи."
+
+msgid "When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors."
+msgstr "Когда отключено, галерея всегда будет использовать тему, выбранную выше, и скроет селектор тем от посетителей."
+
+msgid "Keep React DevTools names and emit DOM component markers in deployed builds."
+msgstr "Сохранять имена React DevTools и выводить маркеры компонентов DOM в развёрнутых сборках."
+
+msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "Добавляет явные имена компонентов для React DevTools в производственных сборках и внедряет атрибуты data-wpsg-component/data-wpsg-slot для инспекции элементов в браузере, селекторов QA и отладки интерфейса."
+
+msgid "Enable smooth animations and transitions."
+msgstr "Включить плавные анимации и переходы."
+
+msgid "Disable for better performance on low-end devices."
+msgstr "Отключите для лучшей производительности на слабых устройствах."
+
+msgid "Disabled"
+msgstr "Отключено"
+
+msgid "10 seconds"
+msgstr "10 секунд"
+
+msgid "30 seconds"
+msgstr "30 секунд"
+
+msgid "1 minute"
+msgstr "1 минута"
+
+msgid "5 minutes"
+msgstr "5 минут"
+
+msgid "15 minutes"
+msgstr "15 минут"
+
+msgid "20 minutes"
+msgstr "20 минут"
+
+msgid "30 minutes"
+msgstr "30 минут"
+
+msgid "45 minutes"
+msgstr "45 минут"
+
+msgid "1 hour"
+msgstr "1 час"
+
+msgid "2 hours"
+msgstr "2 часа"
+
+msgid "4 hours"
+msgstr "4 часа"
+
+msgid "8 hours"
+msgstr "8 часов"
+
+msgid "12 hours"
+msgstr "12 часов"
+
+msgid "1 day"
+msgstr "1 день"
+
+msgid "3 days"
+msgstr "3 дня"
+
+msgid "1 week"
+msgstr "1 неделя"
+
+msgid "How long to cache API responses. Higher values improve performance but show stale data."
+msgstr "Как долго кешировать ответы API. Более высокие значения улучшают производительность, но показывают устаревшие данные."
+
+msgid "Super Gallery Settings"
+msgstr "Настройки Super Gallery"
+
+msgid "Testing..."
+msgstr "Проверка…"
+
+msgid "Connection failed"
+msgstr "Не удалось подключиться"
+
+msgid "Request failed"
+msgstr "Запрос не удался"
+
+msgid "Authentication test was rejected. Refresh the page and try again."
+msgstr "Тест аутентификации был отклонён. Обновите страницу и попробуйте снова."
+
+msgid "Unexpected server response while testing authentication."
+msgstr "Непредвиденный ответ сервера при тестировании аутентификации."
+
+msgid "Authentication"
+msgstr "Аутентификация"
+
+msgid "Auth Provider"
+msgstr "Провайдер аутентификации"
+
+msgid "API Base URL"
+msgstr "Базовый URL API"
+
+msgid "Display Settings"
+msgstr "Параметры отображения"
+
+msgid "Allow User Theme Override"
+msgstr "Разрешить переопределение темы пользователем"
+
+msgid "Component Debug Names & Markers"
+msgstr "Отладочные имена и маркеры компонентов"
+
+msgid "Drag Margin (px)"
+msgstr "Отступ перетаскивания (px)"
+
+msgid "Performance"
+msgstr "Производительность"
+
+msgid "Cache Duration"
+msgstr "Длительность кеша"
+
+msgid "Save Settings"
+msgstr "Сохранить настройки"
+
+msgid "Shortcode Usage"
+msgstr "Использование шорткода"
+
+msgid "Embed a gallery using the following shortcode:"
+msgstr "Встройте галерею с помощью следующего шорткода:"
+
+msgid "Shortcode Attributes"
+msgstr "Атрибуты шорткода"
+
+msgid "Attribute"
+msgstr "Атрибут"
+
+msgid "Campaign slug or ID to display"
+msgstr "Ярлык или ID кампании для отображения"
+
+msgid "Filter by company slug"
+msgstr "Фильтровать по ярлыку компании"
+
+msgid "Use compact display mode"
+msgstr "Использовать компактный режим отображения"
+
+msgid "Permission denied."
+msgstr "Доступ запрещён."
+
+msgid "Connection failed: %s"
+msgstr "Не удалось подключиться: %s"
+
+msgid "API connection successful!"
+msgstr "Соединение с API успешно!"
+
+msgid "API reachable. Authentication required for protected endpoints."
+msgstr "API доступен. Для защищённых конечных точек требуется аутентификация."
+
+msgid "Unexpected response: HTTP %d"
+msgstr "Непредвиденный ответ: HTTP %d"
+
+msgid "Gallery Editor"
+msgstr "Редактор галереи"
