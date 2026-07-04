@@ -269,7 +269,7 @@ class WPSG_DB {
                 sprintf(
                     'Performance cliff: scanning %d campaigns for attachment ID %d. This method is O(campaigns) in queries. The O(1) fix requires a wpsg_media_refs attachment-ID index (Phase 50+).',
                     count($campaign_ids),
-                    $attachment_id
+                    (int) $attachment_id
                 ),
                 '0.26.0'
             );

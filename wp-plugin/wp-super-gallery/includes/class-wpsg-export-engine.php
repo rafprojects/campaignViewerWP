@@ -90,7 +90,7 @@ class WPSG_Export_Engine {
         $job      = self::get_job($id);
         $zip_path = ($job && !empty($job['zip_path'])) ? $job['zip_path'] : self::expected_zip_path($id);
         if (file_exists($zip_path)) {
-            @unlink($zip_path); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+            wp_delete_file($zip_path);
         }
         delete_transient('wpsg_export_job_' . $id);
         self::index_remove($id);
@@ -255,7 +255,7 @@ class WPSG_Export_Engine {
                 // Transient already expired — clean up any orphaned ZIP file.
                 $zip_path = self::expected_zip_path($id);
                 if (file_exists($zip_path)) {
-                    @unlink($zip_path); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                    wp_delete_file($zip_path);
                 }
                 self::index_remove($id);
                 continue;
@@ -279,7 +279,7 @@ class WPSG_Export_Engine {
     public static function get_media_filename(array $item): string {
         $item_id = sanitize_key($item['id'] ?? '');
         $url     = $item['url'] ?? '';
-        $path    = parse_url($url, PHP_URL_PATH) ?: '';
+        $path    = wp_parse_url($url, PHP_URL_PATH) ?: '';
         $ext     = strtolower(pathinfo($path, PATHINFO_EXTENSION));
 
         $base = $item_id ?: md5($url);

@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<ruleset name="WP Super Gallery — Security">
+    <description>
+        Security-scoped PHPCS ruleset for the P60-C compliance pass: output escaping,
+        input sanitization, and nonce verification across the PHP surface. Intentionally
+        NOT the full WordPress standard (naming/formatting nits are out of scope here) —
+        this gate exists to catch security regressions, not style.
+    </description>
+
+    <!-- Scan the runtime PHP surface. -->
+    <file>wp-super-gallery.php</file>
+    <file>uninstall.php</file>
+    <file>includes</file>
+
+    <!-- Never scan third-party or generated code. -->
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+    <exclude-pattern>*/languages/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+
+    <!-- CLI defaults so `composer lint:php` is self-configuring. -->
+    <arg name="extensions" value="php"/>
+    <arg name="basepath" value="."/>
+    <arg name="parallel" value="8"/>
+    <arg name="colors"/>
+    <arg value="sp"/><!-- show sniff codes (s) + progress (p) -->
+
+    <!-- The security category: EscapeOutput, ValidatedSanitizedInput,
+         NonceVerification, SafeRedirect, PluginMenuSlug, etc. -->
+    <rule ref="WordPress.Security"/>
+
+    <!-- Lets the sanitization/nonce sniffs recognise this plugin's i18n text domain. -->
+    <config name="text_domain" value="wp-super-gallery"/>
+</ruleset>

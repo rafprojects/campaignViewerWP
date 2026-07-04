@@ -512,8 +512,8 @@ class WPSG_CPT {
         if (!current_user_can('manage_options') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
             wp_die(esc_html__('Forbidden', 'wp-super-gallery'));
         }
-        $name     = sanitize_text_field($_POST['wpsg_space_name'] ?? '');
-        $raw_slug = sanitize_text_field($_POST['wpsg_space_slug'] ?? '');
+        $name     = sanitize_text_field(wp_unslash($_POST['wpsg_space_name'] ?? ''));
+        $raw_slug = sanitize_text_field(wp_unslash($_POST['wpsg_space_slug'] ?? ''));
         $slug     = sanitize_title($raw_slug ?: $name);
         $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
         if (empty($name) || empty($slug)) {

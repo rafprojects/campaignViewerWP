@@ -114,7 +114,7 @@ class WPSG_Embed {
         }
 
         // Strip the query string to get the bare request path.
-        $raw_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $raw_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
         $request_path = strtok((string) $raw_uri, '?');
 
         // The SW is served at the path component of home_url('/sw.js'), e.g. '/sw.js'

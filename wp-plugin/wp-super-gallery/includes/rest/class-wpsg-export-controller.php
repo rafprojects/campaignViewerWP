@@ -702,7 +702,7 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
 
             $file_array = ['name' => $filename, 'tmp_name' => $tmp];
             $att_id     = media_handle_sideload($file_array, $post_id, sanitize_text_field($ref['title'] ?? ''));
-            @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+            wp_delete_file($tmp);
 
             if (is_wp_error($att_id)) {
                 continue;

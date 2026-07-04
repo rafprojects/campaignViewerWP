@@ -85,7 +85,7 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
             : null;
 
         global $wpdb;
-        $ip   = $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip   = sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'] ?? ''));
         $salt = wp_salt('auth');
         $hash = hash('sha256', $ip . $salt);
 
