@@ -6257,6 +6257,75 @@ msgstr "или перетащите медиа с панели"
 msgid "Media ({{count}})"
 msgstr "Медиа ({{count}})"
 
+msgid "Archive Campaign"
+msgstr "Архивировать кампанию"
+
+msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
+msgstr "Вы уверены, что хотите архивировать «{{title}}»? Это действие пометит её как архивированную."
+
+msgid "Pick from Media Library"
+msgstr "Выбрать из медиабиблиотеки"
+
+msgid "Refresh"
+msgstr "Обновить"
+
+msgid "Load Library"
+msgstr "Загрузить библиотеку"
+
+msgid "Search media..."
+msgstr "Поиск медиа..."
+
+msgid "Search media library"
+msgstr "Поиск в медиабиблиотеке"
+
+msgid "Click \"Load Library\" to browse existing media"
+msgstr "Нажмите «Загрузить библиотеку», чтобы просмотреть существующие медиа"
+
+msgid "Media already added to campaign"
+msgstr "Медиа уже добавлено в кампанию"
+
+msgid "Add {{type}} media: {{label}}"
+msgstr "Добавить медиа {{type}}: {{label}}"
+
+msgid "Added"
+msgstr "Добавлено"
+
+msgid "✏️ Editor"
+msgstr "✏️ Редактор"
+
+msgid "👑 Owner"
+msgstr "👑 Владелец"
+
+msgid "Can read campaign content only"
+msgstr "Может только просматривать содержимое кампании"
+
+msgid "Can edit metadata and media; cannot manage access or builder"
+msgstr "Может редактировать метаданные и медиа; не может управлять доступом или конструктором"
+
+msgid "Full campaign control including access management and builder"
+msgstr "Полный контроль над кампанией, включая управление доступом и конструктор"
+
+msgid "Company-wide access"
+msgstr "Доступ на уровне компании"
+
+msgid "Direct campaign access"
+msgstr "Прямой доступ к кампании"
+
+msgid "This grant has expired"
+msgstr "Это разрешение истекло"
+
+msgid "Grant expires at this time"
+msgstr "Разрешение истекает в это время"
+
+msgid "Expires: {{date}}"
+msgstr "Истекает: {{date}}"
+
+msgid "Revoke company-wide access"
+msgstr "Отозвать доступ на уровне компании"
+
+msgid "Revoke campaign access"
+msgstr "Отозвать доступ к кампании"
+
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr "Настройте, как галерея аутентифицируется с REST API WordPress."
 

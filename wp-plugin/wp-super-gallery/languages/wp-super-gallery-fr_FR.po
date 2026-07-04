@@ -6257,6 +6257,75 @@ msgstr "ou faites glisser un média depuis le panneau"
 msgid "Media ({{count}})"
 msgstr "Médias ({{count}})"
 
+msgid "Archive Campaign"
+msgstr "Archiver la campagne"
+
+msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
+msgstr "Voulez-vous vraiment archiver « {{title}} » ? Cette action la marquera comme archivée."
+
+msgid "Pick from Media Library"
+msgstr "Choisir dans la bibliothèque de médias"
+
+msgid "Refresh"
+msgstr "Actualiser"
+
+msgid "Load Library"
+msgstr "Charger la bibliothèque"
+
+msgid "Search media..."
+msgstr "Rechercher des médias..."
+
+msgid "Search media library"
+msgstr "Rechercher dans la bibliothèque de médias"
+
+msgid "Click \"Load Library\" to browse existing media"
+msgstr "Cliquez sur « Charger la bibliothèque » pour parcourir les médias existants"
+
+msgid "Media already added to campaign"
+msgstr "Média déjà ajouté à la campagne"
+
+msgid "Add {{type}} media: {{label}}"
+msgstr "Ajouter un média {{type}} : {{label}}"
+
+msgid "Added"
+msgstr "Ajouté"
+
+msgid "✏️ Editor"
+msgstr "✏️ Éditeur"
+
+msgid "👑 Owner"
+msgstr "👑 Propriétaire"
+
+msgid "Can read campaign content only"
+msgstr "Peut uniquement consulter le contenu de la campagne"
+
+msgid "Can edit metadata and media; cannot manage access or builder"
+msgstr "Peut modifier les métadonnées et les médias ; ne peut pas gérer les accès ni l’éditeur"
+
+msgid "Full campaign control including access management and builder"
+msgstr "Contrôle total de la campagne, y compris la gestion des accès et l’éditeur"
+
+msgid "Company-wide access"
+msgstr "Accès à toute l’entreprise"
+
+msgid "Direct campaign access"
+msgstr "Accès direct à la campagne"
+
+msgid "This grant has expired"
+msgstr "Cette autorisation a expiré"
+
+msgid "Grant expires at this time"
+msgstr "L’autorisation expire à cette date"
+
+msgid "Expires: {{date}}"
+msgstr "Expire le : {{date}}"
+
+msgid "Revoke company-wide access"
+msgstr "Révoquer l’accès à toute l’entreprise"
+
+msgid "Revoke campaign access"
+msgstr "Révoquer l’accès à la campagne"
+
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr "Configurez la manière dont la galerie s’authentifie auprès de l’API REST de WordPress."
 

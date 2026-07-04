@@ -6257,6 +6257,75 @@ msgstr "或从面板拖动媒体"
 msgid "Media ({{count}})"
 msgstr "媒体 ({{count}})"
 
+msgid "Archive Campaign"
+msgstr "归档活动"
+
+msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
+msgstr "确定要归档“{{title}}”吗？此操作会将其标记为已归档。"
+
+msgid "Pick from Media Library"
+msgstr "从媒体库中选择"
+
+msgid "Refresh"
+msgstr "刷新"
+
+msgid "Load Library"
+msgstr "加载媒体库"
+
+msgid "Search media..."
+msgstr "搜索媒体..."
+
+msgid "Search media library"
+msgstr "搜索媒体库"
+
+msgid "Click \"Load Library\" to browse existing media"
+msgstr "点击“加载媒体库”以浏览现有媒体"
+
+msgid "Media already added to campaign"
+msgstr "媒体已添加到活动"
+
+msgid "Add {{type}} media: {{label}}"
+msgstr "添加{{type}}媒体：{{label}}"
+
+msgid "Added"
+msgstr "已添加"
+
+msgid "✏️ Editor"
+msgstr "✏️ 编辑者"
+
+msgid "👑 Owner"
+msgstr "👑 所有者"
+
+msgid "Can read campaign content only"
+msgstr "只能查看活动内容"
+
+msgid "Can edit metadata and media; cannot manage access or builder"
+msgstr "可编辑元数据和媒体；无法管理访问权限或构建器"
+
+msgid "Full campaign control including access management and builder"
+msgstr "完全的活动控制权，包括访问权限管理和构建器"
+
+msgid "Company-wide access"
+msgstr "公司范围访问权限"
+
+msgid "Direct campaign access"
+msgstr "直接的活动访问权限"
+
+msgid "This grant has expired"
+msgstr "此授权已过期"
+
+msgid "Grant expires at this time"
+msgstr "授权将在此时过期"
+
+msgid "Expires: {{date}}"
+msgstr "过期时间：{{date}}"
+
+msgid "Revoke company-wide access"
+msgstr "撤销公司范围访问权限"
+
+msgid "Revoke campaign access"
+msgstr "撤销活动访问权限"
+
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr "配置图库如何向 WordPress REST API 进行身份验证。"
 

@@ -6257,6 +6257,75 @@ msgstr "oder Medien aus dem Panel ziehen"
 msgid "Media ({{count}})"
 msgstr "Medien ({{count}})"
 
+msgid "Archive Campaign"
+msgstr "Kampagne archivieren"
+
+msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
+msgstr "Möchten Sie „{{title}}“ wirklich archivieren? Diese Aktion markiert sie als archiviert."
+
+msgid "Pick from Media Library"
+msgstr "Aus der Mediathek auswählen"
+
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgid "Load Library"
+msgstr "Bibliothek laden"
+
+msgid "Search media..."
+msgstr "Medien suchen..."
+
+msgid "Search media library"
+msgstr "Mediathek durchsuchen"
+
+msgid "Click \"Load Library\" to browse existing media"
+msgstr "Klicken Sie auf „Bibliothek laden“, um vorhandene Medien zu durchsuchen"
+
+msgid "Media already added to campaign"
+msgstr "Medium bereits zur Kampagne hinzugefügt"
+
+msgid "Add {{type}} media: {{label}}"
+msgstr "{{type}}-Medium hinzufügen: {{label}}"
+
+msgid "Added"
+msgstr "Hinzugefügt"
+
+msgid "✏️ Editor"
+msgstr "✏️ Editor"
+
+msgid "👑 Owner"
+msgstr "👑 Eigentümer"
+
+msgid "Can read campaign content only"
+msgstr "Kann nur Kampagneninhalte lesen"
+
+msgid "Can edit metadata and media; cannot manage access or builder"
+msgstr "Kann Metadaten und Medien bearbeiten; kann Zugriff oder Builder nicht verwalten"
+
+msgid "Full campaign control including access management and builder"
+msgstr "Volle Kampagnenkontrolle einschließlich Zugriffsverwaltung und Builder"
+
+msgid "Company-wide access"
+msgstr "Unternehmensweiter Zugriff"
+
+msgid "Direct campaign access"
+msgstr "Direkter Kampagnenzugriff"
+
+msgid "This grant has expired"
+msgstr "Diese Berechtigung ist abgelaufen"
+
+msgid "Grant expires at this time"
+msgstr "Die Berechtigung läuft zu diesem Zeitpunkt ab"
+
+msgid "Expires: {{date}}"
+msgstr "Läuft ab: {{date}}"
+
+msgid "Revoke company-wide access"
+msgstr "Unternehmensweiten Zugriff widerrufen"
+
+msgid "Revoke campaign access"
+msgstr "Kampagnenzugriff widerrufen"
+
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr "Konfigurieren Sie, wie sich die Galerie bei der WordPress-REST-API authentifiziert."
 
