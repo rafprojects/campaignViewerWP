@@ -440,7 +440,7 @@ function wpsg_should_add_security_headers() {
         return true;
     }
 
-    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';
+    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection to decide security headers; no state change, no nonce.
     if (strpos($route, '/wp-super-gallery/v1/') === 0) {
         return true;
     }

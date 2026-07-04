@@ -1048,7 +1048,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             $params
         );
 
-        $rows = $wpdb->get_results($sql);
+        $rows = $wpdb->get_results($sql); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- $sql is $wpdb->prepare() output with %d/%s placeholders + params.
         $grants = [];
         $status = [];
 

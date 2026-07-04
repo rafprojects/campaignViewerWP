@@ -101,7 +101,7 @@ class WPSG_Monitoring {
     }
 
     private static function is_wpsg_request() {
-        $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';
+        $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection for request metrics; no state change, no nonce.
         if (strpos($route, '/wp-super-gallery/v1/') === 0) {
             return true;
         }

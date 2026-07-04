@@ -142,6 +142,13 @@ jobs:
         working-directory: wp-plugin/wp-super-gallery
         run: composer install --prefer-dist --no-interaction
 
+      # P60-C: security-scoped PHPCS gate (escaping / sanitization / nonce).
+      # Runs once (not per matrix PHP version) since the ruleset is version-independent.
+      - name: PHP lint (PHPCS security)
+        if: matrix.php-version == '8.3'
+        working-directory: wp-plugin/wp-super-gallery
+        run: composer lint:php
+
       - name: Download WordPress core and test library
         run: |
           WP_VERSION=6.7

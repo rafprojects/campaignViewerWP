@@ -169,7 +169,7 @@ class WPSG_Export_Engine {
                     foreach ($tmp_files as $f) { @unlink($f); } // phpcs:ignore
                     @unlink($zip_path); // phpcs:ignore
                     throw new RuntimeException(
-                        'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'
+                        'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message interpolates a numeric round(); not user-facing output.
                     );
                 }
             }
@@ -226,7 +226,7 @@ class WPSG_Export_Engine {
                 foreach ($tmp_files as $f) { @unlink($f); } // phpcs:ignore
                 @unlink($zip_path); // phpcs:ignore
                 throw new RuntimeException(
-                    'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'
+                    'Export would exceed the ' . round($size_limit / 1048576) . ' MB size limit.'  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message interpolates a numeric round(); not user-facing output.
                 );
             }
 

@@ -451,7 +451,7 @@ class WPSG_CPT {
         if (empty($spaces)) {
             return;
         }
-        $selected = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;
+        $selected = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
         echo '<select name="wpsg_space_filter">';
         echo '<option value="">' . esc_html__('All spaces', 'wp-super-gallery') . '</option>';
         foreach ($spaces as $s) {
@@ -472,7 +472,7 @@ class WPSG_CPT {
         if ($query->get('post_type') !== self::POST_TYPE) {
             return;
         }
-        $space_id = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;
+        $space_id = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
         if ($space_id <= 0) {
             return;
         }

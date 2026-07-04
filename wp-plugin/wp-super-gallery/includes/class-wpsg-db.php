@@ -951,7 +951,7 @@ class WPSG_DB {
         $total     = empty($values)
             // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
             ? (int) $wpdb->get_var($count_sql)
-            : (int) $wpdb->get_var($wpdb->prepare($count_sql, $values));
+            : (int) $wpdb->get_var($wpdb->prepare($count_sql, $values)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dynamic WHERE from internal columns; values bound via $wpdb->prepare().
 
         $items_sql      = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
         $items_values   = array_merge($values, [$per_page, $offset]);
@@ -1140,7 +1140,7 @@ class WPSG_DB {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $row                    = $wpdb->get_row($wpdb->prepare(
-            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE id = %d',
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE id = %d', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name from internal method; id bound via prepare().
             $id
         )) ?: null;
         self::$space_cache[$id] = $row;
@@ -1151,7 +1151,7 @@ class WPSG_DB {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         return $wpdb->get_row($wpdb->prepare(
-            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE slug = %s',
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE slug = %s', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name from internal method; slug bound via prepare().
             $slug
         )) ?: null;
     }
@@ -1270,7 +1270,7 @@ class WPSG_DB {
 
         $finish = static function (string $statement) use ($wpdb, $campaign_id) {
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
-            $wpdb->query($statement);
+            $wpdb->query($statement); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Internal cascade DELETE; $statement built from internal table names + int campaign_id.
             wp_cache_delete($campaign_id, 'post_meta');
         };
 
