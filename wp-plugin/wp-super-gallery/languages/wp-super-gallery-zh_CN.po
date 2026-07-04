@@ -26,6 +26,18 @@ msgstr "素材库"
 msgid "Upload and manage global overlay/graphic assets available across all spaces."
 msgstr "上传和管理可在所有空间中使用的全局叠加层/图形素材。"
 
+msgid "Blank Gallery"
+msgstr "空白图库"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "一个没有预配置设置的干净起点。"
+
+msgid "Public Showcase"
+msgstr "公开展示"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "公开可见，创建后即可用于外部分享。"
+
 msgid "Campaigns"
 msgstr "活动"
 
@@ -802,6 +814,57 @@ msgstr "选择 {{title}}"
 
 msgid "Custom gallery: {{summary}}"
 msgstr "自定义图库：{{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "自定义图库覆盖：{{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "嵌套的活动图库覆盖"
+
+msgid "Status for {{title}}"
+msgstr "{{title}} 的状态"
+
+msgid "Visibility for {{title}}"
+msgstr "{{title}} 的可见性"
+
+msgid "Add media to this campaign"
+msgstr "向此活动添加媒体"
+
+msgid "Add media to {{title}}"
+msgstr "向 {{title}} 添加媒体"
+
+msgid "Clone campaign"
+msgstr "克隆活动"
+
+msgid "Move to another space"
+msgstr "移动到另一个空间"
+
+msgid "Move {{title}} to another space"
+msgstr "将 {{title}} 移动到另一个空间"
+
+msgid "Permanently delete campaign"
+msgstr "永久删除活动"
+
+msgid "Failed to update status."
+msgstr "无法更新状态。"
+
+msgid "Failed to update visibility."
+msgstr "无法更新可见性。"
+
+msgid "Failed to update company."
+msgstr "无法更新公司。"
+
+msgid "{{count}} active grant"
+msgstr "{{count}} 个活跃授权"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} 个活跃授权"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} 个待处理请求"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} 个待处理请求"
 
 msgid "Nested overrides"
 msgstr "嵌套覆盖"

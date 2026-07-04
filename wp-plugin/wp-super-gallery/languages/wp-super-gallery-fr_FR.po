@@ -26,6 +26,18 @@ msgstr "Bibliothèque de ressources"
 msgid "Upload and manage global overlay/graphic assets available across all spaces."
 msgstr "Téléversez et gérez les ressources graphiques/superpositions globales disponibles dans tous les espaces."
 
+msgid "Blank Gallery"
+msgstr "Galerie vierge"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "Un point de départ vierge sans paramètres préconfigurés."
+
+msgid "Public Showcase"
+msgstr "Vitrine publique"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "Visibilité publique, prête pour le partage externe dès la création."
+
 msgid "Campaigns"
 msgstr "Campagnes"
 
@@ -802,6 +814,57 @@ msgstr "Sélectionner {{title}}"
 
 msgid "Custom gallery: {{summary}}"
 msgstr "Galerie personnalisée : {{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "Remplacements de galerie personnalisés : {{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "Remplacements de galerie de campagne imbriqués"
+
+msgid "Status for {{title}}"
+msgstr "Statut pour {{title}}"
+
+msgid "Visibility for {{title}}"
+msgstr "Visibilité pour {{title}}"
+
+msgid "Add media to this campaign"
+msgstr "Ajouter des médias à cette campagne"
+
+msgid "Add media to {{title}}"
+msgstr "Ajouter des médias à {{title}}"
+
+msgid "Clone campaign"
+msgstr "Cloner la campagne"
+
+msgid "Move to another space"
+msgstr "Déplacer vers un autre espace"
+
+msgid "Move {{title}} to another space"
+msgstr "Déplacer {{title}} vers un autre espace"
+
+msgid "Permanently delete campaign"
+msgstr "Supprimer définitivement la campagne"
+
+msgid "Failed to update status."
+msgstr "Échec de la mise à jour du statut."
+
+msgid "Failed to update visibility."
+msgstr "Échec de la mise à jour de la visibilité."
+
+msgid "Failed to update company."
+msgstr "Échec de la mise à jour de l’entreprise."
+
+msgid "{{count}} active grant"
+msgstr "{{count}} autorisation active"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} autorisations actives"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} demande en attente"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} demandes en attente"
 
 msgid "Nested overrides"
 msgstr "Remplacements imbriqués"

@@ -26,6 +26,18 @@ msgstr "Biblioteca de recursos"
 msgid "Upload and manage global overlay/graphic assets available across all spaces."
 msgstr "Sube y gestiona recursos gráficos/superposiciones globales disponibles en todos los espacios."
 
+msgid "Blank Gallery"
+msgstr "Galería en blanco"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "Un punto de partida limpio sin ajustes preconfigurados."
+
+msgid "Public Showcase"
+msgstr "Escaparate público"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "Visibilidad pública, lista para compartir externamente justo después de la creación."
+
 msgid "Campaigns"
 msgstr "Campañas"
 
@@ -802,6 +814,57 @@ msgstr "Seleccionar {{title}}"
 
 msgid "Custom gallery: {{summary}}"
 msgstr "Galería personalizada: {{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "Anulaciones de galería personalizadas: {{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "Anulaciones de galería de campaña anidadas"
+
+msgid "Status for {{title}}"
+msgstr "Estado de {{title}}"
+
+msgid "Visibility for {{title}}"
+msgstr "Visibilidad de {{title}}"
+
+msgid "Add media to this campaign"
+msgstr "Añadir medios a esta campaña"
+
+msgid "Add media to {{title}}"
+msgstr "Añadir medios a {{title}}"
+
+msgid "Clone campaign"
+msgstr "Clonar campaña"
+
+msgid "Move to another space"
+msgstr "Mover a otro espacio"
+
+msgid "Move {{title}} to another space"
+msgstr "Mover {{title}} a otro espacio"
+
+msgid "Permanently delete campaign"
+msgstr "Eliminar permanentemente la campaña"
+
+msgid "Failed to update status."
+msgstr "Error al actualizar el estado."
+
+msgid "Failed to update visibility."
+msgstr "Error al actualizar la visibilidad."
+
+msgid "Failed to update company."
+msgstr "Error al actualizar la empresa."
+
+msgid "{{count}} active grant"
+msgstr "{{count}} concesión activa"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} concesiones activas"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} solicitud pendiente"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} solicitudes pendientes"
 
 msgid "Nested overrides"
 msgstr "Anulaciones anidadas"

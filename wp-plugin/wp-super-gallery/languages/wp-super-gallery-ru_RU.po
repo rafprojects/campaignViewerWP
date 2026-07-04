@@ -26,6 +26,18 @@ msgstr "Библиотека ресурсов"
 msgid "Upload and manage global overlay/graphic assets available across all spaces."
 msgstr "Загружайте и управляйте глобальными графическими ресурсами и наложениями, доступными во всех пространствах."
 
+msgid "Blank Gallery"
+msgstr "Пустая галерея"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "Чистая отправная точка без предварительно настроенных параметров."
+
+msgid "Public Showcase"
+msgstr "Публичная витрина"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "Публичная видимость, готова к внешнему обмену сразу после создания."
+
 msgid "Campaigns"
 msgstr "Кампании"
 
@@ -802,6 +814,57 @@ msgstr "Выбрать {{title}}"
 
 msgid "Custom gallery: {{summary}}"
 msgstr "Пользовательская галерея: {{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "Пользовательские переопределения галереи: {{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "Вложенные переопределения галереи кампании"
+
+msgid "Status for {{title}}"
+msgstr "Статус для {{title}}"
+
+msgid "Visibility for {{title}}"
+msgstr "Видимость для {{title}}"
+
+msgid "Add media to this campaign"
+msgstr "Добавить медиа в эту кампанию"
+
+msgid "Add media to {{title}}"
+msgstr "Добавить медиа в {{title}}"
+
+msgid "Clone campaign"
+msgstr "Клонировать кампанию"
+
+msgid "Move to another space"
+msgstr "Переместить в другое пространство"
+
+msgid "Move {{title}} to another space"
+msgstr "Переместить {{title}} в другое пространство"
+
+msgid "Permanently delete campaign"
+msgstr "Удалить кампанию навсегда"
+
+msgid "Failed to update status."
+msgstr "Не удалось обновить статус."
+
+msgid "Failed to update visibility."
+msgstr "Не удалось обновить видимость."
+
+msgid "Failed to update company."
+msgstr "Не удалось обновить компанию."
+
+msgid "{{count}} active grant"
+msgstr "{{count}} активное разрешение"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} активных разрешений"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} ожидающий запрос"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} ожидающих запросов"
 
 msgid "Nested overrides"
 msgstr "Вложенные переопределения"

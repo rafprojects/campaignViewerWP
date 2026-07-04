@@ -35,9 +35,30 @@ class WPSG_Campaign_Templates {
         ],
     ];
 
+    /**
+     * Resolve the localized name/description for a built-in template.
+     *
+     * The `BUILTIN` const stores English defaults (compile-time constants cannot
+     * call __()); this overlays the active-locale translation at request time.
+     * Literal strings are kept here so `wp i18n make-pot` can harvest them.
+     */
+    private static function translate_builtin(array $t): array {
+        switch ($t['id']) {
+            case 'builtin_blank':
+                $t['name']        = __('Blank Gallery', 'wp-super-gallery');
+                $t['description'] = __('A clean starting point with no pre-configured settings.', 'wp-super-gallery');
+                break;
+            case 'builtin_public_showcase':
+                $t['name']        = __('Public Showcase', 'wp-super-gallery');
+                $t['description'] = __('Public visibility, ready for external sharing straight after creation.', 'wp-super-gallery');
+                break;
+        }
+        return $t;
+    }
+
     public static function get_builtins(): array {
         return array_map(static function ($t) {
-            return array_merge($t, ['createdAt' => null]);
+            return array_merge(self::translate_builtin($t), ['createdAt' => null]);
         }, self::BUILTIN);
     }
 
@@ -53,7 +74,7 @@ class WPSG_Campaign_Templates {
     public static function get_builtin(string $id): ?array {
         foreach (self::BUILTIN as $t) {
             if ($t['id'] === $id) {
-                return array_merge($t, ['createdAt' => null]);
+                return array_merge(self::translate_builtin($t), ['createdAt' => null]);
             }
         }
         return null;

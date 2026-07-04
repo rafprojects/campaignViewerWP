@@ -26,6 +26,18 @@ msgstr "Asset-Bibliothek"
 msgid "Upload and manage global overlay/graphic assets available across all spaces."
 msgstr "Globale Overlay-/Grafik-Assets hochladen und verwalten, die in allen Bereichen verfügbar sind."
 
+msgid "Blank Gallery"
+msgstr "Leere Galerie"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "Ein sauberer Ausgangspunkt ohne vorkonfigurierte Einstellungen."
+
+msgid "Public Showcase"
+msgstr "Öffentliche Präsentation"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "Öffentliche Sichtbarkeit, direkt nach der Erstellung bereit zum externen Teilen."
+
 msgid "Campaigns"
 msgstr "Kampagnen"
 
@@ -802,6 +814,57 @@ msgstr "{{title}} auswählen"
 
 msgid "Custom gallery: {{summary}}"
 msgstr "Benutzerdefinierte Galerie: {{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "Benutzerdefinierte Galerie-Überschreibungen: {{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "Verschachtelte Kampagnen-Galerie-Überschreibungen"
+
+msgid "Status for {{title}}"
+msgstr "Status für {{title}}"
+
+msgid "Visibility for {{title}}"
+msgstr "Sichtbarkeit für {{title}}"
+
+msgid "Add media to this campaign"
+msgstr "Medien zu dieser Kampagne hinzufügen"
+
+msgid "Add media to {{title}}"
+msgstr "Medien zu {{title}} hinzufügen"
+
+msgid "Clone campaign"
+msgstr "Kampagne klonen"
+
+msgid "Move to another space"
+msgstr "In einen anderen Bereich verschieben"
+
+msgid "Move {{title}} to another space"
+msgstr "{{title}} in einen anderen Bereich verschieben"
+
+msgid "Permanently delete campaign"
+msgstr "Kampagne dauerhaft löschen"
+
+msgid "Failed to update status."
+msgstr "Status konnte nicht aktualisiert werden."
+
+msgid "Failed to update visibility."
+msgstr "Sichtbarkeit konnte nicht aktualisiert werden."
+
+msgid "Failed to update company."
+msgstr "Unternehmen konnte nicht aktualisiert werden."
+
+msgid "{{count}} active grant"
+msgstr "{{count}} aktive Berechtigung"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} aktive Berechtigungen"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} ausstehende Anfrage"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} ausstehende Anfragen"
 
 msgid "Nested overrides"
 msgstr "Verschachtelte Überschreibungen"
