@@ -316,15 +316,21 @@ P60-G delivered the *pipeline* and a minimal `fr_FR` pilot, but a paid product m
 - Verified: **0 placeholder/printf mismatches** across all 249 strings in both locales; ~85/91 React keys translated (remainder are brand-names/symbols that correctly stay identical); every `.l10n.php` is syntax-clean; the front-end manifest remains in sync.
 - **Caveat recorded:** both packs are **AI-authored for QA and a translation head-start**; a native-speaker review is required before they are relied upon in production. This is noted in the `.po` headers and `TRANSLATING.md`.
 
-### Planned (next languages)
+### Implementation (2026-07-03) — de_DE + zh_CN + ru_RU done (post I-7b re-scope)
 
-| Locale | Language | Notes |
-|--------|----------|-------|
-| `de_DE` | German | `Plural-Forms: nplurals=2; plural=(n != 1);`. Longer compounds — watch UI truncation in the auth bar / buttons. |
-| `ru_RU` | Russian | **3 plural forms.** The i18next plural keys (`_one`/`_other`) only express 2; Russian's `_few`/`_many` forms for the React plural pair would need added keys in `src/i18n-strings.en.json` (a P60-G-adjacent enhancement) for full correctness — the gettext/PHP side is unaffected. |
-| `zh_CN` | Mandarin (Simplified) | **No plural forms** (`nplurals=1`). No spacing before punctuation; the `Play: {{caption}}`-style colons should use fullwidth `：`. |
+Track I (P60-I) expanded fr/es from ~249 to the **full 2,162-msgid surface** (admin panel included), so each *new* pack now covers all 2,162 strings, not 249. All three planned locales shipped via the same deterministic PO pipeline built for I-7b (index-keyed batch builder + `{{var}}`/`%s`/`%d` placeholder-parity validation + `wp i18n make-mo`/`make-php` + wp-env runtime-diff QA):
 
-> Each additional pack is the same mechanical process as fr/es (translate the `.po`, compile). The Russian plural nuance is the only item that may reach back into the i18next source.
+| Locale | Language | msgstrs | wp-env render | Notes | Commit |
+|--------|----------|---------|---------------|-------|--------|
+| `de_DE` | German | 2162/2162 | **2312/2426** | `nplurals=2`; Photoshop-standard blend modes; watch long-compound UI truncation | `5ca8b1ad` |
+| `zh_CN` | Simplified Chinese | 2162/2162 | **2388/2426** | `nplurals=1`; fullwidth punctuation (`：（）。`), no inter-word spaces | `2824cdd1` |
+| `ru_RU` | Russian | 2162/2162 | **2391/2426** | 3-form gettext plurals in `.po`; genitive-plural for `_other` msgid (see nuance) | `aa92db63` |
+
+- Each pack: **0 empty msgstrs, 0 placeholder mismatches**; generated `.l10n.php` passes `php -l`; the "identical to English" remainder (114 / 38 / 35) are CSS/technical tokens, brand names, and cognates, not fallbacks. Runtime QA confirmed the bridge resolves under each live locale (e.g. Danger Zone → *Gefahrenzone* / *危险区域* / *Опасная зона*).
+- **Russian 3-plural nuance (documented, deferred).** `ru_RU` carries the correct Russian 3-form `Plural-Forms` header and each gettext msgid uses the right form. But the React i18next plural pairs only encode `_one`/`_other`, so counts 2–4 render the `_other` (genitive-plural "many") form rather than the ideal `_few` form. Full 3-form React correctness requires adding `_few`/`_many` keys to `src/i18n-strings.en.json` and backfilling all locales — a P60-G-layer source change that touches the shipped fr/es/de/zh packs, so it was intentionally **not** bundled here to avoid destabilising four committed packs. Tracked as a follow-up.
+- **All packs are AI-authored for QA / a translation head-start; a native-speaker review is required before production reliance** (noted in each `.po` header and `TRANSLATING.md`).
+
+**Track H is complete** for the five shipped reference locales (fr, es, de, zh, ru).
 
 ## Track P60-I - Admin-panel internationalization
 

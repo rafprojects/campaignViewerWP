@@ -92,11 +92,18 @@ Prerequisites: [WP-CLI](https://wp-cli.org/) with the i18n command
    the new locale and loading a gallery + the admin panel. Untranslated strings
    should show English.
 
-Two complete reference locales already ship: **French (`fr_FR`)** and
-**Spanish (`es_ES`)** — all ~2,160 strings translated across the PHP surface, the
+**Five complete reference locales ship** — **French (`fr_FR`)**, **Spanish
+(`es_ES`)**, **German (`de_DE`)**, **Simplified Chinese (`zh_CN`)**, and **Russian
+(`ru_RU`)** — each with all ~2,160 strings translated across the PHP surface, the
 customer-facing React front-end, **and the full React admin panel** (campaigns,
 media, settings, access, audit, analytics, spaces, taxonomy, templates, and the
-Layout Builder). Use either `.po` as a worked example.
+Layout Builder). Use any `.po` as a worked example.
+
+> **Russian plural nuance.** `ru_RU` ships correct gettext 3-form plurals, but the
+> React i18next plural keys only encode `_one`/`_other`, so counts 2–4 use the
+> `_other` (genitive-plural) form instead of the ideal `_few` form. Full 3-form
+> React correctness needs `_few`/`_many` keys added to `src/i18n-strings.en.json`
+> (a source-layer enhancement); the PHP/gettext side is already correct.
 
 > These reference locales are AI-authored for QA and a translation head-start;
 > have a native speaker review them before relying on them in production.
