@@ -1,139 +1,198 @@
-# Phase 61 - Monetization & Licensing (Freemius)
+# Phase 61 - Front-End i18n Completeness (Literal-String Audit & Closeout)
 
 **Status:** Planned
-**Created:** 2026-06-26
-**Last updated:** 2026-06-26
+**Created:** 2026-07-04
+**Last updated:** 2026-07-04
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P61-A | Pro/free gating seams (adapter registry + `WPSG_Permissions` + LayoutBuilder pro features) | Planned | Medium |
-| P61-B | Freemius SDK integration | Planned | Medium |
-| P61-C | Pricing & licensing model (tiers, renewals, trial) | Planned | Small-Medium |
-| P61-D | Buyer-facing docs + support process | Planned | Small-Medium |
+| P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Planned | Small |
+| P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Planned | Small |
+| P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Planned | Medium |
+| P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Planned | Small-Medium |
+| P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Planned | Small |
+| P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Planned | Small |
+| P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Planned | Medium |
 
 ---
 
 ## Rationale
 
-With the product feature-complete and [PHASE60_REPORT.md](PHASE60_REPORT.md) making it *shippable*, this phase makes it *sellable*: it wires the pro/free gating, the licensing/update SDK, the pricing model, and the support process for the chosen target — **Freemius premium** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §3, §7).
+P60-G (customer-facing front-end) and P60-I (admin panel) closed the two biggest i18n surfaces, but both were scoped **by area**, not by exhaustive coverage — the enforced-glob mechanism in `eslint.config.js` has to be extended by hand for each new component family, and nothing catches a family that's missed until a human notices raw English in a non-English locale.
 
-1. **What triggered it.** MONETIZATION §7 recommends premium-via-Freemius as the first monetized release, because the SDK collapses license activation, authenticated auto-updates, checkout, and EU-VAT/sales-tax (merchant of record) into one drop-in — weeks of otherwise-bespoke, security-critical, availability-critical infrastructure (MONETIZATION §3, §4).
-2. **Why it belongs together.** Gating, the SDK, pricing, and buyer support are one go-to-market unit; shipping any subset is not a sellable product. They build on two gating seams that already exist (the adapter registry and the `WPSG_Permissions` map), so this is additive, not a rewrite.
-3. **Success.** A buyer can purchase a tiered annual license, activate it (with a trial path), receive authenticated auto-updates, and unlock pro features cleanly — while the free surface stays fully functional — with documented support and refund policies.
-
-> **Depends on Phase 60.** Do not integrate the SDK or gate features until the store-readiness work (version metadata, compliance, packaging) has landed; gating on top of a non-shippable artifact is wasted effort.
+1. **What triggered it.** Two component families (`src/hooks/**`, `src/components/Campaign/**`) were already found missing enforcement mid-session — one QA bugfix (campaign-row actions/status/visibility + built-in template names shipping raw English) and one lint-glob-extension sweep (3 more files it surfaced) landed back to back. That is a recurring-defect pattern, not a one-off, so the enforcement boundary itself needed a full audit rather than another one-off patch.
+2. **Why it belongs together.** A full-`src/` scan (2026-07-04) found the boundary is still incomplete: **81 real violations remain across 6 more directories/files**, none of them in the currently-enforced globs (`Admin/**`, `Galleries/Adapters/**`, `Campaign/**`, `hooks/**`, `packages/shared-ui/src/**`). Closing all of them in one phase — and replacing the ad hoc allow-list with blanket enforcement — is one coherent unit of work; doing it piecemeal just repeats the pattern that triggered this phase.
+3. **Success.** `i18next/no-literal-string` is `'error'` for the entirety of `src/**/*.{ts,tsx}` (test/story fixtures exempt) with zero violations, no per-directory allow-list left to maintain, all newly-harvested strings translated into the five shipped locales, and the stale `FUTURE_TASKS.md` entry this phase supersedes is closed out.
 
 ## Key Decisions
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| A | Licensing/update provider | **Freemius** (MONETIZATION §3). Lowest LOE; merchant-of-record handles tax; first-class freemium gating that maps onto the existing seams. Revisit EDD/self-hosted only if fees/lock-in become material at scale. |
-| B | Monetization model | **Annual subscription + tiered by site count** (single / 5-site / agency), with renewals and a trial (MONETIZATION §2). Best fit for a builder that needs ongoing WP-compat maintenance. |
-| C | Gating seams | **Reuse the two existing cut-points** — the adapter registry (`adapterRegistry.ts`) and the `WPSG_Permissions` tier map — rather than introducing a new gating layer. |
-| D | Pro feature set | **Gate advanced LayoutBuilder capabilities** (text layers from [PHASE59_REPORT.md](PHASE59_REPORT.md), per-breakpoint responsive from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B, starter library) and advanced adapters; keep the core gallery + builder free and fully functional. |
+| A | Scope boundary | This phase covers the entire remaining front-end, not just admin — supersedes the stale framing in `FUTURE_TASKS.md`'s "Full Admin-Panel i18n Migration" entry (P60-I already completed the admin-specific harvest that entry described; what's left is everything else). |
+| B | `AuthBar.tsx` | Sweep its 8 strings in place with local `t()` calls. Do **not** relocate it into `packages/shared-ui/src/` alongside its already-migrated siblings (`AuthBarFloating`/`AuthBarMinimal`) in this phase — that's a file-organization change, not an i18n fix, and would conflate two kinds of diffs. Logged as a Follow-On candidate instead. |
+| C | Enforcement mechanism | Once every remaining directory is verified clean, replace the growing per-glob `'error'` override list in `eslint.config.js` with **one blanket `'error'`** for `src/**/*.{ts,tsx}` (keeping the existing test/story `ignores`), rather than appending yet another named glob. This is the terminal state — no future directory needs manual glob registration to be protected. |
 
 ## Execution Priority
 
-1. **P61-A (gating seams)** — define what is pro and wire the cut-points first; the SDK enforces against these.
-2. **P61-B (Freemius SDK)** — integrate activation/updates/analytics once the gates exist to wrap.
-3. **P61-C (pricing model)** — configure tiers/renewals/trial in Freemius; depends on the gated feature set being settled.
-4. **P61-D (docs + support)** — last; the ongoing-cost surface, written against the finished purchase/activation flow.
+1. **P61-A / P61-B (trivial + near-zero cost)** — clear the cheap wins first to shrink remaining scope fast; no real translation work, just enablement and a handful of strings.
+2. **P61-C → P61-F (real translation work)**, ordered by violation count: `Common/**` (37, headlined by an abandoned partial migration) → `CampaignGallery/**` (18, customer-facing) → `CardViewer/**` (12, customer-facing) → `Auth/AuthBar.tsx` (8).
+3. **P61-G (global flip + translation sweep + closeout)** — last; only valid once P61-A–F leave zero violations anywhere in `src/**`.
 
 ---
 
-## Track P61-A - Pro/free gating seams
+## Track P61-A - Trivial enablement
 
 ### Problem
 
-The plugin has no notion of paid features. To monetize without a rewrite, the free/pro boundary must be expressed at clean, already-existing cut-points rather than scattered through the code.
+`src/contexts/**` and `src/components/Galleries/Shared/**` render no raw literal JSX text at all (a forced-error lint pass found 0 violations in both), but neither is in the enforced glob — so a future change to either could introduce untranslated strings with nothing to catch it.
 
 ### Fix
 
-- Add a `pro: true` flag to advanced adapter registrations and a license check at `resolveAdapter` in `src/components/Galleries/Adapters/adapterRegistry.ts` (registrations are already metadata-driven, so this is localized).
-- Gate management/pro features through the `WPSG_Permissions` map (`includes/class-wpsg-permissions.php`).
-- Designate the LayoutBuilder pro features (text layers, per-breakpoint responsive, starter library) and gate them at their entry points.
+Add both globs to the enforced list in `eslint.config.js`. No source changes are expected.
 
 ### Acceptance criteria
 
-- Pro adapters/features are inaccessible without a valid license and degrade gracefully (clear upsell, no broken UI) when locked.
-- The free surface remains fully functional with no license.
-- Gating is expressed at the registry + permissions seams, not duplicated ad hoc.
+- Both globs are enforced (`'error'`, `jsx-text-only`).
+- `npx eslint` scoped to both globs reports 0 violations, confirming the pre-check held.
 
 ### Validation
 
-- `npm run test` + PHPUnit for the gated/ungated branches; manual QA toggling a simulated license state.
+- `npx eslint 'src/contexts/**/*.{ts,tsx}' 'src/components/Galleries/Shared/**/*.{ts,tsx}'` — must be clean with no code changes.
 
-## Track P61-B - Freemius SDK integration
+## Track P61-B - Near-zero-cost fixes
 
 ### Problem
 
-A paid path needs license activation, authenticated auto-updates, and checkout/tax handling — none of which the plugin has today, and all of which are costly and risky to build in-house.
+Three small, low-traffic spots carry a handful of raw strings: `src/components/Settings/SettingsSystemAdminTab.tsx` (1 — a `<code>` sample string), `src/components/ErrorBoundary.tsx` (1 — "Try Again" button), and `src/App.tsx` (4 — idle-timeout warning text, "Stay signed in" button, offline `Alert` copy).
 
 ### Fix
 
-- Initialize the Freemius SDK in `wp-super-gallery.php` and wrap the P61-A gates in the SDK's entitlement checks (`can_use_premium_code()` / `is_paying()`).
-- Wire authenticated auto-updates through Freemius.
-- Enable opt-in analytics with explicit user disclosure (MONETIZATION §6); no phoning-home without consent.
+- Standard `useTranslation`/`t()` wiring for `ErrorBoundary.tsx` and `App.tsx`; new keys appended to `src/i18n-strings.en.json`.
+- For the `SettingsSystemAdminTab.tsx` `<code>` sample: decide `t()` vs. a documented `eslint-disable-next-line`, following the precedent set in P60-I for the taxonomy tree-indent glyph (technical/code tokens are not prose).
+- Add all three paths (or their parent dirs) to the enforced glob.
 
 ### Acceptance criteria
 
-- License activation/deactivation works end-to-end; pro entitlements flip the P61-A gates.
-- Authenticated auto-updates deliver through Freemius.
-- Analytics are opt-in and disclosed; nothing transmits without consent.
+- All 6 violations resolved or explicitly, documentedly exempted.
+- The three paths are enforced going forward.
 
 ### Validation
 
-- Sandbox a Freemius test license: activate, verify pro unlock, simulate an update, deactivate and verify re-lock; confirm no network calls before opt-in.
+- `npx eslint` scoped to the three files; `tsc -b`; any touched test suites (delegate execution to a Haiku subagent per standing practice).
 
-## Track P61-C - Pricing & licensing model
+## Track P61-C - `src/components/Common/**` sweep
 
 ### Problem
 
-There is no pricing or licensing structure defined. Without tiers, renewals, and a trial, there is nothing to sell or to enforce seat counts against.
+37 violations across 5 files. `GalleryConfigEditorModal.tsx` accounts for 21 of them — it already imports `useTranslation` and calls `t()` twice, so this is a **partially-started, abandoned migration** to finish (Accordion headers like "Shared Section Sizing"/"Viewport Backgrounds", Menu items like "Reset All Changes", descriptive `<Text>` copy) rather than a fresh one. The remainder: `NearDuplicateWarning.tsx` (8), `TypographyEditor.tsx` (5), `CompanyCombobox.tsx` (2), `ConfirmModal.tsx` (1, a reused "Cancel").
 
 ### Fix
 
-- Define annual-subscription pricing tiered by site count (single / 5-site / agency) with renewal handling and a trial, configured in Freemius (MONETIZATION §2).
-- Validate the numbers against direct competitors (Envira, FooGallery, Modula, NextGEN) before committing.
+- Finish `GalleryConfigEditorModal.tsx`'s migration using its existing `t()` wiring.
+- Wrap the remaining 4 files' literals; check for existing reusable msgids before minting new keys (e.g. `ConfirmModal.tsx`'s "Cancel" almost certainly already has a key — same reuse pattern used in the `51969bb5` sweep).
+- Add `src/components/Common/**` to the enforced glob.
 
 ### Acceptance criteria
 
-- Tiers, renewal terms, and the trial are configured and enforce the correct seat counts.
-- Pricing is sanity-checked against competitor benchmarks and recorded in the doc.
+- 0 violations in `src/components/Common/**`.
+- No duplicate msgids created where an existing key already covers the English string.
 
 ### Validation
 
-- Walk a test purchase through each tier in the Freemius sandbox; confirm seat enforcement and renewal/trial behavior.
+- `npx eslint 'src/components/Common/**/*.{ts,tsx}'`; `tsc -b`; touched test suites.
 
-## Track P61-D - Buyer-facing docs + support process
+## Track P61-D - `src/components/CampaignGallery/**` sweep
 
 ### Problem
 
-Support is the dominant *ongoing* cost of any paid path (MONETIZATION §6), and buyers need clear license-activation, troubleshooting, refund, and support-channel information. None of this exists yet.
+18 violations across 4 files, none using `useTranslation` — this is customer-facing **public** campaign-gallery UI that appears to have been missed by the original P54-B/P60-G customer-facing harvest despite being customer-facing: `CardGallery.tsx` (7 — "Viewer Header Settings", access-mode tabs/alert copy), `CampaignCard.tsx` (4 — "Access" badge, video/image stat labels), `CardGalleryHostPagination.tsx` (4 — "Page X of Y", "Load more"), `RequestAccessForm.tsx` (3 — email-check copy, "Request Access" button).
 
 ### Fix
 
-- Write license activation + troubleshooting docs (extending the install docs from [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E).
-- Define the support channel and an SLA, and publish a refund policy consistent with marketplace requirements.
+- Standard `useTranslation`/`t()` wiring across all 4 files; new keys appended to `src/i18n-strings.en.json`.
+- Add `src/components/CampaignGallery/**` to the enforced glob.
 
 ### Acceptance criteria
 
-- License activation/troubleshooting docs exist and match the real flow.
-- A support channel + SLA and a refund policy are published.
+- 0 violations in `src/components/CampaignGallery/**`.
+- Public-facing pagination/access-request copy renders translated under a non-English locale.
 
 ### Validation
 
-- Doc walkthrough against the sandbox activation flow; review the refund policy against Freemius/marketplace requirements.
+- `npx eslint 'src/components/CampaignGallery/**/*.{ts,tsx}'`; `tsc -b`; touched test suites; wp-env spot-check of the public gallery view under a non-English locale.
+
+## Track P61-E - `src/components/CardViewer/CampaignViewer.tsx` sweep
+
+### Problem
+
+12 violations in a single file: "Campaign Header", "Stats Section", Videos/Images/Tags labels, private-campaign / empty-media / loading copy. Sibling files in the same directory (`CampaignGalleryAdapterRenderer.tsx`, `GallerySectionWrapper.tsx`, `PerTypeGallerySection.tsx`, `UnifiedGallerySection.tsx`) are pure dispatch wrappers with 0 violations.
+
+### Fix
+
+- Standard `useTranslation`/`t()` wiring for `CampaignViewer.tsx`.
+- Add the whole `src/components/CardViewer/**` directory to the enforced glob once this file is clean (siblings already pass with no changes needed).
+
+### Acceptance criteria
+
+- 0 violations across `src/components/CardViewer/**`.
+
+### Validation
+
+- `npx eslint 'src/components/CardViewer/**/*.{ts,tsx}'`; `tsc -b`; touched test suites.
+
+## Track P61-F - `src/components/Auth/AuthBar.tsx` sweep
+
+### Problem
+
+8 violations — "Admin Panel", "Sign out", and similar chrome strings — in the one file left behind when its siblings (`AuthBarFloating.tsx`, `AuthBarMinimal.tsx`) were extracted into the already-enforced `packages/shared-ui/src/`.
+
+### Fix
+
+Per Key Decision B: wrap the 8 strings with local `t()` calls in place. Do not relocate the file this phase. Add the path to the enforced glob.
+
+### Acceptance criteria
+
+- 0 violations in `src/components/Auth/AuthBar.tsx`.
+
+### Validation
+
+- `npx eslint 'src/components/Auth/**/*.{ts,tsx}'`; `tsc -b`; touched test suites.
+
+## Track P61-G - Global enforcement flip + translation + closeout
+
+### Problem
+
+Once P61-A–F land, every known directory is individually enforced, but the allow-list mechanism itself is still the ad hoc pattern that caused this phase — and every new key harvested across P61-A–F still needs translating into the five shipped locales before it's actually usable internationally.
+
+### Fix
+
+- Replace `eslint.config.js`'s per-glob override list with a single blanket `'error'` for `src/**/*.{ts,tsx}` (keeping the existing test/story `ignores`), per Key Decision C.
+- Run a full-repo forced-error lint pass to confirm zero violations anywhere outside exempted test/story fixtures.
+- Regenerate the manifest/`.pot` (`npm run i18n:generate`, `wp i18n make-pot`); translate every new msgid into all five shipped packs (**fr_FR, es_ES, de_DE, zh_CN, ru_RU**) via the established deterministic patch pipeline — reuse existing msgids where the English matches, validate `{{var}}`/`%s`/`%d` placeholder parity, 0 empty / 0 mismatches bar; recompile `.mo`/`.l10n.php`; `npm run i18n:check` green.
+- Runtime-verify under at least one non-English locale via wp-env (`switch_to_locale` + `__()` probe, same pattern used in the prior two sweep sessions).
+- Update `docs/FUTURE_TASKS.md`'s "Full Admin-Panel i18n Migration" entry to reflect closure (P60-I + this phase together fully resolve it) — mark resolved/archive rather than leaving it as an open, now-inaccurate backlog item.
+
+### Acceptance criteria
+
+- `i18next/no-literal-string` (`jsx-text-only`) is `'error'` for the entirety of `src/**/*.{ts,tsx}` — no more per-directory allow-list.
+- Zero raw-literal violations anywhere in `src/**` outside exempted fixtures.
+- All newly-harvested keys are translated into all five shipped locales with 0 empty/0 placeholder-mismatch; runtime-verified under a live non-English locale.
+- `FUTURE_TASKS.md`'s stale i18n entry is closed out.
+
+### Validation
+
+- Full-repo `npx eslint 'src/**/*.{ts,tsx}'`; `npm run i18n:check`; production build (`npm run build:wp`); wp-env runtime spot-check.
+
+---
 
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| Free WP.org "lite" tier (top-of-funnel) | MONETIZATION §7 stage 3; gated on the full public-readiness work (full admin i18n + WCAG AA) in [FUTURE_TASKS.md](FUTURE_TASKS.md). Revisit once the pro tier proves out. |
-| EDD / self-hosted licensing | Only if Freemius per-transaction fees or lock-in become material at scale (MONETIZATION §3–4). |
-| Affiliate program | Freemius supports it; defer until there is a renewal base worth amplifying. |
+| Relocate `AuthBar.tsx` into `packages/shared-ui/src/` alongside `AuthBarFloating`/`AuthBarMinimal` | File-organization change, not an i18n fix (Key Decision B) — separate PR to avoid conflating concerns. |
+| Native-speaker review of all 5 packs | Standing deferred item from P60-H/I; this phase adds more machine-translated strings to the same packs, same caveat applies. |
 
 ## Implementation Notes
 

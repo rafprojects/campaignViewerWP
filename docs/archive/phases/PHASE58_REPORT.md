@@ -35,7 +35,7 @@ The LayoutBuilder is mature — Phase 57 landed the last batch of design-tool af
 | B | Zoom/pan | **Excluded — already shipped.** `react-zoom-pan-pinch` drives canvas zoom/pan in `LayoutBuilderCanvasPanel.tsx` (keys `0`/`+`/`-`); not re-scoped here. |
 | C | Small polish items | **Per-slot opacity and Shift+arrow large-nudge folded into P58-A** rather than their own tracks — both are one-field/one-handler changes. |
 | D | Responsive sizing | **P58-B kept in this phase but flagged as the heavyweight;** if its schema/resolution work grows, split it to its own phase rather than bloating Phase 58. |
-| E | Pro gating | Per-breakpoint responsive (P58-B) and the starter library (P58-C) are **natural Pro-tier features** — note the gating seam for [PHASE61_REPORT.md](PHASE61_REPORT.md) but do not gate here. |
+| E | Pro gating | Per-breakpoint responsive (P58-B) and the starter library (P58-C) are **natural Pro-tier features** — note the gating seam for [PHASE62_REPORT.md](PHASE62_REPORT.md) but do not gate here. |
 
 ## Execution Priority
 

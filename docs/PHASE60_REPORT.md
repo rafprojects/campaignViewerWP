@@ -24,11 +24,11 @@
 
 The product is feature-complete enough to sell; this phase closes the **release-readiness** gaps required to ship to a marketplace. The chosen distribution target is **Freemius premium** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §7), so this phase scopes to the "Premium / marketplace — Med-High delta" bar in §5 — not the heavier full-public WP.org bar.
 
-1. **What triggered it.** Phase 54 set a target-independent must-fix floor and deferred the distribution-specific work to FUTURE_TASKS pending a path decision. The path is now chosen (Freemius premium), so the readiness items it gates are scheduled here. The monetization/licensing build itself lives in [PHASE61_REPORT.md](PHASE61_REPORT.md).
+1. **What triggered it.** Phase 54 set a target-independent must-fix floor and deferred the distribution-specific work to FUTURE_TASKS pending a path decision. The path is now chosen (Freemius premium), so the readiness items it gates are scheduled here. The monetization/licensing build itself lives in [PHASE62_REPORT.md](PHASE62_REPORT.md).
 2. **Why it belongs together.** Every track is a precondition for a credible paid release — correct version metadata, translatable strings, escaping/Plugin-Check compliance, accessible admin flows, store collateral, and a validated package — and none adds product features.
 3. **Success.** A reviewer (and a buyer) sees a plugin with consistent version metadata, a generated translation template, a clean Plugin Check / escaping pass, no new critical a11y violations in the main flows, complete store collateral and a privacy statement, and a release artifact that installs/activates/uninstalls cleanly across supported PHP versions.
 
-> **Split from monetization.** This phase makes the plugin *shippable*; [PHASE61_REPORT.md](PHASE61_REPORT.md) makes it *sellable* (gating seams + Freemius SDK + pricing + buyer docs). Land P60 first.
+> **Split from monetization.** This phase makes the plugin *shippable*; [PHASE62_REPORT.md](PHASE62_REPORT.md) makes it *sellable* (gating seams + Freemius SDK + pricing + buyer docs). Land P60 first.
 
 ## Key Decisions
 
@@ -189,7 +189,7 @@ There is no store collateral (banner/icon/screenshots), no privacy/GDPR statemen
 
 - Produce the marketplace assets (banner, icon, screenshots) and finalize the `readme.txt` marketing sections and changelog discipline.
 - Write a privacy/GDPR statement covering data handling (note the existing Sentry PII-scrubbing and the localStorage inventory from Phase 54).
-- Write buyer-facing install + troubleshooting docs (the support-process definition itself lives in [PHASE61_REPORT.md](PHASE61_REPORT.md)).
+- Write buyer-facing install + troubleshooting docs (the support-process definition itself lives in [PHASE62_REPORT.md](PHASE62_REPORT.md)).
 
 ### Acceptance criteria
 
