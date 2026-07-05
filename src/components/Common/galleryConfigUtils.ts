@@ -13,6 +13,7 @@ import {
   type GalleryConfigScope,
 } from '@/types';
 import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
+import i18n from '@/i18n';
 
 export const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
 export type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
@@ -369,22 +370,25 @@ export function shouldRenderAdapterSettingField(
 }
 
 export function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['group']): string {
-  switch (group) {
-    case 'media-frame':
-      return 'Media Frame';
-    case 'photo-grid':
-      return 'Photo Grid';
-    case 'tile-appearance':
-      return 'Tile Appearance';
-    case 'compact-grid':
-      return 'Compact Grid';
-    case 'layout-builder':
-      return 'Layout Builder';
-    case 'shape':
-      return 'Shape Layout';
-    default:
-      return group.charAt(0).toUpperCase() + group.slice(1);
-  }
+  const english = (() => {
+    switch (group) {
+      case 'media-frame':
+        return 'Media Frame';
+      case 'photo-grid':
+        return 'Photo Grid';
+      case 'tile-appearance':
+        return 'Tile Appearance';
+      case 'compact-grid':
+        return 'Compact Grid';
+      case 'layout-builder':
+        return 'Layout Builder';
+      case 'shape':
+        return 'Shape Layout';
+      default:
+        return group.charAt(0).toUpperCase() + group.slice(1);
+    }
+  })();
+  return i18n.t(`set_sg_group_${group}`, english, { ns: 'wpsg' });
 }
 
 export function setAdapterSettingForMatchingScopes(

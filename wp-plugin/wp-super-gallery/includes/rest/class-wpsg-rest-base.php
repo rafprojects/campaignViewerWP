@@ -661,7 +661,7 @@ abstract class WPSG_REST_Base {
             $auth_header = sanitize_text_field(wp_unslash($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
         } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
             $auth_header = 'Basic ' . base64_encode(
-                wp_unslash($_SERVER['PHP_AUTH_USER']) . ':' . wp_unslash($_SERVER['PHP_AUTH_PW'] ?? '')
+                wp_unslash($_SERVER['PHP_AUTH_USER']) . ':' . wp_unslash($_SERVER['PHP_AUTH_PW'] ?? '')  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Basic-auth credentials: unslashed + base64'd into a header WP validates; sanitizing would corrupt the password.
             );
         } else {
             $auth_header = '';

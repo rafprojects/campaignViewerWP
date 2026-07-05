@@ -1,4 +1,5 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import type { Campaign } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -16,21 +17,22 @@ interface ArchiveCampaignModalContentProps {
 }
 
 function ArchiveCampaignModalContent({ campaign, onClose, onConfirm }: ArchiveCampaignModalContentProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Stack gap="md">
       <Text>
-        Are you sure you want to archive &quot;{campaign?.title}&quot;? This action will mark it as archived.
+        {t('campmodal_archive_msg', 'Are you sure you want to archive "{{title}}"? This action will mark it as archived.', { title: campaign?.title ?? '' })}
       </Text>
       <Group justify="flex-end" wrap="wrap" gap="sm">
         <Button variant="default" onClick={onClose}>
-          Cancel
+          {t('admin_cancel', 'Cancel')}
         </Button>
         <Button
           color="red"
           onClick={() => void onConfirm()}
-          aria-label={`Archive campaign ${campaign?.title ?? ''}`.trim()}
+          aria-label={t('admin_archive_campaign_aria', 'Archive campaign {{title}}', { title: campaign?.title ?? '' }).trim()}
         >
-          Archive
+          {t('admin_archive', 'Archive')}
         </Button>
       </Group>
     </Stack>
@@ -45,11 +47,12 @@ export function ArchiveCampaignModal({
   onClose,
   onConfirm,
 }: ArchiveCampaignModalProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Archive Campaign"
+      title={t('campmodal_archive_title', 'Archive Campaign')}
       zIndex={300}
       padding="md"
       withinPortal={false}

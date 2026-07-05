@@ -1,6 +1,9 @@
 import { Accordion, Button, Drawer, Group, Menu, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
+import { tFieldLabel, tFieldDescription, tFieldPlaceholder, tFieldOptions } from '@/utils/adapterSchemaI18n';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 
 import {
@@ -271,6 +274,7 @@ export function GalleryConfigEditorModal({
   zIndex,
   blurEnabled,
 }: GalleryConfigEditorModalProps) {
+  const { t } = useTranslation('wpsg');
   const [draft, setDraft] = useState<GalleryConfig | undefined>(undefined);
   const [baseline, setBaseline] = useState<GalleryConfig | undefined>(undefined);
   const [activeBreakpoint, setActiveBreakpoint] = useState<GalleryConfigBreakpoint>('desktop');
@@ -751,7 +755,7 @@ export function GalleryConfigEditorModal({
                       <Accordion.Panel>
                         <Stack gap="sm">
                           {group.note && (
-                            <Text size="xs" c="dimmed">{group.note}</Text>
+                            <Text size="xs" c="dimmed">{i18n.t(`set_sg_note_${group.group}`, group.note, { ns: 'wpsg' })}</Text>
                           )}
                           {group.fields.filter((field) => shouldRenderAdapterSettingField(resolvedDraft, activeBreakpoint, group, field)).map((field) => {
                             const representativeValue = getRepresentativeAdapterSettingValue(resolvedDraft, activeBreakpoint, group, field);
@@ -760,8 +764,8 @@ export function GalleryConfigEditorModal({
                               return (
                                 <NumberInput
                                   key={String(field.key)}
-                                  label={field.label}
-                                  description={field.description}
+                                  label={tFieldLabel(group.group, field)}
+                                  description={tFieldDescription(group.group, field)}
                                   value={typeof representativeValue === 'number' ? representativeValue : field.fallback}
                                   onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                                     current,
@@ -782,8 +786,8 @@ export function GalleryConfigEditorModal({
                               return (
                                 <DimensionInput
                                   key={String(field.key)}
-                                  label={field.label}
-                                  description={field.description}
+                                  label={tFieldLabel(group.group, field)}
+                                  description={tFieldDescription(group.group, field)}
                                   value={typeof representativeValue === 'number' ? representativeValue : field.fallback}
                                   unit={typeof unitValue === 'string' ? unitValue : 'px'}
                                   onValueChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
@@ -811,11 +815,11 @@ export function GalleryConfigEditorModal({
                               return (
                                 <Select
                                   key={String(field.key)}
-                                  label={field.label}
-                                  description={field.description}
+                                  label={tFieldLabel(group.group, field)}
+                                  description={tFieldDescription(group.group, field)}
                                   data={[
-                                    { value: 'true', label: 'On' },
-                                    { value: 'false', label: 'Off' },
+                                    { value: 'true', label: t('set_ad_on', 'On') },
+                                    { value: 'false', label: t('set_ad_off', 'Off') },
                                   ]}
                                   value={String(typeof representativeValue === 'boolean' ? representativeValue : field.fallback)}
                                   onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
@@ -834,10 +838,10 @@ export function GalleryConfigEditorModal({
                               return (
                                 <TextInput
                                   key={String(field.key)}
-                                  label={field.label}
-                                  description={field.description}
+                                  label={tFieldLabel(group.group, field)}
+                                  description={tFieldDescription(group.group, field)}
                                   value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
-                                  placeholder={field.placeholder}
+                                  placeholder={tFieldPlaceholder(group.group, field)}
                                   onChange={(event) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                                     current,
                                     activeBreakpoint,
@@ -853,8 +857,8 @@ export function GalleryConfigEditorModal({
                               return (
                                 <ColorInput
                                   key={String(field.key)}
-                                  label={field.label}
-                                  description={field.description}
+                                  label={tFieldLabel(group.group, field)}
+                                  description={tFieldDescription(group.group, field)}
                                   value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
                                   onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                                     current,
@@ -870,9 +874,9 @@ export function GalleryConfigEditorModal({
                             return (
                               <Select
                                 key={String(field.key)}
-                                label={field.label}
-                                description={field.description}
-                                data={field.options}
+                                label={tFieldLabel(group.group, field)}
+                                description={tFieldDescription(group.group, field)}
+                                data={tFieldOptions(group.group, field)}
                                 value={typeof representativeValue === 'string' ? representativeValue : field.fallback}
                                 onChange={(value) => updateDraft((current) => setAdapterSettingForMatchingScopes(
                                   current,

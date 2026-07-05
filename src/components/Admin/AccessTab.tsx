@@ -20,6 +20,7 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconAlertCircle, IconArchive, IconUserPlus } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { SearchableEntityInput } from '@/components/Common/SearchableEntityInput';
 import { PendingRequestsPanel } from './PendingRequestsPanel';
@@ -95,6 +96,7 @@ export function AccessTab({
   isMobile = false,
   isSystemAdmin = false,
 }: AccessTabProps) {
+  const { t } = useTranslation('wpsg');
   const {
     userSearchResults,
     userSearchQuery,
@@ -129,24 +131,24 @@ export function AccessTab({
             {/* P53-A: Company / All are system-admin only; editors see campaign access only. */}
             {isSystemAdmin && (
               <Box>
-                <Text size="sm" fw={500} mb={4}>View By</Text>
+                <Text size="sm" fw={500} mb={4}>{t('admin_access_view_by', 'View By')}</Text>
                 <SegmentedControl
                   value={accessViewMode}
                   onChange={(v) => onAccessViewModeChange(v as AccessViewMode)}
                   data={[
-                    { value: 'campaign', label: '📋 Campaign' },
-                    { value: 'company', label: '🏢 Company' },
-                    { value: 'all', label: '📊 All' },
+                    { value: 'campaign', label: t('admin_access_view_campaign', '📋 Campaign') },
+                    { value: 'company', label: t('admin_access_view_company', '🏢 Company') },
+                    { value: 'all', label: t('admin_access_view_all', '📊 All') },
                   ]}
-                  aria-label="Access view mode"
+                  aria-label={t('admin_access_view_mode_aria', 'Access view mode')}
                 />
               </Box>
             )}
 
             {accessViewMode === 'campaign' ? (
               <CampaignSelector
-                label="Select Campaign"
-                placeholder="Choose a campaign..."
+                label={t('admin_access_select_campaign', 'Select Campaign')}
+                placeholder={t('admin_access_choose_campaign', 'Choose a campaign...')}
                 data={campaignSelectData}
                 value={accessCampaignId}
                 onChange={onAccessCampaignChange}
@@ -154,8 +156,8 @@ export function AccessTab({
               />
             ) : (
               <Select
-                label={<Text size="sm" fw={500}>Select Company</Text>}
-                placeholder={companiesLoading ? 'Loading...' : 'Choose a company...'}
+                label={<Text size="sm" fw={500}>{t('admin_access_select_company', 'Select Company')}</Text>}
+                placeholder={companiesLoading ? t('admin_access_loading', 'Loading...') : t('admin_access_choose_company', 'Choose a company...')}
                 data={companySelectData}
                 value={selectedCompanyId}
                 onChange={(v) => onSelectedCompanyChange(v ?? '')}
@@ -170,26 +172,26 @@ export function AccessTab({
             {accessViewMode === 'campaign' && selectedCampaign && (
               <Stack gap={2}>
                 <Group gap="xs">
-                  <Text size="sm" c="dimmed">Company:</Text>
-                  <Badge variant="light">{selectedCampaign.companyId || 'None'}</Badge>
+                  <Text size="sm" c="dimmed">{t('admin_access_company_label', 'Company:')}</Text>
+                  <Badge variant="light">{selectedCampaign.companyId || t('admin_access_none', 'None')}</Badge>
                 </Group>
                 {selectedCampaign.status === 'archived' && (
                   <Alert color="yellow" variant="light" p="xs" icon={<IconAlertCircle size={16} />}>
-                    <Text size="xs">Archived campaign - grants inactive</Text>
+                    <Text size="xs">{t('admin_access_archived_inactive', 'Archived campaign - grants inactive')}</Text>
                   </Alert>
                 )}
                 <Group gap="xs" mt={2}>
-                  <Text size="xs" c="dimmed">Total users:</Text>
-                  <Badge variant="light" color="blue">Access {accessEntriesCount}</Badge>
+                  <Text size="xs" c="dimmed">{t('admin_access_total_users', 'Total users:')}</Text>
+                  <Badge variant="light" color="blue">{t('admin_access_badge_count', 'Access {{count}}', { count: accessEntriesCount })}</Badge>
                 </Group>
               </Stack>
             )}
             {(accessViewMode === 'company' || accessViewMode === 'all') && selectedCompany && (
               <Stack gap={2}>
                 <Group gap="xs">
-                  <Text size="sm" c="dimmed">Campaigns:</Text>
-                  <Badge variant="light" color="green">{selectedCompany.activeCampaigns} active</Badge>
-                  <Badge variant="light" color="gray">{selectedCompany.archivedCampaigns} archived</Badge>
+                  <Text size="sm" c="dimmed">{t('admin_access_campaigns_label', 'Campaigns:')}</Text>
+                  <Badge variant="light" color="green">{t('admin_access_n_active', '{{count}} active', { count: selectedCompany.activeCampaigns })}</Badge>
+                  <Badge variant="light" color="gray">{t('admin_access_n_archived', '{{count}} archived', { count: selectedCompany.archivedCampaigns })}</Badge>
                 </Group>
                 {selectedCompany.activeCampaigns > 0 && (
                   <Button
@@ -200,12 +202,12 @@ export function AccessTab({
                     onClick={() => onArchiveCompanyClick(selectedCompany)}
                     mt={4}
                   >
-                    Archive All Campaigns
+                    {t('admin_access_archive_all', 'Archive All Campaigns')}
                   </Button>
                 )}
                 <Group gap="xs" mt={2}>
-                  <Text size="xs" c="dimmed">Total users:</Text>
-                  <Badge variant="light" color="blue">Access {accessEntriesCount}</Badge>
+                  <Text size="xs" c="dimmed">{t('admin_access_total_users', 'Total users:')}</Text>
+                  <Badge variant="light" color="blue">{t('admin_access_badge_count', 'Access {{count}}', { count: accessEntriesCount })}</Badge>
                 </Group>
               </Stack>
             )}
@@ -220,8 +222,8 @@ export function AccessTab({
           <Stack align="center" gap="xs">
             <Text c="dimmed">
               {accessViewMode === 'campaign'
-                ? 'Select a campaign to manage access permissions'
-                : 'Select a company to manage access permissions'}
+                ? t('admin_access_empty_campaign', 'Select a campaign to manage access permissions')
+                : t('admin_access_empty_company', 'Select a company to manage access permissions')}
             </Text>
           </Stack>
         </Center>
@@ -231,31 +233,31 @@ export function AccessTab({
           <Card shadow="sm" withBorder mb="md" p={{ base: 'sm', md: 'md' }}>
             <Group justify="space-between" mb="sm" wrap="wrap" gap="sm">
               <Text fw={600} size="lg">
-                {accessViewMode === 'campaign' ? 'Current Access' :
-                 accessViewMode === 'company' ? 'Company-Wide Access' :
-                 'All Access (Company + Campaigns)'}
+                {accessViewMode === 'campaign' ? t('admin_access_current', 'Current Access') :
+                 accessViewMode === 'company' ? t('admin_access_company_wide', 'Company-Wide Access') :
+                 t('admin_access_all', 'All Access (Company + Campaigns)')}
               </Text>
               <Group gap="sm">
                 <Checkbox
-                  label="Show expired"
+                  label={t('admin_access_show_expired', 'Show expired')}
                   size="xs"
                   checked={showExpiredGrants}
                   onChange={(e) => onShowExpiredGrantsChange(e.currentTarget.checked)}
                 />
-                <Badge variant="light">{accessEntriesCount} users</Badge>
+                <Badge variant="light">{t('admin_access_n_users', '{{count}} users', { count: accessEntriesCount })}</Badge>
               </Group>
             </Group>
 
             {accessLoading ? (
               <Table.ScrollContainer minWidth={700}>
-                <Table verticalSpacing="xs" aria-label="Loading access entries">
+                <Table verticalSpacing="xs" aria-label={t('admin_access_loading_aria', 'Loading access entries')}>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th>User</Table.Th>
-                      <Table.Th>Access Type</Table.Th>
-                      <Table.Th>Role</Table.Th>
-                      <Table.Th>Granted / Expires</Table.Th>
-                      <Table.Th w={80}>Revoke</Table.Th>
+                      <Table.Th>{t('admin_access_th_user', 'User')}</Table.Th>
+                      <Table.Th>{t('admin_access_th_type', 'Access Type')}</Table.Th>
+                      <Table.Th>{t('admin_access_th_role', 'Role')}</Table.Th>
+                      <Table.Th>{t('admin_access_th_granted', 'Granted / Expires')}</Table.Th>
+                      <Table.Th w={80}>{t('admin_access_th_revoke', 'Revoke')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>
@@ -277,10 +279,10 @@ export function AccessTab({
             ) : accessEntriesCount === 0 ? (
               <Text c="dimmed" ta="center" py="md">
                 {accessViewMode === 'campaign'
-                  ? 'No users have access to this campaign yet. Add users below.'
+                  ? t('admin_access_none_campaign', 'No users have access to this campaign yet. Add users below.')
                   : accessViewMode === 'company'
-                  ? 'No company-wide access grants. Add users below.'
-                  : 'No access grants found for this company or its campaigns.'}
+                  ? t('admin_access_none_company', 'No company-wide access grants. Add users below.')
+                  : t('admin_access_none_all', 'No access grants found for this company or its campaigns.')}
               </Text>
             ) : (
               <ScrollArea style={{ maxHeight: 300 }} offsetScrollbars type="auto">
@@ -288,15 +290,15 @@ export function AccessTab({
                   <Table
                     verticalSpacing="xs"
                     highlightOnHover
-                    aria-label="Current access entries"
+                    aria-label={t('admin_access_current_aria', 'Current access entries')}
                   >
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Th>User</Table.Th>
-                        <Table.Th>Access Type</Table.Th>
-                        <Table.Th>Role</Table.Th>
-                        <Table.Th>Granted / Expires</Table.Th>
-                        <Table.Th w={80}>Revoke</Table.Th>
+                        <Table.Th>{t('admin_access_th_user', 'User')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_type', 'Access Type')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_role', 'Role')}</Table.Th>
+                        <Table.Th>{t('admin_access_th_granted', 'Granted / Expires')}</Table.Th>
+                        <Table.Th w={80}>{t('admin_access_th_revoke', 'Revoke')}</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>{accessRows}</Table.Tbody>
@@ -319,15 +321,15 @@ export function AccessTab({
           {/* Grant Access Form - Unified and compact */}
           <Card shadow="sm" withBorder p={{ base: 'sm', md: 'md' }}>
             <Text fw={600} size="lg" mb="sm">
-              {accessViewMode === 'campaign' ? 'Grant New Access' : 'Grant Company-Wide Access'}
+              {accessViewMode === 'campaign' ? t('admin_access_grant_new', 'Grant New Access') : t('admin_access_grant_company', 'Grant Company-Wide Access')}
             </Text>
 
             <Group align="flex-end" gap="sm" wrap="wrap">
               {/* Unified user search with ID fallback built-in */}
               <Box style={{ flex: 1, minWidth: isMobile ? undefined : 250, width: isMobile ? '100%' : undefined }}>
                 <SearchableEntityInput
-                  label={<Text size="sm" fw={500}>User</Text>}
-                  placeholder="Search name, email, or enter ID..."
+                  label={<Text size="sm" fw={500}>{t('admin_access_th_user', 'User')}</Text>}
+                  placeholder={t('admin_access_user_ph', 'Search name, email, or enter ID...')}
                   displayValue={selectedUser ? `${selectedUser.displayName} (${selectedUser.email})` : userSearchQuery}
                   onInputChange={(val) => {
                     setUserSearchQuery(val);
@@ -356,20 +358,20 @@ export function AccessTab({
                   loading={userSearchLoading}
                 >
                   {userSearchResults.length === 0 && userSearchQuery.length >= 2 && !userSearchLoading && !/^\d+$/.test(userSearchQuery) && (
-                    <Combobox.Empty>No users found</Combobox.Empty>
+                    <Combobox.Empty>{t('admin_access_no_users', 'No users found')}</Combobox.Empty>
                   )}
                   {/^\d+$/.test(userSearchQuery) && (
-                    <Combobox.Empty>Using User ID: {userSearchQuery}</Combobox.Empty>
+                    <Combobox.Empty>{t('admin_access_using_id', 'Using User ID: {{id}}', { id: userSearchQuery })}</Combobox.Empty>
                   )}
                   {userSearchQuery.length < 2 && !/^\d+$/.test(userSearchQuery) && (
-                    <Combobox.Empty>Type name/email or enter user ID</Combobox.Empty>
+                    <Combobox.Empty>{t('admin_access_type_hint', 'Type name/email or enter user ID')}</Combobox.Empty>
                   )}
                   {userSearchResults.map((user) => (
                     <Combobox.Option key={user.id} value={String(user.id)}>
                       <Group gap="xs">
                         <Text size="sm" fw={500}>{user.displayName}</Text>
                         <Text size="xs" c="dimmed">{user.email}</Text>
-                        {user.isAdmin && <Badge size="xs" color="blue">Admin</Badge>}
+                        {user.isAdmin && <Badge size="xs" color="blue">{t('admin_access_admin_badge', 'Admin')}</Badge>}
                       </Group>
                     </Combobox.Option>
                   ))}
@@ -380,10 +382,10 @@ export function AccessTab({
               {accessViewMode === 'campaign' && (
                 <>
                   <Select
-                    label={<Text size="sm" fw={500}>Scope</Text>}
+                    label={<Text size="sm" fw={500}>{t('admin_access_scope', 'Scope')}</Text>}
                     data={[
-                      { value: 'campaign', label: '📋 This Campaign' },
-                      { value: 'company', label: '🏢 All Company Campaigns' },
+                      { value: 'campaign', label: t('admin_access_scope_campaign', '📋 This Campaign') },
+                      { value: 'company', label: t('admin_access_scope_company', '🏢 All Company Campaigns') },
                     ]}
                     value={accessSource}
                     onChange={(v) => onAccessSourceChange((v as 'company' | 'campaign') ?? 'campaign')}
@@ -391,10 +393,10 @@ export function AccessTab({
                   />
 
                   <Select
-                    label={<Text size="sm" fw={500}>Action</Text>}
+                    label={<Text size="sm" fw={500}>{t('admin_access_action', 'Action')}</Text>}
                     data={[
-                      { value: 'grant', label: '✅ Grant Access' },
-                      { value: 'deny', label: '❌ Deny Access' },
+                      { value: 'grant', label: t('admin_access_action_grant', '✅ Grant Access') },
+                      { value: 'deny', label: t('admin_access_action_deny', '❌ Deny Access') },
                     ]}
                     value={accessAction}
                     onChange={(v) => onAccessActionChange((v as 'grant' | 'deny') ?? 'grant')}
@@ -408,25 +410,25 @@ export function AccessTab({
                   wpsg_editor role, not from per-campaign grants. Hidden when action is 'deny'. */}
               {accessAction !== 'deny' && (
                 <Select
-                  label={<Text size="sm" fw={500}>Role</Text>}
+                  label={<Text size="sm" fw={500}>{t('admin_access_th_role', 'Role')}</Text>}
                   data={[
-                    { value: 'viewer', label: '👁 Viewer' },
+                    { value: 'viewer', label: t('admin_access_role_viewer', '👁 Viewer') },
                   ]}
                   value={accessLevel}
                   onChange={(v) => onAccessLevelChange((v as 'viewer' | 'editor' | 'owner') ?? 'viewer')}
                   style={{ minWidth: isMobile ? undefined : 140, width: isMobile ? '100%' : undefined }}
-                  aria-label="Access role level"
+                  aria-label={t('admin_access_role_aria', 'Access role level')}
                 />
               )}
 
               {/* P28-B: optional expiry date-time */}
               <TextInput
-                label={<Text size="sm" fw={500}>Expires at <Text span size="xs" c="dimmed">(optional)</Text></Text>}
+                label={<Text size="sm" fw={500}>{t('admin_access_expires', 'Expires at')} <Text span size="xs" c="dimmed">{t('admin_access_optional', '(optional)')}</Text></Text>}
                 type="datetime-local"
                 value={expiresAt}
                 onChange={(e) => setExpiresAt(e.currentTarget.value)}
                 style={{ minWidth: isMobile ? undefined : 200, width: isMobile ? '100%' : undefined }}
-                aria-label="Access expiry date and time"
+                aria-label={t('admin_access_expires_aria', 'Access expiry date and time')}
               />
 
               <Button
@@ -435,29 +437,29 @@ export function AccessTab({
                 disabled={!selectedUser && !accessUserId}
                 aria-disabled={!selectedUser && !accessUserId}
               >
-                Apply
+                {t('admin_access_apply', 'Apply')}
               </Button>
 
-              <Tooltip label="Create a new user">
+              <Tooltip label={t('admin_access_create_user', 'Create a new user')}>
                 <Button
                   variant="light"
                   leftSection={<IconUserPlus size={16} />}
-                  aria-label="Quick add a new user"
+                  aria-label={t('admin_access_quick_add_aria', 'Quick add a new user')}
                   onClick={onQuickAddUser}
                 >
-                  Quick Add User
+                  {t('admin_access_quick_add', 'Quick Add User')}
                 </Button>
               </Tooltip>
             </Group>
 
             {accessViewMode === 'campaign' && accessSource === 'company' && (
               <Text size="xs" c="dimmed" mt="xs">
-                Company-level grants give access to all campaigns under the same company.
+                {t('admin_access_note_company_level', 'Company-level grants give access to all campaigns under the same company.')}
               </Text>
             )}
             {(accessViewMode === 'company' || accessViewMode === 'all') && (
               <Text size="xs" c="dimmed" mt="xs">
-                Grants apply to all current and future campaigns for this company.
+                {t('admin_access_note_company_future', 'Grants apply to all current and future campaigns for this company.')}
               </Text>
             )}
           </Card>

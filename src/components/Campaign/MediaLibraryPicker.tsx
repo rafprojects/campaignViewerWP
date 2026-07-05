@@ -1,5 +1,6 @@
 import { Badge, Button, Card, Center, Group, Image, Loader, SimpleGrid, Stack, Text, TextInput } from '@mantine/core';
 import { IconPhoto } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -23,13 +24,14 @@ export function MediaLibraryPicker({
   onAddFromLibrary,
   isAlreadyAdded,
 }: MediaLibraryPickerProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Card withBorder>
       <Stack gap="sm">
         <Group justify="space-between">
           <Group>
             <IconPhoto size={20} />
-            <Text fw={500}>Pick from Media Library</Text>
+            <Text fw={500}>{t('medialib_heading', 'Pick from Media Library')}</Text>
           </Group>
           <Button
             variant="subtle"
@@ -37,12 +39,12 @@ export function MediaLibraryPicker({
             onClick={() => void onLoadLibrary(librarySearch)}
             loading={libraryLoading}
           >
-            {libraryMedia.length > 0 ? 'Refresh' : 'Load Library'}
+            {libraryMedia.length > 0 ? t('medialib_refresh', 'Refresh') : t('medialib_load', 'Load Library')}
           </Button>
         </Group>
         <TextInput
-          placeholder="Search media..."
-          aria-label="Search media library"
+          placeholder={t('medialib_search_ph', 'Search media...')}
+          aria-label={t('medialib_search_aria', 'Search media library')}
           value={librarySearch}
           onChange={(e) => onLibrarySearchChange(e.currentTarget.value)}
           onKeyDown={(e) => e.key === 'Enter' && void onLoadLibrary(librarySearch)}
@@ -51,7 +53,7 @@ export function MediaLibraryPicker({
           <Center py="md"><Loader size="sm" /></Center>
         ) : libraryMedia.length === 0 ? (
           <Text size="sm" c="dimmed" ta="center" py="md">
-            Click &quot;Load Library&quot; to browse existing media
+            {t('medialib_empty', 'Click "Load Library" to browse existing media')}
           </Text>
         ) : (
           <SimpleGrid cols={{ base: 3, sm: 4, md: 5 }} spacing="xs">
@@ -74,8 +76,8 @@ export function MediaLibraryPicker({
                   aria-disabled={alreadyAdded}
                   aria-label={
                     alreadyAdded
-                      ? 'Media already added to campaign'
-                      : `Add ${item.type} media: ${item.caption || item.url}`
+                      ? t('medialib_already_added_aria', 'Media already added to campaign')
+                      : t('medialib_add_aria', 'Add {{type}} media: {{label}}', { type: item.type, label: item.caption || item.url })
                   }
                   onKeyDown={(event) => {
                     if (alreadyAdded) return;
@@ -88,7 +90,7 @@ export function MediaLibraryPicker({
                   <Image
                     src={item.thumbnail || item.url}
                     height={60}
-                    alt={item.caption || 'Media'}
+                    alt={item.caption || t('admin_camp_media_alt', 'Media')}
                     fallbackSrc={FALLBACK_IMAGE_SRC}
                   />
                   <Stack gap={2} p={4}>
@@ -96,7 +98,7 @@ export function MediaLibraryPicker({
                       {item.type}
                     </Badge>
                     {alreadyAdded && (
-                      <Text size="xs" c="green">Added</Text>
+                      <Text size="xs" c="green">{t('medialib_added', 'Added')}</Text>
                     )}
                   </Stack>
                 </Card>

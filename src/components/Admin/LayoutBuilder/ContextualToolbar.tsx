@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActionIcon, Button, Group, TextInput, Tooltip } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import {
@@ -108,6 +109,7 @@ export function ContextualToolbar({
   canvasHeight,
   callbacks,
 }: ContextualToolbarProps) {
+  const { t } = useTranslation('wpsg');
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   if (!selectionRect || selectedSlotIds.size === 0) return null;
@@ -139,7 +141,7 @@ export function ContextualToolbar({
     const gid = selectedGroup.id;
     const defaultName = selectedGroup.name ?? '';
     modals.open({
-      title: 'Rename group',
+      title: t('lb_ctb_rename_group', 'Rename group'),
       size: 'xs',
       children: (
         <form
@@ -153,16 +155,16 @@ export function ContextualToolbar({
           <TextInput
             name="groupName"
             defaultValue={defaultName}
-            placeholder="Group name"
+            placeholder={t('lb_ctb_group_name_ph', 'Group name')}
             data-autofocus
             mb="sm"
           />
           <Group justify="flex-end" gap="xs">
             <Button variant="subtle" size="xs" onClick={() => modals.closeAll()}>
-              Cancel
+              {t('lb_ctb_cancel', 'Cancel')}
             </Button>
             <Button size="xs" type="submit">
-              Rename
+              {t('lb_ctb_rename', 'Rename')}
             </Button>
           </Group>
         </form>
@@ -177,7 +179,7 @@ export function ContextualToolbar({
       ref={toolbarRef}
       data-testid="contextual-toolbar"
       role="toolbar"
-      aria-label="Selection actions"
+      aria-label={t('lb_ctb_selection_actions', 'Selection actions')}
       style={{
         position: 'absolute',
         left: clampedLeft,
@@ -200,70 +202,70 @@ export function ContextualToolbar({
     >
       {selectionKind === 'group' && selectedGroup && (
         <>
-          <Tooltip label="Rename group" openDelay={400}>
+          <Tooltip label={t('lb_ctb_rename_group', 'Rename group')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={handleRenameGroupClick}
-              aria-label="Rename group"
+              aria-label={t('lb_ctb_rename_group', 'Rename group')}
             >
               <IconPencil size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Ungroup (Ctrl+Shift+G)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_ungroup_tt', 'Ungroup (Ctrl+Shift+G)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onUngroup(selectedGroup.id)}
-              aria-label="Ungroup"
+              aria-label={t('lb_ctb_ungroup', 'Ungroup')}
             >
               <IconLayersOff size={14} />
             </ActionIcon>
           </Tooltip>
           <ToolbarDivider />
-          <Tooltip label={isGroupLocked ? 'Unlock group' : 'Lock group'} openDelay={400}>
+          <Tooltip label={isGroupLocked ? t('lb_ctb_unlock_group', 'Unlock group') : t('lb_ctb_lock_group', 'Lock group')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onGroupLockToggle(selectedGroup.id, !isGroupLocked)}
-              aria-label={isGroupLocked ? 'Unlock group' : 'Lock group'}
+              aria-label={isGroupLocked ? t('lb_ctb_unlock_group', 'Unlock group') : t('lb_ctb_lock_group', 'Lock group')}
             >
               {isGroupLocked ? <IconLockOpen size={14} /> : <IconLock size={14} />}
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={isGroupHidden ? 'Show group' : 'Hide group'} openDelay={400}>
+          <Tooltip label={isGroupHidden ? t('lb_ctb_show_group', 'Show group') : t('lb_ctb_hide_group', 'Hide group')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onGroupVisibilityToggle(selectedGroup.id, isGroupHidden)}
-              aria-label={isGroupHidden ? 'Show group' : 'Hide group'}
+              aria-label={isGroupHidden ? t('lb_ctb_show_group', 'Show group') : t('lb_ctb_hide_group', 'Hide group')}
             >
               {isGroupHidden ? <IconEye size={14} /> : <IconEyeOff size={14} />}
             </ActionIcon>
           </Tooltip>
           <ToolbarDivider />
-          <Tooltip label="Bring forward (])" openDelay={400}>
+          <Tooltip label={t('lb_ctb_bring_fwd_tt', 'Bring forward (])')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onBringForward(ids)}
-              aria-label="Bring forward"
+              aria-label={t('lb_ctb_bring_fwd', 'Bring forward')}
             >
               <IconArrowUp size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Send backward ([)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_send_bwd_tt', 'Send backward ([)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onSendBackward(ids)}
-              aria-label="Send backward"
+              aria-label={t('lb_ctb_send_bwd', 'Send backward')}
             >
               <IconArrowDown size={14} />
             </ActionIcon>
@@ -273,36 +275,36 @@ export function ContextualToolbar({
 
       {selectionKind === 'multi' && (
         <>
-          <Tooltip label="Group (Ctrl+G)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_group_tt', 'Group (Ctrl+G)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={callbacks.onCreateGroup}
-              aria-label="Group selected slots"
+              aria-label={t('lb_ctb_group_aria', 'Group selected slots')}
             >
               <IconLayersLinked size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Duplicate (Ctrl+D)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_dup_tt', 'Duplicate (Ctrl+D)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={callbacks.onDuplicate}
-              aria-label="Duplicate selected"
+              aria-label={t('lb_ctb_dup_selected', 'Duplicate selected')}
             >
               <IconCopy size={14} />
             </ActionIcon>
           </Tooltip>
           <ToolbarDivider />
-          <Tooltip label="Delete (Del)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_del_tt', 'Delete (Del)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="red"
               onClick={callbacks.onDelete}
-              aria-label="Delete selected"
+              aria-label={t('lb_ctb_del_selected', 'Delete selected')}
             >
               <IconTrash size={14} />
             </ActionIcon>
@@ -312,47 +314,47 @@ export function ContextualToolbar({
 
       {selectionKind === 'single' && (
         <>
-          <Tooltip label="Duplicate (Ctrl+D)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_dup_tt', 'Duplicate (Ctrl+D)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={callbacks.onDuplicate}
-              aria-label="Duplicate slot"
+              aria-label={t('lb_ctb_dup_slot', 'Duplicate slot')}
             >
               <IconCopy size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Bring forward (])" openDelay={400}>
+          <Tooltip label={t('lb_ctb_bring_fwd_tt', 'Bring forward (])')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onBringForward(ids)}
-              aria-label="Bring forward"
+              aria-label={t('lb_ctb_bring_fwd', 'Bring forward')}
             >
               <IconArrowUp size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label="Send backward ([)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_send_bwd_tt', 'Send backward ([)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="gray"
               onClick={() => callbacks.onSendBackward(ids)}
-              aria-label="Send backward"
+              aria-label={t('lb_ctb_send_bwd', 'Send backward')}
             >
               <IconArrowDown size={14} />
             </ActionIcon>
           </Tooltip>
           <ToolbarDivider />
-          <Tooltip label="Delete (Del)" openDelay={400}>
+          <Tooltip label={t('lb_ctb_del_tt', 'Delete (Del)')} openDelay={400}>
             <ActionIcon
               size="sm"
               variant="subtle"
               color="red"
               onClick={callbacks.onDelete}
-              aria-label="Delete slot"
+              aria-label={t('lb_ctb_del_slot', 'Delete slot')}
             >
               <IconTrash size={14} />
             </ActionIcon>

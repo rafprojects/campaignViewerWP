@@ -256,7 +256,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
     public static function list_campaign_categories($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms('wpsg_campaign_category', ['hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_campaign_category', 'hide_empty' => false]);
 
         $terms = get_terms([
             'taxonomy'   => 'wpsg_campaign_category',
@@ -347,7 +347,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
     public static function list_campaign_tags($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms('wpsg_campaign_tag', ['hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_campaign_tag', 'hide_empty' => false]);
 
         $terms = get_terms([
             'taxonomy'   => 'wpsg_campaign_tag',
@@ -960,7 +960,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
             if ($space_id > 0) {
                 $count_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
             }
-            $total = wp_count_terms('wpsg_company', $count_args);
+            $total = wp_count_terms(array_merge(['taxonomy' => 'wpsg_company'], $count_args));
             $response->header('X-WPSG-Total', (string) $total);
             $response->header('X-WPSG-Page', (string) $page);
             $response->header('X-WPSG-Per-Page', (string) $per_page);
@@ -1059,7 +1059,7 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         if ($space_id > 0) {
             $total_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
         }
-        $total       = (int) wp_count_terms('wpsg_company', $total_args);
+        $total       = (int) wp_count_terms(array_merge(['taxonomy' => 'wpsg_company'], $total_args));
         $total_pages = $per_page > 0 ? max(1, (int) ceil($total / $per_page)) : 1;
         $response_data = [
             'items'       => $companies,

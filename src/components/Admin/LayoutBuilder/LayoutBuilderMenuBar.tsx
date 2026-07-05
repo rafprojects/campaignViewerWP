@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Menu, Button, Divider, Group } from '@mantine/core';
 import {
   IconChevronDown,
@@ -132,6 +133,8 @@ export function LayoutBuilderMenuBar({
   layoutScope, setLayoutScope,
   guideCount, onClearGuides,
 }: LayoutBuilderMenuBarProps) {
+  const { t } = useTranslation('wpsg');
+  const panelTitle = useCallback((id: SidePanel) => t(`lb_menu_panel_${id}`, PANEL_LABELS[id]), [t]);
   // Track which side panels are open — queried from dockview on each menu open.
   const [openPanels, setOpenPanels] = useState<Set<SidePanel>>(new Set(SIDE_PANELS));
 
@@ -158,7 +161,7 @@ export function LayoutBuilderMenuBar({
           api.addPanel({
             id,
             component: def.component,
-            title: def.title,
+            title: panelTitle(id),
             ...(canvas ? { position: { direction: 'right', referencePanel: canvas } } : {}),
           });
         } else {
@@ -170,7 +173,7 @@ export function LayoutBuilderMenuBar({
           api.addPanel({
             id,
             component: def.component,
-            title: def.title,
+            title: panelTitle(id),
             ...(reference && direction ? { position: { direction, referencePanel: reference } } : {}),
           });
         }
@@ -180,7 +183,7 @@ export function LayoutBuilderMenuBar({
       }
       setOpenPanels((prev) => new Set([...prev, id]));
     }
-  }, [dockApiRef]);
+  }, [dockApiRef, panelTitle]);
 
   const handleResetLayout = useCallback(() => {
     const api = dockApiRef.current;
@@ -195,55 +198,55 @@ export function LayoutBuilderMenuBar({
       try { api.getPanel(id)?.api.close(); } catch { /* ignore */ }
     }
     try { api.getPanel('canvas')?.api.close(); } catch { /* ignore */ }
-    const layersPanel = api.addPanel({ id: 'layers', component: 'layers', title: 'Layers' });
-    api.addPanel({ id: 'media', component: 'media', title: 'Media & Assets', position: { direction: 'within', referencePanel: layersPanel } });
-    const canvasPanel = api.addPanel({ id: 'canvas', component: 'canvas', tabComponent: 'canvas', title: 'Canvas', position: { direction: 'right', referencePanel: layersPanel } });
-    api.addPanel({ id: 'properties', component: 'properties', title: 'Properties', position: { direction: 'right', referencePanel: canvasPanel } });
+    const layersPanel = api.addPanel({ id: 'layers', component: 'layers', title: panelTitle('layers') });
+    api.addPanel({ id: 'media', component: 'media', title: panelTitle('media'), position: { direction: 'within', referencePanel: layersPanel } });
+    const canvasPanel = api.addPanel({ id: 'canvas', component: 'canvas', tabComponent: 'canvas', title: t('lb_menu_panel_canvas', 'Canvas'), position: { direction: 'right', referencePanel: layersPanel } });
+    api.addPanel({ id: 'properties', component: 'properties', title: panelTitle('properties'), position: { direction: 'right', referencePanel: canvasPanel } });
     setOpenPanels(new Set(SIDE_PANELS));
-  }, [dockApiRef, layoutScope, rootId, templateId]);
+  }, [dockApiRef, layoutScope, rootId, templateId, panelTitle, t]);
 
   return (
     <Group gap={2} wrap="nowrap">
       {/* ── File ── */}
-      <MenuButton label="File">
+      <MenuButton label={t('lb_menu_file', 'File')}>
         <Menu.Item leftSection={<IconDeviceFloppy size={14} />} onClick={onSave}>
-          Save
+          {t('lb_menu_save', 'Save')}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconDownload size={14} />} onClick={onExport}>
-          Export template…
+          {t('lb_menu_export', 'Export template…')}
         </Menu.Item>
         <Menu.Item leftSection={<IconUpload size={14} />} onClick={onImport}>
-          Import from file…
+          {t('lb_menu_import', 'Import from file…')}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconX size={14} />} onClick={onClose}>
-          Close editor
+          {t('lb_menu_close', 'Close editor')}
         </Menu.Item>
       </MenuButton>
 
       {/* ── Edit ── */}
-      <MenuButton label="Edit">
+      <MenuButton label={t('lb_menu_edit', 'Edit')}>
         <Menu.Item leftSection={<IconArrowBackUp size={14} />} onClick={onUndo} disabled={!canUndo}>
-          Undo
+          {t('lb_menu_undo', 'Undo')}
         </Menu.Item>
         <Menu.Item leftSection={<IconArrowForwardUp size={14} />} onClick={onRedo} disabled={!canRedo}>
-          Redo
+          {t('lb_menu_redo', 'Redo')}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconCopy size={14} />} onClick={onDuplicate} disabled={!hasSelection}>
-          Duplicate
+          {t('lb_menu_duplicate', 'Duplicate')}
         </Menu.Item>
         <Menu.Item leftSection={<IconTrash size={14} />} onClick={onDelete} disabled={!hasSelection} color="red">
-          Delete
+          {t('lb_menu_delete', 'Delete')}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconGrid4x4 size={14} />} onClick={onOpenGridGenerator}>
-          Generate grid…
+          {t('lb_menu_gen_grid', 'Generate grid…')}
         </Menu.Item>
         <Menu.Divider />
         <Menu.Item leftSection={<IconHistory size={14} />} onClick={onOpenHistory}>
-          History…
+          {t('lb_menu_history', 'History…')}
         </Menu.Item>
       </MenuButton>
 
@@ -256,51 +259,51 @@ export function LayoutBuilderMenuBar({
             rightSection={<IconChevronDown size={10} />}
             styles={{ root: { fontWeight: 500, fontSize: 12, letterSpacing: 0 } }}
           >
-            View
+            {t('lb_menu_view', 'View')}
           </Button>
         </Menu.Target>
         <Menu.Dropdown>
-          <Menu.Label>Panels</Menu.Label>
+          <Menu.Label>{t('lb_menu_panels', 'Panels')}</Menu.Label>
           {SIDE_PANELS.map((id) => (
             <CheckItem
               key={id}
               checked={openPanels.has(id)}
-              label={PANEL_LABELS[id]}
+              label={panelTitle(id)}
               icon={PANEL_ICONS[id]}
               onClick={() => togglePanel(id)}
             />
           ))}
           <Menu.Divider />
-          <Menu.Label>Canvas</Menu.Label>
-          <CheckItem checked={showGrid} label="Show grid" icon={<IconGrid4x4 size={14} />} onClick={() => setShowGrid(!showGrid)} />
-          <CheckItem checked={showRulers} label="Show rulers" icon={<IconRuler size={14} />} onClick={() => setShowRulers(!showRulers)} />
-          <CheckItem checked={showMeasurements} label="Show measurements" icon={<IconDimensions size={14} />} onClick={() => setShowMeasurements(!showMeasurements)} />
+          <Menu.Label>{t('lb_menu_canvas', 'Canvas')}</Menu.Label>
+          <CheckItem checked={showGrid} label={t('lb_menu_show_grid', 'Show grid')} icon={<IconGrid4x4 size={14} />} onClick={() => setShowGrid(!showGrid)} />
+          <CheckItem checked={showRulers} label={t('lb_menu_show_rulers', 'Show rulers')} icon={<IconRuler size={14} />} onClick={() => setShowRulers(!showRulers)} />
+          <CheckItem checked={showMeasurements} label={t('lb_menu_show_meas', 'Show measurements')} icon={<IconDimensions size={14} />} onClick={() => setShowMeasurements(!showMeasurements)} />
           <Menu.Item
             leftSection={<IconTrash size={14} />}
             onClick={onClearGuides}
             disabled={guideCount === 0}
             color="red"
           >
-            Clear guides
+            {t('lb_menu_clear_guides', 'Clear guides')}
           </Menu.Item>
           <Menu.Divider />
           <Menu.Item leftSection={<IconRefresh size={14} />} onClick={handleResetLayout}>
-            Reset layout
+            {t('lb_menu_reset_layout', 'Reset layout')}
           </Menu.Item>
         </Menu.Dropdown>
       </Menu>
 
       {/* ── Options ── */}
-      <MenuButton label="Options">
-        <Menu.Label>Layout workspace</Menu.Label>
+      <MenuButton label={t('lb_menu_options', 'Options')}>
+        <Menu.Label>{t('lb_menu_workspace', 'Layout workspace')}</Menu.Label>
         <CheckItem
           checked={layoutScope === 'global'}
-          label="Shared across all templates"
+          label={t('lb_menu_scope_global', 'Shared across all templates')}
           onClick={() => setLayoutScope('global')}
         />
         <CheckItem
           checked={layoutScope === 'per-template'}
-          label="Save per template"
+          label={t('lb_menu_scope_per', 'Save per template')}
           onClick={() => setLayoutScope('per-template')}
         />
       </MenuButton>

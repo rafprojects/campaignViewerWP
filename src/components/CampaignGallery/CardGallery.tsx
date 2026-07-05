@@ -12,7 +12,7 @@
  * classic carousel) when `paginationOwnership === 'adapter'`.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { Container, Group, Stack, Title, Text, Tabs, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
+import { Container, Group, Stack, Title, Text, Chip, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconSearch } from '@tabler/icons-react';
 import { CampaignCard } from './CampaignCard';
@@ -351,17 +351,20 @@ export function CardGallery({
             {(galleryBehaviorSettings.showFilterTabs || galleryBehaviorSettings.showSearchBox) && (
               <Group justify="space-between" align="flex-end" wrap="wrap" gap="md" style={{ overflow: 'hidden' }}>
                 {galleryBehaviorSettings.showFilterTabs && (
-                  <Tabs value={filter} onChange={(v) => setFilter(v ?? 'all')} aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0, overflow: 'hidden' }}>
-                    <Tabs.List style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-                      <Tabs.Tab value="all">All</Tabs.Tab>
-                      <Tabs.Tab value="accessible">My Access</Tabs.Tab>
+                  // P60-D: a single-select filter, not tab navigation — Chip.Group
+                  // avoids the invalid tab→panel `aria-controls` that Mantine Tabs
+                  // emit here, and matches the admin-panel filter pattern.
+                  <Chip.Group multiple={false} value={filter} onChange={(v) => setFilter((v as string) || 'all')}>
+                    <Group gap="xs" wrap="wrap" role="group" aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      <Chip value="all" variant="light" size="sm">All</Chip>
+                      <Chip value="accessible" variant="light" size="sm">My Access</Chip>
                       {companies.map((company) => (
-                        <Tabs.Tab key={company} value={company}>
+                        <Chip key={company} value={company} variant="light" size="sm">
                           {company}
-                        </Tabs.Tab>
+                        </Chip>
                       ))}
-                    </Tabs.List>
-                  </Tabs>
+                    </Group>
+                  </Chip.Group>
                 )}
                 {galleryBehaviorSettings.showSearchBox && (
                   <TextInput

@@ -8,6 +8,7 @@
 import { useState } from 'react';
 import { Badge, Popover, Stack, Text, Anchor, Loader, Alert } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaUsageCampaignRef } from '@/services/apiClient';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -27,6 +28,7 @@ interface MediaUsageBadgeContentProps {
 }
 
 function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeContentProps) {
+  const { t } = useTranslation('wpsg');
   if (loading) {
     return (
       <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
@@ -51,12 +53,12 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
     <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
       {detail.length === 0 ? (
         <Text size="sm" c="dimmed">
-          Not used in any campaign.
+          {t('admin_usage_none', 'Not used in any campaign.')}
         </Text>
       ) : (
         <>
           <Text size="xs" fw={600} c="dimmed">
-            Used in campaigns:
+            {t('admin_usage_used_in', 'Used in campaigns:')}
           </Text>
           {detail.map((campaign) => (
             <Anchor
@@ -77,6 +79,7 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
 setWpsgDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
 
 export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: MediaUsageBadgeProps) {
+  const { t } = useTranslation('wpsg');
   const [opened, setOpened] = useState(false);
   const [detail, setDetail] = useState<MediaUsageCampaignRef[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -90,7 +93,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
       const res = await apiClient.getMediaUsage(mediaId);
       setDetail(res.campaigns);
     } catch (err) {
-      setError((err as Error).message || 'Failed to load usage detail');
+      setError((err as Error).message || t('admin_usage_load_fail', 'Failed to load usage detail'));
     } finally {
       setLoading(false);
     }
@@ -104,7 +107,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
   }
 
   const color = count === 0 ? 'red' : 'blue';
-  const label = count === 0 ? 'Unused' : `${count} campaign${count === 1 ? '' : 's'}`;
+  const label = count === 0 ? t('admin_usage_unused', 'Unused') : t('admin_usage_count', '{{count}} campaign', { count });
 
   return (
     <Popover
@@ -127,7 +130,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
             event.stopPropagation();
             handleOpen(!opened);
           }}
-          aria-label={`Media used in ${label}`}
+          aria-label={t('admin_usage_aria', 'Media used in {{label}}', { label })}
         >
           {label}
         </Badge>

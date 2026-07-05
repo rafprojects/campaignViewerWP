@@ -1,27 +1,8 @@
+import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 type BulkCampaignAction = 'archive' | 'restore';
-
-const ACTION_CONFIG: Record<BulkCampaignAction, {
-  title: (label: string) => string;
-  message: (count: number) => string;
-  confirmLabel: (label: string) => string;
-  confirmColor: string;
-}> = {
-  archive: {
-    title: (label) => `Archive ${label}?`,
-    message: (count) => `This will mark all ${count} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time.`,
-    confirmLabel: (label) => `Archive ${label}`,
-    confirmColor: 'orange',
-  },
-  restore: {
-    title: (label) => `Restore ${label}?`,
-    message: (count) => `This will restore all ${count} selected campaigns and make them active again. Any associated access grants will be re-enabled.`,
-    confirmLabel: (label) => `Restore ${label}`,
-    confirmColor: 'teal',
-  },
-};
 
 interface AdminCampaignBulkConfirmModalProps {
   opened: boolean;
@@ -40,18 +21,27 @@ export function AdminCampaignBulkConfirmModal({
   onClose,
   onConfirm,
 }: AdminCampaignBulkConfirmModalProps) {
-  const label = `${count} campaign${count !== 1 ? 's' : ''}`;
-  const config = ACTION_CONFIG[action];
+  const { t } = useTranslation('wpsg');
+
+  const title = action === 'archive'
+    ? t('admin_bulk_archive_title', 'Archive {{count}} campaign?', { count })
+    : t('admin_bulk_restore_title', 'Restore {{count}} campaign?', { count });
+  const message = action === 'archive'
+    ? t('admin_bulk_archive_msg', 'This will mark all {{count}} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time.', { count })
+    : t('admin_bulk_restore_msg', 'This will restore all {{count}} selected campaigns and make them active again. Any associated access grants will be re-enabled.', { count });
+  const confirmLabel = action === 'archive'
+    ? t('admin_bulk_archive_confirm', 'Archive {{count}} campaign', { count })
+    : t('admin_bulk_restore_confirm', 'Restore {{count}} campaign', { count });
 
   return (
     <ConfirmModal
       opened={opened}
       onClose={onClose}
       onConfirm={onConfirm}
-      title={config.title(label)}
-      message={config.message(count)}
-      confirmLabel={config.confirmLabel(label)}
-      confirmColor={config.confirmColor}
+      title={title}
+      message={message}
+      confirmLabel={confirmLabel}
+      confirmColor={action === 'archive' ? 'orange' : 'teal'}
       loading={loading}
     />
   );

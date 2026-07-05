@@ -163,11 +163,11 @@ foreach ( $dirs_to_remove as $dir ) {
 		);
 		foreach ( $files as $file ) {
 			if ( $file->isDir() ) {
-				rmdir( $file->getRealPath() );
+				rmdir( $file->getRealPath() ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Uninstall cleanup: native FS after wp_delete_file; WP_Filesystem init can silently no-op on FTP hosts.
 			} else {
 				wp_delete_file( $file->getRealPath() );
 			}
 		}
-		rmdir( $dir );
+		rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir -- Uninstall cleanup: remove now-empty plugin dir; WP_Filesystem init can silently no-op on FTP hosts.
 	}
 }

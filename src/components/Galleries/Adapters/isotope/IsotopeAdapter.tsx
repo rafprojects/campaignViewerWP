@@ -251,7 +251,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
             >
               <LazyImage
                 src={thumbSrc}
-                alt={item.caption || ''}
+                alt={item.caption || item.title || t('lightbox_image_alt', 'Campaign image')}
                 style={{
                   width: '100%',
                   height: '100%',

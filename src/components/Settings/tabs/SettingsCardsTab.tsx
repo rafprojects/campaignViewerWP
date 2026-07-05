@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Accordion, Box, SegmentedControl, Stack, Text } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import type { CardConfigBreakpoint } from '@/types';
 import type { SettingsData } from '@/contexts/SettingsStore';
@@ -7,12 +8,6 @@ import type { UpdateGallerySetting } from '../GalleryAdapterSettingsSection';
 import { CampaignCardSettingsSection } from '../CampaignCardSettingsSection';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-
-const CARD_SETTINGS_BREAKPOINT_OPTIONS: Array<{ value: CardConfigBreakpoint; label: string }> = [
-  { value: 'desktop', label: 'Desktop' },
-  { value: 'tablet', label: 'Tablet' },
-  { value: 'mobile', label: 'Mobile' },
-];
 
 interface SettingsCardsTabProps {
   settings: SettingsData;
@@ -29,19 +24,25 @@ export const SettingsCardsTab = memo(function SettingsCardsTab({
   cardSettingsBreakpoint,
   setCardSettingsBreakpoint,
 }: SettingsCardsTabProps) {
+  const { t } = useTranslation('wpsg');
   const { value: cardAccordionValue, onChange: cardAccordionOnChange } = usePersistentAccordion('cards', 'appearance');
+  const cardBreakpointOptions: Array<{ value: CardConfigBreakpoint; label: string }> = [
+    { value: 'desktop', label: t('admin_bp_desktop', 'Desktop') },
+    { value: 'tablet', label: t('admin_bp_tablet', 'Tablet') },
+    { value: 'mobile', label: t('admin_bp_mobile', 'Mobile') },
+  ];
 
   return (
     <Stack gap="md">
       <Box>
         <Text size="sm" c="dimmed" mb="xs">
-          Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.
+          {t('set_cards_tab_intro', 'Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline.')}
         </Text>
         <SegmentedControl
-          data={CARD_SETTINGS_BREAKPOINT_OPTIONS}
+          data={cardBreakpointOptions}
           value={cardSettingsBreakpoint}
           onChange={(value) => setCardSettingsBreakpoint(value as CardConfigBreakpoint)}
-          aria-label="Card settings breakpoint"
+          aria-label={t('set_cards_tab_bp_aria', 'Card settings breakpoint')}
           size="xs"
           fullWidth
         />

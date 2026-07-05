@@ -12,6 +12,7 @@ import {
 } from '@mantine/core';
 import { IconCheck, IconPencil, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient, CampaignCategoryEntry, TagEntry } from '@/services/apiClient';
 import {
   getCampaignCategoriesQueryKey,
@@ -42,6 +43,7 @@ interface CategoryRowProps {
 }
 
 function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: CategoryRowProps) {
+  const { t } = useTranslation('wpsg');
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(cat.name);
   const [saving, setSaving] = useState(false);
@@ -53,9 +55,9 @@ function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: 
     try {
       await apiClient.updateCampaignCategory(cat.id, { name: value.trim() });
       onMutate();
-      onNotify({ type: 'success', text: `Category renamed to "${value.trim()}"` });
+      onNotify({ type: 'success', text: t('admin_tax_cat_renamed', 'Category renamed to "{{name}}"', { name: value.trim() }) });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to rename category' });
+      onNotify({ type: 'error', text: t('admin_tax_cat_rename_fail', 'Failed to rename category') });
     } finally {
       setSaving(false);
       setEditing(false);
@@ -67,9 +69,9 @@ function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: 
     try {
       await apiClient.deleteCampaignCategory(cat.id);
       onMutate();
-      onNotify({ type: 'success', text: `Category "${cat.name}" deleted` });
+      onNotify({ type: 'success', text: t('admin_tax_cat_deleted', 'Category "{{name}}" deleted', { name: cat.name }) });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to delete category' });
+      onNotify({ type: 'error', text: t('admin_tax_cat_delete_fail', 'Failed to delete category') });
       setDeleting(false);
     }
   }
@@ -84,12 +86,12 @@ function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: 
           size="xs"
           style={{ flex: 1 }}
           autoFocus
-          aria-label="Edit category name"
+          aria-label={t('admin_tax_edit_cat_aria', 'Edit category name')}
         />
-        <ActionIcon size="sm" variant="filled" color="green" loading={saving} onClick={() => void handleSave()} aria-label="Save">
+        <ActionIcon size="sm" variant="filled" color="green" loading={saving} onClick={() => void handleSave()} aria-label={t('admin_tax_save', 'Save')}>
           <IconCheck size={14} />
         </ActionIcon>
-        <ActionIcon size="sm" variant="subtle" onClick={() => { setValue(cat.name); setEditing(false); }} aria-label="Cancel">
+        <ActionIcon size="sm" variant="subtle" onClick={() => { setValue(cat.name); setEditing(false); }} aria-label={t('admin_tax_cancel', 'Cancel')}>
           <IconX size={14} />
         </ActionIcon>
       </Group>
@@ -99,16 +101,17 @@ function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: 
   return (
     <Group gap="xs" justify="space-between" pl={depth * 16}>
       <Group gap="xs">
+        {/* eslint-disable-next-line i18next/no-literal-string -- tree-indent glyph, not translatable text */}
         {depth > 0 && <Text size="xs" c="dimmed">↳</Text>}
         <Text size="sm">{cat.name}</Text>
         {parentName && <Badge size="xs" variant="light" color="gray">{parentName}</Badge>}
         {cat.count > 0 && <Badge size="xs" variant="light">{cat.count}</Badge>}
       </Group>
       <Group gap={4}>
-        <ActionIcon size="sm" variant="subtle" onClick={() => setEditing(true)} aria-label={`Rename ${cat.name}`}>
+        <ActionIcon size="sm" variant="subtle" onClick={() => setEditing(true)} aria-label={t('admin_tax_rename_name', 'Rename {{name}}', { name: cat.name })}>
           <IconPencil size={14} />
         </ActionIcon>
-        <ActionIcon size="sm" variant="subtle" color="red" loading={deleting} onClick={() => void handleDelete()} aria-label={`Delete ${cat.name}`}>
+        <ActionIcon size="sm" variant="subtle" color="red" loading={deleting} onClick={() => void handleDelete()} aria-label={t('admin_tax_delete_name', 'Delete {{name}}', { name: cat.name })}>
           <IconTrash size={14} />
         </ActionIcon>
       </Group>
@@ -125,13 +128,14 @@ interface TagRowProps {
 }
 
 function TagRow({ tag, onDelete, deleting }: TagRowProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Group gap="xs" justify="space-between">
       <Group gap="xs">
         <Text size="sm">{tag.name}</Text>
         {tag.count > 0 && <Badge size="xs" variant="light">{tag.count}</Badge>}
       </Group>
-      <ActionIcon size="sm" variant="subtle" color="red" loading={deleting} onClick={() => void onDelete(String(tag.id))} aria-label={`Delete ${tag.name}`}>
+      <ActionIcon size="sm" variant="subtle" color="red" loading={deleting} onClick={() => void onDelete(String(tag.id))} aria-label={t('admin_tax_delete_name', 'Delete {{name}}', { name: tag.name })}>
         <IconTrash size={14} />
       </ActionIcon>
     </Group>
@@ -146,6 +150,7 @@ interface AddTermFormProps {
 }
 
 function AddTermForm({ placeholder, onAdd }: AddTermFormProps) {
+  const { t } = useTranslation('wpsg');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -173,7 +178,7 @@ function AddTermForm({ placeholder, onAdd }: AddTermFormProps) {
         aria-label={placeholder}
       />
       <Button size="xs" leftSection={<IconPlus size={12} />} loading={saving} onClick={() => void handleAdd()}>
-        Add
+        {t('admin_tax_add', 'Add')}
       </Button>
     </Group>
   );
@@ -182,6 +187,7 @@ function AddTermForm({ placeholder, onAdd }: AddTermFormProps) {
 // ── Main Modal ────────────────────────────────────────────────────────────────
 
 export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: TaxonomyManagerModalProps) {
+  const { t } = useTranslation('wpsg');
   const queryClient = useQueryClient();
   const { campaignCategories, mutateCampaignCategories } = useCampaignCategories(apiClient, opened);
   const { campaignTags, mutateCampaignTags } = useCampaignTags(apiClient, opened);
@@ -208,9 +214,9 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     try {
       await apiClient.createCampaignCategory(name);
       invalidateCategories();
-      onNotify({ type: 'success', text: `Category "${name}" created` });
+      onNotify({ type: 'success', text: t('admin_tax_cat_created', 'Category "{{name}}" created', { name }) });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to create category' });
+      onNotify({ type: 'error', text: t('admin_tax_cat_create_fail', 'Failed to create category') });
     }
   }
 
@@ -218,9 +224,9 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     try {
       await apiClient.createCampaignTag(name);
       invalidateCampaignTags();
-      onNotify({ type: 'success', text: `Tag "${name}" created` });
+      onNotify({ type: 'success', text: t('admin_tax_tag_created', 'Tag "{{name}}" created', { name }) });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to create tag' });
+      onNotify({ type: 'error', text: t('admin_tax_tag_create_fail', 'Failed to create tag') });
     }
   }
 
@@ -229,9 +235,9 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     try {
       await apiClient.deleteCampaignTag(id);
       invalidateCampaignTags();
-      onNotify({ type: 'success', text: 'Tag deleted' });
+      onNotify({ type: 'success', text: t('admin_tax_tag_deleted', 'Tag deleted') });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to delete tag' });
+      onNotify({ type: 'error', text: t('admin_tax_tag_delete_fail', 'Failed to delete tag') });
     } finally {
       setDeletingTagId(null);
     }
@@ -241,9 +247,9 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     try {
       await apiClient.createMediaTag(name);
       invalidateMediaTags();
-      onNotify({ type: 'success', text: `Media tag "${name}" created` });
+      onNotify({ type: 'success', text: t('admin_tax_mtag_created', 'Media tag "{{name}}" created', { name }) });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to create media tag' });
+      onNotify({ type: 'error', text: t('admin_tax_mtag_create_fail', 'Failed to create media tag') });
     }
   }
 
@@ -252,9 +258,9 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     try {
       await apiClient.deleteMediaTag(id);
       invalidateMediaTags();
-      onNotify({ type: 'success', text: 'Media tag deleted' });
+      onNotify({ type: 'success', text: t('admin_tax_mtag_deleted', 'Media tag deleted') });
     } catch {
-      onNotify({ type: 'error', text: 'Failed to delete media tag' });
+      onNotify({ type: 'error', text: t('admin_tax_mtag_delete_fail', 'Failed to delete media tag') });
     } finally {
       setDeletingTagId(null);
     }
@@ -264,21 +270,21 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Manage Taxonomy"
+      title={t('admin_tax_title', 'Manage Taxonomy')}
       size="sm"
       {...getWpsgDebugProps('TaxonomyManagerModal')}
     >
       <Tabs defaultValue="categories">
         <Tabs.List>
-          <Tabs.Tab value="categories">Categories</Tabs.Tab>
-          <Tabs.Tab value="campaign-tags">Campaign Tags</Tabs.Tab>
-          <Tabs.Tab value="media-tags">Media Tags</Tabs.Tab>
+          <Tabs.Tab value="categories">{t('admin_tax_tab_categories', 'Categories')}</Tabs.Tab>
+          <Tabs.Tab value="campaign-tags">{t('admin_tax_tab_campaign_tags', 'Campaign Tags')}</Tabs.Tab>
+          <Tabs.Tab value="media-tags">{t('admin_tax_tab_media_tags', 'Media Tags')}</Tabs.Tab>
         </Tabs.List>
 
         <Tabs.Panel value="categories" pt="sm">
           <Stack gap="xs">
             {campaignCategories.length === 0 && (
-              <Text size="sm" c="dimmed">No categories yet.</Text>
+              <Text size="sm" c="dimmed">{t('admin_tax_no_categories', 'No categories yet.')}</Text>
             )}
             {(() => {
               const byId = new Map(campaignCategories.map((c) => [c.id, c]));
@@ -312,14 +318,14 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
                 />
               ));
             })()}
-            <AddTermForm placeholder="New category name" onAdd={handleAddCategory} />
+            <AddTermForm placeholder={t('admin_tax_new_category', 'New category name')} onAdd={handleAddCategory} />
           </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="campaign-tags" pt="sm">
           <Stack gap="xs">
             {campaignTags.length === 0 && (
-              <Text size="sm" c="dimmed">No campaign tags yet.</Text>
+              <Text size="sm" c="dimmed">{t('admin_tax_no_campaign_tags', 'No campaign tags yet.')}</Text>
             )}
             {campaignTags.map((tag) => (
               <TagRow
@@ -329,14 +335,14 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
                 deleting={deletingTagId === String(tag.id)}
               />
             ))}
-            <AddTermForm placeholder="New campaign tag" onAdd={handleAddCampaignTag} />
+            <AddTermForm placeholder={t('admin_tax_new_campaign_tag', 'New campaign tag')} onAdd={handleAddCampaignTag} />
           </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="media-tags" pt="sm">
           <Stack gap="xs">
             {mediaTags.length === 0 && (
-              <Text size="sm" c="dimmed">No media tags yet.</Text>
+              <Text size="sm" c="dimmed">{t('admin_tax_no_media_tags', 'No media tags yet.')}</Text>
             )}
             {mediaTags.map((tag) => (
               <TagRow
@@ -346,7 +352,7 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
                 deleting={deletingTagId === String(tag.id)}
               />
             ))}
-            <AddTermForm placeholder="New media tag" onAdd={handleAddMediaTag} />
+            <AddTermForm placeholder={t('admin_tax_new_media_tag', 'New media tag')} onAdd={handleAddMediaTag} />
           </Stack>
         </Tabs.Panel>
       </Tabs>

@@ -3,7 +3,7 @@
  * Plugin Name:       WP Super Gallery
  * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
- * Version:           0.27.0
+ * Version:           0.90.0
  * Requires at least: 6.4
  * Tested up to:      7.0
  * Requires PHP:      8.2
@@ -19,12 +19,13 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.26.0');
+define('WPSG_VERSION', '0.90.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
+require_once WPSG_PLUGIN_DIR . 'includes/i18n/class-wpsg-frontend-strings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-registry.php';
 require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-core-fields.php';
@@ -439,7 +440,7 @@ function wpsg_should_add_security_headers() {
         return true;
     }
 
-    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';
+    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection to decide security headers; no state change, no nonce.
     if (strpos($route, '/wp-super-gallery/v1/') === 0) {
         return true;
     }

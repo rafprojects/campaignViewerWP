@@ -1,5 +1,6 @@
 import { Box, Text, Button, Stack, Divider, SegmentedControl, NumberInput, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { SlotPropertiesPanel } from './SlotPropertiesPanel';
@@ -18,6 +19,7 @@ const ASPECT_PRESETS = [
 ] as const;
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
+  const { t } = useTranslation('wpsg');
   const {
     builder,
     selectedSlot,
@@ -43,7 +45,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   if (builder.isPreview) {
     return (
       <Box p="sm" style={{ ...panelStyle }}>
-        <Text size="sm" c="dimmed">Properties are unavailable in preview mode.</Text>
+        <Text size="sm" c="dimmed">{t('lb_props_preview_unavailable', 'Properties are unavailable in preview mode.')}</Text>
       </Box>
     );
   }
@@ -52,7 +54,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   if (isBackgroundSelected) {
     return (
       <Box p="sm" style={panelStyle}>
-        <Text size="xs" fw={600} c="dimmed" mb="xs">BACKGROUND</Text>
+        <Text size="xs" fw={600} c="dimmed" mb="xs">{t('lb_props_hdr_background', 'BACKGROUND')}</Text>
         <BackgroundPropertiesPanel />
       </Box>
     );
@@ -62,7 +64,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   if (selectedMaskSlotId && selectedSlot) {
     return (
       <Box p="sm" style={panelStyle}>
-        <Text size="xs" fw={600} c="dimmed" mb="xs">MASK PROPERTIES</Text>
+        <Text size="xs" fw={600} c="dimmed" mb="xs">{t('lb_props_hdr_mask', 'MASK PROPERTIES')}</Text>
         <MaskPropertiesPanel
           slot={selectedSlot}
           onUpdate={(updates) => builder.updateSlot(selectedSlot.id, updates)}
@@ -76,7 +78,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   if (selectedSlot) {
     return (
       <Box p="sm" style={panelStyle}>
-        <Text size="xs" fw={600} c="dimmed" mb="xs">SLOT PROPERTIES</Text>
+        <Text size="xs" fw={600} c="dimmed" mb="xs">{t('lb_props_hdr_slot', 'SLOT PROPERTIES')}</Text>
         <SlotPropertiesPanel
           slot={selectedSlot}
           onUpdate={(updates) => builder.updateSlot(selectedSlot.id, updates)}
@@ -93,7 +95,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   if (selectedOverlay) {
     return (
       <Box style={panelStyle}>
-        <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>GRAPHIC LAYER</Text>
+        <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_graphic', 'GRAPHIC LAYER')}</Text>
         <GraphicLayerPropertiesPanel
           key={selectedOverlay.id}
           overlay={selectedOverlay}
@@ -114,10 +116,10 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   }
 
   if (selectedText) {
-    const textIndex = (builder.template.texts ?? []).findIndex((t) => t.id === selectedText.id);
+    const textIndex = (builder.template.texts ?? []).findIndex((txt) => txt.id === selectedText.id);
     return (
       <Box style={panelStyle}>
-        <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>TEXT LAYER</Text>
+        <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_text', 'TEXT LAYER')}</Text>
         <TextPropertiesPanel
           key={selectedText.id}
           text={selectedText}
@@ -144,19 +146,19 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
 
   return (
     <Box p="sm" style={panelStyle}>
-      <Text size="xs" fw={600} c="dimmed" mb="xs">CANVAS</Text>
+      <Text size="xs" fw={600} c="dimmed" mb="xs">{t('lb_props_hdr_canvas', 'CANVAS')}</Text>
       <Stack gap="xs">
         <Box>
-          <Text size="xs" c="dimmed">Slots</Text>
+          <Text size="xs" c="dimmed">{t('lb_props_slots', 'Slots')}</Text>
           <Text size="sm" fw={500}>{slotCount}</Text>
         </Box>
         <Box>
-          <Text size="xs" c="dimmed">Graphic layers</Text>
+          <Text size="xs" c="dimmed">{t('lb_props_graphic_layers', 'Graphic layers')}</Text>
           <Text size="sm" fw={500}>{overlayCount}</Text>
         </Box>
         <Divider />
         <Box>
-          <Text size="xs" c="dimmed" mb={4}>Aspect ratio</Text>
+          <Text size="xs" c="dimmed" mb={4}>{t('lb_props_aspect_ratio', 'Aspect ratio')}</Text>
           <SegmentedControl
             size="xs"
             value={String(builder.template.canvasAspectRatio)}
@@ -166,17 +168,17 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           />
         </Box>
         <Box>
-          <Text size="xs" c="dimmed" mb={4}>Height mode</Text>
+          <Text size="xs" c="dimmed" mb={4}>{t('lb_props_height_mode', 'Height mode')}</Text>
           <Group gap={6} wrap="nowrap">
             <SegmentedControl
               size="xs"
               value={builder.template.canvasHeightMode || 'aspect-ratio'}
               onChange={(val) => builder.setCanvasHeightMode(val as 'aspect-ratio' | 'fixed-vh')}
               data={[
-                { label: 'Ratio', value: 'aspect-ratio' },
-                { label: 'vh', value: 'fixed-vh' },
+                { label: t('lb_props_ratio', 'Ratio'), value: 'aspect-ratio' },
+                { label: t('lb_props_vh', 'vh'), value: 'fixed-vh' },
               ]}
-              aria-label="Canvas height mode"
+              aria-label={t('lb_props_height_mode_aria', 'Canvas height mode')}
             />
             {(builder.template.canvasHeightMode || 'aspect-ratio') === 'fixed-vh' && (
               <NumberInput
@@ -188,7 +190,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
                 size="xs"
                 w={72}
                 suffix="vh"
-                aria-label="Canvas height in viewport units"
+                aria-label={t('lb_props_height_vh_aria', 'Canvas height in viewport units')}
               />
             )}
           </Group>
@@ -204,12 +206,12 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           }}
           fullWidth
         >
-          Add Slot
+          {t('lb_props_add_slot', 'Add Slot')}
         </Button>
         {recentActions.length > 0 && (
           <>
             <Divider />
-            <Text size="xs" fw={600} c="dimmed">Recent actions</Text>
+            <Text size="xs" fw={600} c="dimmed">{t('lb_props_recent_actions', 'Recent actions')}</Text>
             {recentActions.map((entry) => (
               <Text key={entry.id} size="xs" c="dimmed" truncate="end">{entry.label}</Text>
             ))}

@@ -20,10 +20,12 @@ import {
   Tooltip,
 } from '@mantine/core';
 import { IconCopy, IconRefresh, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient, WebhookEndpoint } from '@/services/apiClient';
 import { notifications } from '@mantine/notifications';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 
+// value + English default; the label is translated at the use site (t key set_wh_<event>).
 const WEBHOOK_EVENTS = [
   { value: 'campaign.created', label: 'Campaign created' },
   { value: 'campaign.updated', label: 'Campaign updated' },
@@ -35,6 +37,12 @@ const WEBHOOK_EVENTS = [
   { value: 'access.granted', label: 'Access granted' },
   { value: 'access.revoked', label: 'Access revoked' },
 ];
+
+/** Translate the WEBHOOK_EVENTS labels via keys like `set_wh_campaign_created`. */
+function useWebhookEventOptions() {
+  const { t } = useTranslation('wpsg');
+  return WEBHOOK_EVENTS.map((e) => ({ value: e.value, label: t(`set_wh_${e.value.replace('.', '_')}`, e.label) }));
+}
 
 const QUERY_KEY = ['webhooks'] as const;
 const MAX_ENDPOINTS = 5;
@@ -50,6 +58,7 @@ interface AddFormState {
 }
 
 function SecretReveal({ secret }: { secret: string }) {
+  const { t } = useTranslation('wpsg');
   return (
     <Box
       p="xs"
@@ -67,8 +76,8 @@ function SecretReveal({ secret }: { secret: string }) {
         </Text>
         <CopyButton value={secret}>
           {({ copied, copy }) => (
-            <Tooltip label={copied ? 'Copied!' : 'Copy secret'}>
-              <ActionIcon size="sm" variant="subtle" onClick={copy} aria-label="Copy secret">
+            <Tooltip label={copied ? t('set_wh_copied', 'Copied!') : t('set_wh_copy_secret', 'Copy secret')}>
+              <ActionIcon size="sm" variant="subtle" onClick={copy} aria-label={t('set_wh_copy_secret', 'Copy secret')}>
                 <IconCopy size={14} />
               </ActionIcon>
             </Tooltip>
@@ -98,6 +107,8 @@ function EndpointRow({
   isRotating: boolean;
   isUpdating: boolean;
 }) {
+  const { t } = useTranslation('wpsg');
+  const eventOptions = useWebhookEventOptions();
   const [showEvents, setShowEvents] = useState(false);
 
   return (
@@ -124,25 +135,25 @@ function EndpointRow({
               checked={endpoint.enabled}
               onChange={(e) => onToggleEnabled(endpoint.index, e.currentTarget.checked)}
               disabled={isUpdating}
-              label={endpoint.enabled ? 'On' : 'Off'}
+              label={endpoint.enabled ? t('set_wh_on', 'On') : t('set_wh_off', 'Off')}
             />
-            <Tooltip label="Rotate secret">
+            <Tooltip label={t('set_wh_rotate', 'Rotate secret')}>
               <ActionIcon
                 variant="subtle"
                 loading={isRotating}
                 onClick={() => onRotateSecret(endpoint.index)}
-                aria-label={`Rotate secret for ${endpoint.url}`}
+                aria-label={t('set_wh_rotate_for', 'Rotate secret for {{url}}', { url: endpoint.url })}
               >
                 <IconRefresh size={16} />
               </ActionIcon>
             </Tooltip>
-            <Tooltip label="Delete endpoint">
+            <Tooltip label={t('set_wh_delete', 'Delete endpoint')}>
               <ActionIcon
                 variant="subtle"
                 color="red"
                 loading={isDeleting}
                 onClick={() => onDelete(endpoint.index)}
-                aria-label={`Delete endpoint ${endpoint.url}`}
+                aria-label={t('set_wh_delete_ep', 'Delete endpoint {{url}}', { url: endpoint.url })}
               >
                 <IconTrash size={16} />
               </ActionIcon>
@@ -153,7 +164,7 @@ function EndpointRow({
         <Group gap="xs">
           {endpoint.events.length === 0 ? (
             <Badge size="xs" variant="outline">
-              All events
+              {t('set_wh_all_events', 'All events')}
             </Badge>
           ) : (
             endpoint.events.map((ev) => (
@@ -168,17 +179,17 @@ function EndpointRow({
             onClick={() => setShowEvents((v) => !v)}
             disabled={isUpdating}
           >
-            {showEvents ? 'Hide filter' : 'Edit filter'}
+            {showEvents ? t('set_wh_hide_filter', 'Hide filter') : t('set_wh_edit_filter', 'Edit filter')}
           </Button>
         </Group>
 
         {showEvents && (
           <MultiSelect
             size="xs"
-            data={WEBHOOK_EVENTS}
+            data={eventOptions}
             value={endpoint.events}
             onChange={(events) => onUpdateEvents(endpoint.index, events)}
-            placeholder="All events (leave empty to receive all)"
+            placeholder={t('set_wh_all_events_ph', 'All events (leave empty to receive all)')}
             clearable
           />
         )}
@@ -188,6 +199,8 @@ function EndpointRow({
 }
 
 export function WebhookSettingsSection({ apiClient }: Props) {
+  const { t } = useTranslation('wpsg');
+  const eventOptions = useWebhookEventOptions();
   const queryClient = useQueryClient();
 
   const { data: endpoints = [], isLoading } = useQuery({
@@ -219,7 +232,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       invalidate();
     },
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to create webhook endpoint.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, t('set_wh_err_create', 'Failed to create webhook endpoint.')) });
     },
   });
 
@@ -227,7 +240,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
     mutationFn: (index: number) => apiClient.deleteWebhookEndpoint(index),
     onSuccess: invalidate,
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to delete webhook endpoint.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, t('set_wh_err_delete', 'Failed to delete webhook endpoint.')) });
     },
   });
 
@@ -236,7 +249,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       apiClient.updateWebhookEndpoint(index, data),
     onSuccess: invalidate,
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to update webhook endpoint.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, t('set_wh_err_update', 'Failed to update webhook endpoint.')) });
     },
   });
 
@@ -245,11 +258,11 @@ export function WebhookSettingsSection({ apiClient }: Props) {
     onSuccess: (data, index) => {
       invalidate();
       const ep = endpoints.find((e) => e.index === index);
-      setRotatedLabel(ep?.url ?? `Endpoint ${index}`);
+      setRotatedLabel(ep?.url ?? t('set_wh_endpoint_n', 'Endpoint {{index}}', { index }));
       setRotatedSecret(data.secret);
     },
     onError: (err) => {
-      notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to rotate webhook secret.') });
+      notifications.show({ color: 'red', message: getErrorMessage(err, t('set_wh_err_rotate', 'Failed to rotate webhook secret.')) });
     },
   });
 
@@ -269,17 +282,12 @@ export function WebhookSettingsSection({ apiClient }: Props) {
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur.
-        Payloads include the event type, ISO timestamp, and event data. Use the{' '}
-        <Text component="span" ff="monospace" size="xs">
-          X-WPSG-Signature
-        </Text>{' '}
-        header to verify delivery authenticity.
+        {t('set_wh_desc', 'Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity.', { header: 'X-WPSG-Signature' })}
       </Text>
 
       {endpoints.length === 0 && (
         <Text size="sm" c="dimmed">
-          No webhook endpoints configured.
+          {t('set_wh_none', 'No webhook endpoints configured.')}
         </Text>
       )}
 
@@ -299,26 +307,26 @@ export function WebhookSettingsSection({ apiClient }: Props) {
 
       {endpoints.length < MAX_ENDPOINTS && (
         <>
-          <Divider label="Add endpoint" labelPosition="left" />
+          <Divider label={t('set_wh_add', 'Add endpoint')} labelPosition="left" />
           <Stack gap="sm">
             <TextInput
-              label="URL"
+              label={t('set_wh_url', 'URL')}
               placeholder="https://hooks.example.com/my-webhook"
               value={addForm.url}
               onChange={(e) => setAddForm((s) => ({ ...s, url: e.currentTarget.value }))}
               size="sm"
             />
             <MultiSelect
-              label="Events (optional)"
-              description="Leave empty to receive all events."
-              data={WEBHOOK_EVENTS}
+              label={t('set_wh_events_opt', 'Events (optional)')}
+              description={t('set_wh_events_desc', 'Leave empty to receive all events.')}
+              data={eventOptions}
               value={addForm.events}
               onChange={(events) => setAddForm((s) => ({ ...s, events }))}
               clearable
               size="sm"
             />
             <Checkbox
-              label="Enabled"
+              label={t('set_wh_enabled', 'Enabled')}
               checked={addForm.enabled}
               onChange={(e) => setAddForm((s) => ({ ...s, enabled: e.currentTarget.checked }))}
               size="sm"
@@ -330,7 +338,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
                 loading={createMutation.isPending}
                 disabled={!addForm.url.trim()}
               >
-                Add endpoint
+                {t('set_wh_add', 'Add endpoint')}
               </Button>
             </Box>
           </Stack>
@@ -341,21 +349,16 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       <Modal
         opened={newSecret !== null}
         onClose={() => setNewSecret(null)}
-        title="Webhook secret — save this now"
+        title={t('set_wh_secret_title', 'Webhook secret — save this now')}
         size="md"
       >
         <Stack gap="sm">
           <Text size="sm">
-            This is the only time the full secret will be shown. Copy it and configure your
-            endpoint to verify the{' '}
-            <Text component="span" ff="monospace" size="xs">
-              X-WPSG-Signature
-            </Text>{' '}
-            header using HMAC-SHA256.
+            {t('set_wh_secret_body', 'This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256.', { header: 'X-WPSG-Signature' })}
           </Text>
           {newSecret && <SecretReveal secret={newSecret} />}
           <Group justify="flex-end">
-            <Button onClick={() => setNewSecret(null)}>Done</Button>
+            <Button onClick={() => setNewSecret(null)}>{t('set_wh_done', 'Done')}</Button>
           </Group>
         </Stack>
       </Modal>
@@ -364,17 +367,16 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       <Modal
         opened={rotatedSecret !== null}
         onClose={() => setRotatedSecret(null)}
-        title="New webhook secret — save this now"
+        title={t('set_wh_rotated_title', 'New webhook secret — save this now')}
         size="md"
       >
         <Stack gap="sm">
           <Text size="sm">
-            The secret for <strong>{rotatedLabel}</strong> has been rotated. Update your endpoint
-            receiver with this new value before closing.
+            {t('set_wh_rotated_body', 'The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing.', { label: rotatedLabel })}
           </Text>
           {rotatedSecret && <SecretReveal secret={rotatedSecret} />}
           <Group justify="flex-end">
-            <Button onClick={() => setRotatedSecret(null)}>Done</Button>
+            <Button onClick={() => setRotatedSecret(null)}>{t('set_wh_done', 'Done')}</Button>
           </Group>
         </Stack>
       </Modal>

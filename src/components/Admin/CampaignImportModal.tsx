@@ -6,10 +6,10 @@ import {
   Text,
   Stack,
   Alert,
-  Code,
   FileButton,
 } from '@mantine/core';
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { CampaignExportPayload } from '@/services/apiClient';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -44,12 +44,12 @@ function CampaignImportModalContent({
   onHandleClose,
   onHandleImport,
 }: CampaignImportModalContentProps) {
+  const { t } = useTranslation('wpsg');
   const hasFile = parsed !== null || zipFile !== null;
   return (
     <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
       <Text size="sm" c="dimmed">
-        Select a <Code>.json</Code> or <Code>.zip</Code> file exported from WP Super Gallery.
-        Campaigns will be created as drafts — media and layout templates are imported by value.
+        {t('admin_import_desc', 'Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value.', { json: '.json', zip: '.zip' })}
       </Text>
 
       <FileButton resetRef={resetRef} onChange={onHandleFile} accept="application/json,.json,.zip,application/zip">
@@ -60,7 +60,7 @@ function CampaignImportModalContent({
             leftSection={<IconUpload size={16} />}
             fullWidth
           >
-            {hasFile ? 'Change file' : 'Select .json or .zip file'}
+            {hasFile ? t('admin_import_change_file', 'Change file') : t('admin_import_select_file', 'Select .json or .zip file')}
           </Button>
         )}
       </FileButton>
@@ -73,22 +73,22 @@ function CampaignImportModalContent({
 
       {parsed && (
         <Alert color="teal" icon={<IconInfoCircle size={16} />}>
-          Ready to import: <strong>{campaignTitle}</strong>
+          {t('admin_import_ready', 'Ready to import:')} <strong>{campaignTitle}</strong>
           {parsed.media_references?.length
-            ? ` (${parsed.media_references.length} media reference${parsed.media_references.length !== 1 ? 's' : ''})`
+            ? t('admin_import_media_refs', ' ({{count}} media reference)', { count: parsed.media_references.length })
             : ''}
         </Alert>
       )}
 
       {zipFile && (
         <Alert color="teal" icon={<IconInfoCircle size={16} />}>
-          Ready to import: <strong>{zipFile.name}</strong>
+          {t('admin_import_ready', 'Ready to import:')} <strong>{zipFile.name}</strong>
         </Alert>
       )}
 
       <Group {...getWpsgDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
         <Button variant="subtle" onClick={onHandleClose} disabled={isSaving}>
-          Cancel
+          {t('admin_cancel', 'Cancel')}
         </Button>
         <Button
           disabled={!hasFile}
@@ -96,7 +96,7 @@ function CampaignImportModalContent({
           onClick={onHandleImport}
           leftSection={<IconUpload size={16} />}
         >
-          Import
+          {t('admin_import', 'Import')}
         </Button>
       </Group>
     </Stack>
@@ -112,6 +112,7 @@ export function CampaignImportModal({
   onImportBinary,
   onClose,
 }: CampaignImportModalProps) {
+  const { t } = useTranslation('wpsg');
   const [parsed, setParsed] = useState<CampaignExportPayload | null>(null);
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -138,17 +139,17 @@ export function CampaignImportModal({
           !('version' in json) ||
           !('campaign' in json)
         ) {
-          setParseError('Invalid export file: missing version or campaign key.');
+          setParseError(t('admin_import_err_invalid', 'Invalid export file: missing version or campaign key.'));
           return;
         }
         const payload = json as CampaignExportPayload;
         if (payload.version !== 1) {
-          setParseError(`Unsupported export version: ${payload.version}. Expected 1.`);
+          setParseError(t('admin_import_err_version', 'Unsupported export version: {{version}}. Expected 1.', { version: payload.version }));
           return;
         }
         setParsed(payload);
       } catch {
-        setParseError('Could not parse JSON. Make sure the file is a valid campaign export.');
+        setParseError(t('admin_import_err_parse', 'Could not parse JSON. Make sure the file is a valid campaign export.'));
       }
     };
     reader.readAsText(file);
@@ -171,7 +172,7 @@ export function CampaignImportModal({
   };
 
   const campaignTitle = parsed
-    ? String((parsed.campaign as Record<string, unknown>).title ?? 'Untitled')
+    ? String((parsed.campaign as Record<string, unknown>).title ?? t('admin_untitled', 'Untitled'))
     : null;
 
   return (
@@ -179,7 +180,7 @@ export function CampaignImportModal({
       {...getWpsgDebugProps('CampaignImportModal')}
       opened={opened}
       onClose={handleClose}
-      title={<span {...getWpsgDebugProps('CampaignImportModal', 'title')}>Import Campaign</span>}
+      title={<span {...getWpsgDebugProps('CampaignImportModal', 'title')}>{t('admin_import_title', 'Import Campaign')}</span>}
       size="sm"
       centered
       closeButtonProps={getWpsgDebugProps('CampaignImportModal', 'close')}

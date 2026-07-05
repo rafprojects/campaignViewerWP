@@ -1,5 +1,6 @@
 import { Button, Group, ScrollArea, Skeleton, Table, Text, TextInput } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import type { AuditFilters } from '@/services/adminQuery';
@@ -65,46 +66,47 @@ export function AuditTab({
   exportingZip,
   auditError,
 }: AuditTabProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <>
       <Text size="sm" fw={600} id="audit-heading" mb={2}>
-        Campaign Activity
+        {t('admin_audit_heading', 'Campaign Activity')}
       </Text>
-      <Text size="xs" c="dimmed" mb="xs">All activity recorded for the selected campaign.</Text>
+      <Text size="xs" c="dimmed" mb="xs">{t('admin_audit_subtitle', 'All activity recorded for the selected campaign.')}</Text>
       <Group mb="sm" wrap="wrap" gap="sm">
         <CampaignSelector
           data={campaignSelectData}
           value={auditCampaignId}
           onChange={(v) => onAuditCampaignChange(v)}
           style={{ minWidth: 200 }}
-          aria-label="Select campaign for audit log"
+          aria-label={t('admin_audit_select_aria', 'Select campaign for audit log')}
         />
         <TextInput
           size="xs"
-          placeholder="From (YYYY-MM-DD)"
+          placeholder={t('admin_audit_from_ph', 'From (YYYY-MM-DD)')}
           value={filters.from ?? ''}
           onChange={(e) => onFiltersChange(mergeFilter(filters, 'from', e.currentTarget.value))}
-          aria-label="Audit log from date"
+          aria-label={t('admin_audit_from_aria', 'Audit log from date')}
           style={{ width: 150 }}
         />
         <TextInput
           size="xs"
-          placeholder="To (YYYY-MM-DD)"
+          placeholder={t('admin_audit_to_ph', 'To (YYYY-MM-DD)')}
           value={filters.to ?? ''}
           onChange={(e) => onFiltersChange(mergeFilter(filters, 'to', e.currentTarget.value))}
-          aria-label="Audit log to date"
+          aria-label={t('admin_audit_to_aria', 'Audit log to date')}
           style={{ width: 150 }}
         />
         <TextInput
           size="xs"
-          placeholder="Action filter"
+          placeholder={t('admin_audit_action_ph', 'Action filter')}
           value={filters.action ?? ''}
           onChange={(e) => onFiltersChange(mergeFilter(filters, 'action', e.currentTarget.value))}
-          aria-label="Audit log action filter"
+          aria-label={t('admin_audit_action_aria', 'Audit log action filter')}
           style={{ width: 160 }}
         />
-        <Button size="xs" variant="default" onClick={onExportCsv} aria-label="Export audit log as CSV">
-          Export CSV
+        <Button size="xs" variant="default" onClick={onExportCsv} aria-label={t('admin_audit_csv_aria', 'Export audit log as CSV')}>
+          {t('admin_audit_csv', 'Export CSV')}
         </Button>
         {onExportZip && (
           <Button
@@ -112,31 +114,31 @@ export function AuditTab({
             variant="light"
             onClick={onExportZip}
             loading={exportingZip ?? false}
-            aria-label="Export audit log as ZIP"
+            aria-label={t('admin_audit_zip_aria', 'Export audit log as ZIP')}
           >
-            Download ZIP
+            {t('admin_audit_zip', 'Download ZIP')}
           </Button>
         )}
       </Group>
       {auditLoading ? (
         <Table.ScrollContainer minWidth={680}>
-          <Table verticalSpacing="sm" aria-label="Loading audit entries">
+          <Table verticalSpacing="sm" aria-label={t('admin_audit_loading_aria', 'Loading audit entries')}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th miw={140}>When</Table.Th>
-                <Table.Th miw={200}>Summary</Table.Th>
-                <Table.Th miw={70}>Severity</Table.Th>
-                <Table.Th miw={80}>Actor</Table.Th>
-                <Table.Th miw={160}>Details</Table.Th>
+                <Table.Th miw={140}>{t('admin_audit_th_when', 'When')}</Table.Th>
+                <Table.Th miw={200}>{t('admin_audit_th_summary', 'Summary')}</Table.Th>
+                <Table.Th miw={70}>{t('admin_audit_th_severity', 'Severity')}</Table.Th>
+                <Table.Th miw={80}>{t('admin_audit_th_actor', 'Actor')}</Table.Th>
+                <Table.Th miw={160}>{t('admin_audit_th_details', 'Details')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody><AuditSkeletonRows /></Table.Tbody>
           </Table>
         </Table.ScrollContainer>
       ) : auditError ? (
-        <Text c="red" role="alert" aria-live="assertive">Failed to load audit entries: {auditError.message}</Text>
+        <Text c="red" role="alert" aria-live="assertive">{t('admin_audit_load_fail', 'Failed to load audit entries: {{message}}', { message: auditError.message })}</Text>
       ) : auditEntriesCount === 0 ? (
-        <Text c="dimmed" role="status" aria-live="polite">No audit entries yet.</Text>
+        <Text c="dimmed" role="status" aria-live="polite">{t('admin_audit_none', 'No audit entries yet.')}</Text>
       ) : (
         <ScrollArea
           offsetScrollbars
@@ -146,14 +148,14 @@ export function AuditTab({
           h={360}
         >
           <Table.ScrollContainer minWidth={680}>
-            <Table verticalSpacing="sm" highlightOnHover aria-label="Audit entries">
+            <Table verticalSpacing="sm" highlightOnHover aria-label={t('admin_audit_entries_aria', 'Audit entries')}>
               <Table.Thead>
                 <Table.Tr>
-                  <Table.Th miw={140}>When</Table.Th>
-                  <Table.Th miw={200}>Summary</Table.Th>
-                  <Table.Th miw={70}>Severity</Table.Th>
-                  <Table.Th miw={80}>Actor</Table.Th>
-                  <Table.Th miw={160}>Details</Table.Th>
+                  <Table.Th miw={140}>{t('admin_audit_th_when', 'When')}</Table.Th>
+                  <Table.Th miw={200}>{t('admin_audit_th_summary', 'Summary')}</Table.Th>
+                  <Table.Th miw={70}>{t('admin_audit_th_severity', 'Severity')}</Table.Th>
+                  <Table.Th miw={80}>{t('admin_audit_th_actor', 'Actor')}</Table.Th>
+                  <Table.Th miw={160}>{t('admin_audit_th_details', 'Details')}</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>{auditRows}</Table.Tbody>

@@ -25,6 +25,7 @@ import { MediaDeleteModal } from './MediaDeleteModal';
 import { NearDuplicateWarning } from '@/components/Common/NearDuplicateWarning';
 import { IconPlus, IconRefresh, IconLayoutGrid, IconList, IconGridDots } from '@tabler/icons-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { useMediaItems } from '@/services/adminQuery';
 import { useGetSettings } from '@/services/settingsQuery';
@@ -76,6 +77,7 @@ const LIST_MIN_WIDTH = 720;
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
+  const { t } = useTranslation('wpsg');
   const rootId = useRootId();
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
@@ -271,10 +273,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // Stable data arrays for SegmentedControl — new array references on every render can trigger
   // Mantine's internal ref-measurement loop and cause infinite setState cycles under rapid updates.
   const viewModeData = useMemo(() => [
-    { value: 'grid', label: <Tooltip label="Grid View"><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
-    { value: 'compact', label: <Tooltip label="Compact Grid"><Box><IconGridDots size={16} /></Box></Tooltip> },
-    { value: 'list', label: <Tooltip label="List View"><Box><IconList size={16} /></Box></Tooltip> },
-  ], []);
+    { value: 'grid', label: <Tooltip label={t('admin_media_view_grid', 'Grid View')}><Box><IconLayoutGrid size={16} /></Box></Tooltip> },
+    { value: 'compact', label: <Tooltip label={t('admin_media_view_compact', 'Compact Grid')}><Box><IconGridDots size={16} /></Box></Tooltip> },
+    { value: 'list', label: <Tooltip label={t('admin_media_view_list', 'List View')}><Box><IconList size={16} /></Box></Tooltip> },
+  ], [t]);
 
   const cardSizeData = useMemo(() => [
     { value: 'small', label: 'S' },
@@ -285,12 +287,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   // P34-B: sort selector options — disable usage sort while summary is being fetched
   // to avoid showing a misleading all-zero-count ordering before data arrives.
   const sortModeData = useMemo(() => [
-    { value: 'order', label: 'Order' },
-    { value: 'title', label: 'Title A–Z' },
-    { value: 'created', label: 'Date uploaded' },
-    { value: 'size', label: 'File size' },
-    { value: 'usage', label: 'Usage count', disabled: usageSummaryLoading },
-  ], [usageSummaryLoading]);
+    { value: 'order', label: t('admin_media_sort_order', 'Order') },
+    { value: 'title', label: t('admin_media_sort_title', 'Title A–Z') },
+    { value: 'created', label: t('admin_media_sort_created', 'Date uploaded') },
+    { value: 'size', label: t('admin_media_sort_size', 'File size') },
+    { value: 'usage', label: t('admin_media_sort_usage', 'Usage count'), disabled: usageSummaryLoading },
+  ], [usageSummaryLoading, t]);
 
   const handleViewModeChange = useCallback((v: Primitive) => setViewMode(v as unknown as ViewMode), [setViewMode]);
   const handleCardSizeChange = useCallback((v: Primitive) => setCardSize(v as unknown as CardSize), [setCardSize]);
@@ -308,8 +310,8 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
     <div ref={scrollContainerRef} style={{ overflowY: 'auto', maxHeight: '70vh' }}>
       <Group justify="space-between" mb="md" wrap="wrap" gap="sm">
         <Group gap="md" wrap="wrap">
-          <Text fw={700}>Media</Text>
-          <Text size="sm" c="dimmed">({displayedMedia.length}{orphanFilter ? ` / ${media.length}` : ''} items)</Text>
+          <Text fw={700}>{t('admin_media_heading', 'Media')}</Text>
+          <Text size="sm" c="dimmed">({displayedMedia.length}{orphanFilter ? ` / ${media.length}` : ''} {t('admin_media_items', 'items')})</Text>
         </Group>
         <Group gap="sm" wrap="wrap" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
           {/* View Mode Toggle */}
@@ -317,7 +319,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             size="xs"
             value={viewMode}
             onChange={handleViewModeChange}
-            aria-label="Media view mode"
+            aria-label={t('admin_media_view_mode', 'Media view mode')}
             data={viewModeData}
           />
           {/* Card Size (only for grid modes) */}
@@ -326,7 +328,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               size="xs"
               value={cardSize}
               onChange={handleCardSizeChange}
-              aria-label="Media card size"
+              aria-label={t('admin_media_card_size', 'Media card size')}
               data={cardSizeData}
             />
           )}
@@ -337,16 +339,16 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             onChange={(v) => v && setSortMode(v as MediaSortMode)}
             data={sortModeData}
             style={{ minWidth: 138 }}
-            aria-label="Media sort mode"
+            aria-label={t('admin_media_sort_mode', 'Media sort mode')}
             comboboxProps={{ width: 160 }}
           />
-          <Tooltip label="Show only items exclusive to this campaign">
+          <Tooltip label={t('admin_media_exclusive_tooltip', 'Show only items exclusive to this campaign')}>
             <Switch
               size="xs"
-              label="Exclusive only"
+              label={t('admin_media_exclusive', 'Exclusive only')}
               checked={orphanFilter}
               onChange={(e) => setOrphanFilter(e.currentTarget.checked)}
-              aria-label="Show only media exclusive to this campaign"
+              aria-label={t('admin_media_exclusive_aria', 'Show only media exclusive to this campaign')}
             />
           </Tooltip>
           <Button
@@ -357,10 +359,10 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
             disabled={media.length === 0}
             style={{ flex: '0 0 auto' }}
           >
-            Rescan Types
+            {t('admin_media_rescan_types', 'Rescan Types')}
           </Button>
           <Button leftSection={<IconPlus />} onClick={() => setAddOpen(true)} style={{ flex: '0 0 auto' }}>
-            Add Media
+            {t('admin_media_add', 'Add Media')}
           </Button>
         </Group>
       </Group>
@@ -389,12 +391,12 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                 <Table verticalSpacing="xs" highlightOnHover>
                   <Table.Thead>
                     <Table.Tr>
-                      <Table.Th w={60}>Thumb</Table.Th>
-                      <Table.Th>Caption</Table.Th>
-                      <Table.Th>Type</Table.Th>
-                      <Table.Th>Source</Table.Th>
-                      <Table.Th w={100}>Usage</Table.Th>
-                      <Table.Th w={180}>Actions</Table.Th>
+                      <Table.Th w={60}>{t('admin_media_col_thumb', 'Thumb')}</Table.Th>
+                      <Table.Th>{t('admin_media_col_caption', 'Caption')}</Table.Th>
+                      <Table.Th>{t('admin_media_col_type', 'Type')}</Table.Th>
+                      <Table.Th>{t('admin_media_col_source', 'Source')}</Table.Th>
+                      <Table.Th w={100}>{t('admin_media_col_usage', 'Usage')}</Table.Th>
+                      <Table.Th w={180}>{t('admin_col_actions', 'Actions')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                 </Table>
@@ -420,7 +422,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                     total={listTotalPages}
                     size="sm"
                     withEdges
-                    aria-label="Media list pages"
+                    aria-label={t('admin_media_list_pages', 'Media list pages')}
                   />
                 </Group>
               )}
@@ -460,7 +462,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
               }}>
                 <img
                   src={activeMediaItem.thumbnail ?? activeMediaItem.url ?? FALLBACK_IMAGE_SRC}
-                  alt={activeMediaItem.caption || 'media item'}
+                  alt={activeMediaItem.caption || t('admin_media_drag_alt', 'media item')}
                   style={{ display: 'block', width: '100%', height: 96, objectFit: 'cover' }}
                 />
                 {activeMediaItem.caption && (

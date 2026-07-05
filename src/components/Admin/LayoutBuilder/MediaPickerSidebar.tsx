@@ -9,6 +9,7 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Stack,
   Text,
@@ -80,6 +81,7 @@ export function MediaPickerSidebar({
   onClearMedia,
   onAutoAssign,
 }: MediaPickerSidebarProps) {
+  const { t } = useTranslation('wpsg');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -182,7 +184,7 @@ export function MediaPickerSidebar({
     <Stack gap="sm" h="100%">
       <Group justify="space-between" wrap="nowrap">
         <Text size="sm" fw={600}>
-          Media ({media.length})
+          {t('lb_mps_media_count', 'Media ({{count}})', { count: media.length })}
         </Text>
         <Menu shadow="md" width={190} withinPortal>
           <Menu.Target>
@@ -193,18 +195,18 @@ export function MediaPickerSidebar({
               rightSection={<IconChevronDown size={12} />}
               disabled={media.length === 0 || template.slots.length === 0}
             >
-              Auto
+              {t('lb_mps_auto', 'Auto')}
             </Button>
           </Menu.Target>
           <Menu.Dropdown>
             <Menu.Item leftSection={<IconArrowRight size={13} />} onClick={onAutoAssign}>
-              Auto-fill (forward)
+              {t('lb_mps_autofill_fwd', 'Auto-fill (forward)')}
             </Menu.Item>
             <Menu.Item leftSection={<IconArrowLeft size={13} />} onClick={handleAutoAssignReverse}>
-              Auto-fill (reverse)
+              {t('lb_mps_autofill_rev', 'Auto-fill (reverse)')}
             </Menu.Item>
             <Menu.Item leftSection={<IconArrowsRandom size={13} />} onClick={handleShuffleAssign}>
-              Shuffle &amp; fill
+              {t('lb_mps_shuffle', 'Shuffle & fill')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item
@@ -213,7 +215,7 @@ export function MediaPickerSidebar({
               onClick={handleClearAll}
               disabled={!template.slots.some((s) => s.mediaId)}
             >
-              Clear all assigns
+              {t('lb_mps_clear_all', 'Clear all assigns')}
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
@@ -222,31 +224,31 @@ export function MediaPickerSidebar({
       {/* Search + view toggle */}
       <Group gap={4} wrap="nowrap">
         <TextInput
-          placeholder="Search media…"
+          placeholder={t('lb_mps_search_ph', 'Search media…')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.currentTarget.value)}
           leftSection={<IconSearch size={13} />}
           size="xs"
           style={{ flex: 1 }}
-          aria-label="Search media"
+          aria-label={t('lb_mps_search_aria', 'Search media')}
         />
-        <Tooltip label="List view">
+        <Tooltip label={t('lb_mps_list_view', 'List view')}>
           <ActionIcon
             size="sm"
             variant={viewMode === 'list' ? 'filled' : 'subtle'}
             onClick={() => setViewMode('list')}
-            aria-label="List view"
+            aria-label={t('lb_mps_list_view', 'List view')}
             aria-pressed={viewMode === 'list'}
           >
             <IconLayoutList size={14} />
           </ActionIcon>
         </Tooltip>
-        <Tooltip label="Grid view">
+        <Tooltip label={t('lb_mps_grid_view', 'Grid view')}>
           <ActionIcon
             size="sm"
             variant={viewMode === 'grid' ? 'filled' : 'subtle'}
             onClick={() => setViewMode('grid')}
-            aria-label="Grid view"
+            aria-label={t('lb_mps_grid_view', 'Grid view')}
             aria-pressed={viewMode === 'grid'}
           >
             <IconLayoutGrid size={14} />
@@ -256,11 +258,11 @@ export function MediaPickerSidebar({
 
       {singleSelectedSlotId ? (
         <Text size="xs" c="dimmed">
-          Click or drag a media item to assign it to the selected slot.
+          {t('lb_mps_hint_selected', 'Click or drag a media item to assign it to the selected slot.')}
         </Text>
       ) : (
         <Text size="xs" c="dimmed">
-          Select a slot first, then choose media to assign.
+          {t('lb_mps_hint_none', 'Select a slot first, then choose media to assign.')}
         </Text>
       )}
 
@@ -268,7 +270,7 @@ export function MediaPickerSidebar({
       {template.slots.some((s) => s.mediaId) && (
         <>
           <Text size="xs" fw={500} mt="xs">
-            Assignments
+            {t('lb_mps_assignments', 'Assignments')}
           </Text>
           <Stack gap={2}>
             {template.slots.map((slot, idx) => {
@@ -277,16 +279,16 @@ export function MediaPickerSidebar({
               return (
                 <Group key={slot.id} gap={4} wrap="nowrap">
                   <Badge size="xs" variant="light" w={50} style={{ flexShrink: 0 }}>
-                    Slot {idx + 1}
+                    {t('lb_mps_slot_n', 'Slot {{n}}', { n: idx + 1 })}
                   </Badge>
                   <Text size="xs" truncate style={{ flex: 1 }}>
                     {mediaItem?.title || slot.mediaId}
                   </Text>
-                  <Tooltip label="Unassign">
+                  <Tooltip label={t('lb_mps_unassign', 'Unassign')}>
                     <UnstyledButton
                       onClick={() => handleClearSlotMedia(slot.id)}
                       style={{ lineHeight: 0 }}
-                      aria-label={`Unassign media from slot ${idx + 1}`}
+                      aria-label={t('lb_mps_unassign_aria', 'Unassign media from slot {{n}}', { n: idx + 1 })}
                     >
                       <IconX size={12} />
                     </UnstyledButton>
@@ -355,7 +357,7 @@ export function MediaPickerSidebar({
 
             {filteredMedia.length === 0 && (
               <Text size="xs" c="dimmed" ta="center" py="lg">
-                {searchQuery ? 'No results.' : 'No media items available.'}
+                {searchQuery ? t('lb_mps_no_results', 'No results.') : t('lb_mps_no_media', 'No media items available.')}
               </Text>
             )}
           </Stack>
@@ -427,7 +429,7 @@ export function MediaPickerSidebar({
 
             {filteredMedia.length === 0 && (
               <Text size="xs" c="dimmed" ta="center" py="lg" style={{ gridColumn: '1 / -1' }}>
-                {searchQuery ? 'No results.' : 'No media items available.'}
+                {searchQuery ? t('lb_mps_no_results', 'No results.') : t('lb_mps_no_media', 'No media items available.')}
               </Text>
             )}
           </div>

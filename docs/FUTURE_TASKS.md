@@ -122,7 +122,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 **What to implement:**
 - Add an optional `href` (+ link behavior, e.g. same-tab/new-tab) to `LayoutTextLayer`; absent = plain text, so existing text layers stay back-compatible.
 - Render a CTA layer as a real anchor (`<a>` / `role="link"`) with correct keyboard focus + Enter/Space activation and an accessible name — reuse the slot click/keydown a11y pattern already in `LayoutBuilderGallery.tsx` (`role`/`tabIndex`/key handling).
-- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE61_REPORT.md](PHASE61_REPORT.md)).
+- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE62_REPORT.md](PHASE62_REPORT.md)).
 - Sanitize the URL on save and on render.
 
 **Files:** `src/types/index.ts` (`LayoutTextLayer`), `src/components/Admin/LayoutBuilder/TextPropertiesPanel.tsx`, `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`.
@@ -185,6 +185,19 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation
+
+**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass".
+
+**Context:** Two low-severity, English-safe i18n items surfaced by the review:
+
+1. **Sentence composition (F3).** `ArchiveCompanyModal.tsx` assembles its confirmation from `admin_archco_msg_pre` + `<strong>{name}</strong>` + `admin_archco_msg_post` fragments — fine in English but not word-order-portable for other locales. Fix via a `<Trans>` component so translators get one reorderable unit. Worth a quick sweep for other split-sentence-around-a-node cases while there.
+2. **Locale re-translation.** F2 changed the media-import toast source strings and added `_other` plural siblings (`admin_media_imported`, `admin_media_imported_skipped`). The five packs (fr/es/de/zh/ru) now fall back to correct English for that one toast until re-translated. Fold in the tracked `ru_RU` 3-form plural for the password-length string at the same time. Regenerate via `npm run i18n:generate` → `wp i18n make-pot`, then update the `.po/.mo`.
+
+**Effort:** Low | **Impact:** Low (English-safe); improves non-English fidelity.
+
+---
+
 ## Accessibility
 
 ### Full WCAG AA Audit
@@ -201,7 +214,60 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Monetization & Distribution
 
-*No tasks here yet.*
+### Store Listing Artwork — Banner, Icon, Screenshots
+
+**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E (deferred — graphic-design/capture deliverable).
+
+**Files:** `.wordpress-org/` (spec at [`.wordpress-org/README.md`](../.wordpress-org/README.md)); screenshot captions in [`wp-plugin/wp-super-gallery/readme.txt`](../wp-plugin/wp-super-gallery/readme.txt) `== Screenshots ==`.
+
+**Context:** P60-E delivered all *writable* store collateral (privacy statement, install/troubleshooting guide, readme polish) and a precise asset **spec/manifest**, but the binary graphics themselves are a design task and were not authorable in that track. Produce:
+- `banner-772x250.png` + `banner-1544x500.png` (retina) — product name + one-line value prop.
+- `icon-128x128.png` + `icon-256x256.png` (+ optional `icon.svg`) — simple high-contrast mark legible at 128px.
+- `screenshot-1..5.png` — **must** stay in caption-order sync with `readme.txt`; capture from a seeded wp-env instance with representative (non-placeholder) content on the default theme.
+
+The 10up SVN deploy action reads `.wordpress-org/` automatically, so finals drop straight in with no wiring. Filenames must match the spec exactly.
+
+**Dependencies:** a designer (banner/icon); a seeded wp-env + screenshot-capture pass (screenshots). Gates a polished public WP.org / premium listing but does **not** block the functional release ZIP.
+
+**Effort:** Medium (design-bound, not code) | **Impact:** High for listing conversion; none for plugin function.
+
+---
+
+## Privacy & Compliance
+
+**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
+
+### WordPress Core Privacy Integration (DSAR Export/Erase) — *highest-value*
+
+**Files:** new privacy-tools registrations (`wp_privacy_personal_data_exporters` / `wp_privacy_personal_data_erasers`); data sources in `class-wpsg-db.php` (`wp_wpsg_access_requests`, `wp_wpsg_audit_log`, `access_grants` meta).
+
+**Context:** The plugin stores visitor emails (`wp_wpsg_access_requests.email`) and staff usernames (`wp_wpsg_audit_log`) but registers **no** exporters/erasers, so admins cannot fulfil data-subject access/erasure requests via **Tools → Export/Erase Personal Data** — today it is a manual SQL/WP-CLI process (documented in `PRIVACY.md §5`). Registering exporters/erasers keyed on email (and username) is the standard, expected integration for a plugin that holds PII.
+
+**Effort:** Medium | **Impact:** High for GDPR-serious buyers / EU deployments; strengthens the public-listing story.
+
+### Retention / Auto-Purge for Email & Audit-Log Tables
+
+**Files:** `class-wpsg-maintenance.php` (mirror the existing `wpsg_analytics_purge` cron), settings in `class-wpsg-settings-registry.php`.
+
+**Context:** `wp_wpsg_access_requests` (emails) and `wp_wpsg_audit_log` (usernames/attempted logins) have **no purge job** and grow unbounded. Analytics already has a retention job — but it defaults to `analytics_retention_days = 0` (never purge). Add optional retention windows for the two PII tables and consider a sane non-zero analytics default.
+
+**Effort:** Small-Medium | **Impact:** Medium — data-minimisation hygiene.
+
+### Server-Side (PHP) Sentry PII Scrubber
+
+**Files:** `class-wpsg-sentry.php` (parity with the browser-side `beforeSend` scrubber in `src/services/monitoring/sentry.ts`).
+
+**Context:** The browser Sentry path strips `Authorization` headers and `user.ip_address`; the PHP path sends `$context` verbatim. Sentry is off by default (requires a DSN), so this is low-likelihood, but a scrubber should exist before recommending server-side error reporting.
+
+**Effort:** Small | **Impact:** Low (off by default) but removes a footgun.
+
+### Per-Day Salt Rotation for Analytics Visitor Hash
+
+**Files:** `class-wpsg-analytics-controller.php` (`record_analytics_event`).
+
+**Context:** `visitor_hash = sha256(IP + wp_salt('auth'))` uses a static, non-rotating salt, so a given IP always hashes the same value — good for unique-visitor counts but re-identifiable for the small IPv4 space. Rotating the salt per day (bucketing the hash by date) reduces re-identifiability while preserving same-day uniqueness. Trade-off: cross-day unique counts become approximate.
+
+**Effort:** Small | **Impact:** Low-Medium — hardens an already-pseudonymised field.
 
 ---
 
@@ -389,7 +455,7 @@ When promoting future tasks to an active phase:
 
 *Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
 
-*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE61_REPORT.md](PHASE61_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
+*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE62_REPORT.md](PHASE62_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
 
 *Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
@@ -398,3 +464,5 @@ When promoting future tasks to an active phase:
 *Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
 
 *Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
+
+*Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*

@@ -9,6 +9,7 @@
  * only the TextInput's own ephemeral value so it can clear itself after submit.
  */
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   FileButton,
@@ -49,11 +50,15 @@ export function AssetUploader({
   isUploading = false,
   disabled = false,
   accept = 'image/*',
-  uploadLabel = 'Upload image',
-  urlPlaceholder = 'Or paste image URL…',
+  uploadLabel,
+  urlPlaceholder,
   uploadAriaLabel,
-  urlAriaLabel = 'Image URL',
+  urlAriaLabel,
 }: AssetUploaderProps) {
+  const { t } = useTranslation('wpsg');
+  const effectiveUploadLabel = uploadLabel ?? t('lb_au_upload_image', 'Upload image');
+  const effectiveUrlPlaceholder = urlPlaceholder ?? t('lb_au_url_ph', 'Or paste image URL…');
+  const effectiveUrlAria = urlAriaLabel ?? t('lb_au_url_aria', 'Image URL');
   const [urlValue, setUrlValue] = useState('');
   // FileButton needs a reset ref to clear the native input after each pick
   // so the same file can be re-selected without the change event being swallowed.
@@ -95,10 +100,10 @@ export function AssetUploader({
               isUploading ? <Loader size={10} /> : <IconUpload size={12} />
             }
             disabled={isDisabled}
-            aria-label={uploadAriaLabel ?? uploadLabel}
+            aria-label={uploadAriaLabel ?? effectiveUploadLabel}
             {...props}
           >
-            {uploadLabel}
+            {effectiveUploadLabel}
           </Button>
         )}
       </FileButton>
@@ -106,12 +111,12 @@ export function AssetUploader({
       {onUrlSubmit && (
         <TextInput
           size="xs"
-          placeholder={urlPlaceholder}
+          placeholder={effectiveUrlPlaceholder}
           value={urlValue}
           onChange={(e) => setUrlValue(e.currentTarget.value)}
           onKeyDown={handleUrlKeyDown}
           disabled={isDisabled}
-          aria-label={urlAriaLabel}
+          aria-label={effectiveUrlAria}
         />
       )}
     </Stack>

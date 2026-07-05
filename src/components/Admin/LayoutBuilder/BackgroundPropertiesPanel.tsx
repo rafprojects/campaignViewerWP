@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Text,
@@ -66,6 +67,7 @@ const RADIAL_SIZES: Array<{ value: RadialSize; label: string }> = [
 // ── Component ────────────────────────────────────────────────
 
 export function BackgroundPropertiesPanel() {
+  const { t } = useTranslation('wpsg');
   const {
     builder,
     assetLibrary,
@@ -82,10 +84,10 @@ export function BackgroundPropertiesPanel() {
         size="xs"
         fullWidth
         data={[
-          { label: 'None', value: 'none' },
-          { label: 'Color', value: 'color' },
-          { label: 'Gradient', value: 'gradient' },
-          { label: 'Image', value: 'image' },
+          { label: t('lb_bg_mode_none', 'None'), value: 'none' },
+          { label: t('lb_bg_mode_color', 'Color'), value: 'color' },
+          { label: t('lb_bg_mode_gradient', 'Gradient'), value: 'gradient' },
+          { label: t('lb_bg_mode_image', 'Image'), value: 'image' },
         ]}
         value={mode}
         onChange={(val) => {
@@ -106,7 +108,7 @@ export function BackgroundPropertiesPanel() {
       {/* ── Asset Library for background image ── */}
       {mode === 'image' && (assetLibrary ?? []).length > 0 && (
         <>
-          <SectionHeader label="Asset Library" />
+          <SectionHeader label={t('lb_bg_asset_library', 'Asset Library')} />
           <DesignAssetsGrid
             items={assetLibrary ?? []}
             onSelect={(url) => builder.setBackgroundImage(url)}
@@ -132,19 +134,20 @@ function BackgroundModeControls({
   handleUploadBgImage: (file: File) => void;
   isUploadingBg: boolean;
 }) {
+  const { t } = useTranslation('wpsg');
   const mode = builder.template.backgroundMode ?? 'color';
   const [stopCount, setStopCount] = useState<2 | 3>(
     (builder.template.backgroundGradientStops?.length ?? 2) > 2 ? 3 : 2,
   );
 
   if (mode === 'none') {
-    return <Text size="xs" c="dimmed" mt={4}>Transparent background — no fill applied.</Text>;
+    return <Text size="xs" c="dimmed" mt={4}>{t('lb_bg_transparent', 'Transparent background — no fill applied.')}</Text>;
   }
 
   if (mode === 'color') {
     return (
       <Stack gap={6}>
-        <GRow label="Color">
+        <GRow label={t('lb_slot_color', 'Color')}>
           <ColorInput
             size="xs"
             value={builder.template.backgroundColor}
@@ -189,13 +192,13 @@ function BackgroundModeControls({
       <Stack gap={6}>
         <Box style={{ height: 28, borderRadius: 4, background: previewCss, border: '1px solid var(--mantine-color-default-border)' }} />
 
-        <GRow label="Type">
+        <GRow label={t('lb_slot_type', 'Type')}>
           <SegmentedControl
             size="xs"
             data={[
-              { label: 'Linear', value: 'linear' },
-              { label: 'Radial', value: 'radial' },
-              { label: 'Conic', value: 'conic' },
+              { label: t('lb_bg_linear', 'Linear'), value: 'linear' },
+              { label: t('lb_bg_radial', 'Radial'), value: 'radial' },
+              { label: t('lb_bg_conic', 'Conic'), value: 'conic' },
             ]}
             value={gradType}
             onChange={(v) => {
@@ -210,16 +213,16 @@ function BackgroundModeControls({
 
         {gradType === 'linear' && (
           <>
-            <GRow label="Dir">
+            <GRow label={t('lb_bg_dir', 'Dir')}>
               <Group gap={3}>
                 {GRADIENT_DIRECTIONS.map((d) => (
-                  <Tooltip key={d.value} label={d.label} position="top">
+                  <Tooltip key={d.value} label={t(`lb_bg_dir_${d.value}`, d.label)} position="top">
                     <ActionIcon
                       size="sm"
                       variant={dir === d.value && builder.template.backgroundGradientAngle == null ? 'filled' : 'subtle'}
                       color={dir === d.value && builder.template.backgroundGradientAngle == null ? 'blue' : 'gray'}
                       onClick={() => { builder.setBackgroundGradientDirection(d.value); builder.setBackgroundGradientAngle(undefined); }}
-                      aria-label={d.label}
+                      aria-label={t(`lb_bg_dir_${d.value}`, d.label)}
                     >
                       <Text size="xs" fw={600}>{d.icon}</Text>
                     </ActionIcon>
@@ -227,12 +230,12 @@ function BackgroundModeControls({
                 ))}
               </Group>
             </GRow>
-            <GRow label="Angle">
+            <GRow label={t('lb_bg_angle', 'Angle')}>
               <NumberInput
                 size="xs"
                 value={builder.template.backgroundGradientAngle ?? ''}
                 onChange={(val) => { builder.setBackgroundGradientAngle(val === '' || val === undefined ? undefined : Number(val)); }}
-                placeholder="auto" min={0} max={360} step={5} suffix="°" style={{ flex: 1 }}
+                placeholder={t('lb_bg_auto', 'auto')} min={0} max={360} step={5} suffix="°" style={{ flex: 1 }}
               />
             </GRow>
           </>
@@ -240,28 +243,28 @@ function BackgroundModeControls({
 
         {gradType === 'radial' && (
           <>
-            <GRow label="Shape">
+            <GRow label={t('lb_bg_shape', 'Shape')}>
               <SegmentedControl
                 size="xs"
-                data={[{ label: 'Ellipse', value: 'ellipse' }, { label: 'Circle', value: 'circle' }]}
+                data={[{ label: t('lb_bg_ellipse', 'Ellipse'), value: 'ellipse' }, { label: t('lb_bg_circle', 'Circle'), value: 'circle' }]}
                 value={builder.template.backgroundRadialShape ?? 'ellipse'}
                 onChange={(v) => builder.setBackgroundRadialShape(v as RadialShape)}
                 style={{ flex: 1 }}
               />
             </GRow>
-            <GRow label="Size">
+            <GRow label={t('lb_gl_size', 'Size')}>
               <Select
                 size="xs"
-                data={RADIAL_SIZES.map((s) => ({ value: s.value, label: s.label }))}
+                data={RADIAL_SIZES.map((s) => ({ value: s.value, label: t(`lb_bg_radial_${s.value}`, s.label) }))}
                 value={builder.template.backgroundRadialSize ?? 'farthest-corner'}
                 onChange={(v) => builder.setBackgroundRadialSize((v ?? 'farthest-corner') as RadialSize)}
                 style={{ flex: 1 }}
               />
             </GRow>
-            <GRow label="Ctr X">
+            <GRow label={t('lb_bg_ctr_x', 'Ctr X')}>
               <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setBackgroundGradientCenterX(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
-            <GRow label="Ctr Y">
+            <GRow label={t('lb_bg_ctr_y', 'Ctr Y')}>
               <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setBackgroundGradientCenterY(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
           </>
@@ -269,30 +272,30 @@ function BackgroundModeControls({
 
         {gradType === 'conic' && (
           <>
-            <GRow label="Angle">
+            <GRow label={t('lb_bg_angle', 'Angle')}>
               <NumberInput size="xs" value={builder.template.backgroundGradientAngle ?? 0} onChange={(val) => builder.setBackgroundGradientAngle(val === '' ? 0 : Number(val))} min={0} max={360} step={5} suffix="°" style={{ flex: 1 }} />
             </GRow>
-            <GRow label="Ctr X">
+            <GRow label={t('lb_bg_ctr_x', 'Ctr X')}>
               <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setBackgroundGradientCenterX(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
-            <GRow label="Ctr Y">
+            <GRow label={t('lb_bg_ctr_y', 'Ctr Y')}>
               <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setBackgroundGradientCenterY(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
           </>
         )}
 
-        <GRow label="Stops">
+        <GRow label={t('lb_bg_stops', 'Stops')}>
           <SegmentedControl size="xs" data={[{ label: '2', value: '2' }, { label: '3', value: '3' }]} value={String(stopCount)} onChange={(v) => handleStopCountChange(Number(v) as 2 | 3)} />
         </GRow>
 
         {stops.map((stop, i) => {
-          const stopLabel = i === 0 ? 'Start' : i === stops.length - 1 ? 'End' : 'Mid';
+          const stopLabel = i === 0 ? t('lb_bg_start', 'Start') : i === stops.length - 1 ? t('lb_bg_end', 'End') : t('lb_bg_mid', 'Mid');
           return (
             <Stack key={i} gap={4}>
               <GRow label={stopLabel}>
                 <ColorInput size="xs" value={stop.color} onChange={(val) => updateStop(i, { color: val })} format="rgba" style={{ flex: 1 }} />
               </GRow>
-              <GRow label="Pos">
+              <GRow label={t('lb_bg_pos', 'Pos')}>
                 <Slider size="xs" value={stop.position ?? (i === 0 ? 0 : i === stops.length - 1 ? 100 : 50)} onChange={(val) => updateStop(i, { position: val })} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
               </GRow>
             </Stack>
@@ -308,38 +311,38 @@ function BackgroundModeControls({
       {builder.template.backgroundImage ? (
         <Box>
           <div style={{ background: 'var(--mantine-color-default)', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, overflow: 'hidden', marginBottom: 4 }}>
-            <img src={builder.template.backgroundImage} alt="Background preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            <img src={builder.template.backgroundImage} alt={t('lb_bg_preview_alt', 'Background preview')} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
           </div>
           <Button size="xs" color="red" variant="light" fullWidth leftSection={<IconTrash size={12} />} onClick={() => builder.setBackgroundImage('')} mb={2}>
-            Remove image
+            {t('lb_bg_remove_image', 'Remove image')}
           </Button>
         </Box>
       ) : (
-        <Text size="xs" c="dimmed">No background image set.</Text>
+        <Text size="xs" c="dimmed">{t('lb_bg_no_image', 'No background image set.')}</Text>
       )}
 
       <AssetUploader
         onFileSelect={handleUploadBgImage}
         isUploading={isUploadingBg}
         accept="image/*"
-        uploadLabel="Upload image"
-        uploadAriaLabel="Upload background image"
+        uploadLabel={t('lb_bg_upload_image', 'Upload image')}
+        uploadAriaLabel={t('lb_bg_upload_aria', 'Upload background image')}
       />
 
       {builder.template.backgroundImage && (
         <>
           <Group gap={6} align="center" wrap="nowrap">
-            <Text size="xs" c="dimmed" style={{ width: 40, flexShrink: 0 }}>Fit</Text>
+            <Text size="xs" c="dimmed" style={{ width: 40, flexShrink: 0 }}>{t('lb_slot_fit', 'Fit')}</Text>
             <Select
               size="xs"
               value={builder.template.backgroundImageFit ?? 'cover'}
               onChange={(val) => builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')}
-              data={[{ value: 'cover', label: 'Cover' }, { value: 'contain', label: 'Contain' }, { value: 'fill', label: 'Fill' }]}
+              data={[{ value: 'cover', label: t('lb_slot_fit_cover', 'Cover') }, { value: 'contain', label: t('lb_slot_fit_contain', 'Contain') }, { value: 'fill', label: t('lb_slot_fit_fill', 'Fill') }]}
               style={{ flex: 1 }}
             />
           </Group>
           <Group gap={6} align="center" wrap="nowrap">
-            <Text size="xs" c="dimmed" style={{ width: 40, flexShrink: 0 }}>Alpha</Text>
+            <Text size="xs" c="dimmed" style={{ width: 40, flexShrink: 0 }}>{t('lb_bg_alpha', 'Alpha')}</Text>
             <Box style={{ flex: 1 }}>
               <Slider value={builder.template.backgroundImageOpacity ?? 1} onChange={(val) => builder.setBackgroundImageOpacity(val)} min={0} max={1} step={0.05} size="xs" label={(v) => `${Math.round(v * 100)}%`} />
             </Box>

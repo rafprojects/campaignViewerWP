@@ -1508,7 +1508,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
     public static function list_media_tags($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms('wpsg_media_tag', ['hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_media_tag', 'hide_empty' => false]);
 
         $terms = get_terms([
             'taxonomy'   => 'wpsg_media_tag',
@@ -1719,14 +1719,14 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             $written = file_put_contents($tmp, $file_data);
             unset($file_data);
             if ($written === false) {
-                @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+                wp_delete_file($tmp);
                 $skipped[] = $filename;
                 continue;
             }
 
             $file_array = ['name' => $filename, 'tmp_name' => $tmp];
             $att_id     = media_handle_sideload($file_array, 0, sanitize_text_field($item['title'] ?? ''));
-            @unlink($tmp); // phpcs:ignore WordPress.PHP.NoSilencedErrors
+            wp_delete_file($tmp);
 
             if (is_wp_error($att_id)) {
                 $skipped[] = $filename;

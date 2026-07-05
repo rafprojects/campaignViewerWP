@@ -38,6 +38,7 @@ import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
 import { useAuth } from '@/hooks/useAuth';
+import { useTranslation } from 'react-i18next';
 
 
 const MediaTab = lazy(() => import('./MediaTab'));
@@ -82,6 +83,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   // P53-A: AdminPanel only mounts for editor-or-above (isAdmin); isSystemAdmin
   // gates the system-only surfaces (Import, ZIP/rescan, System Audit, etc.).
   const { isSystemAdmin } = useAuth();
+  const { t } = useTranslation('wpsg');
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
   // first use so existing tab state is not lost when upgrading from pre-P36-A.
@@ -250,65 +252,67 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     setExporting(true);
     try {
       const { jobId } = await apiClient.startAuditLogBinaryExport(params);
-      onNotify({ type: 'success', text: 'Building audit log ZIP — this may take a moment.' });
+      onNotify({ type: 'success', text: t('admin_building_audit_zip', 'Building audit log ZIP — this may take a moment.') });
       try {
         const deadline = Date.now() + 300_000;
         let job = await apiClient.getExportJob(jobId);
         while (job.status === 'pending' || job.status === 'processing') {
-          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          if (Date.now() > deadline) throw new Error(t('admin_export_timeout', 'Export timed out after 5 minutes.'));
           await new Promise((resolve) => setTimeout(resolve, 3000));
           job = await apiClient.getExportJob(jobId);
         }
-        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        if (job.status === 'failed') throw new Error(job.error ?? t('admin_export_failed', 'Export failed'));
         await apiClient.downloadExportJob(jobId, filename);
       } finally {
         await apiClient.deleteExportJob(jobId).catch(() => undefined);
       }
     } catch (err) {
-      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Audit ZIP export failed') });
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : t('admin_audit_zip_failed', 'Audit ZIP export failed')) });
     } finally {
       setExporting(false);
     }
-  }, [apiClient, onNotify]);
+  }, [apiClient, onNotify, t]);
 
   const handleMediaZipExport = useCallback(async () => {
     setMediaZipExporting(true);
     try {
       const params = mediaCampaignId ? { campaignId: mediaCampaignId } : {};
       const { jobId } = await apiClient.startMediaLibraryBinaryExport(params);
-      onNotify({ type: 'success', text: 'Building media library ZIP — this may take a moment.' });
+      onNotify({ type: 'success', text: t('admin_building_media_zip', 'Building media library ZIP — this may take a moment.') });
       try {
         const deadline = Date.now() + 300_000;
         let job = await apiClient.getExportJob(jobId);
         while (job.status === 'pending' || job.status === 'processing') {
-          if (Date.now() > deadline) throw new Error('Export timed out after 5 minutes.');
+          if (Date.now() > deadline) throw new Error(t('admin_export_timeout', 'Export timed out after 5 minutes.'));
           await new Promise((resolve) => setTimeout(resolve, 3000));
           job = await apiClient.getExportJob(jobId);
         }
-        if (job.status === 'failed') throw new Error(job.error ?? 'Export failed');
+        if (job.status === 'failed') throw new Error(job.error ?? t('admin_export_failed', 'Export failed'));
         await apiClient.downloadExportJob(jobId, `media-library-${Date.now()}.zip`);
       } finally {
         await apiClient.deleteExportJob(jobId).catch(() => undefined);
       }
     } catch (err) {
-      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP export failed') });
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : t('admin_media_zip_failed', 'Media ZIP export failed')) });
     } finally {
       setMediaZipExporting(false);
     }
-  }, [apiClient, mediaCampaignId, onNotify]);
+  }, [apiClient, mediaCampaignId, onNotify, t]);
 
   const handleMediaZipImport = useCallback(async (file: File) => {
     setMediaZipImporting(true);
     try {
       const result = await apiClient.importMediaLibraryBinary(file);
-      const msg = `Imported ${result.imported.length} media item${result.imported.length !== 1 ? 's' : ''}${result.skipped.length > 0 ? ` (${result.skipped.length} skipped)` : ''}.`;
+      const msg = result.skipped.length > 0
+        ? t('admin_media_imported_skipped', 'Imported {{count}} media item ({{skipped}} skipped).', { count: result.imported.length, skipped: result.skipped.length })
+        : t('admin_media_imported', 'Imported {{count}} media item.', { count: result.imported.length });
       onNotify({ type: 'success', text: msg });
     } catch (err) {
-      onNotify({ type: 'error', text: (err instanceof Error ? err.message : 'Media ZIP import failed') });
+      onNotify({ type: 'error', text: (err instanceof Error ? err.message : t('admin_media_zip_import_failed', 'Media ZIP import failed')) });
     } finally {
       setMediaZipImporting(false);
     }
-  }, [apiClient, onNotify]);
+  }, [apiClient, onNotify, t]);
 
   const mediaPrefetchedRef = useRef(false);
   const accessPrefetchedRef = useRef(false);
@@ -337,11 +341,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
 
   const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
-    { value: 'all', label: 'All spaces' },
+    { value: 'all', label: t('admin_all_spaces', 'All spaces') },
     ...spaces
       .filter((s) => !s.archived)
-      .map((s) => ({ value: String(s.id), label: s.isDefault ? `${s.name} (default)` : s.name })),
-  ], [spaces]);
+      .map((s) => ({ value: String(s.id), label: s.isDefault ? t('admin_space_default', '{{name}} (default)', { name: s.name }) : s.name })),
+  ], [spaces, t]);
 
   const campaignSelectData = useMemo(
     () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
@@ -400,10 +404,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
       <Group {...getWpsgDebugProps('AdminPanel', 'header')} justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
-          <ActionIcon variant="light" size="lg" onClick={onClose} aria-label="Back to gallery">
+          <ActionIcon variant="light" size="lg" onClick={onClose} aria-label={t('admin_back_to_gallery', 'Back to gallery')}>
             <IconArrowLeft />
           </ActionIcon>
-          <Title order={2} size="h3">Admin Panel</Title>
+          <Title order={2} size="h3">{t('admin_panel_title', 'Admin Panel')}</Title>
           {spaceName && <Badge color={color ?? 'blue'} variant="light" size="sm">{spaceName}</Badge>}
         </Group>
         <Group gap="xs" wrap="wrap">
@@ -420,50 +424,50 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           {isMobile ? (
             <Menu shadow="md" width={200} position="bottom-end">
               <Menu.Target>
-                <ActionIcon variant="light" size="lg" aria-label="Actions menu">
+                <ActionIcon variant="light" size="lg" aria-label={t('admin_actions_menu', 'Actions menu')}>
                   <IconDotsVertical size={18} />
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
                 <Menu.Item leftSection={<IconPlus size={14} />} onClick={campaignActions.handleCreate} disabled={isAllSpaces}>
-                  New Campaign
+                  {t('admin_new_campaign', 'New Campaign')}
                 </Menu.Item>
                 {isSystemAdmin && (
                   <Menu.Item leftSection={<IconFileImport size={14} />} onClick={() => campaignActions.setImportModalOpen(true)} disabled={isAllSpaces}>
-                    Import
+                    {t('admin_import', 'Import')}
                   </Menu.Item>
                 )}
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconStack2 size={14} />} onClick={() => setSpaceManagementOpen(true)}>
-                  Manage spaces
+                  {t('admin_manage_spaces', 'Manage spaces')}
                 </Menu.Item>
                 <Menu.Divider />
                 <Menu.Item leftSection={<IconKeyboard size={14} />} onClick={() => campaignActions.setShortcutHelpOpen(true)}>
-                  Keyboard shortcuts
+                  {t('admin_keyboard_shortcuts', 'Keyboard shortcuts')}
                 </Menu.Item>
               </Menu.Dropdown>
             </Menu>
           ) : (
             <>
-              <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Create new campaign'}>
-                <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label="Create new campaign" disabled={isAllSpaces}>
-                  New Campaign
+              <Tooltip label={isAllSpaces ? t('admin_pick_space_first', 'Pick a space first') : t('admin_create_new_campaign', 'Create new campaign')}>
+                <Button leftSection={<IconPlus />} onClick={campaignActions.handleCreate} size="sm" aria-label={t('admin_create_new_campaign', 'Create new campaign')} disabled={isAllSpaces}>
+                  {t('admin_new_campaign', 'New Campaign')}
                 </Button>
               </Tooltip>
               {isSystemAdmin && (
-                <Tooltip label={isAllSpaces ? 'Pick a space first' : 'Import campaigns'}>
+                <Tooltip label={isAllSpaces ? t('admin_pick_space_first', 'Pick a space first') : t('admin_import_campaigns', 'Import campaigns')}>
                   <Button variant="outline" leftSection={<IconFileImport size={16} />} onClick={() => campaignActions.setImportModalOpen(true)} size="sm" disabled={isAllSpaces}>
-                    Import
+                    {t('admin_import', 'Import')}
                   </Button>
                 </Tooltip>
               )}
-              <Tooltip label="Manage spaces">
-                <ActionIcon variant="subtle" size="lg" onClick={() => setSpaceManagementOpen(true)} aria-label="Manage spaces">
+              <Tooltip label={t('admin_manage_spaces', 'Manage spaces')}>
+                <ActionIcon variant="subtle" size="lg" onClick={() => setSpaceManagementOpen(true)} aria-label={t('admin_manage_spaces', 'Manage spaces')}>
                   <IconStack2 size={18} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="Keyboard shortcuts (?)">
-                <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label="Keyboard shortcuts">
+              <Tooltip label={t('admin_keyboard_shortcuts_tooltip', 'Keyboard shortcuts (?)')}>
+                <ActionIcon variant="subtle" size="lg" onClick={() => campaignActions.setShortcutHelpOpen(true)} aria-label={t('admin_keyboard_shortcuts', 'Keyboard shortcuts')}>
                   <IconKeyboard size={18} />
                 </ActionIcon>
               </Tooltip>
@@ -479,31 +483,31 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             value={activeTab ?? 'campaigns'}
             onChange={(v) => setActiveTab(v)}
             data={[
-              { value: 'campaigns', label: 'Campaigns' },
-              { value: 'media', label: 'Media' },
-              { value: 'layouts', label: 'Layouts' },
-              { value: 'templates', label: 'Templates' },
-              { value: 'assets', label: 'Assets' },
-              { value: 'access', label: 'Access' },
-              { value: 'audit', label: 'Campaign Activity' },
+              { value: 'campaigns', label: t('admin_tab_campaigns', 'Campaigns') },
+              { value: 'media', label: t('admin_tab_media', 'Media') },
+              { value: 'layouts', label: t('admin_tab_layouts', 'Layouts') },
+              { value: 'templates', label: t('admin_tab_templates', 'Templates') },
+              { value: 'assets', label: t('admin_tab_assets', 'Assets') },
+              { value: 'access', label: t('admin_tab_access', 'Access') },
+              { value: 'audit', label: t('admin_tab_audit', 'Campaign Activity') },
               // P53-A: System Audit is system-admin only.
-              ...(isSystemAdmin ? [{ value: 'globalAudit', label: 'System Audit' }] : []),
-              { value: 'analytics', label: 'Analytics' },
+              ...(isSystemAdmin ? [{ value: 'globalAudit', label: t('admin_tab_global_audit', 'System Audit') }] : []),
+              { value: 'analytics', label: t('admin_tab_analytics', 'Analytics') },
             ]}
             mb="sm"
-            aria-label="Select admin panel tab"
+            aria-label={t('admin_select_tab', 'Select admin panel tab')}
           />
         ) : (
           <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
-            <Tabs.Tab value="campaigns">Campaigns</Tabs.Tab>
-            <Tabs.Tab value="media">Media</Tabs.Tab>
-            <Tabs.Tab value="layouts">Layouts</Tabs.Tab>
-            <Tabs.Tab value="templates">Templates</Tabs.Tab>
-            <Tabs.Tab value="assets">Assets</Tabs.Tab>
-            <Tabs.Tab value="access">Access</Tabs.Tab>
-            <Tabs.Tab value="audit">Campaign Activity</Tabs.Tab>
-            {isSystemAdmin && <Tabs.Tab value="globalAudit">System Audit</Tabs.Tab>}
-            <Tabs.Tab value="analytics">Analytics</Tabs.Tab>
+            <Tabs.Tab value="campaigns">{t('admin_tab_campaigns', 'Campaigns')}</Tabs.Tab>
+            <Tabs.Tab value="media">{t('admin_tab_media', 'Media')}</Tabs.Tab>
+            <Tabs.Tab value="layouts">{t('admin_tab_layouts', 'Layouts')}</Tabs.Tab>
+            <Tabs.Tab value="templates">{t('admin_tab_templates', 'Templates')}</Tabs.Tab>
+            <Tabs.Tab value="assets">{t('admin_tab_assets', 'Assets')}</Tabs.Tab>
+            <Tabs.Tab value="access">{t('admin_tab_access', 'Access')}</Tabs.Tab>
+            <Tabs.Tab value="audit">{t('admin_tab_audit', 'Campaign Activity')}</Tabs.Tab>
+            {isSystemAdmin && <Tabs.Tab value="globalAudit">{t('admin_tab_global_audit', 'System Audit')}</Tabs.Tab>}
+            <Tabs.Tab value="analytics">{t('admin_tab_analytics', 'Analytics')}</Tabs.Tab>
           </Tabs.List>
         )}
 
@@ -520,7 +524,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   onClick={() => setFiltersOpen((o) => !o)}
                   aria-expanded={filtersOpen}
                 >
-                  {filtersOpen ? 'Hide filters' : `Filters${activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}`}
+                  {filtersOpen ? t('admin_hide_filters', 'Hide filters') : (activeFilterCount > 0 ? t('admin_filters_count', 'Filters ({{count}})', { count: activeFilterCount }) : t('admin_filters', 'Filters'))}
                 </Button>
               )}
               <Collapse expanded={!isMobile || filtersOpen}>
@@ -528,7 +532,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   {campaignCategories.length > 0 && (
                     <Chip.Group multiple={false} value={categoryFilter ?? ''} onChange={(v) => setCategoryFilter(v || null)}>
                       <Group gap="xs" wrap="wrap">
-                        <Chip value="" variant="light" size="sm">All</Chip>
+                        <Chip value="" variant="light" size="sm">{t('admin_filter_all', 'All')}</Chip>
                         {campaignCategories.map((cat) => (
                           <Chip key={cat.id} value={cat.slug} variant="light" size="sm">{cat.name}</Chip>
                         ))}
@@ -538,7 +542,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   {campaignTags.length > 0 && (
                     <Select
                       size="xs"
-                      placeholder="Tag"
+                      placeholder={t('admin_filter_tag', 'Tag')}
                       clearable
                       data={campaignTags.map((t) => ({ value: t.slug, label: t.name }))}
                       value={tagFilter}
@@ -549,27 +553,28 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   <Select
                     size="xs"
                     data={[
-                      { value: 'created_desc', label: 'Newest first' },
-                      { value: 'created_asc', label: 'Oldest first' },
-                      { value: 'title_asc', label: 'Title A–Z' },
-                      { value: 'title_desc', label: 'Title Z–A' },
-                      { value: 'updated_desc', label: 'Recently updated' },
+                      { value: 'created_desc', label: t('admin_sort_newest', 'Newest first') },
+                      { value: 'created_asc', label: t('admin_sort_oldest', 'Oldest first') },
+                      { value: 'title_asc', label: t('admin_sort_title_az', 'Title A–Z') },
+                      { value: 'title_desc', label: t('admin_sort_title_za', 'Title Z–A') },
+                      { value: 'updated_desc', label: t('admin_sort_recent', 'Recently updated') },
                     ]}
                     value={sortOrder ?? 'created_desc'}
                     onChange={(v) => setSortOrder((v as CampaignFilters['sort']) ?? 'created_desc')}
+                    aria-label={t('admin_sort_label', 'Sort campaigns')}
                     style={{ minWidth: 150 }}
                   />
                   <Switch
                     size="sm"
-                    label="Include archived"
+                    label={t('admin_include_archived', 'Include archived')}
                     checked={includeArchived}
                     onChange={(e) => setIncludeArchived(e.currentTarget.checked)}
                   />
                 </Group>
               </Collapse>
             </Box>
-            <Tooltip label="Manage categories & tags">
-              <ActionIcon variant="subtle" size="sm" onClick={() => setTaxonomyManagerOpen(true)} aria-label="Manage taxonomy">
+            <Tooltip label={t('admin_manage_taxonomy_tooltip', 'Manage categories & tags')}>
+              <ActionIcon variant="subtle" size="sm" onClick={() => setTaxonomyManagerOpen(true)} aria-label={t('admin_manage_taxonomy', 'Manage taxonomy')}>
                 <IconSettings size={16} />
               </ActionIcon>
             </Tooltip>
@@ -648,9 +653,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                   loading={mediaZipExporting}
                   style={{ flex: '0 0 auto' }}
                   onClick={handleMediaZipExport}
-                  aria-label="Export media library as ZIP"
+                  aria-label={t('admin_export_zip_aria', 'Export media library as ZIP')}
                 >
-                  Export ZIP
+                  {t('admin_export_zip', 'Export ZIP')}
                 </Button>
                 <FileButton
                   onChange={(file) => { if (file) handleMediaZipImport(file); }}
@@ -663,9 +668,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                       variant="light"
                       loading={mediaZipImporting}
                       style={{ flex: '0 0 auto' }}
-                      aria-label="Import media library from ZIP"
+                      aria-label={t('admin_import_zip_aria', 'Import media library from ZIP')}
                     >
-                      Import ZIP
+                      {t('admin_import_zip', 'Import ZIP')}
                     </Button>
                   )}
                 </FileButton>
@@ -681,15 +686,15 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                       );
                       onNotify({
                         type: 'success', text: result.media_updated > 0
-                          ? `Rescanned: ${result.media_updated} media items updated across ${result.campaigns_updated} campaigns.`
-                          : 'All media types are correct.'
+                          ? t('admin_rescan_done', 'Rescanned: {{media}} media items updated across {{campaigns}} campaigns.', { media: result.media_updated, campaigns: result.campaigns_updated })
+                          : t('admin_rescan_none', 'All media types are correct.')
                       });
                       onCampaignsUpdated();
                     } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
                     finally { setRescanAllLoading(false); }
                   }}
                 >
-                  Rescan All
+                  {t('admin_rescan_all', 'Rescan All')}
                 </Button>
               </>
             )}
@@ -885,7 +890,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           campaigns={allCampaigns}
           defaultTarget={String(addMediaCampaign.id)}
           onUploaded={onCampaignsUpdated}
-          title={`Add media — ${addMediaCampaign.title}`}
+          title={t('admin_add_media_title', 'Add media — {{title}}', { title: addMediaCampaign.title })}
         />
       )}
       {!!accessState.confirmArchiveCompany && (

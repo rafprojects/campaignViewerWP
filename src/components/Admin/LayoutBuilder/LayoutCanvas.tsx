@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
@@ -174,6 +175,7 @@ export function LayoutCanvas({
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
+  const { t } = useTranslation('wpsg');
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
   const viewportHeight = useViewportHeight();
@@ -591,11 +593,11 @@ export function LayoutCanvas({
               whiteSpace: 'nowrap',
             }}
           >
-            <span>{canvasWidth} × {canvasHeight}px</span>
+            <span>{t('lb_lc_dims', '{{w}} × {{h}}px', { w: canvasWidth, h: canvasHeight })}</span>
             <span style={{ opacity: 0.4 }}>·</span>
             <span>{formatAspectRatio(template.canvasAspectRatio)}</span>
             <span style={{ opacity: 0.4 }}>·</span>
-            <span>{template.slots.length} slot{template.slots.length !== 1 ? 's' : ''}</span>
+            <span>{t('lb_lc_n_slots', '{{count}} slot', { count: template.slots.length })}</span>
           </div>
         </div>
       )}
@@ -608,7 +610,7 @@ export function LayoutCanvas({
         onDragOver={handleCanvasDragOver}
         onDrop={handleCanvasDrop}
         role="application"
-        aria-label="Layout canvas"
+        aria-label={t('lb_canvas_layout_aria', 'Layout canvas')}
         style={{
           position: 'relative',
           width: canvasWidth,
@@ -708,10 +710,10 @@ export function LayoutCanvas({
             }}
           >
             <Text size="sm" c="dimmed" ta="center" style={{ opacity: 0.55 }}>
-              Double-click to add a slot
+              {t('lb_lc_dblclick', 'Double-click to add a slot')}
             </Text>
             <Text size="xs" c="dimmed" ta="center" style={{ opacity: 0.35 }}>
-              or drag media from the panel
+              {t('lb_lc_drag_media', 'or drag media from the panel')}
             </Text>
           </div>
         )}

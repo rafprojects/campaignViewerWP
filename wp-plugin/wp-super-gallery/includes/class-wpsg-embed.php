@@ -77,22 +77,18 @@ class WPSG_Embed {
             'swUrl'                  => home_url('/sw.js'),
         ];
 
-        // P49-C: i18n payload — locale + PHP-side translated strings for the React app.
+        // P49-C / P60-G: i18n payload — locale + the active-locale translation of the
+        // React (i18next) front-end string catalogue. WPSG_Frontend_Strings is generated
+        // from src/i18n-strings.en.json (single source of truth) so the keys match the
+        // i18next namespace exactly and a single .po/.mo per locale translates both the
+        // PHP and React surfaces. Keys default to their English value when untranslated,
+        // and src/i18n.ts additionally falls back to its bundled English defaults.
         $i18n = [
             'locale'  => get_locale(),
-            'strings' => apply_filters('wpsg_i18n_strings', [
-                'close'         => __('Close', 'wp-super-gallery'),
-                'loading'       => __('Loading…', 'wp-super-gallery'),
-                'error'         => __('An error occurred. Please try again.', 'wp-super-gallery'),
-                'noMedia'       => __('No media found.', 'wp-super-gallery'),
-                'uploadFiles'   => __('Upload files', 'wp-super-gallery'),
-                'chooseFiles'   => __('Choose files', 'wp-super-gallery'),
-                'dragDropFiles' => __('or drag & drop files here', 'wp-super-gallery'),
-                'cancel'        => __('Cancel', 'wp-super-gallery'),
-                'save'          => __('Save', 'wp-super-gallery'),
-                'delete'        => __('Delete', 'wp-super-gallery'),
-                'confirm'       => __('Confirm', 'wp-super-gallery'),
-            ]),
+            'strings' => apply_filters(
+                'wpsg_i18n_strings',
+                class_exists('WPSG_Frontend_Strings') ? WPSG_Frontend_Strings::get_translated() : []
+            ),
         ];
 
         return 'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';'
@@ -118,7 +114,7 @@ class WPSG_Embed {
         }
 
         // Strip the query string to get the bare request path.
-        $raw_uri = isset($_SERVER['REQUEST_URI']) ? wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $raw_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
         $request_path = strtok((string) $raw_uri, '?');
 
         // The SW is served at the path component of home_url('/sw.js'), e.g. '/sw.js'

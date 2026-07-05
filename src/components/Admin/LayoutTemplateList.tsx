@@ -6,6 +6,7 @@
  * delete). Includes import/export JSON functionality.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -115,6 +116,7 @@ interface LayoutTemplateListProps {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spaceId }: LayoutTemplateListProps) {
+  const { t: tr } = useTranslation('wpsg');
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -238,13 +240,13 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
     async (t: LayoutTemplate) => {
       try {
         await apiClient.duplicateLayoutTemplate(t.id, `${t.name} (copy)`);
-        onNotify({ type: 'success', text: `Duplicated "${t.name}"` });
+        onNotify({ type: 'success', text: tr('admin_lt_duplicated', 'Duplicated "{{name}}"', { name: t.name }) });
         await refetchTemplates();
       } catch (err) {
         onNotify({ type: 'error', text: (err as Error).message });
       }
     },
-    [apiClient, onNotify, refetchTemplates],
+    [apiClient, onNotify, refetchTemplates, tr],
   );
 
   const handleDelete = useCallback(
@@ -253,7 +255,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
       const target = confirmDelete;
       try {
         await apiClient.deleteLayoutTemplate(target.id);
-        onNotify({ type: 'success', text: `Deleted "${target.name}"` });
+        onNotify({ type: 'success', text: tr('admin_lt_deleted', 'Deleted "{{name}}"', { name: target.name }) });
         setConfirmDelete(null);
         await refetchTemplates();
       } catch (err) {
@@ -267,7 +269,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         onNotify({ type: 'error', text: (err as Error).message });
       }
     },
-    [apiClient, confirmDelete, onNotify, refetchTemplates],
+    [apiClient, confirmDelete, onNotify, refetchTemplates, tr],
   );
 
   const handleForceDelete = useCallback(
@@ -276,7 +278,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
       setForceDeleting(true);
       try {
         await apiClient.deleteLayoutTemplate(forceDelete.template.id, true);
-        onNotify({ type: 'success', text: `Deleted "${forceDelete.template.name}"` });
+        onNotify({ type: 'success', text: tr('admin_lt_deleted', 'Deleted "{{name}}"', { name: forceDelete.template.name }) });
         setForceDelete(null);
         await refetchTemplates();
       } catch (err) {
@@ -285,7 +287,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         setForceDeleting(false);
       }
     },
-    [apiClient, forceDelete, onNotify, refetchTemplates],
+    [apiClient, forceDelete, onNotify, refetchTemplates, tr],
   );
 
   // ── Export (P15-F.4) ──────────────────────────────────────────────────────
@@ -311,7 +313,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         const text = await file.text();
         const data = JSON.parse(text);
         if (!isValidTemplate(data)) {
-          onNotify({ type: 'error', text: 'Invalid template JSON — missing required fields.' });
+          onNotify({ type: 'error', text: tr('admin_lt_invalid_json', 'Invalid template JSON — missing required fields.') });
           return;
         }
         // Strip id so server creates a new one; update timestamps
@@ -322,14 +324,14 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
-        onNotify({ type: 'success', text: `Imported "${rest.name}"` });
+        onNotify({ type: 'success', text: tr('admin_lt_imported', 'Imported "{{name}}"', { name: rest.name }) });
         await refetchTemplates();
         resetRef.current?.();
       } catch (err) {
-        onNotify({ type: 'error', text: `Import failed: ${(err as Error).message}` });
+        onNotify({ type: 'error', text: tr('admin_lt_import_fail', 'Import failed: {{message}}', { message: (err as Error).message }) });
       }
     },
-    [apiClient, onNotify, refetchTemplates],
+    [apiClient, onNotify, refetchTemplates, tr],
   );
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -340,12 +342,12 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
       <Group justify="space-between" wrap="wrap" gap="sm">
         <Group gap="sm">
           <TextInput
-            placeholder="Search layouts…"
+            placeholder={tr('admin_lt_search_ph', 'Search layouts…')}
             leftSection={<IconSearch size={16} />}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.currentTarget.value)}
             style={{ minWidth: 200, flex: '1 1 200px' }}
-            aria-label="Search layout templates"
+            aria-label={tr('admin_lt_search_aria', 'Search layout templates')}
           />
           <SegmentedControl
             size="xs"
@@ -355,19 +357,19 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
               { value: 'grid', label: <IconGridDots size={16} /> },
               { value: 'list', label: <IconList size={16} /> },
             ]}
-            aria-label="View mode"
+            aria-label={tr('admin_lt_view_mode', 'View mode')}
           />
         </Group>
         <Group gap="sm">
           <FileButton onChange={handleImport} accept="application/json" resetRef={resetRef}>
             {(props) => (
               <Button variant="outline" leftSection={<IconUpload size={16} />} size="sm" {...props}>
-                Import
+                {tr('admin_lt_import', 'Import')}
               </Button>
             )}
           </FileButton>
           <Button leftSection={<IconPlus size={16} />} size="sm" onClick={handleCreate}>
-            New Layout
+            {tr('admin_lt_new', 'New Layout')}
           </Button>
           <Button
             variant="light"
@@ -375,7 +377,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
             size="sm"
             onClick={() => setPresetGalleryOpen(true)}
           >
-            From Preset
+            {tr('admin_lt_from_preset', 'From Preset')}
           </Button>
         </Group>
       </Group>
@@ -395,11 +397,11 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
           <Stack align="center" gap="xs">
             <IconLayoutDashboard size={48} color="var(--mantine-color-dimmed)" />
             <Text c="dimmed">
-              {searchQuery ? 'No layouts match your search.' : 'No layout templates yet.'}
+              {searchQuery ? tr('admin_lt_no_match', 'No layouts match your search.') : tr('admin_lt_none', 'No layout templates yet.')}
             </Text>
             {!searchQuery && (
               <Button variant="light" size="sm" onClick={handleCreate}>
-                Create your first layout
+                {tr('admin_lt_create_first', 'Create your first layout')}
               </Button>
             )}
           </Stack>
@@ -431,15 +433,15 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
       {/* List view */}
       {!isLoading && filtered.length > 0 && viewMode === 'list' && (
         <Table.ScrollContainer minWidth={600}>
-          <Table verticalSpacing="sm" highlightOnHover aria-label="Layout template list">
+          <Table verticalSpacing="sm" highlightOnHover aria-label={tr('admin_lt_list_aria', 'Layout template list')}>
             <Table.Thead>
               <Table.Tr>
-                <Table.Th>Name</Table.Th>
-                <Table.Th>Slots</Table.Th>
-                <Table.Th>Aspect</Table.Th>
-                <Table.Th>Updated</Table.Th>
-                <Table.Th>Tags</Table.Th>
-                <Table.Th>Actions</Table.Th>
+                <Table.Th>{tr('admin_lt_th_name', 'Name')}</Table.Th>
+                <Table.Th>{tr('admin_lt_th_slots', 'Slots')}</Table.Th>
+                <Table.Th>{tr('admin_lt_th_aspect', 'Aspect')}</Table.Th>
+                <Table.Th>{tr('admin_lt_th_updated', 'Updated')}</Table.Th>
+                <Table.Th>{tr('admin_lt_th_tags', 'Tags')}</Table.Th>
+                <Table.Th>{tr('admin_lt_th_actions', 'Actions')}</Table.Th>
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
@@ -449,7 +451,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
                     <Text size="sm" fw={500}>{t.name}</Text>
                   </Table.Td>
                   <Table.Td>
-                    <Badge size="sm" variant="light">{t.slots.length} slots</Badge>
+                    <Badge size="sm" variant="light">{tr('admin_lt_n_slots', '{{count}} slot', { count: t.slots.length })}</Badge>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{aspectLabel(t.canvasAspectRatio)}</Text>
@@ -466,23 +468,23 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
                   </Table.Td>
                   <Table.Td>
                     <Group gap="xs">
-                      <Tooltip label="Edit">
-                        <ActionIcon variant="subtle" size="sm" onClick={() => handleEdit(t)} aria-label={`Edit ${t.name}`}>
+                      <Tooltip label={tr('admin_lt_edit', 'Edit')}>
+                        <ActionIcon variant="subtle" size="sm" onClick={() => handleEdit(t)} aria-label={tr('admin_lt_edit_name', 'Edit {{name}}', { name: t.name })}>
                           <IconEdit size={16} />
                         </ActionIcon>
                       </Tooltip>
-                      <Tooltip label="Duplicate">
-                        <ActionIcon variant="subtle" size="sm" onClick={() => handleDuplicate(t)} aria-label={`Duplicate ${t.name}`}>
+                      <Tooltip label={tr('admin_lt_duplicate', 'Duplicate')}>
+                        <ActionIcon variant="subtle" size="sm" onClick={() => handleDuplicate(t)} aria-label={tr('admin_lt_duplicate_name', 'Duplicate {{name}}', { name: t.name })}>
                           <IconCopy size={16} />
                         </ActionIcon>
                       </Tooltip>
-                      <Tooltip label="Export JSON">
-                        <ActionIcon variant="subtle" size="sm" onClick={() => handleExport(t)} aria-label={`Export ${t.name}`}>
+                      <Tooltip label={tr('admin_lt_export_json', 'Export JSON')}>
+                        <ActionIcon variant="subtle" size="sm" onClick={() => handleExport(t)} aria-label={tr('admin_lt_export_name', 'Export {{name}}', { name: t.name })}>
                           <IconDownload size={16} />
                         </ActionIcon>
                       </Tooltip>
-                      <Tooltip label="Delete">
-                        <ActionIcon variant="subtle" color="red" size="sm" onClick={() => setConfirmDelete(t)} aria-label={`Delete ${t.name}`}>
+                      <Tooltip label={tr('admin_lt_delete', 'Delete')}>
+                        <ActionIcon variant="subtle" color="red" size="sm" onClick={() => setConfirmDelete(t)} aria-label={tr('admin_lt_delete_name', 'Delete {{name}}', { name: t.name })}>
                           <IconTrash size={16} />
                         </ActionIcon>
                       </Tooltip>
@@ -516,9 +518,9 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         opened={!!confirmDelete}
         onClose={() => setConfirmDelete(null)}
         onConfirm={handleDelete}
-        title="Delete layout template?"
-        message={`Are you sure you want to delete "${confirmDelete?.name ?? ''}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={tr('admin_lt_delete_title', 'Delete layout template?')}
+        message={tr('admin_lt_delete_msg', 'Are you sure you want to delete "{{name}}"? This cannot be undone.', { name: confirmDelete?.name ?? '' })}
+        confirmLabel={tr('admin_lt_delete', 'Delete')}
         confirmColor="red"
       />
 
@@ -527,9 +529,9 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         opened={!!forceDelete}
         onClose={() => setForceDelete(null)}
         onConfirm={handleForceDelete}
-        title="Template in use"
-        message={`"${forceDelete?.template.name ?? ''}" is in use by ${forceDelete?.inUse ?? 0} campaign(s). Deleting it will unbind those campaigns. Delete anyway?`}
-        confirmLabel="Delete anyway"
+        title={tr('admin_lt_inuse_title', 'Template in use')}
+        message={tr('admin_lt_inuse_msg', '"{{name}}" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?', { name: forceDelete?.template.name ?? '', count: forceDelete?.inUse ?? 0 })}
+        confirmLabel={tr('admin_lt_delete_anyway', 'Delete anyway')}
         confirmColor="red"
         loading={forceDeleting}
       />
@@ -561,6 +563,7 @@ interface TemplateGridCardProps {
 }
 
 function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }: TemplateGridCardProps) {
+  const { t: tr } = useTranslation('wpsg');
   const t = template;
   return (
     <Card
@@ -572,7 +575,7 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
       onClick={() => onEdit(t)}
       role="button"
       tabIndex={0}
-      aria-label={`Edit layout ${t.name}`}
+      aria-label={tr('admin_lt_edit_layout', 'Edit layout {{name}}', { name: t.name })}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -624,7 +627,7 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
         <Box style={{ overflow: 'hidden' }}>
           <Text size="sm" fw={600} lineClamp={1}>{t.name}</Text>
           <Text size="xs" c="dimmed">
-            {t.slots.length} slot{t.slots.length !== 1 ? 's' : ''} · {shortDate(t.updatedAt)}
+            {tr('admin_lt_n_slots', '{{count}} slot', { count: t.slots.length })} · {shortDate(t.updatedAt)}
           </Text>
         </Box>
 
@@ -635,24 +638,24 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
               variant="subtle"
               size="sm"
               onClick={(e) => e.stopPropagation()}
-              aria-label={`Actions for ${t.name}`}
+              aria-label={tr('admin_lt_actions_for', 'Actions for {{name}}', { name: t.name })}
             >
               <IconDots size={16} />
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
             <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => onEdit(t)}>
-              Edit
+              {tr('admin_lt_edit', 'Edit')}
             </Menu.Item>
             <Menu.Item leftSection={<IconCopy size={14} />} onClick={() => onDuplicate(t)}>
-              Duplicate
+              {tr('admin_lt_duplicate', 'Duplicate')}
             </Menu.Item>
             <Menu.Item leftSection={<IconDownload size={14} />} onClick={() => onExport(t)}>
-              Export JSON
+              {tr('admin_lt_export_json', 'Export JSON')}
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item leftSection={<IconTrash size={14} />} color="red" onClick={() => onDelete(t)}>
-              Delete
+              {tr('admin_lt_delete', 'Delete')}
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>

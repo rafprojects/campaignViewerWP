@@ -8,6 +8,7 @@ import type { TagEntry } from '@/services/api/campaignsApi';
 import type { CompanyInfo } from '@/services/adminQuery';
 import { CompanyCombobox } from '@/components/Common/CompanyCombobox';
 import { useMediaQuery } from '@mantine/hooks';
+import { useTranslation } from 'react-i18next';
 import { IconLink, IconTrash, IconUpload } from '@tabler/icons-react';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect as Select } from '@/components/Common/ModalSelect';
@@ -52,11 +53,6 @@ function toLocalInputValue(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
-
-const GALLERY_MODE_OPTIONS = [
-  { value: 'unified', label: 'Unified' },
-  { value: 'per-type', label: 'Per-Type' },
-];
 
 function getCampaignBreakpointAdapterId(
   galleryOverrides: UnifiedCampaignModalHandle['formState']['galleryOverrides'],
@@ -137,17 +133,20 @@ interface UnifiedCampaignModalTabListProps {
   mediaCount: number;
 }
 
-const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListProps> = ({ isEdit, mediaCount }) => (
-  <Tabs.List>
-    <Tabs.Tab value="details">Details</Tabs.Tab>
-    {isEdit && (
-      <Tabs.Tab value="media">
-        Media {mediaCount > 0 && <Badge size="sm" ml={4}>{mediaCount}</Badge>}
-      </Tabs.Tab>
-    )}
-    <Tabs.Tab value="settings">Settings</Tabs.Tab>
-  </Tabs.List>
-);
+const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListProps> = ({ isEdit, mediaCount }) => {
+  const { t } = useTranslation('wpsg');
+  return (
+    <Tabs.List>
+      <Tabs.Tab value="details">{t('admin_camp_tab_details', 'Details')}</Tabs.Tab>
+      {isEdit && (
+        <Tabs.Tab value="media">
+          {t('admin_camp_tab_media', 'Media')} {mediaCount > 0 && <Badge size="sm" ml={4}>{mediaCount}</Badge>}
+        </Tabs.Tab>
+      )}
+      <Tabs.Tab value="settings">{t('admin_camp_tab_settings', 'Settings')}</Tabs.Tab>
+    </Tabs.List>
+  );
+};
 
 UnifiedCampaignModalTabList.displayName = 'UnifiedCampaignModalTabList';
 
@@ -173,25 +172,27 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
   coverImageUploading,
   companies,
   companiesLoading,
-}) => (
+}) => {
+  const { t } = useTranslation('wpsg');
+  return (
   <Tabs.Panel value="details" pt="md">
     <Stack gap="md">
       <TextInput
-        label="Title"
-        placeholder="Campaign title"
+        label={t('admin_camp_title_label', 'Title')}
+        placeholder={t('admin_camp_title_ph', 'Campaign title')}
         value={formState.title}
         onChange={(e) => updateForm({ ...formState, title: e.currentTarget.value })}
         required
       />
       <Textarea
-        label="Description"
-        placeholder="Campaign description"
+        label={t('admin_camp_desc_label', 'Description')}
+        placeholder={t('admin_camp_desc_ph', 'Campaign description')}
         value={formState.description}
         onChange={(e) => updateForm({ ...formState, description: e.currentTarget.value })}
         minRows={3}
       />
       <CompanyCombobox
-        label="Company"
+        label={t('admin_camp_company_label', 'Company')}
         value={formState.company}
         onChange={(v) => updateForm({ ...formState, company: v })}
         companies={companies}
@@ -201,29 +202,29 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
 
       <Card withBorder>
         <Stack gap="sm">
-          <Text fw={500}>Campaign Thumbnail (Card Image)</Text>
+          <Text fw={500}>{t('admin_camp_thumbnail', 'Campaign Thumbnail (Card Image)')}</Text>
           <Image
             src={formState.coverImage || FALLBACK_IMAGE_SRC}
-            alt="Campaign thumbnail preview"
+            alt={t('admin_camp_thumbnail_alt', 'Campaign thumbnail preview')}
             height={140}
             fit="cover"
             fallbackSrc={FALLBACK_IMAGE_SRC}
           />
           {isEdit && mediaItems.length > 0 && (
             <Select
-              label="Use existing campaign media as thumbnail"
-              placeholder="Choose media image/thumbnail"
+              label={t('admin_camp_use_media_thumb', 'Use existing campaign media as thumbnail')}
+              placeholder={t('admin_camp_choose_thumb', 'Choose media image/thumbnail')}
               value={formState.coverImage || null}
               data={mediaItems
                 .filter((media) => media.thumbnail || media.url)
                 .map((media) => ({
                   value: media.thumbnail || media.url,
-                  label: media.caption || `${media.type.toUpperCase()} #${media.id}`,
+                  label: media.caption || t('admin_camp_media_label', '{{type}} #{{id}}', { type: media.type.toUpperCase(), id: media.id }),
                 }))}
               onChange={(value) => onSelectCoverImage(value ?? '')}
               searchable
               clearable
-              nothingFoundMessage="No campaign media available"
+              nothingFoundMessage={t('admin_camp_no_media_avail', 'No campaign media available')}
             />
           )}
           {isEdit && (
@@ -233,7 +234,7 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
             >
               {(props) => (
                 <Button {...props} variant="light" loading={coverImageUploading}>
-                  Upload Custom Thumbnail
+                  {t('admin_camp_upload_thumb', 'Upload Custom Thumbnail')}
                 </Button>
               )}
             </FileButton>
@@ -243,7 +244,8 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
 
     </Stack>
   </Tabs.Panel>
-);
+  );
+};
 
 UnifiedCampaignDetailsPanel.displayName = 'UnifiedCampaignDetailsPanel';
 
@@ -286,45 +288,46 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   layoutTemplates,
   onEditLayout,
 }) => {
+  const { t } = useTranslation('wpsg');
   const usesLayoutBuilder = campaignUsesLayoutBuilder(formState.galleryOverrides);
   return (
   <Tabs.Panel value="settings" pt="md">
     <Stack gap="md">
       <Group grow wrap="wrap" gap="sm">
         <Select
-          label="Status"
+          label={t('admin_camp_status_label', 'Status')}
           data={[
-            { value: 'draft', label: 'Draft' },
-            { value: 'active', label: 'Active' },
-            { value: 'archived', label: 'Archived' },
+            { value: 'draft', label: t('admin_status_draft', 'Draft') },
+            { value: 'active', label: t('admin_status_active', 'Active') },
+            { value: 'archived', label: t('admin_status_archived', 'Archived') },
           ]}
           value={formState.status}
           onChange={(v) => updateForm({ ...formState, status: (v ?? 'draft') as 'draft' | 'active' | 'archived' })}
         />
         <Select
-          label="Visibility"
+          label={t('admin_camp_visibility_label', 'Visibility')}
           data={[
-            { value: 'private', label: 'Private' },
-            { value: 'public', label: 'Public' },
+            { value: 'private', label: t('admin_visibility_private', 'Private') },
+            { value: 'public', label: t('admin_visibility_public', 'Public') },
           ]}
           value={formState.visibility}
           onChange={(v) => updateForm({ ...formState, visibility: (v ?? 'private') as 'public' | 'private' })}
         />
       </Group>
       <TagsInput
-        label="Tags"
-        placeholder="Add tags…"
-        description="Type a tag and press Enter or comma to add"
-        data={tagItems.map((t) => t.name)}
+        label={t('admin_camp_tags_label', 'Tags')}
+        placeholder={t('admin_camp_tags_ph', 'Add tags…')}
+        description={t('admin_camp_tags_desc', 'Type a tag and press Enter or comma to add')}
+        data={tagItems.map((tag) => tag.name)}
         value={formState.tags}
         onChange={(v) => updateForm({ ...formState, tags: v })}
         splitChars={[',']}
         clearable
       />
       <MultiSelect
-        label="Categories"
-        placeholder="Select categories"
-        description="Assign this campaign to one or more categories"
+        label={t('admin_camp_cats_label', 'Categories')}
+        placeholder={t('admin_camp_cats_ph', 'Select categories')}
+        description={t('admin_camp_cats_desc', 'Assign this campaign to one or more categories')}
         value={formState.categories}
         onChange={(v) => updateForm({ ...formState, categories: v })}
         data={buildCategorySelectData(categoryItems)}
@@ -334,37 +337,40 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
       <Group grow wrap="wrap" gap="sm">
         <TextInput
           type="datetime-local"
-          label="Publish At"
-          description="Campaign becomes visible at this date/time"
+          label={t('admin_camp_publish_label', 'Publish At')}
+          description={t('admin_camp_publish_desc', 'Campaign becomes visible at this date/time')}
           value={formState.publishAt ? toLocalInputValue(formState.publishAt) : ''}
           onChange={(e) => updateForm({ ...formState, publishAt: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })}
         />
         <TextInput
           type="datetime-local"
-          label="Unpublish At"
-          description="Campaign is hidden after this date/time"
+          label={t('admin_camp_unpublish_label', 'Unpublish At')}
+          description={t('admin_camp_unpublish_desc', 'Campaign is hidden after this date/time')}
           value={formState.unpublishAt ? toLocalInputValue(formState.unpublishAt) : ''}
           onChange={(e) => updateForm({ ...formState, unpublishAt: e.currentTarget.value ? new Date(e.currentTarget.value).toISOString() : '' })}
         />
       </Group>
       {isEdit && cardBorderMode === 'individual' && (
         <ColorInput
-          label="Card Border Color"
-          description="Custom accent border color for this campaign card"
+          label={t('admin_camp_border_label', 'Card Border Color')}
+          description={t('admin_camp_border_desc', 'Custom accent border color for this campaign card')}
           value={formState.borderColor ?? ''}
           onChange={(v) => updateForm({ ...formState, borderColor: v || undefined })}
-          placeholder="Auto (company brand color)"
+          placeholder={t('admin_camp_border_ph', 'Auto (company brand color)')}
         />
       )}
       {isEdit && (
         <>
           <Stack gap="sm">
             <Select
-              label="Gallery Mode Override"
-              description="Override the global gallery mode for this campaign"
-              placeholder="Default (from settings)"
+              label={t('admin_camp_gmode_label', 'Gallery Mode Override')}
+              description={t('admin_camp_gmode_desc', 'Override the global gallery mode for this campaign')}
+              placeholder={t('admin_camp_gmode_ph', 'Default (from settings)')}
               clearable
-              data={GALLERY_MODE_OPTIONS}
+              data={[
+                { value: 'unified', label: t('admin_gallery_mode_unified', 'Unified') },
+                { value: 'per-type', label: t('admin_gallery_mode_pertype', 'Per-Type') },
+              ]}
               value={campaignGalleryOverrideMode || null}
               onChange={(v) => updateForm({
                 ...formState,
@@ -376,23 +382,23 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
             />
             {effectiveCampaignGalleryMode === 'unified' ? (
               <Box>
-                <Text size="sm" fw={500} mb={4}>Unified Breakpoint Adapters</Text>
+                <Text size="sm" fw={500} mb={4}>{t('admin_camp_unified_bp', 'Unified Breakpoint Adapters')}</Text>
                 <Text size="xs" c="dimmed" mb={8}>
-                  Clear a cell to inherit the global unified adapter for that breakpoint.
+                  {t('admin_camp_unified_bp_hint', 'Clear a cell to inherit the global unified adapter for that breakpoint.')}
                 </Text>
                 <SimpleGrid cols={2} spacing="xs" mb={4}>
                   <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
-                  <Text size="xs" fw={600} ta="center">Unified</Text>
+                  <Text size="xs" fw={600} ta="center">{t('admin_gallery_mode_unified', 'Unified')}</Text>
                 </SimpleGrid>
                 {CAMPAIGN_BREAKPOINTS.map((breakpoint) => (
                   <SimpleGrid cols={2} spacing="xs" mb="xs" key={breakpoint}>
                     <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                      {BREAKPOINT_LABELS[breakpoint]}
+                      {t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint])}
                     </Text>
                     <Select
                       size="xs"
-                      aria-label={`${BREAKPOINT_LABELS[breakpoint]} Unified Gallery Adapter`}
-                      placeholder="Inherited"
+                      aria-label={t('admin_camp_bp_unified_aria', '{{bp}} Unified Gallery Adapter', { bp: t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint]) })}
+                      placeholder={t('admin_camp_inherited', 'Inherited')}
                       clearable
                       data={getAdapterSelectOptions({ context: 'unified-gallery', breakpoint })}
                       value={getCampaignBreakpointAdapterId(resolvedCampaignQuickOverrides, breakpoint, 'unified')}
@@ -403,24 +409,24 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
               </Box>
             ) : (
               <Box>
-                <Text size="sm" fw={500} mb={4}>Per-Type Breakpoint Adapters</Text>
+                <Text size="sm" fw={500} mb={4}>{t('admin_camp_pertype_bp', 'Per-Type Breakpoint Adapters')}</Text>
                 <Text size="xs" c="dimmed" mb={8}>
-                  Clear any cell to inherit that breakpoint's global adapter selection.
+                  {t('admin_camp_pertype_bp_hint', "Clear any cell to inherit that breakpoint's global adapter selection.")}
                 </Text>
                 <SimpleGrid cols={3} spacing="xs" mb={4}>
                   <Text size="xs" fw={600} ta="center" c="dimmed"> </Text>
-                  <Text size="xs" fw={600} ta="center">Image</Text>
-                  <Text size="xs" fw={600} ta="center">Video</Text>
+                  <Text size="xs" fw={600} ta="center">{t('admin_camp_col_image', 'Image')}</Text>
+                  <Text size="xs" fw={600} ta="center">{t('admin_camp_col_video', 'Video')}</Text>
                 </SimpleGrid>
                 {CAMPAIGN_BREAKPOINTS.map((breakpoint) => (
                   <SimpleGrid cols={3} spacing="xs" mb="xs" key={breakpoint}>
                     <Text size="sm" fw={500} style={{ display: 'flex', alignItems: 'center' }}>
-                      {BREAKPOINT_LABELS[breakpoint]}
+                      {t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint])}
                     </Text>
                     <Select
                       size="xs"
-                      aria-label={`${BREAKPOINT_LABELS[breakpoint]} Image Gallery Adapter`}
-                      placeholder="Inherited"
+                      aria-label={t('admin_camp_bp_image_aria', '{{bp}} Image Gallery Adapter', { bp: t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint]) })}
+                      placeholder={t('admin_camp_inherited', 'Inherited')}
                       clearable
                       data={getAdapterSelectOptions({ context: 'campaign-override', breakpoint })}
                       value={getCampaignBreakpointAdapterId(resolvedCampaignQuickOverrides, breakpoint, 'image')}
@@ -428,8 +434,8 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
                     />
                     <Select
                       size="xs"
-                      aria-label={`${BREAKPOINT_LABELS[breakpoint]} Video Gallery Adapter`}
-                      placeholder="Inherited"
+                      aria-label={t('admin_camp_bp_video_aria', '{{bp}} Video Gallery Adapter', { bp: t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint]) })}
+                      placeholder={t('admin_camp_inherited', 'Inherited')}
                       clearable
                       data={getAdapterSelectOptions({ context: 'campaign-override', breakpoint })}
                       value={getCampaignBreakpointAdapterId(resolvedCampaignQuickOverrides, breakpoint, 'video')}
@@ -442,16 +448,16 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           </Stack>
           <Group justify="space-between" align="flex-start" gap="md">
             <Text size="sm" c="dimmed" maw={560}>
-              Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields.
+              {t('admin_camp_quick_overrides_hint', 'Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields.')}
             </Text>
             <Button variant="light" onClick={onOpenResponsiveConfig}>
-              Edit Responsive Config
+              {t('admin_camp_edit_responsive', 'Edit Responsive Config')}
             </Button>
           </Group>
           <Stack gap={6}>
             <Group gap="xs" wrap="wrap">
               <Badge color={hasCustomGalleryOverrides ? 'grape' : 'gray'} variant={hasCustomGalleryOverrides ? 'light' : 'outline'}>
-                {hasCustomGalleryOverrides ? 'Custom gallery overrides' : 'Inheriting global gallery settings'}
+                {hasCustomGalleryOverrides ? t('admin_camp_custom_overrides', 'Custom gallery overrides') : t('admin_camp_inheriting', 'Inheriting global gallery settings')}
               </Badge>
               {galleryOverrideSummary.map((summary) => (
                 <Badge key={summary} color="violet" variant="light">
@@ -462,7 +468,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
             {hasCustomGalleryOverrides && (
               <Group justify="space-between" align="center" wrap="wrap" gap="sm">
                 <Text size="xs" c="dimmed">
-                  Clear the campaign-specific gallery override state here to fall back to the global gallery configuration.
+                  {t('admin_camp_clear_overrides_hint', 'Clear the campaign-specific gallery override state here to fall back to the global gallery configuration.')}
                 </Text>
                 <Button
                   variant="subtle"
@@ -473,7 +479,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
                     ...clearCampaignGalleryOverrides(),
                   })}
                 >
-                  Use Inherited Gallery Settings
+                  {t('admin_camp_use_inherited', 'Use Inherited Gallery Settings')}
                 </Button>
               </Group>
             )}
@@ -487,15 +493,15 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           {layoutTemplates.length > 0 && (
             <Group grow wrap="wrap" gap="sm" align="flex-end">
               <Select
-                label="Layout Template"
+                label={t('admin_camp_layout_label', 'Layout Template')}
                 description={usesLayoutBuilder
-                  ? 'Layout Builder is your selected gallery adapter — choose the template it renders.'
-                  : 'Assign a layout template to use the Layout Builder adapter'}
-                placeholder="None (use default adapter)"
+                  ? t('admin_camp_layout_desc_active', 'Layout Builder is your selected gallery adapter — choose the template it renders.')
+                  : t('admin_camp_layout_desc', 'Assign a layout template to use the Layout Builder adapter')}
+                placeholder={t('admin_camp_layout_ph', 'None (use default adapter)')}
                 clearable
                 data={layoutTemplates.map((lt) => ({
                   value: lt.id,
-                  label: `${lt.name} (${lt.slots.length} slots)`,
+                  label: t('admin_camp_layout_option', '{{name}} ({{count}} slots)', { name: lt.name, count: lt.slots.length }),
                 }))}
                 value={formState.layoutTemplateId || null}
                 onChange={(v) => updateForm({ ...formState, layoutTemplateId: v ?? '' })}
@@ -507,7 +513,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
                   onClick={() => onEditLayout(formState.layoutTemplateId)}
                   style={{ flex: '0 0 auto', alignSelf: 'flex-end' }}
                 >
-                  Edit Layout
+                  {t('admin_camp_edit_layout', 'Edit Layout')}
                 </Button>
               )}
             </Group>
@@ -515,8 +521,8 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
           {usesLayoutBuilder && !formState.layoutTemplateId && (
             <Text size="xs" c="orange" mt={layoutTemplates.length > 0 ? 4 : 0}>
               {layoutTemplates.length > 0
-                ? 'Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter.'
-                : 'Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first.'}
+                ? t('admin_camp_lb_no_template', 'Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter.')
+                : t('admin_camp_lb_no_templates', 'Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first.')}
             </Text>
           )}
         </Box>
@@ -538,6 +544,7 @@ export function UnifiedCampaignModal({
   categoryItems = [],
   tagItems = [],
 }: UnifiedCampaignModalProps) {
+  const { t } = useTranslation('wpsg');
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const { activeCampaign, onEditGalleryConfig, setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   // Live mirrors of the context so the edit-modal effect can snapshot whatever was
@@ -631,11 +638,11 @@ export function UnifiedCampaignModal({
         withinPortal={false}
         title={
           <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
-            <span>{isEdit ? 'Edit Campaign' : 'New Campaign'}</span>
+            <span>{isEdit ? t('admin_camp_edit_title', 'Edit Campaign') : t('admin_camp_new_title', 'New Campaign')}</span>
             <Group gap="xs" wrap="nowrap">
-              <Button variant="default" size="sm" onClick={guardedClose}>Cancel</Button>
+              <Button variant="default" size="sm" onClick={guardedClose}>{t('admin_cancel', 'Cancel')}</Button>
               <Button size="sm" onClick={handleSave} loading={isSaving}>
-                {isEdit ? 'Save Changes' : 'Create Campaign'}
+                {isEdit ? t('admin_camp_save', 'Save Changes') : t('admin_camp_create', 'Create Campaign')}
               </Button>
             </Group>
           </Group>
@@ -644,7 +651,7 @@ export function UnifiedCampaignModal({
         fullScreen={!!isExtraSmall}
         zIndex={300}
       >
-        <Tabs value={activeTab} onChange={setActiveTab} aria-label="Campaign modal tabs">
+        <Tabs value={activeTab} onChange={setActiveTab} aria-label={t('admin_camp_tabs_aria', 'Campaign modal tabs')}>
           <UnifiedCampaignModalTabList isEdit={isEdit} mediaCount={mediaItems.length} />
 
           <UnifiedCampaignDetailsPanel
@@ -717,9 +724,9 @@ export function UnifiedCampaignModal({
         opened={confirmOpen}
         onClose={cancelDiscard}
         onConfirm={confirmDiscard}
-        title="Discard changes?"
-        message="You have unsaved changes. Are you sure you want to discard them?"
-        confirmLabel="Discard"
+        title={t('admin_discard_title', 'Discard changes?')}
+        message={t('admin_discard_msg', 'You have unsaved changes. Are you sure you want to discard them?')}
+        confirmLabel={t('admin_discard', 'Discard')}
         confirmColor="red"
       />
 
@@ -728,11 +735,11 @@ export function UnifiedCampaignModal({
           <LazyGalleryConfigEditorModal
             opened={galleryConfigEditorOpen}
             onClose={() => setGalleryConfigEditorOpen(false)}
-            title="Campaign Responsive Gallery Config"
+            title={t('admin_camp_gconfig_title', 'Campaign Responsive Gallery Config')}
             value={formState.galleryOverrides}
             contextSummary={hasCampaignGalleryOverrides(formState)
-              ? 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.'
-              : 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.'}
+              ? t('admin_camp_gconfig_custom', 'This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings.')
+              : t('admin_camp_gconfig_inherit', 'This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides.')}
             onClear={() => {
               updateForm({
                 ...formState,
@@ -747,9 +754,9 @@ export function UnifiedCampaignModal({
               });
               setGalleryConfigEditorOpen(false);
             }}
-            saveLabel="Apply Campaign Gallery Config"
-            clearLabel="Clear Campaign Overrides"
-            unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+            saveLabel={t('admin_camp_gconfig_save', 'Apply Campaign Gallery Config')}
+            clearLabel={t('admin_camp_gconfig_clear', 'Clear Campaign Overrides')}
+            unifiedAdapterDescription={t('admin_camp_gconfig_unified_desc', 'Adapter applied when this campaign renders images and videos together.')}
             zIndex={500}
           />
         </Suspense>
@@ -809,22 +816,23 @@ function MediaTabContent({
   addMediaLoading,
   onAddExternalMedia,
 }: MediaTabContentProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Stack gap="lg">
       {/* Media grid */}
       {mediaItems.length === 0 ? (
-        <Text c="dimmed" ta="center" py="xl">No media attached to this campaign.</Text>
+        <Text c="dimmed" ta="center" py="xl">{t('admin_camp_no_media', 'No media attached to this campaign.')}</Text>
       ) : (
         <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="sm">
           {mediaItems.map((media) => (
-            <Card key={media.id} shadow="sm" padding="xs" radius="md" withBorder role="group" aria-label={`Media item ${media.caption || media.url}`}>
+            <Card key={media.id} shadow="sm" padding="xs" radius="md" withBorder role="group" aria-label={t('admin_camp_media_item_aria', 'Media item {{label}}', { label: media.caption || media.url })}>
               <Card.Section>
-                <Image src={media.thumbnail || media.url} height={100} alt={media.caption || 'Media'} fallbackSrc={FALLBACK_IMAGE_SRC} />
+                <Image src={media.thumbnail || media.url} height={100} alt={media.caption || t('admin_camp_media_alt', 'Media')} fallbackSrc={FALLBACK_IMAGE_SRC} />
               </Card.Section>
               <Group justify="space-between" mt="xs">
                 <Badge size="xs" variant="light">{media.type}</Badge>
-                <Tooltip label="Remove from campaign">
-                  <ActionIcon color="red" variant="light" size="sm" onClick={() => void onRemoveMedia(media)} aria-label="Remove from campaign">
+                <Tooltip label={t('admin_camp_remove_media', 'Remove from campaign')}>
+                  <ActionIcon color="red" variant="light" size="sm" onClick={() => void onRemoveMedia(media)} aria-label={t('admin_camp_remove_media', 'Remove from campaign')}>
                     <IconTrash size={14} />
                   </ActionIcon>
                 </Tooltip>
@@ -849,11 +857,11 @@ function MediaTabContent({
       {/* Upload section */}
       <Card withBorder>
         <Stack gap="sm">
-          <Group><IconUpload size={20} /><Text fw={500}>Upload New File</Text></Group>
+          <Group><IconUpload size={20} /><Text fw={500}>{t('admin_camp_upload_new', 'Upload New File')}</Text></Group>
           <FileButton onChange={(files) => files && void onUploadFile(files)} accept="image/*,video/*" multiple>
             {(props) => (
               <Button {...props} variant="light" fullWidth disabled={uploadLoading}>
-                {uploadLoading ? 'Uploading...' : `Choose up to ${maxBatchUploadSize} files`}
+                {uploadLoading ? t('admin_camp_uploading', 'Uploading...') : t('admin_camp_choose_files', 'Choose up to {{count}} files', { count: maxBatchUploadSize })}
               </Button>
             )}
           </FileButton>
@@ -879,7 +887,7 @@ function MediaTabContent({
             </Stack>
           )}
           <Text size="xs" c="dimmed">
-            Uploaded files use their filenames as captions in this modal.
+            {t('admin_camp_upload_hint', 'Uploaded files use their filenames as captions in this modal.')}
           </Text>
         </Stack>
       </Card>
@@ -887,27 +895,27 @@ function MediaTabContent({
       {/* External URL section */}
       <Card withBorder>
         <Stack gap="sm">
-          <Group><IconLink size={20} /><Text fw={500}>Add External URL</Text></Group>
+          <Group><IconLink size={20} /><Text fw={500}>{t('admin_camp_add_url', 'Add External URL')}</Text></Group>
           <Select
-            label="Type"
-            data={[{ value: 'video', label: 'Video' }, { value: 'image', label: 'Image' }]}
+            label={t('admin_camp_type_label', 'Type')}
+            data={[{ value: 'video', label: t('admin_camp_type_video', 'Video') }, { value: 'image', label: t('admin_camp_type_image', 'Image') }]}
             value={addMediaType}
             onChange={(v) => onAddMediaTypeChange((v as 'video' | 'image') ?? 'video')}
           />
           <TextInput
-            label="URL"
-            placeholder="https://youtube.com/watch?v=... or image URL"
+            label={t('admin_camp_url_label', 'URL')}
+            placeholder={t('admin_camp_url_ph', 'https://youtube.com/watch?v=... or image URL')}
             value={addMediaUrl}
             onChange={(e) => onAddMediaUrlChange(e.currentTarget.value)}
           />
           <TextInput
-            label="Caption (optional)"
-            placeholder="Describe this media"
+            label={t('admin_camp_caption_label', 'Caption (optional)')}
+            placeholder={t('admin_camp_caption_ph', 'Describe this media')}
             value={addMediaCaption}
             onChange={(e) => onAddMediaCaptionChange(e.currentTarget.value)}
           />
           <Button onClick={() => void onAddExternalMedia()} disabled={!addMediaUrl} loading={addMediaLoading}>
-            Add External Media
+            {t('admin_camp_add_ext_media', 'Add External Media')}
           </Button>
         </Stack>
       </Card>

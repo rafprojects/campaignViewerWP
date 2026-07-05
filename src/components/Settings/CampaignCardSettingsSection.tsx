@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Accordion, Divider, NumberInput, Slider, Stack, Switch, Text, TextInput } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
@@ -29,6 +30,7 @@ interface CampaignCardSettingsSectionProps {
 }
 
 export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint, apiClient }: CampaignCardSettingsSectionProps) {
+  const { t } = useTranslation('wpsg');
   const isDesktop = activeBreakpoint === 'desktop';
 
   // P37-LB: Fetch layout templates for listing-builder template selector
@@ -64,8 +66,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
   /** Decorate a description string with inheritance/override info. */
   function desc(base: string, key: keyof CardBreakpointOverrides): string {
     if (isDesktop) return base;
-    if (hasOverride(key)) return `${base} — Override for ${activeBreakpoint}`;
-    return `${base} — Inherited from ${inheritLabel(key)}`;
+    if (hasOverride(key)) return t('set_card_override', '{{base}} — Override for {{bp}}', { base, bp: activeBreakpoint });
+    return t('set_card_inherited', '{{base}} — Inherited from {{bp}}', { base, bp: inheritLabel(key) });
   }
 
   /** Write a value: flat setting for desktop, cardConfig overlay for tablet/mobile. */
@@ -122,19 +124,19 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
         style={{ cursor: 'pointer' }}
         onClick={() => unitKey ? clearDimField(fieldKey, unitKey) : clearField(fieldKey)}
       >
-        ↻ Reset to inherited
+        {t('set_card_reset_inherited', '↻ Reset to inherited')}
       </Text>
     );
   }
   return (
     <>
       <Accordion.Item value="appearance">
-        <Accordion.Control>Card Appearance</Accordion.Control>
+        <Accordion.Control>{t('set_card_appearance', 'Card Appearance')}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
             <DimensionInput
-              label="Border Radius"
-              description={desc('Corner rounding for campaign cards', 'cardBorderRadius')}
+              label={t('set_card_border_radius', 'Border Radius')}
+              description={desc(t('set_card_border_radius_desc', 'Corner rounding for campaign cards'), 'cardBorderRadius')}
               value={resolved.cardBorderRadius}
               unit={resolved.cardBorderRadiusUnit ?? 'px'}
               onValueChange={(value) => writeField('cardBorderRadius', value)}
@@ -145,8 +147,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardBorderRadius" unitKey="cardBorderRadiusUnit" />
             <NumberInput
-              label="Border Width (px)"
-              description={desc('Left accent border thickness', 'cardBorderWidth')}
+              label={t('set_card_border_width', 'Border Width (px)')}
+              description={desc(t('set_card_border_width_desc', 'Left accent border thickness'), 'cardBorderWidth')}
               value={resolved.cardBorderWidth}
               onChange={(value) => writeField('cardBorderWidth', typeof value === 'number' ? value : 4)}
               min={0}
@@ -155,12 +157,12 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardBorderWidth" />
             <ModalSelect
-              label="Border Color Mode"
-              description={desc('How card accent border colors are determined', 'cardBorderMode')}
+              label={t('set_card_border_mode', 'Border Color Mode')}
+              description={desc(t('set_card_border_mode_desc', 'How card accent border colors are determined'), 'cardBorderMode')}
               data={[
-                { value: 'auto', label: 'Auto (company brand color)' },
-                { value: 'single', label: 'Single color for all cards' },
-                { value: 'individual', label: 'Per-card color (set in Edit Campaign)' },
+                { value: 'auto', label: t('set_card_border_auto', 'Auto (company brand color)') },
+                { value: 'single', label: t('set_card_border_single', 'Single color for all cards') },
+                { value: 'individual', label: t('set_card_border_individual', 'Per-card color (set in Edit Campaign)') },
               ]}
               value={resolvedBorderMode}
               onChange={(value) => writeField('cardBorderMode', (value ?? 'auto') as GalleryBehaviorSettings['cardBorderMode'])}
@@ -168,29 +170,29 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardBorderMode" />
             {resolvedBorderMode === 'single' && (
               <ColorInput
-                label="Border Color"
-                description={desc('Accent border color applied to all campaign cards', 'cardBorderColor')}
+                label={t('set_card_border_color', 'Border Color')}
+                description={desc(t('set_card_border_color_desc', 'Accent border color applied to all campaign cards'), 'cardBorderColor')}
                 value={resolved.cardBorderColor}
                 onChange={(value) => writeField('cardBorderColor', value)}
               />
             )}
             {resolvedBorderMode === 'single' && <ResetLink fieldKey="cardBorderColor" />}
             <ModalSelect
-              label="Card Shadow"
-              description={desc('Depth effect for campaign cards', 'cardShadowPreset')}
+              label={t('set_card_shadow', 'Card Shadow')}
+              description={desc(t('set_card_shadow_desc', 'Depth effect for campaign cards'), 'cardShadowPreset')}
               data={[
-                { value: 'none', label: 'None' },
-                { value: 'subtle', label: 'Subtle' },
-                { value: 'medium', label: 'Medium' },
-                { value: 'dramatic', label: 'Dramatic' },
+                { value: 'none', label: t('set_card_shadow_none', 'None') },
+                { value: 'subtle', label: t('set_card_shadow_subtle', 'Subtle') },
+                { value: 'medium', label: t('set_card_shadow_medium', 'Medium') },
+                { value: 'dramatic', label: t('set_card_shadow_dramatic', 'Dramatic') },
               ]}
               value={resolved.cardShadowPreset}
               onChange={(value) => writeField('cardShadowPreset', value ?? 'subtle')}
             />
             <ResetLink fieldKey="cardShadowPreset" />
             <DimensionInput
-              label="Thumbnail Height"
-              description={desc('Height of the card thumbnail area', 'cardThumbnailHeight')}
+              label={t('set_card_thumb_h', 'Thumbnail Height')}
+              description={desc(t('set_card_thumb_h_desc', 'Height of the card thumbnail area'), 'cardThumbnailHeight')}
               value={resolved.cardThumbnailHeight}
               unit={resolved.cardThumbnailHeightUnit ?? 'px'}
               onValueChange={(value) => writeField('cardThumbnailHeight', value)}
@@ -201,71 +203,71 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardThumbnailHeight" unitKey="cardThumbnailHeightUnit" />
             <ModalSelect
-              label="Thumbnail Fit"
-              description={desc('How the thumbnail image fills the card', 'cardThumbnailFit')}
+              label={t('set_card_thumb_fit', 'Thumbnail Fit')}
+              description={desc(t('set_card_thumb_fit_desc', 'How the thumbnail image fills the card'), 'cardThumbnailFit')}
               data={[
-                { value: 'cover', label: 'Cover (fill)' },
-                { value: 'contain', label: 'Contain (fit)' },
+                { value: 'cover', label: t('set_card_fit_cover', 'Cover (fill)') },
+                { value: 'contain', label: t('set_card_fit_contain', 'Contain (fit)') },
               ]}
               value={resolved.cardThumbnailFit}
               onChange={(value) => writeField('cardThumbnailFit', value ?? 'cover')}
             />
             <ResetLink fieldKey="cardThumbnailFit" />
 
-            <Divider label="Element Visibility" labelPosition="center" />
+            <Divider label={t('set_card_element_vis', 'Element Visibility')} labelPosition="center" />
 
             <Switch
-              label="Show company name badge"
-              description={desc('Company badge overlay on card thumbnail', 'showCardCompanyName')}
+              label={t('set_card_show_company', 'Show company name badge')}
+              description={desc(t('set_card_show_company_desc', 'Company badge overlay on card thumbnail'), 'showCardCompanyName')}
               checked={resolved.showCardCompanyName ?? true}
               onChange={(event) => writeField('showCardCompanyName', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardCompanyName" />
             <Switch
-              label="Show access badge"
-              description={desc("Green 'Access' badge on accessible cards", 'showCardAccessBadge')}
+              label={t('set_card_show_access', 'Show access badge')}
+              description={desc(t('set_card_show_access_desc', "Green 'Access' badge on accessible cards"), 'showCardAccessBadge')}
               checked={resolved.showCardAccessBadge ?? true}
               onChange={(event) => writeField('showCardAccessBadge', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardAccessBadge" />
             <Switch
-              label="Show card title"
-              description={desc('Show the campaign title in the card info panel', 'showCardTitle')}
+              label={t('set_card_show_title', 'Show card title')}
+              description={desc(t('set_card_show_title_desc', 'Show the campaign title in the card info panel'), 'showCardTitle')}
               checked={resolved.showCardTitle ?? true}
               onChange={(event) => writeField('showCardTitle', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardTitle" />
             <Switch
-              label="Show card description"
-              description={desc('Show the campaign description in the card info panel', 'showCardDescription')}
+              label={t('set_card_show_desc', 'Show card description')}
+              description={desc(t('set_card_show_desc_desc', 'Show the campaign description in the card info panel'), 'showCardDescription')}
               checked={resolved.showCardDescription ?? true}
               onChange={(event) => writeField('showCardDescription', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardDescription" />
             <Switch
-              label="Show media counts"
-              description={desc('Video and image count below description', 'showCardMediaCounts')}
+              label={t('set_card_show_counts', 'Show media counts')}
+              description={desc(t('set_card_show_counts_desc', 'Video and image count below description'), 'showCardMediaCounts')}
               checked={resolved.showCardMediaCounts ?? true}
               onChange={(event) => writeField('showCardMediaCounts', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardMediaCounts" />
             <Switch
-              label="Show card border"
-              description={desc('Accent border and hover border effect', 'showCardBorder')}
+              label={t('set_card_show_border', 'Show card border')}
+              description={desc(t('set_card_show_border_desc', 'Accent border and hover border effect'), 'showCardBorder')}
               checked={resolved.showCardBorder ?? true}
               onChange={(event) => writeField('showCardBorder', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardBorder" />
             <Switch
-              label="Show thumbnail fade"
-              description={desc('Gradient overlay at bottom of thumbnail', 'showCardThumbnailFade')}
+              label={t('set_card_show_fade', 'Show thumbnail fade')}
+              description={desc(t('set_card_show_fade_desc', 'Gradient overlay at bottom of thumbnail'), 'showCardThumbnailFade')}
               checked={resolved.showCardThumbnailFade ?? true}
               onChange={(event) => writeField('showCardThumbnailFade', event.currentTarget.checked)}
             />
             <ResetLink fieldKey="showCardThumbnailFade" />
             <Switch
-              label="Show card info panel"
-              description={desc('Show title, description, tags & media counts below thumbnail', 'showCardInfoPanel')}
+              label={t('set_card_show_info', 'Show card info panel')}
+              description={desc(t('set_card_show_info_desc', 'Show title, description, tags & media counts below thumbnail'), 'showCardInfoPanel')}
               checked={resolved.showCardInfoPanel ?? true}
               onChange={(event) => writeField('showCardInfoPanel', event.currentTarget.checked)}
             />
@@ -275,19 +277,19 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
       </Accordion.Item>
 
       <Accordion.Item value="grid-pagination">
-        <Accordion.Control>Card Grid &amp; Pagination</Accordion.Control>
+        <Accordion.Control>{t('set_card_grid_pag', 'Card Grid & Pagination')}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
             <ModalSelect
-              label="Cards Per Row"
-              description={desc('Number of columns in the card grid (Auto = responsive)', 'cardGridColumns')}
+              label={t('set_card_per_row', 'Cards Per Row')}
+              description={desc(t('set_card_per_row_desc', 'Number of columns in the card grid (Auto = responsive)'), 'cardGridColumns')}
               data={[
-                { value: '0', label: 'Auto (responsive)' },
-                { value: '2', label: '2 columns' },
-                { value: '3', label: '3 columns' },
-                { value: '4', label: '4 columns' },
-                { value: '5', label: '5 columns' },
-                { value: '6', label: '6 columns' },
+                { value: '0', label: t('set_card_cols_auto', 'Auto (responsive)') },
+                { value: '2', label: t('set_card_cols_2', '2 columns') },
+                { value: '3', label: t('set_card_cols_3', '3 columns') },
+                { value: '4', label: t('set_card_cols_4', '4 columns') },
+                { value: '5', label: t('set_card_cols_5', '5 columns') },
+                { value: '6', label: t('set_card_cols_6', '6 columns') },
               ]}
               value={String(resolved.cardGridColumns)}
               onChange={(value) => writeField('cardGridColumns', parseInt(value ?? '0', 10))}
@@ -297,8 +299,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             {resolved.cardGridColumns === 0 && (
               <>
                 <NumberInput
-                  label="Max Columns (auto mode)"
-                  description={desc('Cap the number of columns when using Auto layout. 0 = unlimited.', 'cardMaxColumns')}
+                  label={t('set_card_max_cols', 'Max Columns (auto mode)')}
+                  description={desc(t('set_card_max_cols_desc', 'Cap the number of columns when using Auto layout. 0 = unlimited.'), 'cardMaxColumns')}
                   value={resolved.cardMaxColumns}
                   onChange={(value) => writeField('cardMaxColumns', typeof value === 'number' ? value : 0)}
                   min={0}
@@ -309,8 +311,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             )}
 
             <DimensionInput
-              label="Horizontal Gap"
-              description={desc('Horizontal spacing between campaign cards', 'cardGapH')}
+              label={t('set_card_hgap', 'Horizontal Gap')}
+              description={desc(t('set_card_hgap_desc', 'Horizontal spacing between campaign cards'), 'cardGapH')}
               value={resolved.cardGapH}
               unit={resolved.cardGapHUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGapH', value)}
@@ -322,8 +324,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardGapH" unitKey="cardGapHUnit" />
 
             <DimensionInput
-              label="Vertical Gap"
-              description={desc('Vertical spacing between campaign card rows', 'cardGapV')}
+              label={t('set_card_vgap', 'Vertical Gap')}
+              description={desc(t('set_card_vgap_desc', 'Vertical spacing between campaign card rows'), 'cardGapV')}
               value={resolved.cardGapV}
               unit={resolved.cardGapVUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGapV', value)}
@@ -335,8 +337,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardGapV" unitKey="cardGapVUnit" />
 
             <DimensionInput
-              label="Card Max Width"
-              description={desc('Limit individual card width. 0 = no limit (fill column).', 'cardMaxWidth')}
+              label={t('set_card_maxw', 'Card Max Width')}
+              description={desc(t('set_card_maxw_desc', 'Limit individual card width. 0 = no limit (fill column).'), 'cardMaxWidth')}
               value={resolved.cardMaxWidth}
               unit={resolved.cardMaxWidthUnit ?? 'px'}
               onValueChange={(value) => writeField('cardMaxWidth', value)}
@@ -344,13 +346,13 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               allowedUnits={CSS_WIDTH_UNITS}
               max={800}
               step={10}
-              placeholder="0 = unlimited"
+              placeholder={t('set_card_ph_unlimited', '0 = unlimited')}
             />
             <ResetLink fieldKey="cardMaxWidth" unitKey="cardMaxWidthUnit" />
 
             <NumberInput
-              label="Card Scale"
-              description={desc('Primary sizing multiplier for cards. 1 = default size.', 'cardScale')}
+              label={t('set_card_scale', 'Card Scale')}
+              description={desc(t('set_card_scale_desc', 'Primary sizing multiplier for cards. 1 = default size.'), 'cardScale')}
               value={resolved.cardScale ?? 1}
               onChange={(value) => writeField('cardScale', typeof value === 'number' ? value : 1)}
               min={0.5}
@@ -361,14 +363,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardScale" />
 
             <ModalSelect
-              label="Card Justification"
-              description={desc('How cards distribute when a row does not fill the full available width.', 'cardJustifyContent')}
+              label={t('set_card_justify', 'Card Justification')}
+              description={desc(t('set_card_justify_desc', 'How cards distribute when a row does not fill the full available width.'), 'cardJustifyContent')}
               data={[
-                { value: 'start', label: 'Start' },
-                { value: 'center', label: 'Center' },
-                { value: 'end', label: 'End' },
-                { value: 'space-between', label: 'Space Between' },
-                { value: 'space-evenly', label: 'Space Evenly' },
+                { value: 'start', label: t('set_card_justify_start', 'Start') },
+                { value: 'center', label: t('set_card_justify_center', 'Center') },
+                { value: 'end', label: t('set_card_justify_end', 'End') },
+                { value: 'space-between', label: t('set_card_justify_between', 'Space Between') },
+                { value: 'space-evenly', label: t('set_card_justify_evenly', 'Space Evenly') },
               ]}
               value={resolved.cardJustifyContent ?? 'center'}
               onChange={(value) => writeField('cardJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
@@ -376,12 +378,12 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardJustifyContent" />
 
             <ModalSelect
-              label="Vertical Alignment"
-              description={desc('How the card grid aligns vertically when minimum height exceeds content height.', 'cardGalleryVerticalAlign')}
+              label={t('set_card_valign', 'Vertical Alignment')}
+              description={desc(t('set_card_valign_desc', 'How the card grid aligns vertically when minimum height exceeds content height.'), 'cardGalleryVerticalAlign')}
               data={[
-                { value: 'start', label: 'Top' },
-                { value: 'center', label: 'Center' },
-                { value: 'end', label: 'Bottom' },
+                { value: 'start', label: t('set_card_valign_top', 'Top') },
+                { value: 'center', label: t('set_card_justify_center', 'Center') },
+                { value: 'end', label: t('set_card_valign_bottom', 'Bottom') },
               ]}
               value={resolved.cardGalleryVerticalAlign ?? 'start'}
               onChange={(value) => writeField('cardGalleryVerticalAlign', (value ?? 'start') as GalleryBehaviorSettings['cardGalleryVerticalAlign'])}
@@ -389,8 +391,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardGalleryVerticalAlign" />
 
             <DimensionInput
-              label="Grid Minimum Height"
-              description={desc('Minimum height for the card grid container.', 'cardGalleryMinHeight')}
+              label={t('set_card_grid_minh', 'Grid Minimum Height')}
+              description={desc(t('set_card_grid_minh_desc', 'Minimum height for the card grid container.'), 'cardGalleryMinHeight')}
               value={resolved.cardGalleryMinHeight}
               unit={resolved.cardGalleryMinHeightUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGalleryMinHeight', value)}
@@ -398,13 +400,13 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               allowedUnits={CSS_HEIGHT_UNITS}
               max={1200}
               step={50}
-              placeholder="0 = no minimum"
+              placeholder={t('set_card_ph_no_min', '0 = no minimum')}
             />
             <ResetLink fieldKey="cardGalleryMinHeight" unitKey="cardGalleryMinHeightUnit" />
 
             <DimensionInput
-              label="Grid Maximum Height"
-              description={desc('Maximum height for the card grid area. 0 = no limit.', 'cardGalleryMaxHeight')}
+              label={t('set_card_grid_maxh', 'Grid Maximum Height')}
+              description={desc(t('set_card_grid_maxh_desc', 'Maximum height for the card grid area. 0 = no limit.'), 'cardGalleryMaxHeight')}
               value={resolved.cardGalleryMaxHeight}
               unit={resolved.cardGalleryMaxHeightUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGalleryMaxHeight', value)}
@@ -412,13 +414,13 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               allowedUnits={CSS_HEIGHT_UNITS}
               max={2000}
               step={50}
-              placeholder="0 = no maximum"
+              placeholder={t('set_card_ph_no_max', '0 = no maximum')}
             />
             <ResetLink fieldKey="cardGalleryMaxHeight" unitKey="cardGalleryMaxHeightUnit" />
 
             <DimensionInput
-              label="Grid Horizontal Offset"
-              description={desc('Fine-tune horizontal position of the card grid.', 'cardGalleryOffsetX')}
+              label={t('set_card_grid_offx', 'Grid Horizontal Offset')}
+              description={desc(t('set_card_grid_offx_desc', 'Fine-tune horizontal position of the card grid.'), 'cardGalleryOffsetX')}
               value={resolved.cardGalleryOffsetX ?? 0}
               unit={resolved.cardGalleryOffsetXUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGalleryOffsetX', value)}
@@ -431,8 +433,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardGalleryOffsetX" unitKey="cardGalleryOffsetXUnit" />
 
             <DimensionInput
-              label="Grid Vertical Offset"
-              description={desc('Fine-tune vertical position of the card grid.', 'cardGalleryOffsetY')}
+              label={t('set_card_grid_offy', 'Grid Vertical Offset')}
+              description={desc(t('set_card_grid_offy_desc', 'Fine-tune vertical position of the card grid.'), 'cardGalleryOffsetY')}
               value={resolved.cardGalleryOffsetY ?? 0}
               unit={resolved.cardGalleryOffsetYUnit ?? 'px'}
               onValueChange={(value) => writeField('cardGalleryOffsetY', value)}
@@ -445,18 +447,18 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardGalleryOffsetY" unitKey="cardGalleryOffsetYUnit" />
 
             <ModalSelect
-              label="Card Aspect Ratio"
-              description={desc('Lock cards to a fixed aspect ratio', 'cardAspectRatio')}
+              label={t('set_card_aspect', 'Card Aspect Ratio')}
+              description={desc(t('set_card_aspect_desc', 'Lock cards to a fixed aspect ratio'), 'cardAspectRatio')}
               data={[
-                { value: 'auto', label: 'Auto (natural)' },
-                { value: '16:9', label: '16:9 (widescreen)' },
-                { value: '4:3', label: '4:3 (standard)' },
-                { value: '1:1', label: '1:1 (square)' },
-                { value: '3:4', label: '3:4 (portrait)' },
-                { value: '9:16', label: '9:16 (tall portrait)' },
-                { value: '2:3', label: '2:3 (photo portrait)' },
-                { value: '3:2', label: '3:2 (photo landscape)' },
-                { value: '21:9', label: '21:9 (ultrawide)' },
+                { value: 'auto', label: t('set_card_ar_auto', 'Auto (natural)') },
+                { value: '16:9', label: t('set_card_ar_16_9', '16:9 (widescreen)') },
+                { value: '4:3', label: t('set_card_ar_4_3', '4:3 (standard)') },
+                { value: '1:1', label: t('set_card_ar_1_1', '1:1 (square)') },
+                { value: '3:4', label: t('set_card_ar_3_4', '3:4 (portrait)') },
+                { value: '9:16', label: t('set_card_ar_9_16', '9:16 (tall portrait)') },
+                { value: '2:3', label: t('set_card_ar_2_3', '2:3 (photo portrait)') },
+                { value: '3:2', label: t('set_card_ar_3_2', '3:2 (photo landscape)') },
+                { value: '21:9', label: t('set_card_ar_21_9', '21:9 (ultrawide)') },
               ]}
               value={resolved.cardAspectRatio ?? 'auto'}
               onChange={(value) => writeField('cardAspectRatio', (value ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}
@@ -464,8 +466,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             <ResetLink fieldKey="cardAspectRatio" />
 
             <DimensionInput
-              label="Card Min Height"
-              description={desc('Minimum height for each card. 0 = no minimum.', 'cardMinHeight')}
+              label={t('set_card_minh', 'Card Min Height')}
+              description={desc(t('set_card_minh_desc', 'Minimum height for each card. 0 = no minimum.'), 'cardMinHeight')}
               value={resolved.cardMinHeight}
               unit={resolved.cardMinHeightUnit ?? 'px'}
               onValueChange={(value) => writeField('cardMinHeight', value)}
@@ -476,14 +478,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardMinHeight" unitKey="cardMinHeightUnit" />
 
-            <Divider label="Pagination" labelPosition="left" />
+            <Divider label={t('set_card_pagination', 'Pagination')} labelPosition="left" />
             <ModalSelect
-              label="Display Mode"
-              description={desc('How cards are displayed: all at once, progressively loaded, or paginated with arrows', 'cardDisplayMode')}
+              label={t('set_card_display_mode', 'Display Mode')}
+              description={desc(t('set_card_display_mode_desc', 'How cards are displayed: all at once, progressively loaded, or paginated with arrows'), 'cardDisplayMode')}
               data={[
-                { value: 'show-all', label: 'Show All' },
-                { value: 'load-more', label: 'Load More (progressive)' },
-                { value: 'paginated', label: 'Paginated (arrows)' },
+                { value: 'show-all', label: t('set_card_dm_all', 'Show All') },
+                { value: 'load-more', label: t('set_card_dm_more', 'Load More (progressive)') },
+                { value: 'paginated', label: t('set_card_dm_paged', 'Paginated (arrows)') },
               ]}
               value={resolved.cardDisplayMode}
               onChange={(value) => writeField('cardDisplayMode', (value ?? 'load-more') as GalleryBehaviorSettings['cardDisplayMode'])}
@@ -493,8 +495,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             {resolved.cardDisplayMode === 'paginated' && (
               <>
                 <NumberInput
-                  label="Rows Per Page"
-                  description={desc('Number of card rows visible per page', 'cardRowsPerPage')}
+                  label={t('set_card_rows_page', 'Rows Per Page')}
+                  description={desc(t('set_card_rows_page_desc', 'Number of card rows visible per page'), 'cardRowsPerPage')}
                   value={resolved.cardRowsPerPage}
                   onChange={(value) => writeField('cardRowsPerPage', typeof value === 'number' ? value : 3)}
                   min={1}
@@ -503,15 +505,15 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                 />
                 <ResetLink fieldKey="cardRowsPerPage" />
                 <Switch
-                  label="Dot Navigator"
-                  description={desc('Show dot navigator below the card grid', 'cardPageDotNav')}
+                  label={t('set_card_dot_nav', 'Dot Navigator')}
+                  description={desc(t('set_card_dot_nav_desc', 'Show dot navigator below the card grid'), 'cardPageDotNav')}
                   checked={resolved.cardPageDotNav}
                   onChange={(event) => writeField('cardPageDotNav', event.currentTarget.checked)}
                 />
                 <ResetLink fieldKey="cardPageDotNav" />
                 <NumberInput
-                  label="Page Transition Duration (ms)"
-                  description={desc('Slide animation speed between pages', 'cardPageTransitionMs')}
+                  label={t('set_card_page_trans', 'Page Transition Duration (ms)')}
+                  description={desc(t('set_card_page_trans_desc', 'Slide animation speed between pages'), 'cardPageTransitionMs')}
                   value={resolved.cardPageTransitionMs}
                   onChange={(value) => writeField('cardPageTransitionMs', typeof value === 'number' ? value : 300)}
                   min={100}
@@ -526,10 +528,10 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
       </Accordion.Item>
 
       <Accordion.Item value="card-internals">
-        <Accordion.Control>Card Internals</Accordion.Control>
+        <Accordion.Control>{t('set_card_internals', 'Card Internals')}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
-            <Text size="sm" fw={500}>Locked Card Opacity</Text>
+            <Text size="sm" fw={500}>{t('set_card_locked_opacity', 'Locked Card Opacity')}</Text>
             <Slider
               value={resolved.cardLockedOpacity}
               onChange={(value) => writeField('cardLockedOpacity', value)}
@@ -539,7 +541,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
             />
             <ResetLink fieldKey="cardLockedOpacity" />
-            <Text size="sm" fw={500}>Gradient Start Opacity</Text>
+            <Text size="sm" fw={500}>{t('set_card_grad_start', 'Gradient Start Opacity')}</Text>
             <Slider
               value={resolved.cardGradientStartOpacity}
               onChange={(value) => writeField('cardGradientStartOpacity', value)}
@@ -548,7 +550,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={0.05}
             />
             <ResetLink fieldKey="cardGradientStartOpacity" />
-            <Text size="sm" fw={500}>Gradient End Opacity</Text>
+            <Text size="sm" fw={500}>{t('set_card_grad_end', 'Gradient End Opacity')}</Text>
             <Slider
               value={resolved.cardGradientEndOpacity}
               onChange={(value) => writeField('cardGradientEndOpacity', value)}
@@ -558,8 +560,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardGradientEndOpacity" />
             <NumberInput
-              label="Lock Icon Size (px)"
-              description={desc('Size of the lock icon shown on inaccessible cards', 'cardLockIconSize')}
+              label={t('set_card_lock_icon', 'Lock Icon Size (px)')}
+              description={desc(t('set_card_lock_icon_desc', 'Size of the lock icon shown on inaccessible cards'), 'cardLockIconSize')}
               value={resolved.cardLockIconSize}
               onChange={(value) => writeField('cardLockIconSize', typeof value === 'number' ? value : 32)}
               min={12}
@@ -567,8 +569,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardLockIconSize" />
             <NumberInput
-              label="Access Icon Size (px)"
-              description={desc('Size of the icon inside the access badge', 'cardAccessIconSize')}
+              label={t('set_card_access_icon', 'Access Icon Size (px)')}
+              description={desc(t('set_card_access_icon_desc', 'Size of the icon inside the access badge'), 'cardAccessIconSize')}
               value={resolved.cardAccessIconSize}
               onChange={(value) => writeField('cardAccessIconSize', typeof value === 'number' ? value : 14)}
               min={8}
@@ -576,8 +578,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardAccessIconSize" />
             <NumberInput
-              label="Badge Offset Y (px)"
-              description={desc('Vertical offset from the top edge for access and company badges', 'cardBadgeOffsetY')}
+              label={t('set_card_badge_offy', 'Badge Offset Y (px)')}
+              description={desc(t('set_card_badge_offy_desc', 'Vertical offset from the top edge for access and company badges'), 'cardBadgeOffsetY')}
               value={resolved.cardBadgeOffsetY}
               onChange={(value) => writeField('cardBadgeOffsetY', typeof value === 'number' ? value : 8)}
               min={0}
@@ -585,8 +587,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardBadgeOffsetY" />
             <NumberInput
-              label="Company Badge Max Width (px)"
-              description={desc('Maximum width of the company badge before truncation', 'cardCompanyBadgeMaxWidth')}
+              label={t('set_card_company_maxw', 'Company Badge Max Width (px)')}
+              description={desc(t('set_card_company_maxw_desc', 'Maximum width of the company badge before truncation'), 'cardCompanyBadgeMaxWidth')}
               value={resolved.cardCompanyBadgeMaxWidth}
               onChange={(value) => writeField('cardCompanyBadgeMaxWidth', typeof value === 'number' ? value : 160)}
               min={60}
@@ -594,15 +596,15 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardCompanyBadgeMaxWidth" />
             <NumberInput
-              label="Thumbnail Hover Transition (ms)"
-              description={desc('Duration of the thumbnail hover zoom effect', 'cardThumbnailHoverTransitionMs')}
+              label={t('set_card_thumb_hover', 'Thumbnail Hover Transition (ms)')}
+              description={desc(t('set_card_thumb_hover_desc', 'Duration of the thumbnail hover zoom effect'), 'cardThumbnailHoverTransitionMs')}
               value={resolved.cardThumbnailHoverTransitionMs}
               onChange={(value) => writeField('cardThumbnailHoverTransitionMs', typeof value === 'number' ? value : 300)}
               min={0}
               max={1000}
             />
             <ResetLink fieldKey="cardThumbnailHoverTransitionMs" />
-            <Text size="sm" fw={500}>Page Transition Opacity</Text>
+            <Text size="sm" fw={500}>{t('set_card_page_opacity', 'Page Transition Opacity')}</Text>
             <Slider
               value={resolved.cardPageTransitionOpacity}
               onChange={(value) => writeField('cardPageTransitionOpacity', value)}
@@ -612,8 +614,8 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
             />
             <ResetLink fieldKey="cardPageTransitionOpacity" />
             <TextInput
-              label="Auto Columns Breakpoints"
-              description={desc('Format: 480:1,768:2,1024:3,1280:4', 'cardAutoColumnsBreakpoints')}
+              label={t('set_card_auto_cols_bp', 'Auto Columns Breakpoints')}
+              description={desc(t('set_card_auto_cols_bp_desc', 'Format: 480:1,768:2,1024:3,1280:4'), 'cardAutoColumnsBreakpoints')}
               value={resolved.cardAutoColumnsBreakpoints}
               onChange={(event) => writeField('cardAutoColumnsBreakpoints', event.currentTarget.value)}
             />
@@ -624,26 +626,24 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
 
       {/* P35-B: Campaign Listing layout selector */}
       <Accordion.Item value="campaign-listing">
-        <Accordion.Control>Campaign Listing</Accordion.Control>
+        <Accordion.Control>{t('set_card_listing', 'Campaign Listing')}</Accordion.Control>
         <Accordion.Panel>
           <Stack gap="md">
             <Text size="xs" c="dimmed">
-              Choose the layout adapter used to render the public campaign listing.
-              Adapter-specific knobs (gap, columns, target row height) are shared with
-              per-campaign galleries in Phase 1.
+              {t('set_card_listing_intro', 'Choose the layout adapter used to render the public campaign listing. Adapter-specific knobs (gap, columns, target row height) are shared with per-campaign galleries in Phase 1.')}
             </Text>
             <ModalSelect
-              label="Listing Layout (Desktop)"
-              description="Layout adapter for the campaign listing on desktop."
+              label={t('set_card_listing_desktop', 'Listing Layout (Desktop)')}
+              description={t('set_card_listing_desktop_desc', 'Layout adapter for the campaign listing on desktop.')}
               data={getListingAdapterSelectOptions('desktop')}
               value={settings.campaignListingAdapterId ?? 'compact-grid'}
               onChange={(value) => updateSetting('campaignListingAdapterId', value ?? 'compact-grid')}
             />
             <ModalSelect
-              label="Listing Layout (Tablet)"
-              description="Optional override for tablet. Leave unset to inherit the desktop selection."
+              label={t('set_card_listing_tablet', 'Listing Layout (Tablet)')}
+              description={t('set_card_listing_override_desc', 'Optional override for tablet. Leave unset to inherit the desktop selection.')}
               data={[
-                { value: '', label: 'Inherit from desktop' },
+                { value: '', label: t('set_card_inherit_desktop', 'Inherit from desktop') },
                 ...getListingAdapterSelectOptions('tablet'),
               ]}
               value={settings.campaignListingAdapterIdTablet ?? ''}
@@ -652,10 +652,10 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               }
             />
             <ModalSelect
-              label="Listing Layout (Mobile)"
-              description="Optional override for mobile. Leave unset to inherit the desktop selection."
+              label={t('set_card_listing_mobile', 'Listing Layout (Mobile)')}
+              description={t('set_card_listing_override_mobile_desc', 'Optional override for mobile. Leave unset to inherit the desktop selection.')}
               data={[
-                { value: '', label: 'Inherit from desktop' },
+                { value: '', label: t('set_card_inherit_desktop', 'Inherit from desktop') },
                 ...getListingAdapterSelectOptions('mobile'),
               ]}
               value={settings.campaignListingAdapterIdMobile ?? ''}
@@ -668,11 +668,11 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               settings.campaignListingAdapterIdTablet === 'layout-builder' ||
               settings.campaignListingAdapterIdMobile === 'layout-builder') && (
               <ModalSelect
-                label="Listing Layout Template"
-                description="The template whose slots define the positioned containers for campaign cards."
+                label={t('set_card_listing_template', 'Listing Layout Template')}
+                description={t('set_card_listing_template_desc', 'The template whose slots define the positioned containers for campaign cards.')}
                 data={[
-                  { value: '', label: 'No template selected' },
-                  ...(layoutTemplates ?? []).map((t) => ({ value: t.id, label: t.name })),
+                  { value: '', label: t('set_card_no_template', 'No template selected') },
+                  ...(layoutTemplates ?? []).map((lt) => ({ value: lt.id, label: lt.name })),
                 ]}
                 value={settings.campaignListingLayoutTemplateId ?? ''}
                 onChange={(value) =>

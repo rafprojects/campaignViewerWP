@@ -1,5 +1,6 @@
 import { ActionIcon, Box, Image, Modal, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -20,8 +21,9 @@ export function MediaLightboxModal({
   onPrev,
   onNext,
 }: MediaLightboxModalProps) {
+  const { t } = useTranslation('wpsg');
   const currentItem = imageItems[lightboxIndex];
-  const ariaLabel = `Media lightbox: ${currentItem?.caption || 'Image'} (${lightboxIndex + 1} of ${imageItems.length})`;
+  const ariaLabel = t('admin_media_lb_aria', 'Media lightbox: {{caption}} ({{index}} of {{total}})', { caption: currentItem?.caption || t('admin_media_type_image', 'Image'), index: lightboxIndex + 1, total: imageItems.length });
 
   return (
     <Modal
@@ -38,7 +40,7 @@ export function MediaLightboxModal({
         <Box pos="relative">
           <Image
             src={currentItem.url}
-            alt={currentItem.caption || 'Media preview'}
+            alt={currentItem.caption || t('admin_media_lb_alt', 'Media preview')}
             fit="contain"
             mah="80dvh"
           />
@@ -49,7 +51,7 @@ export function MediaLightboxModal({
             top={10}
             right={10}
             onClick={onClose}
-            aria-label="Close lightbox"
+            aria-label={t('admin_media_lb_close', 'Close lightbox')}
           >
             <IconX size={18} />
           </ActionIcon>
@@ -63,7 +65,7 @@ export function MediaLightboxModal({
                 top="50%"
                 style={{ transform: 'translateY(-50%)' }}
                 onClick={onPrev}
-                aria-label="Previous image"
+                aria-label={t('admin_media_lb_prev', 'Previous image')}
               >
                 <IconChevronLeft size={20} />
               </ActionIcon>
@@ -75,7 +77,7 @@ export function MediaLightboxModal({
                 top="50%"
                 style={{ transform: 'translateY(-50%)' }}
                 onClick={onNext}
-                aria-label="Next image"
+                aria-label={t('admin_media_lb_next', 'Next image')}
               >
                 <IconChevronRight size={20} />
               </ActionIcon>
@@ -89,7 +91,7 @@ export function MediaLightboxModal({
             p="md"
             style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--wpsg-color-background) 80%, transparent))' }}
           >
-            <Text c="white" size="sm">{currentItem.caption || 'Untitled'}</Text>
+            <Text c="white" size="sm">{currentItem.caption || t('admin_untitled', 'Untitled')}</Text>
             <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>
           </Box>
         </Box>

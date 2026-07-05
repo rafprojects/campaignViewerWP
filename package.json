@@ -1,7 +1,7 @@
 {
   "name": "wp-super-gallery",
   "private": true,
-  "version": "0.27.0",
+  "version": "0.90.0",
   "type": "module",
   "workspaces": [
     "packages/*"
@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:wp": "npm run build && node scripts/copy-wp-assets.js",
+    "build:wp": "npm run i18n:generate && npm run build && node scripts/copy-wp-assets.js",
+    "i18n:generate": "node scripts/generate-frontend-i18n.mjs",
+    "i18n:check": "node scripts/generate-frontend-i18n.mjs --check",
     "validate:themes": "node scripts/validate-themes.mjs",
     "validate:adapter-settings": "node scripts/validate-adapter-settings-parity.mjs",
     "lint": "eslint .",

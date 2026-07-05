@@ -831,7 +831,7 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         $result = WPSG_DB::list_audit_entries($args);
 
         // Accept: text/csv → CSV export.
-        $accept = $_SERVER['HTTP_ACCEPT'] ?? '';
+        $accept = sanitize_text_field(wp_unslash($_SERVER['HTTP_ACCEPT'] ?? ''));
         if (strpos($accept, 'text/csv') !== false) {
             return self::audit_csv_response($result['items']);
         }

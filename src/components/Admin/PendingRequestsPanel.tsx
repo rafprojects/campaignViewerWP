@@ -12,6 +12,7 @@ import {
   Title,
 } from '@mantine/core';
 import { IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { useAccessRequests } from '@/services/adminQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -28,6 +29,7 @@ function formatDate(iso: string): string {
 }
 
 export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: PendingRequestsPanelProps) {
+  const { t } = useTranslation('wpsg');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const { data: requests, isLoading, refetch } = useAccessRequests(apiClient, campaignId);
@@ -44,7 +46,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
       await refetch();
       onMutate?.();
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to approve request');
+      setActionError(err instanceof Error ? err.message : t('admin_req_approve_fail', 'Failed to approve request'));
     } finally {
       setActionLoading(null);
     }
@@ -58,7 +60,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
       await refetch();
       onMutate?.();
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to deny request');
+      setActionError(err instanceof Error ? err.message : t('admin_req_deny_fail', 'Failed to deny request'));
     } finally {
       setActionLoading(null);
     }
@@ -67,7 +69,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
   if (!campaignId) {
     return (
       <Text size="sm" c="dimmed" ta="center" py="md">
-        Select a campaign to see access requests.
+        {t('admin_req_select_campaign', 'Select a campaign to see access requests.')}
       </Text>
     );
   }
@@ -76,11 +78,11 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
     <Stack gap="sm">
       <Group justify="space-between" align="center">
         <Title order={6}>
-          Access Requests
+          {t('admin_req_title', 'Access Requests')}
         </Title>
         {pendingRequests.length > 0 && (
           <Badge color="orange" variant="filled" size="sm">
-            {pendingRequests.length} pending
+            {t('admin_req_n_pending', '{{count}} pending', { count: pendingRequests.length })}
           </Badge>
         )}
       </Group>
@@ -97,21 +99,21 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
         </Box>
       ) : pendingRequests.length === 0 && resolvedRequests.length === 0 ? (
         <Text size="sm" c="dimmed" ta="center" py="md">
-          No access requests for this campaign.
+          {t('admin_req_none', 'No access requests for this campaign.')}
         </Text>
       ) : (
         <Stack gap="xs">
           {pendingRequests.length > 0 && (
             <>
               <Text size="xs" tt="uppercase" fw={600} c="orange.4">
-                Pending
+                {t('admin_req_pending', 'Pending')}
               </Text>
               <Table striped highlightOnHover withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>Email</Table.Th>
-                    <Table.Th>Requested</Table.Th>
-                    <Table.Th style={{ width: 160 }}>Actions</Table.Th>
+                    <Table.Th>{t('admin_req_th_email', 'Email')}</Table.Th>
+                    <Table.Th>{t('admin_req_th_requested', 'Requested')}</Table.Th>
+                    <Table.Th style={{ width: 160 }}>{t('admin_req_th_actions', 'Actions')}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -138,7 +140,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
                             disabled={!!actionLoading}
                             onClick={() => handleApprove(req.token)}
                           >
-                            Approve
+                            {t('admin_req_approve', 'Approve')}
                           </Button>
                           <Button
                             size="xs"
@@ -149,7 +151,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
                             disabled={!!actionLoading}
                             onClick={() => handleDeny(req.token)}
                           >
-                            Deny
+                            {t('admin_req_deny', 'Deny')}
                           </Button>
                         </Group>
                       </Table.Td>
@@ -163,14 +165,14 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
           {resolvedRequests.length > 0 && (
             <>
               <Text size="xs" tt="uppercase" fw={600} c="dimmed" mt="xs">
-                Resolved
+                {t('admin_req_resolved', 'Resolved')}
               </Text>
               <Table withTableBorder withColumnBorders>
                 <Table.Thead>
                   <Table.Tr>
-                    <Table.Th>Email</Table.Th>
-                    <Table.Th>Status</Table.Th>
-                    <Table.Th>Resolved</Table.Th>
+                    <Table.Th>{t('admin_req_th_email', 'Email')}</Table.Th>
+                    <Table.Th>{t('admin_req_th_status', 'Status')}</Table.Th>
+                    <Table.Th>{t('admin_req_th_resolved', 'Resolved')}</Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
@@ -187,7 +189,7 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
                           variant="light"
                           size="sm"
                         >
-                          {req.status}
+                          {t(`admin_req_status_${req.status}`, req.status)}
                         </Badge>
                       </Table.Td>
                       <Table.Td>

@@ -18,6 +18,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Select,
   Group,
@@ -91,11 +92,14 @@ export interface ThemeSelectorProps {
 
 export function ThemeSelector({
   value,
-  label = 'Theme',
-  description = 'Choose a color theme. Preview applies instantly; saved when you click Save.',
+  label,
+  description,
   selectProps,
   onThemeChange,
 }: ThemeSelectorProps) {
+  const { t } = useTranslation('wpsg');
+  const effectiveLabel = label ?? t('admin_theme_label', 'Theme');
+  const effectiveDescription = description ?? t('admin_theme_desc', 'Choose a color theme. Preview applies instantly; saved when you click Save.');
   const { themeId, availableThemes, setPreviewTheme } = useTheme();
   const resolvedValue = value ?? themeId;
   const { comboboxProps, ...restSelectProps } = selectProps ?? {};
@@ -114,7 +118,7 @@ export function ThemeSelector({
     const swatches = getSwatches(option.value);
     const meta = availableThemes.find((m) => m.id === option.value);
     // Use catalog-backed description; fall back to scheme hint
-    const desc = meta?.description ?? (meta?.colorScheme === 'dark' ? 'Dark theme' : 'Light theme');
+    const desc = meta?.description ?? (meta?.colorScheme === 'dark' ? t('admin_theme_dark', 'Dark theme') : t('admin_theme_light', 'Light theme'));
 
     return (
       <Group gap="sm" wrap="nowrap">
@@ -137,8 +141,8 @@ export function ThemeSelector({
 
   return (
     <Select
-      label={label}
-      description={description}
+      label={effectiveLabel}
+      description={effectiveDescription}
       value={localValue}
       onChange={(value) => {
         if (value) {

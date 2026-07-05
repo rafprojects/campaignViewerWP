@@ -1,5 +1,6 @@
 import { Button, Group, Text, Paper, ActionIcon, Tooltip } from '@mantine/core';
 import { IconX, IconArchive, IconArchiveOff, IconFileZip, IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface BulkActionsBarProps {
@@ -29,6 +30,7 @@ export function BulkActionsBar({
   onDelete,
   onClearSelection,
 }: BulkActionsBarProps) {
+  const { t } = useTranslation('wpsg');
   if (selectedCount === 0) return null;
 
   return (
@@ -47,18 +49,18 @@ export function BulkActionsBar({
     >
       <Group justify="space-between" wrap="wrap">
         <Group gap="xs" wrap="nowrap">
-          <Tooltip label="Clear selection">
+          <Tooltip label={t('admin_clear_selection', 'Clear selection')}>
             <ActionIcon
               variant="subtle"
               size="sm"
               onClick={onClearSelection}
-              aria-label="Clear selection"
+              aria-label={t('admin_clear_selection', 'Clear selection')}
             >
               <IconX size={14} />
             </ActionIcon>
           </Tooltip>
           <Text size="sm" fw={600}>
-            {selectedCount} campaign{selectedCount !== 1 ? 's' : ''} selected
+            {t('admin_bulk_selected', '{{count}} campaign selected', { count: selectedCount })}
           </Text>
         </Group>
 
@@ -71,7 +73,7 @@ export function BulkActionsBar({
             loading={isExporting}
             onClick={onExport}
           >
-            Export ZIP
+            {t('admin_export_zip', 'Export ZIP')}
           </Button>
           {hasActiveSelected && (
             <Button
@@ -82,7 +84,7 @@ export function BulkActionsBar({
               loading={isLoading}
               onClick={onArchive}
             >
-              Archive
+              {t('admin_archive', 'Archive')}
             </Button>
           )}
           {hasArchivedSelected && (
@@ -94,7 +96,7 @@ export function BulkActionsBar({
               loading={isLoading}
               onClick={onRestore}
             >
-              Restore
+              {t('admin_restore', 'Restore')}
             </Button>
           )}
           <Button
@@ -105,7 +107,7 @@ export function BulkActionsBar({
             loading={isLoading}
             onClick={onDelete}
           >
-            Delete
+            {t('admin_delete', 'Delete')}
           </Button>
         </Group>
       </Group>

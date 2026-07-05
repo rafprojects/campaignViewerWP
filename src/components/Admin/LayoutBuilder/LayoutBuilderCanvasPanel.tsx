@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getHotkeyHandler } from '@mantine/hooks';
 import {
   Box, Group, Text, NumberInput, Switch, Slider,
@@ -110,6 +111,10 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     toggleGuideLock,
   } = useBuilderDock();
 
+  const { t: tr } = useTranslation('wpsg');
+  const presetSegmentedData = PRESET_SEGMENTED_DATA.map(({ value, label }) => ({ value, label: tr(`lb_canvas_preset_${value}`, label) }));
+  const breakpointEditData = BREAKPOINT_EDIT_DATA.map(({ value, label }) => ({ value, label: tr(`admin_bp_${value}`, label) }));
+
   const rootId = useRootId();
 
   const contextualToolbarCallbacks = useMemo<ContextualToolbarCallbacks>(
@@ -143,9 +148,9 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       setIsBackgroundSelected(false);
       setSelectedTextId(null);
       setSelectedGuideId(null);
-      announce('New slot added at cursor position');
+      announce(tr('lb_canvas_ann_slot_added', 'New slot added at cursor position'));
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce, tr],
   );
 
   // ── Canvas drop handlers ──────────────────────────────────────────────────
@@ -158,9 +163,9 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       setSelectedTextId(null);
       setSelectedGuideId(null);
       builder.clearSelection();
-      announce('Graphic layer added to canvas');
+      announce(tr('lb_canvas_ann_graphic_added', 'Graphic layer added to canvas'));
     },
-    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
+    [builder, setSelectedOverlayId, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce, tr],
   );
 
   const handleMediaCanvasDrop = useCallback(
@@ -171,9 +176,9 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
       setIsBackgroundSelected(false);
       setSelectedTextId(null);
       setSelectedGuideId(null);
-      announce('New slot created with assigned media');
+      announce(tr('lb_canvas_ann_media_slot', 'New slot created with assigned media'));
     },
-    [builder, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce],
+    [builder, setIsBackgroundSelected, setSelectedTextId, setSelectedGuideId, announce, tr],
   );
 
   // ── Zoom / pan state ──────────────────────────────────────────────────────
@@ -288,14 +293,16 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     const target = selected.length > 0 ? selected : builder.template.slots;
     if (target.length === 0) return;
     const updates = fitRectsIntoBand(target, leftPct, widthPct);
-    const where = breakpointViewportPx ? `${builder.activeBreakpoint} viewport` : 'canvas';
+    const where = breakpointViewportPx
+      ? tr('lb_canvas_where_vp', '{{bp}} viewport', { bp: tr(`admin_bp_${builder.activeBreakpoint}`, builder.activeBreakpoint) })
+      : tr('lb_canvas_where_canvas', 'canvas');
     if (Object.keys(updates).length > 0) {
-      builder.updateSlots(updates, breakpointViewportPx ? 'Fit to viewport' : 'Fit to canvas');
-      announce(`Fit ${target.length} slot(s) into the ${where}`);
+      builder.updateSlots(updates, breakpointViewportPx ? tr('lb_canvas_fit_viewport', 'Fit to viewport') : tr('lb_canvas_fit_canvas', 'Fit to canvas'));
+      announce(tr('lb_canvas_ann_fit', 'Fit {{count}} slot into the {{where}}', { count: target.length, where }));
     } else {
-      announce(`Slots already fit the ${where}`);
+      announce(tr('lb_canvas_ann_already_fit', 'Slots already fit the {{where}}', { where }));
     }
-  }, [breakpointViewportPx, builder, announce]);
+  }, [breakpointViewportPx, builder, announce, tr]);
 
   /**
    * Breakpoint whose slot overrides the canvas should render. In edit mode this
@@ -323,11 +330,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             style={{ flexShrink: 0, borderBottom: '1px solid var(--wpsg-builder-border)' }}
           >
             <Text size="xs" ta="center">
-              Editing{' '}
+              {tr('lb_canvas_editing_pre', 'Editing ')}
               <strong>
-                {builder.activeBreakpoint.charAt(0).toUpperCase() + builder.activeBreakpoint.slice(1)}
-              </strong>{' '}
-              layout — moves and resizes apply to this breakpoint only
+                {tr(`admin_bp_${builder.activeBreakpoint}`, builder.activeBreakpoint.charAt(0).toUpperCase() + builder.activeBreakpoint.slice(1))}
+              </strong>
+              {tr('lb_canvas_editing_post', ' layout — moves and resizes apply to this breakpoint only')}
             </Text>
           </Alert>
         )}
@@ -469,7 +476,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
           >
             <Group gap="md" justify="center" wrap="nowrap">
               <Group gap={4} wrap="nowrap">
-                <Text size="xs" c="dimmed">Max width:</Text>
+                <Text size="xs" c="dimmed">{tr('lb_canvas_max_width', 'Max width:')}</Text>
                 <NumberInput
                   value={builder.template.canvasMaxWidth || 0}
                   onChange={(val) => {
@@ -486,7 +493,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   size="xs"
                   w={80}
                   suffix="px"
-                  aria-label="Canvas max width"
+                  aria-label={tr('lb_canvas_max_width_aria', 'Canvas max width')}
                 />
               </Group>
               <Button
@@ -500,24 +507,24 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   });
                 }}
               >
-                Fit to container
+                {tr('lb_canvas_fit_container', 'Fit to container')}
               </Button>
               <Divider orientation="vertical" />
 
               {/* ── Snap mode selector ──────────────────────────── */}
               <Group gap={6} wrap="nowrap" align="center">
-                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Snap:</Text>
+                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_snap', 'Snap:')}</Text>
                 <SegmentedControl
                   data={SNAP_MODE_DATA}
                   value={snapMode}
                   onChange={(v) => setSnapMode(v as SnapMode)}
                   size="xs"
-                  aria-label="Snap mode"
+                  aria-label={tr('lb_canvas_snap_mode', 'Snap mode')}
                 />
                 {snapMode !== 'off' && (
                   <>
                     <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>
-                      Sensitivity:
+                      {tr('lb_canvas_sensitivity', 'Sensitivity:')}
                     </Text>
                     <Slider
                       value={snapThreshold}
@@ -528,7 +535,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                       size="xs"
                       w={80}
                       label={(v) => `${v}px`}
-                      aria-label="Snap sensitivity"
+                      aria-label={tr('lb_canvas_snap_sens', 'Snap sensitivity')}
                     />
                   </>
                 )}
@@ -538,11 +545,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               {/* ── Grid overlay ────────────────────────────────── */}
               <Group gap={6} wrap="nowrap" align="center">
                 <Switch
-                  label="Grid"
+                  label={tr('lb_canvas_grid', 'Grid')}
                   size="xs"
                   checked={showGrid}
                   onChange={(e) => setShowGrid(e.currentTarget.checked)}
-                  aria-label="Toggle grid overlay"
+                  aria-label={tr('lb_canvas_grid_aria', 'Toggle grid overlay')}
                 />
                 {showGrid && (
                   <NumberInput
@@ -554,7 +561,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                     size="xs"
                     w={68}
                     suffix="px"
-                    aria-label="Grid cell size"
+                    aria-label={tr('lb_canvas_grid_size_aria', 'Grid cell size')}
                   />
                 )}
               </Group>
@@ -563,32 +570,32 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               {/* ── Rulers & measurements ───────────────────────── */}
               <Group gap={6} wrap="nowrap">
                 <Switch
-                  label="Rulers"
+                  label={tr('lb_canvas_rulers', 'Rulers')}
                   size="xs"
                   checked={showRulers}
                   onChange={(e) => setShowRulers(e.currentTarget.checked)}
-                  aria-label="Toggle canvas rulers"
+                  aria-label={tr('lb_canvas_rulers_aria', 'Toggle canvas rulers')}
                 />
                 <Switch
-                  label="Measure"
+                  label={tr('lb_canvas_measure', 'Measure')}
                   size="xs"
                   checked={showMeasurements}
                   onChange={(e) => setShowMeasurements(e.currentTarget.checked)}
-                  aria-label="Toggle measurement overlay"
+                  aria-label={tr('lb_canvas_measure_aria', 'Toggle measurement overlay')}
                 />
               </Group>
               <Divider orientation="vertical" />
 
               {/* ── Persistent guides (P57-E) ──────────────────── */}
               <Group gap={4} wrap="nowrap" align="center">
-                <Text size="xs" c="dimmed">Guides:</Text>
-                <Tooltip label="Add vertical guide">
-                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('x')} aria-label="Add vertical guide">
+                <Text size="xs" c="dimmed">{tr('lb_canvas_guides', 'Guides:')}</Text>
+                <Tooltip label={tr('lb_canvas_add_vguide', 'Add vertical guide')}>
+                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('x')} aria-label={tr('lb_canvas_add_vguide', 'Add vertical guide')}>
                     <IconSeparatorVertical size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Add horizontal guide">
-                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('y')} aria-label="Add horizontal guide">
+                <Tooltip label={tr('lb_canvas_add_hguide', 'Add horizontal guide')}>
+                  <ActionIcon size="sm" variant="subtle" onClick={() => addGuide('y')} aria-label={tr('lb_canvas_add_hguide', 'Add horizontal guide')}>
                     <IconSeparatorHorizontal size={14} />
                   </ActionIcon>
                 </Tooltip>
@@ -597,73 +604,73 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
               {/* ── P58-B: Breakpoint edit mode ─────────────────── */}
               <Group gap={6} wrap="nowrap" align="center">
-                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Breakpoint:</Text>
+                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_breakpoint', 'Breakpoint:')}</Text>
                 <SegmentedControl
-                  data={BREAKPOINT_EDIT_DATA}
+                  data={breakpointEditData}
                   value={builder.activeBreakpoint}
                   onChange={(v) => builder.setActiveBreakpoint(v as ResponsiveBreakpoint)}
                   size="xs"
-                  aria-label="Breakpoint edit mode"
+                  aria-label={tr('lb_canvas_bp_edit_aria', 'Breakpoint edit mode')}
                   data-testid="breakpoint-edit-selector"
                 />
                 <Tooltip
                   label={
                     breakpointViewportPx
-                      ? "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
-                      : 'Move/scale the selected slots (or all slots) back inside the canvas bounds'
+                      ? tr('lb_canvas_fit_vp_tt', "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only")
+                      : tr('lb_canvas_fit_cv_tt', 'Move/scale the selected slots (or all slots) back inside the canvas bounds')
                   }
                 >
                   <Button
                     size="xs"
                     variant="light"
                     onClick={handleFitToViewport}
-                    aria-label={breakpointViewportPx ? 'Fit slots to viewport' : 'Fit slots to canvas'}
+                    aria-label={breakpointViewportPx ? tr('lb_canvas_fit_slots_vp', 'Fit slots to viewport') : tr('lb_canvas_fit_slots_cv', 'Fit slots to canvas')}
                     data-testid="fit-to-viewport"
                   >
-                    {breakpointViewportPx ? 'Fit to viewport' : 'Fit to canvas'}
+                    {breakpointViewportPx ? tr('lb_canvas_fit_viewport', 'Fit to viewport') : tr('lb_canvas_fit_canvas', 'Fit to canvas')}
                   </Button>
                 </Tooltip>
               </Group>
               <Divider orientation="vertical" />
 
               <Switch
-                label="Indices"
+                label={tr('lb_canvas_indices', 'Indices')}
                 size="xs"
                 checked={showSlotIndices}
                 onChange={(e) => setShowSlotIndices(e.currentTarget.checked)}
-                aria-label="Toggle slot index badges"
+                aria-label={tr('lb_canvas_indices_aria', 'Toggle slot index badges')}
               />
               <Divider orientation="vertical" />
               {/* ── Zoom controls ────────────────────────────────── */}
               <Group gap={4} wrap="nowrap">
-                <Tooltip label={isHandTool ? 'Switch to select tool' : 'Hand tool — pan canvas (H)'}>
+                <Tooltip label={isHandTool ? tr('lb_canvas_select_tool', 'Switch to select tool') : tr('lb_canvas_hand_tool_tt', 'Hand tool — pan canvas (H)')}>
                   <ActionIcon
                     variant={isHandTool ? 'filled' : 'subtle'}
                     size="sm"
                     onClick={() => setIsHandTool((v) => !v)}
-                    aria-label={isHandTool ? 'Switch to select tool' : 'Hand tool'}
+                    aria-label={isHandTool ? tr('lb_canvas_select_tool', 'Switch to select tool') : tr('lb_canvas_hand_tool', 'Hand tool')}
                     aria-pressed={isHandTool}
                   >
                     <IconHandGrab size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Fit canvas to viewport (F)">
+                <Tooltip label={tr('lb_canvas_fit_cv_f', 'Fit canvas to viewport (F)')}>
                   <ActionIcon
                     variant="subtle"
                     size="sm"
                     onClick={handleFitCanvas}
-                    aria-label="Fit canvas to viewport"
+                    aria-label={tr('lb_canvas_fit_cv_aria', 'Fit canvas to viewport')}
                   >
                     <IconArrowsMaximize size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Reset zoom to 100%">
+                <Tooltip label={tr('lb_canvas_reset_zoom', 'Reset zoom to 100%')}>
                   <Button
                     size="xs"
                     variant="subtle"
                     onClick={handleResetZoom}
                     style={{ minWidth: 52, fontVariantNumeric: 'tabular-nums' }}
-                    aria-label={`Zoom ${Math.round(scale * 100)}%, click to reset`}
+                    aria-label={tr('lb_canvas_zoom_aria', 'Zoom {{pct}}%, click to reset', { pct: Math.round(scale * 100) })}
                   >
                     {Math.round(scale * 100)}%
                   </Button>
@@ -686,13 +693,13 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             }}
           >
             <Group gap="md" justify="center" wrap="nowrap">
-              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>Preview:</Text>
+              <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_preview', 'Preview:')}</Text>
               <SegmentedControl
-                data={PRESET_SEGMENTED_DATA}
+                data={presetSegmentedData}
                 value={previewPreset}
                 onChange={(v) => setPreviewPreset(v as PreviewPreset)}
                 size="xs"
-                aria-label="Device preview preset"
+                aria-label={tr('lb_canvas_preview_preset_aria', 'Device preview preset')}
                 data-testid="preview-preset-selector"
               />
               {previewPreset === 'custom' && (
@@ -705,7 +712,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   size="xs"
                   w={90}
                   suffix="px"
-                  aria-label="Custom preview width"
+                  aria-label={tr('lb_canvas_custom_width_aria', 'Custom preview width')}
                   data-testid="custom-preview-width-input"
                 />
               )}
@@ -713,11 +720,11 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 <>
                   <Divider orientation="vertical" />
                   <Switch
-                    label="Device frame"
+                    label={tr('lb_canvas_device_frame', 'Device frame')}
                     size="xs"
                     checked={showPreviewFrame}
                     onChange={(e) => setShowPreviewFrame(e.currentTarget.checked)}
-                    aria-label="Toggle device frame chrome"
+                    aria-label={tr('lb_canvas_device_frame_aria', 'Toggle device frame chrome')}
                     data-testid="preview-frame-toggle"
                   />
                 </>
@@ -725,23 +732,23 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               <Divider orientation="vertical" />
               {/* Zoom controls visible in preview mode too */}
               <Group gap={4} wrap="nowrap">
-                <Tooltip label="Fit canvas to viewport (F)">
+                <Tooltip label={tr('lb_canvas_fit_cv_f', 'Fit canvas to viewport (F)')}>
                   <ActionIcon
                     variant="subtle"
                     size="sm"
                     onClick={handleFitCanvas}
-                    aria-label="Fit canvas to viewport"
+                    aria-label={tr('lb_canvas_fit_cv_aria', 'Fit canvas to viewport')}
                   >
                     <IconArrowsMaximize size={14} />
                   </ActionIcon>
                 </Tooltip>
-                <Tooltip label="Reset zoom to 100%">
+                <Tooltip label={tr('lb_canvas_reset_zoom', 'Reset zoom to 100%')}>
                   <Button
                     size="xs"
                     variant="subtle"
                     onClick={handleResetZoom}
                     style={{ minWidth: 52, fontVariantNumeric: 'tabular-nums' }}
-                    aria-label={`Zoom ${Math.round(scale * 100)}%, click to reset`}
+                    aria-label={tr('lb_canvas_zoom_aria', 'Zoom {{pct}}%, click to reset', { pct: Math.round(scale * 100) })}
                   >
                     {Math.round(scale * 100)}%
                   </Button>

@@ -1,11 +1,12 @@
 import './i18n'
-import { StrictMode } from 'react'
+import { StrictMode, useMemo } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { createPortal } from 'react-dom'
 import { QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import { shadowStyles } from './shadowStyles'
-import { MantineProvider } from '@mantine/core'
+import { MantineProvider, mergeThemeOverrides } from '@mantine/core'
+import i18n from './i18n'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
 import '@mantine/core/styles.css'
@@ -134,9 +135,22 @@ function ThemedApp({
 }) {
   const { mantineTheme, colorScheme } = useTheme()
 
+  // P60-D: give every Mantine close button (modals, drawers) an accessible name.
+  // Mantine leaves CloseButton unlabeled by default, which trips axe `button-name`
+  // across the app's ~36 modals; components that pass their own aria-label still win.
+  const themeWithA11y = useMemo(
+    () =>
+      mergeThemeOverrides(mantineTheme, {
+        components: {
+          CloseButton: { defaultProps: { 'aria-label': i18n.t('common_close', 'Close') } },
+        },
+      }),
+    [mantineTheme],
+  )
+
   return (
     <MantineProvider
-      theme={mantineTheme}
+      theme={themeWithA11y}
       forceColorScheme={colorScheme}
       deduplicateInlineStyles
       // Scope Mantine CSS variables into shadow root or document :root

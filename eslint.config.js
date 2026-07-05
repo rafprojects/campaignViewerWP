@@ -80,11 +80,23 @@ export default tseslint.config({
     'i18next/no-literal-string': 'off',
   },
 }, {
-  // P54-B: Enforce no-literal-string on harvested front-end dirs (JSX text only)
-  // so future regressions are caught. Admin (src/components/Admin/**) stays off.
+  // P54-B / P60-I: Enforce no-literal-string on harvested dirs (JSX text only)
+  // so future regressions are caught. P60-I promoted the whole admin panel
+  // (src/components/Admin/**, incl. LayoutBuilder) into the harvested set.
+  // P60-I sweep: src/hooks/** (admin-row hooks like useCampaignsRows render JSX)
+  // and src/components/Campaign/** joined the enforced set — these bypassed the
+  // bridge and shipped raw English (campaign-row actions, media picker labels).
   files: [
     'src/components/Galleries/Adapters/**/*.{ts,tsx}',
+    'src/components/Admin/**/*.{ts,tsx}',
+    'src/components/Campaign/**/*.{ts,tsx}',
+    'src/hooks/**/*.{ts,tsx}',
     'packages/shared-ui/src/**/*.{ts,tsx}',
+  ],
+  // Test/story fixtures render literal JSX intentionally — keep them exempt.
+  ignores: [
+    '**/*.test.{ts,tsx}',
+    '**/*.stories.{ts,tsx}',
   ],
   plugins: { i18next },
   rules: {

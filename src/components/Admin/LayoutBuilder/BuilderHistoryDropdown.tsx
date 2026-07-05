@@ -6,6 +6,7 @@
  * explicit props so it can live outside the BuilderDockContext provider.
  */
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActionIcon,
   Box,
@@ -47,6 +48,7 @@ export function BuilderHistoryDropdown({
   opened: openedProp,
   onOpenedChange,
 }: BuilderHistoryDropdownProps) {
+  const { t } = useTranslation('wpsg');
   const [openedLocal, setOpenedLocal] = useState(false);
   const isControlled = openedProp !== undefined;
   const opened = isControlled ? openedProp : openedLocal;
@@ -79,11 +81,11 @@ export function BuilderHistoryDropdown({
       keepMounted
     >
       <Popover.Target>
-        <Tooltip label={`History (${count})`}>
+        <Tooltip label={t('lb_hist_title', 'History ({{count}})', { count })}>
           <ActionIcon
             variant="subtle"
             onClick={() => setOpened((o) => !o)}
-            aria-label="Open history"
+            aria-label={t('lb_histd_open', 'Open history')}
             aria-expanded={opened}
           >
             <IconClockHour4 size={18} />
@@ -95,7 +97,7 @@ export function BuilderHistoryDropdown({
         {/* Header */}
         <Box px="sm" pt="xs" pb={4} style={{ borderBottom: '1px solid var(--mantine-color-default-border)' }}>
           <Text size="xs" fw={600} c="dimmed" tt="uppercase">
-            History ({count})
+            {t('lb_hist_title', 'History ({{count}})', { count })}
           </Text>
         </Box>
 
@@ -104,9 +106,9 @@ export function BuilderHistoryDropdown({
           <Box p="md" ta="center">
             <IconClockHour4 size={24} style={{ opacity: 0.4, marginBottom: 6 }} />
             <Text size="sm" c="dimmed">
-              No history yet.
+              {t('lb_hist_none', 'No history yet.')}
               <br />
-              Make a change to see history.
+              {t('lb_histd_none_hint', 'Make a change to see history.')}
             </Text>
           </Box>
         ) : (
@@ -123,7 +125,7 @@ export function BuilderHistoryDropdown({
                     key={entry.id}
                     data-testid={`history-dropdown-entry-${entryIdx}`}
                     onClick={() => handleJump(entryIdx)}
-                    aria-label={`Jump to: ${entry.label}`}
+                    aria-label={t('lb_hist_jump_to', 'Jump to: {{label}}', { label: entry.label })}
                     style={{
                       borderRadius: 4,
                       padding: '4px 10px',
@@ -160,7 +162,7 @@ export function BuilderHistoryDropdown({
               <UnstyledButton
                 data-testid="history-dropdown-entry-initial"
                 onClick={() => handleJump(-1)}
-                aria-label="Jump to initial state"
+                aria-label={t('lb_hist_jump_initial', 'Jump to initial state')}
                 style={{
                   borderRadius: 4,
                   padding: '4px 10px',
@@ -171,7 +173,7 @@ export function BuilderHistoryDropdown({
                 }}
               >
                 <Text size="xs" c="dimmed" fs="italic" style={{ flex: 1 }}>
-                  {isHistoryTrimmed ? 'Oldest state' : 'Initial state'}
+                  {isHistoryTrimmed ? t('lb_hist_oldest', 'Oldest state') : t('lb_hist_initial', 'Initial state')}
                 </Text>
                 <IconTrash size={12} style={{ opacity: 0.5 }} />
               </UnstyledButton>

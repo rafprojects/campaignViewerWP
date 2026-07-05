@@ -5,6 +5,7 @@
  * creates a new template pre-populated with its slot definitions.
  */
 import { Modal, SimpleGrid, Card, Text, Group, Badge, Box } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import { IconLayoutDashboard } from '@tabler/icons-react';
 import { LAYOUT_PRESETS, type LayoutPreset } from '@/data/layoutPresets';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -71,6 +72,7 @@ export function PresetGalleryModal({
   onClose,
   onSelect,
 }: PresetGalleryModalProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Modal
       opened={opened}
@@ -78,15 +80,14 @@ export function PresetGalleryModal({
       title={
         <Group gap="xs">
           <IconLayoutDashboard size={20} />
-          <Text fw={600}>Start from Template</Text>
+          <Text fw={600}>{t('lb_preset_title', 'Start from Template')}</Text>
         </Group>
       }
       size="xl"
       centered
     >
       <Text size="sm" c="dimmed" mb="md">
-        Choose a preset layout as your starting point. You can customize
-        slots, shapes, and properties after creation.
+        {t('lb_preset_desc', 'Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation.')}
       </Text>
 
       <SimpleGrid cols={{ base: 2, sm: 3, md: 4 }} spacing="md">
@@ -120,7 +121,7 @@ export function PresetGalleryModal({
             </Text>
             <Group gap={4} mt={4} justify="center">
               <Badge size="xs" variant="light">
-                {preset.slots.length} slots
+                {t('lb_preset_n_slots', '{{count}} slots', { count: preset.slots.length })}
               </Badge>
               {preset.tags.slice(0, 2).map((tag) => (
                 <Badge key={tag} size="xs" variant="outline">

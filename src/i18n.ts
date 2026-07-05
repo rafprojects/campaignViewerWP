@@ -25,15 +25,18 @@ declare global {
 const injected = window.__WPSG_I18N__ ?? {};
 const locale = injected.locale ?? 'en';
 
+// P60-G: PHP (WPSG_Frontend_Strings) injects the active-locale translation of the
+// whole front-end catalogue, keyed identically to enStrings. Merge it over the
+// bundled English defaults so any key missing from the injection degrades to
+// English per-key (belt-and-suspenders alongside fallbackLng below).
+const active = { ...enStrings, ...(injected.strings ?? {}) };
+
 const resources: Record<string, { wpsg: Record<string, string> }> = {
-  en: { wpsg: enStrings },
+  en: { wpsg: locale === 'en' ? active : enStrings },
 };
 
 if (locale !== 'en') {
-  resources[locale] = { wpsg: injected.strings ?? {} };
-} else {
-  // Merge PHP-injected strings over the English defaults
-  resources.en = { wpsg: { ...enStrings, ...(injected.strings ?? {}) } };
+  resources[locale] = { wpsg: active };
 }
 
 i18n.use(initReactI18next).init({
@@ -41,6 +44,14 @@ i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   defaultNS: 'wpsg',
   resources,
+  // P60 review: our catalogue keys are flat, literal strings (e.g.
+  // `set_sg_compact-grid_gridCardAspectRatio_opt_16:9`) — several aspect-ratio
+  // option keys contain ':'. i18next's default nsSeparator (':') / keySeparator
+  // ('.') would parse those as namespace/nested lookups, making the colon-bearing
+  // keys unresolvable (they'd silently fall back to the English default and could
+  // never be localised). Disable both so keys are matched verbatim.
+  keySeparator: false,
+  nsSeparator: false,
   interpolation: {
     escapeValue: false,
   },

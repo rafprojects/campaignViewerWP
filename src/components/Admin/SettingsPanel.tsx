@@ -52,6 +52,7 @@ import { SettingsViewerTab } from '../Settings/tabs/SettingsViewerTab';
 import { SettingsTypographyTab } from '../Settings/tabs/SettingsTypographyTab';
 import { SettingsIntegrationsTab } from '../Settings/tabs/SettingsIntegrationsTab';
 import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
@@ -217,6 +218,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   spaceId,
   isSystemAdmin = false,
 }) => {
+  const { t } = useTranslation('wpsg');
   const isSpaceMode = spaceId != null;
   return <Stack gap="md">
     <Tabs
@@ -237,34 +239,34 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
     >
       <Tabs.List>
         <Tabs.Tab value="appearance" leftSection={<IconSettings size={16} />}>
-          Appearance
+          {t('set_tab_appearance', 'Appearance')}
         </Tabs.Tab>
         <Tabs.Tab value="cards" leftSection={<IconLayoutGrid size={16} />}>
-          Campaign Cards
+          {t('set_tab_cards', 'Campaign Cards')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-layout" leftSection={<IconPhoto size={16} />}>
-          Gallery Layout
+          {t('set_tab_gallery_layout', 'Gallery Layout')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-style" leftSection={<IconPalette size={16} />}>
-          Gallery Style
+          {t('set_tab_gallery_style', 'Gallery Style')}
         </Tabs.Tab>
         <Tabs.Tab value="gallery-navigation" leftSection={<IconArrowsHorizontal size={16} />}>
-          Gallery Navigation
+          {t('set_tab_gallery_nav', 'Gallery Navigation')}
         </Tabs.Tab>
         <Tabs.Tab value="viewer" leftSection={<IconEye size={16} />}>
-          Campaign Viewer
+          {t('set_tab_viewer', 'Campaign Viewer')}
         </Tabs.Tab>
         <Tabs.Tab value="typography" leftSection={<IconTypography size={16} />}>
-          Typography
+          {t('set_tab_typography', 'Typography')}
         </Tabs.Tab>
         {!isSpaceMode && isSystemAdmin && (
           <Tabs.Tab value="integrations" leftSection={<IconPlugConnected size={16} />}>
-            Integrations
+            {t('set_tab_integrations', 'Integrations')}
           </Tabs.Tab>
         )}
         {isSystemAdmin && settings.advancedSettingsEnabled && (
           <Tabs.Tab value="system-admin" leftSection={<IconAdjustments size={16} />}>
-            System & Admin
+            {t('set_tab_system_admin', 'System & Admin')}
           </Tabs.Tab>
         )}
       </Tabs.List>
@@ -339,6 +341,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
+  const { t } = useTranslation('wpsg');
   const color = instanceId ? spaceColor(instanceId) : undefined;
   // P57-B: Read the exact badge/accent colors from the shadow host element.
   // The Drawer portals to document.body, where `:host`-scoped Mantine CSS
@@ -435,15 +438,15 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
     if (!opened || !persistedDraft || draftPromptShownRef.current) return;
     draftPromptShownRef.current = true;
     const draftAge = Math.round((Date.now() - persistedDraft.savedAt) / 60_000);
-    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+    const ageLabel = draftAge < 1 ? t('set_age_now', 'just now') : t('set_age_min', '{{count}} minute ago', { count: draftAge });
     modals.openConfirmModal({
-      title: 'Unsaved settings found',
+      title: t('set_restore_title', 'Unsaved settings found'),
       children: (
         <Text size="sm">
-          You have unsaved settings changes from {ageLabel}. Would you like to restore them?
+          {t('set_restore_body', 'You have unsaved settings changes from {{age}}. Would you like to restore them?', { age: ageLabel })}
         </Text>
       ),
-      labels: { confirm: 'Restore', cancel: 'Discard' },
+      labels: { confirm: t('set_restore_confirm', 'Restore'), cancel: t('set_restore_cancel', 'Discard') },
       confirmProps: { color: 'blue' },
       onConfirm: () => {
         applySettingsUpdate(() => persistedDraft!.settings);
@@ -604,7 +607,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">
             <IconSettings size={22} />
-            <Title order={3}>Settings</Title>
+            <Title order={3}>{t('set_panel_title', 'Settings')}</Title>
             {spaceId != null && (
               <Badge
                 size="sm"
@@ -612,17 +615,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 variant="light"
                 {...(badgeBg ? { style: { backgroundColor: badgeBg, color: badgeText } } : {})}
               >
-                {spaceName ?? `Space ${spaceId}`}
+                {spaceName ?? t('set_space_fallback', 'Space {{id}}', { id: spaceId })}
               </Badge>
             )}
           </Group>
           <Group gap="xs" wrap="nowrap">
-            <Button variant="default" size="sm" onClick={handleClose}>Cancel</Button>
+            <Button variant="default" size="sm" onClick={handleClose}>{t('admin_cancel', 'Cancel')}</Button>
             {hasChanges && (
-              <Button variant="subtle" size="sm" onClick={handleReset} disabled={isSaving}>Reset</Button>
+              <Button variant="subtle" size="sm" onClick={handleReset} disabled={isSaving}>{t('set_reset', 'Reset')}</Button>
             )}
             <Button size="sm" onClick={() => { void handleSave(); }} loading={isSaving} disabled={!hasChanges}>
-              Save Changes
+              {t('admin_camp_save', 'Save Changes')}
             </Button>
           </Group>
         </Group>
@@ -676,7 +679,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
               <LazyGalleryConfigEditorModal
                 opened={galleryConfigEditorOpen}
                 onClose={() => setGalleryConfigEditorOpen(false)}
-                title="Responsive Gallery Config"
+                title={t('set_responsive_config', 'Responsive Gallery Config')}
                 value={buildGalleryConfigEditorSeed(settings)}
                 onSave={(galleryConfig) => {
                   if (!galleryConfig) {

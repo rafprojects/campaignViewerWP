@@ -1,6 +1,7 @@
 import { forwardRef, useState, type CSSProperties, type HTMLAttributes, type ReactNode } from 'react';
 import { Card, Image, Text, Group, Box, ActionIcon, Badge } from '@mantine/core';
 import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -34,10 +35,11 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     cardStyle,
     dragHandleProps,
   }, ref) => {
+    const { t } = useTranslation('wpsg');
     const [badgeHovered, setBadgeHovered] = useState(false);
     const isClickableImage = item.type === 'image' && onImageClick;
-    const mediaTypeLabel = item.type === 'video' ? 'Video' : 'Image';
-    const sourceLabel = item.source === 'external' ? 'External' : 'Upload';
+    const mediaTypeLabel = item.type === 'video' ? t('admin_media_type_video', 'Video') : t('admin_media_type_image', 'Image');
+    const sourceLabel = item.source === 'external' ? t('admin_media_source_external', 'External') : t('admin_media_source_upload', 'Upload');
     const mediaTypeColor = item.type === 'video' ? 'violet' : 'blue';
     const sourceColor = item.source === 'external' ? 'grape' : 'teal';
 
@@ -61,7 +63,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
             tabIndex={isClickableImage ? 0 : -1}
             aria-label={
               isClickableImage
-                ? `Open image preview for ${item.caption || item.url}`
+                ? t('admin_media_open_preview', 'Open image preview for {{label}}', { label: item.caption || item.url })
                 : undefined
             }
             onKeyDown={(event) => {
@@ -75,7 +77,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
             <Box style={{ position: 'relative' }}>
               <Image
                 src={item.thumbnail ?? item.url}
-                alt={item.caption || 'Media thumbnail'}
+                alt={item.caption || t('admin_media_thumb_alt', 'Media thumbnail')}
                 h={height}
                 fit="cover"
                 loading="lazy"
@@ -137,14 +139,14 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     {...(dragHandleProps as any)}
                     variant="subtle"
-                    aria-label="Drag media to reorder"
+                    aria-label={t('admin_media_drag_reorder', 'Drag media to reorder')}
                     style={{ cursor: 'grab' }}
                   >
                     <IconGripVertical size={16} />
                   </ActionIcon>
                 )}
-                <ActionIcon variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={16} /></ActionIcon>
-                <ActionIcon variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={16} /></ActionIcon>
+                <ActionIcon variant="subtle" onClick={onEdit} aria-label={t('admin_media_edit_aria', 'Edit')}><IconPhoto size={16} /></ActionIcon>
+                <ActionIcon variant="subtle" color="red" onClick={onDelete} aria-label={t('admin_media_delete_aria', 'Delete media')}><IconTrash size={16} /></ActionIcon>
               </Group>
             </Group>
           ) : (
@@ -155,14 +157,14 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   {...(dragHandleProps as any)}
                   variant="subtle"
-                  aria-label="Drag media to reorder"
+                  aria-label={t('admin_media_drag_reorder', 'Drag media to reorder')}
                   style={{ cursor: 'grab' }}
                 >
                   <IconGripVertical size={14} />
                 </ActionIcon>
               )}
-              <ActionIcon size="sm" variant="subtle" onClick={onEdit} aria-label="Edit"><IconPhoto size={14} /></ActionIcon>
-              <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete} aria-label="Delete media"><IconTrash size={14} /></ActionIcon>
+              <ActionIcon size="sm" variant="subtle" onClick={onEdit} aria-label={t('admin_media_edit_aria', 'Edit')}><IconPhoto size={14} /></ActionIcon>
+              <ActionIcon size="sm" variant="subtle" color="red" onClick={onDelete} aria-label={t('admin_media_delete_aria', 'Delete media')}><IconTrash size={14} /></ActionIcon>
             </Group>
           )}
         </Card>

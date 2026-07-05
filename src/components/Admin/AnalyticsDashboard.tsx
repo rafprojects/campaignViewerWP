@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActionIcon,
   Alert,
@@ -105,6 +106,7 @@ function StatCard({
 setWpsgDebugDisplayName(StatCard, 'AdminPanel:StatCard');
 
 export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false }: AnalyticsDashboardProps) {
+  const { t } = useTranslation('wpsg');
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
   const [preset, setPreset] = useState<RangePreset>('30');
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
@@ -188,24 +190,24 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
         {isSystemAdmin && (
           <>
             <StatCard
-              label="Total Views (all campaigns)"
+              label={t('admin_analytics_total_views', 'Total Views (all campaigns)')}
               value={summaryData?.totalViews ?? null}
               icon={<IconEye size={18} color="var(--mantine-color-blue-5)" />}
             />
             <StatCard
-              label="Unique Visitors (all campaigns)"
+              label={t('admin_analytics_unique_visitors', 'Unique Visitors (all campaigns)')}
               value={summaryData?.uniqueVisitors ?? null}
               icon={<IconUsers size={18} color="var(--mantine-color-teal-5)" />}
             />
           </>
         )}
         <StatCard
-          label="Views (selected campaign)"
+          label={t('admin_analytics_views_sel', 'Views (selected campaign)')}
           value={data?.totalViews ?? null}
           icon={<IconEye size={18} color="var(--mantine-color-violet-5)" />}
         />
         <StatCard
-          label="Unique (selected campaign)"
+          label={t('admin_analytics_unique_sel', 'Unique (selected campaign)')}
           value={data?.uniqueVisitors ?? null}
           icon={<IconUsers size={18} color="var(--mantine-color-orange-5)" />}
         />
@@ -216,7 +218,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
         <Group justify="space-between" align="center">
           <Title order={4} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconChartLine size={20} />
-            Campaign Analytics
+            {t('admin_analytics_title', 'Campaign Analytics')}
           </Title>
           {/* P34-A: refresh affordance + freshness indicator */}
           <Group gap="xs" align="center">
@@ -225,23 +227,23 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
                 size="xs"
                 color="red"
                 leftSection={<IconWifi size={10} />}
-                aria-label="Browser is offline — polling paused"
+                aria-label={t('admin_analytics_offline_aria', 'Browser is offline — polling paused')}
               >
-                Offline
+                {t('admin_analytics_offline', 'Offline')}
               </Badge>
             )}
             {lastUpdatedAt > 0 && (
               <Text size="xs" c="dimmed" aria-live="polite">
-                Updated {formatUpdatedAt(lastUpdatedAt)}
+                {t('admin_analytics_updated', 'Updated {{time}}', { time: formatUpdatedAt(lastUpdatedAt) })}
               </Text>
             )}
-            <Tooltip label="Refresh analytics" withArrow>
+            <Tooltip label={t('admin_analytics_refresh', 'Refresh analytics')} withArrow>
               <ActionIcon
                 variant="subtle"
                 size="sm"
                 onClick={handleRefreshAll}
                 loading={isLoading}
-                aria-label="Refresh analytics"
+                aria-label={t('admin_analytics_refresh', 'Refresh analytics')}
               >
                 <IconRefresh size={14} />
               </ActionIcon>
@@ -251,7 +253,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
 
         <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
           <Select
-            placeholder="Select campaign"
+            placeholder={t('admin_analytics_select_campaign', 'Select campaign')}
             data={campaigns}
             value={campaignId}
             onChange={setCampaignId}
@@ -263,9 +265,9 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
             value={preset}
             onChange={(v) => setPreset(v as RangePreset)}
             data={[
-              { label: 'Last 7d', value: '7' },
-              { label: 'Last 30d', value: '30' },
-              { label: 'Last 90d', value: '90' },
+              { label: t('admin_analytics_range_7', 'Last 7d'), value: '7' },
+              { label: t('admin_analytics_range_30', 'Last 30d'), value: '30' },
+              { label: t('admin_analytics_range_90', 'Last 90d'), value: '90' },
             ]}
           />
         </SimpleGrid>
@@ -273,7 +275,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
 
       {!campaignId && (
         <Alert icon={<IconInfoCircle size={16} />} color="blue">
-          Select a campaign to view per-campaign analytics.
+          {t('admin_analytics_select_hint', 'Select a campaign to view per-campaign analytics.')}
         </Alert>
       )}
 
@@ -288,7 +290,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
 
           {error && (
             <Alert icon={<IconInfoCircle size={16} />} color="red">
-              Failed to load analytics data.
+              {t('admin_analytics_load_fail', 'Failed to load analytics data.')}
             </Alert>
           )}
 
@@ -298,10 +300,10 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
                 <Stack align="center" gap="xs">
                   <IconChartLine size={32} color="var(--mantine-color-dimmed)" />
                   <Text c="dimmed" size="sm">
-                    No view events recorded for this period.
+                    {t('admin_analytics_no_events', 'No view events recorded for this period.')}
                   </Text>
                   <Text c="dimmed" size="xs">
-                    Make sure <strong>Enable Analytics</strong> is turned on in Settings → Advanced.
+                    {t('admin_analytics_enable_pre', 'Make sure ')}<strong>{t('admin_analytics_enable_strong', 'Enable Analytics')}</strong>{t('admin_analytics_enable_post', ' is turned on in Settings → Advanced.')}
                   </Text>
                 </Stack>
               </Center>
@@ -337,6 +339,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
                   <Line
                     type="monotone"
                     dataKey="Views"
+                    name={t('admin_analytics_legend_views', 'Views')}
                     stroke="var(--mantine-color-blue-5)"
                     strokeWidth={2}
                     dot={false}
@@ -345,6 +348,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
                   <Line
                     type="monotone"
                     dataKey="Unique"
+                    name={t('admin_analytics_legend_unique', 'Unique')}
                     stroke="var(--mantine-color-teal-5)"
                     strokeWidth={2}
                     dot={false}
@@ -360,7 +364,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
             <Stack gap="sm">
               <Title order={5} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <IconPhoto size={16} />
-                Media Performance
+                {t('admin_analytics_media_perf', 'Media Performance')}
               </Title>
               {mediaLoading && (
                 <Center py="md">
@@ -369,7 +373,7 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
               )}
               {!mediaLoading && mediaItems.length === 0 && (
                 <Text size="sm" c="dimmed">
-                  No per-media events recorded for this period. Lightbox interactions with media IDs will appear here.
+                  {t('admin_analytics_no_media', 'No per-media events recorded for this period. Lightbox interactions with media IDs will appear here.')}
                 </Text>
               )}
               {!mediaLoading && mediaItems.length > 0 && (
@@ -377,9 +381,9 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
                   <Table striped highlightOnHover withTableBorder withColumnBorders fz="sm">
                     <Table.Thead>
                       <Table.Tr>
-                        <Table.Th>Media ID</Table.Th>
-                        <Table.Th style={{ textAlign: 'right' }}>Views</Table.Th>
-                        <Table.Th style={{ textAlign: 'right' }}>Lightbox Opens</Table.Th>
+                        <Table.Th>{t('admin_analytics_th_media_id', 'Media ID')}</Table.Th>
+                        <Table.Th style={{ textAlign: 'right' }}>{t('admin_analytics_th_views', 'Views')}</Table.Th>
+                        <Table.Th style={{ textAlign: 'right' }}>{t('admin_analytics_th_lightbox', 'Lightbox Opens')}</Table.Th>
                       </Table.Tr>
                     </Table.Thead>
                     <Table.Tbody>
@@ -409,14 +413,14 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
               <Stack gap="sm">
                 <Title order={5} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <IconChartLine size={16} />
-                  Top Campaigns by Views
+                  {t('admin_analytics_top_campaigns', 'Top Campaigns by Views')}
                 </Title>
                 <Table striped highlightOnHover withTableBorder withColumnBorders fz="sm">
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>#</Table.Th>
-                      <Table.Th>Campaign</Table.Th>
-                      <Table.Th style={{ textAlign: 'right' }}>Views</Table.Th>
+                      <Table.Th>{t('admin_analytics_th_campaign', 'Campaign')}</Table.Th>
+                      <Table.Th style={{ textAlign: 'right' }}>{t('admin_analytics_th_views', 'Views')}</Table.Th>
                     </Table.Tr>
                   </Table.Thead>
                   <Table.Tbody>

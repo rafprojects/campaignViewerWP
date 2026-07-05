@@ -34,7 +34,7 @@ LayoutBuilder layers are media/graphic/mask only — there are **no first-class 
 | A | Own phase vs. a track in Phase 58 | **Own phase.** Matches the FUTURE_TASKS sizing (new layer type + panel + render + persistence + tests). Keeps Phase 58 focused on polish + responsive. (User direction, 2026-06-26.) |
 | B | Text richness | **Single-style text per layer** for v1 (one font/size/weight/color/alignment per layer). Rich multi-style runs are a Follow-On. |
 | C | Translatability | **i18n-aware rendering from the start** — text content flows through the same i18n surface as other user-facing strings; no baked, non-translatable copy. |
-| D | Pro gating | Text layers are a **natural Pro-tier feature**; note the gating seam for [PHASE61_REPORT.md](PHASE61_REPORT.md) (gate at the layer's entry point), but do not gate in this phase. |
+| D | Pro gating | Text layers are a **natural Pro-tier feature**; note the gating seam for [PHASE62_REPORT.md](PHASE62_REPORT.md) (gate at the layer's entry point), but do not gate in this phase. |
 
 ## Execution Priority
 
@@ -463,7 +463,7 @@ Shipped 2026-06-30 (A/B/C) and 2026-07-01 (D, E, F) — a first-class **text lay
 - **Key decisions (course-corrects).** Typography reuses the existing app-wide `TypographyOverride` + `<TypographyEditor>` + the extracted `typographyOverrideToStyle` converter rather than a bespoke set of flat fields — caught mid-phase and corrected in P59-A. In P59-D, the value+unit control was generalized into a shared `UnitScrubField` (rather than a typography-only component) after user direction during planning, and its unit selector was moved from a separate boxed `Select` into the `NumberInput`'s own `rightSection` after manual QA surfaced a height mismatch between the two — both caught and corrected mid-track. In P59-F, live manual QA on the actual dev site (not just jsdom) surfaced that always-visible, sideways-offset guide icons looked cluttered — fixed by gating icons behind selection and stacking them along the guide's own axis — and that surfaced a second issue: the legacy double-click-to-delete path (kept as a "bonus shortcut") now risked accidental deletion once plain click became a frequent select gesture, so it was removed entirely after discussion.
 - **What was deferred.** A clickable/linking **CTA** text layer (href + accessible anchor) → recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md). Full admin-panel i18n of the new builder labels rides with the [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B follow-on (Decision B; sibling panels are likewise hardcoded). Rich multi-style runs, text-on-path, and bound/dynamic captions remain Follow-On candidates. Migrating the remaining ad hoc numeric input (`SlotPropertiesPanel`'s rotation scrub) and auditing for other `UnitScrubField` rollout candidates is future-tasked (`FUTURE_TASKS.md`, Code Quality & Refactoring).
 - **What should happen next.** The Phase 60-B i18n harvest should include the new admin
-  strings when it lands; Pro-gating of text layers is noted for [PHASE61_REPORT.md](PHASE61_REPORT.md)
+  strings when it lands; Pro-gating of text layers is noted for [PHASE62_REPORT.md](PHASE62_REPORT.md)
   (Decision D). A small a11y follow-up could add a text-layer fixture to `e2e/accessibility.spec.ts`
   for an end-to-end axe sweep. The campaign export/import path does not yet round-trip `texts`.
 

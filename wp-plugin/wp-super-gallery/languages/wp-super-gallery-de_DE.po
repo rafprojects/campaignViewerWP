@@ -1,0 +1,6633 @@
+# WP Super Gallery — de_DE translation.
+# AI-authored for QA; review by a native speaker before release.
+msgid ""
+msgstr ""
+"Project-Id-Version: WP Super Gallery 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Language: de_DE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Domain: wp-super-gallery\n"
+
+msgid "WP Super Gallery"
+msgstr "WP Super Gallery"
+
+msgid "https://github.com/rafprojects/wp-super-gallery"
+msgstr "https://github.com/rafprojects/wp-super-gallery"
+
+msgid "Embeddable campaign gallery with Shadow DOM rendering."
+msgstr "Einbettbare Kampagnengalerie mit Shadow-DOM-Rendering."
+
+msgid "Asset Library"
+msgstr "Asset-Bibliothek"
+
+msgid "Upload and manage global overlay/graphic assets available across all spaces."
+msgstr "Globale Overlay-/Grafik-Assets hochladen und verwalten, die in allen Bereichen verfügbar sind."
+
+msgid "Blank Gallery"
+msgstr "Leere Galerie"
+
+msgid "A clean starting point with no pre-configured settings."
+msgstr "Ein sauberer Ausgangspunkt ohne vorkonfigurierte Einstellungen."
+
+msgid "Public Showcase"
+msgstr "Öffentliche Präsentation"
+
+msgid "Public visibility, ready for external sharing straight after creation."
+msgstr "Öffentliche Sichtbarkeit, direkt nach der Erstellung bereit zum externen Teilen."
+
+msgid "Campaigns"
+msgstr "Kampagnen"
+
+msgid "Campaign"
+msgstr "Kampagne"
+
+msgid "SuperGallery"
+msgstr "SuperGallery"
+
+msgid "Add New"
+msgstr "Neu hinzufügen"
+
+msgid "Add New Campaign"
+msgstr "Neue Kampagne hinzufügen"
+
+msgid "Edit Campaign"
+msgstr "Kampagne bearbeiten"
+
+msgid "New Campaign"
+msgstr "Neue Kampagne"
+
+msgid "View Campaign"
+msgstr "Kampagne ansehen"
+
+msgid "View Campaigns"
+msgstr "Kampagnen ansehen"
+
+msgid "Search Campaigns"
+msgstr "Kampagnen suchen"
+
+msgid "No campaigns found"
+msgstr "Keine Kampagnen gefunden"
+
+msgid "No campaigns found in Trash"
+msgstr "Keine Kampagnen im Papierkorb gefunden"
+
+msgid "Companies"
+msgstr "Unternehmen"
+
+msgid "Company"
+msgstr "Unternehmen"
+
+msgid "All Companies"
+msgstr "Alle Unternehmen"
+
+msgid "Edit Company"
+msgstr "Unternehmen bearbeiten"
+
+msgid "View Company"
+msgstr "Unternehmen ansehen"
+
+msgid "Update Company"
+msgstr "Unternehmen aktualisieren"
+
+msgid "Add New Company"
+msgstr "Neues Unternehmen hinzufügen"
+
+msgid "New Company Name"
+msgstr "Name des neuen Unternehmens"
+
+msgid "Search Companies"
+msgstr "Unternehmen suchen"
+
+msgid "Popular Companies"
+msgstr "Beliebte Unternehmen"
+
+msgid "No companies found"
+msgstr "Keine Unternehmen gefunden"
+
+msgid "← Back to Companies"
+msgstr "← Zurück zu Unternehmen"
+
+msgid "Separate companies with commas"
+msgstr "Unternehmen durch Kommas trennen"
+
+msgid "Add or remove companies"
+msgstr "Unternehmen hinzufügen oder entfernen"
+
+msgid "Choose from the most used companies"
+msgstr "Aus den meistverwendeten Unternehmen wählen"
+
+msgid "Campaign Tags"
+msgstr "Kampagnen-Schlagwörter"
+
+msgid "Campaign Categories"
+msgstr "Kampagnen-Kategorien"
+
+msgid "Media Tags"
+msgstr "Medien-Schlagwörter"
+
+msgid "Layout Templates"
+msgstr "Layout-Vorlagen"
+
+msgid "Space"
+msgstr "Bereich"
+
+msgid "All spaces"
+msgstr "Alle Bereiche"
+
+msgid "+ New Space"
+msgstr "+ Neuer Bereich"
+
+msgid "Space name"
+msgstr "Bereichsname"
+
+msgid "Slug (auto)"
+msgstr "Slug (automatisch)"
+
+msgid "Create"
+msgstr "Erstellen"
+
+msgid "Forbidden"
+msgstr "Verboten"
+
+msgid "Gallery Spaces"
+msgstr "Galerie-Bereiche"
+
+msgid "Spaces"
+msgstr "Bereiche"
+
+msgid "Create spaces, edit per-space settings, and manage access grants."
+msgstr "Bereiche erstellen, bereichsspezifische Einstellungen bearbeiten und Zugriffsberechtigungen verwalten."
+
+msgid "Admin menu"
+msgstr "Admin-Menü"
+
+msgid "User navigation"
+msgstr "Benutzernavigation"
+
+msgid "User menu"
+msgstr "Benutzermenü"
+
+msgid "Signed in as {{email}}"
+msgstr "Angemeldet als {{email}}"
+
+msgid "Admin Panel"
+msgstr "Admin-Bereich"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "Edit {{title}}"
+msgstr "{{title}} bearbeiten"
+
+msgid "Edit Gallery Config"
+msgstr "Galerie-Konfiguration bearbeiten"
+
+msgid "Edit gallery config for {{title}}"
+msgstr "Galerie-Konfiguration für {{title}} bearbeiten"
+
+msgid "Manage Media"
+msgstr "Medien verwalten"
+
+msgid "Manage media for {{title}}"
+msgstr "Medien für {{title}} verwalten"
+
+msgid "Archive"
+msgstr "Archivieren"
+
+msgid "Archive {{title}}"
+msgstr "{{title}} archivieren"
+
+msgid "Sign out"
+msgstr "Abmelden"
+
+msgid "Sign in"
+msgstr "Anmelden"
+
+msgid "Sign in to access private campaigns."
+msgstr "Melden Sie sich an, um auf private Kampagnen zuzugreifen."
+
+msgid "Switch targeted gallery space"
+msgstr "Angesteuerten Galerie-Bereich wechseln"
+
+msgid "Target space"
+msgstr "Zielbereich"
+
+msgid "Access private campaigns with your WordPress account."
+msgstr "Greifen Sie mit Ihrem WordPress-Konto auf private Kampagnen zu."
+
+msgid "Email"
+msgstr "E-Mail"
+
+msgid "you@example.com"
+msgstr "you@example.com"
+
+msgid "Password"
+msgstr "Passwort"
+
+msgid "Enter your password"
+msgstr "Geben Sie Ihr Passwort ein"
+
+msgid "Enter a valid email"
+msgstr "Geben Sie eine gültige E-Mail-Adresse ein"
+
+msgid "Password must be at least {{count}} character"
+msgstr "Das Passwort muss mindestens {{count}} Zeichen lang sein"
+
+msgid "Password must be at least {{count}} characters"
+msgstr "Das Passwort muss mindestens {{count}} Zeichen lang sein"
+
+msgid "Error"
+msgstr "Fehler"
+
+msgid "Login failed. Check your credentials."
+msgstr "Anmeldung fehlgeschlagen. Überprüfen Sie Ihre Anmeldedaten."
+
+msgid "Signing in..."
+msgstr "Anmeldung läuft …"
+
+msgid "Media lightbox"
+msgstr "Medien-Lightbox"
+
+msgid "Close lightbox"
+msgstr "Lightbox schließen"
+
+msgid "Previous image (lightbox)"
+msgstr "Vorheriges Bild (Lightbox)"
+
+msgid "Next image (lightbox)"
+msgstr "Nächstes Bild (Lightbox)"
+
+msgid "Campaign video"
+msgstr "Kampagnenvideo"
+
+msgid "Campaign image"
+msgstr "Kampagnenbild"
+
+msgid "{{current}} / {{total}}"
+msgstr "{{current}} / {{total}}"
+
+msgid "←"
+msgstr "←"
+
+msgid "→"
+msgstr "→"
+
+msgid "Esc"
+msgstr "Esc"
+
+msgid "navigate"
+msgstr "navigieren"
+
+msgid "·"
+msgstr "·"
+
+msgid "close"
+msgstr "schließen"
+
+msgid "VIDEO"
+msgstr "VIDEO"
+
+msgid "No media"
+msgstr "Keine Medien"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Image"
+msgstr "Bild"
+
+msgid "{{type}} {{index}}"
+msgstr "{{type}} {{index}}"
+
+msgid "Item {{index}} of {{total}}"
+msgstr "Element {{index}} von {{total}}"
+
+msgid "Item {{index}}"
+msgstr "Element {{index}}"
+
+msgid "Play: {{caption}}"
+msgstr "Abspielen: {{caption}}"
+
+msgid "View: {{caption}}"
+msgstr "Ansehen: {{caption}}"
+
+msgid "Play video {{index}}"
+msgstr "Video {{index}} abspielen"
+
+msgid "View image {{index}}"
+msgstr "Bild {{index}} ansehen"
+
+msgid "Open in lightbox"
+msgstr "In Lightbox öffnen"
+
+msgid "Empty"
+msgstr "Leer"
+
+msgid "Slide {{index}} of {{total}}"
+msgstr "Folie {{index}} von {{total}}"
+
+msgid "View image {{index}} of {{total}}"
+msgstr "Bild {{index}} von {{total}} ansehen"
+
+msgid "Video {{index}} of {{total}}: {{caption}}. Use arrow keys to navigate, Enter or Space to play."
+msgstr "Video {{index}} von {{total}}: {{caption}}. Verwenden Sie die Pfeiltasten zum Navigieren, Enter oder Leertaste zum Abspielen."
+
+msgid "Video player: {{caption}}"
+msgstr "Videoplayer: {{caption}}"
+
+msgid "Untitled video"
+msgstr "Unbenanntes Video"
+
+msgid "Untitled image"
+msgstr "Unbenanntes Bild"
+
+msgid "Open lightbox"
+msgstr "Lightbox öffnen"
+
+msgid "Previous video (overlay)"
+msgstr "Vorheriges Video (Overlay)"
+
+msgid "Next video (overlay)"
+msgstr "Nächstes Video (Overlay)"
+
+msgid "Previous image (overlay)"
+msgstr "Vorheriges Bild (Overlay)"
+
+msgid "Next image (overlay)"
+msgstr "Nächstes Bild (Overlay)"
+
+msgid "Campaign listing"
+msgstr "Kampagnenliste"
+
+msgid "Previous campaigns"
+msgstr "Vorherige Kampagnen"
+
+msgid "Next campaigns"
+msgstr "Nächste Kampagnen"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Default order"
+msgstr "Standardreihenfolge"
+
+msgid "Newest first"
+msgstr "Neueste zuerst"
+
+msgid "Oldest first"
+msgstr "Älteste zuerst"
+
+msgid "Sort order"
+msgstr "Sortierreihenfolge"
+
+msgid "Loading layout template"
+msgstr "Layout-Vorlage wird geladen"
+
+msgid "Loading gallery…"
+msgstr "Galerie wird geladen …"
+
+msgid "Layout template not found"
+msgstr "Layout-Vorlage nicht gefunden"
+
+msgid "View {{title}} in lightbox"
+msgstr "{{title}} in Lightbox ansehen"
+
+msgid "media"
+msgstr "Medien"
+
+msgid "{{count}} media item(s) have no slot — they won't be displayed."
+msgstr "{{count}} Medienelement(e) haben keinen Slot — sie werden nicht angezeigt."
+
+msgid "{{count}} slot(s) have no media — they'll appear as placeholders."
+msgstr "{{count}} Slot(s) haben keine Medien — sie erscheinen als Platzhalter."
+
+msgid "Slot assignment info"
+msgstr "Informationen zur Slot-Zuweisung"
+
+msgid "Kept bindings: {{summary}}"
+msgstr "Beibehaltene Zuordnungen: {{summary}}"
+
+msgid "Cleared (media not in campaign): {{summary}}"
+msgstr "Entfernt (Medien nicht in Kampagne): {{summary}}"
+
+msgid "Auto-filled from remaining media: {{summary}}"
+msgstr "Automatisch aus den verbleibenden Medien gefüllt: {{summary}}"
+
+msgid "Empty (no media remaining): slot{{suffix}} {{summary}}"
+msgstr "Leer (keine Medien übrig): Slot{{suffix}} {{summary}}"
+
+msgid "Layout gallery: {{name}}"
+msgstr "Layout-Galerie: {{name}}"
+
+msgid "Back to gallery"
+msgstr "Zurück zur Galerie"
+
+msgid "Actions menu"
+msgstr "Aktionsmenü"
+
+msgid "Create new campaign"
+msgstr "Neue Kampagne erstellen"
+
+msgid "Import"
+msgstr "Importieren"
+
+msgid "Import campaigns"
+msgstr "Kampagnen importieren"
+
+msgid "Pick a space first"
+msgstr "Wählen Sie zuerst einen Bereich"
+
+msgid "Manage spaces"
+msgstr "Bereiche verwalten"
+
+msgid "Keyboard shortcuts"
+msgstr "Tastenkürzel"
+
+msgid "Keyboard shortcuts (?)"
+msgstr "Tastenkürzel (?)"
+
+msgid "{{name}} (default)"
+msgstr "{{name}} (Standard)"
+
+msgid "Media"
+msgstr "Medien"
+
+msgid "Layouts"
+msgstr "Layouts"
+
+msgid "Templates"
+msgstr "Vorlagen"
+
+msgid "Assets"
+msgstr "Assets"
+
+msgid "Access"
+msgstr "Zugriff"
+
+msgid "Campaign Activity"
+msgstr "Kampagnenaktivität"
+
+msgid "System Audit"
+msgstr "System-Audit"
+
+msgid "Analytics"
+msgstr "Statistiken"
+
+msgid "Select admin panel tab"
+msgstr "Admin-Bereich-Registerkarte auswählen"
+
+msgid "Hide filters"
+msgstr "Filter ausblenden"
+
+msgid "Filters"
+msgstr "Filter"
+
+msgid "Filters ({{count}})"
+msgstr "Filter ({{count}})"
+
+msgid "Tag"
+msgstr "Schlagwort"
+
+msgid "Title A–Z"
+msgstr "Titel A–Z"
+
+msgid "Title Z–A"
+msgstr "Titel Z–A"
+
+msgid "Recently updated"
+msgstr "Kürzlich aktualisiert"
+
+msgid "Include archived"
+msgstr "Archivierte einschließen"
+
+msgid "Manage categories & tags"
+msgstr "Kategorien und Schlagwörter verwalten"
+
+msgid "Manage taxonomy"
+msgstr "Taxonomie verwalten"
+
+msgid "Export ZIP"
+msgstr "ZIP exportieren"
+
+msgid "Export media library as ZIP"
+msgstr "Medienbibliothek als ZIP exportieren"
+
+msgid "Import ZIP"
+msgstr "ZIP importieren"
+
+msgid "Import media library from ZIP"
+msgstr "Medienbibliothek aus ZIP importieren"
+
+msgid "Rescan All"
+msgstr "Alle neu scannen"
+
+msgid "Rescanned: {{media}} media items updated across {{campaigns}} campaigns."
+msgstr "Neu gescannt: {{media}} Medienelemente in {{campaigns}} Kampagnen aktualisiert."
+
+msgid "All media types are correct."
+msgstr "Alle Medientypen sind korrekt."
+
+msgid "Building audit log ZIP — this may take a moment."
+msgstr "Audit-Protokoll-ZIP wird erstellt — das kann einen Moment dauern."
+
+msgid "Building media library ZIP — this may take a moment."
+msgstr "Medienbibliothek-ZIP wird erstellt — das kann einen Moment dauern."
+
+msgid "Export timed out after 5 minutes."
+msgstr "Der Export wurde nach 5 Minuten abgebrochen."
+
+msgid "Export failed"
+msgstr "Export fehlgeschlagen"
+
+msgid "Audit ZIP export failed"
+msgstr "Audit-ZIP-Export fehlgeschlagen"
+
+msgid "Media ZIP export failed"
+msgstr "Medien-ZIP-Export fehlgeschlagen"
+
+msgid "Media ZIP import failed"
+msgstr "Medien-ZIP-Import fehlgeschlagen"
+
+msgid "Imported {{count}} media item(s)."
+msgstr "{{count}} Medienelement(e) importiert."
+
+msgid "Imported {{count}} media item(s) ({{skipped}} skipped)."
+msgstr "{{count}} Medienelement(e) importiert ({{skipped}} übersprungen)."
+
+msgid "Add media — {{title}}"
+msgstr "Medien hinzufügen — {{title}}"
+
+msgid "Clear selection"
+msgstr "Auswahl aufheben"
+
+msgid "{{count}} campaign selected"
+msgstr "{{count}} Kampagne ausgewählt"
+
+msgid "{{count}} campaigns selected"
+msgstr "{{count}} Kampagnen ausgewählt"
+
+msgid "Restore"
+msgstr "Wiederherstellen"
+
+msgid "Delete"
+msgstr "Löschen"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Archive campaign"
+msgstr "Kampagne archivieren"
+
+msgid "Archive this campaign? This action will mark it archived."
+msgstr "Diese Kampagne archivieren? Diese Aktion markiert sie als archiviert."
+
+msgid "Archive campaign {{title}}"
+msgstr "Kampagne {{title}} archivieren"
+
+msgid "Restore campaign"
+msgstr "Kampagne wiederherstellen"
+
+msgid "Restore this campaign? This will make it active again and enable any associated access grants."
+msgstr "Diese Kampagne wiederherstellen? Sie wird wieder aktiv und alle zugehörigen Zugriffsberechtigungen werden reaktiviert."
+
+msgid "Restore campaign {{title}}"
+msgstr "Kampagne {{title}} wiederherstellen"
+
+msgid "Archive {{count}} campaign?"
+msgstr "{{count}} Kampagne archivieren?"
+
+msgid "Archive {{count}} campaigns?"
+msgstr "{{count}} Kampagnen archivieren?"
+
+msgid "This will mark all {{count}} selected campaigns as archived. Archived campaigns are hidden from the gallery but can be restored at any time."
+msgstr "Dadurch werden alle {{count}} ausgewählten Kampagnen als archiviert markiert. Archivierte Kampagnen werden in der Galerie ausgeblendet, können aber jederzeit wiederhergestellt werden."
+
+msgid "Archive {{count}} campaign"
+msgstr "{{count}} Kampagne archivieren"
+
+msgid "Archive {{count}} campaigns"
+msgstr "{{count}} Kampagnen archivieren"
+
+msgid "Restore {{count}} campaign?"
+msgstr "{{count}} Kampagne wiederherstellen?"
+
+msgid "Restore {{count}} campaigns?"
+msgstr "{{count}} Kampagnen wiederherstellen?"
+
+msgid "This will restore all {{count}} selected campaigns and make them active again. Any associated access grants will be re-enabled."
+msgstr "Dadurch werden alle {{count}} ausgewählten Kampagnen wiederhergestellt und wieder aktiviert. Alle zugehörigen Zugriffsberechtigungen werden reaktiviert."
+
+msgid "Restore {{count}} campaign"
+msgstr "{{count}} Kampagne wiederherstellen"
+
+msgid "Restore {{count}} campaigns"
+msgstr "{{count}} Kampagnen wiederherstellen"
+
+msgid "Delete campaign"
+msgstr "Kampagne löschen"
+
+msgid "This permanently deletes \"{{title}}\", its media references, and pending access requests. This cannot be undone."
+msgstr "Dadurch werden „{{title}}“, seine Medienverweise und ausstehende Zugriffsanfragen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden."
+
+msgid "this campaign"
+msgstr "diese Kampagne"
+
+msgid "Type {{token}} to confirm."
+msgstr "Geben Sie {{token}} ein, um zu bestätigen."
+
+msgid "Type {{token}} to confirm"
+msgstr "Geben Sie {{token}} ein, um zu bestätigen"
+
+msgid "Also purge analytics events for this campaign"
+msgstr "Auch Statistik-Ereignisse für diese Kampagne löschen"
+
+msgid "Delete campaign {{title}}"
+msgstr "Kampagne {{title}} löschen"
+
+msgid "Delete permanently"
+msgstr "Dauerhaft löschen"
+
+msgid "Delete {{count}} campaign?"
+msgstr "{{count}} Kampagne löschen?"
+
+msgid "Delete {{count}} campaigns?"
+msgstr "{{count}} Kampagnen löschen?"
+
+msgid "This will permanently delete all {{count}} selected campaigns, their media references, and pending access requests. This cannot be undone."
+msgstr "Dadurch werden alle {{count}} ausgewählten Kampagnen, ihre Medienverweise und ausstehende Zugriffsanfragen dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden."
+
+msgid "Also purge all analytics data for these campaigns"
+msgstr "Auch alle Statistikdaten für diese Kampagnen löschen"
+
+msgid "Delete {{count}} campaign"
+msgstr "{{count}} Kampagne löschen"
+
+msgid "Delete {{count}} campaigns"
+msgstr "{{count}} Kampagnen löschen"
+
+msgid "Duplicate Campaign"
+msgstr "Kampagne duplizieren"
+
+msgid "Duplicate campaign"
+msgstr "Kampagne duplizieren"
+
+msgid "Source:"
+msgstr "Quelle:"
+
+msgid "New name"
+msgstr "Neuer Name"
+
+msgid "Campaign name"
+msgstr "Kampagnenname"
+
+msgid "Copy media associations"
+msgstr "Medienzuordnungen kopieren"
+
+msgid "Media items will appear in both campaigns"
+msgstr "Medienelemente erscheinen in beiden Kampagnen"
+
+msgid "The duplicate will start with an empty media library."
+msgstr "Das Duplikat beginnt mit einer leeren Medienbibliothek."
+
+msgid "Duplicate linked layout template"
+msgstr "Verknüpfte Layout-Vorlage duplizieren"
+
+msgid "The copied campaign gets its own editable layout instead of sharing the original template."
+msgstr "Die kopierte Kampagne erhält ihr eigenes bearbeitbares Layout, anstatt die ursprüngliche Vorlage zu teilen."
+
+msgid "The duplicate will keep pointing at the original layout template."
+msgstr "Das Duplikat verweist weiterhin auf die ursprüngliche Layout-Vorlage."
+
+msgid "{{title}} (Copy)"
+msgstr "{{title}} (Kopie)"
+
+msgid "Duplicate"
+msgstr "Duplizieren"
+
+msgid "Move Campaign to Space"
+msgstr "Kampagne in Bereich verschieben"
+
+msgid "Move campaign to space"
+msgstr "Kampagne in Bereich verschieben"
+
+msgid "Campaign:"
+msgstr "Kampagne:"
+
+msgid "From space:"
+msgstr "Aus Bereich:"
+
+msgid "Pick a space"
+msgstr "Bereich auswählen"
+
+msgid "No other spaces you own"
+msgstr "Keine weiteren Bereiche in Ihrem Besitz"
+
+msgid "All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it."
+msgstr "Alle Statistiken, der Audit-Verlauf, Medienverweise und Zugriffsanfragen werden mit der Kampagne verschoben. Der Quellbereich listet sie nicht mehr auf."
+
+msgid "Move"
+msgstr "Verschieben"
+
+msgid "Add Campaign"
+msgstr "Kampagne hinzufügen"
+
+msgid "Campaign list"
+msgstr "Kampagnenliste"
+
+msgid "Select all"
+msgstr "Alle auswählen"
+
+msgid "Select all campaigns"
+msgstr "Alle Kampagnen auswählen"
+
+msgid "Title"
+msgstr "Titel"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Visibility"
+msgstr "Sichtbarkeit"
+
+msgid "Grants"
+msgstr "Berechtigungen"
+
+msgid "Tags"
+msgstr "Schlagwörter"
+
+msgid "Categories"
+msgstr "Kategorien"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "{{count}} campaigns"
+msgstr "{{count}} Kampagnen"
+
+msgid "Import Campaign"
+msgstr "Kampagne importieren"
+
+msgid "Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value."
+msgstr "Wählen Sie eine aus WP Super Gallery exportierte {{json}}- oder {{zip}}-Datei. Kampagnen werden als Entwürfe erstellt — Medien und Layout-Vorlagen werden als Wert importiert."
+
+msgid "Change file"
+msgstr "Datei ändern"
+
+msgid "Select .json or .zip file"
+msgstr ".json- oder .zip-Datei auswählen"
+
+msgid "Ready to import:"
+msgstr "Bereit zum Importieren:"
+
+msgid " ({{count}} media reference)"
+msgstr " ({{count}} Medienverweis)"
+
+msgid " ({{count}} media references)"
+msgstr " ({{count}} Medienverweise)"
+
+msgid "Invalid export file: missing version or campaign key."
+msgstr "Ungültige Exportdatei: Version oder Kampagnenschlüssel fehlt."
+
+msgid "Unsupported export version: {{version}}. Expected 1."
+msgstr "Nicht unterstützte Exportversion: {{version}}. Erwartet: 1."
+
+msgid "Could not parse JSON. Make sure the file is a valid campaign export."
+msgstr "JSON konnte nicht analysiert werden. Stellen Sie sicher, dass die Datei ein gültiger Kampagnenexport ist."
+
+msgid "Untitled"
+msgstr "Ohne Titel"
+
+msgid "Scheduled"
+msgstr "Geplant"
+
+msgid "Expired"
+msgstr "Abgelaufen"
+
+msgid "Expiring soon"
+msgstr "Läuft bald ab"
+
+msgid "Select {{title}}"
+msgstr "{{title}} auswählen"
+
+msgid "Custom gallery: {{summary}}"
+msgstr "Benutzerdefinierte Galerie: {{summary}}"
+
+msgid "Custom gallery overrides: {{summary}}"
+msgstr "Benutzerdefinierte Galerie-Überschreibungen: {{summary}}"
+
+msgid "Nested campaign gallery overrides"
+msgstr "Verschachtelte Kampagnen-Galerie-Überschreibungen"
+
+msgid "Status for {{title}}"
+msgstr "Status für {{title}}"
+
+msgid "Visibility for {{title}}"
+msgstr "Sichtbarkeit für {{title}}"
+
+msgid "Add media to this campaign"
+msgstr "Medien zu dieser Kampagne hinzufügen"
+
+msgid "Add media to {{title}}"
+msgstr "Medien zu {{title}} hinzufügen"
+
+msgid "Clone campaign"
+msgstr "Kampagne klonen"
+
+msgid "Move to another space"
+msgstr "In einen anderen Bereich verschieben"
+
+msgid "Move {{title}} to another space"
+msgstr "{{title}} in einen anderen Bereich verschieben"
+
+msgid "Permanently delete campaign"
+msgstr "Kampagne dauerhaft löschen"
+
+msgid "Failed to update status."
+msgstr "Status konnte nicht aktualisiert werden."
+
+msgid "Failed to update visibility."
+msgstr "Sichtbarkeit konnte nicht aktualisiert werden."
+
+msgid "Failed to update company."
+msgstr "Unternehmen konnte nicht aktualisiert werden."
+
+msgid "{{count}} active grant"
+msgstr "{{count}} aktive Berechtigung"
+
+msgid "{{count}} active grants"
+msgstr "{{count}} aktive Berechtigungen"
+
+msgid "{{count}} pending request"
+msgstr "{{count}} ausstehende Anfrage"
+
+msgid "{{count}} pending requests"
+msgstr "{{count}} ausstehende Anfragen"
+
+msgid "Nested overrides"
+msgstr "Verschachtelte Überschreibungen"
+
+msgid "Custom gallery overrides"
+msgstr "Benutzerdefinierte Galerie-Überschreibungen"
+
+msgid "{{count}} grant"
+msgstr "{{count}} Berechtigung"
+
+msgid "{{count}} grants"
+msgstr "{{count}} Berechtigungen"
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Clone"
+msgstr "Klonen"
+
+msgid "Duplicate {{title}}"
+msgstr "{{title}} duplizieren"
+
+msgid "Export {{title}}"
+msgstr "{{title}} exportieren"
+
+msgid "Export"
+msgstr "Exportieren"
+
+msgid "Export as ZIP (includes media)"
+msgstr "Als ZIP exportieren (inkl. Medien)"
+
+msgid "Export as JSON (data only)"
+msgstr "Als JSON exportieren (nur Daten)"
+
+msgid "Permanently delete"
+msgstr "Dauerhaft löschen"
+
+msgid "Delete {{title}}"
+msgstr "{{title}} löschen"
+
+msgid "Details"
+msgstr "Details"
+
+msgid "Campaign title"
+msgstr "Kampagnentitel"
+
+msgid "Description"
+msgstr "Beschreibung"
+
+msgid "Campaign description"
+msgstr "Kampagnenbeschreibung"
+
+msgid "Campaign Thumbnail (Card Image)"
+msgstr "Kampagnen-Miniaturbild (Kartenbild)"
+
+msgid "Campaign thumbnail preview"
+msgstr "Vorschau des Kampagnen-Miniaturbilds"
+
+msgid "Use existing campaign media as thumbnail"
+msgstr "Vorhandene Kampagnenmedien als Miniaturbild verwenden"
+
+msgid "Choose media image/thumbnail"
+msgstr "Medienbild/Miniaturbild auswählen"
+
+msgid "{{type}} #{{id}}"
+msgstr "{{type}} Nr. {{id}}"
+
+msgid "No campaign media available"
+msgstr "Keine Kampagnenmedien verfügbar"
+
+msgid "Upload Custom Thumbnail"
+msgstr "Eigenes Miniaturbild hochladen"
+
+msgid "Draft"
+msgstr "Entwurf"
+
+msgid "Active"
+msgstr "Aktiv"
+
+msgid "Archived"
+msgstr "Archiviert"
+
+msgid "Private"
+msgstr "Privat"
+
+msgid "Public"
+msgstr "Öffentlich"
+
+msgid "Add tags…"
+msgstr "Schlagwörter hinzufügen …"
+
+msgid "Type a tag and press Enter or comma to add"
+msgstr "Geben Sie ein Schlagwort ein und drücken Sie Enter oder Komma zum Hinzufügen"
+
+msgid "Select categories"
+msgstr "Kategorien auswählen"
+
+msgid "Assign this campaign to one or more categories"
+msgstr "Diese Kampagne einer oder mehreren Kategorien zuweisen"
+
+msgid "Publish At"
+msgstr "Veröffentlichen am"
+
+msgid "Campaign becomes visible at this date/time"
+msgstr "Die Kampagne wird zu diesem Datum/dieser Uhrzeit sichtbar"
+
+msgid "Unpublish At"
+msgstr "Veröffentlichung beenden am"
+
+msgid "Campaign is hidden after this date/time"
+msgstr "Die Kampagne wird nach diesem Datum/dieser Uhrzeit ausgeblendet"
+
+msgid "Card Border Color"
+msgstr "Kartenrahmenfarbe"
+
+msgid "Custom accent border color for this campaign card"
+msgstr "Benutzerdefinierte Akzentrahmenfarbe für diese Kampagnenkarte"
+
+msgid "Auto (company brand color)"
+msgstr "Automatisch (Markenfarbe des Unternehmens)"
+
+msgid "Gallery Mode Override"
+msgstr "Galeriemodus-Überschreibung"
+
+msgid "Override the global gallery mode for this campaign"
+msgstr "Den globalen Galeriemodus für diese Kampagne überschreiben"
+
+msgid "Default (from settings)"
+msgstr "Standard (aus Einstellungen)"
+
+msgid "Unified"
+msgstr "Vereinheitlicht"
+
+msgid "Per-Type"
+msgstr "Nach Typ"
+
+msgid "Unified Breakpoint Adapters"
+msgstr "Vereinheitlichte Breakpoint-Adapter"
+
+msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
+msgstr "Leeren Sie eine Zelle, um den globalen vereinheitlichten Adapter für diesen Breakpoint zu erben."
+
+msgid "Desktop"
+msgstr "Desktop"
+
+msgid "Tablet"
+msgstr "Tablet"
+
+msgid "Mobile"
+msgstr "Mobil"
+
+msgid "{{bp}} Unified Gallery Adapter"
+msgstr "Vereinheitlichter Galerie-Adapter {{bp}}"
+
+msgid "Inherited"
+msgstr "Geerbt"
+
+msgid "Per-Type Breakpoint Adapters"
+msgstr "Breakpoint-Adapter nach Typ"
+
+msgid "Clear any cell to inherit that breakpoint's global adapter selection."
+msgstr "Leeren Sie eine Zelle, um die globale Adapterauswahl dieses Breakpoints zu erben."
+
+msgid "{{bp}} Image Gallery Adapter"
+msgstr "Bildgalerie-Adapter {{bp}}"
+
+msgid "{{bp}} Video Gallery Adapter"
+msgstr "Videogalerie-Adapter {{bp}}"
+
+msgid "Quick per-breakpoint overrides stay inline here. Use the shared responsive editor for mode changes, shared responsive settings, and adapter-specific fields."
+msgstr "Schnelle Überschreibungen pro Breakpoint bleiben hier inline. Verwenden Sie den gemeinsamen responsiven Editor für Moduswechsel, gemeinsame responsive Einstellungen und adapterspezifische Felder."
+
+msgid "Edit Responsive Config"
+msgstr "Responsive Konfiguration bearbeiten"
+
+msgid "Inheriting global gallery settings"
+msgstr "Erbt globale Galerieeinstellungen"
+
+msgid "Clear the campaign-specific gallery override state here to fall back to the global gallery configuration."
+msgstr "Leeren Sie hier den kampagnenspezifischen Galerie-Überschreibungsstatus, um auf die globale Galeriekonfiguration zurückzufallen."
+
+msgid "Use Inherited Gallery Settings"
+msgstr "Geerbte Galerieeinstellungen verwenden"
+
+msgid "Layout Template"
+msgstr "Layout-Vorlage"
+
+msgid "Layout Builder is your selected gallery adapter — choose the template it renders."
+msgstr "Der Layout-Builder ist Ihr ausgewählter Galerie-Adapter — wählen Sie die Vorlage, die er rendert."
+
+msgid "Assign a layout template to use the Layout Builder adapter"
+msgstr "Weisen Sie eine Layout-Vorlage zu, um den Layout-Builder-Adapter zu verwenden"
+
+msgid "None (use default adapter)"
+msgstr "Keine (Standardadapter verwenden)"
+
+msgid "{{name}} ({{count}} slots)"
+msgstr "{{name}} ({{count}} Slots)"
+
+msgid "Edit Layout"
+msgstr "Layout bearbeiten"
+
+msgid "Layout Builder is selected as a gallery adapter, but no template is assigned — pick one above, or the gallery falls back to the default adapter."
+msgstr "Der Layout-Builder ist als Galerie-Adapter ausgewählt, aber es ist keine Vorlage zugewiesen — wählen Sie oben eine aus, sonst greift die Galerie auf den Standardadapter zurück."
+
+msgid "Layout Builder is selected as a gallery adapter, but no layout templates exist yet. Create one in the Layout Builder first."
+msgstr "Der Layout-Builder ist als Galerie-Adapter ausgewählt, aber es existieren noch keine Layout-Vorlagen. Erstellen Sie zuerst eine im Layout-Builder."
+
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+msgid "Create Campaign"
+msgstr "Kampagne erstellen"
+
+msgid "Campaign modal tabs"
+msgstr "Registerkarten des Kampagnenfensters"
+
+msgid "Discard changes?"
+msgstr "Änderungen verwerfen?"
+
+msgid "You have unsaved changes. Are you sure you want to discard them?"
+msgstr "Sie haben ungespeicherte Änderungen. Möchten Sie sie wirklich verwerfen?"
+
+msgid "Discard"
+msgstr "Verwerfen"
+
+msgid "Campaign Responsive Gallery Config"
+msgstr "Responsive Galeriekonfiguration der Kampagne"
+
+msgid "This campaign currently stores custom gallery overrides. Use Clear Campaign Overrides to return to inherited global gallery settings."
+msgstr "Diese Kampagne speichert derzeit benutzerdefinierte Galerie-Überschreibungen. Verwenden Sie „Kampagnen-Überschreibungen löschen“, um zu den geerbten globalen Galerieeinstellungen zurückzukehren."
+
+msgid "This campaign is currently inheriting global gallery settings. Any changes saved here will create campaign-specific overrides."
+msgstr "Diese Kampagne erbt derzeit globale Galerieeinstellungen. Alle hier gespeicherten Änderungen erstellen kampagnenspezifische Überschreibungen."
+
+msgid "Apply Campaign Gallery Config"
+msgstr "Galeriekonfiguration der Kampagne anwenden"
+
+msgid "Clear Campaign Overrides"
+msgstr "Kampagnen-Überschreibungen löschen"
+
+msgid "Adapter applied when this campaign renders images and videos together."
+msgstr "Adapter, der angewendet wird, wenn diese Kampagne Bilder und Videos zusammen rendert."
+
+msgid "No media attached to this campaign."
+msgstr "Dieser Kampagne sind keine Medien zugeordnet."
+
+msgid "Media item {{label}}"
+msgstr "Medienelement {{label}}"
+
+msgid "Remove from campaign"
+msgstr "Aus Kampagne entfernen"
+
+msgid "Upload New File"
+msgstr "Neue Datei hochladen"
+
+msgid "Uploading..."
+msgstr "Wird hochgeladen …"
+
+msgid "Choose up to {{count}} files"
+msgstr "Wählen Sie bis zu {{count}} Dateien"
+
+msgid "Uploaded files use their filenames as captions in this modal."
+msgstr "Hochgeladene Dateien verwenden ihre Dateinamen als Beschriftungen in diesem Fenster."
+
+msgid "Add External URL"
+msgstr "Externe URL hinzufügen"
+
+msgid "Type"
+msgstr "Typ"
+
+msgid "URL"
+msgstr "URL"
+
+msgid "https://youtube.com/watch?v=... or image URL"
+msgstr "https://youtube.com/watch?v=... oder Bild-URL"
+
+msgid "Caption (optional)"
+msgstr "Beschriftung (optional)"
+
+msgid "Describe this media"
+msgstr "Beschreiben Sie dieses Medium"
+
+msgid "Add External Media"
+msgstr "Externes Medium hinzufügen"
+
+msgid "Save"
+msgstr "Speichern"
+
+msgid "items"
+msgstr "Elemente"
+
+msgid "Add Media"
+msgstr "Medien hinzufügen"
+
+msgid "Rescan Types"
+msgstr "Typen neu scannen"
+
+msgid "Media view mode"
+msgstr "Medien-Ansichtsmodus"
+
+msgid "Media card size"
+msgstr "Größe der Medienkarten"
+
+msgid "Media sort mode"
+msgstr "Medien-Sortiermodus"
+
+msgid "Grid View"
+msgstr "Rasteransicht"
+
+msgid "Compact Grid"
+msgstr "Kompaktes Raster"
+
+msgid "List View"
+msgstr "Listenansicht"
+
+msgid "Order"
+msgstr "Reihenfolge"
+
+msgid "Date uploaded"
+msgstr "Hochladedatum"
+
+msgid "File size"
+msgstr "Dateigröße"
+
+msgid "Usage count"
+msgstr "Nutzungsanzahl"
+
+msgid "Exclusive only"
+msgstr "Nur exklusive"
+
+msgid "Show only items exclusive to this campaign"
+msgstr "Nur Elemente anzeigen, die exklusiv zu dieser Kampagne gehören"
+
+msgid "Show only media exclusive to this campaign"
+msgstr "Nur Medien anzeigen, die exklusiv zu dieser Kampagne gehören"
+
+msgid "Thumb"
+msgstr "Miniatur"
+
+msgid "Caption"
+msgstr "Beschriftung"
+
+msgid "Source"
+msgstr "Quelle"
+
+msgid "Usage"
+msgstr "Nutzung"
+
+msgid "Media list pages"
+msgstr "Seiten der Medienliste"
+
+msgid "media item"
+msgstr "Medienelement"
+
+msgid "Remove from Campaign"
+msgstr "Aus Kampagne entfernen"
+
+msgid "Remove this item from the campaign? The file stays in your media library and can be added to other campaigns."
+msgstr "Dieses Element aus der Kampagne entfernen? Die Datei bleibt in Ihrer Medienbibliothek und kann anderen Kampagnen hinzugefügt werden."
+
+msgid " It is currently used in {{count}} other campaign — those associations are not affected."
+msgstr " Es wird derzeit in {{count}} anderen Kampagne verwendet — diese Zuordnungen sind nicht betroffen."
+
+msgid " It is currently used in {{count}} other campaigns — those associations are not affected."
+msgstr " Es wird derzeit in {{count}} anderen Kampagnen verwendet — diese Zuordnungen sind nicht betroffen."
+
+msgid "Remove"
+msgstr "Entfernen"
+
+msgid "Remove media {{label}}"
+msgstr "Medium {{label}} entfernen"
+
+msgid "Not used in any campaign."
+msgstr "In keiner Kampagne verwendet."
+
+msgid "Used in campaigns:"
+msgstr "Verwendet in Kampagnen:"
+
+msgid "Failed to load usage detail"
+msgstr "Nutzungsdetails konnten nicht geladen werden"
+
+msgid "Unused"
+msgstr "Ungenutzt"
+
+msgid "{{count}} campaign"
+msgstr "{{count}} Kampagne"
+
+msgid "Media used in {{label}}"
+msgstr "Medien verwendet in {{label}}"
+
+msgid "External"
+msgstr "Extern"
+
+msgid "Upload"
+msgstr "Hochladen"
+
+msgid "Open image preview for {{label}}"
+msgstr "Bildvorschau für {{label}} öffnen"
+
+msgid "Media thumbnail"
+msgstr "Medien-Miniaturbild"
+
+msgid "Drag media to reorder"
+msgstr "Medien ziehen, um sie neu anzuordnen"
+
+msgid "Delete media"
+msgstr "Medien löschen"
+
+msgid "Edit Media"
+msgstr "Medien bearbeiten"
+
+msgid "Enter a title (optional)"
+msgstr "Titel eingeben (optional)"
+
+msgid "Optional display title for this media item"
+msgstr "Optionaler Anzeigetitel für dieses Medienelement"
+
+msgid "Enter a caption or description"
+msgstr "Beschriftung oder Beschreibung eingeben"
+
+msgid "Descriptive text shown with the media"
+msgstr "Beschreibender Text, der mit dem Medium angezeigt wird"
+
+msgid "Thumbnail URL"
+msgstr "Miniaturbild-URL"
+
+msgid "https://..."
+msgstr "https://..."
+
+msgid "Custom preview image URL (optional)"
+msgstr "URL des benutzerdefinierten Vorschaubilds (optional)"
+
+msgid "Media lightbox: {{caption}} ({{index}} of {{total}})"
+msgstr "Medien-Lightbox: {{caption}} ({{index}} von {{total}})"
+
+msgid "Media preview"
+msgstr "Medienvorschau"
+
+msgid "Previous image"
+msgstr "Vorheriges Bild"
+
+msgid "Next image"
+msgstr "Nächstes Bild"
+
+msgid "Add to"
+msgstr "Hinzufügen zu"
+
+msgid "File drop zone"
+msgstr "Datei-Ablagezone"
+
+msgid "Choose files"
+msgstr "Dateien auswählen"
+
+msgid "Drop files here"
+msgstr "Dateien hier ablegen"
+
+msgid "or drag & drop files here"
+msgstr "oder Dateien per Drag & Drop hierher ziehen"
+
+msgid "{{count}} file queued"
+msgstr "{{count}} Datei in der Warteschlange"
+
+msgid "{{count}} files queued"
+msgstr "{{count}} Dateien in der Warteschlange"
+
+msgid "Clear all"
+msgstr "Alle löschen"
+
+msgid "Remove {{name}}"
+msgstr "{{name}} entfernen"
+
+msgid "Enter a caption or description (optional)"
+msgstr "Beschriftung oder Beschreibung eingeben (optional)"
+
+msgid "When uploading multiple files, each item uses its filename as the default caption."
+msgstr "Beim Hochladen mehrerer Dateien verwendet jedes Element seinen Dateinamen als Standardbeschriftung."
+
+msgid "Upload {{count}} files"
+msgstr "{{count}} Dateien hochladen"
+
+msgid "{{count}} file uploaded successfully"
+msgstr "{{count}} Datei erfolgreich hochgeladen"
+
+msgid "{{count}} files uploaded successfully"
+msgstr "{{count}} Dateien erfolgreich hochgeladen"
+
+msgid "Uploading {{count}} file…"
+msgstr "{{count}} Datei wird hochgeladen …"
+
+msgid "Uploading {{count}} files…"
+msgstr "{{count}} Dateien werden hochgeladen …"
+
+msgid "External URL"
+msgstr "Externe URL"
+
+msgid "https://youtube.com/..."
+msgstr "https://youtube.com/..."
+
+msgid "External media URL"
+msgstr "URL des externen Mediums"
+
+msgid "Preview"
+msgstr "Vorschau"
+
+msgid "Preview external media"
+msgstr "Externes Medium in Vorschau anzeigen"
+
+msgid "Add"
+msgstr "Hinzufügen"
+
+msgid "Add external media"
+msgstr "Externes Medium hinzufügen"
+
+msgid "External media preview"
+msgstr "Vorschau des externen Mediums"
+
+msgid "General library (all campaigns)"
+msgstr "Allgemeine Bibliothek (alle Kampagnen)"
+
+msgid "{{count}} file added"
+msgstr "{{count}} Datei hinzugefügt"
+
+msgid "{{count}} files added"
+msgstr "{{count}} Dateien hinzugefügt"
+
+msgid "{{count}} file added to the asset library"
+msgstr "{{count}} Datei zur Asset-Bibliothek hinzugefügt"
+
+msgid "{{count}} files added to the asset library"
+msgstr "{{count}} Dateien zur Asset-Bibliothek hinzugefügt"
+
+msgid "Some uploads failed"
+msgstr "Einige Uploads sind fehlgeschlagen"
+
+msgid "{{failures}} of {{total}} file could not be uploaded."
+msgstr "{{failures}} von {{total}} Datei konnte nicht hochgeladen werden."
+
+msgid "{{failures}} of {{total}} files could not be uploaded."
+msgstr "{{failures}} von {{total}} Dateien konnten nicht hochgeladen werden."
+
+msgid "Upload failed"
+msgstr "Upload fehlgeschlagen"
+
+msgid "Upload failed."
+msgstr "Upload fehlgeschlagen."
+
+msgid "Enter a URL to preview."
+msgstr "Geben Sie eine URL für die Vorschau ein."
+
+msgid "External asset added"
+msgstr "Externes Asset hinzugefügt"
+
+msgid "Failed to add external asset."
+msgstr "Externes Asset konnte nicht hinzugefügt werden."
+
+msgid "Make available to all spaces (universal)"
+msgstr "Für alle Bereiche verfügbar machen (universell)"
+
+msgid "Add tags for filtering…"
+msgstr "Schlagwörter zum Filtern hinzufügen …"
+
+msgid "Space {{id}}"
+msgstr "Bereich {{id}}"
+
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+msgid "Responsive Gallery Config"
+msgstr "Responsive Galeriekonfiguration"
+
+msgid "Theme & Layout"
+msgstr "Theme und Layout"
+
+msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
+msgstr "Wählen Sie ein Farb-Theme. Die Vorschau wird sofort angewendet; gespeichert, wenn Sie auf Speichern klicken."
+
+msgid "Default Layout"
+msgstr "Standard-Layout"
+
+msgid "Default layout for displaying gallery items."
+msgstr "Standard-Layout zur Anzeige von Galerieelementen."
+
+msgid "Grid"
+msgstr "Raster"
+
+msgid "Masonry"
+msgstr "Mauerwerk"
+
+msgid "Carousel"
+msgstr "Karussell"
+
+msgid "Items Per Page"
+msgstr "Elemente pro Seite"
+
+msgid "Number of items to display per page (1-100)."
+msgstr "Anzahl der pro Seite anzuzeigenden Elemente (1-100)."
+
+msgid "Page Container"
+msgstr "Seitencontainer"
+
+msgid "App Max Width"
+msgstr "Maximale App-Breite"
+
+msgid "Maximum width of the gallery container. Set to 0 for full-width (edge-to-edge). Default 1200px."
+msgstr "Maximale Breite des Galerie-Containers. Auf 0 setzen für volle Breite (randlos). Standard 1200px."
+
+msgid "0 = full width"
+msgstr "0 = volle Breite"
+
+msgid "Container Padding"
+msgstr "Container-Innenabstand"
+
+msgid "Horizontal padding inside the container. Set to 0 for true edge-to-edge content. Default 16px."
+msgstr "Horizontaler Innenabstand innerhalb des Containers. Auf 0 setzen für echten randlosen Inhalt. Standard 16px."
+
+msgid "WP Full Bleed — Desktop (≥ 1024px)"
+msgstr "WP randlos — Desktop (≥ 1024px)"
+
+msgid "Break out of the WordPress page container padding on desktop viewports. Requires page refresh."
+msgstr "Den Innenabstand des WordPress-Seitencontainers auf Desktop-Viewports durchbrechen. Erfordert eine Seitenaktualisierung."
+
+msgid "WP Full Bleed — Tablet (768-1023px)"
+msgstr "WP randlos — Tablet (768-1023px)"
+
+msgid "Break out of the WordPress page container padding on tablet viewports. Requires page refresh."
+msgstr "Den Innenabstand des WordPress-Seitencontainers auf Tablet-Viewports durchbrechen. Erfordert eine Seitenaktualisierung."
+
+msgid "WP Full Bleed — Mobile (< 768px)"
+msgstr "WP randlos — Mobil (< 768px)"
+
+msgid "Break out of the WordPress page container padding on mobile viewports. Requires page refresh."
+msgstr "Den Innenabstand des WordPress-Seitencontainers auf mobilen Viewports durchbrechen. Erfordert eine Seitenaktualisierung."
+
+msgid "Page Header"
+msgstr "Seitenkopf"
+
+msgid "Show Gallery Title"
+msgstr "Galerietitel anzeigen"
+
+msgid "Show the \"Campaign Gallery\" heading."
+msgstr "Die Überschrift „Kampagnengalerie“ anzeigen."
+
+msgid "Gallery Title Text"
+msgstr "Text des Galerietitels"
+
+msgid "Main heading text shown above the gallery."
+msgstr "Text der Hauptüberschrift, der über der Galerie angezeigt wird."
+
+msgid "Show Gallery Subtitle"
+msgstr "Galerie-Untertitel anzeigen"
+
+msgid "Show the subtitle text beneath the title."
+msgstr "Den Untertiteltext unter dem Titel anzeigen."
+
+msgid "Gallery Subtitle Text"
+msgstr "Text des Galerie-Untertitels"
+
+msgid "Subtitle text shown beneath the title."
+msgstr "Untertiteltext, der unter dem Titel angezeigt wird."
+
+msgid "Show Access Mode"
+msgstr "Zugriffsmodus anzeigen"
+
+msgid "Show the Lock / Hide access-mode toggle (admin only)."
+msgstr "Den Zugriffsmodus-Umschalter Sperren / Ausblenden anzeigen (nur Administratoren)."
+
+msgid "Show Filter Tabs"
+msgstr "Filter-Registerkarten anzeigen"
+
+msgid "Show the campaign filter tab strip."
+msgstr "Die Registerkartenleiste für Kampagnenfilter anzeigen."
+
+msgid "Show Search Box"
+msgstr "Suchfeld anzeigen"
+
+msgid "Show the campaign search input."
+msgstr "Das Kampagnen-Sucheingabefeld anzeigen."
+
+msgid "Page Background"
+msgstr "Seitenhintergrund"
+
+msgid "Page Background Type"
+msgstr "Typ des Seitenhintergrunds"
+
+msgid "Gallery container background style"
+msgstr "Hintergrundstil des Galerie-Containers"
+
+msgid "Default Theme"
+msgstr "Standard-Theme"
+
+msgid "Transparent"
+msgstr "Transparent"
+
+msgid "Solid color"
+msgstr "Volltonfarbe"
+
+msgid "Custom gradient"
+msgstr "Benutzerdefinierter Verlauf"
+
+msgid "Background Color"
+msgstr "Hintergrundfarbe"
+
+msgid "Solid background color for the gallery"
+msgstr "Volltonhintergrundfarbe für die Galerie"
+
+msgid "Show Header Border"
+msgstr "Kopfzeilenrahmen anzeigen"
+
+msgid "Show border, shadow, and backdrop blur on the sticky gallery header."
+msgstr "Rahmen, Schatten und Hintergrundunschärfe auf der fixierten Galerie-Kopfzeile anzeigen."
+
+msgid "Auth Bar"
+msgstr "Authentifizierungsleiste"
+
+msgid "Auth Bar Backdrop Blur (px)"
+msgstr "Hintergrundunschärfe der Authentifizierungsleiste (px)"
+
+msgid "Blur intensity for the auth bar backdrop."
+msgstr "Unschärfeintensität für den Hintergrund der Authentifizierungsleiste."
+
+msgid "Auth Bar Mobile Breakpoint (px)"
+msgstr "Mobiler Breakpoint der Authentifizierungsleiste (px)"
+
+msgid "Viewport width below which the auth bar uses mobile layout."
+msgstr "Viewport-Breite, unterhalb derer die Authentifizierungsleiste das mobile Layout verwendet."
+
+msgid "Security & Login"
+msgstr "Sicherheit und Anmeldung"
+
+msgid "Session Idle Timeout (minutes)"
+msgstr "Sitzungs-Leerlauf-Timeout (Minuten)"
+
+msgid "Automatically sign out users after this many minutes of inactivity. Set to 0 to disable."
+msgstr "Benutzer nach dieser Anzahl von Minuten Inaktivität automatisch abmelden. Auf 0 setzen zum Deaktivieren."
+
+msgid "0 = disabled"
+msgstr "0 = deaktiviert"
+
+msgid "Idle Timeout Warning (seconds before)"
+msgstr "Leerlauf-Timeout-Warnung (Sekunden vorher)"
+
+msgid "Show a 'Stay signed in' prompt this many seconds before signing out. Set to 0 to sign out without warning."
+msgstr "Eine Aufforderung „Angemeldet bleiben“ diese Anzahl von Sekunden vor der Abmeldung anzeigen. Auf 0 setzen, um ohne Warnung abzumelden."
+
+msgid "0 = no warning"
+msgstr "0 = keine Warnung"
+
+msgid "Enable Advanced Settings"
+msgstr "Erweiterte Einstellungen aktivieren"
+
+msgid "Unlock the System & Admin tab with granular control over panel behavior, cache, drawer settings, and more."
+msgstr "Schalten Sie die Registerkarte „System und Verwaltung“ mit detaillierter Kontrolle über Panel-Verhalten, Cache, Schubladeneinstellungen und mehr frei."
+
+msgid "Show Settings Tooltips"
+msgstr "Einstellungs-Tooltips anzeigen"
+
+msgid "Display info icons next to Advanced-tab labels that explain each setting on hover."
+msgstr "Info-Symbole neben den Beschriftungen der Registerkarte „Erweitert“ anzeigen, die beim Überfahren jede Einstellung erklären."
+
+msgid "Campaign created"
+msgstr "Kampagne erstellt"
+
+msgid "Campaign updated"
+msgstr "Kampagne aktualisiert"
+
+msgid "Campaign archived"
+msgstr "Kampagne archiviert"
+
+msgid "Campaign restored"
+msgstr "Kampagne wiederhergestellt"
+
+msgid "Campaign deleted"
+msgstr "Kampagne gelöscht"
+
+msgid "Media added"
+msgstr "Medien hinzugefügt"
+
+msgid "Media removed"
+msgstr "Medien entfernt"
+
+msgid "Access granted"
+msgstr "Zugriff gewährt"
+
+msgid "Access revoked"
+msgstr "Zugriff widerrufen"
+
+msgid "Copied!"
+msgstr "Kopiert!"
+
+msgid "Copy secret"
+msgstr "Geheimnis kopieren"
+
+msgid "On"
+msgstr "Ein"
+
+msgid "Off"
+msgstr "Aus"
+
+msgid "Rotate secret"
+msgstr "Geheimnis erneuern"
+
+msgid "Rotate secret for {{url}}"
+msgstr "Geheimnis für {{url}} erneuern"
+
+msgid "Delete endpoint"
+msgstr "Endpunkt löschen"
+
+msgid "Delete endpoint {{url}}"
+msgstr "Endpunkt {{url}} löschen"
+
+msgid "All events"
+msgstr "Alle Ereignisse"
+
+msgid "Hide filter"
+msgstr "Filter ausblenden"
+
+msgid "Edit filter"
+msgstr "Filter bearbeiten"
+
+msgid "All events (leave empty to receive all)"
+msgstr "Alle Ereignisse (leer lassen, um alle zu empfangen)"
+
+msgid "Failed to create webhook endpoint."
+msgstr "Webhook-Endpunkt konnte nicht erstellt werden."
+
+msgid "Failed to delete webhook endpoint."
+msgstr "Webhook-Endpunkt konnte nicht gelöscht werden."
+
+msgid "Failed to update webhook endpoint."
+msgstr "Webhook-Endpunkt konnte nicht aktualisiert werden."
+
+msgid "Failed to rotate webhook secret."
+msgstr "Webhook-Geheimnis konnte nicht erneuert werden."
+
+msgid "Endpoint {{index}}"
+msgstr "Endpunkt {{index}}"
+
+msgid "Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity."
+msgstr "Webhook-Endpunkte empfangen signierte HMAC-SHA256-POST-Anfragen, wenn Kampagnenereignisse auftreten. Die Nutzdaten enthalten den Ereignistyp, den ISO-Zeitstempel und die Ereignisdaten. Verwenden Sie den {{header}}-Header, um die Authentizität der Zustellung zu überprüfen."
+
+msgid "No webhook endpoints configured."
+msgstr "Keine Webhook-Endpunkte konfiguriert."
+
+msgid "Add endpoint"
+msgstr "Endpunkt hinzufügen"
+
+msgid "Events (optional)"
+msgstr "Ereignisse (optional)"
+
+msgid "Leave empty to receive all events."
+msgstr "Leer lassen, um alle Ereignisse zu empfangen."
+
+msgid "Enabled"
+msgstr "Aktiviert"
+
+msgid "Webhook secret — save this now"
+msgstr "Webhook-Geheimnis — jetzt speichern"
+
+msgid "This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256."
+msgstr "Dies ist das einzige Mal, dass das vollständige Geheimnis angezeigt wird. Kopieren Sie es und konfigurieren Sie Ihren Endpunkt, um den {{header}}-Header mit HMAC-SHA256 zu überprüfen."
+
+msgid "Done"
+msgstr "Fertig"
+
+msgid "New webhook secret — save this now"
+msgstr "Neues Webhook-Geheimnis — jetzt speichern"
+
+msgid "The secret for {{label}} has been rotated. Update your endpoint receiver with this new value before closing."
+msgstr "Das Geheimnis für {{label}} wurde erneuert. Aktualisieren Sie Ihren Endpunkt-Empfänger mit diesem neuen Wert, bevor Sie schließen."
+
+msgid "Fine-grained controls for power users. These settings override internal defaults across all gallery components. Change with care."
+msgstr "Detaillierte Steuerungen für erfahrene Benutzer. Diese Einstellungen überschreiben interne Standardwerte in allen Galeriekomponenten. Ändern Sie sie mit Vorsicht."
+
+msgid "Settings Drawer"
+msgstr "Einstellungsschublade"
+
+msgid "Settings Panel Width"
+msgstr "Breite des Einstellungspanels"
+
+msgid "Width of the settings panel drawer on medium and large screens. On small screens it is always 100%."
+msgstr "Breite der Einstellungspanel-Schublade auf mittleren und großen Bildschirmen. Auf kleinen Bildschirmen beträgt sie immer 100 %."
+
+msgid "Settings Drawer Backdrop Blur"
+msgstr "Hintergrundunschärfe der Einstellungsschublade"
+
+msgid "When enabled, content behind open settings drawers is blurred."
+msgstr "Wenn aktiviert, wird der Inhalt hinter geöffneten Einstellungsschubladen unscharf dargestellt."
+
+msgid "Settings Panel Animation"
+msgstr "Animation des Einstellungspanels"
+
+msgid "Open/close transition for the settings panel drawer. Choose None to disable animation."
+msgstr "Öffnen-/Schließen-Übergang für die Einstellungspanel-Schublade. Wählen Sie „Keine“, um die Animation zu deaktivieren."
+
+msgid "Slide"
+msgstr "Schieben"
+
+msgid "Fade"
+msgstr "Überblenden"
+
+msgid "Scale"
+msgstr "Skalieren"
+
+msgid "None"
+msgstr "Keine"
+
+msgid "Admin Panel Max Width"
+msgstr "Maximale Breite des Admin-Bereichs"
+
+msgid "Maximum width of the admin panel container. Set to 0 for full width (no constraint)."
+msgstr "Maximale Breite des Admin-Bereich-Containers. Auf 0 setzen für volle Breite (keine Einschränkung)."
+
+msgid "Upload / Media"
+msgstr "Upload / Medien"
+
+msgid "Upload Max Size (MB)"
+msgstr "Maximale Upload-Größe (MB)"
+
+msgid "Max Batch Upload Size"
+msgstr "Maximale Stapel-Upload-Größe"
+
+msgid "Allowed Upload Types"
+msgstr "Erlaubte Upload-Typen"
+
+msgid "Comma-separated MIME patterns (e.g. image/*,video/*)"
+msgstr "Durch Kommas getrennte MIME-Muster (z. B. image/*,video/*)"
+
+msgid "Library Page Size"
+msgstr "Seitengröße der Bibliothek"
+
+msgid "Media List Page Size"
+msgstr "Seitengröße der Medienliste"
+
+msgid "Compact Card Height (px)"
+msgstr "Höhe kompakter Karten (px)"
+
+msgid "Small Card Height (px)"
+msgstr "Höhe kleiner Karten (px)"
+
+msgid "Medium Card Height (px)"
+msgstr "Höhe mittlerer Karten (px)"
+
+msgid "Large Card Height (px)"
+msgstr "Höhe großer Karten (px)"
+
+msgid "Media List Min Width (px)"
+msgstr "Mindestbreite der Medienliste (px)"
+
+msgid "Notification Dismiss (ms)"
+msgstr "Benachrichtigung ausblenden (ms)"
+
+msgid "Image Optimization"
+msgstr "Bildoptimierung"
+
+msgid "Optimize on Upload"
+msgstr "Beim Hochladen optimieren"
+
+msgid "Automatically resize and compress images on upload."
+msgstr "Bilder beim Hochladen automatisch skalieren und komprimieren."
+
+msgid "Max Width (px)"
+msgstr "Maximale Breite (px)"
+
+msgid "Max Height (px)"
+msgstr "Maximale Höhe (px)"
+
+msgid "Quality (%)"
+msgstr "Qualität (%)"
+
+msgid "WebP Conversion"
+msgstr "WebP-Konvertierung"
+
+msgid "Generate WebP copies alongside originals."
+msgstr "WebP-Kopien zusätzlich zu den Originalen erzeugen."
+
+msgid "Thumbnail Cache TTL (s)"
+msgstr "Miniaturbild-Cache-TTL (s)"
+
+msgid "How long cached external thumbnails are kept (seconds)."
+msgstr "Wie lange zwischengespeicherte externe Miniaturbilder aufbewahrt werden (Sekunden)."
+
+msgid "Tile / Adapter"
+msgstr "Kachel / Adapter"
+
+msgid "Hover Overlay Opacity"
+msgstr "Deckkraft des Hover-Overlays"
+
+msgid "Bounce Scale (Hover)"
+msgstr "Sprung-Skalierung (Hover)"
+
+msgid "Bounce Scale (Active)"
+msgstr "Sprung-Skalierung (Aktiv)"
+
+msgid "Bounce Duration (ms)"
+msgstr "Sprungdauer (ms)"
+
+msgid "Base Transition Duration (ms)"
+msgstr "Basis-Übergangsdauer (ms)"
+
+msgid "Tile Transition Duration (ms)"
+msgstr "Kachel-Übergangsdauer (ms)"
+
+msgid "Hex Vertical Overlap Ratio"
+msgstr "Vertikales Überlappungsverhältnis (Hexagon)"
+
+msgid "Diamond Vertical Overlap Ratio"
+msgstr "Vertikales Überlappungsverhältnis (Raute)"
+
+msgid "Hex Clip Path"
+msgstr "Hexagon-Clip-Path"
+
+msgid "Diamond Clip Path"
+msgstr "Raute-Clip-Path"
+
+msgid "Default Per Row"
+msgstr "Standard pro Zeile"
+
+msgid "Masonry Auto Column Breakpoints"
+msgstr "Automatische Spalten-Breakpoints (Mauerwerk)"
+
+msgid "Format: 480:2,768:3,1024:4,1280:5"
+msgstr "Format: 480:2,768:3,1024:4,1280:5"
+
+msgid "Grid Card Hover Shadow"
+msgstr "Rasterkarten-Schatten (Hover)"
+
+msgid "Grid Card Default Shadow"
+msgstr "Rasterkarten-Standardschatten"
+
+msgid "Grid Card Hover Scale"
+msgstr "Rasterkarten-Skalierung (Hover)"
+
+msgid "Lightbox"
+msgstr "Lightbox"
+
+msgid "Transition Duration (ms)"
+msgstr "Übergangsdauer (ms)"
+
+msgid "Backdrop Color"
+msgstr "Hintergrundfarbe"
+
+msgid "Entry Scale"
+msgstr "Eingangsskalierung"
+
+msgid "Video Max Width"
+msgstr "Maximale Videobreite"
+
+msgid "Video Height"
+msgstr "Videohöhe"
+
+msgid "Media Max Height"
+msgstr "Maximale Medienhöhe"
+
+msgid "CSS value, e.g. 85vh"
+msgstr "CSS-Wert, z. B. 85vh"
+
+msgid "Z-Index"
+msgstr "Z-Index"
+
+msgid "Navigation"
+msgstr "Navigation"
+
+msgid "Max Visible Dots"
+msgstr "Maximal sichtbare Punkte"
+
+msgid "Arrow Edge Inset (px)"
+msgstr "Pfeil-Randabstand (px)"
+
+msgid "Arrow Min Hit Target (px)"
+msgstr "Minimale Trefferfläche der Pfeile (px)"
+
+msgid "Arrow Fade Duration (ms)"
+msgstr "Pfeil-Überblenddauer (ms)"
+
+msgid "Arrow Scale Transition (ms)"
+msgstr "Pfeil-Skalierungsübergang (ms)"
+
+msgid "Viewport Height Mobile Ratio"
+msgstr "Viewport-Höhenverhältnis (Mobil)"
+
+msgid "Viewport Height Tablet Ratio"
+msgstr "Viewport-Höhenverhältnis (Tablet)"
+
+msgid "Search Input Min Width (px)"
+msgstr "Mindestbreite des Sucheingabefelds (px)"
+
+msgid "Search Input Max Width (px)"
+msgstr "Maximale Breite des Sucheingabefelds (px)"
+
+msgid "System"
+msgstr "System"
+
+msgid "Admin Search Debounce (ms)"
+msgstr "Admin-Such-Entprellung (ms)"
+
+msgid "Min Password Length"
+msgstr "Mindestlänge des Passworts"
+
+msgid "Login Form Max Width (px)"
+msgstr "Maximale Breite des Anmeldeformulars (px)"
+
+msgid "Developer & Debugging"
+msgstr "Entwickler und Debugging"
+
+msgid "Enable Component Debug Names & Markers"
+msgstr "Komponenten-Debug-Namen und -Markierungen aktivieren"
+
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr "Wenn aktiviert, behalten bereitgestellte Builds explizite React-DevTools-Komponentennamen bei und fügen data-wpsg-component/data-wpsg-slot-Attribute in das DOM ein, für die Elementinspektion und QA-Selektoren. Die lokale Entwicklung kann weiterhin Quellkomponentennamen anzeigen, auch wenn dies deaktiviert ist."
+
+msgid "Data Maintenance"
+msgstr "Datenwartung"
+
+msgid "Archive Purge After (days)"
+msgstr "Archiv bereinigen nach (Tagen)"
+
+msgid "Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging."
+msgstr "Archivierte Kampagnen, die älter sind, werden in den Papierkorb verschoben. Auf 0 setzen, um die automatische Bereinigung zu deaktivieren."
+
+msgid "Trash Grace Period (days)"
+msgstr "Papierkorb-Aufbewahrungsfrist (Tage)"
+
+msgid "Trashed campaigns are permanently deleted after this many days. Minimum 7 days."
+msgstr "Kampagnen im Papierkorb werden nach dieser Anzahl von Tagen dauerhaft gelöscht. Mindestens 7 Tage."
+
+msgid "Analytics Retention (days)"
+msgstr "Statistik-Aufbewahrung (Tage)"
+
+msgid "Analytics events older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "Statistik-Ereignisse, die älter sind, werden wöchentlich bereinigt. Auf 0 setzen, um sie unbegrenzt aufzubewahren."
+
+msgid "Object Cache"
+msgstr "Objekt-Cache"
+
+msgid "Health data unavailable"
+msgstr "Zustandsdaten nicht verfügbar"
+
+msgid "Could not load object-cache status from the server."
+msgstr "Objekt-Cache-Status konnte nicht vom Server geladen werden."
+
+msgid "Persistent cache"
+msgstr "Persistenter Cache"
+
+msgid "Not detected"
+msgstr "Nicht erkannt"
+
+msgid "No persistent object cache"
+msgstr "Kein persistenter Objekt-Cache"
+
+msgid "WordPress is using its default in-memory cache, which is discarded on every request. For higher-traffic deployments consider adding a Redis or Memcached drop-in. See docs/object-cache-setup.md for setup instructions."
+msgstr "WordPress verwendet seinen standardmäßigen In-Memory-Cache, der bei jeder Anfrage verworfen wird. Für Bereitstellungen mit höherem Datenverkehr sollten Sie ein Redis- oder Memcached-Drop-in hinzufügen. Anleitungen zur Einrichtung finden Sie unter docs/object-cache-setup.md."
+
+msgid "Cache backend detected but no runtime stats are exposed by this drop-in."
+msgstr "Cache-Backend erkannt, aber dieses Drop-in stellt keine Laufzeitstatistiken bereit."
+
+msgid "Backend stats"
+msgstr "Backend-Statistiken"
+
+msgid "Danger Zone"
+msgstr "Gefahrenzone"
+
+msgid "Irreversible data deletion"
+msgstr "Unwiderrufliche Datenlöschung"
+
+msgid "When preservation is disabled, deleting this plugin permanently removes all campaigns, layout templates, overlay library, analytics events, access grants, and uploaded thumbnail files. This cannot be undone."
+msgstr "Wenn die Aufbewahrung deaktiviert ist, entfernt das Löschen dieses Plugins dauerhaft alle Kampagnen, Layout-Vorlagen, die Overlay-Bibliothek, Statistik-Ereignisse, Zugriffsberechtigungen und hochgeladene Miniaturbilddateien. Dies kann nicht rückgängig gemacht werden."
+
+msgid "Preserve data on plugin removal"
+msgstr "Daten beim Entfernen des Plugins beibehalten"
+
+msgid "When enabled (recommended), all plugin data is kept if you remove the plugin. Disable only if you intend to wipe all gallery data on uninstall."
+msgstr "Wenn aktiviert (empfohlen), werden alle Plugin-Daten beibehalten, wenn Sie das Plugin entfernen. Deaktivieren Sie dies nur, wenn Sie beabsichtigen, alle Galeriedaten bei der Deinstallation zu löschen."
+
+msgid "{{base}} — Override for {{bp}}"
+msgstr "{{base}} — Überschreibung für {{bp}}"
+
+msgid "{{base}} — Inherited from {{bp}}"
+msgstr "{{base}} — Geerbt von {{bp}}"
+
+msgid "↻ Reset to inherited"
+msgstr "↻ Auf geerbt zurücksetzen"
+
+msgid "Card Appearance"
+msgstr "Kartendarstellung"
+
+msgid "Border Radius"
+msgstr "Rahmenradius"
+
+msgid "Corner rounding for campaign cards"
+msgstr "Eckenrundung für Kampagnenkarten"
+
+msgid "Border Width (px)"
+msgstr "Rahmenbreite (px)"
+
+msgid "Left accent border thickness"
+msgstr "Dicke des linken Akzentrahmens"
+
+msgid "Border Color Mode"
+msgstr "Rahmenfarbmodus"
+
+msgid "How card accent border colors are determined"
+msgstr "Wie die Akzentrahmenfarben der Karten bestimmt werden"
+
+msgid "Single color for all cards"
+msgstr "Einzelne Farbe für alle Karten"
+
+msgid "Per-card color (set in Edit Campaign)"
+msgstr "Farbe pro Karte (in „Kampagne bearbeiten“ festgelegt)"
+
+msgid "Border Color"
+msgstr "Rahmenfarbe"
+
+msgid "Accent border color applied to all campaign cards"
+msgstr "Akzentrahmenfarbe, die auf alle Kampagnenkarten angewendet wird"
+
+msgid "Card Shadow"
+msgstr "Kartenschatten"
+
+msgid "Depth effect for campaign cards"
+msgstr "Tiefeneffekt für Kampagnenkarten"
+
+msgid "Subtle"
+msgstr "Dezent"
+
+msgid "Medium"
+msgstr "Mittel"
+
+msgid "Dramatic"
+msgstr "Dramatisch"
+
+msgid "Thumbnail Height"
+msgstr "Miniaturbildhöhe"
+
+msgid "Height of the card thumbnail area"
+msgstr "Höhe des Miniaturbildbereichs der Karte"
+
+msgid "Thumbnail Fit"
+msgstr "Miniaturbild-Anpassung"
+
+msgid "How the thumbnail image fills the card"
+msgstr "Wie das Miniaturbild die Karte ausfüllt"
+
+msgid "Cover (fill)"
+msgstr "Abdecken (füllen)"
+
+msgid "Contain (fit)"
+msgstr "Einpassen (anpassen)"
+
+msgid "Element Visibility"
+msgstr "Sichtbarkeit der Elemente"
+
+msgid "Show company name badge"
+msgstr "Unternehmensnamen-Badge anzeigen"
+
+msgid "Company badge overlay on card thumbnail"
+msgstr "Unternehmens-Badge-Overlay auf dem Kartenminiaturbild"
+
+msgid "Show access badge"
+msgstr "Zugriffs-Badge anzeigen"
+
+msgid "Green 'Access' badge on accessible cards"
+msgstr "Grünes „Zugriff“-Badge auf zugänglichen Karten"
+
+msgid "Show card title"
+msgstr "Kartentitel anzeigen"
+
+msgid "Show the campaign title in the card info panel"
+msgstr "Den Kampagnentitel im Karten-Infobereich anzeigen"
+
+msgid "Show card description"
+msgstr "Kartenbeschreibung anzeigen"
+
+msgid "Show the campaign description in the card info panel"
+msgstr "Die Kampagnenbeschreibung im Karten-Infobereich anzeigen"
+
+msgid "Show media counts"
+msgstr "Medienanzahl anzeigen"
+
+msgid "Video and image count below description"
+msgstr "Video- und Bildanzahl unter der Beschreibung"
+
+msgid "Show card border"
+msgstr "Kartenrahmen anzeigen"
+
+msgid "Accent border and hover border effect"
+msgstr "Akzentrahmen und Hover-Rahmeneffekt"
+
+msgid "Show thumbnail fade"
+msgstr "Miniaturbild-Überblendung anzeigen"
+
+msgid "Gradient overlay at bottom of thumbnail"
+msgstr "Verlaufs-Overlay am unteren Rand des Miniaturbilds"
+
+msgid "Show card info panel"
+msgstr "Karten-Infobereich anzeigen"
+
+msgid "Show title, description, tags & media counts below thumbnail"
+msgstr "Titel, Beschreibung, Schlagwörter und Medienanzahl unter dem Miniaturbild anzeigen"
+
+msgid "Card Grid & Pagination"
+msgstr "Kartenraster und Paginierung"
+
+msgid "Cards Per Row"
+msgstr "Karten pro Zeile"
+
+msgid "Number of columns in the card grid (Auto = responsive)"
+msgstr "Anzahl der Spalten im Kartenraster (Automatisch = responsive)"
+
+msgid "Auto (responsive)"
+msgstr "Automatisch (responsive)"
+
+msgid "2 columns"
+msgstr "2 Spalten"
+
+msgid "3 columns"
+msgstr "3 Spalten"
+
+msgid "4 columns"
+msgstr "4 Spalten"
+
+msgid "5 columns"
+msgstr "5 Spalten"
+
+msgid "6 columns"
+msgstr "6 Spalten"
+
+msgid "Max Columns (auto mode)"
+msgstr "Maximale Spalten (Automatikmodus)"
+
+msgid "Cap the number of columns when using Auto layout. 0 = unlimited."
+msgstr "Die Anzahl der Spalten im Automatik-Layout begrenzen. 0 = unbegrenzt."
+
+msgid "Horizontal Gap"
+msgstr "Horizontaler Abstand"
+
+msgid "Horizontal spacing between campaign cards"
+msgstr "Horizontaler Abstand zwischen Kampagnenkarten"
+
+msgid "Vertical Gap"
+msgstr "Vertikaler Abstand"
+
+msgid "Vertical spacing between campaign card rows"
+msgstr "Vertikaler Abstand zwischen Kampagnenkartenzeilen"
+
+msgid "Card Max Width"
+msgstr "Maximale Kartenbreite"
+
+msgid "Limit individual card width. 0 = no limit (fill column)."
+msgstr "Die Breite einzelner Karten begrenzen. 0 = keine Begrenzung (Spalte füllen)."
+
+msgid "Card Scale"
+msgstr "Kartenskalierung"
+
+msgid "Primary sizing multiplier for cards. 1 = default size."
+msgstr "Primärer Größenmultiplikator für Karten. 1 = Standardgröße."
+
+msgid "Card Justification"
+msgstr "Kartenausrichtung"
+
+msgid "How cards distribute when a row does not fill the full available width."
+msgstr "Wie sich Karten verteilen, wenn eine Zeile nicht die gesamte verfügbare Breite ausfüllt."
+
+msgid "Start"
+msgstr "Anfang"
+
+msgid "Center"
+msgstr "Mitte"
+
+msgid "End"
+msgstr "Ende"
+
+msgid "Space Between"
+msgstr "Zwischenraum"
+
+msgid "Space Evenly"
+msgstr "Gleichmäßiger Abstand"
+
+msgid "Vertical Alignment"
+msgstr "Vertikale Ausrichtung"
+
+msgid "How the card grid aligns vertically when minimum height exceeds content height."
+msgstr "Wie sich das Kartenraster vertikal ausrichtet, wenn die Mindesthöhe die Inhaltshöhe überschreitet."
+
+msgid "Top"
+msgstr "Oben"
+
+msgid "Bottom"
+msgstr "Unten"
+
+msgid "Grid Minimum Height"
+msgstr "Mindesthöhe des Rasters"
+
+msgid "Minimum height for the card grid container."
+msgstr "Mindesthöhe für den Kartenraster-Container."
+
+msgid "Grid Maximum Height"
+msgstr "Maximale Höhe des Rasters"
+
+msgid "Maximum height for the card grid area. 0 = no limit."
+msgstr "Maximale Höhe für den Kartenrasterbereich. 0 = keine Begrenzung."
+
+msgid "Grid Horizontal Offset"
+msgstr "Horizontaler Rasterversatz"
+
+msgid "Fine-tune horizontal position of the card grid."
+msgstr "Horizontale Position des Kartenrasters fein abstimmen."
+
+msgid "Grid Vertical Offset"
+msgstr "Vertikaler Rasterversatz"
+
+msgid "Fine-tune vertical position of the card grid."
+msgstr "Vertikale Position des Kartenrasters fein abstimmen."
+
+msgid "Card Aspect Ratio"
+msgstr "Kartenseitenverhältnis"
+
+msgid "Lock cards to a fixed aspect ratio"
+msgstr "Karten auf ein festes Seitenverhältnis festlegen"
+
+msgid "Auto (natural)"
+msgstr "Automatisch (natürlich)"
+
+msgid "16:9 (widescreen)"
+msgstr "16:9 (Breitbild)"
+
+msgid "4:3 (standard)"
+msgstr "4:3 (Standard)"
+
+msgid "1:1 (square)"
+msgstr "1:1 (Quadrat)"
+
+msgid "3:4 (portrait)"
+msgstr "3:4 (Hochformat)"
+
+msgid "9:16 (tall portrait)"
+msgstr "9:16 (hohes Hochformat)"
+
+msgid "2:3 (photo portrait)"
+msgstr "2:3 (Foto-Hochformat)"
+
+msgid "3:2 (photo landscape)"
+msgstr "3:2 (Foto-Querformat)"
+
+msgid "21:9 (ultrawide)"
+msgstr "21:9 (Ultrabreit)"
+
+msgid "Card Min Height"
+msgstr "Mindesthöhe der Karte"
+
+msgid "Minimum height for each card. 0 = no minimum."
+msgstr "Mindesthöhe für jede Karte. 0 = kein Minimum."
+
+msgid "Pagination"
+msgstr "Paginierung"
+
+msgid "Display Mode"
+msgstr "Anzeigemodus"
+
+msgid "How cards are displayed: all at once, progressively loaded, or paginated with arrows"
+msgstr "Wie Karten angezeigt werden: alle auf einmal, schrittweise geladen oder mit Pfeilen paginiert"
+
+msgid "Show All"
+msgstr "Alle anzeigen"
+
+msgid "Load More (progressive)"
+msgstr "Mehr laden (schrittweise)"
+
+msgid "Paginated (arrows)"
+msgstr "Paginiert (Pfeile)"
+
+msgid "Rows Per Page"
+msgstr "Zeilen pro Seite"
+
+msgid "Number of card rows visible per page"
+msgstr "Anzahl der pro Seite sichtbaren Kartenzeilen"
+
+msgid "Dot Navigator"
+msgstr "Punktnavigator"
+
+msgid "Show dot navigator below the card grid"
+msgstr "Punktnavigator unter dem Kartenraster anzeigen"
+
+msgid "Page Transition Duration (ms)"
+msgstr "Seitenübergangsdauer (ms)"
+
+msgid "Slide animation speed between pages"
+msgstr "Geschwindigkeit der Schiebeanimation zwischen Seiten"
+
+msgid "Card Internals"
+msgstr "Karten-Interna"
+
+msgid "Locked Card Opacity"
+msgstr "Deckkraft gesperrter Karten"
+
+msgid "Gradient Start Opacity"
+msgstr "Deckkraft am Verlaufsanfang"
+
+msgid "Gradient End Opacity"
+msgstr "Deckkraft am Verlaufsende"
+
+msgid "Lock Icon Size (px)"
+msgstr "Größe des Sperrsymbols (px)"
+
+msgid "Size of the lock icon shown on inaccessible cards"
+msgstr "Größe des Sperrsymbols, das auf nicht zugänglichen Karten angezeigt wird"
+
+msgid "Access Icon Size (px)"
+msgstr "Größe des Zugriffssymbols (px)"
+
+msgid "Size of the icon inside the access badge"
+msgstr "Größe des Symbols im Zugriffs-Badge"
+
+msgid "Badge Offset Y (px)"
+msgstr "Badge-Versatz Y (px)"
+
+msgid "Vertical offset from the top edge for access and company badges"
+msgstr "Vertikaler Versatz vom oberen Rand für Zugriffs- und Unternehmens-Badges"
+
+msgid "Company Badge Max Width (px)"
+msgstr "Maximale Breite des Unternehmens-Badges (px)"
+
+msgid "Maximum width of the company badge before truncation"
+msgstr "Maximale Breite des Unternehmens-Badges vor der Kürzung"
+
+msgid "Thumbnail Hover Transition (ms)"
+msgstr "Miniaturbild-Hover-Übergang (ms)"
+
+msgid "Duration of the thumbnail hover zoom effect"
+msgstr "Dauer des Miniaturbild-Hover-Zoom-Effekts"
+
+msgid "Page Transition Opacity"
+msgstr "Deckkraft des Seitenübergangs"
+
+msgid "Auto Columns Breakpoints"
+msgstr "Breakpoints für automatische Spalten"
+
+msgid "Format: 480:1,768:2,1024:3,1280:4"
+msgstr "Format: 480:1,768:2,1024:3,1280:4"
+
+msgid "Campaign Listing"
+msgstr "Kampagnenliste"
+
+msgid "Choose the layout adapter used to render the public campaign listing. Adapter-specific knobs (gap, columns, target row height) are shared with per-campaign galleries in Phase 1."
+msgstr "Wählen Sie den Layout-Adapter, der zum Rendern der öffentlichen Kampagnenliste verwendet wird. Adapterspezifische Regler (Abstand, Spalten, Zielzeilenhöhe) werden in Phase 1 mit den Galerien pro Kampagne geteilt."
+
+msgid "Listing Layout (Desktop)"
+msgstr "Listen-Layout (Desktop)"
+
+msgid "Layout adapter for the campaign listing on desktop."
+msgstr "Layout-Adapter für die Kampagnenliste auf dem Desktop."
+
+msgid "Listing Layout (Tablet)"
+msgstr "Listen-Layout (Tablet)"
+
+msgid "Optional override for tablet. Leave unset to inherit the desktop selection."
+msgstr "Optionale Überschreibung für Tablet. Nicht festlegen, um die Desktop-Auswahl zu erben."
+
+msgid "Inherit from desktop"
+msgstr "Von Desktop erben"
+
+msgid "Listing Layout (Mobile)"
+msgstr "Listen-Layout (Mobil)"
+
+msgid "Optional override for mobile. Leave unset to inherit the desktop selection."
+msgstr "Optionale Überschreibung für Mobil. Nicht festlegen, um die Desktop-Auswahl zu erben."
+
+msgid "Listing Layout Template"
+msgstr "Listen-Layout-Vorlage"
+
+msgid "The template whose slots define the positioned containers for campaign cards."
+msgstr "Die Vorlage, deren Slots die positionierten Container für Kampagnenkarten definieren."
+
+msgid "No template selected"
+msgstr "Keine Vorlage ausgewählt"
+
+msgid "0 = unlimited"
+msgstr "0 = unbegrenzt"
+
+msgid "0 = no minimum"
+msgstr "0 = kein Minimum"
+
+msgid "0 = no maximum"
+msgstr "0 = kein Maximum"
+
+msgid "Open Mode & Sizing"
+msgstr "Öffnungsmodus und Größe"
+
+msgid "Fullscreen Campaign Modal"
+msgstr "Kampagnenfenster im Vollbildmodus"
+
+msgid "Open campaign viewer in fullscreen mode instead of the default modal."
+msgstr "Den Kampagnen-Viewer im Vollbildmodus statt im Standardfenster öffnen."
+
+msgid "Campaign Open Mode"
+msgstr "Kampagnen-Öffnungsmodus"
+
+msgid "What to show when a campaign is opened."
+msgstr "Was angezeigt wird, wenn eine Kampagne geöffnet wird."
+
+msgid "Full (cover, about, galleries, stats)"
+msgstr "Vollständig (Titelbild, Über, Galerien, Statistiken)"
+
+msgid "Galleries only (skip header/about/stats)"
+msgstr "Nur Galerien (Kopfzeile/Über/Statistiken überspringen)"
+
+msgid "Fullscreen Content Max Width"
+msgstr "Maximale Inhaltsbreite im Vollbildmodus"
+
+msgid "Limit content width in fullscreen mode. 0 = full responsive width."
+msgstr "Inhaltsbreite im Vollbildmodus begrenzen. 0 = volle responsive Breite."
+
+msgid "Modal Max Width"
+msgstr "Maximale Fensterbreite"
+
+msgid "Maximum width of the campaign modal when not fullscreen (clamped 600-1600)."
+msgstr "Maximale Breite des Kampagnenfensters, wenn nicht im Vollbildmodus (begrenzt auf 600-1600)."
+
+msgid "Content Max Width"
+msgstr "Maximale Inhaltsbreite"
+
+msgid "Maximum width of the content area inside the modal. 0 = full width."
+msgstr "Maximale Breite des Inhaltsbereichs innerhalb des Fensters. 0 = volle Breite."
+
+msgid "Modal Inner Padding"
+msgstr "Innenabstand des Fensters"
+
+msgid "Padding inside the modal content area (clamped 0-48)."
+msgstr "Innenabstand im Inhaltsbereich des Fensters (begrenzt auf 0-48)."
+
+msgid "Modal Appearance"
+msgstr "Fensterdarstellung"
+
+msgid "Cover Image Height"
+msgstr "Höhe des Titelbilds"
+
+msgid "Height of the cover image in the campaign modal"
+msgstr "Höhe des Titelbilds im Kampagnenfenster"
+
+msgid "Modal Transition"
+msgstr "Fensterübergang"
+
+msgid "Animation style when opening the campaign modal"
+msgstr "Animationsstil beim Öffnen des Kampagnenfensters"
+
+msgid "Pop (scale up)"
+msgstr "Erscheinen (vergrößern)"
+
+msgid "Slide Up"
+msgstr "Nach oben schieben"
+
+msgid "Modal Transition Duration (ms)"
+msgstr "Fensterübergangsdauer (ms)"
+
+msgid "Length of the modal open/close animation"
+msgstr "Dauer der Öffnen-/Schließen-Animation des Fensters"
+
+msgid "Modal Max Height (vh%)"
+msgstr "Maximale Fensterhöhe (vh%)"
+
+msgid "Maximum height of the campaign modal as a percentage of viewport (clamped 50-95)."
+msgstr "Maximale Höhe des Kampagnenfensters als Prozentsatz des Viewports (begrenzt auf 50-95)."
+
+msgid "Content Visibility"
+msgstr "Sichtbarkeit des Inhalts"
+
+msgid "Show Company Name"
+msgstr "Unternehmensnamen anzeigen"
+
+msgid "Show the company badge on the campaign cover image."
+msgstr "Das Unternehmens-Badge auf dem Kampagnen-Titelbild anzeigen."
+
+msgid "Show Date"
+msgstr "Datum anzeigen"
+
+msgid "Show the creation date under the campaign title."
+msgstr "Das Erstellungsdatum unter dem Kampagnentitel anzeigen."
+
+msgid "Show About Section"
+msgstr "Über-Abschnitt anzeigen"
+
+msgid "Show the \"About this Campaign\" heading and description."
+msgstr "Die Überschrift und Beschreibung „Über diese Kampagne“ anzeigen."
+
+msgid "About Section Heading"
+msgstr "Überschrift des Über-Abschnitts"
+
+msgid "Heading for the campaign description section (default \"About\")."
+msgstr "Überschrift für den Kampagnenbeschreibungsabschnitt (Standard „Über“)."
+
+msgid "Show Description"
+msgstr "Beschreibung anzeigen"
+
+msgid "Show the campaign description text within the About section."
+msgstr "Den Kampagnenbeschreibungstext im Über-Abschnitt anzeigen."
+
+msgid "Show Campaign Stats"
+msgstr "Kampagnenstatistiken anzeigen"
+
+msgid "Show the statistics block (video count, image count, tags, visibility)."
+msgstr "Den Statistikblock anzeigen (Videoanzahl, Bildanzahl, Schlagwörter, Sichtbarkeit)."
+
+msgid "Stats Admin-Only"
+msgstr "Statistiken nur für Administratoren"
+
+msgid "When enabled, only admins can see the statistics block."
+msgstr "Wenn aktiviert, können nur Administratoren den Statistikblock sehen."
+
+msgid "Show Cover Image"
+msgstr "Titelbild anzeigen"
+
+msgid "Show the campaign cover image at the top of the viewer."
+msgstr "Das Kampagnen-Titelbild oben im Viewer anzeigen."
+
+msgid "Show Tags"
+msgstr "Schlagwörter anzeigen"
+
+msgid "Show tags section in the campaign viewer."
+msgstr "Den Schlagwörter-Abschnitt im Kampagnen-Viewer anzeigen."
+
+msgid "Show Admin Actions"
+msgstr "Admin-Aktionen anzeigen"
+
+msgid "Show admin action buttons (edit, archive, etc.) in the campaign viewer."
+msgstr "Admin-Aktionsschaltflächen (Bearbeiten, Archivieren usw.) im Kampagnen-Viewer anzeigen."
+
+msgid "Show Gallery Labels"
+msgstr "Galeriebeschriftungen anzeigen"
+
+msgid "Show 'Images' and 'Videos' heading labels above galleries in the viewer."
+msgstr "Die Überschriften „Bilder“ und „Videos“ über den Galerien im Viewer anzeigen."
+
+msgid "Gallery Labels"
+msgstr "Galeriebeschriftungen"
+
+msgid "Image Gallery Label"
+msgstr "Beschriftung der Bildgalerie"
+
+msgid "Custom label for image gallery sections. Count is appended automatically."
+msgstr "Benutzerdefinierte Beschriftung für Bildgalerieabschnitte. Die Anzahl wird automatisch angehängt."
+
+msgid "Video Gallery Label"
+msgstr "Beschriftung der Videogalerie"
+
+msgid "Custom label for video gallery sections. Count is appended automatically."
+msgstr "Benutzerdefinierte Beschriftung für Videogalerieabschnitte. Die Anzahl wird automatisch angehängt."
+
+msgid "Label Justification"
+msgstr "Beschriftungsausrichtung"
+
+msgid "Horizontal alignment for gallery section labels"
+msgstr "Horizontale Ausrichtung für Galerieabschnittsbeschriftungen"
+
+msgid "Left"
+msgstr "Links"
+
+msgid "Right"
+msgstr "Rechts"
+
+msgid "Show Gallery Label Icon"
+msgstr "Galeriebeschriftungssymbol anzeigen"
+
+msgid "Display an icon prefix before each gallery section label"
+msgstr "Ein Symbolpräfix vor jeder Galerieabschnittsbeschriftung anzeigen"
+
+msgid "Modal Background"
+msgstr "Fensterhintergrund"
+
+msgid "Modal Background Type"
+msgstr "Typ des Fensterhintergrunds"
+
+msgid "Background style for the fullscreen campaign modal"
+msgstr "Hintergrundstil für das Kampagnenfenster im Vollbildmodus"
+
+msgid "Modal Background Color"
+msgstr "Fensterhintergrundfarbe"
+
+msgid "Solid background color for the fullscreen modal"
+msgstr "Volltonhintergrundfarbe für das Vollbildfenster"
+
+msgid "Cover Image & Responsive"
+msgstr "Titelbild und Responsive"
+
+msgid "Cover Mobile Ratio"
+msgstr "Titelbild-Verhältnis (Mobil)"
+
+msgid "Cover Tablet Ratio"
+msgstr "Titelbild-Verhältnis (Tablet)"
+
+msgid "Close Button Size (px)"
+msgstr "Größe der Schließen-Schaltfläche (px)"
+
+msgid "Close Button Background"
+msgstr "Hintergrund der Schließen-Schaltfläche"
+
+msgid "CSS color for the close button background (e.g. rgba(0,0,0,0.5))."
+msgstr "CSS-Farbe für den Hintergrund der Schließen-Schaltfläche (z. B. rgba(0,0,0,0.5))."
+
+msgid "Mobile Breakpoint (px)"
+msgstr "Mobiler Breakpoint (px)"
+
+msgid "Viewport width below which the campaign viewer switches to mobile layout."
+msgstr "Viewport-Breite, unterhalb derer der Kampagnen-Viewer zum mobilen Layout wechselt."
+
+msgid "Description Line Height"
+msgstr "Zeilenhöhe der Beschreibung"
+
+msgid "Viewport & Layout"
+msgstr "Viewport und Layout"
+
+msgid "Enable Lightbox"
+msgstr "Lightbox aktivieren"
+
+msgid "Enable fullscreen lightbox when clicking gallery items."
+msgstr "Vollbild-Lightbox beim Anklicken von Galerieelementen aktivieren."
+
+msgid "Enable Animations"
+msgstr "Animationen aktivieren"
+
+msgid "Enable smooth animations and transitions. Disable for better performance on low-end devices."
+msgstr "Flüssige Animationen und Übergänge aktivieren. Deaktivieren für bessere Leistung auf leistungsschwachen Geräten."
+
+msgid "Viewport Dimensions"
+msgstr "Viewport-Abmessungen"
+
+msgid "Height Constraint"
+msgstr "Höhenbeschränkung"
+
+msgid "Choose whether classic galleries can overflow, are kept within the visible screen, or use a manual CSS height."
+msgstr "Wählen Sie, ob klassische Galerien überlaufen dürfen, innerhalb des sichtbaren Bildschirms gehalten werden oder eine manuelle CSS-Höhe verwenden."
+
+msgid "No restraint"
+msgstr "Keine Beschränkung"
+
+msgid "Restrain to view"
+msgstr "Auf Ansicht beschränken"
+
+msgid "Manually control height"
+msgstr "Höhe manuell steuern"
+
+msgid "Manual Gallery Height"
+msgstr "Manuelle Galeriehöhe"
+
+msgid "Accepted units: px, em, rem, vh, dvh, vw, %. Example: 75vh or 420px"
+msgstr "Akzeptierte Einheiten: px, em, rem, vh, dvh, vw, %. Beispiel: 75vh oder 420px"
+
+msgid "Image Border Radius"
+msgstr "Bildrahmenradius"
+
+msgid "Corner rounding for image gallery viewport and thumbnails."
+msgstr "Eckenrundung für den Bildgalerie-Viewport und Miniaturbilder."
+
+msgid "Video Border Radius"
+msgstr "Videorahmenradius"
+
+msgid "Corner rounding for video gallery viewport and thumbnails."
+msgstr "Eckenrundung für den Videogalerie-Viewport und Miniaturbilder."
+
+msgid "Shadow & Depth"
+msgstr "Schatten und Tiefe"
+
+msgid "Image Shadow Preset"
+msgstr "Bildschatten-Voreinstellung"
+
+msgid "Box-shadow depth effect for image gallery viewport."
+msgstr "Box-Shadow-Tiefeneffekt für den Bildgalerie-Viewport."
+
+msgid "Strong"
+msgstr "Stark"
+
+msgid "Custom"
+msgstr "Benutzerdefiniert"
+
+msgid "Image Custom Shadow"
+msgstr "Benutzerdefinierter Bildschatten"
+
+msgid "CSS box-shadow value (e.g. '0 4px 16px rgba(0,0,0,0.25)')."
+msgstr "CSS-Box-Shadow-Wert (z. B. „0 4px 16px rgba(0,0,0,0.25)“)."
+
+msgid "Video Shadow Preset"
+msgstr "Videoschatten-Voreinstellung"
+
+msgid "Box-shadow depth effect for video gallery viewport."
+msgstr "Box-Shadow-Tiefeneffekt für den Videogalerie-Viewport."
+
+msgid "Video Custom Shadow"
+msgstr "Benutzerdefinierter Videoschatten"
+
+msgid "Tile Appearance"
+msgstr "Kacheldarstellung"
+
+msgid "Gap X"
+msgstr "Abstand X"
+
+msgid "Horizontal gap between tiles."
+msgstr "Horizontaler Abstand zwischen Kacheln."
+
+msgid "Gap Y"
+msgstr "Abstand Y"
+
+msgid "Vertical gap between tile rows."
+msgstr "Vertikaler Abstand zwischen Kachelzeilen."
+
+msgid "Tile border thickness. 0 = no border."
+msgstr "Kachelrahmendicke. 0 = kein Rahmen."
+
+msgid "Hover Bounce"
+msgstr "Hover-Sprung"
+
+msgid "Scale-up spring animation when hovering over a tile."
+msgstr "Vergrößernde Federanimation beim Überfahren einer Kachel."
+
+msgid "Hover Glow"
+msgstr "Hover-Leuchten"
+
+msgid "Drop-shadow glow on hover (works with clip-path shapes)."
+msgstr "Schlagschatten-Leuchten beim Überfahren (funktioniert mit Clip-Path-Formen)."
+
+msgid "Glow Color"
+msgstr "Leuchtfarbe"
+
+msgid "Glow Spread (px)"
+msgstr "Leuchtausdehnung (px)"
+
+msgid "Radius of the glow effect."
+msgstr "Radius des Leuchteffekts."
+
+msgid "Transitions"
+msgstr "Übergänge"
+
+msgid "Transition Fade"
+msgstr "Übergangsüberblendung"
+
+msgid "Apply an opacity fade when cards enter and exit during transitions, softening abrupt edges."
+msgstr "Eine Deckkraftüberblendung anwenden, wenn Karten während der Übergänge ein- und ausgeblendet werden, um abrupte Kanten abzumildern."
+
+msgid "Transition Type"
+msgstr "Übergangstyp"
+
+msgid "How gallery media slides between items: fade only, slide only, or combined slide-fade."
+msgstr "Wie Galeriemedien zwischen Elementen wechseln: nur Überblenden, nur Schieben oder kombiniertes Schieben-Überblenden."
+
+msgid "Slide + Fade"
+msgstr "Schieben + Überblenden"
+
+msgid "Scroll Animation Style"
+msgstr "Scroll-Animationsstil"
+
+msgid "Navigation scroll behavior for gallery thumbnail strips."
+msgstr "Navigations-Scrollverhalten für Galerie-Miniaturbildleisten."
+
+msgid "Smooth"
+msgstr "Weich"
+
+msgid "Instant"
+msgstr "Sofort"
+
+msgid "Animation Duration (ms)"
+msgstr "Animationsdauer (ms)"
+
+msgid "Duration for gallery transition and thumbnail highlight animations."
+msgstr "Dauer für Galerieübergangs- und Miniaturbild-Hervorhebungsanimationen."
+
+msgid "Animation Easing"
+msgstr "Animationsbeschleunigung"
+
+msgid "Timing function used for gallery transitions."
+msgstr "Zeitfunktion, die für Galerieübergänge verwendet wird."
+
+msgid "Ease"
+msgstr "Weich (ease)"
+
+msgid "Linear"
+msgstr "Linear"
+
+msgid "Ease In"
+msgstr "Weich einblenden"
+
+msgid "Ease Out"
+msgstr "Weich ausblenden"
+
+msgid "Ease In Out"
+msgstr "Weich ein-/ausblenden"
+
+msgid "Thumbnail Strip"
+msgstr "Miniaturbildleiste"
+
+msgid "Video Thumb Width (px)"
+msgstr "Breite der Video-Miniaturbilder (px)"
+
+msgid "Width of video thumbnail items."
+msgstr "Breite der Video-Miniaturbildelemente."
+
+msgid "Video Thumb Height (px)"
+msgstr "Höhe der Video-Miniaturbilder (px)"
+
+msgid "Height of video thumbnail items."
+msgstr "Höhe der Video-Miniaturbildelemente."
+
+msgid "Image Thumb Width (px)"
+msgstr "Breite der Bild-Miniaturbilder (px)"
+
+msgid "Width of image thumbnail items."
+msgstr "Breite der Bild-Miniaturbildelemente."
+
+msgid "Image Thumb Height (px)"
+msgstr "Höhe der Bild-Miniaturbilder (px)"
+
+msgid "Height of image thumbnail items."
+msgstr "Höhe der Bild-Miniaturbildelemente."
+
+msgid "Thumbnail Gap (px)"
+msgstr "Miniaturbild-Abstand (px)"
+
+msgid "Spacing between thumbnail items in the strip."
+msgstr "Abstand zwischen Miniaturbildelementen in der Leiste."
+
+msgid "Wheel Scroll"
+msgstr "Mausrad-Scrollen"
+
+msgid "Allow mouse wheel to scroll the thumbnail strip horizontally."
+msgstr "Dem Mausrad erlauben, die Miniaturbildleiste horizontal zu scrollen."
+
+msgid "Drag Scroll"
+msgstr "Ziehen-Scrollen"
+
+msgid "Allow click-and-drag to scroll the thumbnail strip."
+msgstr "Klicken und Ziehen zum Scrollen der Miniaturbildleiste erlauben."
+
+msgid "Strip Scroll Buttons"
+msgstr "Leisten-Scrollschaltflächen"
+
+msgid "Show left/right scroll buttons on the thumbnail strip edges."
+msgstr "Linke/rechte Scrollschaltflächen an den Rändern der Miniaturbildleiste anzeigen."
+
+msgid "Thumbnail Scroll Speed"
+msgstr "Miniaturbild-Scrollgeschwindigkeit"
+
+msgid "Multiplier for thumbnail-strip wheel scroll speed."
+msgstr "Multiplikator für die Mausrad-Scrollgeschwindigkeit der Miniaturbildleiste."
+
+msgid "Overlay Arrows"
+msgstr "Overlay-Pfeile"
+
+msgid "Arrow Vertical Position"
+msgstr "Vertikale Position der Pfeile"
+
+msgid "Vertical alignment of the overlay prev/next arrows."
+msgstr "Vertikale Ausrichtung der Overlay-Zurück-/Weiter-Pfeile."
+
+msgid "Arrow Size (px)"
+msgstr "Pfeilgröße (px)"
+
+msgid "Diameter of the overlay navigation arrows."
+msgstr "Durchmesser der Overlay-Navigationspfeile."
+
+msgid "Arrow Color"
+msgstr "Pfeilfarbe"
+
+msgid "Icon color for the overlay arrows."
+msgstr "Symbolfarbe für die Overlay-Pfeile."
+
+msgid "Arrow Background Color"
+msgstr "Hintergrundfarbe der Pfeile"
+
+msgid "Background color (supports rgba for transparency)."
+msgstr "Hintergrundfarbe (unterstützt rgba für Transparenz)."
+
+msgid "Arrow Border Width (px)"
+msgstr "Pfeilrahmenbreite (px)"
+
+msgid "Border thickness around the arrows (0 = none)."
+msgstr "Rahmendicke um die Pfeile (0 = keine)."
+
+msgid "Hover Scale Factor"
+msgstr "Hover-Skalierungsfaktor"
+
+msgid "Auto-hide Delay (ms)"
+msgstr "Verzögerung für automatisches Ausblenden (ms)"
+
+msgid "Show arrows on hover/interaction. 0 = always visible."
+msgstr "Pfeile beim Überfahren/bei Interaktion anzeigen. 0 = immer sichtbar."
+
+msgid "Enable Dot Navigator"
+msgstr "Punktnavigator aktivieren"
+
+msgid "Show a dot-style page indicator."
+msgstr "Einen punktförmigen Seitenindikator anzeigen."
+
+msgid "Dot Position"
+msgstr "Punktposition"
+
+msgid "Where to render the dot navigator relative to the viewport."
+msgstr "Wo der Punktnavigator relativ zum Viewport angezeigt wird."
+
+msgid "Below Viewport"
+msgstr "Unter dem Viewport"
+
+msgid "Overlay Bottom"
+msgstr "Overlay unten"
+
+msgid "Overlay Top"
+msgstr "Overlay oben"
+
+msgid "Dot Size (px)"
+msgstr "Punktgröße (px)"
+
+msgid "Diameter of each dot."
+msgstr "Durchmesser jedes Punkts."
+
+msgid "Dot Shape"
+msgstr "Punktform"
+
+msgid "Shape of the navigation dots."
+msgstr "Form der Navigationspunkte."
+
+msgid "Circle"
+msgstr "Kreis"
+
+msgid "Pill"
+msgstr "Pille"
+
+msgid "Square"
+msgstr "Quadrat"
+
+msgid "Active Dot Color"
+msgstr "Farbe des aktiven Punkts"
+
+msgid "Color for the currently active dot (CSS value)."
+msgstr "Farbe für den aktuell aktiven Punkt (CSS-Wert)."
+
+msgid "Inactive Dot Color"
+msgstr "Farbe der inaktiven Punkte"
+
+msgid "Color for inactive dots (CSS value)."
+msgstr "Farbe für inaktive Punkte (CSS-Wert)."
+
+msgid "Dot Spacing (px)"
+msgstr "Punktabstand (px)"
+
+msgid "Gap between dots."
+msgstr "Abstand zwischen den Punkten."
+
+msgid "Active Dot Scale"
+msgstr "Skalierung des aktiven Punkts"
+
+msgid "Carousel Settings"
+msgstr "Karusselleinstellungen"
+
+msgid "Visible Cards"
+msgstr "Sichtbare Karten"
+
+msgid "Number of slides visible at once in the carousel."
+msgstr "Anzahl der gleichzeitig im Karussell sichtbaren Folien."
+
+msgid "Slide Gap"
+msgstr "Folienabstand"
+
+msgid "Space between carousel slides."
+msgstr "Abstand zwischen Karussellfolien."
+
+msgid "Loop"
+msgstr "Schleife"
+
+msgid "Continuously loop slides when reaching the end."
+msgstr "Folien kontinuierlich in einer Schleife wiederholen, wenn das Ende erreicht ist."
+
+msgid "Drag Enabled"
+msgstr "Ziehen aktiviert"
+
+msgid "Allow dragging/swiping to navigate slides."
+msgstr "Ziehen/Wischen zur Navigation durch Folien erlauben."
+
+msgid "Autoplay"
+msgstr "Automatische Wiedergabe"
+
+msgid "Automatically advance slides."
+msgstr "Folien automatisch weiterschalten."
+
+msgid "Autoplay Speed (ms)"
+msgstr "Geschwindigkeit der automatischen Wiedergabe (ms)"
+
+msgid "Delay between automatic slide transitions."
+msgstr "Verzögerung zwischen automatischen Folienübergängen."
+
+msgid "Pause on Hover"
+msgstr "Bei Hover pausieren"
+
+msgid "Pause autoplay when the mouse hovers over the carousel."
+msgstr "Automatische Wiedergabe pausieren, wenn die Maus über das Karussell fährt."
+
+msgid "Autoplay Direction"
+msgstr "Richtung der automatischen Wiedergabe"
+
+msgid "Direction autoplay advances slides."
+msgstr "Richtung, in der die automatische Wiedergabe die Folien weiterschaltet."
+
+msgid "Left to Right"
+msgstr "Von links nach rechts"
+
+msgid "Right to Left"
+msgstr "Von rechts nach links"
+
+msgid "Visual Effects"
+msgstr "Visuelle Effekte"
+
+msgid "Darken Unfocused Slides"
+msgstr "Nicht fokussierte Folien abdunkeln"
+
+msgid "Apply a dark overlay on slides that are not currently selected."
+msgstr "Ein dunkles Overlay auf Folien anwenden, die derzeit nicht ausgewählt sind."
+
+msgid "Darken Opacity"
+msgstr "Deckkraft der Abdunklung"
+
+msgid "Opacity of the darken overlay (0 = transparent, 1 = fully dark)."
+msgstr "Deckkraft des Abdunklungs-Overlays (0 = transparent, 1 = vollständig dunkel)."
+
+msgid "Edge Fade"
+msgstr "Kantenüberblendung"
+
+msgid "Fade slides at the edges of the carousel viewport."
+msgstr "Folien an den Rändern des Karussell-Viewports überblenden."
+
+msgid "Section Sizing & Spacing"
+msgstr "Abschnittsgröße und Abstand"
+
+msgid "Gallery Section Max Width"
+msgstr "Maximale Breite des Galerieabschnitts"
+
+msgid "Maximum width for each gallery section. 0 = fill available space."
+msgstr "Maximale Breite für jeden Galerieabschnitt. 0 = verfügbaren Platz füllen."
+
+msgid "Gallery Section Min Width"
+msgstr "Mindestbreite des Galerieabschnitts"
+
+msgid "Minimum width floor for gallery sections."
+msgstr "Mindestbreitenuntergrenze für Galerieabschnitte."
+
+msgid "Section Height Mode"
+msgstr "Abschnittshöhenmodus"
+
+msgid "How section height is determined. Auto = content-driven (recommended for masonry/justified)."
+msgstr "Wie die Abschnittshöhe bestimmt wird. Automatisch = inhaltsgesteuert (empfohlen für Mauerwerk/justiert)."
+
+msgid "Auto (content-driven)"
+msgstr "Automatisch (inhaltsgesteuert)"
+
+msgid "Manual (fixed max height)"
+msgstr "Manuell (feste maximale Höhe)"
+
+msgid "Viewport (% of screen)"
+msgstr "Viewport (% des Bildschirms)"
+
+msgid "Gallery Section Max Height"
+msgstr "Maximale Höhe des Galerieabschnitts"
+
+msgid "Maximum height for gallery sections in manual mode."
+msgstr "Maximale Höhe für Galerieabschnitte im manuellen Modus."
+
+msgid "Gallery Section Min Height"
+msgstr "Mindesthöhe des Galerieabschnitts"
+
+msgid "Minimum height floor for gallery sections."
+msgstr "Mindesthöhenuntergrenze für Galerieabschnitte."
+
+msgid "Section Scale"
+msgstr "Abschnittsskalierung"
+
+msgid "Primary sizing multiplier for gallery sections. Scales min/max width, min/max height, and padding proportionally. 1 = default size."
+msgstr "Primärer Größenmultiplikator für Galerieabschnitte. Skaliert Mindest-/Maximalbreite, Mindest-/Maximalhöhe und Innenabstand proportional. 1 = Standardgröße."
+
+msgid "Section Content Alignment"
+msgstr "Inhaltsausrichtung des Abschnitts"
+
+msgid "Content Horizontal Alignment"
+msgstr "Horizontale Inhaltsausrichtung"
+
+msgid "Horizontal alignment of adapter content within each gallery section."
+msgstr "Horizontale Ausrichtung des Adapterinhalts innerhalb jedes Galerieabschnitts."
+
+msgid "Content Vertical Alignment"
+msgstr "Vertikale Inhaltsausrichtung"
+
+msgid "Vertical alignment of adapter content within each gallery section."
+msgstr "Vertikale Ausrichtung des Adapterinhalts innerhalb jedes Galerieabschnitts."
+
+msgid "Content Horizontal Offset"
+msgstr "Horizontaler Inhaltsversatz"
+
+msgid "Fine-tune horizontal position of section content. Negative = left, positive = right."
+msgstr "Horizontale Position des Abschnittsinhalts fein abstimmen. Negativ = links, positiv = rechts."
+
+msgid "Content Vertical Offset"
+msgstr "Vertikaler Inhaltsversatz"
+
+msgid "Fine-tune vertical position of section content. Negative = up, positive = down."
+msgstr "Vertikale Position des Abschnittsinhalts fein abstimmen. Negativ = oben, positiv = unten."
+
+msgid "Equal Height Sections (Per-Type)"
+msgstr "Abschnitte gleicher Höhe (nach Typ)"
+
+msgid "When using per-type galleries, display image and video sections side-by-side at equal height on tablet+ viewports."
+msgstr "Bei Galerien nach Typ Bild- und Videoabschnitte auf Tablet-Viewports und größer nebeneinander in gleicher Höhe anzeigen."
+
+msgid "Gallery Section Padding"
+msgstr "Innenabstand des Galerieabschnitts"
+
+msgid "Inner padding within each gallery section wrapper."
+msgstr "Innenabstand innerhalb jedes Galerieabschnitts-Wrappers."
+
+msgid "Adapter Content Padding"
+msgstr "Innenabstand des Adapterinhalts"
+
+msgid "Inner padding within each adapter (gallery grid). 0 = edges meet section boundary."
+msgstr "Innenabstand innerhalb jedes Adapters (Galerieraster). 0 = Kanten treffen auf die Abschnittsgrenze."
+
+msgid "Vertical alignment of content within the modal."
+msgstr "Vertikale Ausrichtung des Inhalts innerhalb des Fensters."
+
+msgid "Gallery Spacing"
+msgstr "Galerieabstand"
+
+msgid "Gallery Shell Vertical Alignment"
+msgstr "Vertikale Ausrichtung des Galeriegerüsts"
+
+msgid "Vertical alignment of the gallery sections within the viewer shell."
+msgstr "Vertikale Ausrichtung der Galerieabschnitte innerhalb des Viewer-Gerüsts."
+
+msgid "Gallery Shell Vertical Offset"
+msgstr "Vertikaler Versatz des Galeriegerüsts"
+
+msgid "Fine-tune vertical position of the gallery sections. Negative = up, positive = down."
+msgstr "Vertikale Position der Galerieabschnitte fein abstimmen. Negativ = oben, positiv = unten."
+
+msgid "Gallery Max Width"
+msgstr "Maximale Galeriebreite"
+
+msgid "Maximum width of the gallery container. 0 = full responsive width."
+msgstr "Maximale Breite des Galerie-Containers. 0 = volle responsive Breite."
+
+msgid "Gallery Section Gap"
+msgstr "Abstand zwischen Galerieabschnitten"
+
+msgid "Vertical gap between gallery sections."
+msgstr "Vertikaler Abstand zwischen Galerieabschnitten."
+
+msgid "Gallery Edge Margin"
+msgstr "Galerie-Randabstand"
+
+msgid "Horizontal margin on gallery edges."
+msgstr "Horizontaler Rand an den Galeriekanten."
+
+msgid "Adapter Sizing"
+msgstr "Adaptergröße"
+
+msgid "Adapter Sizing Mode"
+msgstr "Adaptergrößenmodus"
+
+msgid "How adapters fill their gallery section. Fill = 100% of section, Manual = custom percentage."
+msgstr "Wie Adapter ihren Galerieabschnitt füllen. Füllen = 100 % des Abschnitts, Manuell = benutzerdefinierter Prozentsatz."
+
+msgid "Fill (100%)"
+msgstr "Füllen (100 %)"
+
+msgid "Manual (custom %)"
+msgstr "Manuell (benutzerdefiniert %)"
+
+msgid "Adapter Max Width (%)"
+msgstr "Maximale Adapterbreite (%)"
+
+msgid "Adapter width as percentage of its gallery section."
+msgstr "Adapterbreite als Prozentsatz seines Galerieabschnitts."
+
+msgid "Adapter Max Height (%)"
+msgstr "Maximale Adapterhöhe (%)"
+
+msgid "Adapter height as percentage of its gallery section."
+msgstr "Adapterhöhe als Prozentsatz seines Galerieabschnitts."
+
+msgid "Adapter Item Gap"
+msgstr "Adapter-Elementabstand"
+
+msgid "Spacing between items in grid adapters (Compact Grid). 0 = no gap."
+msgstr "Abstand zwischen Elementen in Rasteradaptern (Kompaktes Raster). 0 = kein Abstand."
+
+msgid "Adapter Justification"
+msgstr "Adapterausrichtung"
+
+msgid "How adapter items distribute within the container (Compact Grid, Circular)."
+msgstr "Wie sich Adapterelemente im Container verteilen (Kompaktes Raster, Kreisförmig)."
+
+msgid "Stretch"
+msgstr "Strecken"
+
+msgid "Item Scale"
+msgstr "Elementskalierung"
+
+msgid "Primary sizing multiplier for gallery items. Scales card width/height (Compact Grid), row height (Justified), and tile size (Shape adapters) proportionally. 1 = default size. Does not apply to Carousel."
+msgstr "Primärer Größenmultiplikator für Galerieelemente. Skaliert Kartenbreite/-höhe (Kompaktes Raster), Zeilenhöhe (Justiert) und Kachelgröße (Form-Adapter) proportional. 1 = Standardgröße. Gilt nicht für das Karussell."
+
+msgid "Solid Color"
+msgstr "Volltonfarbe"
+
+msgid "Gradient"
+msgstr "Verlauf"
+
+msgid "Background Image"
+msgstr "Hintergrundbild"
+
+msgid "Solid background color behind the viewport"
+msgstr "Volltonhintergrundfarbe hinter dem Viewport"
+
+msgid "Background Gradient"
+msgstr "Hintergrundverlauf"
+
+msgid "CSS gradient string used behind the viewport"
+msgstr "CSS-Verlaufszeichenfolge, die hinter dem Viewport verwendet wird"
+
+msgid "Background Image URL"
+msgstr "URL des Hintergrundbilds"
+
+msgid "Image shown behind the viewport"
+msgstr "Bild, das hinter dem Viewport angezeigt wird"
+
+msgid "Viewport Backgrounds"
+msgstr "Viewport-Hintergründe"
+
+msgid "Image Gallery Background"
+msgstr "Hintergrund der Bildgalerie"
+
+msgid "Background applied behind image gallery viewports"
+msgstr "Hintergrund, der hinter Bildgalerie-Viewports angewendet wird"
+
+msgid "Video Gallery Background"
+msgstr "Hintergrund der Videogalerie"
+
+msgid "Background applied behind video gallery viewports"
+msgstr "Hintergrund, der hinter Videogalerie-Viewports angewendet wird"
+
+msgid "Unified Gallery Background"
+msgstr "Hintergrund der vereinheitlichten Galerie"
+
+msgid "Background applied when unified gallery mode is active"
+msgstr "Hintergrund, der angewendet wird, wenn der vereinheitlichte Galeriemodus aktiv ist"
+
+msgid "Drag scroll"
+msgstr "Ziehen-Scrollen"
+
+msgid "Infinite scroll"
+msgstr "Unendliches Scrollen"
+
+msgid "Keyboard nav"
+msgstr "Tastaturnavigation"
+
+msgid "Touch swipe"
+msgstr "Touch-Wischen"
+
+msgid "Layout builder"
+msgstr "Layout-Builder"
+
+msgid "Listing"
+msgstr "Liste"
+
+msgid "Reset to default"
+msgstr "Auf Standard zurücksetzen"
+
+msgid "Reset {{label}} to default"
+msgstr "{{label}} auf Standard zurücksetzen"
+
+msgid "Enter a value between {{min}} and {{max}}"
+msgstr "Geben Sie einen Wert zwischen {{min}} und {{max}} ein"
+
+msgid "Value exceeds maximum of {{max}}"
+msgstr "Der Wert überschreitet das Maximum von {{max}}"
+
+msgid "Stored value \"{{value}}\" is not a valid option"
+msgstr "Der gespeicherte Wert „{{value}}“ ist keine gültige Option"
+
+msgid "Unified Gallery Mode"
+msgstr "Vereinheitlichter Galeriemodus"
+
+msgid "When enabled, images and videos are combined in a single gallery view. When disabled, each media type uses its own layout independently."
+msgstr "Wenn aktiviert, werden Bilder und Videos in einer einzigen Galerieansicht kombiniert. Wenn deaktiviert, verwendet jeder Medientyp sein eigenes Layout unabhängig."
+
+msgid "Choose the unified gallery adapter used at each breakpoint."
+msgstr "Wählen Sie den vereinheitlichten Galerie-Adapter, der bei jedem Breakpoint verwendet wird."
+
+msgid "Some adapters are unavailable on mobile — they require a larger screen (shown greyed out above)."
+msgstr "Einige Adapter sind auf Mobilgeräten nicht verfügbar — sie erfordern einen größeren Bildschirm (oben ausgegraut dargestellt)."
+
+msgid "Choose separate image and video adapters for each breakpoint."
+msgstr "Wählen Sie separate Bild- und Videoadapter für jeden Breakpoint."
+
+msgid "Breakpoint Pixel Thresholds"
+msgstr "Breakpoint-Pixelschwellen"
+
+msgid "Width thresholds (px) used by the classic carousel adapter to determine the active breakpoint. Defaults match Mantine (768 / 1200)."
+msgstr "Breitenschwellen (px), die vom klassischen Karussell-Adapter verwendet werden, um den aktiven Breakpoint zu bestimmen. Die Standardwerte entsprechen Mantine (768 / 1200)."
+
+msgid "Mobile max (px)"
+msgstr "Mobil max. (px)"
+
+msgid "Max container width considered mobile. (320–1440, default: 768)"
+msgstr "Maximale Containerbreite, die als mobil gilt. (320–1440, Standard: 768)"
+
+msgid "Enter a value between 320 and 1440"
+msgstr "Geben Sie einen Wert zwischen 320 und 1440 ein"
+
+msgid "Mobile threshold must be less than tablet threshold"
+msgstr "Die mobile Schwelle muss kleiner als die Tablet-Schwelle sein"
+
+msgid "Tablet max (px)"
+msgstr "Tablet max. (px)"
+
+msgid "Max container width considered tablet. (320–1920, default: 1200)"
+msgstr "Maximale Containerbreite, die als Tablet gilt. (320–1920, Standard: 1200)"
+
+msgid "Enter a value between 320 and 1920"
+msgstr "Geben Sie einen Wert zwischen 320 und 1920 ein"
+
+msgid "Tablet threshold must be greater than mobile threshold"
+msgstr "Die Tablet-Schwelle muss größer als die mobile Schwelle sein"
+
+msgid "Exports adapter configuration and carousel/media settings. Global navigation, breakpoint, and presentation settings are not included."
+msgstr "Exportiert die Adapterkonfiguration und Karussell-/Medieneinstellungen. Globale Navigations-, Breakpoint- und Präsentationseinstellungen sind nicht enthalten."
+
+msgid "Export adapter settings"
+msgstr "Adaptereinstellungen exportieren"
+
+msgid "Import adapter settings"
+msgstr "Adaptereinstellungen importieren"
+
+msgid "Reset all adapter settings to defaults"
+msgstr "Alle Adaptereinstellungen auf Standard zurücksetzen"
+
+msgid "Gallery Adapters"
+msgstr "Galerie-Adapter"
+
+msgid "Quick breakpoint selectors stay inline here. Use the responsive editor when you need shared layout settings, adapter-specific fields, or deeper nested config changes."
+msgstr "Schnelle Breakpoint-Selektoren bleiben hier inline. Verwenden Sie den responsiven Editor, wenn Sie gemeinsame Layout-Einstellungen, adapterspezifische Felder oder tiefere verschachtelte Konfigurationsänderungen benötigen."
+
+msgid "Desktop edits the base card settings. Tablet and mobile can override selected layout and appearance fields without changing the desktop baseline."
+msgstr "Desktop bearbeitet die Basis-Karteneinstellungen. Tablet und Mobil können ausgewählte Layout- und Darstellungsfelder überschreiben, ohne die Desktop-Basislinie zu ändern."
+
+msgid "Card settings breakpoint"
+msgstr "Breakpoint der Karteneinstellungen"
+
+msgid "— None (use inline HTML fallback) —"
+msgstr "— Keine (Inline-HTML-Fallback verwenden) —"
+
+msgid "Page #{{id}}"
+msgstr "Seite Nr. {{id}}"
+
+msgid "Access Request Magic-Link"
+msgstr "Magic-Link für Zugriffsanfrage"
+
+msgid "When an admin clicks a one-click approval link, the result is shown on this page (via "
+msgstr "Wenn ein Administrator auf einen Ein-Klick-Genehmigungslink klickt, wird das Ergebnis auf dieser Seite angezeigt (über "
+
+msgid "). If no page is selected, a minimal inline HTML page is returned instead."
+msgstr "). Wenn keine Seite ausgewählt ist, wird stattdessen eine minimale Inline-HTML-Seite zurückgegeben."
+
+msgid "Magic-link landing page"
+msgstr "Magic-Link-Landingpage"
+
+msgid "Loading pages…"
+msgstr "Seiten werden geladen …"
+
+msgid "Select a page"
+msgstr "Eine Seite auswählen"
+
+msgid "Customize fonts, sizes, colors, and effects for individual text elements. Empty fields use theme defaults."
+msgstr "Passen Sie Schriftarten, Größen, Farben und Effekte für einzelne Textelemente an. Leere Felder verwenden die Theme-Standardwerte."
+
+msgid "Element Overrides"
+msgstr "Elementüberschreibungen"
+
+msgid "Reset all typography"
+msgstr "Gesamte Typografie zurücksetzen"
+
+msgid "Viewer Title"
+msgstr "Viewer-Titel"
+
+msgid "Viewer Subtitle"
+msgstr "Viewer-Untertitel"
+
+msgid "Card Title"
+msgstr "Kartentitel"
+
+msgid "Card Description"
+msgstr "Kartenbeschreibung"
+
+msgid "Card Company Name"
+msgstr "Unternehmensname (Karte)"
+
+msgid "Card Media Counts"
+msgstr "Medienanzahl (Karte)"
+
+msgid "Campaign Title"
+msgstr "Kampagnentitel"
+
+msgid "Campaign Description"
+msgstr "Kampagnenbeschreibung"
+
+msgid "Campaign Date"
+msgstr "Kampagnendatum"
+
+msgid "Campaign About Heading"
+msgstr "Kampagnen-Über-Überschrift"
+
+msgid "Campaign Stats Value"
+msgstr "Kampagnenstatistikwert"
+
+msgid "Campaign Stats Label"
+msgstr "Kampagnenstatistikbeschriftung"
+
+msgid "Gallery Label"
+msgstr "Galeriebeschriftung"
+
+msgid "Media Caption"
+msgstr "Medienbeschriftung"
+
+msgid "Auth Bar Text"
+msgstr "Text der Authentifizierungsleiste"
+
+msgid "Access Badge Text"
+msgstr "Text des Zugriffs-Badges"
+
+msgid "Rounded-corner radius for image media surfaces in supported adapters."
+msgstr "Eckenrundungsradius für Bildmedienflächen in unterstützten Adaptern."
+
+msgid "Rounded-corner radius for video media surfaces in supported adapters."
+msgstr "Eckenrundungsradius für Videomedienflächen in unterstützten Adaptern."
+
+msgid "Space between items in justified and masonry gallery layouts."
+msgstr "Abstand zwischen Elementen in justierten und Mauerwerk-Galerie-Layouts."
+
+msgid "Tile border thickness. Set 0 to disable borders."
+msgstr "Kachelrahmendicke. Auf 0 setzen, um Rahmen zu deaktivieren."
+
+msgid "CSS color used for tile borders when border width is greater than 0."
+msgstr "CSS-Farbe, die für Kachelrahmen verwendet wird, wenn die Rahmenbreite größer als 0 ist."
+
+msgid "#ffffff"
+msgstr "#ffffff"
+
+msgid "Drop-shadow glow on hover for supported tile-based adapters."
+msgstr "Schlagschatten-Leuchten beim Überfahren für unterstützte kachelbasierte Adapter."
+
+msgid "CSS color used for the hover glow effect."
+msgstr "CSS-Farbe, die für den Hover-Leuchteffekt verwendet wird."
+
+msgid "#7c9ef8"
+msgstr "#7c9ef8"
+
+msgid "Image Viewport Height"
+msgstr "Bild-Viewport-Höhe"
+
+msgid "Base height used for image-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "Basishöhe, die für bilddominierte klassische Galerien vor der Breakpoint-Skalierung verwendet wird. Die manuelle Galeriehöhe überschreibt dies, wenn der gemeinsame Höhenmodus auf manuell eingestellt ist."
+
+msgid "Video Viewport Height"
+msgstr "Video-Viewport-Höhe"
+
+msgid "Base height used for video-dominant classic galleries before breakpoint scaling. Manual gallery height overrides this when the shared height mode is set to manual."
+msgstr "Basishöhe, die für videodominierte klassische Galerien vor der Breakpoint-Skalierung verwendet wird. Die manuelle Galeriehöhe überschreibt dies, wenn der gemeinsame Höhenmodus auf manuell eingestellt ist."
+
+msgid "Box-shadow depth effect for image-dominant classic galleries."
+msgstr "Box-Shadow-Tiefeneffekt für bilddominierte klassische Galerien."
+
+msgid "CSS box-shadow value used when the image shadow preset is custom."
+msgstr "CSS-Box-Shadow-Wert, der verwendet wird, wenn die Bildschatten-Voreinstellung benutzerdefiniert ist."
+
+msgid "0 4px 16px rgba(0,0,0,0.25)"
+msgstr "0 4px 16px rgba(0,0,0,0.25)"
+
+msgid "Box-shadow depth effect for video-dominant classic galleries."
+msgstr "Box-Shadow-Tiefeneffekt für videodominierte klassische Galerien."
+
+msgid "CSS box-shadow value used when the video shadow preset is custom."
+msgstr "CSS-Box-Shadow-Wert, der verwendet wird, wenn die Videoschatten-Voreinstellung benutzerdefiniert ist."
+
+msgid "Allow dragging or swiping to navigate slides."
+msgstr "Ziehen oder Wischen zur Navigation durch Folien erlauben."
+
+msgid "Foreground color used for the overlay arrow icon and border."
+msgstr "Vordergrundfarbe, die für das Overlay-Pfeilsymbol und den Rahmen verwendet wird."
+
+msgid "Background fill applied behind the overlay arrows."
+msgstr "Hintergrundfüllung, die hinter den Overlay-Pfeilen angewendet wird."
+
+msgid "rgba(0,0,0,0.45)"
+msgstr "rgba(0,0,0,0.45)"
+
+msgid "Scale factor applied when hovering the overlay arrows."
+msgstr "Skalierungsfaktor, der beim Überfahren der Overlay-Pfeile angewendet wird."
+
+msgid "Show arrows on hover or interaction. 0 keeps them always visible."
+msgstr "Pfeile beim Überfahren oder bei Interaktion anzeigen. 0 hält sie immer sichtbar."
+
+msgid "Distance between the overlay arrows and the carousel edge."
+msgstr "Abstand zwischen den Overlay-Pfeilen und dem Karussellrand."
+
+msgid "Minimum touch and click target size for the overlay arrows."
+msgstr "Minimale Touch- und Klick-Zielgröße für die Overlay-Pfeile."
+
+msgid "Fade-in and fade-out duration used when arrows auto-hide."
+msgstr "Ein- und Ausblenddauer, die verwendet wird, wenn Pfeile automatisch ausgeblendet werden."
+
+msgid "Hover-scale transition duration for the overlay arrows."
+msgstr "Hover-Skalierungs-Übergangsdauer für die Overlay-Pfeile."
+
+msgid "Maximum number of dot buttons shown before truncation inserts ellipses."
+msgstr "Maximale Anzahl von Punktschaltflächen, die angezeigt werden, bevor die Kürzung Auslassungspunkte einfügt."
+
+msgid "Fill color used for the active dot."
+msgstr "Füllfarbe, die für den aktiven Punkt verwendet wird."
+
+msgid "var(--wpsg-color-primary)"
+msgstr "var(--wpsg-color-primary)"
+
+msgid "Fill color used for inactive dots."
+msgstr "Füllfarbe, die für inaktive Punkte verwendet wird."
+
+msgid "rgba(128,128,128,0.4)"
+msgstr "rgba(128,128,128,0.4)"
+
+msgid "Scale multiplier applied to the active dot."
+msgstr "Skalierungsmultiplikator, der auf den aktiven Punkt angewendet wird."
+
+msgid "Fraction of the viewport height reserved for the carousel on mobile."
+msgstr "Anteil der Viewport-Höhe, der für das Karussell auf Mobilgeräten reserviert ist."
+
+msgid "Fraction of the viewport height reserved for the carousel on tablet."
+msgstr "Anteil der Viewport-Höhe, der für das Karussell auf Tablets reserviert ist."
+
+msgid "Card Width"
+msgstr "Kartenbreite"
+
+msgid "Primary width target for each compact-grid card. The grid wraps responsively around this width."
+msgstr "Primäre Zielbreite für jede Kompaktraster-Karte. Das Raster bricht responsive um diese Breite um."
+
+msgid "Locks card proportions without requiring a separate height control. Auto keeps legacy height-derived behavior."
+msgstr "Sperrt die Kartenproportionen, ohne eine separate Höhensteuerung zu erfordern. Automatisch behält das ältere höhenabgeleitete Verhalten bei."
+
+msgid "Auto (legacy height-derived)"
+msgstr "Automatisch (älter, höhenabgeleitet)"
+
+msgid "5:7 (playing card)"
+msgstr "5:7 (Spielkarte)"
+
+msgid "Max Columns (0 = auto)"
+msgstr "Maximale Spalten (0 = automatisch)"
+
+msgid "Caps the number of compact-grid columns while preserving responsive wrapping."
+msgstr "Begrenzt die Anzahl der Kompaktraster-Spalten unter Beibehaltung des responsiven Umbruchs."
+
+msgid "Card Min Height (px)"
+msgstr "Mindesthöhe der Karte (px)"
+
+msgid "Optional guard that prevents extremely thin cards on narrow containers. Set 0 to disable."
+msgstr "Optionaler Schutz, der extrem dünne Karten auf schmalen Containern verhindert. Auf 0 setzen zum Deaktivieren."
+
+msgid "Target Row Height (px)"
+msgstr "Zielzeilenhöhe (px)"
+
+msgid "Ideal pixel height for each justified row. This is an algorithm input for react-photo-album, not a CSS value."
+msgstr "Ideale Pixelhöhe für jede justierte Zeile. Dies ist eine Algorithmuseingabe für react-photo-album, kein CSS-Wert."
+
+msgid "Photo Normalize Height (px)"
+msgstr "Foto-Normalisierungshöhe (px)"
+
+msgid "Normalization pixel height for aspect-ratio scaling before layout. Lower values produce smaller tiles."
+msgstr "Normalisierungs-Pixelhöhe für die Seitenverhältnisskalierung vor dem Layout. Niedrigere Werte erzeugen kleinere Kacheln."
+
+msgid "Masonry Columns (0 = auto)"
+msgstr "Mauerwerk-Spalten (0 = automatisch)"
+
+msgid "Number of masonry columns. Set 0 to let the layout choose responsively (1-4 based on width)."
+msgstr "Anzahl der Mauerwerk-Spalten. Auf 0 setzen, damit das Layout responsive wählt (1-4 je nach Breite)."
+
+msgid "Auto Column Breakpoints"
+msgstr "Automatische Spalten-Breakpoints"
+
+msgid "Comma-separated width:columns pairs used when masonry columns are set to auto."
+msgstr "Durch Kommas getrennte Breite:Spalten-Paare, die verwendet werden, wenn die Mauerwerk-Spalten auf automatisch eingestellt sind."
+
+msgid "480:2,768:3,1024:4,1280:5"
+msgstr "480:2,768:3,1024:4,1280:5"
+
+msgid "Entrance Animation"
+msgstr "Eingangsanimation"
+
+msgid "Optional first-render animation for Masonry tiles. 'Waterfall' staggers each tile into view from below. Respects prefers-reduced-motion."
+msgstr "Optionale Erstrenderanimation für Mauerwerk-Kacheln. „Wasserfall“ blendet jede Kachel von unten gestaffelt ein. Berücksichtigt prefers-reduced-motion."
+
+msgid "Waterfall (stagger in)"
+msgstr "Wasserfall (gestaffelt einblenden)"
+
+msgid "Entrance Stagger (ms)"
+msgstr "Eingangsstaffelung (ms)"
+
+msgid "Delay in milliseconds between successive tile animations in Waterfall mode."
+msgstr "Verzögerung in Millisekunden zwischen aufeinanderfolgenden Kachelanimationen im Wasserfallmodus."
+
+msgid "Hero Aspect Ratio"
+msgstr "Hero-Seitenverhältnis"
+
+msgid "Fixed aspect ratio of the hero display area."
+msgstr "Festes Seitenverhältnis des Hero-Anzeigebereichs."
+
+msgid "Thumbnail Size"
+msgstr "Miniaturbildgröße"
+
+msgid "Width and height of each thumbnail strip item."
+msgstr "Breite und Höhe jedes Miniaturbildleistenelements."
+
+msgid "Duration of the hero swap and thumbnail highlight transitions."
+msgstr "Dauer der Hero-Wechsel- und Miniaturbild-Hervorhebungsübergänge."
+
+msgid "Strip Position"
+msgstr "Leistenposition"
+
+msgid "Position of the thumbnail strip. 'Right' falls back to 'Below' on narrow containers."
+msgstr "Position der Miniaturbildleiste. „Rechts“ fällt bei schmalen Containern auf „Unten“ zurück."
+
+msgid "Below"
+msgstr "Unten"
+
+msgid "Right (wide containers)"
+msgstr "Rechts (breite Container)"
+
+msgid "Hero Max Width"
+msgstr "Maximale Hero-Breite"
+
+msgid "Maximum width of the spotlight layout. Set 0 to disable (full container width)."
+msgstr "Maximale Breite des Spotlight-Layouts. Auf 0 setzen zum Deaktivieren (volle Containerbreite)."
+
+msgid "Hero Justification"
+msgstr "Hero-Ausrichtung"
+
+msgid "Horizontal alignment of the hero block within the container when Hero Max Width makes it narrower than the container."
+msgstr "Horizontale Ausrichtung des Hero-Blocks innerhalb des Containers, wenn die maximale Hero-Breite ihn schmaler als den Container macht."
+
+msgid "Start (left)"
+msgstr "Anfang (links)"
+
+msgid "End (right)"
+msgstr "Ende (rechts)"
+
+msgid "Snap Alignment"
+msgstr "Einrast-Ausrichtung"
+
+msgid "CSS scroll-snap-align value applied to each slide. Controls where each slide snaps relative to the scroll container."
+msgstr "CSS-scroll-snap-align-Wert, der auf jede Folie angewendet wird. Steuert, wo jede Folie relativ zum Scroll-Container einrastet."
+
+msgid "Page Indicator"
+msgstr "Seitenindikator"
+
+msgid "Show a slide counter (n / total) in the lower-right corner of each slide."
+msgstr "Einen Folienzähler (n / gesamt) in der unteren rechten Ecke jeder Folie anzeigen."
+
+msgid "Container Max Width"
+msgstr "Maximale Containerbreite"
+
+msgid "Maximum width of the scroll-snap container. Set 0 to disable (full container width)."
+msgstr "Maximale Breite des Scroll-Snap-Containers. Auf 0 setzen zum Deaktivieren (volle Containerbreite)."
+
+msgid "Tile Size"
+msgstr "Kachelgröße"
+
+msgid "Width and height of each shape tile (unified gallery)."
+msgstr "Breite und Höhe jeder Formkachel (vereinheitlichte Galerie)."
+
+msgid "Image Tile Size"
+msgstr "Bildkachelgröße"
+
+msgid "Shape tile size for the image gallery."
+msgstr "Formkachelgröße für die Bildgalerie."
+
+msgid "Video Tile Size"
+msgstr "Videokachelgröße"
+
+msgid "Shape tile size for the video gallery."
+msgstr "Formkachelgröße für die Videogalerie."
+
+msgid "Horizontal gap between shape tiles."
+msgstr "Horizontaler Abstand zwischen Formkacheln."
+
+msgid "Vertical gap between shape-tile rows."
+msgstr "Vertikaler Abstand zwischen Formkachelzeilen."
+
+msgid "Layout Builder Scope"
+msgstr "Layout-Builder-Umfang"
+
+msgid "Full: replaces entire gallery (no thumbnail strip). Viewport: replaces only the viewport area."
+msgstr "Vollständig: ersetzt die gesamte Galerie (keine Miniaturbildleiste). Viewport: ersetzt nur den Viewport-Bereich."
+
+msgid "Full Gallery"
+msgstr "Vollständige Galerie"
+
+msgid "Viewport Only"
+msgstr "Nur Viewport"
+
+msgid "Default Glow Color"
+msgstr "Standard-Leuchtfarbe"
+
+msgid "Fallback glow color for slots using Hover = Glow when the slot does not override it."
+msgstr "Fallback-Leuchtfarbe für Slots mit Hover = Leuchten, wenn der Slot sie nicht überschreibt."
+
+msgid "Default Glow Spread (px)"
+msgstr "Standard-Leuchtausdehnung (px)"
+
+msgid "Fallback glow radius for slots using Hover = Glow when the slot does not override it."
+msgstr "Fallback-Leuchtradius für Slots mit Hover = Leuchten, wenn der Slot ihn nicht überschreibt."
+
+msgid "Classic"
+msgstr "Klassisch"
+
+msgid "Classic (Carousel)"
+msgstr "Klassisch (Karussell)"
+
+msgid "Classic Carousel"
+msgstr "Klassisches Karussell"
+
+msgid "Justified"
+msgstr "Justiert"
+
+msgid "Justified Rows (Flickr-style)"
+msgstr "Justierte Zeilen (Flickr-Stil)"
+
+msgid "Hexagonal"
+msgstr "Hexagonal"
+
+msgid "Circular"
+msgstr "Kreisförmig"
+
+msgid "Diamond"
+msgstr "Raute"
+
+msgid "Scroll Snap"
+msgstr "Scroll-Einrasten"
+
+msgid "Scroll Snap (vertical)"
+msgstr "Scroll-Einrasten (vertikal)"
+
+msgid "Coverflow"
+msgstr "Coverflow"
+
+msgid "Coverflow (3D Carousel)"
+msgstr "Coverflow (3D-Karussell)"
+
+msgid "Pinterest"
+msgstr "Pinterest"
+
+msgid "Pinterest (Mosaic Grid)"
+msgstr "Pinterest (Mosaikraster)"
+
+msgid "Stacked"
+msgstr "Gestapelt"
+
+msgid "Stacked (Deck of Cards)"
+msgstr "Gestapelt (Kartenstapel)"
+
+msgid "Filterable Grid"
+msgstr "Filterbares Raster"
+
+msgid "Filterable Grid (Isotope)"
+msgstr "Filterbares Raster (Isotope)"
+
+msgid "Spotlight"
+msgstr "Spotlight"
+
+msgid "Spotlight (Hero + Strip)"
+msgstr "Spotlight (Hero + Leiste)"
+
+msgid "Layout Builder"
+msgstr "Layout-Builder"
+
+msgid "Layout Builder -> per-breakpoint"
+msgstr "Layout-Builder -> pro Breakpoint"
+
+msgid "{{desc}} ({{min}}–{{max}}, default: {{fallback}})"
+msgstr "{{desc}} ({{min}}–{{max}}, Standard: {{fallback}})"
+
+msgid "{{desc}} (max: {{max}}, default: {{fallback}})"
+msgstr "{{desc}} (max.: {{max}}, Standard: {{fallback}})"
+
+msgid "Media Frame"
+msgstr "Medienrahmen"
+
+msgid "Photo Grid"
+msgstr "Fotoraster"
+
+msgid "Scroll-snap"
+msgstr "Scroll-Einrasten"
+
+msgid "Shape Layout"
+msgstr "Form-Layout"
+
+msgid "Choose which layout this gallery uses with the \"Layout Template\" picker in the campaign's Settings tab (Edit Campaign). These options only style the chosen layout."
+msgstr "Wählen Sie mit dem „Layout-Vorlage“-Auswahlfeld auf der Registerkarte „Einstellungen“ der Kampagne (Kampagne bearbeiten), welches Layout diese Galerie verwendet. Diese Optionen gestalten nur das gewählte Layout."
+
+msgid "View By"
+msgstr "Anzeigen nach"
+
+msgid "📋 Campaign"
+msgstr "📋 Kampagne"
+
+msgid "🏢 Company"
+msgstr "🏢 Unternehmen"
+
+msgid "📊 All"
+msgstr "📊 Alle"
+
+msgid "Access view mode"
+msgstr "Zugriffs-Ansichtsmodus"
+
+msgid "Select Campaign"
+msgstr "Kampagne auswählen"
+
+msgid "Choose a campaign..."
+msgstr "Eine Kampagne auswählen..."
+
+msgid "Select Company"
+msgstr "Unternehmen auswählen"
+
+msgid "Loading..."
+msgstr "Wird geladen …"
+
+msgid "Choose a company..."
+msgstr "Ein Unternehmen auswählen..."
+
+msgid "Company:"
+msgstr "Unternehmen:"
+
+msgid "Archived campaign - grants inactive"
+msgstr "Archivierte Kampagne - Berechtigungen inaktiv"
+
+msgid "Total users:"
+msgstr "Benutzer insgesamt:"
+
+msgid "Access {{count}}"
+msgstr "Zugriff {{count}}"
+
+msgid "Campaigns:"
+msgstr "Kampagnen:"
+
+msgid "{{count}} active"
+msgstr "{{count}} aktiv"
+
+msgid "{{count}} archived"
+msgstr "{{count}} archiviert"
+
+msgid "Archive All Campaigns"
+msgstr "Alle Kampagnen archivieren"
+
+msgid "Select a campaign to manage access permissions"
+msgstr "Wählen Sie eine Kampagne, um Zugriffsberechtigungen zu verwalten"
+
+msgid "Select a company to manage access permissions"
+msgstr "Wählen Sie ein Unternehmen, um Zugriffsberechtigungen zu verwalten"
+
+msgid "Current Access"
+msgstr "Aktueller Zugriff"
+
+msgid "Company-Wide Access"
+msgstr "Unternehmensweiter Zugriff"
+
+msgid "All Access (Company + Campaigns)"
+msgstr "Gesamter Zugriff (Unternehmen + Kampagnen)"
+
+msgid "Show expired"
+msgstr "Abgelaufene anzeigen"
+
+msgid "{{count}} users"
+msgstr "{{count}} Benutzer"
+
+msgid "User"
+msgstr "Benutzer"
+
+msgid "Access Type"
+msgstr "Zugriffstyp"
+
+msgid "Role"
+msgstr "Rolle"
+
+msgid "Granted / Expires"
+msgstr "Gewährt / Läuft ab"
+
+msgid "Revoke"
+msgstr "Widerrufen"
+
+msgid "Loading access entries"
+msgstr "Zugriffseinträge werden geladen"
+
+msgid "No users have access to this campaign yet. Add users below."
+msgstr "Noch kein Benutzer hat Zugriff auf diese Kampagne. Fügen Sie unten Benutzer hinzu."
+
+msgid "No company-wide access grants. Add users below."
+msgstr "Keine unternehmensweiten Zugriffsberechtigungen. Fügen Sie unten Benutzer hinzu."
+
+msgid "No access grants found for this company or its campaigns."
+msgstr "Keine Zugriffsberechtigungen für dieses Unternehmen oder seine Kampagnen gefunden."
+
+msgid "Current access entries"
+msgstr "Aktuelle Zugriffseinträge"
+
+msgid "Grant New Access"
+msgstr "Neuen Zugriff gewähren"
+
+msgid "Grant Company-Wide Access"
+msgstr "Unternehmensweiten Zugriff gewähren"
+
+msgid "Search name, email, or enter ID..."
+msgstr "Name, E-Mail suchen oder ID eingeben..."
+
+msgid "No users found"
+msgstr "Keine Benutzer gefunden"
+
+msgid "Using User ID: {{id}}"
+msgstr "Benutzer-ID wird verwendet: {{id}}"
+
+msgid "Type name/email or enter user ID"
+msgstr "Name/E-Mail eingeben oder Benutzer-ID eingeben"
+
+msgid "Admin"
+msgstr "Administrator"
+
+msgid "Scope"
+msgstr "Geltungsbereich"
+
+msgid "📋 This Campaign"
+msgstr "📋 Diese Kampagne"
+
+msgid "🏢 All Company Campaigns"
+msgstr "🏢 Alle Unternehmenskampagnen"
+
+msgid "Action"
+msgstr "Aktion"
+
+msgid "✅ Grant Access"
+msgstr "✅ Zugriff gewähren"
+
+msgid "❌ Deny Access"
+msgstr "❌ Zugriff verweigern"
+
+msgid "👁 Viewer"
+msgstr "👁 Betrachter"
+
+msgid "Access role level"
+msgstr "Zugriffsrollenebene"
+
+msgid "Expires at"
+msgstr "Läuft ab am"
+
+msgid "(optional)"
+msgstr "(optional)"
+
+msgid "Access expiry date and time"
+msgstr "Ablaufdatum und -uhrzeit des Zugriffs"
+
+msgid "Apply"
+msgstr "Anwenden"
+
+msgid "Create a new user"
+msgstr "Einen neuen Benutzer erstellen"
+
+msgid "Quick add a new user"
+msgstr "Einen neuen Benutzer schnell hinzufügen"
+
+msgid "Quick Add User"
+msgstr "Benutzer schnell hinzufügen"
+
+msgid "Company-level grants give access to all campaigns under the same company."
+msgstr "Berechtigungen auf Unternehmensebene gewähren Zugriff auf alle Kampagnen desselben Unternehmens."
+
+msgid "Grants apply to all current and future campaigns for this company."
+msgstr "Die Berechtigungen gelten für alle aktuellen und zukünftigen Kampagnen dieses Unternehmens."
+
+msgid "Failed to approve request"
+msgstr "Anfrage konnte nicht genehmigt werden"
+
+msgid "Failed to deny request"
+msgstr "Anfrage konnte nicht abgelehnt werden"
+
+msgid "Select a campaign to see access requests."
+msgstr "Wählen Sie eine Kampagne, um Zugriffsanfragen anzuzeigen."
+
+msgid "Access Requests"
+msgstr "Zugriffsanfragen"
+
+msgid "{{count}} pending"
+msgstr "{{count}} ausstehend"
+
+msgid "No access requests for this campaign."
+msgstr "Keine Zugriffsanfragen für diese Kampagne."
+
+msgid "Pending"
+msgstr "Ausstehend"
+
+msgid "Requested"
+msgstr "Angefragt"
+
+msgid "Approve"
+msgstr "Genehmigen"
+
+msgid "Deny"
+msgstr "Ablehnen"
+
+msgid "Resolved"
+msgstr "Gelöst"
+
+msgid "approved"
+msgstr "genehmigt"
+
+msgid "denied"
+msgstr "abgelehnt"
+
+msgid "expired"
+msgstr "abgelaufen"
+
+msgid "All activity recorded for the selected campaign."
+msgstr "Alle für die ausgewählte Kampagne aufgezeichneten Aktivitäten."
+
+msgid "Select campaign for audit log"
+msgstr "Kampagne für Audit-Protokoll auswählen"
+
+msgid "From (YYYY-MM-DD)"
+msgstr "Von (JJJJ-MM-TT)"
+
+msgid "Audit log from date"
+msgstr "Audit-Protokoll ab Datum"
+
+msgid "To (YYYY-MM-DD)"
+msgstr "Bis (JJJJ-MM-TT)"
+
+msgid "Audit log to date"
+msgstr "Audit-Protokoll bis Datum"
+
+msgid "Action filter"
+msgstr "Aktionsfilter"
+
+msgid "Audit log action filter"
+msgstr "Audit-Protokoll-Aktionsfilter"
+
+msgid "Export CSV"
+msgstr "CSV exportieren"
+
+msgid "Export audit log as CSV"
+msgstr "Audit-Protokoll als CSV exportieren"
+
+msgid "Download ZIP"
+msgstr "ZIP herunterladen"
+
+msgid "Export audit log as ZIP"
+msgstr "Audit-Protokoll als ZIP exportieren"
+
+msgid "Loading audit entries"
+msgstr "Audit-Einträge werden geladen"
+
+msgid "When"
+msgstr "Wann"
+
+msgid "Summary"
+msgstr "Zusammenfassung"
+
+msgid "Severity"
+msgstr "Schweregrad"
+
+msgid "Actor"
+msgstr "Akteur"
+
+msgid "Failed to load audit entries: {{message}}"
+msgstr "Audit-Einträge konnten nicht geladen werden: {{message}}"
+
+msgid "No audit entries yet."
+msgstr "Noch keine Audit-Einträge."
+
+msgid "Audit entries"
+msgstr "Audit-Einträge"
+
+msgid "Cross-campaign and plugin-wide admin events."
+msgstr "Kampagnenübergreifende und Plugin-weite Admin-Ereignisse."
+
+msgid "Campaign ID"
+msgstr "Kampagnen-ID"
+
+msgid "Filter by campaign ID"
+msgstr "Nach Kampagnen-ID filtern"
+
+msgid "Global audit from date"
+msgstr "Globales Audit ab Datum"
+
+msgid "Global audit to date"
+msgstr "Globales Audit bis Datum"
+
+msgid "Global audit action filter"
+msgstr "Globaler Audit-Aktionsfilter"
+
+msgid "Export global audit log as CSV"
+msgstr "Globales Audit-Protokoll als CSV exportieren"
+
+msgid "Export global audit log as ZIP"
+msgstr "Globales Audit-Protokoll als ZIP exportieren"
+
+msgid "Loading system audit entries"
+msgstr "System-Audit-Einträge werden geladen"
+
+msgid "No audit entries found."
+msgstr "Keine Audit-Einträge gefunden."
+
+msgid "System audit entries"
+msgstr "System-Audit-Einträge"
+
+msgid "Success"
+msgstr "Erfolg"
+
+msgid "Password Reset Link:"
+msgstr "Link zum Zurücksetzen des Passworts:"
+
+msgid "Password reset link"
+msgstr "Link zum Zurücksetzen des Passworts"
+
+msgid "Click to select"
+msgstr "Zum Auswählen klicken"
+
+msgid "Open Reset Link"
+msgstr "Link zum Zurücksetzen öffnen"
+
+msgid "Reset URL copied to clipboard"
+msgstr "Zurücksetzungs-URL in die Zwischenablage kopiert"
+
+msgid "Copy Link"
+msgstr "Link kopieren"
+
+msgid "Share this link securely with the user. They can use it to set their own password."
+msgstr "Teilen Sie diesen Link sicher mit dem Benutzer. Er kann ihn verwenden, um sein eigenes Passwort festzulegen."
+
+msgid "Close"
+msgstr "Schließen"
+
+msgid "user@example.com"
+msgstr "user@example.com"
+
+msgid "User's WordPress login email address"
+msgstr "WordPress-Anmelde-E-Mail-Adresse des Benutzers"
+
+msgid "Display Name"
+msgstr "Anzeigename"
+
+msgid "John Doe"
+msgstr "Max Mustermann"
+
+msgid "Full name for display purposes"
+msgstr "Vollständiger Name für Anzeigezwecke"
+
+msgid "👁 Viewer - Can view granted campaigns"
+msgstr "👁 Betrachter - Kann gewährte Kampagnen ansehen"
+
+msgid "⚙️ Gallery Editor - Can manage this plugin"
+msgstr "⚙️ Galerie-Editor - Kann dieses Plugin verwalten"
+
+msgid "WordPress role determines plugin permissions"
+msgstr "Die WordPress-Rolle bestimmt die Plugin-Berechtigungen"
+
+msgid "Grant Access To (optional)"
+msgstr "Zugriff gewähren auf (optional)"
+
+msgid "No initial access"
+msgstr "Kein anfänglicher Zugriff"
+
+msgid "🧪 Test mode: Simulate email failure"
+msgstr "🧪 Testmodus: E-Mail-Fehler simulieren"
+
+msgid "Enable to test the password reset link UI without actually sending email"
+msgstr "Aktivieren, um die Benutzeroberfläche des Passwort-Zurücksetzungs-Links zu testen, ohne tatsächlich eine E-Mail zu senden"
+
+msgid "Create User"
+msgstr "Benutzer erstellen"
+
+msgid "Viewer"
+msgstr "Betrachter"
+
+msgid "Editor"
+msgstr "Editor"
+
+msgid "Owner"
+msgstr "Eigentümer"
+
+msgid "Failed to update library"
+msgstr "Bibliothek konnte nicht aktualisiert werden"
+
+msgid "Space \"{{name}}\" created"
+msgstr "Bereich „{{name}}“ erstellt"
+
+msgid "Failed to create space"
+msgstr "Bereich konnte nicht erstellt werden"
+
+msgid "Space \"{{name}}\" archived"
+msgstr "Bereich „{{name}}“ archiviert"
+
+msgid "Failed to archive space"
+msgstr "Bereich konnte nicht archiviert werden"
+
+msgid "No WordPress user found with that email"
+msgstr "Kein WordPress-Benutzer mit dieser E-Mail gefunden"
+
+msgid "Failed to grant access"
+msgstr "Zugriff konnte nicht gewährt werden"
+
+msgid "Failed to revoke access"
+msgstr "Zugriff konnte nicht widerrufen werden"
+
+msgid "Role updated"
+msgstr "Rolle aktualisiert"
+
+msgid "Failed to update role"
+msgstr "Rolle konnte nicht aktualisiert werden"
+
+msgid "Library"
+msgstr "Bibliothek"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Slug"
+msgstr "Slug"
+
+msgid "Mode"
+msgstr "Modus"
+
+msgid "open"
+msgstr "offen"
+
+msgid "delegated"
+msgstr "delegiert"
+
+msgid "Archive space"
+msgstr "Bereich archivieren"
+
+msgid "Archive {{name}}"
+msgstr "{{name}} archivieren"
+
+msgid "Create new space"
+msgstr "Neuen Bereich erstellen"
+
+msgid "My Gallery Space"
+msgstr "Mein Galerie-Bereich"
+
+msgid "my-gallery-space"
+msgstr "my-gallery-space"
+
+msgid "Delegated isolation mode"
+msgstr "Delegierter Isolationsmodus"
+
+msgid "Only explicit grantees can access this space. Admins without a grant are denied."
+msgstr "Nur ausdrückliche Berechtigte können auf diesen Bereich zugreifen. Administratoren ohne Berechtigung werden abgewiesen."
+
+msgid "In delegated mode, WordPress admins without an explicit grant cannot access this space. Make sure to add yourself as an owner before saving."
+msgstr "Im delegierten Modus können WordPress-Administratoren ohne ausdrückliche Berechtigung nicht auf diesen Bereich zugreifen. Stellen Sie sicher, dass Sie sich vor dem Speichern als Eigentümer hinzufügen."
+
+msgid "Create space"
+msgstr "Bereich erstellen"
+
+msgid "Configure display settings for "
+msgstr "Anzeigeeinstellungen konfigurieren für "
+
+msgid ". Unset fields inherit the global defaults."
+msgstr ". Nicht festgelegte Felder erben die globalen Standardwerte."
+
+msgid "Configure display settings"
+msgstr "Anzeigeeinstellungen konfigurieren"
+
+msgid "Select a space from the Spaces tab to edit its settings."
+msgstr "Wählen Sie einen Bereich auf der Registerkarte „Bereiche“, um seine Einstellungen zu bearbeiten."
+
+msgid "Access grants for {{name}}"
+msgstr "Zugriffsberechtigungen für {{name}}"
+
+msgid "Granted"
+msgstr "Gewährt"
+
+msgid "User #{{id}}"
+msgstr "Benutzer Nr. {{id}}"
+
+msgid "user {{id}}"
+msgstr "Benutzer {{id}}"
+
+msgid "Role for {{name}}"
+msgstr "Rolle für {{name}}"
+
+msgid "Revoke access"
+msgstr "Zugriff widerrufen"
+
+msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgstr "Keine Zugriffsberechtigungen. Jeder mit der Berechtigung manage_wpsg kann auf diesen Bereich zugreifen."
+
+msgid "Grant access"
+msgstr "Zugriff gewähren"
+
+msgid "User email"
+msgstr "Benutzer-E-Mail"
+
+msgid "Grant"
+msgstr "Gewähren"
+
+msgid "Select a space from the Spaces tab to manage access."
+msgstr "Wählen Sie einen Bereich auf der Registerkarte „Bereiche“, um den Zugriff zu verwalten."
+
+msgid "Select a space from the Spaces tab to manage its shared library."
+msgstr "Wählen Sie einen Bereich auf der Registerkarte „Bereiche“, um seine gemeinsame Bibliothek zu verwalten."
+
+msgid "{{name}} is an open space."
+msgstr "{{name}} ist ein offener Bereich."
+
+msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
+msgstr "Offene Bereiche können jedes Asset in der Bibliothek verwenden — die Auswahl pro Bereich gilt nur für delegierte Bereiche. Schalten Sie diesen Bereich in den delegierten Isolationsmodus, um seine Assets einzuschränken."
+
+msgid "Select the assets "
+msgstr "Wählen Sie die Assets aus, die "
+
+msgid " is allowed to use. Unselected assets are hidden in this space."
+msgstr " verwenden darf. Nicht ausgewählte Assets sind in diesem Bereich ausgeblendet."
+
+msgid "Fonts"
+msgstr "Schriftarten"
+
+msgid "No fonts in the global library."
+msgstr "Keine Schriftarten in der globalen Bibliothek."
+
+msgid "Archive all company campaigns"
+msgstr "Alle Unternehmenskampagnen archivieren"
+
+msgid "Archive all campaigns for "
+msgstr "Alle Kampagnen archivieren für "
+
+msgid "? This will archive {{count}} active campaign."
+msgstr "? Dadurch wird {{count}} aktive Kampagne archiviert."
+
+msgid "? This will archive {{count}} active campaigns."
+msgstr "? Dadurch werden {{count}} aktive Kampagnen archiviert."
+
+msgid "Archive {{count}} Campaign"
+msgstr "{{count}} Kampagne archivieren"
+
+msgid "Archive {{count}} Campaigns"
+msgstr "{{count}} Kampagnen archivieren"
+
+msgid "Archive {{count}} campaign for {{name}}"
+msgstr "{{count}} Kampagne für {{name}} archivieren"
+
+msgid "Archive {{count}} campaigns for {{name}}"
+msgstr "{{count}} Kampagnen für {{name}} archivieren"
+
+msgid "company"
+msgstr "Unternehmen"
+
+msgid "Campaigns to be archived:"
+msgstr "Zu archivierende Kampagnen:"
+
+msgid "Also revoke all company-level access grants"
+msgstr "Auch alle Zugriffsberechtigungen auf Unternehmensebene widerrufen"
+
+msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgstr "Zugriffsberechtigungen für einzelne Kampagnen bleiben erhalten, werden aber inaktiv."
+
+msgid "Asset uploaded."
+msgstr "Asset hochgeladen."
+
+msgid "Delete asset?"
+msgstr "Asset löschen?"
+
+msgid "Delete \"{{name}}\"? This cannot be undone."
+msgstr "„{{name}}“ löschen? Dies kann nicht rückgängig gemacht werden."
+
+msgid "Deleted \"{{name}}\"."
+msgstr "„{{name}}“ gelöscht."
+
+msgid "Upload asset"
+msgstr "Asset hochladen"
+
+msgid "Upload asset to library"
+msgstr "Asset in die Bibliothek hochladen"
+
+msgid "Asset is in use"
+msgstr "Asset wird verwendet"
+
+msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "„{{name}}“ ist mit {{count}} Bereich verknüpft. Beim Entfernen wird die Verknüpfung mit allen Bereichen aufgehoben. Trotzdem löschen?"
+
+msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr "„{{name}}“ ist mit {{count}} Bereichen verknüpft. Beim Entfernen wird die Verknüpfung mit allen Bereichen aufgehoben. Trotzdem löschen?"
+
+msgid "Delete anyway"
+msgstr "Trotzdem löschen"
+
+msgid "No assets in the global library yet. Upload assets from the Layout Builder."
+msgstr "Noch keine Assets in der globalen Bibliothek. Laden Sie Assets aus dem Layout-Builder hoch."
+
+msgid "Search assets…"
+msgstr "Assets suchen …"
+
+msgid "Search assets"
+msgstr "Assets suchen"
+
+msgid "No assets match the current filter."
+msgstr "Keine Assets entsprechen dem aktuellen Filter."
+
+msgid "Total Views (all campaigns)"
+msgstr "Gesamtaufrufe (alle Kampagnen)"
+
+msgid "Unique Visitors (all campaigns)"
+msgstr "Eindeutige Besucher (alle Kampagnen)"
+
+msgid "Views (selected campaign)"
+msgstr "Aufrufe (ausgewählte Kampagne)"
+
+msgid "Unique (selected campaign)"
+msgstr "Eindeutige (ausgewählte Kampagne)"
+
+msgid "Campaign Analytics"
+msgstr "Kampagnenstatistiken"
+
+msgid "Browser is offline — polling paused"
+msgstr "Browser ist offline — Abfrage pausiert"
+
+msgid "Offline"
+msgstr "Offline"
+
+msgid "Updated {{time}}"
+msgstr "Aktualisiert {{time}}"
+
+msgid "Refresh analytics"
+msgstr "Statistiken aktualisieren"
+
+msgid "Select campaign"
+msgstr "Kampagne auswählen"
+
+msgid "Last 7d"
+msgstr "Letzte 7 Tage"
+
+msgid "Last 30d"
+msgstr "Letzte 30 Tage"
+
+msgid "Last 90d"
+msgstr "Letzte 90 Tage"
+
+msgid "Select a campaign to view per-campaign analytics."
+msgstr "Wählen Sie eine Kampagne, um Statistiken pro Kampagne anzuzeigen."
+
+msgid "Failed to load analytics data."
+msgstr "Statistikdaten konnten nicht geladen werden."
+
+msgid "No view events recorded for this period."
+msgstr "Keine Aufrufereignisse für diesen Zeitraum aufgezeichnet."
+
+msgid "Make sure "
+msgstr "Stellen Sie sicher, dass "
+
+msgid "Enable Analytics"
+msgstr "Statistiken aktivieren"
+
+msgid " is turned on in Settings → Advanced."
+msgstr " unter Einstellungen → Erweitert aktiviert ist."
+
+msgid "Media Performance"
+msgstr "Medienleistung"
+
+msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgstr "Keine Ereignisse pro Medium für diesen Zeitraum aufgezeichnet. Lightbox-Interaktionen mit Medien-IDs werden hier angezeigt."
+
+msgid "Media ID"
+msgstr "Medien-ID"
+
+msgid "Views"
+msgstr "Aufrufe"
+
+msgid "Lightbox Opens"
+msgstr "Lightbox-Öffnungen"
+
+msgid "Top Campaigns by Views"
+msgstr "Top-Kampagnen nach Aufrufen"
+
+msgid "Unique"
+msgstr "Eindeutige"
+
+msgid "Category renamed to \"{{name}}\""
+msgstr "Kategorie umbenannt in „{{name}}“"
+
+msgid "Failed to rename category"
+msgstr "Kategorie konnte nicht umbenannt werden"
+
+msgid "Category \"{{name}}\" deleted"
+msgstr "Kategorie „{{name}}“ gelöscht"
+
+msgid "Failed to delete category"
+msgstr "Kategorie konnte nicht gelöscht werden"
+
+msgid "Edit category name"
+msgstr "Kategoriename bearbeiten"
+
+msgid "Rename {{name}}"
+msgstr "{{name}} umbenennen"
+
+msgid "Delete {{name}}"
+msgstr "{{name}} löschen"
+
+msgid "Category \"{{name}}\" created"
+msgstr "Kategorie „{{name}}“ erstellt"
+
+msgid "Failed to create category"
+msgstr "Kategorie konnte nicht erstellt werden"
+
+msgid "Tag \"{{name}}\" created"
+msgstr "Schlagwort „{{name}}“ erstellt"
+
+msgid "Failed to create tag"
+msgstr "Schlagwort konnte nicht erstellt werden"
+
+msgid "Tag deleted"
+msgstr "Schlagwort gelöscht"
+
+msgid "Failed to delete tag"
+msgstr "Schlagwort konnte nicht gelöscht werden"
+
+msgid "Media tag \"{{name}}\" created"
+msgstr "Medien-Schlagwort „{{name}}“ erstellt"
+
+msgid "Failed to create media tag"
+msgstr "Medien-Schlagwort konnte nicht erstellt werden"
+
+msgid "Media tag deleted"
+msgstr "Medien-Schlagwort gelöscht"
+
+msgid "Failed to delete media tag"
+msgstr "Medien-Schlagwort konnte nicht gelöscht werden"
+
+msgid "Manage Taxonomy"
+msgstr "Taxonomie verwalten"
+
+msgid "No categories yet."
+msgstr "Noch keine Kategorien."
+
+msgid "New category name"
+msgstr "Name der neuen Kategorie"
+
+msgid "No campaign tags yet."
+msgstr "Noch keine Kampagnen-Schlagwörter."
+
+msgid "New campaign tag"
+msgstr "Neues Kampagnen-Schlagwort"
+
+msgid "No media tags yet."
+msgstr "Noch keine Medien-Schlagwörter."
+
+msgid "New media tag"
+msgstr "Neues Medien-Schlagwort"
+
+msgid "Failed to load templates."
+msgstr "Vorlagen konnten nicht geladen werden."
+
+msgid "Template \"{{name}}\" deleted."
+msgstr "Vorlage „{{name}}“ gelöscht."
+
+msgid "Failed to delete template."
+msgstr "Vorlage konnte nicht gelöscht werden."
+
+msgid "Template created."
+msgstr "Vorlage erstellt."
+
+msgid "Failed to create template."
+msgstr "Vorlage konnte nicht erstellt werden."
+
+msgid "Campaign Templates"
+msgstr "Kampagnenvorlagen"
+
+msgid "New Template"
+msgstr "Neue Vorlage"
+
+msgid "Built-in"
+msgstr "Integriert"
+
+msgid "No custom templates yet."
+msgstr "Noch keine benutzerdefinierten Vorlagen."
+
+msgid "Template name"
+msgstr "Vorlagenname"
+
+msgid "e.g. Weddings default"
+msgstr "z. B. Hochzeiten Standard"
+
+msgid "Description (optional)"
+msgstr "Beschreibung (optional)"
+
+msgid "e.g. Our standard wedding campaign layout"
+msgstr "z. B. Unser Standard-Layout für Hochzeitskampagnen"
+
+msgid "{{count}} character"
+msgstr "{{count}} Zeichen"
+
+msgid "{{count}} characters"
+msgstr "{{count}} Zeichen"
+
+msgid "Copy settings from campaign (optional)"
+msgstr "Einstellungen aus Kampagne kopieren (optional)"
+
+msgid "Start blank"
+msgstr "Leer beginnen"
+
+msgid "Create Template"
+msgstr "Vorlage erstellen"
+
+msgid "Delete template"
+msgstr "Vorlage löschen"
+
+msgid "Delete template {{name}}"
+msgstr "Vorlage {{name}} löschen"
+
+msgid "Duplicated \"{{name}}\""
+msgstr "„{{name}}“ dupliziert"
+
+msgid "Deleted \"{{name}}\""
+msgstr "„{{name}}“ gelöscht"
+
+msgid "Invalid template JSON — missing required fields."
+msgstr "Ungültiges Vorlagen-JSON — erforderliche Felder fehlen."
+
+msgid "Imported \"{{name}}\""
+msgstr "„{{name}}“ importiert"
+
+msgid "Import failed: {{message}}"
+msgstr "Import fehlgeschlagen: {{message}}"
+
+msgid "Search layouts…"
+msgstr "Layouts suchen …"
+
+msgid "Search layout templates"
+msgstr "Layout-Vorlagen suchen"
+
+msgid "View mode"
+msgstr "Ansichtsmodus"
+
+msgid "New Layout"
+msgstr "Neues Layout"
+
+msgid "From Preset"
+msgstr "Aus Voreinstellung"
+
+msgid "No layouts match your search."
+msgstr "Keine Layouts entsprechen Ihrer Suche."
+
+msgid "No layout templates yet."
+msgstr "Noch keine Layout-Vorlagen."
+
+msgid "Create your first layout"
+msgstr "Erstellen Sie Ihr erstes Layout"
+
+msgid "Layout template list"
+msgstr "Liste der Layout-Vorlagen"
+
+msgid "Slots"
+msgstr "Slots"
+
+msgid "Aspect"
+msgstr "Seitenverhältnis"
+
+msgid "Updated"
+msgstr "Aktualisiert"
+
+msgid "{{count}} slot"
+msgstr "{{count}} Slot"
+
+msgid "{{count}} slots"
+msgstr "{{count}} Slots"
+
+msgid "Edit {{name}}"
+msgstr "{{name}} bearbeiten"
+
+msgid "Duplicate {{name}}"
+msgstr "{{name}} duplizieren"
+
+msgid "Export JSON"
+msgstr "JSON exportieren"
+
+msgid "Export {{name}}"
+msgstr "{{name}} exportieren"
+
+msgid "Delete layout template?"
+msgstr "Layout-Vorlage löschen?"
+
+msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
+msgstr "Möchten Sie „{{name}}“ wirklich löschen? Dies kann nicht rückgängig gemacht werden."
+
+msgid "Template in use"
+msgstr "Vorlage wird verwendet"
+
+msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "„{{name}}“ wird von {{count}} Kampagne verwendet. Beim Löschen wird die Bindung dieser Kampagnen aufgehoben. Trotzdem löschen?"
+
+msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
+msgstr "„{{name}}“ wird von {{count}} Kampagnen verwendet. Beim Löschen wird die Bindung dieser Kampagnen aufgehoben. Trotzdem löschen?"
+
+msgid "Edit layout {{name}}"
+msgstr "Layout {{name}} bearbeiten"
+
+msgid "Actions for {{name}}"
+msgstr "Aktionen für {{name}}"
+
+msgid "Choose a starting point"
+msgstr "Wählen Sie einen Ausgangspunkt"
+
+msgid "Start Blank"
+msgstr "Leer beginnen"
+
+msgid "No pre-configured settings."
+msgstr "Keine vorkonfigurierten Einstellungen."
+
+msgid "Press a key combo…"
+msgstr "Drücken Sie eine Tastenkombination …"
+
+msgid "Confirm key binding"
+msgstr "Tastenbelegung bestätigen"
+
+msgid "Cancel key recording"
+msgstr "Tastenaufzeichnung abbrechen"
+
+msgid "Press any key combo, then ✓ to confirm"
+msgstr "Drücken Sie eine beliebige Tastenkombination, dann ✓ zum Bestätigen"
+
+msgid "custom"
+msgstr "benutzerdefiniert"
+
+msgid "Remap"
+msgstr "Neu belegen"
+
+msgid "Remap {{name}}"
+msgstr "{{name}} neu belegen"
+
+msgid "Reset {{name}} to default"
+msgstr "{{name}} auf Standard zurücksetzen"
+
+msgid "Close active modal"
+msgstr "Aktives Fenster schließen"
+
+msgid "Keyboard Shortcuts"
+msgstr "Tastenkürzel"
+
+msgid "Edit shortcuts"
+msgstr "Tastenkürzel bearbeiten"
+
+msgid "Open keyboard shortcuts help (this modal)"
+msgstr "Hilfe zu Tastenkürzeln öffnen (dieses Fenster)"
+
+msgid "customized"
+msgstr "angepasst"
+
+msgid "Reset all to defaults"
+msgstr "Alle auf Standard zurücksetzen"
+
+msgid "macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input."
+msgstr "macOS: ⌘ ersetzt Ctrl. Tastenkürzel sind deaktiviert, wenn sich der Fokus in einem Texteingabefeld befindet."
+
+msgid "Theme"
+msgstr "Theme"
+
+msgid "Dark theme"
+msgstr "Dunkles Theme"
+
+msgid "Light theme"
+msgstr "Helles Theme"
+
+msgid "Custom Fonts"
+msgstr "Benutzerdefinierte Schriftarten"
+
+msgid "Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors."
+msgstr "Laden Sie .woff2-, .woff-, .ttf- oder .otf-Schriftdateien hoch. Hochgeladene Schriftarten erscheinen im Schriftartenauswahlfeld aller Typografie-Editoren."
+
+msgid "Make {{name}} space-specific"
+msgstr "{{name}} bereichsspezifisch machen"
+
+msgid "Make {{name}} available to all spaces"
+msgstr "{{name}} für alle Bereiche verfügbar machen"
+
+msgid "Uploading…"
+msgstr "Wird hochgeladen …"
+
+msgid "Upload font"
+msgstr "Schriftart hochladen"
+
+msgid "▬ Rectangle"
+msgstr "▬ Rechteck"
+
+msgid "● Circle"
+msgstr "● Kreis"
+
+msgid "⬭ Ellipse"
+msgstr "⬭ Ellipse"
+
+msgid "⬢ Hexagon"
+msgstr "⬢ Hexagon"
+
+msgid "◆ Diamond"
+msgstr "◆ Raute"
+
+msgid "▱ Parallelogram ←"
+msgstr "▱ Parallelogramm ←"
+
+msgid "▱ Parallelogram →"
+msgstr "▱ Parallelogramm →"
+
+msgid "❯ Chevron"
+msgstr "❯ Chevron"
+
+msgid "➤ Arrow"
+msgstr "➤ Pfeil"
+
+msgid "⬟ Trapezoid"
+msgstr "⬟ Trapez"
+
+msgid "❂ Custom"
+msgstr "❂ Benutzerdefiniert"
+
+msgid "Cover"
+msgstr "Abdecken"
+
+msgid "Contain"
+msgstr "Einpassen"
+
+msgid "Fill"
+msgstr "Füllen"
+
+msgid "Pop"
+msgstr "Erscheinen"
+
+msgid "Glow"
+msgstr "Leuchten"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Multiply"
+msgstr "Multiplizieren"
+
+msgid "Screen"
+msgstr "Negativ multiplizieren"
+
+msgid "Overlay"
+msgstr "Ineinanderkopieren"
+
+msgid "Darken"
+msgstr "Abdunkeln"
+
+msgid "Lighten"
+msgstr "Aufhellen"
+
+msgid "Color Dodge"
+msgstr "Farbig abwedeln"
+
+msgid "Color Burn"
+msgstr "Farbig nachbelichten"
+
+msgid "Hard Light"
+msgstr "Hartes Licht"
+
+msgid "Soft Light"
+msgstr "Weiches Licht"
+
+msgid "Difference"
+msgstr "Differenz"
+
+msgid "Exclusion"
+msgstr "Ausschluss"
+
+msgid "Hue"
+msgstr "Farbton"
+
+msgid "Saturation"
+msgstr "Sättigung"
+
+msgid "Color"
+msgstr "Farbe"
+
+msgid "Luminosity"
+msgstr "Luminanz"
+
+msgid "Top left"
+msgstr "Oben links"
+
+msgid "Top center"
+msgstr "Oben mittig"
+
+msgid "Top right"
+msgstr "Oben rechts"
+
+msgid "Left center"
+msgstr "Links mittig"
+
+msgid "Right center"
+msgstr "Rechts mittig"
+
+msgid "Bottom left"
+msgstr "Unten links"
+
+msgid "Bottom center"
+msgstr "Unten mittig"
+
+msgid "Bottom right"
+msgstr "Unten rechts"
+
+msgid "{{label}} info"
+msgstr "Informationen zu {{label}}"
+
+msgid "Bright"
+msgstr "Helligkeit"
+
+msgid "Contrast"
+msgstr "Kontrast"
+
+msgid "Saturate"
+msgstr "Sättigen"
+
+msgid "Blur"
+msgstr "Unschärfe"
+
+msgid "Gray"
+msgstr "Grau"
+
+msgid "Sepia"
+msgstr "Sepia"
+
+msgid "Invert"
+msgstr "Umkehren"
+
+msgid "Enable"
+msgstr "Aktivieren"
+
+msgid "Off X"
+msgstr "Versatz X"
+
+msgid "Off Y"
+msgstr "Versatz Y"
+
+msgid "Intensity"
+msgstr "Intensität"
+
+msgid "Hover only"
+msgstr "Nur bei Hover"
+
+msgid "Always"
+msgstr "Immer"
+
+msgid "Hover"
+msgstr "Hover"
+
+msgid "Max °"
+msgstr "Max. °"
+
+msgid "Persp."
+msgstr "Persp."
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Entrance animation type"
+msgstr "Typ der Eingangsanimation"
+
+msgid "Direction"
+msgstr "Richtung"
+
+msgid "Up"
+msgstr "Oben"
+
+msgid "Down"
+msgstr "Unten"
+
+msgid "Slide direction"
+msgstr "Schieberichtung"
+
+msgid "Duration"
+msgstr "Dauer"
+
+msgid "Entrance duration"
+msgstr "Eingangsdauer"
+
+msgid "Delay"
+msgstr "Verzögerung"
+
+msgid "Entrance delay"
+msgstr "Eingangsverzögerung"
+
+msgid "Play preview"
+msgstr "Vorschau abspielen"
+
+msgid "Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden."
+msgstr "Listenmodus: Container-Effekte (Neigung, Rahmen, Overlay, Füllmethode) werden auf den Karten-Wrapper angewendet. Bildspezifische Steuerungen sind ausgeblendet."
+
+msgid "Layout"
+msgstr "Layout"
+
+msgid "Slot"
+msgstr "Slot"
+
+msgid "Position"
+msgstr "Position"
+
+msgid "X %"
+msgstr "X %"
+
+msgid "Y %"
+msgstr "Y %"
+
+msgid "Size"
+msgstr "Größe"
+
+msgid "Width %"
+msgstr "Breite %"
+
+msgid "Unlock aspect ratio"
+msgstr "Seitenverhältnis entsperren"
+
+msgid "Lock aspect ratio"
+msgstr "Seitenverhältnis sperren"
+
+msgid "Height %"
+msgstr "Höhe %"
+
+msgid "Rotation"
+msgstr "Drehung"
+
+msgid "Rotation degrees"
+msgstr "Drehgrad"
+
+msgid "Reset rotation"
+msgstr "Drehung zurücksetzen"
+
+msgid "Opacity"
+msgstr "Deckkraft"
+
+msgid "Slot opacity"
+msgstr "Slot-Deckkraft"
+
+msgid "Shape"
+msgstr "Form"
+
+msgid "Preset"
+msgstr "Voreinstellung"
+
+msgid "Clip-path"
+msgstr "Clip-Path"
+
+msgid "polygon(50% 0%, 100% 50%, …)"
+msgstr "polygon(50% 0%, 100% 50%, …)"
+
+msgid "Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards."
+msgstr "Bildanpassungs- und Fokuspunkteinstellungen gelten im Listenmodus nicht — Slots fungieren als positionierte Container für Kampagnenkarten."
+
+msgid "Fit"
+msgstr "Anpassung"
+
+msgid "Focus"
+msgstr "Fokuspunkt"
+
+msgid "Click a position to set which part of the image stays in frame."
+msgstr "Klicken Sie auf eine Position, um festzulegen, welcher Teil des Bilds im Rahmen bleibt."
+
+msgid "50% 50%"
+msgstr "50% 50%"
+
+msgid "Border"
+msgstr "Rahmen"
+
+msgid "Radius"
+msgstr "Radius"
+
+msgid "Width"
+msgstr "Breite"
+
+msgid "Effects"
+msgstr "Effekte"
+
+msgid "Shadow"
+msgstr "Schatten"
+
+msgid "Blend"
+msgstr "Füllmethode"
+
+msgid "3D Tilt"
+msgstr "3D-Neigung"
+
+msgid "Entrance"
+msgstr "Eingang"
+
+msgid "Stacking & Interaction"
+msgstr "Stapelung und Interaktion"
+
+msgid "Stacking"
+msgstr "Stapelung"
+
+msgid "Send to Back (Shift+[)"
+msgstr "In den Hintergrund (Umschalt+[)"
+
+msgid "Send to back"
+msgstr "In den Hintergrund"
+
+msgid "Send Backward ([)"
+msgstr "Nach hinten ([)"
+
+msgid "Send backward"
+msgstr "Nach hinten"
+
+msgid "Bring Forward (])"
+msgstr "Nach vorne (])"
+
+msgid "Bring forward"
+msgstr "Nach vorne"
+
+msgid "Bring to Front (Shift+])"
+msgstr "In den Vordergrund (Umschalt+])"
+
+msgid "Bring to front"
+msgstr "In den Vordergrund"
+
+msgid "Interaction"
+msgstr "Interaktion"
+
+msgid "Card click is controlled by the campaign card component."
+msgstr "Der Klick auf die Karte wird von der Kampagnenkartenkomponente gesteuert."
+
+msgid "Click"
+msgstr "Klick"
+
+msgid "Spread"
+msgstr "Ausdehnung"
+
+msgid "Graphic Layer {{index}}"
+msgstr "Grafikebene {{index}}"
+
+msgid "Brightness"
+msgstr "Helligkeit"
+
+msgid "Grayscale"
+msgstr "Graustufen"
+
+msgid "Hue rotate"
+msgstr "Farbton drehen"
+
+msgid "Drop shadow"
+msgstr "Schlagschatten"
+
+msgid "Shadow blur"
+msgstr "Schattenunschärfe"
+
+msgid "Graphic layer name"
+msgstr "Name der Grafikebene"
+
+msgid "Graphic layer preview"
+msgstr "Vorschau der Grafikebene"
+
+msgid "W %"
+msgstr "B %"
+
+msgid "H %"
+msgstr "H %"
+
+msgid "Fill canvas"
+msgstr "Arbeitsfläche füllen"
+
+msgid "Transform"
+msgstr "Transformieren"
+
+msgid "Flip H"
+msgstr "H spiegeln"
+
+msgid "Flip horizontal"
+msgstr "Horizontal spiegeln"
+
+msgid "Flip V"
+msgstr "V spiegeln"
+
+msgid "Flip vertical"
+msgstr "Vertikal spiegeln"
+
+msgid "Appearance"
+msgstr "Darstellung"
+
+msgid "Graphic layer opacity"
+msgstr "Deckkraft der Grafikebene"
+
+msgid "Click-through"
+msgstr "Klick-Durchlass"
+
+msgid "Pointer events pass through to layers below"
+msgstr "Zeigerereignisse werden an darunterliegende Ebenen weitergeleitet"
+
+msgid "Shape & Border"
+msgstr "Form und Rahmen"
+
+msgid "Custom clip-path"
+msgstr "Benutzerdefinierter Clip-Path"
+
+msgid "polygon(50% 0%, 100% 100%, 0% 100%)"
+msgstr "polygon(50% 0%, 100% 100%, 0% 100%)"
+
+msgid "Border color"
+msgstr "Rahmenfarbe"
+
+msgid "Mask"
+msgstr "Maske"
+
+msgid "Mask image URL"
+msgstr "URL des Maskenbilds"
+
+msgid "https://… (SVG/PNG)"
+msgstr "https://… (SVG/PNG)"
+
+msgid "Luminance"
+msgstr "Luminanz"
+
+msgid "Alpha"
+msgstr "Alpha"
+
+msgid "Mask mode"
+msgstr "Maskenmodus"
+
+msgid "Feather"
+msgstr "Weiche Kante"
+
+msgid "Mask feather"
+msgstr "Weiche Kante der Maske"
+
+msgid "Clear mask"
+msgstr "Maske löschen"
+
+msgid "Blend mode"
+msgstr "Füllmethode"
+
+msgid "Danger zone"
+msgstr "Gefahrenzone"
+
+msgid "Remove this graphic layer?"
+msgstr "Diese Grafikebene entfernen?"
+
+msgid "Confirm remove"
+msgstr "Entfernen bestätigen"
+
+msgid "Remove layer"
+msgstr "Ebene entfernen"
+
+msgid "Text Layer {{index}}"
+msgstr "Textebene {{index}}"
+
+msgid "Text layer name"
+msgstr "Name der Textebene"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Text content"
+msgstr "Textinhalt"
+
+msgid "Style"
+msgstr "Stil"
+
+msgid "Heading (H2)"
+msgstr "Überschrift (H2)"
+
+msgid "Subheading (H3)"
+msgstr "Zwischenüberschrift (H3)"
+
+msgid "Paragraph"
+msgstr "Absatz"
+
+msgid "Alignment"
+msgstr "Ausrichtung"
+
+msgid "Text alignment"
+msgstr "Textausrichtung"
+
+msgid "Typography"
+msgstr "Typografie"
+
+msgid "Send to Back"
+msgstr "In den Hintergrund"
+
+msgid "Send Backward"
+msgstr "Nach hinten"
+
+msgid "Bring Forward"
+msgstr "Nach vorne"
+
+msgid "Bring to Front"
+msgstr "In den Vordergrund"
+
+msgid "Remove this text layer?"
+msgstr "Diese Textebene entfernen?"
+
+msgid "Remove text layer"
+msgstr "Textebene entfernen"
+
+msgid "Transparent background — no fill applied."
+msgstr "Transparenter Hintergrund — keine Füllung angewendet."
+
+msgid "Radial"
+msgstr "Radial"
+
+msgid "Conic"
+msgstr "Konisch"
+
+msgid "Dir"
+msgstr "Richt."
+
+msgid "Horizontal (90°)"
+msgstr "Horizontal (90°)"
+
+msgid "Vertical (180°)"
+msgstr "Vertikal (180°)"
+
+msgid "45° right"
+msgstr "45° rechts"
+
+msgid "135° left"
+msgstr "135° links"
+
+msgid "auto"
+msgstr "auto"
+
+msgid "Ellipse"
+msgstr "Ellipse"
+
+msgid "Farthest corner"
+msgstr "Entfernteste Ecke"
+
+msgid "Farthest side"
+msgstr "Entfernteste Seite"
+
+msgid "Closest corner"
+msgstr "Nächste Ecke"
+
+msgid "Closest side"
+msgstr "Nächste Seite"
+
+msgid "Ctr X"
+msgstr "Zentr. X"
+
+msgid "Ctr Y"
+msgstr "Zentr. Y"
+
+msgid "Angle"
+msgstr "Winkel"
+
+msgid "Stops"
+msgstr "Stopps"
+
+msgid "Mid"
+msgstr "Mitte"
+
+msgid "Pos"
+msgstr "Pos"
+
+msgid "Background preview"
+msgstr "Hintergrundvorschau"
+
+msgid "Remove image"
+msgstr "Bild entfernen"
+
+msgid "No background image set."
+msgstr "Kein Hintergrundbild festgelegt."
+
+msgid "Upload image"
+msgstr "Bild hochladen"
+
+msgid "Upload background image"
+msgstr "Hintergrundbild hochladen"
+
+msgid "No mask layer on this slot. Add a mask from the Layers panel first."
+msgstr "Keine Maskenebene auf diesem Slot. Fügen Sie zuerst eine Maske über das Ebenen-Panel hinzu."
+
+msgid "No mask image — drag here or pick below"
+msgstr "Kein Maskenbild — hierher ziehen oder unten auswählen"
+
+msgid "Auto-fit to slot"
+msgstr "Automatisch an Slot anpassen"
+
+msgid "Soften the mask edges. Higher values create a more gradual fade."
+msgstr "Die Maskenkanten weicher machen. Höhere Werte erzeugen einen allmählicheren Übergang."
+
+msgid "Design Assets"
+msgstr "Design-Assets"
+
+msgid "Mask Image"
+msgstr "Maskenbild"
+
+msgid "Replace"
+msgstr "Ersetzen"
+
+msgid "Clear image"
+msgstr "Bild löschen"
+
+msgid "Remove mask layer"
+msgstr "Maskenebene entfernen"
+
+msgid "Properties are unavailable in preview mode."
+msgstr "Eigenschaften sind im Vorschaumodus nicht verfügbar."
+
+msgid "BACKGROUND"
+msgstr "HINTERGRUND"
+
+msgid "MASK PROPERTIES"
+msgstr "MASKENEIGENSCHAFTEN"
+
+msgid "SLOT PROPERTIES"
+msgstr "SLOT-EIGENSCHAFTEN"
+
+msgid "GRAPHIC LAYER"
+msgstr "GRAFIKEBENE"
+
+msgid "TEXT LAYER"
+msgstr "TEXTEBENE"
+
+msgid "CANVAS"
+msgstr "ARBEITSFLÄCHE"
+
+msgid "Graphic layers"
+msgstr "Grafikebenen"
+
+msgid "Aspect ratio"
+msgstr "Seitenverhältnis"
+
+msgid "Height mode"
+msgstr "Höhenmodus"
+
+msgid "Ratio"
+msgstr "Verhältnis"
+
+msgid "vh"
+msgstr "vh"
+
+msgid "Canvas height mode"
+msgstr "Höhenmodus der Arbeitsfläche"
+
+msgid "Canvas height in viewport units"
+msgstr "Höhe der Arbeitsfläche in Viewport-Einheiten"
+
+msgid "Add Slot"
+msgstr "Slot hinzufügen"
+
+msgid "Recent actions"
+msgstr "Letzte Aktionen"
+
+msgid "Full"
+msgstr "Vollständig"
+
+msgid "Laptop"
+msgstr "Laptop"
+
+msgid "New slot added at cursor position"
+msgstr "Neuer Slot an Cursorposition hinzugefügt"
+
+msgid "Graphic layer added to canvas"
+msgstr "Grafikebene zur Arbeitsfläche hinzugefügt"
+
+msgid "New slot created with assigned media"
+msgstr "Neuer Slot mit zugewiesenem Medium erstellt"
+
+msgid "Fit to viewport"
+msgstr "An Viewport anpassen"
+
+msgid "Fit to canvas"
+msgstr "An Arbeitsfläche anpassen"
+
+msgid "{{bp}} viewport"
+msgstr "{{bp}}-Viewport"
+
+msgid "canvas"
+msgstr "Arbeitsfläche"
+
+msgid "Fit {{count}} slot into the {{where}}"
+msgstr "{{count}} Slot in {{where}} einpassen"
+
+msgid "Fit {{count}} slots into the {{where}}"
+msgstr "{{count}} Slots in {{where}} einpassen"
+
+msgid "Slots already fit the {{where}}"
+msgstr "Slots passen bereits in {{where}}"
+
+msgid "Max width:"
+msgstr "Maximale Breite:"
+
+msgid "Canvas max width"
+msgstr "Maximale Breite der Arbeitsfläche"
+
+msgid "Fit to container"
+msgstr "An Container anpassen"
+
+msgid "Snap:"
+msgstr "Einrasten:"
+
+msgid "Snap mode"
+msgstr "Einrastmodus"
+
+msgid "Sensitivity:"
+msgstr "Empfindlichkeit:"
+
+msgid "Snap sensitivity"
+msgstr "Einrastempfindlichkeit"
+
+msgid "Toggle grid overlay"
+msgstr "Rasterüberlagerung umschalten"
+
+msgid "Grid cell size"
+msgstr "Rasterzellengröße"
+
+msgid "Rulers"
+msgstr "Lineale"
+
+msgid "Toggle canvas rulers"
+msgstr "Lineale der Arbeitsfläche umschalten"
+
+msgid "Measure"
+msgstr "Messen"
+
+msgid "Toggle measurement overlay"
+msgstr "Messüberlagerung umschalten"
+
+msgid "Guides:"
+msgstr "Hilfslinien:"
+
+msgid "Add vertical guide"
+msgstr "Vertikale Hilfslinie hinzufügen"
+
+msgid "Add horizontal guide"
+msgstr "Horizontale Hilfslinie hinzufügen"
+
+msgid "Breakpoint:"
+msgstr "Breakpoint:"
+
+msgid "Breakpoint edit mode"
+msgstr "Breakpoint-Bearbeitungsmodus"
+
+msgid "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
+msgstr "Die ausgewählten Slots (oder alle Slots) verschieben/skalieren, damit sie in den Viewport dieses Geräts passen — gilt nur für diesen Breakpoint"
+
+msgid "Move/scale the selected slots (or all slots) back inside the canvas bounds"
+msgstr "Die ausgewählten Slots (oder alle Slots) zurück in die Grenzen der Arbeitsfläche verschieben/skalieren"
+
+msgid "Fit slots to viewport"
+msgstr "Slots an Viewport anpassen"
+
+msgid "Fit slots to canvas"
+msgstr "Slots an Arbeitsfläche anpassen"
+
+msgid "Indices"
+msgstr "Indizes"
+
+msgid "Toggle slot index badges"
+msgstr "Slot-Index-Badges umschalten"
+
+msgid "Switch to select tool"
+msgstr "Zum Auswahlwerkzeug wechseln"
+
+msgid "Hand tool — pan canvas (H)"
+msgstr "Handwerkzeug — Arbeitsfläche verschieben (H)"
+
+msgid "Hand tool"
+msgstr "Handwerkzeug"
+
+msgid "Fit canvas to viewport (F)"
+msgstr "Arbeitsfläche an Viewport anpassen (F)"
+
+msgid "Fit canvas to viewport"
+msgstr "Arbeitsfläche an Viewport anpassen"
+
+msgid "Reset zoom to 100%"
+msgstr "Zoom auf 100 % zurücksetzen"
+
+msgid "Zoom {{pct}}%, click to reset"
+msgstr "Zoom {{pct}} %, zum Zurücksetzen klicken"
+
+msgid "Preview:"
+msgstr "Vorschau:"
+
+msgid "Device preview preset"
+msgstr "Geräte-Vorschau-Voreinstellung"
+
+msgid "Custom preview width"
+msgstr "Benutzerdefinierte Vorschaubreite"
+
+msgid "Device frame"
+msgstr "Geräterahmen"
+
+msgid "Toggle device frame chrome"
+msgstr "Geräterahmen-Chrome umschalten"
+
+msgid "Align slots"
+msgstr "Slots ausrichten"
+
+msgid "Add slot"
+msgstr "Slot hinzufügen"
+
+msgid "Add text"
+msgstr "Text hinzufügen"
+
+msgid "Add mask to selected slot"
+msgstr "Maske zum ausgewählten Slot hinzufügen"
+
+msgid "Delete selected"
+msgstr "Auswahl löschen"
+
+msgid "Delete selected slots"
+msgstr "Ausgewählte Slots löschen"
+
+msgid "Duplicate selected"
+msgstr "Auswahl duplizieren"
+
+msgid "Duplicate selected slots"
+msgstr "Ausgewählte Slots duplizieren"
+
+msgid "Align left edges"
+msgstr "Linke Kanten ausrichten"
+
+msgid "Center horizontally"
+msgstr "Horizontal zentrieren"
+
+msgid "Align right edges"
+msgstr "Rechte Kanten ausrichten"
+
+msgid "Distribute by center (horizontal)"
+msgstr "Nach Mitte verteilen (horizontal)"
+
+msgid "Distribute horizontally by center"
+msgstr "Horizontal nach Mitte verteilen"
+
+msgid "Distribute by gap (horizontal)"
+msgstr "Nach Abstand verteilen (horizontal)"
+
+msgid "Distribute horizontally by gap"
+msgstr "Horizontal nach Abstand verteilen"
+
+msgid "Align top edges"
+msgstr "Obere Kanten ausrichten"
+
+msgid "Center vertically"
+msgstr "Vertikal zentrieren"
+
+msgid "Align bottom edges"
+msgstr "Untere Kanten ausrichten"
+
+msgid "Distribute by center (vertical)"
+msgstr "Nach Mitte verteilen (vertikal)"
+
+msgid "Distribute vertically by center"
+msgstr "Vertikal nach Mitte verteilen"
+
+msgid "Distribute by gap (vertical)"
+msgstr "Nach Abstand verteilen (vertikal)"
+
+msgid "Distribute vertically by gap"
+msgstr "Vertikal nach Abstand verteilen"
+
+msgid "Filter layers…"
+msgstr "Ebenen filtern …"
+
+msgid "Clear filter"
+msgstr "Filter löschen"
+
+msgid "Hide layer"
+msgstr "Ebene ausblenden"
+
+msgid "Show layer"
+msgstr "Ebene anzeigen"
+
+msgid "Unlock layer"
+msgstr "Ebene entsperren"
+
+msgid "Lock layer"
+msgstr "Ebene sperren"
+
+msgid "Layer options"
+msgstr "Ebenenoptionen"
+
+msgid "Add Mask"
+msgstr "Maske hinzufügen"
+
+msgid "Delete layer"
+msgstr "Ebene löschen"
+
+msgid "Expand group"
+msgstr "Gruppe erweitern"
+
+msgid "Collapse group"
+msgstr "Gruppe reduzieren"
+
+msgid "Group"
+msgstr "Gruppieren"
+
+msgid "Ungroup"
+msgstr "Gruppierung aufheben"
+
+msgid "Layout canvas"
+msgstr "Layout-Arbeitsfläche"
+
+msgid "Drag to reposition mask"
+msgstr "Ziehen, um die Maske neu zu positionieren"
+
+msgid "Toggle guide lock"
+msgstr "Hilfsliniensperre umschalten"
+
+msgid "Delete guide"
+msgstr "Hilfslinie löschen"
+
+msgid "Rename group"
+msgstr "Gruppe umbenennen"
+
+msgid "Group name"
+msgstr "Gruppenname"
+
+msgid "Rename"
+msgstr "Umbenennen"
+
+msgid "Selection actions"
+msgstr "Auswahlaktionen"
+
+msgid "Ungroup (Ctrl+Shift+G)"
+msgstr "Gruppierung aufheben (Ctrl+Umschalt+G)"
+
+msgid "Unlock group"
+msgstr "Gruppe entsperren"
+
+msgid "Lock group"
+msgstr "Gruppe sperren"
+
+msgid "Show group"
+msgstr "Gruppe anzeigen"
+
+msgid "Hide group"
+msgstr "Gruppe ausblenden"
+
+msgid "Bring forward (])"
+msgstr "Nach vorne (])"
+
+msgid "Send backward ([)"
+msgstr "Nach hinten ([)"
+
+msgid "Group (Ctrl+G)"
+msgstr "Gruppieren (Ctrl+G)"
+
+msgid "Group selected slots"
+msgstr "Ausgewählte Slots gruppieren"
+
+msgid "Duplicate (Ctrl+D)"
+msgstr "Duplizieren (Ctrl+D)"
+
+msgid "Duplicate slot"
+msgstr "Slot duplizieren"
+
+msgid "Delete (Del)"
+msgstr "Löschen (Entf)"
+
+msgid "Delete slot"
+msgstr "Slot löschen"
+
+msgid "Builder Keyboard Shortcuts"
+msgstr "Builder-Tastenkürzel"
+
+msgid "Builder keyboard shortcuts reference"
+msgstr "Referenz der Builder-Tastenkürzel"
+
+msgid "File"
+msgstr "Datei"
+
+msgid "History"
+msgstr "Verlauf"
+
+msgid "Selection"
+msgstr "Auswahl"
+
+msgid "Nudge"
+msgstr "Verschieben"
+
+msgid "Z-order"
+msgstr "Z-Reihenfolge"
+
+msgid "Canvas"
+msgstr "Arbeitsfläche"
+
+msgid "Help"
+msgstr "Hilfe"
+
+msgid "Save template"
+msgstr "Vorlage speichern"
+
+msgid "Undo"
+msgstr "Rückgängig"
+
+msgid "Redo"
+msgstr "Wiederholen"
+
+msgid "Remove selected slot(s)"
+msgstr "Ausgewählte Slot(s) entfernen"
+
+msgid "Deselect all"
+msgstr "Auswahl aufheben"
+
+msgid "Duplicate selected slot(s)"
+msgstr "Ausgewählte Slot(s) duplizieren"
+
+msgid "Copy selected slot(s)"
+msgstr "Ausgewählte Slot(s) kopieren"
+
+msgid "Paste slot(s)"
+msgstr "Slot(s) einfügen"
+
+msgid "Group selected (2+) · or select all in group when already grouped"
+msgstr "Auswahl gruppieren (2+) · oder alle in der Gruppe auswählen, wenn bereits gruppiert"
+
+msgid "Ungroup selected group"
+msgstr "Ausgewählte Gruppe auflösen"
+
+msgid "Toggle slot in selection (layers panel)"
+msgstr "Slot in Auswahl umschalten (Ebenen-Panel)"
+
+msgid "Range select (layers panel)"
+msgstr "Bereichsauswahl (Ebenen-Panel)"
+
+msgid "Move selected slot 1%"
+msgstr "Ausgewählten Slot um 1 % verschieben"
+
+msgid "Move selected slot 10% (large)"
+msgstr "Ausgewählten Slot um 10 % verschieben (groß)"
+
+msgid "Move selected slot 0.1% (fine)"
+msgstr "Ausgewählten Slot um 0,1 % verschieben (fein)"
+
+msgid "Add new slot"
+msgstr "Neuen Slot hinzufügen"
+
+msgid "Toggle hand / pan tool"
+msgstr "Hand-/Verschiebewerkzeug umschalten"
+
+msgid "Return to select tool"
+msgstr "Zum Auswahlwerkzeug zurückkehren"
+
+msgid "Zoom in"
+msgstr "Vergrößern"
+
+msgid "Zoom out"
+msgstr "Verkleinern"
+
+msgid "Show this keyboard shortcuts reference"
+msgstr "Diese Tastenkürzel-Referenz anzeigen"
+
+msgid "Generate grid"
+msgstr "Raster generieren"
+
+msgid "Auto-grid generator"
+msgstr "Automatischer Rastergenerator"
+
+msgid "Rows"
+msgstr "Zeilen"
+
+msgid "Columns"
+msgstr "Spalten"
+
+msgid "Gap (%)"
+msgstr "Abstand (%)"
+
+msgid "Margin (%)"
+msgstr "Rand (%)"
+
+msgid "Replace existing slots"
+msgstr "Vorhandene Slots ersetzen"
+
+msgid "Preview ({{count}} slot)"
+msgstr "Vorschau ({{count}} Slot)"
+
+msgid "Preview ({{count}} slots)"
+msgstr "Vorschau ({{count}} Slots)"
+
+msgid "These settings leave no room for cells — reduce the gap or margin."
+msgstr "Diese Einstellungen lassen keinen Platz für Zellen — reduzieren Sie den Abstand oder Rand."
+
+msgid "Generate"
+msgstr "Generieren"
+
+msgid "Layers"
+msgstr "Ebenen"
+
+msgid "Media & Assets"
+msgstr "Medien und Assets"
+
+msgid "Properties"
+msgstr "Eigenschaften"
+
+msgid "Options"
+msgstr "Optionen"
+
+msgid "Export template…"
+msgstr "Vorlage exportieren …"
+
+msgid "Import from file…"
+msgstr "Aus Datei importieren …"
+
+msgid "Close editor"
+msgstr "Editor schließen"
+
+msgid "Generate grid…"
+msgstr "Raster generieren …"
+
+msgid "History…"
+msgstr "Verlauf …"
+
+msgid "View"
+msgstr "Ansicht"
+
+msgid "Panels"
+msgstr "Panels"
+
+msgid "Show grid"
+msgstr "Raster anzeigen"
+
+msgid "Show rulers"
+msgstr "Lineale anzeigen"
+
+msgid "Show measurements"
+msgstr "Messungen anzeigen"
+
+msgid "Clear guides"
+msgstr "Hilfslinien löschen"
+
+msgid "Reset layout"
+msgstr "Layout zurücksetzen"
+
+msgid "Layout workspace"
+msgstr "Layout-Arbeitsbereich"
+
+msgid "Shared across all templates"
+msgstr "Für alle Vorlagen gemeinsam"
+
+msgid "Save per template"
+msgstr "Pro Vorlage speichern"
+
+msgid "No history yet."
+msgstr "Noch kein Verlauf."
+
+msgid "Make a change to see the history."
+msgstr "Nehmen Sie eine Änderung vor, um den Verlauf zu sehen."
+
+msgid "History ({{count}})"
+msgstr "Verlauf ({{count}})"
+
+msgid "Undo (Ctrl+Z)"
+msgstr "Rückgängig (Ctrl+Z)"
+
+msgid "Redo (Ctrl+Shift+Z)"
+msgstr "Wiederholen (Ctrl+Umschalt+Z)"
+
+msgid "Jump to: {{label}}"
+msgstr "Springen zu: {{label}}"
+
+msgid "Jump to initial state"
+msgstr "Zum Ausgangszustand springen"
+
+msgid "Oldest state"
+msgstr "Ältester Zustand"
+
+msgid "Initial state"
+msgstr "Ausgangszustand"
+
+msgid "Open history"
+msgstr "Verlauf öffnen"
+
+msgid "You have unsaved changes. Discard them?"
+msgstr "Sie haben ungespeicherte Änderungen. Verwerfen?"
+
+msgid "Keep editing"
+msgstr "Weiter bearbeiten"
+
+msgid "Layout \"{{name}}\" saved"
+msgstr "Layout „{{name}}“ gespeichert"
+
+msgid "Save failed"
+msgstr "Speichern fehlgeschlagen"
+
+msgid "Guide deleted"
+msgstr "Hilfslinie gelöscht"
+
+msgid "{{count}} slot deleted"
+msgstr "{{count}} Slot gelöscht"
+
+msgid "{{count}} slots deleted"
+msgstr "{{count}} Slots gelöscht"
+
+msgid "{{count}} slot duplicated"
+msgstr "{{count}} Slot dupliziert"
+
+msgid "{{count}} slots duplicated"
+msgstr "{{count}} Slots dupliziert"
+
+msgid "Group created ({{count}} slots)"
+msgstr "Gruppe erstellt ({{count}} Slots)"
+
+msgid "Ungrouped"
+msgstr "Gruppierung aufgehoben"
+
+msgid "{{count}} media item assigned"
+msgstr "{{count}} Medienelement zugewiesen"
+
+msgid "{{count}} media items assigned"
+msgstr "{{count}} Medienelemente zugewiesen"
+
+msgid "Generated {{count}} slot"
+msgstr "{{count}} Slot generiert"
+
+msgid "Generated {{count}} slots"
+msgstr "{{count}} Slots generiert"
+
+msgid "Something went wrong in the Layout Editor"
+msgstr "Im Layout-Editor ist etwas schiefgelaufen"
+
+msgid "An unexpected error occurred. Close the editor and try again."
+msgstr "Ein unerwarteter Fehler ist aufgetreten. Schließen Sie den Editor und versuchen Sie es erneut."
+
+msgid "Close Editor"
+msgstr "Editor schließen"
+
+msgid "Unsaved changes"
+msgstr "Ungespeicherte Änderungen"
+
+msgid "Edit mode"
+msgstr "Bearbeitungsmodus"
+
+msgid "Preview mode"
+msgstr "Vorschaumodus"
+
+msgid "Exit preview"
+msgstr "Vorschau beenden"
+
+msgid "Auto"
+msgstr "Automatisch"
+
+msgid "Auto-fill (forward)"
+msgstr "Automatisch füllen (vorwärts)"
+
+msgid "Auto-fill (reverse)"
+msgstr "Automatisch füllen (rückwärts)"
+
+msgid "Shuffle & fill"
+msgstr "Mischen und füllen"
+
+msgid "Clear all assigns"
+msgstr "Alle Zuweisungen löschen"
+
+msgid "Search media…"
+msgstr "Medien suchen …"
+
+msgid "Search media"
+msgstr "Medien suchen"
+
+msgid "List view"
+msgstr "Listenansicht"
+
+msgid "Grid view"
+msgstr "Rasteransicht"
+
+msgid "Click or drag a media item to assign it to the selected slot."
+msgstr "Klicken oder ziehen Sie ein Medienelement, um es dem ausgewählten Slot zuzuweisen."
+
+msgid "Select a slot first, then choose media to assign."
+msgstr "Wählen Sie zuerst einen Slot, dann wählen Sie Medien zum Zuweisen."
+
+msgid "Assignments"
+msgstr "Zuweisungen"
+
+msgid "Slot {{n}}"
+msgstr "Slot {{n}}"
+
+msgid "Unassign"
+msgstr "Zuweisung aufheben"
+
+msgid "Unassign media from slot {{n}}"
+msgstr "Medienzuweisung von Slot {{n}} aufheben"
+
+msgid "No results."
+msgstr "Keine Ergebnisse."
+
+msgid "No media items available."
+msgstr "Keine Medienelemente verfügbar."
+
+msgid "Choose a campaign…"
+msgstr "Eine Kampagne auswählen …"
+
+msgid "Select campaign for media"
+msgstr "Kampagne für Medien auswählen"
+
+msgid "Add media"
+msgstr "Medien hinzufügen"
+
+msgid "Decorative assets, shared across campaigns. Drag onto the canvas to place."
+msgstr "Dekorative Assets, die von allen Kampagnen gemeinsam genutzt werden. Auf die Arbeitsfläche ziehen, um sie zu platzieren."
+
+msgid "Upload to library"
+msgstr "In Bibliothek hochladen"
+
+msgid "No design assets in library yet."
+msgstr "Noch keine Design-Assets in der Bibliothek."
+
+msgid "File type: {{type}}"
+msgstr "Dateityp: {{type}}"
+
+msgid "Tags: {{tags}}"
+msgstr "Schlagwörter: {{tags}}"
+
+msgid "Add tags"
+msgstr "Schlagwörter hinzufügen"
+
+msgid "Edit tags for {{name}}"
+msgstr "Schlagwörter für {{name}} bearbeiten"
+
+msgid "Add a tag…"
+msgstr "Ein Schlagwort hinzufügen …"
+
+msgid "Or paste image URL…"
+msgstr "Oder Bild-URL einfügen …"
+
+msgid "Image URL"
+msgstr "Bild-URL"
+
+msgid "Start from Template"
+msgstr "Aus Vorlage beginnen"
+
+msgid "Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation."
+msgstr "Wählen Sie ein voreingestelltes Layout als Ausgangspunkt. Sie können Slots, Formen und Eigenschaften nach der Erstellung anpassen."
+
+msgid "Campaign Cards"
+msgstr "Kampagnenkarten"
+
+msgid "Gallery Layout"
+msgstr "Galerie-Layout"
+
+msgid "Gallery Style"
+msgstr "Galeriestil"
+
+msgid "Gallery Navigation"
+msgstr "Galerienavigation"
+
+msgid "Campaign Viewer"
+msgstr "Kampagnen-Viewer"
+
+msgid "Integrations"
+msgstr "Integrationen"
+
+msgid "System & Admin"
+msgstr "System und Verwaltung"
+
+msgid "just now"
+msgstr "gerade eben"
+
+msgid "{{count}} minute ago"
+msgstr "vor {{count}} Minute"
+
+msgid "{{count}} minutes ago"
+msgstr "vor {{count}} Minuten"
+
+msgid "Unsaved settings found"
+msgstr "Ungespeicherte Einstellungen gefunden"
+
+msgid "You have unsaved settings changes from {{age}}. Would you like to restore them?"
+msgstr "Sie haben ungespeicherte Einstellungsänderungen von {{age}}. Möchten Sie sie wiederherstellen?"
+
+msgid "Make a change to see history."
+msgstr "Nehmen Sie eine Änderung vor, um den Verlauf zu sehen."
+
+msgid "Editing "
+msgstr "Bearbeiten des "
+
+msgid " layout — moves and resizes apply to this breakpoint only"
+msgstr "-Layouts — Verschiebungen und Größenänderungen gelten nur für diesen Breakpoint"
+
+msgid "{{w}} × {{h}}px"
+msgstr "{{w}} × {{h}}px"
+
+msgid "Double-click to add a slot"
+msgstr "Doppelklicken, um einen Slot hinzuzufügen"
+
+msgid "or drag media from the panel"
+msgstr "oder Medien aus dem Panel ziehen"
+
+msgid "Media ({{count}})"
+msgstr "Medien ({{count}})"
+
+msgid "Archive Campaign"
+msgstr "Kampagne archivieren"
+
+msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
+msgstr "Möchten Sie „{{title}}“ wirklich archivieren? Diese Aktion markiert sie als archiviert."
+
+msgid "Pick from Media Library"
+msgstr "Aus der Mediathek auswählen"
+
+msgid "Refresh"
+msgstr "Aktualisieren"
+
+msgid "Load Library"
+msgstr "Bibliothek laden"
+
+msgid "Search media..."
+msgstr "Medien suchen..."
+
+msgid "Search media library"
+msgstr "Mediathek durchsuchen"
+
+msgid "Click \"Load Library\" to browse existing media"
+msgstr "Klicken Sie auf „Bibliothek laden“, um vorhandene Medien zu durchsuchen"
+
+msgid "Media already added to campaign"
+msgstr "Medium bereits zur Kampagne hinzugefügt"
+
+msgid "Add {{type}} media: {{label}}"
+msgstr "{{type}}-Medium hinzufügen: {{label}}"
+
+msgid "Added"
+msgstr "Hinzugefügt"
+
+msgid "✏️ Editor"
+msgstr "✏️ Editor"
+
+msgid "👑 Owner"
+msgstr "👑 Eigentümer"
+
+msgid "Can read campaign content only"
+msgstr "Kann nur Kampagneninhalte lesen"
+
+msgid "Can edit metadata and media; cannot manage access or builder"
+msgstr "Kann Metadaten und Medien bearbeiten; kann Zugriff oder Builder nicht verwalten"
+
+msgid "Full campaign control including access management and builder"
+msgstr "Volle Kampagnenkontrolle einschließlich Zugriffsverwaltung und Builder"
+
+msgid "Company-wide access"
+msgstr "Unternehmensweiter Zugriff"
+
+msgid "Direct campaign access"
+msgstr "Direkter Kampagnenzugriff"
+
+msgid "This grant has expired"
+msgstr "Diese Berechtigung ist abgelaufen"
+
+msgid "Grant expires at this time"
+msgstr "Die Berechtigung läuft zu diesem Zeitpunkt ab"
+
+msgid "Expires: {{date}}"
+msgstr "Läuft ab: {{date}}"
+
+msgid "Revoke company-wide access"
+msgstr "Unternehmensweiten Zugriff widerrufen"
+
+msgid "Revoke campaign access"
+msgstr "Kampagnenzugriff widerrufen"
+
+msgid "Configure how the gallery authenticates with the WordPress REST API."
+msgstr "Konfigurieren Sie, wie sich die Galerie bei der WordPress-REST-API authentifiziert."
+
+msgid "Configure default display settings for galleries."
+msgstr "Konfigurieren Sie die Standard-Anzeigeeinstellungen für Galerien."
+
+msgid "Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute."
+msgstr "Globales Erscheinungsbild der Authentifizierungsleiste. Pro Seite mit dem Shortcode-Attribut auth_bar_mode überschreiben."
+
+msgid "Floating (circular icon, bottom-right)"
+msgstr "Schwebend (rundes Symbol, unten rechts)"
+
+msgid "Draggable (movable floating icon)"
+msgstr "Verschiebbar (bewegliches schwebendes Symbol)"
+
+msgid "Bar (full-width sticky bar)"
+msgstr "Leiste (fixierte Leiste über volle Breite)"
+
+msgid "Auto-hide (bar hides on scroll)"
+msgstr "Automatisch ausblenden (Leiste wird beim Scrollen ausgeblendet)"
+
+msgid "Minimal (thin strip, ≤32px)"
+msgstr "Minimal (schmaler Streifen, ≤32px)"
+
+msgid "How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page."
+msgstr "Wie die Authentifizierungsleiste auf allen Galerieseiten erscheint. Verwenden Sie das Shortcode-Attribut auth_bar_mode, um es auf einer bestimmten Seite zu überschreiben."
+
+msgid "Minimum distance from viewport edges when dragging (draggable mode only)."
+msgstr "Mindestabstand von den Viewport-Rändern beim Ziehen (nur im verschiebbaren Modus)."
+
+msgid "Configure caching and performance settings."
+msgstr "Konfigurieren Sie Caching- und Leistungseinstellungen."
+
+msgid "WordPress JWT (Recommended)"
+msgstr "WordPress-JWT (empfohlen)"
+
+msgid "None (Public Access Only)"
+msgstr "Keine (nur öffentlicher Zugriff)"
+
+msgid "Select the authentication method for REST API access."
+msgstr "Wählen Sie die Authentifizierungsmethode für den REST-API-Zugriff."
+
+msgid "Test Connection"
+msgstr "Verbindung testen"
+
+msgid "Leave empty to use the current site URL. Only change this for multi-site or headless setups."
+msgstr "Leer lassen, um die aktuelle Website-URL zu verwenden. Ändern Sie dies nur bei Multisite- oder Headless-Setups."
+
+msgid "Default"
+msgstr "Standard"
+
+msgid "Default Dark"
+msgstr "Standard Dunkel"
+
+msgid "Default Light"
+msgstr "Standard Hell"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "Material Dark"
+msgstr "Material Dunkel"
+
+msgid "Material Light"
+msgstr "Material Hell"
+
+msgid "Darcula"
+msgstr "Darcula"
+
+msgid "Nord"
+msgstr "Nord"
+
+msgid "Solarized"
+msgstr "Solarized"
+
+msgid "Solarized Dark"
+msgstr "Solarized Dunkel"
+
+msgid "Solarized Light"
+msgstr "Solarized Hell"
+
+msgid "Accessibility"
+msgstr "Barrierefreiheit"
+
+msgid "High Contrast"
+msgstr "Hoher Kontrast"
+
+msgid "Community"
+msgstr "Community"
+
+msgid "Catppuccin Mocha"
+msgstr "Catppuccin Mocha"
+
+msgid "Catppuccin Latte"
+msgstr "Catppuccin Latte"
+
+msgid "Tokyo Night"
+msgstr "Tokyo Night"
+
+msgid "Gruvbox Dark"
+msgstr "Gruvbox Dark"
+
+msgid "GitHub Light"
+msgstr "GitHub Light"
+
+msgid "Neon"
+msgstr "Neon"
+
+msgid "Cyberpunk"
+msgstr "Cyberpunk"
+
+msgid "Synthwave '84"
+msgstr "Synthwave '84"
+
+msgid "Artistic"
+msgstr "Künstlerisch"
+
+msgid "Sunset Boulevard"
+msgstr "Sunset Boulevard"
+
+msgid "Ocean Breeze"
+msgstr "Ocean Breeze"
+
+msgid "Crimson Canvas"
+msgstr "Crimson Canvas"
+
+msgid "Forest Whisper"
+msgstr "Forest Whisper"
+
+msgid "Midnight Rose"
+msgstr "Midnight Rose"
+
+msgid "Seasonal"
+msgstr "Saisonal"
+
+msgid "Halloween"
+msgstr "Halloween"
+
+msgid "Reverse Halloween"
+msgstr "Umgekehrtes Halloween"
+
+msgid "Default color theme for gallery display. Users can override this if allowed below."
+msgstr "Standard-Farb-Theme für die Galerieanzeige. Benutzer können dies überschreiben, wenn unten erlaubt."
+
+msgid "Allow visitors to switch themes via the gallery UI."
+msgstr "Besuchern erlauben, Themes über die Galerie-Benutzeroberfläche zu wechseln."
+
+msgid "When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors."
+msgstr "Wenn deaktiviert, verwendet die Galerie immer das oben ausgewählte Theme und blendet das Theme-Auswahlfeld für Besucher aus."
+
+msgid "Keep React DevTools names and emit DOM component markers in deployed builds."
+msgstr "React-DevTools-Namen beibehalten und DOM-Komponentenmarkierungen in bereitgestellten Builds ausgeben."
+
+msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "Fügt explizite Komponentennamen für React DevTools in Produktions-Builds hinzu und injiziert data-wpsg-component/data-wpsg-slot-Attribute für die Elementinspektion im Browser, QA-Selektoren und das Debugging der UI-Oberfläche."
+
+msgid "Enable smooth animations and transitions."
+msgstr "Flüssige Animationen und Übergänge aktivieren."
+
+msgid "Disable for better performance on low-end devices."
+msgstr "Für bessere Leistung auf leistungsschwachen Geräten deaktivieren."
+
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+msgid "10 seconds"
+msgstr "10 Sekunden"
+
+msgid "30 seconds"
+msgstr "30 Sekunden"
+
+msgid "1 minute"
+msgstr "1 Minute"
+
+msgid "5 minutes"
+msgstr "5 Minuten"
+
+msgid "15 minutes"
+msgstr "15 Minuten"
+
+msgid "20 minutes"
+msgstr "20 Minuten"
+
+msgid "30 minutes"
+msgstr "30 Minuten"
+
+msgid "45 minutes"
+msgstr "45 Minuten"
+
+msgid "1 hour"
+msgstr "1 Stunde"
+
+msgid "2 hours"
+msgstr "2 Stunden"
+
+msgid "4 hours"
+msgstr "4 Stunden"
+
+msgid "8 hours"
+msgstr "8 Stunden"
+
+msgid "12 hours"
+msgstr "12 Stunden"
+
+msgid "1 day"
+msgstr "1 Tag"
+
+msgid "3 days"
+msgstr "3 Tage"
+
+msgid "1 week"
+msgstr "1 Woche"
+
+msgid "How long to cache API responses. Higher values improve performance but show stale data."
+msgstr "Wie lange API-Antworten zwischengespeichert werden. Höhere Werte verbessern die Leistung, zeigen aber veraltete Daten."
+
+msgid "Super Gallery Settings"
+msgstr "Super Gallery-Einstellungen"
+
+msgid "Testing..."
+msgstr "Test läuft …"
+
+msgid "Connection failed"
+msgstr "Verbindung fehlgeschlagen"
+
+msgid "Request failed"
+msgstr "Anfrage fehlgeschlagen"
+
+msgid "Authentication test was rejected. Refresh the page and try again."
+msgstr "Der Authentifizierungstest wurde abgelehnt. Aktualisieren Sie die Seite und versuchen Sie es erneut."
+
+msgid "Unexpected server response while testing authentication."
+msgstr "Unerwartete Serverantwort beim Testen der Authentifizierung."
+
+msgid "Authentication"
+msgstr "Authentifizierung"
+
+msgid "Auth Provider"
+msgstr "Authentifizierungsanbieter"
+
+msgid "API Base URL"
+msgstr "API-Basis-URL"
+
+msgid "Display Settings"
+msgstr "Anzeigeeinstellungen"
+
+msgid "Allow User Theme Override"
+msgstr "Theme-Überschreibung durch Benutzer erlauben"
+
+msgid "Component Debug Names & Markers"
+msgstr "Komponenten-Debug-Namen und -Markierungen"
+
+msgid "Drag Margin (px)"
+msgstr "Ziehrand (px)"
+
+msgid "Performance"
+msgstr "Leistung"
+
+msgid "Cache Duration"
+msgstr "Cache-Dauer"
+
+msgid "Save Settings"
+msgstr "Einstellungen speichern"
+
+msgid "Shortcode Usage"
+msgstr "Shortcode-Verwendung"
+
+msgid "Embed a gallery using the following shortcode:"
+msgstr "Betten Sie eine Galerie mit dem folgenden Shortcode ein:"
+
+msgid "Shortcode Attributes"
+msgstr "Shortcode-Attribute"
+
+msgid "Attribute"
+msgstr "Attribut"
+
+msgid "Campaign slug or ID to display"
+msgstr "Anzuzeigender Kampagnen-Slug oder -ID"
+
+msgid "Filter by company slug"
+msgstr "Nach Unternehmens-Slug filtern"
+
+msgid "Use compact display mode"
+msgstr "Kompakten Anzeigemodus verwenden"
+
+msgid "Permission denied."
+msgstr "Zugriff verweigert."
+
+msgid "Connection failed: %s"
+msgstr "Verbindung fehlgeschlagen: %s"
+
+msgid "API connection successful!"
+msgstr "API-Verbindung erfolgreich!"
+
+msgid "API reachable. Authentication required for protected endpoints."
+msgstr "API erreichbar. Authentifizierung für geschützte Endpunkte erforderlich."
+
+msgid "Unexpected response: HTTP %d"
+msgstr "Unerwartete Antwort: HTTP %d"
+
+msgid "Gallery Editor"
+msgstr "Galerie-Editor"
+
+msgid "Sort campaigns"
+msgstr "Kampagnen sortieren"
