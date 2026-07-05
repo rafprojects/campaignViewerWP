@@ -160,7 +160,9 @@ jobs:
           cd wp-plugin
           zip -r "../${ZIP_NAME}" wp-super-gallery \
             -x "wp-super-gallery/tests/*" \
+            -x "wp-super-gallery/phpunit/*" \
             -x "wp-super-gallery/phpunit.xml.dist" \
+            -x "wp-super-gallery/phpcs.xml" \
             -x "wp-super-gallery/.phpunit.result.cache" \
             -x "wp-super-gallery/composer.json" \
             -x "wp-super-gallery/composer.lock" \

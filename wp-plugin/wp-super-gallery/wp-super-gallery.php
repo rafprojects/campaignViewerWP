@@ -5,7 +5,7 @@
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
  * Version:           0.90.0
  * Requires at least: 6.4
- * Tested up to:      6.7
+ * Tested up to:      7.0
  * Requires PHP:      8.2
  * Author:            WP Super Gallery
  * Author URI:        https://github.com/rafprojects/wp-super-gallery
