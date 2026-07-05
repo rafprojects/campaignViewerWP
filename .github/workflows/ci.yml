@@ -151,7 +151,7 @@ jobs:
 
       - name: Download WordPress core and test library
         run: |
-          WP_VERSION=6.7
+          WP_VERSION=7.0
           # WordPress core — needed as ABSPATH for the test bootstrap
           curl -s -o /tmp/wordpress.tar.gz "https://wordpress.org/wordpress-${WP_VERSION}.tar.gz"
           tar -xzf /tmp/wordpress.tar.gz -C /tmp/

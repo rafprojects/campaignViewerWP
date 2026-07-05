@@ -710,7 +710,7 @@ These tests verify that deactivation + deletion properly cleans up (or preserves
 |---|------|----------|
 | 1 | Open `LICENSE.md` at the repository root. | File exists and contains the full GPLv2 text ("GNU GENERAL PUBLIC LICENSE, Version 2, June 1991"). |
 | 2 | Open `wp-plugin/wp-super-gallery/LICENSE`. | File exists and matches the repo-root LICENSE.md content. |
-| 3 | Open `wp-plugin/wp-super-gallery/wp-super-gallery.php`. Inspect the plugin file header comment. | Header includes: `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, `Requires at least: 6.0`, `Tested up to: 6.7`, `Requires PHP: 8.0`, `Text Domain: wp-super-gallery`. |
+| 3 | Open `wp-plugin/wp-super-gallery/wp-super-gallery.php`. Inspect the plugin file header comment. | Header includes: `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, `Requires at least: 6.4`, `Tested up to: 7.0`, `Requires PHP: 8.2`, `Text Domain: wp-super-gallery`. |
 | 4 | Run the WordPress.org plugin header validator (or manually compare against [the required headers list](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/)). | All required fields present and correctly formatted. |
 
 ---

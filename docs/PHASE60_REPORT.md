@@ -1,8 +1,8 @@
 # Phase 60 - Release / Store-Readiness (Freemius-targeted)
 
-**Status:** In Progress
+**Status:** Complete (2026-07-05)
 **Created:** 2026-06-26
-**Last updated:** 2026-07-04
+**Last updated:** 2026-07-05
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P60-C | Plugin Check + escaping/sanitization compliance pass | ✅ Done (2026-07-04) — 1 residual PC error is the readme "Tested up to" bump, a P60-F dependency | Medium |
 | P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | ✅ Done (2026-07-04) | Medium |
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | ✅ Done (2026-07-05) — text deliverables complete; banner/icon/screenshot artwork spec'd but pending a designer/capture pass | Small-Medium |
-| P60-F | Release packaging + final cross-version/browser QA | ✅ Done (2026-07-05) — packaging leak fixed, version SoT + Tested-up-to→7.0 (+6.4-floor scan), JS 3641 + PHPUnit 1072/13098 green (live on WP 7.0), build green; only a manual install/uninstall click-through remains | Small-Medium |
+| P60-F | Release packaging + final cross-version/browser QA | ✅ Done (2026-07-05) — packaging leak fixed, version SoT + Tested-up-to→7.0 (+6.4-floor scan), JS 3641 + PHPUnit 1072/13098 green (live on WP 7.0), build green, manual install/uninstall smoke confirmed (both preserve-data branches) | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
 | P60-H | Localization — shipped language packs (fr_FR, es_ES, de_DE, zh_CN, ru_RU) | ✅ Done (2026-07-03) | Medium |
 | P60-I | Admin-panel internationalization (harvest → t(), lint flip, translate) | ✅ Done (2026-07-04) | XL (phase-sized) |
@@ -403,11 +403,12 @@ sit inside the truthful `6.4 → 7.0` window and are not blocked.
 - The authoritative multi-PHP gate remains **CI** (`ci.yml` `test-php` matrix), verified to
   cover **8.2 / 8.3 / 8.4**; the local run above executed on the wp-env container's PHP.
 
-**Remaining (manual, recommended before cutting the release).** A full click-through
-**install → activate → uninstall** on the WP 7.0 test server to confirm the `uninstall.php`
-cleanup and the `preserve_data_on_uninstall` opt-out end-to-end (activation is already
-exercised by the live PHPUnit run; the uninstall *data-removal* path is unit-covered but a
-real-site pass is the belt-and-suspenders check).
+**Manual install → activate → uninstall smoke — ✅ confirmed (2026-07-05, WP 7.0 test
+server).** Both branches of the `preserve_data_on_uninstall` toggle verified end-to-end on a
+real site: with the toggle **enabled**, plugin data is **preserved** on delete; with it
+**disabled**, data is **removed** (`uninstall.php` cleanup path). This was the one acceptance
+item not machine-verifiable (the toggle is awkward to exercise in unit tests); with it
+confirmed, every P60-F acceptance criterion is now satisfied.
 
 ## Track P60-G - i18n runtime: front-end (i18next) locale delivery
 
@@ -600,8 +601,43 @@ Executed **in area-batches**; each batch is self-contained and independently shi
 
 ## Outcome
 
-_To be completed once the phase ships._
+Phase 60 is complete — all nine tracks (A–I) landed. The plugin moved from
+"feature-complete" to "release/store-ready."
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+**What shipped.**
+
+- **Metadata & i18n foundation (A, B, G, H, I).** Version single-source-of-truth reconciled
+  at `0.90.0`; the `.pot` template plus a unified PHP↔React (i18next) gettext bridge; five
+  complete shipped language packs (fr_FR, es_ES, de_DE, zh_CN, ru_RU); and a global
+  `no-literal-string` enforcement flip covering the admin panel.
+- **Compliance & quality (C, D).** A durable, CI-wired PHPCS/WPCS security gate; four
+  dependency CVEs eliminated (`composer audit` clean); Plugin Check shipped-error count
+  driven to zero; and an accessibility pass extending the axe critical/serious baseline to
+  the main admin flows.
+- **Store readiness (E, F).** A GDPR/privacy statement accurate to real data handling, a
+  buyer-facing install/troubleshooting guide, a corrected `readme.txt` (the documented
+  shortcode was wrong), and a store-asset spec. Release packaging hardened (dev-file leak
+  fixed), version SoT verified, `Tested up to` bumped to **7.0** and validated by a live
+  PHPUnit run (**1072 tests / 13098 assertions**) plus a manual install/uninstall smoke on
+  a WP 7.0 site (both preserve-data branches). CI's `WP_VERSION` bumped 6.7 → 7.0 so the
+  ceiling is validated on every run. A post-6.4 core-API scan confirmed `Requires at least:
+  6.4` is truthful.
+
+**What was deferred** (all captured in `docs/FUTURE_TASKS.md`):
+
+- **Store artwork** — banner/icon/screenshots are spec'd (`.wordpress-org/README.md`) but
+  need a designer + a seeded-wp-env screenshot-capture pass.
+- **Privacy & Compliance** — WordPress core DSAR export/erase integration (highest-value),
+  auto-purge/retention for the email + audit-log tables, a PHP-side Sentry PII scrubber, and
+  per-day analytics salt rotation. All documented honestly in `PRIVACY.md` as known gaps.
+- **Full WCAG-AA audit** — the WP.org-tier accessibility gate beyond the critical/serious
+  baseline (pre-existing follow-on).
+- **Native-speaker review** of the five machine-translated language packs.
+
+**What should happen next.**
+
+- **Phase 61** — front-end i18n literal-string completeness audit (81 violations already
+  scoped in `docs/PHASE61_REPORT.md`).
+- **Phase 62** — Freemius monetization/licensing.
+- Before the first paid release: produce the store artwork and decide whether to fold the
+  DSAR privacy integration into a dedicated track.
