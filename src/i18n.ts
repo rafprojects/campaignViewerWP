@@ -44,6 +44,14 @@ i18n.use(initReactI18next).init({
   fallbackLng: 'en',
   defaultNS: 'wpsg',
   resources,
+  // P60 review: our catalogue keys are flat, literal strings (e.g.
+  // `set_sg_compact-grid_gridCardAspectRatio_opt_16:9`) — several aspect-ratio
+  // option keys contain ':'. i18next's default nsSeparator (':') / keySeparator
+  // ('.') would parse those as namespace/nested lookups, making the colon-bearing
+  // keys unresolvable (they'd silently fall back to the English default and could
+  // never be localised). Disable both so keys are matched verbatim.
+  keySeparator: false,
+  nsSeparator: false,
   interpolation: {
     escapeValue: false,
   },

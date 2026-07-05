@@ -185,6 +185,19 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation
+
+**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass".
+
+**Context:** Two low-severity, English-safe i18n items surfaced by the review:
+
+1. **Sentence composition (F3).** `ArchiveCompanyModal.tsx` assembles its confirmation from `admin_archco_msg_pre` + `<strong>{name}</strong>` + `admin_archco_msg_post` fragments — fine in English but not word-order-portable for other locales. Fix via a `<Trans>` component so translators get one reorderable unit. Worth a quick sweep for other split-sentence-around-a-node cases while there.
+2. **Locale re-translation.** F2 changed the media-import toast source strings and added `_other` plural siblings (`admin_media_imported`, `admin_media_imported_skipped`). The five packs (fr/es/de/zh/ru) now fall back to correct English for that one toast until re-translated. Fold in the tracked `ru_RU` 3-form plural for the password-length string at the same time. Regenerate via `npm run i18n:generate` → `wp i18n make-pot`, then update the `.po/.mo`.
+
+**Effort:** Low | **Impact:** Low (English-safe); improves non-English fidelity.
+
+---
+
 ## Accessibility
 
 ### Full WCAG AA Audit
@@ -451,3 +464,5 @@ When promoting future tasks to an active phase:
 *Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
 
 *Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
+
+*Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*

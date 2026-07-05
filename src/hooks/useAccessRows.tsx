@@ -67,7 +67,7 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
             <Stack gap={2}>
               <Tooltip label={a.source === 'company' ? t('accessrow_src_company_tip', 'Company-wide access') : t('accessrow_src_campaign_tip', 'Direct campaign access')}>
                 <Badge variant="light" color={a.source === 'company' ? 'blue' : 'green'}>
-                  {a.source === 'company' ? t('admin_access_view_company', '🏢 Company') : t('admin_access_view_campaign', '📋 Campaign')}
+                  {a.source === 'company' ? t('accessrow_src_company', '🏢 Company') : t('accessrow_src_campaign', '📋 Campaign')}
                 </Badge>
               </Tooltip>
               {isExpired && (

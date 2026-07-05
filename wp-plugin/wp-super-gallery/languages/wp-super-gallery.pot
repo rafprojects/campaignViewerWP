@@ -808,11 +808,19 @@ msgid "Media ZIP import failed"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:170
-msgid "Imported {{count}} media item(s)."
+msgid "Imported {{count}} media item."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:171
-msgid "Imported {{count}} media item(s) ({{skipped}} skipped)."
+msgid "Imported {{count}} media items."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:172
+msgid "Imported {{count}} media item ({{skipped}} skipped)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:173
+msgid "Imported {{count}} media items ({{skipped}} skipped)."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:172

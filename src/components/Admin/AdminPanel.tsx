@@ -304,8 +304,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     try {
       const result = await apiClient.importMediaLibraryBinary(file);
       const msg = result.skipped.length > 0
-        ? t('admin_media_imported_skipped', 'Imported {{count}} media item(s) ({{skipped}} skipped).', { count: result.imported.length, skipped: result.skipped.length })
-        : t('admin_media_imported', 'Imported {{count}} media item(s).', { count: result.imported.length });
+        ? t('admin_media_imported_skipped', 'Imported {{count}} media item ({{skipped}} skipped).', { count: result.imported.length, skipped: result.skipped.length })
+        : t('admin_media_imported', 'Imported {{count}} media item.', { count: result.imported.length });
       onNotify({ type: 'success', text: msg });
     } catch (err) {
       onNotify({ type: 'error', text: (err instanceof Error ? err.message : t('admin_media_zip_import_failed', 'Media ZIP import failed')) });

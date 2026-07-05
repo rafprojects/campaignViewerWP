@@ -599,6 +599,72 @@ Executed **in area-batches**; each batch is self-contained and independently shi
 
 - Record completed work at a high level as tracks land. Keep short and factual.
 
+## Post-Phase PR / Code-Review Pass (2026-07-05)
+
+After all nine tracks landed, the full Phase 60 branch (`main..HEAD` — 159 files,
+~55k insertions) was put through a reviewer pass **as if it were a PR**. There is no
+open PR for the branch, so the `git-address-comments` PR-thread plumbing (verify
+branch, pull/resolve threads, request Copilot review) was intentionally skipped; the
+branch commits themselves were the review target. Method: a multi-agent
+`/code-review` at high effort — eight finder angles (three correctness, three cleanup,
+altitude, conventions) partitioned across the diff by concern (PHP, i18n build tooling
++ core TS, the i18n `.tsx` sweep, CI/release/config, language packs, cleanup), then a
+recall-biased verify pass and triage.
+
+**Clean-bill areas.** The PHP hardening + i18n migration (25 files), the CI /
+release / packaging / version-SoT config, and the five language packs all reviewed
+clean. Two things worth recording: (1) the `wp_count_terms()` signature migration,
+the `embed.php` → `WPSG_Frontend_Strings` bridge, and the new
+`sanitize_text_field(wp_unslash($_SERVER…))` reads were each vetted for behavior
+preservation and found correct; (2) the flagged **"CI targets a non-existent WP 7.0"**
+concern was **disproven by a live check** — `api.wordpress.org` lists 7.0 as current
+(as of 2026-07-05), the tarball returns 200, and both the `wordpress-develop` 7.0
+branch and the `WordPress/WordPress#7.0` tag exist, so CI, `.wp-env.json`, and
+`release.yml` all resolve. Language-pack placeholder integrity was perfect (214
+placeholder-bearing msgids/locale, zero drops) and `ru_RU` correctly declares
+`nplurals=3`.
+
+### Findings & disposition
+
+| # | Area | Severity | Verdict | Detail |
+|---|------|----------|---------|--------|
+| F1 | `src/i18n.ts` | **Material** | **Fixed** | i18next's default `nsSeparator` (`:`) / `keySeparator` (`.`) were left enabled against a **flat** catalogue. The 14 aspect-ratio option keys containing a colon (e.g. `set_sg_compact-grid_gridCardAspectRatio_opt_16:9`) were parsed as `namespace:key` and could **never** resolve — they silently fell back to the English default and were unlocalizable in every locale. Runtime-confirmed by the finder. |
+| F2 | `admin_media_imported` (+`_skipped`) | Low–med | **Fixed** | The only `{{count}}` string family in the catalogue with **no `_other` plural sibling**; the i18n sweep replaced the original `media item${len!==1?'s':''}` logic with a static `media item(s)`. A broad sweep confirmed the other 20 `{{count}}` keys are parenthetical/stat/always-plural, not regressions. |
+| F4 | `src/hooks/useAccessRows.tsx` | Low | **Fixed** | The per-row access-source badge reused `admin_access_view_company/_campaign` — the same keys AccessTab uses for its "View By" control. Gave the badge its own `accessrow_src_company/_campaign` keys (co-located with the sibling `_tip` keys). |
+| F3 | `ArchiveCompanyModal.tsx` | Low | **Deferred** | Confirmation sentence is composed from `_pre` + `<strong>{name}</strong>` + `_post` fragments — English-safe but not word-order-portable for other locales. A proper fix needs a `<Trans>` component (a pattern not otherwise used here); not worth the refactor risk on a release branch. → `FUTURE_TASKS`. |
+| — | `ru_RU` password-length plural | Low | **Deferred** | The English source offers only two buckets (`character`/`characters`); Russian needs three. Residual of the already-tracked "ru 3-plural follow-up"; purely theoretical unless the enforced minimum ever renders as 2–4. Source-i18n design, not a `.po` defect. |
+| — | `src/main.tsx` CloseButton `useMemo` | — | **Rejected** | Claim: the `i18n.t('common_close')` aria-label is frozen because the memo keys only on `[mantineTheme]`. Not a defect: `i18n.init()` runs **synchronously** at module load with the PHP-injected active-locale strings *before* first render, and this app has no runtime locale switching, so the memoized value is correct and never needs to recompute. |
+| C1–C4 | i18n refactor cleanup | Cleanup | **Deferred** | DRY nits: a shared `tBreakpointLabel` helper for the `admin_bp_${bp}` resolver duplicated across ~4 files; inconsistent fallbacks for the same key in `LayoutBuilderCanvasPanel`; two English strings harvested under parallel key families; and the `CAPABILITY_I18N_KEYS` map paralleling `CAPABILITY_LABELS`. The last is **type-guarded** (`Record<AdapterCapability,string>` → a missing key is a compile error, not a runtime `t(undefined)`), and the "double-translation" concern is moot because `make-pot` dedups identical msgids. Maintainability only; refactor churn not warranted at release. |
+
+### Fixes applied
+
+- **F1** — `src/i18n.ts`: added `keySeparator: false, nsSeparator: false` to `init()`
+  (keys are flat, literal strings; several contain `:`). Updated `src/i18n.test.ts` to
+  resolve **bare** keys (matching production's `useTranslation('wpsg')` + `defaultNS`,
+  which never used the `wpsg:` prefix the old tests did) and **added a regression test**
+  asserting a colon-bearing key resolves to its injected value.
+- **F2** — `src/i18n-strings.en.json`: `admin_media_imported` → singular base +
+  `admin_media_imported_other`; same for the `_skipped` pair. Updated the call-site
+  defaults in `AdminPanel.tsx`, regenerated the PHP manifest (`npm run i18n:generate`),
+  and **surgically** updated `wp-super-gallery.pot` (two entries → four; a full `make-pot`
+  was rejected because it reorders the whole file — verified the fresh vs. committed
+  msgid **sets are identical apart from these four**, so the 4.6k-line reorder diff was
+  pure churn). The five locale `.po/.mo` now fall back to correct English for this one
+  toast until re-translated (translator follow-on; runtime is unaffected — `.pot` isn't
+  loaded at runtime and isn't CI-gated).
+- **F4** — added `accessrow_src_company/_campaign` to the catalogue + PHP manifest and
+  pointed the badge at them. No new `.pot` entry (identical English `🏢 Company` / `📋
+  Campaign` msgids already exist), so **zero** added translator burden; this only
+  decouples the i18next keys so the two UI roles can diverge in source later.
+
+### QA (no regressions)
+
+- **Build** (`tsc -b && vite build`): PASS.
+- **Lint** (`eslint .`, incl. the `i18next/no-literal-string` enforcement): PASS, 0 errors.
+- **Unit tests** (`vitest run`): **236 files / 3642 tests passed, 0 failed, 0 skipped**
+  (+1 vs. the pre-review 3641 — the new colon-key regression test). CI's i18n manifest
+  freshness gate (`npm run i18n:check`) passes.
+
 ## Outcome
 
 Phase 60 is complete — all nine tracks (A–I) landed. The plugin moved from
