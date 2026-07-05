@@ -13,7 +13,7 @@
 | P60-C | Plugin Check + escaping/sanitization compliance pass | ✅ Done (2026-07-04) — 1 residual PC error is the readme "Tested up to" bump, a P60-F dependency | Medium |
 | P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | ✅ Done (2026-07-04) | Medium |
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | ✅ Done (2026-07-05) — text deliverables complete; banner/icon/screenshot artwork spec'd but pending a designer/capture pass | Small-Medium |
-| P60-F | Release packaging + final cross-version/browser QA | ✅ Done (2026-07-05) — packaging leak fixed, version SoT + Tested-up-to→7.0 done, JS suites+build green; live-WP install/uninstall smoke + cross-PHP PHPUnit are CI/test-server gated (no local Docker) | Small-Medium |
+| P60-F | Release packaging + final cross-version/browser QA | ✅ Done (2026-07-05) — packaging leak fixed, version SoT + Tested-up-to→7.0 (+6.4-floor scan), JS 3641 + PHPUnit 1072/13098 green (live on WP 7.0), build green; only a manual install/uninstall click-through remains | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
 | P60-H | Localization — shipped language packs (fr_FR, es_ES, de_DE, zh_CN, ru_RU) | ✅ Done (2026-07-03) | Medium |
 | P60-I | Admin-panel internationalization (harvest → t(), lint flip, translate) | ✅ Done (2026-07-04) | XL (phase-sized) |
@@ -382,23 +382,32 @@ header and `readme.txt`, resolving the lone remaining Plugin Check error carried
 P60-C. Per user direction (test server runs WP 7.0), also **pinned** `.wp-env.json`
 `core: null → "WordPress/WordPress#7.0"` so the tested-up-to claim is reproducibly exercised
 in CI rather than testing against a nondeterministic "latest". `Requires at least` kept at
-`6.4` (long-standing declared floor; a post-6.4 core-API scan is logged as an optional
-follow-on — 6.7→7.0 users sit inside the `6.4 → 7.0` supported window and are not blocked).
+`6.4` — **and a post-6.4 core-API scan confirms that floor is truthful.** Extracted the
+plugin's full WP-core call surface (574 distinct `wp_*`/`WP_*`/`get_*`/`register_*`/… calls
+across all non-vendor PHP) and cross-checked every recent-API candidate: none resolved to a
+real post-6.4 core call. `wp_register_script_module` (6.5) / `wp_print_font_faces` (6.4) /
+`wp_get_https_detection_errors` have **no call sites**; `add_module_type` is the plugin's
+own `WPSG_Embed` `script_loader_tag` filter (adds `type="module"` the **pre-6.5** way, i.e.
+deliberately not the 6.5 Script Modules API); `add_font` is a test helper. So 6.7→7.0 users
+sit inside the truthful `6.4 → 7.0` window and are not blocked.
 
 **Verification (this session).**
-- **Vitest: 3641 passed / 0 failed** (236 files); **`npm run build:wp`: success** — both run
-  under Node 20 (the required toolchain) via a Haiku subagent.
-- **PHP PHPUnit: not runnable locally** — this environment has **no Docker** (`spawn docker
-  ENOENT`), so wp-env cannot boot. The authoritative cross-PHP gate is **CI** (`ci.yml`
-  `test-php` matrix), which I verified covers exactly **8.2 / 8.3 / 8.4** against a MySQL
-  service. Reported honestly as infra-unavailable rather than claimed as a local pass.
+- **Vitest: 3641 passed / 0 failed** (236 files); **`npm run build:wp`: success** — under
+  Node 20 (the required toolchain).
+- **PHPUnit: OK — 1072 tests, 13098 assertions, 2 skipped, exit 0**, run **live against the
+  pinned WordPress 7.0** via wp-env (`@wordpress/env` `run tests-cli`). This both proves the
+  plugin loads/activates cleanly under WP 7.0 and validates the `.wp-env.json` 7.0 pin
+  resolves. (Getting here required clearing orphaned wp-env containers/volumes from older
+  `@wordpress/env` versions whose stale-hash health-check helper was wedging the new
+  instance's `tests-mysql`; a `destroy` + volume purge + clean `start` fixed it.)
+- The authoritative multi-PHP gate remains **CI** (`ci.yml` `test-php` matrix), verified to
+  cover **8.2 / 8.3 / 8.4**; the local run above executed on the wp-env container's PHP.
 
-**Remaining (CI / test-server gated, not executable here).** The live **install → activate →
-uninstall** smoke and the cross-PHP PHPUnit run require a real WP/Docker environment. The
-release workflow already boots wp-env, loads the plugin, and runs PHPUnit (exercising
-activation) on every release; the recommended final step is a manual install/activate/
-uninstall pass on the WP 7.0 test server (confirming the `uninstall.php` cleanup and the
-`preserve_data_on_uninstall` opt-out) before triggering the release.
+**Remaining (manual, recommended before cutting the release).** A full click-through
+**install → activate → uninstall** on the WP 7.0 test server to confirm the `uninstall.php`
+cleanup and the `preserve_data_on_uninstall` opt-out end-to-end (activation is already
+exercised by the live PHPUnit run; the uninstall *data-removal* path is unit-covered but a
+real-site pass is the belt-and-suspenders check).
 
 ## Track P60-G - i18n runtime: front-end (i18next) locale delivery
 
