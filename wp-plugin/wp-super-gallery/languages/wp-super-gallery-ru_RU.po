@@ -6628,3 +6628,6 @@ msgstr "Непредвиденный ответ: HTTP %d"
 
 msgid "Gallery Editor"
 msgstr "Редактор галереи"
+
+msgid "Sort campaigns"
+msgstr "Сортировать кампании"

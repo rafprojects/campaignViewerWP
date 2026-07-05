@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-04T03:48:22+00:00\n"
+"POT-Creation-Date: 2026-07-05T05:56:57+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -5973,6 +5973,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1619
 #: includes/i18n/class-wpsg-frontend-strings.php:2406
+#: includes/i18n/class-wpsg-frontend-strings.php:2497
 msgid "Close"
 msgstr ""
 
@@ -8874,6 +8875,10 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2496
 msgid "Revoke campaign access"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2498
+msgid "Sort campaigns"
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:23

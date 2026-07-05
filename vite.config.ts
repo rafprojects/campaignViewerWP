@@ -109,6 +109,13 @@ export default defineConfig({
       '@wp-super-gallery/theme-engine': new URL('./packages/theme-engine/src/index.ts', import.meta.url).pathname,
     },
   },
+  // Dev-only: pin the dependency pre-bundler to esnext so esbuild does no
+  // down-levelling (some deps use destructuring forms esbuild can't lower to
+  // the es2015 build target, which otherwise crashes `vite` dev on-demand).
+  // Production output is unaffected — `build.target` below stays es2015.
+  optimizeDeps: {
+    esbuildOptions: { target: 'esnext' },
+  },
   build: {
     manifest: true,
     target: 'es2015',

@@ -561,6 +561,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
                     ]}
                     value={sortOrder ?? 'created_desc'}
                     onChange={(v) => setSortOrder((v as CampaignFilters['sort']) ?? 'created_desc')}
+                    aria-label={t('admin_sort_label', 'Sort campaigns')}
                     style={{ minWidth: 150 }}
                   />
                   <Switch

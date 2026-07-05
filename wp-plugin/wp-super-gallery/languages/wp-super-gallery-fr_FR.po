@@ -6628,3 +6628,6 @@ msgstr "Réponse inattendue : HTTP %d"
 
 msgid "Gallery Editor"
 msgstr "Éditeur de galerie"
+
+msgid "Sort campaigns"
+msgstr "Trier les campagnes"

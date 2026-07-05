@@ -2494,6 +2494,8 @@ class WPSG_Frontend_Strings {
             'accessrow_expires_label' => __('Expires: {{date}}', 'wp-super-gallery'),
             'accessrow_revoke_company_tip' => __('Revoke company-wide access', 'wp-super-gallery'),
             'accessrow_revoke_campaign_tip' => __('Revoke campaign access', 'wp-super-gallery'),
+            'common_close' => __('Close', 'wp-super-gallery'),
+            'admin_sort_label' => __('Sort campaigns', 'wp-super-gallery'),
         ];
     }
 }

@@ -245,7 +245,7 @@ function GallerySlotView({
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <LazyImage
         src={assigned.thumbnail || assigned.url}
-        alt={assigned.title || 'Video'}
+        alt={assigned.title || t('lightbox_video_title', 'Campaign video')}
         style={{
           width: '100%',
           height: '100%',
@@ -272,7 +272,7 @@ function GallerySlotView({
   ) : (
     <LazyImage
       src={assigned.thumbnail || assigned.url}
-      alt={assigned.title || 'Image'}
+      alt={assigned.title || t('lightbox_image_alt', 'Campaign image')}
       style={{
         width: '100%',
         height: '100%',

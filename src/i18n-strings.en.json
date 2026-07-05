@@ -2466,5 +2466,7 @@
   "accessrow_expires_tip_active": "Grant expires at this time",
   "accessrow_expires_label": "Expires: {{date}}",
   "accessrow_revoke_company_tip": "Revoke company-wide access",
-  "accessrow_revoke_campaign_tip": "Revoke campaign access"
+  "accessrow_revoke_campaign_tip": "Revoke campaign access",
+  "common_close": "Close",
+  "admin_sort_label": "Sort campaigns"
 }

@@ -483,8 +483,12 @@ export function CampaignViewer({
           : { overflow: 'auto', maxHeight: `${clampedMaxHeight}dvh` },
         header: { position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'transparent', padding: 0 },
         close: { color: 'white', background: 'rgba(0,0,0,0.65)', borderRadius: '50%', width: 36, height: 36 },
+        // P60-D: the dialog's accessible name comes from `title` (aria-labelledby).
+        // The campaign uses a custom cover header, so hide the title text visually
+        // (sr-only) while keeping it exposed to assistive tech.
+        title: { position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 },
       }}
-      aria-label={`Campaign details for ${displayedCampaign.title}`}
+      title={`Campaign details for ${displayedCampaign.title}`}
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (

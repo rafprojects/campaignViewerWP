@@ -11,7 +11,7 @@
 | P60-A | Version & metadata single-source-of-truth + `readme.txt` polish | ✅ Done (2026-07-01) | Small |
 | P60-B | i18n completeness — generate `.pot`, confirm user-facing coverage, scope admin harvest | ✅ Done (2026-07-01) | Medium |
 | P60-C | Plugin Check + escaping/sanitization compliance pass | ✅ Done (2026-07-04) — 1 residual PC error is the readme "Tested up to" bump, a P60-F dependency | Medium |
-| P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | Planned | Medium |
+| P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | ✅ Done (2026-07-04) | Medium |
 | P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | Planned | Small-Medium |
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
@@ -220,6 +220,24 @@ Phase 54-C established a critical/serious axe baseline on the **front-end only**
 ### Validation
 
 - Playwright `e2e/accessibility.spec.ts` (extended) passes; manual screen-reader spot-check of one admin flow and one rendered gallery.
+
+### Implementation (2026-07-04) — ✅ Done
+
+**Extended axe coverage to the admin surface.** Added two admin-flow axe tests to `e2e/accessibility.spec.ts` (the tabbed **Admin Panel** campaigns tab, and the **Settings** panel) alongside the P54-C front-end baseline. **All 6 a11y tests pass** (critical/serious, structural). Per **Key Decision C**, the exhaustive WCAG-AA colour-contrast audit stays a follow-on, so the axe gate excludes `color-contrast` (documented in-spec) and enforces the structural set (roles, names, labels, ARIA validity).
+
+**Real a11y violations fixed (found by the extended axe run):**
+- `button-name` on **every modal's close button** — Mantine leaves `CloseButton` unlabeled by default. Fixed globally via a `mergeThemeOverrides` `CloseButton` default `aria-label` in `src/main.tsx` (one change covers all ~36 modals; components with their own label still win).
+- `aria-valid-attr-value` on the **CardGallery filter** — it used Mantine `Tabs` (with dangling `aria-controls` → non-existent panels) as a single-select filter. Converted to `Chip.Group` (the admin-panel filter pattern).
+- `label` on the **AdminPanel sort `Select`** — added an `aria-label`.
+- `aria-dialog-name` on the **CampaignViewer modal** — its `aria-label` was landing on Mantine's root wrapper, not the `role="dialog"` element. Switched to a `title` (→ `aria-labelledby`) rendered visually-hidden so the dialog is named without a visible title bar.
+
+**Alt text.** Translated the LayoutBuilder image/video alt fallbacks (were hardcoded English) and added a `title` fallback to the compact-grid and isotope adapters (`caption || title || t('lightbox_image_alt')`), so gallery images surface meaningful alt where the media provides caption/title. The layout-builder background-image layer keeps `alt=""` (correctly decorative).
+
+**Test-harness repairs (pre-existing P54-C bit-rot, uncovered here).** The e2e a11y suite couldn't run locally: (1) the Vite dev server crashed under this environment's Node 24 (esbuild couldn't down-level destructuring to the `es2015` build target during on-demand dep optimization) — fixed with a **dev-only** `optimizeDeps: { esbuildOptions: { target: 'esnext' } }` in `vite.config.ts` (production `build.target` untouched) and running the suite under Node 20 (matching CI); (2) the front-end tests referenced a drifted campaign-open interaction (`getByText` → the current "Open campaign" button) and fetched media the wrong way — the app embeds media in the `campaigns?include_media=1` response as a `mediaByCampaign` map, not a separate `/media` call; (3) shadow-DOM-incompatible axe `.include()` scopes were replaced with full-page `.analyze()` (axe traverses the open shadow root). CI's e2e job already targets a wp-env instance (Node 20), so no workflow change was needed.
+
+**Verification.** `e2e/accessibility.spec.ts` 6/6 green; vitest **3,641 tests** green (confirms the global CloseButton default + viewer title change broke nothing); `tsc -b` + eslint clean; production `build:wp` succeeds. Two new i18n keys (`common_close`, `admin_sort_label`) added, manifest/`.pot` regenerated, `Sort campaigns` translated into all 5 packs (`Close` reused an existing msgid), `i18n:check` green.
+
+**Follow-On (full WCAG AA).** Colour-contrast (e.g. the access-mode `SegmentedControl` label, 4.03 vs 4.5), full focus management, ARIA landmarks, and Shadow-DOM SR exposure remain the WP.org-tier full-AA audit (Key Decision C) — tracked in [FUTURE_TASKS.md](FUTURE_TASKS.md).
 
 ## Track P60-E - Store assets, privacy/GDPR statement, buyer-facing docs
 
