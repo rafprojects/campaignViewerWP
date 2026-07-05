@@ -33,11 +33,13 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 1. Upload the `wp-super-gallery` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the **Plugins** screen in WordPress.
 3. Navigate to **WP Super Gallery** in the admin menu to create your first campaign.
-4. Use the shortcode `[wp_super_gallery id="123"]` or the block editor embed to display a gallery on any page.
+4. Use the shortcode `[super-gallery campaign="my-campaign-slug"]` (a campaign slug or numeric ID), or the block editor embed, to display a gallery on any page.
+
+Supported shortcode attributes: `campaign` (slug or ID), `company` (slug or ID), `space` (slug or ID), `compact` (true/false), and `auth_bar_mode`.
 
 = Requirements =
 
-* WordPress 6.0 or later
+* WordPress 6.4 or later
 * PHP 8.2 or later
 * MySQL 5.7 / MariaDB 10.3 or later
 
@@ -58,6 +60,10 @@ The oEmbed proxy supports YouTube, Vimeo, Spotify, SoundCloud, Dailymotion, TikT
 = Is SVG upload safe? =
 
 SVG files are sanitised on upload using a dual-layer approach: the `enshrined/svg-sanitize` library strips dangerous elements, and custom validators block malicious CSS and URIs. A restrictive `.htaccess` is also placed in the overlay directory.
+
+= What data does the plugin collect? Is it GDPR-friendly? =
+
+By default the plugin sends **nothing** to any external service — no telemetry or phone-home. It can store two kinds of personal data, both **off by default**: pseudonymised visitor counts if you enable Analytics (the raw IP is never stored — only a salted SHA-256 hash), and requester email addresses if you enable access requests for private campaigns. WordPress login cookies handle authentication; the plugin sets no tracking cookies of its own. See the bundled privacy statement (`docs/PRIVACY.md`) for the full data inventory, retention behaviour, and how to fulfil data-subject requests.
 
 == Screenshots ==
 

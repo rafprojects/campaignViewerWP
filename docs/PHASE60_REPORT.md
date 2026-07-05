@@ -12,7 +12,7 @@
 | P60-B | i18n completeness — generate `.pot`, confirm user-facing coverage, scope admin harvest | ✅ Done (2026-07-01) | Medium |
 | P60-C | Plugin Check + escaping/sanitization compliance pass | ✅ Done (2026-07-04) — 1 residual PC error is the readme "Tested up to" bump, a P60-F dependency | Medium |
 | P60-D | Accessibility hardening (extend the P54-C baseline to key admin flows) | ✅ Done (2026-07-04) | Medium |
-| P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | Planned | Small-Medium |
+| P60-E | Store assets, privacy/GDPR statement, buyer-facing docs | ✅ Done (2026-07-05) — text deliverables complete; banner/icon/screenshot artwork spec'd but pending a designer/capture pass | Small-Medium |
 | P60-F | Release packaging + final cross-version/browser QA | Planned | Small-Medium |
 | P60-G | i18n runtime — front-end (i18next) locale delivery for the React app | ✅ Done (2026-07-01) | Medium-Large |
 | P60-H | Localization — shipped language packs (fr_FR, es_ES, de_DE, zh_CN, ru_RU) | ✅ Done (2026-07-03) | Medium |
@@ -260,6 +260,75 @@ There is no store collateral (banner/icon/screenshots), no privacy/GDPR statemen
 ### Validation
 
 - Visual review of assets against marketplace spec; doc walkthrough against a fresh install.
+
+### Implementation (2026-07-05) — ✅ Done (text deliverables; artwork spec'd)
+
+**Scope decision (user-approved).** Distribution target is **hybrid free/Pro** — asset work
+targets the WordPress.org `.wordpress-org/` spec now, and buyer docs are written to serve
+paid users too. Because banner/icon/screenshot PNGs are graphic-design deliverables (not
+authorable here), the visual assets are **spec'd + slotted** for a designer/capture pass
+while all writable pieces were completed in full.
+
+**Ground-truth audit first.** Before publishing a privacy statement, ran an exhaustive
+data-handling inventory and **verified the load-bearing facts directly** (not trusted from
+the sweep): analytics stores a salted-SHA-256 `visitor_hash`, never a raw IP
+(`class-wpsg-analytics-controller.php:88-90`), and is gated off by default
+(`enable_analytics=false`); `wp_wpsg_access_requests.email` stores raw indexed email
+(`class-wpsg-db.php:354`); **no** WordPress privacy exporter/eraser hooks exist anywhere
+(grep empty); `preserve_data_on_uninstall` is honored (`uninstall.php:18`). This surfaced
+genuine compliance gaps (below) that the statement documents honestly rather than papering
+over.
+
+**Documentation-vs-code bug found & fixed.** The shipped `readme.txt` documented a
+shortcode that does not exist — `[wp_super_gallery id="123"]`. The real tag is
+**`[super-gallery ...]`** with `campaign`/`company`/`space` (slug **or** ID),
+`compact`, and `auth_bar_mode` attributes, and there is **no `id=` attribute**
+(`class-wpsg-embed.php:11,182-188,438-441`). Anyone copying the old snippet would have
+rendered nothing. Fixed in `readme.txt` and documented correctly in the new install guide.
+
+**What shipped (files).**
+
+- **New:** `docs/PRIVACY.md` — full GDPR/privacy statement: per-table PII inventory,
+  privacy-preserving analytics explanation, third-party/transmission section (no
+  phone-home; Sentry off by default; email via `wp_mail`), browser-storage/JWT section,
+  a **manual** data-subject-request procedure (accurate to the current lack of core-tool
+  integration), retention/uninstall behavior, and a documented Follow-Ons list of the gaps.
+- **New:** `docs/guides/INSTALL_AND_TROUBLESHOOTING.md` — buyer-facing requirements,
+  install (ZIP + manual + first-run), correct shortcode + attribute table, configuration
+  essentials, and a troubleshooting matrix (blank gallery, stale assets, oEmbed, SVG,
+  email, REST/nonce, debug toggle) cross-linked to PRIVACY/JWT/THEME/DEBUG guides.
+- **New:** `.wordpress-org/README.md` — store-asset spec/manifest: exact filenames +
+  dimensions for banner (772×250, 1544×500), icon (128, 256, optional SVG), and
+  `screenshot-1..5.png` **cross-mapped to the readme's `== Screenshots ==` captions**, plus
+  a content brief and a note that the 10up deploy action reads this dir automatically.
+- **Changed:** `readme.txt` — corrected shortcode/attributes, aligned Requirements to the
+  plugin header (WP **6.4+**, not 6.0), and added a "What data does the plugin collect?"
+  GDPR FAQ pointing at `PRIVACY.md`. (The `Tested up to: 6.7` bump remains a **P60-F**
+  dependency and was intentionally left untouched.)
+
+**Compliance gaps surfaced (documented as Follow-Ons, not fixed — code changes out of this
+content track's scope).** These are named in `PRIVACY.md` so the statement stays honest:
+
+1. No `wp_privacy_personal_data_exporters`/`_erasers` registration → DSAR fulfilled manually
+   via SQL/WP-CLI today. **Recommended as the highest-value privacy follow-on.**
+2. No auto-purge/retention job for `wp_wpsg_access_requests` (emails) or `wp_wpsg_audit_log`
+   (usernames) — both grow unbounded; analytics has retention but defaults to `0` = never.
+3. PHP-side Sentry has no PII scrubber (browser side does).
+4. Analytics visitor hash uses a static, non-rotating salt.
+
+**Good practices credited in the statement:** pseudonymized (never-raw) analytics IP,
+opt-in/off-by-default analytics, hashed + expiring + single-use magic-keys, HttpOnly
+same-origin default auth with no browser tokens, browser-side Sentry IP/header redaction.
+
+**Verification.** Every file path, `file:line`, dimension, and shortcode attribute in the
+docs was checked against the source. No code changed, so no test run is required; the
+readme/asset/privacy claims were reconciled with `class-wpsg-embed.php`,
+`class-wpsg-analytics-controller.php`, `class-wpsg-db.php`, `uninstall.php`, and the plugin
+header.
+
+**Follow-On (this track).** Produce the actual banner/icon/screenshot artwork to the
+`.wordpress-org/README.md` spec (designer + a seeded-wp-env screenshot-capture pass), and
+consider folding the four privacy gaps above into a dedicated remediation track.
 
 ## Track P60-F - Release packaging + final QA
 
