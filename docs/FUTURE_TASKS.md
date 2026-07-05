@@ -201,7 +201,60 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Monetization & Distribution
 
-*No tasks here yet.*
+### Store Listing Artwork — Banner, Icon, Screenshots
+
+**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E (deferred — graphic-design/capture deliverable).
+
+**Files:** `.wordpress-org/` (spec at [`.wordpress-org/README.md`](../.wordpress-org/README.md)); screenshot captions in [`wp-plugin/wp-super-gallery/readme.txt`](../wp-plugin/wp-super-gallery/readme.txt) `== Screenshots ==`.
+
+**Context:** P60-E delivered all *writable* store collateral (privacy statement, install/troubleshooting guide, readme polish) and a precise asset **spec/manifest**, but the binary graphics themselves are a design task and were not authorable in that track. Produce:
+- `banner-772x250.png` + `banner-1544x500.png` (retina) — product name + one-line value prop.
+- `icon-128x128.png` + `icon-256x256.png` (+ optional `icon.svg`) — simple high-contrast mark legible at 128px.
+- `screenshot-1..5.png` — **must** stay in caption-order sync with `readme.txt`; capture from a seeded wp-env instance with representative (non-placeholder) content on the default theme.
+
+The 10up SVN deploy action reads `.wordpress-org/` automatically, so finals drop straight in with no wiring. Filenames must match the spec exactly.
+
+**Dependencies:** a designer (banner/icon); a seeded wp-env + screenshot-capture pass (screenshots). Gates a polished public WP.org / premium listing but does **not** block the functional release ZIP.
+
+**Effort:** Medium (design-bound, not code) | **Impact:** High for listing conversion; none for plugin function.
+
+---
+
+## Privacy & Compliance
+
+**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
+
+### WordPress Core Privacy Integration (DSAR Export/Erase) — *highest-value*
+
+**Files:** new privacy-tools registrations (`wp_privacy_personal_data_exporters` / `wp_privacy_personal_data_erasers`); data sources in `class-wpsg-db.php` (`wp_wpsg_access_requests`, `wp_wpsg_audit_log`, `access_grants` meta).
+
+**Context:** The plugin stores visitor emails (`wp_wpsg_access_requests.email`) and staff usernames (`wp_wpsg_audit_log`) but registers **no** exporters/erasers, so admins cannot fulfil data-subject access/erasure requests via **Tools → Export/Erase Personal Data** — today it is a manual SQL/WP-CLI process (documented in `PRIVACY.md §5`). Registering exporters/erasers keyed on email (and username) is the standard, expected integration for a plugin that holds PII.
+
+**Effort:** Medium | **Impact:** High for GDPR-serious buyers / EU deployments; strengthens the public-listing story.
+
+### Retention / Auto-Purge for Email & Audit-Log Tables
+
+**Files:** `class-wpsg-maintenance.php` (mirror the existing `wpsg_analytics_purge` cron), settings in `class-wpsg-settings-registry.php`.
+
+**Context:** `wp_wpsg_access_requests` (emails) and `wp_wpsg_audit_log` (usernames/attempted logins) have **no purge job** and grow unbounded. Analytics already has a retention job — but it defaults to `analytics_retention_days = 0` (never purge). Add optional retention windows for the two PII tables and consider a sane non-zero analytics default.
+
+**Effort:** Small-Medium | **Impact:** Medium — data-minimisation hygiene.
+
+### Server-Side (PHP) Sentry PII Scrubber
+
+**Files:** `class-wpsg-sentry.php` (parity with the browser-side `beforeSend` scrubber in `src/services/monitoring/sentry.ts`).
+
+**Context:** The browser Sentry path strips `Authorization` headers and `user.ip_address`; the PHP path sends `$context` verbatim. Sentry is off by default (requires a DSN), so this is low-likelihood, but a scrubber should exist before recommending server-side error reporting.
+
+**Effort:** Small | **Impact:** Low (off by default) but removes a footgun.
+
+### Per-Day Salt Rotation for Analytics Visitor Hash
+
+**Files:** `class-wpsg-analytics-controller.php` (`record_analytics_event`).
+
+**Context:** `visitor_hash = sha256(IP + wp_salt('auth'))` uses a static, non-rotating salt, so a given IP always hashes the same value — good for unique-visitor counts but re-identifiable for the small IPv4 space. Rotating the salt per day (bucketing the hash by date) reduces re-identifiability while preserving same-day uniqueness. Trade-off: cross-day unique counts become approximate.
+
+**Effort:** Small | **Impact:** Low-Medium — hardens an already-pseudonymised field.
 
 ---
 
