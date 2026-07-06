@@ -38,6 +38,7 @@ function MagicLinkPageSelector({
         <Text size="sm" fw={600}>{t('set_sys_magic_title', 'Access Request Magic-Link')}</Text>
         <Text size="xs" c="dimmed">
           {t('set_sys_magic_desc_pre', 'When an admin clicks a one-click approval link, the result is shown on this page (via ')}
+          {/* eslint-disable-next-line i18next/no-literal-string -- literal URL query-string token (not translatable prose); same precedent as P60-I taxonomy tree-indent glyph */}
           <code>?wpsg_result=approved|expired|used|invalid</code>
           {t('set_sys_magic_desc_post', '). If no page is selected, a minimal inline HTML page is returned instead.')}
         </Text>

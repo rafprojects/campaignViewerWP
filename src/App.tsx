@@ -24,6 +24,7 @@ import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
 import { sortByOrder } from '@wp-super-gallery/shared-utils';
 import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { useTranslation } from 'react-i18next';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
 import { useRootId } from '@wp-super-gallery/shared-ui';
 import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
@@ -100,6 +101,7 @@ function AppContent({
   instanceId?: string;
   authBarMode?: string | undefined;
 }) {
+  const { t } = useTranslation('wpsg');
   const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin, isSystemAdmin } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -318,10 +320,10 @@ function AppContent({
     onWarning: (secondsRemaining) => {
       notifications.show({
         id: 'idle-timeout-warning',
-        title: 'Session expiring soon',
+        title: t('app_idle_title', 'Session expiring soon'),
         message: (
           <Stack gap="xs">
-            <span>You will be signed out in {secondsRemaining} seconds due to inactivity.</span>
+            <span>{t('app_idle_warning', 'You will be signed out in {{seconds}} seconds due to inactivity.', { seconds: secondsRemaining })}</span>
             <Button
               size="xs"
               variant="light"
@@ -330,7 +332,7 @@ function AppContent({
                 notifications.hide('idle-timeout-warning');
               }}
             >
-              Stay signed in
+              {t('app_idle_stay', 'Stay signed in')}
             </Button>
           </Stack>
         ),
@@ -384,7 +386,7 @@ function AppContent({
         )}
         {!isOnline && (
           <Container {...(appContainerSize !== undefined ? { size: appContainerSize } : {})} fluid={appContainerFluid} py="sm" style={appContainerPaddingStyle}>
-            <Alert color="orange" role="alert" aria-live="assertive">You appear to be offline. Some features are unavailable.</Alert>
+            <Alert color="orange" role="alert" aria-live="assertive">{t('app_offline', 'You appear to be offline. Some features are unavailable.')}</Alert>
           </Container>
         )}
         {error && (

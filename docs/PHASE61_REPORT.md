@@ -8,8 +8,8 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Planned | Small |
-| P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Planned | Small |
+| P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Done | Small |
+| P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Done | Small |
 | P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Planned | Medium |
 | P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Planned | Small-Medium |
 | P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Planned | Small |
@@ -197,6 +197,8 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 ## Implementation Notes
 
 - Record completed work at a high level as tracks land. Keep short and factual.
+
+**P61-A + P61-B (landed together):** `contexts/**`, `Galleries/Shared/**`, and the whole `Settings/**` dir were confirmed 0-violation and enrolled in the enforced glob as directories (Settings verified clean beyond just the one tab file). The 6 near-zero-cost strings were wired: `App.tsx` idle-timeout notification (title + message with `{{seconds}}` interpolation + "Stay signed in" button) and offline `Alert` → `app_idle_*` / `app_offline` keys via `useTranslation`; `ErrorBoundary.tsx` (a class component) → `i18n` singleton `i18n.t()` for title/body/retry-aria/"Try Again" (`eb_*` keys), matching the `AuthBarFloating.tsx` precedent for non-hook contexts. `SettingsSystemAdminTab.tsx` `<code>?wpsg_result=…</code>` sample is a literal URL query-string token (surrounding prose already split-translated) → documented `eslint-disable-next-line` per Key Decision B / the P60-I glyph precedent, not a `t()` call. Verified: `npx eslint` (real config) clean on all A/B paths; `tsc -b` clean; `i18n:generate` + `i18n:check` in sync (2482 strings); 43 tests pass across App/ErrorBoundary/Settings suites.
 
 ## Outcome
 

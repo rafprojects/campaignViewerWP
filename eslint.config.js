@@ -86,11 +86,19 @@ export default tseslint.config({
   // P60-I sweep: src/hooks/** (admin-row hooks like useCampaignsRows render JSX)
   // and src/components/Campaign/** joined the enforced set — these bypassed the
   // bridge and shipped raw English (campaign-row actions, media picker labels).
+  // P61-A/B: contexts/** + Galleries/Shared/** (pre-verified 0 violations) and
+  // the near-zero-cost App.tsx / ErrorBoundary.tsx / Settings/** trio joined the
+  // enforced set as the front-end-completeness sweep closed the remaining gaps.
   files: [
     'src/components/Galleries/Adapters/**/*.{ts,tsx}',
+    'src/components/Galleries/Shared/**/*.{ts,tsx}',
     'src/components/Admin/**/*.{ts,tsx}',
     'src/components/Campaign/**/*.{ts,tsx}',
+    'src/components/Settings/**/*.{ts,tsx}',
+    'src/contexts/**/*.{ts,tsx}',
     'src/hooks/**/*.{ts,tsx}',
+    'src/App.tsx',
+    'src/components/ErrorBoundary.tsx',
     'packages/shared-ui/src/**/*.{ts,tsx}',
   ],
   // Test/story fixtures render literal JSX intentionally — keep them exempt.
