@@ -2758,6 +2758,11 @@ class WPSG_Frontend_Strings {
             'cv_config_clear' => __('Preview Inherited Gallery Settings', 'wp-super-gallery'),
             'cv_unified_desc' => __('Adapter applied when this campaign renders images and videos together.', 'wp-super-gallery'),
             'admin_sort_label' => __('Sort campaigns', 'wp-super-gallery'),
+            'upsell_pro_title' => __('Pro feature', 'wp-super-gallery'),
+            'upsell_cta' => __('Upgrade', 'wp-super-gallery'),
+            'upsell_text_layers' => __('Text layers are a Pro feature. Upgrade to add and edit text in your layouts.', 'wp-super-gallery'),
+            'upsell_breakpoints' => __('Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts.', 'wp-super-gallery'),
+            'upsell_starter_library' => __('The starter template library is a Pro feature. Upgrade to start from a curated preset.', 'wp-super-gallery'),
         ];
     }
 }

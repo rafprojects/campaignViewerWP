@@ -21,6 +21,12 @@ class WPSG_Import_Sanitization_Test extends WP_UnitTestCase {
         wp_set_current_user( $user_id );
     }
 
+    public function tearDown(): void {
+        // P62-A: never leak a simulated-license filter into the next test.
+        remove_filter( 'wpsg_license_is_pro', '__return_true' );
+        parent::tearDown();
+    }
+
     /**
      * Build a minimal valid import payload, optionally injecting overrides.
      */
@@ -250,5 +256,44 @@ class WPSG_Import_Sanitization_Test extends WP_UnitTestCase {
         $this->assertEquals( 'https://example.com/photo.jpg', $result['slots'][0]['mediaUrl'] );
         $this->assertCount( 1, $result['overlays'] );
         $this->assertEquals( 'https://example.com/overlay.png', $result['overlays'][0]['imageUrl'] );
+    }
+
+    // ── P62-A: import strips pro-gated fields when unlicensed ───
+
+    public function test_import_strips_text_layers_when_unlicensed() {
+        $result = WPSG_Layout_Templates::sanitize_template_data( [
+            'name'  => 'Imported',
+            'slots' => [],
+            'texts' => [
+                [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'Imported text' ],
+            ],
+        ] );
+
+        $this->assertSame( [], $result['texts'], 'Unlicensed import must strip text layers.' );
+    }
+
+    public function test_import_strips_breakpoint_overrides_when_unlicensed() {
+        $result = WPSG_Layout_Templates::sanitize_template_data( [
+            'name'                => 'Imported',
+            'slots'               => [ [ 'id' => 'slot-1', 'x' => 0, 'y' => 0, 'width' => 50, 'height' => 50 ] ],
+            'breakpointOverrides' => [ 'tablet' => [ 'slot-1' => [ 'x' => 10, 'y' => 20 ] ] ],
+        ] );
+
+        $this->assertSame( [], $result['breakpointOverrides'], 'Unlicensed import must strip breakpoint overrides.' );
+    }
+
+    public function test_import_keeps_pro_fields_when_licensed() {
+        add_filter( 'wpsg_license_is_pro', '__return_true' );
+
+        $result = WPSG_Layout_Templates::sanitize_template_data( [
+            'name'  => 'Imported',
+            'slots' => [],
+            'texts' => [
+                [ 'id' => 't1', 'x' => 0, 'y' => 0, 'width' => 40, 'height' => 12, 'content' => 'Imported text' ],
+            ],
+        ] );
+
+        $this->assertCount( 1, $result['texts'], 'Licensed import must keep text layers.' );
+        $this->assertEquals( 'Imported text', $result['texts'][0]['content'] );
     }
 }

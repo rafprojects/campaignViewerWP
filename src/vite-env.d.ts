@@ -34,6 +34,12 @@ interface Window {
     debugComponentMarkers?: boolean;
     /** P50-F: Absolute URL of sw.js served by the plugin PHP endpoint (with Service-Worker-Allowed: / header). */
     swUrl?: string;
+    /** P62-A: license/entitlement state for pro-feature gating. Read by src/hooks/useWpsgLicense.ts. */
+    license?: {
+      isPro: boolean;
+      tier: string | null;
+      upgradeUrl: string;
+    };
   };
   __WPSG_REST_NONCE__?: string;
   __WPSG_SENTRY_DSN__?: string;

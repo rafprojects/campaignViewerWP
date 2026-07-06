@@ -75,6 +75,15 @@ class WPSG_Embed {
             // P50-F: absolute URL at which the SW is served (via maybe_serve_service_worker).
             // Injected so main.tsx uses the correct URL regardless of which page the SPA loads on.
             'swUrl'                  => home_url('/sw.js'),
+            // P62-A: license/entitlement state for pro-feature gating. Read by
+            // src/hooks/useWpsgLicense.ts to drive upsell UI in the LayoutBuilder.
+            // Defaults to the free tier (isPro=false) until real Freemius
+            // credentials are wired via the wpsg_freemius_config filter.
+            'license'                => [
+                'isPro'      => class_exists('WPSG_License') ? WPSG_License::can_use_premium_code() : false,
+                'tier'       => class_exists('WPSG_License') ? WPSG_License::get_tier() : null,
+                'upgradeUrl' => class_exists('WPSG_License') ? WPSG_License::get_upgrade_url() : '',
+            ],
         ];
 
         // P49-C / P60-G: i18n payload — locale + the active-locale translation of the

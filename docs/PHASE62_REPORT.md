@@ -1,17 +1,23 @@
 # Phase 62 - Monetization & Licensing (Freemius)
 
-**Status:** Planned
+**Status:** In Progress
 **Created:** 2026-06-26
-**Last updated:** 2026-06-26
+**Last updated:** 2026-07-06
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P62-A | Pro/free gating seams (adapter registry + `WPSG_Permissions` + LayoutBuilder pro features) | Planned | Medium |
-| P62-B | Freemius SDK integration | Planned | Medium |
-| P62-C | Pricing & licensing model (tiers, renewals, trial) | Planned | Small-Medium |
-| P62-D | Buyer-facing docs + support process | Planned | Small-Medium |
+| P62-A | Pro/free gating seams (new `WPSG_License` entitlement seam + 3 LayoutBuilder pro features) | Code complete (sandbox-pending) | Medium |
+| P62-B | Freemius SDK integration (credential-ready bootstrap) | Code complete (sandbox-pending) | Medium |
+| P62-C | Pricing & licensing model (tiers, renewals, trial) | Planned — human/dashboard (M1-M3) | Small-Medium |
+| P62-D | Buyer-facing docs + support process | In Progress | Small-Medium |
+
+> **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
+> 1. **Adapter-level gating is OUT of scope.** All 14 registered adapters stay free. P62-A gates only the 3 already-identified LayoutBuilder pro features (text layers, per-breakpoint responsive overrides, starter template library). Adapter gating is a Follow-On Candidate.
+> 2. **The entitlement seam is a NEW `WPSG_License` class, not `WPSG_Permissions`.** See the corrected Key Decision C / new Decision E below.
+>
+> No Freemius account exists yet, so all code ships **credential-ready**: with no credentials it is a safe no-op defaulting to the free tier. Real activation/checkout/update testing is **blocked on M1-M3** (human account/dashboard setup) — see Execution Priority and the P62-B/C validation notes.
 
 ---
 
@@ -31,8 +37,9 @@ With the product feature-complete and [PHASE60_REPORT.md](PHASE60_REPORT.md) mak
 |---|----------|------------|
 | A | Licensing/update provider | **Freemius** (MONETIZATION §3). Lowest LOE; merchant-of-record handles tax; first-class freemium gating that maps onto the existing seams. Revisit EDD/self-hosted only if fees/lock-in become material at scale. |
 | B | Monetization model | **Annual subscription + tiered by site count** (single / 5-site / agency), with renewals and a trial (MONETIZATION §2). Best fit for a builder that needs ongoing WP-compat maintenance. |
-| C | Gating seams | **Reuse the two existing cut-points** — the adapter registry (`adapterRegistry.ts`) and the `WPSG_Permissions` tier map — rather than introducing a new gating layer. |
-| D | Pro feature set | **Gate advanced LayoutBuilder capabilities** (text layers from [PHASE59_REPORT.md](PHASE59_REPORT.md), per-breakpoint responsive from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B, starter library) and advanced adapters; keep the core gallery + builder free and fully functional. |
+| C | ~~Gating seams~~ (**superseded by E**) | Original draft proposed reusing the adapter registry + `WPSG_Permissions` map. **Corrected:** adapter gating is out of scope (all adapters stay free), and `WPSG_Permissions` is a role/capability gate, not a license gate. See E. |
+| D | Pro feature set | **Gate 3 LayoutBuilder capabilities only** this phase: text layers (from [PHASE59_REPORT.md](../archive/phases/PHASE59_REPORT.md)), per-breakpoint responsive (from [PHASE58_REPORT.md](../archive/phases/PHASE58_REPORT.md) P58-B), and the starter template library (P58-C). Advanced-adapter gating is deferred (Follow-On). Core gallery + builder stay free and fully functional. |
+| E | Entitlement seam | **A new `WPSG_License` PHP class** is the single source of truth for license/entitlement state — deliberately orthogonal to `WPSG_Permissions`. `WPSG_Permissions` answers "who may call this REST route" (role → 403 on failure); `WPSG_License` answers "is this pro feature unlocked" (entitlement → silent payload degradation on failure). It wraps Freemius's `can_use_premium_code()` when the SDK is live and falls back to the `wpsg_license_is_pro` filter (default free) otherwise. |
 
 ## Execution Priority
 
@@ -51,19 +58,23 @@ The plugin has no notion of paid features. To monetize without a rewrite, the fr
 
 ### Fix
 
-- Add a `pro: true` flag to advanced adapter registrations and a license check at `resolveAdapter` in `src/components/Galleries/Adapters/adapterRegistry.ts` (registrations are already metadata-driven, so this is localized).
-- Gate management/pro features through the `WPSG_Permissions` map (`includes/class-wpsg-permissions.php`).
-- Designate the LayoutBuilder pro features (text layers, per-breakpoint responsive, starter library) and gate them at their entry points.
+- Introduce a new `WPSG_License` class (`includes/class-wpsg-license.php`) as the single entitlement source of truth, with per-feature constants (`FEATURE_LAYOUT_TEXT_LAYERS`, `FEATURE_LAYOUT_BREAKPOINT_OVERRIDES`, `FEATURE_LAYOUT_STARTER_LIBRARY`) and a filter-backed stub (`wpsg_license_is_pro`, default free) for the pre-credentials state.
+- **Server-side enforcement (defense-in-depth):** strip/freeze the gated persisted fields (`texts`, `breakpointOverrides`) in the layout-template write path (`includes/class-wpsg-layout-templates.php` — `create()`/`update()`/`sanitize_template_data()` via a shared `enforce_license_gates()` helper). An unlicensed save succeeds but degrades the pro payload; existing saved data is frozen, never destroyed. This closes the gap where a direct REST POST would bypass the client gate.
+- **Client-side gating (UX):** expose license state via `WPSG_Embed::page_config_js()` → `window.__WPSG_CONFIG__.license` → `src/hooks/useWpsgLicense.ts`, and gate the 3 entry points (add-text button in `LayoutBuilderLayersPanel.tsx`, the breakpoint switcher in `LayoutBuilderCanvasPanel.tsx`, the "From Preset" button in `LayoutTemplateList.tsx`) with an upsell notification (`src/utils/wpsgUpsell.tsx`). The underlying data models/hooks are untouched.
+- **Not touched:** the adapter registry / `AdapterRegistration` (adapter gating deferred), `WPSG_Permissions` (role gate stays orthogonal), and all rendering paths (`LayoutCanvas`, `LayoutBuilderGallery`, `resolveSlotForBreakpoint`) so already-saved pro content always renders.
 
 ### Acceptance criteria
 
-- Pro adapters/features are inaccessible without a valid license and degrade gracefully (clear upsell, no broken UI) when locked.
-- The free surface remains fully functional with no license.
-- Gating is expressed at the registry + permissions seams, not duplicated ad hoc.
+- Pro features are inaccessible without a valid license and degrade gracefully (clear upsell, no broken UI) when locked. ✅
+- The free surface remains fully functional with no license; already-saved pro content still renders. ✅
+- Gating flows through the single `WPSG_License` seam (server enforcement + client UX), not duplicated ad hoc. ✅
 
 ### Validation
 
-- `npm run test` + PHPUnit for the gated/ungated branches; manual QA toggling a simulated license state.
+- ✅ `npm run test` (Vitest): `useWpsgLicense`, the 3 UI gates (Layers/Canvas/TemplateList) — gated + ungated branches.
+- ✅ PHPUnit: `WPSG_License_Test`, plus strip/freeze cases added to `WPSG_Layout_Templates_Test` and `WPSG_Import_Sanitization_Test`.
+- ✅ `npm run i18n:check`, `tsc -b`, ESLint, PHPCS security ruleset.
+- ⏳ Manual QA toggling a simulated license via `add_filter('wpsg_license_is_pro', '__return_true')` in a local mu-plugin (recommended before release).
 
 ## Track P62-B - Freemius SDK integration
 
@@ -73,19 +84,19 @@ A paid path needs license activation, authenticated auto-updates, and checkout/t
 
 ### Fix
 
-- Initialize the Freemius SDK in `wp-super-gallery.php` and wrap the P62-A gates in the SDK's entitlement checks (`can_use_premium_code()` / `is_paying()`).
-- Wire authenticated auto-updates through Freemius.
-- Enable opt-in analytics with explicit user disclosure (MONETIZATION §6); no phoning-home without consent.
+- Add a **credential-ready** Freemius bootstrap block in `wp-super-gallery.php` (defines `wpsg_fs()`): reads the `wpsg_freemius_config` filter, and when the Plugin ID / public key are empty or the vendored SDK is absent, returns `null` — a safe no-op making **zero** network calls (mirrors the `wpsg_sentry_dsn` pattern). `WPSG_License` (P62-A) already delegates to `wpsg_fs()->can_use_premium_code()` when the SDK is live. The composer dependency `freemius/wordpress-sdk` (pinned `^2.13`, resolved 2.13.3) is added to `composer.json`/`composer.lock`.
+- **Auto-updates:** handled automatically by the SDK once `is_premium` + real credentials are configured (reads the existing `WPSG_VERSION` SoT). No separate code path.
+- **Analytics/consent (MONETIZATION §6):** rely on Freemius's built-in opt-in/skip dialog, which fires on first activation *after* real credentials exist. No custom consent UI, and nothing transmits pre-credentials because `wpsg_fs()` is a no-op. Nothing to implement.
 
 ### Acceptance criteria
 
-- License activation/deactivation works end-to-end; pro entitlements flip the P62-A gates.
-- Authenticated auto-updates deliver through Freemius.
-- Analytics are opt-in and disclosed; nothing transmits without consent.
+- ✅ (code) SDK bootstrap is credential-ready and a safe no-op without credentials; `WPSG_License` flips the P62-A gates when the SDK reports premium.
+- ⏳ (sandbox, M1-M3) License activation/deactivation end-to-end; authenticated auto-update delivery; opt-in dialog appearing on activation.
 
 ### Validation
 
-- Sandbox a Freemius test license: activate, verify pro unlock, simulate an update, deactivate and verify re-lock; confirm no network calls before opt-in.
+- ✅ Verifiable now with the stub: PHPUnit/Vitest green with `wpsg_fs()` returning `null`; no network calls before opt-in (there is no SDK call path until credentials exist).
+- ⏳ **Blocked on M1-M3 (real Freemius sandbox account):** activate → verify pro unlock → simulate an update → deactivate → verify re-lock; confirm the opt-in dialog and that `can_use_premium_code()` reflects a real purchased/trial/expired license. Do not mark this track "shipped" until this passes — current state is **code complete, sandbox-pending**.
 
 ## Track P62-C - Pricing & licensing model
 
@@ -115,34 +126,42 @@ Support is the dominant *ongoing* cost of any paid path (MONETIZATION §6), and 
 
 ### Fix
 
-- Write license activation + troubleshooting docs (extending the install docs from [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E).
-- Define the support channel and an SLA, and publish a refund policy consistent with marketplace requirements.
+- ✅ New `docs/guides/LICENSE_ACTIVATION.md` (activation / deactivation / troubleshooting), cross-linked from the P60-E install guide.
+- ✅ Two FAQ entries in `wp-plugin/wp-super-gallery/readme.txt` (license activation, refund policy) with clearly-marked `[PLACEHOLDER]` values.
+- ✅ Troubleshooting-matrix row in `docs/guides/INSTALL_AND_TROUBLESHOOTING.md` pointing at the activation guide.
+- ⏳ Final support-channel/SLA and refund-policy text (M4) and exact Freemius-screen captures (M1-M3) filled in by the account owner before publishing.
 
 ### Acceptance criteria
 
-- License activation/troubleshooting docs exist and match the real flow.
-- A support channel + SLA and a refund policy are published.
+- ✅ License activation/troubleshooting docs exist (written against the SDK's standard flow; exact screens pending M1-M3).
+- ⏳ Real support channel + SLA and refund policy published (placeholders shipped; human fills M4).
 
 ### Validation
 
-- Doc walkthrough against the sandbox activation flow; review the refund policy against Freemius/marketplace requirements.
+- ✅ Docs build/link-check; placeholders clearly marked.
+- ⏳ Walkthrough against the real sandbox activation flow once M1-M3 land; review refund policy against Freemius/marketplace requirements.
 
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| Free WP.org "lite" tier (top-of-funnel) | MONETIZATION §7 stage 3; gated on the full public-readiness work (full admin i18n + WCAG AA) in [FUTURE_TASKS.md](FUTURE_TASKS.md). Revisit once the pro tier proves out. |
+| **Adapter-level pro gating** (`pro` flag on `AdapterRegistration`, license check in `resolveAdapter`) | Explicitly out of scope this phase — all 14 adapters stay free. Revisit only once a specific adapter is deliberately productized as pro, ideally informed by Freemius usage analytics once live. |
+| Free WP.org "lite" tier (top-of-funnel) | MONETIZATION §7 stage 3; gated on the full public-readiness work (WCAG AA still open in [FUTURE_TASKS.md](FUTURE_TASKS.md); admin i18n now resolved via P60-I/P61). Revisit once the pro tier proves out. |
 | EDD / self-hosted licensing | Only if Freemius per-transaction fees or lock-in become material at scale (MONETIZATION §3–4). |
 | Affiliate program | Freemius supports it; defer until there is a renewal base worth amplifying. |
+| Per-feature Freemius plan mapping | `WPSG_License::can_use_feature()` already accepts a feature key; today all 3 constants collapse to one boolean. Split only if pricing later differentiates the features into separate plans. |
+| Save-response "license notice" | When `update()`'s freeze silently drops a pro-field edit, the REST response could carry a flag so the client shows a targeted "your edit wasn't saved — upgrade to keep it" banner instead of a generic upsell. Nice-to-have. |
 
 ## Implementation Notes
 
-- Record completed work at a high level as tracks land. Keep short and factual.
+- **P62-A / P62-B code (2026-07-06).** New `includes/class-wpsg-license.php` (entitlement seam). Credential-ready Freemius bootstrap (`wpsg_fs()`) + `freemius/wordpress-sdk ^2.13` in `composer.json`/`composer.lock`. Server-side strip/freeze of `texts`/`breakpointOverrides` in `class-wpsg-layout-templates.php`. License state exposed via `class-wpsg-embed.php::page_config_js()`. JS: `src/hooks/useWpsgLicense.ts`, `src/utils/wpsgUpsell.tsx`, and 3 UI gates (`LayoutBuilderLayersPanel`, `LayoutBuilderCanvasPanel`, `LayoutTemplateList`). 5 new i18n keys (`upsell_*`) + regenerated PHP manifest.
+- **Design call — graceful degradation:** existing saved pro data always renders; only *new/edited* pro content is gated once a license check is live (`update()` freezes to the stored value, `create()`/import strip to empty). No live migration (pre-launch).
+- **Credential injection:** real Plugin ID / public key are supplied via the `wpsg_freemius_config` filter from **outside** this repo (mu-plugin or wp-config constant) — never committed.
 
 ## Outcome
 
-_To be completed once the phase ships._
+_To be completed once the phase ships (blocked on M1-M3 sandbox validation)._
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+- **Code complete (P62-A, P62-B):** pro-feature gating + credential-ready Freemius SDK, all automated tests + lint green.
+- **Deferred:** adapter-level gating; WP.org lite tier (WCAG AA); affiliate program; per-feature plan mapping.
+- **Next:** human completes M1-M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the filter, then runs the sandbox validation checklist in P62-B/C before flipping the phase to shipped.

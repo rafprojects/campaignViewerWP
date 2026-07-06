@@ -16,6 +16,8 @@ import { CanvasTransformContext, useRootId } from '@wp-super-gallery/shared-ui';
 import { SNAP_MODE_LABELS, type SnapMode } from '@wp-super-gallery/shared-utils';
 import { safeLocalStorage, fitRectsIntoBand } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { showProUpsell } from '@/utils/wpsgUpsell';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 
@@ -112,6 +114,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   } = useBuilderDock();
 
   const { t: tr } = useTranslation('wpsg');
+  const { isPro, upgradeUrl } = useWpsgLicense();
   const presetSegmentedData = PRESET_SEGMENTED_DATA.map(({ value, label }) => ({ value, label: tr(`lb_canvas_preset_${value}`, label) }));
   const breakpointEditData = BREAKPOINT_EDIT_DATA.map(({ value, label }) => ({ value, label: tr(`admin_bp_${value}`, label) }));
 
@@ -608,7 +611,22 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                 <SegmentedControl
                   data={breakpointEditData}
                   value={builder.activeBreakpoint}
-                  onChange={(v) => builder.setActiveBreakpoint(v as ResponsiveBreakpoint)}
+                  onChange={(v) => {
+                    // P62-A: per-breakpoint overrides are a Pro feature. Gate
+                    // the edit-mode switch itself (every override mutation
+                    // happens while activeBreakpoint !== 'desktop'). `desktop`
+                    // stays free; rendering saved tablet/mobile overrides in
+                    // preview is never gated.
+                    if (!isPro && v !== 'desktop') {
+                      showProUpsell(
+                        'upsell_breakpoints',
+                        'Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts.',
+                        upgradeUrl,
+                      );
+                      return;
+                    }
+                    builder.setActiveBreakpoint(v as ResponsiveBreakpoint);
+                  }}
                   size="xs"
                   aria-label={tr('lb_canvas_bp_edit_aria', 'Breakpoint edit mode')}
                   data-testid="breakpoint-edit-selector"

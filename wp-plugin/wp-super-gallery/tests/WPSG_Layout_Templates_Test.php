@@ -8,10 +8,24 @@
 class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
 
     /**
+     * P62-A: this suite exercises the full-featured (licensed) template engine —
+     * text layers and per-breakpoint overrides are Pro features, so the engine's
+     * CRUD/sanitization of them is only reachable with a license. Default the
+     * suite to "licensed"; the dedicated gating tests below drop the license to
+     * assert the unlicensed strip/freeze behaviour.
+     */
+    public function setUp(): void {
+        parent::setUp();
+        add_filter( 'wpsg_license_is_pro', '__return_true' );
+    }
+
+    /**
      * Clean up after each test.
      */
     public function tearDown(): void {
         delete_option( WPSG_Layout_Templates::OPTION_KEY );
+        // Ensure the licensed-state filter never leaks into the next test.
+        remove_filter( 'wpsg_license_is_pro', '__return_true' );
         parent::tearDown();
     }
 
@@ -840,5 +854,128 @@ class WPSG_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertEquals( 'Renamed', $updated['name'] );
         // The merge-update path must preserve previously-saved overrides.
         $this->assertEqualsWithDelta( 12, $updated['breakpointOverrides']['tablet']['slot-1']['x'], 0.0001 );
+    }
+
+    // ── P62-A: license/entitlement gating (server-side enforcement) ──────────
+    //
+    // enforce_license_gates() strips pro fields on create/import and freezes
+    // them on update when unlicensed. In the test env wpsg_fs() returns null,
+    // so WPSG_License falls back to the `wpsg_license_is_pro` filter (default
+    // false = free tier); toggling it via add_filter simulates a pro license.
+
+    /** A text layer payload fixture. */
+    private function text_layer_fixture( string $content = 'Summer Sale' ): array {
+        return [
+            'id'      => 'text-1',
+            'x'       => 10,
+            'y'       => 20,
+            'width'   => 40,
+            'height'  => 12,
+            'zIndex'  => 5,
+            'content' => $content,
+        ];
+    }
+
+    /** A per-breakpoint override payload fixture. */
+    private function breakpoint_override_fixture( float $x = 10 ): array {
+        return [ 'tablet' => [ 'slot-1' => [ 'x' => $x, 'y' => 20 ] ] ];
+    }
+
+    public function test_create_strips_text_layers_when_unlicensed() {
+        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // drop the suite's default license
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ $this->text_layer_fixture() ],
+        ] ) );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( [], $result['texts'], 'Unlicensed create must strip text layers.' );
+    }
+
+    public function test_create_strips_breakpoint_overrides_when_unlicensed() {
+        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // drop the suite's default license
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'breakpointOverrides' => $this->breakpoint_override_fixture(),
+        ] ) );
+
+        $this->assertIsArray( $result );
+        $this->assertSame( [], $result['breakpointOverrides'], 'Unlicensed create must strip breakpoint overrides.' );
+    }
+
+    public function test_create_persists_pro_fields_when_licensed() {
+        // Suite is licensed by default (setUp).
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts'               => [ $this->text_layer_fixture() ],
+            'breakpointOverrides' => $this->breakpoint_override_fixture(),
+        ] ) );
+
+        $this->assertCount( 1, $result['texts'], 'Licensed create must persist text layers.' );
+        $this->assertEquals( 'Summer Sale', $result['texts'][0]['content'] );
+        $this->assertArrayHasKey( 'slot-1', $result['breakpointOverrides']['tablet'] );
+    }
+
+    public function test_per_feature_filter_can_override_a_single_feature() {
+        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // globally free
+        // …but selectively enable ONLY text layers.
+        add_filter( 'wpsg_license_feature_enabled', function ( $enabled, $feature ) {
+            return WPSG_License::FEATURE_LAYOUT_TEXT_LAYERS === $feature ? true : $enabled;
+        }, 10, 2 );
+
+        $result = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts'               => [ $this->text_layer_fixture() ],
+            'breakpointOverrides' => $this->breakpoint_override_fixture(),
+        ] ) );
+
+        $this->assertCount( 1, $result['texts'], 'Text layers enabled by per-feature filter must persist.' );
+        $this->assertSame( [], $result['breakpointOverrides'], 'Breakpoint overrides remain gated.' );
+
+        remove_all_filters( 'wpsg_license_feature_enabled' );
+    }
+
+    public function test_update_freezes_text_layers_when_unlicensed() {
+        // Suite is licensed by default → create persists pro fields.
+        $created = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ $this->text_layer_fixture( 'Original' ) ],
+        ] ) );
+        $this->assertCount( 1, $created['texts'] );
+        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // now unlicensed
+
+        // Now unlicensed: an attempt to change text layers must be frozen to
+        // the last-saved value, NOT emptied and NOT accepted.
+        $updated = WPSG_Layout_Templates::update( $created['id'], [
+            'name'  => 'Renamed',
+            'texts' => [ $this->text_layer_fixture( 'Hacked In' ) ],
+        ] );
+
+        $this->assertEquals( 'Renamed', $updated['name'], 'Non-gated fields still save.' );
+        $this->assertCount( 1, $updated['texts'], 'Existing pro data must be preserved, not destroyed.' );
+        $this->assertEquals( 'Original', $updated['texts'][0]['content'], 'Unlicensed edit to text layers must be discarded (frozen).' );
+    }
+
+    public function test_update_freezes_breakpoint_overrides_when_unlicensed() {
+        // Suite is licensed by default → create persists pro fields.
+        $created = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'breakpointOverrides' => $this->breakpoint_override_fixture( 10 ),
+        ] ) );
+        $this->assertArrayHasKey( 'slot-1', $created['breakpointOverrides']['tablet'] );
+        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // now unlicensed
+
+        $updated = WPSG_Layout_Templates::update( $created['id'], [
+            'breakpointOverrides' => $this->breakpoint_override_fixture( 99 ),
+        ] );
+
+        $this->assertEqualsWithDelta( 10, $updated['breakpointOverrides']['tablet']['slot-1']['x'], 0.0001, 'Unlicensed edit to breakpoint overrides must be frozen to the saved value.' );
+    }
+
+    public function test_update_accepts_pro_fields_when_licensed() {
+        // Suite is licensed by default (setUp).
+        $created = WPSG_Layout_Templates::create( $this->valid_template_data( [
+            'texts' => [ $this->text_layer_fixture( 'Original' ) ],
+        ] ) );
+
+        $updated = WPSG_Layout_Templates::update( $created['id'], [
+            'texts' => [ $this->text_layer_fixture( 'Edited' ) ],
+        ] );
+
+        $this->assertEquals( 'Edited', $updated['texts'][0]['content'], 'Licensed edit to text layers must be accepted.' );
     }
 }

@@ -1,7 +1,8 @@
 {
     "require": {
         "sentry/sentry": "^4.11",
-        "enshrined/svg-sanitize": "^0.22"
+        "enshrined/svg-sanitize": "^0.22",
+        "freemius/wordpress-sdk": "^2.13"
     },
     "require-dev": {
         "yoast/phpunit-polyfills": "^2.0",

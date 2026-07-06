@@ -58,6 +58,8 @@ import {
 } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { showProUpsell } from '@/utils/wpsgUpsell';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -117,6 +119,7 @@ interface LayoutTemplateListProps {
 
 export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spaceId }: LayoutTemplateListProps) {
   const { t: tr } = useTranslation('wpsg');
+  const { isPro, upgradeUrl } = useWpsgLicense();
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -375,7 +378,20 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
             variant="light"
             leftSection={<IconLayoutDashboard size={16} />}
             size="sm"
-            onClick={() => setPresetGalleryOpen(true)}
+            onClick={() => {
+              // P62-A: the starter template library is a Pro feature. Button
+              // stays visible (a locked CTA converts better than a hidden one);
+              // gate the open action.
+              if (!isPro) {
+                showProUpsell(
+                  'upsell_starter_library',
+                  'The starter template library is a Pro feature. Upgrade to start from a curated preset.',
+                  upgradeUrl,
+                );
+                return;
+              }
+              setPresetGalleryOpen(true);
+            }}
           >
             {tr('admin_lt_from_preset', 'From Preset')}
           </Button>

@@ -189,6 +189,10 @@ class WPSG_Layout_Templates {
         $id  = wp_generate_uuid4();
         $now = gmdate( 'c' );
 
+        // P62-A: strip pro-gated fields on create when unlicensed (no prior
+        // state to preserve, so strip-to-empty).
+        $data = self::enforce_license_gates( $data );
+
         $template = self::build_template( $id, $data, $now );
 
         $validation = self::validate_template( $template );
@@ -237,6 +241,11 @@ class WPSG_Layout_Templates {
         if ( ! is_array( $existing ) ) {
             $existing = [];
         }
+
+        // P62-A: freeze pro-gated fields to their last-saved value when
+        // unlicensed, so a lapsed/absent license never destroys already-saved
+        // pro data — it only blocks new/edited pro content on save.
+        $data = self::enforce_license_gates( $data, $existing );
 
         // Rebuild through build_template() so all fields (including new
         // slot sub-fields like shadow, filterEffects, tilt, etc.) are
@@ -516,9 +525,47 @@ class WPSG_Layout_Templates {
      * @return array Sanitized template data.
      */
     public static function sanitize_template_data( array $data ): array {
+        // P62-A: strip pro-gated fields on import when unlicensed. Import has
+        // no prior "existing" state to freeze against, so strip-to-empty (same
+        // as the create path).
+        $data = self::enforce_license_gates( $data );
+
         $id  = wp_generate_uuid4();
         $now = gmdate( 'c' );
         return self::build_template( $id, $data, $now );
+    }
+
+    /**
+     * Strip or freeze license-gated fields (P62-A) on the write path.
+     *
+     * Entitlement enforcement is deliberately server-side and orthogonal to
+     * WPSG_Permissions: a permission failure 403s the request, but an
+     * unlicensed save SUCCEEDS with the pro fields degraded. This closes the
+     * gap where a direct REST POST could bypass the client-side UI gate.
+     *
+     * When $existing is null (create/import) gated fields are stripped to
+     * empty. When $existing is provided (update) they are FROZEN to their
+     * last-saved value, so an absent/lapsed license never destroys
+     * already-saved pro data — it only discards new/edited pro content.
+     *
+     * Currently gates two persisted pro fields: `texts` (P59 text layers) and
+     * `breakpointOverrides` (P58-B per-breakpoint responsive). The starter
+     * template library (P58-C) has no gated persisted field — its presets
+     * carry only `slots` — so it is gated client-side only; if a future preset
+     * ever embeds `texts`/`breakpointOverrides`, this guard already catches it.
+     *
+     * @param array      $data     Incoming (partial) template data.
+     * @param array|null $existing Stored template (update path) or null (create/import).
+     * @return array Adjusted data.
+     */
+    private static function enforce_license_gates( array $data, ?array $existing = null ): array {
+        if ( ! WPSG_License::can_use_feature( WPSG_License::FEATURE_LAYOUT_TEXT_LAYERS ) ) {
+            $data['texts'] = $existing === null ? [] : ( $existing['texts'] ?? [] );
+        }
+        if ( ! WPSG_License::can_use_feature( WPSG_License::FEATURE_LAYOUT_BREAKPOINT_OVERRIDES ) ) {
+            $data['breakpointOverrides'] = $existing === null ? [] : ( $existing['breakpointOverrides'] ?? [] );
+        }
+        return $data;
     }
 
     /**

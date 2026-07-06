@@ -65,6 +65,14 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 
 By default the plugin sends **nothing** to any external service — no telemetry or phone-home. It can store two kinds of personal data, both **off by default**: pseudonymised visitor counts if you enable Analytics (the raw IP is never stored — only a salted SHA-256 hash), and requester email addresses if you enable access requests for private campaigns. WordPress login cookies handle authentication; the plugin sets no tracking cookies of its own. See the bundled privacy statement (`docs/PRIVACY.md`) for the full data inventory, retention behaviour, and how to fulfil data-subject requests.
 
+= How do I activate my Pro license? =
+
+After purchasing, enter your license key on the plugin's licensing screen (added by the Freemius SDK) to unlock the Pro features — advanced LayoutBuilder capabilities such as text layers, per-breakpoint responsive editing, and the starter template library. Deactivating a license re-locks *new* Pro edits but never removes or breaks content you already saved. Step-by-step instructions are in `docs/guides/LICENSE_ACTIVATION.md`. For activation problems, contact support at [PLACEHOLDER: support email, e.g. support@yourdomain.tld].
+
+= What is your refund policy? =
+
+[PLACEHOLDER: refund policy — e.g. "We offer a 14-day money-back guarantee. If the plugin doesn't work for you, contact [PLACEHOLDER: support email] within 14 days of purchase for a full refund."] Refunds are processed through Freemius, our merchant of record.
+
 == Screenshots ==
 
 1. Campaign gallery with classic grid adapter.
