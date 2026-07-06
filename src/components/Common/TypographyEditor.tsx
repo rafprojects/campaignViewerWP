@@ -10,6 +10,7 @@ import {
   Badge,
 } from '@mantine/core';
 import { IconTrash } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { CssValueInput } from '@/components/Common/CssValueInput';
 import type { TypographyOverride } from '@/types';
@@ -121,53 +122,10 @@ const GOOGLE_FONT_OPTIONS = [
   { value: 'Source Code Pro, monospace', label: 'Source Code Pro' },
 ];
 
-/* ── Fallback options — system fonts only (guaranteed available) ──────── */
-const FALLBACK_FONT_OPTIONS = [
-  { value: '', label: '(none)' },
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Helvetica', label: 'Helvetica' },
-  { value: 'Verdana', label: 'Verdana' },
-  { value: 'Tahoma', label: 'Tahoma' },
-  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
-  { value: 'Georgia', label: 'Georgia' },
-  { value: 'Times New Roman', label: 'Times New Roman' },
-  { value: 'Courier New', label: 'Courier New' },
-];
-
-const FONT_WEIGHTS = [
-  { value: '', label: '(default)' },
-  { value: '100', label: '100 — Thin' },
-  { value: '200', label: '200 — Extra Light' },
-  { value: '300', label: '300 — Light' },
-  { value: '400', label: '400 — Normal' },
-  { value: '500', label: '500 — Medium' },
-  { value: '600', label: '600 — Semi Bold' },
-  { value: '700', label: '700 — Bold' },
-  { value: '800', label: '800 — Extra Bold' },
-  { value: '900', label: '900 — Black' },
-];
-
-const FONT_STYLES = [
-  { value: '', label: '(default)' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'italic', label: 'Italic' },
-  { value: 'oblique', label: 'Oblique' },
-];
-
-const TEXT_TRANSFORMS = [
-  { value: '', label: '(default)' },
-  { value: 'none', label: 'None' },
-  { value: 'uppercase', label: 'UPPERCASE' },
-  { value: 'lowercase', label: 'lowercase' },
-  { value: 'capitalize', label: 'Capitalize' },
-];
-
-const TEXT_DECORATIONS = [
-  { value: '', label: '(default)' },
-  { value: 'none', label: 'None' },
-  { value: 'underline', label: 'Underline' },
-  { value: 'overline', label: 'Overline' },
-  { value: 'line-through', label: 'Line-through' },
+/* ── Font names available as fallbacks (proper nouns — not translated) ── */
+const FALLBACK_FONT_NAMES = [
+  'Arial', 'Helvetica', 'Verdana', 'Tahoma', 'Trebuchet MS',
+  'Georgia', 'Times New Roman', 'Courier New',
 ];
 
 /** Remove undefined/empty-string values so the stored object stays lean. */
@@ -180,7 +138,51 @@ function clean(override: TypographyOverride): TypographyOverride {
 }
 
 export function TypographyEditor({ value, onChange, customFonts }: TypographyEditorProps) {
+  const { t } = useTranslation('wpsg');
   const { recentFonts, addRecentFont } = useRecentFonts();
+
+  // Option lists with translatable descriptors. Font names stay as proper nouns;
+  // only the UI descriptors ((none)/(default)/weight/style words) are localised.
+  const noneOpt = t('typo_opt_none_paren', '(none)');
+  const defaultOpt = t('typo_opt_default_paren', '(default)');
+  const fallbackFontOptions = [
+    { value: '', label: noneOpt },
+    ...FALLBACK_FONT_NAMES.map((n) => ({ value: n, label: n })),
+  ];
+  const fontWeights = [
+    { value: '', label: defaultOpt },
+    { value: '100', label: `100 — ${t('typo_w_thin', 'Thin')}` },
+    { value: '200', label: `200 — ${t('typo_w_extralight', 'Extra Light')}` },
+    { value: '300', label: `300 — ${t('typo_w_light', 'Light')}` },
+    { value: '400', label: `400 — ${t('typo_w_normal', 'Normal')}` },
+    { value: '500', label: `500 — ${t('typo_w_medium', 'Medium')}` },
+    { value: '600', label: `600 — ${t('typo_w_semibold', 'Semi Bold')}` },
+    { value: '700', label: `700 — ${t('typo_w_bold', 'Bold')}` },
+    { value: '800', label: `800 — ${t('typo_w_extrabold', 'Extra Bold')}` },
+    { value: '900', label: `900 — ${t('typo_w_black', 'Black')}` },
+  ];
+  const fontStyles = [
+    { value: '', label: defaultOpt },
+    { value: 'normal', label: t('typo_style_normal', 'Normal') },
+    { value: 'italic', label: t('typo_style_italic', 'Italic') },
+    { value: 'oblique', label: t('typo_style_oblique', 'Oblique') },
+  ];
+  // UPPERCASE / lowercase / Capitalize labels demonstrate the CSS transform
+  // itself (locale-invariant illustration), so only the neutral options localise.
+  const textTransforms = [
+    { value: '', label: defaultOpt },
+    { value: 'none', label: t('typo_opt_none', 'None') },
+    { value: 'uppercase', label: 'UPPERCASE' },
+    { value: 'lowercase', label: 'lowercase' },
+    { value: 'capitalize', label: 'Capitalize' },
+  ];
+  const textDecorations = [
+    { value: '', label: defaultOpt },
+    { value: 'none', label: t('typo_opt_none', 'None') },
+    { value: 'underline', label: t('typo_td_underline', 'Underline') },
+    { value: 'overline', label: t('typo_td_overline', 'Overline') },
+    { value: 'line-through', label: t('typo_td_linethrough', 'Line-through') },
+  ];
 
   const set = useCallback(
     <K extends keyof TypographyOverride>(key: K, v: TypographyOverride[K] | '' | undefined) => {
@@ -203,21 +205,21 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         .map((name) => allOptions.find((o) => o.label === name))
         .filter((o): o is { value: string; label: string } => !!o);
       if (recentItems.length > 0) {
-        groups.push({ group: 'Recently Used', items: recentItems });
+        groups.push({ group: t('typo_group_recent', 'Recently Used'), items: recentItems });
         for (const item of recentItems) usedValues.add(item.value);
       }
     }
 
     if (customFonts && customFonts.length > 0) {
       const items = customFonts.map((f) => ({ value: f.family, label: f.name })).filter((o) => !usedValues.has(o.value));
-      if (items.length > 0) groups.push({ group: 'Custom Fonts', items });
+      if (items.length > 0) groups.push({ group: t('typo_group_custom', 'Custom Fonts'), items });
     }
 
-    groups.push({ group: 'System Fonts', items: SYSTEM_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
-    groups.push({ group: 'Google Fonts', items: GOOGLE_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
+    groups.push({ group: t('typo_group_system', 'System Fonts'), items: SYSTEM_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
+    groups.push({ group: t('typo_group_google', 'Google Fonts'), items: GOOGLE_FONT_OPTIONS.filter((o) => !usedValues.has(o.value)) });
 
     return groups;
-  }, [recentFonts, customFonts]);
+  }, [recentFonts, customFonts, t]);
 
   // ── Fallback chain derived state ──
   const primaryLabel = (value.fontFamily ?? '').split(',')[0]!.trim();
@@ -239,8 +241,8 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
             variant="subtle"
             color="red"
             size="sm"
-            title="Reset all overrides"
-            aria-label="Reset all overrides"
+            title={t('typo_reset', 'Reset all overrides')}
+            aria-label={t('typo_reset', 'Reset all overrides')}
             onClick={() => onChange({})}
           >
             <IconTrash size={14} />
@@ -250,7 +252,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
 
       {/* ── Core Typography ── */}
       <Select
-        label="Font Family"
+        label={t('typo_font_family', 'Font Family')}
         value={value.fontFamily ?? ''}
         onChange={(v) => {
           if (v) {
@@ -280,78 +282,78 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         <Stack gap={4}>
           {isFailed && (
             <Badge color="orange" variant="light" size="sm" radius="sm" style={{ alignSelf: 'flex-start' }}>
-              ⚠ Font failed to load — first available fallback will be used
+              {t('typo_font_failed', '⚠ Font failed to load — first available fallback will be used')}
             </Badge>
           )}
           <Group grow gap="sm">
             <Select
-              label="Fallback 1"
-              description={suggestedFb1 && !value.fontFallback1 ? `Suggested: ${suggestedFb1}` : undefined}
+              label={t('typo_fallback1', 'Fallback 1')}
+              description={suggestedFb1 && !value.fontFallback1 ? t('typo_suggested', 'Suggested: {{font}}', { font: suggestedFb1 }) : undefined}
               value={value.fontFallback1 ?? ''}
               onChange={(v) => set('fontFallback1', v || undefined)}
-              data={FALLBACK_FONT_OPTIONS}
+              data={fallbackFontOptions}
               size="xs"
               clearable
             />
             <Select
-              label="Fallback 2"
+              label={t('typo_fallback2', 'Fallback 2')}
               value={value.fontFallback2 ?? ''}
               onChange={(v) => set('fontFallback2', v || undefined)}
-              data={FALLBACK_FONT_OPTIONS}
+              data={fallbackFontOptions}
               size="xs"
               clearable
             />
           </Group>
           <Text size="xs" c="dimmed">
-            Terminal: {terminalFamily}
+            {t('typo_terminal', 'Terminal: {{family}}', { family: terminalFamily })}
           </Text>
         </Stack>
       )}
 
       <Group grow gap="sm">
         <CssValueInput
-          label="Font Size"
+          label={t('typo_font_size', 'Font Size')}
           value={value.fontSize}
           onChange={(v) => set('fontSize', v)}
           allowedUnits={CSS_SPACING_UNITS}
           max={500}
         />
         <Select
-          label="Font Weight"
+          label={t('typo_font_weight', 'Font Weight')}
           value={value.fontWeight != null ? String(value.fontWeight) : ''}
           onChange={(v) => set('fontWeight', v ? Number(v) : undefined)}
-          data={FONT_WEIGHTS}
+          data={fontWeights}
           size="xs"
         />
       </Group>
 
       <Group grow gap="sm">
         <Select
-          label="Font Style"
+          label={t('typo_font_style', 'Font Style')}
           value={value.fontStyle ?? ''}
           onChange={(v) => set('fontStyle', (v as TypographyOverride['fontStyle']) || undefined)}
-          data={FONT_STYLES}
+          data={fontStyles}
           size="xs"
         />
         <Select
-          label="Transform"
+          label={t('typo_transform', 'Transform')}
           value={value.textTransform ?? ''}
           onChange={(v) => set('textTransform', (v as TypographyOverride['textTransform']) || undefined)}
-          data={TEXT_TRANSFORMS}
+          data={textTransforms}
           size="xs"
         />
       </Group>
 
       <Group grow gap="sm">
         <Select
-          label="Decoration"
+          label={t('typo_decoration', 'Decoration')}
           value={value.textDecoration ?? ''}
           onChange={(v) => set('textDecoration', (v as TypographyOverride['textDecoration']) || undefined)}
-          data={TEXT_DECORATIONS}
+          data={textDecorations}
           size="xs"
         />
         <ColorInput
-          label="Color"
+          label={t('typo_color', 'Color')}
           value={value.color ?? ''}
           onChange={(v) => set('color', v || undefined)}
           size="xs"
@@ -360,8 +362,8 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
 
       <Group grow gap="sm">
         <NumberInput
-          label="Line Height"
-          placeholder="e.g. 1.4"
+          label={t('typo_line_height', 'Line Height')}
+          placeholder={t('typo_line_height_ph', 'e.g. 1.4')}
           value={value.lineHeight ?? ''}
           onChange={(v) => set('lineHeight', typeof v === 'number' ? v : undefined)}
           min={0.5}
@@ -371,7 +373,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
           size="xs"
         />
         <CssValueInput
-          label="Letter Spacing"
+          label={t('typo_letter_spacing', 'Letter Spacing')}
           value={value.letterSpacing}
           onChange={(v) => set('letterSpacing', v)}
           allowedUnits={CSS_TRACKING_UNITS}
@@ -380,7 +382,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
           max={20}
         />
         <CssValueInput
-          label="Word Spacing"
+          label={t('typo_word_spacing', 'Word Spacing')}
           value={value.wordSpacing}
           onChange={(v) => set('wordSpacing', v)}
           allowedUnits={CSS_TRACKING_UNITS}
@@ -396,13 +398,13 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         <Accordion.Item value="stroke">
           <Accordion.Control>
             <Text size="xs" fw={500}>
-              Stroke {hasStroke ? '●' : ''}
+              {t('typo_stroke', 'Stroke')} {hasStroke ? '●' : ''}
             </Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Group grow gap="sm">
               <CssValueInput
-                label="Width"
+                label={t('typo_width', 'Width')}
                 value={value.textStrokeWidth}
                 onChange={(v) => set('textStrokeWidth', v)}
                 allowedUnits={CSS_TRACKING_UNITS}
@@ -410,7 +412,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
                 max={20}
               />
               <ColorInput
-                label="Color"
+                label={t('typo_color', 'Color')}
                 value={value.textStrokeColor ?? ''}
                 onChange={(v) => set('textStrokeColor', v || undefined)}
                 size="xs"
@@ -423,14 +425,14 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         <Accordion.Item value="shadow">
           <Accordion.Control>
             <Text size="xs" fw={500}>
-              Shadow {hasShadow ? '●' : ''}
+              {t('typo_shadow', 'Shadow')} {hasShadow ? '●' : ''}
             </Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Stack gap="sm">
               <Group grow gap="sm">
                 <CssValueInput
-                  label="Offset X"
+                  label={t('typo_offset_x', 'Offset X')}
                   value={value.textShadowOffsetX}
                   onChange={(v) => set('textShadowOffsetX', v)}
                   allowedUnits={CSS_TRACKING_UNITS}
@@ -438,7 +440,7 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
                   max={50}
                 />
                 <CssValueInput
-                  label="Offset Y"
+                  label={t('typo_offset_y', 'Offset Y')}
                   value={value.textShadowOffsetY}
                   onChange={(v) => set('textShadowOffsetY', v)}
                   allowedUnits={CSS_TRACKING_UNITS}
@@ -448,14 +450,14 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
               </Group>
               <Group grow gap="sm">
                 <CssValueInput
-                  label="Blur"
+                  label={t('typo_blur', 'Blur')}
                   value={value.textShadowBlur}
                   onChange={(v) => set('textShadowBlur', v)}
                   allowedUnits={CSS_TRACKING_UNITS}
                   max={100}
                 />
                 <ColorInput
-                  label="Color"
+                  label={t('typo_color', 'Color')}
                   format="hexa"
                   value={value.textShadowColor ?? ''}
                   onChange={(v) => set('textShadowColor', v || undefined)}
@@ -470,20 +472,20 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
         <Accordion.Item value="glow">
           <Accordion.Control>
             <Text size="xs" fw={500}>
-              Glow {hasGlow ? '●' : ''}
+              {t('typo_glow', 'Glow')} {hasGlow ? '●' : ''}
             </Text>
           </Accordion.Control>
           <Accordion.Panel>
             <Group grow gap="sm">
               <ColorInput
-                label="Glow Color"
+                label={t('typo_glow_color', 'Glow Color')}
                 format="hexa"
                 value={value.textGlowColor ?? ''}
                 onChange={(v) => set('textGlowColor', v || undefined)}
                 size="xs"
               />
               <CssValueInput
-                label="Glow Blur"
+                label={t('typo_glow_blur', 'Glow Blur')}
                 value={value.textGlowBlur}
                 onChange={(v) => set('textGlowBlur', v)}
                 allowedUnits={CSS_TRACKING_UNITS}

@@ -204,7 +204,7 @@ describe('GalleryConfigEditorModal', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
 
-    expect(await screen.findByText('Editing breakpoint-specific unified settings for the tablet layout.')).toBeInTheDocument();
+    expect(await screen.findByText('Editing breakpoint-specific unified settings for the Tablet layout.')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
     fireEvent.change(screen.getByDisplayValue('2'), { target: { value: '4' } });
     fireEvent.click(screen.getByLabelText('Unified Gallery Adapter', { selector: 'input' }));
@@ -379,7 +379,7 @@ describe('GalleryConfigEditorModal', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Tablet' }));
 
-    expect(await screen.findByText('Settings below apply to the tablet breakpoint for the current per-type gallery surface.')).toBeInTheDocument();
+    expect(await screen.findByText('Settings below apply to the Tablet breakpoint for the current per-type gallery surface.')).toBeInTheDocument();
     expect(screen.getByLabelText('Section Padding (px)')).toHaveValue('24');
 
     fireEvent.change(screen.getByLabelText('Section Padding (px)'), { target: { value: '30' } });

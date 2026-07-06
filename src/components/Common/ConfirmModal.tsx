@@ -1,5 +1,6 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface ConfirmModalProps {
@@ -37,12 +38,13 @@ function ConfirmModalContent({
   confirmAriaLabel,
   loading,
 }: ConfirmModalContentProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
       {typeof message === 'string' ? <Text>{message}</Text> : message}
       {children}
       <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
-        <Button variant="default" onClick={onClose}>Cancel</Button>
+        <Button variant="default" onClick={onClose}>{t('common_cancel', 'Cancel')}</Button>
         <Button
           color={confirmColor}
           onClick={onConfirm}
