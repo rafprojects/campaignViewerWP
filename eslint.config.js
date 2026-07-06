@@ -93,6 +93,7 @@ export default tseslint.config({
     'src/components/Galleries/Adapters/**/*.{ts,tsx}',
     'src/components/Galleries/Shared/**/*.{ts,tsx}',
     'src/components/Admin/**/*.{ts,tsx}',
+    'src/components/Auth/**/*.{ts,tsx}',
     'src/components/Campaign/**/*.{ts,tsx}',
     'src/components/CampaignGallery/**/*.{ts,tsx}',
     'src/components/CardViewer/**/*.{ts,tsx}',
