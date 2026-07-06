@@ -7228,3 +7228,24 @@ msgstr "归档 <strong>{{name}}</strong> 的所有广告系列？这将归档 {{
 
 msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
 msgstr "归档 <strong>{{name}}</strong> 的所有广告系列？这将归档 {{count}} 个活动广告系列。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2761
+msgid "Pro feature"
+msgstr "专业版功能"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2762
+msgid "Upgrade"
+msgstr "升级"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2763
+msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgstr "文本图层是专业版功能。升级即可在布局中添加和编辑文本。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2764
+msgid "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts."
+msgstr "按断点的响应式编辑是专业版功能。升级即可微调平板和移动端布局。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2765
+msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
+msgstr "起始模板库是专业版功能。升级即可从精选预设开始。"
+

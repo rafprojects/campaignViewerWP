@@ -151,12 +151,42 @@ Support is the dominant *ongoing* cost of any paid path (MONETIZATION §6), and 
 | Affiliate program | Freemius supports it; defer until there is a renewal base worth amplifying. |
 | Per-feature Freemius plan mapping | `WPSG_License::can_use_feature()` already accepts a feature key; today all 3 constants collapse to one boolean. Split only if pricing later differentiates the features into separate plans. |
 | Save-response "license notice" | When `update()`'s freeze silently drops a pro-field edit, the REST response could carry a flag so the client shows a targeted "your edit wasn't saved — upgrade to keep it" banner instead of a generic upsell. Nice-to-have. |
+| `.po` locale-completeness check | The PR-review pass found 5 new user-facing strings shipped English-only because `npm run i18n:check` only validates the en-JSON ↔ PHP-manifest sync, not per-locale `msgstr` coverage. A check that fails when a harvested manifest key has no translation in a reference locale would catch this class of regression at CI time. Small tooling add to `scripts/generate-frontend-i18n.mjs` (or a sibling). |
 
 ## Implementation Notes
 
 - **P62-A / P62-B code (2026-07-06).** New `includes/class-wpsg-license.php` (entitlement seam). Credential-ready Freemius bootstrap (`wpsg_fs()`) + `freemius/wordpress-sdk ^2.13` in `composer.json`/`composer.lock`. Server-side strip/freeze of `texts`/`breakpointOverrides` in `class-wpsg-layout-templates.php`. License state exposed via `class-wpsg-embed.php::page_config_js()`. JS: `src/hooks/useWpsgLicense.ts`, `src/utils/wpsgUpsell.tsx`, and 3 UI gates (`LayoutBuilderLayersPanel`, `LayoutBuilderCanvasPanel`, `LayoutTemplateList`). 5 new i18n keys (`upsell_*`) + regenerated PHP manifest.
 - **Design call — graceful degradation:** existing saved pro data always renders; only *new/edited* pro content is gated once a license check is live (`update()` freezes to the stored value, `create()`/import strip to empty). No live migration (pre-launch).
 - **Credential injection:** real Plugin ID / public key are supplied via the `wpsg_freemius_config` filter from **outside** this repo (mu-plugin or wp-config constant) — never committed.
+
+## PR Review & Fix Pass (2026-07-06)
+
+A pre-merge self-review of the P62-A/P62-B branch (`feat/phase62-monetization-licensing`, commits `6567590c` + `de0269b5`) combining a manual PR review with an inline `/code-review` pass (line-by-line, removed-behaviour, cross-file caller tracing, reuse/simplification/efficiency, altitude, and CLAUDE.md-conventions angles). No open GitHub PR existed, so the GitHub-comment steps of the review workflow were skipped; commits/pushes were kept for the fix.
+
+### Verdict
+
+The branch held up well. The license/permission split is correctly orthogonal, the shared `enforce_license_gates()` helper sits at the right altitude (server enforcement is not duplicated per call-site), the create-strip / update-freeze semantics never destroy already-saved pro data, and the Freemius bootstrap is a genuine no-op without credentials. Two candidate defects were investigated and **refuted**:
+
+- **Fatal-error risk from the un-guarded `WPSG_License::can_use_feature()` call in `enforce_license_gates()`** — refuted: `includes/class-wpsg-license.php` is required (`wp-super-gallery.php:100`) before `includes/class-wpsg-layout-templates.php` (`:124`), and the latter has no lazy-load path, so the class is always loaded when the helper runs.
+- **Pro data stripped from *exports*** — refuted: the only non-test caller of `sanitize_template_data()` (`includes/rest/class-wpsg-export-controller.php:191`) is an *import* routine (it builds posts from an incoming payload), so strip-to-empty there is the intended create-path behaviour, and it is covered by `WPSG_Import_Sanitization_Test`.
+
+### Finding — i18n locale-coverage gap (fixed)
+
+**Severity:** Medium. The 5 new user-facing `upsell_*` strings (`upsell_pro_title`, `upsell_cta`, `upsell_text_layers`, `upsell_breakpoints`, `upsell_starter_library`) were added to `src/i18n-strings.en.json` and the generated PHP manifest, but were never harvested into `languages/wp-super-gallery.pot` or translated in any of the 5 reference locales (de_DE, es_ES, fr_FR, ru_RU, zh_CN). A German/Spanish/French/Russian/Chinese site would therefore render the upsell toasts in English, regressing the Phase 61 5-locale-completeness standard. `npm run i18n:check` only validates the en-JSON ↔ PHP-manifest sync, so it did not catch the missing `.po`/`.mo` coverage.
+
+**Fix** (per [TRANSLATING.md](guides/TRANSLATING.md), which authorises AI-authored reference translations pending native-speaker review):
+
+- Regenerated `languages/wp-super-gallery.pot` via `wp i18n make-pot` (adds the 5 msgids).
+- Appended AI-authored translations for all 5 strings to each of the 5 locale `.po` files (surgical `+21` lines/file). `wp i18n update-po` was **rejected** because it reflows the entire file into a ~2,900-line diff; gettext is order-independent, so a targeted append is equivalent and reviewable.
+- Recompiled the runtime binaries with `wp i18n make-mo` and `wp i18n make-php`; verified each locale's `.l10n.php` now carries the translation.
+
+### QA — no regressions
+
+- ✅ **Vitest:** 3,653 tests across 239 files green (incl. `useWpsgLicense` + the 3 gating suites).
+- ✅ **ESLint / `tsc -b` / `npm run i18n:check`:** clean.
+- ✅ **PHPUnit** (wp-env, via the `php-testing` skill): 1,095 tests / 13,141 assertions, 0 failures (2 pre-existing skips). `WPSG_License_Test` (13), `WPSG_Layout_Templates_Test` (60), and `WPSG_Import_Sanitization_Test` (12) all green.
+
+The root cause — no check catches a manifest key that lacks a `msgstr` in a reference locale — is logged as a Follow-On Candidate below.
 
 ## Outcome
 

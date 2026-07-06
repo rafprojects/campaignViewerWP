@@ -7228,3 +7228,24 @@ msgstr "Архивировать все кампании компании <stron
 
 msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
 msgstr "Архивировать все кампании компании <strong>{{name}}</strong>? Будет архивировано {{count}} активных кампаний."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2761
+msgid "Pro feature"
+msgstr "Функция Pro"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2762
+msgid "Upgrade"
+msgstr "Обновить"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2763
+msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgstr "Текстовые слои — это функция Pro. Обновите тариф, чтобы добавлять и редактировать текст в макетах."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2764
+msgid "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts."
+msgstr "Адаптивное редактирование по контрольным точкам — это функция Pro. Обновите тариф, чтобы точно настроить макеты для планшетов и мобильных устройств."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2765
+msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
+msgstr "Библиотека стартовых шаблонов — это функция Pro. Обновите тариф, чтобы начать с готового шаблона."
+
