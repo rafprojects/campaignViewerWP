@@ -12,6 +12,7 @@
     "build:wp": "npm run i18n:generate && npm run build && node scripts/copy-wp-assets.js",
     "i18n:generate": "node scripts/generate-frontend-i18n.mjs",
     "i18n:check": "node scripts/generate-frontend-i18n.mjs --check",
+    "i18n:check:locales": "node scripts/check-i18n-locales.mjs",
     "validate:themes": "node scripts/validate-themes.mjs",
     "validate:adapter-settings": "node scripts/validate-adapter-settings-parity.mjs",
     "lint": "eslint .",

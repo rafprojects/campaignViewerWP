@@ -12,6 +12,7 @@
 | P62-B | Freemius SDK integration (credential-ready bootstrap) | Code complete (sandbox-pending) | Medium |
 | P62-C | Pricing & licensing model (tiers, renewals, trial) | Planned — human/dashboard (M1-M3) | Small-Medium |
 | P62-D | Buyer-facing docs + support process | In Progress | Small-Medium |
+| P62-E | i18n locale-coverage CI gate (PR-review hardening) | Complete | Small |
 
 > **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
 > 1. **Adapter-level gating is OUT of scope.** All 14 registered adapters stay free. P62-A gates only the 3 already-identified LayoutBuilder pro features (text layers, per-breakpoint responsive overrides, starter template library). Adapter gating is a Follow-On Candidate.
@@ -141,6 +142,33 @@ Support is the dominant *ongoing* cost of any paid path (MONETIZATION §6), and 
 - ✅ Docs build/link-check; placeholders clearly marked.
 - ⏳ Walkthrough against the real sandbox activation flow once M1-M3 land; review refund policy against Freemius/marketplace requirements.
 
+## Track P62-E - i18n locale-coverage CI gate (PR-review hardening)
+
+> Added out-of-band during the P62-A/B PR review (2026-07-06); not part of the original phase plan. See the **PR Review & Fix Pass** section for how the underlying defect surfaced.
+
+### Problem
+
+The i18n pipeline (see [TRANSLATING.md](guides/TRANSLATING.md)) has a single English source of truth — `src/i18n-strings.en.json` — that is (a) generated into a PHP `__()` manifest, then (b) harvested by `wp i18n make-pot` into `languages/wp-super-gallery.pot`, translated per locale in `wp-super-gallery-<locale>.po`, and compiled to `.mo`/`.l10n.php`. The existing guard, `npm run i18n:check`, asserts only step (a): that the en source and the generated PHP manifest agree. **Nothing asserts step (b)** — that the reference locales actually translate those strings.
+
+The failure mode is silent and easy to hit: add a user-facing string to the en source, run `npm run i18n:generate` (so `i18n:check` stays green), ship it — and it renders **English-only** on every non-English site, regressing the Phase 61 5-locale-completeness guarantee. This is exactly what the P62-A `upsell_*` strings did (see PR Review & Fix Pass); `i18n:check` was green throughout.
+
+### Fix
+
+- **New `scripts/check-i18n-locales.mjs`.** For every unique front-end source string (a value in `src/i18n-strings.en.json`), assert each reference locale's committed `.po` contains that `msgid` with a **non-empty, non-fuzzy** `msgstr`. It reads the `.po` directly (the `.mo`/`.l10n.php` are compiled from it), so it fails *before* the binaries are built, and on failure prints the exact missing strings per locale plus the remediation commands. Reference locales: `de_DE`, `es_ES`, `fr_FR`, `ru_RU`, `zh_CN`.
+- **Exposed as `npm run i18n:check:locales`.**
+- **CI-enforced.** Wired into `.github/workflows/ci.yml` (`lint-typecheck` job) as a dedicated **i18n locale coverage** step immediately after the existing **i18n manifest freshness** step, so the two guards read as a pair: manifest sync (step a) + locale coverage (step b).
+
+### Acceptance criteria
+
+- ✅ Passes on the current tree — all 2,267 unique front-end strings translated across all 5 reference locales.
+- ✅ Fails (exit 1) with an actionable per-locale report when a front-end string is added without a translation in every reference locale (verified by a negative test: injecting a throwaway key failed all 5 locales, then reverted).
+- ✅ No false positives — fuzzy entries (excluded from the compiled `.mo`) and empty `msgstr` both count as untranslated; shared/duplicate English strings collapse to a single `msgid`; the header entry is skipped.
+
+### Validation
+
+- ✅ `npm run i18n:check:locales` green on the committed tree; injected-string negative test fails as designed.
+- **Scope note.** The gate covers the **front-end** manifest strings — the class that regressed. The broader PHP-only admin/server gettext strings (which carry plural/context nuances) are not gated here; extending coverage to the full `.pot` is a Follow-On Candidate.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -151,7 +179,7 @@ Support is the dominant *ongoing* cost of any paid path (MONETIZATION §6), and 
 | Affiliate program | Freemius supports it; defer until there is a renewal base worth amplifying. |
 | Per-feature Freemius plan mapping | `WPSG_License::can_use_feature()` already accepts a feature key; today all 3 constants collapse to one boolean. Split only if pricing later differentiates the features into separate plans. |
 | Save-response "license notice" | When `update()`'s freeze silently drops a pro-field edit, the REST response could carry a flag so the client shows a targeted "your edit wasn't saved — upgrade to keep it" banner instead of a generic upsell. Nice-to-have. |
-| `.po` locale-completeness check | The PR-review pass found 5 new user-facing strings shipped English-only because `npm run i18n:check` only validates the en-JSON ↔ PHP-manifest sync, not per-locale `msgstr` coverage. A check that fails when a harvested manifest key has no translation in a reference locale would catch this class of regression at CI time. Small tooling add to `scripts/generate-frontend-i18n.mjs` (or a sibling). |
+| Extend the locale-coverage gate to the full PHP surface | Track P62-E gates the front-end manifest strings (the class that regressed). Extending `check-i18n-locales.mjs` to assert every `.pot` msgid — including PHP-only admin/server strings — is more complete but must handle gettext plural/context nuances that the front-end source does not have. Defer until a PHP-surface string actually ships untranslated. |
 
 ## Implementation Notes
 
@@ -186,7 +214,7 @@ The branch held up well. The license/permission split is correctly orthogonal, t
 - ✅ **ESLint / `tsc -b` / `npm run i18n:check`:** clean.
 - ✅ **PHPUnit** (wp-env, via the `php-testing` skill): 1,095 tests / 13,141 assertions, 0 failures (2 pre-existing skips). `WPSG_License_Test` (13), `WPSG_Layout_Templates_Test` (60), and `WPSG_Import_Sanitization_Test` (12) all green.
 
-The root cause — no check catches a manifest key that lacks a `msgstr` in a reference locale — is logged as a Follow-On Candidate below.
+The root cause was a **process gap**, not a one-off: nothing caught a front-end string that lacks a `msgstr` in a reference locale, because `npm run i18n:check` only validates the en-JSON ↔ PHP-manifest sync. That gate is now implemented and CI-enforced — see **Track P62-E** below.
 
 ## Outcome
 
