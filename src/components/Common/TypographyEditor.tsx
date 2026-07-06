@@ -143,46 +143,53 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
 
   // Option lists with translatable descriptors. Font names stay as proper nouns;
   // only the UI descriptors ((none)/(default)/weight/style words) are localised.
-  const noneOpt = t('typo_opt_none_paren', '(none)');
-  const defaultOpt = t('typo_opt_default_paren', '(default)');
-  const fallbackFontOptions = [
-    { value: '', label: noneOpt },
-    ...FALLBACK_FONT_NAMES.map((n) => ({ value: n, label: n })),
-  ];
-  const fontWeights = [
-    { value: '', label: defaultOpt },
-    { value: '100', label: `100 — ${t('typo_w_thin', 'Thin')}` },
-    { value: '200', label: `200 — ${t('typo_w_extralight', 'Extra Light')}` },
-    { value: '300', label: `300 — ${t('typo_w_light', 'Light')}` },
-    { value: '400', label: `400 — ${t('typo_w_normal', 'Normal')}` },
-    { value: '500', label: `500 — ${t('typo_w_medium', 'Medium')}` },
-    { value: '600', label: `600 — ${t('typo_w_semibold', 'Semi Bold')}` },
-    { value: '700', label: `700 — ${t('typo_w_bold', 'Bold')}` },
-    { value: '800', label: `800 — ${t('typo_w_extrabold', 'Extra Bold')}` },
-    { value: '900', label: `900 — ${t('typo_w_black', 'Black')}` },
-  ];
-  const fontStyles = [
-    { value: '', label: defaultOpt },
-    { value: 'normal', label: t('typo_style_normal', 'Normal') },
-    { value: 'italic', label: t('typo_style_italic', 'Italic') },
-    { value: 'oblique', label: t('typo_style_oblique', 'Oblique') },
-  ];
-  // UPPERCASE / lowercase / Capitalize labels demonstrate the CSS transform
-  // itself (locale-invariant illustration), so only the neutral options localise.
-  const textTransforms = [
-    { value: '', label: defaultOpt },
-    { value: 'none', label: t('typo_opt_none', 'None') },
-    { value: 'uppercase', label: 'UPPERCASE' },
-    { value: 'lowercase', label: 'lowercase' },
-    { value: 'capitalize', label: 'Capitalize' },
-  ];
-  const textDecorations = [
-    { value: '', label: defaultOpt },
-    { value: 'none', label: t('typo_opt_none', 'None') },
-    { value: 'underline', label: t('typo_td_underline', 'Underline') },
-    { value: 'overline', label: t('typo_td_overline', 'Overline') },
-    { value: 'line-through', label: t('typo_td_linethrough', 'Line-through') },
-  ];
+  // Memoised on `t` (stable per locale) so the arrays and their ~30 translation
+  // lookups are not rebuilt on every keystroke-driven re-render — mirrors the
+  // adjacent `fontFamilyData` memo.
+  const { fallbackFontOptions, fontWeights, fontStyles, textTransforms, textDecorations } = useMemo(() => {
+    const noneOpt = t('typo_opt_none_paren', '(none)');
+    const defaultOpt = t('typo_opt_default_paren', '(default)');
+    return {
+      fallbackFontOptions: [
+        { value: '', label: noneOpt },
+        ...FALLBACK_FONT_NAMES.map((n) => ({ value: n, label: n })),
+      ],
+      fontWeights: [
+        { value: '', label: defaultOpt },
+        { value: '100', label: `100 — ${t('typo_w_thin', 'Thin')}` },
+        { value: '200', label: `200 — ${t('typo_w_extralight', 'Extra Light')}` },
+        { value: '300', label: `300 — ${t('typo_w_light', 'Light')}` },
+        { value: '400', label: `400 — ${t('typo_w_normal', 'Normal')}` },
+        { value: '500', label: `500 — ${t('typo_w_medium', 'Medium')}` },
+        { value: '600', label: `600 — ${t('typo_w_semibold', 'Semi Bold')}` },
+        { value: '700', label: `700 — ${t('typo_w_bold', 'Bold')}` },
+        { value: '800', label: `800 — ${t('typo_w_extrabold', 'Extra Bold')}` },
+        { value: '900', label: `900 — ${t('typo_w_black', 'Black')}` },
+      ],
+      fontStyles: [
+        { value: '', label: defaultOpt },
+        { value: 'normal', label: t('typo_style_normal', 'Normal') },
+        { value: 'italic', label: t('typo_style_italic', 'Italic') },
+        { value: 'oblique', label: t('typo_style_oblique', 'Oblique') },
+      ],
+      // UPPERCASE / lowercase / Capitalize labels demonstrate the CSS transform
+      // itself (locale-invariant illustration), so only the neutral options localise.
+      textTransforms: [
+        { value: '', label: defaultOpt },
+        { value: 'none', label: t('typo_opt_none', 'None') },
+        { value: 'uppercase', label: 'UPPERCASE' },
+        { value: 'lowercase', label: 'lowercase' },
+        { value: 'capitalize', label: 'Capitalize' },
+      ],
+      textDecorations: [
+        { value: '', label: defaultOpt },
+        { value: 'none', label: t('typo_opt_none', 'None') },
+        { value: 'underline', label: t('typo_td_underline', 'Underline') },
+        { value: 'overline', label: t('typo_td_overline', 'Overline') },
+        { value: 'line-through', label: t('typo_td_linethrough', 'Line-through') },
+      ],
+    };
+  }, [t]);
 
   const set = useCallback(
     <K extends keyof TypographyOverride>(key: K, v: TypographyOverride[K] | '' | undefined) => {

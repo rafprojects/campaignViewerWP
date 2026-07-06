@@ -226,3 +226,82 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 - **Native-speaker review of all five packs** — standing item from P60-H/I; this phase adds more machine-translated strings under the same caveat.
 
 **What should happen next.** Optionally schedule the AuthBar relocation and the date-locale plumbing as small follow-ups; commission native-speaker review of the packs before relying on non-English output in production.
+
+---
+
+## PR Review & Fix Pass (PR #75)
+
+Post-implementation review of the whole branch before merge. Reviewer-driven (no external
+review comments were posted on PR #75 at review time), so this pass **is** the review: a
+`/code-review` fan-out plus an independent manual audit of the diff, with findings triaged
+accept/reject and rationale recorded here per the `git-address-comments` workflow.
+
+### Scope
+
+- **Range:** `merge-base(main) = fb2ba1e` → `HEAD` (`8d8fc9b`) — commits **p61-ab → p61-g**.
+- **Diff:** 39 files, +7,921 / −3,523. The vast majority of that churn is **generated
+  locale artifacts** (`.pot` / `.po` / `.mo` / `.l10n.php`); the hand-written review surface
+  is ~1,000 lines across **20 source files** (18 `.tsx`/`.ts`, `eslint.config.js`,
+  `src/i18n-strings.en.json`) plus the PHP registry `class-wpsg-frontend-strings.php`.
+
+### Method
+
+- **`/code-review` (high effort), 3 finder angles in parallel:** (1) correctness on the
+  migrated React/TS components, (2) cross-layer i18n key/placeholder consistency
+  (React ↔ `en.json` ↔ PHP ↔ `.pot`/`.po`), (3) reuse / simplification / efficiency /
+  altitude / conventions.
+- **Independent manual audit** of every hunk in the source diff, plus **mechanical
+  cross-layer checks** run directly against the tree.
+
+### Verification — all clean
+
+| Check | Result |
+|-------|--------|
+| Key parity `en.json` ↔ PHP (added keys) | **261 = 261**, 0 drift either direction |
+| Placeholder / `<tag>` / English-value parity per key (`en.json` vs PHP) | **0 mismatches** across 261 keys |
+| Every `t()` / `<Trans>` call-site key exists in the registry | ✓ (agent-confirmed, incl. the 3 `<Trans>` blocks) |
+| Interpolation vars passed match each string's `{{…}}` | ✓ all sites |
+| `{{placeholder}}` preserved in translations, all 5 locales (`.po`) | **0 mismatches** |
+| `<strong>` tag preserved in translations, all 5 locales (`.po`) | **0 mismatches** |
+| `npm run i18n:check` (source ↔ generated manifest drift) | **green** |
+| `npm run lint` (blanket `no-literal-string` now on all `src/**`) | **0** |
+| `tsc -b` | **0** |
+| `vitest run` | **236 files / 3,642 tests pass** |
+
+### Findings & dispositions
+
+1. **`TypographyEditor.tsx` — option lists rebuilt every render → ACCEPTED (fixed).**
+   The migration moved five module-level constant option arrays (`fallbackFontOptions`,
+   `fontWeights`, `fontStyles`, `textTransforms`, `textDecorations`, ~30 `t()` lookups)
+   into the render body but left them un-memoized, even though the adjacent `fontFamilyData`
+   is `useMemo`-wrapped. TypographyEditor re-renders on every keystroke inside the
+   LayoutBuilder / in-context editors, so these arrays were re-allocated on each edit for no
+   benefit. **Fix:** wrapped all five in a single `useMemo` keyed on `t` (stable per locale),
+   mirroring the sibling memo. Value-identical output; `tsc`/`lint` clean; the 13
+   TypographyEditor-rendering `TextPropertiesPanel` tests still pass.
+
+2. **`GalleryConfigEditorModal.tsx` — sub-components localize via the `i18n.t()` singleton
+   instead of the `useTranslation` hook → REJECTED (no change).** The theoretical concern is
+   that singleton reads don't re-render on a runtime `i18n.changeLanguage()`. But the app
+   never switches language at runtime — the locale is fixed at WordPress page load from
+   `window.__WPSG_I18N__.locale`, and there is **no `changeLanguage` call anywhere** in
+   `src/`/`packages/`. The `i18n.t()` singleton is also the file's own established convention
+   (`tBreakpointLabel`) and matches sibling modules (`galleryConfigUtils.ts`,
+   `NearDuplicateWarning.tsx`). Converting would add churn with zero functional gain.
+
+3. **`GalleryConfigEditorModal.tsx` — breakpoint labels now Capitalized mid-sentence
+   (“…for the **Tablet** layout.”) → REJECTED (intentional).** This is a deliberate behavior
+   change from P61-C (interpolated breakpoint names reuse the localized, capitalized
+   `admin_bp_*` tab label for consistency with the tabs), and the PR updated the two
+   `GalleryConfigEditorModal.test.tsx` assertions from `tablet` to `Tablet` to match. The
+   sibling scope descriptions still lowercase their label because those are common-noun
+   phrasings, not tab names — the distinction is defensible, not a defect.
+
+No correctness or cross-layer-consistency defects were found — the migration is clean. The
+single applied change is the `TypographyEditor` memoization.
+
+### Outcome
+
+One efficiency fix committed on top of the branch (`TypographyEditor` `useMemo`). Full
+regression gate re-run after the fix: **lint 0, `tsc -b` 0, `i18n:check` green, 3,642 tests
+pass** — no regressions. PR #75 review complete.
