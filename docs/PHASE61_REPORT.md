@@ -12,7 +12,7 @@
 | P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Done | Small |
 | P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Done | Medium |
 | P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Done | Small-Medium |
-| P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Planned | Small |
+| P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Done | Small |
 | P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Planned | Small |
 | P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Planned | Medium |
 
@@ -198,6 +198,8 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 ## Implementation Notes
 
 - Record completed work at a high level as tracks land. Keep short and factual.
+
+**P61-E (`CardViewer/CampaignViewer.tsx`, full migration):** New `cv_*` family across the file's 3 sub-components (each got its own `useTranslation`) + the main component (notify/toast fallbacks, modal aria/title, config-editor labels/summaries). Enrolled the whole `CardViewer/**` dir in the enforced glob (the 4 dispatch-wrapper siblings were already 0-violation). Left the hardcoded `toLocaleDateString('en-US', …)` date-format locale as a noted follow-up (a locale-plumbing concern, not a raw-string one). Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2733 strings), 29 CardViewer tests pass.
 
 **P61-D (`CampaignGallery/**`, full migration):** All 4 public-facing files fully migrated (new `cardgal_*` / `campcard_*` / `cardpg_*` / `raf_*` families — no cross-domain reuse of `gallery_*`/`accessrow_*` per the plan). `CardGallery.tsx` covers both the admin in-context header editor and the public filter/search/empty/hidden-notice surface (the hidden-notice count uses an i18next `_other` plural pair). `RequestAccessForm.tsx` uses `<Trans>` for its bold-campaign-title split sentence. `CampaignCard.tsx` "Access" badge got its own `campcard_access` (decoupled from admin `accessrow_*`). Enrolled `CampaignGallery/**` in the enforced glob. Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2700 strings), 38 CampaignGallery tests pass. Public-locale wp-env spot-check deferred to the Track G runtime-verification pass (batched with the full translation sweep).
 
