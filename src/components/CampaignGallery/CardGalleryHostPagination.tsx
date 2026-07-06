@@ -14,6 +14,7 @@
  */
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Center, Stack, Text } from '@mantine/core';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
@@ -59,6 +60,7 @@ export function CardGalleryHostPagination({
   renderAdapter,
   emptyNode,
 }: CardGalleryHostPaginationProps) {
+  const { t } = useTranslation('wpsg');
   const displayMode = settings.cardDisplayMode ?? 'load-more';
 
   // ── Pagination state ─────────────────────────────────────────────────────
@@ -180,7 +182,7 @@ export function CardGalleryHostPagination({
         ref={gridContainerRef}
         style={{ position: 'relative', overflow: 'hidden' }}
         tabIndex={displayMode === 'paginated' ? 0 : undefined}
-        aria-label={displayMode === 'paginated' ? `Card gallery page ${currentPage + 1} of ${totalPages}` : undefined}
+        aria-label={displayMode === 'paginated' ? t('cardpg_shell_aria', 'Card gallery page {{current}} of {{total}}', { current: currentPage + 1, total: totalPages }) : undefined}
       >
         <div ref={slideRef} style={slideStyle}>
           {renderAdapter(visibleCampaigns)}
@@ -193,8 +195,8 @@ export function CardGalleryHostPagination({
             onNext={goNext}
             total={totalPages}
             settings={settings}
-            previousLabel="Previous page"
-            nextLabel="Next page"
+            previousLabel={t('cardpg_prev', 'Previous page')}
+            nextLabel={t('cardpg_next', 'Next page')}
           />
         )}
       </Box>
@@ -211,7 +213,7 @@ export function CardGalleryHostPagination({
             />
           )}
           <Text size="xs" c="dimmed">
-            Page {currentPage + 1} of {totalPages}
+            {t('cardpg_page_of', 'Page {{current}} of {{total}}', { current: currentPage + 1, total: totalPages })}
           </Text>
         </Stack>
       )}
@@ -223,9 +225,9 @@ export function CardGalleryHostPagination({
             variant="light"
             size="md"
             onClick={() => setVisibleCount((prev) => prev + LOAD_MORE_SIZE)}
-            aria-label={`Load ${filteredCampaigns.length - visibleCount} more campaigns`}
+            aria-label={t('cardpg_load_aria', 'Load {{count}} more campaigns', { count: filteredCampaigns.length - visibleCount })}
           >
-            Load more ({filteredCampaigns.length - visibleCount} remaining)
+            {t('cardpg_load_more', 'Load more ({{count}} remaining)', { count: filteredCampaigns.length - visibleCount })}
           </Button>
         </Center>
       )}

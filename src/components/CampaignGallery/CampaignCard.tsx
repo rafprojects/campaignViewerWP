@@ -1,5 +1,6 @@
 import { forwardRef } from 'react';
 import { IconLock, IconEye } from '@tabler/icons-react';
+import { useTranslation } from 'react-i18next';
 import { Card, Image, Badge, Group, Text, Box, Stack, UnstyledButton } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
@@ -23,6 +24,7 @@ interface CampaignCardProps {
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
+    const { t } = useTranslation('wpsg');
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderRadiusUnit = settings?.cardBorderRadiusUnit ?? 'px';
     const borderWidth = settings?.cardBorderWidth ?? 4;
@@ -69,8 +71,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
         disabled={!hasAccess}
         aria-label={
           hasAccess
-            ? `Open campaign ${campaign.title}`
-            : `Campaign ${campaign.title} is locked`
+            ? t('campcard_open_aria', 'Open campaign {{title}}', { title: campaign.title })
+            : t('campcard_locked_aria', 'Campaign {{title}} is locked', { title: campaign.title })
         }
         {...(styles.card ? { className: styles.card } : {})}
         style={{
@@ -172,7 +174,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 color="green"
                 leftSection={<IconEye size={accessIconSize} />}
               >
-                Access
+                {t('campcard_access', 'Access')}
               </Badge>
             )}
 
@@ -227,8 +229,8 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
 
                 {settings?.showCardMediaCounts !== false && (
                   <Group gap="xs" mt="auto" {...(styles.mediaStats ? { className: styles.mediaStats } : {})}>
-                    <span className={styles.mediaStat}>🎬 {campaign.videos.length} videos</span>
-                    <span className={styles.mediaStat}>🖼️ {campaign.images.length} images</span>
+                    <span className={styles.mediaStat}>{t('campcard_videos', '🎬 {{count}} videos', { count: campaign.videos.length })}</span>
+                    <span className={styles.mediaStat}>{t('campcard_images', '🖼️ {{count}} images', { count: campaign.images.length })}</span>
                   </Group>
                 )}
               </Stack>

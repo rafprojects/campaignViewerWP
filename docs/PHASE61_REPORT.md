@@ -11,7 +11,7 @@
 | P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Done | Small |
 | P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Done | Small |
 | P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Done | Medium |
-| P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Planned | Small-Medium |
+| P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Done | Small-Medium |
 | P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Planned | Small |
 | P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Planned | Small |
 | P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Planned | Medium |
@@ -198,6 +198,8 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 ## Implementation Notes
 
 - Record completed work at a high level as tracks land. Keep short and factual.
+
+**P61-D (`CampaignGallery/**`, full migration):** All 4 public-facing files fully migrated (new `cardgal_*` / `campcard_*` / `cardpg_*` / `raf_*` families — no cross-domain reuse of `gallery_*`/`accessrow_*` per the plan). `CardGallery.tsx` covers both the admin in-context header editor and the public filter/search/empty/hidden-notice surface (the hidden-notice count uses an i18next `_other` plural pair). `RequestAccessForm.tsx` uses `<Trans>` for its bold-campaign-title split sentence. `CampaignCard.tsx` "Access" badge got its own `campcard_access` (decoupled from admin `accessrow_*`). Enrolled `CampaignGallery/**` in the enforced glob. Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2700 strings), 38 CampaignGallery tests pass. Public-locale wp-env spot-check deferred to the Track G runtime-verification pass (batched with the full translation sweep).
 
 **P61-C (`Common/**`, full migration per the Key Decision D standard):** Went well beyond the 37 flagged JSX-text literals — translated every user-facing string in all 5 files (labels, descriptions, placeholders, Select/option labels, aria/title). `GalleryConfigEditorModal.tsx` was a ~90-key finish-the-abandoned-migration job (new `set_ad_gce_*` sub-namespace within the shared adapter-settings family; reused `set_ad_on/off`, `common_cancel`; breakpoint labels reuse `admin_bp_*` via a local `tBreakpointLabel` helper; `formatScopeLabel` in `galleryConfigUtils.ts` localised at source since it's used only here). `NearDuplicateWarning.tsx` uses `<Trans>` for its bold-filename split sentence (folds in the Key-Decision-D split-sentence sweep). `ConfirmModal.tsx` + `NearDuplicateWarning.tsx` share the new `common_cancel`. `TypographyEditor.tsx`: field labels/descriptors localised, module-level descriptor arrays moved in-component to reach `t`; font-family proper nouns and demonstrative `UPPERCASE`/`lowercase`/`Capitalize` transform labels left as locale-invariant. One behaviour change: interpolated breakpoint names now render via the localised (capitalised) `admin_bp_*` label for consistency with the tabs — updated 2 `GalleryConfigEditorModal` test assertions accordingly. Verified: forced + real-config `eslint` clean, `tsc -b` clean, `i18n:check` green (2653 strings), 109 Common tests pass.
 
