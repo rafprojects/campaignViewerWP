@@ -6631,3 +6631,600 @@ msgstr "Éditeur de galerie"
 
 msgid "Sort campaigns"
 msgstr "Trier les campagnes"
+
+msgid "Session expiring soon"
+msgstr "La session va bientôt expirer"
+
+msgid "You will be signed out in {{seconds}} seconds due to inactivity."
+msgstr "Vous serez déconnecté dans {{seconds}} secondes en raison de votre inactivité."
+
+msgid "Stay signed in"
+msgstr "Rester connecté"
+
+msgid "You appear to be offline. Some features are unavailable."
+msgstr "Vous semblez être hors ligne. Certaines fonctionnalités sont indisponibles."
+
+msgid "Something went wrong"
+msgstr "Une erreur est survenue"
+
+msgid "An unexpected error occurred while loading this component."
+msgstr "Une erreur inattendue s'est produite lors du chargement de ce composant."
+
+msgid "Reset error boundary and try again"
+msgstr "Réinitialiser et réessayer"
+
+msgid "Try Again"
+msgstr "Réessayer"
+
+msgid "Unified Gallery"
+msgstr "Galerie unifiée"
+
+msgid "Image Gallery"
+msgstr "Galerie d'images"
+
+msgid "Video Gallery"
+msgstr "Galerie vidéo"
+
+msgid "This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits."
+msgstr "Cet éditeur partagé gère le modèle de sélection de galerie imbriquée. Les sélecteurs en ligne restent disponibles pour un survol rapide et de petites modifications."
+
+msgid "Gallery Mode"
+msgstr "Mode de galerie"
+
+msgid "Choose whether this config resolves a unified gallery or separate image and video galleries."
+msgstr "Choisissez si cette configuration produit une galerie unifiée ou des galeries d'images et de vidéos distinctes."
+
+msgid "Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice."
+msgstr "La sélection du mode unifié est prise en charge ici, mais les remplacements d'adaptateur unifié au niveau de la campagne héritent encore de l'adaptateur unifié global dans cette section."
+
+msgid "Breakpoint Adapters"
+msgstr "Adaptateurs de points de rupture"
+
+msgid "Editing breakpoint-specific unified settings for the {{bp}} layout."
+msgstr "Modification des paramètres unifiés spécifiques au point de rupture pour la disposition {{bp}}."
+
+msgid "Unified Gallery Adapter"
+msgstr "Adaptateur de galerie unifiée"
+
+msgid "Unified gallery adapter for the {{bp}} breakpoint."
+msgstr "Adaptateur de galerie unifiée pour le point de rupture {{bp}}."
+
+msgid "Default adapter"
+msgstr "Adaptateur par défaut"
+
+msgid "Unified adapter overrides remain inherited in this slice."
+msgstr "Les remplacements d'adaptateur unifié restent hérités dans cette section."
+
+msgid "Image Adapter"
+msgstr "Adaptateur d'images"
+
+msgid "Image gallery adapter for the {{bp}} breakpoint."
+msgstr "Adaptateur de galerie d'images pour le point de rupture {{bp}}."
+
+msgid "Video Adapter"
+msgstr "Adaptateur vidéo"
+
+msgid "Video gallery adapter for the {{bp}} breakpoint."
+msgstr "Adaptateur de galerie vidéo pour le point de rupture {{bp}}."
+
+msgid "Settings below apply to the {{bp}} breakpoint for the unified gallery surface."
+msgstr "Les paramètres ci-dessous s'appliquent au point de rupture {{bp}} pour la surface de galerie unifiée."
+
+msgid "Settings below apply to the {{bp}} breakpoint for the current per-type gallery surface."
+msgstr "Les paramètres ci-dessous s'appliquent au point de rupture {{bp}} pour la surface de galerie par type actuelle."
+
+msgid "Apply Gallery Config"
+msgstr "Appliquer la configuration de galerie"
+
+msgid "Clear Overrides"
+msgstr "Effacer les remplacements"
+
+msgid "Adapter applied when images and videos render together."
+msgstr "Adaptateur appliqué lorsque les images et les vidéos s'affichent ensemble."
+
+msgid "Each breakpoint tab controls its own unified adapter and responsive settings."
+msgstr "Chaque onglet de point de rupture contrôle son propre adaptateur unifié et ses paramètres responsives."
+
+msgid "Reset {{label}}"
+msgstr "Réinitialiser {{label}}"
+
+msgid "Reset All Changes"
+msgstr "Réinitialiser toutes les modifications"
+
+msgid "Shared Section Sizing"
+msgstr "Dimensionnement de section partagé"
+
+msgid "Gallery Section Max Width (px)"
+msgstr "Largeur max. de la section de galerie (px)"
+
+msgid "Maximum width for each gallery section. 0 keeps the section fully responsive."
+msgstr "Largeur maximale de chaque section de galerie. 0 conserve la section entièrement responsive."
+
+msgid "Gallery Section Min Width (px)"
+msgstr "Largeur min. de la section de galerie (px)"
+
+msgid "Minimum width floor for each gallery section."
+msgstr "Largeur minimale plancher pour chaque section de galerie."
+
+msgid "How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
+msgstr "Comment la hauteur de section est déterminée. Auto est basé sur le contenu et reste le choix par défaut le plus sûr pour les dispositions en maçonnerie et justifiées."
+
+msgid "Gallery Section Max Height (px)"
+msgstr "Hauteur max. de la section de galerie (px)"
+
+msgid "Maximum height used when section height mode is manual."
+msgstr "Hauteur maximale utilisée lorsque le mode de hauteur de section est manuel."
+
+msgid "Gallery Section Min Height (px)"
+msgstr "Hauteur min. de la section de galerie (px)"
+
+msgid "Minimum height floor for each gallery section."
+msgstr "Hauteur minimale plancher pour chaque section de galerie."
+
+msgid "Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
+msgstr "Détermine si les sections d'images et de vidéos s'alignent à hauteur égale dans les dispositions par type sur les fenêtres plus larges."
+
+msgid "Shared Section Spacing"
+msgstr "Espacement de section partagé"
+
+msgid "Section Padding (px)"
+msgstr "Marge intérieure de section (px)"
+
+msgid "Applies the same inner section padding across the currently edited gallery mode surface."
+msgstr "Applique la même marge intérieure de section sur la surface du mode de galerie en cours d'édition."
+
+msgid "Adapter Content Padding (px)"
+msgstr "Marge intérieure du contenu de l'adaptateur (px)"
+
+msgid "Applies the same inner adapter padding across the currently edited gallery mode surface."
+msgstr "Applique la même marge intérieure d'adaptateur sur la surface du mode de galerie en cours d'édition."
+
+msgid "Shared Adapter Sizing"
+msgstr "Dimensionnement d'adaptateur partagé"
+
+msgid "How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
+msgstr "Comment les adaptateurs remplissent leur section de galerie. « Remplir » utilise toute la section ; « Manuel » vous permet de limiter les pourcentages de largeur et de hauteur."
+
+msgid "Maximum adapter width as a percentage of its gallery section."
+msgstr "Largeur maximale de l'adaptateur en pourcentage de sa section de galerie."
+
+msgid "Maximum adapter height as a percentage of its gallery section."
+msgstr "Hauteur maximale de l'adaptateur en pourcentage de sa section de galerie."
+
+msgid "Adapter Item Gap (px)"
+msgstr "Espace entre éléments de l'adaptateur (px)"
+
+msgid "Applies shared item spacing across the currently edited gallery mode surface."
+msgstr "Applique un espacement d'éléments partagé sur la surface du mode de galerie en cours d'édition."
+
+msgid "Controls how adapter items distribute inside the section for adapters that support justification."
+msgstr "Détermine comment les éléments de l'adaptateur se répartissent dans la section pour les adaptateurs qui prennent en charge la justification."
+
+msgid "Shared Gallery Height"
+msgstr "Hauteur de galerie partagée"
+
+msgid "420px"
+msgstr "420px"
+
+msgid "Shared Gallery Presentation"
+msgstr "Présentation de galerie partagée"
+
+msgid "Shared heading text for image gallery sections when labels are enabled."
+msgstr "Texte d'en-tête partagé pour les sections de galerie d'images lorsque les libellés sont activés."
+
+msgid "Shared heading text for video gallery sections when labels are enabled."
+msgstr "Texte d'en-tête partagé pour les sections de galerie vidéo lorsque les libellés sont activés."
+
+msgid "Gallery Label Justification"
+msgstr "Justification des libellés de galerie"
+
+msgid "Controls how gallery section titles align across the currently edited gallery mode surface."
+msgstr "Détermine l'alignement des titres de section de galerie sur la surface du mode de galerie en cours d'édition."
+
+msgid "Show Gallery Label Icons"
+msgstr "Afficher les icônes des libellés de galerie"
+
+msgid "Displays the adapter icon beside gallery section titles."
+msgstr "Affiche l'icône de l'adaptateur à côté des titres de section de galerie."
+
+msgid "Show Gallery Section Labels"
+msgstr "Afficher les libellés de section de galerie"
+
+msgid "Controls whether gallery section headings render at all for the currently edited gallery mode surface."
+msgstr "Détermine si les en-têtes de section de galerie s'affichent pour la surface du mode de galerie en cours d'édition."
+
+msgid "{{scope}} Background"
+msgstr "Arrière-plan {{scope}}"
+
+msgid "Background applied behind the {{scope}} viewport."
+msgstr "Arrière-plan appliqué derrière la fenêtre {{scope}}."
+
+msgid "{{scope}} Background Color"
+msgstr "Couleur d'arrière-plan {{scope}}"
+
+msgid "Solid background color behind the viewport."
+msgstr "Couleur d'arrière-plan unie derrière la fenêtre."
+
+msgid "{{scope}} Background Gradient"
+msgstr "Dégradé d'arrière-plan {{scope}}"
+
+msgid "CSS gradient string used behind the viewport."
+msgstr "Chaîne de dégradé CSS utilisée derrière la fenêtre."
+
+msgid "{{scope}} Background Image URL"
+msgstr "URL de l'image d'arrière-plan {{scope}}"
+
+msgid "Image shown behind the viewport."
+msgstr "Image affichée derrière la fenêtre."
+
+msgid "Adapter-Specific Settings"
+msgstr "Paramètres spécifiques à l'adaptateur"
+
+msgid "This breakpoint is currently inheriting its adapter choice. Pick an explicit adapter above to expose adapter-specific settings here."
+msgstr "Ce point de rupture hérite actuellement de son choix d'adaptateur. Sélectionnez un adaptateur explicite ci-dessus pour afficher ici les paramètres spécifiques à l'adaptateur."
+
+msgid "Visually similar image found"
+msgstr "Image visuellement similaire trouvée"
+
+msgid "<strong>{{filename}}</strong> looks like an image already in your library."
+msgstr "<strong>{{filename}}</strong> ressemble à une image déjà présente dans votre bibliothèque."
+
+msgid "Existing image"
+msgstr "Image existante"
+
+msgid "Similar existing image"
+msgstr "Image existante similaire"
+
+msgid "Original:"
+msgstr "Original :"
+
+msgid "Identical content"
+msgstr "Contenu identique"
+
+msgid "{{count}}/64 bits different"
+msgstr "{{count}}/64 bits différents"
+
+msgid "Use the existing image to avoid duplicates, or upload this file anyway."
+msgstr "Utilisez l'image existante pour éviter les doublons, ou téléversez quand même ce fichier."
+
+msgid "Use existing"
+msgstr "Utiliser l'existante"
+
+msgid "Upload anyway"
+msgstr "Téléverser quand même"
+
+msgid "Not in any campaign"
+msgstr "Dans aucune campagne"
+
+msgid "Used in: {{a}}"
+msgstr "Utilisée dans : {{a}}"
+
+msgid "Used in: {{a}}, {{b}}"
+msgstr "Utilisée dans : {{a}}, {{b}}"
+
+msgid "Used in: {{a}}, {{b}} and {{count}} more"
+msgstr "Utilisée dans : {{a}}, {{b}} et {{count}} autres"
+
+msgid "Search or add company…"
+msgstr "Rechercher ou ajouter une entreprise…"
+
+msgid "+ Create “{{name}}”"
+msgstr "+ Créer « {{name}} »"
+
+msgid "Reset all overrides"
+msgstr "Réinitialiser tous les remplacements"
+
+msgid "Font Family"
+msgstr "Police"
+
+msgid "Fallback 1"
+msgstr "Police de secours 1"
+
+msgid "Fallback 2"
+msgstr "Police de secours 2"
+
+msgid "Suggested: {{font}}"
+msgstr "Suggérée : {{font}}"
+
+msgid "Terminal: {{family}}"
+msgstr "Terminale : {{family}}"
+
+msgid "⚠ Font failed to load — first available fallback will be used"
+msgstr "⚠ Échec du chargement de la police — la première police de secours disponible sera utilisée"
+
+msgid "Font Size"
+msgstr "Taille de police"
+
+msgid "Font Weight"
+msgstr "Graisse de police"
+
+msgid "Font Style"
+msgstr "Style de police"
+
+msgid "Decoration"
+msgstr "Décoration"
+
+msgid "Line Height"
+msgstr "Hauteur de ligne"
+
+msgid "e.g. 1.4"
+msgstr "p. ex. 1.4"
+
+msgid "Letter Spacing"
+msgstr "Espacement des lettres"
+
+msgid "Word Spacing"
+msgstr "Espacement des mots"
+
+msgid "Offset X"
+msgstr "Décalage X"
+
+msgid "Offset Y"
+msgstr "Décalage Y"
+
+msgid "Glow Blur"
+msgstr "Flou de la lueur"
+
+msgid "Stroke"
+msgstr "Contour"
+
+msgid "Recently Used"
+msgstr "Récemment utilisées"
+
+msgid "System Fonts"
+msgstr "Polices système"
+
+msgid "Google Fonts"
+msgstr "Google Fonts"
+
+msgid "(none)"
+msgstr "(aucune)"
+
+msgid "(default)"
+msgstr "(par défaut)"
+
+msgid "Thin"
+msgstr "Fin"
+
+msgid "Extra Light"
+msgstr "Extra-fin"
+
+msgid "Light"
+msgstr "Léger"
+
+msgid "Semi Bold"
+msgstr "Demi-gras"
+
+msgid "Bold"
+msgstr "Gras"
+
+msgid "Extra Bold"
+msgstr "Extra-gras"
+
+msgid "Black"
+msgstr "Noir"
+
+msgid "Italic"
+msgstr "Italique"
+
+msgid "Oblique"
+msgstr "Oblique"
+
+msgid "Underline"
+msgstr "Souligné"
+
+msgid "Overline"
+msgstr "Surligné"
+
+msgid "Line-through"
+msgstr "Barré"
+
+msgid "Open campaign {{title}}"
+msgstr "Ouvrir la campagne {{title}}"
+
+msgid "Campaign {{title}} is locked"
+msgstr "La campagne {{title}} est verrouillée"
+
+msgid "🎬 {{count}} videos"
+msgstr "🎬 {{count}} vidéos"
+
+msgid "🖼️ {{count}} images"
+msgstr "🖼️ {{count}} images"
+
+msgid "Failed to submit request. Please try again."
+msgstr "Échec de l'envoi de la demande. Veuillez réessayer."
+
+msgid "Check your email for confirmation."
+msgstr "Consultez votre e-mail pour confirmation."
+
+msgid "Request access to <strong>{{title}}</strong>"
+msgstr "Demander l'accès à <strong>{{title}}</strong>"
+
+msgid "your@email.com"
+msgstr "vous@email.com"
+
+msgid "Email address"
+msgstr "Adresse e-mail"
+
+msgid "Request Access"
+msgstr "Demander l'accès"
+
+msgid "Card gallery page {{current}} of {{total}}"
+msgstr "Page de galerie de cartes {{current}} sur {{total}}"
+
+msgid "Previous page"
+msgstr "Page précédente"
+
+msgid "Next page"
+msgstr "Page suivante"
+
+msgid "Page {{current}} of {{total}}"
+msgstr "Page {{current}} sur {{total}}"
+
+msgid "Load {{count}} more campaigns"
+msgstr "Charger {{count}} campagnes de plus"
+
+msgid "Load more ({{count}} remaining)"
+msgstr "Charger plus ({{count}} restantes)"
+
+msgid "No campaigns match your search."
+msgstr "Aucune campagne ne correspond à votre recherche."
+
+msgid "Sign in to view campaigns."
+msgstr "Connectez-vous pour voir les campagnes."
+
+msgid "No accessible campaigns yet."
+msgstr "Aucune campagne accessible pour le moment."
+
+msgid "No accessible campaigns found. Switch to Lock mode to view locked cards."
+msgstr "Aucune campagne accessible trouvée. Passez en mode Verrouillage pour voir les cartes verrouillées."
+
+msgid "No campaigns found matching your filter."
+msgstr "Aucune campagne ne correspond à votre filtre."
+
+msgid "Viewer Header Settings"
+msgstr "Paramètres d'en-tête de la visionneuse"
+
+msgid "Show Title"
+msgstr "Afficher le titre"
+
+msgid "Show Subtitle"
+msgstr "Afficher le sous-titre"
+
+msgid "Title Text"
+msgstr "Texte du titre"
+
+msgid "Subtitle Text"
+msgstr "Texte du sous-titre"
+
+msgid "Background Type"
+msgstr "Type d'arrière-plan"
+
+msgid "Title Typography"
+msgstr "Typographie du titre"
+
+msgid "Gallery"
+msgstr "Galerie"
+
+msgid "Access mode"
+msgstr "Mode d'accès"
+
+msgid "Lock"
+msgstr "Verrouiller"
+
+msgid "Hide"
+msgstr "Masquer"
+
+msgid "Campaign filters"
+msgstr "Filtres de campagne"
+
+msgid "My Access"
+msgstr "Mes accès"
+
+msgid "Search campaigns..."
+msgstr "Rechercher des campagnes..."
+
+msgid "Search campaigns by title, description, or tags"
+msgstr "Rechercher des campagnes par titre, description ou étiquettes"
+
+msgid "Access mode active"
+msgstr "Mode d'accès actif"
+
+msgid "{{count}} campaign hidden by access mode."
+msgstr "{{count}} campagne masquée par le mode d'accès."
+
+msgid "{{count}} campaigns hidden by access mode."
+msgstr "{{count}} campagnes masquées par le mode d'accès."
+
+msgid "Failed to save settings."
+msgstr "Échec de l'enregistrement des paramètres."
+
+msgid "Campaign Header"
+msgstr "En-tête de campagne"
+
+msgid "Stats Section"
+msgstr "Section des statistiques"
+
+msgid "Show Stats"
+msgstr "Afficher les statistiques"
+
+msgid "Admin Only"
+msgstr "Administrateurs uniquement"
+
+msgid "Campaign Statistics"
+msgstr "Statistiques de la campagne"
+
+msgid "Videos"
+msgstr "Vidéos"
+
+msgid "Images"
+msgstr "Images"
+
+msgid "Admin permissions required."
+msgstr "Autorisations d'administrateur requises."
+
+msgid "Campaign API client unavailable."
+msgstr "Client API de campagne indisponible."
+
+msgid "Campaign gallery config updated."
+msgstr "Configuration de galerie de campagne mise à jour."
+
+msgid "Failed to save campaign gallery config."
+msgstr "Échec de l'enregistrement de la configuration de galerie de campagne."
+
+msgid "Close campaign viewer"
+msgstr "Fermer la visionneuse de campagne"
+
+msgid "Campaign details for {{title}}"
+msgstr "Détails de la campagne {{title}}"
+
+msgid "About Section"
+msgstr "Section À propos"
+
+msgid "Show About"
+msgstr "Afficher À propos"
+
+msgid "Heading Typography"
+msgstr "Typographie des titres"
+
+msgid "About this Campaign"
+msgstr "À propos de cette campagne"
+
+msgid "This campaign is private. Sign in or request access to view media."
+msgstr "Cette campagne est privée. Connectez-vous ou demandez l'accès pour voir les médias."
+
+msgid "No media available for this campaign."
+msgstr "Aucun média disponible pour cette campagne."
+
+msgid "Campaign Gallery Config"
+msgstr "Configuration de galerie de campagne"
+
+msgid "This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "Cette campagne stocke actuellement des remplacements de galerie personnalisés. Les modifications s'affichent immédiatement dans la visionneuse, sont annulées en cas d'annulation et ne sont conservées que lorsque vous enregistrez."
+
+msgid "This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "Cette campagne hérite actuellement des paramètres de galerie globaux. Les modifications s'affichent immédiatement dans la visionneuse, sont annulées en cas d'annulation et ne sont conservées que lorsque vous enregistrez."
+
+msgid "Save Campaign Gallery Config"
+msgstr "Enregistrer la configuration de galerie de campagne"
+
+msgid "Preview Inherited Gallery Settings"
+msgstr "Prévisualiser les paramètres de galerie hérités"
+
+msgid "Imported {{count}} media item."
+msgstr "{{count}} élément multimédia importé."
+
+msgid "Imported {{count}} media items."
+msgstr "{{count}} éléments multimédias importés."
+
+msgid "Imported {{count}} media item ({{skipped}} skipped)."
+msgstr "{{count}} élément multimédia importé ({{skipped}} ignoré)."
+
+msgid "Imported {{count}} media items ({{skipped}} skipped)."
+msgstr "{{count}} éléments multimédias importés ({{skipped}} ignorés)."
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
+msgstr "Archiver toutes les campagnes de <strong>{{name}}</strong> ? Cela archivera {{count}} campagne active."
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
+msgstr "Archiver toutes les campagnes de <strong>{{name}}</strong> ? Cela archivera {{count}} campagnes actives."

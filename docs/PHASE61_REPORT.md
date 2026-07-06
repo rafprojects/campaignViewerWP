@@ -1,20 +1,20 @@
 # Phase 61 - Front-End i18n Completeness (Literal-String Audit & Closeout)
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-07-04
-**Last updated:** 2026-07-04
+**Last updated:** 2026-07-05
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Planned | Small |
-| P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Planned | Small |
-| P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Planned | Medium |
-| P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Planned | Small-Medium |
-| P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Planned | Small |
-| P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Planned | Small |
-| P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Planned | Medium |
+| P61-A | Trivial enablement — `src/contexts/**` + `src/components/Galleries/Shared/**` (0 violations) | Done | Small |
+| P61-B | Near-zero-cost fixes — `Settings/SettingsSystemAdminTab.tsx`, `ErrorBoundary.tsx`, `App.tsx` (6 violations) | Done | Small |
+| P61-C | `src/components/Common/**` sweep (37 violations, 5 files) | Done | Medium |
+| P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Done | Small-Medium |
+| P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Done | Small |
+| P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Done | Small |
+| P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Done | Medium |
 
 ---
 
@@ -33,6 +33,7 @@ P60-G (customer-facing front-end) and P60-I (admin panel) closed the two biggest
 | A | Scope boundary | This phase covers the entire remaining front-end, not just admin — supersedes the stale framing in `FUTURE_TASKS.md`'s "Full Admin-Panel i18n Migration" entry (P60-I already completed the admin-specific harvest that entry described; what's left is everything else). |
 | B | `AuthBar.tsx` | Sweep its 8 strings in place with local `t()` calls. Do **not** relocate it into `packages/shared-ui/src/` alongside its already-migrated siblings (`AuthBarFloating`/`AuthBarMinimal`) in this phase — that's a file-organization change, not an i18n fix, and would conflate two kinds of diffs. Logged as a Follow-On candidate instead. |
 | C | Enforcement mechanism | Once every remaining directory is verified clean, replace the growing per-glob `'error'` override list in `eslint.config.js` with **one blanket `'error'`** for `src/**/*.{ts,tsx}` (keeping the existing test/story `ignores`), rather than appending yet another named glob. This is the terminal state — no future directory needs manual glob registration to be protected. |
+| D | Migration depth per touched file | The `jsx-text-only` lint rule only flags JSX-text literals, but every already-enforced dir (`Admin/**`) has its **attribute** strings fully translated too (0 raw `label=`/`description=`/`placeholder=`; 398 `label={t()}`). So "migrate a file" means translate **all** its user-facing strings — JSX text **plus** `label`/`description`/`placeholder`/`aria-label`/`title`/Select-option labels — not just the linter-flagged subset. Confirmed with the user 2026-07-05: leaving attribute strings raw would leave touched files visibly half-translated in non-English locales. Reuse existing keys where the English matches before minting new ones. This enlarges Tracks C–F beyond the initial 81-violation count. |
 
 ## Execution Priority
 
@@ -198,10 +199,109 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 
 - Record completed work at a high level as tracks land. Keep short and factual.
 
+**P61-G (blanket flip + translation sweep + folded-in closeout):**
+- **Enforcement (terminal state).** `eslint.config.js` now enforces `i18next/no-literal-string` (`jsx-text-only`) with **one blanket glob** — `src/**/*.{ts,tsx}` + `packages/shared-ui/src/**` (test/story fixtures exempt) — replacing the per-directory allow-list. Confirmed 0 violations across the whole front end under both the forced rule and the real config.
+- **Translation sweep.** Regenerated the PHP manifest + `.pot` (`wp i18n make-pot`, run standalone). The sweep introduced **193 new unique msgids**; each was machine-translated into all five packs (fr/es/de/zh/ru) via a deterministic patch pipeline (`translations.json` → validated for `{{var}}`/`<tag>`/`%s` placeholder parity, 0 empty/0 mismatch → appended to each `.po`). Recompiled `.mo` + `.l10n.php` with `wp i18n make-mo`/`make-php`. Every `.pot` msgid resolves in every pack (0 missing); `npm run i18n:check` green.
+- **Folded-in review follow-ons (per the user's Track-G decision).** `ArchiveCompanyModal.tsx` migrated to a plural-aware `<Trans>` (`admin_archco_msg`/`_other`), retiring the split pre/post fragments; the 4 changed media-import toast strings retranslated with proper singular/plural in all 5 packs. The tracked `ru_RU` 3-form plural is documented as architecturally blocked by the by-English-string bridge (see `TRANSLATING.md`) — annotated, not falsely closed.
+- **Closeout.** Both `FUTURE_TASKS.md` i18n entries marked resolved.
+
+**P61-F (`Auth/AuthBar.tsx`, pure reuse — 0 new keys):** All 8 chrome strings + the file's other user-facing attribute strings (aria-labels, tooltip) wired to the existing `auth_*` keys already shipping in all 5 packs (via `AuthBarFloating`/`AuthBarMinimal`). One deliberate micro-change: the full-bar sign-in prompt now renders with a trailing period (reusing `auth_sign_in_prompt`), matching its floating/minimal siblings. `i18n:check` unchanged (no new keys). File not relocated to `shared-ui` (Follow-On, Key Decision B). Verified: real + forced eslint clean, `tsc -b` clean, 38 Auth tests pass.
+
+**P61-E (`CardViewer/CampaignViewer.tsx`, full migration):** New `cv_*` family across the file's 3 sub-components (each got its own `useTranslation`) + the main component (notify/toast fallbacks, modal aria/title, config-editor labels/summaries). Enrolled the whole `CardViewer/**` dir in the enforced glob (the 4 dispatch-wrapper siblings were already 0-violation). Left the hardcoded `toLocaleDateString('en-US', …)` date-format locale as a noted follow-up (a locale-plumbing concern, not a raw-string one). Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2733 strings), 29 CardViewer tests pass.
+
+**P61-D (`CampaignGallery/**`, full migration):** All 4 public-facing files fully migrated (new `cardgal_*` / `campcard_*` / `cardpg_*` / `raf_*` families — no cross-domain reuse of `gallery_*`/`accessrow_*` per the plan). `CardGallery.tsx` covers both the admin in-context header editor and the public filter/search/empty/hidden-notice surface (the hidden-notice count uses an i18next `_other` plural pair). `RequestAccessForm.tsx` uses `<Trans>` for its bold-campaign-title split sentence. `CampaignCard.tsx` "Access" badge got its own `campcard_access` (decoupled from admin `accessrow_*`). Enrolled `CampaignGallery/**` in the enforced glob. Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2700 strings), 38 CampaignGallery tests pass. Public-locale wp-env spot-check deferred to the Track G runtime-verification pass (batched with the full translation sweep).
+
+**P61-C (`Common/**`, full migration per the Key Decision D standard):** Went well beyond the 37 flagged JSX-text literals — translated every user-facing string in all 5 files (labels, descriptions, placeholders, Select/option labels, aria/title). `GalleryConfigEditorModal.tsx` was a ~90-key finish-the-abandoned-migration job (new `set_ad_gce_*` sub-namespace within the shared adapter-settings family; reused `set_ad_on/off`, `common_cancel`; breakpoint labels reuse `admin_bp_*` via a local `tBreakpointLabel` helper; `formatScopeLabel` in `galleryConfigUtils.ts` localised at source since it's used only here). `NearDuplicateWarning.tsx` uses `<Trans>` for its bold-filename split sentence (folds in the Key-Decision-D split-sentence sweep). `ConfirmModal.tsx` + `NearDuplicateWarning.tsx` share the new `common_cancel`. `TypographyEditor.tsx`: field labels/descriptors localised, module-level descriptor arrays moved in-component to reach `t`; font-family proper nouns and demonstrative `UPPERCASE`/`lowercase`/`Capitalize` transform labels left as locale-invariant. One behaviour change: interpolated breakpoint names now render via the localised (capitalised) `admin_bp_*` label for consistency with the tabs — updated 2 `GalleryConfigEditorModal` test assertions accordingly. Verified: forced + real-config `eslint` clean, `tsc -b` clean, `i18n:check` green (2653 strings), 109 Common tests pass.
+
+**P61-A + P61-B (landed together):** `contexts/**`, `Galleries/Shared/**`, and the whole `Settings/**` dir were confirmed 0-violation and enrolled in the enforced glob as directories (Settings verified clean beyond just the one tab file). The 6 near-zero-cost strings were wired: `App.tsx` idle-timeout notification (title + message with `{{seconds}}` interpolation + "Stay signed in" button) and offline `Alert` → `app_idle_*` / `app_offline` keys via `useTranslation`; `ErrorBoundary.tsx` (a class component) → `i18n` singleton `i18n.t()` for title/body/retry-aria/"Try Again" (`eb_*` keys), matching the `AuthBarFloating.tsx` precedent for non-hook contexts. `SettingsSystemAdminTab.tsx` `<code>?wpsg_result=…</code>` sample is a literal URL query-string token (surrounding prose already split-translated) → documented `eslint-disable-next-line` per Key Decision B / the P60-I glyph precedent, not a `t()` call. Verified: `npx eslint` (real config) clean on all A/B paths; `tsc -b` clean; `i18n:generate` + `i18n:check` in sync (2482 strings); 43 tests pass across App/ErrorBoundary/Settings suites.
+
 ## Outcome
 
-_To be completed once the phase ships._
+**What shipped.** The front-end i18n enforcement boundary is closed. `i18next/no-literal-string` (`jsx-text-only`) is now a single blanket `'error'` across all of `src/**` + `packages/shared-ui/src/**` (test/story fixtures exempt) — the terminal state, no per-directory allow-list left to maintain. Tracks A–F fully migrated every remaining front-end file to `t()`/`<Trans>` — **not just the 81 linter-flagged JSX-text literals, but all user-facing strings** (labels, descriptions, placeholders, aria/title, option labels) per the enforced-dir standard (Key Decision D). 193 new unique msgids were harvested and machine-translated into all five shipped packs (fr/es/de/zh/ru) with validated placeholder parity (0 empty / 0 mismatch); `.pot`/`.po`/`.mo`/`.l10n.php` regenerated and every pack resolves every msgid. The folded-in review follow-ons landed too: `ArchiveCompanyModal` → plural-aware `<Trans>`, media-import toast retranslated. Both stale `FUTURE_TASKS.md` i18n entries are closed. Verified end-to-end: full lint (blanket rule) clean, `tsc -b` clean, `npm run i18n:check` green, **3642 tests pass**, production build (`npm run build:wp`) succeeds, and a live non-English wp-env locale probe confirms translated output.
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+**What was deferred.**
+- **Relocating `AuthBar.tsx` into `packages/shared-ui/src/`** alongside its already-migrated siblings — a file-organization change, not an i18n fix (Key Decision B). Follow-On candidate.
+- **`ru_RU` 3-form plurals** (`_few`/`_many`) — architecturally blocked by the by-English-string i18next↔gettext bridge (documented in `TRANSLATING.md`); needs a source-layer redesign.
+- **`toLocaleDateString('en-US', …)` in `CampaignViewer.tsx`** — a hardcoded date-format locale (locale-plumbing, not a raw string); noted for a future pass.
+- **Native-speaker review of all five packs** — standing item from P60-H/I; this phase adds more machine-translated strings under the same caveat.
+
+**What should happen next.** Optionally schedule the AuthBar relocation and the date-locale plumbing as small follow-ups; commission native-speaker review of the packs before relying on non-English output in production.
+
+---
+
+## PR Review & Fix Pass (PR #75)
+
+Post-implementation review of the whole branch before merge. Reviewer-driven (no external
+review comments were posted on PR #75 at review time), so this pass **is** the review: a
+`/code-review` fan-out plus an independent manual audit of the diff, with findings triaged
+accept/reject and rationale recorded here per the `git-address-comments` workflow.
+
+### Scope
+
+- **Range:** `merge-base(main) = fb2ba1e` → `HEAD` (`8d8fc9b`) — commits **p61-ab → p61-g**.
+- **Diff:** 39 files, +7,921 / −3,523. The vast majority of that churn is **generated
+  locale artifacts** (`.pot` / `.po` / `.mo` / `.l10n.php`); the hand-written review surface
+  is ~1,000 lines across **20 source files** (18 `.tsx`/`.ts`, `eslint.config.js`,
+  `src/i18n-strings.en.json`) plus the PHP registry `class-wpsg-frontend-strings.php`.
+
+### Method
+
+- **`/code-review` (high effort), 3 finder angles in parallel:** (1) correctness on the
+  migrated React/TS components, (2) cross-layer i18n key/placeholder consistency
+  (React ↔ `en.json` ↔ PHP ↔ `.pot`/`.po`), (3) reuse / simplification / efficiency /
+  altitude / conventions.
+- **Independent manual audit** of every hunk in the source diff, plus **mechanical
+  cross-layer checks** run directly against the tree.
+
+### Verification — all clean
+
+| Check | Result |
+|-------|--------|
+| Key parity `en.json` ↔ PHP (added keys) | **261 = 261**, 0 drift either direction |
+| Placeholder / `<tag>` / English-value parity per key (`en.json` vs PHP) | **0 mismatches** across 261 keys |
+| Every `t()` / `<Trans>` call-site key exists in the registry | ✓ (agent-confirmed, incl. the 3 `<Trans>` blocks) |
+| Interpolation vars passed match each string's `{{…}}` | ✓ all sites |
+| `{{placeholder}}` preserved in translations, all 5 locales (`.po`) | **0 mismatches** |
+| `<strong>` tag preserved in translations, all 5 locales (`.po`) | **0 mismatches** |
+| `npm run i18n:check` (source ↔ generated manifest drift) | **green** |
+| `npm run lint` (blanket `no-literal-string` now on all `src/**`) | **0** |
+| `tsc -b` | **0** |
+| `vitest run` | **236 files / 3,642 tests pass** |
+
+### Findings & dispositions
+
+1. **`TypographyEditor.tsx` — option lists rebuilt every render → ACCEPTED (fixed).**
+   The migration moved five module-level constant option arrays (`fallbackFontOptions`,
+   `fontWeights`, `fontStyles`, `textTransforms`, `textDecorations`, ~30 `t()` lookups)
+   into the render body but left them un-memoized, even though the adjacent `fontFamilyData`
+   is `useMemo`-wrapped. TypographyEditor re-renders on every keystroke inside the
+   LayoutBuilder / in-context editors, so these arrays were re-allocated on each edit for no
+   benefit. **Fix:** wrapped all five in a single `useMemo` keyed on `t` (stable per locale),
+   mirroring the sibling memo. Value-identical output; `tsc`/`lint` clean; the 13
+   TypographyEditor-rendering `TextPropertiesPanel` tests still pass.
+
+2. **`GalleryConfigEditorModal.tsx` — sub-components localize via the `i18n.t()` singleton
+   instead of the `useTranslation` hook → REJECTED (no change).** The theoretical concern is
+   that singleton reads don't re-render on a runtime `i18n.changeLanguage()`. But the app
+   never switches language at runtime — the locale is fixed at WordPress page load from
+   `window.__WPSG_I18N__.locale`, and there is **no `changeLanguage` call anywhere** in
+   `src/`/`packages/`. The `i18n.t()` singleton is also the file's own established convention
+   (`tBreakpointLabel`) and matches sibling modules (`galleryConfigUtils.ts`,
+   `NearDuplicateWarning.tsx`). Converting would add churn with zero functional gain.
+
+3. **`GalleryConfigEditorModal.tsx` — breakpoint labels now Capitalized mid-sentence
+   (“…for the **Tablet** layout.”) → REJECTED (intentional).** This is a deliberate behavior
+   change from P61-C (interpolated breakpoint names reuse the localized, capitalized
+   `admin_bp_*` tab label for consistency with the tabs), and the PR updated the two
+   `GalleryConfigEditorModal.test.tsx` assertions from `tablet` to `Tablet` to match. The
+   sibling scope descriptions still lowercase their label because those are common-noun
+   phrasings, not tab names — the distinction is defensible, not a defect.
+
+No correctness or cross-layer-consistency defects were found — the migration is clean. The
+single applied change is the `TypographyEditor` memoization.
+
+### Outcome
+
+One efficiency fix committed on top of the branch (`TypographyEditor` `useMemo`). Full
+regression gate re-run after the fix: **lint 0, `tsc -b` 0, `i18n:check` green, 3,642 tests
+pass** — no regressions. PR #75 review complete.

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Combobox } from '@mantine/core';
 import type { MantineSize } from '@mantine/core';
+import { useTranslation } from 'react-i18next';
 import type { CompanyInfo } from '@/services/adminQuery';
 import { SearchableEntityInput } from './SearchableEntityInput';
 
@@ -24,8 +25,10 @@ export function CompanyCombobox({
   label,
   required,
   size,
-  placeholder = 'Search or add company…',
+  placeholder,
 }: CompanyComboboxProps) {
+  const { t } = useTranslation('wpsg');
+  const resolvedPlaceholder = placeholder ?? t('cc_placeholder', 'Search or add company…');
   const resolveDisplay = (v: string) => {
     const match = companies.find((c) => c.slug === v);
     return match ? match.name : v;
@@ -87,7 +90,7 @@ export function CompanyCombobox({
       label={label}
       required={required}
       size={size}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
     >
       {filtered.map((company) => (
         <Combobox.Option key={company.slug} value={company.slug}>
@@ -96,11 +99,11 @@ export function CompanyCombobox({
       ))}
       {!exactMatch && inputValue.trim() && (
         <Combobox.Option value={inputValue.trim()}>
-          + Create &ldquo;{inputValue.trim()}&rdquo;
+          {t('cc_create', '+ Create “{{name}}”', { name: inputValue.trim() })}
         </Combobox.Option>
       )}
       {filtered.length === 0 && !inputValue.trim() && (
-        <Combobox.Empty>No companies found</Combobox.Empty>
+        <Combobox.Empty>{t('cc_no_companies', 'No companies found')}</Combobox.Empty>
       )}
     </SearchableEntityInput>
   );

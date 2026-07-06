@@ -1,4 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { IconCalendar, IconTag } from '@tabler/icons-react';
 import { Modal, Image, Badge, Group, Stack, Title, Text, Paper, SimpleGrid, Box, Center, Loader, Switch } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -68,6 +69,7 @@ function CampaignViewerCoverHeader({
   campaignDateStyle,
   coverHeights,
 }: CampaignViewerCoverHeaderProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Box pos="relative" h={coverHeights} component="div">
       <InContextEditor
@@ -75,10 +77,10 @@ function CampaignViewerCoverHeader({
         position="top-left"
       >
         <Stack gap="sm">
-          <Text fw={600} size="xs">Campaign Header</Text>
-          <Switch label="Show Company Name" checked={settings.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
-          <Switch label="Show Date" checked={settings.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
-          <Text fw={500} size="xs" mt="xs">Title Typography</Text>
+          <Text fw={600} size="xs">{t('cv_hdr', 'Campaign Header')}</Text>
+          <Switch label={t('cv_show_company', 'Show Company Name')} checked={settings.showCampaignCompanyName !== false} onChange={(e) => inContextSave('showCampaignCompanyName', e.currentTarget.checked)} size="xs" />
+          <Switch label={t('cv_show_date', 'Show Date')} checked={settings.showCampaignDate !== false} onChange={(e) => inContextSave('showCampaignDate', e.currentTarget.checked)} size="xs" />
+          <Text fw={500} size="xs" mt="xs">{t('cv_title_typo', 'Title Typography')}</Text>
           <TypographyEditor
             value={settings.typographyOverrides.campaignTitle ?? {}}
             onChange={(value) => {
@@ -172,6 +174,7 @@ function CampaignViewerGalleryContent({
   isAdmin,
   apiClient,
 }: CampaignViewerGalleryContentProps) {
+  const { t } = useTranslation('wpsg');
   if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
     return null;
   }
@@ -196,7 +199,7 @@ function CampaignViewerGalleryContent({
         <Center py="xl" mih={200}>
           <Stack align="center" gap="xs">
             <Loader size="md" />
-            <Text size="sm" c="dimmed">Loading gallery…</Text>
+            <Text size="sm" c="dimmed">{t('cv_loading', 'Loading gallery…')}</Text>
           </Stack>
         </Center>
       }>
@@ -229,6 +232,7 @@ function CampaignViewerStatsSection({
   campaignStatsValueStyle,
   campaignStatsLabelStyle,
 }: CampaignViewerStatsSectionProps) {
+  const { t } = useTranslation('wpsg');
   return (
     <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
       <InContextEditor
@@ -236,31 +240,31 @@ function CampaignViewerStatsSection({
         position="top-right"
       >
         <Stack gap="sm">
-          <Text fw={600} size="xs">Stats Section</Text>
-          <Switch label="Show Stats" checked={settings.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
-          <Switch label="Admin Only" checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
+          <Text fw={600} size="xs">{t('cv_stats_section', 'Stats Section')}</Text>
+          <Switch label={t('cv_show_stats', 'Show Stats')} checked={settings.showCampaignStats !== false} onChange={(e) => inContextSave('showCampaignStats', e.currentTarget.checked)} size="xs" />
+          <Switch label={t('cv_admin_only', 'Admin Only')} checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
         </Stack>
       </InContextEditor>
-      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">Campaign Statistics</Title>
+      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
-          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Videos</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>{t('cv_videos', 'Videos')}</Text>
         </Paper>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.images.length}</Text>
-          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Images</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>{t('cv_images', 'Images')}</Text>
         </Paper>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.tags.length}</Text>
-          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>Tags</Text>
+          <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>{t('cv_tags', 'Tags')}</Text>
         </Paper>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>
             {displayedCampaign.visibility === 'public' ? '🌐' : '🔒'}
           </Text>
           <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>
-            {displayedCampaign.visibility === 'public' ? 'Public' : 'Private'}
+            {displayedCampaign.visibility === 'public' ? t('cv_public', 'Public') : t('cv_private', 'Private')}
           </Text>
         </Paper>
       </SimpleGrid>
@@ -280,6 +284,7 @@ export function CampaignViewer({
   onClose,
   spaceId,
 }: CampaignViewerProps) {
+  const { t } = useTranslation('wpsg');
   const s = galleryBehaviorSettings;
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const [viewerCampaign, setViewerCampaign] = useState(campaign);
@@ -320,12 +325,12 @@ export function CampaignViewer({
     }
 
     if (!isAdmin) {
-      onNotify?.({ type: 'error', text: 'Admin permissions required.' });
+      onNotify?.({ type: 'error', text: t('cv_err_admin', 'Admin permissions required.') });
       return;
     }
 
     if (!apiClient) {
-      onNotify?.({ type: 'error', text: 'Campaign API client unavailable.' });
+      onNotify?.({ type: 'error', text: t('cv_err_no_client', 'Campaign API client unavailable.') });
       return;
     }
 
@@ -346,17 +351,17 @@ export function CampaignViewer({
       setGalleryConfigEditorOpen(false);
       setGalleryConfigEditorValue(undefined);
       setGalleryConfigPreviewBaseline(undefined);
-      onNotify?.({ type: 'success', text: 'Campaign gallery config updated.' });
+      onNotify?.({ type: 'success', text: t('cv_saved', 'Campaign gallery config updated.') });
       await onCampaignsUpdated?.();
     } catch (err) {
       onNotify?.({
         type: 'error',
-        text: getErrorMessage(err, 'Failed to save campaign gallery config.'),
+        text: getErrorMessage(err, t('cv_err_save', 'Failed to save campaign gallery config.')),
       });
     } finally {
       setIsSavingGalleryConfig(false);
     }
-  }, [apiClient, isAdmin, isSavingGalleryConfig, onCampaignsUpdated, onNotify, viewerCampaign.id]);
+  }, [apiClient, isAdmin, isSavingGalleryConfig, onCampaignsUpdated, onNotify, viewerCampaign.id, t]);
 
   const handleGalleryConfigSave = useCallback((galleryOverrides: GalleryConfig | undefined) => {
     void persistCampaignGalleryConfig({
@@ -469,7 +474,7 @@ export function CampaignViewer({
       withCloseButton
       closeButtonProps={{
         ...getWpsgDebugProps('CampaignViewer', 'close'),
-        'aria-label': 'Close campaign viewer',
+        'aria-label': t('cv_close_aria', 'Close campaign viewer'),
         size: 'lg',
       }}
       overlayProps={getWpsgDebugProps('CampaignViewer', 'overlay')}
@@ -488,7 +493,7 @@ export function CampaignViewer({
         // (sr-only) while keeping it exposed to assistive tech.
         title: { position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 },
       }}
-      title={`Campaign details for ${displayedCampaign.title}`}
+      title={t('cv_modal_title', 'Campaign details for {{title}}', { title: displayedCampaign.title })}
     >
       {/* Cover Image Header — hidden in galleries-only mode or when cover image disabled */}
       {!galleriesOnly && s.showCampaignCoverImage !== false && (
@@ -518,10 +523,10 @@ export function CampaignViewer({
                 position="top-right"
               >
                 <Stack gap="sm">
-                  <Text fw={600} size="xs">About Section</Text>
-                  <Switch label="Show About" checked={Boolean(s.showCampaignAbout)} onChange={(e) => inContextSave('showCampaignAbout', e.currentTarget.checked)} size="xs" />
-                  <Switch label="Show Description" checked={Boolean(s.showCampaignDescription)} onChange={(e) => inContextSave('showCampaignDescription', e.currentTarget.checked)} size="xs" />
-                  <Text fw={500} size="xs" mt="xs">Heading Typography</Text>
+                  <Text fw={600} size="xs">{t('cv_about_section', 'About Section')}</Text>
+                  <Switch label={t('cv_show_about', 'Show About')} checked={Boolean(s.showCampaignAbout)} onChange={(e) => inContextSave('showCampaignAbout', e.currentTarget.checked)} size="xs" />
+                  <Switch label={t('cv_show_description', 'Show Description')} checked={Boolean(s.showCampaignDescription)} onChange={(e) => inContextSave('showCampaignDescription', e.currentTarget.checked)} size="xs" />
+                  <Text fw={500} size="xs" mt="xs">{t('cv_heading_typo', 'Heading Typography')}</Text>
                   <TypographyEditor
                     value={s.typographyOverrides['campaignAboutHeading'] ?? {}}
                     onChange={(v) => {
@@ -533,7 +538,7 @@ export function CampaignViewer({
                   />
                 </Stack>
               </InContextEditor>
-              <Title order={2} size="h4" mb="sm" style={campaignAboutHeadingStyle}>{s.campaignAboutHeadingText || 'About this Campaign'}</Title>
+              <Title order={2} size="h4" mb="sm" style={campaignAboutHeadingStyle}>{s.campaignAboutHeadingText || t('cv_about_fallback', 'About this Campaign')}</Title>
               {s.showCampaignDescription !== false && (
                 <Text c="dimmed" lh={1.6} style={campaignDescriptionStyle}>
                   {displayedCampaign.description}
@@ -546,7 +551,7 @@ export function CampaignViewer({
           {!hasAccess && (
             <Paper p="md" radius="md" bg="red.9" withBorder role="alert" aria-live="assertive">
               <Text size="sm" fw={600}>
-                This campaign is private. Sign in or request access to view media.
+                {t('cv_private_notice', 'This campaign is private. Sign in or request access to view media.')}
               </Text>
             </Paper>
           )}
@@ -562,7 +567,7 @@ export function CampaignViewer({
           />
 
           {hasAccess && displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0 && (
-            <Text c="dimmed" ta="center" py="xl">No media available for this campaign.</Text>
+            <Text c="dimmed" ta="center" py="xl">{t('cv_no_media', 'No media available for this campaign.')}</Text>
           )}
 
           {/* Campaign Stats — conditional */}
@@ -584,17 +589,17 @@ export function CampaignViewer({
           <LazyGalleryConfigEditorModal
             opened={galleryConfigEditorOpen}
             onClose={closeGalleryConfigEditor}
-            title="Campaign Gallery Config"
+            title={t('cv_config_title', 'Campaign Gallery Config')}
             value={galleryConfigEditorValue}
             contextSummary={hasCampaignGalleryOverrides(displayedCampaign)
-              ? 'This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'
-              : 'This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.'}
+              ? t('cv_config_summary_custom', 'This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.')
+              : t('cv_config_summary_inherit', 'This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save.')}
             onChange={handleGalleryConfigPreviewChange}
             onSave={handleGalleryConfigSave}
-            saveLabel="Save Campaign Gallery Config"
-            clearLabel="Preview Inherited Gallery Settings"
+            saveLabel={t('cv_config_save', 'Save Campaign Gallery Config')}
+            clearLabel={t('cv_config_clear', 'Preview Inherited Gallery Settings')}
             clearMode="draft"
-            unifiedAdapterDescription="Adapter applied when this campaign renders images and videos together."
+            unifiedAdapterDescription={t('cv_unified_desc', 'Adapter applied when this campaign renders images and videos together.')}
             zIndex={500}
             blurEnabled={s.settingsDrawerBlurEnabled}
           />

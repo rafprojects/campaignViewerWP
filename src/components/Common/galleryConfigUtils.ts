@@ -70,11 +70,11 @@ export function getEditableScopes(mode: GalleryConfigMode): Array<EditableGaller
 export function formatScopeLabel(scope: EditableGalleryScope): string {
   switch (scope) {
     case 'unified':
-      return 'Unified Gallery';
+      return i18n.t('set_ad_gce_scope_unified', 'Unified Gallery', { ns: 'wpsg' });
     case 'image':
-      return 'Image Gallery';
+      return i18n.t('set_ad_gce_scope_image', 'Image Gallery', { ns: 'wpsg' });
     case 'video':
-      return 'Video Gallery';
+      return i18n.t('set_ad_gce_scope_video', 'Video Gallery', { ns: 'wpsg' });
   }
 }
 

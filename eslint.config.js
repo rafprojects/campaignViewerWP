@@ -73,24 +73,20 @@ export default tseslint.config({
     globals: globals.node,
   },
 }, storybook.configs["flat/recommended"], {
-  // P49-C / P54-B: i18n rule — globally off for src/ (admin panel strings deferred).
-  files: ['src/**/*.{ts,tsx}'],
-  plugins: { i18next },
-  rules: {
-    'i18next/no-literal-string': 'off',
-  },
-}, {
-  // P54-B / P60-I: Enforce no-literal-string on harvested dirs (JSX text only)
-  // so future regressions are caught. P60-I promoted the whole admin panel
-  // (src/components/Admin/**, incl. LayoutBuilder) into the harvested set.
-  // P60-I sweep: src/hooks/** (admin-row hooks like useCampaignsRows render JSX)
-  // and src/components/Campaign/** joined the enforced set — these bypassed the
-  // bridge and shipped raw English (campaign-row actions, media picker labels).
+  // P61-G: TERMINAL STATE — blanket enforcement. The front-end-completeness
+  // sweep (P61-A–F) closed the last raw-literal gaps, so the whole front end
+  // (all of src/** plus the shared-ui package) is now enforced with ONE glob
+  // instead of the per-directory allow-list that had to be extended by hand for
+  // every new component family. No future directory needs manual registration:
+  // a new file anywhere under src/ is protected the moment it is created.
+  //
+  // History: P49-C/P54-B introduced the rule (off) and enforced the first
+  // harvested dirs; P60-I added Admin/**, hooks/**, Campaign/**; P61 swept the
+  // remaining families (Common, CampaignGallery, CardViewer, Auth, Settings,
+  // contexts, Galleries/Shared, App.tsx, ErrorBoundary.tsx) and flipped to this
+  // blanket rule.
   files: [
-    'src/components/Galleries/Adapters/**/*.{ts,tsx}',
-    'src/components/Admin/**/*.{ts,tsx}',
-    'src/components/Campaign/**/*.{ts,tsx}',
-    'src/hooks/**/*.{ts,tsx}',
+    'src/**/*.{ts,tsx}',
     'packages/shared-ui/src/**/*.{ts,tsx}',
   ],
   // Test/story fixtures render literal JSX intentionally — keep them exempt.

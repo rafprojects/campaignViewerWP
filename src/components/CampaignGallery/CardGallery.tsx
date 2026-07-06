@@ -12,6 +12,7 @@
  * classic carousel) when `paginationOwnership === 'adapter'`.
  */
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Container, Group, Stack, Title, Text, Chip, SegmentedControl, Alert, Box, Center, Loader, TextInput, Switch, Select } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { IconSearch } from '@tabler/icons-react';
@@ -67,6 +68,7 @@ export function CardGallery({
   apiClient,
   spaceId,
 }: CardGalleryProps) {
+  const { t } = useTranslation('wpsg');
   // ── Modal state ───────────────────────────────────────────────────────────
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation.
@@ -82,7 +84,7 @@ export function CardGallery({
   const viewerTitleStyle = useTypographyStyle('viewerTitle', galleryBehaviorSettings);
   const viewerSubtitleStyle = useTypographyStyle('viewerSubtitle', galleryBehaviorSettings);
   const inContextSave = useInContextSave(apiClient, galleryBehaviorSettings, 500, (err) => {
-    notifications.show({ color: 'red', message: getErrorMessage(err, 'Failed to save settings.') });
+    notifications.show({ color: 'red', message: getErrorMessage(err, t('cardgal_save_error', 'Failed to save settings.')) });
   }, spaceId);
 
   // Load Google Fonts referenced in typography overrides.
@@ -235,14 +237,14 @@ export function CardGallery({
       <Stack align="center" gap="md">
         <Text size="lg" c="dimmed" ta="center">
           {searchQuery.trim()
-            ? 'No campaigns match your search.'
+            ? t('cardgal_empty_search', 'No campaigns match your search.')
             : !isAuthenticated && campaigns.length === 0
-              ? 'Sign in to view campaigns.'
+              ? t('cardgal_empty_signin', 'Sign in to view campaigns.')
               : filter === 'accessible'
-                ? 'No accessible campaigns yet.'
+                ? t('cardgal_empty_accessible', 'No accessible campaigns yet.')
                 : accessMode === 'hide'
-                  ? 'No accessible campaigns found. Switch to Lock mode to view locked cards.'
-                  : 'No campaigns found matching your filter.'}
+                  ? t('cardgal_empty_hide', 'No accessible campaigns found. Switch to Lock mode to view locked cards.')
+                  : t('cardgal_empty_filter', 'No campaigns found matching your filter.')}
         </Text>
       </Stack>
     </Center>
@@ -261,52 +263,52 @@ export function CardGallery({
           position="top-right"
         >
           <Stack gap="sm">
-            <Text fw={600} size="xs">Viewer Header Settings</Text>
+            <Text fw={600} size="xs">{t('cardgal_hdr_settings', 'Viewer Header Settings')}</Text>
             <Switch
-              label="Show Title"
+              label={t('cardgal_show_title', 'Show Title')}
               checked={galleryBehaviorSettings.showGalleryTitle}
               onChange={(e) => inContextSave('showGalleryTitle', e.currentTarget.checked)}
               size="xs"
             />
             <Switch
-              label="Show Subtitle"
+              label={t('cardgal_show_subtitle', 'Show Subtitle')}
               checked={galleryBehaviorSettings.showGallerySubtitle}
               onChange={(e) => inContextSave('showGallerySubtitle', e.currentTarget.checked)}
               size="xs"
             />
             <TextInput
-              label="Title Text"
+              label={t('cardgal_title_text', 'Title Text')}
               value={galleryBehaviorSettings.galleryTitleText}
               onChange={(e) => inContextSave('galleryTitleText', e.currentTarget.value)}
               size="xs"
             />
             <TextInput
-              label="Subtitle Text"
+              label={t('cardgal_subtitle_text', 'Subtitle Text')}
               value={galleryBehaviorSettings.gallerySubtitleText}
               onChange={(e) => inContextSave('gallerySubtitleText', e.currentTarget.value)}
               size="xs"
             />
             <Select
-              label="Background Type"
+              label={t('cardgal_bg_type', 'Background Type')}
               value={galleryBehaviorSettings.viewerBgType}
               onChange={(v) => inContextSave('viewerBgType', v)}
               data={[
-                { value: 'theme', label: 'Theme' },
-                { value: 'transparent', label: 'Transparent' },
-                { value: 'solid', label: 'Solid Color' },
-                { value: 'gradient', label: 'Gradient' },
+                { value: 'theme', label: t('cardgal_bg_theme', 'Theme') },
+                { value: 'transparent', label: t('cardgal_bg_transparent', 'Transparent') },
+                { value: 'solid', label: t('cardgal_bg_solid', 'Solid Color') },
+                { value: 'gradient', label: t('cardgal_bg_gradient', 'Gradient') },
               ]}
               size="xs"
             />
             {galleryBehaviorSettings.viewerBgType === 'solid' && (
               <ColorInput
-                label="Background Color"
+                label={t('cardgal_bg_color', 'Background Color')}
                 value={galleryBehaviorSettings.viewerBgColor}
                 onChange={(v) => inContextSave('viewerBgColor', v)}
                 size="xs"
               />
             )}
-            <Text fw={500} size="xs" mt="xs">Title Typography</Text>
+            <Text fw={500} size="xs" mt="xs">{t('cardgal_title_typo', 'Title Typography')}</Text>
             <TypographyEditor
               value={galleryBehaviorSettings.typographyOverrides['viewerTitle'] ?? {}}
               onChange={(v) => {
@@ -325,22 +327,22 @@ export function CardGallery({
               <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
                 {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle) && (
                   <Stack gap={0}>
-                    {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || 'Gallery'}</Title>}
+                    {galleryBehaviorSettings.showGalleryTitle && <Title order={1} size="h3" style={viewerTitleStyle}>{galleryBehaviorSettings.galleryTitleText || t('cardgal_gallery_fallback', 'Gallery')}</Title>}
                     {galleryBehaviorSettings.showGallerySubtitle && galleryBehaviorSettings.gallerySubtitleText && <Text c="dimmed" size="sm" style={viewerSubtitleStyle}>{galleryBehaviorSettings.gallerySubtitleText}</Text>}
                   </Stack>
                 )}
                 {isAdmin && galleryBehaviorSettings.showAccessMode && (
                   <Group gap="sm" align="center">
-                    <Text size="xs" fw={600} tt="uppercase" c="dimmed">Access mode</Text>
+                    <Text size="xs" fw={600} tt="uppercase" c="dimmed">{t('cardgal_access_mode', 'Access mode')}</Text>
                     <SegmentedControl
                       value={accessMode}
                       onChange={(v) => onAccessModeChange?.(v as 'lock' | 'hide')}
                       data={[
-                        { label: 'Lock', value: 'lock' },
-                        { label: 'Hide', value: 'hide' },
+                        { label: t('cardgal_lock', 'Lock'), value: 'lock' },
+                        { label: t('cardgal_hide', 'Hide'), value: 'hide' },
                       ]}
                       size="xs"
-                      aria-label="Access mode"
+                      aria-label={t('cardgal_access_mode', 'Access mode')}
                     />
                   </Group>
                 )}
@@ -355,9 +357,9 @@ export function CardGallery({
                   // avoids the invalid tab→panel `aria-controls` that Mantine Tabs
                   // emit here, and matches the admin-panel filter pattern.
                   <Chip.Group multiple={false} value={filter} onChange={(v) => setFilter((v as string) || 'all')}>
-                    <Group gap="xs" wrap="wrap" role="group" aria-label="Campaign filters" style={{ flex: '1 1 auto', minWidth: 0 }}>
-                      <Chip value="all" variant="light" size="sm">All</Chip>
-                      <Chip value="accessible" variant="light" size="sm">My Access</Chip>
+                    <Group gap="xs" wrap="wrap" role="group" aria-label={t('cardgal_filters_aria', 'Campaign filters')} style={{ flex: '1 1 auto', minWidth: 0 }}>
+                      <Chip value="all" variant="light" size="sm">{t('cardgal_filter_all', 'All')}</Chip>
+                      <Chip value="accessible" variant="light" size="sm">{t('cardgal_filter_my_access', 'My Access')}</Chip>
                       {companies.map((company) => (
                         <Chip key={company} value={company} variant="light" size="sm">
                           {company}
@@ -368,13 +370,13 @@ export function CardGallery({
                 )}
                 {galleryBehaviorSettings.showSearchBox && (
                   <TextInput
-                    placeholder="Search campaigns..."
+                    placeholder={t('cardgal_search_ph', 'Search campaigns...')}
                     leftSection={<IconSearch size={16} />}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.currentTarget.value)}
                     style={{ minWidth: 'min(200px, 100%)', maxWidth: 280 }}
                     size="sm"
-                    aria-label="Search campaigns by title, description, or tags"
+                    aria-label={t('cardgal_search_aria', 'Search campaigns by title, description, or tags')}
                   />
                 )}
               </Group>
@@ -382,8 +384,8 @@ export function CardGallery({
 
             {/* Hidden notice */}
             {showHiddenNotice && (
-              <Alert color="yellow" title="Access mode active" role="status" aria-live="polite">
-                {hiddenCount} campaign{hiddenCount === 1 ? '' : 's'} hidden by access mode.
+              <Alert color="yellow" title={t('cardgal_access_active_title', 'Access mode active')} role="status" aria-live="polite">
+                {t('cardgal_hidden_notice', '{{count}} campaign hidden by access mode.', { count: hiddenCount })}
               </Alert>
             )}
           </Stack>

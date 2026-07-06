@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Box, Button, Text, TextInput, Stack, Alert } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
+import { Trans, useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -14,6 +15,7 @@ interface RequestAccessFormProps {
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: RequestAccessFormProps) {
+  const { t } = useTranslation('wpsg');
   const [email, setEmail] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -31,7 +33,7 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       const msg =
         err instanceof Error
           ? err.message
-          : 'Failed to submit request. Please try again.';
+          : t('raf_error_generic', 'Failed to submit request. Please try again.');
       setErrorMessage(msg);
       setSubmitState('error');
     }
@@ -51,7 +53,7 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       >
         <IconCheck size={24} color="var(--mantine-color-green-4)" />
         <Text size="sm" mt={6} c="dimmed">
-          Check your email for confirmation.
+          {t('raf_check_email', 'Check your email for confirmation.')}
         </Text>
       </Box>
     );
@@ -71,10 +73,12 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
     >
       <Stack gap="xs">
         <Text size="xs" fw={500} ta="center" c="dimmed">
-          Request access to{' '}
-          <Text component="span" fw={700} inherit>
-            {campaignTitle}
-          </Text>
+          <Trans
+            i18nKey="raf_request_to"
+            values={{ title: campaignTitle }}
+            components={{ strong: <Text component="span" fw={700} inherit /> }}
+            defaults="Request access to <strong>{{title}}</strong>"
+          />
         </Text>
 
         {submitState === 'error' && (
@@ -89,14 +93,14 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
         )}
 
         <TextInput
-          placeholder="your@email.com"
+          placeholder={t('raf_email_ph', 'your@email.com')}
           value={email}
           onChange={(e) => setEmail(e.currentTarget.value)}
           type="email"
           required
           size="xs"
           leftSection={<IconMail size={14} />}
-          aria-label="Email address"
+          aria-label={t('raf_email_aria', 'Email address')}
           disabled={submitState === 'loading'}
           styles={{
             input: {
@@ -114,7 +118,7 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
           loading={submitState === 'loading'}
           fullWidth
         >
-          Request Access
+          {t('raf_request_access', 'Request Access')}
         </Button>
       </Stack>
     </Box>

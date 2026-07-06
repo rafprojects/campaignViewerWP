@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Container, Group, Button, Tooltip, ActionIcon, Text, Menu } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
@@ -180,6 +181,7 @@ function AuthBarFull({
   instanceId,
   pageSpaces,
 }: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean; pageSpaces?: import('@wp-super-gallery/shared-ui').SpaceSwitcherSpace[] | undefined }) {
+  const { t } = useTranslation('wpsg');
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
 
@@ -209,7 +211,7 @@ function AuthBarFull({
     <Box
       {...getWpsgDebugProps('AuthBar')}
       component="nav"
-      aria-label="User navigation"
+      aria-label={t('auth_user_nav_label', 'User navigation')}
       style={{
         position: 'sticky',
         top: 'var(--wp-admin--admin-bar--height, 0px)',
@@ -225,13 +227,13 @@ function AuthBarFull({
         <Group {...getWpsgDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
           {!isAuthenticated ? (
             <>
-              <Text size="sm" c="dimmed">Sign in to access private campaigns</Text>
-              <Button variant="light" size="sm" onClick={onOpenSignIn}>Sign in</Button>
+              <Text size="sm" c="dimmed">{t('auth_sign_in_prompt', 'Sign in to access private campaigns.')}</Text>
+              <Button variant="light" size="sm" onClick={onOpenSignIn}>{t('auth_sign_in', 'Sign in')}</Button>
             </>
           ) : (
             <>
               <Text size="sm" truncate style={{ minWidth: 0 }}>
-                Signed in as {email}
+                {t('auth_signed_in_as', 'Signed in as {{email}}', { email })}
               </Text>
 
               {isMobile ? (
@@ -240,7 +242,7 @@ function AuthBarFull({
                   styles={{ dropdown: color ? { borderColor: `var(--mantine-color-${color}-5)` } : {} }}
                 >
                   <Menu.Target>
-                    <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label="User menu">
+                    <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label={t('auth_user_menu_label', 'User menu')}>
                       <IconDotsVertical size={18} />
                     </ActionIcon>
                   </Menu.Target>
@@ -248,10 +250,10 @@ function AuthBarFull({
                     {isAdmin && (
                       <>
                         <Menu.Item leftSection={<IconDashboard size={16} />} onClick={handleOpenAdmin}>
-                          Admin Panel
+                          {t('auth_admin_panel', 'Admin Panel')}
                         </Menu.Item>
                         <Menu.Item leftSection={<IconSettings size={16} />} onClick={handleOpenSettings}>
-                          Settings
+                          {t('auth_settings', 'Settings')}
                         </Menu.Item>
                         {instanceId && (
                           <Box px={8} py={4}>
@@ -266,7 +268,7 @@ function AuthBarFull({
                       </>
                     )}
                     <Menu.Item leftSection={<IconLogout size={16} />} onClick={onLogout} color="red">
-                      Sign out
+                      {t('auth_sign_out', 'Sign out')}
                     </Menu.Item>
                   </Menu.Dropdown>
                 </Menu>
@@ -281,15 +283,15 @@ function AuthBarFull({
                         className="wpsg-admin-btn"
                         size="sm"
                       >
-                        Admin Panel
+                        {t('auth_admin_panel', 'Admin Panel')}
                       </Button>
-                      <Tooltip label="Settings">
+                      <Tooltip label={t('auth_settings', 'Settings')}>
                         <ActionIcon
                           variant="default"
                           size="lg"
                           className="wpsg-admin-btn"
                           onClick={handleOpenSettings}
-                          aria-label="Settings"
+                          aria-label={t('auth_settings', 'Settings')}
                         >
                           <IconSettings size={20} />
                         </ActionIcon>
@@ -308,7 +310,7 @@ function AuthBarFull({
                     onClick={onLogout}
                     size="sm"
                   >
-                    Sign out
+                    {t('auth_sign_out', 'Sign out')}
                   </Button>
                 </Group>
               )}

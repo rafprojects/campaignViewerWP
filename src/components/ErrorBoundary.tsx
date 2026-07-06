@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import i18n from 'i18next';
 import { Alert, Button, Stack, Text } from '@mantine/core';
 import { IconAlertTriangle } from '@tabler/icons-react';
 
@@ -48,21 +49,21 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <Alert
           color="red"
-          title="Something went wrong"
+          title={i18n.t('eb_error_title', 'Something went wrong')}
           icon={<IconAlertTriangle />}
           role="alert"
         >
           <Stack gap="sm">
             <Text size="sm">
-              {this.state.error?.message || 'An unexpected error occurred while loading this component.'}
+              {this.state.error?.message || i18n.t('eb_error_body', 'An unexpected error occurred while loading this component.')}
             </Text>
             <Button
               size="xs"
               variant="light"
               onClick={this.handleReset}
-              aria-label="Reset error boundary and try again"
+              aria-label={i18n.t('eb_retry_aria', 'Reset error boundary and try again')}
             >
-              Try Again
+              {i18n.t('eb_try_again', 'Try Again')}
             </Button>
           </Stack>
         </Alert>

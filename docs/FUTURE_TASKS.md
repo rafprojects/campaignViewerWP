@@ -173,28 +173,24 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Internationalization
 
-### Full Admin-Panel i18n Migration
+### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)
 
 **Origin:** Phase 54 (P54-B harvests **user-facing** strings only; admin deferred here).
 
-**Context:** ~300 raw JSX literals remain; `i18next/no-literal-string` is `'off'` globally (`eslint.config.js:82`). After the user-facing harvest in P54-B, complete the admin-panel strings and flip the lint rule to `'error'` **globally** so regressions are caught everywhere. **Gates the public WP.org / premium paths** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §5).
-
-**Status (2026-06-26):** `.pot` generation + confirming user-facing coverage is scheduled in [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B (the Freemius-premium floor). This entry — the **full** admin harvest (~300 literals) + flipping the lint rule to `'error'` — remains deferred as the **WP.org public-listing gate**.
-
-**Effort:** Medium-High | **Impact:** Low for English-only deployments; High/required for public distribution.
+**Resolved (2026-07-05, [PHASE61_REPORT.md](PHASE61_REPORT.md)):** P60-I completed the admin-panel harvest; **Phase 61** swept every remaining front-end family (`Common`, `CampaignGallery`, `CardViewer`, `Auth`, `Settings`, `contexts`, `Galleries/Shared`, `App.tsx`, `ErrorBoundary.tsx`) and flipped `i18next/no-literal-string` to a single **blanket `'error'` for all of `src/**` + `packages/shared-ui/src/**`** — the terminal state, with no per-directory allow-list left to maintain. All newly-harvested strings are translated into the five shipped packs (fr/es/de/zh/ru). The WP.org public-listing i18n gate this entry described is now met.
 
 ---
 
-### i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation
+### ~~i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation~~ — ✅ RESOLVED (Phase 61-G, one caveat)
 
-**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass".
+**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass". Folded into Phase 61 Track G.
 
-**Context:** Two low-severity, English-safe i18n items surfaced by the review:
+**Resolved (2026-07-05):**
 
-1. **Sentence composition (F3).** `ArchiveCompanyModal.tsx` assembles its confirmation from `admin_archco_msg_pre` + `<strong>{name}</strong>` + `admin_archco_msg_post` fragments — fine in English but not word-order-portable for other locales. Fix via a `<Trans>` component so translators get one reorderable unit. Worth a quick sweep for other split-sentence-around-a-node cases while there.
-2. **Locale re-translation.** F2 changed the media-import toast source strings and added `_other` plural siblings (`admin_media_imported`, `admin_media_imported_skipped`). The five packs (fr/es/de/zh/ru) now fall back to correct English for that one toast until re-translated. Fold in the tracked `ru_RU` 3-form plural for the password-length string at the same time. Regenerate via `npm run i18n:generate` → `wp i18n make-pot`, then update the `.po/.mo`.
+1. **Sentence composition (F3).** ✅ `ArchiveCompanyModal.tsx` now composes its confirmation with a single `<Trans>` (`admin_archco_msg` / `_other`, `<strong>{{name}}</strong>` inline) — one reorderable, plural-aware unit. The pre/post fragment keys were removed. Other split-sentence cases surfaced during the P61 sweep (`NearDuplicateWarning`, `RequestAccessForm`) were also migrated to `<Trans>`.
+2. **Locale re-translation.** ✅ The changed media-import toast strings (`admin_media_imported[_skipped]` + `_other` siblings) are now translated with proper singular/plural forms in all five packs; `.pot`/`.po`/`.mo`/`.l10n.php` regenerated (0 pot msgids untranslated).
 
-**Effort:** Low | **Impact:** Low (English-safe); improves non-English fidelity.
+**Remaining caveat (architectural, not actionable via re-translation):** the `ru_RU` **3-form** plural (`_few`/`_many`) for count-bearing strings (password-length, media counts) is **not achievable through the current i18next↔gettext bridge** — the bridge resolves translations by English string, so `_few`/`_many` (identical English to `_other`) collapse to one msgid. This is already documented in [`docs/guides/TRANSLATING.md`](guides/TRANSLATING.md) ("Russian plural nuance"); ru uses the `_other` form for counts 2–4. True 3-form correctness needs a source-layer redesign (distinct keys resolved by key, not English) and is out of scope here.
 
 ---
 
