@@ -1,8 +1,8 @@
 # Phase 61 - Front-End i18n Completeness (Literal-String Audit & Closeout)
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-07-04
-**Last updated:** 2026-07-04
+**Last updated:** 2026-07-05
 
 ### Tracks
 
@@ -14,7 +14,7 @@
 | P61-D | `src/components/CampaignGallery/**` sweep (18 violations, 4 files) | Done | Small-Medium |
 | P61-E | `src/components/CardViewer/CampaignViewer.tsx` sweep (12 violations, 1 file) | Done | Small |
 | P61-F | `src/components/Auth/AuthBar.tsx` sweep (8 violations) | Done | Small |
-| P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Planned | Medium |
+| P61-G | Global enforcement flip + translation sweep + `FUTURE_TASKS.md` closeout | Done | Medium |
 
 ---
 
@@ -199,6 +199,12 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 
 - Record completed work at a high level as tracks land. Keep short and factual.
 
+**P61-G (blanket flip + translation sweep + folded-in closeout):**
+- **Enforcement (terminal state).** `eslint.config.js` now enforces `i18next/no-literal-string` (`jsx-text-only`) with **one blanket glob** — `src/**/*.{ts,tsx}` + `packages/shared-ui/src/**` (test/story fixtures exempt) — replacing the per-directory allow-list. Confirmed 0 violations across the whole front end under both the forced rule and the real config.
+- **Translation sweep.** Regenerated the PHP manifest + `.pot` (`wp i18n make-pot`, run standalone). The sweep introduced **193 new unique msgids**; each was machine-translated into all five packs (fr/es/de/zh/ru) via a deterministic patch pipeline (`translations.json` → validated for `{{var}}`/`<tag>`/`%s` placeholder parity, 0 empty/0 mismatch → appended to each `.po`). Recompiled `.mo` + `.l10n.php` with `wp i18n make-mo`/`make-php`. Every `.pot` msgid resolves in every pack (0 missing); `npm run i18n:check` green.
+- **Folded-in review follow-ons (per the user's Track-G decision).** `ArchiveCompanyModal.tsx` migrated to a plural-aware `<Trans>` (`admin_archco_msg`/`_other`), retiring the split pre/post fragments; the 4 changed media-import toast strings retranslated with proper singular/plural in all 5 packs. The tracked `ru_RU` 3-form plural is documented as architecturally blocked by the by-English-string bridge (see `TRANSLATING.md`) — annotated, not falsely closed.
+- **Closeout.** Both `FUTURE_TASKS.md` i18n entries marked resolved.
+
 **P61-F (`Auth/AuthBar.tsx`, pure reuse — 0 new keys):** All 8 chrome strings + the file's other user-facing attribute strings (aria-labels, tooltip) wired to the existing `auth_*` keys already shipping in all 5 packs (via `AuthBarFloating`/`AuthBarMinimal`). One deliberate micro-change: the full-bar sign-in prompt now renders with a trailing period (reusing `auth_sign_in_prompt`), matching its floating/minimal siblings. `i18n:check` unchanged (no new keys). File not relocated to `shared-ui` (Follow-On, Key Decision B). Verified: real + forced eslint clean, `tsc -b` clean, 38 Auth tests pass.
 
 **P61-E (`CardViewer/CampaignViewer.tsx`, full migration):** New `cv_*` family across the file's 3 sub-components (each got its own `useTranslation`) + the main component (notify/toast fallbacks, modal aria/title, config-editor labels/summaries). Enrolled the whole `CardViewer/**` dir in the enforced glob (the 4 dispatch-wrapper siblings were already 0-violation). Left the hardcoded `toLocaleDateString('en-US', …)` date-format locale as a noted follow-up (a locale-plumbing concern, not a raw-string one). Verified: forced + real-config eslint clean, `tsc -b` clean, `i18n:check` green (2733 strings), 29 CardViewer tests pass.
@@ -211,8 +217,12 @@ Once P61-A–F land, every known directory is individually enforced, but the all
 
 ## Outcome
 
-_To be completed once the phase ships._
+**What shipped.** The front-end i18n enforcement boundary is closed. `i18next/no-literal-string` (`jsx-text-only`) is now a single blanket `'error'` across all of `src/**` + `packages/shared-ui/src/**` (test/story fixtures exempt) — the terminal state, no per-directory allow-list left to maintain. Tracks A–F fully migrated every remaining front-end file to `t()`/`<Trans>` — **not just the 81 linter-flagged JSX-text literals, but all user-facing strings** (labels, descriptions, placeholders, aria/title, option labels) per the enforced-dir standard (Key Decision D). 193 new unique msgids were harvested and machine-translated into all five shipped packs (fr/es/de/zh/ru) with validated placeholder parity (0 empty / 0 mismatch); `.pot`/`.po`/`.mo`/`.l10n.php` regenerated and every pack resolves every msgid. The folded-in review follow-ons landed too: `ArchiveCompanyModal` → plural-aware `<Trans>`, media-import toast retranslated. Both stale `FUTURE_TASKS.md` i18n entries are closed. Verified end-to-end: full lint (blanket rule) clean, `tsc -b` clean, `npm run i18n:check` green, **3642 tests pass**, production build (`npm run build:wp`) succeeds, and a live non-English wp-env locale probe confirms translated output.
 
-- What shipped.
-- What was deferred.
-- What should happen next.
+**What was deferred.**
+- **Relocating `AuthBar.tsx` into `packages/shared-ui/src/`** alongside its already-migrated siblings — a file-organization change, not an i18n fix (Key Decision B). Follow-On candidate.
+- **`ru_RU` 3-form plurals** (`_few`/`_many`) — architecturally blocked by the by-English-string i18next↔gettext bridge (documented in `TRANSLATING.md`); needs a source-layer redesign.
+- **`toLocaleDateString('en-US', …)` in `CampaignViewer.tsx`** — a hardcoded date-format locale (locale-plumbing, not a raw string); noted for a future pass.
+- **Native-speaker review of all five packs** — standing item from P60-H/I; this phase adds more machine-translated strings under the same caveat.
+
+**What should happen next.** Optionally schedule the AuthBar relocation and the date-locale plumbing as small follow-ups; commission native-speaker review of the packs before relying on non-English output in production.

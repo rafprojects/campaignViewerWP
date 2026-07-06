@@ -6631,3 +6631,600 @@ msgstr "Редактор галереи"
 
 msgid "Sort campaigns"
 msgstr "Сортировать кампании"
+
+msgid "Session expiring soon"
+msgstr "Сессия скоро истечёт"
+
+msgid "You will be signed out in {{seconds}} seconds due to inactivity."
+msgstr "Вы выйдете из системы через {{seconds}} с из-за бездействия."
+
+msgid "Stay signed in"
+msgstr "Остаться в системе"
+
+msgid "You appear to be offline. Some features are unavailable."
+msgstr "Похоже, вы не в сети. Некоторые функции недоступны."
+
+msgid "Something went wrong"
+msgstr "Что-то пошло не так"
+
+msgid "An unexpected error occurred while loading this component."
+msgstr "При загрузке этого компонента произошла непредвиденная ошибка."
+
+msgid "Reset error boundary and try again"
+msgstr "Сбросить и повторить попытку"
+
+msgid "Try Again"
+msgstr "Повторить"
+
+msgid "Unified Gallery"
+msgstr "Единая галерея"
+
+msgid "Image Gallery"
+msgstr "Галерея изображений"
+
+msgid "Video Gallery"
+msgstr "Видеогалерея"
+
+msgid "This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits."
+msgstr "Этот общий редактор управляет моделью выбора вложенной галереи. Встроенные селекторы остаются доступными для быстрого просмотра и мелких правок."
+
+msgid "Gallery Mode"
+msgstr "Режим галереи"
+
+msgid "Choose whether this config resolves a unified gallery or separate image and video galleries."
+msgstr "Выберите, создаёт ли эта конфигурация единую галерею или отдельные галереи изображений и видео."
+
+msgid "Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice."
+msgstr "Здесь поддерживается выбор единого режима, но переопределения единого адаптера на уровне кампании в этом разделе по-прежнему наследуют глобальный единый адаптер."
+
+msgid "Breakpoint Adapters"
+msgstr "Адаптеры точек останова"
+
+msgid "Editing breakpoint-specific unified settings for the {{bp}} layout."
+msgstr "Редактирование единых настроек для точки останова макета {{bp}}."
+
+msgid "Unified Gallery Adapter"
+msgstr "Адаптер единой галереи"
+
+msgid "Unified gallery adapter for the {{bp}} breakpoint."
+msgstr "Адаптер единой галереи для точки останова {{bp}}."
+
+msgid "Default adapter"
+msgstr "Адаптер по умолчанию"
+
+msgid "Unified adapter overrides remain inherited in this slice."
+msgstr "Переопределения единого адаптера в этом разделе остаются унаследованными."
+
+msgid "Image Adapter"
+msgstr "Адаптер изображений"
+
+msgid "Image gallery adapter for the {{bp}} breakpoint."
+msgstr "Адаптер галереи изображений для точки останова {{bp}}."
+
+msgid "Video Adapter"
+msgstr "Адаптер видео"
+
+msgid "Video gallery adapter for the {{bp}} breakpoint."
+msgstr "Адаптер видеогалереи для точки останова {{bp}}."
+
+msgid "Settings below apply to the {{bp}} breakpoint for the unified gallery surface."
+msgstr "Настройки ниже применяются к точке останова {{bp}} для единой галереи."
+
+msgid "Settings below apply to the {{bp}} breakpoint for the current per-type gallery surface."
+msgstr "Настройки ниже применяются к точке останова {{bp}} для текущей галереи по типам."
+
+msgid "Apply Gallery Config"
+msgstr "Применить конфигурацию галереи"
+
+msgid "Clear Overrides"
+msgstr "Очистить переопределения"
+
+msgid "Adapter applied when images and videos render together."
+msgstr "Адаптер, применяемый, когда изображения и видео отображаются вместе."
+
+msgid "Each breakpoint tab controls its own unified adapter and responsive settings."
+msgstr "Каждая вкладка точки останова управляет своим единым адаптером и адаптивными настройками."
+
+msgid "Reset {{label}}"
+msgstr "Сбросить {{label}}"
+
+msgid "Reset All Changes"
+msgstr "Сбросить все изменения"
+
+msgid "Shared Section Sizing"
+msgstr "Общие размеры раздела"
+
+msgid "Gallery Section Max Width (px)"
+msgstr "Макс. ширина раздела галереи (px)"
+
+msgid "Maximum width for each gallery section. 0 keeps the section fully responsive."
+msgstr "Максимальная ширина каждого раздела галереи. 0 сохраняет раздел полностью адаптивным."
+
+msgid "Gallery Section Min Width (px)"
+msgstr "Мин. ширина раздела галереи (px)"
+
+msgid "Minimum width floor for each gallery section."
+msgstr "Минимальная ширина для каждого раздела галереи."
+
+msgid "How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
+msgstr "Как определяется высота раздела. «Авто» зависит от содержимого и остаётся самым безопасным вариантом по умолчанию для «кирпичной» и выровненной раскладок."
+
+msgid "Gallery Section Max Height (px)"
+msgstr "Макс. высота раздела галереи (px)"
+
+msgid "Maximum height used when section height mode is manual."
+msgstr "Максимальная высота, используемая, когда режим высоты раздела — ручной."
+
+msgid "Gallery Section Min Height (px)"
+msgstr "Мин. высота раздела галереи (px)"
+
+msgid "Minimum height floor for each gallery section."
+msgstr "Минимальная высота для каждого раздела галереи."
+
+msgid "Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
+msgstr "Определяет, выравниваются ли разделы изображений и видео по одинаковой высоте в раскладках по типам на широких экранах."
+
+msgid "Shared Section Spacing"
+msgstr "Общие отступы раздела"
+
+msgid "Section Padding (px)"
+msgstr "Внутренний отступ раздела (px)"
+
+msgid "Applies the same inner section padding across the currently edited gallery mode surface."
+msgstr "Применяет одинаковый внутренний отступ раздела ко всей редактируемой поверхности режима галереи."
+
+msgid "Adapter Content Padding (px)"
+msgstr "Внутренний отступ содержимого адаптера (px)"
+
+msgid "Applies the same inner adapter padding across the currently edited gallery mode surface."
+msgstr "Применяет одинаковый внутренний отступ адаптера ко всей редактируемой поверхности режима галереи."
+
+msgid "Shared Adapter Sizing"
+msgstr "Общие размеры адаптера"
+
+msgid "How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
+msgstr "Как адаптеры заполняют свой раздел галереи. «Заполнить» использует весь раздел; «Вручную» позволяет ограничить проценты ширины и высоты."
+
+msgid "Maximum adapter width as a percentage of its gallery section."
+msgstr "Максимальная ширина адаптера в процентах от его раздела галереи."
+
+msgid "Maximum adapter height as a percentage of its gallery section."
+msgstr "Максимальная высота адаптера в процентах от его раздела галереи."
+
+msgid "Adapter Item Gap (px)"
+msgstr "Промежуток между элементами адаптера (px)"
+
+msgid "Applies shared item spacing across the currently edited gallery mode surface."
+msgstr "Применяет общий интервал между элементами ко всей редактируемой поверхности режима галереи."
+
+msgid "Controls how adapter items distribute inside the section for adapters that support justification."
+msgstr "Определяет, как элементы адаптера распределяются внутри раздела для адаптеров, поддерживающих выравнивание."
+
+msgid "Shared Gallery Height"
+msgstr "Общая высота галереи"
+
+msgid "420px"
+msgstr "420px"
+
+msgid "Shared Gallery Presentation"
+msgstr "Общее оформление галереи"
+
+msgid "Shared heading text for image gallery sections when labels are enabled."
+msgstr "Общий текст заголовка для разделов галереи изображений, когда подписи включены."
+
+msgid "Shared heading text for video gallery sections when labels are enabled."
+msgstr "Общий текст заголовка для разделов видеогалереи, когда подписи включены."
+
+msgid "Gallery Label Justification"
+msgstr "Выравнивание подписей галереи"
+
+msgid "Controls how gallery section titles align across the currently edited gallery mode surface."
+msgstr "Определяет выравнивание заголовков разделов галереи по всей редактируемой поверхности режима галереи."
+
+msgid "Show Gallery Label Icons"
+msgstr "Показывать значки подписей галереи"
+
+msgid "Displays the adapter icon beside gallery section titles."
+msgstr "Отображает значок адаптера рядом с заголовками разделов галереи."
+
+msgid "Show Gallery Section Labels"
+msgstr "Показывать подписи разделов галереи"
+
+msgid "Controls whether gallery section headings render at all for the currently edited gallery mode surface."
+msgstr "Определяет, отображаются ли заголовки разделов галереи на редактируемой поверхности режима галереи."
+
+msgid "{{scope}} Background"
+msgstr "Фон {{scope}}"
+
+msgid "Background applied behind the {{scope}} viewport."
+msgstr "Фон, применяемый за областью просмотра {{scope}}."
+
+msgid "{{scope}} Background Color"
+msgstr "Цвет фона {{scope}}"
+
+msgid "Solid background color behind the viewport."
+msgstr "Сплошной цвет фона за областью просмотра."
+
+msgid "{{scope}} Background Gradient"
+msgstr "Градиент фона {{scope}}"
+
+msgid "CSS gradient string used behind the viewport."
+msgstr "Строка CSS-градиента, используемая за областью просмотра."
+
+msgid "{{scope}} Background Image URL"
+msgstr "URL фонового изображения {{scope}}"
+
+msgid "Image shown behind the viewport."
+msgstr "Изображение, отображаемое за областью просмотра."
+
+msgid "Adapter-Specific Settings"
+msgstr "Настройки для конкретного адаптера"
+
+msgid "This breakpoint is currently inheriting its adapter choice. Pick an explicit adapter above to expose adapter-specific settings here."
+msgstr "Эта точка останова сейчас наследует выбор адаптера. Выберите явный адаптер выше, чтобы показать здесь настройки для конкретного адаптера."
+
+msgid "Visually similar image found"
+msgstr "Найдено визуально похожее изображение"
+
+msgid "<strong>{{filename}}</strong> looks like an image already in your library."
+msgstr "<strong>{{filename}}</strong> похоже на изображение, уже имеющееся в вашей библиотеке."
+
+msgid "Existing image"
+msgstr "Существующее изображение"
+
+msgid "Similar existing image"
+msgstr "Похожее существующее изображение"
+
+msgid "Original:"
+msgstr "Оригинал:"
+
+msgid "Identical content"
+msgstr "Идентичное содержимое"
+
+msgid "{{count}}/64 bits different"
+msgstr "{{count}}/64 бит отличается"
+
+msgid "Use the existing image to avoid duplicates, or upload this file anyway."
+msgstr "Используйте существующее изображение, чтобы избежать дубликатов, или всё равно загрузите этот файл."
+
+msgid "Use existing"
+msgstr "Использовать существующее"
+
+msgid "Upload anyway"
+msgstr "Всё равно загрузить"
+
+msgid "Not in any campaign"
+msgstr "Ни в одной кампании"
+
+msgid "Used in: {{a}}"
+msgstr "Используется в: {{a}}"
+
+msgid "Used in: {{a}}, {{b}}"
+msgstr "Используется в: {{a}}, {{b}}"
+
+msgid "Used in: {{a}}, {{b}} and {{count}} more"
+msgstr "Используется в: {{a}}, {{b}} и ещё {{count}}"
+
+msgid "Search or add company…"
+msgstr "Найти или добавить компанию…"
+
+msgid "+ Create “{{name}}”"
+msgstr "+ Создать «{{name}}»"
+
+msgid "Reset all overrides"
+msgstr "Сбросить все переопределения"
+
+msgid "Font Family"
+msgstr "Семейство шрифтов"
+
+msgid "Fallback 1"
+msgstr "Резервный 1"
+
+msgid "Fallback 2"
+msgstr "Резервный 2"
+
+msgid "Suggested: {{font}}"
+msgstr "Рекомендуется: {{font}}"
+
+msgid "Terminal: {{family}}"
+msgstr "Конечный: {{family}}"
+
+msgid "⚠ Font failed to load — first available fallback will be used"
+msgstr "⚠ Не удалось загрузить шрифт — будет использован первый доступный резервный"
+
+msgid "Font Size"
+msgstr "Размер шрифта"
+
+msgid "Font Weight"
+msgstr "Насыщенность шрифта"
+
+msgid "Font Style"
+msgstr "Начертание шрифта"
+
+msgid "Decoration"
+msgstr "Оформление"
+
+msgid "Line Height"
+msgstr "Высота строки"
+
+msgid "e.g. 1.4"
+msgstr "напр. 1.4"
+
+msgid "Letter Spacing"
+msgstr "Межбуквенный интервал"
+
+msgid "Word Spacing"
+msgstr "Межсловный интервал"
+
+msgid "Offset X"
+msgstr "Смещение X"
+
+msgid "Offset Y"
+msgstr "Смещение Y"
+
+msgid "Glow Blur"
+msgstr "Размытие свечения"
+
+msgid "Stroke"
+msgstr "Обводка"
+
+msgid "Recently Used"
+msgstr "Недавно использованные"
+
+msgid "System Fonts"
+msgstr "Системные шрифты"
+
+msgid "Google Fonts"
+msgstr "Google Fonts"
+
+msgid "(none)"
+msgstr "(нет)"
+
+msgid "(default)"
+msgstr "(по умолчанию)"
+
+msgid "Thin"
+msgstr "Тонкий"
+
+msgid "Extra Light"
+msgstr "Сверхсветлый"
+
+msgid "Light"
+msgstr "Светлый"
+
+msgid "Semi Bold"
+msgstr "Полужирный"
+
+msgid "Bold"
+msgstr "Жирный"
+
+msgid "Extra Bold"
+msgstr "Сверхжирный"
+
+msgid "Black"
+msgstr "Чёрный"
+
+msgid "Italic"
+msgstr "Курсив"
+
+msgid "Oblique"
+msgstr "Наклонный"
+
+msgid "Underline"
+msgstr "Подчёркнутый"
+
+msgid "Overline"
+msgstr "Надчёркнутый"
+
+msgid "Line-through"
+msgstr "Зачёркнутый"
+
+msgid "Open campaign {{title}}"
+msgstr "Открыть кампанию {{title}}"
+
+msgid "Campaign {{title}} is locked"
+msgstr "Кампания {{title}} заблокирована"
+
+msgid "🎬 {{count}} videos"
+msgstr "🎬 {{count}} видео"
+
+msgid "🖼️ {{count}} images"
+msgstr "🖼️ {{count}} изобр."
+
+msgid "Failed to submit request. Please try again."
+msgstr "Не удалось отправить запрос. Повторите попытку."
+
+msgid "Check your email for confirmation."
+msgstr "Проверьте почту для подтверждения."
+
+msgid "Request access to <strong>{{title}}</strong>"
+msgstr "Запросить доступ к <strong>{{title}}</strong>"
+
+msgid "your@email.com"
+msgstr "vy@email.com"
+
+msgid "Email address"
+msgstr "Адрес эл. почты"
+
+msgid "Request Access"
+msgstr "Запросить доступ"
+
+msgid "Card gallery page {{current}} of {{total}}"
+msgstr "Страница галереи карточек {{current}} из {{total}}"
+
+msgid "Previous page"
+msgstr "Предыдущая страница"
+
+msgid "Next page"
+msgstr "Следующая страница"
+
+msgid "Page {{current}} of {{total}}"
+msgstr "Страница {{current}} из {{total}}"
+
+msgid "Load {{count}} more campaigns"
+msgstr "Загрузить ещё {{count}} кампаний"
+
+msgid "Load more ({{count}} remaining)"
+msgstr "Загрузить ещё (осталось {{count}})"
+
+msgid "No campaigns match your search."
+msgstr "Нет кампаний, соответствующих вашему запросу."
+
+msgid "Sign in to view campaigns."
+msgstr "Войдите, чтобы просмотреть кампании."
+
+msgid "No accessible campaigns yet."
+msgstr "Пока нет доступных кампаний."
+
+msgid "No accessible campaigns found. Switch to Lock mode to view locked cards."
+msgstr "Доступных кампаний не найдено. Переключитесь в режим блокировки, чтобы увидеть заблокированные карточки."
+
+msgid "No campaigns found matching your filter."
+msgstr "Не найдено кампаний, соответствующих вашему фильтру."
+
+msgid "Viewer Header Settings"
+msgstr "Настройки заголовка просмотра"
+
+msgid "Show Title"
+msgstr "Показывать заголовок"
+
+msgid "Show Subtitle"
+msgstr "Показывать подзаголовок"
+
+msgid "Title Text"
+msgstr "Текст заголовка"
+
+msgid "Subtitle Text"
+msgstr "Текст подзаголовка"
+
+msgid "Background Type"
+msgstr "Тип фона"
+
+msgid "Title Typography"
+msgstr "Типографика заголовка"
+
+msgid "Gallery"
+msgstr "Галерея"
+
+msgid "Access mode"
+msgstr "Режим доступа"
+
+msgid "Lock"
+msgstr "Блокировать"
+
+msgid "Hide"
+msgstr "Скрыть"
+
+msgid "Campaign filters"
+msgstr "Фильтры кампаний"
+
+msgid "My Access"
+msgstr "Мой доступ"
+
+msgid "Search campaigns..."
+msgstr "Поиск кампаний..."
+
+msgid "Search campaigns by title, description, or tags"
+msgstr "Поиск кампаний по названию, описанию или тегам"
+
+msgid "Access mode active"
+msgstr "Режим доступа включён"
+
+msgid "{{count}} campaign hidden by access mode."
+msgstr "{{count}} кампания скрыта режимом доступа."
+
+msgid "{{count}} campaigns hidden by access mode."
+msgstr "{{count}} кампаний скрыто режимом доступа."
+
+msgid "Failed to save settings."
+msgstr "Не удалось сохранить настройки."
+
+msgid "Campaign Header"
+msgstr "Заголовок кампании"
+
+msgid "Stats Section"
+msgstr "Раздел статистики"
+
+msgid "Show Stats"
+msgstr "Показывать статистику"
+
+msgid "Admin Only"
+msgstr "Только для админов"
+
+msgid "Campaign Statistics"
+msgstr "Статистика кампании"
+
+msgid "Videos"
+msgstr "Видео"
+
+msgid "Images"
+msgstr "Изображения"
+
+msgid "Admin permissions required."
+msgstr "Требуются права администратора."
+
+msgid "Campaign API client unavailable."
+msgstr "Клиент API кампаний недоступен."
+
+msgid "Campaign gallery config updated."
+msgstr "Конфигурация галереи кампании обновлена."
+
+msgid "Failed to save campaign gallery config."
+msgstr "Не удалось сохранить конфигурацию галереи кампании."
+
+msgid "Close campaign viewer"
+msgstr "Закрыть просмотр кампании"
+
+msgid "Campaign details for {{title}}"
+msgstr "Сведения о кампании {{title}}"
+
+msgid "About Section"
+msgstr "Раздел «О кампании»"
+
+msgid "Show About"
+msgstr "Показывать «О кампании»"
+
+msgid "Heading Typography"
+msgstr "Типографика заголовков"
+
+msgid "About this Campaign"
+msgstr "Об этой кампании"
+
+msgid "This campaign is private. Sign in or request access to view media."
+msgstr "Эта кампания приватная. Войдите или запросите доступ, чтобы просмотреть медиа."
+
+msgid "No media available for this campaign."
+msgstr "Для этой кампании нет доступных медиафайлов."
+
+msgid "Campaign Gallery Config"
+msgstr "Конфигурация галереи кампании"
+
+msgid "This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "Эта кампания сейчас хранит пользовательские переопределения галереи. Изменения сразу отображаются в просмотрщике, отменяются при отмене и сохраняются только при сохранении."
+
+msgid "This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "Эта кампания сейчас наследует глобальные настройки галереи. Изменения сразу отображаются в просмотрщике, отменяются при отмене и сохраняются только при сохранении."
+
+msgid "Save Campaign Gallery Config"
+msgstr "Сохранить конфигурацию галереи кампании"
+
+msgid "Preview Inherited Gallery Settings"
+msgstr "Предпросмотр унаследованных настроек галереи"
+
+msgid "Imported {{count}} media item."
+msgstr "Импортирован {{count}} медиаэлемент."
+
+msgid "Imported {{count}} media items."
+msgstr "Импортировано {{count}} медиаэлементов."
+
+msgid "Imported {{count}} media item ({{skipped}} skipped)."
+msgstr "Импортирован {{count}} медиаэлемент ({{skipped}} пропущен)."
+
+msgid "Imported {{count}} media items ({{skipped}} skipped)."
+msgstr "Импортировано {{count}} медиаэлементов ({{skipped}} пропущено)."
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
+msgstr "Архивировать все кампании компании <strong>{{name}}</strong>? Будет архивирована {{count}} активная кампания."
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
+msgstr "Архивировать все кампании компании <strong>{{name}}</strong>? Будет архивировано {{count}} активных кампаний."

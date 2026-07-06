@@ -6631,3 +6631,600 @@ msgstr "图库编辑者"
 
 msgid "Sort campaigns"
 msgstr "排序活动"
+
+msgid "Session expiring soon"
+msgstr "会话即将过期"
+
+msgid "You will be signed out in {{seconds}} seconds due to inactivity."
+msgstr "由于长时间未操作，您将在 {{seconds}} 秒后退出登录。"
+
+msgid "Stay signed in"
+msgstr "保持登录"
+
+msgid "You appear to be offline. Some features are unavailable."
+msgstr "您似乎已离线。部分功能不可用。"
+
+msgid "Something went wrong"
+msgstr "出现问题"
+
+msgid "An unexpected error occurred while loading this component."
+msgstr "加载此组件时发生意外错误。"
+
+msgid "Reset error boundary and try again"
+msgstr "重置并重试"
+
+msgid "Try Again"
+msgstr "重试"
+
+msgid "Unified Gallery"
+msgstr "统一图库"
+
+msgid "Image Gallery"
+msgstr "图片库"
+
+msgid "Video Gallery"
+msgstr "视频库"
+
+msgid "This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits."
+msgstr "此共享编辑器负责嵌套图库的选择模型。内联选择器仍可用于快速浏览和小幅编辑。"
+
+msgid "Gallery Mode"
+msgstr "图库模式"
+
+msgid "Choose whether this config resolves a unified gallery or separate image and video galleries."
+msgstr "选择此配置生成统一图库，还是分开的图片库和视频库。"
+
+msgid "Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice."
+msgstr "此处支持统一模式的选择，但在此片段中，广告系列级别的统一适配器覆盖仍会继承全局统一适配器。"
+
+msgid "Breakpoint Adapters"
+msgstr "断点适配器"
+
+msgid "Editing breakpoint-specific unified settings for the {{bp}} layout."
+msgstr "正在编辑 {{bp}} 布局的断点专用统一设置。"
+
+msgid "Unified Gallery Adapter"
+msgstr "统一图库适配器"
+
+msgid "Unified gallery adapter for the {{bp}} breakpoint."
+msgstr "{{bp}} 断点的统一图库适配器。"
+
+msgid "Default adapter"
+msgstr "默认适配器"
+
+msgid "Unified adapter overrides remain inherited in this slice."
+msgstr "在此片段中，统一适配器覆盖仍为继承状态。"
+
+msgid "Image Adapter"
+msgstr "图片适配器"
+
+msgid "Image gallery adapter for the {{bp}} breakpoint."
+msgstr "{{bp}} 断点的图片库适配器。"
+
+msgid "Video Adapter"
+msgstr "视频适配器"
+
+msgid "Video gallery adapter for the {{bp}} breakpoint."
+msgstr "{{bp}} 断点的视频库适配器。"
+
+msgid "Settings below apply to the {{bp}} breakpoint for the unified gallery surface."
+msgstr "以下设置适用于统一图库界面的 {{bp}} 断点。"
+
+msgid "Settings below apply to the {{bp}} breakpoint for the current per-type gallery surface."
+msgstr "以下设置适用于当前分类型图库界面的 {{bp}} 断点。"
+
+msgid "Apply Gallery Config"
+msgstr "应用图库配置"
+
+msgid "Clear Overrides"
+msgstr "清除覆盖"
+
+msgid "Adapter applied when images and videos render together."
+msgstr "图片和视频一起呈现时应用的适配器。"
+
+msgid "Each breakpoint tab controls its own unified adapter and responsive settings."
+msgstr "每个断点选项卡控制其自己的统一适配器和响应式设置。"
+
+msgid "Reset {{label}}"
+msgstr "重置 {{label}}"
+
+msgid "Reset All Changes"
+msgstr "重置所有更改"
+
+msgid "Shared Section Sizing"
+msgstr "共享区块尺寸"
+
+msgid "Gallery Section Max Width (px)"
+msgstr "图库区块最大宽度（px）"
+
+msgid "Maximum width for each gallery section. 0 keeps the section fully responsive."
+msgstr "每个图库区块的最大宽度。0 表示区块完全自适应。"
+
+msgid "Gallery Section Min Width (px)"
+msgstr "图库区块最小宽度（px）"
+
+msgid "Minimum width floor for each gallery section."
+msgstr "每个图库区块的最小宽度下限。"
+
+msgid "How section height is determined. Auto is content-driven and remains the safest default for masonry and justified layouts."
+msgstr "如何确定区块高度。“自动”由内容驱动，是瀑布流和两端对齐布局最安全的默认选项。"
+
+msgid "Gallery Section Max Height (px)"
+msgstr "图库区块最大高度（px）"
+
+msgid "Maximum height used when section height mode is manual."
+msgstr "当区块高度模式为手动时使用的最大高度。"
+
+msgid "Gallery Section Min Height (px)"
+msgstr "图库区块最小高度（px）"
+
+msgid "Minimum height floor for each gallery section."
+msgstr "每个图库区块的最小高度下限。"
+
+msgid "Controls whether image and video sections align to equal height in per-type layouts on wider viewports."
+msgstr "控制在较宽视口的分类型布局中，图片和视频区块是否对齐到相同高度。"
+
+msgid "Shared Section Spacing"
+msgstr "共享区块间距"
+
+msgid "Section Padding (px)"
+msgstr "区块内边距（px）"
+
+msgid "Applies the same inner section padding across the currently edited gallery mode surface."
+msgstr "在当前编辑的图库模式界面上应用相同的区块内边距。"
+
+msgid "Adapter Content Padding (px)"
+msgstr "适配器内容内边距（px）"
+
+msgid "Applies the same inner adapter padding across the currently edited gallery mode surface."
+msgstr "在当前编辑的图库模式界面上应用相同的适配器内边距。"
+
+msgid "Shared Adapter Sizing"
+msgstr "共享适配器尺寸"
+
+msgid "How adapters fill their gallery section. Fill uses the full section; Manual lets you cap width and height percentages."
+msgstr "适配器如何填充其图库区块。“填充”使用整个区块；“手动”可让您限制宽度和高度百分比。"
+
+msgid "Maximum adapter width as a percentage of its gallery section."
+msgstr "适配器最大宽度，占其图库区块的百分比。"
+
+msgid "Maximum adapter height as a percentage of its gallery section."
+msgstr "适配器最大高度，占其图库区块的百分比。"
+
+msgid "Adapter Item Gap (px)"
+msgstr "适配器项目间距（px）"
+
+msgid "Applies shared item spacing across the currently edited gallery mode surface."
+msgstr "在当前编辑的图库模式界面上应用共享的项目间距。"
+
+msgid "Controls how adapter items distribute inside the section for adapters that support justification."
+msgstr "控制对于支持对齐的适配器，适配器项目在区块内的分布方式。"
+
+msgid "Shared Gallery Height"
+msgstr "共享图库高度"
+
+msgid "420px"
+msgstr "420px"
+
+msgid "Shared Gallery Presentation"
+msgstr "共享图库呈现"
+
+msgid "Shared heading text for image gallery sections when labels are enabled."
+msgstr "启用标签时，图片库区块的共享标题文本。"
+
+msgid "Shared heading text for video gallery sections when labels are enabled."
+msgstr "启用标签时，视频库区块的共享标题文本。"
+
+msgid "Gallery Label Justification"
+msgstr "图库标签对齐"
+
+msgid "Controls how gallery section titles align across the currently edited gallery mode surface."
+msgstr "控制图库区块标题在当前编辑的图库模式界面上的对齐方式。"
+
+msgid "Show Gallery Label Icons"
+msgstr "显示图库标签图标"
+
+msgid "Displays the adapter icon beside gallery section titles."
+msgstr "在图库区块标题旁显示适配器图标。"
+
+msgid "Show Gallery Section Labels"
+msgstr "显示图库区块标签"
+
+msgid "Controls whether gallery section headings render at all for the currently edited gallery mode surface."
+msgstr "控制是否在当前编辑的图库模式界面上呈现图库区块标题。"
+
+msgid "{{scope}} Background"
+msgstr "{{scope}} 背景"
+
+msgid "Background applied behind the {{scope}} viewport."
+msgstr "应用于 {{scope}} 视口后面的背景。"
+
+msgid "{{scope}} Background Color"
+msgstr "{{scope}} 背景颜色"
+
+msgid "Solid background color behind the viewport."
+msgstr "视口后面的纯色背景。"
+
+msgid "{{scope}} Background Gradient"
+msgstr "{{scope}} 背景渐变"
+
+msgid "CSS gradient string used behind the viewport."
+msgstr "用于视口后面的 CSS 渐变字符串。"
+
+msgid "{{scope}} Background Image URL"
+msgstr "{{scope}} 背景图片 URL"
+
+msgid "Image shown behind the viewport."
+msgstr "显示在视口后面的图片。"
+
+msgid "Adapter-Specific Settings"
+msgstr "适配器专用设置"
+
+msgid "This breakpoint is currently inheriting its adapter choice. Pick an explicit adapter above to expose adapter-specific settings here."
+msgstr "此断点当前继承其适配器选择。在上方选择明确的适配器以在此显示适配器专用设置。"
+
+msgid "Visually similar image found"
+msgstr "发现视觉相似的图片"
+
+msgid "<strong>{{filename}}</strong> looks like an image already in your library."
+msgstr "<strong>{{filename}}</strong> 看起来像您媒体库中已有的图片。"
+
+msgid "Existing image"
+msgstr "现有图片"
+
+msgid "Similar existing image"
+msgstr "相似的现有图片"
+
+msgid "Original:"
+msgstr "原始："
+
+msgid "Identical content"
+msgstr "内容相同"
+
+msgid "{{count}}/64 bits different"
+msgstr "{{count}}/64 位不同"
+
+msgid "Use the existing image to avoid duplicates, or upload this file anyway."
+msgstr "使用现有图片以避免重复，或仍然上传此文件。"
+
+msgid "Use existing"
+msgstr "使用现有"
+
+msgid "Upload anyway"
+msgstr "仍然上传"
+
+msgid "Not in any campaign"
+msgstr "不在任何广告系列中"
+
+msgid "Used in: {{a}}"
+msgstr "用于：{{a}}"
+
+msgid "Used in: {{a}}, {{b}}"
+msgstr "用于：{{a}}、{{b}}"
+
+msgid "Used in: {{a}}, {{b}} and {{count}} more"
+msgstr "用于：{{a}}、{{b}} 以及另外 {{count}} 个"
+
+msgid "Search or add company…"
+msgstr "搜索或添加公司…"
+
+msgid "+ Create “{{name}}”"
+msgstr "+ 创建“{{name}}”"
+
+msgid "Reset all overrides"
+msgstr "重置所有覆盖"
+
+msgid "Font Family"
+msgstr "字体"
+
+msgid "Fallback 1"
+msgstr "后备字体 1"
+
+msgid "Fallback 2"
+msgstr "后备字体 2"
+
+msgid "Suggested: {{font}}"
+msgstr "建议：{{font}}"
+
+msgid "Terminal: {{family}}"
+msgstr "末端：{{family}}"
+
+msgid "⚠ Font failed to load — first available fallback will be used"
+msgstr "⚠ 字体加载失败 — 将使用第一个可用的后备字体"
+
+msgid "Font Size"
+msgstr "字号"
+
+msgid "Font Weight"
+msgstr "字重"
+
+msgid "Font Style"
+msgstr "字体样式"
+
+msgid "Decoration"
+msgstr "装饰"
+
+msgid "Line Height"
+msgstr "行高"
+
+msgid "e.g. 1.4"
+msgstr "例如 1.4"
+
+msgid "Letter Spacing"
+msgstr "字母间距"
+
+msgid "Word Spacing"
+msgstr "词间距"
+
+msgid "Offset X"
+msgstr "X 偏移"
+
+msgid "Offset Y"
+msgstr "Y 偏移"
+
+msgid "Glow Blur"
+msgstr "发光模糊"
+
+msgid "Stroke"
+msgstr "描边"
+
+msgid "Recently Used"
+msgstr "最近使用"
+
+msgid "System Fonts"
+msgstr "系统字体"
+
+msgid "Google Fonts"
+msgstr "Google 字体"
+
+msgid "(none)"
+msgstr "（无）"
+
+msgid "(default)"
+msgstr "（默认）"
+
+msgid "Thin"
+msgstr "纤细"
+
+msgid "Extra Light"
+msgstr "极细"
+
+msgid "Light"
+msgstr "细"
+
+msgid "Semi Bold"
+msgstr "半粗"
+
+msgid "Bold"
+msgstr "粗体"
+
+msgid "Extra Bold"
+msgstr "特粗"
+
+msgid "Black"
+msgstr "特黑"
+
+msgid "Italic"
+msgstr "斜体"
+
+msgid "Oblique"
+msgstr "倾斜"
+
+msgid "Underline"
+msgstr "下划线"
+
+msgid "Overline"
+msgstr "上划线"
+
+msgid "Line-through"
+msgstr "删除线"
+
+msgid "Open campaign {{title}}"
+msgstr "打开广告系列 {{title}}"
+
+msgid "Campaign {{title}} is locked"
+msgstr "广告系列 {{title}} 已锁定"
+
+msgid "🎬 {{count}} videos"
+msgstr "🎬 {{count}} 个视频"
+
+msgid "🖼️ {{count}} images"
+msgstr "🖼️ {{count}} 张图片"
+
+msgid "Failed to submit request. Please try again."
+msgstr "提交请求失败。请重试。"
+
+msgid "Check your email for confirmation."
+msgstr "请查收您的电子邮件以确认。"
+
+msgid "Request access to <strong>{{title}}</strong>"
+msgstr "申请访问 <strong>{{title}}</strong>"
+
+msgid "your@email.com"
+msgstr "your@email.com"
+
+msgid "Email address"
+msgstr "电子邮件地址"
+
+msgid "Request Access"
+msgstr "申请访问"
+
+msgid "Card gallery page {{current}} of {{total}}"
+msgstr "卡片图库第 {{current}} 页，共 {{total}} 页"
+
+msgid "Previous page"
+msgstr "上一页"
+
+msgid "Next page"
+msgstr "下一页"
+
+msgid "Page {{current}} of {{total}}"
+msgstr "第 {{current}} 页，共 {{total}} 页"
+
+msgid "Load {{count}} more campaigns"
+msgstr "再加载 {{count}} 个广告系列"
+
+msgid "Load more ({{count}} remaining)"
+msgstr "加载更多（剩余 {{count}} 个）"
+
+msgid "No campaigns match your search."
+msgstr "没有广告系列与您的搜索匹配。"
+
+msgid "Sign in to view campaigns."
+msgstr "登录以查看广告系列。"
+
+msgid "No accessible campaigns yet."
+msgstr "尚无可访问的广告系列。"
+
+msgid "No accessible campaigns found. Switch to Lock mode to view locked cards."
+msgstr "未找到可访问的广告系列。切换到锁定模式以查看锁定的卡片。"
+
+msgid "No campaigns found matching your filter."
+msgstr "未找到与您的筛选条件匹配的广告系列。"
+
+msgid "Viewer Header Settings"
+msgstr "查看器标题设置"
+
+msgid "Show Title"
+msgstr "显示标题"
+
+msgid "Show Subtitle"
+msgstr "显示副标题"
+
+msgid "Title Text"
+msgstr "标题文本"
+
+msgid "Subtitle Text"
+msgstr "副标题文本"
+
+msgid "Background Type"
+msgstr "背景类型"
+
+msgid "Title Typography"
+msgstr "标题排版"
+
+msgid "Gallery"
+msgstr "图库"
+
+msgid "Access mode"
+msgstr "访问模式"
+
+msgid "Lock"
+msgstr "锁定"
+
+msgid "Hide"
+msgstr "隐藏"
+
+msgid "Campaign filters"
+msgstr "广告系列筛选器"
+
+msgid "My Access"
+msgstr "我的访问权限"
+
+msgid "Search campaigns..."
+msgstr "搜索广告系列..."
+
+msgid "Search campaigns by title, description, or tags"
+msgstr "按标题、描述或标签搜索广告系列"
+
+msgid "Access mode active"
+msgstr "访问模式已启用"
+
+msgid "{{count}} campaign hidden by access mode."
+msgstr "访问模式隐藏了 {{count}} 个广告系列。"
+
+msgid "{{count}} campaigns hidden by access mode."
+msgstr "访问模式隐藏了 {{count}} 个广告系列。"
+
+msgid "Failed to save settings."
+msgstr "保存设置失败。"
+
+msgid "Campaign Header"
+msgstr "广告系列标题"
+
+msgid "Stats Section"
+msgstr "统计区块"
+
+msgid "Show Stats"
+msgstr "显示统计"
+
+msgid "Admin Only"
+msgstr "仅限管理员"
+
+msgid "Campaign Statistics"
+msgstr "广告系列统计"
+
+msgid "Videos"
+msgstr "视频"
+
+msgid "Images"
+msgstr "图片"
+
+msgid "Admin permissions required."
+msgstr "需要管理员权限。"
+
+msgid "Campaign API client unavailable."
+msgstr "广告系列 API 客户端不可用。"
+
+msgid "Campaign gallery config updated."
+msgstr "广告系列图库配置已更新。"
+
+msgid "Failed to save campaign gallery config."
+msgstr "保存广告系列图库配置失败。"
+
+msgid "Close campaign viewer"
+msgstr "关闭广告系列查看器"
+
+msgid "Campaign details for {{title}}"
+msgstr "{{title}} 的广告系列详情"
+
+msgid "About Section"
+msgstr "关于区块"
+
+msgid "Show About"
+msgstr "显示关于"
+
+msgid "Heading Typography"
+msgstr "标题排版"
+
+msgid "About this Campaign"
+msgstr "关于此广告系列"
+
+msgid "This campaign is private. Sign in or request access to view media."
+msgstr "此广告系列为私密。请登录或申请访问以查看媒体。"
+
+msgid "No media available for this campaign."
+msgstr "此广告系列没有可用的媒体。"
+
+msgid "Campaign Gallery Config"
+msgstr "广告系列图库配置"
+
+msgid "This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "此广告系列当前存储自定义图库覆盖。更改会立即在查看器中预览，取消时还原，仅在保存时保留。"
+
+msgid "This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr "此广告系列当前继承全局图库设置。更改会立即在查看器中预览，取消时还原，仅在保存时保留。"
+
+msgid "Save Campaign Gallery Config"
+msgstr "保存广告系列图库配置"
+
+msgid "Preview Inherited Gallery Settings"
+msgstr "预览继承的图库设置"
+
+msgid "Imported {{count}} media item."
+msgstr "已导入 {{count}} 个媒体项。"
+
+msgid "Imported {{count}} media items."
+msgstr "已导入 {{count}} 个媒体项。"
+
+msgid "Imported {{count}} media item ({{skipped}} skipped)."
+msgstr "已导入 {{count}} 个媒体项（跳过 {{skipped}} 个）。"
+
+msgid "Imported {{count}} media items ({{skipped}} skipped)."
+msgstr "已导入 {{count}} 个媒体项（跳过 {{skipped}} 个）。"
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
+msgstr "归档 <strong>{{name}}</strong> 的所有广告系列？这将归档 {{count}} 个活动广告系列。"
+
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
+msgstr "归档 <strong>{{name}}</strong> 的所有广告系列？这将归档 {{count}} 个活动广告系列。"

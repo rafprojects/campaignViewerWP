@@ -1,5 +1,5 @@
 import { Alert, Box, Checkbox, ScrollArea, Stack, Text } from '@mantine/core';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
@@ -43,7 +43,13 @@ export function ArchiveCompanyModal({
       title={t('admin_archco_title', 'Archive all company campaigns')}
       message={
         <Text>
-          {t('admin_archco_msg_pre', 'Archive all campaigns for ')}<strong>{company?.name}</strong>{t('admin_archco_msg_post', '? This will archive {{count}} active campaign.', { count: activeCount })}
+          <Trans
+            i18nKey="admin_archco_msg"
+            count={activeCount}
+            values={{ name: company?.name, count: activeCount }}
+            components={{ strong: <strong /> }}
+            defaults="Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
+          />
         </Text>
       }
       confirmLabel={t('admin_archco_confirm', 'Archive {{count}} Campaign', { count: activeCount })}
