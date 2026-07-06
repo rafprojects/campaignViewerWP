@@ -358,7 +358,17 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ## Settings & Admin UI
 
-*No tasks here yet.*
+### Admin Notice on Unresolved Shortcode Space Reference
+
+**Origin:** Phase 62 QA (2026-07-06). Surfaced while diagnosing a "fresh reinstall" report where a page with three `[super-gallery space="…"]` shortcodes (originally three distinct spaces) silently collapsed all three onto the default space after the referenced spaces no longer existed — confusing an admin who expected the original layout. Confirmed benign (user oversight), but the silent fallback hid the real cause.
+
+**Context:** `WPSG_Embed::resolve_space_id()` ([class-wpsg-embed.php](class-wpsg-embed.php)) resolves an explicit `space=` / `campaign=` / `company=` attribute and, when the target does not exist, **silently** falls through to `wpsg_default_space_id`. Visitors should never see an error, but an admin has no signal that a shortcode is pointing at a deleted/renamed/mistyped space and is quietly rendering the default instead.
+
+**What to implement:** When an *explicit* `space`/`campaign`/`company` attribute is provided but does not resolve (i.e. the fallback to default is taken because the requested target is missing — not merely omitted), render an **admin-only** inline notice on that gallery instance, e.g. *"This gallery references a space that no longer exists — showing the default space."* Gate it to `manage_wpsg` (never shown to visitors). Self-contained PHP change in the shortcode render path; no JS. Catches the general dangling-reference case (deleted/renamed space, typo, or destructive reinstall), not just reinstalls.
+
+**Files:** `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` (`resolve_space_id()` to distinguish "attribute given but unresolved" from "omitted", and `render_shortcode()` to emit the capability-gated notice).
+
+**Effort:** Small | **Impact:** Low — a robustness/diagnostic nicety for a rare, self-inflicted (data-loss) condition; not urgent, no live users affected. Explicitly **not** a "reinstall detection/warning" system (disproportionate); this is the proportionate general-purpose signal.
 
 ---
 
