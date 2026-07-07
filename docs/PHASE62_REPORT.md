@@ -1,6 +1,6 @@
 # Phase 62 - Monetization & Licensing (Freemius)
 
-**Status:** In Progress
+**Status:** In Progress — engineering tracks complete (P62-A/B/D/E, validated 2026-07-06); phase ship blocked on human M1–M4 (P62-C pricing + sandbox validation + doc placeholders)
 **Created:** 2026-06-26
 **Last updated:** 2026-07-06
 
@@ -11,7 +11,7 @@
 | P62-A | Pro/free gating seams (new `WPSG_License` entitlement seam + 3 LayoutBuilder pro features) | Code complete (sandbox-pending) | Medium |
 | P62-B | Freemius SDK integration (credential-ready bootstrap) | Code complete (sandbox-pending) | Medium |
 | P62-C | Pricing & licensing model (tiers, renewals, trial) | Planned — human/dashboard (M1-M3) | Small-Medium |
-| P62-D | Buyer-facing docs + support process | In Progress | Small-Medium |
+| P62-D | Buyer-facing docs + support process | Docs authored (human M1–M4 placeholders) | Small-Medium |
 | P62-E | i18n locale-coverage CI gate (PR-review hardening) | Complete | Small |
 
 > **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
@@ -218,8 +218,13 @@ The root cause was a **process gap**, not a one-off: nothing caught a front-end 
 
 ## Outcome
 
-_To be completed once the phase ships (blocked on M1-M3 sandbox validation)._
+**Engineering-complete; phase ship blocked on human M1–M4 (Freemius account/dashboard).** Track statuses validated against the codebase on 2026-07-06:
 
-- **Code complete (P62-A, P62-B):** pro-feature gating + credential-ready Freemius SDK, all automated tests + lint green.
-- **Deferred:** adapter-level gating; WP.org lite tier (WCAG AA); affiliate program; per-feature plan mapping.
-- **Next:** human completes M1-M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the filter, then runs the sandbox validation checklist in P62-B/C before flipping the phase to shipped.
+- ✅ **P62-A (gating seams) — code complete & verified.** `WPSG_License` seam, server-side `enforce_license_gates()`, the 3 LayoutBuilder client gates, and license state in `WPSG_Embed::page_config_js()` all present. PHPUnit green (`WPSG_License_Test` +13, plus the strip/freeze cases in `WPSG_Layout_Templates_Test`/`WPSG_Import_Sanitization_Test`); Vitest gating suites green.
+- ✅ **P62-B (Freemius SDK) — code complete & verified.** `wpsg_fs()` credential-ready bootstrap present; `freemius/wordpress-sdk ^2.13` (resolved 2.13.3) in `composer.json`/`composer.lock`; a safe no-op without credentials.
+- ✅ **P62-E (i18n locale-coverage gate) — complete.** `scripts/check-i18n-locales.mjs` + `npm run i18n:check:locales` + CI step; green across 2,267 front-end strings × 5 locales.
+- 🟡 **P62-D (buyer docs) — authored, human fill pending.** `docs/guides/LICENSE_ACTIVATION.md`, the two `readme.txt` FAQ entries, and the troubleshooting row all present; remaining `[PLACEHOLDER]` markers (support email, refund policy) are filled by the account owner at M4.
+- ⏳ **P62-C (pricing model) — not started (human-only).** Tiers / renewals / trial are configured in the Freemius dashboard; no code deliverable, blocked pre-account.
+- ⏳ **Sandbox validation (P62-A/B)** — activation → pro-unlock → update → deactivate → re-lock, plus the opt-in dialog; blocked on the real Freemius sandbox (M1–M3). Do not flip A/B to "shipped" until this passes.
+- **Deferred (Follow-On):** adapter-level gating; WP.org lite tier (WCAG AA); affiliate program; per-feature plan mapping; full-PHP-surface locale gate.
+- **Next:** human completes M1–M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the `wpsg_freemius_config` filter, then runs the P62-B/C sandbox checklist before flipping the phase to shipped.
