@@ -141,6 +141,9 @@ from the admin panel for placing a gallery on a non-WordPress site.
   regardless of license state.
 - Full activation / deactivation / troubleshooting steps are in
   [LICENSE_ACTIVATION.md](LICENSE_ACTIVATION.md).
+- Selling the plugin yourself? The owner go-live runbook is
+  [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md), and the pro/free boundary + developer
+  guide is [PRO_FEATURES.md](PRO_FEATURES.md).
 
 ### Enabling debug logging
 - Set the `wpsg_debug` flag (see [DEBUG_TOGGLE.md](DEBUG_TOGGLE.md)) to surface verbose

@@ -97,3 +97,9 @@ and (if relevant) your license/order reference.
 
 [PLACEHOLDER: refund policy — e.g. "14-day money-back guarantee; contact support within 14
 days of purchase for a full refund."] Refunds are processed through Freemius.
+
+---
+
+_Selling or maintaining the plugin (not a buyer)? See the owner go-live runbook
+[MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md) and the developer pro-features guide
+[PRO_FEATURES.md](PRO_FEATURES.md)._
