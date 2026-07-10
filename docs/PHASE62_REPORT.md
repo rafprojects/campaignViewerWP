@@ -24,7 +24,7 @@
 
 ## Rationale
 
-With the product feature-complete and [PHASE60_REPORT.md](PHASE60_REPORT.md) making it *shippable*, this phase makes it *sellable*: it wires the pro/free gating, the licensing/update SDK, the pricing model, and the support process for the chosen target — **Freemius premium** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §3, §7).
+With the product feature-complete and [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) making it *shippable*, this phase makes it *sellable*: it wires the pro/free gating, the licensing/update SDK, the pricing model, and the support process for the chosen target — **Freemius premium** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §3, §7).
 
 1. **What triggered it.** MONETIZATION §7 recommends premium-via-Freemius as the first monetized release, because the SDK collapses license activation, authenticated auto-updates, checkout, and EU-VAT/sales-tax (merchant of record) into one drop-in — weeks of otherwise-bespoke, security-critical, availability-critical infrastructure (MONETIZATION §3, §4).
 2. **Why it belongs together.** Gating, the SDK, pricing, and buyer support are one go-to-market unit; shipping any subset is not a sellable product. They build on two gating seams that already exist (the adapter registry and the `WPSG_Permissions` map), so this is additive, not a rewrite.
@@ -39,7 +39,7 @@ With the product feature-complete and [PHASE60_REPORT.md](PHASE60_REPORT.md) mak
 | A | Licensing/update provider | **Freemius** (MONETIZATION §3). Lowest LOE; merchant-of-record handles tax; first-class freemium gating that maps onto the existing seams. Revisit EDD/self-hosted only if fees/lock-in become material at scale. |
 | B | Monetization model | **Annual subscription + tiered by site count** (single / 5-site / agency), with renewals and a trial (MONETIZATION §2). Best fit for a builder that needs ongoing WP-compat maintenance. |
 | C | ~~Gating seams~~ (**superseded by E**) | Original draft proposed reusing the adapter registry + `WPSG_Permissions` map. **Corrected:** adapter gating is out of scope (all adapters stay free), and `WPSG_Permissions` is a role/capability gate, not a license gate. See E. |
-| D | Pro feature set | **Gate 3 LayoutBuilder capabilities only** this phase: text layers (from [PHASE59_REPORT.md](../archive/phases/PHASE59_REPORT.md)), per-breakpoint responsive (from [PHASE58_REPORT.md](../archive/phases/PHASE58_REPORT.md) P58-B), and the starter template library (P58-C). Advanced-adapter gating is deferred (Follow-On). Core gallery + builder stay free and fully functional. |
+| D | Pro feature set | **Gate 3 LayoutBuilder capabilities only** this phase: text layers (from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md)), per-breakpoint responsive (from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B), and the starter template library (P58-C). Advanced-adapter gating is deferred (Follow-On). Core gallery + builder stay free and fully functional. |
 | E | Entitlement seam | **A new `WPSG_License` PHP class** is the single source of truth for license/entitlement state — deliberately orthogonal to `WPSG_Permissions`. `WPSG_Permissions` answers "who may call this REST route" (role → 403 on failure); `WPSG_License` answers "is this pro feature unlocked" (entitlement → silent payload degradation on failure). It wraps Freemius's `can_use_premium_code()` when the SDK is live and falls back to the `wpsg_license_is_pro` filter (default free) otherwise. |
 
 ## Execution Priority

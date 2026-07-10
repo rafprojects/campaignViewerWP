@@ -1,7 +1,7 @@
 # Monetization & Distribution Options
 
 > **Created:** 2026-06-17
-> **Purpose:** Decision-support for taking wp-super-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](PHASE54_REPORT.md) anchored to this codebase.
+> **Purpose:** Decision-support for taking wp-super-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) anchored to this codebase.
 > **Status:** Reference. *(Update 2026-07-06: the path is now **chosen** — **Freemius premium** is the decision of record; see PHASE60 / [PHASE62_REPORT.md](PHASE62_REPORT.md) Key Decision A, and the go-live runbook [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md). This doc is retained for the option analysis behind that choice.)* PHASE54's must-fix bar was kept target-independent so the decision could be made later without invalidating that work.
 > **Tone:** Honest engineering assessment, not marketing. Every LOE claim ties to a concrete file/seam in the repo.
 
@@ -121,7 +121,7 @@ What each path needs **on top of** PHASE54, with the concrete artifacts involved
 
 ## Cross-references
 
-- [PHASE54_REPORT.md](PHASE54_REPORT.md) — the must-fix floor for every path here.
+- [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) — the must-fix floor for every path here.
 - [FUTURE_TASKS.md](FUTURE_TASKS.md) — full admin i18n, full WCAG AA, standalone-SPA/JWT (the SaaS prerequisite), and the gating-candidate enhancements.
 - [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md) — the owner go-live runbook (M1–M4, pricing, pro-testing) for the chosen Freemius-premium path.
 - [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md) — the free/pro boundary decisions and how to add new pro features.
