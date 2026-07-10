@@ -196,36 +196,13 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Accessibility
 
-### Full WCAG AA Audit
-
-**Origin:** Phase 54 (P54-C establishes a critical/serious axe baseline on the front-end only).
-
-**Context:** Beyond P54-C's front-end critical/serious baseline, a full WCAG AA pass across the admin panel and all flows (contrast, focus management, ARIA landmarks, Shadow-DOM screen-reader exposure). **Gates the public WP.org path.**
-
-**Status (2026-06-26):** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-D extends the critical/serious axe baseline to the **main admin flows** (the Freemius-premium tier). The **full** WCAG AA pass below remains deferred as the **WP.org public-listing gate**.
-
-**Effort:** High | **Impact:** Low for private/internal; High/required for public distribution.
+Nothing yet.
 
 ---
 
 ## Monetization & Distribution
 
-### Store Listing Artwork — Banner, Icon, Screenshots
-
-**Origin:** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E (deferred — graphic-design/capture deliverable).
-
-**Files:** `.wordpress-org/` (spec at [`.wordpress-org/README.md`](../.wordpress-org/README.md)); screenshot captions in [`wp-plugin/wp-super-gallery/readme.txt`](../wp-plugin/wp-super-gallery/readme.txt) `== Screenshots ==`.
-
-**Context:** P60-E delivered all *writable* store collateral (privacy statement, install/troubleshooting guide, readme polish) and a precise asset **spec/manifest**, but the binary graphics themselves are a design task and were not authorable in that track. Produce:
-- `banner-772x250.png` + `banner-1544x500.png` (retina) — product name + one-line value prop.
-- `icon-128x128.png` + `icon-256x256.png` (+ optional `icon.svg`) — simple high-contrast mark legible at 128px.
-- `screenshot-1..5.png` — **must** stay in caption-order sync with `readme.txt`; capture from a seeded wp-env instance with representative (non-placeholder) content on the default theme.
-
-The 10up SVN deploy action reads `.wordpress-org/` automatically, so finals drop straight in with no wiring. Filenames must match the spec exactly.
-
-**Dependencies:** a designer (banner/icon); a seeded wp-env + screenshot-capture pass (screenshots). Gates a polished public WP.org / premium listing but does **not** block the functional release ZIP.
-
-**Effort:** Medium (design-bound, not code) | **Impact:** High for listing conversion; none for plugin function.
+Nothing yet.
 
 ---
 
@@ -466,6 +443,8 @@ When promoting future tasks to an active phase:
 *Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
+
+*Updated: July 10, 2026 (P62 freemium expansion) — The distribution model expanded from premium-only to **freemium** (free WP.org "lite" build + premium via Freemius). Promoted **Full WCAG AA Audit** → [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H and **Store Listing Artwork** → P62-I and **removed both from the queue** (the Accessibility and Monetization & Distribution sections are now empty placeholders); the previously-deferred free WP.org "lite" tier is now **in scope** as P62-F–I (spike → code split → WCAG AA → WP.org submission).*
 
 *Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
 

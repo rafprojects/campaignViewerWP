@@ -1,8 +1,8 @@
 # Phase 62 - Monetization & Licensing (Freemius)
 
-**Status:** In Progress — engineering tracks complete (P62-A/B/D/E, validated 2026-07-06); phase ship blocked on human M1–M4 (P62-C pricing + sandbox validation + doc placeholders)
+**Status:** In Progress — premium-track engineering complete (P62-A/B/D/E, validated 2026-07-06); premium ship blocked on human M1–M4 (P62-C pricing + sandbox validation + doc placeholders). **Scope expanded 2026-07-10:** distribution moved from premium-only to **freemium** (free WordPress.org "lite" build + premium via Freemius), adding **P62-F–K** (WP.org enablement, buyer legal, go-live hardening) — all Planned, no code yet.
 **Created:** 2026-06-26
-**Last updated:** 2026-07-06
+**Last updated:** 2026-07-10
 
 ### Tracks
 
@@ -13,12 +13,20 @@
 | P62-C | Pricing & licensing model (tiers, renewals, trial) | Planned — human/dashboard (M1-M3) | Small-Medium |
 | P62-D | Buyer-facing docs + support process | Docs authored (human M1–M4 placeholders) | Small-Medium |
 | P62-E | i18n locale-coverage CI gate (PR-review hardening) | Complete | Small |
+| P62-F | Spike: frontend free/premium split mechanism (compiled-bundle stripping) | Planned | Small |
+| P62-G | WP.org "lite" build: free/paid code split (`__premium_only` + build split) | Planned | Large |
+| P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Planned | Large |
+| P62-I | WP.org submission + dual-channel release (Plugin Check, artwork, SVN) | Planned | Medium |
+| P62-J | Buyer/user legal: EULA + privacy statement | Planned | Small-Medium |
+| P62-K | Go-live hardening: SDK-derived upgrade URL + packaging | Planned | Small |
 
 > **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
 > 1. **Adapter-level gating is OUT of scope.** All 14 registered adapters stay free. P62-A gates only the 3 already-identified LayoutBuilder pro features (text layers, per-breakpoint responsive overrides, starter template library). Adapter gating is a Follow-On Candidate.
 > 2. **The entitlement seam is a NEW `WPSG_License` class, not `WPSG_Permissions`.** See the corrected Key Decision C / new Decision E below.
 >
 > No Freemius account exists yet, so all code ships **credential-ready**: with no credentials it is a safe no-op defaulting to the free tier. Real activation/checkout/update testing is **blocked on M1-M3** (human account/dashboard setup) — see Execution Priority and the P62-B/C validation notes.
+
+> **Scope note (2026-07-10) — freemium expansion.** The distribution model changed from **premium-only** to **freemium**: a free "lite" build on WordPress.org (top-of-funnel) alongside the premium build sold via Freemius. WordPress.org forbids locked/premium code in a hosted plugin, so the single-build **runtime gating** (P62-A) that suffices for the premium build is **not** sufficient for a `.org` free build — the Pro code must be *physically stripped*, and Freemius cannot strip inside the plugin's compiled React bundle. This adds tracks **P62-F–K** below (spike → code split → WCAG AA → WP.org submission → buyer legal → go-live hardening). As a result, the prior "WP.org lite tier" Follow-On Candidate and the deferred **Full WCAG AA** / **Store Listing Artwork** items ([FUTURE_TASKS.md](FUTURE_TASKS.md)) are **promoted into this phase**. All new tracks are **Planned** (no code yet); the premium tracks (A–E) do not depend on them and can ship first.
 
 ---
 
@@ -41,6 +49,7 @@ With the product feature-complete and [PHASE60_REPORT.md](archive/phases/PHASE60
 | C | ~~Gating seams~~ (**superseded by E**) | Original draft proposed reusing the adapter registry + `WPSG_Permissions` map. **Corrected:** adapter gating is out of scope (all adapters stay free), and `WPSG_Permissions` is a role/capability gate, not a license gate. See E. |
 | D | Pro feature set | **Gate 3 LayoutBuilder capabilities only** this phase: text layers (from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md)), per-breakpoint responsive (from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B), and the starter template library (P58-C). Advanced-adapter gating is deferred (Follow-On). Core gallery + builder stay free and fully functional. |
 | E | Entitlement seam | **A new `WPSG_License` PHP class** is the single source of truth for license/entitlement state — deliberately orthogonal to `WPSG_Permissions`. `WPSG_Permissions` answers "who may call this REST route" (role → 403 on failure); `WPSG_License` answers "is this pro feature unlocked" (entitlement → silent payload degradation on failure). It wraps Freemius's `can_use_premium_code()` when the SDK is live and falls back to the `wpsg_license_is_pro` filter (default free) otherwise. |
+| F | Distribution model (**expanded 2026-07-10**) | **Freemium: free WordPress.org "lite" build + premium via Freemius** (was premium-only; MONETIZATION §7 stage 3 pulled forward). WP.org bars locked code, so the free build must be produced by **Freemius deployment stripping** (`__premium_only` markers) **plus a build-level free/premium split** for the compiled React bundle (Freemius cannot strip inside a bundled asset). See P62-F (spike) → P62-G (split). Premium (A–E) can still ship first, lite-follow — see the Recommendations in [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md) §10. |
 
 ## Execution Priority
 
@@ -48,6 +57,15 @@ With the product feature-complete and [PHASE60_REPORT.md](archive/phases/PHASE60
 2. **P62-B (Freemius SDK)** — integrate activation/updates/analytics once the gates exist to wrap.
 3. **P62-C (pricing model)** — configure tiers/renewals/trial in Freemius; depends on the gated feature set being settled.
 4. **P62-D (docs + support)** — last; the ongoing-cost surface, written against the finished purchase/activation flow.
+
+**Freemium expansion (P62-F–K, added 2026-07-10) — sequenced after / in parallel with the premium launch:**
+
+5. **P62-F (split-mechanism spike)** — decide the compiled-bundle free/premium split approach; gates P62-G's estimate.
+6. **P62-G (WP.org lite code split)** — implement the chosen split so Freemius can generate a compliant free build.
+7. **P62-H (full WCAG AA)** — the public-listing quality bar (decouplable from launch — not a hard WP.org gate).
+8. **P62-I (WP.org submission + dual-channel release)** — Plugin Check on the stripped build, listing artwork, `.org` review, SVN deploy of the free build; Freemius serves the premium build.
+9. **P62-J (EULA + privacy)** — product EULA + extend `docs/PRIVACY.md`; independent of the code split.
+10. **P62-K (go-live hardening)** — SDK-derived upgrade URL + `.distignore`; small, do any time before launch.
 
 ---
 
@@ -169,12 +187,154 @@ The failure mode is silent and easy to hit: add a user-facing string to the en s
 - ✅ `npm run i18n:check:locales` green on the committed tree; injected-string negative test fails as designed.
 - **Scope note.** The gate covers the **front-end** manifest strings — the class that regressed. The broader PHP-only admin/server gettext strings (which carry plural/context nuances) are not gated here; extending coverage to the full `.pot` is a Follow-On Candidate.
 
+## Track P62-F - Spike: frontend free/premium split mechanism
+
+> Added 2026-07-10 with the freemium expansion. **Planned — no code yet.**
+
+### Problem
+
+Freemius's deployment processor strips premium code at the **file/function level** (`__premium_only` filename suffixes, `is__premium_only()` blocks). But WP Super Gallery's front end ships as a **single compiled Vite/React bundle** (`assets/`, copied from the root `dist/`), and Freemius **cannot strip code inside a compiled asset**. So a WP.org-compliant free build (P62-G) needs a **build-level** free/premium split, and the mechanism choice drives P62-G's size and shape — it must be settled first.
+
+### Fix
+
+- Time-boxed spike evaluating three options:
+  1. **Conditional Vite entries** — emit separate `free` / `premium` bundles; PHP enqueues one per `is_premium`.
+  2. **Dynamic-imported Pro chunk** — lazy-load the Pro UI (`LayoutBuilderLayersPanel` text layers, `LayoutBuilderCanvasPanel` breakpoint-override editing, `LayoutTemplateList` starter gallery) from a chunk excluded from the free build.
+  3. **Separate `*__premium_only` Pro JS asset(s)** — ship the Pro UI as distinct files Freemius strips, loaded only in the premium build.
+- Build a minimal PoC of the chosen option; confirm the free bundle contains **no Pro functionality** and that a Freemius deployment produces a clean free build.
+
+### Acceptance criteria
+
+- ⏳ A recorded decision (chosen mechanism + rationale), added to [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).
+- ⏳ A PoC free bundle verified to exclude Pro code.
+- ⏳ A build-out estimate for P62-G.
+
+### Validation
+
+- ⏳ Inspect the PoC free bundle for absence of Pro modules; dry-run a Freemius sandbox deployment to confirm the generated free version is clean.
+
+## Track P62-G - WP.org "lite" build: free/paid code split
+
+> Added 2026-07-10 with the freemium expansion. **Planned — no code yet; depends on P62-F.**
+
+### Problem
+
+WordPress.org requires **all hosted code to be free and fully functional** — a plugin "may not contain functionality that is restricted or locked, only to be made available by payment." The current design ships all 3 Pro features in one build, gated at runtime: correct for the Freemius premium build, but non-compliant for a free `.org` listing, where the Pro code must be **absent**, not merely gated.
+
+### Fix
+
+- **PHP:** move/guard Pro-only server logic with `is__premium_only()` blocks and/or `*__premium_only.php` files — the Pro-field acceptance around `enforce_license_gates()` in `includes/class-wpsg-layout-templates.php`. (Server enforcement already *strips* Pro fields for graceful degradation; this ensures the free build carries no Pro code path at all.)
+- **Frontend:** implement the free/premium split chosen in **P62-F** so the free bundle excludes the Pro UI. Upsell prompts may remain in the free build (upselling is permitted); only the Pro *functionality* must be gone.
+- **readme.txt:** wrap Pro-only marketing copy in `[//]: # fs_premium_only_begin` / `fs_premium_only_end` (and `fs_free_only`) fences so the free readme doesn't advertise locked features as free.
+
+### Acceptance criteria
+
+- ⏳ Freemius deployment generates a free build with **zero** Pro code (PHP + JS); the premium build is unchanged.
+- ⏳ The free build is functionally complete for all non-Pro features; Pro content authored on a licensed site still renders where applicable.
+
+### Validation
+
+- ⏳ Deploy via a Freemius sandbox; inspect the generated free ZIP for Pro-code absence; run the existing PHPUnit/Vitest suites against the split build; manual smoke of the free build.
+
+## Track P62-H - Full WCAG AA audit
+
+> Added 2026-07-10 with the freemium expansion; carried over from the FUTURE_TASKS backlog (origin P54-C front-end baseline → P60-D admin-flow baseline) and removed from that queue. **Planned — no code yet.**
+
+### Problem
+
+A public WordPress.org listing raises the accessibility bar. [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-D landed the **critical/serious** axe baseline on the main admin flows only; a full WCAG **AA** pass across the admin panel and all flows (contrast, focus management, ARIA landmarks, Shadow-DOM screen-reader exposure) remains open.
+
+### Fix
+
+- Complete the full WCAG AA audit + remediation across the admin panel and public gallery flows, extending the P60-D baseline; extend the CI axe/a11y gate accordingly.
+
+### Acceptance criteria
+
+- ⏳ Full WCAG AA conformance across admin + public flows, with the a11y gate extended to match.
+
+### Validation
+
+- ⏳ Automated axe pass (extended scope) + manual screen-reader/keyboard walkthrough.
+
+> **Not a hard WP.org gate.** WCAG AA is the project's *quality bar* for a public listing, not a WordPress.org submission requirement. The lite tier can launch before full AA lands if desired (see Recommendations in the readiness runbook).
+
+## Track P62-I - WP.org submission + dual-channel release
+
+> Added 2026-07-10 with the freemium expansion. **Planned — no code yet; depends on P62-G.**
+
+### Problem
+
+The freemium model ships two artifacts from one codebase: the **free "lite"** build on WordPress.org and the **premium** build via Freemius. That requires `.org` review + SVN publication for the free build and confirmation that Freemius serves the premium build — none of which is wired end-to-end yet.
+
+### Fix
+
+- **Plugin Check (PCP):** re-run against the **stripped free build** (P60 achieved compliance on the single build; keep `Tested up to` current — WP 7.0.x as of 2026-07).
+- **Listing assets:** finalize `readme.txt` + commission **Store Listing Artwork** (banner / icon / screenshots — spec/manifest in [`.wordpress-org/README.md`](../.wordpress-org/README.md), origin P60-E; carried over from the FUTURE_TASKS backlog and removed from that queue).
+- **Submission + deploy:** submit the lite build to the WP.org plugin review (manual, ~1–10 days); on approval, deploy the exact stripped free bytes via the existing `.github/workflows/svn-deploy.yml`; confirm Freemius serves the premium build via `is_premium`.
+- **Decision to record:** prefer **Freemius deployment auto-strip** (upload single codebase → Freemius generates free + premium and can push the free build to `.org`) over a self-managed lite build — contingent on the P62-F/G resolution.
+- **Optional CI enhancement:** adopt the official **"Deploy on Freemius" GitHub Action** to auto-upload premium builds on release.
+
+### Acceptance criteria
+
+- ⏳ Plugin Check green on the stripped free build; readme + artwork complete.
+- ⏳ Free build approved on WP.org and published via SVN; premium build served by Freemius.
+
+### Validation
+
+- ⏳ Run Plugin Check locally on the free ZIP; complete a real WP.org review cycle; install the published free build on a clean site and the premium build via a Freemius sandbox license.
+
+## Track P62-J - Buyer/user legal: EULA + privacy
+
+> Added 2026-07-10 with the freemium expansion. **Planned — no code yet.**
+
+### Problem
+
+A professional paid listing needs a product **EULA** and a clear **privacy/data-collection statement**. P62-D covers support email + refund policy, but there is no EULA, and the existing `docs/PRIVACY.md` predates the Freemius checkout + SDK opt-in analytics.
+
+### Fix
+
+- Add a product **EULA**, wired into the Freemius listing and referenced from [guides/LICENSE_ACTIVATION.md](guides/LICENSE_ACTIVATION.md).
+- **Extend** `docs/PRIVACY.md` (do not duplicate) to cover Freemius-checkout data handling and the SDK opt-in analytics, satisfying GDPR/CCPA disclosure for the paid path.
+
+### Acceptance criteria
+
+- ⏳ EULA published on the listing and linked from buyer docs.
+- ⏳ `docs/PRIVACY.md` covers the Freemius checkout + opt-in analytics data flows.
+
+### Validation
+
+- ⏳ Legal-text review; link-check the EULA references; confirm the privacy statement matches what Freemius/the SDK actually collect.
+
+## Track P62-K - Go-live hardening: SDK-derived upgrade URL + packaging
+
+> Added 2026-07-10 with the freemium expansion. **Planned — no code yet.**
+
+### Problem
+
+Two small go-live footguns: (1) `WPSG_License::get_upgrade_url()` (`includes/class-wpsg-license.php:107-109`) reads only the `wpsg_license_upgrade_url` filter and defaults to the placeholder `https://your-site.tld/pricing` — unlike its sibling `get_tier()`, it never delegates to the live SDK, so a forgotten filter sends buyers to a dead URL instead of Freemius checkout. (2) The release ZIP excludes are duplicated inline in `release.yml`, and the `phpunit/*` glob wouldn't catch a stray top-level `phpunit` file.
+
+### Fix
+
+- Make `get_upgrade_url()` prefer `wpsg_fs()->get_upgrade_url()` when `is_sdk_active()` (mirror `get_tier()` at `class-wpsg-license.php:91-101`), falling back to the filter/placeholder otherwise.
+- Add a `.distignore` to centralize packaging excludes (low urgency — clean CI releases are unaffected — but removes drift risk).
+- Reconcile the **M2** `fs_dynamic_init` note with the **freemium** flags the Freemius-generated snippet sets and the current init (`wp-super-gallery.php:78-90`) omits: `has_premium_version => true`, a distinct `premium_slug`, `is_org_compliant => true`, and a non-empty `menu['first-path']`.
+
+### Acceptance criteria
+
+- ⏳ Upgrade CTAs resolve to the live Freemius pricing/checkout URL when the SDK is active.
+- ⏳ `.distignore` present; release ZIP verified to exclude tooling/stray artifacts.
+- ⏳ M2 `fs_dynamic_init` reconciled with the generated snippet (documented; applied at go-live).
+
+### Validation
+
+- ⏳ Unit-test `get_upgrade_url()` SDK-active vs stub paths; inspect a built ZIP's file list; diff the init args against Freemius's generated snippet during M2.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
 | **Adapter-level pro gating** (`pro` flag on `AdapterRegistration`, license check in `resolveAdapter`) | Explicitly out of scope this phase — all 14 adapters stay free. Revisit only once a specific adapter is deliberately productized as pro, ideally informed by Freemius usage analytics once live. |
-| Free WP.org "lite" tier (top-of-funnel) | MONETIZATION §7 stage 3; gated on the full public-readiness work (WCAG AA still open in [FUTURE_TASKS.md](FUTURE_TASKS.md); admin i18n now resolved via P60-I/P61). Revisit once the pro tier proves out. |
+| ~~Free WP.org "lite" tier (top-of-funnel)~~ **→ promoted to P62-F–I (2026-07-10)** | Was MONETIZATION §7 stage 3, deferred; **now in scope** as the freemium expansion (spike → code split → WCAG AA → WP.org submission). No longer a follow-on. |
 | EDD / self-hosted licensing | Only if Freemius per-transaction fees or lock-in become material at scale (MONETIZATION §3–4). |
 | Affiliate program | Freemius supports it; defer until there is a renewal base worth amplifying. |
 | Per-feature Freemius plan mapping | `WPSG_License::can_use_feature()` already accepts a feature key; today all 3 constants collapse to one boolean. Split only if pricing later differentiates the features into separate plans. |
@@ -226,5 +386,7 @@ The root cause was a **process gap**, not a one-off: nothing caught a front-end 
 - 🟡 **P62-D (buyer docs) — authored, human fill pending.** `docs/guides/LICENSE_ACTIVATION.md`, the two `readme.txt` FAQ entries, and the troubleshooting row all present; remaining `[PLACEHOLDER]` markers (support email, refund policy) are filled by the account owner at M4.
 - ⏳ **P62-C (pricing model) — not started (human-only).** Tiers / renewals / trial are configured in the Freemius dashboard; no code deliverable, blocked pre-account.
 - ⏳ **Sandbox validation (P62-A/B)** — activation → pro-unlock → update → deactivate → re-lock, plus the opt-in dialog; blocked on the real Freemius sandbox (M1–M3). Do not flip A/B to "shipped" until this passes.
-- **Deferred (Follow-On):** adapter-level gating; WP.org lite tier (WCAG AA); affiliate program; per-feature plan mapping; full-PHP-surface locale gate.
-- **Next:** human completes M1–M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the `wpsg_freemius_config` filter, then runs the P62-B/C sandbox checklist before flipping the phase to shipped. The full go-live runbook — with **M1–M4 defined** — is [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md); the pro decisions + dev guide are in [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).
+- ⏳ **P62-F–K (freemium enablement) — Planned, no code yet (added 2026-07-10).** WP.org "lite" build free/paid split (P62-F spike → P62-G), full WCAG AA (P62-H), WP.org submission + dual-channel release (P62-I), EULA + privacy (P62-J), and go-live hardening (P62-K). Added when the distribution model expanded from premium-only to freemium; the premium tracks (A–E) do not depend on these and can ship first.
+- **Deferred (Follow-On):** adapter-level gating; affiliate program; per-feature plan mapping; full-PHP-surface locale gate. *(The WP.org "lite" tier and full WCAG AA are no longer deferred — promoted to P62-F–I / P62-H.)*
+- **Next (premium launch):** human completes M1–M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the `wpsg_freemius_config` filter, then runs the P62-B/C sandbox checklist before flipping the premium tracks to shipped.
+- **Next (freemium launch):** execute P62-F (split-mechanism spike) → P62-G (code split) → P62-I (WP.org submission), with P62-H/J/K in parallel; this can follow the premium launch. The full go-live runbook — with **M1–M4 defined** — is [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md); the pro decisions + dev guide are in [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).
