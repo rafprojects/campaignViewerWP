@@ -1,6 +1,6 @@
 # WP Super Gallery - Implementation Plan
 
-This plan builds on the original architecture reference in [docs/ARCHITECTURE_INIT.md](docs/ARCHITECTURE_INIT.md). It defines the decisions, TODOs, and the concrete work needed to ship a production-ready SPA and WordPress‑embedded widget.
+This plan builds on the original architecture reference in [docs/ARCHITECTURE_INIT.md](ARCHITECTURE_INIT.md). It defines the decisions, TODOs, and the concrete work needed to ship a production-ready SPA and WordPress‑embedded widget.
 
 ---
 
@@ -294,7 +294,7 @@ All endpoints are served from the WordPress REST namespace:
 ### Phase 4: Main UI Mantine Migration
 
 - Implement the main UI migration once scope is confirmed.
-- Track component-by-component steps in [docs/MANTINE_MAIN_UI_ASSESSMENT.md](docs/MANTINE_MAIN_UI_ASSESSMENT.md).
+- Track component-by-component steps in [docs/MANTINE_MAIN_UI_ASSESSMENT.md](MANTINE_MAIN_UI_ASSESSMENT.md).
 
 **Completed in Phase 5 so far:**
 
@@ -356,13 +356,13 @@ Track functional UX improvements that are not pure styling.
 ### Phase 8: Theme System
 
 - Implement a global theme system for main UI + admin panel.
-- Reference feasibility and configuration plan in [docs/THEME_SYSTEM_ASSESSMENT.md](docs/THEME_SYSTEM_ASSESSMENT.md).
+- Reference feasibility and configuration plan in [docs/THEME_SYSTEM_ASSESSMENT.md](THEME_SYSTEM_ASSESSMENT.md).
 
 ---
 
 ## Admin Panel Sub‑Plan
 
-A separate doc captures the admin panel flow and complexity: [docs/ADMIN_PANEL_PLAN.md](docs/ADMIN_PANEL_PLAN.md)
+A separate doc captures the admin panel flow and complexity: [docs/ADMIN_PANEL_PLAN.md](ADMIN_PANEL_PLAN.md)
 
 ---
 

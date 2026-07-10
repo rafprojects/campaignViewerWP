@@ -540,4 +540,4 @@ instance is good.
 - **Validated.** PHPUnit 1037 tests / 12970 assertions green (2 skipped); vitest
   2386 tests green; production build green with the SW build-hash injected. A
   post-merge correctness + security review of P52+P53 is recorded in
-  [docs/testing/REVIEW_P52_P53.md](testing/REVIEW_P52_P53.md).
+  [docs/testing/REVIEW_P52_P53.md](../reviews/REVIEW_P52_P53.md).

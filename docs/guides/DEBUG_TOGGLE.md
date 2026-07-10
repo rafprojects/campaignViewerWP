@@ -46,7 +46,7 @@ The debug flag persists across browser page reloads, so you only need to set it 
 
 ## Implementation
 
-Debug utilities are in [src/utils/debug.ts](../src/utils/debug.ts) and provide:
+Debug utilities are in [src/utils/debug.ts](../../src/utils/debug.ts) and provide:
 - `isDebugEnabled()` — checks localStorage for the flag
 - `debugGroup(label)` — starts a grouped console output
 - `debugLog(...args)` — logs arguments (like console.log)

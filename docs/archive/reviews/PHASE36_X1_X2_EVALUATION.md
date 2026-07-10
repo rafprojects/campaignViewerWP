@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-30
 **Status:** Evaluated - Ready for review
-**Related:** [PHASE36_REPORT.md](./PHASE36_REPORT.md), [PHASE35_REPORT.md](./PHASE35_REPORT.md), [PHASE36_FOLLOWUP_FINDINGS.md](./PHASE36_FOLLOWUP_FINDINGS.md)
+**Related:** [PHASE36_REPORT.md](../phases/PHASE36_REPORT.md), [PHASE35_REPORT.md](../phases/PHASE35_REPORT.md), [PHASE36_FOLLOWUP_FINDINGS.md](./PHASE36_FOLLOWUP_FINDINGS.md)
 
 ---
 

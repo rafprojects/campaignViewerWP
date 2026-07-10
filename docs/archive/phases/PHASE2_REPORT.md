@@ -21,10 +21,10 @@ This report tracks Phase 2 work: authentication, permission enforcement, and fro
 
 Files:
 
-- [src/services/auth/AuthProvider.ts](src/services/auth/AuthProvider.ts)
-- [src/services/auth/WpJwtProvider.ts](src/services/auth/WpJwtProvider.ts)
-- [src/contexts/AuthContext.tsx](src/contexts/AuthContext.tsx)
-- [src/hooks/useAuth.ts](src/hooks/useAuth.ts)
+- [src/services/auth/AuthProvider.ts](../../../src/services/auth/AuthProvider.ts)
+- [src/services/auth/WpJwtProvider.ts](../../../src/services/auth/WpJwtProvider.ts)
+- [src/contexts/AuthContext.tsx](../../../src/contexts/AuthContext.tsx)
+- [src/hooks/useAuth.ts](../../../src/hooks/useAuth.ts)
 
 ### 2) Frontend Auth State
 
@@ -34,10 +34,10 @@ Files:
 
 Files:
 
-- [src/components/Auth/LoginForm.tsx](src/components/Auth/LoginForm.tsx)
+- [src/components/Auth/LoginForm.tsx](../../../packages/shared-ui/src/LoginForm.tsx)
 - [src/components/Auth/LoginForm.module.scss](src/components/Auth/LoginForm.module.scss)
-- [src/App.tsx](src/App.tsx)
-- [src/styles/global.scss](src/styles/global.scss)
+- [src/App.tsx](../../../src/App.tsx)
+- [src/styles/global.scss](../../../src/styles/global.scss)
 
 ### 3) Permissions Endpoint + Access Checks
 
@@ -47,7 +47,7 @@ Files:
 
 Files:
 
-- [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
+- [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
 
 ### 4) JWT Setup Documentation
 
@@ -55,7 +55,7 @@ Files:
 
 Files:
 
-- [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md)
+- [docs/WP_JWT_SETUP.md](../../guides/WP_JWT_SETUP.md)
 
 ### 5) Live REST Data in UI
 
@@ -65,7 +65,7 @@ Files:
 
 Files:
 
-- [src/App.tsx](src/App.tsx)
+- [src/App.tsx](../../../src/App.tsx)
 
 ### 6) Auth Lifecycle
 
@@ -77,10 +77,10 @@ Files:
 
 Files:
 
-- [src/App.tsx](src/App.tsx)
-- [src/services/apiClient.ts](src/services/apiClient.ts)
-- [src/services/auth/WpJwtProvider.ts](src/services/auth/WpJwtProvider.ts)
-- [src/components/Auth/LoginForm.tsx](src/components/Auth/LoginForm.tsx)
+- [src/App.tsx](../../../src/App.tsx)
+- [src/services/apiClient.ts](../../../src/services/apiClient.ts)
+- [src/services/auth/WpJwtProvider.ts](../../../src/services/auth/WpJwtProvider.ts)
+- [src/components/Auth/LoginForm.tsx](../../../packages/shared-ui/src/LoginForm.tsx)
 
 ### 7) UI Permission Gating
 
@@ -95,12 +95,12 @@ Files:
 
 Files:
 
-- [src/components/Campaign/CampaignViewer.tsx](src/components/Campaign/CampaignViewer.tsx)
-- [src/components/Campaign/CampaignViewer.module.scss](src/components/Campaign/CampaignViewer.module.scss)
-- [src/App.tsx](src/App.tsx)
-- [src/components/Gallery/CardGallery.tsx](src/components/Gallery/CardGallery.tsx)
-- [src/components/Gallery/CardGallery.module.scss](src/components/Gallery/CardGallery.module.scss)
-- [src/styles/global.scss](src/styles/global.scss)
+- [src/components/Campaign/CampaignViewer.tsx](../../../src/components/CardViewer/CampaignViewer.tsx)
+- [src/components/Campaign/CampaignViewer.module.scss](../../../src/components/CardViewer/CampaignViewer.module.scss)
+- [src/App.tsx](../../../src/App.tsx)
+- [src/components/Gallery/CardGallery.tsx](../../../src/components/CampaignGallery/CardGallery.tsx)
+- [src/components/Gallery/CardGallery.module.scss](../../../src/components/CampaignGallery/CardGallery.module.scss)
+- [src/styles/global.scss](../../../src/styles/global.scss)
 
 ### 8) Testing Plan + Automated Suites
 
@@ -111,15 +111,15 @@ Files:
 Files:
 
 - [docs/TESTING_PLAN.md](docs/TESTING_PLAN.md)
-- [vite.config.ts](vite.config.ts)
-- [src/test/setup.ts](src/test/setup.ts)
-- [src/test/test-globals.d.ts](src/test/test-globals.d.ts)
-- [src/components/Gallery/CardGallery.test.tsx](src/components/Gallery/CardGallery.test.tsx)
-- [src/components/Campaign/CampaignViewer.test.tsx](src/components/Campaign/CampaignViewer.test.tsx)
-- [playwright.config.ts](playwright.config.ts)
-- [e2e/smoke.spec.ts](e2e/smoke.spec.ts)
-- [e2e/auth-permissions.spec.ts](e2e/auth-permissions.spec.ts)
-- [e2e/admin-actions.spec.ts](e2e/admin-actions.spec.ts)
+- [vite.config.ts](../../../vite.config.ts)
+- [src/test/setup.ts](../../../src/test/setup.ts)
+- [src/test/test-globals.d.ts](../../../src/test/test-globals.d.ts)
+- [src/components/Gallery/CardGallery.test.tsx](../../../src/components/CampaignGallery/CardGallery.test.tsx)
+- [src/components/Campaign/CampaignViewer.test.tsx](../../../src/components/CardViewer/CampaignViewer.test.tsx)
+- [playwright.config.ts](../../../playwright.config.ts)
+- [e2e/smoke.spec.ts](../../../e2e/smoke.spec.ts)
+- [e2e/auth-permissions.spec.ts](../../../e2e/auth-permissions.spec.ts)
+- [e2e/admin-actions.spec.ts](../../../e2e/admin-actions.spec.ts)
 
 ### 9) WP Embed Config Injection
 
@@ -127,7 +127,7 @@ Files:
 
 Files:
 
-- [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
+- [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
 
 ---
 

@@ -10,7 +10,7 @@ This file documents the current nested-first gallery contract in the codebase.
 
 `galleryConfig` and campaign `galleryOverrides` are the only supported gallery configuration surfaces exposed to the app and REST responses when nested data exists. Older flat global settings and historical campaign adapter override fields may still be promoted into nested form during DB/read-time migration, but they are no longer rehydrated back into the live frontend/PHP contract once nested config is available.
 
-The broader implementation/refactor record lives in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md).
+The broader implementation/refactor record lives in [PHASE25_SETTINGS_REFACTOR.md](../archive/phases/PHASE25_SETTINGS_REFACTOR.md).
 
 The goals of the model are:
 

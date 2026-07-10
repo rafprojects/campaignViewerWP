@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-21
 **Status:** Pre-Evaluation (acceptance criteria not yet met)
-**Related:** [PHASE31_REPORT.md](./PHASE31_REPORT.md) # Track P31-D
+**Related:** [PHASE31_REPORT.md](../phases/PHASE31_REPORT.md) # Track P31-D
 
 ---
 

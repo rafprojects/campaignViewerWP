@@ -1,7 +1,7 @@
 # JWT Auth Storage — In-Depth Analysis
 
 **Date:** March 4, 2026  
-**Reference:** Action item A-1 from [PRODUCTION_READINESS_ACTION_ITEMS.md](PRODUCTION_READINESS_ACTION_ITEMS.md)  
+**Reference:** Action item A-1 from [PRODUCTION_READINESS_ACTION_ITEMS.md](../phases/PRODUCTION_READINESS_ACTION_ITEMS.md)  
 **Severity:** CRITICAL  
 **Purpose:** Provide detailed analysis of the vulnerability and pros/cons for each remediation option so you can make an informed decision.
 
@@ -292,4 +292,4 @@ The only scenario where Option 2 is preferable is if a significant percentage of
 
 ---
 
-*Decision: **Option 1 (nonce-only default)** selected on March 5, 2026. Implemented as Track P20-K in [archive/phases/PHASE20_REPORT.md](archive/phases/PHASE20_REPORT.md). JWT code commented out (not deleted) with `WPSG_ENABLE_JWT` env-var gate for future cross-origin use. Option 2 (in-memory tokens + httpOnly refresh cookie) recorded in [FUTURE_TASKS.md](FUTURE_TASKS.md) § Access Control.*
+*Decision: **Option 1 (nonce-only default)** selected on March 5, 2026. Implemented as Track P20-K in [archive/phases/PHASE20_REPORT.md](../phases/PHASE20_REPORT.md). JWT code commented out (not deleted) with `WPSG_ENABLE_JWT` env-var gate for future cross-origin use. Option 2 (in-memory tokens + httpOnly refresh cookie) recorded in [FUTURE_TASKS.md](../../FUTURE_TASKS.md) § Access Control.*

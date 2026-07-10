@@ -3,9 +3,9 @@
 This guide explains the Admin Panel UI structure, the Mantine components in use, and how to customize layout, spacing, borders, and overall visual style.
 
 ## Where the Admin Panel lives
-- Primary component: `AdminPanel` in [src/components/Admin/AdminPanel.tsx](../src/components/Admin/AdminPanel.tsx)
-- Mantine providers: [src/main.tsx](../src/main.tsx)
-- Shadow DOM styles injection: [src/shadowStyles.ts](../src/shadowStyles.ts)
+- Primary component: `AdminPanel` in [src/components/Admin/AdminPanel.tsx](../../src/components/Admin/AdminPanel.tsx)
+- Mantine providers: [src/main.tsx](../../src/main.tsx)
+- Shadow DOM styles injection: [src/shadowStyles.ts](../../src/shadowStyles.ts)
 
 ## Structure overview (layout and control map)
 The admin UI is a single component composed of Mantine primitives. The layout flows like this:
@@ -121,7 +121,7 @@ The admin UI is a single component composed of Mantine primitives. The layout fl
 ## Theme overrides (global look & feel)
 
 ### MantineProvider theme
-You can set global theme values in [src/main.tsx](../src/main.tsx):
+You can set global theme values in [src/main.tsx](../../src/main.tsx):
 
 ```tsx
 <MantineProvider
@@ -172,7 +172,7 @@ If you prefer, you can keep Mantine defaults and only override specific componen
 
 ### Shadow DOM note
 
-If Shadow DOM is enabled, Mantine styles are injected via [src/shadowStyles.ts](../src/shadowStyles.ts). Any global overrides should also be included there if they rely on CSS variables or resets.
+If Shadow DOM is enabled, Mantine styles are injected via [src/shadowStyles.ts](../../src/shadowStyles.ts). Any global overrides should also be included there if they rely on CSS variables or resets.
 
 ## Component‑level overrides (localized styling)
 

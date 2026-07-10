@@ -58,7 +58,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Origin:** Phase 58 planning (2026-06-26). Surfaced while scoping the LayoutBuilder enhancements; future-task'd per user direction.
 
-**Context:** Slots are positioned in percentages with no constraint model — they cannot be pinned to a canvas edge so they reflow predictably on resize. A constraints/pinning system is the deeper responsive model that complements the per-breakpoint overrides in [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B.
+**Context:** Slots are positioned in percentages with no constraint model — they cannot be pinned to a canvas edge so they reflow predictably on resize. A constraints/pinning system is the deeper responsive model that complements the per-breakpoint overrides in [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B.
 
 **What to implement:** Per-slot anchor constraints (pin to left/right/top/bottom/center, fixed vs. stretch), resolved at render and on canvas resize, persisted in the template schema.
 
@@ -70,7 +70,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### LayoutBuilder — Align/Distribute Keyboard Shortcuts
 
-**Origin:** Deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A (Editor UX Polish) during batch-1 execution (2026-06-26), per user direction — the binding scheme needs design before implementation. The rest of P58-A (clipboard, slot opacity, nudge steps) ships in batch 1.
+**Origin:** Deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A (Editor UX Polish) during batch-1 execution (2026-06-26), per user direction — the binding scheme needs design before implementation. The rest of P58-A (clipboard, slot opacity, nudge steps) ships in batch 1.
 
 **Context:** Align and distribute exist only as Layers-panel buttons (`src/components/Admin/LayoutBuilder/LayoutBuilderLayersPanel.tsx`); there are no keyboard equivalents (unlike Figma). The blocker is binding choice: nearly all single keys are taken (`N`/`H`/`V`/`F`/`?`/`[`/`]`, plus `Ctrl+Z`/`D`/`G`/`S`), and the obvious `Ctrl+Alt+Arrows` collides with OS shortcuts (Linux workspace switch, Intel-GPU screen rotation). Two candidate schemes surfaced in planning: an **"A-chord"** (press `A`, then a direction / `H` / `V`) which is conflict-free but two-step, or a single-press `Ctrl+Alt+…` combo which is faster but unreliable cross-OS.
 
@@ -87,7 +87,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### LayoutBuilder — Published Responsive Canvas Sizing (Breakpoint Render Model)
 
-**Origin:** Deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B during implementation (2026-06-29), per user direction — needs an extensive manual-testing pass plus careful planning before committing to a model.
+**Origin:** Deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B during implementation (2026-06-29), per user direction — needs an extensive manual-testing pass plus careful planning before committing to a model.
 
 **Context:** P58-B ships per-breakpoint slot overrides + a builder boundary guide, and the published gallery now renders a non-desktop breakpoint as the **centered device-width band** of the design canvas, **scaled to fill** the container (`computeBreakpointBand` in `packages/shared-utils/src/breakpointViewport.ts`) — a "full-height vertical slice, scale-to-fill" model. It works, but on-page sizing is still imperfect: the layout is constrained left/right (the band is centered and the rest of the design canvas is hidden), and because tablet/mobile scale the band to the container, **slots get progressively smaller as the breakpoint narrows**. There is no per-breakpoint canvas aspect/height — mobile inherits the desktop canvas height as a tall, narrow slice. A better model would let the published layout size itself to the page more naturally across breakpoints.
 
@@ -101,7 +101,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### LayoutBuilder — Faithful Preview (Breakpoint Render + Runtime Effects)
 
-**Origin:** Deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B (2026-06-29), per user direction.
+**Origin:** Deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B (2026-06-29), per user direction.
 
 **Context:** Two preview gaps. **(1)** The builder's internal **Preview** mode (`LayoutCanvas` in `isPreview`, inside the device-frame) is a *separate* render path from the published `LayoutBuilderGallery`. After the P58-B publish-at-breakpoint fix the published/campaign render shows the centered band correctly, but the builder's Preview toggle does not necessarily match — it renders the design canvas inside the device frame rather than reusing the gallery's crop+scale band model. **(2)** Preview does not exercise the runtime effects the published gallery applies — per-slot glow, hover bounce/pop, entrance (scroll-reveal) animations, tilt — so the user cannot quickly validate a layout's interactive feel without actually publishing.
 
@@ -115,7 +115,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### LayoutBuilder — Clickable / Linking CTA Text Layer
 
-**Origin:** Deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) during P59 planning (2026-06-29), per user direction — Phase 59 ships single-style text layers with semantic roles (heading/subheading/paragraph/caption) rendered as real DOM text (Decision B: single-style text for v1); the linking/CTA variant was split off to keep v1 to pure, non-interactive text.
+**Origin:** Deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) during P59 planning (2026-06-29), per user direction — Phase 59 ships single-style text layers with semantic roles (heading/subheading/paragraph/caption) rendered as real DOM text (Decision B: single-style text for v1); the linking/CTA variant was split off to keep v1 to pure, non-interactive text.
 
 **Context:** Phase 59 text layers (`LayoutTextLayer` in `src/types/index.ts`; render path in `LayoutBuilderGallery.tsx`, P59-C) render as non-interactive semantic text — a heading or caption, not a link. A common layout need is a **call-to-action**: text that navigates somewhere when clicked (e.g. "Shop now"). That requires a link target on the layer plus interactive, accessible rendering — more than "style a string."
 
@@ -135,7 +135,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### LayoutBuilder — Right-Click / Long-Press Contextual Menu
 
-**Origin:** Raised by the user during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F planning (2026-07-01) as a follow-on idea, explicitly not urgent — sized as a future UX investment rather than something to build now.
+**Origin:** Raised by the user during [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) P59-F planning (2026-07-01) as a follow-on idea, explicitly not urgent — sized as a future UX investment rather than something to build now.
 
 **Context:** The LayoutBuilder currently exposes actions through two menu surfaces only: the top `Menu`-bar dropdowns (`LayoutBuilderMenuBar.tsx` — File/Edit/View, global scope) and the per-row `Menu` inside `LayerRow.tsx` (Layers-panel row actions). There is **no context menu anywhere on the canvas itself** — verified during P59-F research. A right-click (or long-press, for touch) menu on a canvas object is a standard design-tool convention (Figma, Photoshop, Canva) for fast, targeted actions without leaving the canvas or hunting through a side panel.
 
@@ -147,7 +147,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Files:** New component under `src/components/Admin/LayoutBuilder/` (e.g. a `LayoutBuilderContextMenu.tsx`); wiring touches `LayoutCanvas.tsx` (attach `onContextMenu`/long-press handlers per target) and `LayoutBuilderModal.tsx` (action dispatch, selection-on-right-click).
 
-**Depends on:** No hard dependency, but [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-F (guide delete-icon + keyboard delete) is a natural first candidate action this menu would eventually expose for guides — P59-F solves guide deletion directly rather than waiting on this larger system.
+**Depends on:** No hard dependency, but [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) P59-F (guide delete-icon + keyboard delete) is a natural first candidate action this menu would eventually expose for guides — P59-F solves guide deletion directly rather than waiting on this larger system.
 
 **Effort:** Medium-Large (new UI infrastructure: positioning, per-type action-set logic, touch long-press handling, keyboard/a11y for the menu itself) | **Impact:** Medium — meaningful workflow speedup for power users, matches conventions from professional design tools, but existing menu surfaces (Edit menu, Layers-panel row actions) already cover the same actions today, just less directly.
 
@@ -157,7 +157,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs
 
-**Origin:** Surfaced during [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D planning (2026-06-30), per user direction — P59-D itself stays scoped to `TypographyEditor`'s 8 CSS-unit fields; the app-wide rollout is explicitly deferred.
+**Origin:** Surfaced during [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) P59-D planning (2026-06-30), per user direction — P59-D itself stays scoped to `TypographyEditor`'s 8 CSS-unit fields; the app-wide rollout is explicitly deferred.
 
 **Context:** P59-D extracts `UnitScrubField` (`src/components/Common/UnitScrubField.tsx`) — a shared `NumberInput` + unit `Select` + drag-to-scrub control — and migrates `DimensionInput` (`src/components/Settings/DimensionInput.tsx`) and the new `CssValueInput` (`src/components/Common/CssValueInput.tsx`, used by `TypographyEditor`) onto it as thin, contract-preserving adapters. That leaves at least one known ad hoc numeric input outside the new pattern, and likely others not yet inventoried.
 
@@ -177,13 +177,13 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Origin:** Phase 54 (P54-B harvests **user-facing** strings only; admin deferred here).
 
-**Resolved (2026-07-05, [PHASE61_REPORT.md](PHASE61_REPORT.md)):** P60-I completed the admin-panel harvest; **Phase 61** swept every remaining front-end family (`Common`, `CampaignGallery`, `CardViewer`, `Auth`, `Settings`, `contexts`, `Galleries/Shared`, `App.tsx`, `ErrorBoundary.tsx`) and flipped `i18next/no-literal-string` to a single **blanket `'error'` for all of `src/**` + `packages/shared-ui/src/**`** — the terminal state, with no per-directory allow-list left to maintain. All newly-harvested strings are translated into the five shipped packs (fr/es/de/zh/ru). The WP.org public-listing i18n gate this entry described is now met.
+**Resolved (2026-07-05, [PHASE61_REPORT.md](archive/phases/PHASE61_REPORT.md)):** P60-I completed the admin-panel harvest; **Phase 61** swept every remaining front-end family (`Common`, `CampaignGallery`, `CardViewer`, `Auth`, `Settings`, `contexts`, `Galleries/Shared`, `App.tsx`, `ErrorBoundary.tsx`) and flipped `i18next/no-literal-string` to a single **blanket `'error'` for all of `src/**` + `packages/shared-ui/src/**`** — the terminal state, with no per-directory allow-list left to maintain. All newly-harvested strings are translated into the five shipped packs (fr/es/de/zh/ru). The WP.org public-listing i18n gate this entry described is now met.
 
 ---
 
 ### ~~i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation~~ — ✅ RESOLVED (Phase 61-G, one caveat)
 
-**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass". Folded into Phase 61 Track G.
+**Origin:** Phase 60 post-phase PR/code-review (2026-07-05), deferred from [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) → "Post-Phase PR / Code-Review Pass". Folded into Phase 61 Track G.
 
 **Resolved (2026-07-05):**
 
@@ -202,7 +202,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 **Context:** Beyond P54-C's front-end critical/serious baseline, a full WCAG AA pass across the admin panel and all flows (contrast, focus management, ARIA landmarks, Shadow-DOM screen-reader exposure). **Gates the public WP.org path.**
 
-**Status (2026-06-26):** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-D extends the critical/serious axe baseline to the **main admin flows** (the Freemius-premium tier). The **full** WCAG AA pass below remains deferred as the **WP.org public-listing gate**.
+**Status (2026-06-26):** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-D extends the critical/serious axe baseline to the **main admin flows** (the Freemius-premium tier). The **full** WCAG AA pass below remains deferred as the **WP.org public-listing gate**.
 
 **Effort:** High | **Impact:** Low for private/internal; High/required for public distribution.
 
@@ -212,7 +212,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### Store Listing Artwork — Banner, Icon, Screenshots
 
-**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E (deferred — graphic-design/capture deliverable).
+**Origin:** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E (deferred — graphic-design/capture deliverable).
 
 **Files:** `.wordpress-org/` (spec at [`.wordpress-org/README.md`](../.wordpress-org/README.md)); screenshot captions in [`wp-plugin/wp-super-gallery/readme.txt`](../wp-plugin/wp-super-gallery/readme.txt) `== Screenshots ==`.
 
@@ -231,7 +231,7 @@ The 10up SVN deploy action reads `.wordpress-org/` automatically, so finals drop
 
 ## Privacy & Compliance
 
-**Origin:** [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
+**Origin:** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
 
 ### WordPress Core Privacy Integration (DSAR Export/Erase) — *highest-value*
 
@@ -283,7 +283,7 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 ## Access Control
 
-Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
+Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](archive/phases/PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
 
 ### Granular Custom-Role Permission Engine (GitHub-style)
 
@@ -297,7 +297,7 @@ Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPO
 - An admin UI to create/edit custom roles and assign them, plus a migration path from the fixed presets.
 - Permission resolution that layers custom roles over the preset map without breaking the existing tier checks or the P52-A regression matrix.
 
-**Rationale for deferral:** A full custom-role engine is a self-contained system (storage + UI + migration + resolution) whose cost is the management surface, not the enforcement. With only a handful of actor archetypes today, it is premature (YAGNI). The P52-A centralized map deliberately makes this work **additive rather than a rewrite** — revisit only if a concrete multi-tenant or custom-role requirement emerges. Deferred from [PHASE52_REPORT.md](PHASE52_REPORT.md) Track P52-A (decided 2026-06-15).
+**Rationale for deferral:** A full custom-role engine is a self-contained system (storage + UI + migration + resolution) whose cost is the management surface, not the enforcement. With only a handful of actor archetypes today, it is premature (YAGNI). The P52-A centralized map deliberately makes this work **additive rather than a rewrite** — revisit only if a concrete multi-tenant or custom-role requirement emerges. Deferred from [PHASE52_REPORT.md](archive/phases/PHASE52_REPORT.md) Track P52-A (decided 2026-06-15).
 
 **Effort:** High (multi-track / likely its own phase) | **Impact:** Low today; High if a multi-tenant custom-role need appears.
 
@@ -362,7 +362,7 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 **Origin:** Phase 62 QA (2026-07-06). Surfaced while diagnosing a "fresh reinstall" report where a page with three `[super-gallery space="…"]` shortcodes (originally three distinct spaces) silently collapsed all three onto the default space after the referenced spaces no longer existed — confusing an admin who expected the original layout. Confirmed benign (user oversight), but the silent fallback hid the real cause.
 
-**Context:** `WPSG_Embed::resolve_space_id()` ([class-wpsg-embed.php](class-wpsg-embed.php)) resolves an explicit `space=` / `campaign=` / `company=` attribute and, when the target does not exist, **silently** falls through to `wpsg_default_space_id`. Visitors should never see an error, but an admin has no signal that a shortcode is pointing at a deleted/renamed/mistyped space and is quietly rendering the default instead.
+**Context:** `WPSG_Embed::resolve_space_id()` ([class-wpsg-embed.php](../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)) resolves an explicit `space=` / `campaign=` / `company=` attribute and, when the target does not exist, **silently** falls through to `wpsg_default_space_id`. Visitors should never see an error, but an admin has no signal that a shortcode is pointing at a deleted/renamed/mistyped space and is quietly rendering the default instead.
 
 **What to implement:** When an *explicit* `space`/`campaign`/`company` attribute is provided but does not resolve (i.e. the fallback to default is taken because the requested target is missing — not merely omitted), render an **admin-only** inline notice on that gallery instance, e.g. *"This gallery references a space that no longer exists — showing the default space."* Gate it to `manage_wpsg` (never shown to visitors). Self-contained PHP change in the shortcode render path; no JS. Catches the general dangling-reference case (deleted/renamed space, typo, or destructive reinstall), not just reinstalls.
 
@@ -457,18 +457,18 @@ When promoting future tasks to an active phase:
 
 *Updated: June 12, 2026 (P50-F follow-on) — Re-added Build & Bundle section with "Service Worker — Offline Support (App Shell Pattern)": deferred from P50-F after manual testing confirmed offline mode is unsupported by design (SW intentionally skips navigation/HTML caching to avoid stale-chunk failures after deploys). Full offline support requires a versioned app-shell cache with deploy-time busting.*
 
-*Updated: June 17, 2026 (P54 planning) — Added the Phase 54 production-readiness review follow-ons (deferred from [PHASE54_REPORT.md](PHASE54_REPORT.md), which is tight must-fix only): four LayoutBuilder enhancements (Editor UX Polish, Responsive/Per-Breakpoint Editing, Text/Caption Layers, Design-Tool Affordances) under Builder, ordered by user priority; "Gallery — Admin-Control Additions"; a new Code Quality & Refactoring section (adapter data extraction / registration-seam / field-map unification; large-file decomposition); Internationalization (full admin i18n migration — P54-B does user-facing only); Accessibility (full WCAG AA — P54-C does the front-end critical/serious baseline); and Monetization & Distribution (licensing/update infra), cross-linked to the new [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).*
+*Updated: June 17, 2026 (P54 planning) — Added the Phase 54 production-readiness review follow-ons (deferred from [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md), which is tight must-fix only): four LayoutBuilder enhancements (Editor UX Polish, Responsive/Per-Breakpoint Editing, Text/Caption Layers, Design-Tool Affordances) under Builder, ordered by user priority; "Gallery — Admin-Control Additions"; a new Code Quality & Refactoring section (adapter data extraction / registration-seam / field-map unification; large-file decomposition); Internationalization (full admin i18n migration — P54-B does user-facing only); Accessibility (full WCAG AA — P54-C does the front-end critical/serious baseline); and Monetization & Distribution (licensing/update infra), cross-linked to the new [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md).*
 
-*Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
+*Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](archive/phases/PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](archive/phases/PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](archive/phases/PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
 
-*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE62_REPORT.md](PHASE62_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
+*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE62_REPORT.md](PHASE62_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
 
-*Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
+*Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
-*Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
+*Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
 
-*Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
+*Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
 
-*Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
+*Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
 
-*Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*
+*Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*

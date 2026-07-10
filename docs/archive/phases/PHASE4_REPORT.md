@@ -10,7 +10,7 @@ This report tracks Phase 4 work: migrating the main UI components to Mantine for
 
 - Assess feasibility and scope for migrating the main UI to Mantine.
 - Implement the main UI migration once scope is confirmed.
-- Track component-by-component steps in [docs/MANTINE_MAIN_UI_ASSESSMENT.md](docs/MANTINE_MAIN_UI_ASSESSMENT.md).
+- Track component-by-component steps in [docs/MANTINE_MAIN_UI_ASSESSMENT.md](../../old/MANTINE_MAIN_UI_ASSESSMENT.md).
 
 ---
 
@@ -29,7 +29,7 @@ This report tracks Phase 4 work: migrating the main UI components to Mantine for
 - ✅ Recommended migration order and 8-week timeline
 - ✅ Testing checklist and dependencies list
 
-**Document:** [docs/MANTINE_MAIN_UI_ASSESSMENT.md](docs/MANTINE_MAIN_UI_ASSESSMENT.md)
+**Document:** [docs/MANTINE_MAIN_UI_ASSESSMENT.md](../../old/MANTINE_MAIN_UI_ASSESSMENT.md)
 
 ---
 

@@ -1242,7 +1242,7 @@ This is a **research and design spike**, not an implementation track. The output
 - A proposed operation set: 11 operations with names, icons, and behavior definitions. (✓)
 - Novel enhancement: "Equalize slot sizes" proposal with feasibility note. (✓)
 
-**Output:** [`docs/P30K_ALIGNMENT_SPIKE.md`](P30K_ALIGNMENT_SPIKE.md)
+**Output:** [`docs/P30K_ALIGNMENT_SPIKE.md`](../reviews/P30K_ALIGNMENT_SPIKE.md)
 
 ### Effort Estimate
 

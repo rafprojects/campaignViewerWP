@@ -25,7 +25,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
   - `src/services/auth/WpJwtProvider.ts` (token/user/permissions storage)
   - `src/services/auth/WpJwtProvider.test.ts`
   - `src/App.test.tsx`
-  - [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md)
+  - [docs/WP_JWT_SETUP.md](../guides/WP_JWT_SETUP.md)
 
 ### PR #9 — Enforce visibility and access grants in GET /campaigns endpoint
 
@@ -42,7 +42,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Database‑level filtering for non‑admins using `post__in` and accessible IDs.
   - Pagination metadata returned from `WP_Query` totals.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.
+  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.
 - Follow‑up options:
   - Consider using 404 for unauthorized access in `get_campaign()` / `list_media()`
     to reduce information leakage.
@@ -59,7 +59,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Existing `can_view_campaign()` checks are enforced for campaign and media
     access, and list filtering is scoped to accessible IDs.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) during Phase 2.
+  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) during Phase 2.
 - Follow‑up options:
   - Evaluate swapping unauthorized responses to 404 for sensitive endpoints.
 
@@ -75,4 +75,4 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Anonymous users are forced to `visibility=public` in `list_campaigns()`.
   - Authenticated non‑admins are constrained to `post__in` accessible IDs.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.
+  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.

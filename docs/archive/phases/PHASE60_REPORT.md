@@ -22,13 +22,13 @@
 
 ## Rationale
 
-The product is feature-complete enough to sell; this phase closes the **release-readiness** gaps required to ship to a marketplace. The chosen distribution target is **Freemius premium** (see [MONETIZATION_OPTIONS.md](MONETIZATION_OPTIONS.md) §7), so this phase scopes to the "Premium / marketplace — Med-High delta" bar in §5 — not the heavier full-public WP.org bar.
+The product is feature-complete enough to sell; this phase closes the **release-readiness** gaps required to ship to a marketplace. The chosen distribution target is **Freemius premium** (see [MONETIZATION_OPTIONS.md](../../MONETIZATION_OPTIONS.md) §7), so this phase scopes to the "Premium / marketplace — Med-High delta" bar in §5 — not the heavier full-public WP.org bar.
 
-1. **What triggered it.** Phase 54 set a target-independent must-fix floor and deferred the distribution-specific work to FUTURE_TASKS pending a path decision. The path is now chosen (Freemius premium), so the readiness items it gates are scheduled here. The monetization/licensing build itself lives in [PHASE62_REPORT.md](PHASE62_REPORT.md).
+1. **What triggered it.** Phase 54 set a target-independent must-fix floor and deferred the distribution-specific work to FUTURE_TASKS pending a path decision. The path is now chosen (Freemius premium), so the readiness items it gates are scheduled here. The monetization/licensing build itself lives in [PHASE62_REPORT.md](../../PHASE62_REPORT.md).
 2. **Why it belongs together.** Every track is a precondition for a credible paid release — correct version metadata, translatable strings, escaping/Plugin-Check compliance, accessible admin flows, store collateral, and a validated package — and none adds product features.
 3. **Success.** A reviewer (and a buyer) sees a plugin with consistent version metadata, a generated translation template, a clean Plugin Check / escaping pass, no new critical a11y violations in the main flows, complete store collateral and a privacy statement, and a release artifact that installs/activates/uninstalls cleanly across supported PHP versions.
 
-> **Split from monetization.** This phase makes the plugin *shippable*; [PHASE62_REPORT.md](PHASE62_REPORT.md) makes it *sellable* (gating seams + Freemius SDK + pricing + buyer docs). Land P60 first.
+> **Split from monetization.** This phase makes the plugin *shippable*; [PHASE62_REPORT.md](../../PHASE62_REPORT.md) makes it *sellable* (gating seams + Freemius SDK + pricing + buyer docs). Land P60 first.
 
 ## Key Decisions
 
@@ -237,7 +237,7 @@ Phase 54-C established a critical/serious axe baseline on the **front-end only**
 
 **Verification.** `e2e/accessibility.spec.ts` 6/6 green; vitest **3,641 tests** green (confirms the global CloseButton default + viewer title change broke nothing); `tsc -b` + eslint clean; production `build:wp` succeeds. Two new i18n keys (`common_close`, `admin_sort_label`) added, manifest/`.pot` regenerated, `Sort campaigns` translated into all 5 packs (`Close` reused an existing msgid), `i18n:check` green.
 
-**Follow-On (full WCAG AA).** Colour-contrast (e.g. the access-mode `SegmentedControl` label, 4.03 vs 4.5), full focus management, ARIA landmarks, and Shadow-DOM SR exposure remain the WP.org-tier full-AA audit (Key Decision C) — tracked in [FUTURE_TASKS.md](FUTURE_TASKS.md).
+**Follow-On (full WCAG AA).** Colour-contrast (e.g. the access-mode `SegmentedControl` label, 4.03 vs 4.5), full focus management, ARIA landmarks, and Shadow-DOM SR exposure remain the WP.org-tier full-AA audit (Key Decision C) — tracked in [FUTURE_TASKS.md](../../FUTURE_TASKS.md).
 
 ## Track P60-E - Store assets, privacy/GDPR statement, buyer-facing docs
 
@@ -249,7 +249,7 @@ There is no store collateral (banner/icon/screenshots), no privacy/GDPR statemen
 
 - Produce the marketplace assets (banner, icon, screenshots) and finalize the `readme.txt` marketing sections and changelog discipline.
 - Write a privacy/GDPR statement covering data handling (note the existing Sentry PII-scrubbing and the localStorage inventory from Phase 54).
-- Write buyer-facing install + troubleshooting docs (the support-process definition itself lives in [PHASE62_REPORT.md](PHASE62_REPORT.md)).
+- Write buyer-facing install + troubleshooting docs (the support-process definition itself lives in [PHASE62_REPORT.md](../../PHASE62_REPORT.md)).
 
 ### Acceptance criteria
 

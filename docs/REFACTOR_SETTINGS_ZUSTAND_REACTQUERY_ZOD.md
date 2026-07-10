@@ -1,6 +1,6 @@
 # Refactoring Plan: Settings System with Zustand, React Query, and Zod
 
-> Note: this original proposal has now been evaluated and refined in [PHASE25_SETTINGS_REFACTOR.md](PHASE25_SETTINGS_REFACTOR.md).
+> Note: this original proposal has now been evaluated and refined in [PHASE25_SETTINGS_REFACTOR.md](archive/phases/PHASE25_SETTINGS_REFACTOR.md).
 >
 > The main scope changes are:
 > - legacy bridge removal is now intended in the same phase because the plugin is still unreleased
