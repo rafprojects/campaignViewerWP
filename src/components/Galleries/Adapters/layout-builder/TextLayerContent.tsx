@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import type { LayoutTextLayer } from '@/types';
 import { loadGoogleFont } from '@wp-super-gallery/shared-utils';
-import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
+import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { textLayerElement, textLayerTextStyle, TEXT_LAYER_WRAPPER_STYLE } from '@/utils/textLayerStyle';
 
 /**

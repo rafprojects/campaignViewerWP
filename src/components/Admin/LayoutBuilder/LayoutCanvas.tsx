@@ -22,8 +22,8 @@ import { ContextualToolbar, type ContextualToolbarCallbacks } from './Contextual
 import { CanvasGrid } from './CanvasGrid';
 import { CanvasRulers } from './CanvasRulers';
 import { MeasurementOverlay } from './MeasurementOverlay';
-import { GraphicLayerContent } from './GraphicLayerContent';
-import { TextLayerContent } from './TextLayerContent';
+import { GraphicLayerContent } from '@/components/Galleries/Adapters/layout-builder/GraphicLayerContent';
+import { TextLayerContent } from '@/components/Galleries/Adapters/layout-builder/TextLayerContent';
 import { textLayerTextStyle } from '@/utils/textLayerStyle';
 import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
