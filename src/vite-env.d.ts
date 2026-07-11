@@ -1,5 +1,13 @@
 /// <reference types="vite/client" />
 
+/**
+ * P62-F: build-time premium flag, replaced by Vite `define` with a literal boolean.
+ * `true` in the default (premium) build; `false` in the `WPSG_PREMIUM=false` free build,
+ * which lets Rollup dead-code-eliminate the Pro authoring code. Orthogonal to the runtime
+ * `isPro` license check (`useWpsgLicense`). See docs/guides/PRO_FEATURES.md.
+ */
+declare const __WPSG_PREMIUM__: boolean;
+
 declare module '*.module.scss' {
   const classes: { [key: string]: string };
   export default classes;

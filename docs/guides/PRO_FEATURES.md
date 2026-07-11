@@ -204,6 +204,7 @@ in `WPSG_Embed::page_config_js()` and the `WpsgLicenseInfo` type in `useWpsgLice
 
 - [ ] `FEATURE_*` constant added; call sites use `can_use_feature()`.
 - [ ] Client entry point gated with `useWpsgLicense` + `showProUpsell`.
+- [ ] Pro UI + its lazy `import()` gated behind `__WPSG_PREMIUM__` so the free WP.org build strips it (see §7).
 - [ ] `upsell_*` key added to `i18n-strings.en.json` **and translated in all 5 locales** (`i18n:check:locales` green).
 - [ ] If it persists data: `enforce_license_gates()` strip/freeze block added (server enforcement).
 - [ ] PHP + JS tests for both licensed and unlicensed branches.
@@ -219,3 +220,95 @@ These are yours to make; they don't change the code (or change it only via a fil
 - **Expanding the Pro set:** adding features follows §5. The obvious deferred candidate is
   adapter-level gating (currently all free).
 - **Pricing:** see [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md) §6.
+
+---
+
+## 7. Free vs premium build split — the WP.org "lite" build (P62-F decision)
+
+For the **freemium** distribution (free build on WordPress.org + premium via Freemius), the runtime
+`isPro` gate in §3 is **not enough**: WordPress.org forbids shipping locked/premium code, so the
+free build must have the Pro code **physically absent**. Freemius's deployment processor can strip
+premium *files* (`__premium_only`), but **cannot strip inside our single compiled Vite/React
+bundle**. So the front end needs a **build-level** split.
+
+### The mechanism — a build-time flag (`__WPSG_PREMIUM__`)
+
+`vite.config.ts` defines a compile-time constant:
+
+```ts
+define: { __WPSG_PREMIUM__: JSON.stringify(process.env.WPSG_PREMIUM !== 'false') },
+```
+
+- Default build (`npm run build`, `npm run build:wp`) ⇒ `__WPSG_PREMIUM__ === true` ⇒ the
+  **premium** bundle (all Pro code present — identical to today).
+- `WPSG_PREMIUM=false` build (`npm run build:free`, `npm run build:wp:free`) ⇒ literal `false` ⇒
+  Rollup **dead-code-eliminates** every branch behind the flag, **including the dynamic
+  `import()`s** it guards, so the Pro authoring chunks (and their data) never enter the bundle.
+
+The constant is declared ambiently in `src/vite-env.d.ts` (`declare const __WPSG_PREMIUM__:
+boolean;`) so TypeScript/ESLint see a normal `boolean` (both branches type-check, no unused-var
+noise); only Rollup, seeing the substituted literal, performs the elimination.
+
+### Two orthogonal layers — do not conflate
+
+| Layer | Symbol | Controls | Lives |
+|---|---|---|---|
+| **Presence** | `__WPSG_PREMIUM__` | whether the Pro code is *in the build* | build time (Vite `define`) |
+| **Access** | `isPro` (`useWpsgLicense`) | whether a present feature is *unlocked* | runtime (license) |
+
+Both coexist. The **premium** build keeps the runtime `isPro` check so an expired/trial license
+still upsells. The **free** build has the Pro code stripped, so there is nothing to unlock and the
+runtime check is moot for those features.
+
+### The gating pattern (as applied to the starter library)
+
+Gate the lazy import, the CTA, and the render so nothing references the Pro chunk when the flag is
+false (see `src/components/Admin/LayoutTemplateList.tsx`):
+
+```tsx
+const PresetGalleryModal = __WPSG_PREMIUM__
+  ? lazy(() => import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal })))
+  : null;
+// …CTA button and <PresetGalleryModal/> render both wrapped in `{__WPSG_PREMIUM__ && …}`
+```
+
+### Authoring vs rendering — only strip authoring
+
+The public renderer
+(`src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`) displays **saved**
+text layers and breakpoint overrides and imports **none** of the authoring UI — so the free build
+strips the *authoring* code while keeping the *renderer*, preserving the graceful-degradation
+guarantee (§2). **P62-G caveat:** two pure renderers used by the public gallery
+(`Admin/LayoutBuilder/TextLayerContent.tsx`, `GraphicLayerContent.tsx`) physically live in the
+authoring tree and must be **relocated** to a shared module so the stripped free build keeps them.
+
+### Rejected alternatives
+
+- **Lazy-chunk gating alone** (never `import()` the Pro chunk at runtime): leaves the Pro code in
+  the bundle — non-compliant — and can't strip *inline* Pro code (text/breakpoint authoring lives
+  inside `LayoutBuilder*Panel.tsx`, not in a separate chunk).
+- **Separate Vite entries** (`rollupOptions.input`): needs the shared renderer/type/util modules
+  hoisted out first anyway, and adds PHP/manifest lookup churn, without solving inline Pro code.
+
+### Deployment consequence (revises the P62-I assumption)
+
+Because Freemius can't strip the JS bundle, the free `.org` build is **self-built**
+(`npm run build:wp:free`) and **self-deployed** via the SVN workflow; Freemius receives the premium
+(flag-on) build. Freemius JS auto-strip is **not** used. (PHP server code can still use Freemius
+`__premium_only` conventions — that's independent of this JS split.)
+
+### i18n note (not a compliance issue)
+
+The English source strings for Pro features (e.g. `lb_preset_desc`, `upsell_starter_library` in
+`src/i18n-strings.en.json`) are bundled into the main entry as translation *text* and remain in the
+free build regardless of the flag. That is **text, not locked functionality** — WordPress.org
+permits upsell/marketing copy — so it is compliant. Stripping Pro i18n keys from the free build's
+string manifest is an optional P62-G nicety, not a requirement.
+
+### Status (P62-F, 2026-07-10)
+
+Spike **complete**. Mechanism proven with a kept first slice: the **starter library** is gated
+behind `__WPSG_PREMIUM__`. Verified — the free build (`WPSG_PREMIUM=false npm run build`) contains
+**no** `PresetGalleryModal-*.js` chunk and **no** preset data (`Magazine Spread` absent), while the
+premium build contains both; the premium bundle is byte-size-identical to before. Extending the
+pattern to text layers + breakpoint overrides (and the renderer relocation above) is **P62-G**.
