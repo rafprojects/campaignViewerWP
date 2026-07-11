@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Box, Text, Button, Stack, Divider, SegmentedControl, NumberInput, Group } from '@mantine/core';
 import { IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -7,8 +8,13 @@ import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
-import { TextPropertiesPanel } from './TextPropertiesPanel';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+
+// P62-G: gate the Pro text editor behind the build flag so the free WP.org build
+// dead-code-eliminates TextPropertiesPanel (and its heavyweight TypographyEditor).
+const TextPropertiesPanel = __WPSG_PREMIUM__
+  ? lazy(() => import('./TextPropertiesPanel').then((m) => ({ default: m.TextPropertiesPanel })))
+  : null;
 
 const ASPECT_PRESETS = [
   { label: '16:9', value: String(16 / 9) },
@@ -120,21 +126,31 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     return (
       <Box style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_text', 'TEXT LAYER')}</Text>
-        <TextPropertiesPanel
-          key={selectedText.id}
-          text={selectedText}
-          textIndex={textIndex + 1}
-          onUpdate={builder.updateText}
-          onRename={builder.renameText}
-          onRemove={(id) => {
-            builder.removeText(id);
-            setSelectedTextId(null);
-          }}
-          onBringToFront={(id) => builder.bringToFront([id])}
-          onSendToBack={(id) => builder.sendToBack([id])}
-          onBringForward={(id) => builder.bringForward([id])}
-          onSendBackward={(id) => builder.sendBackward([id])}
-        />
+        {__WPSG_PREMIUM__ && TextPropertiesPanel ? (
+          <Suspense fallback={null}>
+            <TextPropertiesPanel
+              key={selectedText.id}
+              text={selectedText}
+              textIndex={textIndex + 1}
+              onUpdate={builder.updateText}
+              onRename={builder.renameText}
+              onRemove={(id) => {
+                builder.removeText(id);
+                setSelectedTextId(null);
+              }}
+              onBringToFront={(id) => builder.bringToFront([id])}
+              onSendToBack={(id) => builder.sendToBack([id])}
+              onBringForward={(id) => builder.bringForward([id])}
+              onSendBackward={(id) => builder.sendBackward([id])}
+            />
+          </Suspense>
+        ) : (
+          // P62-G: free WP.org build — the text editor is stripped. Existing text
+          // layers still render on the canvas; editing them is a Pro feature.
+          <Text size="sm" c="dimmed" p="sm">
+            {t('upsell_text_layers', 'Text layers are a Pro feature. Upgrade to add and edit text in your layouts.')}
+          </Text>
+        )}
       </Box>
     );
   }

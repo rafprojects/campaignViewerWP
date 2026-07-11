@@ -223,35 +223,40 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
               <IconPlus size={14} />
             </ActionIcon>
           </Tooltip>
-          <Tooltip label={tr('lb_layers_add_text', 'Add text')}>
-            <ActionIcon
-              size="sm"
-              variant="light"
-              onClick={() => {
-                // P62-A: text layers are a Pro feature. Gate the entry point;
-                // the underlying data model/hook is untouched (existing text
-                // layers still render for everyone — see server-side freeze).
-                if (!isPro) {
-                  showProUpsell(
-                    'upsell_text_layers',
-                    'Text layers are a Pro feature. Upgrade to add and edit text in your layouts.',
-                    upgradeUrl,
-                  );
-                  return;
-                }
-                const id = builder.addText();
-                setSelectedOverlayId(null);
-                setIsBackgroundSelected(false);
-                setSelectedMaskSlotId(null);
-                setSelectedGuideId(null);
-                builder.clearSelection();
-                setSelectedTextId(id);
-              }}
-              aria-label={tr('lb_layers_add_text', 'Add text')}
-            >
-              <IconLetterT size={14} />
-            </ActionIcon>
-          </Tooltip>
+          {/* P62-G: text layers are Pro — the add-text control is absent from the free
+              WP.org build. In the premium build the runtime isPro check below still
+              upsells expired/unlicensed installs. */}
+          {__WPSG_PREMIUM__ && (
+            <Tooltip label={tr('lb_layers_add_text', 'Add text')}>
+              <ActionIcon
+                size="sm"
+                variant="light"
+                onClick={() => {
+                  // P62-A: text layers are a Pro feature. Gate the entry point;
+                  // the underlying data model/hook is untouched (existing text
+                  // layers still render for everyone — see server-side freeze).
+                  if (!isPro) {
+                    showProUpsell(
+                      'upsell_text_layers',
+                      'Text layers are a Pro feature. Upgrade to add and edit text in your layouts.',
+                      upgradeUrl,
+                    );
+                    return;
+                  }
+                  const id = builder.addText();
+                  setSelectedOverlayId(null);
+                  setIsBackgroundSelected(false);
+                  setSelectedMaskSlotId(null);
+                  setSelectedGuideId(null);
+                  builder.clearSelection();
+                  setSelectedTextId(id);
+                }}
+                aria-label={tr('lb_layers_add_text', 'Add text')}
+              >
+                <IconLetterT size={14} />
+              </ActionIcon>
+            </Tooltip>
+          )}
           <Tooltip label={tr('lb_layers_add_mask', 'Add mask to selected slot')}>
             <ActionIcon
               size="sm"
