@@ -227,7 +227,24 @@ Freemius's deployment processor strips premium code at the **file/function level
 
 ## Track P62-G - WP.org "lite" build: free/paid code split
 
-> Added 2026-07-10 with the freemium expansion. **Planned — no code yet; depends on P62-F.**
+> Added 2026-07-10 with the freemium expansion. **In progress (2026-07-11): client-side split (a–d) complete & verified; server/readme/CI slices (e–g) remain — see Progress.**
+
+### Progress (2026-07-11)
+
+**Client-side split complete (a–d)** — the free build (`WPSG_PREMIUM=false`) now strips all three Pro features' authoring code, verified by chunk/string inspection; existing saved Pro content still renders (renderers kept):
+
+- **(a)** Relocated the pure layer renderers (`TextLayerContent`, `GraphicLayerContent`) out of `Admin/LayoutBuilder/` into the public-renderer dir, and extracted `GOOGLE_FONT_NAMES` → `src/data/googleFontNames.ts`, so the renderer path no longer imports authoring code (commit `60baf938`).
+- **(b)** Gated text-layer authoring: the "Add text" control is absent from the free build, and `TextPropertiesPanel` (+ its heavy `TypographyEditor`) is a flag-gated lazy import — no `TextPropertiesPanel-*.js` chunk in the free build (commit `0673fd3b`).
+- **(c)** Gated the breakpoint edit-mode switcher — no `breakpoint-edit-selector`/`fit-to-viewport` in the free build; free users edit desktop only (commit `601594d3`).
+- **(d)** Starter library — done in P62-F.
+- Each slice verified: `tsc -b`, ESLint, all 3,653 Vitest tests green; premium retains all Pro chunks, free omits them.
+
+**Reframing of (e)/(f) under the self-built free-build model (P62-F finding):** the free `.org` build is produced by `build:wp:free` (self-built), **not** Freemius auto-strip — so the original `__premium_only` / `fs_premium_only` plan does not apply:
+
+- **(e) PHP — no `__premium_only` stripping needed or appropriate.** The server code is *license-enforcement* (`WPSG_License` + `enforce_license_gates()`), not premium *feature* code — it must **stay** in the free build (it strips Pro fields for unlicensed sites, keeping the free tier free). There is no premium-only server feature code to remove; WP.org permits license-check + Freemius-SDK code in a freemium plugin.
+- **(f) readme — `fs_premium_only` fences do not apply** (nothing processes them in a self-built build). Instead the single `readme.txt` must be `.org`-honest: describe the free tier and present the 3 Pro features as an **upsell** (permitted), not as included features — a readme review/edit, not fence insertion.
+
+**Remaining (g):** wire `build:wp:free` into the release/SVN path for the free `.org` artifact (incl. a separate packaging output so it doesn't clobber the premium `assets/`), and add a CI assertion that the free build excludes the Pro chunks (`release.yml`/`ci.yml` + a small check script).
 
 ### Problem
 
