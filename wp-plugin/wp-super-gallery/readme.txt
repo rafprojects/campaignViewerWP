@@ -17,7 +17,7 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 **Key features:**
 
 * **Shadow DOM rendering** — galleries embed on any page without CSS conflicts.
-* **Visual layout builder** — drag-and-drop grid editor with layer support (masks, overlays, backgrounds, text).
+* **Visual layout builder** — drag-and-drop grid editor with layer support (masks, overlays, backgrounds).
 * **Multiple tile adapters** — classic grid, masonry, justified, hexagonal, circular, diamond, and compact-grid layouts.
 * **Campaign management** — create, schedule, and organise media campaigns with tagging and access controls.
 * **oEmbed proxy** — embed external media via a built-in oEmbed proxy with provider allowlist and SSRF protection.
@@ -27,6 +27,16 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 * **Design assets** — SVG overlay library with drag-and-drop, upload sanitization, and .htaccess hardening.
 * **Image optimisation** — automatic resize, compression, and optional WebP conversion on upload.
 * **Extensible** — hooks, filters, and a REST API for custom integrations.
+
+**WP Super Gallery Pro (optional upgrade):**
+
+Everything above is free and fully functional. A Pro license (sold via Freemius) unlocks three advanced LayoutBuilder authoring capabilities:
+
+* **Text layers** — add and edit rich text layers on a layout.
+* **Per-breakpoint responsive editing** — fine-tune slot position and size independently for tablet and mobile.
+* **Starter template library** — start a layout from a curated preset instead of a blank canvas.
+
+Layouts that already use these features keep rendering on the free plugin — a lapsed or absent license never breaks or deletes saved content. See the FAQ below for activation.
 
 == Installation ==
 
