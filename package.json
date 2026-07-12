@@ -28,6 +28,7 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "size-check": "node scripts/check-bundle-size.mjs",
+    "check:free-build": "WPSG_PREMIUM=false npm run build && node scripts/check-free-build-clean.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "test:visual": "playwright test --config=playwright.visual.config.ts",

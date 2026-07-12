@@ -78,6 +78,12 @@ jobs:
       - name: Production build (build:wp)
         run: npm run build:wp
 
+      # P62-G: the free WP.org "lite" build must exclude all Pro authoring code.
+      # Rebuild with WPSG_PREMIUM=false and assert no Pro chunks/markers leak in —
+      # a regression here would ship locked functionality to WordPress.org.
+      - name: Free build — WP.org Pro-code exclusion gate
+        run: npm run check:free-build
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v4
