@@ -14,7 +14,7 @@
 | P62-D | Buyer-facing docs + support process | Docs authored (human M1–M4 placeholders) | Small-Medium |
 | P62-E | i18n locale-coverage CI gate (PR-review hardening) | Complete | Small |
 | P62-F | Spike: frontend free/premium split mechanism (compiled-bundle stripping) | Complete (spike, 2026-07-10) | Small |
-| P62-G | WP.org "lite" build: free/paid code split (`__premium_only` + build split) | Planned | Large |
+| P62-G | WP.org "lite" build: free/paid code split (build-time `__WPSG_PREMIUM__` flag) | Core complete (2026-07-11); release wiring → P62-I | Large |
 | P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Planned | Large |
 | P62-I | WP.org submission + dual-channel release (Plugin Check, artwork, SVN) | Planned | Medium |
 | P62-J | Buyer/user legal: EULA + privacy statement | Planned | Small-Medium |
@@ -227,7 +227,7 @@ Freemius's deployment processor strips premium code at the **file/function level
 
 ## Track P62-G - WP.org "lite" build: free/paid code split
 
-> Added 2026-07-10 with the freemium expansion. **In progress (2026-07-11): client-side split (a–d) complete & verified; server/readme/CI slices (e–g) remain — see Progress.**
+> Added 2026-07-10 with the freemium expansion. **Core complete (2026-07-11): the free build strips all Pro code, is produced by `build:wp:free`, and is CI-gated on every PR. The remaining dual-channel release/SVN wiring was folded into P62-I. See Progress.**
 
 ### Progress (2026-07-11)
 
@@ -242,9 +242,9 @@ Freemius's deployment processor strips premium code at the **file/function level
 **Reframing of (e)/(f) under the self-built free-build model (P62-F finding):** the free `.org` build is produced by `build:wp:free` (self-built), **not** Freemius auto-strip — so the original `__premium_only` / `fs_premium_only` plan does not apply:
 
 - **(e) PHP — no `__premium_only` stripping needed or appropriate.** The server code is *license-enforcement* (`WPSG_License` + `enforce_license_gates()`), not premium *feature* code — it must **stay** in the free build (it strips Pro fields for unlicensed sites, keeping the free tier free). There is no premium-only server feature code to remove; WP.org permits license-check + Freemius-SDK code in a freemium plugin.
-- **(f) readme — `fs_premium_only` fences do not apply** (nothing processes them in a self-built build). Instead the single `readme.txt` must be `.org`-honest: describe the free tier and present the 3 Pro features as an **upsell** (permitted), not as included features — a readme review/edit, not fence insertion.
+- **(f) readme — done** (`fs_premium_only` fences do not apply under the self-built model). The single `readme.txt` now presents the 3 Pro features as a **"WP Super Gallery Pro (optional upgrade)"** section — not as included free features — and drops "text" from the free layer list (commit `79d454b6`).
 
-**Remaining (g):** wire `build:wp:free` into the release/SVN path for the free `.org` artifact (incl. a separate packaging output so it doesn't clobber the premium `assets/`), and add a CI assertion that the free build excludes the Pro chunks (`release.yml`/`ci.yml` + a small check script).
+**(g) — done (lean scope, chosen 2026-07-11).** Added `scripts/check-free-build-clean.mjs` + `npm run check:free-build` (builds with `WPSG_PREMIUM=false`, fails on any Pro chunk/marker), wired as a **blocking gate on every PR** in `ci.yml`, plus a **hard guard** on `svn-deploy.yml` so the premium ZIP can't reach `.org` (commit `aee0517d`). Verified: the gate fails on a premium build (lists all 5 Pro markers) and passes on a free build (58 clean assets). **Deferred to P62-I:** the full dual-channel release wiring — `release.yml` emitting a separate free ZIP (via `build:wp:free`) and `svn-deploy.yml` switched to that free ZIP (removing the guard) — since the actual `.org` launch is gated on the Freemius account (M1), WCAG (P62-H), and artwork anyway.
 
 ### Problem
 
@@ -300,6 +300,7 @@ The freemium model ships two artifacts from one codebase: the **free "lite"** bu
 - **Plugin Check (PCP):** re-run against the **stripped free build** (P60 achieved compliance on the single build; keep `Tested up to` current — WP 7.0.x as of 2026-07).
 - **Listing assets:** finalize `readme.txt` + commission **Store Listing Artwork** (banner / icon / screenshots — spec/manifest in [`.wordpress-org/README.md`](../.wordpress-org/README.md), origin P60-E; carried over from the FUTURE_TASKS backlog and removed from that queue).
 - **Submission + deploy:** submit the lite build to the WP.org plugin review (manual, ~1–10 days); on approval, deploy the exact stripped free bytes via the existing `.github/workflows/svn-deploy.yml`; confirm Freemius serves the premium build via `is_premium`.
+- **Dual-channel release wiring (absorbed from P62-G(g), 2026-07-11):** update `release.yml` to also emit a **free ZIP** (`npm run build:wp:free`, a separate output so it doesn't clobber the premium `assets/`), point `svn-deploy.yml` at that free ZIP, and **remove the P62-G guard** that currently blocks SVN deploy. (P62-G already shipped the free build + a blocking CI Pro-code gate.)
 - **Decision (updated by the P62-F spike, 2026-07-10):** for the **front end**, Freemius auto-strip is **not viable** — it cannot strip a compiled JS bundle — so the free build is **self-built** (`npm run build:wp:free`) and self-deployed via SVN; Freemius serves the premium build. PHP server code may still use Freemius `__premium_only`. (Supersedes the earlier lean toward Freemius auto-strip for the front end.)
 - **Optional CI enhancement:** adopt the official **"Deploy on Freemius" GitHub Action** to auto-upload premium builds on release.
 
@@ -416,7 +417,8 @@ The root cause was a **process gap**, not a one-off: nothing caught a front-end 
 - ⏳ **P62-C (pricing model) — not started (human-only).** Tiers / renewals / trial are configured in the Freemius dashboard; no code deliverable, blocked pre-account.
 - ⏳ **Sandbox validation (P62-A/B)** — activation → pro-unlock → update → deactivate → re-lock, plus the opt-in dialog; blocked on the real Freemius sandbox (M1–M3). Do not flip A/B to "shipped" until this passes.
 - ✅ **P62-F (split-mechanism spike) — complete (2026-07-10).** Decision: build-time `__WPSG_PREMIUM__` flag (Vite `define`) → two build variants; PoC verified (free build strips the starter-library chunk + preset data), premium build unchanged. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md) §7; the P62-G estimate is in the P62-F track section.
-- ⏳ **P62-G–K (freemium enablement) — Planned.** WP.org "lite" code split (P62-G, builds on the P62-F flag), full WCAG AA (P62-H), WP.org submission + dual-channel release (P62-I), EULA + privacy (P62-J), go-live hardening (P62-K). The premium tracks (A–E) do not depend on these and can ship first.
+- ✅ **P62-G (WP.org "lite" code split) — core complete (2026-07-11).** The free build (`build:wp:free`) strips all 3 Pro features' authoring code (starter library, text editor, breakpoint switcher); a blocking CI gate + an SVN guard prevent Pro-code leaks to `.org`. Full dual-channel release/SVN wiring folded into P62-I. See the P62-G track section.
+- ⏳ **P62-H/I/J/K (freemium enablement) — Planned.** Full WCAG AA (P62-H), WP.org submission + dual-channel release (P62-I, incl. the deferred P62-G release wiring), EULA + privacy (P62-J), go-live hardening (P62-K). The premium tracks (A–E) do not depend on these and can ship first.
 - **Deferred (Follow-On):** adapter-level gating; affiliate program; per-feature plan mapping; full-PHP-surface locale gate. *(The WP.org "lite" tier and full WCAG AA are no longer deferred — promoted to P62-F–I / P62-H.)*
 - **Next (premium launch):** human completes M1–M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the `wpsg_freemius_config` filter, then runs the P62-B/C sandbox checklist before flipping the premium tracks to shipped.
 - **Next (freemium launch):** P62-F (split-mechanism spike) is **done**; next execute P62-G (code split) → P62-I (WP.org submission), with P62-H/J/K in parallel; this can follow the premium launch. The full go-live runbook — with **M1–M4 defined** — is [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md); the pro decisions + dev guide are in [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).
