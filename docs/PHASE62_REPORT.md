@@ -17,7 +17,7 @@
 | P62-G | WP.org "lite" build: free/paid code split (build-time `__WPSG_PREMIUM__` flag) | Core complete (2026-07-11); release wiring → P62-I | Large |
 | P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Contrast done (2026-07-11); manual AT audit = human follow-on | Large |
 | P62-I | WP.org submission + dual-channel release (Plugin Check, artwork, SVN) | Planned | Medium |
-| P62-J | Buyer/user legal: EULA + privacy statement | Planned | Small-Medium |
+| P62-J | Buyer/user legal: EULA + privacy statement | Drafted (2026-07-11); publish at M4 | Small-Medium |
 | P62-K | Go-live hardening: SDK-derived upgrade URL + packaging | Done (2026-07-11) | Small |
 
 > **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
@@ -325,7 +325,7 @@ The freemium model ships two artifacts from one codebase: the **free "lite"** bu
 
 ## Track P62-J - Buyer/user legal: EULA + privacy
 
-> Added 2026-07-10 with the freemium expansion. **Planned — no code yet.**
+> Added 2026-07-10 with the freemium expansion. **Done (2026-07-11): EULA drafted + PRIVACY.md extended for the Freemius data flow; human fills placeholders + publishes to the listing (M4).**
 
 ### Problem
 
@@ -338,12 +338,12 @@ A professional paid listing needs a product **EULA** and a clear **privacy/data-
 
 ### Acceptance criteria
 
-- ⏳ EULA published on the listing and linked from buyer docs.
-- ⏳ `docs/PRIVACY.md` covers the Freemius checkout + opt-in analytics data flows.
+- ✅ Product EULA drafted (`docs/EULA.md`, template with `[PLACEHOLDER]`s + legal-review note), linked from `LICENSE_ACTIVATION.md`. ⏳ Publishing to the Freemius listing + filling placeholders is human M4.
+- ✅ `docs/PRIVACY.md` §8 covers Freemius checkout (merchant of record) + the SDK opt-in diagnostics (GDPR/CCPA), with summary + §3 carve-outs.
 
 ### Validation
 
-- ⏳ Legal-text review; link-check the EULA references; confirm the privacy statement matches what Freemius/the SDK actually collect.
+- ✅ Relative links resolve (EULA ↔ PRIVACY ↔ LICENSE_ACTIVATION). ⏳ Attorney legal-text review + confirming the exact Freemius data set at go-live remain human tasks.
 
 ## Track P62-K - Go-live hardening: SDK-derived upgrade URL + packaging
 
@@ -429,7 +429,9 @@ The root cause was a **process gap**, not a one-off: nothing caught a front-end 
 - ✅ **P62-F (split-mechanism spike) — complete (2026-07-10).** Decision: build-time `__WPSG_PREMIUM__` flag (Vite `define`) → two build variants; PoC verified (free build strips the starter-library chunk + preset data), premium build unchanged. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md) §7; the P62-G estimate is in the P62-F track section.
 - ✅ **P62-G (WP.org "lite" code split) — core complete (2026-07-11).** The free build (`build:wp:free`) strips all 3 Pro features' authoring code (starter library, text editor, breakpoint switcher); a blocking CI gate + an SVN guard prevent Pro-code leaks to `.org`. Full dual-channel release/SVN wiring folded into P62-I. See the P62-G track section.
 - 🟡 **P62-H (WCAG AA) — contrast increment complete (2026-07-11); manual AT audit is a human follow-on.** Deterministic per-theme contrast gate (blocking CI) + 18 themes fixed to AA + e2e contrast re-enabled + [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) (static review + human AT checklist). See the P62-H track.
-- ⏳ **P62-I/J/K (freemium enablement) — Planned.** WP.org submission + dual-channel release (P62-I, incl. the deferred P62-G release wiring), EULA + privacy (P62-J), go-live hardening (P62-K). The premium tracks (A–E) do not depend on these and can ship first.
+- ✅ **P62-K (go-live hardening) — done (2026-07-11).** SDK-derived upgrade URL + `.distignore` + M2 flag notes (commit `e7fecaa3`).
+- 🟡 **P62-J (buyer legal) — drafted (2026-07-11).** EULA (`docs/EULA.md`) + PRIVACY.md §8 (Freemius data flow); publishing to the listing + placeholder fills are human M4.
+- ⏳ **P62-I (WP.org submission + dual-channel release) — Planned.** Mostly gated on the Freemius account (M1) + artwork; absorbs the deferred P62-G release wiring. The premium tracks (A–E) do not depend on these and can ship first.
 - **Deferred (Follow-On):** adapter-level gating; affiliate program; per-feature plan mapping; full-PHP-surface locale gate. *(The WP.org "lite" tier and full WCAG AA are no longer deferred — promoted to P62-F–I / P62-H.)*
 - **Next (premium launch):** human completes M1–M4 (Freemius account, product, pricing/trial config, support/refund text), injects real credentials via the `wpsg_freemius_config` filter, then runs the P62-B/C sandbox checklist before flipping the premium tracks to shipped.
 - **Next (freemium launch):** P62-F (split-mechanism spike) is **done**; next execute P62-G (code split) → P62-I (WP.org submission), with P62-H/J/K in parallel; this can follow the premium launch. The full go-live runbook — with **M1–M4 defined** — is [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md); the pro decisions + dev guide are in [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).

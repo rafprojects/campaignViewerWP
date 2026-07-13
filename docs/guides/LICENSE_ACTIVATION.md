@@ -48,7 +48,8 @@ license ends" below).
 
 Freemius may ask, during activation, whether to share anonymous usage data. This is
 **opt-in** — you can skip it and the plugin still works fully. Nothing is transmitted
-before you make that choice.
+before you make that choice. For exactly what's shared if you opt in (and the checkout/billing
+data Freemius handles as merchant of record), see the [Privacy Statement](../PRIVACY.md) §8.
 
 ---
 
@@ -97,6 +98,14 @@ and (if relevant) your license/order reference.
 
 [PLACEHOLDER: refund policy — e.g. "14-day money-back guarantee; contact support within 14
 days of purchase for a full refund."] Refunds are processed through Freemius.
+
+---
+
+## License terms
+
+Your Pro license is governed by the [End-User License Agreement (EULA)](../EULA.md): the **GPLv2+**
+covers the plugin code, and the EULA covers the paid **license, updates, and support**. What data is
+collected — including the Freemius opt-in — is in the [Privacy Statement](../PRIVACY.md) §8.
 
 ---
 
