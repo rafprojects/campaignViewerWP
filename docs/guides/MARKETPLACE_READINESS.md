@@ -4,6 +4,9 @@
 step-by-step runbook for launching the **paid** plugin, plus how to test the Pro
 functionality end-to-end.
 
+> **In a hurry?** The one-page go-live checklist is [GO_LIVE_PUNCH_LIST.md](GO_LIVE_PUNCH_LIST.md) —
+> this doc is the detailed runbook behind it.
+
 - For the **buyer-facing** activation guide (what an end user does with a license key), see
   [LICENSE_ACTIVATION.md](LICENSE_ACTIVATION.md).
 - For the **developer-facing** breakdown of what "Pro" is and how to add new Pro features,
