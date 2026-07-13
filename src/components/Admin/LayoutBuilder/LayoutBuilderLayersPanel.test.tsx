@@ -56,6 +56,7 @@ vi.mock('./BuilderDockContext', () => ({
 
 // Imported after mocks are registered.
 import { LayoutBuilderLayersPanel } from './LayoutBuilderLayersPanel';
+import { expectNoA11yViolations } from '@/test/axe';
 
 const panelProps = {} as never;
 
@@ -87,5 +88,11 @@ describe('LayoutBuilderLayersPanel — text-layer pro gate', () => {
 
     expect(addText).toHaveBeenCalledTimes(1);
     expect(showProUpsell).not.toHaveBeenCalled();
+  });
+
+  it('has no structural a11y violations', async () => {
+    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    const { container } = render(<LayoutBuilderLayersPanel {...panelProps} />);
+    await expectNoA11yViolations(container);
   });
 });

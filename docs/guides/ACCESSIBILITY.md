@@ -17,6 +17,7 @@ gate, so the WP.org "lite" tier can launch before the manual AT audit below is c
 | **Structural axe** | critical/serious roles/names/labels/ARIA validity **+ color-contrast** across 6 flows | `e2e/accessibility.spec.ts` (`@axe-core/playwright`) | No — manual `e2e.yml` (`workflow_dispatch`) |
 | **Modal close-button names** | `aria-label` on every Mantine `CloseButton` (P60-D) | `src/main.tsx` (global default) | via axe |
 | **Dynamic announcements** | 19 `aria-live` / `role=status\|alert` regions (e.g. lightbox position counter, P54-C) | across `src/` | via axe |
+| **Component structural axe** (jsdom) | roles / names / labels / ARIA on rendered components (WCAG A/AA; contrast excluded) | `src/test/axe.ts` + per-component `*.test.tsx` | **Yes** — Vitest CI (coverage growing) |
 
 ### The contrast gate (P62-H, 2026-07-11)
 
@@ -36,6 +37,31 @@ Contrast (WCAG 1.4.3) was previously **disabled** in the axe suite. It is now en
 **foreground** text tokens only (`textMuted`/`textMuted2`, and `text` in darcula/tokyo-night/
 forest-whisper) — never surfaces/backgrounds, so elevation and palette identity are preserved. Muted
 text is now slightly higher-contrast across the theme library.
+
+### Component structural axe harness (P62-H, 2026-07-11)
+
+A jsdom axe harness runs structural WCAG A/AA checks (roles, accessible names, form labels, ARIA
+validity — **not** contrast, which jsdom can't compute) over rendered components in the fast Vitest CI.
+
+- **Helper:** `src/test/axe.ts` → `await expectNoA11yViolations(container)`. It runs axe with the WCAG
+  A/AA tag set and disables `color-contrast` (covered by the theme-contrast gate) and landmark/`region`
+  best-practice rules (components render in isolation, not full pages).
+- **Add coverage:** in any component's `*.test.tsx`, render via the shared `@/test/test-utils` `render`
+  (which now mirrors the app's global CloseButton `aria-label` default so modal a11y tests are
+  accurate), then `await expectNoA11yViolations(container)`. i18n any new accessible-name string per
+  [PRO_FEATURES.md](PRO_FEATURES.md) §5.
+- **Gated today:** `ConfirmModal`, `LayoutBuilderLayersPanel` — the harness's first clean surfaces.
+
+**Structural a11y backlog (grow the gate; concrete issues the harness already found):**
+
+| Surface | Issue axe found | WCAG | Fix |
+|---|---|---|---|
+| `LayoutTemplateList` view toggle | icon-only `SegmentedControl` segments have no accessible name (`label`, critical) | 4.1.2 | Give each segment an i18n'd name (visually-hidden text or aria-label — needs the 5-locale i18n step) |
+| `LayoutTemplateList` template card | `role="button"` Card nests a Menu button → `nested-interactive` (serious) | 4.1.2 | Restructure so the card's primary action is a real button/link (e.g. on the title), not a button wrapping buttons |
+| **Not yet covered** | — | — | Add `expectNoA11yViolations` to the LayoutBuilder property panels (Slot/Text/Graphic/Mask/Background/Image), the modals (`GalleryConfigEditorModal`, `UnifiedCampaignModal`, campaign/admin modals), `AdminPanel`, `SettingsPanel`, and the gallery adapters — fixing what each surfaces |
+
+Expect each newly-covered surface to surface its own fixes (often missing form labels or nested
+interactives); treat this as a **living gate** that grows component-by-component.
 
 ---
 

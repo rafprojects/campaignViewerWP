@@ -15,7 +15,7 @@
 | P62-E | i18n locale-coverage CI gate (PR-review hardening) | Complete | Small |
 | P62-F | Spike: frontend free/premium split mechanism (compiled-bundle stripping) | Complete (spike, 2026-07-10) | Small |
 | P62-G | WP.org "lite" build: free/paid code split (build-time `__WPSG_PREMIUM__` flag) | Core complete (2026-07-11); release wiring → P62-I | Large |
-| P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Contrast done (2026-07-11); manual AT audit = human follow-on | Large |
+| P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Contrast + structural-axe harness done (2026-07-11); coverage growth + manual AT = follow-on | Large |
 | P62-I | WP.org submission + dual-channel release (Plugin Check, artwork, SVN) | Planned | Medium |
 | P62-J | Buyer/user legal: EULA + privacy statement | Drafted (2026-07-11); publish at M4 | Small-Medium |
 | P62-K | Go-live hardening: SDK-derived upgrade URL + packaging | Done (2026-07-11) | Small |
@@ -267,7 +267,7 @@ WordPress.org requires **all hosted code to be free and fully functional** — a
 
 ## Track P62-H - Full WCAG AA audit
 
-> Added 2026-07-10; carried over from the FUTURE_TASKS backlog (origin P54-C → P60-D baselines). **In progress (2026-07-11): the contrast increment is complete (deterministic AA gate + 18-theme fixes + e2e contrast re-enabled); the manual assistive-tech audit is a documented human follow-on.**
+> Added 2026-07-10; carried over from the FUTURE_TASKS backlog (origin P54-C → P60-D baselines). **In progress (2026-07-11): contrast increment complete (AA gate + 18-theme fixes + e2e contrast) and a component-level structural axe harness is now gating in CI; broadening structural coverage + the manual AT audit are documented follow-ons.**
 
 ### Problem
 
@@ -279,16 +279,24 @@ A public WordPress.org listing raises the accessibility bar. [PHASE60_REPORT.md]
 - **Fixed 18 of 23 themes.** The audit found muted text below AA on secondary surfaces across 18 themes (systematic pattern). All fixed with minimal, hue-preserving bumps to **foreground** text tokens only (`textMuted`/`textMuted2`, and `text` in darcula/tokyo-night/forest-whisper) — surfaces/backgrounds untouched, so elevation/palette identity are preserved.
 - **Re-enabled `color-contrast`** in the manual e2e axe suite (`e2e/accessibility.spec.ts`) for runtime coverage on top of the token gate.
 - **Static focus/ARIA review + human AT checklist** documented in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) (findings: no plugin-owned landmarks [WP-admin-context nuance], `outline:none` to verify, LayoutBuilder Escape disabled; + a keyboard/SR/Shadow-DOM checklist).
-- Verified: `tsc`, ESLint, full Vitest (240 files / 3,676 tests) green.
+- Verified: `tsc`, ESLint, full Vitest green.
 
-### Remaining (human follow-on — not automatable)
+### Progress (2026-07-11) — structural axe harness
 
-- ⏳ Manual assistive-tech audit — follow the step-by-step QA script in [guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md) (living doc: setup, per-surface test scripts, issue log, coverage tracker): keyboard walkthrough, real screen-reader (NVDA/VoiceOver) pass, focus order/traps, **Shadow-DOM SR exposure**, reduced-motion, 200% reflow. Requires a human with an AT stack.
+- **Component-level structural axe (blocking, fast CI).** Added `axe-core` (dev dep) + `src/test/axe.ts` (`expectNoA11yViolations`) — structural WCAG A/AA checks (roles/names/labels/ARIA; contrast excluded) over rendered components in the existing Vitest job. Mirrored the app's global CloseButton `aria-label` default into `src/test/test-utils.tsx` so modal a11y tests are accurate.
+- **Gated `ConfirmModal` + `LayoutBuilderLayersPanel`** (first clean surfaces). The harness immediately surfaced concrete issues elsewhere (`LayoutTemplateList`: icon-only `SegmentedControl` labels + a `nested-interactive` card) — logged as a **structural a11y backlog** in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) to grow the gate component-by-component.
+- Verified: `tsc`, ESLint, full Vitest (240 files / 3,678 tests) green.
+
+### Remaining
+
+- ⏳ **Manual assistive-tech audit (human)** — follow the step-by-step QA script in [guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md) (setup, per-surface scripts, issue log, coverage tracker): keyboard, real screen-reader (NVDA/VoiceOver), focus order/traps, **Shadow-DOM SR exposure**, reduced-motion, 200% reflow.
+- ⏳ **Structural coverage growth (automatable, ongoing).** Extend `expectNoA11yViolations` to the remaining high-value surfaces (LayoutBuilder property panels, the modals, AdminPanel/SettingsPanel, adapters), fixing what each surfaces — a living gate (see the ACCESSIBILITY.md backlog). Each surface's fixes often need form-label i18n or an interactive-nesting restructure.
 
 ### Acceptance criteria
 
 - ✅ Contrast (1.4.3): every theme AA, gated deterministically in blocking CI; e2e color-contrast re-enabled.
 - ⏳ Focus / keyboard / landmark / SR (2.1.x, 2.4.x, 1.3.1, 4.1.2): reviewed at code level + documented; real-AT verification is the human follow-on.
+- 🟡 Structural axe (roles/names/labels/ARIA, 4.1.2): jsdom harness in place + gating clean surfaces; broadening coverage + fixing found issues is an ongoing living gate.
 
 ### Validation
 
@@ -428,7 +436,7 @@ The root cause was a **process gap**, not a one-off: nothing caught a front-end 
 - ⏳ **Sandbox validation (P62-A/B)** — activation → pro-unlock → update → deactivate → re-lock, plus the opt-in dialog; blocked on the real Freemius sandbox (M1–M3). Do not flip A/B to "shipped" until this passes.
 - ✅ **P62-F (split-mechanism spike) — complete (2026-07-10).** Decision: build-time `__WPSG_PREMIUM__` flag (Vite `define`) → two build variants; PoC verified (free build strips the starter-library chunk + preset data), premium build unchanged. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md) §7; the P62-G estimate is in the P62-F track section.
 - ✅ **P62-G (WP.org "lite" code split) — core complete (2026-07-11).** The free build (`build:wp:free`) strips all 3 Pro features' authoring code (starter library, text editor, breakpoint switcher); a blocking CI gate + an SVN guard prevent Pro-code leaks to `.org`. Full dual-channel release/SVN wiring folded into P62-I. See the P62-G track section.
-- 🟡 **P62-H (WCAG AA) — contrast increment complete (2026-07-11); manual AT audit is a human follow-on.** Deterministic per-theme contrast gate (blocking CI) + 18 themes fixed to AA + e2e contrast re-enabled + [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) (static review + human AT checklist). See the P62-H track.
+- 🟡 **P62-H (WCAG AA) — contrast + structural-axe harness complete (2026-07-11); coverage growth + manual AT audit are follow-ons.** Blocking per-theme contrast gate + 18 themes fixed + e2e contrast + a component-level structural axe harness (gating `ConfirmModal`/`LayoutBuilderLayersPanel`, with a documented backlog) + [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) + the [manual AT audit script](guides/ACCESSIBILITY_MANUAL_AUDIT.md). See the P62-H track.
 - ✅ **P62-K (go-live hardening) — done (2026-07-11).** SDK-derived upgrade URL + `.distignore` + M2 flag notes (commit `e7fecaa3`).
 - 🟡 **P62-J (buyer legal) — drafted (2026-07-11).** EULA (`docs/EULA.md`) + PRIVACY.md §8 (Freemius data flow); publishing to the listing + placeholder fills are human M4.
 - ⏳ **P62-I (WP.org submission + dual-channel release) — Planned.** Mostly gated on the Freemius account (M1) + artwork; absorbs the deferred P62-G release wiring. The premium tracks (A–E) do not depend on these and can ship first.
