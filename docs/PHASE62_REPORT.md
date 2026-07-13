@@ -283,7 +283,7 @@ A public WordPress.org listing raises the accessibility bar. [PHASE60_REPORT.md]
 
 ### Remaining (human follow-on — not automatable)
 
-- ⏳ Manual assistive-tech audit per [ACCESSIBILITY.md](guides/ACCESSIBILITY.md) §3: keyboard walkthrough, real screen-reader (NVDA/VoiceOver) pass, focus order/traps, **Shadow-DOM SR exposure**, reduced-motion, 200% reflow. Requires a human with an AT stack.
+- ⏳ Manual assistive-tech audit — follow the step-by-step QA script in [guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md) (living doc: setup, per-surface test scripts, issue log, coverage tracker): keyboard walkthrough, real screen-reader (NVDA/VoiceOver) pass, focus order/traps, **Shadow-DOM SR exposure**, reduced-motion, 200% reflow. Requires a human with an AT stack.
 
 ### Acceptance criteria
 

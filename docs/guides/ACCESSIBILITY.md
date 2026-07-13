@@ -60,7 +60,11 @@ Positive signals: **no positive `tabIndex`** anywhere (no tab-order anti-pattern
 
 Automated tooling (axe) cannot verify focus order, keyboard operability, real screen-reader output, or
 ARIA exposure across the Shadow-DOM boundary. Run this manually with a real AT stack (NVDA + Firefox
-and VoiceOver + Safari) before declaring full AA:
+and VoiceOver + Safari) before declaring full AA.
+
+> **Follow the step-by-step QA script:** [ACCESSIBILITY_MANUAL_AUDIT.md](ACCESSIBILITY_MANUAL_AUDIT.md)
+> — a living doc with AT setup, per-surface test scripts (with expected results), an issue log, and a
+> coverage tracker. The list below is the short version.
 
 - [ ] **Keyboard-only walkthrough** of each surface: gallery listing, lightbox, campaign viewer, Admin
       Panel (all tabs), Settings, and the **LayoutBuilder** (the heaviest surface — drag/drop canvas,
