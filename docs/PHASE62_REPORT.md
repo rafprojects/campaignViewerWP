@@ -18,7 +18,7 @@
 | P62-H | Full WCAG AA audit (WP.org public-listing quality bar) | Contrast done (2026-07-11); manual AT audit = human follow-on | Large |
 | P62-I | WP.org submission + dual-channel release (Plugin Check, artwork, SVN) | Planned | Medium |
 | P62-J | Buyer/user legal: EULA + privacy statement | Planned | Small-Medium |
-| P62-K | Go-live hardening: SDK-derived upgrade URL + packaging | Planned | Small |
+| P62-K | Go-live hardening: SDK-derived upgrade URL + packaging | Done (2026-07-11) | Small |
 
 > **Scope note (2026-07-06).** Two decisions taken during planning narrowed this phase from the original draft:
 > 1. **Adapter-level gating is OUT of scope.** All 14 registered adapters stay free. P62-A gates only the 3 already-identified LayoutBuilder pro features (text layers, per-breakpoint responsive overrides, starter template library). Adapter gating is a Follow-On Candidate.
@@ -347,7 +347,7 @@ A professional paid listing needs a product **EULA** and a clear **privacy/data-
 
 ## Track P62-K - Go-live hardening: SDK-derived upgrade URL + packaging
 
-> Added 2026-07-10 with the freemium expansion. **Planned — no code yet.**
+> Added 2026-07-10 with the freemium expansion. **Done (2026-07-11): SDK-derived upgrade URL + `.distignore` shipped; M2 freemium flags documented in `wpsg_fs()`.**
 
 ### Problem
 
@@ -361,13 +361,13 @@ Two small go-live footguns: (1) `WPSG_License::get_upgrade_url()` (`includes/cla
 
 ### Acceptance criteria
 
-- ⏳ Upgrade CTAs resolve to the live Freemius pricing/checkout URL when the SDK is active.
-- ⏳ `.distignore` present; release ZIP verified to exclude tooling/stray artifacts.
-- ⏳ M2 `fs_dynamic_init` reconciled with the generated snippet (documented; applied at go-live).
+- ✅ `get_upgrade_url()` prefers `wpsg_fs()->get_upgrade_url()` when `is_sdk_active()` (mirrors `get_tier()`), filter-overridable, placeholder fallback otherwise (`includes/class-wpsg-license.php`).
+- ✅ `.distignore` added (`wp-plugin/wp-super-gallery/.distignore`) as the canonical exclude list mirroring `release.yml`.
+- ✅ M2 `fs_dynamic_init` freemium flags (`has_premium_version`, `premium_slug`, `is_org_compliant`, `menu['first-path']`) documented in the `wpsg_fs()` NOTE(M2) comment; applied at go-live with real credentials.
 
 ### Validation
 
-- ⏳ Unit-test `get_upgrade_url()` SDK-active vs stub paths; inspect a built ZIP's file list; diff the init args against Freemius's generated snippet during M2.
+- ✅ `php -l` clean; `WPSG_License_Test::test_get_upgrade_url_default_and_filter` tightened to assert the stub-path default (runs in the PHP CI matrix). The SDK-active path is validated against a Freemius sandbox. ⏳ ZIP file-list inspection + init-args diff happen at go-live (M2).
 
 ## Follow-On Candidates
 

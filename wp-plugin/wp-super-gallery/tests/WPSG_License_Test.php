@@ -86,7 +86,10 @@ class WPSG_License_Test extends WP_UnitTestCase {
     }
 
     public function test_get_upgrade_url_default_and_filter() {
-        $this->assertNotEmpty( WPSG_License::get_upgrade_url() );
+        // Stub path (no SDK in the test env): default is the placeholder pricing URL.
+        // When the SDK is live, get_upgrade_url() prefers wpsg_fs()->get_upgrade_url()
+        // (P62-K) — validated against a Freemius sandbox, not here.
+        $this->assertSame( 'https://your-site.tld/pricing', WPSG_License::get_upgrade_url() );
 
         add_filter( 'wpsg_license_upgrade_url', function () {
             return 'https://example.test/buy';

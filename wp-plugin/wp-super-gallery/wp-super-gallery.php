@@ -72,9 +72,12 @@ if (!function_exists('wpsg_fs')) {
         }
 
         // NOTE (M2): once the Freemius dashboard product exists, reconcile these
-        // defaults with the exact snippet Freemius generates for this product
-        // (menu slug, icon, is_premium bundle path, etc.). $config is merged
-        // last so real credentials always come from the filter, never hardcoded.
+        // defaults with the exact snippet Freemius generates for this product. For
+        // the freemium (WP.org "lite" + premium) model the generated snippet adds
+        // `has_premium_version => true`, a distinct `premium_slug`, and
+        // `is_org_compliant => true`, and sets a non-empty `menu['first-path']`
+        // (see docs/PHASE62_REPORT.md P62-K and guides/MARKETPLACE_READINESS.md §4).
+        // $config is merged last so real credentials always come from the filter.
         $wpsg_fs = fs_dynamic_init(array_merge([
             'id'             => '',
             'slug'           => 'wp-super-gallery',

@@ -101,10 +101,20 @@ final class WPSG_License {
     }
 
     /**
-     * Upgrade/pricing URL for upsell CTAs. Placeholder until real pricing exists
-     * (P62-C / M2-M3); filterable so the real URL can be injected outside the repo.
+     * Upgrade/pricing URL for upsell CTAs. When the Freemius SDK is live it defaults
+     * to Freemius's own pricing/checkout URL — so buyers reach real checkout even if
+     * the `wpsg_license_upgrade_url` filter is never set (P62-K); otherwise it falls
+     * back to the placeholder. The filter always overrides (P62-C / M2-M3). Mirrors
+     * the SDK-delegation pattern in get_tier().
      */
     public static function get_upgrade_url(): string {
-        return (string) apply_filters('wpsg_license_upgrade_url', 'https://your-site.tld/pricing');
+        $default = 'https://your-site.tld/pricing';
+        if (self::is_sdk_active() && method_exists(wpsg_fs(), 'get_upgrade_url')) {
+            $sdk_url = wpsg_fs()->get_upgrade_url();
+            if (is_string($sdk_url) && $sdk_url !== '') {
+                $default = $sdk_url;
+            }
+        }
+        return (string) apply_filters('wpsg_license_upgrade_url', $default);
     }
 }
