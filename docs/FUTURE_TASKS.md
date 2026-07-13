@@ -196,7 +196,20 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Accessibility
 
-Nothing yet.
+### Structural a11y (axe) gate — grow coverage + fix found issues
+
+**Origin:** [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H (component structural axe harness, 2026-07-11) — the automatable half of the structural work, deferred here after the harness landed.
+
+**Context:** A jsdom axe harness (`src/test/axe.ts` → `expectNoA11yViolations`) runs structural WCAG A/AA checks (roles/names/labels/ARIA; contrast excluded) in the blocking Vitest CI, and `test-utils` mirrors the app's global Mantine CloseButton `aria-label`. Two clean surfaces are gated (`ConfirmModal`, `LayoutBuilderLayersPanel`). Growing the gate is a living, component-by-component effort — the full backlog + the "how to add coverage" pattern are in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) ("structural a11y backlog"). Two parts:
+
+1. **Fix the concrete issues the harness already found in `LayoutTemplateList`:** (a) the icon-only view-toggle `SegmentedControl` segments have no accessible name (`label`, critical) — give each an i18n'd name (visually-hidden text or `aria-label`; requires the 5-locale i18n step); (b) the `role="button"` template `Card` nests a Menu button (`nested-interactive`, serious) — restructure so the primary action is a real button/link (e.g. on the title), not a button wrapping buttons.
+2. **Extend `expectNoA11yViolations` coverage** to the remaining high-value surfaces — the LayoutBuilder property panels (Slot/Text/Graphic/Mask/Background/Image), the modals (`GalleryConfigEditorModal`, `UnifiedCampaignModal`, campaign/admin modals), `AdminPanel`, `SettingsPanel`, and the gallery adapters — fixing what each surfaces (typically missing form labels or nested interactives).
+
+The **manual** assistive-tech audit ([guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md)) is the separate human half of P62-H.
+
+**Status:** harness + 2 gated surfaces done (P62-H); coverage growth + the `LayoutTemplateList` fixes deferred. **WCAG AA is a quality bar, not a hard WP.org submission gate**, so this can grow post-launch.
+
+**Effort:** Medium (ongoing/incremental; per-surface fixes often pull in the i18n pipeline or an interaction restructure) | **Impact:** Medium — raises the public-listing a11y bar and prevents structural-a11y regressions via CI.
 
 ---
 
@@ -445,6 +458,8 @@ When promoting future tasks to an active phase:
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
 
 *Updated: July 10, 2026 (P62 freemium expansion) — The distribution model expanded from premium-only to **freemium** (free WP.org "lite" build + premium via Freemius). Promoted **Full WCAG AA Audit** → [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H and **Store Listing Artwork** → P62-I and **removed both from the queue** (the Accessibility and Monetization & Distribution sections are now empty placeholders); the previously-deferred free WP.org "lite" tier is now **in scope** as P62-F–I (spike → code split → WCAG AA → WP.org submission).*
+
+*Updated: July 11, 2026 (P62-H) — Added Accessibility entry "Structural a11y (axe) gate — grow coverage + fix found issues", deferred from P62-H after the component axe harness landed (the automatable half; the manual AT audit is a separate human task). Concrete backlog seeded from the harness's first findings in `LayoutTemplateList`.*
 
 *Updated: June 30, 2026 (P59-A execution) — Added Builder entry "LayoutBuilder — Clickable / Linking CTA Text Layer", deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) per user direction — Phase 59 ships single-style, non-interactive text layers; the linking/CTA variant (href + accessible anchor rendering + URL control) is split off as a follow-on.*
 
