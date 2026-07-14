@@ -196,7 +196,7 @@ in `WPSG_Embed::page_config_js()` and the `WpsgLicenseInfo` type in `useWpsgLice
   `tests/WPSG_License_Test.php`, `tests/WPSG_Layout_Templates_Test.php`,
   `tests/WPSG_Import_Sanitization_Test.php`.
 - **JS:** set `window.__WPSG_CONFIG__.license = { isPro, tier, upgradeUrl }` before render and
-  `delete window.__WPSG_CONFIG__` in `afterEach`; assert `showProUpsell` was called with the
+  `delete window.__WPSG_CONFIG__` in `afterEach`; assert `showProUpsell` wa
   right key. See `src/hooks/useWpsgLicense.test.ts` and the `.test.tsx` beside each gated
   component.
 
@@ -350,9 +350,23 @@ Drop a dev-only must-use plugin to force the licensed state on the **premium** b
 add_filter( 'wpsg_license_is_pro', '__return_true' );
 ```
 
+`wp-content/mu-plugins/` is a path on the **target WordPress site**, not in this repo. For `wp-env`:
+that directory isn't mounted by default (only `"plugins"` in `.wp-env.json` is), so either:
+
+- add a `"mappings"` entry in `.wp-env.json` (e.g. `"wp-content/mu-plugins": "./.wp-env-mu-plugins"`)
+  pointing at a local folder containing this file, then `npx wp-env start`; or
+- write it straight into the running container for a one-off: `npx wp-env run cli bash -c
+  "mkdir -p wp-content/mu-plugins && cat > wp-content/mu-plugins/wpsg-fake-pro.php" <<'EOF'` /
+  paste the snippet / `EOF`.
+
 Remove it to see the unlicensed/upsell state. To unlock a single feature (per-tier testing) use the
 `wpsg_license_feature_enabled` filter (§4). On the **free** build these filters have no visible
 effect — the Pro UI isn't in the bundle to unlock.
+
+Note this filter only has an effect when no real Freemius credentials are configured (`WPSG_License::
+is_sdk_active()` is false) — it drives the dev/test stub path. Once a site has real credentials, entitlement
+is decided by `wpsg_fs()->can_use_premium_code()` (Freemius's own remote-validated check) and this filter
+is never consulted, so it cannot be used to fake a license on a live paid install.
 
 ### Deploy-testing workflows
 
