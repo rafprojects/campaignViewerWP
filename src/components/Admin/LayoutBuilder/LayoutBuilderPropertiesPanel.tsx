@@ -9,6 +9,7 @@ import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useWpsgLicense } from '@/hooks/useWpsgLicense';
 
 // P62-G: gate the Pro text editor behind the build flag so the free WP.org build
 // dead-code-eliminates TextPropertiesPanel (and its heavyweight TypographyEditor).
@@ -26,6 +27,7 @@ const ASPECT_PRESETS = [
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const { t } = useTranslation('wpsg');
+  const { isPro } = useWpsgLicense();
   const {
     builder,
     selectedSlot,
@@ -126,7 +128,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     return (
       <Box style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_text', 'TEXT LAYER')}</Text>
-        {__WPSG_PREMIUM__ && TextPropertiesPanel ? (
+        {__WPSG_PREMIUM__ && TextPropertiesPanel && isPro ? (
           <Suspense fallback={null}>
             <TextPropertiesPanel
               key={selectedText.id}
@@ -145,8 +147,12 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
             />
           </Suspense>
         ) : (
-          // P62-G: free WP.org build — the text editor is stripped. Existing text
-          // layers still render on the canvas; editing them is a Pro feature.
+          // Text-layer editing is a Pro feature. Two paths reach here:
+          //  • free WP.org build (__WPSG_PREMIUM__ false) — TextPropertiesPanel is
+          //    dead-code-eliminated entirely; existing text still renders on canvas.
+          //  • premium build, unlicensed runtime (!isPro) — we must NOT show a live
+          //    editor: the server freezes `texts` on save (enforce_license_gates),
+          //    so an editable panel would silently discard the user's edits (P62-A).
           <Text size="sm" c="dimmed" p="sm">
             {t('upsell_text_layers', 'Text layers are a Pro feature. Upgrade to add and edit text in your layouts.')}
           </Text>

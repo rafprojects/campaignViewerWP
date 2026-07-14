@@ -424,6 +424,29 @@ The branch held up well. The license/permission split is correctly orthogonal, t
 
 The root cause was a **process gap**, not a one-off: nothing caught a front-end string that lacks a `msgstr` in a reference locale, because `npm run i18n:check` only validates the en-JSON ↔ PHP-manifest sync. That gate is now implemented and CI-enforced — see **Track P62-E** below.
 
+## PR Review & Fix Pass — 2 (2026-07-14)
+
+A second review pass, this time over the **full** open PR (`#76`, `feat/phase62-monetization-licensing`, `main...HEAD`) — i.e. the whole phase as accumulated since the 2026-07-06 pass: P62-F–K (build-flag split, WCAG-AA contrast + structural axe harness, EULA/privacy, SDK-derived upgrade URL) plus the JSDOM-noise test fix. Combined a manual PR review with an inline `/code-review` pass (line-by-line, removed-behaviour, cross-file caller tracing, reuse/simplification/efficiency, altitude, CLAUDE.md-conventions). The PR had **no open review threads** (no Copilot/human comments), so the GitHub-comment collection/resolve steps were no-ops; commits/pushes were kept for the fix.
+
+### Verdict
+
+The phase held up well — the entitlement seam, build-flag DCE gating, server-side create-strip/update-freeze, and the well-isolated new PHP/TS test suites are all sound. Three findings; one fixed, two dispositioned without change:
+
+- **F1 (Medium) — fixed.** In the premium build the text **properties** editor was gated only by the `__WPSG_PREMIUM__` build flag, **not** the runtime `isPro` license. An unlicensed/expired premium user could select an existing text layer and edit it in a fully-live `TextPropertiesPanel`; on save the server `enforce_license_gates()` freeze silently reverts `texts` to the stored value, so the edit vanished on reload with **no upsell and no warning** — silent data loss, inconsistent with every sibling gate (add-text, breakpoints, starter library all check `isPro`).
+- **F2 (Low) — accepted by design.** `e2e/accessibility.spec.ts` now enforces `color-contrast` (a *serious*-impact rule that `criticalViolations` catches) across all 6 live flows. This is the intended P62-H tightening — the 18 themes were fixed to pass and token contrast is also gated deterministically by `packages/theme-engine/contrastAudit.test.ts` — so the expansion is deliberate, not a regression.
+- **F3 (Low) — refuted.** The default Freemius config bag looked duplicated between `wpsg_fs()` and `WPSG_License::get_config()`, but the duplication is forced by bootstrap ordering: `wpsg_fs()` is defined and self-invoked *before* `class-wpsg-license.php` is required, so it cannot delegate to the class. Already commented in-code.
+
+### Fix — F1 runtime gate (`LayoutBuilderPropertiesPanel.tsx`)
+
+- Added `useWpsgLicense()` and tightened the editor render condition to `__WPSG_PREMIUM__ && TextPropertiesPanel && isPro`; the unlicensed path now falls through to the existing dimmed `upsell_text_layers` message instead of a live editor. This aligns the premium-unlicensed path with the free-build path (both show the upsell) and removes the silent edit-loss surface.
+- Added a regression suite `LayoutBuilderPropertiesPanel.test.tsx` (2 tests): **licensed** renders the editor, **unlicensed** renders the upsell and never the editor — mirroring the existing Layers-panel gating test's isolation pattern (mocked dock context + stubbed heavy children).
+
+### QA — no regressions
+
+- ✅ **Vitest:** full suite green with the source fix — 3,678 tests / 240 files; plus the new 2-test regression suite green → **3,680 / 241** aggregate.
+- ✅ **ESLint** (changed file) **/ `tsc -b`:** clean.
+- ➖ **PHPUnit:** not re-run — this pass changed **no PHP**; the P62-A server-side gates and their suites (`WPSG_License_Test`, `WPSG_Layout_Templates_Test`, `WPSG_Import_Sanitization_Test`) are unchanged from the 2026-07-06 pass.
+
 ## Outcome
 
 **Engineering-complete; phase ship blocked on human M1–M4 (Freemius account/dashboard).** Track statuses validated against the codebase on 2026-07-06:
