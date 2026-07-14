@@ -14,7 +14,7 @@ import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEdit
 import { buildGradientCss } from '@wp-super-gallery/shared-utils';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { loadGoogleFontsFromOverrides } from '@wp-super-gallery/shared-utils';
-import { GOOGLE_FONT_NAMES } from '@/components/Common/TypographyEditor';
+import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
 import { notifications } from '@mantine/notifications';

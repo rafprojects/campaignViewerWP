@@ -148,10 +148,10 @@ Built with:
 ## 📝 Documentation
 
 - [README.md](./README.md) - Project overview
-- [CHANGELOG.md](./CHANGELOG.md) - Complete version history
+- [CHANGELOG.md](../../CHANGELOG.md) - Complete version history
 - [PHASE7_REPORT.md](../archive/phases/PHASE7_REPORT.md) - Phase 7 detailed report
 - [PHASE8_PLAN.md](./docs/PHASE8_PLAN.md) - Phase 8 roadmap
-- [FUTURE_TASKS.md](./docs/FUTURE_TASKS.md) - Enhancement backlog
+- [FUTURE_TASKS.md](../FUTURE_TASKS.md) - Enhancement backlog
 
 ---
 

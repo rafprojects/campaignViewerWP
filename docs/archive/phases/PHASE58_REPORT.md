@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](FUTURE_TASKS.md)) | Done | Small-Medium |
+| P58-A | Editor UX Polish — real `Ctrl+C`/`Ctrl+V` clipboard + per-slot opacity + nudge steps (align/distribute hotkeys split to [FUTURE_TASKS.md](../../FUTURE_TASKS.md)) | Done | Small-Medium |
 | P58-B | Responsive / per-breakpoint slot overrides (hide/move/resize per device) | Done | Medium-High |
 | P58-C | Starter template library — already shipped (P15-J); enhanced with rotated/split presets + faithful previews | Done | Small |
 | P58-D | Marquee multi-select on the canvas | Done | Small-Medium |
@@ -21,7 +21,7 @@
 
 The LayoutBuilder is mature — Phase 57 landed the last batch of design-tool affordances (saved swatches, eyedropper, layer search, persistent guides, slot rotation). What remains are the editor-parity gaps and net-new capabilities that turn it from "good" into a builder users would pay for.
 
-1. **What triggered it.** Three items sat in [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder after Phase 54's production-readiness review (Editor UX Polish, per-breakpoint responsive, text/caption layers), and a planning pass (2026-06-26) surfaced four net-new additions worth scheduling now. Text/caption layers is large enough to own [PHASE59_REPORT.md](PHASE59_REPORT.md); the rest land here.
+1. **What triggered it.** Three items sat in [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder after Phase 54's production-readiness review (Editor UX Polish, per-breakpoint responsive, text/caption layers), and a planning pass (2026-06-26) surfaced four net-new additions worth scheduling now. Text/caption layers is large enough to own [PHASE59_REPORT.md](PHASE59_REPORT.md); the rest land here.
 2. **Why it belongs together.** All six tracks extend the same surfaces — the `useLayoutBuilderState` schema, `LayoutCanvas`, and the `LayoutBuilderGallery` render path — on the cleaner base left by Phase 55's decomposition. Each is independently shippable and revertible.
 3. **Success.** Designers get true clipboard + keyboard parity with Figma, per-device control over slots, a fast start from curated templates, rubber-band selection, on-scroll entrance motion, and one-click grid scaffolding — each usable on its own.
 
@@ -35,7 +35,7 @@ The LayoutBuilder is mature — Phase 57 landed the last batch of design-tool af
 | B | Zoom/pan | **Excluded — already shipped.** `react-zoom-pan-pinch` drives canvas zoom/pan in `LayoutBuilderCanvasPanel.tsx` (keys `0`/`+`/`-`); not re-scoped here. |
 | C | Small polish items | **Per-slot opacity and Shift+arrow large-nudge folded into P58-A** rather than their own tracks — both are one-field/one-handler changes. |
 | D | Responsive sizing | **P58-B kept in this phase but flagged as the heavyweight;** if its schema/resolution work grows, split it to its own phase rather than bloating Phase 58. |
-| E | Pro gating | Per-breakpoint responsive (P58-B) and the starter library (P58-C) are **natural Pro-tier features** — note the gating seam for [PHASE62_REPORT.md](PHASE62_REPORT.md) but do not gate here. |
+| E | Pro gating | Per-breakpoint responsive (P58-B) and the starter library (P58-C) are **natural Pro-tier features** — note the gating seam for [PHASE62_REPORT.md](../../PHASE62_REPORT.md) but do not gate here. |
 
 ## Execution Priority
 
@@ -75,7 +75,7 @@ Two editor affordances stop short of design-tool parity. True clipboard **copy/p
 
 ### Implementation notes (2026-06-26)
 
-Shipped: real clipboard, per-slot opacity, and the three-tier nudge. **Align/distribute keyboard shortcuts were split off** to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder (binding scheme needs design — user direction); the rest landed.
+Shipped: real clipboard, per-slot opacity, and the three-tier nudge. **Align/distribute keyboard shortcuts were split off** to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder (binding scheme needs design — user direction); the rest landed.
 
 - **Clipboard** — `copySlots`/`pasteSlots` in `useLayoutBuilderState.ts`, backed by per-hook-instance `useRef`s (`clipboardRef`, `pasteCountRef`) so the buffer never leaks across builders; wired to `Ctrl+C`/`Ctrl+V` in `useLayoutBuilderKeyboardHandlers.ts` (gated on `!isPreview`). Copy deep-clones via `structuredClone` (captures nested `maskLayer`/`filterEffects`/`shadow`/`tilt`/`overlayEffect`); paste offsets `+3%` cumulatively per repeat and selects the new slots as one undo entry.
   - **Gotcha:** `mutate()` runs its recipe inside a deferred functional updater (`setTemplateRaw((prev) => produce(prev, recipe))`), so IDs generated *inside* the recipe aren't visible to the synchronous `setSelectedSlotIds` that follows. `pasteSlots` pre-builds clones + IDs *before* `mutate` (mirroring `addSlot`). Caught by a test asserting paste selects the new slots.
@@ -137,9 +137,9 @@ Manual QA after the initial ship surfaced several issues and UX gaps, fixed acro
 
 **Round 3 — Builder boundary guide (no-clip editing).** The breakpoint edit view originally *clipped* the canvas to the device width, hiding inherited slots positioned beyond that window and making them un-editable. Replaced the clip with a non-clipping model: edit mode shows the **full canvas** plus a centered, to-scale **device-width guide band** (390 mobile / 768 tablet) marking the breakpoint's visible area (`LayoutCanvas.tsx`). Added a breakpoint-aware `updateSlots` (so the align/distribute toolbar writes per-breakpoint overrides on tablet/mobile, not the base), a `fitRectsIntoBand` helper (`packages/shared-utils/src/alignSlots.ts`), and a **"Fit to viewport"** action that scales/centers the selection (or all slots) into the active breakpoint's band. *(This supersedes the "canvas is constrained to the breakpoint's reference width" behaviour described in the Builder-UI note above — the canvas is no longer clipped in edit mode.)*
 
-**Round 4 — Publish at the actual breakpoint + toolbar polish (2026-06-29).** The published gallery rendered the canvas at its design width and **left-aligned the scroll**, so a phone showed the *left edge* of the desktop canvas instead of the centered band the editor designed. Now, at tablet/mobile the gallery renders **only the centered device-width band, scaled to fill the container** — matching the builder's guide exactly. Implemented via a new pure helper `computeBreakpointBand` (`packages/shared-utils/src/breakpointViewport.ts`): the canvas renders at its design size inside an `overflow:hidden` window and is cropped + `transform: scale()`'d to the band. Slots stay percentages of the design canvas (no coordinate remap), so builder and gallery share one coordinate basis. Model (user-confirmed): **scale-to-fill** + a **full-height vertical slice** of the design canvas (per-breakpoint canvas aspect is out of scope — see [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder "Published Responsive Canvas Sizing"). Also: **"Fit to viewport"** now shows on desktop too (labelled "Fit to canvas" — pulls stray slots back into bounds), and the redundant **"Add Slot"** footer button was removed (slots are added via the Layers panel and canvas double-click).
+**Round 4 — Publish at the actual breakpoint + toolbar polish (2026-06-29).** The published gallery rendered the canvas at its design width and **left-aligned the scroll**, so a phone showed the *left edge* of the desktop canvas instead of the centered band the editor designed. Now, at tablet/mobile the gallery renders **only the centered device-width band, scaled to fill the container** — matching the builder's guide exactly. Implemented via a new pure helper `computeBreakpointBand` (`packages/shared-utils/src/breakpointViewport.ts`): the canvas renders at its design size inside an `overflow:hidden` window and is cropped + `transform: scale()`'d to the band. Slots stay percentages of the design canvas (no coordinate remap), so builder and gallery share one coordinate basis. Model (user-confirmed): **scale-to-fill** + a **full-height vertical slice** of the design canvas (per-breakpoint canvas aspect is out of scope — see [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder "Published Responsive Canvas Sizing"). Also: **"Fit to viewport"** now shows on desktop too (labelled "Fit to canvas" — pulls stray slots back into bounds), and the redundant **"Add Slot"** footer button was removed (slots are added via the Layers panel and canvas double-click).
 
-**Deferred from these rounds** (to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder): a better published responsive sizing model (the on-page left/right constraint and progressive-shrink across breakpoints), and a faithful builder Preview (align the Preview render with the published breakpoint model and surface runtime effects — glow, bounce, entrance, tilt — in Preview).
+**Deferred from these rounds** (to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder): a better published responsive sizing model (the on-page left/right constraint and progressive-shrink across breakpoints), and a faithful builder Preview (align the Preview render with the published breakpoint model and surface runtime effects — glow, bounce, entrance, tilt — in Preview).
 
 ## Track P58-C - Starter template library
 
@@ -267,9 +267,9 @@ Slots are added one at a time. Building a regular grid means repetitive manual p
 | Candidate | Why it is deferred |
 |-----------|--------------------|
 | Split P58-B to its own phase | Only if the per-breakpoint schema/resolution work grows beyond a single track during execution. |
-| History persistence across sessions | Promoted to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder (per user direction). |
-| Reusable "symbol" / linked-component slots | Promoted to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder. |
-| Slot constraints / pinning (anchor-to-edge) | Promoted to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder; a deeper responsive model complementing P58-B. |
+| History persistence across sessions | Promoted to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder (per user direction). |
+| Reusable "symbol" / linked-component slots | Promoted to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder. |
+| Slot constraints / pinning (anchor-to-edge) | Promoted to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder; a deeper responsive model complementing P58-B. |
 
 ## Implementation Notes
 
@@ -281,5 +281,5 @@ _Updated 2026-06-26 — all six tracks shipped. Updated 2026-06-29 — P58-B pos
 
 - **What shipped.** P58-A (clipboard, per-slot opacity, three-tier nudge), P58-D (marquee multi-select), P58-F (auto-grid generator), P58-C (already delivered in P15-J; enhanced with rotated/split presets + faithful previews), P58-E (scroll-reveal entrance animations with full per-slot controls), and P58-B (responsive / per-breakpoint slot overrides — schema v2, breakpoint editing UI, gallery resolution). Plus a fix for a pre-existing `duplicateSlots` selection bug found along the way.
 - **P58-B post-ship.** Four follow-up rounds (see Track P58-B › Post-ship fixes): the 8-issue round (B-4 PHP persistence drift was the headline), the F-1/F-2/F-3 round, the builder boundary-guide (no-clip editing + device-width band), and the publish-at-breakpoint round (centered band scaled-to-fill via `computeBreakpointBand`, desktop "Fit to canvas", removed "Add Slot").
-- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder pending a binding-scheme design. From the P58-B post-ship work: a better published responsive sizing model and a faithful builder Preview (with runtime effects), both in [FUTURE_TASKS.md](FUTURE_TASKS.md) › Builder.
+- **What was deferred.** The align/distribute keyboard shortcuts (originally folded into P58-A) were split to [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder pending a binding-scheme design. From the P58-B post-ship work: a better published responsive sizing model and a faithful builder Preview (with runtime effects), both in [FUTURE_TASKS.md](../../FUTURE_TASKS.md) › Builder.
 - **What should happen next.** Manual QA of all tracks via the `see-wp` flow is recommended, especially P58-B's responsive editing UX. The align/distribute hotkeys can be picked up when a conflict-free binding is chosen.

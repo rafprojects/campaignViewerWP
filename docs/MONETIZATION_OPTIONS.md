@@ -1,8 +1,8 @@
 # Monetization & Distribution Options
 
 > **Created:** 2026-06-17
-> **Purpose:** Decision-support for taking wp-super-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](PHASE54_REPORT.md) anchored to this codebase.
-> **Status:** Reference. No path is chosen yet; PHASE54's must-fix bar is kept target-independent so this decision can be made later without invalidating that work.
+> **Purpose:** Decision-support for taking wp-super-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) anchored to this codebase.
+> **Status:** Reference. *(Update 2026-07-06: the path is now **chosen** — **Freemius premium** is the decision of record; see PHASE60 / [PHASE62_REPORT.md](PHASE62_REPORT.md) Key Decision A, and the go-live runbook [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md). This doc is retained for the option analysis behind that choice.)* PHASE54's must-fix bar was kept target-independent so the decision could be made later without invalidating that work.
 > **Tone:** Honest engineering assessment, not marketing. Every LOE claim ties to a concrete file/seam in the repo.
 
 ---
@@ -112,14 +112,16 @@ What each path needs **on top of** PHASE54, with the concrete artifacts involved
 ## 7. Recommended sequencing
 
 1. **Validate (now → post-PHASE54): private / client sales.** Lowest bar, fastest cash, real signal on willingness to pay. Requires nothing beyond PHASE54.
-2. **Monetize: premium via Freemius.** Once there's demand, add the gating flag at the adapter registry + `WPSG_Permissions` seams and the Freemius SDK. Subscription + tiered-by-site-count pricing. Avoids building/hosting licensing + update + tax infrastructure.
-3. **Scale reach (optional, later): free WP.org "lite" tier.** A freemium free-core on .org becomes the top-of-funnel for the Freemius-licensed pro plugin. This is the step that requires the full admin i18n + Plugin Check + WCAG AA work — defer it until the pro tier proves the product.
+2. **Monetize: premium via Freemius.** Once there's demand, add the gating flag at the adapter registry + `WPSG_Permissions` seams and the Freemius SDK. Subscription + tiered-by-site-count pricing. Avoids building/hosting licensing + update + tax infrastructure. *(Superseded by Phase 62: gating went through a new `WPSG_License` entitlement seam — deliberately orthogonal to `WPSG_Permissions` — and all 14 adapters stayed free; the 3 gated features are LayoutBuilder capabilities. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).)*
+3. **Scale reach: free WP.org "lite" tier.** A freemium free-core on .org becomes the top-of-funnel for the Freemius-licensed pro plugin. This is the step that requires the free/paid code split + Plugin Check + WCAG AA work. *(Updated 2026-07-10: this is **no longer "defer until the pro tier proves out"** — the owner has chosen freemium, so the WP.org "lite" tier is **in scope** and tracked in [PHASE62_REPORT.md](PHASE62_REPORT.md) as **P62-F–I**. Sequencing recommendation stands: ship premium first, add the free WP.org tier afterwards, so the Large code-split/WCAG work and the ~1–10 day WP.org review stay off the paid-launch critical path — see [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md) §10.)*
 
-**Decision triggers to move between stages:** repeated inbound "can I buy this?" → stage 2; pro renewals healthy and support load manageable → stage 3. If none of that materializes, stopping at stage 1 (or internal/single-site) is a perfectly valid end state.
+**Decision triggers to move between stages:** repeated inbound "can I buy this?" → stage 2; pro renewals healthy and support load manageable → stage 3 (**now planned regardless**, per the 2026-07-10 freemium decision). If demand never materializes, stopping at stage 1 (or internal/single-site) is a perfectly valid end state.
 
 ---
 
 ## Cross-references
 
-- [PHASE54_REPORT.md](PHASE54_REPORT.md) — the must-fix floor for every path here.
+- [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) — the must-fix floor for every path here.
 - [FUTURE_TASKS.md](FUTURE_TASKS.md) — full admin i18n, full WCAG AA, standalone-SPA/JWT (the SaaS prerequisite), and the gating-candidate enhancements.
+- [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md) — the owner go-live runbook (M1–M4, pricing, pro-testing) for the chosen Freemius-premium path.
+- [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md) — the free/pro boundary decisions and how to add new pro features.

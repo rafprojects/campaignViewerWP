@@ -44,8 +44,8 @@ import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shar
 import { computeBreakpointBand } from '@wp-super-gallery/shared-utils';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
-import { GraphicLayerContent } from '@/components/Admin/LayoutBuilder/GraphicLayerContent';
-import { TextLayerContent } from '@/components/Admin/LayoutBuilder/TextLayerContent';
+import { GraphicLayerContent } from './GraphicLayerContent';
+import { TextLayerContent } from './TextLayerContent';
 import { useViewportHeight } from '@wp-super-gallery/shared-utils';
 import { sanitizeCssUrl, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

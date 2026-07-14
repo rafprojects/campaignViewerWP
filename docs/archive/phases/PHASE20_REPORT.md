@@ -151,7 +151,7 @@
 
 ## Rationale
 
-Phase 19 completed the builder power-tools sprint (keyboard shortcuts, undo/redo hardening, WP-CLI, pre-commit toolchain, coverage recovery to 65 %). A comprehensive production readiness evaluation (see [PRODUCTION_READINESS_EVALUATION.md](../PRODUCTION_READINESS_EVALUATION.md)) then identified 2 CRITICAL, 7 HIGH, 12 MEDIUM, and 15+ LOW findings across security, reliability, performance, and distribution readiness. Phase 20 addresses them systematically:
+Phase 19 completed the builder power-tools sprint (keyboard shortcuts, undo/redo hardening, WP-CLI, pre-commit toolchain, coverage recovery to 65 %). A comprehensive production readiness evaluation (see [PRODUCTION_READINESS_EVALUATION.md](PRODUCTION_READINESS_EVALUATION.md)) then identified 2 CRITICAL, 7 HIGH, 12 MEDIUM, and 15+ LOW findings across security, reliability, performance, and distribution readiness. Phase 20 addresses them systematically:
 
 **1 — Public endpoints have no default rate limiting.** `apply_filters('wpsg_rate_limit_public', 0)` means the plugin ships with rate limiting effectively disabled. Any automated script can exhaust server resources. This is a CRITICAL fix requiring a single line change plus sensible defaults.
 
@@ -179,8 +179,8 @@ Phase 19 completed the builder power-tools sprint (keyboard shortcuts, undo/redo
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| A | JWT auth hardening (A-1 from action items) | **Option 1 — Drop JWT for same-origin, WP nonce-only.** Comment out (not delete) JWT code paths for future standalone SPA use; gate behind `WPSG_ENABLE_JWT_AUTH` constant. Option 2 (in-memory tokens + refresh cookie) recorded in [FUTURE_TASKS.md](../FUTURE_TASKS.md) for the non-WP-plugin version. See [JWT_AUTH_ANALYSIS.md](../JWT_AUTH_ANALYSIS.md). |
-| B | SVG upload handling (A-3 from action items) | **Option 2 — Server-side sanitization via `enshrined/svg-sanitize` + client-side DOMPurify dual layer.** Custom CSS sanitization within SVG `<style>` blocks (allowlist-based URI validation). Frontend renders SVGs as `<img>`. See [SVG_UPLOAD_ANALYSIS.md](../SVG_UPLOAD_ANALYSIS.md). |
+| A | JWT auth hardening (A-1 from action items) | **Option 1 — Drop JWT for same-origin, WP nonce-only.** Comment out (not delete) JWT code paths for future standalone SPA use; gate behind `WPSG_ENABLE_JWT_AUTH` constant. Option 2 (in-memory tokens + refresh cookie) recorded in [FUTURE_TASKS.md](../../FUTURE_TASKS.md) for the non-WP-plugin version. See [JWT_AUTH_ANALYSIS.md](../reviews/JWT_AUTH_ANALYSIS.md). |
+| B | SVG upload handling (A-3 from action items) | **Option 2 — Server-side sanitization via `enshrined/svg-sanitize` + client-side DOMPurify dual layer.** Custom CSS sanitization within SVG `<style>` blocks (allowlist-based URI validation). Frontend renders SVGs as `<img>`. See [SVG_UPLOAD_ANALYSIS.md](../reviews/SVG_UPLOAD_ANALYSIS.md). |
 | C | Phase execution order | Security-critical fixes first (P20-A through P20-D), then infrastructure (P20-E through P20-G), then hardening (P20-H), then performance and distribution (P20-I, P20-J). |
 | D | CI platform | GitHub Actions (not CircleCI). The existing `.circleci/config.yml` will be archived, not deleted, until the migration is validated. |
 | E | Rate limit default value | 60 requests/minute/IP for public endpoints; 120/minute for authenticated endpoints. Configurable via `wpsg_rate_limit_public` and `wpsg_rate_limit_authenticated` filters. |
@@ -1062,7 +1062,7 @@ Grant these capabilities to `administrator` and `wpsg_admin` roles on plugin act
 
 **Status:** Not started  
 **Priority:** 🔴 Critical — ship-blocking  
-**Origin:** Action item A-1; decision: Option 1 (see [JWT_AUTH_ANALYSIS.md](../JWT_AUTH_ANALYSIS.md))  
+**Origin:** Action item A-1; decision: Option 1 (see [JWT_AUTH_ANALYSIS.md](../reviews/JWT_AUTH_ANALYSIS.md))  
 **Effort:** Small–Medium (1–2 days)
 
 ### Problem
@@ -1073,7 +1073,7 @@ JWT tokens are stored in `localStorage` (`wpsg_access_token`, `wpsg_user`, `wpsg
 
 1. **Default path (same-origin):** Remove JWT from the auth flow entirely. Rely on WP login cookie (`httpOnly`) + `X-WP-Nonce` from `__WPSG_CONFIG__.restNonce`. No tokens in `localStorage`.
 2. **Opt-in path (cross-origin/headless):** Gate behind `define('WPSG_ENABLE_JWT_AUTH', true)` in `wp-config.php`. When enabled, `WpJwtProvider` is instantiated and the login form appears.
-3. **Code preservation:** Comment out (not delete) JWT code blocks with `// [WPSG_JWT_DISABLED] — Preserved for future standalone SPA use. Enable via WPSG_ENABLE_JWT_AUTH constant.` tags. This preserves the framework for Option 2 (in-memory tokens + refresh cookie) documented in [FUTURE_TASKS.md](../FUTURE_TASKS.md).
+3. **Code preservation:** Comment out (not delete) JWT code blocks with `// [WPSG_JWT_DISABLED] — Preserved for future standalone SPA use. Enable via WPSG_ENABLE_JWT_AUTH constant.` tags. This preserves the framework for Option 2 (in-memory tokens + refresh cookie) documented in [FUTURE_TASKS.md](../../FUTURE_TASKS.md).
 
 ### Tasks
 
@@ -1147,7 +1147,7 @@ JWT tokens are stored in `localStorage` (`wpsg_access_token`, `wpsg_user`, `wpsg
 
 **Status:** ✅ Complete  
 **Priority:** 🔴 High — ship-blocking  
-**Origin:** Action item A-3; decision: Option 2 with enhancements (see [SVG_UPLOAD_ANALYSIS.md](../SVG_UPLOAD_ANALYSIS.md))  
+**Origin:** Action item A-3; decision: Option 2 with enhancements (see [SVG_UPLOAD_ANALYSIS.md](../reviews/SVG_UPLOAD_ANALYSIS.md))  
 **Effort:** Medium (3–5 hours)
 
 ### Problem
@@ -1218,7 +1218,7 @@ The `enshrined/svg-sanitize` library parses the SVG as strict XML, strips danger
 - [ ] DOMPurify sanitizes SVG content at both upload-preview and render-time in the frontend
 - [ ] All overlay render paths use `<img>` tags (not inline SVG)
 - [ ] SVGs served from `wpsg-overlays/` include `Content-Security-Policy: script-src 'none'` response header
-- [ ] PHPUnit tests cover all attack vectors listed in [SVG_UPLOAD_ANALYSIS.md](../SVG_UPLOAD_ANALYSIS.md) §1
+- [ ] PHPUnit tests cover all attack vectors listed in [SVG_UPLOAD_ANALYSIS.md](../reviews/SVG_UPLOAD_ANALYSIS.md) §1
 - [ ] Vitest tests verify DOMPurify integration at both touchpoints
 
 ---

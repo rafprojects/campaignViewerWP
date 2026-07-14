@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '../../test/test-utils';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { ApiError } from '@/services/apiClient';
@@ -9,8 +9,16 @@ vi.mock('./LayoutBuilder/LayoutBuilderModal', () => ({
     opened ? <div data-testid="layout-builder-modal"><button onClick={onClose}>Close Builder</button></div> : null,
 }));
 
+// Rendered only when presetGalleryOpen is true, so its presence == "opened".
 vi.mock('./LayoutBuilder/PresetGalleryModal', () => ({
-  PresetGalleryModal: () => null,
+  PresetGalleryModal: () => <div data-testid="preset-gallery-modal" />,
+}));
+
+// Spy on the shared pro-upsell helper so gating is observable without a
+// Notifications provider.
+const showProUpsell = vi.fn();
+vi.mock('@/utils/wpsgUpsell', () => ({
+  showProUpsell: (...args: unknown[]) => showProUpsell(...args),
 }));
 
 const mockTemplate = {
@@ -165,6 +173,38 @@ describe('LayoutTemplateList', () => {
     fireEvent.click(editBtn);
 
     expect(await screen.findByTestId('layout-builder-modal')).toBeInTheDocument();
+  });
+
+  // ── P62-A: starter template library is a Pro feature ──────────────────────
+
+  describe('starter library pro gate', () => {
+    afterEach(() => {
+      showProUpsell.mockClear();
+      delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    });
+
+    it('unlicensed: "From Preset" shows upsell and does not open the gallery', async () => {
+      delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+      render(<LayoutTemplateList apiClient={makeApiClient()} onNotify={vi.fn()} />);
+      await screen.findByText('My Template');
+
+      fireEvent.click(screen.getByRole('button', { name: /from preset/i }));
+
+      expect(showProUpsell).toHaveBeenCalledTimes(1);
+      expect(showProUpsell).toHaveBeenCalledWith('upsell_starter_library', expect.any(String), expect.any(String));
+      expect(screen.queryByTestId('preset-gallery-modal')).not.toBeInTheDocument();
+    });
+
+    it('licensed: "From Preset" opens the gallery and does not upsell', async () => {
+      window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+      render(<LayoutTemplateList apiClient={makeApiClient()} onNotify={vi.fn()} />);
+      await screen.findByText('My Template');
+
+      fireEvent.click(screen.getByRole('button', { name: /from preset/i }));
+
+      expect(showProUpsell).not.toHaveBeenCalled();
+      expect(await screen.findByTestId('preset-gallery-modal')).toBeInTheDocument();
+    });
   });
 
   it('shows empty state when search has no match', async () => {

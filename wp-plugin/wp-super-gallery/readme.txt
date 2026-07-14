@@ -17,7 +17,7 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 **Key features:**
 
 * **Shadow DOM rendering** — galleries embed on any page without CSS conflicts.
-* **Visual layout builder** — drag-and-drop grid editor with layer support (masks, overlays, backgrounds, text).
+* **Visual layout builder** — drag-and-drop grid editor with layer support (masks, overlays, backgrounds).
 * **Multiple tile adapters** — classic grid, masonry, justified, hexagonal, circular, diamond, and compact-grid layouts.
 * **Campaign management** — create, schedule, and organise media campaigns with tagging and access controls.
 * **oEmbed proxy** — embed external media via a built-in oEmbed proxy with provider allowlist and SSRF protection.
@@ -27,6 +27,16 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 * **Design assets** — SVG overlay library with drag-and-drop, upload sanitization, and .htaccess hardening.
 * **Image optimisation** — automatic resize, compression, and optional WebP conversion on upload.
 * **Extensible** — hooks, filters, and a REST API for custom integrations.
+
+**WP Super Gallery Pro (optional upgrade):**
+
+Everything above is free and fully functional. A Pro license (sold via Freemius) unlocks three advanced LayoutBuilder authoring capabilities:
+
+* **Text layers** — add and edit rich text layers on a layout.
+* **Per-breakpoint responsive editing** — fine-tune slot position and size independently for tablet and mobile.
+* **Starter template library** — start a layout from a curated preset instead of a blank canvas.
+
+Layouts that already use these features keep rendering on the free plugin — a lapsed or absent license never breaks or deletes saved content. See the FAQ below for activation.
 
 == Installation ==
 
@@ -64,6 +74,14 @@ SVG files are sanitised on upload using a dual-layer approach: the `enshrined/sv
 = What data does the plugin collect? Is it GDPR-friendly? =
 
 By default the plugin sends **nothing** to any external service — no telemetry or phone-home. It can store two kinds of personal data, both **off by default**: pseudonymised visitor counts if you enable Analytics (the raw IP is never stored — only a salted SHA-256 hash), and requester email addresses if you enable access requests for private campaigns. WordPress login cookies handle authentication; the plugin sets no tracking cookies of its own. See the bundled privacy statement (`docs/PRIVACY.md`) for the full data inventory, retention behaviour, and how to fulfil data-subject requests.
+
+= How do I activate my Pro license? =
+
+After purchasing, enter your license key on the plugin's licensing screen (added by the Freemius SDK) to unlock the Pro features — advanced LayoutBuilder capabilities such as text layers, per-breakpoint responsive editing, and the starter template library. Deactivating a license re-locks *new* Pro edits but never removes or breaks content you already saved. Step-by-step instructions are in `docs/guides/LICENSE_ACTIVATION.md`. For activation problems, contact support at [PLACEHOLDER: support email, e.g. support@yourdomain.tld].
+
+= What is your refund policy? =
+
+[PLACEHOLDER: refund policy — e.g. "We offer a 14-day money-back guarantee. If the plugin doesn't work for you, contact [PLACEHOLDER: support email] within 14 days of purchase for a full refund."] Refunds are processed through Freemius, our merchant of record.
 
 == Screenshots ==
 

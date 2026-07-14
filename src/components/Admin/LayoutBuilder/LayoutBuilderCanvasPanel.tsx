@@ -16,6 +16,8 @@ import { CanvasTransformContext, useRootId } from '@wp-super-gallery/shared-ui';
 import { SNAP_MODE_LABELS, type SnapMode } from '@wp-super-gallery/shared-utils';
 import { safeLocalStorage, fitRectsIntoBand } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { showProUpsell } from '@/utils/wpsgUpsell';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 
@@ -112,6 +114,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   } = useBuilderDock();
 
   const { t: tr } = useTranslation('wpsg');
+  const { isPro, upgradeUrl } = useWpsgLicense();
   const presetSegmentedData = PRESET_SEGMENTED_DATA.map(({ value, label }) => ({ value, label: tr(`lb_canvas_preset_${value}`, label) }));
   const breakpointEditData = BREAKPOINT_EDIT_DATA.map(({ value, label }) => ({ value, label: tr(`admin_bp_${value}`, label) }));
 
@@ -603,35 +606,59 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
               <Divider orientation="vertical" />
 
               {/* ── P58-B: Breakpoint edit mode ─────────────────── */}
-              <Group gap={6} wrap="nowrap" align="center">
-                <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_breakpoint', 'Breakpoint:')}</Text>
-                <SegmentedControl
-                  data={breakpointEditData}
-                  value={builder.activeBreakpoint}
-                  onChange={(v) => builder.setActiveBreakpoint(v as ResponsiveBreakpoint)}
-                  size="xs"
-                  aria-label={tr('lb_canvas_bp_edit_aria', 'Breakpoint edit mode')}
-                  data-testid="breakpoint-edit-selector"
-                />
-                <Tooltip
-                  label={
-                    breakpointViewportPx
-                      ? tr('lb_canvas_fit_vp_tt', "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only")
-                      : tr('lb_canvas_fit_cv_tt', 'Move/scale the selected slots (or all slots) back inside the canvas bounds')
-                  }
-                >
-                  <Button
-                    size="xs"
-                    variant="light"
-                    onClick={handleFitToViewport}
-                    aria-label={breakpointViewportPx ? tr('lb_canvas_fit_slots_vp', 'Fit slots to viewport') : tr('lb_canvas_fit_slots_cv', 'Fit slots to canvas')}
-                    data-testid="fit-to-viewport"
-                  >
-                    {breakpointViewportPx ? tr('lb_canvas_fit_viewport', 'Fit to viewport') : tr('lb_canvas_fit_canvas', 'Fit to canvas')}
-                  </Button>
-                </Tooltip>
-              </Group>
-              <Divider orientation="vertical" />
+              {/* P62-G: per-breakpoint editing is Pro — the whole switcher (and its
+                  trailing divider) is absent from the free WP.org build, so free users
+                  edit desktop only. Saved tablet/mobile overrides still render in
+                  preview/published via the renderer. In premium the runtime isPro check
+                  still upsells expired/unlicensed installs. */}
+              {__WPSG_PREMIUM__ && (
+                <>
+                  <Group gap={6} wrap="nowrap" align="center">
+                    <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_breakpoint', 'Breakpoint:')}</Text>
+                    <SegmentedControl
+                      data={breakpointEditData}
+                      value={builder.activeBreakpoint}
+                      onChange={(v) => {
+                        // P62-A: per-breakpoint overrides are a Pro feature. Gate
+                        // the edit-mode switch itself (every override mutation
+                        // happens while activeBreakpoint !== 'desktop'). `desktop`
+                        // stays free; rendering saved tablet/mobile overrides in
+                        // preview is never gated.
+                        if (!isPro && v !== 'desktop') {
+                          showProUpsell(
+                            'upsell_breakpoints',
+                            'Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts.',
+                            upgradeUrl,
+                          );
+                          return;
+                        }
+                        builder.setActiveBreakpoint(v as ResponsiveBreakpoint);
+                      }}
+                      size="xs"
+                      aria-label={tr('lb_canvas_bp_edit_aria', 'Breakpoint edit mode')}
+                      data-testid="breakpoint-edit-selector"
+                    />
+                    <Tooltip
+                      label={
+                        breakpointViewportPx
+                          ? tr('lb_canvas_fit_vp_tt', "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only")
+                          : tr('lb_canvas_fit_cv_tt', 'Move/scale the selected slots (or all slots) back inside the canvas bounds')
+                      }
+                    >
+                      <Button
+                        size="xs"
+                        variant="light"
+                        onClick={handleFitToViewport}
+                        aria-label={breakpointViewportPx ? tr('lb_canvas_fit_slots_vp', 'Fit slots to viewport') : tr('lb_canvas_fit_slots_cv', 'Fit slots to canvas')}
+                        data-testid="fit-to-viewport"
+                      >
+                        {breakpointViewportPx ? tr('lb_canvas_fit_viewport', 'Fit to viewport') : tr('lb_canvas_fit_canvas', 'Fit to canvas')}
+                      </Button>
+                    </Tooltip>
+                  </Group>
+                  <Divider orientation="vertical" />
+                </>
+              )}
 
               <Switch
                 label={tr('lb_canvas_indices', 'Indices')}

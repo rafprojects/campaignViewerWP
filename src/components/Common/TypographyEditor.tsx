@@ -22,6 +22,7 @@ import {
 } from '@wp-super-gallery/shared-utils';
 import { useRecentFonts } from '@wp-super-gallery/shared-utils';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
+import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface CustomFontEntry {
@@ -38,23 +39,8 @@ interface TypographyEditorProps {
   customFonts?: CustomFontEntry[];
 }
 
-/** Names that need to be loaded from Google Fonts CDN. */
-export const GOOGLE_FONT_NAMES: ReadonlySet<string> = new Set([
-  // Sans-serif
-  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Poppins',
-  'Oswald', 'Raleway', 'Nunito', 'Source Sans 3', 'PT Sans', 'Noto Sans',
-  'Work Sans', 'Quicksand', 'Barlow', 'Cabin', 'DM Sans', 'Fira Sans',
-  'Karla', 'Mulish', 'Rubik', 'Ubuntu', 'Josefin Sans', 'Manrope',
-  'Plus Jakarta Sans', 'Outfit',
-  // Serif
-  'Playfair Display', 'Merriweather', 'Libre Baskerville', 'Crimson Text',
-  'EB Garamond', 'Bitter', 'Cormorant Garamond', 'Lora', 'PT Serif',
-  'Noto Serif',
-  // Display / Handwriting
-  'Dancing Script', 'Pacifico', 'Lobster', 'Caveat', 'Satisfy',
-  // Monospace
-  'Fira Code', 'JetBrains Mono', 'Source Code Pro',
-]);
+// GOOGLE_FONT_NAMES lives in `@/data/googleFontNames` (extracted in P62-G so the layer
+// renderers and public viewers can use it without importing this authoring component).
 
 /* ── System fonts — always available, no CDN dependency ──────────────── */
 const SYSTEM_FONT_OPTIONS = [

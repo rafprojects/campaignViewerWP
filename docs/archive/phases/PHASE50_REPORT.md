@@ -624,7 +624,7 @@ Add a compact menu bar row inside `LayoutBuilderModal` between the History butto
 
 ### Problem
 
-While testing P50-B, the "Overlay section" appeared to be missing from the Layout Builder's Media & Assets panel. It actually exists — buried inside the collapsed **Design Assets** accordion → **Graphic Layers** sub-section ([LayoutBuilderMediaPanel.tsx:65-98](src/components/Admin/LayoutBuilder/LayoutBuilderMediaPanel.tsx#L65-L98)) — and is mislabeled. Three related gaps compound the discoverability problem:
+While testing P50-B, the "Overlay section" appeared to be missing from the Layout Builder's Media & Assets panel. It actually exists — buried inside the collapsed **Design Assets** accordion → **Graphic Layers** sub-section ([LayoutBuilderMediaPanel.tsx:65-98](../../../src/components/Admin/LayoutBuilder/LayoutBuilderMediaPanel.tsx#L65-L98)) — and is mislabeled. Three related gaps compound the discoverability problem:
 
 1. **No general / decorative media bucket (apparently).** Users want to add non-campaign, decorative images to a layout. In fact the overlay library *is* exactly that bucket (global, campaign-agnostic, placed as free-floating canvas layers via `builder.addOverlay`, per-space isolated by P50-B) — it is just hidden and named "overlay".
 2. **No transparency / file-type cues.** A user can't tell a transparent PNG from an opaque JPG in the grid, nor differentiate formats.

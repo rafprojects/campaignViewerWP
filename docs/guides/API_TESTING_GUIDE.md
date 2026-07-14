@@ -250,7 +250,7 @@ QA Checklist / Test cases (high level)
 - Analytics flow: enable analytics in settings, send `analytics/event`, then fetch `analytics/campaigns/{id}` to confirm counts.
 
 Where to look in the repo
-- Route registrations & server behavior: [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
+- Route registrations & server behavior: [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
 - Client usage/examples: `src/services/apiClient.ts`, `src/services/adminQuery.ts`, `src/contexts/AuthContext.tsx` and admin SPA builds under `wp-plugin/wp-super-gallery/admin/build/assets`.
 
 If you want, I can:

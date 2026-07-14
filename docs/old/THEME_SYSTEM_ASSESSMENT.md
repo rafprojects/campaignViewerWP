@@ -15,7 +15,7 @@ This document evaluates the feasibility of a theme system that allows admins to 
 ### Option A — Theme JSON + Mantine theme adapter (recommended)
 - Store themes as JSON (name, palette, radii, typography, spacing, shadows).
 - At runtime, load the selected theme and adapt it to a Mantine `theme` object.
-- Apply to `MantineProvider` in [src/main.tsx](../src/main.tsx).
+- Apply to `MantineProvider` in [src/main.tsx](../../src/main.tsx).
 
 **Pros:**
 - Simple to author new themes.
@@ -69,7 +69,7 @@ Once WP integration is ready, expose a setting:
 3. **Theme adapter**
    - Convert theme JSON to Mantine theme (or CSS variables + Mantine binding).
 4. **Apply to MantineProvider**
-   - Update [src/main.tsx](../src/main.tsx) to load and apply selected theme.
+   - Update [src/main.tsx](../../src/main.tsx) to load and apply selected theme.
 5. **Shadow DOM support**
    - Ensure CSS variable sets apply inside shadow root.
 6. **Validation and fallback**

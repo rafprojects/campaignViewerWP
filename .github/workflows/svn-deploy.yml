@@ -29,6 +29,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # ── P62-G guard ─────────────────────────────────────────────────────────
+      # WordPress.org must receive the FREE ("lite") build, but this workflow still
+      # downloads the PREMIUM release ZIP (wp-super-gallery-v*.zip from release.yml),
+      # which contains Pro code WordPress.org disallows — deploying it would leak
+      # locked functionality. Wiring a dedicated free ZIP (npm run build:wp:free) into
+      # the release and this deploy is tracked in P62-I. Until then this workflow is
+      # intentionally blocked; remove this guard as part of P62-I.
+      - name: Guard — free build required for WordPress.org (P62-G)
+        run: |
+          echo "::error::SVN Deploy is disabled: it would push the PREMIUM build (Pro code) to WordPress.org, which is not allowed. Wire the free 'lite' build (npm run build:wp:free) first — see P62-I."
+          exit 1
+
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0

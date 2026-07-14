@@ -2730,5 +2730,10 @@
   "cv_config_save": "Save Campaign Gallery Config",
   "cv_config_clear": "Preview Inherited Gallery Settings",
   "cv_unified_desc": "Adapter applied when this campaign renders images and videos together.",
-  "admin_sort_label": "Sort campaigns"
+  "admin_sort_label": "Sort campaigns",
+  "upsell_pro_title": "Pro feature",
+  "upsell_cta": "Upgrade",
+  "upsell_text_layers": "Text layers are a Pro feature. Upgrade to add and edit text in your layouts.",
+  "upsell_breakpoints": "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts.",
+  "upsell_starter_library": "The starter template library is a Pro feature. Upgrade to start from a curated preset."
 }

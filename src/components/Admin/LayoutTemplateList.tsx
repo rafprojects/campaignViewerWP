@@ -45,9 +45,14 @@ import type { LayoutTemplate } from '@/types';
 const LayoutBuilderModal = lazy(() =>
   import('./LayoutBuilder/LayoutBuilderModal').then((m) => ({ default: m.LayoutBuilderModal }))
 );
-const PresetGalleryModal = lazy(() =>
-  import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
-);
+// P62-F: gate the Pro starter-library chunk behind the build-time premium flag. In the
+// free build (WPSG_PREMIUM=false) __WPSG_PREMIUM__ is a literal `false`, so Rollup drops
+// this dynamic import and, transitively, PresetGalleryModal + LAYOUT_PRESETS (layoutPresets).
+const PresetGalleryModal = __WPSG_PREMIUM__
+  ? lazy(() =>
+      import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
+    )
+  : null;
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { ApiError } from '@/services/apiClient';
 import { createEmptyTemplate } from '@/hooks/useLayoutBuilderState';
@@ -58,6 +63,8 @@ import {
 } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { showProUpsell } from '@/utils/wpsgUpsell';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -117,6 +124,7 @@ interface LayoutTemplateListProps {
 
 export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spaceId }: LayoutTemplateListProps) {
   const { t: tr } = useTranslation('wpsg');
+  const { isPro, upgradeUrl } = useWpsgLicense();
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -371,14 +379,32 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
           <Button leftSection={<IconPlus size={16} />} size="sm" onClick={handleCreate}>
             {tr('admin_lt_new', 'New Layout')}
           </Button>
-          <Button
-            variant="light"
-            leftSection={<IconLayoutDashboard size={16} />}
-            size="sm"
-            onClick={() => setPresetGalleryOpen(true)}
-          >
-            {tr('admin_lt_from_preset', 'From Preset')}
-          </Button>
+          {/* P62-F: the "From Preset" CTA is Pro-only and absent from the free build, so
+              the WP.org listing ships no locked feature. In the premium build the runtime
+              isPro check below still upsells expired/unlicensed installs. */}
+          {__WPSG_PREMIUM__ && (
+            <Button
+              variant="light"
+              leftSection={<IconLayoutDashboard size={16} />}
+              size="sm"
+              onClick={() => {
+                // P62-A: the starter template library is a Pro feature. Button
+                // stays visible (a locked CTA converts better than a hidden one);
+                // gate the open action.
+                if (!isPro) {
+                  showProUpsell(
+                    'upsell_starter_library',
+                    'The starter template library is a Pro feature. Upgrade to start from a curated preset.',
+                    upgradeUrl,
+                  );
+                  return;
+                }
+                setPresetGalleryOpen(true);
+              }}
+            >
+              {tr('admin_lt_from_preset', 'From Preset')}
+            </Button>
+          )}
         </Group>
       </Group>
 
@@ -536,16 +562,19 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
         loading={forceDeleting}
       />
 
-      {/* Preset gallery (P15-J.2) */}
-      <Suspense fallback={null}>
-        {presetGalleryOpen && (
-          <PresetGalleryModal
-            opened={presetGalleryOpen}
-            onClose={() => setPresetGalleryOpen(false)}
-            onSelect={handleCreateFromPreset}
-          />
-        )}
-      </Suspense>
+      {/* Preset gallery (P15-J.2). P62-F: Pro-only — this whole block (and the lazy import
+          above) is dead-code-eliminated from the free build. */}
+      {__WPSG_PREMIUM__ && PresetGalleryModal && (
+        <Suspense fallback={null}>
+          {presetGalleryOpen && (
+            <PresetGalleryModal
+              opened={presetGalleryOpen}
+              onClose={() => setPresetGalleryOpen(false)}
+              onSelect={handleCreateFromPreset}
+            />
+          )}
+        </Suspense>
+      )}
     </Stack>
   );
 }

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-06T02:16:21+00:00\n"
+"POT-Creation-Date: 2026-07-06T22:06:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -9725,6 +9725,26 @@ msgstr ""
 msgid "Sort campaigns"
 msgstr ""
 
+#: includes/i18n/class-wpsg-frontend-strings.php:2761
+msgid "Pro feature"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2762
+msgid "Upgrade"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2763
+msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2764
+msgid "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2765
+msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
+msgstr ""
+
 #: includes/settings/class-wpsg-settings-core-fields.php:23
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr ""
@@ -10130,6 +10150,6 @@ msgstr ""
 msgid "Unexpected response: HTTP %d"
 msgstr ""
 
-#: wp-super-gallery.php:146
+#: wp-super-gallery.php:221
 msgid "Gallery Editor"
 msgstr ""

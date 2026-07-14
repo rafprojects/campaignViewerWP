@@ -1,7 +1,7 @@
 # ASAP Tasks
 
 Tasks with meaningful user or system impact that should be addressed in the near term.
-Sourced from archived [PHP_IMPLEMENTATION_REVIEW.txt](archive/reviews/PHP_IMPLEMENTATION_REVIEW.txt) and [REACT_IMPLEMENTATION_REVIEW.txt](archive/reviews/REACT_IMPLEMENTATION_REVIEW.txt) deferred task lists.
+Sourced from archived [PHP_IMPLEMENTATION_REVIEW.txt](../reviews/PHP_IMPLEMENTATION_REVIEW.txt) and [REACT_IMPLEMENTATION_REVIEW.txt](../reviews/REACT_IMPLEMENTATION_REVIEW.txt) deferred task lists.
 
 ---
 

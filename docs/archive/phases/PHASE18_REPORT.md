@@ -140,7 +140,7 @@ Phase 17 completed the builder UX overhaul (dockable panels, design assets conso
 
 ## Track P18-QA — Coverage Sprint (JS + PHP to ≥ 75 %) ✅ COMPLETE
 
-> **Run PHP tests via wp-env — see [TESTING_QUICKSTART.md](../TESTING_QUICKSTART.md) for full instructions.**
+> **Run PHP tests via wp-env — see [TESTING_QUICKSTART.md](../../testing/TESTING_QUICKSTART.md) for full instructions.**
 
 **Status:** Complete — all vitest thresholds green; PHP suite expanded and passing.
 
@@ -208,7 +208,7 @@ describe.each(adapters)('$name adapter', ({ Component }) => {
 
 ### PHP Coverage Gap Analysis
 
-> See [TESTING_QUICKSTART.md](../TESTING_QUICKSTART.md) for how to run PHPUnit tests with and without coverage output.
+> See [TESTING_QUICKSTART.md](../../testing/TESTING_QUICKSTART.md) for how to run PHPUnit tests with and without coverage output.
 
 **Enabling line coverage in wp-env:**
 

@@ -28,7 +28,7 @@ Sentry provides error tracking and stack traces in production. It helps:
 ## Web Vitals: Usage
 
 ### Where it runs
-Startup hook: [src/main.tsx](../src/main.tsx) calls `startWebVitalsMonitoring()`.
+Startup hook: [src/main.tsx](../../src/main.tsx) calls `startWebVitalsMonitoring()`.
 
 ### What it does
 - Observes PerformanceObserver entries for LCP/CLS/INP/FID
@@ -50,7 +50,7 @@ Default sampling rate is 100%. If sampling is needed later, update `startWebVita
 ## Sentry: Usage
 
 ### Where it runs
-Startup hook: [src/main.tsx](../src/main.tsx) calls `initSentry({ dsn })`.
+Startup hook: [src/main.tsx](../../src/main.tsx) calls `initSentry({ dsn })`.
 
 ### How it is configured
 - Sentry only initializes when a DSN is provided.
@@ -103,10 +103,10 @@ add_filter('wpsg_alert_throttle_minutes', fn() => 10);
 
 ## Related Files
 
-- Web Vitals implementation: [src/services/monitoring/webVitals.ts](../src/services/monitoring/webVitals.ts)
-- Sentry initialization: [src/services/monitoring/sentry.ts](../src/services/monitoring/sentry.ts)
-- Bootstrap wiring: [src/main.tsx](../src/main.tsx)
-- WP config injection: [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
+- Web Vitals implementation: [src/services/monitoring/webVitals.ts](../../src/services/monitoring/webVitals.ts)
+- Sentry initialization: [src/services/monitoring/sentry.ts](../../src/services/monitoring/sentry.ts)
+- Bootstrap wiring: [src/main.tsx](../../src/main.tsx)
+- WP config injection: [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
 
 ---
 

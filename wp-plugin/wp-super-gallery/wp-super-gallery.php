@@ -23,6 +23,84 @@ define('WPSG_VERSION', '0.90.0');
 define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+// ── Freemius SDK bootstrap (P62-B) ──────────────────────────────────────────
+// Deliberately a distinct block before the require_once list: Freemius's own
+// integration docs require the SDK to bootstrap before other plugin code.
+//
+// Credential-ready: until a real Plugin ID + public key are injected via the
+// `wpsg_freemius_config` filter (outside this repo — a site-specific mu-plugin
+// or wp-config.php-backed constant), this is a safe no-op. wpsg_fs() returns
+// null, makes zero network calls, and WPSG_License falls back to its stub
+// (default free tier). This mirrors the wpsg_sentry_dsn pattern in
+// class-wpsg-sentry.php.
+if (!function_exists('wpsg_fs')) {
+    /**
+     * Freemius SDK instance, or null when no credentials are configured.
+     *
+     * @return \Freemius|null
+     */
+    function wpsg_fs() {
+        global $wpsg_fs;
+
+        if (isset($wpsg_fs)) {
+            return $wpsg_fs;
+        }
+
+        $config = apply_filters('wpsg_freemius_config', [
+            'id'         => '',
+            'public_key' => '',
+            'is_premium' => false,
+        ]);
+        $config = is_array($config) ? $config : [];
+
+        // No credentials → no-op (default free tier). Never phones home.
+        if (empty($config['id']) || empty($config['public_key'])) {
+            $wpsg_fs = null;
+            return null;
+        }
+
+        $sdk_entry = WPSG_PLUGIN_DIR . 'vendor/freemius/wordpress-sdk/start.php';
+        if (!file_exists($sdk_entry)) {
+            $wpsg_fs = null;
+            return null;
+        }
+        require_once $sdk_entry;
+
+        if (!function_exists('fs_dynamic_init')) {
+            $wpsg_fs = null;
+            return null;
+        }
+
+        // NOTE (M2): once the Freemius dashboard product exists, reconcile these
+        // defaults with the exact snippet Freemius generates for this product. For
+        // the freemium (WP.org "lite" + premium) model the generated snippet adds
+        // `has_premium_version => true`, a distinct `premium_slug`, and
+        // `is_org_compliant => true`, and sets a non-empty `menu['first-path']`
+        // (see docs/PHASE62_REPORT.md P62-K and guides/MARKETPLACE_READINESS.md §4).
+        // $config is merged last so real credentials always come from the filter.
+        $wpsg_fs = fs_dynamic_init(array_merge([
+            'id'             => '',
+            'slug'           => 'wp-super-gallery',
+            'type'           => 'plugin',
+            'public_key'     => '',
+            'is_premium'     => false,
+            'has_addons'     => false,
+            'has_paid_plans' => true,
+            'menu'           => [
+                'slug'       => 'wp-super-gallery',
+                'first-path' => '',
+            ],
+        ], $config));
+
+        return $wpsg_fs;
+    }
+
+    // Initialize (no-op until credentials exist) and signal readiness.
+    wpsg_fs();
+    do_action('wpsg_fs_loaded');
+}
+
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-license.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
 require_once WPSG_PLUGIN_DIR . 'includes/i18n/class-wpsg-frontend-strings.php';

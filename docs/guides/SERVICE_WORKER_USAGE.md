@@ -16,14 +16,14 @@ The service worker provides **offline support** and **asset caching** by caching
 
 ## Current Implementation
 
-File: [public/sw.js](../public/sw.js)
+File: [public/sw.js](../../public/sw.js)
 
 Behavior summary:
 - **Install:** initializes runtime cache and activates immediately.
 - **Activate:** clears older WPSG caches.
 - **Fetch:** cache‑first strategy for same‑origin GET requests.
 
-Registration happens in [src/main.tsx](../src/main.tsx) in production builds.
+Registration happens in [src/main.tsx](../../src/main.tsx) in production builds.
 
 ---
 

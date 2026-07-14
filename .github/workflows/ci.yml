@@ -49,6 +49,13 @@ jobs:
       - name: i18n manifest freshness
         run: npm run i18n:check
 
+      # P62 (PR-review track): fail if a front-end string is not translated in
+      # every reference locale. i18n:check only proves en<->manifest sync; this
+      # catches strings that shipped English-only (added to the source but never
+      # harvested/translated into the .po). See docs/guides/TRANSLATING.md.
+      - name: i18n locale coverage
+        run: npm run i18n:check:locales
+
   # ── Job 2: Frontend tests + build ────────────────────────────────────────
   test-frontend:
     name: Vitest + Build
@@ -70,6 +77,12 @@ jobs:
 
       - name: Production build (build:wp)
         run: npm run build:wp
+
+      # P62-G: the free WP.org "lite" build must exclude all Pro authoring code.
+      # Rebuild with WPSG_PREMIUM=false and assert no Pro chunks/markers leak in —
+      # a regression here would ship locked functionality to WordPress.org.
+      - name: Free build — WP.org Pro-code exclusion gate
+        run: npm run check:free-build
 
       - name: Upload coverage report
         if: always()

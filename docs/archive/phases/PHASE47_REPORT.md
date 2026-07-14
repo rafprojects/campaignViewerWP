@@ -515,11 +515,11 @@ The **mechanism is sound**: every settings *read path* that has a space context 
 
 ### 1. Read-path verification
 
-`get_effective_settings()` lives at [class-wpsg-settings.php:216-231](../wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php#L216-L231) — `array_merge($global, $filtered_overrides)`, where `$filtered_overrides` is the space's `settings_overrides` intersected with the overridable allowlist.
+`get_effective_settings()` lives at [class-wpsg-settings.php:216-231](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php#L216-L231) — `array_merge($global, $filtered_overrides)`, where `$filtered_overrides` is the space's `settings_overrides` intersected with the overridable allowlist.
 
 | Consumer | Source | Scope | Correct? |
 |----------|--------|-------|----------|
-| Public `GET /settings?space=ID` | [class-wpsg-settings-controller.php:50-55](../wp-plugin/wp-super-gallery/includes/rest/class-wpsg-settings-controller.php#L50-L55) | `get_effective_settings($id)` when `id>0`, else global | ✅ space-aware |
+| Public `GET /settings?space=ID` | [class-wpsg-settings-controller.php:50-55](../../../wp-plugin/wp-super-gallery/includes/rest/class-wpsg-settings-controller.php#L50-L55) | `get_effective_settings($id)` when `id>0`, else global | ✅ space-aware |
 | Public `POST /settings` (save) | class-wpsg-settings-controller.php | global `get_settings()` — admin save of defaults | ✅ intentionally global |
 | `GET /spaces/{id}/settings` | class-wpsg-space-controller.php | `get_effective_settings($id)` | ✅ space-aware |
 | `PUT /spaces/{id}/settings` | class-wpsg-space-controller.php | allowlist-filtered write to `settings_overrides` | ✅ space-aware |
@@ -535,8 +535,8 @@ No `get_settings()` call was found where a space id was in scope but discarded.
 
 | Bucket | Count | Defined in |
 |--------|------:|-----------|
-| Admin-only (global) | 29 | `$admin_only_fields` ([registry:371-401](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L371-L401)) |
-| Space-overridable | 34 | `$space_overridable_fields` ([registry:408-443](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443)) |
+| Admin-only (global) | 29 | `$admin_only_fields` ([registry:371-401](../../../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L371-L401)) |
+| Space-overridable | 34 | `$space_overridable_fields` ([registry:408-443](../../../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443)) |
 | Uncategorized → **forced global** | ~271 | (neither list; fall through `get_effective_settings`) |
 
 The **29 admin-only** (auth, API base, cache TTLs, image-optimization, upload limits, debounce/timeout, uninstall/purge, magic-link page) are correctly global. The **34 space-overridable** match Decision C's stated scope (theme, layout, items-per-page, lightbox/animations, full-bleed trio, typography, gallery title/subtitle, the `show_*` card/campaign/gallery toggles, `default_visibility`, the campaign-listing adapter trio + template).
@@ -557,7 +557,7 @@ These are grouped so promotion can be done in coherent sets (most fields are pai
 | **Modal & lightbox** | `modal_cover_*`, `modal_transition*`, `modal_max_*`, `modal_gallery_*`, `modal_close_button_*`, `lightbox_*` | Promote |
 | **Gallery section / adapter layout** | `gallery_section_*`, `adapter_*`, `app_max_width`, `app_padding`, `gallery_sizing_mode`, `section_scale`, `item_scale` | Promote |
 | **Viewport & responsive** | `video/image_viewport_height`, `viewport_height_*_ratio`, `modal_mobile_breakpoint`, `*_breakpoints` | Promote (mostly) |
-| **CSS unit companions** | ~48 `*_unit` fields ([registry:310-357](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L310-L357)) | Promote **only paired** with their value field |
+| **CSS unit companions** | ~48 `*_unit` fields ([registry:310-357](../../../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L310-L357)) | Promote **only paired** with their value field |
 | **Extra display toggles** | `show_viewer_border`, `show_campaign_cover_image`, `show_campaign_tags`, `show_campaign_gallery_labels`, `transition_fade_enabled`, `dot_nav_enabled`, `campaign_open_mode` | Promote — siblings of already-overridable `show_*` toggles |
 | **Admin-panel / operational** | `settings_panel_width`, `admin_panel_max_width`, `library_page_size`, `media_list_page_size`, `media_*_card_height`, `show_settings_tooltips`, `show_in_context_editors`, `show_campaign_admin_actions`, `settings_drawer_blur_enabled`, `campaign_stats_admin_only`, `enable_analytics` | **Leave global** — govern the editing surface / site-wide ops, not the public per-space look |
 
@@ -565,10 +565,10 @@ So: of the ~271, roughly **~250 are public visual/presentation knobs** (promotio
 
 ### 4. Known nuances & a bug found
 
-- **⚠️ Stale read-back after save (`get_space()` cache).** `WPSG_DB::get_space()` keeps a **request-level static cache** ([class-wpsg-db.php:972-985](../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) that `update_space()` does **not** invalidate. `PUT /spaces/{id}/settings` does `get_space()` (caches) → `update_space()` (writes DB) → `get_space()` (returns the **stale** cached row), so the endpoint's **response** returns the pre-save `settings_overrides` / effective settings even though the save itself persisted correctly. The admin panel reads that response after saving, so per-space settings can appear to "revert" until a fresh refetch — a strong candidate for the save-time settings glitches seen in P47-J. Same get→update→get pattern likely affects the space access-grant endpoints. Suggested fix (deferred — audit-only): bust the static cache in `update_space()`/`archive_space()`/`delete_space()`/`insert_space()`. Regression tests assert on the persisted DB row, which is correct.
+- **⚠️ Stale read-back after save (`get_space()` cache).** `WPSG_DB::get_space()` keeps a **request-level static cache** ([class-wpsg-db.php:972-985](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) that `update_space()` does **not** invalidate. `PUT /spaces/{id}/settings` does `get_space()` (caches) → `update_space()` (writes DB) → `get_space()` (returns the **stale** cached row), so the endpoint's **response** returns the pre-save `settings_overrides` / effective settings even though the save itself persisted correctly. The admin panel reads that response after saving, so per-space settings can appear to "revert" until a fresh refetch — a strong candidate for the save-time settings glitches seen in P47-J. Same get→update→get pattern likely affects the space access-grant endpoints. Suggested fix (deferred — audit-only): bust the static cache in `update_space()`/`archive_space()`/`delete_space()`/`insert_space()`. Regression tests assert on the persisted DB row, which is correct.
 - **Whole-unit JSON merge.** `typography_overrides` (and `*_bg_gradient`) are allowlisted but stored as JSON; the flat `array_merge` replaces them wholesale — a space cannot inherit some sub-keys and override others. Acceptable as a whole-unit override; note it if granular typography inheritance is ever wanted.
 - **`gallery_config` / `card_config` are not settings keys.** They are composed at runtime from individual layout fields. Per-space layout therefore depends on promoting those individual fields (above), not on overriding a single config blob.
-- **Per-space UI is narrower than the allowlist.** The dedicated `SpaceSettingsPanel` ([SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) edits only **9 of the 34** overridable fields. A fuller path exists — `SettingsPanel` accepts a `spaceId` prop and saves to `/spaces/{id}/settings` ([SettingsPanel.tsx:140](../src/components/Admin/SettingsPanel.tsx#L140), [448-452](../src/components/Admin/SettingsPanel.tsx#L448-L452)) — but it is not the panel wired into the management modal. Any allowlist expansion should also pick a single coherent per-space settings UI.
+- **Per-space UI is narrower than the allowlist.** The dedicated `SpaceSettingsPanel` ([SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) edits only **9 of the 34** overridable fields. A fuller path exists — `SettingsPanel` accepts a `spaceId` prop and saves to `/spaces/{id}/settings` ([SettingsPanel.tsx:140](../../../src/components/Admin/SettingsPanel.tsx#L140), [448-452](../../../src/components/Admin/SettingsPanel.tsx#L448-L452)) — but it is not the panel wired into the management modal. Any allowlist expansion should also pick a single coherent per-space settings UI.
 
 ### 5. Regression coverage added
 
@@ -580,7 +580,7 @@ PHP `WPSG_P47_Spaces_Settings_Test` (inheritance + allowlist enforcement) and `W
 
 ### Problem
 
-`WPSG_DB::get_space()` keeps a request-level `static $cache = []` ([class-wpsg-db.php:972-985](../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) to avoid repeated DB reads inside hot permission loops. However `update_space()`, `archive_space()`, `delete_space()`, and `insert_space()` never bust this cache. The concrete symptom:
+`WPSG_DB::get_space()` keeps a request-level `static $cache = []` ([class-wpsg-db.php:972-985](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-db.php#L972-L985)) to avoid repeated DB reads inside hot permission loops. However `update_space()`, `archive_space()`, `delete_space()`, and `insert_space()` never bust this cache. The concrete symptom:
 
 `PUT /spaces/{id}/settings` executes `get_space()` (populates cache) → `update_space()` (writes DB) → `get_space()` (returns the **stale** cached row). The endpoint's response therefore contains the pre-save `settings_overrides`, so the React admin panel sees the old values after saving — the root of the "settings appear to revert" reports in P47-J. The same get→write→get pattern affects the access-grant endpoints (`GET/POST/DELETE /spaces/{id}/access`).
 
@@ -623,7 +623,7 @@ Added `test_put_settings_response_reflects_saved_values_not_stale_cache` to `WPS
 
 ### Fix
 
-Add the following groups to `$space_overridable_fields` in [class-wpsg-settings-registry.php:408-443](../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443). No behavior change for existing sites — the Default Space has no overrides so effective settings are unchanged; the fields merely become eligible for per-space override via `PUT /spaces/{id}/settings`.
+Add the following groups to `$space_overridable_fields` in [class-wpsg-settings-registry.php:408-443](../../../wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php#L408-L443). No behavior change for existing sites — the Default Space has no overrides so effective settings are unchanged; the fields merely become eligible for per-space override via `PUT /spaces/{id}/settings`.
 
 **Branding text & labels (~5 fields)**
 `campaign_about_heading_text`, `gallery_image_label`, `gallery_video_label`, `gallery_label_justification`, `show_gallery_label_icon`
@@ -771,7 +771,7 @@ Add the following groups to `$space_overridable_fields`. Fields marked `(+ unit)
 
 ### Problem
 
-`SpaceSettingsPanel` ([src/components/Admin/SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) currently exposes only 9 of the 34 (and growing, post P47-M/N) space-overridable fields. A fuller per-space settings path already exists: `SettingsPanel` ([src/components/Admin/SettingsPanel.tsx:140](../src/components/Admin/SettingsPanel.tsx#L140)) accepts a `spaceId` prop and routes its saves to `PUT /spaces/{id}/settings`, but it is not wired into `SpaceManagementView` or the "Campaigns → Spaces" admin page. After P47-M and P47-N promote ~280 additional fields, the editing surface gap becomes the practical barrier to using per-space settings at all.
+`SpaceSettingsPanel` ([src/components/Admin/SpaceSettingsPanel.tsx](../src/components/Admin/SpaceSettingsPanel.tsx)) currently exposes only 9 of the 34 (and growing, post P47-M/N) space-overridable fields. A fuller per-space settings path already exists: `SettingsPanel` ([src/components/Admin/SettingsPanel.tsx:140](../../../src/components/Admin/SettingsPanel.tsx#L140)) accepts a `spaceId` prop and routes its saves to `PUT /spaces/{id}/settings`, but it is not wired into `SpaceManagementView` or the "Campaigns → Spaces" admin page. After P47-M and P47-N promote ~280 additional fields, the editing surface gap becomes the practical barrier to using per-space settings at all.
 
 ### Fix
 

@@ -71,6 +71,14 @@ function resolveVendorChunk(id: string): string | undefined {
 
 export default defineConfig({
   base: './',
+  // P62-F: build-time premium flag, substituted as a literal boolean so Rollup can
+  // dead-code-eliminate Pro authoring code. Default build = premium (flag true, all Pro
+  // code present); `WPSG_PREMIUM=false npm run build` produces the WordPress.org-compliant
+  // free build with the Pro authoring code (and its lazy chunks) stripped. The runtime
+  // `isPro` license check is a separate, orthogonal layer. See docs/guides/PRO_FEATURES.md.
+  define: {
+    __WPSG_PREMIUM__: JSON.stringify(process.env.WPSG_PREMIUM !== 'false'),
+  },
   plugins: [
     react(),
     // Only generate treemap when ANALYZE=true or ANALYZE=1 (e.g. `ANALYZE=true npm run build`)

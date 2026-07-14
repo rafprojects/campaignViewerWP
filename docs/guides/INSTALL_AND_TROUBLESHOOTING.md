@@ -133,6 +133,18 @@ from the admin panel for placing a gallery on a non-WordPress site.
   after leaving a tab open a long time, reload the page to refresh the session.
 - Confirm the logged-in user has the required capability (System-Admin vs Editor tier).
 
+### Pro license won't activate / Pro features stay locked
+- Confirm the license key is entered on the plugin's licensing screen and shows as active.
+- Pro features (LayoutBuilder text layers, per-breakpoint responsive editing, the starter
+  template library) unlock only while a valid license is active; when locked they show a
+  clear "Pro feature" upsell rather than breaking. Content you already saved keeps working
+  regardless of license state.
+- Full activation / deactivation / troubleshooting steps are in
+  [LICENSE_ACTIVATION.md](LICENSE_ACTIVATION.md).
+- Selling the plugin yourself? The owner go-live runbook is
+  [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md), and the pro/free boundary + developer
+  guide is [PRO_FEATURES.md](PRO_FEATURES.md).
+
 ### Enabling debug logging
 - Set the `wpsg_debug` flag (see [DEBUG_TOGGLE.md](DEBUG_TOGGLE.md)) to surface verbose
   front-end diagnostics in the console when reporting an issue.

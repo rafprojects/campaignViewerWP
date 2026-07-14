@@ -55,10 +55,10 @@ test.describe('accessibility baseline', () => {
     // Wait for the campaign card to appear
     await expect(page.getByText('A11y Test Campaign')).toBeVisible();
 
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 
@@ -107,10 +107,10 @@ test.describe('accessibility baseline', () => {
 
     // Full-page analyze: axe traverses the open shadow root the app mounts in
     // (a scoped `.include()` CSS selector cannot cross the shadow boundary).
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 
@@ -139,10 +139,10 @@ test.describe('accessibility baseline', () => {
     // Wait for carousel region to appear
     await expect(page.getByRole('region', { name: /View image|Video \d/i }).first()).toBeVisible({ timeout: 10_000 });
 
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 
@@ -173,10 +173,10 @@ test.describe('accessibility baseline', () => {
     // Wait for lightbox dialog
     await expect(page.getByRole('dialog', { name: 'Media lightbox' })).toBeVisible();
 
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 });
@@ -248,10 +248,10 @@ test.describe('accessibility - admin flows', () => {
     await expect(page.getByRole('tab', { name: 'Campaigns' })).toBeVisible();
     await expect(page.getByText('Admin Campaign').first()).toBeVisible();
 
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 
@@ -267,10 +267,10 @@ test.describe('accessibility - admin flows', () => {
     // settings-panel-specific control (its first tab) to confirm it opened.
     await expect(page.getByRole('tab', { name: 'Appearance' })).toBeVisible();
 
-    // color-contrast is intentionally excluded: the full WCAG-AA contrast audit
-    // is a deferred WP.org-tier follow-on (Phase 60 Key Decision C). This gate
-    // enforces the structural critical/serious set (roles, names, labels, ARIA).
-    const results = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
+    // P62-H: color-contrast is now enforced. Theme-token contrast is gated
+    // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
+    // this manual e2e adds runtime contrast coverage across real rendered flows.
+    const results = await new AxeBuilder({ page }).analyze();
     expect(criticalViolations(results.violations)).toEqual([]);
   });
 });

@@ -296,6 +296,20 @@ function relativeLuminance(color: string): number | null {
 }
 
 /**
+ * WCAG contrast ratio between two CSS colors: (L1 + 0.05) / (L2 + 0.05) with
+ * L1 the lighter luminance. Returns null if either color cannot be parsed.
+ * Reused by the theme-contrast audit (P62-H).
+ */
+export function contrastRatio(a: string, b: string): number | null {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  if (la === null || lb === null) return null;
+  const lighter = Math.max(la, lb);
+  const darker = Math.min(la, lb);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/**
  * Emit a dev-mode warning if a critical text/background contrast pair
  * fails WCAG AA (4.5:1 for normal text).
  *

@@ -106,7 +106,7 @@ This is the primary checklist for QA on a local WordPress install. Use it for ev
    - **Plugins** → **WP Super Gallery** → **Activate**.
 
 5. Ensure JWT auth is configured.
-   - Follow [docs/WP_JWT_SETUP.md](docs/WP_JWT_SETUP.md) and confirm permalinks are **Post name**.
+   - Follow [docs/WP_JWT_SETUP.md](../guides/WP_JWT_SETUP.md) and confirm permalinks are **Post name**.
 
 6. Create a test page and embed the widget.
    - Add the shortcode provided by the plugin and publish the page.

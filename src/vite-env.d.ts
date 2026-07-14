@@ -1,5 +1,13 @@
 /// <reference types="vite/client" />
 
+/**
+ * P62-F: build-time premium flag, replaced by Vite `define` with a literal boolean.
+ * `true` in the default (premium) build; `false` in the `WPSG_PREMIUM=false` free build,
+ * which lets Rollup dead-code-eliminate the Pro authoring code. Orthogonal to the runtime
+ * `isPro` license check (`useWpsgLicense`). See docs/guides/PRO_FEATURES.md.
+ */
+declare const __WPSG_PREMIUM__: boolean;
+
 declare module '*.module.scss' {
   const classes: { [key: string]: string };
   export default classes;
@@ -34,6 +42,12 @@ interface Window {
     debugComponentMarkers?: boolean;
     /** P50-F: Absolute URL of sw.js served by the plugin PHP endpoint (with Service-Worker-Allowed: / header). */
     swUrl?: string;
+    /** P62-A: license/entitlement state for pro-feature gating. Read by src/hooks/useWpsgLicense.ts. */
+    license?: {
+      isPro: boolean;
+      tier: string | null;
+      upgradeUrl: string;
+    };
   };
   __WPSG_REST_NONCE__?: string;
   __WPSG_SENTRY_DSN__?: string;

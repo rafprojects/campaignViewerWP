@@ -2,7 +2,7 @@
 
 > **Branch:** Current working branch (with unstaged prior work)
 > **Scope:** CampaignViewer → Gallery Section → Adapter responsive chain, unified carousel, file reorganization, settings restructuring
-> **Reference:** [COMPONENT_TREE_MAP.md](COMPONENT_TREE_MAP.md), [MANTINE_COMPONENT_MAP.md](MANTINE_COMPONENT_MAP.md)
+> **Reference:** [COMPONENT_TREE_MAP.md](../../models/COMPONENT_TREE_MAP.md), [MANTINE_COMPONENT_MAP.md](../../models/MANTINE_COMPONENT_MAP.md)
 > **External reference:** [Grok assessment](https://grok.com/share/bGVnYWN5_7adf4fa9-b928-4cf9-80f2-d58a6e8153d6) (critique + recommendations incorporated below)
 
 ---
@@ -902,7 +902,7 @@ See Phase 1 table above for complete move list.
 **Root Cause:** Only two breakpoints (`sm: 768px`, `lg: 1200px`) with a ceiling of 3 columns. No `xl` or `xxl` breakpoints.
 
 **Tasks:**
-- Add breakpoints to `effectiveColumns` in `CardGallery.tsx` ([line 82](src/components/CampaignGallery/CardGallery.tsx#L82)):
+- Add breakpoints to `effectiveColumns` in `CardGallery.tsx` ([line 82](../../../src/components/CampaignGallery/CardGallery.tsx#L82)):
   ```
   xxl (≥1800px): 5 cols
   xl  (≥1400px): 4 cols
@@ -925,7 +925,7 @@ See Phase 1 table above for complete move list.
 
 **Tasks:**
 - Add `cardMaxWidthUnit: 'px' | '%'` setting (default `'px'` for backward compat)
-- In `CampaignCard.tsx` ([line 62](src/components/CampaignGallery/CampaignCard.tsx#L62)): emit `maxWidth: \`${maxWidth}${unit}\`` based on unit setting
+- In `CampaignCard.tsx` ([line 62](../../../src/components/CampaignGallery/CampaignCard.tsx#L62)): emit `maxWidth: \`${maxWidth}${unit}\`` based on unit setting
 - In `CardGallery.tsx` flex branch: when unit is `'%'`, skip the `maxCols * cardMaxWidth` arithmetic and let flexbox handle wrapping naturally (percentage widths are relative to parent, not absolute)
 - Add a Select control beside the Card Max Width NumberInput in SettingsPanel
 
@@ -939,7 +939,7 @@ See Phase 1 table above for complete move list.
 
 **QA Finding:** Selecting 5 or 6 columns appears to "reset" back to 4. The Select dropdown offers these values, but the flex branch's container `maxWidth` is calculated from `maxCols`, which falls back to `4` when `cardGridColumns > 0` but `cardMaxWidth > 0` creates a container too narrow for the viewport.
 
-**Root Cause:** In `CardGallery.tsx` ([line 91](src/components/CampaignGallery/CardGallery.tsx#L91)), `maxCols` hardcode-fallbacks to `4` in auto mode. When `cardGridColumns` is set to 5 or 6, `maxCols` does use that value — but with `cardMaxWidth` set, the resulting container `maxWidth = 5 * cardMaxWidth + gaps` may be narrower than expected, causing fewer visible columns. Also, the SimpleGrid branch uses `effectiveColumns` directly which should work — so this bug is flex-branch-specific.
+**Root Cause:** In `CardGallery.tsx` ([line 91](../../../src/components/CampaignGallery/CardGallery.tsx#L91)), `maxCols` hardcode-fallbacks to `4` in auto mode. When `cardGridColumns` is set to 5 or 6, `maxCols` does use that value — but with `cardMaxWidth` set, the resulting container `maxWidth = 5 * cardMaxWidth + gaps` may be narrower than expected, causing fewer visible columns. Also, the SimpleGrid branch uses `effectiveColumns` directly which should work — so this bug is flex-branch-specific.
 
 **Tasks:**
 - Ensure the flex branch container `maxWidth` calculation in `CardGallery.tsx` doesn't artificially limit columns:
@@ -954,7 +954,7 @@ See Phase 1 table above for complete move list.
 
 ### 7d. CardGallery Last-Row Justification
 
-**QA Finding:** Partial last rows in the flex branch are hardcoded to `justifyContent: 'center'` ([line 384](src/components/CampaignGallery/CardGallery.tsx#L384)). Users need control over this.
+**QA Finding:** Partial last rows in the flex branch are hardcoded to `justifyContent: 'center'` ([line 384](../../../src/components/CampaignGallery/CardGallery.tsx#L384)). Users need control over this.
 
 **Root Cause:** Hardcoded value, no setting exists.
 

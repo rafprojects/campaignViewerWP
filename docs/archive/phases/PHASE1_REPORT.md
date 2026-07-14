@@ -12,14 +12,14 @@ This document summarizes Phase 1 work (Core Data + API Contract) and outlines ho
 - Defined API contract for campaigns, media, access, and uploads.
 - Added endpoint shapes and payload examples.
 
-See: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+See: [docs/ARCHITECTURE.md](../../old/ARCHITECTURE.md)
 
 ### 2) Embed Security
 
 - Documented secure handling of external media (allow‑list + canonical embed URLs).
 - Enforced HTTPS and provider-specific URL validation.
 
-See: [docs/EMBED_SECURITY.md](docs/EMBED_SECURITY.md)
+See: [docs/EMBED_SECURITY.md](../../old/EMBED_SECURITY.md)
 
 ### 3) WordPress Plugin Skeleton (CPT + REST)
 
@@ -30,9 +30,9 @@ See: [docs/EMBED_SECURITY.md](docs/EMBED_SECURITY.md)
 
 Files:
 
-- [wp-plugin/wp-super-gallery/wp-super-gallery.php](wp-plugin/wp-super-gallery/wp-super-gallery.php)
-- [wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php](wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php)
-- [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
+- [wp-plugin/wp-super-gallery/wp-super-gallery.php](../../../wp-plugin/wp-super-gallery/wp-super-gallery.php)
+- [wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php)
+- [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php)
 
 ### 4) Embed Wrapper + Asset Handling
 
@@ -42,7 +42,7 @@ Files:
 
 File:
 
-- [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
+- [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](../../../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
 
 ### 5) SPA + WP Dual Mount
 
@@ -54,7 +54,7 @@ File:
 
 File:
 
-- [src/main.tsx](src/main.tsx)
+- [src/main.tsx](../../../src/main.tsx)
 
 ---
 

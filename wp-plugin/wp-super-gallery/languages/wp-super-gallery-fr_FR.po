@@ -7228,3 +7228,24 @@ msgstr "Archiver toutes les campagnes de <strong>{{name}}</strong> ? Cela archiv
 
 msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
 msgstr "Archiver toutes les campagnes de <strong>{{name}}</strong> ? Cela archivera {{count}} campagnes actives."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2761
+msgid "Pro feature"
+msgstr "Fonctionnalité Pro"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2762
+msgid "Upgrade"
+msgstr "Mettre à niveau"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2763
+msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgstr "Les calques de texte sont une fonctionnalité Pro. Passez à la version supérieure pour ajouter et modifier du texte dans vos mises en page."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2764
+msgid "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts."
+msgstr "L'édition responsive par point de rupture est une fonctionnalité Pro. Passez à la version supérieure pour peaufiner les mises en page tablette et mobile."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2765
+msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
+msgstr "La bibliothèque de modèles de départ est une fonctionnalité Pro. Passez à la version supérieure pour démarrer à partir d'un modèle prédéfini."
+

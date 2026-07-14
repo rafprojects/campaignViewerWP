@@ -1,7 +1,7 @@
 # WP Super Gallery — Privacy & GDPR Statement
 
 **Applies to:** WP Super Gallery plugin, all editions (free and Pro).
-**Last reviewed:** 2026-07-05 (plugin 0.90.0)
+**Last reviewed:** 2026-07-11 (plugin 0.90.0; added Freemius Pro-licensing §8)
 
 This document describes exactly what data the plugin collects, where it is stored,
 whether any of it leaves your server, and how to satisfy data-subject (GDPR/CCPA)
@@ -14,6 +14,10 @@ processor running entirely on your own WordPress hosting.
 > data it can hold is (a) pseudonymized visitor counts *if you turn analytics on*
 > and (b) email addresses *if you enable the access-request feature*. Both are
 > off by default.
+>
+> _Pro edition:_ the plugin's own code still sends us nothing, but the paid build bundles the
+> **Freemius** licensing SDK — checkout/billing runs through Freemius, and diagnostic sharing is
+> **opt-in** during activation. See **§8**.
 
 ---
 
@@ -86,7 +90,8 @@ only in these cases, none of which send visitor PII to the plugin author:
     server-side DSN if you are comfortable with the error context (which may include
     request details) being sent to your Sentry instance.
 
-The plugin contains **no analytics beacons, telemetry, or "phone-home" to the author.**
+The plugin contains **no analytics beacons, telemetry, or "phone-home" to the author.** (The **Pro
+edition** additionally bundles the Freemius licensing SDK — a separate, opt-in data flow covered in §8.)
 
 ---
 
@@ -168,6 +173,32 @@ custom roles/caps, cron hooks, and uploaded overlay/thumbnail directories. Ticki
 - SVG uploads are sanitized (server + client) and the overlay directory is hardened with a
   restrictive `.htaccess`.
 - The oEmbed proxy enforces a provider allowlist with SSRF protection.
+
+---
+
+## 8. Freemius (Pro edition) — licensing, checkout & opt-in diagnostics
+
+The **free** edition and the plugin's own code send us nothing (§1–§4). The **Pro** edition — and any
+build configured with Freemius credentials — additionally bundles the **Freemius** SDK for licensing,
+secure updates, and checkout. Freemius acts as our **merchant of record**.
+
+- **Checkout & billing (Freemius):** when you buy or renew a Pro license, **Freemius** collects the data
+  needed to sell and support it — e.g. name, email, billing/tax location, and payment details (card data
+  is handled by the payment processor, not stored by us). This happens on Freemius's checkout, governed
+  by **[Freemius's privacy policy](https://freemius.com/privacy/)**, not by this plugin. We (the seller)
+  receive order/license metadata (e.g. your email and license status), not full card numbers.
+- **Opt-in diagnostics (Freemius SDK):** on activation the SDK shows an **opt-in** dialog. **Only if you
+  opt in**, it shares environment/usage data with Freemius to improve the product — typically the site
+  URL, WordPress/PHP versions, plugin version, the admin email, and the list of active plugins/theme. If
+  you **skip**, no usage data is sent; the SDK still performs the minimal license-validation and update
+  checks the paid features require. You can opt out later, and **deactivating** the license or
+  **uninstalling** stops it.
+- **Only where credentials are configured:** a build with no Freemius credentials (e.g. the plugin
+  before go-live, or a self-hosted copy without a key) makes **zero** Freemius network calls —
+  `wpsg_fs()` is a no-op.
+
+Buyer-facing view: [guides/LICENSE_ACTIVATION.md](guides/LICENSE_ACTIVATION.md); commercial terms:
+[EULA.md](EULA.md).
 
 ---
 

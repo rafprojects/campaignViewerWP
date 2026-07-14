@@ -1,0 +1,27 @@
+# WP Super Gallery — files excluded from the distributed plugin (P62-K).
+#
+# Canonical exclude list: mirrors the inline `zip -x` excludes in
+# .github/workflows/release.yml. Keep the two in sync until the release workflow
+# consumes this file directly. gitignore-style patterns; a leading `/` anchors to
+# the plugin root. `vendor/` is intentionally NOT excluded — production Composer
+# deps (incl. the Freemius SDK) ship in the package.
+
+# ── Tests & test tooling ──────────────────────────────────────────────────
+/tests
+/bin
+phpunit.xml.dist
+phpcs.xml
+.phpunit.result.cache
+phpunit
+
+# ── Composer manifests (deps are vendored at build; manifests don't ship) ──
+composer.json
+composer.lock
+
+# ── Local dev environment ─────────────────────────────────────────────────
+.wp-env.json
+.distignore
+
+# ── Editor / OS cruft ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db

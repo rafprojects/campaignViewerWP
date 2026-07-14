@@ -346,7 +346,7 @@ Web-vitals: not yet implemented — expected at this stage since the production 
 
 ## Production Target & Monetization
 
-The P54 must-fix phase is the **common prerequisite for every distribution path**; only the *extra* work differs. Full detail, comparisons, fee tables, and codebase-anchored LOE live in **[`MONETIZATION_OPTIONS.md`](MONETIZATION_OPTIONS.md)**. Summary:
+The P54 must-fix phase is the **common prerequisite for every distribution path**; only the *extra* work differs. Full detail, comparisons, fee tables, and codebase-anchored LOE live in **[`MONETIZATION_OPTIONS.md`](../../MONETIZATION_OPTIONS.md)**. Summary:
 
 | Target | Pros | Cons | Delta LOE on top of P54 |
 |--------|------|------|-------------------------|
