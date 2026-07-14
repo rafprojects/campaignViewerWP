@@ -1,0 +1,227 @@
+# Phase 64 - Access Request, Grants & Auth Correctness
+
+**Status:** Planned
+**Created:** 2026-07-14
+**Last updated:** 2026-07-14 (cross-referenced against the same-day React review: `useAccessRows.tsx` added to P64-B's frontend scope)
+
+### Tracks
+
+| Track | Description | Status | Effort |
+|-------|-------------|--------|--------|
+| P64-A | Extract a shared grants helper (`WPSG_Grants`) — enabling refactor for P64-B | Planned | Medium |
+| P64-B | Split revoke granularity: campaign-scoped vs company-wide (decided) | Planned | Small-Medium PHP + Small-Medium FE |
+| P64-C | Access-request email abuse: defer requester confirmation + tighten rate/abuse control (decided) | Planned | Small |
+| P64-D | Approved access-request users have no way to log in | Planned | Tiny |
+| P64-E | Magic-link inline-HTML fallback served through the JSON encoder | Planned | Small |
+| P64-F | `create_user`'s email-failure fallback can never trigger | Planned | Small |
+
+---
+
+## Rationale
+
+The review ([PHP_REVIEW_FINDINGS.md](PHP_REVIEW_FINDINGS.md)) found that the access-request → grant → revoke lifecycle is functionally complete but has several correctness gaps clustered in the same files (`class-wpsg-access-controller.php`, `class-wpsg-space-controller.php`), plus one already-user-decided scope change (A-14) that is incoherent without touching both PHP and the frontend. All items below were independently re-verified against current source on 2026-07-14.
+
+1. **What triggered it.** A-14 (revoke over-broadness) and B-1 (access-request email abuse) both went through a decision round with the user on 2026-07-13 and already carry resolved scopes — this phase is where those decisions get executed. A-7, A-8, and A-13 are smaller correctness bugs in the same request/notification code paths, discovered in the same review pass.
+2. **Why it belongs together.** Every track touches the access-request, magic-link, or grants code in `class-wpsg-access-controller.php` — bundling avoids re-reading the same 700-line file five separate times, and P64-A's extraction directly de-risks P64-B's revoke-logic change.
+3. **Success.** Revoking a user from one campaign never silently revokes their company-wide access; the public access-request endpoint can no longer be used to email arbitrary victims; every path that provisions a WP user account also gives that user a way to actually log in; grant expiry/enrichment logic lives in one place instead of four.
+
+## Key Decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | Revoke granularity (A-14) | **Decided by user, 2026-07-13.** Revoke from the campaign by default; provide an explicit, separate mechanism for company-wide revoke. Both granularities must exist end-to-end (PHP + frontend) — carried forward verbatim into P64-B. |
+| B | Access-request confirmation email (B-1) | **Decided by user, 2026-07-13.** Do both halves: defer the requester-facing confirmation email to the approve/deny step (structural fix — removes the "email any address I type" primitive), and give the endpoint its own tight rate limit + a `wpsg_access_request_precheck` filter seam for CAPTCHA/honeypot (abuse-volume fix). Carried forward verbatim into P64-C. |
+| C | Extraction-before-fix ordering | P64-A (grants helper extraction) is sequenced before P64-B (revoke-granularity fix) so the new campaign-vs-company-vs-deny-override logic lands in the shared helper instead of becoming a fourth divergent copy. This is an engineering-sequencing call, not a product decision — flagged here for visibility since it changes P64-B's effective effort (some of its logic moves into P64-A). |
+
+## Execution Priority
+
+1. **P64-A** — do first; it's pure refactor (no behavior change) and directly reduces the surface P64-B has to touch correctly.
+2. **P64-B** — the highest-impact fix in the phase (closes a real privilege-tier leak); build it on top of P64-A's helper.
+3. **P64-C** — independent of A/B; can run in parallel. Both halves (deferral + rate limit) should land together since the rate limit alone doesn't remove the "attacker chooses the recipient" property.
+4. **P64-D, P64-E, P64-F** — small, independent, no dependencies on the above; batch together, in any order.
+
+---
+
+## Track P64-A - Extract a shared grants helper (`WPSG_Grants`)
+
+*Source: PHP_REVIEW_FINDINGS.md § C-2 — re-verified 2026-07-14, confirmed accurate. Verification found the expiry-check duplication is wider than the review estimated (8 call sites, not ~4) — same direction, bigger win.*
+
+### Problem
+
+Access-grant handling repeats across three storage locations (campaign postmeta, company termmeta, space-table JSON) with three near-identical `upsert_*` implementations (`upsert_grant`, `upsert_override` in `class-wpsg-access-controller.php`; `upsert_space_grant` in `class-wpsg-space-controller.php`), the same expiry check (`!empty($e['expires_at']) && strtotime(...) < time()`) copy-pasted at 8 call sites across `class-wpsg-access-controller.php`, `class-wpsg-rest-base.php`, `class-wpsg-space-controller.php`, and `class-wpsg-maintenance.php`, the same `expires_at` ISO-8601 validation error string duplicated verbatim in three endpoint handlers, and near-identical page-sliced user-enrichment blocks (`list_access`, `list_company_access`, space `list_access`). Any future change to grant shape (e.g. adding `granted_by` uniformly) currently touches ~10+ sites.
+
+### Fix
+
+Introduce `WPSG_Grants` (new `includes/class-wpsg-grants.php`) exposing:
+- `upsert(array $grants, array $entry)`
+- `remove(array $grants, int $user_id)`
+- `is_expired(array $entry, ?int $now = null)`
+- `filter_active(array $grants)`
+- `parse_expiry_param($raw): string|null|WP_Error`
+- `enrich_users(array $entries)` for response shaping
+
+Storage stays exactly where it is (postmeta/termmeta/space JSON) — this is pure logic extraction, no schema change.
+
+### Acceptance criteria
+
+- All three `upsert_*` call sites, all 8 expiry-check sites, the three duplicated validation strings, and the three enrichment blocks are replaced with calls into `WPSG_Grants`.
+- Zero behavior change: the full existing P28-B/P33/P47/P53 grant test matrix passes unmodified.
+
+### Validation
+
+- Run the full existing access/grants test suite (P28-B, P33, P47, P53 matrices) and confirm no regressions.
+- New unit tests directly against `WPSG_Grants` methods (expiry edge cases, malformed `expires_at` input).
+
+---
+
+## Track P64-B - Split revoke granularity: campaign-scoped vs company-wide
+
+*Source: PHP_REVIEW_FINDINGS.md § A-14 — re-verified 2026-07-14, all four sub-claims confirmed accurate. Decision already made — see Key Decision A. This track deliberately includes frontend scope; the fix is incoherent without it. Cross-referenced 2026-07-14 against REACT_REVIEW_FINDINGS.md § G, which names `useAccessRows` for the same fix — both hooks are real and compose together (see the note at the end of the Frontend fix section below).*
+
+### Problem
+
+`DELETE /campaigns/{id}/access/{userId}` (`revoke_access()`, `class-wpsg-access-controller.php:326-363`) removes a user's grants from **three** stores at once: campaign postmeta, per-campaign overrides, **and company termmeta** — so revoking one campaign silently revokes every campaign of that company. Two aggravating facts, both re-confirmed:
+
+- **The granularity already exists everywhere else.** Granting already supports both scopes (`source: 'company'|'campaign'`), per-campaign deny overrides already exist and are checked *first* in `get_effective_campaign_level()` (confirmed: deny-check at lines 363-370, immediately after the admin short-circuit and before any grant lookup), and the frontend (`src/hooks/useAdminAccessState.ts`) already has an `accessSource` picker on grant (line 40) and already calls the company-scoped revoke endpoint from its company view (line 160). Only the campaign-scoped revoke handler is over-broad.
+- **It is a permission-tier inconsistency.** `company.access.revoke` is gated `require_system_admin`, but campaign-scoped revoke (gated `require_campaign_space_access`, reachable by space editors) mutates the same company-level grants — a space editor can currently destroy System-Admin-tier company-wide grants through the side door.
+
+**Semantics subtlety:** for a user whose access comes from a company grant, merely deleting their (non-existent) campaign grant would not remove access. "Revoke from this campaign" for a company-sourced user must write a **deny override** instead (the mechanism already exists and already wins over grants in precedence).
+
+### Fix
+
+*PHP* (`class-wpsg-access-controller.php`, built on P64-A's `WPSG_Grants` helper):
+- `revoke_access()`: remove **campaign-level** grants for the user; if (and only if) an active company grant also covers this user, add a per-campaign deny override instead of touching termmeta. Never modify company grants from this endpoint.
+- Distinct audit actions (`access.revoked` vs `access.denied_via_revoke` or similar) so the log tells the two apart.
+- Company-wide revoke stays exactly where it is (`DELETE /companies/{id}/access/{userId}`, `require_system_admin`) — no change needed; the tier inconsistency disappears once the campaign endpoint stops reaching into termmeta.
+- Response tells the client what happened (`{ removed: 'campaign_grant' | 'deny_override_added' }`) so the UI can phrase its confirmation.
+
+*Frontend* (`src/hooks/useAdminAccessState.ts`, Access tab components):
+- The campaign-view revoke of an entry with `source: 'company'` gets confirm-dialog copy distinguishing the outcomes: "Block this user on this campaign only (their company-wide access is kept)" — plus a second, visually distinct action "Revoke company-wide…" calling the existing company endpoint (shown only to System Admins, matching the gate).
+- The "all" view (per-entry campaign-scoped delete, ~line 162) inherits the same handling.
+- The access list already renders `source` per entry — no data-model change, copy + action wiring only.
+- **Cross-referenced 2026-07-14 against the React review:** `useAdminAccessState.ts` owns the state/API-call layer (grant/revoke handlers, `accessSource` picker); the actual per-row revoke action and confirm-dialog wiring live one layer down, in `src/hooks/useAccessRows.tsx` (confirmed via `AdminPanel.tsx`'s `useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole })` composition). Both files are in scope for this track's frontend work — `useAccessRows.tsx` specifically for the per-row confirm-dialog copy split.
+
+### Acceptance criteria
+
+- Revoking a company-sourced user from one campaign leaves their company grant intact and their access to every *other* campaign of that company unaffected; they lose access only to the campaign revoked from.
+- Revoking a campaign-sourced user removes only their campaign grant.
+- A space editor cannot affect company grants via any campaign-scoped endpoint.
+- The company-wide revoke endpoint (System-Admin-only) still works unchanged.
+- The frontend confirm-dialog copy correctly distinguishes "block on this campaign" from "revoke company-wide."
+
+### Validation
+
+- Extend the P33-C role-enforcement matrix (`tests/WPSG_P33C_Role_Enforcement_Test.php`): campaign-sourced revoke removes only campaign grant; company-sourced revoke adds override + leaves company grant + other campaigns intact; space editor cannot touch company grants via any campaign endpoint.
+- Frontend test coverage for the two confirm-dialog paths and the new i18n strings.
+- Manual: revoke a company-sourced user from one of their campaigns, confirm they still see the company's other campaigns; then use the separate company-wide revoke and confirm all access is gone.
+
+---
+
+## Track P64-C - Access-request email abuse: defer confirmation, tighten rate limit
+
+*Source: PHP_REVIEW_FINDINGS.md § B-1 — re-verified 2026-07-14, confirmed accurate. Decision already made — see Key Decision B.*
+
+### Problem
+
+`POST /campaigns/{id}/access-requests` (`submit_access_request()`, `class-wpsg-access-controller.php:398-486`) is public/unauthenticated and sends **two** emails: an admin notification to the fixed `admin_email`, and a confirmation to the **requester-supplied address**, which the code never verifies the caller owns — confirmed. An unauthenticated endpoint that emails an attacker-chosen recipient is a mail-amplification / email-bombing primitive: an attacker can loop through a victim list and make the site send "your access request was received" mail to each one, with (pre-P63-A) no effective rate limiting. Fallout: harassment of arbitrary victims, admin-inbox flooding, and — the more durable cost — mail-reputation damage to the site's own sending domain from bounces/spam-reports, degrading delivery of the site's *legitimate* mail. Confirmed both approve and deny handlers already send their own requester-facing emails independently (`do_approve_request()` at approval; `deny_access_request()` at denial, behind the `wpsg_send_denial_email` filter) — so deferring the pre-approval email doesn't leave requesters uninformed once resolved.
+
+### Fix
+
+- **Structural:** stop sending the requester confirmation on submit. Change the 201 response copy from "check your email for confirmation" to "you'll receive an email once your request is reviewed." The admin notification (fixed recipient) still fires immediately.
+- **Rate/abuse:** give the endpoint its own tight limit (e.g. 5/min/IP + a daily per-IP cap on *distinct* emails submitted) and a `wpsg_access_request_precheck` filter so operators can wire a CAPTCHA/honeypot. This depends on P63-A (rate limiting actually working) to be meaningful.
+
+### Acceptance criteria
+
+- Submitting an access request no longer sends any email to the requester-supplied address; only the fixed-recipient admin notification fires.
+- The 201 response copy reflects the new "reviewed later" messaging (with matching frontend i18n string update).
+- The endpoint has its own rate limit distinct from the generic `rate_limit_public`, and a `wpsg_access_request_precheck` filter hook exists for CAPTCHA/honeypot integration.
+- Approval and denial still notify the requester as before (unchanged).
+
+### Validation
+
+- Test: submitting a request no longer triggers a `wp_mail` call to the requester address (mock/assert on `wp_mail` calls).
+- Test: the new per-endpoint rate limit trips independently of the generic public limit.
+- Manual: submit a request from the public form, confirm the on-page copy and the absence of a requester email; then approve it and confirm the approval email arrives.
+
+---
+
+## Track P64-D - Approved access-request users have no way to log in
+
+*Source: PHP_REVIEW_FINDINGS.md § A-7 — re-verified 2026-07-14, confirmed accurate.*
+
+### Problem
+
+`do_approve_request()` (`class-wpsg-access-controller.php:545-604`) provisions missing users via `wp_create_user($username, wp_generate_password(), $email)` and emails "your access has been approved — visit the site," but never calls `wp_new_user_notification()` or otherwise sends credentials or a reset link. A first-time visitor granted access via the magic-link flow lands on a login form with a password nobody knows and must discover "Lost your password?" on their own. The parallel `create_user` admin endpoint (`class-wpsg-auth-controller.php`) already does this correctly via `wp_new_user_notification($user_id, null, 'user')`.
+
+### Fix
+
+Call `wp_new_user_notification($user_id, null, 'user')` after `wp_create_user()` in `do_approve_request()`, mirroring the existing `create_user` path.
+
+### Acceptance criteria
+
+- A first-time access-request approval sends a password-reset-link notification in addition to the "access approved" email.
+- Approving a request for an *existing* user does not trigger a spurious reset-link notification.
+
+### Validation
+
+- Test asserting `wp_new_user_notification` fires for the new-user path and not for the existing-user path.
+- Manual: approve an access request for a brand-new email, confirm two emails arrive (approval notice + reset-link notification) and the reset link works.
+
+---
+
+## Track P64-E - Magic-link inline-HTML fallback served through the JSON encoder
+
+*Source: PHP_REVIEW_FINDINGS.md § A-8 — re-verified 2026-07-14, confirmed accurate.*
+
+### Problem
+
+When no landing page is configured, `magic_link_redirect()` (`class-wpsg-access-controller.php:669-705`) returns a `WP_REST_Response` whose *data* is an HTML string. `WP_REST_Server::serve_request()` JSON-encodes response data by default, so the browser receives a quoted, backslash-escaped blob under `Content-Type: text/html` — a visually broken page. The CSV export in the same codebase (`audit_csv_response()`, `class-wpsg-campaign-controller.php:952-961`) already solves an analogous problem correctly via a one-shot `rest_pre_serve_request` filter that echoes raw output and bypasses JSON encoding.
+
+### Fix
+
+Reuse the `rest_pre_serve_request` echo pattern for the HTML fallback (or, more simply, always redirect — e.g. to `home_url()` with a `wpsg_result` query arg — and drop inline HTML entirely).
+
+### Acceptance criteria
+
+- Visiting a magic link with no landing page configured renders actual HTML in the browser, not an escaped JSON string.
+
+### Validation
+
+- Manual: clear `magic_link_landing_page_id`, follow a magic link, confirm the fallback page renders correctly.
+- If the redirect approach is chosen instead: confirm the redirect target renders the intended message.
+
+---
+
+## Track P64-F - `create_user`'s email-failure fallback can never trigger
+
+*Source: PHP_REVIEW_FINDINGS.md § A-13 — re-verified 2026-07-14, confirmed accurate.*
+
+### Problem
+
+`wp_new_user_notification()` is wrapped in `try/catch (Exception)` (`class-wpsg-auth-controller.php:405-423`), but `wp_mail()` catches PHPMailer exceptions internally and returns `false` rather than throwing — nothing ever throws through this call. `$email_sent` is therefore always `true`, and the reset-URL fallback below it (returned to the client when mail fails) is unreachable on a real mail failure.
+
+### Fix
+
+Hook `wp_mail_failed` around the call (set a flag in a closure, remove the hook after) instead of relying on an exception, or call `wp_mail()` directly and check its boolean return.
+
+### Acceptance criteria
+
+- Simulating a mail-send failure (e.g. via a `wp_mail_failed`-triggering SMTP misconfiguration in a test) results in `$email_sent = false` and the reset-URL fallback being returned to the client.
+
+### Validation
+
+- Test that forces `wp_mail` to fail (filter `pre_wp_mail` to short-circuit failure, or trigger `wp_mail_failed` directly) and asserts the fallback path activates.
+
+## Follow-On Candidates
+
+| Candidate | Why it is deferred |
+|-----------|--------------------|
+| Full storage-backend unification for grants (single table instead of postmeta/termmeta/space-JSON) | C-2's logic-only extraction (P64-A) captures nearly all the maintenance win without a schema migration; revisit only if the three storage backends themselves become a maintenance burden. |
+
+## Implementation Notes
+
+- Record completed work here as tracks land; nothing executed yet.
+
+## Outcome
+
+Not started.
