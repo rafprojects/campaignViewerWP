@@ -312,3 +312,57 @@ behind `__WPSG_PREMIUM__`. Verified — the free build (`WPSG_PREMIUM=false npm 
 **no** `PresetGalleryModal-*.js` chunk and **no** preset data (`Magazine Spread` absent), while the
 premium build contains both; the premium bundle is byte-size-identical to before. Extending the
 pattern to text layers + breakpoint overrides (and the renderer relocation above) is **P62-G**.
+
+---
+
+## 8. Building & deploy-testing the free vs premium editions
+
+Because of the two-layer model (§7), there are **three** states worth deploy-testing — the build flag
+decides code *presence*, the license decides *access*:
+
+| State | Build command | License | What you should see |
+|---|---|---|---|
+| **Free (WP.org "lite")** | `npm run build:wp:free` | n/a | Pro authoring UI is **absent** (no "Add text", no breakpoint switcher, no starter library). Saved Pro content still **renders**. |
+| **Premium, unlicensed** | `npm run build:wp` | none | Pro UI is **present but gated** → activating it shows an upsell prompt. (What a buyer sees before activating.) |
+| **Premium, licensed** | `npm run build:wp` | fake-pro filter, or real Freemius | Pro features **unlocked**. |
+
+### Build commands
+
+- **Premium build:** `npm run build:wp` — the default build (`__WPSG_PREMIUM__` = true). Runs i18n
+  generation + `tsc`/`vite build`, then copies `dist/` into `wp-plugin/wp-super-gallery/assets/`.
+- **Free build:** `npm run build:wp:free` — the same pipeline with `WPSG_PREMIUM=false`, so Rollup
+  dead-code-eliminates the Pro authoring code.
+- **Verify the free build is clean:** `npm run check:free-build` — builds free and fails if any Pro
+  chunk/marker leaks in (this is the CI gate).
+
+> Both write to the **same** `wp-plugin/wp-super-gallery/assets/` — the two editions can't coexist
+> there. Rebuild to switch, and **reload the browser** afterward (assets are content-hashed and the
+> PHP reads the fresh manifest; no plugin re-activation is needed for an asset-only change). The
+> **PHP is identical** in both editions — only the JS bundle differs; the server-side
+> `enforce_license_gates()` is what keeps the free tier free.
+
+### Simulating a license (no Freemius account needed)
+
+Drop a dev-only must-use plugin to force the licensed state on the **premium** build:
+
+```php
+<?php // wp-content/mu-plugins/wpsg-fake-pro.php — DEV/QA ONLY
+add_filter( 'wpsg_license_is_pro', '__return_true' );
+```
+
+Remove it to see the unlicensed/upsell state. To unlock a single feature (per-tier testing) use the
+`wpsg_license_feature_enabled` filter (§4). On the **free** build these filters have no visible
+effect — the Pro UI isn't in the bundle to unlock.
+
+### Deploy-testing workflows
+
+- **Quick, one edition at a time (recommended):** `npx wp-env start` loads the plugin straight from
+  `wp-plugin/wp-super-gallery/`. Rebuild (`build:wp` / `build:wp:free`), reload, test. Toggle the
+  public embed's shadow DOM with `?shadow=0` on the page URL.
+- **Both editions side-by-side:** build one, copy `wp-plugin/wp-super-gallery/` to a second folder
+  under a distinct slug (e.g. `wp-super-gallery-premium/`), then build the other into the original.
+  Install both — this mirrors the real free-slug / `premium_slug` split (M2 in the
+  [go-live punch list](GO_LIVE_PUNCH_LIST.md)).
+- **Exact release bytes:** the `Release` workflow produces the premium ZIP; the free ZIP comes from
+  `build:wp:free` + zipping the plugin folder. For a production-faithful test install those ZIPs on a
+  clean site rather than a rebuilt dev tree.
