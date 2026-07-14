@@ -4,6 +4,47 @@ import { cleanup } from '@testing-library/react';
 // Initialise i18next with English defaults so t() returns English strings in tests.
 import '../i18n';
 
+// JSDOM doesn't implement real navigation, so any attempt raises a "Not implemented:
+// navigation (except hash changes)" jsdomError that its default virtual console forwards
+// to console.error. Two things in this app trigger it during tests: window.location.reload()
+// (AuthContext logout) and clicking a blob-href download anchor (JSDOM's hyperlink-follow
+// logic never consults the `download` attribute, so every `a.download = …; a.click()`
+// helper looks like a navigation to it). Both are JSDOM implementation-gaps, not real
+// failures — the suite passes either way — but the stack traces read as a broken build.
+//
+// Filter out ONLY that message, and keep forwarding every other jsdomError. jsdomError is
+// not just "not implemented" noise: JSDOM also routes genuine problems through it —
+// uncaught exceptions thrown from event handlers (runtime-script-errors.js, `Uncaught …`),
+// CSS parse errors, XHR/resource-load failures. Blanket-silencing the whole event
+// (removeAllListeners, or jsdom's omitJSDOMErrors option) would swallow those too and let
+// a real handler-throwing bug pass a test silently — so we replace the forwarder with a
+// message-filtered one rather than removing it.
+//
+// This must mutate the existing virtual console in place, not replace it: vitest's jsdom
+// environment proxies `window` onto Node's real `global` (`populateGlobal`) with a getter
+// that forwards to the real jsdom window but a setter that only writes to a disconnected
+// shadow map — so `window._virtualConsole = …` never reaches the instance jsdom's own
+// internals (navigation.js et al.) read. Calling methods on the object from the getter
+// mutates the real shared instance and works. (A vite.config.ts environmentOptions
+// virtualConsole can't be used either: pool 'forks' IPC-serializes that config and a live
+// VirtualConsole/EventEmitter can't survive it.)
+{
+	const virtualConsole = (window as unknown as {
+		_virtualConsole: {
+			removeAllListeners(event: string): void;
+			on(event: string, cb: (err: Error & { detail?: unknown }) => void): void;
+		};
+	})._virtualConsole;
+	virtualConsole.removeAllListeners('jsdomError');
+	virtualConsole.on('jsdomError', (err) => {
+		if (typeof err?.message === 'string' && err.message.includes('Not implemented: navigation')) {
+			return;
+		}
+		// Preserve JSDOM's default forwarding (virtual-console.js sendTo) for everything else.
+		console.error(err.stack, err.detail);
+	});
+}
+
 // ── IntersectionObserver stub (needed by embla-carousel) ────────────
 if (!globalThis.IntersectionObserver) {
 	class IntersectionObserver {
