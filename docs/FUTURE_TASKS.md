@@ -275,6 +275,23 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](archive/phases/PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
 
+### Per-Space Authorization Scoping of Ephemeral Export-Job Resources
+
+**Files:** `includes/rest/class-wpsg-export-controller.php` (`authorize_job_access()`), `includes/class-wpsg-export-engine.php` (`create_job()` stamp), `includes/class-wpsg-permissions.php` (`require_campaign_space_access`).
+
+**Context:** The `export-jobs/{job_id}` read/delete/download endpoints gate on the global `require_admin` (manage_wpsg) floor. P63-E stamps `required_tier` and re-checks it; the P63-E-2 PR-review follow-up (see [PHASE63_REPORT.md](PHASE63_REPORT.md)) additionally stamps `created_by` and enforces **creator-ownership** — a non-System-Admin may only touch a job they created. That closes the exploitable same-tier / cross-space peer-read gap. What it deliberately does **not** do is bind a job to the *campaign space* it was exported from and re-check `require_campaign_space_access` on access.
+
+**What it would take:**
+- Stamp the originating `space_id`(s) on the job at `create_job()` time.
+- Re-check `require_campaign_space_access` for that space in `authorize_job_access()`, layered over the existing tier + ownership checks.
+- Resolve **multi-space batch (`multi_campaign`) semantics** — a batch export may span campaigns in several spaces, so decide whether access requires membership in *all* contributing spaces, the union, or the creating user's effective set (the ambiguity that made ownership scoping the pragmatic first cut).
+
+**Rationale for deferral:** Ownership scoping already prevents a peer from pulling a job they did not create, which covers the concrete threat. True per-space scoping is a larger design (schema stamp + batch-semantics decision + resolution) with little marginal security benefit over ownership for today's single-actor create→poll→download flow. It composes cleanly with the P52-A `WPSG_Permissions` map. Deferred from Phase 63 PR review (P63-E-2, 2026-07-15); revisit if a shared-job or delegated-download flow appears, or alongside the custom-role engine below.
+
+**Effort:** Medium | **Impact:** Low today (ownership scoping covers the live risk); Medium if delegated/shared job flows emerge.
+
+---
+
 ### Granular Custom-Role Permission Engine (GitHub-style)
 
 **Files:** `includes/class-wpsg-permissions.php` (introduced in P52-A), role/cap setup in `wp-super-gallery.php`, a new admin UI + storage.

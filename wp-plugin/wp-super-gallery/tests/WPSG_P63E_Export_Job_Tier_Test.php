@@ -114,4 +114,82 @@ class WPSG_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
 
         WPSG_Export_Engine::delete_job( $id );
     }
+
+    // ── Ownership enforcement (P63-E-2: same-tier peer / cross-space) ─────────
+
+    /** Editor B (a manage_wpsg peer in another space) must not read Editor A's job. */
+    public function test_editor_cannot_access_another_editors_job() {
+        wp_set_current_user( $this->editor_id );
+        $id = WPSG_Export_Engine::create_job( 'campaign', '{}', [] ); // editor-tier, created_by = editor A
+
+        $editor_b = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+        get_user_by( 'id', $editor_b )->add_cap( 'manage_wpsg' );
+
+        $resp = $this->poll_job( $editor_b, $id );
+
+        $this->assertInstanceOf( WP_Error::class, $resp );
+        $this->assertSame( 403, $resp->get_error_data()['status'] );
+
+        WPSG_Export_Engine::delete_job( $id );
+    }
+
+    /** The creator can always read their own job. */
+    public function test_editor_can_access_own_job() {
+        wp_set_current_user( $this->editor_id );
+        $id = WPSG_Export_Engine::create_job( 'campaign', '{}', [] );
+
+        $resp = $this->poll_job( $this->editor_id, $id );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $resp );
+        $this->assertSame( 200, $resp->get_status() );
+
+        WPSG_Export_Engine::delete_job( $id );
+    }
+
+    /** System Admins retain global access to any job (support / debugging). */
+    public function test_system_admin_can_access_another_users_job() {
+        wp_set_current_user( $this->editor_id );
+        $id = WPSG_Export_Engine::create_job( 'campaign', '{}', [] ); // created by the editor
+
+        $resp = $this->poll_job( $this->admin_id, $id );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $resp );
+        $this->assertSame( 200, $resp->get_status() );
+
+        WPSG_Export_Engine::delete_job( $id );
+    }
+
+    /** Unstamped (created_by 0) jobs — pre-stamp in-flight / CLI — fall back to tier-only. */
+    public function test_unstamped_job_falls_back_to_tier_only() {
+        // No current user set → created_by is 0.
+        $id  = WPSG_Export_Engine::create_job( 'campaign', '{}', [] );
+        $job = WPSG_Export_Engine::get_job( $id );
+        $this->assertSame( 0, $job['created_by'] );
+
+        $resp = $this->poll_job( $this->editor_id, $id );
+
+        $this->assertInstanceOf( WP_REST_Response::class, $resp );
+        $this->assertSame( 200, $resp->get_status() );
+
+        WPSG_Export_Engine::delete_job( $id );
+    }
+
+    /** Ownership is enforced on the download endpoint too, before the status check. */
+    public function test_download_rejected_for_non_owner_editor() {
+        wp_set_current_user( $this->editor_id );
+        $id = WPSG_Export_Engine::create_job( 'campaign', '{}', [] );
+
+        $editor_b = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+        get_user_by( 'id', $editor_b )->add_cap( 'manage_wpsg' );
+
+        wp_set_current_user( $editor_b );
+        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $id . '/download' );
+        $req->set_param( 'job_id', $id );
+        $resp = WPSG_Export_Controller::download_export_job( $req );
+
+        $this->assertInstanceOf( WP_Error::class, $resp );
+        $this->assertSame( 403, $resp->get_error_data()['status'] );
+
+        WPSG_Export_Engine::delete_job( $id );
+    }
 }

@@ -411,14 +411,35 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
     }
 
     /**
-     * P63-E: enforce the tier stamped on the job at creation time.
+     * P63-E: enforce the tier stamped on the job at creation time, plus (P63-E-2
+     * follow-up) creator-ownership so a same-tier peer in a different campaign space
+     * cannot pull a job they did not create.
      *
      * The permission_callback for the job endpoints (export_jobs.read/delete/download)
-     * is the coarse `require_admin` floor (manage_wpsg). Jobs created under a stricter
-     * gate (audit / media-library export → System Admin) stamp `required_tier`, which
-     * must be re-checked here so a lower-tier user who obtains the job ID cannot pull
-     * content they could never have created. Missing tier (pre-P63-E jobs still in
-     * flight) defaults to the old floor, TIER_EDITOR.
+     * is the coarse `require_admin` floor (manage_wpsg). Two gates are re-applied here:
+     *
+     *   1. Tier — jobs created under a stricter gate (audit / media-library export →
+     *      System Admin) stamp `required_tier`, which must be re-checked so a
+     *      lower-tier user who obtains the job ID cannot pull content they could
+     *      never have created. Missing tier (pre-P63-E jobs still in flight) defaults
+     *      to the old floor, TIER_EDITOR.
+     *
+     *   2. Ownership — `require_admin` is a *global* capability (not space-scoped),
+     *      so without this a manage_wpsg editor in one campaign space could
+     *      read/download a `campaign` / `multi_campaign` export created by an editor
+     *      in another space merely by holding the 32-hex job ID. A non-System-Admin
+     *      actor may therefore only touch a job they created; System Admins retain
+     *      access to any job (support / debugging) — and because System-Admin-gated
+     *      jobs already require that tier at step 1, audit / media-library jobs stay
+     *      reachable by any System Admin exactly as before. Enforced only when the
+     *      creator id is known (> 0), so pre-stamp in-flight jobs and CLI-created jobs
+     *      (no logged-in user → created_by 0) fall back to the tier-only check.
+     *
+     * NB: this is deliberately *ownership* scoping, not full *space* scoping. True
+     * per-space authorization of these ephemeral job resources (stamping the space
+     * id and re-checking require_campaign_space_access, incl. multi-space batch
+     * semantics) is tracked as a separate follow-up — see FUTURE_TASKS.md and the
+     * PR-review section of PHASE63_REPORT.md.
      *
      * @return true|WP_Error  true when authorized, WP_Error(403) otherwise.
      */
@@ -431,6 +452,23 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
                 ['status' => 403]
             );
         }
+
+        // Ownership gate (P63-E-2): a non-System-Admin may only access jobs they
+        // created. Skipped when the creator is unknown (created_by 0) so in-flight
+        // pre-stamp jobs and CLI-created jobs keep working under the tier-only check.
+        $creator = (int) ($job['created_by'] ?? 0);
+        if (
+            $creator > 0
+            && $creator !== get_current_user_id()
+            && !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)
+        ) {
+            return new WP_Error(
+                'wpsg_forbidden',
+                'You do not have permission to access this export job.',
+                ['status' => 403]
+            );
+        }
+
         return true;
     }
 

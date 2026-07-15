@@ -346,3 +346,47 @@ Automated coverage (the 6 new `WPSG_P63*` test files + the extended rate-limiter
 ## Outcome
 
 All 8 tracks (P63-A…H) implemented on branch `feat/phase63-php-hardening-1-of-5`, 2026-07-14. Six new test files added (`WPSG_P63{A_B,C,D,E,F,G}_*`), two existing tests updated (`WPSG_Coverage_Extras_Test` for the removed asset-header method; `WPSG_P39CM1_Export_Test` unaffected by the named-arg `create_job` change). `php -l` clean on all changed files. Full wp-env PHPUnit run + commit pending.
+
+---
+
+## PR Review & Hardening Follow-Up (P63-E-2)
+
+*Added 2026-07-15. A self-review pass over the branch's committed hardening work (`9aed7238`) plus a `/code-review` sweep, following the `git-address-comments` process for triage/rationale/QA (there is no open GitHub PR for this branch yet, so the review was conducted against the `main…HEAD` diff rather than PR threads).*
+
+### Method
+
+Full branch diff vs `main` reviewed at extra-high effort (≈980 lines: 8 PHP source files + `public/.htaccess` + 6 new test files) across correctness (line-by-line, removed-behavior, cross-file caller/callee, language-pitfall), and cleanup (reuse / simplification / efficiency / altitude / conventions) angles. A Haiku subagent ran the PHPUnit suite (per the `php-testing` skill) as the QA gate; test authoring and all triage were done in-session.
+
+### Findings & triage
+
+| # | Finding | Severity | Disposition | Rationale |
+|---|---------|----------|-------------|-----------|
+| 1 | **Cross-space / same-tier peer read of export jobs.** `authorize_job_access()` (P63-E) re-checks the stamped *tier* but not *ownership*; `export_jobs.read/delete/download` sit at the global `require_admin` floor, so a `manage_wpsg` editor in space A holding a 32-hex job ID could read/download a `campaign` / `multi_campaign` export created by an editor in space B. | Low (pre-existing; not introduced by this diff) | **Accept → fixed (P63-E-2)** | Pre-existing, but by P63-E's own threat model ("content they could never have created") it is the natural next step. Closed with creator-ownership enforcement (below). |
+| 2 | `created_by` stamped on the job but not read by any enforcement code. | Nit | **Accept (subsumed by #1)** | The ownership fix (#1) now consumes `created_by`, so it is no longer dead data. |
+| 3 | P63-C `.htaccess` applies blanket `immutable` caching to all matching files in `assets/`, which would stale any non-content-hashed asset copied from `public/`. | Info | **Reject (no change)** | Verified `public/` contains only `.htaccess` (not served by Apache) and `sw.js` (explicitly `no-store`-overridden in the same file). There are no other non-hashed assets, so there is no stale-cache surface. |
+| 4 | P63-B filter rename `wpsg_rate_limit_window` → `wpsg_rest_rate_limit_window` is a breaking change for any site filtering the old name. | Info | **Reject (no change)** | Intentional and documented — the two subsystems shared a name with divergent signatures (a genuine footgun); the filters are internal hardening knobs with no references outside the plugin. Already captured as a Key Decision. |
+
+No correctness, crash, regression, or reuse/simplification defects were found in the reviewed diff — the P63 work is careful and comprehensively unit-tested. Only finding #1 warranted a code change.
+
+### Accepted fix — creator-ownership on export-job endpoints
+
+**Change:** `authorize_job_access()` (`includes/rest/class-wpsg-export-controller.php`) now layers an **ownership** gate over the existing tier gate: a non-System-Admin actor may only touch a job whose `created_by` matches the current user. System Admins retain access to any job (support/debugging), and because System-Admin-gated jobs (audit / media-library) already require that tier at the first gate, those remain reachable by any System Admin exactly as before. The gate is skipped when the creator id is unknown (`created_by === 0`), so pre-P63-E in-flight jobs and CLI-created jobs (no logged-in user) fall back to the prior tier-only behavior — no regression.
+
+**Decision — ownership scoping, not full space scoping.** The finding was framed as space scoping, but binding a job to a campaign *space* has unresolved multi-space semantics for `multi_campaign` batch exports (a batch may span several spaces). Creator-ownership fully closes the concrete threat (a peer pulling a job they did not create) with minimal blast radius and no schema/semantics ambiguity, and it composes cleanly with the P52-A `WPSG_Permissions` map. True per-space authorization of these ephemeral resources is tracked as a dedicated follow-up in [FUTURE_TASKS.md](FUTURE_TASKS.md) → *Access Control → Per-Space Authorization Scoping of Ephemeral Export-Job Resources*.
+
+**Tests:** five cases added to `WPSG_P63E_Export_Job_Tier_Test` — peer editor rejected (read + download), owner allowed, System Admin cross-user allowed, and the unstamped-job tier-only fallback. All seven original P63-E cases still pass unchanged (each stamps `created_by = 0` or exercises the System-Admin tier, so the new gate is a no-op for them).
+
+### QA
+
+Full wp-env PHPUnit run (2026-07-15), delegated to a Haiku runner per the `php-testing` skill:
+
+- **Baseline (pre-fix, branch as committed):** `OK — 1151 tests, 13223 assertions, 2 skipped`, exit 0. Confirms the committed P63-A…H work has no regressions on its own.
+- **`WPSG_P63E_Export_Job_Tier_Test` (post-fix, focused):** `OK — 12 tests, 23 assertions`, exit 0 (7 original + 5 new ownership cases).
+- **Full suite (post-fix):** `OK — 1156 tests, 13234 assertions, 2 skipped`, exit 0 — exactly +5 tests over baseline, **zero failures/errors, no regressions**.
+
+### Files touched by the review
+
+- `includes/rest/class-wpsg-export-controller.php` — `authorize_job_access()` ownership gate + docblock.
+- `tests/WPSG_P63E_Export_Job_Tier_Test.php` — five ownership-enforcement tests.
+- `docs/FUTURE_TASKS.md` — new *Per-Space Authorization Scoping* tracking entry.
+- `docs/PHASE63_REPORT.md` — this section.
