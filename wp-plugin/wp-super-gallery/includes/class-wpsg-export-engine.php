@@ -34,30 +34,49 @@ class WPSG_Export_Engine {
     /**
      * Create an export job and schedule it for background processing.
      *
-     * @param string $type        Caller-defined type string (e.g. 'campaign').
-     * @param string $manifest    JSON-encoded manifest to embed as manifest.json.
-     * @param array  $media_items Array of {id, url, title} tuples to fetch.
-     * @param int    $size_limit  Maximum total ZIP size in bytes.
+     * @param string $type          Caller-defined type string (e.g. 'campaign').
+     * @param string $manifest      JSON-encoded manifest to embed as manifest.json.
+     * @param array  $media_items   Array of {id, url, title} tuples to fetch.
+     * @param int    $size_limit    Maximum total ZIP size in bytes.
+     * @param string $required_tier P63-E: WPSG_Permissions TIER_* required to
+     *                              read/delete/download this job. Defaults to
+     *                              TIER_EDITOR (manage_wpsg); callers whose create
+     *                              gate is stricter (e.g. audit / media-library
+     *                              export require System Admin) must pass
+     *                              TIER_SYSTEM_ADMIN so the job can't be pulled by a
+     *                              lower-tier user who obtains the job ID.
      * @return string             Opaque job ID (32-char hex string).
      */
     public static function create_job(
         string $type,
         string $manifest,
         array $media_items,
-        int $size_limit = self::SIZE_LIMIT_BYTES
+        int $size_limit = self::SIZE_LIMIT_BYTES,
+        string $required_tier = WPSG_Permissions::TIER_EDITOR
     ): string {
         $id = bin2hex(random_bytes(16));
 
+        $allowed_tiers = [
+            WPSG_Permissions::TIER_SYSTEM_ADMIN,
+            WPSG_Permissions::TIER_EDITOR,
+            WPSG_Permissions::TIER_VIEWER,
+        ];
+        if (!in_array($required_tier, $allowed_tiers, true)) {
+            $required_tier = WPSG_Permissions::TIER_EDITOR;
+        }
+
         $job = [
-            'id'          => $id,
-            'type'        => sanitize_key($type),
-            'status'      => 'pending',
-            'created_at'  => gmdate('c'),
-            'manifest'    => $manifest,
-            'media_items' => $media_items,
-            'zip_path'    => '',
-            'size_limit'  => $size_limit,
-            'error'       => null,
+            'id'            => $id,
+            'type'          => sanitize_key($type),
+            'status'        => 'pending',
+            'created_at'    => gmdate('c'),
+            'created_by'    => get_current_user_id(),
+            'required_tier' => $required_tier,
+            'manifest'      => $manifest,
+            'media_items'   => $media_items,
+            'zip_path'      => '',
+            'size_limit'    => $size_limit,
+            'error'         => null,
         ];
 
         set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);

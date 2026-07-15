@@ -410,6 +410,30 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
 
+    /**
+     * P63-E: enforce the tier stamped on the job at creation time.
+     *
+     * The permission_callback for the job endpoints (export_jobs.read/delete/download)
+     * is the coarse `require_admin` floor (manage_wpsg). Jobs created under a stricter
+     * gate (audit / media-library export → System Admin) stamp `required_tier`, which
+     * must be re-checked here so a lower-tier user who obtains the job ID cannot pull
+     * content they could never have created. Missing tier (pre-P63-E jobs still in
+     * flight) defaults to the old floor, TIER_EDITOR.
+     *
+     * @return true|WP_Error  true when authorized, WP_Error(403) otherwise.
+     */
+    private static function authorize_job_access(array $job) {
+        $required = $job['required_tier'] ?? WPSG_Permissions::TIER_EDITOR;
+        if (!WPSG_Permissions::actor_has_tier($required)) {
+            return new WP_Error(
+                'wpsg_forbidden',
+                'You do not have permission to access this export job.',
+                ['status' => 403]
+            );
+        }
+        return true;
+    }
+
     // GET /export-jobs/{job_id} — poll job status.
     public static function get_export_job($request) {
         $job_id = sanitize_key($request->get_param('job_id'));
@@ -417,6 +441,11 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
 
         if (!$job) {
             return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        $authorized = self::authorize_job_access($job);
+        if (is_wp_error($authorized)) {
+            return $authorized;
         }
 
         $payload = [
@@ -443,6 +472,11 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
         }
 
+        $authorized = self::authorize_job_access($job);
+        if (is_wp_error($authorized)) {
+            return $authorized;
+        }
+
         WPSG_Export_Engine::delete_job($job_id);
         return new WP_REST_Response(['deleted' => true], 200);
     }
@@ -454,6 +488,11 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
 
         if (!$job) {
             return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+        }
+
+        $authorized = self::authorize_job_access($job);
+        if (is_wp_error($authorized)) {
+            return $authorized;
         }
 
         if ($job['status'] !== 'complete') {

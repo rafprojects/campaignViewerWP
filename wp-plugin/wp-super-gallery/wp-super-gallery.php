@@ -463,7 +463,18 @@ function wpsg_run_schedule_auto_archive() {
 }
 
 add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
-add_action('send_headers', 'wpsg_add_security_headers');
+
+// P63-C: security headers are emitted at the two points where output has NOT yet
+// started and the request context is actually known:
+//   - front-end pages containing the gallery shortcode → template_redirect
+//   - REST responses on our namespace          → rest_pre_serve_request
+// The previous single `send_headers` hook fired before render_shortcode() set its
+// $GLOBALS['wpsg_has_shortcode'] flag, and after REST requests had already been
+// served and terminated by rest_api_loaded() during parse_request, so it never
+// actually emitted anything. Static plugin assets are handled by assets/.htaccess
+// (a real web-server directive), not PHP — those files never enter PHP.
+add_action('template_redirect', 'wpsg_maybe_send_security_headers');
+add_filter('rest_pre_serve_request', 'wpsg_add_rest_security_headers', 9, 4);
 
 function wpsg_add_cors_headers($served, $result, $request, $server) {
     $route = $request->get_route();
@@ -487,48 +498,80 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
     return $served;
 }
 
-function wpsg_add_security_headers() {
+/**
+ * Build the plugin's security response-header set (name => value). Kept as a pure
+ * function so it can be asserted directly in tests without capturing header() output.
+ */
+function wpsg_security_headers_list() {
+    $headers = [
+        'X-Content-Type-Options' => 'nosniff',
+        'X-Frame-Options'        => apply_filters('wpsg_x_frame_options', 'SAMEORIGIN'),
+        'Referrer-Policy'        => apply_filters('wpsg_referrer_policy', 'strict-origin-when-cross-origin'),
+        'Permissions-Policy'     => apply_filters('wpsg_permissions_policy', 'camera=(), microphone=(), geolocation=()'),
+    ];
+
+    $csp = apply_filters('wpsg_csp_header', '');
+    if (!empty($csp)) {
+        $headers['Content-Security-Policy'] = $csp;
+    }
+
+    return $headers;
+}
+
+/**
+ * Emit the plugin's security response headers. Shared by the front-end and REST
+ * entry points. No-op if the feature is filtered off or headers were already sent.
+ */
+function wpsg_emit_security_headers() {
     if (!apply_filters('wpsg_security_headers_enabled', true)) {
         return;
     }
-
-    if (!wpsg_should_add_security_headers()) {
+    if (headers_sent()) {
         return;
     }
 
-    if (!headers_sent()) {
-        $xfo = apply_filters('wpsg_x_frame_options', 'SAMEORIGIN');
-        $referrer = apply_filters('wpsg_referrer_policy', 'strict-origin-when-cross-origin');
-        $permissions = apply_filters('wpsg_permissions_policy', 'camera=(), microphone=(), geolocation=()');
-        $csp = apply_filters('wpsg_csp_header', '');
-
-        header('X-Content-Type-Options: nosniff');
-        header('X-Frame-Options: ' . $xfo);
-        header('Referrer-Policy: ' . $referrer);
-        header('Permissions-Policy: ' . $permissions);
-
-        if (!empty($csp)) {
-            header('Content-Security-Policy: ' . $csp);
-        }
+    foreach (wpsg_security_headers_list() as $name => $value) {
+        header($name . ': ' . $value);
     }
 }
 
-function wpsg_should_add_security_headers() {
-    if (!empty($GLOBALS['wpsg_has_shortcode'])) {
-        return true;
+/**
+ * Whether the current front-end request renders the gallery shortcode. Detects it
+ * from the queried post's stored content (not the runtime render flag, which is
+ * set too late — P63-C). Pure/side-effect-free so it can be unit-tested via go_to().
+ */
+function wpsg_page_has_gallery_shortcode() {
+    if (is_admin() || wp_doing_ajax()) {
+        return false;
     }
+    $post = get_post();
+    return $post instanceof WP_Post && has_shortcode((string) $post->post_content, 'super-gallery');
+}
 
-    $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection to decide security headers; no state change, no nonce.
-    if (strpos($route, '/wp-super-gallery/v1/') === 0) {
-        return true;
+/**
+ * Front-end: emit security headers on pages that render the gallery shortcode.
+ *
+ * Runs on template_redirect — after send_headers but before any template output,
+ * so header() calls are still valid (P63-C).
+ */
+function wpsg_maybe_send_security_headers() {
+    if (wpsg_page_has_gallery_shortcode()) {
+        wpsg_emit_security_headers();
     }
+}
 
-    $uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
-    if (strpos($uri, '/wp-json/wp-super-gallery/v1/') !== false) {
-        return true;
+/**
+ * REST: emit security headers on responses for the plugin's namespace.
+ *
+ * Runs on rest_pre_serve_request (the same hook the plugin uses for CORS), which
+ * fires inside the REST server just before the response body is sent — the correct
+ * place for REST headers, since send_headers never fires for REST requests (P63-C).
+ */
+function wpsg_add_rest_security_headers($served, $result, $request, $server) {
+    if ($request instanceof WP_REST_Request && strpos((string) $request->get_route(), '/wp-super-gallery/v1/') === 0) {
+        wpsg_emit_security_headers();
     }
-
-    return strpos($uri, '/wp-content/plugins/wp-super-gallery/') !== false;
+    return $served;
 }
 
 // Initialize settings (admin only).

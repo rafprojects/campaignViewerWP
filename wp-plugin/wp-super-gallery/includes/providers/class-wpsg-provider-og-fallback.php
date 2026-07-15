@@ -32,7 +32,8 @@ class WPSG_Provider_OG_Fallback implements WPSG_Provider_Handler {
     public function fetch(string $url, array $parsed, array &$attempts): ?array {
         try {
             $attempts[] = $url;
-            $resp = wp_remote_get($url, [
+            // P63-H: SSRF-safe HTTP client — independently safe on any call path.
+            $resp = wp_safe_remote_get($url, [
                 'timeout'     => 6,
                 'redirection' => 0,
                 'headers'     => [

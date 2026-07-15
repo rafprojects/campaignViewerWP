@@ -17,7 +17,10 @@ class WPSG_Embed {
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
 
-        add_action('send_headers', [self::class, 'add_asset_cache_headers']);
+        // P63-C: no send_headers hook for asset caching here. Static files under
+        // assets/ are served by the web server without entering PHP, so a PHP-side
+        // Cache-Control attempt never ran. Long-cache immutable headers are set by
+        // the shipped assets/.htaccess (Apache) — see public/.htaccess in source.
 
         if ($entry && isset($entry['file'])) {
             $script_url = $base_url . $entry['file'];
@@ -147,31 +150,6 @@ class WPSG_Embed {
         // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
         readfile($sw_file);
         exit;
-    }
-
-    public static function add_asset_cache_headers() {
-        if (headers_sent()) {
-            return;
-        }
-
-        $uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
-        if (empty($uri)) {
-            return;
-        }
-
-        if (strpos($uri, '/wp-content/plugins/wp-super-gallery/assets/') === false) {
-            return;
-        }
-
-        $path = wp_parse_url($uri, PHP_URL_PATH);
-        $ext = $path ? strtolower(pathinfo($path, PATHINFO_EXTENSION)) : '';
-        $cacheable = ['js', 'css', 'svg', 'png', 'jpg', 'jpeg', 'webp', 'gif', 'woff2', 'woff', 'ttf', 'eot'];
-
-        if (!in_array($ext, $cacheable, true)) {
-            return;
-        }
-
-        header('Cache-Control: public, max-age=31536000, immutable');
     }
 
     /**

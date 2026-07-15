@@ -32,7 +32,10 @@ class WPSG_Provider_WPCore implements WPSG_Provider_Handler {
         $core_endpoint = rest_url('oembed/1.0/embed?url=' . rawurlencode($url));
         $attempts[] = $core_endpoint;
 
-        $resp = wp_remote_get($core_endpoint, [
+        // P63-H: wp_safe_remote_get() blocks private/reserved IPs at the HTTP
+        // layer, so this handler is SSRF-safe independent of proxy_oembed()'s
+        // out-of-band pre_http_request filter.
+        $resp = wp_safe_remote_get($core_endpoint, [
             'timeout' => 5,
             'headers' => ['Accept' => 'application/json'],
         ]);

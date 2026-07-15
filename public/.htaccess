@@ -1,0 +1,29 @@
+# WP Super Gallery — static asset caching (P63-C)
+#
+# Vite emits content-hashed, immutable asset filenames (e.g. index-<hash>.js),
+# so they can be cached aggressively and effectively forever. This file is the
+# source of truth; the build copies it into the plugin's assets/ directory
+# (public/.htaccess -> dist/.htaccess -> assets/.htaccess) so Apache serves the
+# long-cache header directly, without PHP ever running for these requests.
+#
+# Nginx has no per-directory equivalent — add this to the server block instead:
+#
+#   location ~* ^/wp-content/plugins/wp-super-gallery/assets/.+\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif)$ {
+#       add_header Cache-Control "public, max-age=31536000, immutable";
+#   }
+#   # The service worker must NOT be long-cached:
+#   location = /wp-content/plugins/wp-super-gallery/assets/sw.js {
+#       add_header Cache-Control "no-cache, no-store, must-revalidate";
+#   }
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # The service worker (also present in assets/) must always be revalidated so
+    # updates propagate promptly — override the blanket rule above for it.
+    <Files "sw.js">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+    </Files>
+</IfModule>
