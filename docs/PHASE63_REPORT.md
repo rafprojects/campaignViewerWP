@@ -1,21 +1,23 @@
 # Phase 63 - Rate Limiting, Security Header & SSRF Hardening Completion
 
-**Status:** Planned
+**Status:** In progress — P63-A…H + P63-E-2 complete (committed, full PHPUnit suite green); P63-I open
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-15
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P63-A | Rate limiting silently no-ops without a persistent object cache | Planned | Small |
-| P63-B | Consolidate the two rate-limiter implementations; fix client-IP handling | Planned | Small-Medium |
-| P63-C | Security & asset-cache headers are dead code (hook-timing) | Planned | Small-Medium |
-| P63-D | CSV formula-injection neutralization in audit-log export | Planned | Tiny |
-| P63-E | Export-job read/download gate stamped to creator's tier | Planned | Small |
-| P63-F | `is_private_ip()` reserved-range completeness | Planned | Tiny |
-| P63-G | Bearer-auth branch hardening (defense-in-depth) | Planned | Tiny-Small |
-| P63-H | Provider handlers use `wp_safe_remote_get` | Planned | Tiny |
+| P63-A | Rate limiting silently no-ops without a persistent object cache | ✅ Done | Small |
+| P63-B | Consolidate the two rate-limiter implementations; fix client-IP handling | ✅ Done | Small-Medium |
+| P63-C | Security & asset-cache headers are dead code (hook-timing) | ✅ Done | Small-Medium |
+| P63-D | CSV formula-injection neutralization in audit-log export | ✅ Done | Tiny |
+| P63-E | Export-job read/download gate stamped to creator's tier | ✅ Done | Small |
+| P63-E-2 | Export-job creator-ownership gate (PR-review follow-up) | ✅ Done | Tiny-Small |
+| P63-F | `is_private_ip()` reserved-range completeness | ✅ Done | Tiny |
+| P63-G | Bearer-auth branch hardening (defense-in-depth) | ✅ Done | Tiny-Small |
+| P63-H | Provider handlers use `wp_safe_remote_get` | ✅ Done | Tiny |
+| **P63-I** | **Per-space authorization scoping of export-job resources** (promoted from FUTURE_TASKS 2026-07-15) | ⬜ Planned | Medium |
 
 ---
 
@@ -34,6 +36,7 @@ The 2026-07-13 full PHP review ([PHP_REVIEW_FINDINGS.md](PHP_REVIEW_FINDINGS.md)
 | A | Rate-limiter consolidation scope | P63-B consolidates client-IP resolution onto `WPSG_Rate_Limiter::get_client_ip()` and namespaces the two classes' `wpsg_rate_limit_window` filters distinctly. Full storage-backend unification (making `WPSG_Rate_Limiter` the single backend for both oEmbed and REST-base limiting) is left as a Follow-On Candidate — P63-A's fix (gate on `wp_using_ext_object_cache()`) is sufficient to restore correctness without that larger refactor. |
 | B | Bearer-auth fix depth | **Resolved (user, 2026-07-14): Option 2 (tighten).** Only honor the `Bearer ` skip when `is_user_logged_in()` is true AND a filterable guard confirms an external token-auth integration actually validated the credential — default `false` preserves today's stricter (nonce-required) behavior for sites with no JWT integration wired up. See Track P63-G. |
 | C | P63-C static-asset header fix | **Resolved (user, 2026-07-14): both.** Ship a checked-in `assets/.htaccess` (restores headers on Apache out of the box) AND document the nginx-equivalent snippet in packaging docs. See Track P63-C. |
+| D | P63-I multi-space batch (`multi_campaign`) export scoping | **Open.** A batch export may span campaigns in several spaces; decide whether access requires membership in **all** contributing spaces, **any** (union), or the **creator's effective space set**. Recommendation: all contributing spaces (fail-closed). To be resolved when P63-I is executed; creator-ownership (P63-E-2) is the interim control. See Track P63-I. |
 
 ## Execution Priority
 
@@ -44,6 +47,7 @@ All 8 tracks were independently re-verified against current source on 2026-07-14
 3. **Batch 3 (independent, small — batch together): P63-D, P63-F, P63-H.** No dependencies between them. Advisory: P63-F touches `class-wpsg-rest-base.php` (`is_private_ip()`, a different function than A/B's `rate_limit_check()`) — sequence after Batch 1 completes to avoid mid-flight edits to the same file.
 4. **Batch 4 (independent): P63-E.** Touches the export-job/permissions files (`class-wpsg-export-engine.php`, `class-wpsg-export-controller.php`, `class-wpsg-permissions.php`).
 5. **Batch 5 (last): P63-G.** Lowest urgency (not practically exploitable today per its Validation Notes); Key Decision B is now resolved (Option 2, tighten) so this is no longer scope-blocked — kept last purely for priority ordering.
+6. **Batch 6 (open, added 2026-07-15): P63-I.** Per-space export-job scoping, promoted from FUTURE_TASKS after the PR review. Blocked on Key Decision D (multi-space batch semantics); builds on P63-E / P63-E-2 in the same export-job / permissions files. Batches 1–5 above are the original re-verified set (2026-07-14); P63-I is the remaining open work.
 
 ---
 
@@ -309,6 +313,37 @@ Switch all four handlers to `wp_safe_remote_get()` — behavior-identical for le
 
 Independently re-verified against current source — CONFIRMED. All 4 `wp_remote_get()` call sites enumerated: `class-wpsg-provider-rumble.php:43`, `class-wpsg-provider-wpcore.php:35`, `class-wpsg-provider-direct.php:46`, `class-wpsg-provider-og-fallback.php:35` — none use `wp_safe_remote_get()`, while other parts of the plugin already do (`class-wpsg-export-engine.php:195`, `class-wpsg-thumbnail-cache.php:95`, `class-wpsg-settings-service.php:54`, `class-wpsg-webhooks.php:125`), confirming these four are the outliers. The `pre_http_request` SSRF filter actually lives in `includes/rest/class-wpsg-system-controller.php` inside `proxy_oembed()` (added/removed in a `try/finally` around `WPSG_OEmbed_Providers::fetch()`), which delegates to `WPSG_Provider_Registry::resolve()` — a fully `public static` API with no internal SSRF gating of its own. Confirmed the `wpsg_register_providers` hook (`class-wpsg-provider-registry.php:127`) is real and documented for third-party handler registration. Today `resolve()` has only one call site (`proxy_oembed()`), so the risk is currently latent rather than live, but the registry/handlers have zero built-in protection — any future internal caller (a new route, a CLI command, cron, or third-party code calling the registry directly) would bypass the SSRF safety net entirely, exactly as the finding describes.
 
+## Track P63-I - Per-space authorization scoping of export-job resources
+
+*Promoted from [FUTURE_TASKS.md](FUTURE_TASKS.md) into this phase on 2026-07-15 during the PR review — follow-on to P63-E → P63-E-2 (creator-ownership). Tracked here, not in the backlog, because it is a security-relevant access control that should be executed in-phase rather than forgotten.*
+
+**Status:** Planned — the one open track remaining in this phase.
+
+### Problem
+
+The `export-jobs/{job_id}` read/delete/download endpoints gate on the global `require_admin` (`manage_wpsg`) floor. P63-E stamps `required_tier` and re-checks it; P63-E-2 additionally stamps `created_by` and enforces creator-ownership, closing the exploitable same-tier / cross-space *peer* read gap. Neither binds a job to the *campaign space* it was exported from, so authorization is by tier + creator identity, not by the space-membership dimension the create-gate (`require_campaign_space_access`) actually enforces. This leaves two seams: the `created_by`-unstamped fallback path (legacy / CLI jobs) degrades to a tier-only check with no space constraint, and any future relaxation of strict ownership (e.g. same-space team access to a shared job) would have no space guard to fall back on.
+
+### Fix
+
+- Stamp the originating `space_id`(s) on the job record at `create_job()` time, alongside the existing `created_by` / `required_tier`.
+- Re-check `require_campaign_space_access` for that space in `authorize_job_access()`, layered over the existing tier + ownership checks. System Admins continue to bypass; jobs with no stamped space (legacy, and the non-space `audit` / `media_library` types that are already System-Admin-tiered) keep their current behavior.
+- Resolve the multi-space batch (`multi_campaign`) semantics — Key Decision D — before wiring the batch path.
+
+### Open decision — Key Decision D (multi-space batch semantics)
+
+A `multi_campaign` batch export may span campaigns in several spaces. Access policy must be chosen: require membership in **all** contributing spaces (fail-closed / least-privilege), **any** one of them (union), or match the **creator's effective space set** at creation. Recommendation: **all** contributing spaces, stamping the full set; relax only if a real workflow proves it too strict.
+
+### Acceptance criteria
+
+- A `campaign` export job carries its origin space; `authorize_job_access()` denies any non-System-Admin lacking `require_campaign_space_access` to that space — **including** on the `created_by`-unstamped fallback path that today degrades to tier-only.
+- `multi_campaign` batch jobs enforce the Key Decision D policy across all contributing spaces.
+- P63-E / P63-E-2 tier + ownership behavior is preserved (no regression); System-Admin global access and the non-space `audit` / `media_library` job paths are unchanged.
+
+### Validation
+
+- New PHPUnit cases: cross-space denial for a `campaign` job (incl. an unstamped / tier-only-fallback job), the `multi_campaign` multi-space policy, and System-Admin bypass; plus a regression pass over the existing P63-E / P63-E-2 matrix.
+- Manual: as an editor with access only to space B, attempt to read/download a space-A `campaign` export job ID → 403; as an editor with space-A access (per Decision D) → allowed.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -345,7 +380,7 @@ Automated coverage (the 6 new `WPSG_P63*` test files + the extended rate-limiter
 
 ## Outcome
 
-All 8 tracks (P63-A…H) implemented on branch `feat/phase63-php-hardening-1-of-5`, 2026-07-14. Six new test files added (`WPSG_P63{A_B,C,D,E,F,G}_*`), two existing tests updated (`WPSG_Coverage_Extras_Test` for the removed asset-header method; `WPSG_P39CM1_Export_Test` unaffected by the named-arg `create_job` change). `php -l` clean on all changed files. Full wp-env PHPUnit run + commit pending.
+All 8 original tracks (P63-A…H) implemented on branch `feat/phase63-php-hardening-1-of-5`, 2026-07-14, plus the PR-review follow-up **P63-E-2** (creator-ownership) on 2026-07-15. Six new test files added (`WPSG_P63{A_B,C,D,E,F,G}_*`) and extended for P63-E-2; two existing tests updated (`WPSG_Coverage_Extras_Test` for the removed asset-header method; `WPSG_P39CM1_Export_Test` unaffected by the named-arg `create_job` change). `php -l` clean on all changed files; full wp-env PHPUnit suite green (1156 tests, 13234 assertions, 0 failures) and committed (`5bdde47e`). **Remaining open track: P63-I** (per-space authorization scoping), promoted from FUTURE_TASKS on 2026-07-15 — see its track section and Key Decision D.
 
 ---
 
@@ -372,7 +407,7 @@ No correctness, crash, regression, or reuse/simplification defects were found in
 
 **Change:** `authorize_job_access()` (`includes/rest/class-wpsg-export-controller.php`) now layers an **ownership** gate over the existing tier gate: a non-System-Admin actor may only touch a job whose `created_by` matches the current user. System Admins retain access to any job (support/debugging), and because System-Admin-gated jobs (audit / media-library) already require that tier at the first gate, those remain reachable by any System Admin exactly as before. The gate is skipped when the creator id is unknown (`created_by === 0`), so pre-P63-E in-flight jobs and CLI-created jobs (no logged-in user) fall back to the prior tier-only behavior — no regression.
 
-**Decision — ownership scoping, not full space scoping.** The finding was framed as space scoping, but binding a job to a campaign *space* has unresolved multi-space semantics for `multi_campaign` batch exports (a batch may span several spaces). Creator-ownership fully closes the concrete threat (a peer pulling a job they did not create) with minimal blast radius and no schema/semantics ambiguity, and it composes cleanly with the P52-A `WPSG_Permissions` map. True per-space authorization of these ephemeral resources is tracked as a dedicated follow-up in [FUTURE_TASKS.md](FUTURE_TASKS.md) → *Access Control → Per-Space Authorization Scoping of Ephemeral Export-Job Resources*.
+**Decision — ownership scoping, not full space scoping.** The finding was framed as space scoping, but binding a job to a campaign *space* has unresolved multi-space semantics for `multi_campaign` batch exports (a batch may span several spaces). Creator-ownership fully closes the concrete threat (a peer pulling a job they did not create) with minimal blast radius and no schema/semantics ambiguity, and it composes cleanly with the P52-A `WPSG_Permissions` map. True per-space authorization of these ephemeral resources is now promoted to an active track of this phase — see **Track P63-I** above (first logged in FUTURE_TASKS, moved in-phase 2026-07-15 so it is executed here rather than deferred).
 
 **Tests:** five cases added to `WPSG_P63E_Export_Job_Tier_Test` — peer editor rejected (read + download), owner allowed, System Admin cross-user allowed, and the unstamped-job tier-only fallback. All seven original P63-E cases still pass unchanged (each stamps `created_by = 0` or exercises the System-Admin tier, so the new gate is a no-op for them).
 
@@ -388,5 +423,5 @@ Full wp-env PHPUnit run (2026-07-15), delegated to a Haiku runner per the `php-t
 
 - `includes/rest/class-wpsg-export-controller.php` — `authorize_job_access()` ownership gate + docblock.
 - `tests/WPSG_P63E_Export_Job_Tier_Test.php` — five ownership-enforcement tests.
-- `docs/FUTURE_TASKS.md` — new *Per-Space Authorization Scoping* tracking entry.
-- `docs/PHASE63_REPORT.md` — this section.
+- `docs/FUTURE_TASKS.md` → **Track P63-I** — the per-space follow-up was first logged in FUTURE_TASKS, then promoted in-phase (2026-07-15) as Track P63-I so it is not deferred.
+- `docs/PHASE63_REPORT.md` — this section, the new Track P63-I, Key Decision D, and the track-status updates.

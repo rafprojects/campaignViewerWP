@@ -438,8 +438,8 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
      * NB: this is deliberately *ownership* scoping, not full *space* scoping. True
      * per-space authorization of these ephemeral job resources (stamping the space
      * id and re-checking require_campaign_space_access, incl. multi-space batch
-     * semantics) is tracked as a separate follow-up — see FUTURE_TASKS.md and the
-     * PR-review section of PHASE63_REPORT.md.
+     * semantics) is tracked as PHASE63 Track P63-I (and the PR-review section /
+     * Key Decision D of PHASE63_REPORT.md).
      *
      * @return true|WP_Error  true when authorized, WP_Error(403) otherwise.
      */
