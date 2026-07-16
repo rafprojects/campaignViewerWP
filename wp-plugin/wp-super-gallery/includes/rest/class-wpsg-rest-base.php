@@ -600,6 +600,21 @@ abstract class WPSG_REST_Base {
     }
 
     /**
+     * P63-I: resolve the space that owns a campaign — post meta `_wpsg_space_id`,
+     * falling back to the configured default space. Returns 0 when the campaign has
+     * no space (pre-spaces install / no default configured). Centralizes the
+     * meta+default lookup shared by the space-access gate below and export-job
+     * space stamping (WPSG_Export_Controller).
+     */
+    protected static function resolve_campaign_space_id(int $campaign_id): int {
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($space_id <= 0) {
+            $space_id = intval(get_option('wpsg_default_space_id'));
+        }
+        return max(0, $space_id);
+    }
+
+    /**
      * P52-A5b: does the user have access to the space that owns this campaign?
      *
      * Mirrors the space gate in get_effective_campaign_level(): a campaign with
@@ -608,10 +623,7 @@ abstract class WPSG_REST_Base {
      * everywhere; open-mode manage_wpsg ⇒ owner; delegated ⇒ explicit grant).
      */
     private static function user_can_access_campaign_space(int $campaign_id, int $user_id): bool {
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
-        if ($space_id <= 0) {
-            $space_id = intval(get_option('wpsg_default_space_id'));
-        }
+        $space_id = self::resolve_campaign_space_id($campaign_id);
         if ($space_id <= 0) {
             return true;
         }

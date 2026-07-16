@@ -45,6 +45,13 @@ class WPSG_Export_Engine {
      *                              export require System Admin) must pass
      *                              TIER_SYSTEM_ADMIN so the job can't be pulled by a
      *                              lower-tier user who obtains the job ID.
+     * @param array  $space_ids    P63-I: campaign space ids this job's content was
+     *                              exported from. Read/delete/download re-checks that
+     *                              the requesting editor currently has access to
+     *                              EVERY listed space (symmetric with the
+     *                              require_campaign_batch_space_access create gate).
+     *                              Empty = no space scoping (audit / media-library /
+     *                              spaceless campaigns) — tier + ownership still apply.
      * @return string             Opaque job ID (32-char hex string).
      */
     public static function create_job(
@@ -52,7 +59,8 @@ class WPSG_Export_Engine {
         string $manifest,
         array $media_items,
         int $size_limit = self::SIZE_LIMIT_BYTES,
-        string $required_tier = WPSG_Permissions::TIER_EDITOR
+        string $required_tier = WPSG_Permissions::TIER_EDITOR,
+        array $space_ids = []
     ): string {
         $id = bin2hex(random_bytes(16));
 
@@ -65,6 +73,12 @@ class WPSG_Export_Engine {
             $required_tier = WPSG_Permissions::TIER_EDITOR;
         }
 
+        // P63-I: normalize to a deduplicated list of positive ints.
+        $space_ids = array_values(array_unique(array_filter(
+            array_map('intval', $space_ids),
+            static fn($sid) => $sid > 0
+        )));
+
         $job = [
             'id'            => $id,
             'type'          => sanitize_key($type),
@@ -72,6 +86,7 @@ class WPSG_Export_Engine {
             'created_at'    => gmdate('c'),
             'created_by'    => get_current_user_id(),
             'required_tier' => $required_tier,
+            'space_ids'     => $space_ids,
             'manifest'      => $manifest,
             'media_items'   => $media_items,
             'zip_path'      => '',

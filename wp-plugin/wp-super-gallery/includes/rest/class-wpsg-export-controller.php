@@ -308,7 +308,14 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
-        $job_id = WPSG_Export_Engine::create_job('campaign', $manifest, (array) $media);
+        // P63-I: stamp the campaign's space so read/download re-checks space access.
+        $space_id = self::resolve_campaign_space_id($post_id);
+        $job_id   = WPSG_Export_Engine::create_job(
+            'campaign',
+            $manifest,
+            (array) $media,
+            space_ids: $space_id > 0 ? [$space_id] : []
+        );
 
         self::add_audit_entry($post_id, 'campaign.exported', [
             'format'     => 'binary',
@@ -340,11 +347,17 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
         $all_media_items = [];
         $seen_urls       = [];
         $skipped_ids     = [];
+        $space_ids       = []; // P63-I: contributing spaces for the read/download gate.
 
         foreach ($ids as $post_id) {
             if (!self::campaign_exists($post_id)) {
                 $skipped_ids[] = $post_id;
                 continue;
+            }
+
+            $space_id = self::resolve_campaign_space_id($post_id);
+            if ($space_id > 0) {
+                $space_ids[] = $space_id;
             }
 
             $post     = get_post($post_id);
@@ -393,7 +406,14 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
-        $job_id = WPSG_Export_Engine::create_job('multi_campaign', $manifest, $all_media_items);
+        // P63-I: stamp every contributing space; read/download requires access to
+        // all of them (create_job dedups). Symmetric with the batch create gate.
+        $job_id = WPSG_Export_Engine::create_job(
+            'multi_campaign',
+            $manifest,
+            $all_media_items,
+            space_ids: $space_ids
+        );
 
         self::add_audit_entry(0, 'campaign.batch_exported', [
             'format'       => 'binary',
@@ -435,41 +455,60 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
      *      creator id is known (> 0), so pre-stamp in-flight jobs and CLI-created jobs
      *      (no logged-in user → created_by 0) fall back to the tier-only check.
      *
-     * NB: this is deliberately *ownership* scoping, not full *space* scoping. True
-     * per-space authorization of these ephemeral job resources (stamping the space
-     * id and re-checking require_campaign_space_access, incl. multi-space batch
-     * semantics) is tracked as PHASE63 Track P63-I (and the PR-review section /
-     * Key Decision D of PHASE63_REPORT.md).
+     *   3. Space (P63-I) — for jobs stamped with the campaign space(s) their content
+     *      was exported from, a non-System-Admin requesting editor must *currently*
+     *      have access to **every** contributing space. This is symmetric with the
+     *      `require_campaign_batch_space_access` create gate (any inaccessible space
+     *      denies the whole aggregate — no cross-space read of a batch that mixes
+     *      spaces the reader was never granted). System Admins are `owner` in every
+     *      space and bypass. Jobs with no stamped space (audit / media-library /
+     *      spaceless campaigns / legacy in-flight) skip this gate and rely on tier +
+     *      ownership. Because the check is re-evaluated at read time, an editor whose
+     *      grant to a contributing space was revoked after creating the job loses
+     *      access to it — least-privilege, per Key Decision D ("all contributing
+     *      spaces").
      *
      * @return true|WP_Error  true when authorized, WP_Error(403) otherwise.
      */
     private static function authorize_job_access(array $job) {
         $required = $job['required_tier'] ?? WPSG_Permissions::TIER_EDITOR;
         if (!WPSG_Permissions::actor_has_tier($required)) {
-            return new WP_Error(
-                'wpsg_forbidden',
-                'You do not have permission to access this export job.',
-                ['status' => 403]
-            );
+            return self::job_forbidden();
         }
+
+        $is_system_admin = WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN);
 
         // Ownership gate (P63-E-2): a non-System-Admin may only access jobs they
         // created. Skipped when the creator is unknown (created_by 0) so in-flight
         // pre-stamp jobs and CLI-created jobs keep working under the tier-only check.
         $creator = (int) ($job['created_by'] ?? 0);
-        if (
-            $creator > 0
-            && $creator !== get_current_user_id()
-            && !WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_SYSTEM_ADMIN)
-        ) {
-            return new WP_Error(
-                'wpsg_forbidden',
-                'You do not have permission to access this export job.',
-                ['status' => 403]
-            );
+        if ($creator > 0 && $creator !== get_current_user_id() && !$is_system_admin) {
+            return self::job_forbidden();
+        }
+
+        // Space gate (P63-I): the requesting editor must currently have access to
+        // EVERY contributing space. System Admins bypass (owner everywhere); an empty
+        // set (non-space / legacy jobs) skips the gate.
+        $space_ids = $job['space_ids'] ?? [];
+        if (!empty($space_ids) && !$is_system_admin) {
+            $user_id = get_current_user_id();
+            foreach ($space_ids as $space_id) {
+                if (!self::can_access_space((int) $space_id, $user_id)) {
+                    return self::job_forbidden();
+                }
+            }
         }
 
         return true;
+    }
+
+    /** P63-I: the single 403 an unauthorized job access returns. */
+    private static function job_forbidden(): WP_Error {
+        return new WP_Error(
+            'wpsg_forbidden',
+            'You do not have permission to access this export job.',
+            ['status' => 403]
+        );
     }
 
     // GET /export-jobs/{job_id} — poll job status.
