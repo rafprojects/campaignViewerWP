@@ -49,6 +49,38 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
         return ['token' => $token, 'raw_key' => $raw_key];
     }
 
+    /**
+     * P64-E: the magic-link fallback no longer returns its HTML as response data
+     * (which the REST server JSON-encoded into a broken page); it echoes raw HTML
+     * via a one-shot rest_pre_serve_request filter. rest_do_request() doesn't run
+     * that filter, so to see the message text we isolate the wpsg-registered
+     * filter (bootstrap filters on this hook expect 4 args + call header()) and
+     * invoke it, capturing the echo.
+     *
+     * @return array{0: WP_REST_Response, 1: string} [response, echoed HTML]
+     */
+    private function serve_and_capture_html(WP_REST_Request $request): array {
+        global $wp_filter;
+        $saved = $wp_filter['rest_pre_serve_request'] ?? null;
+        unset($wp_filter['rest_pre_serve_request']);
+
+        $response = rest_do_request($request);
+
+        $html = '';
+        if (!empty($wp_filter['rest_pre_serve_request'])) {
+            ob_start();
+            apply_filters('rest_pre_serve_request', false);
+            $html = (string) ob_get_clean();
+        }
+
+        if ($saved !== null) {
+            $wp_filter['rest_pre_serve_request'] = $saved;
+        } else {
+            unset($wp_filter['rest_pre_serve_request']);
+        }
+        return [$response, $html];
+    }
+
     public function tearDown(): void {
         parent::tearDown();
         wp_set_current_user(0);
@@ -119,15 +151,14 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
 
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
-        $response = rest_do_request($request);
+        [$response, $html] = $this->serve_and_capture_html($request);
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Expired key must not change request status.');
 
-        // Body (inline HTML) or Location header must indicate "expired".
-        $body     = is_string($response->get_data()) ? $response->get_data() : '';
+        // The served HTML (P64-E: echoed raw) or a Location header must indicate "expired".
         $location = $response->get_headers()['Location'] ?? '';
-        $this->assertMatchesRegularExpression('/expired|Expired/i', $body . $location);
+        $this->assertMatchesRegularExpression('/expired|Expired/i', $html . $location);
     }
 
     // =========================================================================
@@ -143,14 +174,13 @@ class WPSG_P28I_Magic_Link_Test extends WP_UnitTestCase {
 
         $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
-        $response = rest_do_request($request);
+        [$response, $html] = $this->serve_and_capture_html($request);
 
         $updated = WPSG_DB::get_access_request($token);
         $this->assertEquals('pending', $updated['status'], 'Pre-used key must not approve request.');
 
-        $body     = is_string($response->get_data()) ? $response->get_data() : '';
         $location = $response->get_headers()['Location'] ?? '';
-        $this->assertMatchesRegularExpression('/used|Used|Processed/i', $body . $location);
+        $this->assertMatchesRegularExpression('/used|Used|Processed/i', $html . $location);
     }
 
     // =========================================================================

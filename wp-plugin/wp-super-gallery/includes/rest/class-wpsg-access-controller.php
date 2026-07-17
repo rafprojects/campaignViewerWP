@@ -568,6 +568,13 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 );
             }
             $user = get_user_by('ID', $user_id);
+
+            // P64-D: the account was created with a random password nobody knows.
+            // Send the standard password-set notification (a reset link, not the
+            // password) so a first-time approved requester can actually log in —
+            // mirroring the admin `create_user` path. Fires ONLY for freshly
+            // created users; existing users already have credentials.
+            wp_new_user_notification($user_id, null, 'user');
         }
 
         // Grant access (campaign-level). P33-B: persist the approved role.
@@ -705,7 +712,29 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
 <style>*{box-sizing:border-box}body{font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f4f4f5}.card{max-width:420px;width:100%;margin:1rem;padding:2rem;background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);text-align:center}h1{margin:0 0 .75rem;font-size:1.4rem;color:{$color}}p{margin:0 0 1.5rem;color:#555;line-height:1.5}a{color:#3b82f6;text-decoration:none;font-weight:500}a:hover{text-decoration:underline}</style>
 </head><body><div class=\"card\"><h1>{$title_e}</h1><p>{$message_e}</p><a href=\"{$admin_url}\">Go to Admin Panel</a></div></body></html>";
         // phpcs:enable
-        $response = new WP_REST_Response($html, 200);
+
+        // P64-E: serve the HTML raw. Passing the HTML as WP_REST_Response *data*
+        // makes WP_REST_Server::serve_request() JSON-encode it — the browser then
+        // gets a quoted, backslash-escaped blob under Content-Type: text/html (a
+        // visibly broken page). Echo it through a one-shot rest_pre_serve_request
+        // filter instead, bypassing the JSON encoder — the same pattern the audit
+        // CSV export uses (WPSG_Campaign_Controller::audit_csv_response()).
+        add_filter('rest_pre_serve_request', function ($served) use ($html) {
+            if (!$served) {
+                // rest_pre_serve_request fires before any output on a real request,
+                // so headers aren't sent yet; guard for CLI/test contexts where
+                // they may be, to avoid a "headers already sent" warning.
+                if (!headers_sent()) {
+                    header('Content-Type: text/html; charset=utf-8');
+                }
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $html is built from esc_html()/esc_url() parts above.
+                echo $html;
+                $served = true;
+            }
+            return $served;
+        }, 10, 1);
+
+        $response = new WP_REST_Response(null, 200);
         $response->header('Content-Type', 'text/html; charset=utf-8');
         return $response;
     }

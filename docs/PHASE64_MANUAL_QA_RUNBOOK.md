@@ -251,3 +251,105 @@ done
 - The daily 20/IP bucket and the 5/min bucket are separate; a burst test trips the minute bucket first. Don't set both filters to tiny values at once or you'll conflate them.
 
 ---
+
+### P64-D — Approved first-time requesters can actually log in
+
+**What & why.** `do_approve_request()` provisions a missing user with `wp_create_user($username, wp_generate_password(), $email)` — a password nobody knows — and emailed only "your access was approved, visit the site." A first-time visitor then hit a login form they could never pass. Fix: call `wp_new_user_notification($user_id, null, 'user')` (a password-set/reset link, not the password) for **newly created** users, mirroring the admin `create_user` path. Existing users are untouched (no spurious reset email).
+
+**Preconditions.** Mail log from §1. A pending access request for a **brand-new** email (one with no WP user).
+
+**Steps.**
+```bash
+: > wp-content/wpsg-mail.log
+# Approve the pending request as System Admin (admin UI, or the approve endpoint).
+cat wp-content/wpsg-mail.log
+```
+
+**Expected (pass).** **Two** emails to the requester: the "Access Approved" notice *and* a password-set notification (WordPress's "[SiteName] Login Details" / password-reset link). Following that reset link lets the new user set a password and log in.
+
+**Then the existing-user case:** approve a request for an email that **already** has a WP account → only the "Access Approved" email; **no** password-reset notification (they already have credentials).
+
+**Why it proves the fix.** Pre-fix the mail log showed only the "approved" notice for a new user — no way to obtain a password. The reset-link email is the missing piece.
+
+**Regression checks.** Automated `WPSG_P64DEF_Auth_Correctness_Test` pins both branches (notification fires for a new email, not for an existing user) via the `wp_new_user_notification_email` hook.
+
+**Pitfalls.** wp-env has no real MTA — use the mail log or a catcher; a bare "it didn't error" tells you nothing about which emails were attempted. The notification is a *reset link*, never the plaintext password.
+
+---
+
+### P64-E — Magic-link fallback page renders real HTML (not escaped JSON)
+
+**What & why.** With no landing page configured, `magic_link_redirect()` returned a `WP_REST_Response` whose *data* was an HTML string. `WP_REST_Server::serve_request()` JSON-encodes response data, so the browser got a quoted, backslash-escaped blob under `Content-Type: text/html` — a visibly broken page. Fix: echo the HTML raw through a one-shot `rest_pre_serve_request` filter (data is now `null`), the same pattern the audit-CSV export uses.
+
+**Preconditions.** Ensure **no** magic-link landing page is set: `wpsg_settings['magic_link_landing_page_id']` unset/0 (Settings → the magic-link landing page selector empty). A pending request with a valid magic key (captured from the admin notification email's one-click link), or just any magic-approve URL to hit the invalid/expired fallback.
+
+**Steps.** Open a magic-approve URL **in a browser** (or `curl`), e.g. the one-click link from the admin email, or a deliberately-invalid one to see the "Invalid Link" card:
+```bash
+curl -s "$BASE/wp-json/wp-super-gallery/v1/campaigns/<CID>/access-requests/<TOKEN>/magic-approve?magic_key=deadbeef" | head -c 120; echo
+```
+
+**Expected (pass).** The response body **starts with `<!DOCTYPE html>`** and is a normal styled result card in the browser — **not** a string that begins with `"<!DOCTYPE` or shows literal `\/` and escaped quotes.
+
+**Why it proves the fix.** Pre-fix the body was a JSON-encoded string (leading `"`, `\"` around every attribute, `\/` in `</…>`), which browsers render as garbled text. Raw `<!DOCTYPE …>` proves the JSON encoder is bypassed.
+
+**Regression checks.** With a landing page **configured**, the magic link still 302-redirects to that page with `?wpsg_result=…` (unchanged). `WPSG_P28I_Magic_Link_Test` stays green. Automated `WPSG_P64DEF_Auth_Correctness_Test` asserts the response data is `null` and the serve filter echoes raw `<!DOCTYPE` with no `\/` escaping.
+
+**Pitfalls.** `rest_do_request()` (used by unit tests) does **not** run `rest_pre_serve_request`, so the raw echo only happens on a real HTTP request — test it with an actual browser/curl request, not a REST-internal call. The redirect branch (landing page set) never had the bug; to see the fallback you must clear the landing page.
+
+---
+
+### P64-F — `create_user` mail-failure fallback actually triggers
+
+**What & why.** The reset-URL fallback in `create_user()` (returned to the client so an admin can still onboard the user when mail is down) was gated on a `try/catch (Exception)` around `wp_new_user_notification()`. But `wp_mail()` catches PHPMailer exceptions internally and returns `false` — it never throws — so `$email_sent` was always `true` and the fallback was dead code. Fix: listen for `wp_mail_failed` around the call.
+
+**Preconditions.** System Admin. A way to force a mail failure — e.g. a scratch mu-plugin that makes `wp_mail` fail the way a real SMTP error does:
+```php
+add_filter('pre_wp_mail', function ($short) {
+    do_action('wp_mail_failed', new WP_Error('forced', 'forced failure'));
+    return false; // report failure
+}, 10, 1);
+```
+
+**Steps.** With that filter active, create a user via the admin "Quick add user" flow (or `POST /users`), then inspect the response.
+
+**Expected (pass).** The 201 response has `emailSent: false`, `emailFailed: true`, and a `resetUrl` the admin can hand to the user. Without the filter (mail succeeds), `emailSent: true` and **no** `resetUrl`.
+
+**Why it proves the fix.** Pre-fix, even with mail forced to fail, `emailSent` came back `true` and no `resetUrl` was produced — the admin had no recovery path. Now the failure is detected and the fallback link appears.
+
+**Regression checks.** Automated `WPSG_P64DEF_Auth_Correctness_Test` covers both the failure path (emailSent=false + resetUrl present) and the success path (emailSent=true, no resetUrl).
+
+**Pitfalls.** A `pre_wp_mail` short-circuit that *doesn't* also fire `wp_mail_failed` is a deliberate "mail suppressed" override, not a failure — the fix (correctly) only reacts to `wp_mail_failed`. Simulate the real failure signal, as the snippet above does.
+
+---
+
+### P64-G — Space-level revoke is confirmed before it fires
+
+**What & why.** `SpaceManagementView`'s per-grant trash icon called the DELETE immediately on click — no confirmation. This is the same gap P64-B closed for the campaign/company Access tab, on a separate surface. Fix: a plain confirm dialog (space access has no campaign/company duality, so no branching copy) before the revoke fires.
+
+**Preconditions.** Admin SPA → WP Super Gallery → **Spaces** → pick a space with at least one access grant → **Access** tab.
+
+**Steps.** Click the red trash icon on a grant row.
+
+**Expected (pass).** A dialog titled **"Revoke space access?"** — body "Revoke access to this space for {name}?" — with **Revoke** / **Cancel**. **Cancel** makes no request (the grant stays); **Revoke** fires exactly one `DELETE /spaces/{id}/access/{userId}` and the row disappears.
+
+**Why it proves the fix.** Pre-fix the click fired the DELETE with no chance to reconsider. The dialog interposes a confirmation.
+
+**Regression checks.** Automated `SpaceManagementView.test.tsx` (P64-G block): dialog-opens-on-click / no immediate DELETE, cancel does nothing, confirm calls DELETE with the right URL. The inline role dropdown and other Access-tab behavior are unaffected.
+
+**Pitfalls.** This is a distinct code path from P64-B's `useAccessRows` dialog — they share the pattern, not the component. Testing one doesn't cover the other.
+
+---
+
+## 5. Sign-off checklist
+
+| Track | Primary assertion | Regression assertion | Done |
+|---|---|---|---|
+| P64-A | Full suite green after the refactor; `WPSG_Grants` unit tests pass | Zero private `upsert_*`/inline expiry copies remain; grant matrix unchanged | ☐ |
+| P64-B | Company-sourced campaign revoke → deny override, company grant kept; space editor can't wipe company grants | Campaign-sourced revoke unchanged; company-wide endpoint still clears the grant; confirm dialog copy correct per view×source | ☐ |
+| P64-C | Submit emails only the admin, never the requester; dedicated 5/min limit trips; precheck rejects | Duplicate 409 / cooldown 429 / approve-notifies still work | ☐ |
+| P64-D | New-email approval sends a password-set notification | Existing-user approval sends none | ☐ |
+| P64-E | Fallback body starts with raw `<!DOCTYPE html>` | Landing-page redirect branch unchanged; magic-link suite green | ☐ |
+| P64-F | Forced mail failure → `emailSent:false` + `resetUrl` | Successful send → `emailSent:true`, no `resetUrl` | ☐ |
+| P64-G | Space revoke shows a confirm dialog; DELETE only on confirm | Cancel makes no request; role dropdown unaffected | ☐ |
+
+**Automated baseline (must be green alongside manual QA):** full wp-env PHPUnit suite plus the frontend Vitest suite. See PHASE64_REPORT.md → each track's *Implementation* block for the exact per-track counts.

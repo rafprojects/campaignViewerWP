@@ -413,13 +413,20 @@ class WPSG_Auth_Controller extends WPSG_REST_Base {
         }
 
         if (!$simulate_email_failure) {
-            try {
-                // Send password reset email to user
-                wp_new_user_notification($user_id, null, 'user');
-                $email_sent = true;
-            } catch (Exception $e) {
-                $email_sent = false;
-            }
+            // P64-F: wp_mail() catches PHPMailer exceptions internally and returns
+            // false (firing `wp_mail_failed`) rather than throwing — so the old
+            // try/catch could never see a failure and $email_sent was effectively
+            // always true, leaving the reset-URL fallback below unreachable.
+            // Listen for `wp_mail_failed` around the call instead.
+            $mail_failed = false;
+            $on_mail_failed = static function () use (&$mail_failed) {
+                $mail_failed = true;
+            };
+            add_action('wp_mail_failed', $on_mail_failed);
+            // Send password reset email to user (a reset link, not the password).
+            wp_new_user_notification($user_id, null, 'user');
+            remove_action('wp_mail_failed', $on_mail_failed);
+            $email_sent = !$mail_failed;
         }
 
         // If campaign_id provided, grant access

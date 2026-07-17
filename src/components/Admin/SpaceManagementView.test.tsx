@@ -277,3 +277,67 @@ describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
     expect(apiClient.post).not.toHaveBeenCalled();
   });
 });
+
+// P64-G: space-level revoke used to fire the DELETE instantly on click. It now
+// goes through a confirm dialog, matching the campaign/company Access tab.
+describe('SpaceManagementView — Access revoke confirmation (P64-G)', () => {
+  const GRANT = {
+    userId: 42,
+    user: { displayName: 'Dana', email: 'dana@example.com' },
+    access_level: 'viewer',
+    grantedAt: '2025-01-01',
+  };
+
+  function clientWithGrants() {
+    return createMockApiClient({
+      get: vi.fn().mockImplementation((url: string) => {
+        if (/\/spaces\/\d+\/access/.test(url)) return Promise.resolve([GRANT]);
+        if (/\/spaces($|\?)/.test(url) || url.endsWith('/spaces')) return Promise.resolve([DELEGATED_SPACE]);
+        return Promise.resolve([]);
+      }),
+    });
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  async function openAccessTab(apiClient: ApiClient) {
+    renderView(apiClient);
+    await selectSpace('Delegated Space');
+    await clickTab('Access');
+    await screen.findByText('Dana');
+  }
+
+  it('opens a confirm dialog instead of revoking immediately on click', async () => {
+    const apiClient = clientWithGrants();
+    await openAccessTab(apiClient);
+
+    fireEvent.click(screen.getByRole('button', { name: /revoke access/i }));
+
+    expect(await screen.findByText(/revoke space access\?/i)).toBeInTheDocument();
+    expect(apiClient.delete).not.toHaveBeenCalled();
+  });
+
+  it('does not call DELETE when the dialog is cancelled', async () => {
+    const apiClient = clientWithGrants();
+    await openAccessTab(apiClient);
+
+    fireEvent.click(screen.getByRole('button', { name: /revoke access/i }));
+    await screen.findByText(/revoke space access\?/i);
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(apiClient.delete).not.toHaveBeenCalled();
+  });
+
+  it('calls DELETE to the space access endpoint when confirmed', async () => {
+    const apiClient = clientWithGrants();
+    await openAccessTab(apiClient);
+
+    fireEvent.click(screen.getByRole('button', { name: /revoke access/i }));
+    await screen.findByText(/revoke space access\?/i);
+    fireEvent.click(screen.getByRole('button', { name: /^revoke$/i }));
+
+    await waitFor(() => {
+      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/spaces/10/access/42');
+    });
+  });
+});

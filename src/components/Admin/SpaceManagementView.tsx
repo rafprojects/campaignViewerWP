@@ -6,6 +6,7 @@ import {
 import {
   IconPlus, IconTrash, IconAlertCircle, IconUserPlus, IconSettings, IconInfoCircle,
 } from '@tabler/icons-react';
+import { modals } from '@mantine/modals';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
@@ -254,6 +255,27 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     }
   }, [apiClient, selectedSpaceId, refetchGrants, onNotify, t]);
 
+  // P64-G: revoking space access is destructive and fired instantly on click;
+  // gate it behind a confirm dialog (plain confirm — space access has no
+  // campaign/company duality), matching the campaign/company Access tab.
+  const requestRevokeAccess = useCallback((grant: SpaceGrant) => {
+    const name = grant.user?.displayName ?? t('admin_space_user_lc', 'user {{id}}', { id: grant.userId });
+    modals.openConfirmModal({
+      title: t('admin_space_revoke_confirm_title', 'Revoke space access?'),
+      children: (
+        <Text size="sm">
+          {t('admin_space_revoke_confirm_body', 'Revoke access to this space for {{name}}?', { name })}
+        </Text>
+      ),
+      labels: {
+        confirm: t('admin_space_revoke_confirm_button', 'Revoke'),
+        cancel: t('admin_space_revoke_confirm_cancel', 'Cancel'),
+      },
+      confirmProps: { color: 'red' },
+      onConfirm: () => { void handleRevokeAccess(grant.userId); },
+    });
+  }, [handleRevokeAccess, t]);
+
   // P51-H: change an existing grant's role inline. POST /access upserts the grant
   // (see WPSG_Space_Controller::upsert_space_grant), so re-posting with the new
   // access_level updates it in place.
@@ -465,7 +487,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                             variant="subtle"
                             color="red"
                             size="sm"
-                            onClick={() => void handleRevokeAccess(grant.userId)}
+                            onClick={() => requestRevokeAccess(grant)}
                             aria-label={t('admin_space_revoke_aria', 'Revoke access')}
                           >
                             <IconTrash size={14} />
