@@ -43,7 +43,8 @@ class WPSG_Provider_Direct implements WPSG_Provider_Handler {
             $full = $endpoint . rawurlencode($url);
             $attempts[] = $full;
 
-            $resp = wp_remote_get($full, [
+            // P63-H: SSRF-safe HTTP client — independently safe on any call path.
+            $resp = wp_safe_remote_get($full, [
                 'timeout' => 5,
                 'headers' => ['Accept' => 'application/json'],
             ]);

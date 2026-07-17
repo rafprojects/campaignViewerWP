@@ -64,12 +64,9 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
         $this->assertTrue(wp_script_is('wp-super-gallery-app', 'registered'));
     }
 
-    public function test_embed_add_asset_cache_headers_noop_without_matching_uri() {
-        // With no matching asset URI, should return without error.
-        $_SERVER['REQUEST_URI'] = '/some-page';
-        WPSG_Embed::add_asset_cache_headers();
-        $this->assertTrue(true);
-    }
+    // P63-C: WPSG_Embed::add_asset_cache_headers() was removed — static assets are
+    // served by the web server without entering PHP, so the PHP-side header attempt
+    // never ran. Long-cache immutable headers now ship via assets/.htaccess.
 
     // ═══════════════════════════════════════════════════════════════════════
     // WPSG_Asset_Library — ensure_htaccess, sanitize_svg_uris

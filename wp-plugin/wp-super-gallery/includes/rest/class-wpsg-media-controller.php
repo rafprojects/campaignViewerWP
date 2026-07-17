@@ -1651,7 +1651,9 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
-        $job_id = WPSG_Export_Engine::create_job('media_library', $manifest, $media_items);
+        // P63-E: media-library export is System-Admin-gated to create; stamp the job
+        // so read/download is likewise System-Admin-only, even if the job ID leaks.
+        $job_id = WPSG_Export_Engine::create_job('media_library', $manifest, $media_items, required_tier: WPSG_Permissions::TIER_SYSTEM_ADMIN);
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
     }
 

@@ -40,7 +40,9 @@ class WPSG_Provider_Rumble implements WPSG_Provider_Handler {
         $thumb = '';
 
         $attempts[] = $url;
-        $html_resp = wp_remote_get($url, [
+        // P63-H: use the SSRF-safe HTTP client so this handler is protected
+        // regardless of call path (see proxy_oembed() out-of-band filter).
+        $html_resp = wp_safe_remote_get($url, [
             'timeout' => 6,
             'headers' => [
                 'Accept'     => 'text/html',

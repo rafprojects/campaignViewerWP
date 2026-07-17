@@ -26,6 +26,11 @@ class WPSG_Rate_Limiter {
      */
     public static function check($ip, $endpoint = 'oembed') {
         $limit  = intval(apply_filters('wpsg_rate_limit_max', self::DEFAULT_LIMIT, $endpoint));
+        // NB (P63-B): this `wpsg_rate_limit_window` filter tunes ONLY the oEmbed
+        // proxy limiter. The REST-base limiter (WPSG_REST_Base) uses a distinct
+        // `wpsg_rest_rate_limit_window` filter — the two subsystems previously
+        // shared this name with divergent signatures, so tuning one silently
+        // affected the other.
         $window = intval(apply_filters('wpsg_rate_limit_window', self::DEFAULT_WINDOW, $endpoint));
 
         $key = self::TRANSIENT_PREFIX . $endpoint . '_' . md5($ip);

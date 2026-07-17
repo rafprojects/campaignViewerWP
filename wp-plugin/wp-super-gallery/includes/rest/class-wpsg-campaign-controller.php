@@ -929,21 +929,42 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             ];
         }
 
-        $job_id = WPSG_Export_Engine::create_job('audit', $manifest, $media_items);
+        // P63-E: audit-log export is System-Admin-gated to create; stamp the job so
+        // read/download is likewise System-Admin-only, even if the job ID leaks.
+        $job_id = WPSG_Export_Engine::create_job('audit', $manifest, $media_items, required_tier: WPSG_Permissions::TIER_SYSTEM_ADMIN);
 
         return new WP_REST_Response(['jobId' => $job_id, 'status' => 'pending'], 202);
+    }
+
+    /**
+     * P63-D: format one CSV cell — neutralize spreadsheet formula-injection, then
+     * quote and escape.
+     *
+     * A cell whose first character is =, +, -, @, TAB or CR is interpreted as a
+     * formula by Excel/LibreOffice/Google Sheets (OWASP CSV injection). The
+     * directly-reachable vector here is `actor_login` (WordPress usernames may
+     * start with '-' or '@'), but the guard is applied to every column for
+     * defense-in-depth. A leading single-quote forces the spreadsheet to treat the
+     * cell as text; embedded double-quotes are doubled per RFC 4180.
+     */
+    private static function csv_cell($value): string {
+        $value = (string) $value;
+        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            $value = "'" . $value;
+        }
+        return '"' . str_replace('"', '""', $value) . '"';
     }
 
     private static function audit_csv_response(array $items): WP_REST_Response {
         $lines = ["id,campaign_id,action,actor_login,created_at,details"];
         foreach ($items as $item) {
             $lines[] = implode(',', [
-                '"' . $item['id'] . '"',
-                '"' . $item['campaignId'] . '"',
-                '"' . str_replace('"', '""', $item['action']) . '"',
-                '"' . str_replace('"', '""', $item['actorLogin']) . '"',
-                '"' . $item['createdAt'] . '"',
-                '"' . str_replace('"', '""', wp_json_encode($item['details'])) . '"',
+                self::csv_cell($item['id']),
+                self::csv_cell($item['campaignId']),
+                self::csv_cell($item['action']),
+                self::csv_cell($item['actorLogin']),
+                self::csv_cell($item['createdAt']),
+                self::csv_cell(wp_json_encode($item['details'])),
             ]);
         }
         $csv = implode("\r\n", $lines);

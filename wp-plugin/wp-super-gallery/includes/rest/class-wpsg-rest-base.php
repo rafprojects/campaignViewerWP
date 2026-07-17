@@ -57,9 +57,17 @@ abstract class WPSG_REST_Base {
 
     // ── Rate limiting ─────────────────────────────────────────────────────────
 
+    /**
+     * P63-B: the REST-base limiter tunes its window via the
+     * `wpsg_rest_rate_limit_window` filter (args: $default_seconds, $scope).
+     * This is deliberately distinct from the oEmbed proxy's `wpsg_rate_limit_window`
+     * filter in WPSG_Rate_Limiter (args: $default, $endpoint) — the two guard
+     * different subsystems and previously shared a name with divergent signatures,
+     * so tuning one silently affected the other.
+     */
     public static function rate_limit_public($request) {
         $limit = intval(apply_filters('wpsg_rate_limit_public', 60));
-        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'public'));
         return self::rate_limit_check($request, 'public', $limit, $window);
     }
 
@@ -94,7 +102,7 @@ abstract class WPSG_REST_Base {
             }
         }
 
-        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'authenticated'));
         $result = self::rate_limit_check($request, 'authenticated', $limit, $window, $space_id);
 
         if (is_wp_error($result)) {
@@ -113,7 +121,7 @@ abstract class WPSG_REST_Base {
      */
     public static function rate_limit_magic_approve($request) {
         $limit  = intval(apply_filters('wpsg_rate_limit_magic_approve', 10));
-        $window = intval(apply_filters('wpsg_rate_limit_window', 60));
+        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'magic_approve'));
         return self::rate_limit_check($request, 'magic_approve', $limit, $window);
     }
 
@@ -122,14 +130,30 @@ abstract class WPSG_REST_Base {
             return true;
         }
 
-        $ip = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : 'unknown';
+        // P63-B: resolve the client IP through the shared, trusted-proxy-aware
+        // resolver instead of raw REMOTE_ADDR. Behind a reverse proxy/CDN every
+        // visitor's REMOTE_ADDR is the proxy's IP, which would collapse all public
+        // traffic into a single site-wide bucket per route once the limiter is live
+        // (P63-A). get_client_ip() only honours X-Forwarded-For / X-Real-IP from
+        // IPs in the wpsg_rate_limiter_trusted_proxies allowlist.
+        $ip = class_exists('WPSG_Rate_Limiter')
+            ? WPSG_Rate_Limiter::get_client_ip()
+            : (isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '0.0.0.0');
         $user_id = get_current_user_id();
         $route = $request->get_route();
         // Include space_id in the key when set so each space has its own bucket (P48-D).
         $space_seg = $space_id > 0 ? '_s' . $space_id : '';
         $key = sprintf('wpsg_rl_%s%s_%s_%s', $scope, $space_seg, $user_id ?: 'anon', md5($ip . '|' . $route));
 
-        if (function_exists('wp_cache_incr')) {
+        // P63-A: gate the object-cache counter on whether a *persistent* object
+        // cache is actually installed. WordPress core defines wp_cache_incr()
+        // unconditionally — even for the default per-request array cache, which
+        // does NOT survive between requests — so keying on function_exists() left
+        // this branch always taken and the counter resetting to 1 every request on
+        // hosts without Redis/Memcached, meaning the limit never tripped and the
+        // transient fallback below was permanently unreachable. wp_using_ext_object_cache()
+        // is the correct signal for "counters persist across requests".
+        if (wp_using_ext_object_cache()) {
             $cache_key = $key . '_count';
             $reset_key = $key . '_reset';
 
@@ -576,6 +600,21 @@ abstract class WPSG_REST_Base {
     }
 
     /**
+     * P63-I: resolve the space that owns a campaign — post meta `_wpsg_space_id`,
+     * falling back to the configured default space. Returns 0 when the campaign has
+     * no space (pre-spaces install / no default configured). Centralizes the
+     * meta+default lookup shared by the space-access gate below and export-job
+     * space stamping (WPSG_Export_Controller).
+     */
+    protected static function resolve_campaign_space_id(int $campaign_id): int {
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        if ($space_id <= 0) {
+            $space_id = intval(get_option('wpsg_default_space_id'));
+        }
+        return max(0, $space_id);
+    }
+
+    /**
      * P52-A5b: does the user have access to the space that owns this campaign?
      *
      * Mirrors the space gate in get_effective_campaign_level(): a campaign with
@@ -584,10 +623,7 @@ abstract class WPSG_REST_Base {
      * everywhere; open-mode manage_wpsg ⇒ owner; delegated ⇒ explicit grant).
      */
     private static function user_can_access_campaign_space(int $campaign_id, int $user_id): bool {
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
-        if ($space_id <= 0) {
-            $space_id = intval(get_option('wpsg_default_space_id'));
-        }
+        $space_id = self::resolve_campaign_space_id($campaign_id);
         if ($space_id <= 0) {
             return true;
         }
@@ -666,7 +702,9 @@ abstract class WPSG_REST_Base {
         } else {
             $auth_header = '';
         }
-        if (!empty($auth_header) && stripos($auth_header, 'Bearer ') === 0) {
+        // P63-G: only honor a Bearer skip when a token-auth integration actually
+        // authenticated the request — not on mere header presence.
+        if (self::bearer_auth_is_verified($auth_header)) {
             return true;
         }
 
@@ -698,6 +736,34 @@ abstract class WPSG_REST_Base {
     private static function verify_rest_nonce() {
         $nonce = isset($_SERVER['HTTP_X_WP_NONCE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_WP_NONCE'])) : '';
         return (bool) wp_verify_nonce($nonce, 'wp_rest');
+    }
+
+    /**
+     * P63-G: whether an `Authorization: Bearer …` header should be honored as
+     * pre-authenticated (i.e. skip this file's nonce check).
+     *
+     * Previously the mere PRESENCE of a `Bearer ` prefix returned true, regardless
+     * of whether any token was actually validated. That was not directly
+     * exploitable — WordPress core's rest_cookie_check_errors() already demotes a
+     * cookie session lacking a valid nonce to user 0 before any permission callback
+     * runs, closing the classic CSRF path — but trusting an unvalidated header is
+     * needless. The skip is now honored only when BOTH hold:
+     *   1. WordPress resolved a real current user (cookie / Application Password /
+     *      an external integration hooked into determine_current_user), and
+     *   2. a token-auth integration explicitly asserts, via the
+     *      `wpsg_bearer_auth_verified` filter (default false), that it validated
+     *      this specific credential.
+     * Sites with no JWT/token integration keep the stricter nonce-required path.
+     *
+     * @param string $auth_header The Authorization header value.
+     * @return bool
+     */
+    public static function bearer_auth_is_verified($auth_header) {
+        if (empty($auth_header) || stripos($auth_header, 'Bearer ') !== 0) {
+            return false;
+        }
+        return is_user_logged_in()
+            && (bool) apply_filters('wpsg_bearer_auth_verified', false, $auth_header);
     }
 
     public static function require_authenticated() {
@@ -930,10 +996,13 @@ abstract class WPSG_REST_Base {
      * - IPv4 private ranges (10.x, 172.16-31.x, 192.168.x)
      * - IPv4 loopback (127.x)
      * - IPv4 link-local (169.254.x)
+     * - IPv4 benchmarking (198.18.0.0/15), multicast (224.0.0.0/4),
+     *   reserved incl. 255.255.255.255 (240.0.0.0/4) — P63-F
      * - IPv6 loopback (::1)
      * - IPv6 unique local (fc00::/7)
      * - IPv6 link-local (fe80::/10)
      * - IPv6-mapped IPv4 (::ffff:x.x.x.x)
+     * - IPv6 NAT64 well-known prefix (64:ff9b::/96) — P63-F
      * - IPv6 documentation (2001:db8::/32)
      * - IPv6 discard (100::/64)
      *
@@ -957,8 +1026,11 @@ abstract class WPSG_REST_Base {
                 ['100.64.0.0', '100.127.255.255'],      // Shared address space (RFC 6598)
                 ['192.0.0.0', '192.0.0.255'],           // IETF Protocol Assignments (RFC 6890)
                 ['192.0.2.0', '192.0.2.255'],           // TEST-NET-1 (RFC 5737)
+                ['198.18.0.0', '198.19.255.255'],       // Benchmarking (RFC 2544) — P63-F
                 ['198.51.100.0', '198.51.100.255'],     // TEST-NET-2 (RFC 5737)
                 ['203.0.113.0', '203.0.113.255'],       // TEST-NET-3 (RFC 5737)
+                ['224.0.0.0', '239.255.255.255'],       // Multicast (RFC 5771) — P63-F
+                ['240.0.0.0', '255.255.255.255'],       // Reserved + limited broadcast 255.255.255.255 (RFC 1112/919) — P63-F
             ];
             foreach ($ranges as $r) {
                 $from = sprintf('%u', ip2long($r[0]));
@@ -993,6 +1065,24 @@ abstract class WPSG_REST_Base {
 
             // IPv4-mapped IPv6 (::ffff:x.x.x.x) - check the embedded IPv4
             if (substr($lower, 0, 30) === '0000:0000:0000:0000:0000:ffff:') {
+                $ipv4_hex = substr($lower, 30);
+                $parts = explode(':', $ipv4_hex);
+                if (count($parts) === 2) {
+                    $oct1 = hexdec(substr($parts[0], 0, 2));
+                    $oct2 = hexdec(substr($parts[0], 2, 2));
+                    $oct3 = hexdec(substr($parts[1], 0, 2));
+                    $oct4 = hexdec(substr($parts[1], 2, 2));
+                    $ipv4 = "$oct1.$oct2.$oct3.$oct4";
+                    return self::is_private_ip($ipv4);
+                }
+            }
+
+            // NAT64 well-known prefix 64:ff9b::/96 (P63-F). The trailing 32 bits
+            // embed an IPv4 address that can map into RFC-1918 / metadata space on
+            // NAT64 networks (e.g. 64:ff9b::169.254.169.254). Extract and recurse
+            // through the IPv4 check — mirrors the ::ffff: handling above. A NAT64
+            // wrapper around a genuinely public IPv4 correctly returns false.
+            if (substr($lower, 0, 30) === '0064:ff9b:0000:0000:0000:0000:') {
                 $ipv4_hex = substr($lower, 30);
                 $parts = explode(':', $ipv4_hex);
                 if (count($parts) === 2) {

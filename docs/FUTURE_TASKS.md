@@ -275,6 +275,8 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](archive/phases/PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
 
+*Per-space authorization scoping of ephemeral export-job resources was promoted out of this backlog into Phase 63 and **completed** on 2026-07-15 — see [PHASE63_REPORT.md](PHASE63_REPORT.md) Track **P63-I** (follow-on to P63-E / P63-E-2). Export-job read/download now enforces tier + creator-ownership + all-contributing-spaces.*
+
 ### Granular Custom-Role Permission Engine (GitHub-style)
 
 **Files:** `includes/class-wpsg-permissions.php` (introduced in P52-A), role/cap setup in `wp-super-gallery.php`, a new admin UI + storage.
