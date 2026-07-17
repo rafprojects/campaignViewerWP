@@ -47,11 +47,10 @@ class WPSG_Grants {
     /**
      * True when the entry carries an expiry that is in the past.
      *
-     * An empty/absent expiry never expires; an unparseable expiry is treated as
-     * "no valid expiry set" (not expired) rather than silently expiring the
-     * grant. For real data — where expires_at is always either null or an ISO
-     * string produced by gmdate('c', …) — this matches the historical inline
-     * checks exactly.
+     * An empty/absent expiry never expires. An unparseable expiry is treated as
+     * expired (fail closed) — this matches the historical inline checks exactly:
+     * `strtotime($x) < $now` coerces a `false` result (unparseable) to `0` for
+     * the comparison, so a malformed expires_at was always "in the past" there.
      *
      * @param int|null $now Unix timestamp to compare against; defaults to now.
      */
@@ -62,7 +61,7 @@ class WPSG_Grants {
         }
         $ts = strtotime($expires_at);
         if ($ts === false) {
-            return false;
+            return true;
         }
         return $ts < ($now ?? time());
     }
@@ -75,6 +74,18 @@ class WPSG_Grants {
         return array_values(array_filter($grants, static function ($entry) use ($now) {
             return !self::is_expired($entry, $now);
         }));
+    }
+
+    /**
+     * True when the list carries a non-expired grant for the given user.
+     */
+    public static function has_active_grant(array $grants, int $user_id): bool {
+        foreach ($grants as $grant) {
+            if (intval($grant['userId'] ?? 0) === $user_id && !self::is_expired($grant)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

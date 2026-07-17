@@ -77,10 +77,11 @@ class WPSG_P64A_Grants_Helper_Test extends WP_UnitTestCase {
         $this->assertFalse(WPSG_Grants::is_expired(['expires_at' => $future]));
     }
 
-    public function test_is_expired_false_for_unparseable_expiry() {
-        // Guards against the inline `strtotime(...) < now` form silently treating
-        // garbage (strtotime === false → 0) as "expired long ago".
-        $this->assertFalse(WPSG_Grants::is_expired(['expires_at' => 'not-a-date']));
+    public function test_is_expired_true_for_unparseable_expiry() {
+        // Matches the inline `strtotime(...) < now` form this replaces: a
+        // `strtotime() === false` result coerces to `0` in that comparison, so
+        // garbage was always treated as "expired long ago" (fail closed).
+        $this->assertTrue(WPSG_Grants::is_expired(['expires_at' => 'not-a-date']));
     }
 
     public function test_is_expired_respects_injected_now() {
@@ -100,6 +101,18 @@ class WPSG_P64A_Grants_Helper_Test extends WP_UnitTestCase {
         $out = WPSG_Grants::filter_active($grants);
         $ids = array_column($out, 'userId');
         $this->assertSame([2, 3], $ids);
+    }
+
+    // ── has_active_grant ────────────────────────────────────────────────────────
+
+    public function test_has_active_grant_true_for_non_expired_match() {
+        $grants = [
+            ['userId' => 1, 'expires_at' => gmdate('c', time() - 60)], // expired
+            ['userId' => 2, 'expires_at' => null],                     // never expires
+        ];
+        $this->assertFalse(WPSG_Grants::has_active_grant($grants, 1));
+        $this->assertTrue(WPSG_Grants::has_active_grant($grants, 2));
+        $this->assertFalse(WPSG_Grants::has_active_grant($grants, 3), 'no entry for this user at all');
     }
 
     // ── parse_expiry_param ──────────────────────────────────────────────────────

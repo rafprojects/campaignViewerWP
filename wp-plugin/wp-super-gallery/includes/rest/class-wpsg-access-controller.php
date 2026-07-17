@@ -331,12 +331,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         if ($company_term) {
             $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
             $company_grants = is_array($company_grants) ? $company_grants : [];
-            foreach ($company_grants as $grant) {
-                if (intval($grant['userId'] ?? 0) === $user_id && !WPSG_Grants::is_expired($grant)) {
-                    $has_company_grant = true;
-                    break;
-                }
-            }
+            $has_company_grant = WPSG_Grants::has_active_grant($company_grants, $user_id);
         }
 
         $overrides = get_post_meta($post_id, 'access_overrides', true);
@@ -574,7 +569,27 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             // password) so a first-time approved requester can actually log in —
             // mirroring the admin `create_user` path. Fires ONLY for freshly
             // created users; existing users already have credentials.
+            //
+            // P64-D fix: wp_mail() swallows PHPMailer failures and returns false
+            // (firing `wp_mail_failed`) rather than throwing, so a bare call here
+            // has no way to know the notification didn't go out — same gap P64-F
+            // fixed in the admin create_user path. Listen for `wp_mail_failed` so
+            // a silent failure is at least auditable.
+            $mail_failed = false;
+            $on_mail_failed = static function () use (&$mail_failed) {
+                $mail_failed = true;
+            };
+            add_action('wp_mail_failed', $on_mail_failed);
             wp_new_user_notification($user_id, null, 'user');
+            remove_action('wp_mail_failed', $on_mail_failed);
+
+            if ($mail_failed) {
+                self::add_audit_entry($post_id, 'access.request.notification_failed', [
+                    'email'  => $data['email'],
+                    'userId' => $user_id,
+                    'token'  => $token,
+                ]);
+            }
         }
 
         // Grant access (campaign-level). P33-B: persist the approved role.
