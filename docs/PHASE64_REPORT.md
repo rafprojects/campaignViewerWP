@@ -305,4 +305,8 @@ Add a `modals.openConfirmModal` confirmation (same `@mantine/modals` convention 
 
 ## Outcome
 
-Complete — all tracks A–G landed and validated. Backend: the new P64 test classes plus the full pre-existing PHPUnit suite are green (final full-suite run recorded below). Frontend: Vitest suites for the touched components pass; `tsc`/`eslint`/`i18n:check` clean.
+Complete — all tracks A–G landed and validated.
+
+- **Full PHPUnit suite: OK — 1200 tests, 0 failures, 2 pre-existing skips** (baseline was 1166; +34 new across the four P64 test classes). The final run surfaced exactly one intentional break — `WPSG_P52A_Permission_Matrix_Test::test_map_matches_frozen_matrix`, the frozen permission-map snapshot, which had to be updated for P64-C's `campaign.access_request.submit` → `rate_limit_access_request` remap — now updated and green.
+- **Full frontend Vitest suite: 241 files, 3688 tests, all passing.** `tsc --noEmit`, `eslint`, and `i18n:check` clean.
+- Committed on `feat/phase64-php-hardening-2-of-5` across four feature commits (A; B; C; D/E/F/G) plus the frozen-matrix follow-up.

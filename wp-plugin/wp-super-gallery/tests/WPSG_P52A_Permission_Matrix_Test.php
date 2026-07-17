@@ -42,7 +42,7 @@ class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
             'campaign.access.list'                  => 'require_campaign_space_access',
             'campaign.access.grant'                 => 'require_campaign_space_access',
             'campaign.access.revoke'                => 'require_campaign_space_access',
-            'campaign.access_request.submit'        => 'rate_limit_public',
+            'campaign.access_request.submit'        => 'rate_limit_access_request', // P64-C: own tight limit + precheck seam
             'campaign.access_request.list'          => 'require_campaign_space_access',
             'campaign.access_request.approve'       => 'require_campaign_space_access',
             'campaign.access_request.deny'          => 'require_campaign_space_access',
