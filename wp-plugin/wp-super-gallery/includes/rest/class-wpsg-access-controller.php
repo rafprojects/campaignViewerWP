@@ -461,7 +461,8 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             )
         );
 
-        // Admin notification with one-click approval link.
+        // Admin notification with one-click approval link. Goes to the fixed
+        // admin_email — never a caller-supplied address.
         wp_mail(
             get_option('admin_email'),
             sprintf('[%s] Access Request — %s', $site_name, $campaign_title),
@@ -475,19 +476,17 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             )
         );
 
-        // Confirmation email to the requester.
-        wp_mail(
-            $email,
-            sprintf('[%s] Access Request Received — %s', $site_name, $campaign_title),
-            sprintf(
-                "Hello,\n\nYour access request for \"%s\" has been received.\nAn administrator will review your request shortly.\n\nThank you,\n%s",
-                $campaign_title,
-                $site_name
-            )
-        );
+        // P64-C: intentionally NO email to the requester-supplied address here.
+        // This endpoint is public and unauthenticated and never verifies the
+        // caller owns the address, so emailing it on submit is a mail-amplification
+        // / email-bombing primitive (an attacker loops a victim list to send each
+        // one "your request was received"). The requester IS notified once an
+        // admin resolves the request — do_approve_request() emails on approval and
+        // deny_access_request() on denial (behind wpsg_send_denial_email) — so no
+        // legitimate requester is left uninformed.
 
         return new WP_REST_Response([
-            'message' => 'Request submitted. Check your email for confirmation.',
+            'message' => 'Request submitted. You will receive an email once an administrator reviews it.',
             'token'   => $token,
         ], 201);
     }

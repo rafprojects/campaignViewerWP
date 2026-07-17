@@ -2668,7 +2668,7 @@
   "campcard_videos": "🎬 {{count}} videos",
   "campcard_images": "🖼️ {{count}} images",
   "raf_error_generic": "Failed to submit request. Please try again.",
-  "raf_check_email": "Check your email for confirmation.",
+  "raf_check_email": "Request submitted. You will receive an email once an administrator reviews it.",
   "raf_request_to": "Request access to <strong>{{title}}</strong>",
   "raf_email_ph": "your@email.com",
   "raf_email_aria": "Email address",

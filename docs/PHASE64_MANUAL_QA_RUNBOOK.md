@@ -197,3 +197,57 @@ curl -s -u 'sysadmin:APPPW' "$BASE/wp-json/wp-super-gallery/v1/companies/<TERM>/
 - The frontend dialog is view-mode-aware: the **same** company-sourced row shows different copy in campaign view vs company view because the endpoint it will hit differs. That's intentional, not a bug.
 
 ---
+
+### P64-C — Access-request endpoint is no longer a mail-bombing primitive
+
+**What & why.** `POST /campaigns/{id}/access-requests` is public/unauthenticated and used to send **two** emails: an admin notification (fixed `admin_email`) and a "your request was received" confirmation to the **caller-supplied** address — which it never verified the caller owned. That made it a mail-amplification / email-bombing tool (loop a victim list → the site emails each). Fix: **(1)** no requester email on submit (the admin is still notified; the requester hears back only at approve/deny); **(2)** a dedicated tight rate limit (5/min + 20/day per IP) instead of the generic 60/min public limiter; **(3)** a `wpsg_access_request_precheck` filter for CAPTCHA/honeypot.
+
+**Preconditions.** The mail-log mu-plugin from §1 installed (`tail -f wp-content/wpsg-mail.log`). A campaign ID `CID`.
+
+#### Part 1 — no requester email on submit
+
+**Steps.**
+```bash
+: > wp-content/wpsg-mail.log   # clear
+curl -s -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/access-requests" \
+  -H 'Content-Type: application/json' -d '{"email":"victim@example.com"}' | jq .
+cat wp-content/wpsg-mail.log
+```
+
+**Expected (pass).** The 201 body reads *"Request submitted. You will receive an email once an administrator reviews it."* (not "check your email"). The mail log shows **one** line — `TO=<admin_email>` — and **no** line `TO=victim@example.com`.
+
+**Why it proves the fix.** Pre-fix the log would show a second line to `victim@example.com`. The attacker-chosen recipient is gone; only the fixed admin address is ever mailed on submit.
+
+**Then confirm the requester still hears back on resolution:**
+```bash
+: > wp-content/wpsg-mail.log
+# Approve the pending request (as System Admin) via the admin UI or the approve endpoint, then:
+cat wp-content/wpsg-mail.log   # → a line TO=victim@example.com (the approval notice)
+```
+
+#### Part 2 — dedicated rate limit (distinct from the 60/min public limiter)
+
+**Steps.** Tighten just the access-request limit via a scratch mu-plugin: `add_filter('wpsg_rate_limit_access_request', fn() => 2);`. Then from one IP:
+```bash
+for i in 1 2 3; do
+  curl -s -o /dev/null -w "%{http_code}\n" -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/access-requests" \
+    -H 'Content-Type: application/json' -d "{\"email\":\"user$i@example.com\"}"
+done
+```
+
+**Expected (pass).** `201`, `201`, `429`. The 3rd trips at **2**, proving the limit is the dedicated `wpsg_access_request` bucket — not the generic 60/min public one (which is untouched by that filter).
+
+#### Part 3 — the precheck seam
+
+**Steps.** Add `add_filter('wpsg_access_request_precheck', '__return_false');` (simulating a failed CAPTCHA/honeypot), then submit once.
+
+**Expected (pass).** `403` with code `wpsg_access_request_rejected`; the mail log stays empty and no request row is created (rejected before the handler runs). Returning a `WP_Error` from the filter (e.g. a real CAPTCHA integration) is surfaced verbatim with its own status/code.
+
+**Regression checks.** With no filters set, a single legitimate submit still returns 201 with a token; duplicate-pending still 409; post-denial-within-24h still 429 (the cooldown, unaffected by the new limiter at low volume); approve still provisions the user and emails them.
+
+**Pitfalls.**
+- Viewing only the on-page 201 message proves nothing about the *email* — you must watch the mail log (or a real inbox) to confirm the requester address isn't mailed.
+- The dedicated limiter, like all P63 rate limiting, only persists across requests on a host with a real object cache **or** via the transient fallback — default wp-env uses the transient path (works). Keep the source IP constant across the three requests.
+- The daily 20/IP bucket and the 5/min bucket are separate; a burst test trips the minute bucket first. Don't set both filters to tiny values at once or you'll conflate them.
+
+---

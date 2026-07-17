@@ -2695,7 +2695,7 @@ class WPSG_Frontend_Strings {
             'campcard_videos' => __('🎬 {{count}} videos', 'wp-super-gallery'),
             'campcard_images' => __('🖼️ {{count}} images', 'wp-super-gallery'),
             'raf_error_generic' => __('Failed to submit request. Please try again.', 'wp-super-gallery'),
-            'raf_check_email' => __('Check your email for confirmation.', 'wp-super-gallery'),
+            'raf_check_email' => __('Request submitted. You will receive an email once an administrator reviews it.', 'wp-super-gallery'),
             'raf_request_to' => __('Request access to <strong>{{title}}</strong>', 'wp-super-gallery'),
             'raf_email_ph' => __('your@email.com', 'wp-super-gallery'),
             'raf_email_aria' => __('Email address', 'wp-super-gallery'),

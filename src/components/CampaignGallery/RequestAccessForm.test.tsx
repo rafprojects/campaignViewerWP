@@ -43,8 +43,10 @@ describe('RequestAccessForm', () => {
     );
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'user@example.com' } });
     fireEvent.click(screen.getByRole('button', { name: /request access/i }));
+    // P64-C: success copy no longer promises a confirmation email — the
+    // requester hears back only once an admin reviews the request.
     await waitFor(() =>
-      expect(screen.getByText(/check your email/i)).toBeInTheDocument(),
+      expect(screen.getByText(/once an administrator reviews it/i)).toBeInTheDocument(),
     );
   });
 

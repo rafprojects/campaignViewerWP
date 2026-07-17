@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P64-A | Extract a shared grants helper (`WPSG_Grants`) — enabling refactor for P64-B | ✅ Done | Medium |
 | P64-B | Split revoke granularity: campaign-scoped vs company-wide (decided) | ✅ Done | Small-Medium PHP + Medium FE |
-| P64-C | Access-request email abuse: defer requester confirmation + tighten rate/abuse control (decided) | Planned | Small |
+| P64-C | Access-request email abuse: defer requester confirmation + tighten rate/abuse control (decided) | ✅ Done | Small |
 | P64-D | Approved access-request users have no way to log in | Planned | Tiny |
 | P64-E | Magic-link inline-HTML fallback served through the JSON encoder | Planned | Small |
 | P64-F | `create_user`'s email-failure fallback can never trigger | Planned | Small |
@@ -170,6 +170,13 @@ Storage stays exactly where it is (postmeta/termmeta/space JSON) — this is pur
 - Test: submitting a request no longer triggers a `wp_mail` call to the requester address (mock/assert on `wp_mail` calls).
 - Test: the new per-endpoint rate limit trips independently of the generic public limit.
 - Manual: submit a request from the public form, confirm the on-page copy and the absence of a requester email; then approve it and confirm the approval email arrives.
+
+### Implementation (2026-07-17) — ✅ Done
+
+- **Structural:** removed the requester-facing confirmation email from `submit_access_request()`. The admin notification (fixed `admin_email`) still fires. 201 copy changed to "Request submitted. You will receive an email once an administrator reviews it." Frontend `RequestAccessForm.tsx` success copy updated to match (kept the `raf_check_email` i18n key to avoid churn in locale files; only its value changed).
+- **Rate/abuse:** new public permission primitive `WPSG_REST_Base::rate_limit_access_request()`, wired via the permission map (`campaign.access_request.submit` → `rate_limit_access_request`, was `rate_limit_public`). Two buckets through the existing `rate_limit_check()` infra: **5/min/IP** (`wpsg_rate_limit_access_request`) and **20/day/IP** (`wpsg_rate_limit_access_request_daily`). Plus the `wpsg_access_request_precheck` filter (default allow; a plugin may return `false` → 403 `wpsg_access_request_rejected`, or a `WP_Error` surfaced verbatim) for CAPTCHA/honeypot.
+- **Note on "distinct emails":** the plan suggested a daily cap on *distinct* emails. Because the handler already rejects duplicate pending emails (409) and enforces a 24h cooldown on denied ones, a per-IP daily *submission* cap is effectively a distinct-email cap — implemented that way (simpler, reuses `rate_limit_check`).
+- **Tests:** `WPSG_P64C_Access_Request_Abuse_Test` — OK (6 tests, 17 assertions): admin-emailed-but-not-requester, deferred-review copy, requester-still-notified-on-approval, precheck-false→403, precheck-WP_Error surfaced, dedicated-limit-trips-independently. Frontend `RequestAccessForm.test.tsx` updated (asserts new copy). Regression `WPSG_REST_Extended_Test` — OK (63 tests). `tsc`/`eslint`/`i18n:check` clean.
 
 ---
 
