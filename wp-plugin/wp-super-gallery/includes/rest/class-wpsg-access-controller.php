@@ -196,7 +196,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
                 return false;
             }
             // P28-B: skip expired grants unless caller asks for them.
-            if (!$include_expired && !empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+            if (!$include_expired && WPSG_Grants::is_expired($entry, $now)) {
                 return false;
             }
             return true;
@@ -207,36 +207,9 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         $total = count($effective);
         $page_items = array_slice($effective, $offset, $per_page);
 
-        // Enrich only the current page with user details.
-        $user_ids = array_unique(array_map(function ($entry) {
-            return intval($entry['userId'] ?? 0);
-        }, $page_items));
-
-        $user_map = [];
-        if (!empty($user_ids)) {
-            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
-            foreach ($users as $user) {
-                $user_map[$user->ID] = [
-                    'displayName' => $user->display_name,
-                    'email' => $user->user_email,
-                    'login' => $user->user_login,
-                ];
-            }
-        }
-
-        $enriched = array_map(function ($entry) use ($user_map, $now) {
-            $user_id = intval($entry['userId'] ?? 0);
-            if (isset($user_map[$user_id])) {
-                $entry['user'] = $user_map[$user_id];
-            }
-            // P28-B: compute is_expired on the fly.
-            $expires_at = $entry['expires_at'] ?? null;
-            $entry['expires_at'] = $expires_at;
-            $entry['is_expired'] = $expires_at !== null && strtotime($expires_at) < $now;
-            // P33-B: normalize legacy grants that pre-date RBAC.
-            $entry['access_level'] = self::validate_access_level($entry['access_level'] ?? 'viewer');
-            return $entry;
-        }, $page_items);
+        // P64-A: shared page-slice enrichment — user objects, access_level
+        // normalization, and on-the-fly is_expired/expires_at (P28-B).
+        $enriched = WPSG_Grants::enrich_users($page_items, true, $now);
 
         return self::paginated_response($enriched, $total, $page, $per_page);
     }
@@ -259,15 +232,10 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_invalid_source', 'Invalid source', ['status' => 400]);
         }
 
-        // P28-B: optional expiry — validate ISO 8601 datetime if provided.
-        $expires_at_raw = $request->get_param('expires_at');
-        $expires_at = null;
-        if ($expires_at_raw !== null && $expires_at_raw !== '') {
-            $ts = strtotime(sanitize_text_field($expires_at_raw));
-            if ($ts === false) {
-                return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
-            }
-            $expires_at = gmdate('c', $ts);
+        // P28-B / P64-A: optional expiry — validate ISO 8601 datetime if provided.
+        $expires_at = WPSG_Grants::parse_expiry_param($request->get_param('expires_at'));
+        if (is_wp_error($expires_at)) {
+            return $expires_at;
         }
 
         // P33-B: access_level for RBAC (deny entries carry no role).
@@ -289,13 +257,13 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             }
             $grants = get_term_meta($company_term->term_id, 'access_grants', true);
             $grants = is_array($grants) ? $grants : [];
-            $grants = self::upsert_grant($grants, $entry);
+            $grants = WPSG_Grants::upsert($grants, $entry);
             update_term_meta($company_term->term_id, 'access_grants', $grants);
         } else {
             if ($action === 'deny') {
                 $overrides = get_post_meta($post_id, 'access_overrides', true);
                 $overrides = is_array($overrides) ? $overrides : [];
-                $overrides = self::upsert_override($overrides, [
+                $overrides = WPSG_Grants::upsert($overrides, [
                     'userId' => $user_id,
                     'action' => 'deny',
                     'grantedAt' => gmdate('c'),
@@ -304,7 +272,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             } else {
                 $grants = get_post_meta($post_id, 'access_grants', true);
                 $grants = is_array($grants) ? $grants : [];
-                $grants = self::upsert_grant($grants, $entry);
+                $grants = WPSG_Grants::upsert($grants, $entry);
                 update_post_meta($post_id, 'access_grants', $grants);
             }
         }
@@ -334,24 +302,18 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         if ($company_term) {
             $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
             $company_grants = is_array($company_grants) ? $company_grants : [];
-            $company_grants = array_values(array_filter($company_grants, function ($entry) use ($user_id) {
-                return intval($entry['userId'] ?? 0) !== $user_id;
-            }));
+            $company_grants = WPSG_Grants::remove($company_grants, $user_id);
             update_term_meta($company_term->term_id, 'access_grants', $company_grants);
         }
 
         $campaign_grants = get_post_meta($post_id, 'access_grants', true);
         $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
-        $campaign_grants = array_values(array_filter($campaign_grants, function ($entry) use ($user_id) {
-            return intval($entry['userId'] ?? 0) !== $user_id;
-        }));
+        $campaign_grants = WPSG_Grants::remove($campaign_grants, $user_id);
         update_post_meta($post_id, 'access_grants', $campaign_grants);
 
         $overrides = get_post_meta($post_id, 'access_overrides', true);
         $overrides = is_array($overrides) ? $overrides : [];
-        $overrides = array_values(array_filter($overrides, function ($entry) use ($user_id) {
-            return intval($entry['userId'] ?? 0) !== $user_id;
-        }));
+        $overrides = WPSG_Grants::remove($overrides, $user_id);
         update_post_meta($post_id, 'access_overrides', $overrides);
 
         self::add_audit_entry($post_id, 'access.revoked', [
@@ -567,7 +529,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         // Grant access (campaign-level). P33-B: persist the approved role.
         $grants = get_post_meta($post_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
-        $grants = self::upsert_grant($grants, [
+        $grants = WPSG_Grants::upsert($grants, [
             'userId'       => $user->ID,
             'campaignId'   => $post_id,
             'source'       => 'campaign',
@@ -816,31 +778,9 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         $total      = count($all_grants);
         $page_slice = array_slice($all_grants, $offset, $per_page);
 
-        $user_ids = array_unique(array_filter(array_map(function ($entry) {
-            return intval($entry['userId'] ?? 0);
-        }, $page_slice)));
-
-        $user_map = [];
-        if (!empty($user_ids)) {
-            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
-            foreach ($users as $user) {
-                $user_map[$user->ID] = [
-                    'displayName' => $user->display_name,
-                    'email' => $user->user_email,
-                    'login' => $user->user_login,
-                ];
-            }
-        }
-
-        $enriched = array_map(function ($entry) use ($user_map) {
-            $user_id = intval($entry['userId'] ?? 0);
-            if (isset($user_map[$user_id])) {
-                $entry['user'] = $user_map[$user_id];
-            }
-            // P33-B: normalize legacy grants that pre-date RBAC.
-            $entry['access_level'] = self::validate_access_level($entry['access_level'] ?? 'viewer');
-            return $entry;
-        }, $page_slice);
+        // P64-A: shared page-slice enrichment. No expiry flags here — the
+        // company-access list historically omits is_expired/expires_at.
+        $enriched = WPSG_Grants::enrich_users($page_slice, false);
 
         $response = self::paginated_response($enriched, $total, $page, $per_page);
         self::log_slow_rest('companies.access', $start, [
@@ -867,15 +807,10 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
-        // P28-B: optional expiry.
-        $expires_at_raw = $request->get_param('expires_at');
-        $expires_at = null;
-        if ($expires_at_raw !== null && $expires_at_raw !== '') {
-            $ts = strtotime(sanitize_text_field($expires_at_raw));
-            if ($ts === false) {
-                return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
-            }
-            $expires_at = gmdate('c', $ts);
+        // P28-B / P64-A: optional expiry.
+        $expires_at = WPSG_Grants::parse_expiry_param($request->get_param('expires_at'));
+        if (is_wp_error($expires_at)) {
+            return $expires_at;
         }
 
         // P33-B: access_level for RBAC.
@@ -893,7 +828,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             'access_level' => $access_level,
         ];
 
-        $grants = self::upsert_grant($grants, $entry);
+        $grants = WPSG_Grants::upsert($grants, $entry);
         update_term_meta($term_id, 'access_grants', $grants);
 
         // Get first campaign for audit log (if any)
@@ -939,9 +874,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
 
         $grants = get_term_meta($term_id, 'access_grants', true);
         $grants = is_array($grants) ? $grants : [];
-        $grants = array_values(array_filter($grants, function ($entry) use ($user_id) {
-            return intval($entry['userId'] ?? 0) !== $user_id;
-        }));
+        $grants = WPSG_Grants::remove($grants, $user_id);
         update_term_meta($term_id, 'access_grants', $grants);
 
         // Get first campaign for audit log (if any)
@@ -1069,24 +1002,6 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         ];
     }
 
-    private static function upsert_grant($grants, $entry) {
-        $user_id = intval($entry['userId']);
-        $filtered = array_filter($grants, function ($item) use ($user_id) {
-            return intval($item['userId'] ?? 0) !== $user_id;
-        });
-        $filtered[] = $entry;
-        return array_values($filtered);
-    }
-
-    private static function upsert_override($overrides, $entry) {
-        $user_id = intval($entry['userId']);
-        $filtered = array_filter($overrides, function ($item) use ($user_id) {
-            return intval($item['userId'] ?? 0) !== $user_id;
-        });
-        $filtered[] = $entry;
-        return array_values($filtered);
-    }
-
     public static function access_summary($request) {
         global $wpdb;
 
@@ -1186,7 +1101,7 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             // Count only non-expired grants.
             $active_count = 0;
             foreach ($grants as $grant) {
-                if (!empty($grant['expires_at']) && strtotime($grant['expires_at']) < $now) {
+                if (WPSG_Grants::is_expired($grant, $now)) {
                     continue;
                 }
                 if (!empty($grant['userId'])) {

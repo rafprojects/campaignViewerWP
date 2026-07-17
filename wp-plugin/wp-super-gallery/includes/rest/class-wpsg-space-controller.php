@@ -341,31 +341,8 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         $total      = count($grants);
         $page_items = array_slice($grants, $offset, $per_page);
 
-        $user_ids = array_unique(array_map(fn($g) => intval($g['userId'] ?? 0), $page_items));
-        $user_map = [];
-        if (!empty($user_ids)) {
-            $users = get_users(['include' => $user_ids, 'fields' => ['ID', 'user_email', 'display_name', 'user_login']]);
-            foreach ($users as $user) {
-                $user_map[$user->ID] = [
-                    'displayName' => $user->display_name,
-                    'email'       => $user->user_email,
-                    'login'       => $user->user_login,
-                ];
-            }
-        }
-
-        $now      = time();
-        $enriched = array_map(function ($grant) use ($user_map, $now) {
-            $uid = intval($grant['userId'] ?? 0);
-            if (isset($user_map[$uid])) {
-                $grant['user'] = $user_map[$uid];
-            }
-            $grant['access_level'] = self::validate_access_level($grant['access_level'] ?? 'viewer');
-            $expires_at            = $grant['expires_at'] ?? null;
-            $grant['expires_at']   = $expires_at;
-            $grant['is_expired']   = $expires_at !== null && strtotime($expires_at) < $now;
-            return $grant;
-        }, $page_items);
+        // P64-A: shared page-slice enrichment (user objects + expiry flags).
+        $enriched = WPSG_Grants::enrich_users($page_items, true);
 
         return self::paginated_response($enriched, $total, $page, $per_page);
     }
@@ -385,21 +362,17 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_user_not_found', 'User not found', ['status' => 404]);
         }
 
-        $expires_at = null;
-        $expires_raw = $request->get_param('expires_at');
-        if ($expires_raw !== null && $expires_raw !== '') {
-            $ts = strtotime(sanitize_text_field($expires_raw));
-            if ($ts === false) {
-                return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
-            }
-            $expires_at = gmdate('c', $ts);
+        // P64-A: shared expiry-param parsing.
+        $expires_at = WPSG_Grants::parse_expiry_param($request->get_param('expires_at'));
+        if (is_wp_error($expires_at)) {
+            return $expires_at;
         }
 
         $access_level = self::validate_access_level($request->get_param('access_level') ?? 'viewer');
 
         $grants  = json_decode($space->access_grants, true);
         $grants  = is_array($grants) ? $grants : [];
-        $grants  = self::upsert_space_grant($grants, [
+        $grants  = WPSG_Grants::upsert($grants, [
             'userId'       => $user_id,
             'access_level' => $access_level,
             'grantedAt'    => gmdate('c'),
@@ -430,7 +403,7 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
 
         $grants = json_decode($space->access_grants, true);
         $grants = is_array($grants) ? $grants : [];
-        $grants = array_values(array_filter($grants, fn($g) => intval($g['userId'] ?? 0) !== $user_id));
+        $grants = WPSG_Grants::remove($grants, $user_id);
 
         WPSG_DB::update_space($space_id, ['access_grants' => $grants]);
         self::add_audit_entry(0, 'space.access.revoked', ['userId' => $user_id], [
@@ -629,12 +602,5 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
             $out['grants'] = $grants;
         }
         return $out;
-    }
-
-    private static function upsert_space_grant(array $grants, array $entry): array {
-        $user_id  = intval($entry['userId']);
-        $filtered = array_filter($grants, fn($g) => intval($g['userId'] ?? 0) !== $user_id);
-        $filtered[] = $entry;
-        return array_values($filtered);
     }
 }

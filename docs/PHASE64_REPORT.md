@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P64-A | Extract a shared grants helper (`WPSG_Grants`) — enabling refactor for P64-B | Planned | Medium |
+| P64-A | Extract a shared grants helper (`WPSG_Grants`) — enabling refactor for P64-B | ✅ Done | Medium |
 | P64-B | Split revoke granularity: campaign-scoped vs company-wide (decided) | Planned | Small-Medium PHP + Medium FE |
 | P64-C | Access-request email abuse: defer requester confirmation + tighten rate/abuse control (decided) | Planned | Small |
 | P64-D | Approved access-request users have no way to log in | Planned | Tiny |
@@ -74,6 +74,15 @@ Storage stays exactly where it is (postmeta/termmeta/space JSON) — this is pur
 
 - Run the full existing access/grants test suite (P28-B, P33, P47, P53 matrices) and confirm no regressions.
 - New unit tests directly against `WPSG_Grants` methods (expiry edge cases, malformed `expires_at` input).
+
+### Implementation (2026-07-16) — ✅ Done
+
+- New `includes/class-wpsg-grants.php` exposes `upsert`, `remove`, `is_expired`, `filter_active`, `parse_expiry_param`, `validate_access_level`, and `enrich_users`. Loaded via `class-wpsg-rest.php` (always required on request + cron).
+- **Canonical `validate_access_level`.** Moved the access-level enum rule into `WPSG_Grants`; `WPSG_REST_Base::validate_access_level()` now delegates to it (one source of truth, lets `enrich_users` normalise levels without coupling back to REST_Base). No call site changed — the protected method still resolves via `self::`.
+- **`is_expired` robustness.** The canonical check treats empty/`'0'`/unparseable `expires_at` as *not expired* (the old inline `strtotime($x) < now` form cast a `false` from an unparseable date to `0`, making garbage look "expired since 1970"). Real grants only ever store `null` or a `gmdate('c')` ISO string, so this is a no-op on real data — confirmed by the full suite staying green.
+- **`enrich_users($entries, $with_expiry)`.** The `with_expiry` flag preserves exact output: the company-access list (`list_company_access`) historically omits `is_expired`/`expires_at`, so it passes `false`; campaign and space lists pass `true`.
+- **Call sites converted:** all three `upsert_*` private copies removed (`upsert_grant`/`upsert_override` in access-controller, `upsert_space_grant` in space-controller); the three `parse_expiry_param` blocks, the three enrichment blocks, and every grant-expiry check replaced. **Verification found a 10th grant-expiry site the plan's enumeration missed — `class-wpsg-monitoring.php` (expired-grant metric count) — also converted** (so the real footprint was 5 files, not 4). The `magic_key_expires_at` check at `class-wpsg-access-controller.php:600` was deliberately *left* (it's a magic-link key, not a grant).
+- **Tests:** `WPSG_P64A_Grants_Helper_Test` (19 tests, 44 assertions) pins every method incl. expiry edge cases + malformed input. Full suite green after a clean wp-env restart: **1185 tests, 13302 assertions, 0 failures** (baseline 1166 + 19 new). *An initial run showed 26 scattered errors across unrelated suites — font/export/cache/webhook — traced to an unhealthy `tests-mysql` container (`add_cap() on false` in setUp); a clean restart cleared them all, confirming zero regressions.*
 
 ---
 

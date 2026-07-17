@@ -284,9 +284,8 @@ abstract class WPSG_REST_Base {
      * @return string 'viewer' | 'editor' | 'owner'
      */
     protected static function validate_access_level($level): string {
-        return in_array($level, ['viewer', 'editor', 'owner'], true)
-            ? (string) $level
-            : 'viewer';
+        // P64-A: WPSG_Grants is the canonical home for this rule; delegate.
+        return WPSG_Grants::validate_access_level($level);
     }
 
     // ── P47-B: Space-level permission helpers ────────────────────────────────
@@ -317,8 +316,7 @@ abstract class WPSG_REST_Base {
                 if (intval($grant['userId'] ?? 0) !== $user_id) {
                     continue;
                 }
-                $expires_at = $grant['expires_at'] ?? null;
-                if ($expires_at !== null && strtotime($expires_at) < time()) {
+                if (WPSG_Grants::is_expired($grant)) {
                     continue; // expired grant confers no access
                 }
                 return self::validate_access_level($grant['access_level'] ?? 'viewer');
@@ -403,7 +401,7 @@ abstract class WPSG_REST_Base {
                 continue;
             }
             // Expired grants do not confer access.
-            if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+            if (WPSG_Grants::is_expired($entry, $now)) {
                 continue;
             }
             return self::validate_access_level($entry['access_level'] ?? 'viewer');
@@ -418,7 +416,7 @@ abstract class WPSG_REST_Base {
                 if (intval($entry['userId'] ?? 0) !== $user_id) {
                     continue;
                 }
-                if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+                if (WPSG_Grants::is_expired($entry, $now)) {
                     continue;
                 }
                 return self::validate_access_level($entry['access_level'] ?? 'viewer');
