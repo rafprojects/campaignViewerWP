@@ -11,15 +11,17 @@ function TestRows({
   entries,
   viewMode = 'campaign',
   onChangeRole = vi.fn(),
+  onRevokeAccess = vi.fn(),
 }: {
   entries: CompanyAccessGrant[];
   viewMode?: 'campaign' | 'company' | 'all';
   onChangeRole?: (entry: CompanyAccessGrant, level: CampaignAccessLevel) => Promise<void>;
+  onRevokeAccess?: (entry: CompanyAccessGrant) => Promise<void>;
 }) {
   const rows = useAccessRows({
     accessEntries: entries,
     accessViewMode: viewMode,
-    onRevokeAccess: vi.fn(),
+    onRevokeAccess,
     onChangeRole,
   });
   return (
@@ -136,5 +138,73 @@ describe('useAccessRows — P51-H role dropdown', () => {
     expect(roleInput('Alice').value).toMatch(/viewer/i);
     expect(roleInput('Bob').value).toMatch(/editor/i);
     expect(roleInput('Carol').value).toMatch(/owner/i);
+  });
+});
+
+// P64-B: revoke must be confirmed, and the confirmation copy must state the
+// actual outcome — which differs for a company-sourced grant by view mode.
+describe('useAccessRows — P64-B revoke confirmation', () => {
+  const revokeButton = () => screen.getByRole('button', { name: /revoke access/i });
+
+  it('does not revoke immediately on click — it opens a confirm dialog first', async () => {
+    const onRevokeAccess = vi.fn().mockResolvedValue(undefined);
+    render(<TestRows entries={[{ ...baseEntry, source: 'campaign' }]} onRevokeAccess={onRevokeAccess} />);
+
+    fireEvent.click(revokeButton());
+
+    // A dialog appears; nothing revoked yet.
+    expect(await screen.findByText(/revoke access\?/i)).toBeInTheDocument();
+    expect(onRevokeAccess).not.toHaveBeenCalled();
+  });
+
+  it('cancelling the dialog does not call onRevokeAccess', async () => {
+    const onRevokeAccess = vi.fn().mockResolvedValue(undefined);
+    render(<TestRows entries={[{ ...baseEntry, source: 'campaign' }]} onRevokeAccess={onRevokeAccess} />);
+
+    fireEvent.click(revokeButton());
+    await screen.findByText(/revoke access\?/i);
+    fireEvent.click(screen.getByRole('button', { name: /^cancel$/i }));
+
+    expect(onRevokeAccess).not.toHaveBeenCalled();
+  });
+
+  it('confirming the dialog calls onRevokeAccess with the entry', async () => {
+    const onRevokeAccess = vi.fn().mockResolvedValue(undefined);
+    render(<TestRows entries={[{ ...baseEntry, source: 'campaign' }]} onRevokeAccess={onRevokeAccess} />);
+
+    fireEvent.click(revokeButton());
+    await screen.findByText(/revoke access\?/i);
+    fireEvent.click(screen.getByRole('button', { name: /^revoke$/i }));
+
+    expect(onRevokeAccess).toHaveBeenCalledTimes(1);
+    expect(onRevokeAccess).toHaveBeenCalledWith(expect.objectContaining({ userId: 1, source: 'campaign' }));
+  });
+
+  it('company-sourced entry in CAMPAIGN view: copy says block-this-campaign-only', async () => {
+    render(
+      <TestRows
+        viewMode="campaign"
+        entries={[{ ...baseEntry, source: 'company', companyName: 'Acme' }]}
+      />,
+    );
+    fireEvent.click(revokeButton());
+
+    expect(await screen.findByText(/block on this campaign\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/access to other Acme campaigns is kept/i)).toBeInTheDocument();
+    // Confirm button reflects the block-only action, not a company-wide revoke.
+    expect(screen.getByRole('button', { name: /block on this campaign/i })).toBeInTheDocument();
+  });
+
+  it('company-sourced entry in COMPANY view: copy says revoke company-wide', async () => {
+    render(
+      <TestRows
+        viewMode="company"
+        entries={[{ ...baseEntry, source: 'company', companyName: 'Acme' }]}
+      />,
+    );
+    fireEvent.click(revokeButton());
+
+    expect(await screen.findByText(/revoke company-wide access\?/i)).toBeInTheDocument();
+    expect(screen.getByText(/across ALL campaigns of Acme/i)).toBeInTheDocument();
   });
 });

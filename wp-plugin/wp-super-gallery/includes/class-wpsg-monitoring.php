@@ -384,8 +384,7 @@ class WPSG_Monitoring {
                 continue;
             }
             foreach ($grants as $entry) {
-                $expires_at = $entry['expires_at'] ?? null;
-                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                if (WPSG_Grants::is_expired($entry, $now)) {
                     $count++;
                 }
             }

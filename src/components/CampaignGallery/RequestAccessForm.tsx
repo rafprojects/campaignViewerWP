@@ -53,7 +53,10 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       >
         <IconCheck size={24} color="var(--mantine-color-green-4)" />
         <Text size="sm" mt={6} c="dimmed">
-          {t('raf_check_email', 'Check your email for confirmation.')}
+          {/* P64-C: no confirmation email is sent on submit anymore (that was a
+              mail-bombing vector on this public endpoint); the requester hears
+              back only once an admin resolves the request. */}
+          {t('raf_check_email', 'Request submitted. You will receive an email once an administrator reviews it.')}
         </Text>
       </Box>
     );

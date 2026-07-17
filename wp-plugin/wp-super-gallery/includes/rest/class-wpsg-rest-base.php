@@ -125,6 +125,52 @@ abstract class WPSG_REST_Base {
         return self::rate_limit_check($request, 'magic_approve', $limit, $window);
     }
 
+    /**
+     * P64-C: dedicated gate for the public access-request submit endpoint.
+     *
+     * Distinct from the generic rate_limit_public (60/min) because this endpoint
+     * sends mail and writes DB rows on an unauthenticated request. The structural
+     * fix (deferring the requester-facing email to the approve/deny step) removes
+     * the attacker-chosen-recipient primitive; these limits cap the residual abuse
+     * volume (admin-inbox flooding, request-table churn):
+     *
+     *   - 5/min/IP           (filter `wpsg_rate_limit_access_request`)
+     *   - 20/day/IP          (filter `wpsg_rate_limit_access_request_daily`)
+     *
+     * The daily bucket is effectively a per-IP cap on *distinct* emails, since the
+     * handler already rejects duplicate pending emails and enforces a 24h cooldown
+     * on denied ones — the same email cannot be productively resubmitted.
+     *
+     * Also exposes `wpsg_access_request_precheck` — an extension seam for a
+     * CAPTCHA/honeypot integration to reject a submission before it is processed.
+     */
+    public static function rate_limit_access_request($request) {
+        $per_min = intval(apply_filters('wpsg_rate_limit_access_request', 5));
+        $window  = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'access_request'));
+        $minute  = self::rate_limit_check($request, 'access_request', $per_min, $window);
+        if (is_wp_error($minute)) {
+            return $minute;
+        }
+
+        $per_day = intval(apply_filters('wpsg_rate_limit_access_request_daily', 20));
+        $daily   = self::rate_limit_check($request, 'access_request_daily', $per_day, DAY_IN_SECONDS);
+        if (is_wp_error($daily)) {
+            return $daily;
+        }
+
+        // Extension seam for CAPTCHA / honeypot. Default allows. An integration
+        // may return a WP_Error (surfaced as-is) or boolean false to reject.
+        $precheck = apply_filters('wpsg_access_request_precheck', true, $request);
+        if (is_wp_error($precheck)) {
+            return $precheck;
+        }
+        if ($precheck === false) {
+            return new WP_Error('wpsg_access_request_rejected', 'Access request could not be verified.', ['status' => 403]);
+        }
+
+        return true;
+    }
+
     private static function rate_limit_check($request, $scope, $limit, $window, $space_id = 0) {
         if ($limit <= 0) {
             return true;
@@ -284,9 +330,8 @@ abstract class WPSG_REST_Base {
      * @return string 'viewer' | 'editor' | 'owner'
      */
     protected static function validate_access_level($level): string {
-        return in_array($level, ['viewer', 'editor', 'owner'], true)
-            ? (string) $level
-            : 'viewer';
+        // P64-A: WPSG_Grants is the canonical home for this rule; delegate.
+        return WPSG_Grants::validate_access_level($level);
     }
 
     // ── P47-B: Space-level permission helpers ────────────────────────────────
@@ -317,8 +362,7 @@ abstract class WPSG_REST_Base {
                 if (intval($grant['userId'] ?? 0) !== $user_id) {
                     continue;
                 }
-                $expires_at = $grant['expires_at'] ?? null;
-                if ($expires_at !== null && strtotime($expires_at) < time()) {
+                if (WPSG_Grants::is_expired($grant)) {
                     continue; // expired grant confers no access
                 }
                 return self::validate_access_level($grant['access_level'] ?? 'viewer');
@@ -403,7 +447,7 @@ abstract class WPSG_REST_Base {
                 continue;
             }
             // Expired grants do not confer access.
-            if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+            if (WPSG_Grants::is_expired($entry, $now)) {
                 continue;
             }
             return self::validate_access_level($entry['access_level'] ?? 'viewer');
@@ -418,7 +462,7 @@ abstract class WPSG_REST_Base {
                 if (intval($entry['userId'] ?? 0) !== $user_id) {
                     continue;
                 }
-                if (!empty($entry['expires_at']) && strtotime($entry['expires_at']) < $now) {
+                if (WPSG_Grants::is_expired($entry, $now)) {
                     continue;
                 }
                 return self::validate_access_level($entry['access_level'] ?? 'viewer');

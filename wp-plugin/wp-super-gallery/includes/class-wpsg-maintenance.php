@@ -193,8 +193,7 @@ class WPSG_Maintenance {
             $kept    = [];
             $removed = [];
             foreach ($grants as $entry) {
-                $expires_at = $entry['expires_at'] ?? null;
-                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                if (WPSG_Grants::is_expired($entry, $now)) {
                     $removed[] = $entry;
                 } else {
                     $kept[] = $entry;
@@ -237,8 +236,7 @@ class WPSG_Maintenance {
             $kept    = [];
             $removed = [];
             foreach ($grants as $entry) {
-                $expires_at = $entry['expires_at'] ?? null;
-                if ($expires_at !== null && strtotime($expires_at) < $now) {
+                if (WPSG_Grants::is_expired($entry, $now)) {
                     $removed[] = $entry;
                 } else {
                     $kept[] = $entry;

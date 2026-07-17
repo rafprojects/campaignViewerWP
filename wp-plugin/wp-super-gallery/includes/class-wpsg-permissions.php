@@ -23,6 +23,7 @@ if (!defined('ABSPATH')) {
  *   __return_true               public        — no auth (read-only / login)
  *   rate_limit_public           public        — unauthenticated, IP rate-limited
  *   rate_limit_magic_approve    public        — unauthenticated, tight rate limit
+ *   rate_limit_access_request   public        — unauthenticated, tight limit + precheck seam (P64-C)
  *   require_authenticated       authenticated — any logged-in user (self scope)
  *   rate_limit_authenticated    manage_options— user creation, rate-limited (System Admin)
  *   require_admin               manage_wpsg   — global admin (bare cap, no space scope)
@@ -74,7 +75,7 @@ final class WPSG_Permissions {
         'campaign.access.list'             => 'require_campaign_space_access',     // GET    /campaigns/{id}/access
         'campaign.access.grant'            => 'require_campaign_space_access',     // POST   /campaigns/{id}/access
         'campaign.access.revoke'           => 'require_campaign_space_access',     // DELETE /campaigns/{id}/access/{userId}
-        'campaign.access_request.submit'   => 'rate_limit_public',          // POST   /campaigns/{id}/access-requests
+        'campaign.access_request.submit'   => 'rate_limit_access_request',  // POST   /campaigns/{id}/access-requests (P64-C: own tight limit + precheck)
         'campaign.access_request.list'     => 'require_campaign_space_access',     // GET    /campaigns/{id}/access-requests
         'campaign.access_request.approve'  => 'require_campaign_space_access',     // POST   /campaigns/{id}/access-requests/{token}/approve
         'campaign.access_request.deny'     => 'require_campaign_space_access',     // POST   /campaigns/{id}/access-requests/{token}/deny
