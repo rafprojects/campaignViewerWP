@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P64-A | Extract a shared grants helper (`WPSG_Grants`) — enabling refactor for P64-B | ✅ Done | Medium |
-| P64-B | Split revoke granularity: campaign-scoped vs company-wide (decided) | Planned | Small-Medium PHP + Medium FE |
+| P64-B | Split revoke granularity: campaign-scoped vs company-wide (decided) | ✅ Done | Small-Medium PHP + Medium FE |
 | P64-C | Access-request email abuse: defer requester confirmation + tighten rate/abuse control (decided) | Planned | Small |
 | P64-D | Approved access-request users have no way to log in | Planned | Tiny |
 | P64-E | Magic-link inline-HTML fallback served through the JSON encoder | Planned | Small |
@@ -128,6 +128,20 @@ Storage stays exactly where it is (postmeta/termmeta/space JSON) — this is pur
 - Extend the P33-C role-enforcement matrix (`tests/WPSG_P33C_Role_Enforcement_Test.php`, currently 374 lines / 18 test methods, no existing revoke coverage): campaign-sourced revoke removes only campaign grant; company-sourced revoke adds override + leaves company grant + other campaigns intact; space editor cannot touch company grants via any campaign endpoint.
 - Frontend (Vitest, not Jest — the suite uses `@testing-library/jest-dom` matchers but runs on Vitest): `useAdminAccessState.coverage.test.tsx` already has branch coverage of the three DELETE-endpoint-resolution paths (campaign revoke, company-source-in-company-view, campaign-source-in-company-view) — extend it for the new `{ removed: 'campaign_grant' | 'deny_override_added' }` response shape. `useAccessRows.test.tsx` currently has zero coverage of click→`onRevokeAccess` or any dialog interaction — this is net-new test surface: add tests for dialog-open-on-click, cancel-does-not-call-onRevokeAccess, confirm-does-call-onRevokeAccess, and the copy split by `source`.
 - Manual: revoke a company-sourced user from one of their campaigns, confirm they still see the company's other campaigns; then use the separate company-wide revoke and confirm all access is gone; confirm a campaign-sourced revoke also requires confirmation before firing.
+
+### Implementation (2026-07-16) — ✅ Done
+
+*PHP.* `revoke_access()` rewritten: it now **removes only the campaign-level grant** and **never touches company termmeta**. It then checks whether an *active* company grant still covers the user; if so it writes a per-campaign **deny override** (blocking this campaign while company-wide access to other campaigns is preserved) rather than reaching into the company's grants. The response returns `{ removed: 'campaign_grant' | 'deny_override_added' }`, and the audit action distinguishes the two (`access.revoked` vs `access.denied_via_revoke`). The tier inconsistency disappears structurally — the campaign endpoint physically cannot mutate company grants anymore.
+
+*Frontend.* Built a **new** revoke confirm dialog (none existed — the trash icon fired the DELETE immediately). Implemented entirely inside `useAccessRows.tsx` via `modals.openConfirmModal` (no `AdminPanel`/prop changes). Copy is `(view × source)`-aware: campaign-view company-sourced → "Block on this campaign?" (block-this-campaign-only); company/all-view company-sourced → "Revoke company-wide access?"; campaign-sourced → plain "Revoke access?". New i18n keys added to `src/i18n-strings.en.json` and regenerated into the PHP manifest.
+
+**Deviation from plan (decided with user, 2026-07-16):** the plan called for a System-Admin-only "Revoke company-wide instead" escalation button inside the campaign-view dialog. On seeing the code we chose **not** to build it — injecting a company-wide action into a single-campaign view muddies the per-campaign-vs-company-wide mental model, and both outcomes are already reachable (campaign view = block-this-campaign; company view = company-wide). The accurate-copy dialog fully satisfies the acceptance criteria without the extra scope.
+
+**Deviation from plan (test file):** revoke-granularity behavior lives in a dedicated `WPSG_P64B_Revoke_Granularity_Test` (4 tests) rather than being folded into `WPSG_P33C_Role_Enforcement_Test` — cleaner and more discoverable, and keeps P33C focused on permission gating. It covers: campaign-sourced revoke removes only the campaign grant (no redundant override); company-sourced revoke adds a deny override + leaves the company grant and other campaigns intact; a space editor's campaign revoke cannot touch company grants (the tier fix); and the company-wide endpoint still clears the company grant.
+
+**Tests.** PHP: `WPSG_P64B_Revoke_Granularity_Test` — OK (4 tests, 22 assertions); regressions green (`WPSG_REST_Extended_Test` 63, `WPSG_P33C` 18, `WPSG_P52A_Permission_Matrix` 11, `WPSG_P28B` 6). Frontend: `useAccessRows.test.tsx` — 16 tests (5 new: dialog-opens-on-click / no immediate revoke, cancel does nothing, confirm calls `onRevokeAccess`, campaign-view company-sourced copy, company-view company-sourced copy). `tsc --noEmit`, `eslint`, and `i18n:check` all clean.
+
+*Note on the plan's frontend validation pointer:* it referenced extending `useAdminAccessState.coverage.test.tsx` for the new `{ removed }` response shape. The frontend doesn't branch on the `removed` value (the server owns the outcome; the UI just re-fetches), so there was nothing behavioral to assert there — the meaningful new coverage is the dialog interaction in `useAccessRows.test.tsx`.
 
 ---
 

@@ -291,6 +291,24 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
         return new WP_REST_Response(['message' => 'Access updated'], 200);
     }
 
+    /**
+     * DELETE /campaigns/{id}/access/{userId}
+     *
+     * P64-B: campaign-scoped revoke. This endpoint is reachable by space editors
+     * (gated `require_campaign_space_access`) and must NEVER touch company-level
+     * grants — those live behind the System-Admin-only company revoke endpoint.
+     *
+     * Two outcomes, depending on where the user's access comes from:
+     *   - Campaign-sourced user (has a campaign-level grant, no active company
+     *     grant): remove the campaign grant. That fully revokes their access to
+     *     this campaign. → { removed: 'campaign_grant' }
+     *   - Company-sourced user (covered by an active company grant): removing a
+     *     (possibly non-existent) campaign grant wouldn't revoke anything, since
+     *     the company grant still propagates. Instead write a per-campaign deny
+     *     override — which `get_effective_campaign_level()` checks before any
+     *     grant — blocking THIS campaign only while company-wide access to every
+     *     other campaign is preserved. → { removed: 'deny_override_added' }
+     */
     public static function revoke_access($request) {
         $post_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
@@ -298,30 +316,57 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_invalid_request', 'Invalid request', ['status' => 400]);
         }
 
-        $company_term = self::get_company_term($post_id);
-        if ($company_term) {
-            $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
-            $company_grants = is_array($company_grants) ? $company_grants : [];
-            $company_grants = WPSG_Grants::remove($company_grants, $user_id);
-            update_term_meta($company_term->term_id, 'access_grants', $company_grants);
-        }
-
+        // Always drop any campaign-level grant for the user. Company termmeta is
+        // never touched here (that would over-revoke — the bug this fixes).
         $campaign_grants = get_post_meta($post_id, 'access_grants', true);
         $campaign_grants = is_array($campaign_grants) ? $campaign_grants : [];
         $campaign_grants = WPSG_Grants::remove($campaign_grants, $user_id);
         update_post_meta($post_id, 'access_grants', $campaign_grants);
 
+        // Does an active company grant still cover this user? If so, the campaign
+        // grant removal above wasn't enough — block this campaign with a deny
+        // override instead of reaching into the company's grants.
+        $company_term      = self::get_company_term($post_id);
+        $has_company_grant = false;
+        if ($company_term) {
+            $company_grants = get_term_meta($company_term->term_id, 'access_grants', true);
+            $company_grants = is_array($company_grants) ? $company_grants : [];
+            foreach ($company_grants as $grant) {
+                if (intval($grant['userId'] ?? 0) === $user_id && !WPSG_Grants::is_expired($grant)) {
+                    $has_company_grant = true;
+                    break;
+                }
+            }
+        }
+
         $overrides = get_post_meta($post_id, 'access_overrides', true);
         $overrides = is_array($overrides) ? $overrides : [];
-        $overrides = WPSG_Grants::remove($overrides, $user_id);
-        update_post_meta($post_id, 'access_overrides', $overrides);
 
-        self::add_audit_entry($post_id, 'access.revoked', [
+        if ($has_company_grant) {
+            // Block this campaign only; company grant + other campaigns untouched.
+            $overrides = WPSG_Grants::upsert($overrides, [
+                'userId'    => $user_id,
+                'action'    => 'deny',
+                'grantedAt' => gmdate('c'),
+            ]);
+            update_post_meta($post_id, 'access_overrides', $overrides);
+            $removed       = 'deny_override_added';
+            $audit_action  = 'access.denied_via_revoke';
+        } else {
+            // No company grant to override — the campaign-grant removal fully
+            // revokes. Clear any stale deny override for this user (redundant now).
+            $overrides = WPSG_Grants::remove($overrides, $user_id);
+            update_post_meta($post_id, 'access_overrides', $overrides);
+            $removed       = 'campaign_grant';
+            $audit_action  = 'access.revoked';
+        }
+
+        self::add_audit_entry($post_id, $audit_action, [
             'userId' => $user_id,
         ]);
         do_action('wpsg_access_revoked', $post_id, ['userId' => $user_id]);
         self::clear_accessible_campaigns_cache();
-        return new WP_REST_Response(['message' => 'Access revoked'], 200);
+        return new WP_REST_Response(['message' => 'Access revoked', 'removed' => $removed], 200);
     }
 
     // -------------------------------------------------------------------------

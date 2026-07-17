@@ -112,3 +112,88 @@ curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns
 **Regression checks.** Full PHPUnit suite green (see the sign-off table). `grep -rn "upsert_grant\|upsert_override\|upsert_space_grant" includes/` returns **zero** hits (all three private copies removed). `grep -rn "strtotime(\$expires_at)\|strtotime(\$entry\['expires_at'\])" includes/` returns only the `WPSG_Grants` definition and the unrelated `magic_key_expires_at` check (a magic-link key, not a grant — deliberately out of scope).
 
 ---
+
+### P64-B — Campaign-scoped revoke no longer wipes company-wide access
+
+**What & why.** Pre-fix, `DELETE /campaigns/{id}/access/{userId}` deleted the user's grants from campaign postmeta, campaign overrides, **and company termmeta** — so revoking one campaign silently revoked every campaign of that company, and a space editor (who can reach this endpoint via `require_campaign_space_access`) could destroy System-Admin-tier company grants. Fix: the campaign endpoint **never touches company termmeta**. For a company-sourced user it writes a per-campaign **deny override** (block this campaign only); for a campaign-sourced user it removes the campaign grant. The response `removed` field reports which happened. The frontend gates every revoke behind a confirm dialog whose copy states the actual outcome.
+
+**Preconditions.** System Admin + a delegated editor (see PHASE63 §2). A company with **two** campaigns A and B (recipe in §3). A subscriber `victim` you can grant/revoke.
+
+#### Part 1 — PHP: company-sourced revoke blocks one campaign, keeps the rest
+
+**Steps.**
+```bash
+# Grant victim COMPANY-wide access; confirm they can reach both A and B.
+curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/companies/<TERM>/access" \
+  -H 'Content-Type: application/json' -d '{"userId":<VICTIM>,"access_level":"viewer"}'
+
+# Revoke victim from campaign A only:
+curl -s -u 'sysadmin:APPPW' -X DELETE "$BASE/wp-json/wp-super-gallery/v1/campaigns/<A>/access/<VICTIM>" | jq .
+# → { "message":"Access revoked", "removed":"deny_override_added" }
+
+# The company grant is untouched:
+curl -s -u 'sysadmin:APPPW' "$BASE/wp-json/wp-super-gallery/v1/companies/<TERM>/access" | jq '.items[] | select(.userId==<VICTIM>)'
+# → still present (source: "company")
+
+# Campaign A now carries a deny override for victim; campaign B has none.
+npx wp-env run cli wp post meta get <A> access_overrides
+npx wp-env run cli wp post meta get <B> access_overrides   # empty
+```
+
+**Expected (pass).** `removed: "deny_override_added"`; the company grant survives; campaign A has a `deny` override for victim; campaign B has none. If you log in as `victim`, they can view campaign B but not A.
+
+**Why it proves the fix.** The company grant surviving proves termmeta wasn't touched; the deny override on A (and its absence on B) proves "block this campaign only." Pre-fix, the company grant would be **gone** and victim would lose B as well.
+
+#### Part 2 — PHP: campaign-sourced revoke removes only the campaign grant
+
+**Steps.**
+```bash
+curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/<A>/access" \
+  -H 'Content-Type: application/json' -d '{"userId":<VICTIM2>,"source":"campaign"}'
+curl -s -u 'sysadmin:APPPW' -X DELETE "$BASE/wp-json/wp-super-gallery/v1/campaigns/<A>/access/<VICTIM2>" | jq .
+# → { ..., "removed":"campaign_grant" }
+npx wp-env run cli wp post meta get <A> access_overrides   # empty — no redundant deny override
+```
+
+**Expected (pass).** `removed: "campaign_grant"`; the campaign grant is gone; **no** deny override is written (nothing to override).
+
+#### Part 3 — PHP: the tier fix (a space editor cannot destroy company grants)
+
+**Steps.** Put campaign A in a **space S**; grant the delegated **editor** access to S (not to the company). Grant `victim` company-wide access. Then, **as the editor**, revoke victim from A:
+```bash
+curl -s -u 'editor_a:APPPW' -X DELETE "$BASE/wp-json/wp-super-gallery/v1/campaigns/<A>/access/<VICTIM>" | jq .
+# → 200, removed:"deny_override_added"
+curl -s -u 'sysadmin:APPPW' "$BASE/wp-json/wp-super-gallery/v1/companies/<TERM>/access" | jq '.items[] | select(.userId==<VICTIM>)'
+# → STILL present
+```
+
+**Expected (pass).** The editor's revoke succeeds (200) but only adds a campaign deny override — the company grant **survives**. Pre-fix, the editor's single call would have deleted the System-Admin-tier company grant.
+
+**Why it proves the fix.** The editor never had rights to company grants; post-fix the campaign endpoint physically cannot reach them. The company-wide revoke (`DELETE /companies/{id}/access/{userId}`) remains System-Admin-only and unchanged.
+
+#### Part 4 — Frontend: the confirm dialog states the real outcome
+
+**Steps (admin SPA → WP Super Gallery → Access tab).**
+1. **Campaign view**, company-sourced row → click the red trash icon.
+2. **Company (or All) view**, company-sourced row → click trash.
+3. **Any view**, campaign-sourced row → click trash.
+
+**Expected (pass).**
+- (1) Dialog titled **"Block on this campaign?"** — body: "… has company-wide access. Blocking here removes them from this campaign only — access to other {company} campaigns is kept." Confirm button: **"Block on this campaign."**
+- (2) Dialog titled **"Revoke company-wide access?"** — body mentions "across ALL campaigns of {company}." Confirm: **"Revoke company-wide."**
+- (3) Dialog titled **"Revoke access?"** — plain single-campaign confirm.
+- In every case, **Cancel** performs no request (watch the network tab / the grant stays); **Confirm** fires exactly one DELETE.
+
+**Why it proves the fix.** Pre-fix, clicking the trash icon fired the DELETE **immediately with no confirmation and no explanation** — an admin could wipe company-wide access believing they were editing one campaign. The distinct copy per (view × source) makes the actual outcome explicit before anything happens.
+
+**Regression checks.**
+- `test_grant_and_revoke_access` (campaign-sourced) still returns 200 — unchanged contract, plus the new `removed` field.
+- The company-wide revoke endpoint still fully clears the company grant (System-Admin-only).
+- Frontend: the inline role dropdown and all existing Access-tab behavior are unaffected (only the revoke click path changed).
+
+**Pitfalls.**
+- The deny-override branch only triggers when an **active** (non-expired) company grant covers the user. If you test with an expired company grant, you'll get `removed: "campaign_grant"` — correct, because an expired grant confers nothing to block.
+- Don't confuse the campaign endpoint's "block this campaign" with the company endpoint's "revoke company-wide" — they are different URLs with different gates. The whole point is they no longer bleed into each other.
+- The frontend dialog is view-mode-aware: the **same** company-sourced row shows different copy in campaign view vs company view because the endpoint it will hit differs. That's intentional, not a bug.
+
+---

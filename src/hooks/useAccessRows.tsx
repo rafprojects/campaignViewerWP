@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group, Select } from '@mantine/core';
+import { modals } from '@mantine/modals';
 import { IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { CompanyAccessGrant as CompanyAccessGrantType } from '@/services/adminQuery';
@@ -38,6 +39,50 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
     };
     // P51-H: ordered options for the inline role Select.
     const roleSelectOptions = ROLE_ORDER.map((value) => ({ value, label: roleCfg[value].label }));
+
+    // P64-B: revoke is destructive and — for a company-sourced grant — the
+    // outcome differs by view (campaign view blocks THIS campaign only; company
+    // view revokes company-wide). Gate every revoke behind a confirm dialog whose
+    // copy states the actual outcome, so nobody wipes company-wide access by
+    // accident. The dialog does not offer a cross-scope "escalate" action: per-
+    // campaign actions live in the campaign view, company-wide in the company view.
+    const openRevokeConfirm = (a: CompanyAccessGrantType) => {
+      const name = a.user?.displayName ?? t('accessrow_user_short', 'user {{id}}', { id: a.userId });
+      const company = a.companyName ?? t('accessrow_this_company', 'this company');
+      const isCompanySrc = a.source === 'company';
+      const isCampaignView = accessViewMode === 'campaign';
+
+      let title: string;
+      let body: string;
+      let confirm: string;
+      if (isCampaignView && isCompanySrc) {
+        // Campaign endpoint writes a per-campaign deny override; company grant kept.
+        title = t('accessrow_revoke_block_title', 'Block on this campaign?');
+        body = t('accessrow_revoke_block_body', '{{name}} has company-wide access. Blocking here removes them from this campaign only — access to other {{company}} campaigns is kept.', { name, company });
+        confirm = t('accessrow_revoke_block_confirm', 'Block on this campaign');
+      } else if (isCompanySrc) {
+        // Company/All view: the company endpoint revokes company-wide.
+        title = t('accessrow_revoke_companywide_title', 'Revoke company-wide access?');
+        body = t('accessrow_revoke_companywide_body', 'This revokes company-wide access for {{name}} across ALL campaigns of {{company}}.', { name, company });
+        confirm = t('accessrow_revoke_companywide_confirm', 'Revoke company-wide');
+      } else {
+        // Campaign-sourced grant (either view): plain single-campaign revoke.
+        const campaign = isCampaignView
+          ? t('accessrow_this_campaign', 'this campaign')
+          : (a.campaignTitle ?? t('accessrow_this_campaign', 'this campaign'));
+        title = t('accessrow_revoke_title', 'Revoke access?');
+        body = t('accessrow_revoke_body', 'Revoke access to {{campaign}} for {{name}}?', { campaign, name });
+        confirm = t('accessrow_revoke_confirm', 'Revoke');
+      }
+
+      modals.openConfirmModal({
+        title,
+        children: <Text size="sm">{body}</Text>,
+        labels: { confirm, cancel: t('accessrow_revoke_cancel', 'Cancel') },
+        confirmProps: { color: 'red' },
+        onConfirm: () => { void onRevokeAccess(a); },
+      });
+    };
 
     return accessEntries.map((a) => {
       const isExpired = a.is_expired === true;
@@ -114,7 +159,7 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
           </Table.Td>
           <Table.Td>
             <Tooltip label={a.source === 'company' ? t('accessrow_revoke_company_tip', 'Revoke company-wide access') : t('accessrow_revoke_campaign_tip', 'Revoke campaign access')}>
-              <ActionIcon color="red" variant="light" size="lg" onClick={() => void onRevokeAccess(a)} aria-label={t('admin_space_revoke_aria', 'Revoke access')}>
+              <ActionIcon color="red" variant="light" size="lg" onClick={() => openRevokeConfirm(a)} aria-label={t('admin_space_revoke_aria', 'Revoke access')}>
                 <IconTrash size={16} />
               </ActionIcon>
             </Tooltip>
