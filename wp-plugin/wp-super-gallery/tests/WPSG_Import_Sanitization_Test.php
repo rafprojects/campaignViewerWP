@@ -296,4 +296,62 @@ class WPSG_Import_Sanitization_Test extends WP_UnitTestCase {
         $this->assertCount( 1, $result['texts'], 'Licensed import must keep text layers.' );
         $this->assertEquals( 'Imported text', $result['texts'][0]['content'] );
     }
+
+    // ── P65-A: import_campaign() controller-path layout-template round-trip ─────
+
+    /**
+     * A-4 regression: the REST JSON import path must create the layout template
+     * under the REGISTERED CPT (wpsg_layout_tpl) and bind by UUID, so it is
+     * retrievable via WPSG_Layout_Templates::get(). Before P65-A this path built
+     * a post of the unregistered `wpsg_layout_template` type and bound a numeric
+     * ID — an orphan the template library never saw. Every existing test in this
+     * file exercised sanitize_template_data() directly and so never caught it.
+     */
+    public function test_import_campaign_creates_layout_template_under_registered_cpt() {
+        WPSG_CPT::register();
+
+        $payload = $this->build_payload();
+        $request = new WP_REST_Request( 'POST', '/wp-super-gallery/v1/campaigns/import' );
+        $request->set_body( wp_json_encode( $payload ) );
+        $request->set_header( 'Content-Type', 'application/json' );
+
+        $response = WPSG_Export_Controller::import_campaign( $request );
+        $this->assertInstanceOf( WP_REST_Response::class, $response );
+        $this->assertSame( 201, $response->get_status() );
+
+        $new_id   = $response->get_data()['id'];
+        $bound_id = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+        $this->assertNotEmpty( $bound_id );
+
+        // Retrievable through the CRUD class → lives under the registered CPT.
+        $fetched = WPSG_Layout_Templates::get( $bound_id );
+        $this->assertIsArray( $fetched, 'Imported template must be retrievable via WPSG_Layout_Templates::get().' );
+
+        // The unregistered post type must never be created.
+        $orphans = get_posts( [ 'post_type' => 'wpsg_layout_template', 'post_status' => 'any', 'posts_per_page' => -1 ] );
+        $this->assertCount( 0, $orphans );
+    }
+
+    /**
+     * G-4 regression: URL-only (JSON) media import writes `source: 'external'`,
+     * not the historical `'url'` (which the frontend mislabeled as an upload).
+     */
+    public function test_import_campaign_media_source_is_external() {
+        WPSG_CPT::register();
+
+        $payload = $this->build_payload( [
+            'media_references' => [
+                [ 'id' => 'ref-1', 'url' => 'https://example.com/x.jpg', 'title' => 'X' ],
+            ],
+        ] );
+        $request = new WP_REST_Request( 'POST', '/wp-super-gallery/v1/campaigns/import' );
+        $request->set_body( wp_json_encode( $payload ) );
+        $request->set_header( 'Content-Type', 'application/json' );
+
+        $response = WPSG_Export_Controller::import_campaign( $request );
+        $new_id   = $response->get_data()['id'];
+
+        $media = get_post_meta( $new_id, 'media_items', true );
+        $this->assertSame( 'external', $media[0]['source'] );
+    }
 }

@@ -258,34 +258,20 @@ class WPSG_CLI {
 
         $format = $assoc_args['format'] ?? 'json';
 
-        $post     = get_post( $post_id );
-        $campaign = $this->format_campaign( $post );
-        $media    = get_post_meta( $post_id, 'media_items', true ) ?: [];
-
-        // Embed layout template by value so the export is self-contained.
-        $template_id     = get_post_meta( $post_id, '_wpsg_layout_binding_template_id', true );
-        $layout_template = $template_id ? WPSG_Layout_Templates::get( $template_id ) : null;
-
         if ( $format === 'binary' ) {
             if ( ! WPSG_Export_Engine::check_zip_available() ) {
                 WP_CLI::error( 'ext-zip is required for binary export.' );
             }
 
-            $media_references = array_values( array_map( function ( $item ) {
-                return [
-                    'id'       => $item['id'] ?? '',
-                    'url'      => $item['url'] ?? '',
-                    'title'    => $item['title'] ?? '',
-                    'filename' => WPSG_Export_Engine::get_media_filename( $item ),
-                ];
-            }, (array) $media ) );
-
+            // P65-A: shared export entry (fixes A-4 layout-template loss here too).
+            $entry    = WPSG_Campaign_IO::build_entry( $post_id, true );
+            $media    = get_post_meta( $post_id, 'media_items', true ) ?: [];
             $manifest = wp_json_encode( [
                 'version'          => 2,
                 'exported_at'      => gmdate( 'c' ),
-                'campaign'         => $campaign,
-                'layout_template'  => $layout_template,
-                'media_references' => $media_references,
+                'campaign'         => $entry['campaign'],
+                'layout_template'  => $entry['layout_template'],
+                'media_references' => $entry['media_references'],
             ] );
             if ( $manifest === false ) {
                 WP_CLI::error( "Failed to encode export manifest for campaign {$post_id}." );
@@ -311,18 +297,13 @@ class WPSG_CLI {
         }
 
         // Default: JSON export to stdout.
+        $entry   = WPSG_Campaign_IO::build_entry( $post_id, false );
         $payload = [
             'version'          => 1,
             'exported_at'      => gmdate( 'c' ),
-            'campaign'         => $campaign,
-            'layout_template'  => $layout_template,
-            'media_references' => array_values( array_map( function ( $item ) {
-                return [
-                    'id'    => $item['id'] ?? '',
-                    'url'   => $item['url'] ?? '',
-                    'title' => $item['title'] ?? '',
-                ];
-            }, (array) $media ) ),
+            'campaign'         => $entry['campaign'],
+            'layout_template'  => $entry['layout_template'],
+            'media_references' => $entry['media_references'],
         ];
 
         // Output raw JSON — allows shell redirect to file.
@@ -378,83 +359,18 @@ class WPSG_CLI {
             WP_CLI::error( "Unsupported export version: {$version}." );
         }
 
-        $src         = $body['campaign'];
-        $title       = sanitize_text_field( $src['title'] ?? 'Imported Campaign' );
-        $description = sanitize_textarea_field( $src['description'] ?? '' );
-
-        $post_id = wp_insert_post( [
-            'post_title'   => $title,
-            'post_content' => $description,
-            'post_type'    => 'wpsg_campaign',
-            'post_status'  => 'publish',
-        ], true );
-
-        if ( is_wp_error( $post_id ) ) {
-            WP_CLI::error( 'Failed to create campaign: ' . $post_id->get_error_message() );
-        }
-
-        // Copy scalar meta; always import as draft.
-        $meta_map = [
-            'visibility'      => 'visibility',
-            'tags'            => 'tags',
-            'coverImage'      => 'cover_image',
-            'publishAt'       => 'publish_at',
-            'unpublishAt'     => 'unpublish_at',
+        // P65-A: thin wrapper over the shared import pipeline (URL-only, no ZIP).
+        $entry = [
+            'campaign'         => $body['campaign'],
+            'layout_template'  => $body['layout_template'] ?? null,
+            'media_references' => $body['media_references'] ?? [],
         ];
-        update_post_meta( $post_id, 'status', 'draft' );
-        foreach ( $meta_map as $src_key => $meta_key ) {
-            if ( ! empty( $src[ $src_key ] ) ) {
-                if ( $src_key === 'tags' && is_array( $src[ $src_key ] ) ) {
-                    update_post_meta( $post_id, $meta_key, array_values( array_map( 'sanitize_text_field', $src[ $src_key ] ) ) );
-                } else {
-                    update_post_meta( $post_id, $meta_key, sanitize_text_field( $src[ $src_key ] ) );
-                }
-            }
+        $result = WPSG_Campaign_IO::import_entry( $entry, null, [ 'via' => 'cli', 'format' => 'json' ] );
+        if ( is_wp_error( $result ) ) {
+            WP_CLI::error( 'Failed to import campaign: ' . $result->get_error_message() );
         }
 
-        $gallery_overrides = WPSG_REST::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
-        if ( ! empty( $gallery_overrides ) ) {
-            update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
-        }
-
-        // Embed layout template by value if provided.
-        $layout_template = $body['layout_template'] ?? null;
-        if ( $layout_template && is_array( $layout_template ) ) {
-            // Support legacy manifests that used 'title' instead of 'name'.
-            if ( ! isset( $layout_template['name'] ) && isset( $layout_template['title'] ) ) {
-                $layout_template['name'] = $layout_template['title'];
-            }
-            $created = WPSG_Layout_Templates::create( $layout_template );
-            if ( ! is_wp_error( $created ) ) {
-                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', $created['id'] );
-                if ( ! empty( $src['layoutBinding'] ) ) {
-                    $binding = $src['layoutBinding'];
-                    if ( is_array( $binding ) ) {
-                        $binding['templateId'] = $created['id'];
-                    }
-                    update_post_meta( $post_id, '_wpsg_layout_binding', $binding );
-                }
-            }
-        }
-
-        // Import media references (URL-only, no binary transfer).
-        $media_refs = $body['media_references'] ?? [];
-        if ( is_array( $media_refs ) && ! empty( $media_refs ) ) {
-            $media_items = array_values( array_map( function ( $ref ) {
-                return [
-                    'id'     => sanitize_text_field( $ref['id'] ?? '' ),
-                    'url'    => esc_url_raw( $ref['url'] ?? '' ),
-                    'title'  => sanitize_text_field( $ref['title'] ?? '' ),
-                    'type'   => 'image',
-                    'source' => 'url',
-                    'order'  => 0,
-                ];
-            }, $media_refs ) );
-            update_post_meta( $post_id, 'media_items', $media_items );
-        }
-
-        $this->add_audit_entry( $post_id, 'campaign.imported', [ 'source_title' => $title, 'source' => 'cli' ] );
-        WP_CLI::success( "Campaign imported. New ID: {$post_id}" );
+        WP_CLI::success( "Campaign imported. New ID: {$result['id']}" );
     }
 
     /**
@@ -488,124 +404,27 @@ class WPSG_CLI {
             WP_CLI::error( "Unsupported manifest version: {$version}. Binary import requires version 2." );
         }
 
-        $src         = $body['campaign'];
-        $title       = sanitize_text_field( $src['title'] ?? 'Imported Campaign' );
-        $description = sanitize_textarea_field( $src['description'] ?? '' );
-
-        $post_id = wp_insert_post( [
-            'post_title'   => $title,
-            'post_content' => $description,
-            'post_type'    => 'wpsg_campaign',
-            'post_status'  => 'publish',
-        ], true );
-
-        if ( is_wp_error( $post_id ) ) {
-            $zip->close();
-            WP_CLI::error( 'Failed to create campaign: ' . $post_id->get_error_message() );
-        }
-
-        $meta_map = [
-            'visibility'  => 'visibility',
-            'tags'        => 'tags',
-            'coverImage'  => 'cover_image',
-            'publishAt'   => 'publish_at',
-            'unpublishAt' => 'unpublish_at',
+        // P65-A: thin wrapper over the shared import pipeline. The service
+        // streams ZIP entries, dedupes by MD5, and stamps attachmentId — all of
+        // which the old hand-rolled CLI loop did not do.
+        $entry = [
+            'campaign'         => $body['campaign'],
+            'layout_template'  => $body['layout_template'] ?? null,
+            'media_references' => $body['media_references'] ?? [],
         ];
-        update_post_meta( $post_id, 'status', 'draft' );
-        foreach ( $meta_map as $src_key => $meta_key ) {
-            if ( ! empty( $src[ $src_key ] ) ) {
-                if ( $src_key === 'tags' && is_array( $src[ $src_key ] ) ) {
-                    update_post_meta( $post_id, $meta_key, array_values( array_map( 'sanitize_text_field', $src[ $src_key ] ) ) );
-                } else {
-                    update_post_meta( $post_id, $meta_key, sanitize_text_field( $src[ $src_key ] ) );
-                }
-            }
-        }
-
-        $gallery_overrides = WPSG_REST::promote_campaign_gallery_overrides( $src['galleryOverrides'] ?? null );
-        if ( ! empty( $gallery_overrides ) ) {
-            update_post_meta( $post_id, '_wpsg_gallery_overrides', wp_json_encode( $gallery_overrides ) );
-        }
-
-        $layout_template = $body['layout_template'] ?? null;
-        if ( $layout_template && is_array( $layout_template ) ) {
-            // Support legacy manifests that used 'title' instead of 'name'.
-            if ( ! isset( $layout_template['name'] ) && isset( $layout_template['title'] ) ) {
-                $layout_template['name'] = $layout_template['title'];
-            }
-            $created = WPSG_Layout_Templates::create( $layout_template );
-            if ( ! is_wp_error( $created ) ) {
-                update_post_meta( $post_id, '_wpsg_layout_binding_template_id', $created['id'] );
-                if ( ! empty( $src['layoutBinding'] ) ) {
-                    $binding = $src['layoutBinding'];
-                    if ( is_array( $binding ) ) {
-                        $binding['templateId'] = $created['id'];
-                    }
-                    update_post_meta( $post_id, '_wpsg_layout_binding', $binding );
-                }
-            }
-        }
-
-        require_once ABSPATH . 'wp-admin/includes/media.php';
-        require_once ABSPATH . 'wp-admin/includes/file.php';
-        require_once ABSPATH . 'wp-admin/includes/image.php';
-
-        $media_items   = [];
-        $sideload_ok   = 0;
-        $sideload_fail = 0;
-
-        foreach ( (array) ( $body['media_references'] ?? [] ) as $ref ) {
-            $filename = sanitize_file_name( $ref['filename'] ?? '' );
-            if ( ! $filename ) {
-                continue;
-            }
-
-            $file_data = $zip->getFromName( 'media/' . $filename );
-            if ( $file_data === false ) {
-                WP_CLI::warning( "media/{$filename} not found in archive — skipping." );
-                ++$sideload_fail;
-                continue;
-            }
-
-            $tmp = wp_tempnam( $filename );
-            if ( $tmp === false ) {
-                WP_CLI::warning( "Could not create temporary file for {$filename} — skipping." );
-                ++$sideload_fail;
-                continue;
-            }
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-            file_put_contents( $tmp, $file_data );
-            unset( $file_data );
-
-            $file_array = [ 'name' => $filename, 'tmp_name' => $tmp ];
-            $att_id     = media_handle_sideload( $file_array, $post_id, sanitize_text_field( $ref['title'] ?? '' ) );
-            wp_delete_file( $tmp );
-
-            if ( is_wp_error( $att_id ) ) {
-                WP_CLI::warning( "Could not sideload {$filename}: " . $att_id->get_error_message() );
-                ++$sideload_fail;
-                continue;
-            }
-
-            $media_items[] = [
-                'id'     => (string) $att_id,
-                'url'    => wp_get_attachment_url( $att_id ),
-                'title'  => sanitize_text_field( $ref['title'] ?? '' ),
-                'type'   => 'image',
-                'source' => 'upload',
-                'order'  => 0,
-            ];
-            ++$sideload_ok;
-        }
-
+        $result = WPSG_Campaign_IO::import_entry( $entry, $zip, [ 'via' => 'cli', 'format' => 'binary' ] );
         $zip->close();
 
-        if ( ! empty( $media_items ) ) {
-            update_post_meta( $post_id, 'media_items', $media_items );
+        if ( is_wp_error( $result ) ) {
+            WP_CLI::error( 'Failed to import campaign: ' . $result->get_error_message() );
         }
 
-        $this->add_audit_entry( $post_id, 'campaign.imported', [ 'source_title' => $title, 'source' => 'cli-binary' ] );
-        WP_CLI::success( "Campaign imported (binary). New ID: {$post_id}. Media: {$sideload_ok} imported, {$sideload_fail} skipped." );
+        foreach ( $result['media_skipped'] as $skip ) {
+            WP_CLI::warning( "Skipped {$skip['filename']}: {$skip['reason']}" );
+        }
+        $ok      = $result['media_imported'];
+        $skipped = count( $result['media_skipped'] );
+        WP_CLI::success( "Campaign imported (binary). New ID: {$result['id']}. Media: {$ok} imported, {$skipped} skipped." );
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -868,30 +687,6 @@ class WPSG_CLI {
         }
         $post = get_post( $post_id );
         return $post instanceof WP_Post && $post->post_type === 'wpsg_campaign';
-    }
-
-    /**
-     * Format a campaign post into a simple associative array (subset of
-     * WPSG_REST::format_campaign, sufficient for export payloads).
-     */
-    private function format_campaign( WP_Post $post ): array {
-        return [
-            'id'          => (string) $post->ID,
-            'title'       => $post->post_title,
-            'description' => $post->post_content,
-            'status'      => get_post_meta( $post->ID, 'status', true ) ?: 'draft',
-            'visibility'  => get_post_meta( $post->ID, 'visibility', true ) ?: 'private',
-            'tags'        => get_post_meta( $post->ID, 'tags', true ) ?: [],
-            'coverImage'  => get_post_meta( $post->ID, 'cover_image', true ) ?: '',
-            'publishAt'   => get_post_meta( $post->ID, 'publish_at', true ) ?: '',
-            'unpublishAt' => get_post_meta( $post->ID, 'unpublish_at', true ) ?: '',
-            'layoutBinding' => get_post_meta( $post->ID, '_wpsg_layout_binding', true ) ?: null,
-            'galleryOverrides' => WPSG_REST::promote_campaign_gallery_overrides(
-                get_post_meta( $post->ID, '_wpsg_gallery_overrides', true )
-            ),
-            'createdAt'   => $post->post_date,
-            'updatedAt'   => $post->post_modified,
-        ];
     }
 
     /**

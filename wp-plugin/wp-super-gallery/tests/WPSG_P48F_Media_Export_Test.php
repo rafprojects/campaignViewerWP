@@ -139,4 +139,96 @@ class WPSG_P48F_Media_Export_Test extends WP_UnitTestCase {
         $this->assertSame(403, $res->get_status());
         wp_set_current_user($this->admin_id);
     }
+
+    // ── P65-B ──────────────────────────────────────────────────────────────────
+
+    /**
+     * A-5 regression: a campaign-filtered export of a campaign with REAL media
+     * items (uniqid `id`, WP post ID in `attachmentId`) must include those files.
+     * Before the fix, the filter mapped `intval($item['id'])` → 0 for every item,
+     * collapsing to [0] and exporting nothing even for media-rich campaigns.
+     */
+    public function test_export_campaign_filter_includes_referenced_attachment(): void {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip required.');
+        }
+
+        $att_id = self::factory()->attachment->create_upload_object(__DIR__ . '/stubs/1x1.jpg');
+        $this->assertGreaterThan(0, $att_id);
+
+        $campaign_id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => 'Media-Rich Campaign',
+            'post_status' => 'publish',
+        ]);
+        // Realistic shape: `id` is a uniqid string, `attachmentId` is the WP post ID.
+        update_post_meta($campaign_id, 'media_items', [
+            [
+                'id'           => 'uuid-abc-123',
+                'attachmentId' => $att_id,
+                'type'         => 'image',
+                'source'       => 'upload',
+                'url'          => wp_get_attachment_url($att_id),
+            ],
+        ]);
+
+        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req->set_param('campaign_id', $campaign_id);
+        $res = rest_do_request($req);
+        $this->assertSame(202, $res->get_status());
+
+        $job_id = $res->get_data()['jobId'];
+        WPSG_Export_Engine::process_job($job_id);
+        $job = WPSG_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+        $zip->close();
+
+        $this->assertSame(1, $manifest['item_count'], 'Campaign-filtered export must include the referenced attachment.');
+        $this->assertSame((string) $att_id, $manifest['items'][0]['id']);
+
+        // P65-C: within the cap, the true total is surfaced and truncated is false.
+        $this->assertSame(1, $manifest['total_available']);
+        $this->assertFalse($manifest['truncated']);
+    }
+
+    /**
+     * E-4: the media-library ZIP import streams entries to disk. Round-trip a
+     * real media entry to confirm the streaming swap still imports correctly.
+     */
+    public function test_import_binary_streams_media_round_trip(): void {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip required.');
+        }
+
+        $manifest = wp_json_encode([
+            'version'    => 1,
+            'type'       => 'media_library',
+            'item_count' => 1,
+            'items'      => [
+                ['id' => '1', 'filename' => 'media-1.jpg', 'title' => 'Streamed'],
+            ],
+        ]);
+        $tmp_zip = wp_tempnam('mlib-import.zip');
+        $zip = new ZipArchive();
+        $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('manifest.json', $manifest);
+        $zip->addFromString('media/media-1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
+        $zip->close();
+
+        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/import/binary');
+        $req->set_file_params([
+            'file' => ['name' => 'mlib-import.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
+        ]);
+        $res = rest_do_request($req);
+        @unlink($tmp_zip);
+
+        $this->assertSame(201, $res->get_status());
+        $data = $res->get_data();
+        $this->assertCount(1, $data['imported'], 'Streamed media entry must import.');
+        $this->assertEmpty($data['skipped']);
+    }
 }

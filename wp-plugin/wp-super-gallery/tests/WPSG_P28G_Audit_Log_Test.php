@@ -223,4 +223,48 @@ class WPSG_P28G_Audit_Log_Test extends WP_UnitTestCase {
         $this->assertNotEmpty($content_type, 'Content-Type header must be set for CSV response.');
         $this->assertStringContainsString('text/csv', $content_type);
     }
+
+    // =========================================================================
+    // P65-C: binary audit export surfaces truncation state
+    // =========================================================================
+
+    public function test_audit_binary_export_manifest_reports_total_and_truncation() {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip required.');
+        }
+        $this->set_admin();
+        $c1 = $this->create_campaign('Audit Export Campaign');
+        for ($i = 0; $i < 3; $i++) {
+            WPSG_DB::insert_audit_entry([
+                'campaign_id' => $c1,
+                'action'      => 'media.created',
+                'actor_id'    => 1,
+                'actor_login' => 'admin',
+                'details'     => [],
+                'created_at'  => '2026-01-0' . ($i + 1) . ' 10:00:00',
+            ]);
+        }
+
+        // Call the handler directly (the permission_callback is System-Admin-gated;
+        // we're exercising the manifest logic, not the gate).
+        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $res = WPSG_Campaign_Controller::export_audit_log_binary($req);
+        $this->assertInstanceOf(WP_REST_Response::class, $res);
+        $this->assertSame(202, $res->get_status());
+
+        $job_id = $res->get_data()['jobId'];
+        WPSG_Export_Engine::process_job($job_id);
+        $job = WPSG_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+        $zip->close();
+
+        // Within the 5000-row cap: the true total is surfaced and truncated is false.
+        $this->assertSame(3, $manifest['entry_count']);
+        $this->assertSame(3, $manifest['total_available'], 'True total must be surfaced (list_audit_entries already computes it).');
+        $this->assertFalse($manifest['truncated'], 'Within-cap export must not be flagged truncated.');
+    }
 }

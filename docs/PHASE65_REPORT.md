@@ -1,16 +1,19 @@
 # Phase 65 - Campaign Import/Export Consolidation
 
-**Status:** Planned
+**Status:** Complete (all tracks landed & validated)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-18
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P65-A | Extract `WPSG_Campaign_IO` service — consolidates 4 drifting import/export copies; fixes the layout-template bug and media-source-value drift by construction | Planned | Medium |
-| P65-B | Campaign-filtered media-library export exports nothing (UUID through `intval()`) | Planned | Tiny |
-| P65-C | Silent truncation caps on binary exports (audit log + media library) | Planned | Small |
+| P65-A | Extract `WPSG_Campaign_IO` service — consolidates 4 drifting import/export copies; fixes the layout-template (A-4), MD5-dedup, datetime, media-source (G-4), `attachmentId` and ZIP-streaming (E-4) drift by construction | **Landed** | Medium-Large |
+| P65-B | Campaign-filtered media-library export exports nothing (`attachmentId` through `intval($item['id'])`) + stream the standalone media-library ZIP import (E-4's 5th path) | **Landed** | Small |
+| P65-C | Silent truncation caps on binary exports (audit log + media library) | **Landed** | Small |
+| P65-D | Preserve media `type` (and `embedUrl`/`provider`) through export→import so videos/embeds survive a round-trip (was forced to `image`) | **Landed** | Small-Medium |
+
+> **2026-07-17 refinement.** Before execution, all six findings were independently re-verified against current source (three Explore agents + first-hand reads). The two smaller tracks (B, C) checked out exactly. Track A had two imprecise premises that changed the fix, plus one new bug and one new gap — all folded in below. See **Validation & Refinement (2026-07-17)** and the per-track notes.
 
 ---
 
@@ -26,15 +29,31 @@ The review ([PHP_REVIEW_FINDINGS.md](PHP_REVIEW_FINDINGS.md)) found the campaign
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| A | Consolidation shape | One `WPSG_Campaign_IO` (or similarly namespaced) service exposing `build_manifest($post_id)` and `import_entry(array $entry, ?ZipArchive $zip)`; REST controllers and CLI become thin transport wrappers (HTTP status shaping / `WP_CLI::error` respectively). |
+| A | Consolidation shape | One `WPSG_Campaign_IO` service exposing `build_entry(int $post_id, bool $binary)` and `import_entry(array $entry, ?ZipArchive $zip, array $opts)`; REST controllers and CLI become thin transport wrappers (HTTP status shaping / `WP_CLI::error` respectively). It is a **standalone** class (not a `WPSG_REST_Base` subclass) because `WPSG_CLI` does not extend the REST hierarchy; three `WPSG_REST_Base` helpers (`format_campaign`, `find_attachment_by_md5`, `clear_accessible_campaigns_cache`) were widened `protected`→`public` so the service can compose them. |
 | B | MD5 dedup asymmetry resolution | Adopt the REST-ZIP behavior (dedupe imported media by MD5) as the canonical behavior for both REST and CLI ZIP import, since it's already correct there — not a new design, just applying the existing better implementation uniformly. |
-| C | Canonical media `source` value set | Adopt the meta sanitizer's allowlist (`upload\|library\|wp\|external\|oembed`) as canonical; update the REST `create_media` route enum to match, and make `WPSG_Campaign_IO`'s import builder write an explicit, real source value instead of the placeholder `'url'` that's been silently coerced to `'wp'`. |
+| C | Canonical media `source` value set | **Revised 2026-07-17.** Original premise (all four imports write `'url'`) was wrong: only the two **JSON** paths did; both ZIP paths already correctly wrote `'upload'`. Resolution: JSON (URL-only, no attachment) imports write **`'external'`** — the value the app already fully supports for URL-referenced media (`class-wpsg-media-controller.php:406-419`), which the frontend renders and labels correctly (it treats any non-`'external'` source as an uploaded attachment, so the old `'url'` was mislabeled "Upload"). Also align the `create_media` route enum (`['upload','external','library']`) to the sanitizer allowlist (`['upload','library','wp','external','oembed']`). No new allowlist value invented. |
+| D | Media `type` preservation (new track P65-D) | The pipeline hardcodes every re-imported media item to `type:'image'` (a pre-existing bug, not one of the 39 findings). Cleanly preserving `type` also requires carrying `embedUrl`/`provider` through the manifest (external videos need them to render), which is a schema change beyond A's scope. **Decision (user, 2026-07-17):** keep A focused, but track the fix explicitly as **P65-D** in this phase rather than a vague follow-on. |
+| E | Sideloaded media `id`/`attachmentId` shape (new) | ZIP import wrote the attachment ID into the `id` field and never set `attachmentId`, so imported attachments were invisible to `wp wpsg media orphans` and metadata enrichment (both gate on `attachmentId`). Resolution: match the canonical upload shape — `id` = the source manifest's uniqid (preserved, so layout-slot bindings still resolve) with a UUID fallback, `attachmentId` = the WP post ID. **Decision (user, 2026-07-17):** fix inside P65-A since the same code is being rewritten. |
 
 ## Execution Priority
 
-1. **P65-A** — do first; it's the largest track and its landing removes A-4, E-4, and G-4 as separate work items (see Rationale).
-2. **P65-B** — independent of P65-A; can proceed in parallel, but touches a neighboring file (`class-wpsg-media-controller.php`) so coordinate to avoid merge conflicts if both are in flight.
-3. **P65-C** — independent; do last since it's the lowest-risk, most mechanical fix (pagination loop / truncation flag, no new abstractions).
+1. **P65-A** — do first; it's the largest track and its landing removes A-4, E-4 (campaign paths), and G-4 as separate work items (see Rationale). **Landed 2026-07-17** (branch `feat/phase65-php-hardening-3-of-5`).
+2. **P65-B + P65-C (media-library half)** — both live in `class-wpsg-media-controller.php`; batch together. Zero file overlap with P65-A, so this batch can run in parallel. P65-B now also closes E-4's 5th path (`import_media_library_binary`, outside the campaign service) by reusing P65-A's streaming helper. P65-C's audit-log half is a separate file (`class-wpsg-campaign-controller.php`) and can drop in anytime.
+3. **P65-D** — new track; do after A (it depends on A's rewritten pipeline being in place, and extends the manifest shape).
+
+---
+
+## Validation & Refinement (2026-07-17)
+
+Before execution, every finding was re-verified against current source. Corrections folded in:
+
+| # | Original claim | Verified reality | Effect |
+|---|----------------|------------------|--------|
+| 1 | A-4 affects "the pipeline" broadly | Isolated to the REST-JSON path only — `export_campaign()` (`class-wpsg-export-controller.php:94`) and `import_campaign()` (`:193-197`). REST-ZIP and both CLI paths already used `WPSG_Layout_Templates::get()/create()`. | Smaller, localized fix; still lands inside the C-1 extraction. |
+| 2 | All 4 imports write `source => 'url'`, coerced to `'wp'` | Only the 2 **JSON** paths wrote `'url'`; both ZIP paths already wrote `'upload'`. (The coercion is real — the registered `media_items` sanitizer *does* run on `update_post_meta` once the CPT is registered on `init`, so `'url'` → `'wp'` in production.) | JSON paths now write **`'external'`** (Key Decision C). |
+| 3 (new) | — | No import path set `attachmentId` on sideloaded media (only `id`), so imported attachments were invisible to `wp wpsg media orphans` and enrichment. | Fixed in P65-A (Key Decision E). |
+| 4 (new) | E-4 "folds into C-1" | E-4's primary subject `import_media_library_binary()` is a **5th, standalone** ZIP path the campaign service can't reach. | Streaming fix moved to **P65-B** so E-4 closes fully (Phase 67's backlog already assumes this). |
+| 5 | P65-A effort: Medium | ~829 lines / 8 functions / 5 entangled behavioral decisions; near-zero existing coverage of the bugs. | Re-labeled **Medium-Large**; new characterization tests are load-bearing, not optional. |
 
 ---
 
@@ -77,9 +96,29 @@ Per Key Decisions A–C: build one `WPSG_Campaign_IO` service exposing `build_ma
 - New test asserting REST-ZIP and CLI-ZIP produce identical dedup behavior on the same archive.
 - Manual: export a campaign with a layout template via each of the four transports, re-import via each, confirm the template renders identically in all four cases.
 
+### Implementation Notes (2026-07-17) — **LANDED**
+
+**New service:** `includes/class-wpsg-campaign-io.php` (`WPSG_Campaign_IO`), a standalone class with two public statics:
+- `build_entry(int $post_id, bool $binary): array` → `{ campaign, layout_template, media_references }` (binary adds `filename` per ref). Used by every export transport; the version envelope (v1/v2/v3) stays in the transport.
+- `import_entry(array $entry, ?ZipArchive $zip, array $opts): array|WP_Error` → `{ id, title, media_imported, media_skipped[] }`. `$zip === null` ⇒ URL-only import (`source: 'external'`); `$zip` present ⇒ streamed sideload (`source: 'upload'`, `attachmentId` set, MD5 dedup). `$opts = { via: 'rest'|'cli', format: 'json'|'binary' }` shapes the single canonical audit entry.
+
+**Behaviors unified (one correct implementation each):** layout template always via `WPSG_Layout_Templates::get()/create()` (A-4); MD5 dedup on every ZIP transport; datetime `strtotime()` normalization on every transport; `layoutBinding` recursively sanitized on every transport (was REST-only); media `source` = `'external'` (JSON) / `'upload'` (ZIP); `attachmentId` stamped on sideloaded media; ZIP entries streamed via a new `WPSG_Export_Engine::stream_zip_entry_to_file()` helper (E-4, campaign paths).
+
+**Transports rewired to thin wrappers:** `export_campaign` / `import_campaign` / `export_campaign_binary` / `batch_export_binary` / `import_campaign_binary` (`class-wpsg-export-controller.php`); `campaign_export` / `campaign_import` / `campaign_import_binary` (`class-wpsg-cli.php`).
+
+**Dead code removed:** `WPSG_Export_Controller::import_single_campaign_from_zip()` (~150 lines) and the CLI's private subset `format_campaign()`.
+
+**Support change:** three `WPSG_REST_Base` helpers widened `protected`→`public` (`format_campaign`, `find_attachment_by_md5`, `clear_accessible_campaigns_cache`) so the standalone service can compose them — no behavior change (visibility only; no subclass redeclares them).
+
+**Tests:** new `tests/WPSG_P65A_Campaign_IO_Test.php` (9 tests — build_entry A-4, source `external`/`upload`, `attachmentId`, datetime normalization, MD5 dedup, streaming helper, end-to-end round-trip). Tightened `WPSG_P39CM1_Export_Test::test_binary_import_round_trip` (real JPEG fixture; asserts 201 + `source:upload` + `attachmentId` instead of tolerating 500). Extended `WPSG_CLI_Test` (layout-template survives round-trip; new CLI ZIP-import test). Added real `import_campaign()` controller-path tests to `WPSG_Import_Sanitization_Test` (A-4 + G-4 regressions — the file previously only exercised `sanitize_template_data()` directly).
+
+**Verification:** full PHPUnit suite green — **1213 tests, 13407 assertions, 0 failures, 0 errors, 2 pre-existing skips**. `php -l` + `phpcs -q` clean on all touched files. (Test execution delegated to a Haiku subagent via `/php-testing`; authored here.)
+
+**Discovery worth noting:** the registered `media_items` meta sanitizer (`WPSG_CPT::sanitize_media_items`) *does* run on direct `update_post_meta` once the CPT is registered on `init` — so the old `source: 'url'` genuinely *was* being coerced to `'wp'` in production (an upload source with no attachment = broken). This confirms the `'external'` fix was necessary, not cosmetic. It also normalizes a missing `attachmentId` to `0`, which is why URL-only media carry `attachmentId: 0` rather than no key.
+
 ---
 
-## Track P65-B - Campaign-filtered media-library export exports nothing
+## Track P65-B - Media-library export/import fixes (A-5 + E-4's 5th path)
 
 *Source: PHP_REVIEW_FINDINGS.md § A-5 — re-verified 2026-07-14, confirmed accurate. The codebase's own `WPSG_CLI::media_orphans()` already documents the correct rule inline: "Only use attachmentId (WP post ID); 'id' is a uniqid string and never matches attachment IDs" — this track applies that same rule to the export path that currently violates it.*
 
@@ -89,15 +128,18 @@ Per Key Decisions A–C: build one `WPSG_Campaign_IO` service exposing `build_ma
 
 ### Fix
 
-Map `intval($item['attachmentId'] ?? 0)` instead of `intval($item['id'])`.
+- **B1 (A-5):** in `export_media_library_binary()`, map `intval($item['attachmentId'] ?? 0)` instead of `intval($item['id'])`.
+- **B2 (E-4's 5th path):** in `import_media_library_binary()` (`class-wpsg-media-controller.php`, the standalone media-library ZIP import that `WPSG_Campaign_IO` structurally cannot reach), replace `$zip->getFromName('media/'.$filename)` with the streaming helper **`WPSG_Export_Engine::stream_zip_entry_to_file()`** built in P65-A. This closes E-4 completely (Phase 67's backlog assumes Phase 65 does so).
 
 ### Acceptance criteria
 
 - A campaign-filtered media-library export of a campaign with real media items returns those items' files, not an empty archive.
+- A large media-library ZIP import does not spike PHP memory by an entry's full size.
 
 ### Validation
 
 - Extend `tests/WPSG_P48F_Media_Export_Test.php` with a realistic UUID-id media-items fixture (not an empty array) and assert the exported ZIP contains the expected files.
+- Assert `import_media_library_binary()` still round-trips a real media entry after the streaming swap.
 
 ---
 
@@ -123,6 +165,31 @@ Map `intval($item['attachmentId'] ?? 0)` instead of `intval($item['id'])`.
 
 - Test with a fixture exceeding the cap for both export types; assert either full export or an accurate `truncated`/total signal.
 
+---
+
+## Track P65-D - Preserve media `type` (and embed fields) through export→import
+
+*New track, added 2026-07-17 (Key Decision D). Not one of the original 39 findings — surfaced during P65-A verification.*
+
+### Problem
+
+Every export/import path carries only `id`/`url`/`title` for each media item and the import side hardcodes `type => 'image'`. A campaign whose gallery contains videos or embeds loses that type on export→import: the re-imported items all become images. Now that P65-A routes all of this through one `WPSG_Campaign_IO::build_entry()` / `import_entry()`, the fix is a single-place change.
+
+### Fix
+
+- `build_entry()`: include `type` (and, for `external`/`oembed` items, `embedUrl` + `provider`) in each `media_reference`.
+- `import_entry()`: honor the manifest's `type` (validated against `image|video|embed`) instead of hardcoding `image`; carry `embedUrl`/`provider` when present so external videos/embeds render. For JSON (URL-only) imports, `source` stays `'external'`; for ZIP imports (real attachment) it stays `'upload'`.
+- Backward compatible: absent `type` still defaults to `image`; no manifest version bump needed (new optional fields).
+
+### Acceptance criteria
+
+- A campaign with a video/embed media item exported and re-imported (all four transports) keeps its `type` and renders as the same media kind.
+- Existing image-only exports round-trip byte-for-byte identically.
+
+### Validation
+
+- Extend the `WPSG_Campaign_IO` test with a video/embed fixture; assert `type` and embed fields survive a build_entry→import_entry round-trip.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -131,8 +198,43 @@ Map `intval($item['attachmentId'] ?? 0)` instead of `intval($item['id'])`.
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+All four tracks landed 2026-07-17 on `feat/phase65-php-hardening-3-of-5` (per-track commits).
+
+- **P65-A** — see the "Implementation Notes (2026-07-17) — LANDED" block under Track P65-A for the full rationale, file list, and decisions.
+- **P65-B** — `export_media_library_binary()` now keys the campaign filter off `attachmentId` (`class-wpsg-media-controller.php`, B1/A-5); `import_media_library_binary()` streams ZIP entries via `WPSG_Export_Engine::stream_zip_entry_to_file()` (B2/E-4's 5th path). Tests: `WPSG_P48F_Media_Export_Test` gained a realistic-fixture campaign-filter export (real attachment via `create_upload_object`) and a streamed import round-trip.
+- **P65-C** — both binary exports surface `total_available` + `truncated` in the manifest: the audit log reuses the true total `list_audit_entries()` already computes (`class-wpsg-campaign-controller.php`); the media library reads `WP_Query::found_posts`/`max_num_pages` (`class-wpsg-media-controller.php`). Within-cap behavior tested in `WPSG_P48F` and `WPSG_P28G`. (Exceeding the 500/5000 caps is impractical to fixture in a unit test; the flag logic is `total_available > count` / `max_num_pages > 1`.)
+- **P65-D** — `WPSG_Campaign_IO::build_entry()` carries `type` + `embedUrl`/`provider`; both import builders honor the manifest `type` (validated `image|video|embed`) instead of hardcoding `image`. Backward compatible (absent `type` ⇒ `image`; no manifest version bump). Tested by a video round-trip in `WPSG_P65A_Campaign_IO_Test`.
+
+**Validation:** full PHPUnit suite green after each track — final: **1217 tests, 13430 assertions, 0 failures, 0 errors, 2 pre-existing skips**. `php -l` + `phpcs -q` clean on all touched files throughout. Test execution delegated to a Haiku subagent via `/php-testing`; tests authored here.
 
 ## Outcome
 
-Not started.
+**Complete.** The campaign import/export pipeline is now backed by one `WPSG_Campaign_IO` service (REST + CLI, JSON + ZIP are thin wrappers); A-4, MD5-dedup, datetime, G-4, `attachmentId` and E-4 (all five ZIP-read paths, campaign + standalone media-library) are fixed by construction; A-5's campaign-filtered media export works; binary exports no longer silently truncate; and media `type`/embed fields survive round-trips. ~150 lines of duplicated import logic + a dead CLI helper removed (net −277 lines in P65-A alone). Full suite green.
+
+---
+
+## Post-Landing PR Review & Fix Pass (2026-07-18)
+
+No GitHub PR existed yet for `feat/phase65-php-hardening-3-of-5`, so this was a self-review of the four landed commits (`24a0ae6a..af8c4904`) rather than a fetched-PR-comments pass: a `/code-review high` 8-angle pass (3 correctness angles + reuse/simplification/efficiency/altitude/conventions) against the diff, followed by first-hand verification of every candidate against current source before touching any code — the same "re-verify against source, don't trust the finder's framing" discipline used throughout this phase.
+
+### Findings & dispositions
+
+| # | Finding | Verdict | Rationale |
+|---|---------|---------|-----------|
+| 1 | Binary (ZIP) import drops `embedUrl`/`provider` — `WPSG_Campaign_IO::upload_media_item()` never copied them, unlike `build_url_media_items()` | **Confirmed — fixed** | Directly contradicts P65-D's own stated goal ("preserve media type + embed fields through export/import"); the phase's only round-trip test (`test_media_type_and_embed_fields_survive_round_trip`) exercised the JSON path only, so the gap in the binary path had zero coverage. |
+| 2 | Multi-campaign batch ZIP export (`batch_export_binary`) can write a manifest `filename` for campaign B that was never written to the archive, when B shares a media URL with an earlier campaign A in the same batch (URL-dedup keeps only A's file, but B's `media_references[].filename` is still derived from B's own item id) | **Confirmed — fixed** | Verified by diffing against the pre-P65-A code: this exact filename/dedup mismatch already existed before this phase (`build_entry()`'s consolidation carried it forward unchanged, byte-for-byte identical logic to the old inline code) — a pre-existing bug, not a regression introduced by P65-A, but caught during this pass with zero prior test coverage, so it was fixed here rather than deferred. |
+| 3 | `find_attachment_by_md5()` dedup reuses an existing attachment across campaigns with no ownership/space check — framed by one finder as a cross-tenant data leak | **Refuted** | Verified against the RBAC model (`PHASE52_REPORT.md`, `require_campaign_space_access`): "space" is a hard boundary at the *campaign* record layer, but the underlying WP media library is explicitly *not* space-scoped anywhere in the codebase (`get_campaigns_for_attachment_id()` already scans site-wide with zero space filter; the existing upload-dedup flow already surfaces cross-space `existing_id` suggestions). Cross-space media reuse is the accepted, pre-existing design, not a new violation. |
+| 4 | Consolidation renamed the JSON-import audit-log key from `mediaRefCount` to `mediaCount`, "silently" dropping the old key | **Refuted** | Grepped the entire plugin and frontend (`src/`) for `mediaRefCount`: zero consumers. Nothing reads the old key, so unifying the audit shape under `mediaCount` (matching every other transport) breaks nothing. |
+| 5 | Campaigns whose media was sideloaded via ZIP import *before* this phase (when `attachmentId` was never stamped) will silently produce an empty export under P65-B's new `attachmentId`-keyed campaign filter | **Confirmed, deferred** | Real gap, but narrow (only pre-P65-A ZIP-imported campaigns) and consistent with an existing, accepted codebase convention: `WPSG_CLI::media_orphans()` has the identical limitation today (items without `attachmentId` are already invisible to it). No user-facing signal distinguishes "no media" from "media without attachmentId," which would be worth a follow-up, but a data-migration/backfill is out of scope for a same-day fix pass. **Deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md)** ("Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns"). |
+| 6 | While verifying fix #1: `WPSG_Export_Engine::build_zip()` treats every media item's `url` as a downloadable file, including `source:"external"`/`"oembed"` items whose `url` is a webpage (the real embeddable link lives in `embedUrl`) — a binary export either zips garbage bytes or the re-import fails file-type validation and the item lands in `media_skipped`. Fix #1 only guarantees embed metadata survives *if* an item's bytes were actually sideloaded; a genuine video/embed item's bytes never make it into a ZIP export in the first place. | **Confirmed, deferred** | Real and deeper than fix #1, but pre-dates Phase 65 (the `build_zip()` download loop wasn't touched by these commits) and needs export-engine + import-branching changes beyond a metadata copy — out of scope for a same-day fix pass. **Deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md)** ("Binary Campaign Export Downloads Non-File URLs for Embed/External Media"). |
+| 7 | Reuse/simplification cleanup: `build_url_media_items()`/`upload_media_item()` re-derive type/source whitelisting that `WPSG_Cpt::sanitize_media_items()` already implements; `apply_scalar_meta()`'s datetime handling duplicates `WPSG_Cpt::sanitize_datetime()`; `total_available`/`truncated` truncation-flag logic is duplicated near-verbatim between the audit-log and media-library exporters (P65-C); `import_entry()`'s `$opts['via']`/`format` derivation is a residual per-transport special case | **Noted, not fixed** | Legitimate maintainability suggestions, not correctness bugs. Deferred rather than refactored in this pass to avoid widening the diff's blast radius on already-tested, freshly-landed consolidation code without a dedicated test lens on the refactor itself. **Deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md)** ("Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths"). |
+| 8 | Three call sites re-fetch `media_items` postmeta immediately before calling `build_entry()`, which re-fetches it internally | **Noted, not fixed** | WordPress's post-meta object cache means the second `get_post_meta()` call in the same request is a cache hit, not a second DB round-trip — the real cost is negligible, so this wasn't worth the risk of threading the already-fetched array through `build_entry()`'s signature. |
+
+### Fixes applied
+
+- **`includes/class-wpsg-campaign-io.php`** — `upload_media_item()` now carries `embedUrl`/`provider` from the manifest reference into the sideloaded item, matching `build_url_media_items()`. New test: `WPSG_P65A_Campaign_IO_Test::test_zip_import_preserves_embed_fields`.
+- **`includes/rest/class-wpsg-export-controller.php`** — `batch_export_binary()` now builds a `url → filename` map from the same first-seen-wins dedup pass that decides what actually goes into the ZIP, then rewrites every campaign's `media_references[].filename` to the canonical filename for its URL before encoding the manifest — so a campaign that loses the "first writer" race for a shared URL still references the file that's actually in the archive. New test: `WPSG_P39CM1_Export_Test::test_batch_export_manifest_filenames_match_zip_for_shared_media`.
+
+### Validation
+
+Full PHPUnit suite green after both fixes: **1219 tests, 13437 assertions, 0 failures, 0 errors, 2 pre-existing skips** — no regressions from either fix, and both new regression tests pass. Test execution delegated to a Haiku subagent per the `/php-testing` skill; tests and fixes authored here.

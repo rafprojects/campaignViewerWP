@@ -271,6 +271,52 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 ---
 
+### Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns
+
+**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
+
+**Context:** P65-B fixed `export_media_library_binary()` to filter a campaign's media by `attachmentId` instead of the always-zero `id`. But any campaign whose media was sideloaded via ZIP import **before** Phase 65 landed (when `attachmentId` was never stamped on sideloaded items) still has no `attachmentId` on those items — the campaign-filtered export silently returns an empty archive for exactly those campaigns, same symptom P65-B fixed, different root cause (stale data vs. wrong filter key). This is consistent with an existing codebase convention — `WPSG_CLI::media_orphans()` has the identical blind spot today, items without `attachmentId` are already invisible to it — but there is no signal anywhere distinguishing "campaign genuinely has no media" from "media exists but predates the `attachmentId` fix."
+
+**What to implement:** Either (a) a one-time backfill/migration that stamps `attachmentId` on legacy sideloaded media items by matching `url` to an existing attachment, or (b) a softer fix: have `export_media_library_binary()`'s empty-result branch distinguish "campaign has zero `media_items`" from "campaign has `media_items` but none resolved an `attachmentId`," surfacing the latter as a warning instead of a silent empty export.
+
+**Files:** `includes/rest/class-wpsg-media-controller.php` (`export_media_library_binary()`); a backfill migration would also touch `includes/class-wpsg-campaign-io.php`.
+
+**Effort:** Small (warning signal) to Medium (backfill migration) | **Impact:** Low — only affects campaigns imported via ZIP before Phase 65; new imports are unaffected.
+
+---
+
+### Binary Campaign Export Downloads Non-File URLs for Embed/External Media
+
+**Origin:** Surfaced during the Phase 65 post-landing PR review (2026-07-18) while verifying a fix for dropped `embedUrl`/`provider` fields — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
+
+**Context:** `WPSG_Export_Engine::build_zip()` treats every `media_items[].url` as a downloadable file and fetches it via `wp_safe_remote_get()`. For `source:"external"`/`"oembed"` items (YouTube, Vimeo, etc.) `url` is the original webpage link, not a media file — `normalize_external_media()` deliberately keeps the real embeddable link in a separate `embedUrl` field. So a binary (ZIP) campaign export either downloads garbage bytes (an HTML page) and stores them under a made-up filename, or the entry fails WordPress's file-type validation on re-import and silently lands in `media_skipped` — a video/embed item never meaningfully round-trips through the ZIP transport, only through JSON (where P65-D's fix already works, since JSON never touches `build_zip()`). This predates Phase 65 — the `build_zip()` download loop wasn't touched by the P65 commits — and is a deeper change than the metadata-preservation fix that shipped in the post-landing pass, so it was documented rather than fixed on the spot.
+
+**What to implement:** In `WPSG_Export_Engine::build_zip()` (or upstream, before media items reach `create_job()`), skip items whose `source` is `external`/`oembed` — no real attachment bytes to fetch — rather than attempting to download `url`. The manifest already carries `embedUrl`/`provider` for these items (P65-D); a ZIP export should include them in the JSON manifest only, with no corresponding `media/` file, and `WPSG_Campaign_IO::sideload_media_items()` should recognize a media reference with no `filename` and route it through the URL-only path `build_url_media_items()` already uses for JSON imports, instead of trying (and failing) to find it in the archive.
+
+**Files:** `includes/class-wpsg-export-engine.php` (`build_zip()`), `includes/class-wpsg-campaign-io.php` (`build_entry()`'s `filename` assignment, `sideload_media_items()`'s embed-ref handling).
+
+**Effort:** Medium — touches the shared export engine and the P65-A service's import branching; needs new fixture coverage for a video/embed item through a real binary export→import | **Impact:** Medium — today the only transport where a video/embed campaign item survives a full round-trip is JSON; ZIP export/import of a campaign with embedded video content silently loses that item.
+
+---
+
+### Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths
+
+**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass". Noted but not fixed in that pass, to avoid widening the diff's blast radius on freshly-landed, already-tested consolidation code.
+
+**Context:** Four small duplication/indirection items surfaced during the review, none a correctness bug:
+1. `WPSG_Campaign_IO::build_url_media_items()`/`upload_media_item()`/`normalize_media_type()` re-derive the same type/source whitelisting `WPSG_Cpt::sanitize_media_items()` already implements as the registered meta sanitizer.
+2. `WPSG_Campaign_IO::apply_scalar_meta()`'s inline `strtotime()`/`gmdate()` datetime normalization duplicates `WPSG_Cpt::sanitize_datetime()`.
+3. The `total_available`/`truncated` truncation-flag computation (P65-C) is implemented near-identically in both `class-wpsg-media-controller.php` and `class-wpsg-campaign-controller.php`, with no shared helper.
+4. `WPSG_Campaign_IO::import_entry()`'s `$opts['via']`/`$opts['format']` derivation is a residual per-transport special case — every call site already passes both explicitly, so the `??` defaults are unreachable, and `format` is fully derivable from whether `$zip` is passed.
+
+**What to implement:** Route (1)/(2) through the existing `WPSG_Cpt` sanitizers instead of re-implementing them; extract (3) into a shared helper (alongside `WPSG_REST_Base::paginated_response()`/`parse_pagination()`); simplify (4) by having each call site pass an explicit `source` string instead of the `via`/`format` ternary.
+
+**Files:** `includes/class-wpsg-campaign-io.php`, `includes/class-wpsg-cpt.php`, `includes/rest/class-wpsg-media-controller.php`, `includes/rest/class-wpsg-campaign-controller.php`.
+
+**Effort:** Small-Medium | **Impact:** Low — maintainability only; no observed behavioral bug today.
+
+---
+
 ## Access Control
 
 Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](archive/phases/PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
@@ -468,3 +514,5 @@ When promoting future tasks to an active phase:
 *Updated: June 30, 2026 (P59-D planning) — Added Code Quality & Refactoring entry "Roll Out `UnitScrubField` to Remaining Ad Hoc Numeric/Unit Inputs", deferred from [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md) P59-D per user direction — P59-D itself stays scoped to `TypographyEditor`'s fields; the rotation-scrub migration and a broader Settings/LayoutBuilder sweep are future-tasked.*
 
 *Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*
+
+*Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*

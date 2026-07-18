@@ -1589,10 +1589,13 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         }
 
         // When filtering by campaign, restrict to attachment IDs referenced by that campaign.
+        // P65-B (A-5): the real WP attachment ID lives in `attachmentId`; `id` is a
+        // uniqid string that intval()s to 0 for every item (as WPSG_CLI::media_orphans()
+        // documents), which collapsed the filter to [0] and exported nothing.
         if ($campaign_id > 0) {
             $media = get_post_meta($campaign_id, 'media_items', true) ?: [];
             $att_ids = array_values(array_filter(array_map(function ($item) {
-                $id = intval($item['id'] ?? 0);
+                $id = intval($item['attachmentId'] ?? 0);
                 return $id > 0 ? $id : null;
             }, (array) $media)));
 
@@ -1639,12 +1642,20 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             'search'      => $search ?: null,
         ]);
 
+        // P65-C (A-12): this is a single-page fetch (posts_per_page above). Surface
+        // the true total and a `truncated` flag so an export that hit the cap
+        // never silently drops attachments without saying so.
+        $total_available = (int) $query->found_posts;
+        $truncated       = $query->max_num_pages > 1;
+
         $manifest = wp_json_encode([
             'version'    => 1,
             'type'       => 'media_library',
             'exported_at' => gmdate('c'),
             'filters'    => $filters_used,
             'item_count' => count($manifest_items),
+            'total_available' => $total_available,
+            'truncated'  => $truncated,
             'items'      => $manifest_items,
         ]);
         if ($manifest === false) {
@@ -1706,21 +1717,16 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                 continue;
             }
 
-            $file_data = $zip->getFromName('media/' . $filename);
-            if ($file_data === false) {
-                $skipped[] = $filename;
-                continue;
-            }
-
             $tmp = wp_tempnam($filename);
             if ($tmp === false) {
                 $skipped[] = $filename;
                 continue;
             }
-            // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-            $written = file_put_contents($tmp, $file_data);
-            unset($file_data);
-            if ($written === false) {
+            // P65-B / E-4: stream the entry to disk rather than buffering the
+            // whole file in memory (a large video otherwise spikes PHP memory by
+            // its full size). Returns false if the entry is missing or the copy
+            // fails.
+            if (!WPSG_Export_Engine::stream_zip_entry_to_file($zip, 'media/' . $filename, $tmp)) {
                 wp_delete_file($tmp);
                 $skipped[] = $filename;
                 continue;

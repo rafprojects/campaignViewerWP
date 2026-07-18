@@ -369,11 +369,14 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
             ],
         ]);
 
+        // P65-A: use a real JPEG so the sideload actually succeeds and we can
+        // assert the imported media shape (source=upload, attachmentId set) —
+        // the old fixture used fake bytes and tolerated a 500.
         $tmp_zip = wp_tempnam('test-export.zip');
         $zip = new ZipArchive();
         $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         $zip->addFromString('manifest.json', $manifest);
-        $zip->addFromString('media/media-m1.jpg', 'FAKE_IMAGE_DATA');
+        $zip->addFromString('media/media-m1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
         $zip->close();
 
         $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
@@ -387,14 +390,15 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
 
         @unlink($tmp_zip);
 
-        // Sideload will fail in the test environment (no real WP media pipeline),
-        // but the campaign should still be created from the manifest.
-        $this->assertContains($response->get_status(), [201, 500], 'Expected 201 or pipeline error');
-        if ($response->get_status() === 201) {
-            $data = $response->get_data();
-            $this->assertSame('Round-Trip Campaign', $data['title']);
-            $this->assertSame('draft', $data['status']);
-        }
+        $this->assertSame(201, $response->get_status());
+        $data = $response->get_data();
+        $this->assertSame('Round-Trip Campaign', $data['title']);
+        $this->assertSame('draft', $data['status']);
+
+        $media = get_post_meta($data['id'], 'media_items', true);
+        $this->assertSame('upload', $media[0]['source']);
+        $this->assertGreaterThan(0, intval($media[0]['attachmentId']), 'Imported media must carry attachmentId.');
+        $this->assertSame('m1', $media[0]['id'], 'Source media id is preserved.');
     }
 
     public function test_binary_import_rejects_version_1_manifest() {
@@ -487,6 +491,58 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
             $zip_entry = $zip->getFromName('media/' . $filename);
             $this->assertNotFalse($zip_entry, "media/{$filename} must exist in the ZIP");
         }
+
+        $zip->close();
+        WPSG_Export_Engine::delete_job($job_id);
+    }
+
+    // ── batch_export_binary: cross-campaign shared-URL filenames ──────────────
+
+    public function test_batch_export_manifest_filenames_match_zip_for_shared_media() {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Two campaigns referencing the same URL under different item ids.
+        // The ZIP dedupes by URL and only writes one file (under campaign A's
+        // id); campaign B's manifest entry must be rewritten to point at that
+        // same filename instead of the one derived from its own item id.
+        $shared_url = 'https://example.com/shared.jpg';
+        $cid_a = $this->create_campaign('Batch A');
+        update_post_meta($cid_a, 'media_items', [
+            ['id' => 'a-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+        $cid_b = $this->create_campaign('Batch B');
+        update_post_meta($cid_b, 'media_items', [
+            ['id' => 'b-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/batch/export/binary', [
+            'ids' => [$cid_a, $cid_b],
+        ]);
+        $this->assertSame(202, $response->get_status());
+        $job_id = $response->get_data()['jobId'];
+
+        WPSG_Export_Engine::process_job($job_id);
+        $job = WPSG_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+
+        $filename_a = $manifest['campaigns'][0]['media_references'][0]['filename'];
+        $filename_b = $manifest['campaigns'][1]['media_references'][0]['filename'];
+
+        $this->assertSame(
+            $filename_a,
+            $filename_b,
+            'Both campaigns share one URL, so they must reference the single filename actually written to the ZIP.'
+        );
+        $this->assertNotFalse(
+            $zip->getFromName('media/' . $filename_b),
+            "media/{$filename_b} must exist in the ZIP — campaign B's own-id filename was never written."
+        );
 
         $zip->close();
         WPSG_Export_Engine::delete_job($job_id);

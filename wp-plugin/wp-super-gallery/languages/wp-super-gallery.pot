@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-06T22:06:04+00:00\n"
+"POT-Creation-Date: 2026-07-18T21:04:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -34,9 +34,9 @@ msgstr ""
 #: includes/class-wpsg-asset-admin-renderer.php:37
 #: includes/class-wpsg-asset-admin-renderer.php:38
 #: includes/class-wpsg-asset-admin-renderer.php:72
-#: includes/i18n/class-wpsg-frontend-strings.php:1833
-#: includes/i18n/class-wpsg-frontend-strings.php:2221
-#: includes/i18n/class-wpsg-frontend-strings.php:2541
+#: includes/i18n/class-wpsg-frontend-strings.php:1837
+#: includes/i18n/class-wpsg-frontend-strings.php:2225
+#: includes/i18n/class-wpsg-frontend-strings.php:2545
 msgid "Asset Library"
 msgstr ""
 
@@ -65,14 +65,14 @@ msgstr ""
 #: includes/class-wpsg-cpt.php:72
 #: includes/class-wpsg-cpt.php:411
 #: includes/i18n/class-wpsg-frontend-strings.php:141
-#: includes/i18n/class-wpsg-frontend-strings.php:1984
+#: includes/i18n/class-wpsg-frontend-strings.php:1988
 msgid "Campaigns"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:70
 #: includes/i18n/class-wpsg-frontend-strings.php:35
 #: includes/i18n/class-wpsg-frontend-strings.php:1722
-#: includes/i18n/class-wpsg-frontend-strings.php:1871
+#: includes/i18n/class-wpsg-frontend-strings.php:1875
 msgid "Campaign"
 msgstr ""
 
@@ -165,7 +165,7 @@ msgid "Popular Companies"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:108
-#: includes/i18n/class-wpsg-frontend-strings.php:2631
+#: includes/i18n/class-wpsg-frontend-strings.php:2647
 msgid "No companies found"
 msgstr ""
 
@@ -186,7 +186,7 @@ msgid "Choose from the most used companies"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:122
-#: includes/i18n/class-wpsg-frontend-strings.php:1896
+#: includes/i18n/class-wpsg-frontend-strings.php:1900
 msgid "Campaign Tags"
 msgstr ""
 
@@ -195,7 +195,7 @@ msgid "Campaign Categories"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:143
-#: includes/i18n/class-wpsg-frontend-strings.php:1897
+#: includes/i18n/class-wpsg-frontend-strings.php:1901
 msgid "Media Tags"
 msgstr ""
 
@@ -209,7 +209,7 @@ msgstr ""
 
 #: includes/class-wpsg-cpt.php:456
 #: includes/i18n/class-wpsg-frontend-strings.php:139
-#: includes/i18n/class-wpsg-frontend-strings.php:1994
+#: includes/i18n/class-wpsg-frontend-strings.php:1998
 msgid "All spaces"
 msgstr ""
 
@@ -483,8 +483,8 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:394
 #: includes/i18n/class-wpsg-frontend-strings.php:440
 #: includes/i18n/class-wpsg-frontend-strings.php:1195
-#: includes/i18n/class-wpsg-frontend-strings.php:2109
-#: includes/i18n/class-wpsg-frontend-strings.php:2220
+#: includes/i18n/class-wpsg-frontend-strings.php:2113
+#: includes/i18n/class-wpsg-frontend-strings.php:2224
 msgid "Image"
 msgstr ""
 
@@ -521,7 +521,7 @@ msgid "Open in lightbox"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:95
-#: includes/i18n/class-wpsg-frontend-strings.php:2584
+#: includes/i18n/class-wpsg-frontend-strings.php:2588
 msgid "Empty"
 msgstr ""
 
@@ -583,7 +583,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:110
 #: includes/i18n/class-wpsg-frontend-strings.php:154
-#: includes/i18n/class-wpsg-frontend-strings.php:2719
+#: includes/i18n/class-wpsg-frontend-strings.php:2735
 msgid "All"
 msgstr ""
 
@@ -610,7 +610,7 @@ msgid "Loading layout template"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:116
-#: includes/i18n/class-wpsg-frontend-strings.php:2731
+#: includes/i18n/class-wpsg-frontend-strings.php:2747
 msgid "Loading gallery…"
 msgstr ""
 
@@ -671,7 +671,7 @@ msgid "Create new campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:133
-#: includes/i18n/class-wpsg-frontend-strings.php:1933
+#: includes/i18n/class-wpsg-frontend-strings.php:1937
 msgid "Import"
 msgstr ""
 
@@ -684,7 +684,7 @@ msgid "Pick a space first"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:136
-#: includes/i18n/class-wpsg-frontend-strings.php:1815
+#: includes/i18n/class-wpsg-frontend-strings.php:1819
 msgid "Manage spaces"
 msgstr ""
 
@@ -716,13 +716,13 @@ msgid "Templates"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:145
-#: includes/i18n/class-wpsg-frontend-strings.php:1812
+#: includes/i18n/class-wpsg-frontend-strings.php:1816
 msgid "Assets"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:146
 #: includes/i18n/class-wpsg-frontend-strings.php:1769
-#: includes/i18n/class-wpsg-frontend-strings.php:2682
+#: includes/i18n/class-wpsg-frontend-strings.php:2698
 msgid "Access"
 msgstr ""
 
@@ -749,8 +749,8 @@ msgid "Hide filters"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:152
-#: includes/i18n/class-wpsg-frontend-strings.php:2119
-#: includes/i18n/class-wpsg-frontend-strings.php:2188
+#: includes/i18n/class-wpsg-frontend-strings.php:2123
+#: includes/i18n/class-wpsg-frontend-strings.php:2192
 msgid "Filters"
 msgstr ""
 
@@ -876,26 +876,28 @@ msgid "{{count}} campaigns selected"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:187
-#: includes/i18n/class-wpsg-frontend-strings.php:2573
+#: includes/i18n/class-wpsg-frontend-strings.php:2577
 msgid "Restore"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:188
-#: includes/i18n/class-wpsg-frontend-strings.php:1830
-#: includes/i18n/class-wpsg-frontend-strings.php:1954
-#: includes/i18n/class-wpsg-frontend-strings.php:2462
-#: includes/i18n/class-wpsg-frontend-strings.php:2551
+#: includes/i18n/class-wpsg-frontend-strings.php:1834
+#: includes/i18n/class-wpsg-frontend-strings.php:1958
+#: includes/i18n/class-wpsg-frontend-strings.php:2466
+#: includes/i18n/class-wpsg-frontend-strings.php:2555
 msgid "Delete"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:189
 #: includes/i18n/class-wpsg-frontend-strings.php:1749
-#: includes/i18n/class-wpsg-frontend-strings.php:1831
-#: includes/i18n/class-wpsg-frontend-strings.php:1880
-#: includes/i18n/class-wpsg-frontend-strings.php:2192
-#: includes/i18n/class-wpsg-frontend-strings.php:2379
-#: includes/i18n/class-wpsg-frontend-strings.php:2446
-#: includes/i18n/class-wpsg-frontend-strings.php:2614
+#: includes/i18n/class-wpsg-frontend-strings.php:1803
+#: includes/i18n/class-wpsg-frontend-strings.php:1835
+#: includes/i18n/class-wpsg-frontend-strings.php:1884
+#: includes/i18n/class-wpsg-frontend-strings.php:2196
+#: includes/i18n/class-wpsg-frontend-strings.php:2383
+#: includes/i18n/class-wpsg-frontend-strings.php:2450
+#: includes/i18n/class-wpsg-frontend-strings.php:2619
+#: includes/i18n/class-wpsg-frontend-strings.php:2630
 msgid "Cancel"
 msgstr ""
 
@@ -972,6 +974,7 @@ msgid "This permanently deletes \"{{title}}\", its media references, and pending
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:208
+#: includes/i18n/class-wpsg-frontend-strings.php:2618
 msgid "this campaign"
 msgstr ""
 
@@ -1068,8 +1071,8 @@ msgid "{{title}} (Copy)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:232
-#: includes/i18n/class-wpsg-frontend-strings.php:1950
-#: includes/i18n/class-wpsg-frontend-strings.php:2461
+#: includes/i18n/class-wpsg-frontend-strings.php:1954
+#: includes/i18n/class-wpsg-frontend-strings.php:2465
 msgid "Duplicate"
 msgstr ""
 
@@ -1114,7 +1117,7 @@ msgid "Campaign list"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:244
-#: includes/i18n/class-wpsg-frontend-strings.php:1843
+#: includes/i18n/class-wpsg-frontend-strings.php:1847
 msgid "Select all"
 msgstr ""
 
@@ -1145,21 +1148,21 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:251
 #: includes/i18n/class-wpsg-frontend-strings.php:324
-#: includes/i18n/class-wpsg-frontend-strings.php:1944
-#: includes/i18n/class-wpsg-frontend-strings.php:2549
-#: includes/i18n/class-wpsg-frontend-strings.php:2738
+#: includes/i18n/class-wpsg-frontend-strings.php:1948
+#: includes/i18n/class-wpsg-frontend-strings.php:2553
+#: includes/i18n/class-wpsg-frontend-strings.php:2754
 msgid "Tags"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:252
 #: includes/i18n/class-wpsg-frontend-strings.php:327
-#: includes/i18n/class-wpsg-frontend-strings.php:1895
+#: includes/i18n/class-wpsg-frontend-strings.php:1899
 msgid "Categories"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:253
 #: includes/i18n/class-wpsg-frontend-strings.php:1681
-#: includes/i18n/class-wpsg-frontend-strings.php:1945
+#: includes/i18n/class-wpsg-frontend-strings.php:1949
 msgid "Actions"
 msgstr ""
 
@@ -1320,8 +1323,8 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:293
 #: includes/i18n/class-wpsg-frontend-strings.php:446
-#: includes/i18n/class-wpsg-frontend-strings.php:1948
-#: includes/i18n/class-wpsg-frontend-strings.php:2453
+#: includes/i18n/class-wpsg-frontend-strings.php:1952
+#: includes/i18n/class-wpsg-frontend-strings.php:2457
 msgid "Edit"
 msgstr ""
 
@@ -1417,12 +1420,12 @@ msgid "Archived"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:322
-#: includes/i18n/class-wpsg-frontend-strings.php:2740
+#: includes/i18n/class-wpsg-frontend-strings.php:2756
 msgid "Private"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:323
-#: includes/i18n/class-wpsg-frontend-strings.php:2739
+#: includes/i18n/class-wpsg-frontend-strings.php:2755
 msgid "Public"
 msgstr ""
 
@@ -1504,17 +1507,17 @@ msgid "Clear a cell to inherit the global unified adapter for that breakpoint."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:344
-#: includes/i18n/class-wpsg-frontend-strings.php:2282
+#: includes/i18n/class-wpsg-frontend-strings.php:2286
 msgid "Desktop"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:345
-#: includes/i18n/class-wpsg-frontend-strings.php:2284
+#: includes/i18n/class-wpsg-frontend-strings.php:2288
 msgid "Tablet"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:346
-#: includes/i18n/class-wpsg-frontend-strings.php:2285
+#: includes/i18n/class-wpsg-frontend-strings.php:2289
 msgid "Mobile"
 msgstr ""
 
@@ -1612,7 +1615,7 @@ msgid "Campaign modal tabs"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:374
-#: includes/i18n/class-wpsg-frontend-strings.php:2488
+#: includes/i18n/class-wpsg-frontend-strings.php:2492
 msgid "Discard changes?"
 msgstr ""
 
@@ -1621,8 +1624,8 @@ msgid "You have unsaved changes. Are you sure you want to discard them?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:376
-#: includes/i18n/class-wpsg-frontend-strings.php:2490
-#: includes/i18n/class-wpsg-frontend-strings.php:2574
+#: includes/i18n/class-wpsg-frontend-strings.php:2494
+#: includes/i18n/class-wpsg-frontend-strings.php:2578
 msgid "Discard"
 msgstr ""
 
@@ -1647,7 +1650,7 @@ msgid "Clear Campaign Overrides"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:382
-#: includes/i18n/class-wpsg-frontend-strings.php:2759
+#: includes/i18n/class-wpsg-frontend-strings.php:2775
 msgid "Adapter applied when this campaign renders images and videos together."
 msgstr ""
 
@@ -1685,7 +1688,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:392
 #: includes/i18n/class-wpsg-frontend-strings.php:421
-#: includes/i18n/class-wpsg-frontend-strings.php:2070
+#: includes/i18n/class-wpsg-frontend-strings.php:2074
 msgid "Type"
 msgstr ""
 
@@ -1711,9 +1714,9 @@ msgid "Add External Media"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:400
-#: includes/i18n/class-wpsg-frontend-strings.php:1879
-#: includes/i18n/class-wpsg-frontend-strings.php:2455
-#: includes/i18n/class-wpsg-frontend-strings.php:2519
+#: includes/i18n/class-wpsg-frontend-strings.php:1883
+#: includes/i18n/class-wpsg-frontend-strings.php:2459
+#: includes/i18n/class-wpsg-frontend-strings.php:2523
 msgid "Save"
 msgstr ""
 
@@ -1789,7 +1792,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:420
 #: includes/i18n/class-wpsg-frontend-strings.php:452
-#: includes/i18n/class-wpsg-frontend-strings.php:2206
+#: includes/i18n/class-wpsg-frontend-strings.php:2210
 msgid "Caption"
 msgstr ""
 
@@ -1826,7 +1829,7 @@ msgid " It is currently used in {{count}} other campaigns — those associations
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:430
-#: includes/i18n/class-wpsg-frontend-strings.php:2194
+#: includes/i18n/class-wpsg-frontend-strings.php:2198
 msgid "Remove"
 msgstr ""
 
@@ -1864,7 +1867,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:442
 #: includes/i18n/class-wpsg-frontend-strings.php:474
-#: includes/i18n/class-wpsg-frontend-strings.php:2261
+#: includes/i18n/class-wpsg-frontend-strings.php:2265
 msgid "Upload"
 msgstr ""
 
@@ -1961,7 +1964,7 @@ msgid "{{count}} files queued"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:470
-#: includes/i18n/class-wpsg-frontend-strings.php:1844
+#: includes/i18n/class-wpsg-frontend-strings.php:1848
 msgid "Clear all"
 msgstr ""
 
@@ -2010,7 +2013,7 @@ msgid "External media URL"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:483
-#: includes/i18n/class-wpsg-frontend-strings.php:2518
+#: includes/i18n/class-wpsg-frontend-strings.php:2522
 msgid "Preview"
 msgstr ""
 
@@ -2019,7 +2022,7 @@ msgid "Preview external media"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:485
-#: includes/i18n/class-wpsg-frontend-strings.php:1883
+#: includes/i18n/class-wpsg-frontend-strings.php:1887
 msgid "Add"
 msgstr ""
 
@@ -2097,7 +2100,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:505
 #: includes/i18n/class-wpsg-frontend-strings.php:1238
-#: includes/i18n/class-wpsg-frontend-strings.php:2069
+#: includes/i18n/class-wpsg-frontend-strings.php:2073
 msgid "Reset"
 msgstr ""
 
@@ -2110,7 +2113,7 @@ msgid "Theme & Layout"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:508
-#: includes/i18n/class-wpsg-frontend-strings.php:1989
+#: includes/i18n/class-wpsg-frontend-strings.php:1993
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr ""
 
@@ -2126,7 +2129,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:511
 #: includes/i18n/class-wpsg-frontend-strings.php:1173
-#: includes/i18n/class-wpsg-frontend-strings.php:2304
+#: includes/i18n/class-wpsg-frontend-strings.php:2308
 #: includes/settings/class-wpsg-settings-core-fields.php:315
 msgid "Grid"
 msgstr ""
@@ -2283,7 +2286,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:547
 #: includes/i18n/class-wpsg-frontend-strings.php:917
-#: includes/i18n/class-wpsg-frontend-strings.php:2709
+#: includes/i18n/class-wpsg-frontend-strings.php:2725
 msgid "Transparent"
 msgstr ""
 
@@ -2299,7 +2302,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:550
 #: includes/i18n/class-wpsg-frontend-strings.php:1157
-#: includes/i18n/class-wpsg-frontend-strings.php:2712
+#: includes/i18n/class-wpsg-frontend-strings.php:2728
 msgid "Background Color"
 msgstr ""
 
@@ -2428,13 +2431,13 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:581
 #: includes/i18n/class-wpsg-frontend-strings.php:1181
-#: includes/i18n/class-wpsg-frontend-strings.php:2054
+#: includes/i18n/class-wpsg-frontend-strings.php:2058
 msgid "On"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:582
 #: includes/i18n/class-wpsg-frontend-strings.php:1182
-#: includes/i18n/class-wpsg-frontend-strings.php:2053
+#: includes/i18n/class-wpsg-frontend-strings.php:2057
 msgid "Off"
 msgstr ""
 
@@ -2523,7 +2526,7 @@ msgid "This is the only time the full secret will be shown. Copy it and configur
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:605
-#: includes/i18n/class-wpsg-frontend-strings.php:1980
+#: includes/i18n/class-wpsg-frontend-strings.php:1984
 msgid "Done"
 msgstr ""
 
@@ -2569,19 +2572,19 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:616
 #: includes/i18n/class-wpsg-frontend-strings.php:983
-#: includes/i18n/class-wpsg-frontend-strings.php:2073
+#: includes/i18n/class-wpsg-frontend-strings.php:2077
 msgid "Slide"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:617
 #: includes/i18n/class-wpsg-frontend-strings.php:872
 #: includes/i18n/class-wpsg-frontend-strings.php:984
-#: includes/i18n/class-wpsg-frontend-strings.php:2072
+#: includes/i18n/class-wpsg-frontend-strings.php:2076
 msgid "Fade"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:618
-#: includes/i18n/class-wpsg-frontend-strings.php:2255
+#: includes/i18n/class-wpsg-frontend-strings.php:2259
 msgid "Scale"
 msgstr ""
 
@@ -2594,12 +2597,12 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1386
 #: includes/i18n/class-wpsg-frontend-strings.php:1504
 #: includes/i18n/class-wpsg-frontend-strings.php:1623
-#: includes/i18n/class-wpsg-frontend-strings.php:2015
-#: includes/i18n/class-wpsg-frontend-strings.php:2018
-#: includes/i18n/class-wpsg-frontend-strings.php:2060
-#: includes/i18n/class-wpsg-frontend-strings.php:2071
-#: includes/i18n/class-wpsg-frontend-strings.php:2217
-#: includes/i18n/class-wpsg-frontend-strings.php:2664
+#: includes/i18n/class-wpsg-frontend-strings.php:2019
+#: includes/i18n/class-wpsg-frontend-strings.php:2022
+#: includes/i18n/class-wpsg-frontend-strings.php:2064
+#: includes/i18n/class-wpsg-frontend-strings.php:2075
+#: includes/i18n/class-wpsg-frontend-strings.php:2221
+#: includes/i18n/class-wpsg-frontend-strings.php:2680
 msgid "None"
 msgstr ""
 
@@ -2773,7 +2776,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:663
 #: includes/i18n/class-wpsg-frontend-strings.php:1170
-#: includes/i18n/class-wpsg-frontend-strings.php:2014
+#: includes/i18n/class-wpsg-frontend-strings.php:2018
 msgid "Lightbox"
 msgstr ""
 
@@ -2807,13 +2810,13 @@ msgid "CSS value, e.g. 85vh"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:671
-#: includes/i18n/class-wpsg-frontend-strings.php:2127
+#: includes/i18n/class-wpsg-frontend-strings.php:2131
 msgid "Z-Index"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:672
 #: includes/i18n/class-wpsg-frontend-strings.php:1015
-#: includes/i18n/class-wpsg-frontend-strings.php:1982
+#: includes/i18n/class-wpsg-frontend-strings.php:1986
 msgid "Navigation"
 msgstr ""
 
@@ -3052,7 +3055,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:954
 #: includes/i18n/class-wpsg-frontend-strings.php:1378
 #: includes/i18n/class-wpsg-frontend-strings.php:1388
-#: includes/i18n/class-wpsg-frontend-strings.php:2669
+#: includes/i18n/class-wpsg-frontend-strings.php:2685
 msgid "Medium"
 msgstr ""
 
@@ -3240,7 +3243,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1146
 #: includes/i18n/class-wpsg-frontend-strings.php:1275
 #: includes/i18n/class-wpsg-frontend-strings.php:1532
-#: includes/i18n/class-wpsg-frontend-strings.php:2243
+#: includes/i18n/class-wpsg-frontend-strings.php:2247
 msgid "Start"
 msgstr ""
 
@@ -3252,7 +3255,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1421
 #: includes/i18n/class-wpsg-frontend-strings.php:1528
 #: includes/i18n/class-wpsg-frontend-strings.php:1533
-#: includes/i18n/class-wpsg-frontend-strings.php:2039
+#: includes/i18n/class-wpsg-frontend-strings.php:2043
 msgid "Center"
 msgstr ""
 
@@ -3260,7 +3263,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1147
 #: includes/i18n/class-wpsg-frontend-strings.php:1277
 #: includes/i18n/class-wpsg-frontend-strings.php:1534
-#: includes/i18n/class-wpsg-frontend-strings.php:2244
+#: includes/i18n/class-wpsg-frontend-strings.php:2248
 msgid "End"
 msgstr ""
 
@@ -3683,7 +3686,7 @@ msgid "Content Visibility"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:879
-#: includes/i18n/class-wpsg-frontend-strings.php:2728
+#: includes/i18n/class-wpsg-frontend-strings.php:2744
 msgid "Show Company Name"
 msgstr ""
 
@@ -3692,7 +3695,7 @@ msgid "Show the company badge on the campaign cover image."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:881
-#: includes/i18n/class-wpsg-frontend-strings.php:2729
+#: includes/i18n/class-wpsg-frontend-strings.php:2745
 msgid "Show Date"
 msgstr ""
 
@@ -3717,7 +3720,7 @@ msgid "Heading for the campaign description section (default \"About\")."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:887
-#: includes/i18n/class-wpsg-frontend-strings.php:2749
+#: includes/i18n/class-wpsg-frontend-strings.php:2765
 msgid "Show Description"
 msgstr ""
 
@@ -3806,14 +3809,14 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:908
 #: includes/i18n/class-wpsg-frontend-strings.php:1103
 #: includes/i18n/class-wpsg-frontend-strings.php:1297
-#: includes/i18n/class-wpsg-frontend-strings.php:2079
+#: includes/i18n/class-wpsg-frontend-strings.php:2083
 msgid "Left"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:910
 #: includes/i18n/class-wpsg-frontend-strings.php:1105
 #: includes/i18n/class-wpsg-frontend-strings.php:1298
-#: includes/i18n/class-wpsg-frontend-strings.php:2080
+#: includes/i18n/class-wpsg-frontend-strings.php:2084
 msgid "Right"
 msgstr ""
 
@@ -3983,10 +3986,10 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:956
 #: includes/i18n/class-wpsg-frontend-strings.php:1380
 #: includes/i18n/class-wpsg-frontend-strings.php:1390
-#: includes/i18n/class-wpsg-frontend-strings.php:1912
-#: includes/i18n/class-wpsg-frontend-strings.php:1968
-#: includes/i18n/class-wpsg-frontend-strings.php:2113
-#: includes/i18n/class-wpsg-frontend-strings.php:2286
+#: includes/i18n/class-wpsg-frontend-strings.php:1916
+#: includes/i18n/class-wpsg-frontend-strings.php:1972
+#: includes/i18n/class-wpsg-frontend-strings.php:2117
+#: includes/i18n/class-wpsg-frontend-strings.php:2290
 msgid "Custom"
 msgstr ""
 
@@ -4061,7 +4064,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:974
 #: includes/i18n/class-wpsg-frontend-strings.php:1365
-#: includes/i18n/class-wpsg-frontend-strings.php:2653
+#: includes/i18n/class-wpsg-frontend-strings.php:2669
 msgid "Glow Color"
 msgstr ""
 
@@ -4136,7 +4139,7 @@ msgid "Ease"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:994
-#: includes/i18n/class-wpsg-frontend-strings.php:2223
+#: includes/i18n/class-wpsg-frontend-strings.php:2227
 msgid "Linear"
 msgstr ""
 
@@ -4352,7 +4355,7 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1047
 #: includes/i18n/class-wpsg-frontend-strings.php:1464
-#: includes/i18n/class-wpsg-frontend-strings.php:2234
+#: includes/i18n/class-wpsg-frontend-strings.php:2238
 msgid "Circle"
 msgstr ""
 
@@ -4778,14 +4781,14 @@ msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1154
 #: includes/i18n/class-wpsg-frontend-strings.php:1307
-#: includes/i18n/class-wpsg-frontend-strings.php:2710
+#: includes/i18n/class-wpsg-frontend-strings.php:2726
 msgid "Solid Color"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1155
 #: includes/i18n/class-wpsg-frontend-strings.php:1308
-#: includes/i18n/class-wpsg-frontend-strings.php:2219
-#: includes/i18n/class-wpsg-frontend-strings.php:2711
+#: includes/i18n/class-wpsg-frontend-strings.php:2223
+#: includes/i18n/class-wpsg-frontend-strings.php:2727
 msgid "Gradient"
 msgstr ""
 
@@ -4868,7 +4871,7 @@ msgid "Listing"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1179
-#: includes/i18n/class-wpsg-frontend-strings.php:1976
+#: includes/i18n/class-wpsg-frontend-strings.php:1980
 msgid "Reset to default"
 msgstr ""
 
@@ -5852,7 +5855,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1595
 #: includes/i18n/class-wpsg-frontend-strings.php:1597
 #: includes/i18n/class-wpsg-frontend-strings.php:1610
-#: includes/i18n/class-wpsg-frontend-strings.php:2505
+#: includes/i18n/class-wpsg-frontend-strings.php:2509
 msgid "Layout Builder"
 msgstr ""
 
@@ -5893,12 +5896,12 @@ msgid "View By"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1613
-#: includes/i18n/class-wpsg-frontend-strings.php:2607
+#: includes/i18n/class-wpsg-frontend-strings.php:2611
 msgid "📋 Campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1614
-#: includes/i18n/class-wpsg-frontend-strings.php:2606
+#: includes/i18n/class-wpsg-frontend-strings.php:2610
 msgid "🏢 Company"
 msgstr ""
 
@@ -6002,7 +6005,7 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:1640
 #: includes/i18n/class-wpsg-frontend-strings.php:1741
 #: includes/i18n/class-wpsg-frontend-strings.php:1793
-#: includes/i18n/class-wpsg-frontend-strings.php:1804
+#: includes/i18n/class-wpsg-frontend-strings.php:1808
 msgid "Role"
 msgstr ""
 
@@ -6011,6 +6014,8 @@ msgid "Granted / Expires"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1642
+#: includes/i18n/class-wpsg-frontend-strings.php:1802
+#: includes/i18n/class-wpsg-frontend-strings.php:2622
 msgid "Revoke"
 msgstr ""
 
@@ -6345,13 +6350,13 @@ msgid "Share this link securely with the user. They can use it to set their own 
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1734
-#: includes/i18n/class-wpsg-frontend-strings.php:2520
-#: includes/i18n/class-wpsg-frontend-strings.php:2613
+#: includes/i18n/class-wpsg-frontend-strings.php:2524
+#: includes/i18n/class-wpsg-frontend-strings.php:2629
 msgid "Close"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1736
-#: includes/i18n/class-wpsg-frontend-strings.php:1803
+#: includes/i18n/class-wpsg-frontend-strings.php:1807
 msgid "user@example.com"
 msgstr ""
 
@@ -6460,10 +6465,10 @@ msgid "Library"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1771
-#: includes/i18n/class-wpsg-frontend-strings.php:1940
-#: includes/i18n/class-wpsg-frontend-strings.php:2089
-#: includes/i18n/class-wpsg-frontend-strings.php:2151
-#: includes/i18n/class-wpsg-frontend-strings.php:2197
+#: includes/i18n/class-wpsg-frontend-strings.php:1944
+#: includes/i18n/class-wpsg-frontend-strings.php:2093
+#: includes/i18n/class-wpsg-frontend-strings.php:2155
+#: includes/i18n/class-wpsg-frontend-strings.php:2201
 msgid "Name"
 msgstr ""
 
@@ -6473,7 +6478,7 @@ msgid "Slug"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1773
-#: includes/i18n/class-wpsg-frontend-strings.php:2059
+#: includes/i18n/class-wpsg-frontend-strings.php:2063
 msgid "Mode"
 msgstr ""
 
@@ -6546,12 +6551,12 @@ msgid "Granted"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1795
-#: includes/i18n/class-wpsg-frontend-strings.php:2602
+#: includes/i18n/class-wpsg-frontend-strings.php:2606
 msgid "User #{{id}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1796
-#: includes/i18n/class-wpsg-frontend-strings.php:2603
+#: includes/i18n/class-wpsg-frontend-strings.php:2607
 msgid "user {{id}}"
 msgstr ""
 
@@ -6565,3183 +6570,3227 @@ msgid "Revoke access"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1800
-msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgid "Revoke space access?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1801
-msgid "Grant access"
+msgid "Revoke access to this space for {{name}}?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1802
-msgid "User email"
+#: includes/i18n/class-wpsg-frontend-strings.php:1804
+msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1805
-msgid "Grant"
+msgid "Grant access"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1806
-msgid "Select a space from the Spaces tab to manage access."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1807
-msgid "Select a space from the Spaces tab to manage its shared library."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1808
-msgid "{{name}} is an open space."
+msgid "User email"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1809
-msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
+msgid "Grant"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1810
-msgid "Select the assets "
+msgid "Select a space from the Spaces tab to manage access."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1811
-msgid " is allowed to use. Unselected assets are hidden in this space."
+msgid "Select a space from the Spaces tab to manage its shared library."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1812
+msgid "{{name}} is an open space."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1813
-msgid "Fonts"
+msgid "Open spaces can use every asset in the library — per-space selection only applies to delegated spaces. Switch this space to delegated isolation mode to restrict its assets."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1814
-msgid "No fonts in the global library."
+msgid "Select the assets "
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1816
-msgid "Archive all company campaigns"
+#: includes/i18n/class-wpsg-frontend-strings.php:1815
+msgid " is allowed to use. Unselected assets are hidden in this space."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1817
-msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
+msgid "Fonts"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1818
-msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1819
-msgid "Archive {{count}} Campaign"
+msgid "No fonts in the global library."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1820
-msgid "Archive {{count}} Campaigns"
+msgid "Archive all company campaigns"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1821
-msgid "Archive {{count}} campaign for {{name}}"
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaign."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1822
-msgid "Archive {{count}} campaigns for {{name}}"
+msgid "Archive all campaigns for <strong>{{name}}</strong>? This will archive {{count}} active campaigns."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1823
-msgid "company"
+msgid "Archive {{count}} Campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1824
-msgid "Campaigns to be archived:"
+msgid "Archive {{count}} Campaigns"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1825
-msgid "Also revoke all company-level access grants"
+msgid "Archive {{count}} campaign for {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1826
-msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgid "Archive {{count}} campaigns for {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1827
-msgid "Asset uploaded."
+msgid "company"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1828
-msgid "Delete asset?"
+msgid "Campaigns to be archived:"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1829
-msgid "Delete \"{{name}}\"? This cannot be undone."
+msgid "Also revoke all company-level access grants"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1830
+msgid "Access grants for individual campaigns will be preserved but become inactive."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1831
+msgid "Asset uploaded."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1832
-msgid "Deleted \"{{name}}\"."
+msgid "Delete asset?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1834
-msgid "Upload asset"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1835
-msgid "Upload asset to library"
+#: includes/i18n/class-wpsg-frontend-strings.php:1833
+msgid "Delete \"{{name}}\"? This cannot be undone."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1836
-msgid "Asset is in use"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1837
-msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
+msgid "Deleted \"{{name}}\"."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1838
-msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgid "Upload asset"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1839
-#: includes/i18n/class-wpsg-frontend-strings.php:1961
-msgid "Delete anyway"
+msgid "Upload asset to library"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1840
-msgid "No assets in the global library yet. Upload assets from the Layout Builder."
+msgid "Asset is in use"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1841
-msgid "Search assets…"
+msgid "\"{{name}}\" is associated with {{count}} space. Removing it will unlink it from all spaces. Delete anyway?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1842
-msgid "Search assets"
+msgid "\"{{name}}\" is associated with {{count}} spaces. Removing it will unlink it from all spaces. Delete anyway?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1843
+#: includes/i18n/class-wpsg-frontend-strings.php:1965
+msgid "Delete anyway"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1844
+msgid "No assets in the global library yet. Upload assets from the Layout Builder."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1845
-msgid "No assets match the current filter."
+msgid "Search assets…"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1846
-msgid "Total Views (all campaigns)"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1847
-msgid "Unique Visitors (all campaigns)"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1848
-msgid "Views (selected campaign)"
+msgid "Search assets"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1849
-msgid "Unique (selected campaign)"
+msgid "No assets match the current filter."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1850
-msgid "Campaign Analytics"
+msgid "Total Views (all campaigns)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1851
-msgid "Browser is offline — polling paused"
+msgid "Unique Visitors (all campaigns)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1852
-msgid "Offline"
+msgid "Views (selected campaign)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1853
-msgid "Updated {{time}}"
+msgid "Unique (selected campaign)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1854
-msgid "Refresh analytics"
+msgid "Campaign Analytics"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1855
-msgid "Select campaign"
+msgid "Browser is offline — polling paused"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1856
-msgid "Last 7d"
+msgid "Offline"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1857
-msgid "Last 30d"
+msgid "Updated {{time}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1858
-msgid "Last 90d"
+msgid "Refresh analytics"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1859
-msgid "Select a campaign to view per-campaign analytics."
+msgid "Select campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1860
-msgid "Failed to load analytics data."
+msgid "Last 7d"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1861
-msgid "No view events recorded for this period."
+msgid "Last 30d"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1862
-msgid "Make sure "
+msgid "Last 90d"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1863
-msgid "Enable Analytics"
+msgid "Select a campaign to view per-campaign analytics."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1864
-msgid " is turned on in Settings → Advanced."
+msgid "Failed to load analytics data."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1865
-msgid "Media Performance"
+msgid "No view events recorded for this period."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1866
-msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgid "Make sure "
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1867
-msgid "Media ID"
+msgid "Enable Analytics"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1868
-#: includes/i18n/class-wpsg-frontend-strings.php:1872
-msgid "Views"
+msgid " is turned on in Settings → Advanced."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1869
-msgid "Lightbox Opens"
+msgid "Media Performance"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1870
-msgid "Top Campaigns by Views"
+msgid "No per-media events recorded for this period. Lightbox interactions with media IDs will appear here."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1871
+msgid "Media ID"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1872
+#: includes/i18n/class-wpsg-frontend-strings.php:1876
+msgid "Views"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1873
-msgid "Unique"
+msgid "Lightbox Opens"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1874
-msgid "Category renamed to \"{{name}}\""
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1875
-msgid "Failed to rename category"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1876
-msgid "Category \"{{name}}\" deleted"
+msgid "Top Campaigns by Views"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1877
-msgid "Failed to delete category"
+msgid "Unique"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1878
-msgid "Edit category name"
+msgid "Category renamed to \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1879
+msgid "Failed to rename category"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1880
+msgid "Category \"{{name}}\" deleted"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1881
-msgid "Rename {{name}}"
+msgid "Failed to delete category"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1882
-#: includes/i18n/class-wpsg-frontend-strings.php:1955
-#: includes/i18n/class-wpsg-frontend-strings.php:1997
-#: includes/i18n/class-wpsg-frontend-strings.php:2552
-msgid "Delete {{name}}"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1884
-msgid "Category \"{{name}}\" created"
+msgid "Edit category name"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1885
-msgid "Failed to create category"
+msgid "Rename {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1886
-msgid "Tag \"{{name}}\" created"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1887
-msgid "Failed to create tag"
+#: includes/i18n/class-wpsg-frontend-strings.php:1959
+#: includes/i18n/class-wpsg-frontend-strings.php:2001
+#: includes/i18n/class-wpsg-frontend-strings.php:2556
+msgid "Delete {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1888
-msgid "Tag deleted"
+msgid "Category \"{{name}}\" created"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1889
-msgid "Failed to delete tag"
+msgid "Failed to create category"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1890
-msgid "Media tag \"{{name}}\" created"
+msgid "Tag \"{{name}}\" created"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1891
-msgid "Failed to create media tag"
+msgid "Failed to create tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1892
-msgid "Media tag deleted"
+msgid "Tag deleted"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1893
-msgid "Failed to delete media tag"
+msgid "Failed to delete tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1894
-msgid "Manage Taxonomy"
+msgid "Media tag \"{{name}}\" created"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1895
+msgid "Failed to create media tag"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1896
+msgid "Media tag deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1897
+msgid "Failed to delete media tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1898
-msgid "No categories yet."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1899
-msgid "New category name"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1900
-msgid "No campaign tags yet."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1901
-msgid "New campaign tag"
+msgid "Manage Taxonomy"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1902
-msgid "No media tags yet."
+msgid "No categories yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1903
-msgid "New media tag"
+msgid "New category name"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1904
-msgid "Failed to load templates."
+msgid "No campaign tags yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1905
-msgid "Template \"{{name}}\" deleted."
+msgid "New campaign tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1906
-msgid "Failed to delete template."
+msgid "No media tags yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1907
-msgid "Template created."
+msgid "New media tag"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1908
-msgid "Failed to create template."
+msgid "Failed to load templates."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1909
-msgid "Campaign Templates"
+msgid "Template \"{{name}}\" deleted."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1910
-msgid "New Template"
+msgid "Failed to delete template."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1911
-#: includes/i18n/class-wpsg-frontend-strings.php:1967
-msgid "Built-in"
+msgid "Template created."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1912
+msgid "Failed to create template."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1913
-msgid "No custom templates yet."
+msgid "Campaign Templates"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1914
-#: includes/i18n/class-wpsg-frontend-strings.php:2510
-msgid "Template name"
+msgid "New Template"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1915
-msgid "e.g. Weddings default"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1916
-msgid "Description (optional)"
+#: includes/i18n/class-wpsg-frontend-strings.php:1971
+msgid "Built-in"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1917
-msgid "e.g. Our standard wedding campaign layout"
+msgid "No custom templates yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1918
-msgid "{{count}} character"
+#: includes/i18n/class-wpsg-frontend-strings.php:2514
+msgid "Template name"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1919
-msgid "{{count}} characters"
+msgid "e.g. Weddings default"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1920
-msgid "Copy settings from campaign (optional)"
+msgid "Description (optional)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1921
-msgid "Start blank"
+msgid "e.g. Our standard wedding campaign layout"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1922
-msgid "Create Template"
+msgid "{{count}} character"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1923
-msgid "Delete template"
+msgid "{{count}} characters"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1924
-msgid "Delete template {{name}}"
+msgid "Copy settings from campaign (optional)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1925
-msgid "Duplicated \"{{name}}\""
+msgid "Start blank"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1926
-msgid "Deleted \"{{name}}\""
+msgid "Create Template"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1927
-msgid "Invalid template JSON — missing required fields."
+msgid "Delete template"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1928
-msgid "Imported \"{{name}}\""
+msgid "Delete template {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1929
-msgid "Import failed: {{message}}"
+msgid "Duplicated \"{{name}}\""
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1930
-msgid "Search layouts…"
+msgid "Deleted \"{{name}}\""
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1931
-msgid "Search layout templates"
+msgid "Invalid template JSON — missing required fields."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1932
-msgid "View mode"
+msgid "Imported \"{{name}}\""
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1933
+msgid "Import failed: {{message}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1934
-msgid "New Layout"
+msgid "Search layouts…"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1935
-msgid "From Preset"
+msgid "Search layout templates"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1936
-msgid "No layouts match your search."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1937
-msgid "No layout templates yet."
+msgid "View mode"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1938
-msgid "Create your first layout"
+msgid "New Layout"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1939
-msgid "Layout template list"
+msgid "From Preset"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1940
+msgid "No layouts match your search."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1941
-#: includes/i18n/class-wpsg-frontend-strings.php:2271
-msgid "Slots"
+msgid "No layout templates yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1942
-msgid "Aspect"
+msgid "Create your first layout"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1943
-msgid "Updated"
+msgid "Layout template list"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1945
+#: includes/i18n/class-wpsg-frontend-strings.php:2275
+msgid "Slots"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1946
-#: includes/i18n/class-wpsg-frontend-strings.php:2580
-msgid "{{count}} slot"
+msgid "Aspect"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1947
-#: includes/i18n/class-wpsg-frontend-strings.php:2558
-#: includes/i18n/class-wpsg-frontend-strings.php:2581
-msgid "{{count}} slots"
+msgid "Updated"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1949
-msgid "Edit {{name}}"
+#: includes/i18n/class-wpsg-frontend-strings.php:1950
+#: includes/i18n/class-wpsg-frontend-strings.php:2584
+msgid "{{count}} slot"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1951
-msgid "Duplicate {{name}}"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1952
-msgid "Export JSON"
+#: includes/i18n/class-wpsg-frontend-strings.php:2562
+#: includes/i18n/class-wpsg-frontend-strings.php:2585
+msgid "{{count}} slots"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1953
-msgid "Export {{name}}"
+msgid "Edit {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1955
+msgid "Duplicate {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1956
-msgid "Delete layout template?"
+msgid "Export JSON"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1957
-msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1958
-msgid "Template in use"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1959
-msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
+msgid "Export {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1960
-msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
+msgid "Delete layout template?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1961
+msgid "Are you sure you want to delete \"{{name}}\"? This cannot be undone."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1962
-msgid "Edit layout {{name}}"
+msgid "Template in use"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1963
-msgid "Actions for {{name}}"
+msgid "\"{{name}}\" is in use by {{count}} campaign. Deleting it will unbind those campaigns. Delete anyway?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1964
-msgid "Choose a starting point"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1965
-msgid "Start Blank"
+msgid "\"{{name}}\" is in use by {{count}} campaigns. Deleting it will unbind those campaigns. Delete anyway?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1966
-msgid "No pre-configured settings."
+msgid "Edit layout {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1967
+msgid "Actions for {{name}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1968
+msgid "Choose a starting point"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1969
-msgid "Press a key combo…"
+msgid "Start Blank"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1970
-msgid "Confirm key binding"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1971
-msgid "Cancel key recording"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1972
-msgid "Press any key combo, then ✓ to confirm"
+msgid "No pre-configured settings."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1973
-msgid "custom"
+msgid "Press a key combo…"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1974
-msgid "Remap"
+msgid "Confirm key binding"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1975
-msgid "Remap {{name}}"
+msgid "Cancel key recording"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1976
+msgid "Press any key combo, then ✓ to confirm"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1977
-msgid "Reset {{name}} to default"
+msgid "custom"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1978
-msgid "Close active modal"
+msgid "Remap"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1979
-msgid "Keyboard Shortcuts"
+msgid "Remap {{name}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1981
-msgid "Edit shortcuts"
+msgid "Reset {{name}} to default"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1982
+msgid "Close active modal"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1983
-msgid "Open keyboard shortcuts help (this modal)"
+msgid "Keyboard Shortcuts"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1985
-msgid "customized"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:1986
-msgid "Reset all to defaults"
+msgid "Edit shortcuts"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1987
+msgid "Open keyboard shortcuts help (this modal)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1989
+msgid "customized"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1990
+msgid "Reset all to defaults"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:1991
 msgid "macOS: ⌘ replaces Ctrl. Shortcuts are disabled when focus is inside a text input."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1988
-#: includes/i18n/class-wpsg-frontend-strings.php:2708
+#: includes/i18n/class-wpsg-frontend-strings.php:1992
+#: includes/i18n/class-wpsg-frontend-strings.php:2724
 #: includes/settings/class-wpsg-settings-renderer.php:137
 msgid "Theme"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1990
+#: includes/i18n/class-wpsg-frontend-strings.php:1994
 msgid "Dark theme"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1991
+#: includes/i18n/class-wpsg-frontend-strings.php:1995
 msgid "Light theme"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1992
-#: includes/i18n/class-wpsg-frontend-strings.php:2659
+#: includes/i18n/class-wpsg-frontend-strings.php:1996
+#: includes/i18n/class-wpsg-frontend-strings.php:2675
 msgid "Custom Fonts"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1993
+#: includes/i18n/class-wpsg-frontend-strings.php:1997
 msgid "Upload .woff2, .woff, .ttf, or .otf font files. Uploaded fonts appear in the font picker for all typography editors."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1995
+#: includes/i18n/class-wpsg-frontend-strings.php:1999
 msgid "Make {{name}} space-specific"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1996
+#: includes/i18n/class-wpsg-frontend-strings.php:2000
 msgid "Make {{name}} available to all spaces"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1998
+#: includes/i18n/class-wpsg-frontend-strings.php:2002
 msgid "Uploading…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:1999
+#: includes/i18n/class-wpsg-frontend-strings.php:2003
 msgid "Upload font"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2000
+#: includes/i18n/class-wpsg-frontend-strings.php:2004
 msgid "▬ Rectangle"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2001
+#: includes/i18n/class-wpsg-frontend-strings.php:2005
 msgid "● Circle"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2002
+#: includes/i18n/class-wpsg-frontend-strings.php:2006
 msgid "⬭ Ellipse"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2003
+#: includes/i18n/class-wpsg-frontend-strings.php:2007
 msgid "⬢ Hexagon"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2004
+#: includes/i18n/class-wpsg-frontend-strings.php:2008
 msgid "◆ Diamond"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2005
+#: includes/i18n/class-wpsg-frontend-strings.php:2009
 msgid "▱ Parallelogram ←"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2006
+#: includes/i18n/class-wpsg-frontend-strings.php:2010
 msgid "▱ Parallelogram →"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2007
+#: includes/i18n/class-wpsg-frontend-strings.php:2011
 msgid "❯ Chevron"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2008
+#: includes/i18n/class-wpsg-frontend-strings.php:2012
 msgid "➤ Arrow"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2009
+#: includes/i18n/class-wpsg-frontend-strings.php:2013
 msgid "⬟ Trapezoid"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2010
+#: includes/i18n/class-wpsg-frontend-strings.php:2014
 msgid "❂ Custom"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2011
+#: includes/i18n/class-wpsg-frontend-strings.php:2015
 msgid "Cover"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2012
+#: includes/i18n/class-wpsg-frontend-strings.php:2016
 msgid "Contain"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2013
+#: includes/i18n/class-wpsg-frontend-strings.php:2017
 msgid "Fill"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2016
+#: includes/i18n/class-wpsg-frontend-strings.php:2020
 msgid "Pop"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2017
-#: includes/i18n/class-wpsg-frontend-strings.php:2140
-#: includes/i18n/class-wpsg-frontend-strings.php:2657
+#: includes/i18n/class-wpsg-frontend-strings.php:2021
+#: includes/i18n/class-wpsg-frontend-strings.php:2144
+#: includes/i18n/class-wpsg-frontend-strings.php:2673
 msgid "Glow"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2019
-#: includes/i18n/class-wpsg-frontend-strings.php:2668
-#: includes/i18n/class-wpsg-frontend-strings.php:2674
+#: includes/i18n/class-wpsg-frontend-strings.php:2023
+#: includes/i18n/class-wpsg-frontend-strings.php:2684
+#: includes/i18n/class-wpsg-frontend-strings.php:2690
 msgid "Normal"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2020
+#: includes/i18n/class-wpsg-frontend-strings.php:2024
 msgid "Multiply"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2021
+#: includes/i18n/class-wpsg-frontend-strings.php:2025
 msgid "Screen"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2022
-#: includes/i18n/class-wpsg-frontend-strings.php:2122
+#: includes/i18n/class-wpsg-frontend-strings.php:2026
+#: includes/i18n/class-wpsg-frontend-strings.php:2126
 msgid "Overlay"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2023
-#: includes/i18n/class-wpsg-frontend-strings.php:2061
+#: includes/i18n/class-wpsg-frontend-strings.php:2027
+#: includes/i18n/class-wpsg-frontend-strings.php:2065
 msgid "Darken"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2024
-#: includes/i18n/class-wpsg-frontend-strings.php:2062
+#: includes/i18n/class-wpsg-frontend-strings.php:2028
+#: includes/i18n/class-wpsg-frontend-strings.php:2066
 msgid "Lighten"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2025
+#: includes/i18n/class-wpsg-frontend-strings.php:2029
 msgid "Color Dodge"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2026
+#: includes/i18n/class-wpsg-frontend-strings.php:2030
 msgid "Color Burn"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2027
+#: includes/i18n/class-wpsg-frontend-strings.php:2031
 msgid "Hard Light"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2028
+#: includes/i18n/class-wpsg-frontend-strings.php:2032
 msgid "Soft Light"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2029
+#: includes/i18n/class-wpsg-frontend-strings.php:2033
 msgid "Difference"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2030
+#: includes/i18n/class-wpsg-frontend-strings.php:2034
 msgid "Exclusion"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2031
-#: includes/i18n/class-wpsg-frontend-strings.php:2051
+#: includes/i18n/class-wpsg-frontend-strings.php:2035
+#: includes/i18n/class-wpsg-frontend-strings.php:2055
 msgid "Hue"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2032
+#: includes/i18n/class-wpsg-frontend-strings.php:2036
 msgid "Saturation"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2033
-#: includes/i18n/class-wpsg-frontend-strings.php:2058
-#: includes/i18n/class-wpsg-frontend-strings.php:2218
-#: includes/i18n/class-wpsg-frontend-strings.php:2644
+#: includes/i18n/class-wpsg-frontend-strings.php:2037
+#: includes/i18n/class-wpsg-frontend-strings.php:2062
+#: includes/i18n/class-wpsg-frontend-strings.php:2222
+#: includes/i18n/class-wpsg-frontend-strings.php:2660
 msgid "Color"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2034
+#: includes/i18n/class-wpsg-frontend-strings.php:2038
 msgid "Luminosity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2035
+#: includes/i18n/class-wpsg-frontend-strings.php:2039
 msgid "Top left"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2036
+#: includes/i18n/class-wpsg-frontend-strings.php:2040
 msgid "Top center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2037
+#: includes/i18n/class-wpsg-frontend-strings.php:2041
 msgid "Top right"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2038
+#: includes/i18n/class-wpsg-frontend-strings.php:2042
 msgid "Left center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2040
+#: includes/i18n/class-wpsg-frontend-strings.php:2044
 msgid "Right center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2041
+#: includes/i18n/class-wpsg-frontend-strings.php:2045
 msgid "Bottom left"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2042
+#: includes/i18n/class-wpsg-frontend-strings.php:2046
 msgid "Bottom center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2043
+#: includes/i18n/class-wpsg-frontend-strings.php:2047
 msgid "Bottom right"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2044
+#: includes/i18n/class-wpsg-frontend-strings.php:2048
 msgid "{{label}} info"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2045
+#: includes/i18n/class-wpsg-frontend-strings.php:2049
 msgid "Bright"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2046
-#: includes/i18n/class-wpsg-frontend-strings.php:2144
+#: includes/i18n/class-wpsg-frontend-strings.php:2050
+#: includes/i18n/class-wpsg-frontend-strings.php:2148
 msgid "Contrast"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2047
-#: includes/i18n/class-wpsg-frontend-strings.php:2145
+#: includes/i18n/class-wpsg-frontend-strings.php:2051
+#: includes/i18n/class-wpsg-frontend-strings.php:2149
 msgid "Saturate"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2048
-#: includes/i18n/class-wpsg-frontend-strings.php:2146
-#: includes/i18n/class-wpsg-frontend-strings.php:2652
+#: includes/i18n/class-wpsg-frontend-strings.php:2052
+#: includes/i18n/class-wpsg-frontend-strings.php:2150
+#: includes/i18n/class-wpsg-frontend-strings.php:2668
 msgid "Blur"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2049
+#: includes/i18n/class-wpsg-frontend-strings.php:2053
 msgid "Gray"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2050
+#: includes/i18n/class-wpsg-frontend-strings.php:2054
 msgid "Sepia"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2052
+#: includes/i18n/class-wpsg-frontend-strings.php:2056
 msgid "Invert"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2055
+#: includes/i18n/class-wpsg-frontend-strings.php:2059
 msgid "Enable"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2056
+#: includes/i18n/class-wpsg-frontend-strings.php:2060
 msgid "Off X"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2057
+#: includes/i18n/class-wpsg-frontend-strings.php:2061
 msgid "Off Y"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2063
+#: includes/i18n/class-wpsg-frontend-strings.php:2067
 msgid "Intensity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2064
+#: includes/i18n/class-wpsg-frontend-strings.php:2068
 msgid "Hover only"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2065
+#: includes/i18n/class-wpsg-frontend-strings.php:2069
 msgid "Always"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2066
-#: includes/i18n/class-wpsg-frontend-strings.php:2139
+#: includes/i18n/class-wpsg-frontend-strings.php:2070
+#: includes/i18n/class-wpsg-frontend-strings.php:2143
 msgid "Hover"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2067
+#: includes/i18n/class-wpsg-frontend-strings.php:2071
 msgid "Max °"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2068
+#: includes/i18n/class-wpsg-frontend-strings.php:2072
 msgid "Persp."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2074
+#: includes/i18n/class-wpsg-frontend-strings.php:2078
 msgid "Zoom"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2075
+#: includes/i18n/class-wpsg-frontend-strings.php:2079
 msgid "Entrance animation type"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2076
+#: includes/i18n/class-wpsg-frontend-strings.php:2080
 msgid "Direction"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2077
+#: includes/i18n/class-wpsg-frontend-strings.php:2081
 msgid "Up"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2078
+#: includes/i18n/class-wpsg-frontend-strings.php:2082
 msgid "Down"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2081
+#: includes/i18n/class-wpsg-frontend-strings.php:2085
 msgid "Slide direction"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2082
+#: includes/i18n/class-wpsg-frontend-strings.php:2086
 msgid "Duration"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2083
+#: includes/i18n/class-wpsg-frontend-strings.php:2087
 msgid "Entrance duration"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2084
+#: includes/i18n/class-wpsg-frontend-strings.php:2088
 msgid "Delay"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2085
+#: includes/i18n/class-wpsg-frontend-strings.php:2089
 msgid "Entrance delay"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2086
+#: includes/i18n/class-wpsg-frontend-strings.php:2090
 msgid "Play preview"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2087
+#: includes/i18n/class-wpsg-frontend-strings.php:2091
 msgid "Listing mode: container effects (tilt, border, overlay, blend) apply to the card wrapper. Image-specific controls are hidden."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2088
+#: includes/i18n/class-wpsg-frontend-strings.php:2092
 msgid "Layout"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2090
+#: includes/i18n/class-wpsg-frontend-strings.php:2094
 msgid "Slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2091
-#: includes/i18n/class-wpsg-frontend-strings.php:2154
+#: includes/i18n/class-wpsg-frontend-strings.php:2095
+#: includes/i18n/class-wpsg-frontend-strings.php:2158
 msgid "Position"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2092
+#: includes/i18n/class-wpsg-frontend-strings.php:2096
 msgid "X %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2093
+#: includes/i18n/class-wpsg-frontend-strings.php:2097
 msgid "Y %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2094
-#: includes/i18n/class-wpsg-frontend-strings.php:2155
+#: includes/i18n/class-wpsg-frontend-strings.php:2098
+#: includes/i18n/class-wpsg-frontend-strings.php:2159
 msgid "Size"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2095
+#: includes/i18n/class-wpsg-frontend-strings.php:2099
 msgid "Width %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2096
+#: includes/i18n/class-wpsg-frontend-strings.php:2100
 msgid "Unlock aspect ratio"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2097
+#: includes/i18n/class-wpsg-frontend-strings.php:2101
 msgid "Lock aspect ratio"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2098
+#: includes/i18n/class-wpsg-frontend-strings.php:2102
 msgid "Height %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2099
-#: includes/i18n/class-wpsg-frontend-strings.php:2160
+#: includes/i18n/class-wpsg-frontend-strings.php:2103
+#: includes/i18n/class-wpsg-frontend-strings.php:2164
 msgid "Rotation"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2100
+#: includes/i18n/class-wpsg-frontend-strings.php:2104
 msgid "Rotation degrees"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2101
+#: includes/i18n/class-wpsg-frontend-strings.php:2105
 msgid "Reset rotation"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2102
-#: includes/i18n/class-wpsg-frontend-strings.php:2166
+#: includes/i18n/class-wpsg-frontend-strings.php:2106
+#: includes/i18n/class-wpsg-frontend-strings.php:2170
 msgid "Opacity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2103
+#: includes/i18n/class-wpsg-frontend-strings.php:2107
 msgid "Slot opacity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2104
-#: includes/i18n/class-wpsg-frontend-strings.php:2171
-#: includes/i18n/class-wpsg-frontend-strings.php:2232
+#: includes/i18n/class-wpsg-frontend-strings.php:2108
+#: includes/i18n/class-wpsg-frontend-strings.php:2175
+#: includes/i18n/class-wpsg-frontend-strings.php:2236
 msgid "Shape"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2105
+#: includes/i18n/class-wpsg-frontend-strings.php:2109
 msgid "Preset"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2106
+#: includes/i18n/class-wpsg-frontend-strings.php:2110
 msgid "Clip-path"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2107
+#: includes/i18n/class-wpsg-frontend-strings.php:2111
 msgid "polygon(50% 0%, 100% 50%, …)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2108
+#: includes/i18n/class-wpsg-frontend-strings.php:2112
 msgid "Image fit and focal point settings do not apply in listing mode — slots act as positioned containers for campaign cards."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2110
+#: includes/i18n/class-wpsg-frontend-strings.php:2114
 msgid "Fit"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2111
+#: includes/i18n/class-wpsg-frontend-strings.php:2115
 msgid "Focus"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2112
+#: includes/i18n/class-wpsg-frontend-strings.php:2116
 msgid "Click a position to set which part of the image stays in frame."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2114
+#: includes/i18n/class-wpsg-frontend-strings.php:2118
 msgid "50% 50%"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2115
-#: includes/i18n/class-wpsg-frontend-strings.php:2175
+#: includes/i18n/class-wpsg-frontend-strings.php:2119
+#: includes/i18n/class-wpsg-frontend-strings.php:2179
 msgid "Border"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2116
-#: includes/i18n/class-wpsg-frontend-strings.php:2174
+#: includes/i18n/class-wpsg-frontend-strings.php:2120
+#: includes/i18n/class-wpsg-frontend-strings.php:2178
 msgid "Radius"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2117
-#: includes/i18n/class-wpsg-frontend-strings.php:2649
+#: includes/i18n/class-wpsg-frontend-strings.php:2121
+#: includes/i18n/class-wpsg-frontend-strings.php:2665
 msgid "Width"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2118
-#: includes/i18n/class-wpsg-frontend-strings.php:2186
+#: includes/i18n/class-wpsg-frontend-strings.php:2122
+#: includes/i18n/class-wpsg-frontend-strings.php:2190
 msgid "Effects"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2120
-#: includes/i18n/class-wpsg-frontend-strings.php:2656
+#: includes/i18n/class-wpsg-frontend-strings.php:2124
+#: includes/i18n/class-wpsg-frontend-strings.php:2672
 msgid "Shadow"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2121
+#: includes/i18n/class-wpsg-frontend-strings.php:2125
 msgid "Blend"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2123
+#: includes/i18n/class-wpsg-frontend-strings.php:2127
 msgid "3D Tilt"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2124
+#: includes/i18n/class-wpsg-frontend-strings.php:2128
 msgid "Entrance"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2125
+#: includes/i18n/class-wpsg-frontend-strings.php:2129
 msgid "Stacking & Interaction"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2126
-#: includes/i18n/class-wpsg-frontend-strings.php:2189
+#: includes/i18n/class-wpsg-frontend-strings.php:2130
+#: includes/i18n/class-wpsg-frontend-strings.php:2193
 msgid "Stacking"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2128
+#: includes/i18n/class-wpsg-frontend-strings.php:2132
 msgid "Send to Back (Shift+[)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2129
-#: includes/i18n/class-wpsg-frontend-strings.php:2427
+#: includes/i18n/class-wpsg-frontend-strings.php:2133
+#: includes/i18n/class-wpsg-frontend-strings.php:2431
 msgid "Send to back"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2130
+#: includes/i18n/class-wpsg-frontend-strings.php:2134
 msgid "Send Backward ([)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2131
-#: includes/i18n/class-wpsg-frontend-strings.php:2391
-#: includes/i18n/class-wpsg-frontend-strings.php:2425
+#: includes/i18n/class-wpsg-frontend-strings.php:2135
+#: includes/i18n/class-wpsg-frontend-strings.php:2395
+#: includes/i18n/class-wpsg-frontend-strings.php:2429
 msgid "Send backward"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2132
+#: includes/i18n/class-wpsg-frontend-strings.php:2136
 msgid "Bring Forward (])"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2133
-#: includes/i18n/class-wpsg-frontend-strings.php:2389
-#: includes/i18n/class-wpsg-frontend-strings.php:2424
+#: includes/i18n/class-wpsg-frontend-strings.php:2137
+#: includes/i18n/class-wpsg-frontend-strings.php:2393
+#: includes/i18n/class-wpsg-frontend-strings.php:2428
 msgid "Bring forward"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2134
+#: includes/i18n/class-wpsg-frontend-strings.php:2138
 msgid "Bring to Front (Shift+])"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2135
-#: includes/i18n/class-wpsg-frontend-strings.php:2426
+#: includes/i18n/class-wpsg-frontend-strings.php:2139
+#: includes/i18n/class-wpsg-frontend-strings.php:2430
 msgid "Bring to front"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2136
+#: includes/i18n/class-wpsg-frontend-strings.php:2140
 msgid "Interaction"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2137
+#: includes/i18n/class-wpsg-frontend-strings.php:2141
 msgid "Card click is controlled by the campaign card component."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2138
+#: includes/i18n/class-wpsg-frontend-strings.php:2142
 msgid "Click"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2141
+#: includes/i18n/class-wpsg-frontend-strings.php:2145
 msgid "Spread"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2142
+#: includes/i18n/class-wpsg-frontend-strings.php:2146
 msgid "Graphic Layer {{index}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2143
+#: includes/i18n/class-wpsg-frontend-strings.php:2147
 msgid "Brightness"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2147
+#: includes/i18n/class-wpsg-frontend-strings.php:2151
 msgid "Grayscale"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2148
+#: includes/i18n/class-wpsg-frontend-strings.php:2152
 msgid "Hue rotate"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2149
+#: includes/i18n/class-wpsg-frontend-strings.php:2153
 msgid "Drop shadow"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2150
+#: includes/i18n/class-wpsg-frontend-strings.php:2154
 msgid "Shadow blur"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2152
+#: includes/i18n/class-wpsg-frontend-strings.php:2156
 msgid "Graphic layer name"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2153
+#: includes/i18n/class-wpsg-frontend-strings.php:2157
 msgid "Graphic layer preview"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2156
+#: includes/i18n/class-wpsg-frontend-strings.php:2160
 msgid "W %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2157
+#: includes/i18n/class-wpsg-frontend-strings.php:2161
 msgid "H %"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2158
+#: includes/i18n/class-wpsg-frontend-strings.php:2162
 msgid "Fill canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2159
-#: includes/i18n/class-wpsg-frontend-strings.php:2642
+#: includes/i18n/class-wpsg-frontend-strings.php:2163
+#: includes/i18n/class-wpsg-frontend-strings.php:2658
 msgid "Transform"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2161
+#: includes/i18n/class-wpsg-frontend-strings.php:2165
 msgid "Flip H"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2162
+#: includes/i18n/class-wpsg-frontend-strings.php:2166
 msgid "Flip horizontal"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2163
+#: includes/i18n/class-wpsg-frontend-strings.php:2167
 msgid "Flip V"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2164
+#: includes/i18n/class-wpsg-frontend-strings.php:2168
 msgid "Flip vertical"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2165
-#: includes/i18n/class-wpsg-frontend-strings.php:2559
+#: includes/i18n/class-wpsg-frontend-strings.php:2169
+#: includes/i18n/class-wpsg-frontend-strings.php:2563
 msgid "Appearance"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2167
+#: includes/i18n/class-wpsg-frontend-strings.php:2171
 msgid "Graphic layer opacity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2168
+#: includes/i18n/class-wpsg-frontend-strings.php:2172
 msgid "Click-through"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2169
+#: includes/i18n/class-wpsg-frontend-strings.php:2173
 msgid "Pointer events pass through to layers below"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2170
+#: includes/i18n/class-wpsg-frontend-strings.php:2174
 msgid "Shape & Border"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2172
+#: includes/i18n/class-wpsg-frontend-strings.php:2176
 msgid "Custom clip-path"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2173
+#: includes/i18n/class-wpsg-frontend-strings.php:2177
 msgid "polygon(50% 0%, 100% 100%, 0% 100%)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2176
+#: includes/i18n/class-wpsg-frontend-strings.php:2180
 msgid "Border color"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2177
+#: includes/i18n/class-wpsg-frontend-strings.php:2181
 msgid "Mask"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2178
+#: includes/i18n/class-wpsg-frontend-strings.php:2182
 msgid "Mask image URL"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2179
+#: includes/i18n/class-wpsg-frontend-strings.php:2183
 msgid "https://… (SVG/PNG)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2180
+#: includes/i18n/class-wpsg-frontend-strings.php:2184
 msgid "Luminance"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2181
-#: includes/i18n/class-wpsg-frontend-strings.php:2252
+#: includes/i18n/class-wpsg-frontend-strings.php:2185
+#: includes/i18n/class-wpsg-frontend-strings.php:2256
 msgid "Alpha"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2182
+#: includes/i18n/class-wpsg-frontend-strings.php:2186
 msgid "Mask mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2183
+#: includes/i18n/class-wpsg-frontend-strings.php:2187
 msgid "Feather"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2184
+#: includes/i18n/class-wpsg-frontend-strings.php:2188
 msgid "Mask feather"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2185
+#: includes/i18n/class-wpsg-frontend-strings.php:2189
 msgid "Clear mask"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2187
+#: includes/i18n/class-wpsg-frontend-strings.php:2191
 msgid "Blend mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2190
+#: includes/i18n/class-wpsg-frontend-strings.php:2194
 msgid "Danger zone"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2191
+#: includes/i18n/class-wpsg-frontend-strings.php:2195
 msgid "Remove this graphic layer?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2193
+#: includes/i18n/class-wpsg-frontend-strings.php:2197
 msgid "Confirm remove"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2195
+#: includes/i18n/class-wpsg-frontend-strings.php:2199
 msgid "Remove layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2196
+#: includes/i18n/class-wpsg-frontend-strings.php:2200
 msgid "Text Layer {{index}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2198
+#: includes/i18n/class-wpsg-frontend-strings.php:2202
 msgid "Text layer name"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2199
-#: includes/i18n/class-wpsg-frontend-strings.php:2201
+#: includes/i18n/class-wpsg-frontend-strings.php:2203
+#: includes/i18n/class-wpsg-frontend-strings.php:2205
 msgid "Text"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2200
+#: includes/i18n/class-wpsg-frontend-strings.php:2204
 msgid "Text content"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2202
+#: includes/i18n/class-wpsg-frontend-strings.php:2206
 msgid "Style"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2203
+#: includes/i18n/class-wpsg-frontend-strings.php:2207
 msgid "Heading (H2)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2204
+#: includes/i18n/class-wpsg-frontend-strings.php:2208
 msgid "Subheading (H3)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2205
+#: includes/i18n/class-wpsg-frontend-strings.php:2209
 msgid "Paragraph"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2207
+#: includes/i18n/class-wpsg-frontend-strings.php:2211
 msgid "Alignment"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2208
+#: includes/i18n/class-wpsg-frontend-strings.php:2212
 msgid "Text alignment"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2209
-#: includes/i18n/class-wpsg-frontend-strings.php:2565
+#: includes/i18n/class-wpsg-frontend-strings.php:2213
+#: includes/i18n/class-wpsg-frontend-strings.php:2569
 msgid "Typography"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2210
-#: includes/i18n/class-wpsg-frontend-strings.php:2366
+#: includes/i18n/class-wpsg-frontend-strings.php:2214
+#: includes/i18n/class-wpsg-frontend-strings.php:2370
 msgid "Send to Back"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2211
-#: includes/i18n/class-wpsg-frontend-strings.php:2365
+#: includes/i18n/class-wpsg-frontend-strings.php:2215
+#: includes/i18n/class-wpsg-frontend-strings.php:2369
 msgid "Send Backward"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2212
-#: includes/i18n/class-wpsg-frontend-strings.php:2364
+#: includes/i18n/class-wpsg-frontend-strings.php:2216
+#: includes/i18n/class-wpsg-frontend-strings.php:2368
 msgid "Bring Forward"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2213
-#: includes/i18n/class-wpsg-frontend-strings.php:2363
+#: includes/i18n/class-wpsg-frontend-strings.php:2217
+#: includes/i18n/class-wpsg-frontend-strings.php:2367
 msgid "Bring to Front"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2214
+#: includes/i18n/class-wpsg-frontend-strings.php:2218
 msgid "Remove this text layer?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2215
-#: includes/i18n/class-wpsg-frontend-strings.php:2216
+#: includes/i18n/class-wpsg-frontend-strings.php:2219
+#: includes/i18n/class-wpsg-frontend-strings.php:2220
 msgid "Remove text layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2222
+#: includes/i18n/class-wpsg-frontend-strings.php:2226
 msgid "Transparent background — no fill applied."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2224
+#: includes/i18n/class-wpsg-frontend-strings.php:2228
 msgid "Radial"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2225
+#: includes/i18n/class-wpsg-frontend-strings.php:2229
 msgid "Conic"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2226
+#: includes/i18n/class-wpsg-frontend-strings.php:2230
 msgid "Dir"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2227
+#: includes/i18n/class-wpsg-frontend-strings.php:2231
 msgid "Horizontal (90°)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2228
+#: includes/i18n/class-wpsg-frontend-strings.php:2232
 msgid "Vertical (180°)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2229
+#: includes/i18n/class-wpsg-frontend-strings.php:2233
 msgid "45° right"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2230
+#: includes/i18n/class-wpsg-frontend-strings.php:2234
 msgid "135° left"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2231
+#: includes/i18n/class-wpsg-frontend-strings.php:2235
 msgid "auto"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2233
+#: includes/i18n/class-wpsg-frontend-strings.php:2237
 msgid "Ellipse"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2235
+#: includes/i18n/class-wpsg-frontend-strings.php:2239
 msgid "Farthest corner"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2236
+#: includes/i18n/class-wpsg-frontend-strings.php:2240
 msgid "Farthest side"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2237
+#: includes/i18n/class-wpsg-frontend-strings.php:2241
 msgid "Closest corner"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2238
+#: includes/i18n/class-wpsg-frontend-strings.php:2242
 msgid "Closest side"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2239
+#: includes/i18n/class-wpsg-frontend-strings.php:2243
 msgid "Ctr X"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2240
+#: includes/i18n/class-wpsg-frontend-strings.php:2244
 msgid "Ctr Y"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2241
+#: includes/i18n/class-wpsg-frontend-strings.php:2245
 msgid "Angle"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2242
+#: includes/i18n/class-wpsg-frontend-strings.php:2246
 msgid "Stops"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2245
+#: includes/i18n/class-wpsg-frontend-strings.php:2249
 msgid "Mid"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2246
+#: includes/i18n/class-wpsg-frontend-strings.php:2250
 msgid "Pos"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2247
+#: includes/i18n/class-wpsg-frontend-strings.php:2251
 msgid "Background preview"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2248
+#: includes/i18n/class-wpsg-frontend-strings.php:2252
 msgid "Remove image"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2249
+#: includes/i18n/class-wpsg-frontend-strings.php:2253
 msgid "No background image set."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2250
-#: includes/i18n/class-wpsg-frontend-strings.php:2553
+#: includes/i18n/class-wpsg-frontend-strings.php:2254
+#: includes/i18n/class-wpsg-frontend-strings.php:2557
 msgid "Upload image"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2251
+#: includes/i18n/class-wpsg-frontend-strings.php:2255
 msgid "Upload background image"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2253
+#: includes/i18n/class-wpsg-frontend-strings.php:2257
 msgid "No mask layer on this slot. Add a mask from the Layers panel first."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2254
+#: includes/i18n/class-wpsg-frontend-strings.php:2258
 msgid "No mask image — drag here or pick below"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2256
+#: includes/i18n/class-wpsg-frontend-strings.php:2260
 msgid "Auto-fit to slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2257
+#: includes/i18n/class-wpsg-frontend-strings.php:2261
 msgid "Soften the mask edges. Higher values create a more gradual fade."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2258
+#: includes/i18n/class-wpsg-frontend-strings.php:2262
 msgid "Design Assets"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2259
+#: includes/i18n/class-wpsg-frontend-strings.php:2263
 msgid "Mask Image"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2260
+#: includes/i18n/class-wpsg-frontend-strings.php:2264
 msgid "Replace"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2262
+#: includes/i18n/class-wpsg-frontend-strings.php:2266
 msgid "Clear image"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2263
+#: includes/i18n/class-wpsg-frontend-strings.php:2267
 msgid "Remove mask layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2264
+#: includes/i18n/class-wpsg-frontend-strings.php:2268
 msgid "Properties are unavailable in preview mode."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2265
+#: includes/i18n/class-wpsg-frontend-strings.php:2269
 msgid "BACKGROUND"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2266
+#: includes/i18n/class-wpsg-frontend-strings.php:2270
 msgid "MASK PROPERTIES"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2267
+#: includes/i18n/class-wpsg-frontend-strings.php:2271
 msgid "SLOT PROPERTIES"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2268
+#: includes/i18n/class-wpsg-frontend-strings.php:2272
 msgid "GRAPHIC LAYER"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2269
+#: includes/i18n/class-wpsg-frontend-strings.php:2273
 msgid "TEXT LAYER"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2270
+#: includes/i18n/class-wpsg-frontend-strings.php:2274
 msgid "CANVAS"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2272
+#: includes/i18n/class-wpsg-frontend-strings.php:2276
 msgid "Graphic layers"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2273
+#: includes/i18n/class-wpsg-frontend-strings.php:2277
 msgid "Aspect ratio"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2274
+#: includes/i18n/class-wpsg-frontend-strings.php:2278
 msgid "Height mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2275
+#: includes/i18n/class-wpsg-frontend-strings.php:2279
 msgid "Ratio"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2276
+#: includes/i18n/class-wpsg-frontend-strings.php:2280
 msgid "vh"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2277
+#: includes/i18n/class-wpsg-frontend-strings.php:2281
 msgid "Canvas height mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2278
+#: includes/i18n/class-wpsg-frontend-strings.php:2282
 msgid "Canvas height in viewport units"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2279
+#: includes/i18n/class-wpsg-frontend-strings.php:2283
 msgid "Add Slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2280
+#: includes/i18n/class-wpsg-frontend-strings.php:2284
 msgid "Recent actions"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2281
+#: includes/i18n/class-wpsg-frontend-strings.php:2285
 msgid "Full"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2283
+#: includes/i18n/class-wpsg-frontend-strings.php:2287
 msgid "Laptop"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2287
+#: includes/i18n/class-wpsg-frontend-strings.php:2291
 msgid "New slot added at cursor position"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2288
+#: includes/i18n/class-wpsg-frontend-strings.php:2292
 msgid "Graphic layer added to canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2289
+#: includes/i18n/class-wpsg-frontend-strings.php:2293
 msgid "New slot created with assigned media"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2290
+#: includes/i18n/class-wpsg-frontend-strings.php:2294
 msgid "Fit to viewport"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2291
+#: includes/i18n/class-wpsg-frontend-strings.php:2295
 msgid "Fit to canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2292
+#: includes/i18n/class-wpsg-frontend-strings.php:2296
 msgid "{{bp}} viewport"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2293
+#: includes/i18n/class-wpsg-frontend-strings.php:2297
 msgid "canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2294
+#: includes/i18n/class-wpsg-frontend-strings.php:2298
 msgid "Fit {{count}} slot into the {{where}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2295
+#: includes/i18n/class-wpsg-frontend-strings.php:2299
 msgid "Fit {{count}} slots into the {{where}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2296
+#: includes/i18n/class-wpsg-frontend-strings.php:2300
 msgid "Slots already fit the {{where}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2297
+#: includes/i18n/class-wpsg-frontend-strings.php:2301
 msgid "Max width:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2298
+#: includes/i18n/class-wpsg-frontend-strings.php:2302
 msgid "Canvas max width"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2299
+#: includes/i18n/class-wpsg-frontend-strings.php:2303
 msgid "Fit to container"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2300
+#: includes/i18n/class-wpsg-frontend-strings.php:2304
 msgid "Snap:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2301
+#: includes/i18n/class-wpsg-frontend-strings.php:2305
 msgid "Snap mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2302
+#: includes/i18n/class-wpsg-frontend-strings.php:2306
 msgid "Sensitivity:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2303
+#: includes/i18n/class-wpsg-frontend-strings.php:2307
 msgid "Snap sensitivity"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2305
+#: includes/i18n/class-wpsg-frontend-strings.php:2309
 msgid "Toggle grid overlay"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2306
+#: includes/i18n/class-wpsg-frontend-strings.php:2310
 msgid "Grid cell size"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2307
+#: includes/i18n/class-wpsg-frontend-strings.php:2311
 msgid "Rulers"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2308
+#: includes/i18n/class-wpsg-frontend-strings.php:2312
 msgid "Toggle canvas rulers"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2309
+#: includes/i18n/class-wpsg-frontend-strings.php:2313
 msgid "Measure"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2310
+#: includes/i18n/class-wpsg-frontend-strings.php:2314
 msgid "Toggle measurement overlay"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2311
+#: includes/i18n/class-wpsg-frontend-strings.php:2315
 msgid "Guides:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2312
+#: includes/i18n/class-wpsg-frontend-strings.php:2316
 msgid "Add vertical guide"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2313
+#: includes/i18n/class-wpsg-frontend-strings.php:2317
 msgid "Add horizontal guide"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2314
+#: includes/i18n/class-wpsg-frontend-strings.php:2318
 msgid "Breakpoint:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2315
+#: includes/i18n/class-wpsg-frontend-strings.php:2319
 msgid "Breakpoint edit mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2316
+#: includes/i18n/class-wpsg-frontend-strings.php:2320
 msgid "Move/scale the selected slots (or all slots) to fit this device's viewport — applies to this breakpoint only"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2317
+#: includes/i18n/class-wpsg-frontend-strings.php:2321
 msgid "Move/scale the selected slots (or all slots) back inside the canvas bounds"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2318
+#: includes/i18n/class-wpsg-frontend-strings.php:2322
 msgid "Fit slots to viewport"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2319
+#: includes/i18n/class-wpsg-frontend-strings.php:2323
 msgid "Fit slots to canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2320
+#: includes/i18n/class-wpsg-frontend-strings.php:2324
 msgid "Indices"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2321
+#: includes/i18n/class-wpsg-frontend-strings.php:2325
 msgid "Toggle slot index badges"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2322
+#: includes/i18n/class-wpsg-frontend-strings.php:2326
 msgid "Switch to select tool"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2323
+#: includes/i18n/class-wpsg-frontend-strings.php:2327
 msgid "Hand tool — pan canvas (H)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2324
+#: includes/i18n/class-wpsg-frontend-strings.php:2328
 msgid "Hand tool"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2325
+#: includes/i18n/class-wpsg-frontend-strings.php:2329
 msgid "Fit canvas to viewport (F)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2326
-#: includes/i18n/class-wpsg-frontend-strings.php:2431
+#: includes/i18n/class-wpsg-frontend-strings.php:2330
+#: includes/i18n/class-wpsg-frontend-strings.php:2435
 msgid "Fit canvas to viewport"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2327
-#: includes/i18n/class-wpsg-frontend-strings.php:2432
+#: includes/i18n/class-wpsg-frontend-strings.php:2331
+#: includes/i18n/class-wpsg-frontend-strings.php:2436
 msgid "Reset zoom to 100%"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2328
+#: includes/i18n/class-wpsg-frontend-strings.php:2332
 msgid "Zoom {{pct}}%, click to reset"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2329
+#: includes/i18n/class-wpsg-frontend-strings.php:2333
 msgid "Preview:"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2330
+#: includes/i18n/class-wpsg-frontend-strings.php:2334
 msgid "Device preview preset"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2331
+#: includes/i18n/class-wpsg-frontend-strings.php:2335
 msgid "Custom preview width"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2332
+#: includes/i18n/class-wpsg-frontend-strings.php:2336
 msgid "Device frame"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2333
+#: includes/i18n/class-wpsg-frontend-strings.php:2337
 msgid "Toggle device frame chrome"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2334
+#: includes/i18n/class-wpsg-frontend-strings.php:2338
 msgid "Align slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2335
+#: includes/i18n/class-wpsg-frontend-strings.php:2339
 msgid "Add slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2336
+#: includes/i18n/class-wpsg-frontend-strings.php:2340
 msgid "Add text"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2337
+#: includes/i18n/class-wpsg-frontend-strings.php:2341
 msgid "Add mask to selected slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2338
-#: includes/i18n/class-wpsg-frontend-strings.php:2398
+#: includes/i18n/class-wpsg-frontend-strings.php:2342
+#: includes/i18n/class-wpsg-frontend-strings.php:2402
 msgid "Delete selected"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2339
+#: includes/i18n/class-wpsg-frontend-strings.php:2343
 msgid "Delete selected slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2340
-#: includes/i18n/class-wpsg-frontend-strings.php:2395
+#: includes/i18n/class-wpsg-frontend-strings.php:2344
+#: includes/i18n/class-wpsg-frontend-strings.php:2399
 msgid "Duplicate selected"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2341
+#: includes/i18n/class-wpsg-frontend-strings.php:2345
 msgid "Duplicate selected slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2342
+#: includes/i18n/class-wpsg-frontend-strings.php:2346
 msgid "Align left edges"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2343
+#: includes/i18n/class-wpsg-frontend-strings.php:2347
 msgid "Center horizontally"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2344
+#: includes/i18n/class-wpsg-frontend-strings.php:2348
 msgid "Align right edges"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2345
+#: includes/i18n/class-wpsg-frontend-strings.php:2349
 msgid "Distribute by center (horizontal)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2346
+#: includes/i18n/class-wpsg-frontend-strings.php:2350
 msgid "Distribute horizontally by center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2347
+#: includes/i18n/class-wpsg-frontend-strings.php:2351
 msgid "Distribute by gap (horizontal)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2348
+#: includes/i18n/class-wpsg-frontend-strings.php:2352
 msgid "Distribute horizontally by gap"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2349
+#: includes/i18n/class-wpsg-frontend-strings.php:2353
 msgid "Align top edges"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2350
+#: includes/i18n/class-wpsg-frontend-strings.php:2354
 msgid "Center vertically"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2351
+#: includes/i18n/class-wpsg-frontend-strings.php:2355
 msgid "Align bottom edges"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2352
+#: includes/i18n/class-wpsg-frontend-strings.php:2356
 msgid "Distribute by center (vertical)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2353
+#: includes/i18n/class-wpsg-frontend-strings.php:2357
 msgid "Distribute vertically by center"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2354
+#: includes/i18n/class-wpsg-frontend-strings.php:2358
 msgid "Distribute by gap (vertical)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2355
+#: includes/i18n/class-wpsg-frontend-strings.php:2359
 msgid "Distribute vertically by gap"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2356
+#: includes/i18n/class-wpsg-frontend-strings.php:2360
 msgid "Filter layers…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2357
+#: includes/i18n/class-wpsg-frontend-strings.php:2361
 msgid "Clear filter"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2358
+#: includes/i18n/class-wpsg-frontend-strings.php:2362
 msgid "Hide layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2359
+#: includes/i18n/class-wpsg-frontend-strings.php:2363
 msgid "Show layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2360
+#: includes/i18n/class-wpsg-frontend-strings.php:2364
 msgid "Unlock layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2361
+#: includes/i18n/class-wpsg-frontend-strings.php:2365
 msgid "Lock layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2362
+#: includes/i18n/class-wpsg-frontend-strings.php:2366
 msgid "Layer options"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2367
+#: includes/i18n/class-wpsg-frontend-strings.php:2371
 msgid "Add Mask"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2368
+#: includes/i18n/class-wpsg-frontend-strings.php:2372
 msgid "Delete layer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2369
+#: includes/i18n/class-wpsg-frontend-strings.php:2373
 msgid "Expand group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2370
+#: includes/i18n/class-wpsg-frontend-strings.php:2374
 msgid "Collapse group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2371
+#: includes/i18n/class-wpsg-frontend-strings.php:2375
 msgid "Group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2372
-#: includes/i18n/class-wpsg-frontend-strings.php:2383
+#: includes/i18n/class-wpsg-frontend-strings.php:2376
+#: includes/i18n/class-wpsg-frontend-strings.php:2387
 msgid "Ungroup"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2373
+#: includes/i18n/class-wpsg-frontend-strings.php:2377
 msgid "Layout canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2374
+#: includes/i18n/class-wpsg-frontend-strings.php:2378
 msgid "Drag to reposition mask"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2375
+#: includes/i18n/class-wpsg-frontend-strings.php:2379
 msgid "Toggle guide lock"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2376
+#: includes/i18n/class-wpsg-frontend-strings.php:2380
 msgid "Delete guide"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2377
+#: includes/i18n/class-wpsg-frontend-strings.php:2381
 msgid "Rename group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2378
+#: includes/i18n/class-wpsg-frontend-strings.php:2382
 msgid "Group name"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2380
+#: includes/i18n/class-wpsg-frontend-strings.php:2384
 msgid "Rename"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2381
+#: includes/i18n/class-wpsg-frontend-strings.php:2385
 msgid "Selection actions"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2382
+#: includes/i18n/class-wpsg-frontend-strings.php:2386
 msgid "Ungroup (Ctrl+Shift+G)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2384
+#: includes/i18n/class-wpsg-frontend-strings.php:2388
 msgid "Unlock group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2385
+#: includes/i18n/class-wpsg-frontend-strings.php:2389
 msgid "Lock group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2386
+#: includes/i18n/class-wpsg-frontend-strings.php:2390
 msgid "Show group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2387
+#: includes/i18n/class-wpsg-frontend-strings.php:2391
 msgid "Hide group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2388
+#: includes/i18n/class-wpsg-frontend-strings.php:2392
 msgid "Bring forward (])"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2390
+#: includes/i18n/class-wpsg-frontend-strings.php:2394
 msgid "Send backward ([)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2392
+#: includes/i18n/class-wpsg-frontend-strings.php:2396
 msgid "Group (Ctrl+G)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2393
+#: includes/i18n/class-wpsg-frontend-strings.php:2397
 msgid "Group selected slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2394
+#: includes/i18n/class-wpsg-frontend-strings.php:2398
 msgid "Duplicate (Ctrl+D)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2396
+#: includes/i18n/class-wpsg-frontend-strings.php:2400
 msgid "Duplicate slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2397
+#: includes/i18n/class-wpsg-frontend-strings.php:2401
 msgid "Delete (Del)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2399
+#: includes/i18n/class-wpsg-frontend-strings.php:2403
 msgid "Delete slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2400
+#: includes/i18n/class-wpsg-frontend-strings.php:2404
 msgid "Builder Keyboard Shortcuts"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2401
+#: includes/i18n/class-wpsg-frontend-strings.php:2405
 msgid "Builder keyboard shortcuts reference"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2402
-#: includes/i18n/class-wpsg-frontend-strings.php:2452
+#: includes/i18n/class-wpsg-frontend-strings.php:2406
+#: includes/i18n/class-wpsg-frontend-strings.php:2456
 msgid "File"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2403
+#: includes/i18n/class-wpsg-frontend-strings.php:2407
 msgid "History"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2404
+#: includes/i18n/class-wpsg-frontend-strings.php:2408
 msgid "Selection"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2405
+#: includes/i18n/class-wpsg-frontend-strings.php:2409
 msgid "Nudge"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2406
+#: includes/i18n/class-wpsg-frontend-strings.php:2410
 msgid "Z-order"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2407
-#: includes/i18n/class-wpsg-frontend-strings.php:2451
-#: includes/i18n/class-wpsg-frontend-strings.php:2467
+#: includes/i18n/class-wpsg-frontend-strings.php:2411
+#: includes/i18n/class-wpsg-frontend-strings.php:2455
+#: includes/i18n/class-wpsg-frontend-strings.php:2471
 msgid "Canvas"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2408
+#: includes/i18n/class-wpsg-frontend-strings.php:2412
 msgid "Help"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2409
+#: includes/i18n/class-wpsg-frontend-strings.php:2413
 msgid "Save template"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2410
-#: includes/i18n/class-wpsg-frontend-strings.php:2459
-#: includes/i18n/class-wpsg-frontend-strings.php:2480
-#: includes/i18n/class-wpsg-frontend-strings.php:2512
+#: includes/i18n/class-wpsg-frontend-strings.php:2414
+#: includes/i18n/class-wpsg-frontend-strings.php:2463
+#: includes/i18n/class-wpsg-frontend-strings.php:2484
+#: includes/i18n/class-wpsg-frontend-strings.php:2516
 msgid "Undo"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2411
-#: includes/i18n/class-wpsg-frontend-strings.php:2460
-#: includes/i18n/class-wpsg-frontend-strings.php:2482
-#: includes/i18n/class-wpsg-frontend-strings.php:2514
+#: includes/i18n/class-wpsg-frontend-strings.php:2415
+#: includes/i18n/class-wpsg-frontend-strings.php:2464
+#: includes/i18n/class-wpsg-frontend-strings.php:2486
+#: includes/i18n/class-wpsg-frontend-strings.php:2518
 msgid "Redo"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2412
+#: includes/i18n/class-wpsg-frontend-strings.php:2416
 msgid "Remove selected slot(s)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2413
+#: includes/i18n/class-wpsg-frontend-strings.php:2417
 msgid "Deselect all"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2414
+#: includes/i18n/class-wpsg-frontend-strings.php:2418
 msgid "Duplicate selected slot(s)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2415
+#: includes/i18n/class-wpsg-frontend-strings.php:2419
 msgid "Copy selected slot(s)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2416
+#: includes/i18n/class-wpsg-frontend-strings.php:2420
 msgid "Paste slot(s)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2417
+#: includes/i18n/class-wpsg-frontend-strings.php:2421
 msgid "Group selected (2+) · or select all in group when already grouped"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2418
+#: includes/i18n/class-wpsg-frontend-strings.php:2422
 msgid "Ungroup selected group"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2419
+#: includes/i18n/class-wpsg-frontend-strings.php:2423
 msgid "Toggle slot in selection (layers panel)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2420
+#: includes/i18n/class-wpsg-frontend-strings.php:2424
 msgid "Range select (layers panel)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2421
+#: includes/i18n/class-wpsg-frontend-strings.php:2425
 msgid "Move selected slot 1%"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2422
+#: includes/i18n/class-wpsg-frontend-strings.php:2426
 msgid "Move selected slot 10% (large)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2423
+#: includes/i18n/class-wpsg-frontend-strings.php:2427
 msgid "Move selected slot 0.1% (fine)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2428
+#: includes/i18n/class-wpsg-frontend-strings.php:2432
 msgid "Add new slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2429
+#: includes/i18n/class-wpsg-frontend-strings.php:2433
 msgid "Toggle hand / pan tool"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2430
+#: includes/i18n/class-wpsg-frontend-strings.php:2434
 msgid "Return to select tool"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2433
+#: includes/i18n/class-wpsg-frontend-strings.php:2437
 msgid "Zoom in"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2434
+#: includes/i18n/class-wpsg-frontend-strings.php:2438
 msgid "Zoom out"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2435
+#: includes/i18n/class-wpsg-frontend-strings.php:2439
 msgid "Show this keyboard shortcuts reference"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2436
+#: includes/i18n/class-wpsg-frontend-strings.php:2440
 msgid "Generate grid"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2437
+#: includes/i18n/class-wpsg-frontend-strings.php:2441
 msgid "Auto-grid generator"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2438
+#: includes/i18n/class-wpsg-frontend-strings.php:2442
 msgid "Rows"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2439
+#: includes/i18n/class-wpsg-frontend-strings.php:2443
 msgid "Columns"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2440
+#: includes/i18n/class-wpsg-frontend-strings.php:2444
 msgid "Gap (%)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2441
+#: includes/i18n/class-wpsg-frontend-strings.php:2445
 msgid "Margin (%)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2442
+#: includes/i18n/class-wpsg-frontend-strings.php:2446
 msgid "Replace existing slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2443
+#: includes/i18n/class-wpsg-frontend-strings.php:2447
 msgid "Preview ({{count}} slot)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2444
+#: includes/i18n/class-wpsg-frontend-strings.php:2448
 msgid "Preview ({{count}} slots)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2445
+#: includes/i18n/class-wpsg-frontend-strings.php:2449
 msgid "These settings leave no room for cells — reduce the gap or margin."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2447
+#: includes/i18n/class-wpsg-frontend-strings.php:2451
 msgid "Generate"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2448
-#: includes/i18n/class-wpsg-frontend-strings.php:2576
+#: includes/i18n/class-wpsg-frontend-strings.php:2452
+#: includes/i18n/class-wpsg-frontend-strings.php:2580
 msgid "Layers"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2449
+#: includes/i18n/class-wpsg-frontend-strings.php:2453
 msgid "Media & Assets"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2450
+#: includes/i18n/class-wpsg-frontend-strings.php:2454
 msgid "Properties"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2454
+#: includes/i18n/class-wpsg-frontend-strings.php:2458
 msgid "Options"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2456
+#: includes/i18n/class-wpsg-frontend-strings.php:2460
 msgid "Export template…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2457
+#: includes/i18n/class-wpsg-frontend-strings.php:2461
 msgid "Import from file…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2458
+#: includes/i18n/class-wpsg-frontend-strings.php:2462
 msgid "Close editor"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2463
+#: includes/i18n/class-wpsg-frontend-strings.php:2467
 msgid "Generate grid…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2464
+#: includes/i18n/class-wpsg-frontend-strings.php:2468
 msgid "History…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2465
+#: includes/i18n/class-wpsg-frontend-strings.php:2469
 msgid "View"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2466
+#: includes/i18n/class-wpsg-frontend-strings.php:2470
 msgid "Panels"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2468
+#: includes/i18n/class-wpsg-frontend-strings.php:2472
 msgid "Show grid"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2469
+#: includes/i18n/class-wpsg-frontend-strings.php:2473
 msgid "Show rulers"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2470
+#: includes/i18n/class-wpsg-frontend-strings.php:2474
 msgid "Show measurements"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2471
+#: includes/i18n/class-wpsg-frontend-strings.php:2475
 msgid "Clear guides"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2472
+#: includes/i18n/class-wpsg-frontend-strings.php:2476
 msgid "Reset layout"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2473
+#: includes/i18n/class-wpsg-frontend-strings.php:2477
 msgid "Layout workspace"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2474
+#: includes/i18n/class-wpsg-frontend-strings.php:2478
 msgid "Shared across all templates"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2475
+#: includes/i18n/class-wpsg-frontend-strings.php:2479
 msgid "Save per template"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2476
+#: includes/i18n/class-wpsg-frontend-strings.php:2480
 msgid "No history yet."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2477
+#: includes/i18n/class-wpsg-frontend-strings.php:2481
 msgid "Make a change to see the history."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2478
+#: includes/i18n/class-wpsg-frontend-strings.php:2482
 msgid "History ({{count}})"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2479
-#: includes/i18n/class-wpsg-frontend-strings.php:2511
+#: includes/i18n/class-wpsg-frontend-strings.php:2483
+#: includes/i18n/class-wpsg-frontend-strings.php:2515
 msgid "Undo (Ctrl+Z)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2481
-#: includes/i18n/class-wpsg-frontend-strings.php:2513
+#: includes/i18n/class-wpsg-frontend-strings.php:2485
+#: includes/i18n/class-wpsg-frontend-strings.php:2517
 msgid "Redo (Ctrl+Shift+Z)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2483
+#: includes/i18n/class-wpsg-frontend-strings.php:2487
 msgid "Jump to: {{label}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2484
+#: includes/i18n/class-wpsg-frontend-strings.php:2488
 msgid "Jump to initial state"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2485
+#: includes/i18n/class-wpsg-frontend-strings.php:2489
 msgid "Oldest state"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2486
+#: includes/i18n/class-wpsg-frontend-strings.php:2490
 msgid "Initial state"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2487
+#: includes/i18n/class-wpsg-frontend-strings.php:2491
 msgid "Open history"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2489
+#: includes/i18n/class-wpsg-frontend-strings.php:2493
 msgid "You have unsaved changes. Discard them?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2491
+#: includes/i18n/class-wpsg-frontend-strings.php:2495
 msgid "Keep editing"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2492
+#: includes/i18n/class-wpsg-frontend-strings.php:2496
 msgid "Layout \"{{name}}\" saved"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2493
+#: includes/i18n/class-wpsg-frontend-strings.php:2497
 msgid "Save failed"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2494
+#: includes/i18n/class-wpsg-frontend-strings.php:2498
 msgid "Guide deleted"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2495
+#: includes/i18n/class-wpsg-frontend-strings.php:2499
 msgid "{{count}} slot deleted"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2496
+#: includes/i18n/class-wpsg-frontend-strings.php:2500
 msgid "{{count}} slots deleted"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2497
+#: includes/i18n/class-wpsg-frontend-strings.php:2501
 msgid "{{count}} slot duplicated"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2498
+#: includes/i18n/class-wpsg-frontend-strings.php:2502
 msgid "{{count}} slots duplicated"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2499
+#: includes/i18n/class-wpsg-frontend-strings.php:2503
 msgid "Group created ({{count}} slots)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2500
+#: includes/i18n/class-wpsg-frontend-strings.php:2504
 msgid "Ungrouped"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2501
+#: includes/i18n/class-wpsg-frontend-strings.php:2505
 msgid "{{count}} media item assigned"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2502
+#: includes/i18n/class-wpsg-frontend-strings.php:2506
 msgid "{{count}} media items assigned"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2503
+#: includes/i18n/class-wpsg-frontend-strings.php:2507
 msgid "Generated {{count}} slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2504
+#: includes/i18n/class-wpsg-frontend-strings.php:2508
 msgid "Generated {{count}} slots"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2506
+#: includes/i18n/class-wpsg-frontend-strings.php:2510
 msgid "Something went wrong in the Layout Editor"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2507
+#: includes/i18n/class-wpsg-frontend-strings.php:2511
 msgid "An unexpected error occurred. Close the editor and try again."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2508
+#: includes/i18n/class-wpsg-frontend-strings.php:2512
 msgid "Close Editor"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2509
+#: includes/i18n/class-wpsg-frontend-strings.php:2513
 msgid "Unsaved changes"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2515
+#: includes/i18n/class-wpsg-frontend-strings.php:2519
 msgid "Edit mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2516
+#: includes/i18n/class-wpsg-frontend-strings.php:2520
 msgid "Preview mode"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2517
+#: includes/i18n/class-wpsg-frontend-strings.php:2521
 msgid "Exit preview"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2521
+#: includes/i18n/class-wpsg-frontend-strings.php:2525
 msgid "Auto"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2522
+#: includes/i18n/class-wpsg-frontend-strings.php:2526
 msgid "Auto-fill (forward)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2523
+#: includes/i18n/class-wpsg-frontend-strings.php:2527
 msgid "Auto-fill (reverse)"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2524
+#: includes/i18n/class-wpsg-frontend-strings.php:2528
 msgid "Shuffle & fill"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2525
+#: includes/i18n/class-wpsg-frontend-strings.php:2529
 msgid "Clear all assigns"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2526
+#: includes/i18n/class-wpsg-frontend-strings.php:2530
 msgid "Search media…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2527
+#: includes/i18n/class-wpsg-frontend-strings.php:2531
 msgid "Search media"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2528
+#: includes/i18n/class-wpsg-frontend-strings.php:2532
 msgid "List view"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2529
+#: includes/i18n/class-wpsg-frontend-strings.php:2533
 msgid "Grid view"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2530
+#: includes/i18n/class-wpsg-frontend-strings.php:2534
 msgid "Click or drag a media item to assign it to the selected slot."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2531
+#: includes/i18n/class-wpsg-frontend-strings.php:2535
 msgid "Select a slot first, then choose media to assign."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2532
+#: includes/i18n/class-wpsg-frontend-strings.php:2536
 msgid "Assignments"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2533
+#: includes/i18n/class-wpsg-frontend-strings.php:2537
 msgid "Slot {{n}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2534
+#: includes/i18n/class-wpsg-frontend-strings.php:2538
 msgid "Unassign"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2535
+#: includes/i18n/class-wpsg-frontend-strings.php:2539
 msgid "Unassign media from slot {{n}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2536
+#: includes/i18n/class-wpsg-frontend-strings.php:2540
 msgid "No results."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2537
+#: includes/i18n/class-wpsg-frontend-strings.php:2541
 msgid "No media items available."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2538
+#: includes/i18n/class-wpsg-frontend-strings.php:2542
 msgid "Choose a campaign…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2539
+#: includes/i18n/class-wpsg-frontend-strings.php:2543
 msgid "Select campaign for media"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2540
+#: includes/i18n/class-wpsg-frontend-strings.php:2544
 msgid "Add media"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2542
+#: includes/i18n/class-wpsg-frontend-strings.php:2546
 msgid "Decorative assets, shared across campaigns. Drag onto the canvas to place."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2543
+#: includes/i18n/class-wpsg-frontend-strings.php:2547
 msgid "Upload to library"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2544
+#: includes/i18n/class-wpsg-frontend-strings.php:2548
 msgid "No design assets in library yet."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2545
+#: includes/i18n/class-wpsg-frontend-strings.php:2549
 msgid "File type: {{type}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2546
+#: includes/i18n/class-wpsg-frontend-strings.php:2550
 msgid "Tags: {{tags}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2547
+#: includes/i18n/class-wpsg-frontend-strings.php:2551
 msgid "Add tags"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2548
+#: includes/i18n/class-wpsg-frontend-strings.php:2552
 msgid "Edit tags for {{name}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2550
+#: includes/i18n/class-wpsg-frontend-strings.php:2554
 msgid "Add a tag…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2554
+#: includes/i18n/class-wpsg-frontend-strings.php:2558
 msgid "Or paste image URL…"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2555
+#: includes/i18n/class-wpsg-frontend-strings.php:2559
 msgid "Image URL"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2556
+#: includes/i18n/class-wpsg-frontend-strings.php:2560
 msgid "Start from Template"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2557
+#: includes/i18n/class-wpsg-frontend-strings.php:2561
 msgid "Choose a preset layout as your starting point. You can customize slots, shapes, and properties after creation."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2560
+#: includes/i18n/class-wpsg-frontend-strings.php:2564
 msgid "Campaign Cards"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2561
+#: includes/i18n/class-wpsg-frontend-strings.php:2565
 msgid "Gallery Layout"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2562
+#: includes/i18n/class-wpsg-frontend-strings.php:2566
 msgid "Gallery Style"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2563
+#: includes/i18n/class-wpsg-frontend-strings.php:2567
 msgid "Gallery Navigation"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2564
+#: includes/i18n/class-wpsg-frontend-strings.php:2568
 msgid "Campaign Viewer"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2566
+#: includes/i18n/class-wpsg-frontend-strings.php:2570
 msgid "Integrations"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2567
+#: includes/i18n/class-wpsg-frontend-strings.php:2571
 msgid "System & Admin"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2568
+#: includes/i18n/class-wpsg-frontend-strings.php:2572
 msgid "just now"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2569
+#: includes/i18n/class-wpsg-frontend-strings.php:2573
 msgid "{{count}} minute ago"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2570
+#: includes/i18n/class-wpsg-frontend-strings.php:2574
 msgid "{{count}} minutes ago"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2571
+#: includes/i18n/class-wpsg-frontend-strings.php:2575
 msgid "Unsaved settings found"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2572
+#: includes/i18n/class-wpsg-frontend-strings.php:2576
 msgid "You have unsaved settings changes from {{age}}. Would you like to restore them?"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2575
+#: includes/i18n/class-wpsg-frontend-strings.php:2579
 msgid "Make a change to see history."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2577
+#: includes/i18n/class-wpsg-frontend-strings.php:2581
 msgid "Editing "
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2578
+#: includes/i18n/class-wpsg-frontend-strings.php:2582
 msgid " layout — moves and resizes apply to this breakpoint only"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2579
+#: includes/i18n/class-wpsg-frontend-strings.php:2583
 msgid "{{w}} × {{h}}px"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2582
+#: includes/i18n/class-wpsg-frontend-strings.php:2586
 msgid "Double-click to add a slot"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2583
+#: includes/i18n/class-wpsg-frontend-strings.php:2587
 msgid "or drag media from the panel"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2585
+#: includes/i18n/class-wpsg-frontend-strings.php:2589
 msgid "Media ({{count}})"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2586
+#: includes/i18n/class-wpsg-frontend-strings.php:2590
 msgid "Archive Campaign"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2587
+#: includes/i18n/class-wpsg-frontend-strings.php:2591
 msgid "Are you sure you want to archive \"{{title}}\"? This action will mark it as archived."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2588
+#: includes/i18n/class-wpsg-frontend-strings.php:2592
 msgid "Pick from Media Library"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2589
+#: includes/i18n/class-wpsg-frontend-strings.php:2593
 msgid "Refresh"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2590
+#: includes/i18n/class-wpsg-frontend-strings.php:2594
 msgid "Load Library"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2591
+#: includes/i18n/class-wpsg-frontend-strings.php:2595
 msgid "Search media..."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2592
+#: includes/i18n/class-wpsg-frontend-strings.php:2596
 msgid "Search media library"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2593
+#: includes/i18n/class-wpsg-frontend-strings.php:2597
 msgid "Click \"Load Library\" to browse existing media"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2594
+#: includes/i18n/class-wpsg-frontend-strings.php:2598
 msgid "Media already added to campaign"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2595
+#: includes/i18n/class-wpsg-frontend-strings.php:2599
 msgid "Add {{type}} media: {{label}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2596
+#: includes/i18n/class-wpsg-frontend-strings.php:2600
 msgid "Added"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2597
+#: includes/i18n/class-wpsg-frontend-strings.php:2601
 msgid "✏️ Editor"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2598
+#: includes/i18n/class-wpsg-frontend-strings.php:2602
 msgid "👑 Owner"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2599
+#: includes/i18n/class-wpsg-frontend-strings.php:2603
 msgid "Can read campaign content only"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2600
+#: includes/i18n/class-wpsg-frontend-strings.php:2604
 msgid "Can edit metadata and media; cannot manage access or builder"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2601
+#: includes/i18n/class-wpsg-frontend-strings.php:2605
 msgid "Full campaign control including access management and builder"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2604
+#: includes/i18n/class-wpsg-frontend-strings.php:2608
 msgid "Company-wide access"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2605
+#: includes/i18n/class-wpsg-frontend-strings.php:2609
 msgid "Direct campaign access"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2608
+#: includes/i18n/class-wpsg-frontend-strings.php:2612
 msgid "This grant has expired"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2609
+#: includes/i18n/class-wpsg-frontend-strings.php:2613
 msgid "Grant expires at this time"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2610
+#: includes/i18n/class-wpsg-frontend-strings.php:2614
 msgid "Expires: {{date}}"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2611
+#: includes/i18n/class-wpsg-frontend-strings.php:2615
 msgid "Revoke company-wide access"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2612
+#: includes/i18n/class-wpsg-frontend-strings.php:2616
 msgid "Revoke campaign access"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2615
-msgid "Visually similar image found"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2616
-msgid "<strong>{{filename}}</strong> looks like an image already in your library."
-msgstr ""
-
 #: includes/i18n/class-wpsg-frontend-strings.php:2617
-msgid "Existing image"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2618
-msgid "Similar existing image"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2619
-msgid "Original:"
+msgid "this company"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2620
-msgid "Identical content"
+msgid "Revoke access?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2621
-msgid "{{count}}/64 bits different"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2622
-msgid "Use the existing image to avoid duplicates, or upload this file anyway."
+msgid "Revoke access to {{campaign}} for {{name}}?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2623
-msgid "Use existing"
+msgid "Block on this campaign?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2624
-msgid "Upload anyway"
+msgid "{{name}} has company-wide access. Blocking here removes them from this campaign only — access to other {{company}} campaigns is kept."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2625
-msgid "Not in any campaign"
+msgid "Block on this campaign"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2626
-msgid "Used in: {{a}}"
+msgid "Revoke company-wide access?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2627
-msgid "Used in: {{a}}, {{b}}"
+msgid "This revokes company-wide access for {{name}} across ALL campaigns of {{company}}."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2628
-msgid "Used in: {{a}}, {{b}} and {{count}} more"
+msgid "Revoke company-wide"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2629
-msgid "Search or add company…"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2630
-msgid "+ Create “{{name}}”"
+#: includes/i18n/class-wpsg-frontend-strings.php:2631
+msgid "Visually similar image found"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2632
-msgid "Reset all overrides"
+msgid "<strong>{{filename}}</strong> looks like an image already in your library."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2633
-msgid "Font Family"
+msgid "Existing image"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2634
-msgid "Fallback 1"
+msgid "Similar existing image"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2635
-msgid "Fallback 2"
+msgid "Original:"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2636
-msgid "Suggested: {{font}}"
+msgid "Identical content"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2637
-msgid "Terminal: {{family}}"
+msgid "{{count}}/64 bits different"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2638
-msgid "⚠ Font failed to load — first available fallback will be used"
+msgid "Use the existing image to avoid duplicates, or upload this file anyway."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2639
-msgid "Font Size"
+msgid "Use existing"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2640
-msgid "Font Weight"
+msgid "Upload anyway"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2641
-msgid "Font Style"
+msgid "Not in any campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2642
+msgid "Used in: {{a}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2643
-msgid "Decoration"
+msgid "Used in: {{a}}, {{b}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2644
+msgid "Used in: {{a}}, {{b}} and {{count}} more"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2645
-msgid "Line Height"
+msgid "Search or add company…"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2646
-msgid "e.g. 1.4"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2647
-msgid "Letter Spacing"
+msgid "+ Create “{{name}}”"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2648
-msgid "Word Spacing"
+msgid "Reset all overrides"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2649
+msgid "Font Family"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2650
-msgid "Offset X"
+msgid "Fallback 1"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2651
-msgid "Offset Y"
+msgid "Fallback 2"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2652
+msgid "Suggested: {{font}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2653
+msgid "Terminal: {{family}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2654
-msgid "Glow Blur"
+msgid "⚠ Font failed to load — first available fallback will be used"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2655
-msgid "Stroke"
+msgid "Font Size"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2658
-msgid "Recently Used"
+#: includes/i18n/class-wpsg-frontend-strings.php:2656
+msgid "Font Weight"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2660
-msgid "System Fonts"
+#: includes/i18n/class-wpsg-frontend-strings.php:2657
+msgid "Font Style"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2659
+msgid "Decoration"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2661
-msgid "Google Fonts"
+msgid "Line Height"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2662
-msgid "(none)"
+msgid "e.g. 1.4"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2663
-msgid "(default)"
+msgid "Letter Spacing"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2665
-msgid "Thin"
+#: includes/i18n/class-wpsg-frontend-strings.php:2664
+msgid "Word Spacing"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2666
-msgid "Extra Light"
+msgid "Offset X"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2667
-msgid "Light"
+msgid "Offset Y"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2670
-msgid "Semi Bold"
+msgid "Glow Blur"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2671
-msgid "Bold"
+msgid "Stroke"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2672
-msgid "Extra Bold"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2673
-msgid "Black"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2675
-msgid "Italic"
+#: includes/i18n/class-wpsg-frontend-strings.php:2674
+msgid "Recently Used"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2676
-msgid "Oblique"
+msgid "System Fonts"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2677
-msgid "Underline"
+msgid "Google Fonts"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2678
-msgid "Overline"
+msgid "(none)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2679
-msgid "Line-through"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2680
-msgid "Open campaign {{title}}"
+msgid "(default)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2681
-msgid "Campaign {{title}} is locked"
+msgid "Thin"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2682
+msgid "Extra Light"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2683
-msgid "🎬 {{count}} videos"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2684
-msgid "🖼️ {{count}} images"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2685
-msgid "Failed to submit request. Please try again."
+msgid "Light"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2686
-msgid "Check your email for confirmation."
+msgid "Semi Bold"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2687
-msgid "Request access to <strong>{{title}}</strong>"
+msgid "Bold"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2688
-msgid "your@email.com"
+msgid "Extra Bold"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2689
-msgid "Email address"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2690
-msgid "Request Access"
+msgid "Black"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2691
-msgid "Card gallery page {{current}} of {{total}}"
+msgid "Italic"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2692
-msgid "Previous page"
+msgid "Oblique"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2693
-msgid "Next page"
+msgid "Underline"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2694
-msgid "Page {{current}} of {{total}}"
+msgid "Overline"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2695
-msgid "Load {{count}} more campaigns"
+msgid "Line-through"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2696
-msgid "Load more ({{count}} remaining)"
+msgid "Open campaign {{title}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2697
-msgid "No campaigns match your search."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2698
-msgid "Sign in to view campaigns."
+msgid "Campaign {{title}} is locked"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2699
-msgid "No accessible campaigns yet."
+msgid "🎬 {{count}} videos"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2700
-msgid "No accessible campaigns found. Switch to Lock mode to view locked cards."
+msgid "🖼️ {{count}} images"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2701
-msgid "No campaigns found matching your filter."
+msgid "Failed to submit request. Please try again."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2702
-msgid "Viewer Header Settings"
+msgid "Request submitted. You will receive an email once an administrator reviews it."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2703
-msgid "Show Title"
+msgid "Request access to <strong>{{title}}</strong>"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2704
-msgid "Show Subtitle"
+msgid "your@email.com"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2705
-msgid "Title Text"
+msgid "Email address"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2706
-msgid "Subtitle Text"
+msgid "Request Access"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2707
-msgid "Background Type"
+msgid "Card gallery page {{current}} of {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2708
+msgid "Previous page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2709
+msgid "Next page"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2710
+msgid "Page {{current}} of {{total}}"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2711
+msgid "Load {{count}} more campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2712
+msgid "Load more ({{count}} remaining)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2713
-#: includes/i18n/class-wpsg-frontend-strings.php:2730
-msgid "Title Typography"
+msgid "No campaigns match your search."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2714
-msgid "Gallery"
+msgid "Sign in to view campaigns."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2715
-msgid "Access mode"
+msgid "No accessible campaigns yet."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2716
-msgid "Lock"
+msgid "No accessible campaigns found. Switch to Lock mode to view locked cards."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2717
-msgid "Hide"
+msgid "No campaigns found matching your filter."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2718
-msgid "Campaign filters"
+msgid "Viewer Header Settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2719
+msgid "Show Title"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2720
-msgid "My Access"
+msgid "Show Subtitle"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2721
-msgid "Search campaigns..."
+msgid "Title Text"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2722
-msgid "Search campaigns by title, description, or tags"
+msgid "Subtitle Text"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2723
-msgid "Access mode active"
+msgid "Background Type"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2724
-msgid "{{count}} campaign hidden by access mode."
+#: includes/i18n/class-wpsg-frontend-strings.php:2729
+#: includes/i18n/class-wpsg-frontend-strings.php:2746
+msgid "Title Typography"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2725
-msgid "{{count}} campaigns hidden by access mode."
+#: includes/i18n/class-wpsg-frontend-strings.php:2730
+msgid "Gallery"
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2726
-msgid "Failed to save settings."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2727
-msgid "Campaign Header"
+#: includes/i18n/class-wpsg-frontend-strings.php:2731
+msgid "Access mode"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2732
-msgid "Stats Section"
+msgid "Lock"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2733
-msgid "Show Stats"
+msgid "Hide"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2734
-msgid "Admin Only"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2735
-msgid "Campaign Statistics"
+msgid "Campaign filters"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2736
-msgid "Videos"
+msgid "My Access"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2737
-msgid "Images"
+msgid "Search campaigns..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2738
+msgid "Search campaigns by title, description, or tags"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2739
+msgid "Access mode active"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2740
+msgid "{{count}} campaign hidden by access mode."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2741
-msgid "Admin permissions required."
+msgid "{{count}} campaigns hidden by access mode."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2742
-msgid "Campaign API client unavailable."
+msgid "Failed to save settings."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2743
-msgid "Campaign gallery config updated."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2744
-msgid "Failed to save campaign gallery config."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2745
-msgid "Close campaign viewer"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2746
-msgid "Campaign details for {{title}}"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2747
-msgid "About Section"
+msgid "Campaign Header"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2748
-msgid "Show About"
+msgid "Stats Section"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2749
+msgid "Show Stats"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2750
-msgid "Heading Typography"
+msgid "Admin Only"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2751
-msgid "About this Campaign"
+msgid "Campaign Statistics"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2752
-msgid "This campaign is private. Sign in or request access to view media."
+msgid "Videos"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2753
-msgid "No media available for this campaign."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2754
-msgid "Campaign Gallery Config"
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2755
-msgid "This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
-msgstr ""
-
-#: includes/i18n/class-wpsg-frontend-strings.php:2756
-msgid "This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgid "Images"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2757
-msgid "Save Campaign Gallery Config"
+msgid "Admin permissions required."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2758
-msgid "Preview Inherited Gallery Settings"
+msgid "Campaign API client unavailable."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2759
+msgid "Campaign gallery config updated."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2760
-msgid "Sort campaigns"
+msgid "Failed to save campaign gallery config."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2761
-msgid "Pro feature"
+msgid "Close campaign viewer"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2762
-msgid "Upgrade"
+msgid "Campaign details for {{title}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2763
-msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgid "About Section"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2764
+msgid "Show About"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2766
+msgid "Heading Typography"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2767
+msgid "About this Campaign"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2768
+msgid "This campaign is private. Sign in or request access to view media."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2769
+msgid "No media available for this campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2770
+msgid "Campaign Gallery Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2771
+msgid "This campaign currently stores custom gallery overrides. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2772
+msgid "This campaign is currently inheriting global gallery settings. Changes preview in the viewer immediately, revert on cancel, and persist only when you save."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2773
+msgid "Save Campaign Gallery Config"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2774
+msgid "Preview Inherited Gallery Settings"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2776
+msgid "Sort campaigns"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2777
+msgid "Pro feature"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2778
+msgid "Upgrade"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2779
+msgid "Text layers are a Pro feature. Upgrade to add and edit text in your layouts."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2780
 msgid "Per-breakpoint responsive editing is a Pro feature. Upgrade to fine-tune tablet and mobile layouts."
 msgstr ""
 
-#: includes/i18n/class-wpsg-frontend-strings.php:2765
+#: includes/i18n/class-wpsg-frontend-strings.php:2781
 msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
 msgstr ""
 
@@ -10150,6 +10199,6 @@ msgstr ""
 msgid "Unexpected response: HTTP %d"
 msgstr ""
 
-#: wp-super-gallery.php:221
+#: wp-super-gallery.php:225
 msgid "Gallery Editor"
 msgstr ""
