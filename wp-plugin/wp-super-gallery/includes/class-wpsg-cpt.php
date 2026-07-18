@@ -54,6 +54,9 @@ class WPSG_CPT {
             add_action('manage_wpsg_campaign_posts_custom_column', [self::class, 'render_space_column'], 10, 2);
             add_action('restrict_manage_posts', [self::class, 'render_space_filter_dropdown']);
             add_action('pre_get_posts', [self::class, 'apply_space_filter']);
+            // P66-E: keep campaign-template posts out of the wp-admin Campaigns
+            // list table (they are wpsg_campaign posts flagged _wpsg_is_template).
+            add_action('pre_get_posts', [self::class, 'exclude_templates_from_admin_list']);
             add_action('manage_posts_extra_tablenav', [self::class, 'render_create_space_ui']);
             add_action('admin_post_wpsg_create_space', [self::class, 'handle_create_space']);
             // P51-G: clarify the ambiguous default "Count" column on the Companies
@@ -478,6 +481,26 @@ class WPSG_CPT {
         }
         $meta = $query->get('meta_query') ?: [];
         $meta[] = ['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC'];
+        $query->set('meta_query', $meta);
+    }
+
+    /**
+     * P66-E: exclude campaign-template posts from the wp-admin Campaigns list
+     * table. Templates are wpsg_campaign posts carrying the _wpsg_is_template
+     * flag; they are managed via the dedicated templates UI, not this table.
+     */
+    public static function exclude_templates_from_admin_list(\WP_Query $query): void {
+        if (!is_admin() || !$query->is_main_query()) {
+            return;
+        }
+        if ($query->get('post_type') !== self::POST_TYPE) {
+            return;
+        }
+        $meta   = $query->get('meta_query') ?: [];
+        $meta[] = [
+            'key'     => WPSG_Campaign_Templates::META_IS_TEMPLATE,
+            'compare' => 'NOT EXISTS',
+        ];
         $query->set('meta_query', $meta);
     }
 

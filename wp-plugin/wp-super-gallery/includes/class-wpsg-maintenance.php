@@ -72,21 +72,27 @@ class WPSG_Maintenance {
 
         $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
 
+        // P66-B: key the purge clock off when the campaign was *archived*
+        // (archived_at, written by WPSG_Campaign_Status since P66-A), not its
+        // creation date. A two-year-old campaign archived yesterday must not be
+        // trashed on the next cron run. Campaigns with no archived_at stamp are
+        // excluded (conservative) — the P66-B migration seeds it for every
+        // already-archived campaign, so this only shields anomalies.
         $query = new WP_Query([
             'post_type'      => 'wpsg_campaign',
             'post_status'    => 'any',
             'posts_per_page' => 100,
-            'date_query'     => [
-                [
-                    'before'    => $before,
-                    'inclusive' => true,
-                    'column'    => 'post_date_gmt',
-                ],
-            ],
-            'meta_query' => [
+            'meta_query'     => [
+                'relation' => 'AND',
                 [
                     'key'   => 'status',
                     'value' => 'archived',
+                ],
+                [
+                    'key'     => 'archived_at',
+                    'value'   => $before,
+                    'compare' => '<=',
+                    'type'    => 'DATETIME',
                 ],
             ],
         ]);

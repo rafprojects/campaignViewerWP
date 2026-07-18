@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '15';
+    const DB_VERSION = '16';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -34,6 +34,12 @@ class WPSG_DB {
         self::maybe_migrate_assoc_overlay_type_v14();
         self::maybe_backfill_space_library_assoc();
         self::maybe_convert_campaign_tables_to_innodb_v15();
+        // P66-C: stamp historical space_id on the three scoped tables whose
+        // writers never set it (analytics/media_refs/access_requests).
+        self::maybe_backfill_scoped_space_ids();
+        // P66-B: seed archived_at for already-archived campaigns so the
+        // maintenance auto-purge keys off the real archival date.
+        self::maybe_backfill_archived_at();
         update_option('wpsg_db_version', self::DB_VERSION);
     }
 
@@ -198,6 +204,10 @@ class WPSG_DB {
         global $wpdb;
         $table = self::get_media_refs_table();
 
+        // P66-C: stamp the campaign's space on every ref (same value for all,
+        // resolved once). The column existed since v11 but was never written.
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+
         // Delete existing refs for this campaign.
         $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
 
@@ -212,7 +222,8 @@ class WPSG_DB {
             $wpdb->insert($table, [
                 'media_id'    => $mid,
                 'campaign_id' => $campaign_id,
-            ], ['%s', '%d']);
+                'space_id'    => $space_id,
+            ], ['%s', '%d', '%d']);
         }
     }
 
@@ -444,15 +455,19 @@ class WPSG_DB {
      */
     public static function insert_access_request(array $data): string {
         global $wpdb;
-        $table = self::get_access_requests_table();
+        $table       = self::get_access_requests_table();
+        $campaign_id = intval($data['campaign_id']);
+        // P66-C: stamp the campaign's space (column existed since v11, unwritten).
+        $space_id    = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
         $wpdb->insert($table, [
             'token'        => $data['token'],
-            'campaign_id'  => intval($data['campaign_id']),
+            'campaign_id'  => $campaign_id,
             'email'        => $data['email'],
             'status'       => $data['status'] ?? 'pending',
             'requested_at' => gmdate('Y-m-d H:i:s', strtotime($data['requested_at'])),
             'resolved_at'  => null,
-        ], ['%s', '%d', '%s', '%s', '%s', '%s']);
+            'space_id'     => $space_id,
+        ], ['%s', '%d', '%s', '%s', '%s', '%s', '%d']);
         return $data['token'];
     }
 
@@ -1466,6 +1481,138 @@ class WPSG_DB {
         }
 
         update_option('wpsg_space_library_assoc_backfilled', '1', false);
+    }
+
+    // ── P66-C: Backfill space_id on the three scoped tables ───────────────────
+
+    /**
+     * One-time backfill of space_id on the campaign-scoped tables whose writers
+     * never stamped it (analytics_events, media_refs, access_requests). The
+     * audit_log table is intentionally excluded — insert_audit_entry() already
+     * stamps it (P50-A). Resolves each row's space from the campaign's
+     * `_wpsg_space_id` post meta; rows already stamped (space_id != 0) are left
+     * untouched, so a re-run (or a move-corrected row) is never clobbered.
+     */
+    private static function maybe_backfill_scoped_space_ids(): void {
+        if (get_option('wpsg_scoped_space_id_backfilled')) {
+            return;
+        }
+
+        global $wpdb;
+        $tables = [
+            self::get_analytics_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table names from internal methods; no user input in this DDL/DML.
+            $wpdb->query(
+                "UPDATE {$table} t
+                 JOIN {$wpdb->postmeta} pm
+                   ON pm.post_id = t.campaign_id
+                  AND pm.meta_key = '_wpsg_space_id'
+                 SET t.space_id = pm.meta_value
+                 WHERE t.space_id = 0"
+            );
+        }
+
+        update_option('wpsg_scoped_space_id_backfilled', '1', false);
+    }
+
+    // ── P66-B: Seed archived_at for already-archived campaigns ────────────────
+
+    /**
+     * One-time backfill of the archived_at post meta introduced in P66-A, so the
+     * maintenance auto-purge (which now keys off archived_at) has a value for
+     * campaigns archived before this release. archived_at is derived from the
+     * most recent `campaign.archived` audit entry — the DB audit-log table first,
+     * then the legacy `audit_log` post meta — falling back to "now" only when no
+     * archival record exists, which keeps the purge clock conservative.
+     */
+    private static function maybe_backfill_archived_at(): void {
+        if (get_option('wpsg_archived_at_backfilled')) {
+            return;
+        }
+
+        // Currently-archived campaigns that have no archived_at stamp yet.
+        $post_ids = get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                ['key' => 'status', 'value' => 'archived'],
+                ['key' => WPSG_Campaign_Status::META_ARCHIVED_AT, 'compare' => 'NOT EXISTS'],
+            ],
+        ]);
+
+        if (!empty($post_ids)) {
+            global $wpdb;
+            $audit_table = self::get_audit_log_table();
+            $now         = gmdate('Y-m-d H:i:s');
+
+            foreach (array_chunk(array_map('intval', $post_ids), 200) as $chunk) {
+                $placeholders = implode(', ', array_fill(0, count($chunk), '%d'));
+                // Most-recent campaign.archived timestamp per campaign, one query per chunk.
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT campaign_id, MAX(created_at) AS archived_at
+                     FROM {$audit_table}
+                     WHERE action = 'campaign.archived' AND campaign_id IN ({$placeholders})
+                     GROUP BY campaign_id",
+                    $chunk
+                ), ARRAY_A);
+
+                $db_map = [];
+                foreach ($rows as $row) {
+                    $db_map[intval($row['campaign_id'])] = $row['archived_at'];
+                }
+
+                foreach ($chunk as $cid) {
+                    $ts = $db_map[$cid] ?? null;
+                    if (empty($ts)) {
+                        $ts = self::derive_archived_at_from_legacy_meta($cid);
+                    }
+                    if (empty($ts)) {
+                        $ts = $now;
+                    }
+                    update_post_meta($cid, WPSG_Campaign_Status::META_ARCHIVED_AT, $ts);
+                }
+            }
+        }
+
+        update_option('wpsg_archived_at_backfilled', '1', false);
+    }
+
+    /**
+     * Derive an archived_at timestamp from a campaign's legacy `audit_log` post
+     * meta (the pre-P28-G store, still authoritative until a campaign's audit is
+     * first viewed and migrated into the DB table). Returns the most recent
+     * `campaign.archived` entry as a UTC `Y-m-d H:i:s` string, or null.
+     */
+    private static function derive_archived_at_from_legacy_meta(int $campaign_id): ?string {
+        $legacy = get_post_meta($campaign_id, 'audit_log', true);
+        if (!is_array($legacy)) {
+            return null;
+        }
+        $max = null;
+        foreach ($legacy as $entry) {
+            if (!is_array($entry) || ($entry['action'] ?? '') !== 'campaign.archived') {
+                continue;
+            }
+            $raw = $entry['createdAt'] ?? $entry['created_at'] ?? '';
+            if ($raw === '') {
+                continue;
+            }
+            $ts = strtotime((string) $raw);
+            if ($ts !== false && ($max === null || $ts > $max)) {
+                $max = $ts;
+            }
+        }
+        return $max !== null ? gmdate('Y-m-d H:i:s', $max) : null;
     }
 
     private static function ensure_index($table, $index_name, $columns_sql) {

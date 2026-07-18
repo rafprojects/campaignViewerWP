@@ -18,15 +18,25 @@ class WPSG_Maintenance_Test extends WP_UnitTestCase {
         parent::tearDown();
     }
 
-    private function create_archived_campaign(string $date_gmt): int {
+    /**
+     * @param string      $archived_at   The archival timestamp — the value the
+     *                                    P66-B auto-purge keys off.
+     * @param string|null $post_date_gmt  Creation date; defaults to $archived_at.
+     *                                    Pass a different value to prove the
+     *                                    purge ignores the creation date.
+     */
+    private function create_archived_campaign(string $archived_at, ?string $post_date_gmt = null): int {
+        $post_date_gmt = $post_date_gmt ?? $archived_at;
         $id = wp_insert_post([
             'post_type'     => 'wpsg_campaign',
             'post_title'    => 'Old Campaign',
             'post_status'   => 'publish',
-            'post_date_gmt' => $date_gmt,
-            'post_date'     => $date_gmt,
+            'post_date_gmt' => $post_date_gmt,
+            'post_date'     => $post_date_gmt,
         ]);
         update_post_meta($id, 'status', 'archived');
+        // P66-B: the purge clock is archived_at, not the creation date.
+        update_post_meta($id, 'archived_at', $archived_at);
         return $id;
     }
 
@@ -131,6 +141,65 @@ class WPSG_Maintenance_Test extends WP_UnitTestCase {
 
         $this->assertEquals('trash', get_post($old_id)->post_status);
         $this->assertEquals('publish', get_post($fresh_id)->post_status);
+    }
+
+    // ── P66-B: purge keys off archived_at, not the creation date ───────────
+
+    public function test_trash_ignores_creation_date_when_archived_recently() {
+        add_filter('wpsg_archive_retention_days', function () { return 30; });
+
+        // Created two years ago, archived only yesterday. Under the old
+        // (post_date_gmt) logic this was trashed on the next cron run — the bug.
+        $created  = gmdate('Y-m-d H:i:s', strtotime('-2 years'));
+        $archived = gmdate('Y-m-d H:i:s', strtotime('-1 day'));
+        $id       = $this->create_archived_campaign($archived, $created);
+
+        WPSG_Maintenance::trash_archived_campaigns();
+
+        $this->assertEquals(
+            'publish',
+            get_post($id)->post_status,
+            'A long-old campaign archived yesterday must NOT be trashed'
+        );
+    }
+
+    public function test_trash_purges_when_archived_long_ago_despite_recent_creation() {
+        add_filter('wpsg_archive_retention_days', function () { return 30; });
+
+        // Created yesterday but archived 60 days ago: purge eligibility follows
+        // archived_at, regardless of how new the campaign itself is.
+        $created  = gmdate('Y-m-d H:i:s', strtotime('-1 day'));
+        $archived = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
+        $id       = $this->create_archived_campaign($archived, $created);
+
+        WPSG_Maintenance::trash_archived_campaigns();
+
+        $this->assertEquals(
+            'trash',
+            get_post($id)->post_status,
+            'A campaign archived 60 days ago must be trashed regardless of creation date'
+        );
+    }
+
+    public function test_trash_skips_archived_campaign_without_archived_at() {
+        add_filter('wpsg_archive_retention_days', function () { return 30; });
+
+        // An archived campaign lacking an archived_at stamp (e.g. one the
+        // backfill somehow missed) is conservatively left alone, never purged
+        // earlier than it would have been.
+        $old = gmdate('Y-m-d H:i:s', strtotime('-365 days'));
+        $id  = wp_insert_post([
+            'post_type'     => 'wpsg_campaign',
+            'post_title'    => 'No archived_at',
+            'post_status'   => 'publish',
+            'post_date_gmt' => $old,
+            'post_date'     => $old,
+        ]);
+        update_post_meta($id, 'status', 'archived'); // deliberately no archived_at
+
+        WPSG_Maintenance::trash_archived_campaigns();
+
+        $this->assertEquals('publish', get_post($id)->post_status);
     }
 
     // ── purge_trashed_campaigns (phase 2) ──────────────────────────────────

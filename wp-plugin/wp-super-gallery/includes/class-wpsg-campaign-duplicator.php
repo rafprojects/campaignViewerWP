@@ -38,6 +38,9 @@ class WPSG_Campaign_Duplicator {
             'cover_image',
             '_wpsg_gallery_overrides',
             '_wpsg_layout_binding',
+            // P66-D: keep the duplicate in the source campaign's space instead of
+            // silently dropping to the Default Space.
+            '_wpsg_space_id',
         ];
 
         foreach ( $meta_keys as $key ) {
@@ -79,6 +82,15 @@ class WPSG_Campaign_Duplicator {
         $company_terms = wp_get_post_terms( $source_id, 'wpsg_company', [ 'fields' => 'ids' ] );
         if ( ! is_wp_error( $company_terms ) && ! empty( $company_terms ) ) {
             wp_set_object_terms( $new_id, $company_terms, 'wpsg_company' );
+        }
+
+        // P66-D: carry the categorization taxonomies too — previously only the
+        // company term was copied, so a duplicate lost its categories and tags.
+        foreach ( [ 'wpsg_campaign_category', 'wpsg_campaign_tag' ] as $taxonomy ) {
+            $term_ids = wp_get_post_terms( $source_id, $taxonomy, [ 'fields' => 'ids' ] );
+            if ( ! is_wp_error( $term_ids ) && ! empty( $term_ids ) ) {
+                wp_set_object_terms( $new_id, $term_ids, $taxonomy );
+            }
         }
 
         return $new_id;

@@ -100,6 +100,7 @@ if (!function_exists('wpsg_fs')) {
     do_action('wpsg_fs_loaded');
 }
 
+require_once WPSG_PLUGIN_DIR . 'includes/wpsg-cron-hooks.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-license.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
@@ -127,6 +128,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-phash.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-duplicator.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-status.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
@@ -146,17 +148,12 @@ function wpsg_activate() {
 register_deactivation_hook(__FILE__, 'wpsg_deactivate');
 function wpsg_deactivate() {
     // Roles and capabilities are kept on deactivation
-    // Only remove on uninstall if desired
-    wp_clear_scheduled_hook(WPSG_Maintenance::CLEANUP_HOOK);
-    wp_clear_scheduled_hook(WPSG_Maintenance::TRASH_PURGE_HOOK);
-    wp_clear_scheduled_hook(WPSG_Maintenance::ANALYTICS_PURGE_HOOK);
-    wp_clear_scheduled_hook(WPSG_Maintenance::EXPIRED_GRANTS_HOOK);
-    wp_clear_scheduled_hook('wpsg_schedule_auto_archive');
-    wp_clear_scheduled_hook('wpsg_thumbnail_cache_cleanup');
-    wp_clear_scheduled_hook(WPSG_Alerts::CRON_HOOK);
-    wp_clear_scheduled_hook(WPSG_Webhooks::RETRY_HOOK);
-    wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_PROCESS_HOOK);
-    wp_clear_scheduled_hook(WPSG_Export_Engine::JOB_CLEANUP_HOOK);
+    // Only remove on uninstall if desired.
+    // P66-F: clear every scheduled hook from the single canonical list shared
+    // with uninstall.php, so the two can no longer drift.
+    foreach (wpsg_get_cron_hooks() as $hook) {
+        wp_clear_scheduled_hook($hook);
+    }
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
@@ -327,7 +324,9 @@ function wpsg_archive_campaign_status_batch_fallback(array $post_ids) {
     $processed = 0;
 
     foreach ($post_ids as $post_id) {
-        update_post_meta($post_id, 'status', 'archived');
+        // P66-A: set() writes `status` and stamps archived_at (reading the prior
+        // status), so the maintenance auto-purge (P66-B) can key off it.
+        WPSG_Campaign_Status::set((int) $post_id, 'archived');
         $processed++;
     }
 
@@ -407,10 +406,17 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
         );
 
         if ($inserted === false) {
-            // UPDATE already succeeded for $existing_ids; only retry the missing rows.
+            // UPDATE already succeeded for $existing_ids; stamp those (P66-A),
+            // then only retry the missing rows through the metadata-API fallback.
+            WPSG_Campaign_Status::stamp_archived_batch($existing_ids);
             return count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids);
         }
     }
+
+    // P66-A: stamp archived_at for every campaign whose status was just written
+    // via the batched SQL above. The selection query guarantees each id was not
+    // already archived, so every one is a genuine fresh archival.
+    WPSG_Campaign_Status::stamp_archived_batch($post_ids);
 
     foreach ($post_ids as $post_id) {
         clean_post_cache($post_id);
