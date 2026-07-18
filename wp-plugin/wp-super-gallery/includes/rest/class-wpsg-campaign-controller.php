@@ -898,12 +898,21 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             'space'       => $space ? intval($space) : null,
         ]);
 
+        // P65-C (A-12): this is a single-page fetch capped at per_page above.
+        // list_audit_entries() already computes the true total via COUNT(*), so
+        // surface it plus a `truncated` flag — a compliance export must never
+        // silently drop entries beyond the cap.
+        $total_available = (int) ($result['total'] ?? count($manifest_entries));
+        $truncated       = $total_available > count($manifest_entries);
+
         $manifest = wp_json_encode([
             'version'     => 1,
             'type'        => 'audit',
             'exported_at' => gmdate('c'),
             'filters'     => $filters_used,
             'entry_count' => count($manifest_entries),
+            'total_available' => $total_available,
+            'truncated'   => $truncated,
             'entries'     => $manifest_entries,
         ]);
         if ($manifest === false) {
