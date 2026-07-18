@@ -58,11 +58,20 @@ class WPSG_Campaign_IO {
         $layout_template = $template_id ? WPSG_Layout_Templates::get($template_id) : null;
 
         $media_references = array_values(array_map(function ($item) use ($binary) {
+            // P65-D: carry `type` (and the embed fields for external/oembed media)
+            // so videos/embeds survive a round-trip instead of becoming images.
             $ref = [
                 'id'    => $item['id'] ?? '',
                 'url'   => $item['url'] ?? '',
                 'title' => $item['title'] ?? '',
+                'type'  => self::normalize_media_type($item['type'] ?? 'image'),
             ];
+            if (!empty($item['embedUrl'])) {
+                $ref['embedUrl'] = $item['embedUrl'];
+            }
+            if (!empty($item['provider'])) {
+                $ref['provider'] = $item['provider'];
+            }
             if ($binary) {
                 $ref['filename'] = WPSG_Export_Engine::get_media_filename($item);
             }
@@ -229,16 +238,30 @@ class WPSG_Campaign_IO {
             if (!is_array($ref)) {
                 continue;
             }
-            $items[] = [
+            // P65-D: honor the manifest's `type` (default image) and carry the
+            // embed fields so external videos/embeds render after re-import.
+            $item = [
                 'id'     => sanitize_text_field($ref['id'] ?? '') ?: wp_generate_uuid4(),
                 'url'    => esc_url_raw($ref['url'] ?? ''),
                 'title'  => sanitize_text_field($ref['title'] ?? ''),
-                'type'   => 'image',
+                'type'   => self::normalize_media_type($ref['type'] ?? 'image'),
                 'source' => 'external',
                 'order'  => 0,
             ];
+            if (!empty($ref['embedUrl'])) {
+                $item['embedUrl'] = esc_url_raw($ref['embedUrl']);
+            }
+            if (!empty($ref['provider'])) {
+                $item['provider'] = sanitize_text_field($ref['provider']);
+            }
+            $items[] = $item;
         }
         return $items;
+    }
+
+    /** Normalize a media `type` to the registered set, defaulting to image. */
+    private static function normalize_media_type($type): string {
+        return in_array($type, ['image', 'video', 'embed'], true) ? $type : 'image';
     }
 
     /**
@@ -322,7 +345,8 @@ class WPSG_Campaign_IO {
             'attachmentId' => $att_id,
             'url'          => $url ?: '',
             'title'        => sanitize_text_field($ref['title'] ?? ''),
-            'type'         => 'image',
+            // P65-D: honor the manifest's `type` (a sideloaded item may be a video).
+            'type'         => self::normalize_media_type($ref['type'] ?? 'image'),
             'source'       => 'upload',
             'order'        => 0,
         ];

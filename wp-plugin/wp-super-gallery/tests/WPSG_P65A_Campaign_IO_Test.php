@@ -178,6 +178,42 @@ class WPSG_P65A_Campaign_IO_Test extends WP_UnitTestCase {
         $this->assertSame('Round-Trip Template', $fetched['name']);
     }
 
+    // ── P65-D: media type + embed fields survive a round-trip ────────────────────
+
+    public function test_media_type_and_embed_fields_survive_round_trip() {
+        $cid = $this->create_campaign('Video Campaign');
+        update_post_meta($cid, 'media_items', [
+            [
+                'id'       => 'vid-1',
+                'type'     => 'video',
+                'source'   => 'external',
+                'url'      => 'https://example.com/watch',
+                'embedUrl' => 'https://example.com/embed/1',
+                'provider' => 'youtube',
+                'title'    => 'A Video',
+            ],
+        ]);
+
+        // Export entry carries type + embed fields (was id/url/title only).
+        $entry = WPSG_Campaign_IO::build_entry($cid, false);
+        $ref   = $entry['media_references'][0];
+        $this->assertSame('video', $ref['type']);
+        $this->assertSame('https://example.com/embed/1', $ref['embedUrl']);
+        $this->assertSame('youtube', $ref['provider']);
+
+        // Re-import (URL-only) preserves them instead of forcing type=image.
+        $result = WPSG_Campaign_IO::import_entry(
+            ['campaign' => ['title' => 'Imported', 'description' => ''], 'media_references' => $entry['media_references']],
+            null,
+            ['via' => 'rest', 'format' => 'json']
+        );
+        $media = get_post_meta($result['id'], 'media_items', true);
+        $this->assertSame('video', $media[0]['type'], 'Video type must survive round-trip (was forced to image).');
+        $this->assertSame('external', $media[0]['source']);
+        $this->assertSame('https://example.com/embed/1', $media[0]['embedUrl']);
+        $this->assertSame('youtube', $media[0]['provider']);
+    }
+
     // ── import_entry: ZIP (sideload) ─────────────────────────────────────────────
 
     public function test_zip_import_sets_source_upload_and_attachment_id() {

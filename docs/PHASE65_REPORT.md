@@ -1,6 +1,6 @@
 # Phase 65 - Campaign Import/Export Consolidation
 
-**Status:** In progress (P65-A code complete, validating)
+**Status:** Complete (all tracks landed & validated)
 **Created:** 2026-07-14
 **Last updated:** 2026-07-17
 
@@ -8,10 +8,10 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P65-A | Extract `WPSG_Campaign_IO` service — consolidates 4 drifting import/export copies; fixes the layout-template (A-4), MD5-dedup, datetime, media-source (G-4), `attachmentId` and ZIP-streaming (E-4) drift by construction | Code complete (validating) | Medium-Large |
-| P65-B | Campaign-filtered media-library export exports nothing (`attachmentId` through `intval($item['id'])`) + stream the standalone media-library ZIP import (E-4's 5th path) | Planned | Small |
-| P65-C | Silent truncation caps on binary exports (audit log + media library) | Planned | Small |
-| P65-D | Preserve media `type` (and `embedUrl`/`provider`) through export→import so videos/embeds survive a round-trip (currently forced to `image`) | Planned | Small-Medium |
+| P65-A | Extract `WPSG_Campaign_IO` service — consolidates 4 drifting import/export copies; fixes the layout-template (A-4), MD5-dedup, datetime, media-source (G-4), `attachmentId` and ZIP-streaming (E-4) drift by construction | **Landed** | Medium-Large |
+| P65-B | Campaign-filtered media-library export exports nothing (`attachmentId` through `intval($item['id'])`) + stream the standalone media-library ZIP import (E-4's 5th path) | **Landed** | Small |
+| P65-C | Silent truncation caps on binary exports (audit log + media library) | **Landed** | Small |
+| P65-D | Preserve media `type` (and `embedUrl`/`provider`) through export→import so videos/embeds survive a round-trip (was forced to `image`) | **Landed** | Small-Medium |
 
 > **2026-07-17 refinement.** Before execution, all six findings were independently re-verified against current source (three Explore agents + first-hand reads). The two smaller tracks (B, C) checked out exactly. Track A had two imprecise premises that changed the fix, plus one new bug and one new gap — all folded in below. See **Validation & Refinement (2026-07-17)** and the per-track notes.
 
@@ -198,9 +198,15 @@ Every export/import path carries only `id`/`url`/`title` for each media item and
 
 ## Implementation Notes
 
-- **P65-A — landed 2026-07-17** on `feat/phase65-php-hardening-3-of-5`. See the "Implementation Notes (2026-07-17) — LANDED" block under Track P65-A for the full rationale, file list, decisions, and validation results (full suite: 1213 tests / 13407 assertions / 0 failures). Per-track commit; execution paused here for review before P65-B/C/D.
-- **P65-B, P65-C, P65-D** — not started.
+All four tracks landed 2026-07-17 on `feat/phase65-php-hardening-3-of-5` (per-track commits).
+
+- **P65-A** — see the "Implementation Notes (2026-07-17) — LANDED" block under Track P65-A for the full rationale, file list, and decisions.
+- **P65-B** — `export_media_library_binary()` now keys the campaign filter off `attachmentId` (`class-wpsg-media-controller.php`, B1/A-5); `import_media_library_binary()` streams ZIP entries via `WPSG_Export_Engine::stream_zip_entry_to_file()` (B2/E-4's 5th path). Tests: `WPSG_P48F_Media_Export_Test` gained a realistic-fixture campaign-filter export (real attachment via `create_upload_object`) and a streamed import round-trip.
+- **P65-C** — both binary exports surface `total_available` + `truncated` in the manifest: the audit log reuses the true total `list_audit_entries()` already computes (`class-wpsg-campaign-controller.php`); the media library reads `WP_Query::found_posts`/`max_num_pages` (`class-wpsg-media-controller.php`). Within-cap behavior tested in `WPSG_P48F` and `WPSG_P28G`. (Exceeding the 500/5000 caps is impractical to fixture in a unit test; the flag logic is `total_available > count` / `max_num_pages > 1`.)
+- **P65-D** — `WPSG_Campaign_IO::build_entry()` carries `type` + `embedUrl`/`provider`; both import builders honor the manifest `type` (validated `image|video|embed`) instead of hardcoding `image`. Backward compatible (absent `type` ⇒ `image`; no manifest version bump). Tested by a video round-trip in `WPSG_P65A_Campaign_IO_Test`.
+
+**Validation:** full PHPUnit suite green after each track — final: **1217 tests, 13430 assertions, 0 failures, 0 errors, 2 pre-existing skips**. `php -l` + `phpcs -q` clean on all touched files throughout. Test execution delegated to a Haiku subagent via `/php-testing`; tests authored here.
 
 ## Outcome
 
-P65-A complete and validated (service extracted, all transports rewired to thin wrappers, A-4/MD5/datetime/G-4/attachmentId/E-4-campaign-paths fixed by construction, ~150 lines of duplicated import logic + a dead CLI helper removed, full suite green). P65-B/C/D pending.
+**Complete.** The campaign import/export pipeline is now backed by one `WPSG_Campaign_IO` service (REST + CLI, JSON + ZIP are thin wrappers); A-4, MD5-dedup, datetime, G-4, `attachmentId` and E-4 (all five ZIP-read paths, campaign + standalone media-library) are fixed by construction; A-5's campaign-filtered media export works; binary exports no longer silently truncate; and media `type`/embed fields survive round-trips. ~150 lines of duplicated import logic + a dead CLI helper removed (net −277 lines in P65-A alone). Full suite green.
