@@ -395,10 +395,24 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
     }
 
     public function test_campaign_export_import_round_trip(): void {
-        // Create source campaign with tags.
+        // Export now routes through the shared build_entry() → full
+        // format_campaign(), which reads the wpsg_company / category taxonomies.
+        WPSG_CPT::register();
+
+        // Create source campaign with tags and a bound layout template.
         $source_id = $this->create_campaign( 'Round-trip Source' );
         update_post_meta( $source_id, 'visibility', 'private' );
         update_post_meta( $source_id, 'tags', [ 'alpha', 'beta' ] );
+
+        // P65-A: bind a layout template so the round-trip proves A-4 is fixed on
+        // the CLI JSON transport (the template must survive export → import).
+        $tpl = WPSG_Layout_Templates::create( [
+            'name'              => 'CLI RT Template',
+            'canvasAspectRatio' => 1.0,
+            'slots'             => [ [ 'id' => 'slot-1', 'x' => 0, 'y' => 0, 'width' => 50, 'height' => 50, 'shape' => 'rectangle' ] ],
+            'overlays'          => [],
+        ] );
+        update_post_meta( $source_id, '_wpsg_layout_binding_template_id', $tpl['id'] );
 
         // Export.
         $this->cli->campaign_export( [ (string) $source_id ], [] );
@@ -425,6 +439,52 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
         $this->assertGreaterThan( 0, $new_id );
         $post = get_post( $new_id );
         $this->assertEquals( 'Round-trip Source', $post->post_title );
+
+        // The layout template must have been recreated and be retrievable.
+        $bound_id = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+        $this->assertNotEmpty( $bound_id, 'Imported campaign must carry a layout-template binding.' );
+        $fetched = WPSG_Layout_Templates::get( $bound_id );
+        $this->assertIsArray( $fetched );
+        $this->assertEquals( 'CLI RT Template', $fetched['name'] );
+    }
+
+    public function test_campaign_import_binary_sideloads_media_with_attachment_id(): void {
+        if ( ! WPSG_Export_Engine::check_zip_available() ) {
+            $this->markTestSkipped( 'ext-zip not available' );
+        }
+
+        $manifest = wp_json_encode( [
+            'version'          => 2,
+            'exported_at'      => gmdate( 'c' ),
+            'campaign'         => [ 'title' => 'CLI Binary Import', 'description' => '' ],
+            'layout_template'  => null,
+            'media_references' => [
+                [ 'id' => 'cb1', 'url' => 'https://example.com/a.jpg', 'title' => 'A', 'filename' => 'media-cb1.jpg' ],
+            ],
+        ] );
+
+        $file = tempnam( get_temp_dir(), 'wpsg-clizip-' );
+        $zip_path = $file . '.zip';
+        $zip = new ZipArchive();
+        $zip->open( $zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE );
+        $zip->addFromString( 'manifest.json', $manifest );
+        $zip->addFromString( 'media/media-cb1.jpg', file_get_contents( __DIR__ . '/stubs/1x1.jpg' ) );
+        $zip->close();
+
+        try {
+            $this->cli->campaign_import( [ $zip_path ], [] );
+        } finally {
+            @unlink( $file );
+            @unlink( $zip_path );
+        }
+
+        preg_match( '/New ID: (\d+)/', $this->last_success(), $m );
+        $new_id = intval( $m[1] ?? 0 );
+        $this->assertGreaterThan( 0, $new_id );
+
+        $media = get_post_meta( $new_id, 'media_items', true );
+        $this->assertSame( 'upload', $media[0]['source'] );
+        $this->assertGreaterThan( 0, intval( $media[0]['attachmentId'] ), 'CLI ZIP import must stamp attachmentId (was missing before P65-A).' );
     }
 
     // ─────────────────────────────────────────────────────────────────────────

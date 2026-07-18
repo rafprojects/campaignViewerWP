@@ -324,6 +324,40 @@ class WPSG_Export_Engine {
         return class_exists('ZipArchive');
     }
 
+    /**
+     * P65-A / E-4: stream a single ZIP entry to a destination file without
+     * buffering the whole entry in memory.
+     *
+     * The naive `ZipArchive::getFromName()` reads the entire entry into a PHP
+     * string first — a large video spikes memory by its full size. This uses
+     * `getStream()` + `stream_copy_to_stream()` so memory stays flat regardless
+     * of entry size. Shared by campaign ZIP import (WPSG_Campaign_IO) and the
+     * standalone media-library ZIP import.
+     *
+     * @param ZipArchive $zip        Open archive.
+     * @param string     $entry_name Name of the entry inside the archive.
+     * @param string     $dest_path  Destination file path to write into.
+     * @return bool                  True on success, false if the entry is
+     *                               missing or the copy failed.
+     */
+    public static function stream_zip_entry_to_file(ZipArchive $zip, string $entry_name, string $dest_path): bool {
+        $in = $zip->getStream($entry_name);
+        if ($in === false) {
+            return false;
+        }
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+        $out = fopen($dest_path, 'wb');
+        if ($out === false) {
+            fclose($in);
+            return false;
+        }
+        $copied = stream_copy_to_stream($in, $out);
+        fclose($in);
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+        fclose($out);
+        return $copied !== false;
+    }
+
     private static function expected_zip_path(string $id): string {
         $upload_dir = wp_upload_dir();
         return trailingslashit($upload_dir['basedir']) . 'wpsg-exports/wpsg-export-' . $id . '.zip';

@@ -131,6 +131,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-io.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-space-admin-renderer.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-admin-renderer.php';
 

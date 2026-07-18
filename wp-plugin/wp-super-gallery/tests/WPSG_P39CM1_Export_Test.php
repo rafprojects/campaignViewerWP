@@ -369,11 +369,14 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
             ],
         ]);
 
+        // P65-A: use a real JPEG so the sideload actually succeeds and we can
+        // assert the imported media shape (source=upload, attachmentId set) —
+        // the old fixture used fake bytes and tolerated a 500.
         $tmp_zip = wp_tempnam('test-export.zip');
         $zip = new ZipArchive();
         $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         $zip->addFromString('manifest.json', $manifest);
-        $zip->addFromString('media/media-m1.jpg', 'FAKE_IMAGE_DATA');
+        $zip->addFromString('media/media-m1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
         $zip->close();
 
         $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
@@ -387,14 +390,15 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
 
         @unlink($tmp_zip);
 
-        // Sideload will fail in the test environment (no real WP media pipeline),
-        // but the campaign should still be created from the manifest.
-        $this->assertContains($response->get_status(), [201, 500], 'Expected 201 or pipeline error');
-        if ($response->get_status() === 201) {
-            $data = $response->get_data();
-            $this->assertSame('Round-Trip Campaign', $data['title']);
-            $this->assertSame('draft', $data['status']);
-        }
+        $this->assertSame(201, $response->get_status());
+        $data = $response->get_data();
+        $this->assertSame('Round-Trip Campaign', $data['title']);
+        $this->assertSame('draft', $data['status']);
+
+        $media = get_post_meta($data['id'], 'media_items', true);
+        $this->assertSame('upload', $media[0]['source']);
+        $this->assertGreaterThan(0, intval($media[0]['attachmentId']), 'Imported media must carry attachmentId.');
+        $this->assertSame('m1', $media[0]['id'], 'Source media id is preserved.');
     }
 
     public function test_binary_import_rejects_version_1_manifest() {

@@ -1017,7 +1017,9 @@ abstract class WPSG_REST_Base {
         return $campaign_ids;
     }
 
-    protected static function clear_accessible_campaigns_cache() {
+    // P65-A: public so the standalone WPSG_Campaign_IO service (not a subclass)
+    // can invalidate the cache after importing a campaign.
+    public static function clear_accessible_campaigns_cache() {
         self::bump_cache_version();
     }
 
@@ -1227,7 +1229,9 @@ abstract class WPSG_REST_Base {
         return $ts !== false ? gmdate('c', $ts) : '';
     }
 
-    protected static function format_campaign($post) {
+    // P65-A: public so the standalone WPSG_Campaign_IO service (not a subclass)
+    // can build the canonical campaign object for export manifests.
+    public static function format_campaign($post) {
         $company_term = self::get_company_term($post->ID);
         $company_id = $company_term ? $company_term->slug : '';
         $thumbnail_id = get_post_thumbnail_id($post->ID);
@@ -1343,7 +1347,9 @@ abstract class WPSG_REST_Base {
     // Shared by WPSG_Export_Controller (binary import) and WPSG_Media_Controller
     // (single-file upload).
 
-    protected static function find_attachment_by_md5(string $md5): int {
+    // P65-A: public so the standalone WPSG_Campaign_IO service (not a subclass)
+    // can dedupe sideloaded media during campaign import.
+    public static function find_attachment_by_md5(string $md5): int {
         global $wpdb;
         $id = $wpdb->get_var($wpdb->prepare(
             "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpsg_file_md5' AND meta_value = %s LIMIT 1",
