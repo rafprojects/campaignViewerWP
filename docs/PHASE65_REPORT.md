@@ -2,7 +2,7 @@
 
 **Status:** Complete (all tracks landed & validated)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-17
+**Last updated:** 2026-07-18
 
 ### Tracks
 
@@ -210,3 +210,30 @@ All four tracks landed 2026-07-17 on `feat/phase65-php-hardening-3-of-5` (per-tr
 ## Outcome
 
 **Complete.** The campaign import/export pipeline is now backed by one `WPSG_Campaign_IO` service (REST + CLI, JSON + ZIP are thin wrappers); A-4, MD5-dedup, datetime, G-4, `attachmentId` and E-4 (all five ZIP-read paths, campaign + standalone media-library) are fixed by construction; A-5's campaign-filtered media export works; binary exports no longer silently truncate; and media `type`/embed fields survive round-trips. ~150 lines of duplicated import logic + a dead CLI helper removed (net −277 lines in P65-A alone). Full suite green.
+
+---
+
+## Post-Landing PR Review & Fix Pass (2026-07-18)
+
+No GitHub PR existed yet for `feat/phase65-php-hardening-3-of-5`, so this was a self-review of the four landed commits (`24a0ae6a..af8c4904`) rather than a fetched-PR-comments pass: a `/code-review high` 8-angle pass (3 correctness angles + reuse/simplification/efficiency/altitude/conventions) against the diff, followed by first-hand verification of every candidate against current source before touching any code — the same "re-verify against source, don't trust the finder's framing" discipline used throughout this phase.
+
+### Findings & dispositions
+
+| # | Finding | Verdict | Rationale |
+|---|---------|---------|-----------|
+| 1 | Binary (ZIP) import drops `embedUrl`/`provider` — `WPSG_Campaign_IO::upload_media_item()` never copied them, unlike `build_url_media_items()` | **Confirmed — fixed** | Directly contradicts P65-D's own stated goal ("preserve media type + embed fields through export/import"); the phase's only round-trip test (`test_media_type_and_embed_fields_survive_round_trip`) exercised the JSON path only, so the gap in the binary path had zero coverage. |
+| 2 | Multi-campaign batch ZIP export (`batch_export_binary`) can write a manifest `filename` for campaign B that was never written to the archive, when B shares a media URL with an earlier campaign A in the same batch (URL-dedup keeps only A's file, but B's `media_references[].filename` is still derived from B's own item id) | **Confirmed — fixed** | Verified by diffing against the pre-P65-A code: this exact filename/dedup mismatch already existed before this phase (`build_entry()`'s consolidation carried it forward unchanged, byte-for-byte identical logic to the old inline code) — a pre-existing bug, not a regression introduced by P65-A, but caught during this pass with zero prior test coverage, so it was fixed here rather than deferred. |
+| 3 | `find_attachment_by_md5()` dedup reuses an existing attachment across campaigns with no ownership/space check — framed by one finder as a cross-tenant data leak | **Refuted** | Verified against the RBAC model (`PHASE52_REPORT.md`, `require_campaign_space_access`): "space" is a hard boundary at the *campaign* record layer, but the underlying WP media library is explicitly *not* space-scoped anywhere in the codebase (`get_campaigns_for_attachment_id()` already scans site-wide with zero space filter; the existing upload-dedup flow already surfaces cross-space `existing_id` suggestions). Cross-space media reuse is the accepted, pre-existing design, not a new violation. |
+| 4 | Consolidation renamed the JSON-import audit-log key from `mediaRefCount` to `mediaCount`, "silently" dropping the old key | **Refuted** | Grepped the entire plugin and frontend (`src/`) for `mediaRefCount`: zero consumers. Nothing reads the old key, so unifying the audit shape under `mediaCount` (matching every other transport) breaks nothing. |
+| 5 | Campaigns whose media was sideloaded via ZIP import *before* this phase (when `attachmentId` was never stamped) will silently produce an empty export under P65-B's new `attachmentId`-keyed campaign filter | **Confirmed, deferred** | Real gap, but narrow (only pre-P65-A ZIP-imported campaigns) and consistent with an existing, accepted codebase convention: `WPSG_CLI::media_orphans()` has the identical limitation today (items without `attachmentId` are already invisible to it). No user-facing signal distinguishes "no media" from "media without attachmentId," which would be worth a follow-up, but a data-migration/backfill is out of scope for a same-day fix pass. |
+| 6 | Reuse/simplification cleanup: `build_url_media_items()`/`upload_media_item()` re-derive type/source whitelisting that `WPSG_Cpt::sanitize_media_items()` already implements; `apply_scalar_meta()`'s datetime handling duplicates `WPSG_Cpt::sanitize_datetime()`; `total_available`/`truncated` truncation-flag logic is duplicated near-verbatim between the audit-log and media-library exporters (P65-C); `import_entry()`'s `$opts['via']`/`format` derivation is a residual per-transport special case | **Noted, not fixed** | Legitimate maintainability suggestions, not correctness bugs. Deferred rather than refactored in this pass to avoid widening the diff's blast radius on already-tested, freshly-landed consolidation code without a dedicated test lens on the refactor itself — good candidates for a future cleanup phase. |
+| 7 | Three call sites re-fetch `media_items` postmeta immediately before calling `build_entry()`, which re-fetches it internally | **Noted, not fixed** | WordPress's post-meta object cache means the second `get_post_meta()` call in the same request is a cache hit, not a second DB round-trip — the real cost is negligible, so this wasn't worth the risk of threading the already-fetched array through `build_entry()`'s signature. |
+
+### Fixes applied
+
+- **`includes/class-wpsg-campaign-io.php`** — `upload_media_item()` now carries `embedUrl`/`provider` from the manifest reference into the sideloaded item, matching `build_url_media_items()`. New test: `WPSG_P65A_Campaign_IO_Test::test_zip_import_preserves_embed_fields`.
+- **`includes/rest/class-wpsg-export-controller.php`** — `batch_export_binary()` now builds a `url → filename` map from the same first-seen-wins dedup pass that decides what actually goes into the ZIP, then rewrites every campaign's `media_references[].filename` to the canonical filename for its URL before encoding the manifest — so a campaign that loses the "first writer" race for a shared URL still references the file that's actually in the archive. New test: `WPSG_P39CM1_Export_Test::test_batch_export_manifest_filenames_match_zip_for_shared_media`.
+
+### Validation
+
+Full PHPUnit suite green after both fixes: **1219 tests, 13437 assertions, 0 failures, 0 errors, 2 pre-existing skips** — no regressions from either fix, and both new regression tests pass. Test execution delegated to a Haiku subagent per the `/php-testing` skill; tests and fixes authored here.

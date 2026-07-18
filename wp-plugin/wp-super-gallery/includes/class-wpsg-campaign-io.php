@@ -340,7 +340,7 @@ class WPSG_Campaign_IO {
      * `attachmentId` is the WP post ID.
      */
     private static function upload_media_item(int $att_id, $url, array $ref): array {
-        return [
+        $item = [
             'id'           => sanitize_text_field($ref['id'] ?? '') ?: wp_generate_uuid4(),
             'attachmentId' => $att_id,
             'url'          => $url ?: '',
@@ -350,5 +350,15 @@ class WPSG_Campaign_IO {
             'source'       => 'upload',
             'order'        => 0,
         ];
+        // P65-D: carry the embed fields through the binary path too — this was
+        // previously only done in build_url_media_items(), so a ZIP round-trip
+        // silently dropped embedUrl/provider even though build_entry() exports them.
+        if (!empty($ref['embedUrl'])) {
+            $item['embedUrl'] = esc_url_raw($ref['embedUrl']);
+        }
+        if (!empty($ref['provider'])) {
+            $item['provider'] = sanitize_text_field($ref['provider']);
+        }
+        return $item;
     }
 }

@@ -214,11 +214,12 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
 
         $ids = array_map('intval', (array) $request->get_param('ids'));
 
-        $campaigns_data  = [];
-        $all_media_items = [];
-        $seen_urls       = [];
-        $skipped_ids     = [];
-        $space_ids       = []; // P63-I: contributing spaces for the read/download gate.
+        $campaigns_data      = [];
+        $all_media_items     = [];
+        $seen_urls           = [];
+        $canonical_filenames = []; // url => filename actually written to the ZIP.
+        $skipped_ids         = [];
+        $space_ids           = []; // P63-I: contributing spaces for the read/download gate.
 
         foreach ($ids as $post_id) {
             if (!self::campaign_exists($post_id)) {
@@ -236,12 +237,15 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
             // P65-A: each entry comes from the shared builder (fixes A-4 here too).
             $campaigns_data[] = WPSG_Campaign_IO::build_entry($post_id, true);
 
-            // Deduplicate media items by URL across campaigns.
+            // Deduplicate media items by URL across campaigns: the ZIP holds one
+            // file per unique URL, written under the filename of whichever
+            // campaign referenced it first.
             foreach ($media as $item) {
                 $url = $item['url'] ?? '';
                 if ($url && !isset($seen_urls[$url])) {
-                    $seen_urls[$url]   = true;
-                    $all_media_items[] = $item;
+                    $seen_urls[$url]     = true;
+                    $all_media_items[]   = $item;
+                    $canonical_filenames[$url] = WPSG_Export_Engine::get_media_filename($item);
                 }
             }
         }
@@ -249,6 +253,21 @@ class WPSG_Export_Controller extends WPSG_REST_Base {
         if (empty($campaigns_data)) {
             return new WP_Error('wpsg_not_found', 'No valid campaigns found for export.', ['status' => 404]);
         }
+
+        // build_entry() derives each manifest filename from that campaign's own
+        // item id, but a later campaign sharing a URL with an earlier one never
+        // got its own file written to the archive (dedup above keeps only the
+        // first). Rewrite every reference to the filename actually in the ZIP so
+        // re-import doesn't silently drop media shared across campaigns.
+        foreach ($campaigns_data as &$campaign_entry) {
+            foreach ($campaign_entry['media_references'] as &$ref) {
+                if (!empty($ref['filename']) && !empty($ref['url']) && isset($canonical_filenames[$ref['url']])) {
+                    $ref['filename'] = $canonical_filenames[$ref['url']];
+                }
+            }
+            unset($ref);
+        }
+        unset($campaign_entry);
 
         $manifest = wp_json_encode([
             'version'      => 3,

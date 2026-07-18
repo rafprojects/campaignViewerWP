@@ -267,6 +267,36 @@ class WPSG_P65A_Campaign_IO_Test extends WP_UnitTestCase {
         );
     }
 
+    public function test_zip_import_preserves_embed_fields() {
+        // P65-D fix: upload_media_item() must carry embedUrl/provider through
+        // the sideload path too, matching build_url_media_items() — previously
+        // a ZIP round-trip silently dropped them for video/embed items.
+        $refs = [[
+            'id'       => 'vid-1',
+            'title'    => 'A Video',
+            'type'     => 'video',
+            'filename' => 'media-vid-1.jpg',
+            'embedUrl' => 'https://example.com/embed/1',
+            'provider' => 'youtube',
+        ]];
+        $tmp_zip = $this->build_media_zip($refs);
+        $zip     = new ZipArchive();
+        $zip->open($tmp_zip);
+
+        $result = WPSG_Campaign_IO::import_entry(
+            ['campaign' => ['title' => 'Zip Video', 'description' => ''], 'media_references' => $refs],
+            $zip,
+            ['via' => 'rest', 'format' => 'binary']
+        );
+        $zip->close();
+        @unlink($tmp_zip);
+
+        $media = get_post_meta($result['id'], 'media_items', true);
+        $this->assertSame('video', $media[0]['type']);
+        $this->assertSame('https://example.com/embed/1', $media[0]['embedUrl']);
+        $this->assertSame('youtube', $media[0]['provider']);
+    }
+
     // ── streaming helper (E-4) ───────────────────────────────────────────────────
 
     public function test_stream_zip_entry_to_file_copies_bytes() {

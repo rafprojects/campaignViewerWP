@@ -495,4 +495,56 @@ class WPSG_P39CM1_Export_Test extends WP_UnitTestCase {
         $zip->close();
         WPSG_Export_Engine::delete_job($job_id);
     }
+
+    // ── batch_export_binary: cross-campaign shared-URL filenames ──────────────
+
+    public function test_batch_export_manifest_filenames_match_zip_for_shared_media() {
+        if (!WPSG_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Two campaigns referencing the same URL under different item ids.
+        // The ZIP dedupes by URL and only writes one file (under campaign A's
+        // id); campaign B's manifest entry must be rewritten to point at that
+        // same filename instead of the one derived from its own item id.
+        $shared_url = 'https://example.com/shared.jpg';
+        $cid_a = $this->create_campaign('Batch A');
+        update_post_meta($cid_a, 'media_items', [
+            ['id' => 'a-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+        $cid_b = $this->create_campaign('Batch B');
+        update_post_meta($cid_b, 'media_items', [
+            ['id' => 'b-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/batch/export/binary', [
+            'ids' => [$cid_a, $cid_b],
+        ]);
+        $this->assertSame(202, $response->get_status());
+        $job_id = $response->get_data()['jobId'];
+
+        WPSG_Export_Engine::process_job($job_id);
+        $job = WPSG_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+
+        $filename_a = $manifest['campaigns'][0]['media_references'][0]['filename'];
+        $filename_b = $manifest['campaigns'][1]['media_references'][0]['filename'];
+
+        $this->assertSame(
+            $filename_a,
+            $filename_b,
+            'Both campaigns share one URL, so they must reference the single filename actually written to the ZIP.'
+        );
+        $this->assertNotFalse(
+            $zip->getFromName('media/' . $filename_b),
+            "media/{$filename_b} must exist in the ZIP — campaign B's own-id filename was never written."
+        );
+
+        $zip->close();
+        WPSG_Export_Engine::delete_job($job_id);
+    }
 }
