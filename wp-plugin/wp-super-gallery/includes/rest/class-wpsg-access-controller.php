@@ -1024,11 +1024,18 @@ class WPSG_Access_Controller extends WPSG_REST_Base {
 
         $archived_count = 0;
         foreach ($campaigns as $campaign) {
-            update_post_meta($campaign->ID, 'status', 'archived');
-            self::add_audit_entry($campaign->ID, 'campaign.archived', [
-                'bulkAction' => true,
-                'companyId' => $term_id,
-                'companyName' => $term->name,
+            // P66-A: centralize the status write so archived_at is stamped.
+            // Preserves the prior behavior: a bulk-action audit entry per
+            // campaign, no per-campaign hook, and one cache bump after the loop.
+            WPSG_Campaign_Status::set($campaign->ID, 'archived', [
+                'audit' => [
+                    'action'  => 'campaign.archived',
+                    'details' => [
+                        'bulkAction'  => true,
+                        'companyId'   => $term_id,
+                        'companyName' => $term->name,
+                    ],
+                ],
             ]);
             $archived_count++;
         }

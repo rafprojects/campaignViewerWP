@@ -137,9 +137,12 @@ class WPSG_CLI {
             WP_CLI::error( "Campaign {$post_id} not found." );
         }
 
-        update_post_meta( $post_id, 'status', 'archived' );
-        $this->add_audit_entry( $post_id, 'campaign.archived', [ 'source' => 'cli' ] );
-        $this->clear_campaign_cache();
+        // P66-A: centralize the status write so archived_at is stamped. Audit +
+        // cache preserved; the CLI path fires no hook (unchanged behavior).
+        WPSG_Campaign_Status::set( $post_id, 'archived', [
+            'audit' => [ 'action' => 'campaign.archived', 'details' => [], 'ctx' => [ 'source' => 'cli' ] ],
+            'cache' => true,
+        ] );
         WP_CLI::success( "Campaign {$post_id} archived." );
     }
 
@@ -164,9 +167,12 @@ class WPSG_CLI {
             WP_CLI::error( "Campaign {$post_id} not found." );
         }
 
-        update_post_meta( $post_id, 'status', 'active' );
-        $this->add_audit_entry( $post_id, 'campaign.restored', [ 'source' => 'cli' ] );
-        $this->clear_campaign_cache();
+        // P66-A: centralize the status write so restored_at is stamped and
+        // archived_at cleared. Audit + cache preserved; no hook (unchanged).
+        WPSG_Campaign_Status::set( $post_id, 'active', [
+            'audit' => [ 'action' => 'campaign.restored', 'details' => [], 'ctx' => [ 'source' => 'cli' ] ],
+            'cache' => true,
+        ] );
         WP_CLI::success( "Campaign {$post_id} restored." );
     }
 

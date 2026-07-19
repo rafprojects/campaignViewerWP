@@ -1,19 +1,21 @@
 # Phase 66 - Campaign & Analytics Data Integrity, Lifecycle Bookkeeping
 
-**Status:** Planned
+**Status:** Complete (2026-07-18)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14 (cross-referenced against the same-day React review: P66-C validation now includes a frontend spot-check)
+**Last updated:** 2026-07-18 (PR review & fix pass — implementation validated correct across all six tracks; one large-install backfill-scalability finding fixed, one accepted as low-risk; suite green at 1256)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P66-A | Centralize campaign status writes (`WPSG_Campaign_Status::set()`) — enabling refactor for P66-B | Planned | Small-Medium |
-| P66-B | Archive auto-purge keys off creation date, not archived date | Planned | Small-Medium |
-| P66-C | Space-filtered analytics always empty — inserts never stamp `space_id` | Planned | Small |
-| P66-D | Duplicating a campaign drops its space and its category/tag terms | Planned | Tiny |
-| P66-E | Campaign templates appear in campaign listings (admin scope) | Planned | Tiny |
-| P66-F | Uninstall completeness (options/tables/dirs/indexes/cron) | Planned | Small-Medium |
+| P66-A | Centralize campaign status writes (`WPSG_Campaign_Status::set()`) — enabling refactor for P66-B | ✅ Done | Small-Medium |
+| P66-B | Archive auto-purge keys off creation date, not archived date | ✅ Done | Small-Medium |
+| P66-C | Space-filtered analytics always empty — inserts never stamp `space_id` | ✅ Done | Small |
+| P66-D | Duplicating a campaign drops its space and its category/tag terms | ✅ Done | Tiny |
+| P66-E | Campaign templates appear in campaign listings (admin scope) | ✅ Done | Tiny |
+| P66-F | Uninstall completeness (options/tables/dirs/indexes/cron) | ✅ Done | Small-Medium |
+
+**Manual QA:** see the companion [PHASE66_MANUAL_QA_RUNBOOK.md](PHASE66_MANUAL_QA_RUNBOOK.md) for per-track by-hand validation.
 
 ---
 
@@ -30,7 +32,7 @@ The review ([PHP_REVIEW_FINDINGS.md](PHP_REVIEW_FINDINGS.md)) found a cluster of
 | # | Decision | Resolution |
 |---|----------|------------|
 | A | Centralize-before-fix ordering | P66-A (centralize status writes) is sequenced before P66-B (archive-purge date fix), since P66-B's `archived_at` timestamp needs exactly one write site to be reliable. Engineering-sequencing call, not a product decision. |
-| B | `archived_at` backfill for already-archived campaigns | **Default (assumption, not yet confirmed with user):** seed `archived_at = now()` for existing archived campaigns rather than attempting to derive it from historical audit-log `campaign.archived` entries. Conservative — nothing gets purged early — and avoids a one-time migration that parses audit-log JSON. Flag if you'd rather do the more-accurate audit-log-derived backfill instead. |
+| B | `archived_at` backfill for already-archived campaigns | **RESOLVED 2026-07-18 (user chose the audit-log-derived backfill):** seed `archived_at` from each currently-archived campaign's most recent `campaign.archived` audit entry — the DB audit-log table first, then the legacy `audit_log` post meta — falling back to `now()` only when no archival record exists at all. More historically accurate than "seed from now"; the follow-on candidate below is therefore delivered, not deferred. |
 | C | Uninstall scope for `wpsg-exports/` | **Already decided by user, 2026-07-13** (PHP_REVIEW_FINDINGS.md § H-4): delete `wpsg-exports/` in **both** preserve-data and full-cleanup uninstall modes — the 24-hour export-job TTL makes preserving ZIPs past uninstall backwards (they'd outlive normal operation). One doc sentence should tell migrators to move ZIPs out of `uploads/wpsg-exports/` before uninstalling. Carried forward verbatim into P66-F. |
 
 ## Execution Priority
@@ -201,14 +203,127 @@ Add a `['key' => '_wpsg_is_template', 'compare' => 'NOT EXISTS']` clause to `lis
 
 ## Follow-On Candidates
 
-| Candidate | Why it is deferred |
-|-----------|--------------------|
-| Audit-log-derived `archived_at` backfill (more accurate than "seed from now") | The conservative "seed from now" default (Key Decision B) avoids a one-time migration that parses historical audit-log JSON; revisit only if operators need precise historical purge-eligibility for campaigns archived before this phase. |
+| Candidate | Status |
+|-----------|--------|
+| Audit-log-derived `archived_at` backfill (more accurate than "seed from now") | **Delivered this phase** (Key Decision B resolved to this option). No longer a follow-on. |
+| Direct PHPUnit coverage that boots `uninstall.php` end-to-end | Deferred. `uninstall.php` runs in an isolated process (`WP_UNINSTALL_PLUGIN`), which the PHPUnit harness does not model. P66-F is covered by `WPSG_Cron_Hooks_Test` (single-source-of-truth + deactivation clear) plus the before/after DB/filesystem diff in the manual QA runbook. |
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+### P66-A — `WPSG_Campaign_Status` (new class)
+- New `includes/class-wpsg-campaign-status.php`. `set($id, $status, $ctx)` validates the enum, writes `status`, and — via `stamp_transition()` — writes `archived_at` on entering the archived state / `restored_at` (clearing `archived_at`) on leaving it. A redundant re-archive does **not** reset `archived_at` (the purge clock must not restart).
+- **Design call (my judgment):** audit / hook / cache side-effects are **opt-in via `$ctx`**, passed per call site to reproduce each site's *existing* behavior, so no outward-facing change (webhook volume, audit-log noise) results. The core bug — a timestamp written atomically wherever status is — is fixed uniformly; the review's "fires the matching hook + audit entry" is honored where callers already did so.
+- Wired all 7 sites: `archive_campaign`, `restore_campaign`, `batch_campaigns`, `apply_campaign_meta` (generic create/update, events suppressed since the caller emits `campaign.created`/`campaign.updated`), `archive_company` (access controller, one cache bump after the loop, no per-campaign hook — unchanged), CLI `campaign_archive`/`campaign_restore` (audit+cache, no hook — unchanged).
+- The auto-archive **cron** batch (`wpsg_archive_campaign_status_batch`) keeps its optimized batched-SQL status write and additionally calls `WPSG_Campaign_Status::stamp_archived_batch()` (2 queries: clear stale archived_at/restored_at, then one bulk INSERT) — O(1) queries per batch. The metadata-API fallback routes each campaign through `set()`. Fixed a latent gap: the partial-failure branch now stamps the already-UPDATEd ids before falling back.
+
+### P66-B — auto-purge keyed off `archived_at`
+- `WPSG_Maintenance::trash_archived_campaigns()` swapped its `date_query` on `post_date_gmt` for a `meta_query` on `archived_at` (`<=` cutoff, DATETIME). Archived campaigns with no `archived_at` are excluded (conservative shield).
+- Backfill `WPSG_DB::maybe_backfill_archived_at()` (audit-log-derived, per Key Decision B) + helper `derive_archived_at_from_legacy_meta()`. Runs once via the `DB_VERSION` bump to `16`, guarded by `wpsg_archived_at_backfilled`.
+
+### P66-C — `space_id` stamped on the three scoped writers
+- `record_analytics_event()`, `WPSG_DB::sync_media_refs()`, `WPSG_DB::insert_access_request()` now resolve the campaign's `_wpsg_space_id` and stamp it at insert (same pattern as `insert_audit_entry`).
+- Backfill `WPSG_DB::maybe_backfill_scoped_space_ids()` (one `UPDATE … JOIN wp_postmeta` per table, `WHERE space_id = 0`), guarded by `wpsg_scoped_space_id_backfilled`. audit_log excluded (already stamped in P50-A).
+
+### P66-D — duplication completeness
+- `WPSG_Campaign_Duplicator::duplicate()` adds `_wpsg_space_id` to the copied meta keys and copies the `wpsg_campaign_category` / `wpsg_campaign_tag` taxonomies alongside `wpsg_company`.
+
+### P66-E — templates excluded from listings
+- `list_campaigns()` gains a `_wpsg_is_template NOT EXISTS` meta clause (placed first, so it applies to admin, anonymous, and space-scoped paths).
+- New `WPSG_CPT::exclude_templates_from_admin_list()` `pre_get_posts` filter for the wp-admin Campaigns list table (mirrors the existing `apply_space_filter`).
+
+### P66-F — uninstall completeness + shared cron list
+- New dependency-free `includes/wpsg-cron-hooks.php` → `wpsg_get_cron_hooks()`, the single source of truth consumed by both `wpsg_deactivate()` and `uninstall.php` (10 hooks; was 10 vs 4).
+- `uninstall.php`: added all confirmed-missing options + a `LIKE 'wpsg\_thumb\_%'` delete; drops `wpsg_assets` + `wpsg_space_library_assoc`; removes `wpsg-fonts/` and (per Key Decision C, **before** the preserve-data early return) `wpsg-exports/`; guarded `DROP INDEX` for the two custom core-table indexes; added the two new P66 backfill-guard options to the deletion list.
+- Packaging note added to [INSTALL_AND_TROUBLESHOOTING.md](guides/INSTALL_AND_TROUBLESHOOTING.md#uninstalling): move ZIPs out of `uploads/wpsg-exports/` before uninstalling.
+
+### Tests
+- New: `WPSG_P66A_Campaign_Status_Test`, `WPSG_P66B_Archived_At_Backfill_Test`, `WPSG_P66C_Scoped_Space_Id_Test`, `WPSG_P66D_Duplicate_Space_Taxonomy_Test`, `WPSG_P66E_Template_Listing_Test`, `WPSG_Cron_Hooks_Test`.
+- Extended: `WPSG_Maintenance_Test` (creation-date-independent purge + no-`archived_at` skip), `WPSG_Auto_Archive_Cron_Test` (batched path stamps `archived_at`).
+- Full wp-env PHPUnit suite: **1255 tests, 13535 assertions, 0 failures, 2 pre-existing skips** (was 1219/13437 at the P65 landing; +36 tests).
 
 ## Outcome
 
-Not started.
+All six tracks landed and tested. Campaign lifecycle bookkeeping is now complete: status transitions stamp `archived_at`/`restored_at` from every entry point; the auto-purge keys off the real archival date (with an audit-log-derived backfill for history); the three scoped tables stamp `space_id` so space analytics report real numbers; duplicates keep their space and categorization; templates no longer masquerade as campaigns; and uninstall removes all plugin data — options (incl. webhook secrets), tables, directories, custom core-table indexes, and all cron hooks — with `wpsg-exports/` always removed and the cron-hook list a single source of truth.
+
+---
+
+## PR Review & Fix Pass (2026-07-18)
+
+A post-implementation review of the Phase 66 commit (`a2f412c7`) — a self-review
+across all six tracks plus a high-effort `/code-review` pass — was run before this
+work is promoted. The goal was to validate correctness independently of the
+green test suite and catch anything a careful human reviewer would.
+
+### Verdict: implementation validated correct
+
+All six tracks were checked against their own acceptance criteria, and the
+highest-risk seams were traced end-to-end:
+
+- **P66-A** — the audit side-effect wiring preserves each call site's *exact*
+  prior behavior. The CLI's `['source' => 'cli']` moving from the `$details`
+  arg into `$ctx` is a no-op: `WPSG_REST::add_audit_entry()` has a back-compat
+  block that hoists a string `$details['source']` into `$ctx['source']`, so the
+  stored entry is identical either way. `WPSG_REST::add_audit_entry` /
+  `bump_cache_version` resolve to the same base methods the old code called.
+- **P66-A cron batch** — `stamp_archived_batch()` unconditionally resets
+  `archived_at`, which is only safe if the batch never contains an
+  already-archived campaign. Confirmed: its sole caller
+  (`wpsg_run_schedule_auto_archive`) selects on `status != 'archived' OR NOT
+  EXISTS`, so every id is a genuine fresh archival. The partial-failure branch
+  correctly stamps the already-UPDATEd ids before falling back.
+- **P66-B** — `archived_at <= cutoff` (DATETIME) satisfies "eligible at N+1
+  days, not at 1 day, regardless of creation date"; missing-stamp campaigns are
+  excluded (conservative shield). The legacy-meta derivation reads exactly the
+  keys (`action`, `createdAt`/`created_at`) that the canonical
+  `backfill_audit_entries()` writes, so the audit-derived seed is accurate.
+- **P66-C** — `$wpdb->insert()` consumes the format array in `$data` key order;
+  the added `space_id`/`%d` are positioned consistently in all three writers.
+  The `space_id` column is `BIGINT UNSIGNED NOT NULL DEFAULT 0`, so the
+  backfill's `WHERE space_id = 0` catches every historical row (no NULLs).
+- **P66-D / P66-E** — duplication copies the space + both taxonomies; the
+  template-exclusion clause is ANDed into every `list_campaigns()` path and the
+  wp-admin `pre_get_posts` filter. The dedicated template UI uses its own
+  `get_posts(... EXISTS ...)` secondary query, which the `is_main_query()`-gated
+  filter never touches — so templates stay fully manageable.
+- **P66-F** — deactivate/uninstall now share one canonical hook list; the
+  `LIKE 'wpsg\_thumb\_%'` escape is correct and does not collide with
+  `wpsg_thumbnail_cache_index`; `wpsg-exports/` removal precedes the
+  preserve-data early return per Key Decision C.
+- **Migration ordering** — CPT registration (`init`:10, registered first) runs
+  before `WPSG_DB::maybe_upgrade` (`init`:10, registered later), so the
+  backfills' `get_posts()`/`WP_Query` calls see a registered post type.
+
+No correctness defects were found.
+
+### Findings & dispositions
+
+| # | Finding | Severity | Disposition |
+|---|---------|----------|-------------|
+| 1 | `maybe_backfill_scoped_space_ids()` rewrote the entire (potentially multi-million-row) `wpsg_analytics_events` table in a single `UPDATE ... JOIN`. On a large site this can exceed the request/MySQL timeout during the `init`-hook migration; because the guard option is written only after the loop, a timeout re-runs the migration on every subsequent request (site degradation after upgrade). This is the first backfill in `class-wpsg-db.php` to touch the highest-volume table — all others operate on small bounded sets. | Low–Moderate (large installs only) | **Accepted — fixed.** |
+| 2 | `maybe_backfill_archived_at()` loads all archived-campaign IDs with `posts_per_page => -1` (unbounded). | Low | **Accepted as low-risk — not changed.** Bounded by the archived-campaign count (inherently small vs. per-event rows) and loads IDs only; the heavy per-campaign audit lookup is already chunked at 200. Rewriting it as a `WP_Query` pagination loop that mutates its own `NOT EXISTS` filter each iteration risks a `wp_query`-cache infinite loop (identical query vars can return cached ids), a worse failure mode than the negligible memory cost it would save. |
+
+### Fix (Finding 1)
+
+`maybe_backfill_scoped_space_ids()` now resolves each campaign's non-default
+`_wpsg_space_id` once (a single bounded read of the `_wpsg_space_id` postmeta,
+sized by campaign count, not event count), groups campaign ids by space, and
+issues one `UPDATE ... WHERE space_id = 0 AND campaign_id IN (<=500 ids)` per
+chunk per table. Every statement is bounded; no single statement locks or
+rewrites a whole table. The end state is provably identical to the old JOIN:
+rows keyed to a campaign with a non-default space get that space, and every
+other row (default-space, `'0'`, empty, or missing meta) stays at `0`.
+
+- **Test added:** `WPSG_P66C_Scoped_Space_Id_Test::test_backfill_groups_multiple_spaces_and_skips_default_space`
+  — two campaigns in distinct non-default spaces plus one default-space (`'0'`)
+  campaign; asserts each non-default campaign's historical rows are stamped with
+  the correct space and the default-space campaign's rows stay `0` (covers the
+  grouping + the `<> '0'` exclusion that the batched path introduces).
+
+### Validation
+
+- Files changed: `includes/class-wpsg-db.php` (batched backfill),
+  `tests/WPSG_P66C_Scoped_Space_Id_Test.php` (new coverage). Both lint clean
+  (`php -l`).
+- Full wp-env PHPUnit suite: **1256 tests, 13538 assertions, 0 failures, 2
+  pre-existing skips** (+1 test / +3 assertions over the phase-landing
+  1255/13535 — the new grouping/exclusion test); all six P66 test classes green.

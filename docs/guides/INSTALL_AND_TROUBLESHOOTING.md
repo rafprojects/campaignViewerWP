@@ -154,8 +154,13 @@ from the admin panel for placing a gallery on a non-WordPress site.
 ## Uninstalling
 
 Deleting the plugin runs a full cleanup (custom tables, campaigns, options, roles, cron,
-uploaded overlay/thumbnail dirs) **unless** you enable **"Preserve data on uninstall"** in
+uploaded overlay/thumbnail/font dirs) **unless** you enable **"Preserve data on uninstall"** in
 Settings first. See [PRIVACY.md §6](../PRIVACY.md) for the exact list of what is removed.
+
+> **Export archives are always removed.** The `uploads/wpsg-exports/` directory holds
+> generated export ZIPs behind a 24-hour job TTL, so it is deleted on uninstall **even when
+> "Preserve data on uninstall" is enabled.** If you need any of those archives, download or
+> move them out of `uploads/wpsg-exports/` before uninstalling.
 
 ---
 

@@ -80,4 +80,26 @@ class WPSG_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 		$this->assertSame( 'active', get_post_meta( $post_id, 'status', true ) );
 		$this->assertSame( $before, WPSG_REST::get_cache_version() );
 	}
+
+	// P66-A/B: the batched auto-archive path must also stamp archived_at so the
+	// maintenance auto-purge can key off it.
+	public function test_auto_archive_stamps_archived_at_on_batched_campaigns(): void {
+		$expired_at = gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour' ) );
+
+		$existing_id = $this->create_campaign( 'Expired Active', $expired_at, 'active' );
+		$missing_id  = $this->create_campaign( 'Expired No Status', $expired_at, null );
+
+		wpsg_run_schedule_auto_archive();
+
+		foreach ( [ $existing_id, $missing_id ] as $post_id ) {
+			$stamp = get_post_meta( $post_id, 'archived_at', true );
+			$this->assertNotEmpty( $stamp, "archived_at must be stamped for campaign {$post_id}" );
+			$this->assertMatchesRegularExpression(
+				'/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/',
+				$stamp
+			);
+			// Exactly one archived_at row — no duplicate meta from the batch insert.
+			$this->assertCount( 1, get_post_meta( $post_id, 'archived_at', false ) );
+		}
+	}
 }

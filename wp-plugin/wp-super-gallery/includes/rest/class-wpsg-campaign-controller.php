@@ -277,6 +277,14 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         }
 
         $meta_query = [];
+        // P66-E: user campaign templates are wpsg_campaign posts flagged with
+        // _wpsg_is_template; they are managed through the dedicated templates
+        // endpoint and must never surface as draft campaigns in any listing.
+        // Placed first so it applies to the admin, anonymous, and scoped paths.
+        $meta_query[] = [
+            'key'     => WPSG_Campaign_Templates::META_IS_TEMPLATE,
+            'compare' => 'NOT EXISTS',
+        ];
         // P47-C: space scoping — filter by _wpsg_space_id when a numeric space id is given.
         if (is_numeric($space_param) && intval($space_param) > 0) {
             $meta_query[] = [
@@ -544,10 +552,13 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        update_post_meta($post_id, 'status', 'archived');
-        self::add_audit_entry($post_id, 'campaign.archived', []);
-        do_action('wpsg_campaign_archived', $post_id);
-        self::clear_accessible_campaigns_cache();
+        // P66-A: centralize the status write so archived_at is stamped alongside
+        // it; audit + hook + cache preserve this endpoint's prior side-effects.
+        WPSG_Campaign_Status::set($post_id, 'archived', [
+            'audit' => ['action' => 'campaign.archived', 'details' => []],
+            'hook'  => 'wpsg_campaign_archived',
+            'cache' => true,
+        ]);
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
     }
 
@@ -557,10 +568,13 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
-        update_post_meta($post_id, 'status', 'active');
-        self::add_audit_entry($post_id, 'campaign.restored', []);
-        do_action('wpsg_campaign_restored', $post_id);
-        self::clear_accessible_campaigns_cache();
+        // P66-A: centralize the status write so restored_at is stamped and
+        // archived_at cleared alongside it; audit + hook + cache preserved.
+        WPSG_Campaign_Status::set($post_id, 'active', [
+            'audit' => ['action' => 'campaign.restored', 'details' => []],
+            'hook'  => 'wpsg_campaign_restored',
+            'cache' => true,
+        ]);
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
     }
 
@@ -762,9 +776,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                     $failed[] = ['id' => (string) $post_id, 'reason' => 'not found'];
                     continue;
                 }
-                update_post_meta($post_id, 'status', $new_status);
-                self::add_audit_entry($post_id, "campaign.{$action}d", []);
-                do_action("wpsg_campaign_{$action}d", $post_id);
+                // P66-A: centralize the status write (stamps archived_at /
+                // restored_at); cache is bumped once after the loop below.
+                WPSG_Campaign_Status::set($post_id, $new_status, [
+                    'audit' => ['action' => "campaign.{$action}d", 'details' => []],
+                    'hook'  => "wpsg_campaign_{$action}d",
+                ]);
                 $success[] = (string) $post_id;
             }
         }
@@ -1014,7 +1031,12 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             if (!in_array($status, $allowed_status, true)) {
                 return new WP_Error('wpsg_invalid_status', 'Invalid status value', ['status' => 400]);
             }
-            update_post_meta($post_id, 'status', $status);
+            // P66-A: centralize the status write so a status change to/from
+            // 'archived' via create/update stamps archived_at/restored_at too.
+            // The audit entry + hook + cache are emitted by the create/update
+            // caller (campaign.created / campaign.updated), so no side-effects
+            // are requested here.
+            WPSG_Campaign_Status::set($post_id, $status);
         }
         if (is_array($tags)) {
             update_post_meta($post_id, 'tags', array_values(array_map('sanitize_text_field', $tags)));

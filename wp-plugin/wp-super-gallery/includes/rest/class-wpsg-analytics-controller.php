@@ -89,14 +89,21 @@ class WPSG_Analytics_Controller extends WPSG_REST_Base {
         $salt = wp_salt('auth');
         $hash = hash('sha256', $ip . $salt);
 
+        // P66-C: stamp the campaign's space so space-filtered analytics summaries
+        // count this event (the column existed since v11 but was never written,
+        // leaving every space-scoped query at zero). Same resolution pattern as
+        // WPSG_DB::insert_audit_entry().
+        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+
         $table = WPSG_DB::get_analytics_table();
         $row   = [
             'campaign_id'  => $campaign_id,
             'event_type'   => $event_type,
             'visitor_hash' => $hash,
             'occurred_at'  => current_time('mysql', true),
+            'space_id'     => $space_id,
         ];
-        $fmts = ['%d', '%s', '%s', '%s'];
+        $fmts = ['%d', '%s', '%s', '%s', '%d'];
         if ($media_id !== null) {
             $row['media_id'] = $media_id;
             $fmts[]          = '%s';
