@@ -159,4 +159,51 @@ class WPSG_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         ));
         $this->assertSame($space_id, $stored, 'Backfill must set space_id from the campaign meta');
     }
+
+    /**
+     * PR-review hardening: the backfill now resolves the space per campaign and
+     * groups ids by space (chunked UPDATEs) instead of one table-wide JOIN. This
+     * pins that the grouped path is equivalent — rows for campaigns in different
+     * non-default spaces each get the right space, while a default-space campaign
+     * (meta '0') is left at 0 rather than being wrongly rewritten.
+     */
+    public function test_backfill_groups_multiple_spaces_and_skips_default_space() {
+        global $wpdb;
+
+        $space_a = $this->make_space();
+        $space_b = $this->make_space();
+        $camp_a  = $this->create_campaign_in_space($space_a);
+        $camp_b  = $this->create_campaign_in_space($space_b);
+        // Default-space campaign: explicit '0' meta must be treated as no space.
+        $camp_default = $this->create_campaign_in_space(0);
+
+        $insert_legacy_row = function (int $campaign_id) use ($wpdb) {
+            $wpdb->insert(WPSG_DB::get_analytics_table(), [
+                'campaign_id'  => $campaign_id,
+                'event_type'   => 'view',
+                'visitor_hash' => 'legacy-' . $campaign_id,
+                'occurred_at'  => gmdate('Y-m-d H:i:s'),
+                'space_id'     => 0,
+            ], ['%d', '%s', '%s', '%s', '%d']);
+        };
+        $insert_legacy_row($camp_a);
+        $insert_legacy_row($camp_b);
+        $insert_legacy_row($camp_default);
+
+        delete_option('wpsg_scoped_space_id_backfilled');
+        $method = new ReflectionMethod('WPSG_DB', 'maybe_backfill_scoped_space_ids');
+        $method->setAccessible(true);
+        $method->invoke(null);
+
+        $stored = function (int $campaign_id) use ($wpdb): int {
+            return (int) $wpdb->get_var($wpdb->prepare(
+                'SELECT space_id FROM ' . WPSG_DB::get_analytics_table() . ' WHERE campaign_id = %d LIMIT 1',
+                $campaign_id
+            ));
+        };
+
+        $this->assertSame($space_a, $stored($camp_a), 'Campaign in space A gets space A');
+        $this->assertSame($space_b, $stored($camp_b), 'Campaign in space B gets space B');
+        $this->assertSame(0, $stored($camp_default), 'Default-space campaign stays at 0');
+    }
 }

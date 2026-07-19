@@ -1492,6 +1492,16 @@ class WPSG_DB {
      * stamps it (P50-A). Resolves each row's space from the campaign's
      * `_wpsg_space_id` post meta; rows already stamped (space_id != 0) are left
      * untouched, so a re-run (or a move-corrected row) is never clobbered.
+     *
+     * PR-review hardening: the space is resolved once per campaign (bounded by
+     * the campaign count) and campaigns are grouped by space, so each UPDATE is
+     * bounded to a 500-id chunk. The earlier `UPDATE ... JOIN ... WHERE
+     * space_id = 0` rewrote the entire — potentially multi-million-row —
+     * analytics table in one locking statement; on a large site that can exceed
+     * the request/MySQL timeout, and because the guard option is written only
+     * after the loop, a failure would re-run the migration on every request. The
+     * end state is identical: rows keyed to a campaign with a non-default space
+     * get that space; every other row stays at 0.
      */
     private static function maybe_backfill_scoped_space_ids(): void {
         if (get_option('wpsg_scoped_space_id_backfilled')) {
@@ -1505,16 +1515,34 @@ class WPSG_DB {
             self::get_access_requests_table(),
         ];
 
+        // Resolve each campaign's non-default space once and group ids by space.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $meta_rows = $wpdb->get_results(
+            "SELECT post_id, meta_value FROM {$wpdb->postmeta}
+             WHERE meta_key = '_wpsg_space_id' AND meta_value <> '' AND meta_value <> '0'",
+            ARRAY_A
+        );
+
+        $ids_by_space = [];
+        foreach ($meta_rows as $meta_row) {
+            $space_id = intval($meta_row['meta_value']);
+            if ($space_id > 0) {
+                $ids_by_space[$space_id][] = intval($meta_row['post_id']);
+            }
+        }
+
         foreach ($tables as $table) {
-            // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table names from internal methods; no user input in this DDL/DML.
-            $wpdb->query(
-                "UPDATE {$table} t
-                 JOIN {$wpdb->postmeta} pm
-                   ON pm.post_id = t.campaign_id
-                  AND pm.meta_key = '_wpsg_space_id'
-                 SET t.space_id = pm.meta_value
-                 WHERE t.space_id = 0"
-            );
+            foreach ($ids_by_space as $space_id => $campaign_ids) {
+                foreach (array_chunk($campaign_ids, 500) as $chunk) {
+                    $placeholders = implode(', ', array_fill(0, count($chunk), '%d'));
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name from internal method; space id + campaign ids parameterized.
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE {$table} SET space_id = %d
+                         WHERE space_id = 0 AND campaign_id IN ({$placeholders})",
+                        array_merge([$space_id], $chunk)
+                    ));
+                }
+            }
         }
 
         update_option('wpsg_scoped_space_id_backfilled', '1', false);
