@@ -857,29 +857,11 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         }
 
         $file = $files['file'];
-        if ( isset( $file['error'] ) && UPLOAD_ERR_OK !== $file['error'] ) {
-            $message = 'Upload failed.';
-            $status  = 400;
-            switch ( $file['error'] ) {
-                case UPLOAD_ERR_INI_SIZE:
-                case UPLOAD_ERR_FORM_SIZE:
-                    $message = 'Uploaded file exceeds the allowed size.';
-                    $status  = 413;
-                    break;
-                case UPLOAD_ERR_PARTIAL:
-                    $message = 'The uploaded file was only partially uploaded.';
-                    break;
-                case UPLOAD_ERR_NO_FILE:
-                    $message = 'No file was uploaded.';
-                    break;
-                case UPLOAD_ERR_NO_TMP_DIR:
-                case UPLOAD_ERR_CANT_WRITE:
-                case UPLOAD_ERR_EXTENSION:
-                    $message = 'Server error while processing upload.';
-                    $status  = 500;
-                    break;
-            }
-            return new WP_Error( 'wpsg_font_upload_failed', $message, [ 'status' => $status ] );
+        // P67-C: reuse the shared $_FILES['error'] → message/status mapping from
+        // WPSG_REST_Base instead of an inline copy of the same switch.
+        $error = self::get_upload_error_data( $file );
+        if ( $error ) {
+            return new WP_Error( 'wpsg_font_upload_failed', $error['message'], [ 'status' => $error['status'] ] );
         }
 
         if ( ! isset( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
@@ -1003,18 +985,25 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         }
 
         // Prime meta + term caches in batch to eliminate N+1 queries in the loop.
+        // P67-F: prime the taxonomy actually read below (wpsg_company), not
+        // wpsg_campaign — the old call primed a taxonomy the loop never queries,
+        // so the get_the_terms() lookups still fell through to the DB.
         if (!empty($all_campaigns)) {
             $campaign_ids = wp_list_pluck($all_campaigns, 'ID');
             update_meta_cache('post', $campaign_ids);
-            update_object_term_cache($campaign_ids, 'wpsg_campaign');
+            update_object_term_cache($campaign_ids, 'wpsg_company');
         }
 
         // Index campaigns by company term_id for O(1) lookup per company.
         $campaigns_by_term = [];
         foreach ($all_campaigns as $campaign) {
-            $campaign_terms = wp_get_object_terms($campaign->ID, 'wpsg_company', ['fields' => 'ids']);
-            foreach ($campaign_terms as $tid) {
-                $campaigns_by_term[$tid][] = $campaign;
+            // P67-F: get_the_terms() reads the cache primed above; wp_get_object_terms()
+            // would always hit the DB per campaign.
+            $campaign_terms = get_the_terms($campaign->ID, 'wpsg_company');
+            if (is_array($campaign_terms)) {
+                foreach ($campaign_terms as $term) {
+                    $campaigns_by_term[$term->term_id][] = $campaign;
+                }
             }
         }
 

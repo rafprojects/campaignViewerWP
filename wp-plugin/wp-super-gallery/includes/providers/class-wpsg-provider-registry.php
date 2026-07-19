@@ -19,6 +19,16 @@ if (!defined('ABSPATH')) {
 
 class WPSG_Provider_Registry {
     /**
+     * P67-E: canonical Rumble video-ID token, shared by WPSG_Provider_Rumble and
+     * the media controller's normalize_external_media() so the two regexes can't
+     * drift. Hosted here (rather than on WPSG_Provider_Rumble) because the
+     * registry is the providers module's always-loaded entry point, while the
+     * individual handler classes load lazily — the media controller can reference
+     * this constant safely without triggering a fatal.
+     */
+    const RUMBLE_VIDEO_ID_TOKEN = 'v[0-9a-zA-Z]+';
+
+    /**
      * Registered handler instances, keyed by class name.
      *
      * @var WPSG_Provider_Handler[]

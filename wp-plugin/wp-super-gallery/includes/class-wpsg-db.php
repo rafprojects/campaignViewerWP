@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '16';
+    const DB_VERSION = '17';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -40,7 +40,55 @@ class WPSG_DB {
         // P66-B: seed archived_at for already-archived campaigns so the
         // maintenance auto-purge keys off the real archival date.
         self::maybe_backfill_archived_at();
+        // P67-I: stamp _wpsg_filesize on existing attachments so the media-library
+        // "size" sort orders them correctly (new uploads get it at write time).
+        self::maybe_backfill_filesize_meta();
         update_option('wpsg_db_version', self::DB_VERSION);
+    }
+
+    /**
+     * P67-I: one-time, option-guarded backfill of the numeric _wpsg_filesize meta
+     * for existing image/video attachments, so the media-library size sort has a
+     * real value to order by. New uploads stamp it at write time (the media
+     * controller's own path and the add_attachment hook), so this only seeds
+     * history. Batched to keep memory flat on large libraries.
+     */
+    private static function maybe_backfill_filesize_meta(): void {
+        if (get_option('wpsg_filesize_backfilled')) {
+            return;
+        }
+
+        // Always fetch the first page of still-unstamped attachments: stamping a
+        // batch removes it from the NOT EXISTS filter, so the next batch is the new
+        // first page. Incrementing a page offset here would skip rows.
+        do {
+            $ids = get_posts([
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'post_mime_type' => ['image', 'video'],
+                'posts_per_page' => 200,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+                'meta_query'     => [
+                    ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
+                ],
+            ]);
+
+            foreach ($ids as $id) {
+                // Always stamp a value (0 when the file is missing/unreadable) so
+                // the row leaves the NOT EXISTS filter — otherwise the loop would
+                // re-fetch the same unstampable rows forever.
+                $file = get_attached_file($id);
+                $size = 0;
+                if (is_string($file) && $file !== '' && file_exists($file)) {
+                    $bytes = filesize($file);
+                    $size = ($bytes !== false) ? (int) $bytes : 0;
+                }
+                update_post_meta($id, '_wpsg_filesize', $size);
+            }
+        } while (count($ids) === 200);
+
+        update_option('wpsg_filesize_backfilled', '1', false);
     }
 
     // ── P18-F: Analytics events table ─────────────────────────────────────

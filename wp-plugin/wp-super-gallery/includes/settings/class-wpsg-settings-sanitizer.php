@@ -279,201 +279,22 @@ class WPSG_Settings_Sanitizer {
 
         $sanitized = [];
 
-        if (isset($input['auth_provider'])) {
-            $sanitized['auth_provider'] = in_array($input['auth_provider'], $valid_options['auth_provider'], true)
-                ? $input['auth_provider']
-                : $defaults['auth_provider'];
-        }
-
+        // P67-A: Every field with standard semantics — bool casts, int/float range
+        // clamps, and enum allowlists (including enums that previously left the
+        // value unset on invalid input, which the generic loop already normalized
+        // to the default afterwards) — is handled entirely by the generic
+        // registry-driven loop at the end of this method, from
+        // WPSG_Settings_Registry::$valid_options and ::$field_ranges. Adding such a
+        // field needs zero changes here. Only fields needing bespoke sanitization
+        // the generic loop can't express remain hand-written below: api_base (URL),
+        // card_border_color (hex with a brand fallback), and the four structured /
+        // nested payloads.
         if (isset($input['api_base'])) {
             $sanitized['api_base'] = esc_url_raw(trim($input['api_base']));
         }
 
-        if (isset($input['theme'])) {
-            $sanitized['theme'] = in_array($input['theme'], $valid_options['theme'], true)
-                ? $input['theme']
-                : $defaults['theme'];
-        }
-
-        if (isset($input['gallery_layout'])) {
-            $sanitized['gallery_layout'] = in_array($input['gallery_layout'], $valid_options['gallery_layout'], true)
-                ? $input['gallery_layout']
-                : $defaults['gallery_layout'];
-        }
-
-        if (isset($input['items_per_page'])) {
-            $items = intval($input['items_per_page']);
-            $sanitized['items_per_page'] = max(1, min(100, $items));
-        }
-
-        if (isset($input['thumbnail_scroll_speed'])) {
-            $speed = floatval($input['thumbnail_scroll_speed']);
-            $sanitized['thumbnail_scroll_speed'] = max(0.25, min(3, $speed));
-        }
-
-        if (isset($input['scroll_animation_style'])) {
-            $sanitized['scroll_animation_style'] = in_array($input['scroll_animation_style'], $valid_options['scroll_animation_style'], true)
-                ? $input['scroll_animation_style']
-                : $defaults['scroll_animation_style'];
-        }
-
-        if (isset($input['scroll_animation_duration_ms'])) {
-            $duration = intval($input['scroll_animation_duration_ms']);
-            $sanitized['scroll_animation_duration_ms'] = max(0, min(2000, $duration));
-        }
-
-        if (isset($input['scroll_animation_easing'])) {
-            $sanitized['scroll_animation_easing'] = in_array($input['scroll_animation_easing'], $valid_options['scroll_animation_easing'], true)
-                ? $input['scroll_animation_easing']
-                : $defaults['scroll_animation_easing'];
-        }
-
-        if (isset($input['scroll_transition_type'])) {
-            $sanitized['scroll_transition_type'] = in_array($input['scroll_transition_type'], $valid_options['scroll_transition_type'], true)
-                ? $input['scroll_transition_type']
-                : $defaults['scroll_transition_type'];
-        }
-
-        if (isset($input['transition_fade_enabled'])) {
-            $sanitized['transition_fade_enabled'] = (bool) $input['transition_fade_enabled'];
-        }
-
-        if (isset($input['video_thumbnail_width'])) {
-            $sanitized['video_thumbnail_width'] = max(30, min(200, intval($input['video_thumbnail_width'])));
-        }
-        if (isset($input['video_thumbnail_height'])) {
-            $sanitized['video_thumbnail_height'] = max(30, min(200, intval($input['video_thumbnail_height'])));
-        }
-        if (isset($input['image_thumbnail_width'])) {
-            $sanitized['image_thumbnail_width'] = max(30, min(200, intval($input['image_thumbnail_width'])));
-        }
-        if (isset($input['image_thumbnail_height'])) {
-            $sanitized['image_thumbnail_height'] = max(30, min(200, intval($input['image_thumbnail_height'])));
-        }
-        if (isset($input['thumbnail_wheel_scroll_enabled'])) {
-            $sanitized['thumbnail_wheel_scroll_enabled'] = (bool) $input['thumbnail_wheel_scroll_enabled'];
-        }
-        if (isset($input['thumbnail_drag_scroll_enabled'])) {
-            $sanitized['thumbnail_drag_scroll_enabled'] = (bool) $input['thumbnail_drag_scroll_enabled'];
-        }
-        if (isset($input['thumbnail_scroll_buttons_visible'])) {
-            $sanitized['thumbnail_scroll_buttons_visible'] = (bool) $input['thumbnail_scroll_buttons_visible'];
-        }
-
-        if (isset($input['card_border_radius'])) {
-            $sanitized['card_border_radius'] = max(0, min(24, intval($input['card_border_radius'])));
-        }
-        if (isset($input['card_border_width'])) {
-            $sanitized['card_border_width'] = max(0, min(8, intval($input['card_border_width'])));
-        }
-        if (isset($input['card_border_mode']) && in_array($input['card_border_mode'], $valid_options['card_border_mode'], true)) {
-            $sanitized['card_border_mode'] = $input['card_border_mode'];
-        }
         if (isset($input['card_border_color'])) {
             $sanitized['card_border_color'] = sanitize_hex_color($input['card_border_color']) ?: '#228be6';
-        }
-        if (isset($input['card_shadow_preset']) && in_array($input['card_shadow_preset'], $valid_options['card_shadow_preset'], true)) {
-            $sanitized['card_shadow_preset'] = $input['card_shadow_preset'];
-        }
-        if (isset($input['card_thumbnail_height'])) {
-            $sanitized['card_thumbnail_height'] = max(100, min(400, intval($input['card_thumbnail_height'])));
-        }
-        if (isset($input['card_thumbnail_fit']) && in_array($input['card_thumbnail_fit'], $valid_options['card_thumbnail_fit'], true)) {
-            $sanitized['card_thumbnail_fit'] = $input['card_thumbnail_fit'];
-        }
-        if (isset($input['card_grid_columns'])) {
-            $sanitized['card_grid_columns'] = max(0, min(6, intval($input['card_grid_columns'])));
-        }
-        if (isset($input['card_gap_h'])) {
-            $sanitized['card_gap_h'] = max(0, min(48, intval($input['card_gap_h'])));
-        }
-        if (isset($input['card_gap_v'])) {
-            $sanitized['card_gap_v'] = max(0, min(48, intval($input['card_gap_v'])));
-        }
-        if (isset($input['modal_cover_height'])) {
-            $sanitized['modal_cover_height'] = max(100, min(400, intval($input['modal_cover_height'])));
-        }
-        if (isset($input['modal_transition']) && in_array($input['modal_transition'], $valid_options['modal_transition'], true)) {
-            $sanitized['modal_transition'] = $input['modal_transition'];
-        }
-        if (isset($input['modal_transition_duration'])) {
-            $sanitized['modal_transition_duration'] = max(100, min(1000, intval($input['modal_transition_duration'])));
-        }
-        if (isset($input['modal_max_height'])) {
-            $sanitized['modal_max_height'] = max(50, min(100, intval($input['modal_max_height'])));
-        }
-
-        if (isset($input['card_display_mode']) && in_array($input['card_display_mode'], $valid_options['card_display_mode'], true)) {
-            $sanitized['card_display_mode'] = $input['card_display_mode'];
-        }
-        if (isset($input['card_rows_per_page'])) {
-            $sanitized['card_rows_per_page'] = max(1, min(10, intval($input['card_rows_per_page'])));
-        }
-        if (isset($input['card_page_dot_nav'])) {
-            $sanitized['card_page_dot_nav'] = (bool) $input['card_page_dot_nav'];
-        }
-        if (isset($input['card_page_transition_ms'])) {
-            $sanitized['card_page_transition_ms'] = max(100, min(800, intval($input['card_page_transition_ms'])));
-        }
-
-        if (isset($input['show_gallery_title'])) {
-            $sanitized['show_gallery_title'] = (bool) $input['show_gallery_title'];
-        }
-        if (isset($input['show_gallery_subtitle'])) {
-            $sanitized['show_gallery_subtitle'] = (bool) $input['show_gallery_subtitle'];
-        }
-        if (isset($input['show_access_mode'])) {
-            $sanitized['show_access_mode'] = (bool) $input['show_access_mode'];
-        }
-        if (isset($input['show_filter_tabs'])) {
-            $sanitized['show_filter_tabs'] = (bool) $input['show_filter_tabs'];
-        }
-        if (isset($input['show_search_box'])) {
-            $sanitized['show_search_box'] = (bool) $input['show_search_box'];
-        }
-
-        if (isset($input['app_max_width'])) {
-            $sanitized['app_max_width'] = max(0, min(3000, intval($input['app_max_width'])));
-        }
-        if (isset($input['app_padding'])) {
-            $sanitized['app_padding'] = max(0, min(100, intval($input['app_padding'])));
-        }
-        if (isset($input['settings_panel_width'])) {
-            $sanitized['settings_panel_width'] = max(0, min(3000, intval($input['settings_panel_width'])));
-        }
-        if (isset($input['admin_panel_max_width'])) {
-            $sanitized['admin_panel_max_width'] = max(0, min(3000, intval($input['admin_panel_max_width'])));
-        }
-        if (isset($input['wp_full_bleed_desktop'])) {
-            $sanitized['wp_full_bleed_desktop'] = (bool) $input['wp_full_bleed_desktop'];
-        }
-        if (isset($input['wp_full_bleed_tablet'])) {
-            $sanitized['wp_full_bleed_tablet'] = (bool) $input['wp_full_bleed_tablet'];
-        }
-        if (isset($input['wp_full_bleed_mobile'])) {
-            $sanitized['wp_full_bleed_mobile'] = (bool) $input['wp_full_bleed_mobile'];
-        }
-        if (isset($input['enable_lightbox'])) {
-            $sanitized['enable_lightbox'] = (bool) $input['enable_lightbox'];
-        }
-        if (isset($input['enable_animations'])) {
-            $sanitized['enable_animations'] = (bool) $input['enable_animations'];
-        }
-        if (isset($input['allow_user_theme_override'])) {
-            $sanitized['allow_user_theme_override'] = (bool) $input['allow_user_theme_override'];
-        }
-        if (isset($input['debug_component_markers'])) {
-            $sanitized['debug_component_markers'] = (bool) $input['debug_component_markers'];
-        }
-
-        if (isset($input['cache_ttl'])) {
-            $ttl = intval($input['cache_ttl']);
-            $sanitized['cache_ttl'] = max(0, min(604800, $ttl));
-        }
-
-        if (isset($input['rate_limit_requests_per_minute'])) {
-            $rpm = intval($input['rate_limit_requests_per_minute']);
-            $sanitized['rate_limit_requests_per_minute'] = max(0, min(6000, $rpm));
         }
 
         if (isset($input['typography_overrides'])) {

@@ -30,7 +30,9 @@ class WPSG_Provider_Rumble implements WPSG_Provider_Handler {
     public function fetch(string $url, array $parsed, array &$attempts): ?array {
         $path = $parsed['path'] ?? '';
         $matches = [];
-        if (!preg_match('#/((v[0-9a-zA-Z]+))(?:-[^/]+)?(?:\.html)?$#', $path, $matches)) {
+        // P67-E: shared video-ID token (see WPSG_Provider_Registry::RUMBLE_VIDEO_ID_TOKEN).
+        $token = WPSG_Provider_Registry::RUMBLE_VIDEO_ID_TOKEN;
+        if (!preg_match('#/((' . $token . '))(?:-[^/]+)?(?:\.html)?$#', $path, $matches)) {
             return null;
         }
 

@@ -123,6 +123,8 @@ $options = [
 	// P66-B / P66-C: one-time migration guard flags introduced this phase
 	'wpsg_scoped_space_id_backfilled',
 	'wpsg_archived_at_backfilled',
+	// P67-I: one-time filesize backfill guard.
+	'wpsg_filesize_backfilled',
 ];
 foreach ( $options as $option ) {
 	delete_option( $option );

@@ -838,6 +838,9 @@ class WPSG_Settings_Registry {
         'video_tile_size'             => [60, 400],
         'cache_ttl'                   => [0, 604800],
         'thumbnail_cache_ttl'         => [0, 604800],
+        // P67-A: range moved here from the hand-written sanitize_settings() block
+        // so the generic loop clamps it (was the only removed int block missing a range).
+        'rate_limit_requests_per_minute' => [0, 6000],
         'optimize_max_width'          => [100, 4096],
         'optimize_max_height'         => [100, 4096],
         'optimize_quality'            => [10, 100],

@@ -1180,19 +1180,6 @@ class WPSG_Layout_Templates {
     }
 
     /**
-     * Check if the serialized template library exceeds the size limit.
-     *
-     * @deprecated P20-I-1 — CPT storage removes the single-row bottleneck.
-     *             Kept for backward compatibility if called externally.
-     *
-     * @param  array $all All templates.
-     * @return true Always passes now.
-     */
-    private static function check_size_limit( array $all ) {
-        return true;
-    }
-
-    /**
      * Migrate a template to the current schema version.
      *
      * @param  array $template Raw template data.

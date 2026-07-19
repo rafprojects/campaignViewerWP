@@ -211,6 +211,69 @@ class WPSG_P39IN1_Webhook_Test extends WP_UnitTestCase {
         $this->assertSame(0, $log[0]['statusCode']);
     }
 
+    // ── P67-H: first delivery attempt is dispatched via WP-Cron ─────────────────
+
+    public function test_dispatch_defers_first_attempt_to_cron_for_endpoint_with_id() {
+        // Mock the HTTP layer to 200 so that IF a synchronous delivery happened it
+        // would be logged immediately — the point of the test is that it does NOT.
+        add_filter('pre_http_request', function () {
+            return [
+                'response' => ['code' => 200, 'message' => 'OK'],
+                'body'     => '',
+                'headers'  => [],
+                'cookies'  => [],
+                'filename' => null,
+            ];
+        }, 10, 3);
+
+        // A real endpoint carries a stable UUID id (assigned at creation). Only
+        // id-bearing endpoints take the cron path; id-less legacy config falls back
+        // to synchronous delivery (covered by the tests above).
+        $endpoint_id = wp_generate_uuid4();
+        WPSG_Webhooks::save_endpoints([[
+            'id'      => $endpoint_id,
+            'url'     => 'https://hooks.test/cron',
+            'secret'  => 'testsecret',
+            'events'  => [],
+            'enabled' => true,
+        ]]);
+
+        WPSG_Webhooks::dispatch('campaign.created', ['id' => 7, 'title' => 'Async']);
+
+        // The originating request did NOT deliver inline — nothing logged yet.
+        $this->assertEmpty(
+            WPSG_Webhooks::get_delivery_log(),
+            'attempt #1 must be deferred to cron, not delivered synchronously'
+        );
+
+        // A cron event for attempt #1 must be scheduled, carrying the endpoint UUID
+        // and attempt=1. Read it out of the cron array (timestamp-agnostic).
+        $found_args = null;
+        foreach (_get_cron_array() as $events) {
+            if (isset($events[WPSG_Webhooks::RETRY_HOOK])) {
+                $hook = reset($events[WPSG_Webhooks::RETRY_HOOK]);
+                $found_args = $hook['args'];
+                break;
+            }
+        }
+        $this->assertNotNull($found_args, 'attempt #1 should be scheduled on the retry hook');
+        $this->assertSame($endpoint_id, $found_args[0]);
+        $this->assertSame('campaign.created', $found_args[1]);
+        $this->assertSame(1, $found_args[3]);
+
+        // Run the scheduled delivery as cron would; now the log is populated.
+        WPSG_Webhooks::retry_delivery(...$found_args);
+
+        remove_all_filters('pre_http_request');
+
+        $log = WPSG_Webhooks::get_delivery_log();
+        $this->assertCount(1, $log);
+        $this->assertTrue($log[0]['success']);
+        $this->assertSame(200, $log[0]['statusCode']);
+        $this->assertSame(1, $log[0]['attempt']);
+        $this->assertSame('campaign.created', $log[0]['event']);
+    }
+
     public function test_dispatch_skips_disabled_endpoint() {
         add_filter('pre_http_request', function () {
             return [

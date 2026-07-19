@@ -491,40 +491,6 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         return [];
     }
 
-    private static function get_upload_error_data(array $file) {
-        if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_OK) {
-            return null;
-        }
-
-        $message = 'Upload failed.';
-        $status = 400;
-
-        switch ($file['error']) {
-            case UPLOAD_ERR_INI_SIZE:
-            case UPLOAD_ERR_FORM_SIZE:
-                $message = 'Uploaded file exceeds the allowed size.';
-                $status = 413;
-                break;
-            case UPLOAD_ERR_PARTIAL:
-                $message = 'The uploaded file was only partially uploaded.';
-                break;
-            case UPLOAD_ERR_NO_FILE:
-                $message = 'No file was uploaded.';
-                break;
-            case UPLOAD_ERR_NO_TMP_DIR:
-            case UPLOAD_ERR_CANT_WRITE:
-            case UPLOAD_ERR_EXTENSION:
-                $message = 'Server error while processing upload.';
-                $status = 500;
-                break;
-        }
-
-        return [
-            'message' => $message,
-            'status' => $status,
-        ];
-    }
-
     private static function is_trusted_uploaded_file($tmp_name, array $file) {
         $allow_non_http_uploads = (bool) apply_filters('wpsg_allow_non_http_uploads', false, $file);
         if ($allow_non_http_uploads) {
@@ -559,7 +525,38 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             wp_update_attachment_metadata($attachment_id, $attachment_metadata);
         }
 
+        // P67-I: stamp the numeric filesize meta the media-library size sort reads.
+        // Done from the known-good $file_path (deterministic); the add_attachment
+        // hook is the best-effort catch for attachments created outside this path.
+        self::stamp_filesize_meta($attachment_id, $file_path);
+
         return intval($attachment_id);
+    }
+
+    /**
+     * P67-I: record an attachment's byte size in the numeric _wpsg_filesize meta
+     * that the media-library "size" sort orders by. Registered on add_attachment
+     * (for native/other-plugin uploads) and called directly from the plugin's own
+     * upload path. Idempotent; a re-stamp just rewrites the same value.
+     *
+     * @param int         $attachment_id Attachment post id.
+     * @param string|null $file_path     Known file path, or null to resolve it.
+     */
+    public static function stamp_filesize_meta($attachment_id, $file_path = null) {
+        $attachment_id = intval($attachment_id);
+        if ($attachment_id <= 0) {
+            return;
+        }
+        if (!is_string($file_path) || $file_path === '') {
+            $file_path = get_attached_file($attachment_id);
+        }
+        if (!is_string($file_path) || $file_path === '' || !file_exists($file_path)) {
+            return;
+        }
+        $size = filesize($file_path);
+        if ($size !== false) {
+            update_post_meta($attachment_id, '_wpsg_filesize', (int) $size);
+        }
     }
 
     private static function prepare_uploaded_attachment_payload($attachment_id) {
@@ -989,15 +986,6 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         return new WP_REST_Response(['message' => 'Media reordered'], 200);
     }
 
-
-    /**
-     * @deprecated Use enrich_media_with_metadata() instead.
-     * Kept for call sites that have not yet been migrated; delegates directly.
-     */
-    private static function enrich_media_with_dimensions(array $items): array {
-        return self::enrich_media_with_metadata($items);
-    }
-
     /**
      * Rescan and fix media types for a single campaign.
      */
@@ -1127,6 +1115,37 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
     }
 
+    /**
+     * P67-C: shape the shared 409 duplicate / near-duplicate response fields from
+     * an upload WP_Error, so the single-file and batch upload paths can't drift.
+     *
+     * @param WP_Error $upload Error returned by upload_single_media_file().
+     * @return array The duplicate/near-duplicate fields (empty for other errors).
+     */
+    private static function format_duplicate_fields(WP_Error $upload): array {
+        $data = $upload->get_error_data();
+        switch ($upload->get_error_code()) {
+            case 'wpsg_duplicate_file':
+                return [
+                    'duplicate'          => true,
+                    'existing_id'        => $data['existing_id'],
+                    'existing_url'       => $data['existing_url'],
+                    'existing_name'      => $data['existing_name'] ?? '',
+                    'existing_campaigns' => $data['existing_campaigns'] ?? [],
+                ];
+            case 'wpsg_near_duplicate_file':
+                return [
+                    'near_duplicate'    => true,
+                    'similar_id'        => $data['similar_id'],
+                    'similar_url'       => $data['similar_url'],
+                    'distance'          => $data['distance'],
+                    'similar_name'      => $data['similar_name'] ?? '',
+                    'similar_campaigns' => $data['similar_campaigns'] ?? [],
+                ];
+        }
+        return [];
+    }
+
     public static function upload_media($request) {
         $files = $request->get_file_params();
         $entries = self::get_uploaded_file_entries($files);
@@ -1165,13 +1184,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                             'resource_label' => $filename,
                         ]);
                     }
-                    return new WP_REST_Response([
-                        'duplicate'          => true,
-                        'existing_id'        => $data['existing_id'],
-                        'existing_url'       => $data['existing_url'],
-                        'existing_name'      => $data['existing_name'] ?? '',
-                        'existing_campaigns' => $data['existing_campaigns'] ?? [],
-                    ], 409);
+                    return new WP_REST_Response(self::format_duplicate_fields($upload), 409);
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
                     $data = $upload->get_error_data();
@@ -1188,14 +1201,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                             'resource_label' => $filename,
                         ]);
                     }
-                    return new WP_REST_Response([
-                        'near_duplicate'    => true,
-                        'similar_id'        => $data['similar_id'],
-                        'similar_url'       => $data['similar_url'],
-                        'distance'          => $data['distance'],
-                        'similar_name'      => $data['similar_name'] ?? '',
-                        'similar_campaigns' => $data['similar_campaigns'] ?? [],
-                    ], 409);
+                    return new WP_REST_Response(self::format_duplicate_fields($upload), 409);
                 }
                 return $upload;
             }
@@ -1230,22 +1236,11 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
                     'error'    => $upload->get_error_message(),
                 ];
                 if ($upload->get_error_code() === 'wpsg_duplicate_file') {
-                    $data = $upload->get_error_data();
-                    $result['duplicate']          = true;
-                    $result['existing_id']        = $data['existing_id'];
-                    $result['existing_url']       = $data['existing_url'];
-                    $result['existing_name']      = $data['existing_name'] ?? '';
-                    $result['existing_campaigns'] = $data['existing_campaigns'] ?? [];
+                    $result = array_merge($result, self::format_duplicate_fields($upload));
                     $dup_count++;
                 }
                 if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
-                    $data = $upload->get_error_data();
-                    $result['near_duplicate']    = true;
-                    $result['similar_id']        = $data['similar_id'];
-                    $result['similar_url']       = $data['similar_url'];
-                    $result['distance']          = $data['distance'];
-                    $result['similar_name']      = $data['similar_name'] ?? '';
-                    $result['similar_campaigns'] = $data['similar_campaigns'] ?? [];
+                    $result = array_merge($result, self::format_duplicate_fields($upload));
                     $near_dup_count++;
                 }
                 $results[] = $result;
@@ -1316,8 +1311,12 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             'title_desc'   => ['orderby' => 'title',      'order' => 'DESC'],
             'created_asc'  => ['orderby' => 'date',       'order' => 'ASC'],
             'created_desc' => ['orderby' => 'date',       'order' => 'DESC'],
-            'size_asc'     => ['orderby' => 'meta_value_num', 'meta_key' => '_wp_attachment_metadata', 'order' => 'ASC'],
-            'size_desc'    => ['orderby' => 'meta_value_num', 'meta_key' => '_wp_attachment_metadata', 'order' => 'DESC'],
+            // P67-I: size sorts on the dedicated numeric _wpsg_filesize meta (see
+            // create_attachment_from_upload() + the add_attachment hook + the DB
+            // backfill). The old _wp_attachment_metadata key is a serialized array
+            // whose numeric cast is 0 for every row, making the sort a no-op.
+            'size_asc'     => ['orderby' => '_wpsg_filesize', 'order' => 'ASC'],
+            'size_desc'    => ['orderby' => '_wpsg_filesize', 'order' => 'DESC'],
         ];
         $sort_opts = $sort_map[$sort] ?? $sort_map['created_desc'];
 
@@ -1326,12 +1325,24 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             'post_status'    => 'inherit',
             'posts_per_page' => min($per_page, 100),
             'paged'          => max($page, 1),
-            'orderby'        => $sort_opts['orderby'],
             'order'          => $sort_opts['order'],
             'post_mime_type' => ['image', 'video'],
         ];
-        if (isset($sort_opts['meta_key'])) {
-            $args['meta_key'] = $sort_opts['meta_key'];
+        if ($sort_opts['orderby'] === '_wpsg_filesize') {
+            // Order by the numeric filesize meta, but keep attachments that don't
+            // yet carry it (sorted as NULL) instead of filtering them out — a bare
+            // meta_key clause would exclude them.
+            $args['meta_query'] = [
+                'relation' => 'OR',
+                'wpsg_fs'         => ['key' => '_wpsg_filesize', 'type' => 'NUMERIC', 'compare' => 'EXISTS'],
+                'wpsg_fs_missing' => ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
+            ];
+            $args['orderby'] = ['wpsg_fs' => $sort_opts['order'], 'ID' => 'ASC'];
+        } else {
+            $args['orderby'] = $sort_opts['orderby'];
+            if (isset($sort_opts['meta_key'])) {
+                $args['meta_key'] = $sort_opts['meta_key'];
+            }
         }
 
         if (!empty($search)) {
@@ -1447,7 +1458,8 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             // The canonical Rumble video identifier is the first slug segment (e.g. "v72ksce" from "v72ksce-...")
             $parts = explode('-', $slug);
             $video_id = $parts[0] ?? $slug;
-            if (!preg_match('/^v[0-9a-zA-Z]+$/i', $video_id)) {
+            // P67-E: shared video-ID token (see WPSG_Provider_Registry::RUMBLE_VIDEO_ID_TOKEN).
+            if (!preg_match('/^' . WPSG_Provider_Registry::RUMBLE_VIDEO_ID_TOKEN . '$/i', $video_id)) {
                 return new WP_Error('invalid_url', 'Invalid Rumble video ID format');
             }
 
@@ -1503,7 +1515,7 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         return new WP_Error('invalid_url', 'Provider not supported');
     }
 
-    // --- P14-C: Thumbnail cache endpoints ---
+    // ── Media tag endpoints ──────────────────────────────────
 
     public static function list_media_tags($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
@@ -1754,10 +1766,4 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
             'skipped'  => $skipped,
         ], 201);
     }
-
-    // ── P15-B: Layout Template Handlers ──────────────────────
-
-    /**
-     * List all layout templates (admin).
-     */
 }

@@ -9,8 +9,8 @@
  * matrix here so A4/A5 reclassifications are deliberate, reviewable diffs.
  *
  * Strategy behavior itself is cross-covered by:
- *   - WPSG_P33C_Role_Enforcement_Test  (require_campaign_editor / require_campaign_owner)
- *   - WPSG_P47_Spaces_Isolation_Test   (require_space_member / require_space_owner, delegated mode)
+ *   - WPSG_P33C_Role_Enforcement_Test  (require_campaign_space_access — per-campaign mutation is role+space-scoped)
+ *   - WPSG_P47_Spaces_Isolation_Test   (space-scoped read/isolation, delegated mode)
  * with the require_admin / public / authenticated strategies pinned below.
  */
 class WPSG_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
