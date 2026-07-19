@@ -985,13 +985,15 @@ class WPSG_Content_Controller extends WPSG_REST_Base {
         }
 
         // Prime meta + term caches in batch to eliminate N+1 queries in the loop.
-        // P67-F: prime the taxonomy actually read below (wpsg_company), not
-        // wpsg_campaign — the old call primed a taxonomy the loop never queries,
-        // so the get_the_terms() lookups still fell through to the DB.
+        // update_object_term_cache()'s second parameter is the *object type* (the
+        // post type), not a taxonomy: it expands to every taxonomy registered for
+        // that type — wpsg_company included. Passing the taxonomy name instead makes
+        // the call a silent no-op (get_object_taxonomies('wpsg_company') === []),
+        // which leaves the get_the_terms() lookups below hitting the DB per campaign.
         if (!empty($all_campaigns)) {
             $campaign_ids = wp_list_pluck($all_campaigns, 'ID');
             update_meta_cache('post', $campaign_ids);
-            update_object_term_cache($campaign_ids, 'wpsg_company');
+            update_object_term_cache($campaign_ids, 'wpsg_campaign');
         }
 
         // Index campaigns by company term_id for O(1) lookup per company.

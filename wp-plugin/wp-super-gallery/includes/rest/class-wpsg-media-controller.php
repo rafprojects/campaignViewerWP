@@ -539,6 +539,12 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
      * (for native/other-plugin uploads) and called directly from the plugin's own
      * upload path. Idempotent; a re-stamp just rewrites the same value.
      *
+     * A value is always written — 0 when the file is missing or unreadable (an
+     * offloaded/remote attachment, a broken path) — matching what the one-time
+     * backfill stamps for the same rows. Skipping the write instead would leave
+     * those attachments permanently without the key, so they would sort as NULL
+     * forever and stay invisible to any future query that filters on it.
+     *
      * @param int         $attachment_id Attachment post id.
      * @param string|null $file_path     Known file path, or null to resolve it.
      */
@@ -550,13 +556,13 @@ class WPSG_Media_Controller extends WPSG_REST_Base {
         if (!is_string($file_path) || $file_path === '') {
             $file_path = get_attached_file($attachment_id);
         }
-        if (!is_string($file_path) || $file_path === '' || !file_exists($file_path)) {
-            return;
+
+        $size = 0;
+        if (is_string($file_path) && $file_path !== '' && file_exists($file_path)) {
+            $bytes = filesize($file_path);
+            $size  = ($bytes !== false) ? (int) $bytes : 0;
         }
-        $size = filesize($file_path);
-        if ($size !== false) {
-            update_post_meta($attachment_id, '_wpsg_filesize', (int) $size);
-        }
+        update_post_meta($attachment_id, '_wpsg_filesize', $size);
     }
 
     private static function prepare_uploaded_attachment_payload($attachment_id) {

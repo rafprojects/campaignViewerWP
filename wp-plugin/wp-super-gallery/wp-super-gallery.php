@@ -306,6 +306,9 @@ add_action('deleted_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
 // sort has a real numeric value to order by. Covers native WP / other-plugin
 // uploads; the plugin's own upload path stamps it directly from the known file path.
 add_action('add_attachment', ['WPSG_Media_Controller', 'stamp_filesize_meta']);
+// P67-I: the one-time backfill is bounded per run (see WPSG_DB); this hook resumes
+// it until every pre-existing attachment is stamped.
+add_action(WPSG_DB::FILESIZE_BACKFILL_HOOK, ['WPSG_DB', 'run_filesize_backfill_batch']);
 add_action('init', ['WPSG_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.

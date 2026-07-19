@@ -21,6 +21,7 @@ class WPSG_Cron_Hooks_Test extends WP_UnitTestCase {
             WPSG_Webhooks::RETRY_HOOK,
             WPSG_Export_Engine::JOB_PROCESS_HOOK,
             WPSG_Export_Engine::JOB_CLEANUP_HOOK,
+            WPSG_DB::FILESIZE_BACKFILL_HOOK,
         ];
     }
 

@@ -2,7 +2,7 @@
 
 **Companion to:** [PHASE67_REPORT.md](PHASE67_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE66_MANUAL_QA_RUNBOOK.md](PHASE66_MANUAL_QA_RUNBOOK.md).
 
-**Scope:** tracks P67-A … P67-J. Phase 67 is a **code-quality** phase — refactors, duplicate-code extraction, query-count efficiency fixes, and dead-code removal. Unlike Phase 66 (100% behavior-visible lifecycle bookkeeping), **most of Phase 67 is deliberately invisible**: the correct manual-QA result for a refactor/deletion track is "nothing changed." Several sub-items therefore have **no** hand-QA script at all — for those this doc states the *rationale* (why an automated test or a repo-wide grep is the only meaningful check) in place of steps. The tracks that *do* have an observable effect (P67-F/G query counts, P67-H webhook latency, P67-I size sort) carry real before/after scripts.
+**Scope:** tracks P67-A … P67-J, plus **P67-R** (§4) — the four fixes from the post-landing PR review pass, which amend P67-F, P67-G, P67-H and P67-I. Phase 67 is a **code-quality** phase — refactors, duplicate-code extraction, query-count efficiency fixes, and dead-code removal. Unlike Phase 66 (100% behavior-visible lifecycle bookkeeping), **most of Phase 67 is deliberately invisible**: the correct manual-QA result for a refactor/deletion track is "nothing changed." Several sub-items therefore have **no** hand-QA script at all — for those this doc states the *rationale* (why an automated test or a repo-wide grep is the only meaningful check) in place of steps. The tracks that *do* have an observable effect (P67-F/G query counts, P67-H webhook latency, P67-I size sort) carry real before/after scripts.
 
 **Golden rule (unchanged from P63–P66):** a fix's test is only meaningful if you have also seen it **fail without the fix**, or you understand precisely why the pre-fix code was wrong. Each section states the pre-fix behavior so a green result actually proves something. The cleanest way to watch these fail is to check out the commit **before** this phase and re-run the same steps:
 
@@ -65,6 +65,7 @@ The absolute number is host-dependent; what matters is **before-fix count minus 
 | P67-H | First webhook delivery attempt moves to WP-Cron instead of blocking the request | **Yes** — admin save is fast even with dead endpoints |
 | P67-I | Media-library "size" sort uses a real numeric `_wpsg_filesize` meta | **Yes** — size sort actually orders by size |
 | P67-J | Dead permission primitives + vestigial code deleted; one latent `$user_id` bug fixed; a counter option de-autoloaded | Mostly no — deletions with zero live callers |
+| P67-R | Review fixes: cache priming actually primes (F/G); unreadable files stamp `0` and the backfill is bounded + cron-resumed (I); a refused cron schedule delivers inline (H) | **Yes** for F/G (the priming was a no-op) and I; no for H's fallback unless cron refuses |
 
 ---
 
@@ -133,9 +134,11 @@ npx wp-env run cli wp db query \
 
 ### P67-F — `get_the_terms()` on hot-path term lookups
 
-**What & why.** Four per-item term lookups switched from `wp_get_object_terms()` (always a DB query) to `get_the_terms()` (reads the object-term cache that `WP_Query` / `update_object_term_cache()` primes): `get_company_term()`, `get_campaign_category_names()`, `get_campaign_category_ids()` in `WPSG_REST_Base`, and `list_companies()`'s per-campaign company lookup in the content controller. `list_companies()` additionally had a **wrong-taxonomy** priming bug — it primed `wpsg_campaign` but queried `wpsg_company`, so the cache never matched; now it primes `wpsg_company`.
+**What & why.** Four per-item term lookups switched from `wp_get_object_terms()` (always a DB query) to `get_the_terms()` (reads the object-term cache that `WP_Query` / `update_object_term_cache()` primes): `get_company_term()`, `get_campaign_category_names()`, `get_campaign_category_ids()` in `WPSG_REST_Base`, and `list_companies()`'s per-campaign company lookup in the content controller.
 
-**Pre-fix behavior.** Each `format_campaign()` issued ~2 term queries per campaign (company + category) straight to the DB even on a `campaigns.list` call whose posts came from `WP_Query` (which had already primed the object-term cache). `list_companies()` issued one company-term query per campaign despite its "O(1) with cache priming" comment, because the priming targeted a taxonomy the loop never read.
+**Pre-fix behavior.** Each `format_campaign()` issued ~2 term queries per campaign (company + category) straight to the DB even on a `campaigns.list` call whose posts came from `WP_Query` (which had already primed the object-term cache).
+
+> **Correction (P67-R).** P67-F originally also "fixed" `list_companies()`'s priming call from `wpsg_campaign` to `wpsg_company`, on the review's premise that it primed the wrong taxonomy. That premise was wrong, and the change was reverted. `update_object_term_cache($ids, $type)`'s second parameter is an **object type** (a post type), which it expands through `get_object_taxonomies()` into *every* taxonomy registered for that type — `wpsg_company` included. Passing a taxonomy name makes the whole call a silent no-op, because `get_object_taxonomies('wpsg_company') === []`. The original `wpsg_campaign` argument was correct all along. See §4.
 
 **Observable effect: query count, not output.** Output is byte-for-byte identical (same terms, same order — `get_the_terms()` and the priming both use the default `orderby => name`). The win is fewer DB queries on cache-primed paths.
 
@@ -159,12 +162,14 @@ npx wp-env run cli wp eval '
 
 **Expected (pass).** The fresh (transient-miss) `campaigns.list` issues meaningfully **fewer** queries than pre-fix — roughly `2 × N` fewer, where N = campaigns returned (one company + one category lookup per campaign eliminated). **Why it proves the fix:** check out the pre-fix commit and run the same block; the delta is the ~2N term queries `wp_get_object_terms()` used to force. **Pitfall:** you must compare a **transient-miss** build both times (the response is cached in a transient for `cache_ttl`); if the transient is warm, `list_campaigns` returns early and issues almost no queries in *both* versions, hiding the difference. The helper above deletes the transient before the measured call. (`delete_transient_like` is shorthand — on the dev site use `wp transient delete --all` between runs.)
 
-**`list_companies()` taxonomy fix — spot-check output unchanged:**
+**`list_companies()` — spot-check output unchanged:**
 
 ```bash
 curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/companies" | jq '[.[] | {name, campaignCount: (.campaigns | length)}]'
 # → same company→campaign groupings as before the fix (correctness preserved; only the query count drops)
 ```
+
+Note that this endpoint's explicit prime is belt-and-braces either way: `get_posts()` returns full `WP_Post` objects, and WP_Query already primes the object-term cache for its own results. The observable query count therefore does *not* move with the P67-R correction — the fix is to the call's correctness, not its effect here. The place where priming genuinely matters is `get_accessible_campaign_ids()` (P67-G below), which pages with `fields => 'ids'` and so starts entirely cold.
 
 **Explicit non-target.** `enrich_media_with_metadata()` also calls `wp_get_object_terms()`, but as a **batch** lookup across many attachment IDs (`'fields' => 'all_with_object_id'`). `get_the_terms()` only accepts a single object ID, so it is **deliberately left as-is** — not a missed swap. Do not "fix" it to `get_the_terms()` in a loop; that would reintroduce the N+1 this phase removes.
 
@@ -175,7 +180,7 @@ curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/companies" | jq '[.[] | {name, 
 ### P67-G — Prime meta/term caches in full-scan loops
 
 **What & why.** Three (four, counting a second loop) full-scan loops fetched IDs with `fields => 'ids'` (which skips meta-cache priming) and then read `get_post_meta()` / `get_term_meta()` per row. Each now primes the relevant cache in bounded batches first:
-- `get_accessible_campaign_ids()` — primes `update_meta_cache('post', …)` **and** `update_object_term_cache(…, 'wpsg_company')` per page (pairs with P67-F: `can_view_campaign()` reads several meta keys and, for private campaigns, the company term).
+- `get_accessible_campaign_ids()` — primes the whole page with one `_prime_post_caches($query->posts, true, true)` (post objects + meta + object terms). Pairs with P67-F: `can_view_campaign()` reads several meta keys, calls `get_post()` on the draft branch, and for private campaigns resolves the company term. **Amended by P67-R** — this originally primed meta by hand plus `update_object_term_cache(…, 'wpsg_company')`, which primed nothing (see §4 R1), *and* missed the post-object cache that `get_the_terms()` needs, so P67-F's swap had added a fresh N+1 here. `_prime_post_caches()` covers all three caches and derives the object-type argument itself.
 - `purge_expired_grants()` — primes post-meta for the campaign-grant loop **and** `update_termmeta_cache()` for the company-grant loop (the second loop was not in the original review scope; folded in here per Phase 67 planning Decision 4).
 - `count_expired_grants_pending_cleanup()` — primes post-meta (runs on every `/admin/health` call).
 
@@ -258,6 +263,22 @@ curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/webhooks/deliveries" | jq '.[0]
 **Regression checks.** `WPSG_P39IN1_Webhook_Test` passes unmodified — its fixtures save endpoints **without** an `id`, so they exercise the synchronous fallback (`deliver()` is identical in both paths). One **new** test, `test_dispatch_defers_first_attempt_to_cron_for_endpoint_with_id`, covers the fix directly: it asserts the log is empty right after `dispatch()` (no inline delivery), that a `wpsg_webhook_retry` event with `attempt = 1` is scheduled, and that running it logs the delivery. This is the first automated coverage of the cron/retry path, which previously had none.
 
 **Pitfall.** Only endpoints created through the REST API (`POST /webhooks`) get a UUID `id` and therefore the cron path; an endpoint written directly into the `wpsg_webhook_endpoints` option without an `id` will deliver synchronously. Use the REST endpoint (as above) to exercise the async path.
+
+**Amended by P67-R — a refused schedule falls back to inline delivery.** `dispatch()` originally ignored `wp_schedule_single_event()`'s return value. That call returns `false` when a `pre_schedule_event`/`schedule_event` filter vetoes the event, or when an identical event is already queued inside its 10-minute duplicate window — and the delivery was then dropped **with no log entry at all**. `dispatch()` now delivers inline when scheduling is refused, so an attempt is never silently lost:
+
+```bash
+# Veto scheduling, dispatch, and confirm the delivery still happened + was logged.
+npx wp-env run cli wp eval '
+  add_filter("pre_schedule_event", fn() => false, 10, 3);
+  update_option(WPSG_Webhooks::LOG_OPTION, []);
+  WPSG_Webhooks::dispatch("campaign.created", ["id" => 1, "title" => "veto"]);
+  $log = WPSG_Webhooks::get_delivery_log();
+  echo "log entries: " . count($log) . " attempt: " . ($log[0]["attempt"] ?? "-") . "\n";
+'
+# → log entries: 1  attempt: 1   (pre-fix: 0 entries — the delivery vanished)
+```
+
+Pinned by `WPSG_P67R_Review_Fixes_Test::test_dispatch_delivers_inline_when_cron_refuses_the_schedule`.
 
 ---
 
@@ -505,15 +526,86 @@ npx wp-env run cli wp post meta get $NID _wpsg_filesize   # → byte size restor
 **Expected (pass).** All three write paths (plugin upload, `add_attachment` hook, one-time backfill) leave a correct `_wpsg_filesize`. Each is exercised independently because none subsumes the others.
 
 **Pitfalls.**
-- Attachments that *don't* yet carry `_wpsg_filesize` are **not** dropped from the size-sorted list — the query uses an `OR … NOT EXISTS` meta clause so they sort as NULL (first on ASC / last on DESC) rather than vanishing. Do not "simplify" it to a bare `meta_key`, which would silently exclude them.
-- The backfill stamps `0` for any attachment whose file is missing on disk (rather than skipping it) — that is deliberate, so the one-time migration always terminates instead of re-scanning unstampable rows forever.
+- Attachments that *don't* yet carry `_wpsg_filesize` are **not** dropped from the size-sorted list — the query uses an `OR … NOT EXISTS` meta clause so they sort as NULL (first on ASC / last on DESC) rather than vanishing. Do not "simplify" it to a bare `meta_key`, which would silently exclude them. (P67-R specifically tested whether that `OR` clause fans the join out and duplicates un-stamped rows — it does not; leave the clause alone. `DISTINCT` is *not* the fix if you ever think it is: it errors under `ONLY_FULL_GROUP_BY` because `ORDER BY` references a non-selected column.)
+- **Both** write paths stamp `0` for an attachment whose file is missing or unreadable, rather than skipping it. For the backfill this makes the migration terminate instead of re-scanning unstampable rows forever; for `stamp_filesize_meta()` it keeps offloaded/remote media from ending up permanently without the key. **Amended by P67-R** — the hook path originally skipped the write, diverging from the backfill.
 - Re-observing the backfill needs **both** the guard option cleared (`wpsg_filesize_backfilled`) and the DB version reset, exactly like the P66 migration re-runs.
 
-**Regression checks.** `WPSG_P67I_Filesize_Sort_Test` (new — hook stamp, idempotency, backfill, and the size sort both directions). Existing media-library listing coverage passes unmodified.
+**The backfill is bounded per run and resumes on cron (P67-R).** It originally looped over the entire attachment library in one pass, from `maybe_upgrade()` on `init` — a `filesize()` stat plus a meta write per row. On a large library that can outlive `max_execution_time`, and since `wpsg_db_version` is only bumped after `maybe_upgrade()` returns, a timeout there re-enters the whole upgrade path on every subsequent request. It now stamps at most `FILESIZE_BACKFILL_MAX_BATCHES × FILESIZE_BACKFILL_BATCH` (5 × 200 = 1000) attachments per run and schedules `wpsg_filesize_backfill` to continue.
+
+```bash
+# Force the multi-run path with tiny bounds, then watch it resume.
+npx wp-env run cli wp eval '
+  add_filter("wpsg_filesize_backfill_batch_size", fn() => 1);
+  add_filter("wpsg_filesize_backfill_max_batches", fn() => 1);
+  delete_option("wpsg_filesize_backfilled");
+  WPSG_DB::run_filesize_backfill_batch();
+  echo "complete flag: " . var_export(get_option("wpsg_filesize_backfilled"), true) . "\n";
+  echo "continuation queued: " . var_export((bool) wp_next_scheduled(WPSG_DB::FILESIZE_BACKFILL_HOOK), true) . "\n";
+'
+# → complete flag: false   continuation queued: true   (with >1 unstamped attachment)
+
+# Drain it the way cron would, until the guard flips:
+npx wp-env run cli wp cron event run wpsg_filesize_backfill
+npx wp-env run cli wp option get wpsg_filesize_backfilled   # → 1 once every row is stamped
+```
+
+**Expected (pass).** With more unstamped attachments than one run's budget, the guard option stays unset and a `wpsg_filesize_backfill` event is queued; running it repeatedly finishes the library and sets the guard, after which the hook is not rescheduled. On a small library the whole thing still completes inside `maybe_upgrade()` with no cron event queued at all.
+
+**Regression checks.** `WPSG_P67I_Filesize_Sort_Test` (hook stamp, idempotency, backfill, and the size sort both directions) and `WPSG_P67R_Review_Fixes_Test` (zero-stamp on unreadable files, bounded run + cron resume, hook registration). `WPSG_Cron_Hooks_Test` pins `wpsg_filesize_backfill` in the canonical hook list so deactivate/uninstall clear it. Existing media-library listing coverage passes unmodified.
 
 ---
 
-## 4. Sign-off checklist
+## 4. Review-fix verification — P67-R
+
+The PR review pass over the landed phase found four defects. Each is folded into its own track section above; this block is the consolidated check, and the one place to start if you are re-verifying the phase after the fixes rather than working through it track by track. Full rationale: [PHASE67_REPORT.md → PR Review & Fix Pass](PHASE67_REPORT.md#pr-review--fix-pass--p67-r-2026-07-19).
+
+**R1 — cache priming targeted a taxonomy instead of an object type.** The single highest-value check in this block, because the two efficiency tracks' priming was doing *nothing*. The distinction is easy to re-break, so verify the core contract first and the plugin behaviour second:
+
+```bash
+npx wp-env run cli wp eval '
+  var_dump(get_object_taxonomies("wpsg_company"));   // → array(0) {}  — a taxonomy is NOT an object type
+  var_dump(get_object_taxonomies("wpsg_campaign"));  // → includes "wpsg_company"
+'
+```
+
+```bash
+# The path where it actually mattered: fields => "ids" leaves posts, meta AND terms cold.
+# Public campaigns return from can_view_campaign() before touching terms, so a warm
+# cache afterwards can only come from the batch prime.
+npx wp-env run cli wp eval '
+  WPSG_REST_Base::clear_accessible_campaigns_cache();
+  wp_cache_flush();
+  $m = new ReflectionMethod("WPSG_REST_Base", "get_accessible_campaign_ids");
+  $m->setAccessible(true);
+  $m->invoke(null, 0);
+  $id = (int) get_posts(["post_type" => "wpsg_campaign", "posts_per_page" => 1, "fields" => "ids"])[0];
+  echo "post cache primed: " . var_export(false !== wp_cache_get($id, "posts"), true) . "\n";
+  echo "term cache primed: " . var_export(false !== get_object_term_cache($id, "wpsg_company"), true) . "\n";
+'
+# → both true. Pre-fix: both false (the prime returned early on an empty taxonomy list,
+#   and nothing primed the post objects that get_the_terms() needs).
+```
+
+**R2 — unreadable files are stamped `0`, not skipped.** See the P67-I *Pitfalls*; check with an attachment whose `_wp_attached_file` points nowhere:
+
+```bash
+npx wp-env run cli wp eval '
+  $id = wp_insert_post(["post_type" => "attachment", "post_status" => "inherit", "post_title" => "ghost"]);
+  update_post_meta($id, "_wp_attached_file", "does/not/exist.jpg");
+  WPSG_Media_Controller::stamp_filesize_meta($id);
+  var_dump(get_post_meta($id, "_wpsg_filesize", true));   // → string(1) "0"  (pre-fix: "" — never written)
+'
+```
+
+**R3 — the backfill is bounded and resumes on cron.** Procedure in the P67-I section above (tiny-bounds filter → continuation queued → drain via `wp cron event run`).
+
+**R4 — a refused cron schedule still delivers.** Procedure in the P67-H section above (`pre_schedule_event` veto → delivery logged inline).
+
+**Regression checks for the whole block.** `WPSG_P67R_Review_Fixes_Test` (7 tests) pins all four, plus the core taxonomy-vs-object-type contract that R1 rested on. It fails against the pre-fix commit for each defect, so it is a real guard rather than a description of current behaviour.
+
+---
+
+## 5. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
 |---|---|---|---|
@@ -527,5 +619,6 @@ npx wp-env run cli wp post meta get $NID _wpsg_filesize   # → byte size restor
 | P67-B | Identical query args + cache keys for identical inputs | `WPSG_P67B_Query_Builder_Test` + campaign-listing suites green | ☐ |
 | P67-A | Out-of-range/invalid inputs clamp/fall-back identically; `sanitize_settings` ~61% smaller | `WPSG_Settings_Test` / `_Extended_Test` / `_Rest_Test` green (byte-for-byte) | ☐ |
 | P67-I | Size sort orders by real file size both directions; all three write paths stamp `_wpsg_filesize` | `WPSG_P67I_Filesize_Sort_Test` green | ☐ |
+| P67-R | §4 R1–R4: priming warms post+term caches on the `fields => 'ids'` path; unreadable files stamp `0`; backfill bounded + resumes on cron; refused schedule delivers inline | `WPSG_P67R_Review_Fixes_Test` + `WPSG_Cron_Hooks_Test` green | ☐ |
 
-**Automated baseline (must be green alongside manual QA):** full wp-env PHPUnit suite. Phase 67 adds 13 tests (9 for P67-B + 4 for P67-I) and removes 2 (the dropped `WPSG_Image_Optimizer::get_stats()` tests) from the P66 landing baseline of 1255. See PHASE67_REPORT.md → each track's *Implementation* block for the exact per-track rationale and any line-number/scope corrections surfaced during execution.
+**Automated baseline (must be green alongside manual QA):** full wp-env PHPUnit suite — **1274 tests, 13609 assertions, 0 failures, 2 pre-existing skips**, `composer lint:php` clean. Phase 67 adds 20 tests (9 for P67-B + 4 for P67-I + 7 for P67-R) and removes 2 (the dropped `WPSG_Image_Optimizer::get_stats()` tests) from the P66 landing baseline of 1255. See PHASE67_REPORT.md → each track's *Implementation* block for the exact per-track rationale and any line-number/scope corrections surfaced during execution, and its *PR Review & Fix Pass* section for the four post-landing fixes and the six areas that were challenged and cleared.

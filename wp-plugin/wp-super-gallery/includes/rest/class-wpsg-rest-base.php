@@ -992,14 +992,21 @@ abstract class WPSG_REST_Base {
                 'no_found_rows' => true,
             ]);
 
-            // P67-G: prime post-meta and company-term caches for the whole page so
-            // the per-post can_view_campaign() checks — which read several meta keys
-            // and, for private campaigns, the company term (P67-F) — resolve from
-            // cache instead of issuing N+1 DB queries. The page is already bounded by
-            // $per_page, so no further chunking is needed here.
+            // P67-G: prime the post, post-meta and object-term caches for the whole
+            // page so the per-post can_view_campaign() checks — which read several
+            // meta keys, call get_post() on the draft branch, and for private
+            // campaigns resolve the company term via get_the_terms() (P67-F) — all
+            // hit cache instead of issuing N+1 DB queries. The page is already
+            // bounded by $per_page, so no further chunking is needed here.
+            //
+            // _prime_post_caches() is used rather than hand-rolled priming because
+            // 'fields' => 'ids' leaves the post objects themselves uncached, and
+            // get_the_terms() calls get_post() before anything else. It also derives
+            // the object-term cache argument from the posts' real post type:
+            // update_object_term_cache()'s second parameter is an *object type*, not
+            // a taxonomy — passing a taxonomy name makes it a silent no-op.
             if (!empty($query->posts)) {
-                update_meta_cache('post', $query->posts);
-                update_object_term_cache($query->posts, 'wpsg_company');
+                _prime_post_caches($query->posts, true, true);
             }
 
             foreach ($query->posts as $post_id) {

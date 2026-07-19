@@ -38,6 +38,7 @@ if (!function_exists('wpsg_get_cron_hooks')) {
             'wpsg_webhook_retry',            // WPSG_Webhooks::RETRY_HOOK
             'wpsg_export_process_job',       // WPSG_Export_Engine::JOB_PROCESS_HOOK
             'wpsg_export_cleanup',           // WPSG_Export_Engine::JOB_CLEANUP_HOOK
+            'wpsg_filesize_backfill',        // WPSG_DB::FILESIZE_BACKFILL_HOOK
         ];
     }
 }
