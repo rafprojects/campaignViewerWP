@@ -72,9 +72,10 @@ describe('parseNodeConfig', () => {
     expect('enableLightbox' in result).toBe(false)
   })
 
-  it('rejects non-finite numbers for spaceId', () => {
-    // JSON has no Infinity/NaN literal, but a stringified numeric that parses to
-    // a huge value still stays finite; simulate via an already-invalid shape.
+  it('drops a null spaceId (not a valid number)', () => {
+    // JSON has no Infinity/NaN literal, so a non-finite number can't arrive over
+    // the wire; the reachable wrong-typed case for a number field is null, which
+    // z.number() rejects and `.catch(undefined)` drops.
     const result = parseNodeConfig(configNode(JSON.stringify({ spaceId: null })))
     expect('spaceId' in result).toBe(false)
   })

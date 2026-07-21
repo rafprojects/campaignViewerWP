@@ -34,7 +34,7 @@ git checkout feature/phase69-react-hardening-2-of-4   # back to the fixes
 |---|---|---|
 | P69-A | `docs/PRIVACY.md` now documents the Google Fonts third-party data flow (server-side `<link>` enqueue + client-side injection), its trigger, and the opt-out | No — documentation only. Optionally *observe* the pre-existing flow (a `fonts.googleapis.com` request) to confirm the doc is accurate |
 | P69-B | `debug_component_markers` default flipped `true → false` in both `class-wpsg-settings-registry.php` (canonical) and `class-wpsg-embed.php` (defensive fallback) | **Yes** — a fresh install's public gallery no longer stamps `data-wpsg-component` / `data-wpsg-slot` attributes (prod build) |
-| P69-C | `parseNodeConfig` in `src/main.tsx` now validates `data-wpsg-config` through a zod schema (allowlist + type-check), matching `parseProps`'s `ALLOWED_PROPS` treatment | **Yes** — a crafted config payload with extra/wrong-typed keys is stripped/coerced instead of passed through |
+| P69-C | `parseNodeConfig` (extracted from `src/main.tsx` into `src/mountConfig.ts`) now validates `data-wpsg-config` through a zod schema (allowlist + type-check), matching `parseProps`'s `ALLOWED_PROPS` treatment | **Yes** — a crafted config payload with extra/wrong-typed keys is stripped/coerced instead of passed through |
 | P69-D | `ErrorBoundary.tsx` shows generic translated copy to the public; the raw `error.message` only when the viewer is an admin **or** `wpsg_debug` is set. Also adds a public-facing boundary around `<App>` in `main.tsx` (the gallery had none) | **Yes** — a thrown error renders differently for a public visitor vs. an admin/debug session |
 | P69-E | `docs/FUTURE_TASKS.md`'s "JWT In-Memory Token Auth" item now cross-references the `wpsg_permissions` cache/TTL gap and no longer claims the provider is commented out | No — documentation only |
 
@@ -215,3 +215,17 @@ Covers: public viewer (no `isAdmin`, no debug) sees generic copy and **not** the
 | P69-E | `FUTURE_TASKS.md` cross-references the `wpsg_permissions` TTL gap and no longer claims the provider is commented out | None — documentation only | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** full wp-env PHPUnit suite (Phase 69 adds one PHP test for P69-B) and the front-end Vitest suite (Phase 69 adds parseNodeConfig + ErrorBoundary unit tests for P69-C/P69-D). See PHASE69_REPORT.md → each track's *Implementation* block for per-track rationale and the Planning Refinement Pass for the corrections surfaced during validation.
+
+---
+
+## 5. PR review & validation log (2026-07-21, PR #83)
+
+A full reviewer pass ran over the branch's two commits — line-by-line code review plus a live validation run. Full write-up (correctness verification per track, prototype-pollution/no-regression proof, fixes applied) is in [PHASE69_REPORT.md → PR Review & Validation Pass](PHASE69_REPORT.md#pr-review--validation-pass-2026-07-21-pr-83). Result: **the implementation is correct as written**; the only changes were two doc/test-accuracy nits (this runbook's §2 `parseNodeConfig` location; a mislabeled `mountConfig.test.ts` case).
+
+| Check (this pass) | Result |
+|---|---|
+| `npx tsc -b` | Clean |
+| `npx vitest run src/mountConfig.test.ts src/components/ErrorBoundary.test.tsx` | 20 passed |
+| `npx eslint` (all changed FE files) | Clean |
+| PHPUnit `--filter test_get_defaults_debug_component_markers_is_false` | OK (1 test, 2 assertions) |
+| PHPUnit settings/embed slice (`WPSG_Settings_Test`, `WPSG_Settings_Extended_Test`, `WPSG_Settings_Rest_Test`, `WPSG_Embed_Test`) | OK (22 tests, 154 assertions) |

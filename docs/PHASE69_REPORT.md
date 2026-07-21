@@ -1,6 +1,6 @@
 # Phase 69 - React Security, Privacy & Hardening Defaults
 
-**Status:** Complete (pending PR review)
+**Status:** Complete (PR #83 reviewed & validated)
 **Created:** 2026-07-14
 **Last updated:** 2026-07-21
 
@@ -221,3 +221,30 @@ All five tracks landed across two commits on `feature/phase69-react-hardening-2-
 - **P69-E** — the JWT permissions-cache staleness is cross-referenced into the FUTURE_TASKS.md rework item so it won't be missed.
 
 Verification: full PHP suite green (1275 passed / 2 skipped); `tsc -b` clean; full Vitest suite green (3718 tests); ESLint clean. Manual QA steps captured in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md).
+
+## PR Review & Validation Pass (2026-07-21, PR #83)
+
+A full reviewer pass over the two-commit branch (`8eb7118f`, `20cedfa4`) — line-by-line code review of every changed file plus independent re-validation against source and a live test run. No inline PR comments existed; this was a from-scratch review, not a comment-addressing pass.
+
+### Correctness verification (all confirmed — no blocking issues)
+
+- **P69-B (PHP default flip).** Confirmed `debug_component_markers` flips `true → false` in **both** hardcoded locations (`class-wpsg-settings-registry.php:30` canonical `self::$defaults`; `class-wpsg-embed.php:68` defensive `isset(...) ? ... : false` fallback), and that `get_defaults()` (`class-wpsg-settings-registry.php:974-979`) returns the raw `false` because the `WPSG_DEBUG_COMPONENT_MARKERS` constant override is not defined in the test bootstrap — so the new `test_get_defaults_debug_component_markers_is_false` asserts the real default, not the override branch.
+- **P69-C (zod validation) — no-regression proof.** The one risk in adding a strict schema is dropping a legitimate PHP-generated field. Traced the source of every consumed field back through `class-wpsg-embed.php`: `spaceId` comes from `resolve_space_id()` which is typed `: int` (→ JSON number → passes `z.number().finite()`); `spaceName`/`instanceId`/`theme`/`authBarMode` are strings; and `galleryLayout`/`enableLightbox`/`enableAnimations` are parsed into `NodeConfig` but **not consumed** in `main.tsx`, so even a dropped value is inert. Conclusion: no legitimate payload loses a field it actually uses. Prototype-pollution safety confirmed — zod rebuilds a fresh object from allowlisted keys only, and `pruneUndefinedKeys` uses `Object.fromEntries`, so a crafted `__proto__` own-property never reaches the result.
+- **P69-D (ErrorBoundary gating).** Confirmed the gate `showRawMessage = this.props.isAdmin === true || isDebugEnabled()`, the empty-message fallback (`error.message || genericBody`), and correct `isAdmin` threading at all four default-fallback sites (`App.tsx` ×2 real `isAdmin`; `AdminPanel.tsx` ×2 `isAdmin={true}`). The new public boundary wrapping `<App>` in `ThemedApp` sits inside `MantineProvider`/`ModalsProvider` (so the Mantine `Alert` renders) and correctly passes **no** `isAdmin` (public default = generic copy). Nested inner boundaries catch first, so no double Sentry report.
+
+### Fixes applied during review (2 trivial accuracy nits, no behavior change)
+
+1. **QA runbook §2 mental-model table** said `parseNodeConfig` is "in `src/main.tsx`"; corrected to note it was extracted into `src/mountConfig.ts` (consistent with §P69-C's own body).
+2. **`src/mountConfig.test.ts`** test *"rejects non-finite numbers for spaceId"* was a misnomer — its body tests `spaceId: null`. Renamed to *"drops a null spaceId (not a valid number)"* and clarified the comment (JSON has no Infinity/NaN literal, so `null` is the reachable wrong-typed case). Assertion unchanged.
+
+### Validation run (this pass)
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Clean |
+| `npx vitest run src/mountConfig.test.ts src/components/ErrorBoundary.test.tsx` | 20 passed (10 + 10) |
+| `npx eslint` (all changed FE files) | Clean |
+| PHPUnit `--filter test_get_defaults_debug_component_markers_is_false` | OK (1 test, 2 assertions) |
+| PHPUnit settings/embed slice (`WPSG_Settings_Test`, `WPSG_Settings_Extended_Test`, `WPSG_Settings_Rest_Test`, `WPSG_Embed_Test`) | OK (22 tests, 154 assertions) |
+
+**Outcome:** the two commits are correct as written; the only changes this pass are the two doc/test-accuracy fixes above. No implementation logic was altered.
