@@ -1,5 +1,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { AuthProvider, AuthSession, AuthUser } from '@/services/auth/AuthProvider';
+import { permissionsDigest } from '@/services/auth/AuthProvider';
+
+/** Content equality for two auth users, so a refresh returning the same user
+ *  keeps the previous reference (no needless context re-render). */
+function sameUser(a: AuthUser | null, b: AuthUser | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.id === b.id && a.email === b.email && a.role === b.role;
+}
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -67,6 +76,58 @@ export function AuthProvider({ provider, fallbackPermissions = [], children }: A
       isMounted = false;
     };
   }, [provider]);
+
+  // [P68-C] Refresh permissions when the tab regains focus / becomes visible.
+  // AuthContext otherwise reads permissions only once at mount and once at
+  // login, so a grant changed elsewhere (e.g. an access request approved in
+  // another tab) wouldn't surface until a full reload. Re-hydrating from the
+  // provider on the "user came back to look" signal picks it up; App.tsx keys
+  // the campaigns query on a permissions digest, so a refetch fires only when
+  // the set actually changed. Gated on `user` — anonymous visitors have
+  // nothing to refresh (and `provider.init()` re-runs the /permissions detect
+  // for the default WpNonceProvider, since getPermissions() alone is cached).
+  useEffect(() => {
+    if (!provider || !user) return undefined;
+
+    let cancelled = false;
+    let inFlight = false;
+
+    const refresh = async () => {
+      if (inFlight) return; // coalesce overlapping focus + visibility events
+      inFlight = true;
+      try {
+        const session = await provider.init();
+        if (cancelled || !session?.accessToken) return;
+        const [nextPermissions, nextUser] = await Promise.all([
+          provider.getPermissions(),
+          provider.getUser(),
+        ]);
+        if (cancelled) return;
+        // Bail out of a state change (and the resulting refetch) when nothing
+        // actually changed, so a plain tab-refocus is free.
+        setPermissions((prev) =>
+          permissionsDigest(prev) === permissionsDigest(nextPermissions) ? prev : nextPermissions,
+        );
+        setUser((prev) => (sameUser(prev, nextUser) ? prev : nextUser));
+      } catch {
+        // Best-effort — a failed refresh leaves the existing state intact.
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [provider, user]);
 
   const login = useCallback(async (email: string, password: string) => {
     if (!provider) {

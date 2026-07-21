@@ -51,7 +51,37 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $output = WPSG_Embed::render_shortcode();
 
         $this->assertStringContainsString( 'window.__WPSG_CONFIG__', $output );
+    }
+
+    /**
+     * P68-B: an anonymous visitor's page config must NOT carry a REST nonce —
+     * a guest nonce authenticates nothing but its presence as X-WP-Nonce made
+     * the service worker treat every public request as authenticated, disabling
+     * the anonymous stale-while-revalidate cache. WP_UnitTestCase runs with no
+     * current user by default, so this render is the logged-out case.
+     */
+    public function test_render_shortcode_omits_rest_nonce_for_anonymous_visitor() {
+        wp_set_current_user( 0 );
+
+        $output = WPSG_Embed::render_shortcode();
+
+        $this->assertStringContainsString( 'window.__WPSG_CONFIG__', $output );
+        $this->assertStringNotContainsString( '"restNonce"', $output );
+    }
+
+    /**
+     * P68-B: a logged-in user still gets a REST nonce so their authenticated
+     * requests keep working (and the SW correctly treats them as authenticated).
+     */
+    public function test_render_shortcode_includes_rest_nonce_for_logged_in_user() {
+        $user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+        wp_set_current_user( $user_id );
+
+        $output = WPSG_Embed::render_shortcode();
+
         $this->assertStringContainsString( '"restNonce"', $output );
+
+        wp_set_current_user( 0 );
     }
 
     public function test_render_shortcode_embeds_campaign_attribute() {

@@ -203,6 +203,20 @@ describe('HttpTransportImpl', () => {
       expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBeUndefined();
     });
 
+    // [P68-B] Anonymous visitor: the getNonce callback is always wired (App.tsx
+    // passes getWpNonce), but it returns undefined because PHP no longer injects
+    // restNonce for logged-out sessions. The header must then be absent so the
+    // service worker's anonymous stale-while-revalidate path is reachable.
+    it('omits X-WP-Nonce when the getNonce callback returns undefined (anonymous)', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport({ getNonce: () => undefined });
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBeUndefined();
+    });
+
     it('injects Bearer token from authProvider when one returns a token', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
 
@@ -411,6 +425,48 @@ describe('HttpTransportImpl', () => {
         status: 500,
         message: 'Request failed',
       });
+    });
+  });
+
+  // ── Empty / 204 success bodies (P68-E) ────────────────────────────────────
+
+  describe('empty success bodies', () => {
+    it('resolves with undefined for a 204 response without calling json()', async () => {
+      const json = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 204,
+        headers: new Headers(),
+        json,
+      });
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toBeUndefined();
+      // The success path must not attempt to parse an absent body.
+      expect(json).not.toHaveBeenCalled();
+    });
+
+    it('resolves with undefined for a 200 response with Content-Length: 0', async () => {
+      const json = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-length': '0' }),
+        json,
+      });
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toBeUndefined();
+      expect(json).not.toHaveBeenCalled();
+    });
+
+    it('still parses JSON for a normal 2xx body (no regression)', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({ status: 200, json: async () => ({ data: 'present' }) }),
+      );
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toEqual({ data: 'present' });
     });
   });
 

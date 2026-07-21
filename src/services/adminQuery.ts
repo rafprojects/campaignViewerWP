@@ -17,6 +17,7 @@ import type {
   TagEntry,
 } from '@/services/apiClient';
 import type { GalleryConfig, MediaItem } from '@/types';
+import { fetchAllPages } from '@/services/pagination';
 import { sortByOrder } from '@wp-super-gallery/shared-utils';
 
 type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
@@ -144,7 +145,6 @@ const CATEGORY_QUERY_STALE_TIME = 60_000;
 const ANALYTICS_QUERY_STALE_TIME = 10_000;
 const ACCESS_REQUESTS_QUERY_STALE_TIME = 30_000;
 const PREFETCH_CONCURRENCY = 6;
-const MAX_SELECTOR_PAGES = 20;
 
 /** Default interval for visibility-aware analytics polling (P34-A). */
 export const ANALYTICS_POLL_INTERVAL_MS = 30_000;
@@ -292,21 +292,17 @@ async function fetchAdminCampaigns(
 }
 
 async function fetchAllCampaignOptions(apiClient: ApiClient, spaceId = 'all'): Promise<AdminCampaign[]> {
-  const all: AdminCampaign[] = [];
-  let page = 1;
-  let totalPages = 1;
   const spaceParam = spaceId !== 'all' ? `&space=${encodeURIComponent(spaceId)}` : '';
 
-  do {
-    const response = await apiClient.get<ApiCampaignResponse>(
+  // P68-A: shared all-pages loop (see services/pagination.ts). Cap unchanged
+  // (fetchAllPages defaults to DEFAULT_MAX_PAGES = 20, formerly MAX_SELECTOR_PAGES).
+  const pages = await fetchAllPages<ApiCampaignResponse>((page) =>
+    apiClient.get<ApiCampaignResponse>(
       `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true${spaceParam}`,
-    );
-    all.push(...(response.items ?? []));
-    totalPages = response.totalPages ?? 1;
-    page += 1;
-  } while (page <= totalPages && page <= MAX_SELECTOR_PAGES);
+    ),
+  );
 
-  return all;
+  return pages.flatMap((response) => response.items ?? []);
 }
 
 async function fetchAccessGrants(

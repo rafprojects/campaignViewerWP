@@ -316,4 +316,76 @@ describe('AuthProvider', () => {
     expect(logoutCall[0]).toContain('/auth/logout');
     expect(logoutCall[1]?.method).toBe('POST');
   });
+
+  // ── P68-C: focus/visibility permissions refresh ─────────────
+
+  it('re-hydrates permissions when the tab becomes visible again (P68-C)', async () => {
+    const user: AuthUser = { id: '1', email: 'v@example.com', role: 'viewer' };
+    // getPermissions is cached at the provider level, so a real refresh comes
+    // from init() re-running the /permissions detect. Model that: init resolves
+    // a session each call; getPermissions returns the grown grant set second.
+    const init = vi.fn().mockResolvedValue({ accessToken: 'tok' });
+    const getPermissions = vi
+      .fn()
+      .mockResolvedValueOnce(['1']) // mount
+      .mockResolvedValue(['1', '2']); // after the access grant lands
+    const provider: AuthProviderInterface = {
+      init,
+      login: vi.fn(),
+      logout: vi.fn(),
+      getAccessToken: vi.fn().mockResolvedValue('tok'),
+      getUser: vi.fn().mockResolvedValue(user),
+      getPermissions,
+    };
+
+    render(
+      <AuthProvider provider={provider}>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('1')).toBeInTheDocument());
+    expect(init).toHaveBeenCalledTimes(1);
+
+    // User returns to the tab.
+    await act(async () => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => expect(screen.getByText('1,2')).toBeInTheDocument());
+    // Re-hydrated from the provider (not just a cached getPermissions read).
+    expect(init).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not refresh on visibility change for an unauthenticated visitor (P68-C)', async () => {
+    // Guest session — init resolves null, so no user; the focus effect must not
+    // subscribe (anonymous visitors have nothing to refresh).
+    const init = vi.fn().mockResolvedValue(null);
+    const provider: AuthProviderInterface = {
+      init,
+      login: vi.fn(),
+      logout: vi.fn(),
+      getAccessToken: vi.fn().mockResolvedValue(null),
+      getUser: vi.fn().mockResolvedValue(null),
+      getPermissions: vi.fn().mockResolvedValue([]),
+    };
+
+    render(
+      <AuthProvider provider={provider} fallbackPermissions={['f']}>
+        <AuthConsumer />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText('guest')).toBeInTheDocument());
+    expect(init).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    // No second init — the guest path never subscribed the refresh listener.
+    expect(init).toHaveBeenCalledTimes(1);
+  });
 });

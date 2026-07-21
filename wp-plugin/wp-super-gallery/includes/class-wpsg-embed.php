@@ -71,7 +71,6 @@ class WPSG_Embed {
             'authProvider'           => $auth_provider,
             'apiBase'                => $api_base,
             'sentryDsn'              => $sentry_dsn,
-            'restNonce'              => wp_create_nonce('wp_rest'),
             'enableJwt'              => defined('WPSG_ENABLE_JWT_AUTH') && WPSG_ENABLE_JWT_AUTH,
             'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
             'allowUserThemeOverride' => $allow_user_theme_override,
@@ -88,6 +87,23 @@ class WPSG_Embed {
                 'upgradeUrl' => class_exists('WPSG_License') ? WPSG_License::get_upgrade_url() : '',
             ],
         ];
+
+        // P68-B: only emit a REST nonce for an authenticated user. For an
+        // anonymous visitor wp_create_nonce('wp_rest') mints a guest (user 0)
+        // nonce that authenticates nothing — but its mere presence as an
+        // X-WP-Nonce header (attached by HttpTransportImpl.buildAuthHeaders
+        // whenever getNonce() is truthy) made every public request look
+        // "authenticated" to the service worker, so the anonymous
+        // stale-while-revalidate cache in public/sw.js never ran for real app
+        // traffic. Omitting the key leaves getNonce() undefined, the header is
+        // skipped, and the SW's isAuthenticated gate correctly treats the
+        // request as anonymous. Logged-in users (incl. every wp-admin screen
+        // that emits this config) still get their nonce. The login flow does
+        // not depend on this value: it mints a fresh nonce server-side in
+        // WPSG_Auth_Controller::handle_cookie_login().
+        if (is_user_logged_in()) {
+            $config['restNonce'] = wp_create_nonce('wp_rest');
+        }
 
         // P49-C / P60-G: i18n payload — locale + the active-locale translation of the
         // React (i18next) front-end string catalogue. WPSG_Frontend_Strings is generated

@@ -30,6 +30,18 @@ export interface AuthSession {
   expiresAt?: string | undefined;
 }
 
+/**
+ * Stable, order-independent digest of a permissions (campaign-id) list.
+ *
+ * [P68-C] Used to key the campaigns query on the viewer's grants so a changed
+ * grant set forces a refetch, and to skip redundant state updates when a
+ * focus-triggered refresh returns the same set. Sorted so `['1','2']` and
+ * `['2','1']` collapse to one key; entries are stringified for stability.
+ */
+export function permissionsDigest(permissions: string[]): string {
+  return [...permissions].map(String).sort().join('|');
+}
+
 export interface AuthProvider {
   init(): Promise<AuthSession | null>;
   login(email: string, password: string): Promise<AuthSession>;
