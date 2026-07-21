@@ -19,6 +19,7 @@ import { fetchAllPages } from './services/pagination';
 import { useLayoutTemplates } from './services/layoutTemplateQuery';
 import { getWpNonce, setWpNonce, WP_NONCE_PATH } from './services/wpNonce';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
+import { permissionsDigest } from './services/auth/AuthProvider';
 import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './types';
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
@@ -289,6 +290,9 @@ function AppContent({
     isAuthenticated,
     isAdmin ? 'admin' : 'user',
     spaceId ?? null,
+    // [P68-C] fetchCampaigns uses `permissions` to decide which campaigns' media
+    // to expose; include a stable digest so a mid-session grant change refetches.
+    permissionsDigest(permissions),
   ] as const;
   const {
     data: campaigns,

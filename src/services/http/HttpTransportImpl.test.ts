@@ -428,6 +428,48 @@ describe('HttpTransportImpl', () => {
     });
   });
 
+  // ── Empty / 204 success bodies (P68-E) ────────────────────────────────────
+
+  describe('empty success bodies', () => {
+    it('resolves with undefined for a 204 response without calling json()', async () => {
+      const json = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 204,
+        headers: new Headers(),
+        json,
+      });
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toBeUndefined();
+      // The success path must not attempt to parse an absent body.
+      expect(json).not.toHaveBeenCalled();
+    });
+
+    it('resolves with undefined for a 200 response with Content-Length: 0', async () => {
+      const json = vi.fn();
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-length': '0' }),
+        json,
+      });
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toBeUndefined();
+      expect(json).not.toHaveBeenCalled();
+    });
+
+    it('still parses JSON for a normal 2xx body (no regression)', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+        makeResponse({ status: 200, json: async () => ({ data: 'present' }) }),
+      );
+
+      const transport = makeTransport();
+      await expect(transport.get('/some-path')).resolves.toEqual({ data: 'present' });
+    });
+  });
+
   // ── Accessor methods ──────────────────────────────────────────────────────
 
   describe('accessors', () => {

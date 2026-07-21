@@ -163,3 +163,74 @@ npx vitest run src/services/http/HttpTransportImpl.test.ts     # FE: header omit
 **Pitfalls.**
 - **Don't test P68-B with a warm pre-fix service worker** (see the Update-on-reload note above) — the single most common false result.
 - **`useNonceHeartbeat`** (`src/hooks/useNonceHeartbeat.ts`) already no-ops when no nonce is present, so it simply stops running for anonymous visitors — confirm no console errors, but there's nothing to change there.
+
+---
+
+### P68-C — Mid-session permission changes refresh the campaigns view (scope expanded)
+
+**What & why.** The campaigns query key (`src/App.tsx`) included `user?.id`, `isAuthenticated`, and the admin flag, but **not** `permissions` — while `fetchCampaigns` uses `permissions` to decide which campaigns' media to expose per item. If a viewer's grants changed mid-session (an access request approved elsewhere), the cached query kept the old access mapping until a full reload. **Scope expansion (Key Decision C):** verification found `AuthContext` had *no mid-session permissions-refresh path at all* — `permissions` was set only once at mount and once at login (no polling/focus/websocket). So the digest-in-query-key fix alone was necessary but not sufficient to make the acceptance criterion ("approving access mid-session updates the view without reload") literally true — nothing would ever change `permissions` for it to react to. The fix therefore has **two** parts: (1) a stable `permissionsDigest(permissions)` in the campaigns query key, and (2) a window-focus/`visibilitychange` listener in `AuthContext` (gated on an authenticated `user`) that re-hydrates permissions from the provider when the tab regains focus — the natural "user came back after approving access elsewhere" signal.
+
+**Pre-fix behavior.** A viewer whose access was granted in another tab/session saw no change in their gallery — the same campaigns' media stayed hidden — until they hard-reloaded the page.
+
+**Important mechanism note.** `provider.getPermissions()` returns a *cached* value (both providers), so the refresh re-runs `provider.init()` (which re-hits `/permissions` for the default `WpNonceProvider`) and then reads `getPermissions()`/`getUser()`. The JWT provider caches permissions in localStorage without expiry (the known, deferred B-4 finding) — so on the opt-in JWT path this focus refresh is a no-op until that separate rework lands. The default cookie+nonce deployment refreshes correctly.
+
+**Primary proof — a grant approved elsewhere appears on tab refocus, no reload.**
+
+1. Log in as a **viewer** with access to campaign A but not campaign B. Load the public gallery; confirm B's media is hidden/locked.
+2. In a **separate** admin session (another browser/profile), approve the viewer's access request for campaign B (Admin → Pending Requests).
+3. Return to the viewer's tab — click into it / alt-tab back so it regains focus.
+
+**Expected (pass).** Campaign B's media becomes visible in the viewer's gallery **without a manual reload**, within one refetch of regaining focus. **Why it proves the fix:** pre-fix, the viewer's `permissions` never updated mid-session and the campaigns query key never changed, so the view stayed stale until reload. **Pitfall — staleTime:** the campaigns query has a 5s `staleTime`; the refetch fires when the digest in the key changes (a genuinely new grant), which bypasses staleTime because it's a *new* key, not a refetch of the same one. If B still looks locked, confirm the grant actually landed server-side (`GET /permissions` for that viewer should now include B's id).
+
+**Confirm no wasteful churn for the unchanged case.**
+
+4. With no grant change, click away from the viewer's tab and back several times.
+
+**Expected (pass).** No campaigns refetch fires on a plain refocus when permissions are unchanged. **Why:** the digest is order-independent and the `AuthContext` refresh bails out (returns the previous state reference) when the re-hydrated permissions/user are content-identical, so the query key is byte-stable and React Query doesn't refetch. **Pitfall:** open the Network panel and watch for `/permissions` + `/campaigns` calls — a `/permissions` probe on refocus is expected (that's how we detect a change) but a `/campaigns` refetch should **not** follow unless the grant set actually changed.
+
+**Automated proof.**
+
+```bash
+npx vitest run src/contexts/AuthContext.test.tsx src/services/auth/AuthProvider.test.ts
+```
+
+- `AuthContext.test.tsx` gains: *"re-hydrates permissions when the tab becomes visible again"* (fires `visibilitychange`, asserts `init()` runs a second time and the grant set grows `['1'] → ['1','2']` in the UI without a reload) and *"does not refresh on visibility change for an unauthenticated visitor"* (guest never subscribes the listener; `init` stays at one call).
+- `AuthProvider.test.ts` (new) pins `permissionsDigest`: order-independence, distinctness, empty-list stability, and the separator guard (so `['1','2'] ≠ ['12']`).
+
+**Regression checks.** Full FE suite green (the campaigns query-key shape changed — every `<App>`-rendering test still passes because the added digest is `''` for their empty-permissions fixtures). `tsc`/`eslint` clean.
+
+**Pitfalls.**
+- **Don't gate the refresh on anything but `user`.** Gating on `isAuthenticated` (derived from `user`) is equivalent; the point is it must not run for anonymous visitors (they'd have no session to re-detect and would just burn a request).
+- **Overlapping events.** `focus` and `visibilitychange` can both fire on a single tab-return; the handler has an in-flight guard so they coalesce into one refresh — if you ever see a double `/permissions` probe per refocus, that guard has been broken.
+
+---
+
+### P68-E — `handleResponse` tolerates an empty/204 success body
+
+**What & why.** `HttpTransportImpl.handleResponse` ended with an unconditional `return response.json()`. An endpoint typed `Promise<void>` (e.g. `deleteCampaignTemplate`) or any future 204/empty-body 2xx would reject with a JSON parse error **despite the request succeeding**. The fix returns `undefined` when the response is a 204 or carries `Content-Length: 0`, and otherwise still parses JSON — so a genuinely malformed body from a data-returning endpoint is still surfaced as an error rather than silently swallowed.
+
+**Pre-fix behavior.** Latent — current WP controllers always return a JSON body, so nothing triggers it today. It's contract fragility, not a live bug; the correct manual observation is "nothing regressed."
+
+**This is a latent-hardening fix — the automated test is the real proof.** There is no current endpoint that returns 204, so there is no hand-QA script that exercises it without fabricating a response. Rationale in place of steps: the meaningful check is the unit test below plus confirming existing JSON-returning endpoints are unaffected (which the full suite pins).
+
+```bash
+npx vitest run src/services/http/HttpTransportImpl.test.ts
+```
+
+- New tests: *"resolves with undefined for a 204 response without calling json()"*, *"resolves with undefined for a 200 with Content-Length: 0"*, and *"still parses JSON for a normal 2xx body (no regression)"*. The first two also assert `json()` is **not** called (so no parse attempt on an absent body); the third guards against over-broad short-circuiting.
+
+**Regression checks.** Whole transport suite green (22 → 25 tests); every domain module that goes through `handleResponse` is unaffected because the guard only triggers on an explicit 204 / `Content-Length: 0`. **Pitfall:** a chunked 2xx response with no `Content-Length` header and a real body still parses normally — the guard deliberately does **not** treat a missing length header as empty, so streaming/large responses aren't mis-handled.
+
+---
+
+## 4. Sign-off checklist
+
+| Track | Primary assertion | Regression assertion | Done |
+|---|---|---|---|
+| P68-A | A space with >10 campaigns renders all of them (public gallery) | `pagination.test.ts` + `App.test.tsx` multi-page case green; admin selector suites unmodified | ☐ |
+| P68-D | Loading copy shows genuine `(page X of Y)` on multi-page loads; spinner-only on single-page | `pagination.test.ts` `onPage` progress asserts | ☐ |
+| P68-B | Logged-out GETs carry no `X-WP-Nonce`; `META_CACHE` populates; login still works | `WPSG_Embed_Test` (anon omits / logged-in includes) + `HttpTransportImpl.test.ts` green; no `sw.js`/transport code change | ☐ |
+| P68-C | A grant approved elsewhere appears on tab refocus, no reload; no refetch when unchanged | `AuthContext.test.tsx` focus-refresh + `AuthProvider.test.ts` digest green; full FE suite green | ☐ |
+| P68-E | Simulated 204/empty 2xx resolves `undefined` without a parse error | `HttpTransportImpl.test.ts` 204 cases green; existing JSON endpoints unaffected | ☐ |
+
+**Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `WPSG_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.

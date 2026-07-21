@@ -143,6 +143,18 @@ export class HttpTransportImpl implements HttpTransport {
 
       throw new ApiError(errorMessage, response.status, errorBody);
     }
+
+    // [P68-E] A 2xx response is not guaranteed to carry a JSON body. Endpoints
+    // typed Promise<void> (e.g. deleteCampaignTemplate) or any 204/empty-body
+    // success would otherwise reject with a JSON parse error despite having
+    // succeeded. Return undefined for a body-less success; the void-typed
+    // callers already expect nothing back. We only short-circuit on an explicit
+    // 204 or Content-Length: 0 — a chunked response with no length header still
+    // falls through to json(), so a genuinely malformed JSON body from a
+    // data-returning endpoint is still surfaced as an error rather than masked.
+    if (response.status === 204 || response.headers?.get('content-length') === '0') {
+      return undefined as T;
+    }
     return response.json() as Promise<T>;
   }
 

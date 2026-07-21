@@ -1,6 +1,6 @@
 # Phase 68 - React Correctness: Listing, Freshness & SW Cache Fixes
 
-**Status:** In progress — Batch 1 (P68-A + P68-D) and Batch 2 (P68-B) done; P68-C, P68-E pending
+**Status:** Complete — all tracks done (P68-A, P68-B, P68-C, P68-D, P68-E). Full FE suite green (243 files / 3707 tests); PHP `WPSG_Embed_Test` green.
 **Created:** 2026-07-14
 **Last updated:** 2026-07-21
 
@@ -10,9 +10,9 @@
 |-------|-------------|--------|--------|
 | P68-A | Public gallery listing is silently capped at 10 campaigns | ✅ Done | Small-Medium |
 | P68-B | Anonymous SW stale-while-revalidate is unreachable (nonce sent unconditionally) — both-sides | ✅ Done | Small-Medium FE + Small PHP |
-| P68-C | Permission changes mid-session don't refresh the public campaigns query (scope expanded — see Key Decision C) | Planned | Small-Medium |
+| P68-C | Permission changes mid-session don't refresh the public campaigns query (scope expanded — see Key Decision C) | ✅ Done | Small-Medium |
 | P68-D | Campaign load progress indicator never shows intermediate progress | ✅ Done (folded into P68-A — see Key Decision D) | Small |
-| P68-E | `handleResponse` assumes every 2xx body is JSON | Planned | Small |
+| P68-E | `handleResponse` assumes every 2xx body is JSON | ✅ Done | Small |
 
 ---
 
@@ -120,7 +120,14 @@ The campaigns query key (`src/App.tsx:265-272`) includes `user?.id`, `isAuthenti
 
 ### Fix
 
-Include a stable digest of `permissions` (e.g. a sorted-join string) in the campaigns query key, or invalidate the campaigns query wherever `permissions` state is refreshed (likely `AuthContext.tsx`).
+Per Key Decision C — **scope expanded.** (1) Include a stable `permissionsDigest(permissions)` in the campaigns query key; (2) add a window-focus/`visibilitychange` listener in `AuthContext.tsx` that re-hydrates permissions on tab refocus, because verification found `permissions` had *no* mid-session refresh path at all (set once at mount + once at login), so the digest alone had nothing to react to.
+
+### Implementation (landed 2026-07-21)
+
+- **`src/services/auth/AuthProvider.ts`** — new `permissionsDigest(permissions): string` (sorted, stringified, `|`-joined) shared by the query key and the refresh bailout.
+- **`src/App.tsx`** — `permissionsDigest(permissions)` appended to `campaignsKey`.
+- **`src/contexts/AuthContext.tsx`** — new effect gated on `provider && user` that, on `focus`/`visibilitychange`→visible, re-runs `provider.init()` (the real refresh — `getPermissions()` alone is provider-cached, so `init()` re-hits `/permissions` for `WpNonceProvider`) then reads `getPermissions()`/`getUser()` and updates state **only when content changed** (digest/`sameUser` bailout ⇒ no needless refetch/re-render). An in-flight guard coalesces overlapping focus+visibility events. JWT path: `getPermissions()` is localStorage-cached without expiry (deferred B-4), so the focus refresh is a no-op there until that rework — acceptable, JWT is disabled by default.
+- **Tests** — `AuthContext.test.tsx` (visibility re-hydrate grows the grant set without reload; guest never subscribes); new `AuthProvider.test.ts` (digest order-independence, distinctness, empty stability, separator guard). Full FE suite green.
 
 ### Acceptance criteria
 
@@ -174,15 +181,15 @@ Per Key Decision D — **resolved: make it real, folded into P68-A.** `campaignL
 
 Guard on `response.status === 204` / empty `content-length` and return `undefined as T` in that case, or wrap the success-path `.json()` call in the same try/catch pattern already used on the error branch.
 
+### Implementation (landed 2026-07-21)
+
+- **`src/services/http/HttpTransportImpl.ts`** — before the success-path `response.json()`, added `if (response.status === 204 || response.headers?.get('content-length') === '0') return undefined as T;`. Chose the precise 204/empty-length guard over a blanket success try/catch so a genuinely malformed body from a data-returning endpoint is still surfaced as an error rather than silently swallowed. A chunked 2xx with no length header deliberately still parses.
+- **Tests** — `HttpTransportImpl.test.ts` gains three cases: 204 → `undefined` (and `json()` not called), `Content-Length: 0` → `undefined`, and a normal JSON body still parses. Transport suite 22 → 25.
+
 ### Acceptance criteria
 
-- A simulated 204/empty-body 2xx response resolves successfully with `undefined` rather than throwing a JSON parse error.
-- No behavior change for existing JSON-returning endpoints.
-
-### Validation
-
-- Unit test: mock a 204 response, assert `handleResponse` resolves without throwing.
-- Existing transport test suite stays green.
+- A simulated 204/empty-body 2xx response resolves successfully with `undefined` rather than throwing a JSON parse error. ✅
+- No behavior change for existing JSON-returning endpoints. ✅
 
 ## Follow-On Candidates
 
@@ -192,8 +199,14 @@ Guard on `response.status === 204` / empty `content-length` and return `undefine
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+Landed in three batches on `feature/phase68-react-hardening-1-of-4` (2026-07-21):
+
+- **Batch 1 — P68-A + P68-D:** shared `src/services/pagination.ts` `fetchAllPages` helper (used by both `fetchCampaigns` and `fetchAllCampaignOptions`), public listing now pages `per_page=50` through `totalPages`; real per-page progress replaces the synchronous flash. New `pagination.test.ts` + an `App.test.tsx` multi-page regression case.
+- **Batch 2 — P68-B:** PHP-only code change — `page_config_js()` omits `restNonce` for anonymous visitors; the FE header drop and SW SWR reachability fall out naturally (no FE code change, only a transport test). `WPSG_Embed_Test` conditional-nonce coverage.
+- **Batch 3 — P68-C + P68-E:** `permissionsDigest` in the campaigns query key + a focus/visibility permissions re-hydrate in `AuthContext`; `handleResponse` 204/empty-body guard. New `AuthProvider.test.ts`, `AuthContext.test.tsx` focus cases, `HttpTransportImpl.test.ts` 204 cases.
+
+Per-track rationale, line-citation corrections, and the two new Key Decisions (C, D) are recorded in each track's *Implementation* block and the Key Decisions table above. Manual verification steps: [PHASE68_MANUAL_QA_RUNBOOK.md](PHASE68_MANUAL_QA_RUNBOOK.md).
 
 ## Outcome
 
-Not started.
+**Complete.** All five tracks landed. Verification: full FE vitest suite green (243 files / 3707 tests), `npx tsc -b` and `npx eslint .` clean, PHP `WPSG_Embed_Test` green (18 tests / 30 assertions) via the wp-env `/php-testing` path. No `sw.js` change was required (P68-B's gate was already correct). Remaining follow-on: server-driven `CardGallery` host pagination (deferred — see Follow-On Candidates).
