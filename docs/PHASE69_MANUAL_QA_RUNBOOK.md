@@ -35,7 +35,7 @@ git checkout feature/phase69-react-hardening-2-of-4   # back to the fixes
 | P69-A | `docs/PRIVACY.md` now documents the Google Fonts third-party data flow (server-side `<link>` enqueue + client-side injection), its trigger, and the opt-out | No — documentation only. Optionally *observe* the pre-existing flow (a `fonts.googleapis.com` request) to confirm the doc is accurate |
 | P69-B | `debug_component_markers` default flipped `true → false` in both `class-wpsg-settings-registry.php` (canonical) and `class-wpsg-embed.php` (defensive fallback) | **Yes** — a fresh install's public gallery no longer stamps `data-wpsg-component` / `data-wpsg-slot` attributes (prod build) |
 | P69-C | `parseNodeConfig` in `src/main.tsx` now validates `data-wpsg-config` through a zod schema (allowlist + type-check), matching `parseProps`'s `ALLOWED_PROPS` treatment | **Yes** — a crafted config payload with extra/wrong-typed keys is stripped/coerced instead of passed through |
-| P69-D | `ErrorBoundary.tsx` shows generic translated copy to the public; the raw `error.message` only when the viewer is an admin **or** `wpsg_debug` is set | **Yes** — a thrown error renders differently for a public visitor vs. an admin/debug session |
+| P69-D | `ErrorBoundary.tsx` shows generic translated copy to the public; the raw `error.message` only when the viewer is an admin **or** `wpsg_debug` is set. Also adds a public-facing boundary around `<App>` in `main.tsx` (the gallery had none) | **Yes** — a thrown error renders differently for a public visitor vs. an admin/debug session |
 | P69-E | `docs/FUTURE_TASKS.md`'s "JWT In-Memory Token Auth" item now cross-references the `wpsg_permissions` cache/TTL gap and no longer claims the provider is commented out | No — documentation only |
 
 ---
@@ -137,14 +137,81 @@ npx @wordpress/env run cli wp eval 'update_option("wpsg_settings", ["debug_compo
 
 ---
 
+### P69-C — `parseNodeConfig` allowlist + type-check
+
+**What & why.** At mount, PHP stamps two attributes onto each host: `data-wpsg-props` and `data-wpsg-config`. `parseProps` filtered `data-wpsg-props` through the `ALLOWED_PROPS` allowlist, but `parseNodeConfig` cast `data-wpsg-config` to `NodeConfig` via a bare `as NodeConfig` assertion — a compile-time-only claim with **no runtime allowlist or type-check**. The attribute is PHP-generated today (low risk), but the asymmetry is the kind that erodes: anything else that can set that attribute (a page-builder plugin storing raw HTML, an XSS elsewhere) got arbitrary keys/types into the mount config. P69-C gives `data-wpsg-config` the same treatment via a small zod schema (mirroring the idioms already in `src/types/settingsSchemas.ts`). The parsing was extracted into `src/mountConfig.ts` so it can be unit-tested without importing `main.tsx`'s side effects.
+
+**Pre-fix behavior.** `parseNodeConfig` returned `JSON.parse(raw) as NodeConfig` — any keys/types in the JSON passed straight through into the React tree.
+
+**Observable effect: malformed config is stripped/coerced.** This is primarily proven by the unit test; the live effect is only visible if you deliberately craft a bad `data-wpsg-config`.
+
+**Verification (unit test — the primary proof).**
+
+```bash
+npx vitest run src/mountConfig.test.ts
+```
+
+The test feeds `parseNodeConfig` (a) a payload with an extra unexpected key (asserts it is stripped) and (b) a payload with wrong-typed known keys, e.g. `spaceId: "not-a-number"`, `enableLightbox: "yes"` (asserts each is dropped while valid siblings survive), plus the happy path (a legitimate PHP payload passes through unchanged) and the guards (missing attr / invalid JSON / array / null → `{}`).
+
+**Optional live check.** In the browser, on a mounted gallery host, hand-edit the attribute and re-mount (or set it before load):
+
+```js
+// DevTools console, on a page with a WPSG mount host:
+const host = document.querySelector('[data-wpsg-config]');
+host.setAttribute('data-wpsg-config', JSON.stringify({ spaceId: 3, evil: 'x', theme: 42 }));
+// Re-mount (reload). The app receives { spaceId: 3 } — 'evil' stripped, wrong-typed 'theme' dropped.
+```
+
+**Why it proves the fix.** Pre-fix, `evil` and the numeric `theme` would flow into the component tree verbatim; post-fix the schema strips the unknown key and drops the wrong-typed one, so only allowlisted, correctly-typed fields reach the app — matching `parseProps`'s guarantee for `data-wpsg-props`.
+
+**Regression checks.**
+- **New:** `src/mountConfig.test.ts` (parseNodeConfig allowlist/coercion + a couple of `parseProps` cases to confirm the extraction preserved it).
+- **Unchanged:** the PHP side that *generates* `data-wpsg-config` is untouched, and `WPSG_Embed_Test`'s `data-wpsg-config` shape assertions remain green — legitimate PHP payloads (numeric `spaceId`, string `theme`, boolean toggles) all satisfy the schema, so there is no behavior change for real traffic.
+
+**Pitfall.** The schema drops a wrong-typed *known* key (falls back to the downstream default) rather than throwing — a single bad field must not discard the whole config. If you "tighten" it to a strict parse that rejects the entire object on one bad field, a malformed page-builder attribute would blank the whole mount. Keep the per-field `.catch(undefined)` + prune approach.
+
+---
+
+### P69-D — ErrorBoundary hides raw error message from the public
+
+**What & why.** `ErrorBoundary`'s default fallback rendered `this.state.error?.message` to whoever was looking. Exception messages can carry internal details (URLs, state fragments); Sentry already receives the full error, so end users don't need it. P69-D shows generic translated copy by default and the raw message only when the viewer is an admin/editor (`isAdmin` prop) **or** the `wpsg_debug` localStorage flag is set. It also adds a **public-facing boundary** around the whole gallery (`<ErrorBoundary>` wrapping `<App>` in `ThemedApp`, `src/main.tsx`) — previously the public listing/viewer had *no* boundary at all, so an uncaught render error was unhandled. The admin sub-trees keep their own inner boundaries that pass `isAdmin` so operators still see raw messages.
+
+**Pre-fix behavior.** Any error boundary (all admin-only before this phase) showed the raw `error.message`. The public gallery path had no boundary, so a render error there produced React's default blank/unmount, not a friendly fallback.
+
+**Note on the "5 sites."** Four boundary call sites use the default fallback and now pass an `isAdmin` value: `src/App.tsx` (×2, real `isAdmin` from `useAuth()`), `src/components/Admin/AdminPanel.tsx` (×2, `isAdmin={true}` — that panel only mounts for editor-or-above). The fifth, `LayoutBuilderModal.tsx`, supplies a **custom `fallback`** prop, so it never reaches the raw-message code and is intentionally left unchanged. The new public boundary in `main.tsx` passes **no** `isAdmin`, so it defaults to generic copy.
+
+**Observable effect: copy differs by viewer.**
+
+**Verification (unit test — the primary proof).**
+
+```bash
+npx vitest run src/components/ErrorBoundary.test.tsx
+```
+
+Covers: public viewer (no `isAdmin`, no debug) sees generic copy and **not** the raw message; admin viewer (`isAdmin`) sees the raw message; `wpsg_debug=1` reveals the raw message even for a non-admin.
+
+**Manual check.**
+- **As a public visitor / non-admin:** trigger a component error (e.g. temporarily throw in a gallery component, or corrupt a payload). The boundary shows *"Something went wrong"* + *"An unexpected error occurred while loading this component."* — **not** the raw message.
+- **As an admin**, or with `localStorage.setItem('wpsg_debug', '1')` then reload: the same error now shows the raw `error.message` for troubleshooting.
+
+**Why it proves the fix.** Pre-fix, the raw message rendered for everyone; post-fix a public visitor gets only generic copy (internal details withheld) while privileged operators and debug sessions retain the full message. The full error still reaches Sentry via `componentDidCatch` either way.
+
+**Regression checks.**
+- **New/updated:** `src/components/ErrorBoundary.test.tsx` — the two pre-existing tests that asserted the raw message is always shown were updated to the gated behavior (public = generic; admin/debug = raw), and new cases added.
+- **Unchanged:** the "Try Again" / `onReset` / custom-fallback / renders-children tests are unaffected by message gating. The empty-message case (`new Error()`) still shows generic copy in all modes (`error.message || genericBody`).
+
+**Pitfall.** `ErrorBoundary` is a class component and cannot call `useAuth()`; `isAdmin` must be threaded as a **prop** from a site that has it. The public `main.tsx` boundary sits *above* the auth context, so it deliberately has no `isAdmin` — that is correct (a public-level boundary should default to hiding details), not a missed wiring.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
 |---|---|---|---|
 | P69-A | `PRIVACY.md` §3 accurately documents the Google Fonts trigger / IP disclosure / opt-out; optional Network check confirms the request fires only when a Google font is selected | No code changed — `loadGoogleFont.test.ts` + typography coverage green | ☐ |
 | P69-B | Fresh-install **prod build** public gallery has no `data-wpsg-*` attributes; toggling the setting on restores them; emitted config is `debugComponentMarkers:false` | `WPSG_Settings_Extended_Test` new default test + `WPSG_Embed_Test` / `WPSG_Settings_Rest_Test` green | ☐ |
-| P69-C | *(commit 2)* Crafted `data-wpsg-config` with extra/wrong-typed keys is stripped/coerced; legitimate PHP payloads unchanged | `WPSG_Embed_Test` config-shape assertions green; new `main`/parseNodeConfig unit test green | ☐ |
-| P69-D | *(commit 2)* Public/non-admin visitor sees generic copy on an error boundary; admin or `wpsg_debug` session sees the raw message | New `ErrorBoundary` unit test (admin/debug × on/off) green | ☐ |
+| P69-C | Crafted `data-wpsg-config` with extra/wrong-typed keys is stripped/dropped; legitimate PHP payloads unchanged | `WPSG_Embed_Test` config-shape assertions green; new `src/mountConfig.test.ts` green | ☐ |
+| P69-D | Public/non-admin visitor sees generic copy on an error boundary; admin or `wpsg_debug` session sees the raw message; public gallery now has a boundary | Updated `ErrorBoundary` unit tests (public/admin/debug) green | ☐ |
 | P69-E | `FUTURE_TASKS.md` cross-references the `wpsg_permissions` TTL gap and no longer claims the provider is commented out | None — documentation only | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** full wp-env PHPUnit suite (Phase 69 adds one PHP test for P69-B) and the front-end Vitest suite (Phase 69 adds parseNodeConfig + ErrorBoundary unit tests for P69-C/P69-D). See PHASE69_REPORT.md → each track's *Implementation* block for per-track rationale and the Planning Refinement Pass for the corrections surfaced during validation.

@@ -1,18 +1,18 @@
 # Phase 69 - React Security, Privacy & Hardening Defaults
 
-**Status:** Planned
+**Status:** Complete (pending PR review)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-21
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P69-A | Google Fonts fetched client-side by public visitors — undocumented third-party data flow | Planned | Small (docs) |
-| P69-B | Debug component markers stamped on production DOM by default — mostly PHP | Planned | Small |
-| P69-C | `parseNodeConfig` skips the key-allowlist treatment `parseProps` gets | Planned | Small |
-| P69-D | ErrorBoundary shows raw `error.message` to public visitors | Planned | Small |
-| P69-E | JWT provider's localStorage permissions cache never expires (opt-in path) | Planned | — (tracking only) |
+| P69-A | Google Fonts fetched client-side by public visitors — undocumented third-party data flow | Done | Small (docs) |
+| P69-B | Debug component markers stamped on production DOM by default — mostly PHP | Done | Small |
+| P69-C | `parseNodeConfig` skips the key-allowlist treatment `parseProps` gets | Done | Small |
+| P69-D | ErrorBoundary shows raw `error.message` to public visitors | Done | Small |
+| P69-E | JWT provider's localStorage permissions cache never expires (opt-in path) | Done (doc cross-ref) | — (tracking only) |
 
 ---
 
@@ -134,6 +134,10 @@ Apply the same allowlist+type-check treatment already used for `parseProps` — 
 
 - Unit test: feed `parseNodeConfig` a payload with an extra unexpected key and a wrong-typed known key; assert it's stripped/coerced rather than silently passed through.
 
+### Implementation (2026-07-21) — Done
+
+Extracted the mount-attribute parsing (`MountProps`, `ALLOWED_PROPS`, `parseProps`, `NodeConfig`, `parseNodeConfig`) out of `src/main.tsx` into a new `src/mountConfig.ts`, so the boundary is unit-testable without importing `main.tsx`'s side effects (Sentry init, SW registration, DOM mount). `main.tsx` now imports these. `parseNodeConfig` validates `data-wpsg-config` through a zod `NodeConfigSchema` covering **all 8** `NodeConfig` fields (not just the 3 the finding named), mirroring the existing idioms in `src/types/settingsSchemas.ts`: each field is `.optional().catch(undefined)` so a wrong-typed value drops that single field (falling back to the downstream default) rather than failing the whole parse, and `z.object`'s default strips unknown keys; the result is then pruned of undefined keys. Kept the schema permissive on enum *values* (`theme`/`galleryLayout`/`authBarMode` are plain strings at the type level today — not union enums — so the schema type-checks them as strings rather than inventing enum sets the PHP side doesn't enforce here). New test `src/mountConfig.test.ts`. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-C.
+
 ---
 
 ## Track P69-D - ErrorBoundary shows raw `error.message` to public visitors
@@ -156,6 +160,10 @@ Show generic translated copy by default; include the raw message only when the `
 ### Validation
 
 - Unit test: render the boundary with a thrown error under both debug-on and debug-off conditions, assert the correct copy in each.
+
+### Implementation (2026-07-21) — Done
+
+Gated the raw-message render in `ErrorBoundary.tsx` behind `showRawMessage = this.props.isAdmin === true || isDebugEnabled()` (`isDebugEnabled` from `src/utils/debug.ts`); public visitors get the generic i18n copy, admins/editors and `wpsg_debug` sessions keep the raw message. Added an `isAdmin?: boolean` prop and threaded it from the four default-fallback call sites: `src/App.tsx` ×2 (real `isAdmin` from `useAuth()`) and `AdminPanel.tsx` ×2 (`isAdmin={true}` — that panel only mounts for editor-or-above). **Discovery during implementation:** the "5th" site, `LayoutBuilderModal.tsx`, supplies a **custom `fallback`** prop and so never reaches the raw-message code — intentionally left unchanged. **Also discovered:** *all* existing `ErrorBoundary` usages were admin-only — the public gallery had **no** boundary at all, so finding B-3's "public visitor" premise wasn't actually exercised. Per user direction (chosen 2026-07-21), added a **public-facing boundary** wrapping `<App>` in `ThemedApp` (`src/main.tsx`) with no `isAdmin` prop, so a public render error now shows generic copy instead of an unhandled crash. Updated the two pre-existing `ErrorBoundary.test.tsx` cases that asserted the raw message is always shown (they encoded the old behavior) to the gated behavior, and added admin/debug cases. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-D.
 
 ---
 
@@ -196,8 +204,20 @@ Edited `docs/FUTURE_TASKS.md`'s "JWT In-Memory Token Auth" section: (1) added a 
   - P69-B: `debug_component_markers` default flipped `true → false` in `class-wpsg-settings-registry.php` + `class-wpsg-embed.php` fallback; new `WPSG_Settings_Extended_Test::test_get_defaults_debug_component_markers_is_false`. PHP-only, no FE change.
   - P69-E: `docs/FUTURE_TASKS.md` JWT item cross-references the `wpsg_permissions` cache/TTL gap and corrects the stale "commented out" wording.
   - Companion `docs/PHASE69_MANUAL_QA_RUNBOOK.md` created with §§ P69-A/B/E and the sign-off table (C/D rows added in commit 2).
-- **Commit 2 — P69-C + P69-D:** pending.
+- **Commit 2 — P69-C + P69-D (2026-07-21).** Independent small FE hardening.
+  - P69-C: extracted mount-attribute parsing into `src/mountConfig.ts`; `parseNodeConfig` now validates `data-wpsg-config` via a zod schema (all 8 `NodeConfig` fields) — unknown keys stripped, wrong-typed known keys dropped. New `src/mountConfig.test.ts`.
+  - P69-D: `ErrorBoundary` gates the raw `error.message` behind `isAdmin` / `wpsg_debug`; threaded `isAdmin` from 4 default-fallback sites (the 5th uses a custom fallback). Added a public boundary around `<App>` in `main.tsx` (the gallery previously had none — per user direction). Updated `ErrorBoundary.test.tsx`.
+  - Companion runbook extended with §§ P69-C/P69-D.
+  - Validation: `npx tsc -b` clean; full Vitest suite green (**244 files, 3718 tests, 0 failures**); ESLint clean on changed files.
 
 ## Outcome
 
-Not started.
+All five tracks landed across two commits on `feature/phase69-react-hardening-2-of-4`. No exploitable issue existed going in; the phase hardened three defaults/exposure gaps and documented one third-party data flow:
+
+- **P69-A** — Google Fonts data flow now documented in `PRIVACY.md` (found to be broader than the finding: server-side enqueue is the primary path).
+- **P69-B** — production galleries no longer ship debug DOM markers by default.
+- **P69-C** — the `data-wpsg-config` mount boundary is now runtime-validated (zod), matching `data-wpsg-props`.
+- **P69-D** — `ErrorBoundary` no longer leaks raw exception messages to the public, and the public gallery gained an error boundary it never had.
+- **P69-E** — the JWT permissions-cache staleness is cross-referenced into the FUTURE_TASKS.md rework item so it won't be missed.
+
+Verification: full PHP suite green (1275 passed / 2 skipped); `tsc -b` clean; full Vitest suite green (3718 tests); ESLint clean. Manual QA steps captured in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md).

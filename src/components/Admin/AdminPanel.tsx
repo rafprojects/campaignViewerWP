@@ -699,7 +699,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
               </>
             )}
           </Group>
-          <ErrorBoundary>
+          <ErrorBoundary isAdmin={true}>
             <Suspense fallback={<Center py="md"><Loader /></Center>}>
               <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
             </Suspense>
@@ -790,7 +790,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
-          <ErrorBoundary>
+          <ErrorBoundary isAdmin={true}>
             <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
               <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} isSystemAdmin={isSystemAdmin} />
             </Suspense>

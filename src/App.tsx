@@ -419,7 +419,7 @@ function AppContent({
           </Container>
         )}
         {isSettingsOpen && (
-          <ErrorBoundary onReset={closeSettings}>
+          <ErrorBoundary onReset={closeSettings} isAdmin={isAdmin}>
             <Suspense fallback={null}>
               <SettingsPanel
                 opened={isSettingsOpen}
@@ -438,7 +438,7 @@ function AppContent({
         )}
         {isAdminPanelOpen ? (
           <Container {...(adminPanelContainerSize !== undefined ? { size: adminPanelContainerSize } : appContainerSize !== undefined ? { size: appContainerSize } : {})} py="xl" style={appContainerPaddingStyle}>
-            <ErrorBoundary onReset={closeAdminPanel}>
+            <ErrorBoundary onReset={closeAdminPanel} isAdmin={isAdmin}>
               <Suspense fallback={<Center py={120}><Loader /></Center>}>
                 <AdminPanel
                   apiClient={apiClient}

@@ -4,7 +4,8 @@
  * Covers:
  * - Renders children when no error
  * - Catches errors via getDerivedStateFromError
- * - Shows default error UI with message
+ * - Shows default error UI (generic copy for public viewers)
+ * - P69-D: raw error message gated behind isAdmin / wpsg_debug
  * - Try Again button calls handleReset and clears state
  * - Custom fallback prop renders instead of default UI
  * - onReset callback is invoked on reset
@@ -43,7 +44,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Hello World')).toBeInTheDocument();
   });
 
-  it('catches a render error and shows default error UI', () => {
+  it('catches a render error and shows the generic default error UI (public viewer)', () => {
     const spy = suppressConsoleError();
     render(
       <ErrorBoundary>
@@ -54,17 +55,36 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-    expect(screen.getByText(/Test explosion/)).toBeInTheDocument();
+    // P69-D: a public viewer (no isAdmin, no wpsg_debug) sees generic copy, not
+    // the raw exception message, which may carry internal details.
+    expect(
+      screen.getByText(/An unexpected error occurred while loading this component/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Test explosion/)).not.toBeInTheDocument();
   });
 
-  it('shows the error message from the thrown Error', () => {
+  it('shows the raw error message to an admin viewer (P69-D)', () => {
     const spy = suppressConsoleError();
     render(
-      <ErrorBoundary>
+      <ErrorBoundary isAdmin>
         <Bomb shouldThrow />
       </ErrorBoundary>,
     );
     spy.mockRestore();
+
+    expect(screen.getByText(/Test explosion/)).toBeInTheDocument();
+  });
+
+  it('shows the raw error message when wpsg_debug is set, even for a non-admin (P69-D)', () => {
+    const spy = suppressConsoleError();
+    localStorage.setItem('wpsg_debug', '1');
+    render(
+      <ErrorBoundary isAdmin={false}>
+        <Bomb shouldThrow />
+      </ErrorBoundary>,
+    );
+    spy.mockRestore();
+    localStorage.removeItem('wpsg_debug');
 
     expect(screen.getByText(/Test explosion/)).toBeInTheDocument();
   });
