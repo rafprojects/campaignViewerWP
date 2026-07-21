@@ -5,7 +5,20 @@ if (!defined('ABSPATH')) {
 }
 
 class WPSG_DB {
-    const DB_VERSION = '16';
+    const DB_VERSION = '17';
+
+    /** P67-I: attachments stamped per query in the _wpsg_filesize backfill. */
+    const FILESIZE_BACKFILL_BATCH = 200;
+
+    /**
+     * P67-I: batches stamped per run before the rest is handed to WP-Cron.
+     * 200 × 5 = 1000 attachments per request: enough to finish a normal library in
+     * the upgrade itself, small enough that a huge one cannot exhaust the request.
+     */
+    const FILESIZE_BACKFILL_MAX_BATCHES = 5;
+
+    /** P67-I: cron hook that resumes the backfill; see wpsg-cron-hooks.php. */
+    const FILESIZE_BACKFILL_HOOK = 'wpsg_filesize_backfill';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -40,7 +53,93 @@ class WPSG_DB {
         // P66-B: seed archived_at for already-archived campaigns so the
         // maintenance auto-purge keys off the real archival date.
         self::maybe_backfill_archived_at();
+        // P67-I: stamp _wpsg_filesize on existing attachments so the media-library
+        // "size" sort orders them correctly (new uploads get it at write time).
+        self::maybe_backfill_filesize_meta();
         update_option('wpsg_db_version', self::DB_VERSION);
+    }
+
+    /**
+     * P67-I: one-time, option-guarded backfill of the numeric _wpsg_filesize meta
+     * for existing image/video attachments, so the media-library size sort has a
+     * real value to order by. New uploads stamp it at write time (the media
+     * controller's own path and the add_attachment hook), so this only seeds
+     * history.
+     *
+     * Entry point from maybe_upgrade(); the work itself is bounded per run and
+     * resumed on cron (see run_filesize_backfill_batch()).
+     */
+    private static function maybe_backfill_filesize_meta(): void {
+        self::run_filesize_backfill_batch();
+    }
+
+    /**
+     * P67-I: stamp up to FILESIZE_BACKFILL_MAX_BATCHES batches of unstamped
+     * attachments, then either mark the backfill complete or schedule itself to
+     * continue.
+     *
+     * The work is deliberately bounded. A media library is the largest table a
+     * gallery plugin touches, and this runs from maybe_upgrade() on `init` — an
+     * unbounded loop over every attachment (a filesize() stat plus a meta write
+     * each) can outlive max_execution_time on a large install. Because
+     * `wpsg_db_version` is only bumped after maybe_upgrade() returns, a timeout
+     * there would re-enter the whole upgrade path on every subsequent request.
+     * Bounding the run keeps each request cheap and lets cron finish the tail.
+     *
+     * Public so the cron hook can call it.
+     */
+    public static function run_filesize_backfill_batch(): void {
+        if (get_option('wpsg_filesize_backfilled')) {
+            return;
+        }
+
+        // Both bounds are filterable so an operator on an unusually large or
+        // unusually slow install can retune the trade-off between finishing sooner
+        // and keeping each request cheap.
+        $batch_size  = max(1, intval(apply_filters('wpsg_filesize_backfill_batch_size', self::FILESIZE_BACKFILL_BATCH)));
+        $max_batches = max(1, intval(apply_filters('wpsg_filesize_backfill_max_batches', self::FILESIZE_BACKFILL_MAX_BATCHES)));
+
+        for ($batch = 0; $batch < $max_batches; $batch++) {
+            // Always fetch the first page of still-unstamped attachments: stamping a
+            // batch removes it from the NOT EXISTS filter, so the next batch is the
+            // new first page. Incrementing a page offset here would skip rows.
+            $ids = get_posts([
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'post_mime_type' => ['image', 'video'],
+                'posts_per_page' => $batch_size,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+                'meta_query'     => [
+                    ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
+                ],
+            ]);
+
+            foreach ($ids as $id) {
+                // Always stamp a value (0 when the file is missing/unreadable) so
+                // the row leaves the NOT EXISTS filter — otherwise the loop would
+                // re-fetch the same unstampable rows forever. Mirrors what
+                // WPSG_Media_Controller::stamp_filesize_meta() writes for new rows.
+                $file = get_attached_file($id);
+                $size = 0;
+                if (is_string($file) && $file !== '' && file_exists($file)) {
+                    $bytes = filesize($file);
+                    $size = ($bytes !== false) ? (int) $bytes : 0;
+                }
+                update_post_meta($id, '_wpsg_filesize', $size);
+            }
+
+            // A short page means there is nothing left to stamp.
+            if (count($ids) < $batch_size) {
+                update_option('wpsg_filesize_backfilled', '1', false);
+                return;
+            }
+        }
+
+        // Budget spent with rows still unstamped — resume on the next cron tick.
+        if (!wp_next_scheduled(self::FILESIZE_BACKFILL_HOOK)) {
+            wp_schedule_single_event(time() + MINUTE_IN_SECONDS, self::FILESIZE_BACKFILL_HOOK);
+        }
     }
 
     // ── P18-F: Analytics events table ─────────────────────────────────────

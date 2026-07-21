@@ -1,23 +1,26 @@
 # Phase 67 - PHP Code Quality: Refactor, Efficiency & Dead-Code Sweep
 
-**Status:** Planned
+**Status:** Complete — landed 2026-07-19 (all 10 tracks + the P67-R review-fix pass; full suite 1274 tests / 0 failures / lint clean)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-19
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P67-A | Collapse ~58 redundant hand-written blocks in `sanitize_settings()` into the registry-driven loop | Planned | Medium |
-| P67-B | Extract query-builder and cache-key stages from `list_campaigns()` | Planned | Small-Medium |
-| P67-C | Dedup upload error/duplicate response shaping | Planned | Small |
-| P67-D | Unify the global-settings write path (3 copies → 1) | Planned | Small |
-| P67-E | Minor duplications bundle (meta-sync closures, Rumble regex, user-search alignment) | Planned | Tiny |
-| P67-F | Replace `wp_get_object_terms()` with `get_the_terms()` in hot paths | Planned | Small |
-| P67-G | Prime meta caches in full-scan loops | Planned | Small |
-| P67-H | Dispatch the first webhook delivery attempt asynchronously | Planned | Small |
-| P67-I | Media-library "size" sort orders by a serialized blob | Planned | Small-Medium |
-| P67-J | Dead-code & latent-bug sweep (deprecated permission primitives, vestigial code, `$user_id`/`current_user_can()` mismatch, oEmbed-failure-count autoload) | Planned | Small |
+| P67-A | Collapse ~58 redundant hand-written blocks in `sanitize_settings()` into the registry-driven loop | Done | Medium |
+| P67-B | Extract query-builder and cache-key stages from `list_campaigns()` | Done | Small-Medium |
+| P67-C | Dedup upload error/duplicate response shaping | Done | Small |
+| P67-D | Unify the global-settings write path (3 copies → 1) | Done | Small |
+| P67-E | Minor duplications bundle (meta-sync closures, Rumble regex, user-search alignment) | Done | Tiny |
+| P67-F | Replace `wp_get_object_terms()` with `get_the_terms()` in hot paths | Done | Small |
+| P67-G | Prime meta caches in full-scan loops | Done | Small |
+| P67-H | Dispatch the first webhook delivery attempt asynchronously | Done | Small |
+| P67-I | Media-library "size" sort orders by a serialized blob | Done | Small-Medium |
+| P67-J | Dead-code & latent-bug sweep (deprecated permission primitives, vestigial code, `$user_id`/`current_user_can()` mismatch, oEmbed-failure-count autoload) | Done | Small |
+| P67-R | PR review & fix pass over the landed phase (4 defects fixed, 6 areas cleared) — see [PR Review & Fix Pass](#pr-review--fix-pass--p67-r-2026-07-19) | Done | Small-Medium |
+
+**Manual QA:** see the companion [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md) for per-track hand-verification steps and the sign-off checklist.
 
 ---
 
@@ -300,8 +303,56 @@ Four small, independent items bundled for a single cleanup pass:
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+Landed 2026-07-19 in batches, each verified against the full wp-env PHPUnit suite before the next:
+**J → (F, G, H) → (C, D, E) → (B, A) + I.** Final suite: **1267 tests, 13579 assertions, 0 failures, 2 pre-existing skips** (was 1255 at the P66 landing; +12 net = 8 new `WPSG_P67B_Query_Builder_Test` + 4 new `WPSG_P67I_Filesize_Sort_Test`, and −2 for the removed `WPSG_Image_Optimizer::get_stats()` tests). `composer lint:php` clean throughout.
+
+Corrections and decisions surfaced during execution (the plan's line numbers were treated as advisory and re-derived against current source):
+
+- **P67-A.** Actual block count was **58**; after analysis, **all** bool/int-range/float-range/enum blocks were removable — *including* the five "leave-unset-on-invalid" enum blocks (`card_border_mode`, `card_shadow_preset`, `card_thumbnail_fit`, `modal_transition`, `card_display_mode`), because the generic loop runs *after* the hand blocks and already normalized their invalid inputs to the default. Only the **6** genuinely special fields remain hand-written (`api_base`, `card_border_color`, `typography_overrides`, `viewer_bg_gradient`, `gallery_config`, `card_config`) — exactly the set the review named. `rate_limit_requests_per_minute => [0,6000]` was moved into `WPSG_Settings_Registry::$field_ranges` (the only removed int block whose range wasn't already there). `sanitize_settings()` shrank ~280 → ~108 lines (~61%). Every removed field's default type was verified against the registry before removal; the settings suites (which pin exact per-field output) confirm byte-for-byte equivalence.
+- **P67-B.** `list_campaigns()` was **253 lines** (not the plan's 245 — P66-E's template-exclusion block shifted it). Extracted `build_campaign_cache_key()` + `build_campaign_query_args()` verbatim; added `WPSG_P67B_Query_Builder_Test` (8 tests) covering admin/anonymous/scoped branches, the meta-query `relation => AND` fixup, sort mapping, and cache-key stability/variation.
+- **P67-C.** Extracted `format_duplicate_fields(WP_Error)` for the shared 409 shaping (a more precise target than the plan's `format_upload_result` — the real duplication was only the duplicate/near-duplicate field block; the audit calls still use `$data` directly). Moved `get_upload_error_data()` to `WPSG_REST_Base`; `upload_font()` now calls it.
+- **P67-D.** Built `WPSG_REST_Base::write_global_settings($input, $mode, $bump_cache, $summary_prefix, $audit_extra)` with modes `replace`/`patch`/`changed`, preserving all three call sites byte-for-byte. The permission-guard difference (settings controller returns a 403; space panel **silently drops**) was **deliberately preserved**; unifying it is future-tasked in [FUTURE_TASKS.md](FUTURE_TASKS.md) › *Settings & Admin UI*.
+- **P67-E.** (a) one named `wpsg_sync_media_refs_on_meta_change()` for all three meta hooks, with the delete-path `[]` quirk preserved via `current_action()`. (b) shared Rumble token hosted on the **always-loaded `WPSG_Provider_Registry`** (`RUMBLE_VIDEO_ID_TOKEN`), *not* the lazily-loaded `WPSG_Provider_Rumble`, so the media controller can reference it without a fatal (no autoloader exists for these classes). (c) `resolve_user`/`search_users` columns confirmed already aligned — **no code change**.
+- **P67-F.** Swapped the 4 term lookups to `get_the_terms()` and fixed `list_companies()`'s wrong-taxonomy cache prime (`wpsg_campaign` → `wpsg_company`). Left the **batch** `enrich_media_with_metadata()` `wp_get_object_terms()` call untouched — `get_the_terms()` takes a single object id, so it is a documented **non-target**, not a miss.
+- **P67-G.** Primed `update_meta_cache`/`update_object_term_cache`/`update_termmeta_cache` in the three scan loops, **plus** the second (company-term) loop inside `purge_expired_grants()` that wasn't in the original review scope (per planning Decision 4). Batch priming is memory-neutral because WordPress already lazy-loads each post's full meta on first access.
+- **P67-H.** Attempt #1 now routes through the same `wpsg_webhook_retry` cron hook as retries 2–3 (delay 0), with a synchronous fallback for id-less legacy endpoints. Added `test_dispatch_defers_first_attempt_to_cron_for_endpoint_with_id` — the first automated coverage of the cron/retry path. Trade-off (documented): the first delivery-log entry now appears after the cron tick, not inline.
+- **P67-I.** `_wpsg_filesize` numeric meta written at upload (`create_attachment_from_upload()` + a new `add_attachment` hook), backfilled by a **DB v17** one-time guarded migration; sort uses an `OR … NOT EXISTS` meta clause so un-stamped attachments sort as NULL instead of vanishing. Two bugs caught in the backfill during implementation: the paginated `NOT EXISTS` loop skipped rows (fixed to always fetch page 1) and could infinite-loop on missing-file attachments (fixed by stamping `0`). Added `WPSG_P67I_Filesize_Sort_Test` (4 tests). `wpsg_filesize_backfilled` added to `uninstall.php`.
+- **P67-J.** Deleted the 3 dead permission primitives, `enrich_media_with_dimensions()`, `WPSG_Layout_Templates::check_size_limit()`, and `WPSG_Image_Optimizer::get_stats()` (chosen over wiring into `/admin/health`, since it is an unbounded full-library scan that would be a health-endpoint regression) + its 2 tests. Relabelled the mislabelled `P14-C` marker, removed the stray `P15-B` marker + orphaned docblock, cleaned the stale `WPSG_P52A_Permission_Matrix_Test` docblock and `WPSG_Permissions` legend entries. Fixed `get_effective_campaign_level()`'s admin short-circuit to `user_can($user_id, …)` and kept the function (Decision 2). Set `wpsg_oembed_failure_count`'s two `update_option()` sites to `$autoload = false`.
+
+## PR Review & Fix Pass — P67-R (2026-07-19)
+
+A full review pass over the landed Phase 67 commit (`10c9bf38`), covering correctness of every track rather than only the diff's stated intent. Four defects were found and fixed; six areas were challenged and cleared without changes. Two hypotheses were tested empirically against wp-env rather than reasoned about, because both hinged on WordPress core semantics that are easy to misread — one confirmed a real bug, the other exonerated the code.
+
+Regression guards live in `WPSG_P67R_Review_Fixes_Test` (7 tests). Each fix below states what was wrong, why it mattered, and what pins it.
+
+### Accepted — fixed
+
+**R1. `update_object_term_cache()` was passed a taxonomy, not an object type.** Its second parameter is an *object type*, which it expands via `get_object_taxonomies()` into every taxonomy registered for that type. `get_object_taxonomies('wpsg_company')` returns `[]` — a taxonomy is not an object type — so both P67 calls primed nothing at all and returned early. Verified directly in wp-env: priming 3 campaigns via the taxonomy name warms 0/3 object-term caches; via the post type, 3/3.
+
+- `class-wpsg-rest-base.php` — `get_accessible_campaign_ids()`. **Real impact.** The page is fetched with `fields => 'ids'`, so post objects, meta *and* terms all start cold; the no-op prime meant P67-G's stated win never materialised. Worse, P67-F's swap to `get_the_terms()` introduced a *new* N+1 on this path, because `get_the_terms()` calls `get_post()` first and nothing had primed the post cache. Replaced both hand-rolled priming calls with a single `_prime_post_caches($query->posts, true, true)`, which primes posts, meta and object terms together and derives the object-type argument from the posts themselves — so the same mistake cannot recur here.
+- `class-wpsg-content-controller.php` — `list_companies()`. **No runtime impact**, but the change was wrong in the other direction: the pre-P67 `'wpsg_campaign'` argument was already correct, and P67-F "fixed" it to `'wpsg_company'` on a mistaken premise inherited from the review finding (§ E-1's "primes the wrong taxonomy" note). The observable effect is nil either way — `get_posts()` returns full `WP_Post` objects and WP_Query primes the object-term cache for its own results — so the explicit call is belt-and-braces regardless. Reverted to the post type and replaced the comment with the actual API contract.
+
+**R2. `stamp_filesize_meta()` silently skipped unreadable files.** It returned without writing when the attachment's file was missing — offloaded/remote media, a broken path — while the backfill deliberately stamps `0` for exactly those rows. The divergence left such attachments permanently without `_wpsg_filesize`: invisible to any future query filtering on the key, and reliant forever on the `OR … NOT EXISTS` branch of the sort. Now always writes, `0` when unreadable, matching the backfill.
+
+**R3. The `_wpsg_filesize` backfill was unbounded.** `maybe_backfill_filesize_meta()` looped over *every* image/video attachment in one pass — a `filesize()` stat plus a meta write each — from `maybe_upgrade()` on `init`. A media library is the largest table a gallery plugin touches; on a large install this can outlive `max_execution_time`, and because `wpsg_db_version` is only bumped after `maybe_upgrade()` returns, a timeout there re-enters the entire upgrade path on every subsequent request. (The sibling P66 backfills are bounded by what they scan — archived campaigns only — so they were not exposed to this.) Now bounded to `FILESIZE_BACKFILL_MAX_BATCHES × FILESIZE_BACKFILL_BATCH` = 1000 attachments per run, with the remainder handed to a new `wpsg_filesize_backfill` cron hook that resumes until the guard option is set. Both bounds are filterable (`wpsg_filesize_backfill_batch_size`, `wpsg_filesize_backfill_max_batches`), following the existing `wpsg_permissions_page_size` convention. The hook is registered in the plugin bootstrap and added to the canonical `wpsg_get_cron_hooks()` list, so deactivate/uninstall clear it — `WPSG_Cron_Hooks_Test` pins it against the class constant like every other hook.
+
+**R4. `wp_schedule_single_event()`'s return value was ignored.** P67-H routed webhook delivery #1 through cron but never checked whether the event was actually queued. `wp_schedule_single_event()` returns false when a `pre_schedule_event`/`schedule_event` filter vetoes the event, or when an identical event is already queued inside its 10-minute duplicate window — and the attempt was then dropped with **no delivery-log entry at all**, which is strictly worse than the latency P67-H set out to avoid. `dispatch()` now falls back to inline `deliver()` when scheduling is refused; `schedule_retry()` returns `bool` to report it.
+
+### Challenged — no change needed
+
+- **P67-A range equivalence.** The highest-risk claim in the phase (58 hand-written blocks deleted in favour of registry metadata) was verified mechanically rather than by inspection: all 24 removed numeric clamps were extracted from the diff and cross-checked against `WPSG_Settings_Registry::$field_ranges`. Every one matches exactly. `thumbnail_scroll_speed`'s default is `1.0` — a genuine float — so the generic loop takes the float branch and its `0.25` lower bound survives, which an int default would have silently destroyed.
+- **Media size-sort join fan-out.** The `relation => OR` + `EXISTS`/`NOT EXISTS` meta clause looked like it should duplicate un-stamped attachments: core joins the `EXISTS` clause on `post_id` alone with the key test in `WHERE`, and `WP_Query` — unlike `WP_User_Query` — never consults `has_or_relation()` to add `DISTINCT`. Tested with a deliberately un-stamped attachment carrying extra meta rows: **no duplication**, correct `total`. Left as-is. (`DISTINCT` would in fact have been the wrong fix — it errors under `ONLY_FULL_GROUP_BY` when `ORDER BY` references a non-selected column.)
+- **P67-F output ordering.** `get_the_terms()` could plausibly return a different order than `wp_get_object_terms()` did, which would change category order in API responses. It does not: `update_object_term_cache()` primes with `orderby => 'name'` and `get_the_terms()`'s uncached path uses `wp_get_object_terms()`'s `orderby => name` default, so both the primed and unprimed paths match the old behaviour. The "byte-for-byte identical output" claim holds.
+- **P67-B / P67-C / P67-D extractions.** Re-derived each against its pre-refactor source. `build_campaign_query_args()`/`build_campaign_cache_key()` are faithful; `format_duplicate_fields()` produces the same fields in both the single-file and batch paths; `write_global_settings()`'s three modes reproduce all three call sites including the space panel's skip-when-nothing-changed semantics and the deliberately-preserved silent drop.
+- **P67-J deletions.** Repo-wide grep confirms zero remaining references to all six deleted symbols (the three permission primitives, `enrich_media_with_dimensions()`, `check_size_limit()`, `WPSG_Image_Optimizer::get_stats()`), including the TS/JS client.
+- **`_wpsg_filesize` and uninstall.** Not added to `uninstall.php`'s cleanup — consistent, not an omission: the plugin deletes no post meta on uninstall (`_wpsg_space_id` and the rest are equally untouched). Only the `wpsg_filesize_backfilled` guard option is removed, which P67-I already did.
+
+### Validation
+
+Full wp-env PHPUnit suite green and `composer lint:php` clean after the fixes; see the *Outcome* section for the final counts. `WPSG_P67R_Review_Fixes_Test` fails against the pre-fix commit for R1, R2, R3 and R4 respectively, so each guard demonstrably pins its defect. Manual-QA steps for the fixes are folded into the per-track sections of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md) plus its new *§5 Review-fix verification* block.
 
 ## Outcome
 
-Not started.
+Complete. All ten tracks landed with full automated coverage green and PHPCS clean; per-track manual-QA procedures are documented in [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md). One follow-on (the settings-write guard unification deferred from P67-D) is recorded in FUTURE_TASKS.md.
+
+A subsequent PR review pass (**P67-R**, above) found and fixed four defects in the landed work — two of them in the efficiency tracks' own cache priming, which was silently doing nothing — and cleared six further areas after challenge. Final suite: **1274 tests, 13609 assertions, 0 failures, 2 pre-existing skips** (1267 at the P67 landing, +7 from `WPSG_P67R_Review_Fixes_Test`). `composer lint:php` clean.

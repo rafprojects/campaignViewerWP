@@ -190,71 +190,60 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
         ]);
     }
 
-    public static function list_campaigns($request) {
-        $start = microtime(true);
-        $status = sanitize_text_field($request->get_param('status'));
-        $visibility = sanitize_text_field($request->get_param('visibility'));
-        $company = sanitize_text_field($request->get_param('company'));
-        $search = sanitize_text_field($request->get_param('search'));
-        $include_media_raw = $request->get_param('include_media');
-        $include_media = in_array(strtolower((string) $include_media_raw), ['1', 'true', 'yes'], true);
-        $page = max(1, intval($request->get_param('page')));
-        $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
-        // P28-E: New filter params.
-        $category           = sanitize_text_field($request->get_param('category') ?? '');
-        $tag                = sanitize_text_field($request->get_param('tag') ?? '');
-        $sort               = sanitize_text_field($request->get_param('sort') ?: 'created_desc');
-        $include_archived   = in_array(strtolower((string) $request->get_param('include_archived')), ['1', 'true', 'yes'], true);
-        $template_id_filter = sanitize_text_field($request->get_param('template_id') ?? '');
-        // P47-C: optional space filter — numeric id scopes to that space; omitted/all = no filter.
-        $space_param = sanitize_text_field($request->get_param('space') ?? '');
-
-        // Generate cache key based on user ID, query parameters, and cache version
-        $user_id = get_current_user_id();
-        // P53-A: only a System Admin (manage_options) gets the unscoped "see every
-        // campaign" view. A wpsg_editor (manage_wpsg) is scoped to the campaigns it
-        // can access — public campaigns everywhere (P53-B) plus everything in the
-        // spaces it can access — closing the cross-space private-metadata leak while
-        // preserving public visibility.
-        $is_system_admin = current_user_can('manage_options');
-        $search_key = $search ? md5($search) : 'none';
+    /**
+     * P67-B: build the transient cache key for a campaigns.list request.
+     * Extracted verbatim from list_campaigns() — same inputs produce the same key.
+     *
+     * @param array $f               Sanitized filters (see list_campaigns()).
+     * @param int   $user_id         Current user id.
+     * @param bool  $is_system_admin Whether the actor sees every campaign unscoped.
+     * @return string
+     */
+    private static function build_campaign_cache_key(array $f, int $user_id, bool $is_system_admin): string {
+        $search_key = $f['search'] ? md5($f['search']) : 'none';
         $cv = self::get_cache_version();
-        $cache_key = 'wpsg_campaigns_' . md5(sprintf(
+        return 'wpsg_campaigns_' . md5(sprintf(
             'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
-            $status ?: 'all',
-            $visibility ?: 'all',
-            $company ?: 'all',
+            $f['status'] ?: 'all',
+            $f['visibility'] ?: 'all',
+            $f['company'] ?: 'all',
             $search_key,
-            $page,
-            $per_page,
+            $f['page'],
+            $f['per_page'],
             $is_system_admin ? 'admin' : 'user',
-            $include_media ? 'with_media' : 'no_media',
-            $category ?: 'none',
-            $tag ?: 'none',
-            $sort,
-            $include_archived ? 'incl' : 'excl',
-            $template_id_filter ? md5($template_id_filter) : 'none',
-            is_numeric($space_param) ? $space_param : 'all'
+            $f['include_media'] ? 'with_media' : 'no_media',
+            $f['category'] ?: 'none',
+            $f['tag'] ?: 'none',
+            $f['sort'],
+            $f['include_archived'] ? 'incl' : 'excl',
+            $f['template_id'] ? md5($f['template_id']) : 'none',
+            is_numeric($f['space']) ? $f['space'] : 'all'
         ));
+    }
 
-        // Try to get cached data
-        $cached = get_transient($cache_key);
-        if (false !== $cached && is_array($cached)) {
-            return new WP_REST_Response($cached, 200);
-        }
-
+    /**
+     * P67-B: assemble the WP_Query args for a campaigns.list request. Extracted
+     * verbatim from list_campaigns() with no behavior change. The only external
+     * read is the accessible-campaign-id lookup for scoped, authenticated users.
+     *
+     * @param array $f               Sanitized filters (see list_campaigns()).
+     * @param bool  $is_system_admin Whether the actor sees every campaign unscoped.
+     * @param int   $user_id         Current user id (0 = anonymous).
+     * @return array WP_Query args.
+     */
+    private static function build_campaign_query_args(array $f, bool $is_system_admin, int $user_id): array {
         $args = [
             'post_type'      => 'wpsg_campaign',
             'post_status'    => 'publish',
-            'paged'          => $page,
-            'posts_per_page' => $per_page,
-            's'              => $search,
+            'paged'          => $f['page'],
+            'posts_per_page' => $f['per_page'],
+            's'              => $f['search'],
         ];
 
         // P28-E: Sort mapping.
-        switch ($sort) {
+        switch ($f['sort']) {
             case 'created_asc':
                 $args['orderby'] = 'date';
                 $args['order']   = 'ASC';
@@ -286,19 +275,19 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
             'compare' => 'NOT EXISTS',
         ];
         // P47-C: space scoping — filter by _wpsg_space_id when a numeric space id is given.
-        if (is_numeric($space_param) && intval($space_param) > 0) {
+        if (is_numeric($f['space']) && intval($f['space']) > 0) {
             $meta_query[] = [
                 'key'   => '_wpsg_space_id',
-                'value' => intval($space_param),
+                'value' => intval($f['space']),
                 'type'  => 'NUMERIC',
             ];
         }
-        if (!empty($status)) {
+        if (!empty($f['status'])) {
             $meta_query[] = [
                 'key'   => 'status',
-                'value' => $status,
+                'value' => $f['status'],
             ];
-        } elseif (!$include_archived) {
+        } elseif (!$f['include_archived']) {
             // P28-E: Exclude archived campaigns by default; pass include_archived=true to override.
             $meta_query[] = [
                 'relation' => 'OR',
@@ -306,17 +295,17 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 ['key' => 'status', 'value' => 'archived', 'compare' => '!='],
             ];
         }
-        if (!empty($visibility)) {
+        if (!empty($f['visibility'])) {
             $meta_query[] = [
                 'key'   => 'visibility',
-                'value' => $visibility,
+                'value' => $f['visibility'],
             ];
         }
         // P28-E: Filter by layout template ID.
-        if (!empty($template_id_filter)) {
+        if (!empty($f['template_id'])) {
             $meta_query[] = [
                 'key'   => '_wpsg_layout_binding_template_id',
-                'value' => $template_id_filter,
+                'value' => $f['template_id'],
             ];
         }
         if (!empty($meta_query)) {
@@ -325,25 +314,25 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
 
         // P28-E: Taxonomy filters — company, category, and tag may all be present simultaneously.
         $tax_clauses = [];
-        if (!empty($company)) {
+        if (!empty($f['company'])) {
             $tax_clauses[] = [
                 'taxonomy' => 'wpsg_company',
                 'field'    => 'slug',
-                'terms'    => [$company],
+                'terms'    => [$f['company']],
             ];
         }
-        if (!empty($category)) {
+        if (!empty($f['category'])) {
             $tax_clauses[] = [
                 'taxonomy' => 'wpsg_campaign_category',
                 'field'    => 'slug',
-                'terms'    => [$category],
+                'terms'    => [$f['category']],
             ];
         }
-        if (!empty($tag)) {
+        if (!empty($f['tag'])) {
             $tax_clauses[] = [
                 'taxonomy' => 'wpsg_campaign_tag',
                 'field'    => 'slug',
-                'terms'    => [$tag],
+                'terms'    => [$f['tag']],
             ];
         }
         if (!empty($tax_clauses)) {
@@ -395,6 +384,63 @@ class WPSG_Campaign_Controller extends WPSG_REST_Base {
                 $args['meta_query']['relation'] = 'AND';
             }
         }
+
+        return $args;
+    }
+
+    public static function list_campaigns($request) {
+        $start = microtime(true);
+        $status = sanitize_text_field($request->get_param('status'));
+        $visibility = sanitize_text_field($request->get_param('visibility'));
+        $company = sanitize_text_field($request->get_param('company'));
+        $search = sanitize_text_field($request->get_param('search'));
+        $include_media_raw = $request->get_param('include_media');
+        $include_media = in_array(strtolower((string) $include_media_raw), ['1', 'true', 'yes'], true);
+        $page = max(1, intval($request->get_param('page')));
+        $per_page = max(1, min(50, intval($request->get_param('per_page') ?: 10)));
+        // P28-E: New filter params.
+        $category           = sanitize_text_field($request->get_param('category') ?? '');
+        $tag                = sanitize_text_field($request->get_param('tag') ?? '');
+        $sort               = sanitize_text_field($request->get_param('sort') ?: 'created_desc');
+        $include_archived   = in_array(strtolower((string) $request->get_param('include_archived')), ['1', 'true', 'yes'], true);
+        $template_id_filter = sanitize_text_field($request->get_param('template_id') ?? '');
+        // P47-C: optional space filter — numeric id scopes to that space; omitted/all = no filter.
+        $space_param = sanitize_text_field($request->get_param('space') ?? '');
+
+        $user_id = get_current_user_id();
+        // P53-A: only a System Admin (manage_options) gets the unscoped "see every
+        // campaign" view. A wpsg_editor (manage_wpsg) is scoped to the campaigns it
+        // can access — public campaigns everywhere (P53-B) plus everything in the
+        // spaces it can access — closing the cross-space private-metadata leak while
+        // preserving public visibility.
+        $is_system_admin = current_user_can('manage_options');
+
+        // P67-B: bundle the sanitized filters once; the cache-key and query-args
+        // builders both read from it.
+        $filters = [
+            'status'           => $status,
+            'visibility'       => $visibility,
+            'company'          => $company,
+            'search'           => $search,
+            'include_media'    => $include_media,
+            'page'             => $page,
+            'per_page'         => $per_page,
+            'category'         => $category,
+            'tag'              => $tag,
+            'sort'             => $sort,
+            'include_archived' => $include_archived,
+            'template_id'      => $template_id_filter,
+            'space'            => $space_param,
+        ];
+
+        // Try to get cached data
+        $cache_key = self::build_campaign_cache_key($filters, $user_id, $is_system_admin);
+        $cached = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            return new WP_REST_Response($cached, 200);
+        }
+
+        $args = self::build_campaign_query_args($filters, $is_system_admin, $user_id);
 
         $query = new WP_Query($args);
         $items = array_map([self::class, 'format_campaign'], $query->posts);

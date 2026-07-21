@@ -80,25 +80,8 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
             return $denied;
         }
 
-        $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current   = WPSG_Settings::get_settings();
-        $merged    = array_merge($current, $sanitized);
-
-        $changed_keys = array_keys(array_filter($sanitized, function ($v, $k) use ($current) {
-            return !array_key_exists($k, $current) || $current[$k] !== $v;
-        }, ARRAY_FILTER_USE_BOTH));
-
-        update_option(WPSG_Settings::OPTION_NAME, $merged);
-        self::bump_cache_version();
-
-        if (!empty($changed_keys)) {
-            self::add_audit_entry(0, 'settings.updated', [
-                'changedKeys' => $changed_keys,
-            ], [
-                'scope'   => 'system',
-                'summary' => 'App settings updated: ' . implode(', ', $changed_keys),
-            ]);
-        }
+        // P67-D: shared global-settings write path (sanitize → merge → audit).
+        self::write_global_settings($input, 'replace', true, 'App settings updated: ');
 
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),
@@ -120,27 +103,8 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
             return $denied;
         }
 
-        $sanitized = WPSG_Settings::sanitize_settings($input);
-        $current   = WPSG_Settings::get_settings();
-        $applied   = array_intersect_key($sanitized, $input);
-
-        $changed_keys = array_keys(array_filter($applied, function ($v, $k) use ($current) {
-            return !array_key_exists($k, $current) || $current[$k] !== $v;
-        }, ARRAY_FILTER_USE_BOTH));
-
-        // Only merge the keys the caller actually sent.
-        $merged = array_merge($current, $applied);
-        update_option(WPSG_Settings::OPTION_NAME, $merged);
-        self::bump_cache_version();
-
-        if (!empty($changed_keys)) {
-            self::add_audit_entry(0, 'settings.updated', [
-                'changedKeys' => $changed_keys,
-            ], [
-                'scope'   => 'system',
-                'summary' => 'App settings patched: ' . implode(', ', $changed_keys),
-            ]);
-        }
+        // P67-D: shared global-settings write path (patch = only caller-sent keys).
+        self::write_global_settings($input, 'patch', true, 'App settings patched: ');
 
         return new WP_REST_Response(
             WPSG_Settings::to_js(WPSG_Settings::get_settings(), true),

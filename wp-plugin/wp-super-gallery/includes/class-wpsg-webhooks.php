@@ -99,7 +99,22 @@ class WPSG_Webhooks {
             'data'      => $payload,
         ];
 
+        // P67-H: dispatch delivery attempt #1 through WP-Cron (like retries 2-3)
+        // instead of blocking the originating request. A slow or unreachable
+        // endpoint used to add up to MAX_ENDPOINTS × 10s to every campaign/media
+        // save; now the admin request returns immediately and cron does the POST.
+        // Endpoints without a stable UUID (legacy config) fall back to the inline
+        // synchronous path so they are still delivered.
+        // If scheduling is refused — wp_schedule_single_event() returns false when a
+        // pre_schedule_event/schedule_event filter vetoes it, or when an identical
+        // event is already queued inside its 10-minute duplicate window — deliver
+        // inline instead. Dropping the attempt silently would lose the delivery and
+        // its log entry entirely, which is worse than the latency this avoids.
         foreach ($endpoints as $idx => $endpoint) {
+            $endpoint_id = $endpoint['id'] ?? '';
+            if ($endpoint_id && self::schedule_retry($endpoint_id, $event, $full_payload, 1)) {
+                continue;
+            }
             self::deliver($idx, $endpoint, $event, $full_payload, 1);
         }
     }
@@ -149,14 +164,18 @@ class WPSG_Webhooks {
         }
     }
 
-    private static function schedule_retry(string $endpoint_id, string $event, array $payload, int $attempt) {
-        // Attempt 2: +5 min. Attempt 3: +30 min.
+    /**
+     * @return bool True when the event was queued, false when WP-Cron refused it.
+     */
+    private static function schedule_retry(string $endpoint_id, string $event, array $payload, int $attempt): bool {
+        // Attempt 1: immediate (+0, P67-H — off the originating request). Attempt 2:
+        // +5 min. Attempt 3: +30 min.
         // The stable endpoint UUID is persisted rather than the array index, which
         // can shift when endpoints are deleted. The endpoint is reloaded from the
         // option at retry time; neither the secret nor the full config is stored.
         $delays = [0, 300, 1800];
         $delay  = $delays[$attempt - 1] ?? 1800;
-        wp_schedule_single_event(
+        return (bool) wp_schedule_single_event(
             time() + $delay,
             self::RETRY_HOOK,
             [$endpoint_id, $event, $payload, $attempt]

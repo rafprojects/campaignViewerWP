@@ -378,6 +378,13 @@ class WPSG_Monitoring {
             'no_found_rows'  => true,
         ]);
 
+        // P67-G: prime post-meta in bounded batches so the per-campaign
+        // get_post_meta('access_grants') reads below are cache hits, not N+1
+        // queries. This runs on every /admin/health call.
+        foreach (array_chunk($campaigns, 200) as $chunk) {
+            update_meta_cache('post', $chunk);
+        }
+
         foreach ($campaigns as $campaign_id) {
             $grants = get_post_meta($campaign_id, 'access_grants', true);
             if (!is_array($grants)) {

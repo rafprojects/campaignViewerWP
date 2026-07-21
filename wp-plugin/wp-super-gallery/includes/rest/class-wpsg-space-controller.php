@@ -458,25 +458,20 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         // manage_options (the System & Admin tab is already gated to that tier
         // client-side); editors writing only display keys are unaffected.
         $global_input = array_diff_key($snake_input, $allowed);
+        // P67-D: route the changed global keys through the shared write path.
+        // NOTE: this branch still *silently drops* the global keys when the caller
+        // lacks manage_options (unlike /settings, which returns a 403). That
+        // pre-existing inconsistency is deliberately preserved here; unifying the
+        // guard is tracked in docs/FUTURE_TASKS.md. Passing false for $bump_cache
+        // because bump_cache_version() is called once below after the override write.
         if (!empty($global_input) && current_user_can('manage_options')) {
-            $sanitized_global = WPSG_Settings::sanitize_settings($global_input);
-            $applied_global   = array_intersect_key($sanitized_global, $global_input);
-            $current_global   = WPSG_Settings::get_settings();
-            $changed_global   = array_filter(
-                $applied_global,
-                fn($v, $k) => !array_key_exists($k, $current_global) || $current_global[$k] !== $v,
-                ARRAY_FILTER_USE_BOTH
+            self::write_global_settings(
+                $global_input,
+                'changed',
+                false,
+                'Global settings updated via space panel: ',
+                ['via' => 'space-panel']
             );
-            if (!empty($changed_global)) {
-                update_option(WPSG_Settings::OPTION_NAME, array_merge($current_global, $changed_global));
-                self::add_audit_entry(0, 'settings.updated', [
-                    'changedKeys' => array_keys($changed_global),
-                    'via'         => 'space-panel',
-                ], [
-                    'scope'   => 'system',
-                    'summary' => 'Global settings updated via space panel: ' . implode(', ', array_keys($changed_global)),
-                ]);
-            }
         }
 
         $to_clear  = array_keys(array_filter($to_set, fn($v) => $v === null));

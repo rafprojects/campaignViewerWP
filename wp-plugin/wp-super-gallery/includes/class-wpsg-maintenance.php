@@ -190,6 +190,13 @@ class WPSG_Maintenance {
             'no_found_rows'  => true,
         ]);
 
+        // P67-G: prime post-meta in bounded batches so the per-campaign
+        // get_post_meta('access_grants') reads below are cache hits, not N+1
+        // queries. Chunked so each priming query's IN(...) list stays bounded.
+        foreach (array_chunk($campaigns, 200) as $chunk) {
+            update_meta_cache('post', $chunk);
+        }
+
         foreach ($campaigns as $campaign_id) {
             $grants = get_post_meta($campaign_id, 'access_grants', true);
             if (!is_array($grants) || empty($grants)) {
@@ -231,6 +238,13 @@ class WPSG_Maintenance {
 
         if (is_wp_error($terms)) {
             return;
+        }
+
+        // P67-G: prime term-meta in bounded batches so the per-term
+        // get_term_meta('access_grants') reads below are cache hits, not N+1
+        // queries — same pattern as the campaign loop above.
+        foreach (array_chunk($terms, 200) as $chunk) {
+            update_termmeta_cache($chunk);
         }
 
         foreach ($terms as $term_id) {

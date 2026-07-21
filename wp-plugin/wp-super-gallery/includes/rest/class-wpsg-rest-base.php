@@ -424,7 +424,9 @@ abstract class WPSG_REST_Base {
         }
 
         // 1. Site-wide admin always wins — they are treated as owner.
-        if (current_user_can('manage_wpsg')) {
+        // P67-J (G-3): resolve the capability against the passed $user_id, not the
+        // current request user, so this helper is correct if reused for another user.
+        if (user_can($user_id, 'manage_wpsg')) {
             return 'owner';
         }
 
@@ -473,97 +475,7 @@ abstract class WPSG_REST_Base {
         return '';
     }
 
-    /**
-     * P33-C: Permission callback — requires at least 'editor' role on the
-     * campaign identified by the request's `id` parameter.
-     *
-     * Site-wide manage_wpsg capability always satisfies this check.
-     * Both `editor` and `owner` campaign roles satisfy this check.
-     *
-     * @param WP_REST_Request $request
-     * @return bool
-     */
-    public static function require_campaign_editor(WP_REST_Request $request): bool {
-        // Auth integrity check (nonce or Bearer token).
-        if (!self::verify_admin_auth()) {
-            return false;
-        }
-
-        $user_id = get_current_user_id();
-        if ($user_id <= 0) {
-            return false;
-        }
-
-        // Site-wide admin is always allowed.
-        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
-            return true;
-        }
-
-        $campaign_id = intval($request->get_param('id'));
-        if ($campaign_id <= 0) {
-            return false;
-        }
-
-        $level = self::get_effective_campaign_level($user_id, $campaign_id);
-        return in_array($level, ['editor', 'owner'], true);
-    }
-
-    /**
-     * P33-C: Permission callback — requires at least 'owner' role on the
-     * campaign identified by the request's `id` parameter.
-     *
-     * Site-wide manage_wpsg capability always satisfies this check.
-     * Only the `owner` campaign role (or site admin) satisfies this check.
-     *
-     * @param WP_REST_Request $request
-     * @return bool
-     */
-    public static function require_campaign_owner(WP_REST_Request $request): bool {
-        // Auth integrity check (nonce or Bearer token).
-        if (!self::verify_admin_auth()) {
-            return false;
-        }
-
-        $user_id = get_current_user_id();
-        if ($user_id <= 0) {
-            return false;
-        }
-
-        // Site-wide admin is always allowed.
-        if (WPSG_Permissions::actor_has_tier(WPSG_Permissions::TIER_EDITOR)) {
-            return true;
-        }
-
-        $campaign_id = intval($request->get_param('id'));
-        if ($campaign_id <= 0) {
-            return false;
-        }
-
-        $level = self::get_effective_campaign_level($user_id, $campaign_id);
-        return $level === 'owner';
-    }
-
     // ── P47-C: Space permission callbacks ────────────────────────────────────
-
-    /**
-     * Permission callback — requires 'owner' level within the space identified
-     * by the request's `id` parameter. manage_wpsg satisfies this in open mode
-     * (via get_effective_space_level); manage_options always satisfies it.
-     */
-    public static function require_space_owner(WP_REST_Request $request): bool {
-        if (!self::verify_admin_auth()) {
-            return false;
-        }
-        $user_id = get_current_user_id();
-        if ($user_id <= 0) {
-            return false;
-        }
-        $space_id = intval($request->get_param('id'));
-        if ($space_id <= 0) {
-            return false;
-        }
-        return self::get_effective_space_level($user_id, $space_id) === 'owner';
-    }
 
     /**
      * Permission callback — requires any access level (viewer or above) within
@@ -840,6 +752,83 @@ abstract class WPSG_REST_Base {
         update_option('wpsg_cache_version', $v + 1, true);
     }
 
+    // ── P67-D: shared global-settings write path ───────────────────────────────
+
+    /**
+     * Single global-settings write path shared by update_settings(),
+     * patch_settings(), and the space panel's global-key routing. Sanitizes,
+     * merges per $mode, writes wpsg_settings, and emits the settings.updated
+     * audit entry.
+     *
+     * The permission guard stays with each caller — they differ deliberately:
+     * the settings controller returns an explicit 403 for a non-manage_options
+     * write, while the space panel silently drops the keys — so this helper
+     * assumes the write is already authorized (see docs/FUTURE_TASKS.md for the
+     * decision to unify that guard later).
+     *
+     * @param array  $snake_input    snake_case settings the caller is writing.
+     * @param string $mode           'replace' — merge all sanitized keys (full save);
+     *                               'patch'   — merge only caller-sent keys;
+     *                               'changed' — merge only keys whose value changed,
+     *                                           and skip the write entirely when
+     *                                           nothing changed (space-panel semantics).
+     * @param bool   $bump_cache     bump the cache version here (callers that bump
+     *                               once later — the space panel — pass false).
+     * @param string $summary_prefix audit summary prefix; the changed keys are appended.
+     * @param array  $audit_extra    extra fields merged into the audit details.
+     * @return string[] the changed keys (possibly empty).
+     */
+    protected static function write_global_settings(
+        array $snake_input,
+        string $mode,
+        bool $bump_cache,
+        string $summary_prefix,
+        array $audit_extra = []
+    ): array {
+        $sanitized = WPSG_Settings::sanitize_settings($snake_input);
+        $current   = WPSG_Settings::get_settings();
+
+        // Which sanitized keys participate in this write.
+        $applied = ($mode === 'replace')
+            ? $sanitized
+            : array_intersect_key($sanitized, $snake_input);
+
+        $changed = array_filter($applied, function ($v, $k) use ($current) {
+            return !array_key_exists($k, $current) || $current[$k] !== $v;
+        }, ARRAY_FILTER_USE_BOTH);
+        $changed_keys = array_keys($changed);
+
+        if ($mode === 'changed') {
+            // Space-panel semantics: merge only the changed keys, and skip the
+            // option write + audit entirely when nothing changed.
+            if (empty($changed)) {
+                return [];
+            }
+            $to_merge = $changed;
+        } else {
+            // replace/patch always write, preserving the unconditional
+            // update_option + cache bump of the original controllers.
+            $to_merge = $applied;
+        }
+
+        update_option(WPSG_Settings::OPTION_NAME, array_merge($current, $to_merge));
+
+        if ($bump_cache) {
+            self::bump_cache_version();
+        }
+
+        if (!empty($changed_keys)) {
+            self::add_audit_entry(0, 'settings.updated', array_merge([
+                'changedKeys' => $changed_keys,
+            ], $audit_extra), [
+                'scope'   => 'system',
+                'summary' => $summary_prefix . implode(', ', $changed_keys),
+            ]);
+        }
+
+        return $changed_keys;
+    }
+
     // ── Pagination ────────────────────────────────────────────────────────────
 
     // ── P28-F: Pagination helpers ────────────────────────────────────────────
@@ -1003,6 +992,23 @@ abstract class WPSG_REST_Base {
                 'no_found_rows' => true,
             ]);
 
+            // P67-G: prime the post, post-meta and object-term caches for the whole
+            // page so the per-post can_view_campaign() checks — which read several
+            // meta keys, call get_post() on the draft branch, and for private
+            // campaigns resolve the company term via get_the_terms() (P67-F) — all
+            // hit cache instead of issuing N+1 DB queries. The page is already
+            // bounded by $per_page, so no further chunking is needed here.
+            //
+            // _prime_post_caches() is used rather than hand-rolled priming because
+            // 'fields' => 'ids' leaves the post objects themselves uncached, and
+            // get_the_terms() calls get_post() before anything else. It also derives
+            // the object-term cache argument from the posts' real post type:
+            // update_object_term_cache()'s second parameter is an *object type*, not
+            // a taxonomy — passing a taxonomy name makes it a silent no-op.
+            if (!empty($query->posts)) {
+                _prime_post_caches($query->posts, true, true);
+            }
+
             foreach ($query->posts as $post_id) {
                 if (self::can_view_campaign($post_id, $user_id)) {
                     $campaign_ids[] = (string) $post_id;
@@ -1023,12 +1029,58 @@ abstract class WPSG_REST_Base {
         self::bump_cache_version();
     }
 
+    // ── Upload error helpers ──────────────────────────────────────────────────
+
+    /**
+     * P67-C: map a PHP file-upload error code ($_FILES['error']) to a user-facing
+     * message + HTTP status. Shared by the media-upload and font-upload paths so
+     * the two can't drift.
+     *
+     * @param array $file A single $_FILES entry.
+     * @return array{message: string, status: int}|null null when there is no error.
+     */
+    protected static function get_upload_error_data(array $file) {
+        if (!isset($file['error']) || $file['error'] === UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        $message = 'Upload failed.';
+        $status = 400;
+
+        switch ($file['error']) {
+            case UPLOAD_ERR_INI_SIZE:
+            case UPLOAD_ERR_FORM_SIZE:
+                $message = 'Uploaded file exceeds the allowed size.';
+                $status = 413;
+                break;
+            case UPLOAD_ERR_PARTIAL:
+                $message = 'The uploaded file was only partially uploaded.';
+                break;
+            case UPLOAD_ERR_NO_FILE:
+                $message = 'No file was uploaded.';
+                break;
+            case UPLOAD_ERR_NO_TMP_DIR:
+            case UPLOAD_ERR_CANT_WRITE:
+            case UPLOAD_ERR_EXTENSION:
+                $message = 'Server error while processing upload.';
+                $status = 500;
+                break;
+        }
+
+        return [
+            'message' => $message,
+            'status' => $status,
+        ];
+    }
+
     // ── Company term ──────────────────────────────────────────────────────────
 
     protected static function get_company_term($post_id) {
-        $terms = wp_get_object_terms($post_id, 'wpsg_company');
-        if (!empty($terms) && !is_wp_error($terms)) {
-            return $terms[0];
+        // P67-F: get_the_terms() reads the object-term cache primed by WP_Query /
+        // update_object_term_cache(); wp_get_object_terms() always hits the DB.
+        $terms = get_the_terms($post_id, 'wpsg_company');
+        if (is_array($terms) && !empty($terms)) {
+            return reset($terms);
         }
         return null;
     }
@@ -1260,13 +1312,15 @@ abstract class WPSG_REST_Base {
     }
 
     private static function get_campaign_category_names($post_id) {
-        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'names']);
-        return is_array($terms) && !is_wp_error($terms) ? array_values($terms) : [];
+        // P67-F: read the primed object-term cache instead of hitting the DB.
+        $terms = get_the_terms($post_id, 'wpsg_campaign_category');
+        return is_array($terms) ? array_values(wp_list_pluck($terms, 'name')) : [];
     }
 
     private static function get_campaign_category_ids($post_id) {
-        $terms = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
-        return is_array($terms) && !is_wp_error($terms) ? array_values(array_map('strval', $terms)) : [];
+        // P67-F: read the primed object-term cache instead of hitting the DB.
+        $terms = get_the_terms($post_id, 'wpsg_campaign_category');
+        return is_array($terms) ? array_values(array_map('strval', wp_list_pluck($terms, 'term_id'))) : [];
     }
 
     private static function get_campaign_gallery_overrides($post_id) {

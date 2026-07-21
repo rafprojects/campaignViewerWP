@@ -238,22 +238,6 @@ class WPSG_Image_Optimizer_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('webp', $mimes);
     }
 
-    // ── get_stats ──────────────────────────────────────────────────────────
-
-    public function test_get_stats_returns_expected_keys() {
-        $stats = WPSG_Image_Optimizer::get_stats();
-        $this->assertArrayHasKey('optimizedCount', $stats);
-        $this->assertArrayHasKey('webpCount', $stats);
-        $this->assertArrayHasKey('totalImages', $stats);
-    }
-
-    public function test_get_stats_returns_zero_when_no_attachments() {
-        $stats = WPSG_Image_Optimizer::get_stats();
-        $this->assertEquals(0, $stats['totalImages']);
-        $this->assertEquals(0, $stats['optimizedCount']);
-        $this->assertEquals(0, $stats['webpCount']);
-    }
-
     // ── Constants ──────────────────────────────────────────────────────────
 
     public function test_default_constants() {

@@ -28,14 +28,11 @@ if (!defined('ABSPATH')) {
  *   rate_limit_authenticated    manage_options— user creation, rate-limited (System Admin)
  *   require_admin               manage_wpsg   — global admin (bare cap, no space scope)
  *   require_system_admin        manage_options— System Admin only (WP dashboard tier)
- *   require_campaign_editor     DEPRECATED (P53-D) — unused; editing is role+space-scoped now
- *   require_campaign_owner      DEPRECATED (P53-D) — unused; managing is role+space-scoped now
  *   require_campaign_space_access       manage_wpsg + space — per-campaign admin op, scoped to the campaign's space
  *   require_campaign_batch_space_access manage_wpsg + space — batch variant, every id's space must be accessible
  *   require_campaign_space_move manage_wpsg + space — manage_wpsg + access to BOTH source & target space
  *   require_space_member        grant         — any access level in the space (read)
  *   require_space_admin         manage_wpsg + space — per-space management/access, scoped to the space
- *   require_space_owner         DEPRECATED (P53-D) — unused; space mgmt is role+space-scoped now
  *
  * ── P52-A staging ─────────────────────────────────────────────────────────
  * A1 (this commit) wires the map to the *current* gates verbatim — a provable

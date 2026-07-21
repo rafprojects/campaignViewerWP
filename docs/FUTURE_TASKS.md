@@ -410,6 +410,20 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
+### Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)
+
+**Origin:** Phase 67 planning verification (2026-07-19), deferred from track P67-D.
+
+**Context:** P67-D unified the three global-settings write call sites' *mechanics* (sanitize/merge/audit) behind `WPSG_REST_Base::write_global_settings()`, but deliberately preserved a pre-existing behavioral inconsistency: `update_settings()`/`patch_settings()` return an explicit 403 naming the blocked fields when a non-`manage_options` caller attempts to write admin-only keys (via `guard_admin_only_settings()`); `update_space_settings()`'s global-key block instead **silently drops** those keys with no error. Keeping the difference kept P67-D a pure no-behavior-change refactor.
+
+**What to implement:** Decide whether `update_space_settings()` should return the same explicit 403 as the other two paths for unauthorized global-key writes, then implement it using the shared `write_global_settings()` helper (e.g. by moving the `guard_admin_only_settings()` check into, or ahead of, the space-panel global branch). Silent data loss on a permission boundary is worth a deliberate decision rather than leaving it as an accident.
+
+**Files:** `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-space-controller.php` (`update_space_settings()`), `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-settings-controller.php` (`guard_admin_only_settings()`), `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-rest-base.php` (`write_global_settings()`).
+
+**Effort:** Tiny | **Impact:** Low — a latent inconsistency, not a live bug (the System & Admin tab is already gated to `manage_options` client-side), but it is a silent-data-loss corner on a permission boundary.
+
+---
+
 ## Integration
 
 ### Third-Party OAuth Providers

@@ -299,7 +299,8 @@ class WPSG_System_Controller extends WPSG_REST_Base {
                 WPSG_Logger::warning('oembed', 'oEmbed fetch returned error payload', ['url' => $url, 'attempts' => $attempts]);
                 do_action('wpsg_oembed_failure', $url, $attempts);
                 $count = intval(get_option('wpsg_oembed_failure_count', 0));
-                update_option('wpsg_oembed_failure_count', $count + 1);
+                // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
+                update_option('wpsg_oembed_failure_count', $count + 1, false);
                 set_transient($cache_key, $error_payload, 5 * MINUTE_IN_SECONDS);
                 return new WP_REST_Response($result, 502);
             }
@@ -320,7 +321,8 @@ class WPSG_System_Controller extends WPSG_REST_Base {
         WPSG_Logger::warning('oembed', 'oEmbed fetch failed, caching generic fallback', ['url' => $url, 'attempts' => $attempts]);
         do_action('wpsg_oembed_failure', $url, $attempts);
         $count = intval(get_option('wpsg_oembed_failure_count', 0));
-        update_option('wpsg_oembed_failure_count', $count + 1);
+        // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
+        update_option('wpsg_oembed_failure_count', $count + 1, false);
         set_transient($cache_key, $fallback, 5 * MINUTE_IN_SECONDS);
         // Do not expose internal cache metadata to clients.
         $out_fallback = $fallback;

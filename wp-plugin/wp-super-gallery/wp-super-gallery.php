@@ -285,23 +285,30 @@ add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Webhooks', 'register']);
 add_action('init', ['WPSG_Export_Engine', 'register']);
 
-// P20-I-2: Automatically sync media refs whenever media_items meta is updated.
-add_action('updated_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
-    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
-        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
+// P20-I-2: Automatically sync media refs whenever media_items meta changes.
+// P67-E: one named handler for all three meta hooks (was three near-identical
+// closures). On delete the meta value is gone, so all refs for the post are
+// cleared — detected via current_action() rather than the closure's body.
+function wpsg_sync_media_refs_on_meta_change($meta_id_or_ids, $post_id, $meta_key, $meta_value) {
+    if ($meta_key !== 'media_items' || get_post_type($post_id) !== WPSG_CPT::POST_TYPE) {
+        return;
     }
-}, 10, 4);
-add_action('added_post_meta', function ($meta_id, $post_id, $meta_key, $meta_value) {
-    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
-        WPSG_DB::sync_media_refs((int) $post_id, is_array($meta_value) ? $meta_value : []);
-    }
-}, 10, 4);
-add_action('deleted_post_meta', function ($meta_ids, $post_id, $meta_key, $meta_value) {
-    if ($meta_key === 'media_items' && get_post_type($post_id) === WPSG_CPT::POST_TYPE) {
-        // Clear all media refs for this post when media_items meta is deleted.
-        WPSG_DB::sync_media_refs((int) $post_id, []);
-    }
-}, 10, 4);
+    $items = (current_action() === 'deleted_post_meta')
+        ? []
+        : (is_array($meta_value) ? $meta_value : []);
+    WPSG_DB::sync_media_refs((int) $post_id, $items);
+}
+add_action('updated_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
+add_action('added_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
+add_action('deleted_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
+
+// P67-I: stamp _wpsg_filesize on every new attachment so the media-library "size"
+// sort has a real numeric value to order by. Covers native WP / other-plugin
+// uploads; the plugin's own upload path stamps it directly from the known file path.
+add_action('add_attachment', ['WPSG_Media_Controller', 'stamp_filesize_meta']);
+// P67-I: the one-time backfill is bounded per run (see WPSG_DB); this hook resumes
+// it until every pre-existing attachment is stamped.
+add_action(WPSG_DB::FILESIZE_BACKFILL_HOOK, ['WPSG_DB', 'run_filesize_backfill_batch']);
 add_action('init', ['WPSG_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.
