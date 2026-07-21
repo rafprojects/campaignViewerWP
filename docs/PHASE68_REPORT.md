@@ -207,6 +207,36 @@ Landed in three batches on `feature/phase68-react-hardening-1-of-4` (2026-07-21)
 
 Per-track rationale, line-citation corrections, and the two new Key Decisions (C, D) are recorded in each track's *Implementation* block and the Key Decisions table above. Manual verification steps: [PHASE68_MANUAL_QA_RUNBOOK.md](PHASE68_MANUAL_QA_RUNBOOK.md).
 
+## PR Review & Validation Pass (2026-07-21)
+
+A post-implementation PR review was conducted over PR #82's branch commits (`84a7e036` P68-A/D, `8c4ca9c1` P68-B, `25246535` P68-C/E — plus the phase-67 archive doc move). GitHub carried **no open review threads or reviewer (Copilot) comments**, so the review was conducted directly against the diff: each track's implementation was read end-to-end, its central assumption verified against the actual server/source, and the affected test + type + lint + PHP surface re-run to confirm no regressions.
+
+### Correctness verification — per track
+
+| Track | What was checked | Verdict |
+|-------|------------------|---------|
+| P68-A | `fetchAllPages` loop bounds (`page <= totalPages && page <= maxPages`), single-page/absent-`totalPages` termination, `items` flat-map + collision-free `mediaByCampaign` merge. **Central assumption verified in source:** the public (`include_media`) listing genuinely returns `totalPages` — `WPSG_Campaign_Controller::list_campaigns()` sets `'totalPages' => (int) $query->max_num_pages` at `class-wpsg-campaign-controller.php:471`, so the FE loop actually pages (it is not silently capped at one 50-wide page). | ✅ Correct |
+| P68-D | `onPage(page, min(totalPages, maxPages))` feeds `campaignLoadProgress`; loading copy gated on `campaignLoadProgress.total > 1` at `src/App.tsx:466` so single-page loads show no counter. | ✅ Correct |
+| P68-B | `restNonce` emitted only inside `if ( is_user_logged_in() )` (`class-wpsg-embed.php:104`); FE `buildAuthHeaders` already guards `if (nonce)` so the header drop falls out with no FE code change; wp-admin renderers are always logged-in so the gate is a no-op there. | ✅ Correct |
+| P68-C | Focus/`visibilitychange` effect gated on `provider && user` (anonymous never subscribes); `permissionsDigest` bail-out keeps the state reference stable when unchanged (no key churn / no needless refetch); overlapping focus+visibility events coalesced by the synchronous `inFlight` guard; `cancelled` flag prevents setState after unmount/re-subscribe. Digest is order-independent and separator-safe. | ✅ Correct |
+| P68-E | 204 / `Content-Length: 0` short-circuits to `undefined`; a chunked 2xx with no length header still parses (malformed data-endpoint bodies still surface as errors, not silently swallowed). | ✅ Correct |
+
+### Observations (non-blocking — no code change made)
+
+1. **`fetchAllPages` hard cap is a silent truncation at `DEFAULT_MAX_PAGES × 50 = 1,000` campaigns/space** — structurally the same *class* as the original A-1 bug, but at a 100× higher threshold and with no user-facing signal. This is already the documented **Follow-On Candidate** (server-driven `CardGallery` host pagination); accepted as-is for this phase.
+2. **The P68-C focus refresh calls `provider.init()` (a `/permissions` round-trip for `WpNonceProvider`) on every tab refocus for logged-in users.** This is intended — it's the "user came back after approving access elsewhere" detection signal — and the digest bail-out ensures it never triggers a `/campaigns` refetch unless the grant set actually changed. Noted as expected behavior, not a defect.
+
+### Outcome of the review
+
+**No code fixes were required** — all five tracks were verified correct against source, with the two items above logged as accepted observations rather than defects. Because no source changed, the existing full-suite baseline stands; the review re-validated the affected surface directly:
+
+- `npx tsc -b` → clean (exit 0)
+- `npx eslint` (six changed source files) → clean (exit 0)
+- `npx vitest run` over the five affected files (`pagination.test.ts`, `App.test.tsx`, `AuthContext.test.tsx`, `AuthProvider.test.ts`, `HttpTransportImpl.test.ts`) → **55/55 green**
+- PHP `WPSG_Embed_Test` via the wp-env `/php-testing` path → **18 tests / 30 assertions OK**
+
+Manual browser-side steps (SW `META_CACHE` population, mid-session grant refresh, multi-page loading copy) remain as documented in [PHASE68_MANUAL_QA_RUNBOOK.md](PHASE68_MANUAL_QA_RUNBOOK.md) § 5 (Review-pass sign-off).
+
 ## Outcome
 
-**Complete.** All five tracks landed. Verification: full FE vitest suite green (243 files / 3707 tests), `npx tsc -b` and `npx eslint .` clean, PHP `WPSG_Embed_Test` green (18 tests / 30 assertions) via the wp-env `/php-testing` path. No `sw.js` change was required (P68-B's gate was already correct). Remaining follow-on: server-driven `CardGallery` host pagination (deferred — see Follow-On Candidates).
+**Complete.** All five tracks landed and passed a post-implementation PR review (2026-07-21) with no code changes required — see *PR Review & Validation Pass* above. Verification: full FE vitest suite green (243 files / 3707 tests), `npx tsc -b` and `npx eslint .` clean, PHP `WPSG_Embed_Test` green (18 tests / 30 assertions) via the wp-env `/php-testing` path. No `sw.js` change was required (P68-B's gate was already correct). Remaining follow-on: server-driven `CardGallery` host pagination (deferred — see Follow-On Candidates).

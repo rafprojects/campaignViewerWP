@@ -234,3 +234,41 @@ npx vitest run src/services/http/HttpTransportImpl.test.ts
 | P68-E | Simulated 204/empty 2xx resolves `undefined` without a parse error | `HttpTransportImpl.test.ts` 204 cases green; existing JSON endpoints unaffected | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `WPSG_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.
+
+---
+
+## 5. Review-pass sign-off (PR #82, 2026-07-21)
+
+A post-implementation PR review over the branch commits (P68-A/D `84a7e036`, P68-B `8c4ca9c1`, P68-C/E `25246535`) found **no open review threads** and required **no code changes** — every track was verified correct against source. The full rationale is in [PHASE68_REPORT.md](PHASE68_REPORT.md) → *PR Review & Validation Pass*. This section records what the reviewer re-ran so the result is reproducible.
+
+**Automated re-validation (all green, no source changed):**
+
+```bash
+npx tsc -b                                                    # → exit 0
+npx eslint src/services/pagination.ts src/App.tsx \
+  src/services/adminQuery.ts src/contexts/AuthContext.tsx \
+  src/services/auth/AuthProvider.ts \
+  src/services/http/HttpTransportImpl.ts                      # → exit 0
+npx vitest run src/services/pagination.test.ts src/App.test.tsx \
+  src/contexts/AuthContext.test.tsx \
+  src/services/auth/AuthProvider.test.ts \
+  src/services/http/HttpTransportImpl.test.ts                 # → 55/55 green
+
+# PHP (wp-env /php-testing path):
+npx @wordpress/env run tests-cli \
+  --env-cwd=wp-content/plugins/wp-super-gallery \
+  php vendor/bin/phpunit --filter WPSG_Embed_Test             # → OK (18 tests, 30 assertions)
+```
+
+> **wp-env gotcha (surfaced this pass):** invoking `vendor/bin/phpunit` directly on the `tests-cli` container fails with `exec: "vendor/bin/phpunit": permission denied` (exit 126). Prefix it with `php` (`php vendor/bin/phpunit …`) — the wrapper script's exec bit isn't honored through `wp-env run`.
+
+**Key source assumption confirmed during review** (worth re-checking if P68-A ever appears to under-fetch): the public `include_media` listing really does return `totalPages`, at [class-wpsg-campaign-controller.php:471](../wp-plugin/wp-super-gallery/includes/rest/class-wpsg-campaign-controller.php#L471) (`'totalPages' => (int) $query->max_num_pages`). If that field is ever dropped from the response, `fetchAllPages` silently collapses to a single page and the A-1 truncation returns — this is the single load-bearing server contract behind the fix.
+
+**Accepted observations (logged, deliberately not "fixed"):**
+
+| # | Observation | Why it's acceptable |
+|---|-------------|---------------------|
+| 1 | `fetchAllPages` truncates at `DEFAULT_MAX_PAGES × 50 = 1,000` campaigns/space with no user-facing signal | Documented Follow-On (server-driven host pagination); 100× the original 10-cap, out of scope for this phase |
+| 2 | The P68-C focus refresh fires a `/permissions` round-trip on every tab refocus for logged-in users | Intended detection signal; the digest bail-out guarantees it never triggers a `/campaigns` refetch unless grants actually changed |
+
+**Sign-off:** ☐ Review-pass automated re-validation green (tsc / eslint / affected vitest / `WPSG_Embed_Test`) · ☐ No source diff introduced by the review · ☐ Observations 1–2 acknowledged
