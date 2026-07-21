@@ -98,3 +98,68 @@ npm run test -- src/services/pagination.test.ts src/App.test.tsx
 - **The admin campaigns *table* is untouched.** It already paged via `fetchAdminCampaigns` (`page`/`per_page` params) and its own pagination UI; P68-A only changes the *public* fetch and the *all-options selector* loop. Don't expect the admin table's page size to change.
 - **`mediaByCampaign` merge across pages is collision-free** because campaign IDs are unique per page — if you ever see a campaign's media go missing on a multi-page load, that assumption (not the merge) is what to check.
 - **The cap is real.** A space with >1,000 campaigns (20 pages × 50) will still truncate at the cap — this is the documented Follow-On Candidate (server-driven host pagination), not a P68-A regression.
+
+---
+
+### P68-B — Anonymous SW stale-while-revalidate becomes reachable (both-sides)
+
+**What & why.** `public/sw.js` routes public metadata GETs into its stale-while-revalidate cache (`META_CACHE` + TTL stamping + FIFO eviction via `handleMetaRequest`) **only when** the request carries neither `X-WP-Nonce` nor `Authorization` (`isAuthenticated` gate, `sw.js:104-109`). But `class-wpsg-embed.php`'s `page_config_js()` emitted `restNonce => wp_create_nonce('wp_rest')` **unconditionally** — including for anonymous visitors — and `HttpTransportImpl.buildAuthHeaders()` attaches the nonce whenever `getNonce()` is truthy. So every request from the app carried `X-WP-Nonce`, `isAuthenticated` was always true, and the ~100-line anonymous SWR path never ran for real traffic. For a logged-out visitor that nonce authenticates user 0 — it provides nothing. **The fix:** PHP now omits `restNonce` from the page config for anonymous visitors (gate on `is_user_logged_in()`); the FE header drop then falls out naturally (`buildAuthHeaders` already guards `if (nonce)`), and `sw.js` needs no change — its gate simply starts being reached.
+
+**Pre-fix behavior.** Every GET from the app — even a logged-out visitor's — carried `X-WP-Nonce`; `META_CACHE` never populated for anonymous traffic; the SWR code was dead-by-gating (the same failure shape as PHP A-1/A-2).
+
+**Scope note — this is deliberately a PHP-only code change.** The FE required *no* edit: `buildAuthHeaders` already omits the header when `getNonce()` is falsy, and `WpNonceProvider.init()` already returns a `null` session (leaving `isAuthenticated` false) when there's no nonce — so for anonymous visitors it now short-circuits to the same result *and skips a pointless `/permissions` fetch*. The FE work here is a regression **test**, not a code change.
+
+**Primary proof — no `X-WP-Nonce` on a logged-out visitor's requests, and the SW cache populates.**
+
+1. Open the public gallery in an **incognito/logged-out** browser window. Open devtools → **Network**.
+2. Filter to the `wp-super-gallery/v1/` XHRs. Inspect the request headers of a `campaigns`/metadata GET.
+
+**Expected (pass).** **No `X-WP-Nonce` request header** on any of the logged-out app's GETs. **Why it proves the fix:** on the pre-fix build the same requests all carry `X-WP-Nonce` (the guest nonce). Then confirm the SWR cache is now reachable:
+
+3. devtools → **Application** → **Cache Storage** → look for the `META_CACHE` entry (name defined in `sw.js`). After loading a metadata endpoint once, it should contain the cached response; reload and confirm a stale-while-revalidate hit (instant paint, background refresh).
+
+**Expected (pass).** `META_CACHE` populates for the logged-out session; pre-fix it stays empty because every request looked authenticated. **Pitfall — service-worker caching:** the SW itself is served `no-cache` (see `maybe_serve_service_worker`), but an *already-registered* old SW can linger. In devtools → Application → Service Workers, tick **Update on reload** (or Unregister + hard-reload) before testing, or you may be exercising the pre-fix SW logic against the post-fix headers.
+
+**Confirm the logged-in path is unaffected.**
+
+4. Log in as a real user, reload the gallery, inspect the same GETs.
+
+**Expected (pass).** Logged-in requests **still carry `X-WP-Nonce`**, and the SW treats them as authenticated (they bypass `META_CACHE`). **Why it matters:** the gate must only drop the nonce for genuinely anonymous sessions.
+
+**Confirm login still works end-to-end (the one regression-risk edge).**
+
+5. From a fully logged-out session (no nonce in the page config now), open the sign-in form and log in with valid credentials.
+
+**Expected (pass).** Login succeeds. **Why it can't regress:** the login POST doesn't need a nonce — WP's `rest_cookie_check_errors` only enforces `X-WP-Nonce` once the request already carries a logged-in session cookie, which an anonymous login POST does not; and `WPSG_Auth_Controller::handle_cookie_login()` mints a **fresh** nonce server-side (`class-wpsg-auth-controller.php:261`) which `WpNonceProvider.login()` stores via `setWpNonce()`. So the guest nonce was never actually load-bearing for login. Confirm subsequent authenticated actions (e.g. opening the admin panel) work, proving the freshly-minted post-login nonce is in effect.
+
+**PHP-side spot check (optional, scriptable).**
+
+```bash
+# Anonymous render omits restNonce; a logged-in render includes it.
+npx wp-env run cli wp eval '
+  wp_set_current_user(0);
+  echo (strpos(WPSG_Embed::page_config_js(), "\"restNonce\"") === false ? "anon: omitted" : "anon: PRESENT") . "\n";
+  $u = get_users(["role" => "administrator", "number" => 1]);
+  wp_set_current_user($u[0]->ID);
+  echo (strpos(WPSG_Embed::page_config_js(), "\"restNonce\"") !== false ? "logged-in: present" : "logged-in: MISSING") . "\n";
+'
+# → anon: omitted   /   logged-in: present
+```
+
+**Automated proof.**
+
+```bash
+npx vitest run src/services/http/HttpTransportImpl.test.ts     # FE: header omitted when getNonce()→undefined
+# PHP (via the /php-testing skill, wp-env): WPSG_Embed_Test
+#   test_render_shortcode_omits_rest_nonce_for_anonymous_visitor   (anonymous → no "restNonce")
+#   test_render_shortcode_includes_rest_nonce_for_logged_in_user   (admin     → "restNonce" present)
+```
+
+- FE: `HttpTransportImpl.test.ts` gains *"omits X-WP-Nonce when the getNonce callback returns undefined (anonymous)"* — the exact runtime shape post-fix (the callback is wired but returns `undefined`). 22 tests green.
+- PHP: `WPSG_Embed_Test` gains the two conditional-nonce tests above and relaxes `test_render_shortcode_includes_config_script` (which formerly asserted `restNonce` always present — now only asserts the config script emits, since the nonce is conditional). 18 tests / 30 assertions green.
+
+**Regression checks.** No `sw.js` change (verify none crept in — its gate was already correct). No `HttpTransportImpl.ts`/`WpNonceProvider.ts` code change — only a test was added. The wp-admin Spaces/Assets renderers (`class-wpsg-asset-admin-renderer.php`, `class-wpsg-space-admin-renderer.php`) also call `page_config_js()`, but those pages are always logged-in, so the gate is a no-op there (nonce still emitted) — confirm the admin apps on those screens still authenticate.
+
+**Pitfalls.**
+- **Don't test P68-B with a warm pre-fix service worker** (see the Update-on-reload note above) — the single most common false result.
+- **`useNonceHeartbeat`** (`src/hooks/useNonceHeartbeat.ts`) already no-ops when no nonce is present, so it simply stops running for anonymous visitors — confirm no console errors, but there's nothing to change there.

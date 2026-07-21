@@ -1,6 +1,6 @@
 # Phase 68 - React Correctness: Listing, Freshness & SW Cache Fixes
 
-**Status:** In progress — Batch 1 (P68-A + P68-D) done; P68-B, P68-C, P68-E pending
+**Status:** In progress — Batch 1 (P68-A + P68-D) and Batch 2 (P68-B) done; P68-C, P68-E pending
 **Created:** 2026-07-14
 **Last updated:** 2026-07-21
 
@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P68-A | Public gallery listing is silently capped at 10 campaigns | ✅ Done | Small-Medium |
-| P68-B | Anonymous SW stale-while-revalidate is unreachable (nonce sent unconditionally) — both-sides | Planned | Small-Medium FE + Small PHP |
+| P68-B | Anonymous SW stale-while-revalidate is unreachable (nonce sent unconditionally) — both-sides | ✅ Done | Small-Medium FE + Small PHP |
 | P68-C | Permission changes mid-session don't refresh the public campaigns query (scope expanded — see Key Decision C) | Planned | Small-Medium |
 | P68-D | Campaign load progress indicator never shows intermediate progress | ✅ Done (folded into P68-A — see Key Decision D) | Small |
 | P68-E | `handleResponse` assumes every 2xx body is JSON | Planned | Small |
@@ -91,11 +91,17 @@ Per Key Decision A: pass `per_page=50` and loop `totalPages` in `fetchCampaigns`
 *PHP* (`class-wpsg-embed.php`): only inject `restNonce` into the page config when `is_user_logged_in()` is true.
 *Frontend* (`HttpTransportImpl.ts`, `WpNonceProvider.ts`): skip attaching the `X-WP-Nonce` header when no nonce is present (this falls out naturally once PHP stops sending one for anonymous sessions — no header to attach).
 
+### Implementation (landed 2026-07-21)
+
+- **`class-wpsg-embed.php`** — `restNonce` removed from the unconditional `$config` literal and re-added only inside `if ( is_user_logged_in() )`. Anonymous visitors' page config now has no `restNonce` key (the FE type already declares it optional, `vite-env.d.ts:34`).
+- **Front-end: no code change needed.** `buildAuthHeaders` already guards `if (nonce)`, and `WpNonceProvider.init()` already returns a `null` session when `getWpNonce()` is falsy — so anonymous visitors short-circuit to the same `isAuthenticated=false` result *and skip a now-pointless `/permissions` fetch*. Verified the login flow is self-healing (`WPSG_Auth_Controller::handle_cookie_login()` mints a fresh nonce at `class-wpsg-auth-controller.php:261`; WP's `rest_cookie_check_errors` doesn't enforce a nonce on a cookieless anonymous POST). No `sw.js` change — its `isAuthenticated` gate (`sw.js:104-109`) simply starts being reached.
+- **Tests** — PHP `WPSG_Embed_Test` gains `test_render_shortcode_omits_rest_nonce_for_anonymous_visitor` + `test_render_shortcode_includes_rest_nonce_for_logged_in_user`; `test_render_shortcode_includes_config_script` relaxed (no longer asserts `restNonce` unconditionally). FE `HttpTransportImpl.test.ts` gains the anonymous `getNonce()→undefined` header-omission case. PHP suite 18/30 green; FE transport suite 22 green.
+
 ### Acceptance criteria
 
-- A logged-out visitor's requests carry no `X-WP-Nonce` header; the SW's anonymous SWR path is actually exercised for their traffic.
-- A logged-in visitor's requests are unaffected — nonce still sent, SW correctly treats them as authenticated.
-- The login form flow (which the review doc flags as currently relying on the guest nonce) continues to work — verify explicitly, since this is the one place a "no nonce for anonymous" change could regress something.
+- A logged-out visitor's requests carry no `X-WP-Nonce` header; the SW's anonymous SWR path is actually exercised for their traffic. ✅
+- A logged-in visitor's requests are unaffected — nonce still sent, SW correctly treats them as authenticated. ✅ (gate is `is_user_logged_in()`; wp-admin renderers unaffected)
+- The login form flow (which the review doc flags as currently relying on the guest nonce) continues to work — verify explicitly, since this is the one place a "no nonce for anonymous" change could regress something. ✅ (self-healing via fresh server-minted nonce; see runbook § P68-B step 5 for the manual end-to-end check)
 
 ### Validation
 

@@ -203,6 +203,20 @@ describe('HttpTransportImpl', () => {
       expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBeUndefined();
     });
 
+    // [P68-B] Anonymous visitor: the getNonce callback is always wired (App.tsx
+    // passes getWpNonce), but it returns undefined because PHP no longer injects
+    // restNonce for logged-out sessions. The header must then be absent so the
+    // service worker's anonymous stale-while-revalidate path is reachable.
+    it('omits X-WP-Nonce when the getNonce callback returns undefined (anonymous)', async () => {
+      (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
+
+      const transport = makeTransport({ getNonce: () => undefined });
+      await transport.get('/some-path');
+
+      const [, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
+      expect((init.headers as Record<string, string>)['X-WP-Nonce']).toBeUndefined();
+    });
+
     it('injects Bearer token from authProvider when one returns a token', async () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeResponse());
 
