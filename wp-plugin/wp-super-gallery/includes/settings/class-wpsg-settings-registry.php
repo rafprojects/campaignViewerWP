@@ -27,7 +27,7 @@ class WPSG_Settings_Registry {
         'api_base'                   => '',
         'theme'                      => 'default-dark',
         'allow_user_theme_override'  => true,
-        'debug_component_markers'    => true,
+        'debug_component_markers'    => false,
         'gallery_layout'             => 'grid',
         'items_per_page'             => 12,
         'enable_lightbox'            => true,

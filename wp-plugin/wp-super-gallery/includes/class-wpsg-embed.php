@@ -65,7 +65,7 @@ class WPSG_Embed {
 
         $settings = class_exists('WPSG_Settings') ? WPSG_Settings::get_settings() : [];
         $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
-        $debug_component_markers   = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : true;
+        $debug_component_markers   = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : false;
 
         $config = [
             'authProvider'           => $auth_provider,

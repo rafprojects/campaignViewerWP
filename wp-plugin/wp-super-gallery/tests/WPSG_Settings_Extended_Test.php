@@ -36,6 +36,18 @@ class WPSG_Settings_Extended_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('auth_provider', $defaults);
     }
 
+    /**
+     * P69-B: debug component markers must default to OFF so a fresh install does
+     * not stamp data-wpsg-component / data-wpsg-slot attributes onto public
+     * gallery output. The admin toggle and the wpsg_debug_component_markers
+     * filter remain the explicit opt-in.
+     */
+    public function test_get_defaults_debug_component_markers_is_false() {
+        $defaults = WPSG_Settings::get_defaults();
+        $this->assertArrayHasKey('debug_component_markers', $defaults);
+        $this->assertFalse($defaults['debug_component_markers']);
+    }
+
     // ── get_setting ────────────────────────────────────────────────────────
 
     public function test_get_setting_returns_default_for_missing() {

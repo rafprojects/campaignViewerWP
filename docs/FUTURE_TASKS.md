@@ -355,9 +355,9 @@ Add a CORS allowed-origins admin setting and enforce it on REST API responses, r
 
 ### JWT In-Memory Token Auth (Standalone SPA)
 
-**Context:** Phase 20 (P20-K) defaulted the plugin to nonce-only authentication and commented out the JWT localStorage flow to eliminate the XSS → token-theft vector. However, if WPSG is ever deployed as a **standalone SPA on a different origin** (i.e. not embedded via shortcode), WP nonces are unavailable because they require a same-origin page load. In that scenario, JWT auth is required.
+**Context:** Phase 20 (P20-K) defaulted the plugin to nonce-only authentication and gated the JWT `localStorage` flow behind an opt-in flag (`WPSG_ENABLE_JWT_AUTH`) to eliminate the XSS → token-theft vector for the default deployment. However, if WPSG is ever deployed as a **standalone SPA on a different origin** (i.e. not embedded via shortcode), WP nonces are unavailable because they require a same-origin page load. In that scenario, JWT auth is required.
 
-The current JWT code stores tokens in `localStorage`, which is accessible to any script on the page. The secure alternative is:
+The JWT code (`src/services/auth/WpJwtProvider.ts`) is **live, working code today** — not commented out. It is simply not instantiated unless the site opts in: `getAuthProvider()` in `src/App.tsx` returns a `WpJwtProvider` only when `enableJwt === true` (backed by the `WPSG_ENABLE_JWT_AUTH` constant), otherwise a cookie/nonce `WpNonceProvider`. It stores tokens in `localStorage`, which is accessible to any script on the page. The secure alternative is:
 
 1. **In-memory access token** — stored in a module-scoped variable (not `localStorage`). Survives only for the tab's lifetime.
 2. **httpOnly refresh cookie** — issued by a new `/wpsg/v1/token/refresh` endpoint with `SameSite=Strict; Secure; HttpOnly`. The browser sends it automatically; JS cannot read it.
@@ -365,7 +365,8 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 
 **What it would take:**
 - New PHP endpoint: `POST /wpsg/v1/token/refresh` — validates the httpOnly cookie, issues a new JWT with a 15-minute TTL.
-- Modify `WpJwtProvider.tsx` (currently commented out): replace `localStorage.setItem/getItem` with a module-scoped `let accessToken: string | null`.
+- Modify `WpJwtProvider.ts` (live today, flag-gated — not commented out): replace `localStorage.setItem/getItem` with a module-scoped `let accessToken: string | null`.
+- **Permissions-cache staleness (from the 2026-07-13 React review, § B-4, tracked as Phase 69 P69-E):** `WpJwtProvider.getPermissions()` returns the cached `wpsg_permissions` `localStorage` entry with **no TTL** — it is only cleared on logout, so a revoked grant persists in the client UI until the user logs out (display-only; the server still enforces on every request). Fold the fix into this rework: add a TTL to the cache, or drop it entirely since the `/permissions` endpoint is cheap. See [PHASE69_REPORT.md → P69-E](PHASE69_REPORT.md#track-p69-e---jwt-providers-localstorage-permissions-cache-never-expires-tracking-only).
 - Add a `useTokenRefresh` hook that calls the refresh endpoint 1 minute before expiry and on window `focus` events.
 - `apiClient.ts`: attach `Authorization: Bearer <in-memory-token>` only when the env-var opt-in `WPSG_ENABLE_JWT=1` is set.
 - Server-side: set the refresh cookie on `POST /wpsg/v1/token` (login) and clear it on `DELETE /wpsg/v1/token` (logout).
@@ -376,7 +377,7 @@ The current JWT code stores tokens in `localStorage`, which is accessible to any
 - Q2: What is the refresh-cookie TTL? 7 days (convenience) vs. 24 hours (security) — should it be admin-configurable?
 - Q3: Is a `/wpsg/v1/token/revoke-all` endpoint needed for the "log out everywhere" use case?
 
-**Prerequisites:** P20-K must be complete (nonce-only default + JWT code commented out with env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
+**Prerequisites:** P20-K must be complete (nonce-only default + JWT provider behind the `WPSG_ENABLE_JWT_AUTH` env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
 
 **P39-AU1 deferral note (2026-06-01):** P39-AU1 was gated on P39-CO1. Both tracks were deferred together — the CORS restriction work itself was rolled back because the primary deployment model (embedded WordPress shortcode) is same-origin and does not need cross-origin auth. The standalone SPA path requires the app to be prepared for that deployment model first (routing, build config, deployment documentation, CORS policy). Revisit when there is a concrete standalone SPA deployment requirement.
 

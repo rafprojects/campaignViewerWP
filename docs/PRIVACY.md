@@ -1,7 +1,7 @@
 # WP Super Gallery — Privacy & GDPR Statement
 
 **Applies to:** WP Super Gallery plugin, all editions (free and Pro).
-**Last reviewed:** 2026-07-11 (plugin 0.90.0; added Freemius Pro-licensing §8)
+**Last reviewed:** 2026-07-21 (plugin 0.90.0; documented Google Fonts data flow §3)
 
 This document describes exactly what data the plugin collects, where it is stored,
 whether any of it leaves your server, and how to satisfy data-subject (GDPR/CCPA)
@@ -72,9 +72,29 @@ device fingerprints, geolocation. The plugin sets **no tracking cookies** of its
 By default, **no personal data leaves your server.** The plugin makes outbound requests
 only in these cases, none of which send visitor PII to the plugin author:
 
-- **oEmbed / media providers** (YouTube, Vimeo, etc.): the plugin fetches embed metadata
-  *by media URL* from the provider you embedded. These requests contain the media URL and
-  your server's own IP — standard for any oEmbed — not your visitors' data.
+- **Google Fonts (`fonts.googleapis.com`) — only if you select a Google font**: WP Super
+  Gallery ships a set of optional Google-hosted web fonts for gallery typography. **If, and
+  only if, you choose one of these fonts** in **Settings → Typography** (a per-element
+  typography override), the plugin loads that font's stylesheet from Google's CDN on the
+  **public gallery page** — so **your visitor's browser connects to Google, disclosing the
+  visitor's IP address (and standard request headers) to Google**. This happens two ways,
+  both triggered by the same font selection:
+  - **Server-side (primary):** the shortcode output enqueues a `<link
+    rel="stylesheet" href="https://fonts.googleapis.com/css2?family=…">` into the page HTML
+    (`class-wpsg-embed.php`), so the font request fires even with JavaScript disabled.
+  - **Client-side:** the gallery app additionally injects the same `<link>` at runtime for
+    fonts referenced by typography overrides (`loadGoogleFont.ts`, via `CardGallery` /
+    `CampaignViewer`).
+
+  **This is off unless you opt in by picking a Google font** — the default theme uses no
+  Google font, and with no Google font selected the plugin makes **zero** requests to
+  Google. Disclosing a visitor's IP to Google Fonts is the exact fact pattern behind the
+  2022 *LG München I* GDPR ruling, so this matters for EU-facing sites.
+
+  **How to avoid it entirely:** use a **system font stack** (no external request at all) or
+  **upload a custom font** (Settings → Typography → custom fonts) — uploaded fonts are
+  served locally from your own site via `@font-face` and never touch Google. If you do use a
+  Google font, disclose it in your site's own privacy policy.
 - **Email (`wp_mail`)**: when the access-request feature is used, the plugin emails the
   site admin (the message includes the requester's email address) and sends the requester
   a confirmation / magic-approval link. Mail is sent through **your own** WordPress mail
