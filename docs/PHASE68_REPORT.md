@@ -1,17 +1,17 @@
 # Phase 68 - React Correctness: Listing, Freshness & SW Cache Fixes
 
-**Status:** Planned
+**Status:** In progress — Batch 1 (P68-A + P68-D) done; P68-B, P68-C, P68-E pending
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-21
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P68-A | Public gallery listing is silently capped at 10 campaigns | Planned | Small-Medium |
+| P68-A | Public gallery listing is silently capped at 10 campaigns | ✅ Done | Small-Medium |
 | P68-B | Anonymous SW stale-while-revalidate is unreachable (nonce sent unconditionally) — both-sides | Planned | Small-Medium FE + Small PHP |
-| P68-C | Permission changes mid-session don't refresh the public campaigns query | Planned | Small |
-| P68-D | Campaign load progress indicator never shows intermediate progress | Planned | Small |
+| P68-C | Permission changes mid-session don't refresh the public campaigns query (scope expanded — see Key Decision C) | Planned | Small-Medium |
+| P68-D | Campaign load progress indicator never shows intermediate progress | ✅ Done (folded into P68-A — see Key Decision D) | Small |
 | P68-E | `handleResponse` assumes every 2xx body is JSON | Planned | Small |
 
 ---
@@ -28,14 +28,20 @@ The 2026-07-13 full React review ([REACT_REVIEW_FINDINGS.md](REACT_REVIEW_FINDIN
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| A | A-1 fix shape | Follow the review's preferred direction: pass `per_page=50` and loop `totalPages`, mirroring the existing `fetchAllCampaignOptions` pattern in `src/services/adminQuery.ts` (already verified to loop pages correctly up to `MAX_SELECTOR_PAGES`) — extract that loop as a shared helper rather than duplicating it a third time. Full server-side `CardGallery` host-pagination wiring is a larger change and is not required to fix the data-loss bug; treat as a Follow-On Candidate if product wants true infinite/paged public browsing later. |
-| B | A-2's PHP-side change | This finding is cross-side (front-end SW + `class-wpsg-embed.php`) and originated in this review rather than the PHP one, so it has no existing home in Phases 63–67 — it's scoped entirely within P68-B below rather than requiring a PHP-phase edit. Chosen direction: gate `restNonce` injection in `page_config_js()` on `is_user_logged_in()` rather than adding a new "was a session actually detected" signal on the FE `WpNonceProvider` — smaller surface, and the login-form flow already re-derives its own nonce independently (verify during implementation per the Acceptance Criteria below). |
+| A | A-1 fix shape | Follow the review's preferred direction: pass `per_page=50` and loop `totalPages`, mirroring the existing `fetchAllCampaignOptions` pattern in `src/services/adminQuery.ts` (already verified to loop pages correctly up to `MAX_SELECTOR_PAGES`) — extract that loop as a shared helper rather than duplicating it a third time. Full server-side `CardGallery` host-pagination wiring is a larger change and is not required to fix the data-loss bug; treat as a Follow-On Candidate if product wants true infinite/paged public browsing later. **As implemented (2026-07-21):** helper extracted to `src/services/pagination.ts` as `fetchAllPages(fetchPage, { maxPages, onPage })` returning the raw per-page responses so each caller merges its own shape; the former `MAX_SELECTOR_PAGES = 20` is now `DEFAULT_MAX_PAGES = 20` in that module. Also widened `App.tsx`'s local `ApiCampaignResponse` to declare `total`/`totalPages`, which the server (`class-wpsg-campaign-controller.php:466-472`) already returns — it was simply undeclared, which is why the caller never paged. |
+| B | A-2's PHP-side change | This finding is cross-side (front-end SW + `class-wpsg-embed.php`) and originated in this review rather than the PHP one, so it has no existing home in Phases 63–67 — it's scoped entirely within P68-B below rather than requiring a PHP-phase edit. Chosen direction: gate `restNonce` injection in `page_config_js()` (the `restNonce` assignment is at `class-wpsg-embed.php:74`) on `is_user_logged_in()` rather than adding a new "was a session actually detected" signal on the FE `WpNonceProvider` — smaller surface, and the login-form flow already re-derives its own nonce independently (verified 2026-07-21: `handle_cookie_login` mints a fresh nonce server-side at `class-wpsg-auth-controller.php:261`; and WP's `rest_cookie_check_errors` only enforces `X-WP-Nonce` once the request already carries a session cookie, so an anonymous login POST isn't blocked by having no nonce to send). |
+| C | P68-C scope (new, 2026-07-21) | **Expand scope.** Verified `AuthContext.tsx`'s `permissions` state has *no* mid-session refresh path today (set once on mount + once on `login()` only). The review's original digest-in-query-key fix is necessary but not sufficient to make its own acceptance criteria true. Add a window-focus/`visibilitychange` listener (gated on `isAuthenticated`) that re-calls `provider.getPermissions()` on tab refocus, **on top of** the query-key digest. |
+| D | P68-D scope & sequencing (new, 2026-07-21) | **Make it real, fold into P68-A.** Since P68-A already builds a genuine page-by-page loop, feed `campaignLoadProgress` real `{ completed: page, total: min(totalPages, maxPages) }` from `fetchAllPages`'s `onPage` callback instead of the synchronous 0→N flash. Delivered as part of P68-A's commit; the loading counter now shows only when the listing spans >1 page. |
 
 ## Execution Priority
 
-1. **P68-A** — highest impact in the whole React backlog; do first and in isolation.
-2. **P68-B** — independent of P68-A; both-sides, so land the PHP nonce-gating change and the FE/SW signal change together to avoid a window where they disagree.
-3. **P68-C, P68-D, P68-E** — small, independent, no dependencies on the above; batch together.
+Formalized into batches for the executing agent (D folded into A, so four units not five):
+
+1. **Batch 1 (do first, isolated): P68-A** (includes P68-D's real-progress wiring). ✅ Done 2026-07-21. Highest impact; touches `App.tsx`'s `fetchCampaigns`/`campaignsKey` region and adds `src/services/pagination.ts`, consumed by both `App.tsx` and `adminQuery.ts`. Landed and verified before anything else touches this region.
+2. **Batch 2 (independent, both-sides — land PHP + FE together): P68-B.** `class-wpsg-embed.php` + `HttpTransportImpl.ts` + `WpNonceProvider.ts`; `sw.js` needs no edit (its gate reacts naturally once the header stops being sent). Do not split PHP/FE across commits.
+3. **Batch 3 (independent, small — after Batch 1): P68-C + P68-E.** P68-C touches `App.tsx`'s `campaignsKey` (the region Batch 1 restructured) + `AuthContext.tsx`; P68-E touches only `HttpTransportImpl.ts`'s `handleResponse` (independent of P68-B's `buildAuthHeaders` in the same file). Sequenced after Batch 1 to avoid overlapping `App.tsx` query-key edits.
+
+Batches 2 and 3 may run in either relative order; Batch 1 is fixed first.
 
 ---
 
@@ -45,11 +51,18 @@ The 2026-07-13 full React review ([REACT_REVIEW_FINDINGS.md](REACT_REVIEW_FINDIN
 
 ### Problem
 
-The public campaign fetch in `fetchCampaigns` (`src/App.tsx:240`) requests `/campaigns?include_media=1` with no `per_page` and no page loop. The PHP controller (`class-wpsg-campaign-controller.php:202`) defaults `per_page` to 10 (max 50), and the response's `total`/`totalPages` fields are ignored by the caller. `CardGalleryHostPagination.tsx` only slices the already-fetched, client-side array for its pagination modes (paginated/load-more/show-all) — it never triggers a server refetch. Any site or space with more than 10 campaigns silently shows exactly 10, with no error and no "load more" affordance. The admin panel is unaffected — its query layer already passes `page`/`per_page` and has a working capped all-pages loop in `fetchAllCampaignOptions`.
+The public campaign fetch in `fetchCampaigns` (`src/App.tsx`) requested `/campaigns?include_media=1` with no `per_page` and no page loop. The PHP controller defaults `per_page` to 10 (max 50) — `class-wpsg-campaign-controller.php:400` (moved from ~202 by the P67 `build_campaign_cache_key`/`build_campaign_query_args` extraction, commit `10c9bf38`) — and the response's `total`/`totalPages` fields (returned at `class-wpsg-campaign-controller.php:466-472`) were ignored by the caller, whose local `ApiCampaignResponse` type didn't even declare them. `CardGalleryHostPagination.tsx` only slices the already-fetched, client-side array for its pagination modes (paginated/load-more/show-all) — it never triggers a server refetch (verified: no `ApiClient`/`fetch`/`useQuery` import in the file). Any site or space with more than 10 campaigns silently showed exactly 10, with no error and no "load more" affordance. The admin panel is unaffected — its query layer already passes `page`/`per_page` and has a working capped all-pages loop in `fetchAllCampaignOptions`.
 
 ### Fix
 
-Per Key Decision A: pass `per_page=50` and loop `totalPages` in `fetchCampaigns`, following the same pattern as `fetchAllCampaignOptions`. Extract that loop as a shared helper (e.g. `fetchAllPages(fetchPage, maxPages)`) used by both call sites instead of a third copy.
+Per Key Decision A: pass `per_page=50` and loop `totalPages` in `fetchCampaigns`, following the same pattern as `fetchAllCampaignOptions`. Extract that loop as a shared helper (`fetchAllPages(fetchPage, { maxPages, onPage })`) used by both call sites instead of a third copy.
+
+### Implementation (landed 2026-07-21)
+
+- **New `src/services/pagination.ts`** — `fetchAllPages<TResponse extends PagedResponse>(fetchPage, { maxPages?, onPage? })` walks pages 1..N until `totalPages` is exhausted or `maxPages` (default `DEFAULT_MAX_PAGES = 20`) is hit, returning the raw per-page responses so each caller merges its own fields. `onPage(completed, total)` reports genuine progress with `total` clamped to `min(totalPages, maxPages)`.
+- **`src/App.tsx`** — `fetchCampaigns` now calls `fetchAllPages` with `include_media=1&per_page=50&page=N`, flat-maps `items`, merges `mediaByCampaign` across pages (collision-free — unique campaign IDs per page), and drives `campaignLoadProgress` from `onPage` (P68-D). Local `ApiCampaignResponse` widened with optional `total`/`totalPages`. The synchronous end-of-map progress set was removed.
+- **`src/services/adminQuery.ts`** — `fetchAllCampaignOptions` refactored onto `fetchAllPages`; the local `MAX_SELECTOR_PAGES` constant removed (folded into the helper default). `fetchAdminCampaigns` (the admin table's single-page fetch) untouched.
+- **Tests** — new `src/services/pagination.test.ts` (7 tests) pins the helper incl. the P68-D progress signal; new `App.test.tsx` case pins the >1-page render + two-request page walk. `npx tsc -b`, `npx eslint`, and the affected vitest files (41 tests) all green.
 
 ### Acceptance criteria
 
@@ -125,15 +138,21 @@ Include a stable digest of `permissions` (e.g. a sorted-join string) in the camp
 
 ### Fix
 
-Remove the `campaignLoadProgress` state and the counter copy (the spinner already communicates loading), or make it a real signal by keying it to actual async work — the paginated fetches from P68-A would provide a genuine progress signal (page N of totalPages) for free.
+Per Key Decision D — **resolved: make it real, folded into P68-A.** `campaignLoadProgress` is now fed by `fetchAllPages`'s `onPage` callback (`{ completed: page, total: min(totalPages, maxPages) }`), and the loading copy renders `(page X of Y)` only when `total > 1`; single-page loads show just the spinner + label.
+
+### Implementation (landed 2026-07-21, as part of P68-A)
+
+- Removed the synchronous `{total: N, completed: 0}` → `{total: N, completed: N}` writes around the `.map()`.
+- Progress is driven per-page from the real loop; the loading alert at `src/App.tsx` gained the `campaignLoadProgress.total > 1` guard so the counter never appears for single-page loads.
+- Pinned by `src/services/pagination.test.ts` (`onPage` reports `[[1,3],[2,3],[3,3]]` for a 3-page fetch; total clamped to `maxPages`). The exact DOM copy is intentionally not snapshot-tested — the meaningful assertion is that the progress signal reflects genuine async work, which lives in the helper test.
 
 ### Acceptance criteria
 
-- The loading UI no longer displays a progress counter that can't reflect real progress, unless P68-A's pagination is used to drive a genuine one.
+- The loading UI no longer displays a progress counter that can't reflect real progress; when the listing spans multiple pages it shows genuine page-N-of-M progress. ✅
 
 ### Validation
 
-- Manual: load a gallery with many campaigns (post-P68-A, this will involve multiple page fetches) and confirm the loading copy either shows real incremental progress or has been simplified to a plain spinner.
+- Manual: seed >50 campaigns in one space (to force >1 FE page), load the public gallery, confirm the loading copy shows `(page 1 of 2)` → `(page 2 of 2)`; with ≤50 campaigns confirm only the spinner shows. See [PHASE68_MANUAL_QA_RUNBOOK.md](PHASE68_MANUAL_QA_RUNBOOK.md) § P68-A.
 
 ---
 

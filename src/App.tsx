@@ -15,6 +15,7 @@ import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
 import { AddExternalMediaModal } from './components/Campaign/AddExternalMediaModal';
 import { ApiClient } from './services/apiClient';
+import { fetchAllPages } from './services/pagination';
 import { useLayoutTemplates } from './services/layoutTemplateQuery';
 import { getWpNonce, setWpNonce, WP_NONCE_PATH } from './services/wpNonce';
 import type { AuthProvider as AuthProviderInterface } from './services/auth/AuthProvider';
@@ -64,6 +65,12 @@ type ApiCampaign = Omit<Campaign, 'company' | 'videos' | 'images'> & {
 interface ApiCampaignResponse {
   items: ApiCampaign[];
   mediaByCampaign?: Record<string, MediaItem[]>;
+  // [P68-A] The server already returns these on every campaigns.list response
+  // (WPSG_Campaign_Controller::list_campaigns); they were simply undeclared
+  // here, which is why the public fetch never paged. `totalPages` drives the
+  // shared fetchAllPages loop below.
+  total?: number;
+  totalPages?: number;
 }
 
 const titleCase = (value: string) =>
@@ -237,10 +244,24 @@ function AppContent({
   const fetchCampaigns = useCallback(async () => {
     setCampaignLoadProgress({ total: 0, completed: 0 });
     const spaceParam = spaceId != null ? `&space=${spaceId}` : '';
-    const response = await apiClient.get<ApiCampaignResponse>(`/wp-json/wp-super-gallery/v1/campaigns?include_media=1${spaceParam}`);
-    const items = response.items ?? [];
-    const mediaByCampaign = response.mediaByCampaign ?? {};
-    setCampaignLoadProgress({ total: items.length, completed: 0 });
+    // [P68-A] Page through the whole listing (per_page=50) instead of taking
+    // only the server's default first 10 — any space with >10 campaigns was
+    // silently truncated before. [P68-D] The per-page callback drives a real
+    // progress signal (page N of M) rather than the old synchronous 0→N flash.
+    const pages = await fetchAllPages<ApiCampaignResponse>(
+      (page) =>
+        apiClient.get<ApiCampaignResponse>(
+          `/wp-json/wp-super-gallery/v1/campaigns?include_media=1&per_page=50&page=${page}${spaceParam}`,
+        ),
+      { onPage: (completed, total) => setCampaignLoadProgress({ completed, total }) },
+    );
+    const items = pages.flatMap((response) => response.items ?? []);
+    // Campaign IDs are unique across pages, so merging the per-page maps can't
+    // collide; each page only carries media for its own campaigns.
+    const mediaByCampaign = pages.reduce<Record<string, MediaItem[]>>(
+      (acc, response) => Object.assign(acc, response.mediaByCampaign ?? {}),
+      {},
+    );
     const mapped = items.map((item) => {
       const canAccess = isAdmin || item.visibility === 'public' || permissions.some((id) => String(id) === String(item.id));
       const mediaItems: MediaItem[] = canAccess ? (mediaByCampaign[String(item.id)] ?? []) : [];
@@ -258,7 +279,6 @@ function AppContent({
         videos: orderedMedia.filter((m) => m.type === 'video'), images: orderedMedia.filter((m) => m.type === 'image')
       } as Campaign;
     });
-    setCampaignLoadProgress({ total: items.length, completed: items.length });
     return mapped;
   }, [apiClient, isAdmin, permissions, spaceId]);
 
@@ -436,7 +456,10 @@ function AppContent({
               <Stack gap={2} align="center">
                 <Container size="sm" px={0}>
                   <Alert color="blue" variant="light" role="status" aria-live="polite">
-                    Loading campaigns...{campaignLoadProgress.total > 0 ? ` (${campaignLoadProgress.completed}/${campaignLoadProgress.total} processed)` : ''}
+                    {/* [P68-D] Only show the page counter when the listing
+                        actually spans multiple pages; single-page loads (the
+                        common case) just show the spinner + label. */}
+                    Loading campaigns...{campaignLoadProgress.total > 1 ? ` (page ${campaignLoadProgress.completed} of ${campaignLoadProgress.total})` : ''}
                   </Alert>
                 </Container>
               </Stack>

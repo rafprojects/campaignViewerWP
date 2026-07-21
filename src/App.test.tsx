@@ -248,6 +248,62 @@ describe('App', () => {
     expect(calledPerCampaignMedia).toBe(false);
   });
 
+  // [P68-A] Regression: a listing that spans more than one server page
+  // (>10 campaigns pre-fix silently showed only the first 10) must page
+  // through all of them and render campaigns from beyond page 1.
+  it('pages through all campaigns when the listing spans multiple pages', async () => {
+    const makeCampaign = (id: string, title: string) => ({
+      id,
+      companyId: 'acme',
+      title,
+      description: 'Test description',
+      thumbnail: 'https://example.com/thumb.jpg',
+      coverImage: 'https://example.com/cover.jpg',
+      status: 'active',
+      visibility: 'public',
+      tags: ['launch'],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-02T00:00:00.000Z',
+    });
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+        const pageMatch = url.match(/[?&]page=(\d+)/);
+        const page = pageMatch ? Number(pageMatch[1]) : 1;
+        const items =
+          page === 1
+            ? [makeCampaign('101', 'Campaign Page One')]
+            : [makeCampaign('202', 'Campaign Page Two')];
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ items, total: 2, totalPages: 2 }),
+        } as Response;
+      }
+
+      return { ok: true, status: 200, json: async () => ({ items: [] }) } as Response;
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as typeof fetch);
+
+    render(<App />);
+
+    // Both a page-1 and a page-2 campaign render — the fix pages past page 1.
+    expect(await screen.findByText('Campaign Page One')).toBeInTheDocument();
+    expect(await screen.findByText('Campaign Page Two')).toBeInTheDocument();
+
+    // Exactly two campaign-list requests were made (page 1 and page 2).
+    const listCalls = fetchMock.mock.calls.filter(([url]) =>
+      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+    );
+    expect(listCalls).toHaveLength(2);
+    expect(String(listCalls[0][0])).toContain('page=1');
+    expect(String(listCalls[1][0])).toContain('page=2');
+  });
+
   it('shows session expired message on 401 responses', async () => {
     (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
     localStorage.setItem('wpsg_access_token', 'token');
