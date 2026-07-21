@@ -22,8 +22,8 @@ import { resolveWpThemeIds } from './services/wpThemeId'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
 import { RootIdProvider } from '@wp-super-gallery/shared-ui'
-
-type MountProps = Record<string, unknown>
+import { parseProps, parseNodeConfig, type MountProps, type NodeConfig } from './mountConfig'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 const query = new URLSearchParams(window.location.search)
 const windowFlag = (window as Window & { __USE_SHADOW_DOM__?: boolean }).__USE_SHADOW_DOM__
@@ -56,49 +56,6 @@ if ('serviceWorker' in navigator && !import.meta.env.DEV) {
         console.error('Service worker registration failed:', error);
       });
   });
-}
-
-/**
- * Allowed shortcode prop keys. Prevents external shortcode consumers from
- * injecting unexpected keys into the React component tree (P20-H-1).
- */
-const ALLOWED_PROPS = new Set(['campaign', 'company', 'space'])
-
-const parseProps = (node: Element): MountProps => {
-  const raw = node.getAttribute('data-wpsg-props')
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    return Object.fromEntries(
-      Object.entries(parsed as Record<string, unknown>).filter(([k]) => ALLOWED_PROPS.has(k)),
-    )
-  } catch {
-    return {}
-  }
-}
-
-interface NodeConfig {
-  spaceId?: number
-  spaceName?: string
-  instanceId?: string
-  theme?: string
-  galleryLayout?: string
-  enableLightbox?: boolean
-  enableAnimations?: boolean
-  authBarMode?: string
-}
-
-const parseNodeConfig = (node: Element): NodeConfig => {
-  const raw = node.getAttribute('data-wpsg-config')
-  if (!raw) return {}
-  try {
-    const parsed = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
-    return parsed as NodeConfig
-  } catch {
-    return {}
-  }
 }
 
 const ensureThemeScopeSelector = (host: HTMLElement): string => {
@@ -165,7 +122,13 @@ function ThemedApp({
     >
       <Notifications withinPortal={false} />
       <ModalsProvider>
-        <App {...props} />
+        {/* P69-D: public-facing boundary. No isAdmin prop → a public visitor
+            sees generic copy, never a raw exception message (Sentry still gets
+            the full error). Admin sub-trees have their own inner ErrorBoundary
+            passing isAdmin so operators keep raw messages for troubleshooting. */}
+        <ErrorBoundary>
+          <App {...props} />
+        </ErrorBoundary>
       </ModalsProvider>
     </MantineProvider>
   )

@@ -1,24 +1,24 @@
 # Phase 69 - React Security, Privacy & Hardening Defaults
 
-**Status:** Planned
+**Status:** Complete (PR #83 reviewed & validated)
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-21
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P69-A | Google Fonts fetched client-side by public visitors — undocumented third-party data flow | Planned | Small (docs) |
-| P69-B | Debug component markers stamped on production DOM by default — mostly PHP | Planned | Small |
-| P69-C | `parseNodeConfig` skips the key-allowlist treatment `parseProps` gets | Planned | Small |
-| P69-D | ErrorBoundary shows raw `error.message` to public visitors | Planned | Small |
-| P69-E | JWT provider's localStorage permissions cache never expires (opt-in path) | Planned | — (tracking only) |
+| P69-A | Google Fonts fetched client-side by public visitors — undocumented third-party data flow | Done | Small (docs) |
+| P69-B | Debug component markers stamped on production DOM by default — mostly PHP | Done | Small |
+| P69-C | `parseNodeConfig` skips the key-allowlist treatment `parseProps` gets | Done | Small |
+| P69-D | ErrorBoundary shows raw `error.message` to public visitors | Done | Small |
+| P69-E | JWT provider's localStorage permissions cache never expires (opt-in path) | Done (doc cross-ref) | — (tracking only) |
 
 ---
 
 ## Rationale
 
-No exploitable front-end vulnerability was found in the 2026-07-13 review ([REACT_REVIEW_FINDINGS.md](REACT_REVIEW_FINDINGS.md)) — this phase is hardening and compliance polish on an already-strong posture (one `dangerouslySetInnerHTML` behind DOMPurify, consistent CSS-injection sanitization, mount-time prop allowlisting, cookie/nonce auth with no browser-stored tokens by default). All items were independently re-verified against current source on 2026-07-14, with zero disputes.
+No exploitable front-end vulnerability was found in the 2026-07-13 review ([REACT_REVIEW_FINDINGS.md](archive/reviews/REACT_REVIEW_FINDINGS.md)) — this phase is hardening and compliance polish on an already-strong posture (one `dangerouslySetInnerHTML` behind DOMPurify, consistent CSS-injection sanitization, mount-time prop allowlisting, cookie/nonce auth with no browser-stored tokens by default). All items were independently re-verified against current source on 2026-07-14, with zero disputes.
 
 1. **What triggered it.** B-1 (Google Fonts) is the highest-impact item in this cluster — verified to run on the actual public gallery render path (`CardGallery.tsx`, `CampaignViewer.tsx`), not just an admin preview, disclosing every public visitor's IP to Google with zero documentation of the flow. E-1 (debug markers) is cataloged under "Efficiency" in the source doc but is really the same failure shape as PHP's A-1/A-2 and this phase's own B-1: a setting defaults to the more-invasive choice and nobody has to opt in to get it.
 2. **Why it belongs together.** Every item is "harden a default or close an information-exposure gap," none is a live exploit, and all are independent small changes — a natural single batch.
@@ -30,7 +30,25 @@ No exploitable front-end vulnerability was found in the 2026-07-13 review ([REAC
 |---|----------|------------|
 | A | B-1 fix scope | Ship the **docs-only** fix now (Small effort): document the Google Fonts data flow, trigger condition, and opt-out in `PRIVACY.md`. The self-host variant (download selected font files server-side at settings-save time, serve locally) is a genuinely separate, both-sides, Medium-effort feature — moved to Follow-On Candidates rather than bundled into this phase, since it isn't required to close the compliance-documentation gap. |
 | B | E-1's PHP-only scope | This finding is cataloged in the React review but its fix is almost entirely a PHP settings-default flip (`class-wpsg-settings-registry.php`) with zero FE code change needed — it has no existing home in Phases 63–67 since it surfaced in this review, not the PHP one. Kept here (rather than reopening an already-written PHP phase doc) since that's where it's cataloged and the change is trivial. |
-| C | B-4 track scope | No standalone implementation work in this phase — `WpJwtProvider`'s localStorage cache is disabled-by-default (`WPSG_ENABLE_JWT_AUTH` opt-in) and display-only staleness (server still enforces). Confirmed the existing "JWT In-Memory Token Auth" item in [FUTURE_TASKS.md](FUTURE_TASKS.md) is the right home for the actual fix; P69-E exists purely so this phase's tracking is complete, not as new scheduled work. |
+| C | B-4 track scope | No standalone implementation work in this phase — `WpJwtProvider`'s localStorage cache is disabled-by-default (`WPSG_ENABLE_JWT_AUTH` opt-in) and display-only staleness (server still enforces). Confirmed the existing "JWT In-Memory Token Auth" item in [FUTURE_TASKS.md](FUTURE_TASKS.md) is the right home for the actual fix; P69-E exists purely so this phase's tracking is complete, not as new scheduled work. **Refined during planning validation (2026-07-21, see below): that FUTURE_TASKS.md item doesn't currently mention this cache/TTL gap at all, so P69-E now includes a 2-line doc cross-reference rather than zero action.** |
+
+## Planning Refinement Pass (2026-07-21)
+
+Before execution, every claim in this doc was independently re-verified against current source (two Explore agents + direct inspection), not re-trusted from the 2026-07-14 pass. All five tracks' core claims held up. Three refinements were surfaced and approved by the user; they supersede the affected text elsewhere in this doc:
+
+1. **P69-B — two default locations, not one.** `debug_component_markers` defaults to `true` in both `class-wpsg-settings-registry.php:30` (canonical `self::$defaults`, already cited) **and** `class-wpsg-embed.php:68` (`isset($settings['debug_component_markers']) ? … : true` — a defensive fallback that only fires if `WPSG_Settings::get_settings()` fails to run at all, since `get_settings()` always merges the registry default via `wp_parse_args()`). Both flip to `false`. The `WPSG_DEBUG_COMPONENT_MARKERS` constant override (`class-wpsg-settings-registry.php:977-979`) is an intentional dev/test escape hatch and stays untouched.
+2. **P69-B — no existing test asserts the current default.** Searched all PHP test files; nothing calls `get_defaults()['debug_component_markers']` and asserts a value (`WPSG_Settings_Test.php:298-321` and `WPSG_Settings_Extended_Test.php:315-321` test sanitization/rendering, not the default). The track's acceptance criteria below is corrected accordingly — write a **new** test, not an "updated" one.
+3. **P69-E — upgraded from zero action to a 2-line `FUTURE_TASKS.md` edit.** See Key Decision C above.
+
+**Non-blocking notes carried forward for execution** (don't change scope, but matter for correctly scoping/testing each fix):
+- P69-B's "~14 files" file-count claim undercounts (actual is ~32 narrow / ~121 broad call sites) — doesn't change the fix, which is PHP-only regardless of FE call-site count.
+- `isWpsgDebugEnabled()` (`src/utils/wpsgDebug.ts:7-9`) short-circuits true whenever `import.meta.env.DEV` — validate P69-B against a **production build**, not dev.
+- P69-C's `NodeConfig` (`src/main.tsx:81-90`) has **8** fields (`spaceId`, `spaceName`, `instanceId`, `theme`, `galleryLayout`, `enableLightbox`, `enableAnimations`, `authBarMode`), not just the 3 named as examples in the Fix section below — all 8 need allowlist/type coverage. `zod` (already a dependency, `^4.3.6`) is already used for exactly this in `src/types/settingsSchemas.ts` — follow that pattern.
+- P69-D: `ErrorBoundary` is a class component, so it can't call `useAuth()` directly for admin status, and there's no `isAdmin` on `window.__WPSG_CONFIG__`. Add an `isAdmin` prop and thread it from its 5 mount sites (`src/App.tsx:422,441`; `AdminPanel.tsx:702,793`; `LayoutBuilderModal.tsx:474`), all of which already have `isAdmin` in scope via `useAuth()` (`AuthContext.tsx:166-167`). Combine with `isDebugEnabled()` (`src/utils/debug.ts`, safe to call directly, no hook). Use the existing `i18n.t('key', 'fallback')` (i18next) pattern already in this file — this codebase doesn't use `@wordpress/i18n`'s `__()` anywhere in the frontend.
+
+**New required deliverable:** as each track lands, add a section to a new companion doc, `docs/PHASE69_MANUAL_QA_RUNBOOK.md`, following the style/structure of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md) — what & why, pre-fix behavior, manual verification steps (or explicit rationale where no hand-testable surface exists, e.g. P69-E), why it proves the fix, regression checks, pitfalls — closing with a sign-off checklist table.
+
+**Approved commit batching:** single branch (`feature/phase69-react-hardening-2-of-4`), one PR, two commits, matching the Phase 68 (PR #82) pattern — Commit 1: P69-A + P69-B + P69-E (defaults/docs, no shared code); Commit 2: P69-C + P69-D (independent small FE hardening).
 
 ## Execution Priority
 
@@ -61,6 +79,10 @@ Per Key Decision A: document the flow in `PRIVACY.md` — trigger condition (a t
 
 - Manual doc review: confirm the new section accurately reflects when `loadGoogleFont.ts` actually runs (public render, not just builder preview).
 
+### Implementation (2026-07-21) — Done
+
+Added a dedicated bullet to `PRIVACY.md` §3 ("Data that leaves your server"). During implementation, verification of the actual code surfaced that the flow is **broader than the source finding stated**: it is *not only* the client-side `loadGoogleFont.ts` injection. `class-wpsg-embed.php` (`render_shortcode`, ~line 248-264) *also* enqueues a `fonts.googleapis.com` `<link>` server-side via `wp_enqueue_style`, reading the same `typography_overrides` source (`WPSG_Settings_Typography::extract_google_font_families`). So the font request fires on the public page **even with JavaScript disabled** — the server-side path is actually the primary one. The doc documents both mechanisms, the opt-in trigger (default theme uses no Google font ⇒ zero requests by default), the IP disclosure, and the two opt-outs (system font stack; custom uploaded fonts served locally via `@font-face`, per `WPSG_Font_Library::generate_font_face_css`). Header "Last reviewed" bumped to 2026-07-21. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-A (doc-review + optional Network-panel confirmation).
+
 ---
 
 ## Track P69-B - Debug component markers stamped on production DOM by default
@@ -73,17 +95,21 @@ Per Key Decision A: document the flow in `PRIVACY.md` — trigger condition (a t
 
 ### Fix
 
-Per Key Decision B: flip the PHP default to `false` (`class-wpsg-settings-registry.php`'s `debug_component_markers` default). The admin toggle and the `wpsg_debug_component_markers` filter stay as the explicit opt-in. No FE code change needed — `getWpsgDebugProps()` already correctly reads whatever the config says.
+Per Key Decision B, flip the PHP default to `false` in **both** places it's hardcoded (see Planning Refinement Pass #1 above): `class-wpsg-settings-registry.php:30`'s canonical `self::$defaults` array, and `class-wpsg-embed.php:68`'s defensive `isset(...) ? ... : true` fallback. The admin toggle and the `wpsg_debug_component_markers` filter stay as the explicit opt-in. No FE code change needed — `getWpsgDebugProps()` already correctly reads whatever the config says.
 
 ### Acceptance criteria
 
-- A fresh install with no settings customization does not render `data-wpsg-*` debug attributes on public gallery output.
+- A fresh install with no settings customization does not render `data-wpsg-*` debug attributes on public gallery output **in a production build** (dev builds always show markers via `isWpsgDebugEnabled()`'s `import.meta.env.DEV` short-circuit — that's expected, not a regression).
 - The admin toggle / filter still allow re-enabling markers for debugging.
 
 ### Validation
 
-- Existing settings-default tests updated for the new default value.
-- Manual: fresh install, view a public gallery's rendered HTML, confirm no `data-wpsg-component`/`data-wpsg-slot` attributes are present; toggle the setting on and confirm they reappear.
+- New PHP test asserting `WPSG_Settings::get_defaults()['debug_component_markers'] === false` (no existing test locks in the current default — see Planning Refinement Pass #2).
+- Manual: fresh install, view a public gallery's rendered HTML **from a production build**, confirm no `data-wpsg-component`/`data-wpsg-slot` attributes are present; toggle the setting on and confirm they reappear.
+
+### Implementation (2026-07-21) — Done
+
+Flipped `'debug_component_markers'` `true → false` in `class-wpsg-settings-registry.php` (`$defaults`) and the `page_config_js()` fallback in `class-wpsg-embed.php`. Left the `WPSG_DEBUG_COMPONENT_MARKERS` constant override (`get_defaults()`) untouched. Added `WPSG_Settings_Extended_Test::test_get_defaults_debug_component_markers_is_false`; confirmed the constant is not defined in the test bootstrap (so `get_defaults()` returns the raw `false`, not the override branch), and that no existing test asserted the old `true` default (the ones referencing the key set it explicitly to `false`/`true` as input and are unaffected). No FE change. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-B — note the prod-build requirement (dev builds force markers on via `import.meta.env.DEV`).
 
 ---
 
@@ -108,6 +134,10 @@ Apply the same allowlist+type-check treatment already used for `parseProps` — 
 
 - Unit test: feed `parseNodeConfig` a payload with an extra unexpected key and a wrong-typed known key; assert it's stripped/coerced rather than silently passed through.
 
+### Implementation (2026-07-21) — Done
+
+Extracted the mount-attribute parsing (`MountProps`, `ALLOWED_PROPS`, `parseProps`, `NodeConfig`, `parseNodeConfig`) out of `src/main.tsx` into a new `src/mountConfig.ts`, so the boundary is unit-testable without importing `main.tsx`'s side effects (Sentry init, SW registration, DOM mount). `main.tsx` now imports these. `parseNodeConfig` validates `data-wpsg-config` through a zod `NodeConfigSchema` covering **all 8** `NodeConfig` fields (not just the 3 the finding named), mirroring the existing idioms in `src/types/settingsSchemas.ts`: each field is `.optional().catch(undefined)` so a wrong-typed value drops that single field (falling back to the downstream default) rather than failing the whole parse, and `z.object`'s default strips unknown keys; the result is then pruned of undefined keys. Kept the schema permissive on enum *values* (`theme`/`galleryLayout`/`authBarMode` are plain strings at the type level today — not union enums — so the schema type-checks them as strings rather than inventing enum sets the PHP side doesn't enforce here). New test `src/mountConfig.test.ts`. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-C.
+
 ---
 
 ## Track P69-D - ErrorBoundary shows raw `error.message` to public visitors
@@ -131,6 +161,10 @@ Show generic translated copy by default; include the raw message only when the `
 
 - Unit test: render the boundary with a thrown error under both debug-on and debug-off conditions, assert the correct copy in each.
 
+### Implementation (2026-07-21) — Done
+
+Gated the raw-message render in `ErrorBoundary.tsx` behind `showRawMessage = this.props.isAdmin === true || isDebugEnabled()` (`isDebugEnabled` from `src/utils/debug.ts`); public visitors get the generic i18n copy, admins/editors and `wpsg_debug` sessions keep the raw message. Added an `isAdmin?: boolean` prop and threaded it from the four default-fallback call sites: `src/App.tsx` ×2 (real `isAdmin` from `useAuth()`) and `AdminPanel.tsx` ×2 (`isAdmin={true}` — that panel only mounts for editor-or-above). **Discovery during implementation:** the "5th" site, `LayoutBuilderModal.tsx`, supplies a **custom `fallback`** prop and so never reaches the raw-message code — intentionally left unchanged. **Also discovered:** *all* existing `ErrorBoundary` usages were admin-only — the public gallery had **no** boundary at all, so finding B-3's "public visitor" premise wasn't actually exercised. Per user direction (chosen 2026-07-21), added a **public-facing boundary** wrapping `<App>` in `ThemedApp` (`src/main.tsx`) with no `isAdmin` prop, so a public render error now shows generic copy instead of an unhandled crash. Updated the two pre-existing `ErrorBoundary.test.tsx` cases that asserted the raw message is always shown (they encoded the old behavior) to the gated behavior, and added admin/debug cases. QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-D.
+
 ---
 
 ## Track P69-E - JWT provider's localStorage permissions cache never expires (tracking only)
@@ -143,15 +177,19 @@ Show generic translated copy by default; include the raw message only when the `
 
 ### Fix
 
-No standalone fix here — fold into the existing "JWT In-Memory Token Auth" item in `FUTURE_TASKS.md` when that work is scheduled: add a TTL (or drop the cache entirely, since the permissions endpoint is cheap) as part of that larger rework.
+No standalone fix here — fold into the existing "JWT In-Memory Token Auth" item in `FUTURE_TASKS.md` when that work is scheduled: add a TTL (or drop the cache entirely, since the permissions endpoint is cheap) as part of that larger rework. **Refined during planning validation:** that FUTURE_TASKS.md item (~line 356+) currently says nothing about this cache/TTL gap — it only covers access-token storage — and the only prior record of the gap (`REACT_REVIEW_FINDINGS.md`) has since been archived. So this phase adds a 2-line cross-reference to that item (plus fixes its stale claim that `WpJwtProvider.tsx` is "currently commented out" — it's live, working `.ts` code today, flag-gated at `App.tsx:50-56`) rather than doing nothing.
 
 ### Acceptance criteria
 
-- N/A this phase — recorded so the review is complete and the eventual JWT rework doesn't miss this gap.
+- `docs/FUTURE_TASKS.md`'s "JWT In-Memory Token Auth" section cross-references the `wpsg_permissions` cache/TTL gap and no longer claims `WpJwtProvider` is commented out.
 
 ### Validation
 
-- N/A this phase.
+- Doc-only: review the `FUTURE_TASKS.md` diff for accuracy. No test — recorded in the companion QA runbook with rationale rather than a script (see Planning Refinement Pass).
+
+### Implementation (2026-07-21) — Done
+
+Edited `docs/FUTURE_TASKS.md`'s "JWT In-Memory Token Auth" section: (1) added a bullet in "What it would take" describing the `wpsg_permissions` no-TTL cache staleness (revoked grant lingers in UI until logout; display-only) with a back-link to this report's P69-E section; (2) corrected three stale "commented out" references — the Context paragraph, the file bullet (also fixed the filename `WpJwtProvider.tsx → .ts`), and the Prerequisites line — to state the provider is live, flag-gated code (`getAuthProvider()` in `App.tsx` instantiates it only when `enableJwt === true`). QA in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) § P69-E (diff review; no runtime surface).
 
 ## Follow-On Candidates
 
@@ -161,8 +199,52 @@ No standalone fix here — fold into the existing "JWT In-Memory Token Auth" ite
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+- **Commit 1 — P69-A + P69-B + P69-E (2026-07-21).** Defaults/docs batch, no shared code.
+  - P69-A: `docs/PRIVACY.md` §3 documents the Google Fonts flow (server-side `wp_enqueue_style` `<link>` + client-side `loadGoogleFont.ts` injection; opt-in trigger; IP disclosure; system-font/custom-font opt-outs). Broader than the source finding — the server-side path is primary and fires with JS off.
+  - P69-B: `debug_component_markers` default flipped `true → false` in `class-wpsg-settings-registry.php` + `class-wpsg-embed.php` fallback; new `WPSG_Settings_Extended_Test::test_get_defaults_debug_component_markers_is_false`. PHP-only, no FE change.
+  - P69-E: `docs/FUTURE_TASKS.md` JWT item cross-references the `wpsg_permissions` cache/TTL gap and corrects the stale "commented out" wording.
+  - Companion `docs/PHASE69_MANUAL_QA_RUNBOOK.md` created with §§ P69-A/B/E and the sign-off table (C/D rows added in commit 2).
+- **Commit 2 — P69-C + P69-D (2026-07-21).** Independent small FE hardening.
+  - P69-C: extracted mount-attribute parsing into `src/mountConfig.ts`; `parseNodeConfig` now validates `data-wpsg-config` via a zod schema (all 8 `NodeConfig` fields) — unknown keys stripped, wrong-typed known keys dropped. New `src/mountConfig.test.ts`.
+  - P69-D: `ErrorBoundary` gates the raw `error.message` behind `isAdmin` / `wpsg_debug`; threaded `isAdmin` from 4 default-fallback sites (the 5th uses a custom fallback). Added a public boundary around `<App>` in `main.tsx` (the gallery previously had none — per user direction). Updated `ErrorBoundary.test.tsx`.
+  - Companion runbook extended with §§ P69-C/P69-D.
+  - Validation: `npx tsc -b` clean; full Vitest suite green (**244 files, 3718 tests, 0 failures**); ESLint clean on changed files.
 
 ## Outcome
 
-Not started.
+All five tracks landed across two commits on `feature/phase69-react-hardening-2-of-4`. No exploitable issue existed going in; the phase hardened three defaults/exposure gaps and documented one third-party data flow:
+
+- **P69-A** — Google Fonts data flow now documented in `PRIVACY.md` (found to be broader than the finding: server-side enqueue is the primary path).
+- **P69-B** — production galleries no longer ship debug DOM markers by default.
+- **P69-C** — the `data-wpsg-config` mount boundary is now runtime-validated (zod), matching `data-wpsg-props`.
+- **P69-D** — `ErrorBoundary` no longer leaks raw exception messages to the public, and the public gallery gained an error boundary it never had.
+- **P69-E** — the JWT permissions-cache staleness is cross-referenced into the FUTURE_TASKS.md rework item so it won't be missed.
+
+Verification: full PHP suite green (1275 passed / 2 skipped); `tsc -b` clean; full Vitest suite green (3718 tests); ESLint clean. Manual QA steps captured in [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md).
+
+## PR Review & Validation Pass (2026-07-21, PR #83)
+
+A full reviewer pass over the two-commit branch (`8eb7118f`, `20cedfa4`) — line-by-line code review of every changed file plus independent re-validation against source and a live test run. No inline PR comments existed; this was a from-scratch review, not a comment-addressing pass.
+
+### Correctness verification (all confirmed — no blocking issues)
+
+- **P69-B (PHP default flip).** Confirmed `debug_component_markers` flips `true → false` in **both** hardcoded locations (`class-wpsg-settings-registry.php:30` canonical `self::$defaults`; `class-wpsg-embed.php:68` defensive `isset(...) ? ... : false` fallback), and that `get_defaults()` (`class-wpsg-settings-registry.php:974-979`) returns the raw `false` because the `WPSG_DEBUG_COMPONENT_MARKERS` constant override is not defined in the test bootstrap — so the new `test_get_defaults_debug_component_markers_is_false` asserts the real default, not the override branch.
+- **P69-C (zod validation) — no-regression proof.** The one risk in adding a strict schema is dropping a legitimate PHP-generated field. Traced the source of every consumed field back through `class-wpsg-embed.php`: `spaceId` comes from `resolve_space_id()` which is typed `: int` (→ JSON number → passes `z.number().finite()`); `spaceName`/`instanceId`/`theme`/`authBarMode` are strings; and `galleryLayout`/`enableLightbox`/`enableAnimations` are parsed into `NodeConfig` but **not consumed** in `main.tsx`, so even a dropped value is inert. Conclusion: no legitimate payload loses a field it actually uses. Prototype-pollution safety confirmed — zod rebuilds a fresh object from allowlisted keys only, and `pruneUndefinedKeys` uses `Object.fromEntries`, so a crafted `__proto__` own-property never reaches the result.
+- **P69-D (ErrorBoundary gating).** Confirmed the gate `showRawMessage = this.props.isAdmin === true || isDebugEnabled()`, the empty-message fallback (`error.message || genericBody`), and correct `isAdmin` threading at all four default-fallback sites (`App.tsx` ×2 real `isAdmin`; `AdminPanel.tsx` ×2 `isAdmin={true}`). The new public boundary wrapping `<App>` in `ThemedApp` sits inside `MantineProvider`/`ModalsProvider` (so the Mantine `Alert` renders) and correctly passes **no** `isAdmin` (public default = generic copy). Nested inner boundaries catch first, so no double Sentry report.
+
+### Fixes applied during review (2 trivial accuracy nits, no behavior change)
+
+1. **QA runbook §2 mental-model table** said `parseNodeConfig` is "in `src/main.tsx`"; corrected to note it was extracted into `src/mountConfig.ts` (consistent with §P69-C's own body).
+2. **`src/mountConfig.test.ts`** test *"rejects non-finite numbers for spaceId"* was a misnomer — its body tests `spaceId: null`. Renamed to *"drops a null spaceId (not a valid number)"* and clarified the comment (JSON has no Infinity/NaN literal, so `null` is the reachable wrong-typed case). Assertion unchanged.
+
+### Validation run (this pass)
+
+| Check | Result |
+|---|---|
+| `npx tsc -b` | Clean |
+| `npx vitest run src/mountConfig.test.ts src/components/ErrorBoundary.test.tsx` | 20 passed (10 + 10) |
+| `npx eslint` (all changed FE files) | Clean |
+| PHPUnit `--filter test_get_defaults_debug_component_markers_is_false` | OK (1 test, 2 assertions) |
+| PHPUnit settings/embed slice (`WPSG_Settings_Test`, `WPSG_Settings_Extended_Test`, `WPSG_Settings_Rest_Test`, `WPSG_Embed_Test`) | OK (22 tests, 154 assertions) |
+
+**Outcome:** the two commits are correct as written; the only changes this pass are the two doc/test-accuracy fixes above. No implementation logic was altered.
