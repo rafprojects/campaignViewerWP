@@ -91,9 +91,9 @@ export function BackgroundPropertiesPanel() {
         ]}
         value={mode}
         onChange={(val) => {
-          builder.setBackgroundMode(val as BackgroundMode);
+          builder.setTemplateField('backgroundMode', val as BackgroundMode);
           if (val === 'gradient' && (!builder.template.backgroundGradientStops || builder.template.backgroundGradientStops.length < 2)) {
-            builder.setBackgroundGradientStops([...DEFAULT_GRADIENT_STOPS]);
+            builder.setTemplateField('backgroundGradientStops', [...DEFAULT_GRADIENT_STOPS]);
           }
         }}
       />
@@ -151,7 +151,7 @@ function BackgroundModeControls({
           <ColorInput
             size="xs"
             value={builder.template.backgroundColor}
-            onChange={builder.setBackgroundColor}
+            onChange={(color) => builder.setTemplateField('backgroundColor', color)}
             format="hexa"
             swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
             style={{ flex: 1 }}
@@ -171,18 +171,18 @@ function BackgroundModeControls({
     const updateStop = (index: number, patch: Partial<GradientStop>) => {
       const next = [...stops];
       next[index] = { ...next[index]!, ...patch } as GradientStop;
-      builder.setBackgroundGradientStops(next);
+      builder.setTemplateField('backgroundGradientStops', next);
     };
 
     const handleStopCountChange = (count: 2 | 3) => {
       setStopCount(count);
       if (count === 3 && stops.length < 3) {
-        builder.setBackgroundGradientStops([
+        builder.setTemplateField('backgroundGradientStops', [
           ...stops,
           { color: 'rgba(128,128,128,1)', position: 50 },
         ]);
       } else if (count === 2 && stops.length > 2) {
-        builder.setBackgroundGradientStops(stops.slice(0, 2));
+        builder.setTemplateField('backgroundGradientStops', stops.slice(0, 2));
       }
     };
 
@@ -202,9 +202,9 @@ function BackgroundModeControls({
             ]}
             value={gradType}
             onChange={(v) => {
-              builder.setBackgroundGradientType(v as GradientType);
+              builder.setTemplateField('backgroundGradientType', v as GradientType);
               if (v === 'radial') {
-                builder.setBackgroundGradientDirection(undefined as unknown as GradientDirection);
+                builder.setTemplateField('backgroundGradientDirection', undefined as unknown as GradientDirection);
               }
             }}
             style={{ flex: 1 }}
@@ -221,7 +221,7 @@ function BackgroundModeControls({
                       size="sm"
                       variant={dir === d.value && builder.template.backgroundGradientAngle == null ? 'filled' : 'subtle'}
                       color={dir === d.value && builder.template.backgroundGradientAngle == null ? 'blue' : 'gray'}
-                      onClick={() => { builder.setBackgroundGradientDirection(d.value); builder.setBackgroundGradientAngle(undefined); }}
+                      onClick={() => { builder.setTemplateField('backgroundGradientDirection', d.value); builder.setTemplateField('backgroundGradientAngle', undefined); }}
                       aria-label={t(`lb_bg_dir_${d.value}`, d.label)}
                     >
                       <Text size="xs" fw={600}>{d.icon}</Text>
@@ -234,7 +234,7 @@ function BackgroundModeControls({
               <NumberInput
                 size="xs"
                 value={builder.template.backgroundGradientAngle ?? ''}
-                onChange={(val) => { builder.setBackgroundGradientAngle(val === '' || val === undefined ? undefined : Number(val)); }}
+                onChange={(val) => { builder.setTemplateField('backgroundGradientAngle', val === '' || val === undefined ? undefined : Number(val)); }}
                 placeholder={t('lb_bg_auto', 'auto')} min={0} max={360} step={5} suffix="°" style={{ flex: 1 }}
               />
             </GRow>
@@ -248,7 +248,7 @@ function BackgroundModeControls({
                 size="xs"
                 data={[{ label: t('lb_bg_ellipse', 'Ellipse'), value: 'ellipse' }, { label: t('lb_bg_circle', 'Circle'), value: 'circle' }]}
                 value={builder.template.backgroundRadialShape ?? 'ellipse'}
-                onChange={(v) => builder.setBackgroundRadialShape(v as RadialShape)}
+                onChange={(v) => builder.setTemplateField('backgroundRadialShape', v as RadialShape)}
                 style={{ flex: 1 }}
               />
             </GRow>
@@ -257,15 +257,15 @@ function BackgroundModeControls({
                 size="xs"
                 data={RADIAL_SIZES.map((s) => ({ value: s.value, label: t(`lb_bg_radial_${s.value}`, s.label) }))}
                 value={builder.template.backgroundRadialSize ?? 'farthest-corner'}
-                onChange={(v) => builder.setBackgroundRadialSize((v ?? 'farthest-corner') as RadialSize)}
+                onChange={(v) => builder.setTemplateField('backgroundRadialSize', (v ?? 'farthest-corner') as RadialSize)}
                 style={{ flex: 1 }}
               />
             </GRow>
             <GRow label={t('lb_bg_ctr_x', 'Ctr X')}>
-              <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setBackgroundGradientCenterX(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
+              <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setTemplateField('backgroundGradientCenterX', v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
             <GRow label={t('lb_bg_ctr_y', 'Ctr Y')}>
-              <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setBackgroundGradientCenterY(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
+              <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setTemplateField('backgroundGradientCenterY', v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
           </>
         )}
@@ -273,13 +273,13 @@ function BackgroundModeControls({
         {gradType === 'conic' && (
           <>
             <GRow label={t('lb_bg_angle', 'Angle')}>
-              <NumberInput size="xs" value={builder.template.backgroundGradientAngle ?? 0} onChange={(val) => builder.setBackgroundGradientAngle(val === '' ? 0 : Number(val))} min={0} max={360} step={5} suffix="°" style={{ flex: 1 }} />
+              <NumberInput size="xs" value={builder.template.backgroundGradientAngle ?? 0} onChange={(val) => builder.setTemplateField('backgroundGradientAngle', val === '' ? 0 : Number(val))} min={0} max={360} step={5} suffix="°" style={{ flex: 1 }} />
             </GRow>
             <GRow label={t('lb_bg_ctr_x', 'Ctr X')}>
-              <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setBackgroundGradientCenterX(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
+              <Slider size="xs" value={builder.template.backgroundGradientCenterX ?? 50} onChange={(v) => builder.setTemplateField('backgroundGradientCenterX', v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
             <GRow label={t('lb_bg_ctr_y', 'Ctr Y')}>
-              <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setBackgroundGradientCenterY(v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
+              <Slider size="xs" value={builder.template.backgroundGradientCenterY ?? 50} onChange={(v) => builder.setTemplateField('backgroundGradientCenterY', v)} min={0} max={100} step={1} label={(v) => `${v}%`} style={{ flex: 1 }} />
             </GRow>
           </>
         )}
@@ -336,7 +336,7 @@ function BackgroundModeControls({
             <Select
               size="xs"
               value={builder.template.backgroundImageFit ?? 'cover'}
-              onChange={(val) => builder.setBackgroundImageFit((val ?? 'cover') as 'cover' | 'contain' | 'fill')}
+              onChange={(val) => builder.setTemplateField('backgroundImageFit', (val ?? 'cover') as 'cover' | 'contain' | 'fill')}
               data={[{ value: 'cover', label: t('lb_slot_fit_cover', 'Cover') }, { value: 'contain', label: t('lb_slot_fit_contain', 'Contain') }, { value: 'fill', label: t('lb_slot_fit_fill', 'Fill') }]}
               style={{ flex: 1 }}
             />
@@ -344,7 +344,7 @@ function BackgroundModeControls({
           <Group gap={6} align="center" wrap="nowrap">
             <Text size="xs" c="dimmed" style={{ width: 40, flexShrink: 0 }}>{t('lb_bg_alpha', 'Alpha')}</Text>
             <Box style={{ flex: 1 }}>
-              <Slider value={builder.template.backgroundImageOpacity ?? 1} onChange={(val) => builder.setBackgroundImageOpacity(val)} min={0} max={1} step={0.05} size="xs" label={(v) => `${Math.round(v * 100)}%`} />
+              <Slider value={builder.template.backgroundImageOpacity ?? 1} onChange={(val) => builder.setTemplateField('backgroundImageOpacity', val)} min={0} max={1} step={0.05} size="xs" label={(v) => `${Math.round(v * 100)}%`} />
             </Box>
           </Group>
         </>

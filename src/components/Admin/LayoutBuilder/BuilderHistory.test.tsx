@@ -75,14 +75,14 @@ describe('useLayoutBuilderState — history entries (P19-B)', () => {
 
   it('setName creates "Rename template" entry', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
-    act(() => { result.current.setName('My Layout'); });
+    act(() => { result.current.setTemplateField('name', 'My Layout'); });
     expect(result.current.historyEntries.at(-1)?.label).toBe('Rename template');
   });
 
   it('multiple mutations create multiple history entries in order', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
     act(() => { result.current.addSlot(); });
-    act(() => { result.current.setName('New Name'); });
+    act(() => { result.current.setTemplateField('name', 'New Name'); });
     expect(result.current.historyEntries).toHaveLength(2);
     expect(result.current.historyEntries[0].label).toBe('Add slot');
     expect(result.current.historyEntries[1].label).toBe('Rename template');
@@ -170,7 +170,7 @@ describe('useLayoutBuilderState — history entries (P19-B)', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
     // Push 55 mutations
     for (let i = 0; i < 55; i++) {
-      act(() => { result.current.setName(`Name ${i}`); });
+      act(() => { result.current.setTemplateField('name', `Name ${i}`); });
     }
     expect(result.current.historyEntries.length).toBeLessThanOrEqual(50);
   });
@@ -178,8 +178,8 @@ describe('useLayoutBuilderState — history entries (P19-B)', () => {
   it('each history entry has a unique id', () => {
     const { result } = renderHook(() => useLayoutBuilderState(createEmptyTemplate()));
     act(() => { result.current.addSlot(); });
-    act(() => { result.current.setName('A'); });
-    act(() => { result.current.setName('B'); });
+    act(() => { result.current.setTemplateField('name', 'A'); });
+    act(() => { result.current.setTemplateField('name', 'B'); });
     const ids = result.current.historyEntries.map((e) => e.id);
     const unique = new Set(ids);
     expect(unique.size).toBe(ids.length);

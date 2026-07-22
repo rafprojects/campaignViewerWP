@@ -8,7 +8,7 @@
  */
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Stack, Title, Group, Text } from '@mantine/core';
+import { Box, Stack, Text } from '@mantine/core';
 import { IconCircles, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type {
@@ -19,10 +19,11 @@ import type {
 } from '@/types';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const SCOPE = 'circle';
@@ -64,14 +65,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
 
   return (
     <Stack {...getWpsgDebugProps('CircularGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
-            {common.showGalleryLabelIcon && <IconCircles size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} icon={<IconCircles size={18} />} />
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
@@ -158,11 +152,8 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
         }
       `}</style>
 
-      <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close}
-        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
+      <AdapterLightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
+        onPrev={prev} onNext={next} onClose={close} settings={settings} />
     </Stack>
   );
 }

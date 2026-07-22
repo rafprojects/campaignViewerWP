@@ -8,15 +8,15 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P70-A | Extract shared adapter chrome (heading, Lightbox wiring, container-width hook) | Planned | Medium |
-| P70-B | Consolidate `DiamondGallery`/`HexagonalGallery` into a config-driven `ClippedTileGridGallery` | Planned | Small-Medium |
-| P70-C | Consolidate nonce-refresh logic into one place | Planned | Small |
-| P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Planned | Small-Medium |
-| P70-E | `ApiClient` facade — migrate to namespaced domain modules | Planned | Medium |
-| P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Planned | Small |
-| P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Planned | Medium |
-| P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Planned | Medium-Large |
-| P70-I | Promote inline sub-components out of six 900+-line files | Planned | Small per file, Medium overall |
+| P70-A | Extract shared adapter chrome (heading, Lightbox wiring, container-width hook) | Done | Medium |
+| P70-B | Consolidate `DiamondGallery`/`HexagonalGallery` into a config-driven `ClippedTileGridGallery` | Done | Small-Medium |
+| P70-C | Consolidate nonce-refresh logic into one place | Done | Small |
+| P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Done | Small-Medium |
+| P70-E | `ApiClient` facade — migrate to namespaced domain modules | Deferred (follow-on) | Medium |
+| P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Done | Small |
+| P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Done | Medium |
+| P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Done (zip only; tab-state hooks → Follow-On) | Medium-Large |
+| P70-I | Promote inline sub-components out of six 900+-line files | Deferred (follow-on) | Small per file, Medium overall |
 
 ---
 
@@ -34,6 +34,21 @@ Nothing in this phase is broken — the 2026-07-13 review ([REACT_REVIEW_FINDING
 |---|----------|------------|
 | A | C-1/C-2 sequencing | Extract the shared adapter chrome (P70-A, generalizes to all 14 adapters) **before** consolidating Diamond/Hexagonal (P70-B) — so the new `ClippedTileGridGallery` is built on top of the shared chrome hook from day one instead of needing a second pass. Verification found `_shared/` already exports `resolveGalleryHeading`/`resolveAdapterShellStyle` as data/style *logic*; P70-A's job is wrapping that logic in the actual shared JSX (heading block, `<Lightbox>` element, `useContainerWidth`) that's currently hand-copied per file. |
 | B | C-5 scope calibration | Verification found `apiClient.ts` is 422 lines, not the ~300 estimated in the review — same duplication-facade shape, just a larger file than stated. No change to the fix direction, just a note that this track is somewhat bigger than its original Effort estimate suggested. |
+
+## Planning Refinement & Execution Decisions (2026-07-21)
+
+A validation pass re-checked every structural claim against current source (all held: Diamond/Hex 217 lines each, 17 template-field setters, `apiClient.ts` 422 lines, `AdminPanel.tsx` 999 / `types/index.ts` 1811 / `useLayoutBuilderState.ts` 1130, all six P70-I line counts exact, 14 chrome-bearing adapters = 16 main `.tsx` − 2 layer-content files). One path correction surfaced: the report references **flat** adapter paths (`Adapters/DiamondGallery.tsx`) but adapters live in **per-type subdirectories** (`Adapters/diamond/DiamondGallery.tsx`); `_shared/` is `Adapters/_shared/`.
+
+Four execution decisions were taken with the maintainer:
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| C | Scope of P70-E and P70-I | **Deferred to a follow-on.** Both are by-design incremental/opportunistic (E = ~70-call-site codemod behind deprecated shims; I = "do each file as it's next touched") and don't fit a bounded phase. In-scope this phase: **A, B, C, D, F, G.** |
+| D | PR strategy | **One PR, batched commits** on the `feature/phase70-*` branch (Phase 69 precedent). |
+| E | P70-D depth | **Dedupe-and-keep-split** — move `GALLERY_BREAKPOINTS`/scope types to one home and re-export; do *not* merge `galleryConfigUtils.ts` (one consumer) into a ~1000-line file. |
+| F | P70-A container-width | **Custom `useContainerWidth(ref)`**, not Mantine's `useElementSize` — replicates the exact existing effect (initial `clientWidth` seed + `ResizeObserver`) with a consumer-supplied ref, guaranteeing byte-identical behaviour. |
+
+**Execution order (batched commits, single PR):** Batch 1 = P70-A → P70-B (adapter chrome, A first so B builds on it); Batch 2 = P70-G (`types` split); Batch 3 = P70-C / P70-D / P70-F (independent small consolidations); Batch 4 = P70-H (`AdminPanel`, largest, last).
 
 ## Execution Priority
 
@@ -76,6 +91,15 @@ Migrate adapters incrementally — each is a mechanical ~30-line diet with exist
 - Existing per-adapter snapshot tests pass unmodified after migration.
 - New unit tests directly against the shared `AdapterHeading`/`AdapterLightbox`/`useContainerWidth`.
 
+### Implementation (2026-07-21)
+
+Added to `Adapters/_shared/`: `useContainerWidth.ts`, `AdapterLightbox.tsx`, `AdapterHeading.tsx` (+ a unit test each). Verification surfaced that the chrome is **not** uniform across all 14 adapters — three shapes exist, and the extraction was built to preserve each exactly:
+- **Heading:** an *icon variant* (`<Title><Group>{icon}{label}</Group></Title>`, 8 adapters, Masonry with an extra `titleStyle`) and a *label-only variant* (`<Title>{label}</Title>`, 5 adapters). `AdapterHeading` selects between them by **whether an `icon` prop is passed** (not by `showGalleryLabelIcon`). LayoutBuilder's `<Text>`-based heading is a third shape and stays inline (not migrated).
+- **Lightbox:** the five `settings.lightbox*` props were byte-identical across all 14; `AdapterLightbox` owns them, the six variable props stay per-adapter. Migrated all 12 non-clipped adapters (Diamond/Hex get it via P70-B).
+- **Container width:** only Diamond/Hex/LayoutBuilder hand-rolled a `ResizeObserver`. `useContainerWidth` reproduces the Diamond/Hex effect (initial `clientWidth` seed + observer). **LayoutBuilder was intentionally left inline** — its observer uses a different, no-initial-read shape (`containerWidth || 9999` fallback + `runtime.breakpoint`) whose first-render breakpoint must not shift; forcing it onto the seeding hook would be a subtle behaviour change. Its first consumer is `ClippedTileGridGallery` (P70-B).
+
+**Outcome:** `tsc -b` clean; 322 adapter tests + 18 `_shared` unit tests green; eslint clean. No DOM/snapshot change.
+
 ---
 
 ## Track P70-B - Consolidate `DiamondGallery`/`HexagonalGallery`
@@ -100,6 +124,12 @@ Extract a `ClippedTileGridGallery` (in `Adapters/_shared/`, built on P70-A's sha
 - Existing snapshot tests for both adapters pass unmodified.
 - Manual: render both gallery types on the dev site, visually confirm no regression.
 
+### Implementation (2026-07-21)
+
+Added `Adapters/_shared/ClippedTileGridGallery.tsx` (built on P70-A's chrome + `useContainerWidth`), driven by a `ClippedTileGridConfig` capturing the ~7 constants that differed: `scope`, `debugName`, `clipPath`, `vOverlap`, heading `icon`, `playIconRatio`/`zoomIconRatio`, and `badge` (`bottom`/`padding`/`fontSize`/optional `whiteSpace`). `DiamondGallery.tsx` and `HexagonalGallery.tsx` are now ~45-line config wrappers (down from 217 each). Inline-style property order is preserved (the diamond badge's `whiteSpace: 'nowrap'` is spread last, conditionally) so the emitted `style` attribute stays byte-identical.
+
+**Outcome:** `tsc -b` clean (after typing the forwarded optional `runtime` prop as `ResolvedGallerySectionRuntime | undefined` for `exactOptionalPropertyTypes`); adapter smoke suite green unmodified; eslint clean. Net −131 lines plus single-source-of-truth for the clipped-grid family.
+
 ---
 
 ## Track P70-C - Consolidate nonce-refresh logic
@@ -123,6 +153,14 @@ Add `fetchFreshNonce(apiBase): Promise<string | null>` to `wpNonce.ts`; have the
 
 - Existing nonce-heartbeat and transport-refresh test coverage passes unmodified.
 
+### Implementation (2026-07-21)
+
+Extracted the fetch-and-parse into a pure, WordPress-agnostic `src/services/http/fetchNonce.ts::fetchNonceFrom(url, currentNonce?)` (+ unit test). `HttpTransportImpl.refreshNonce` now calls it; `wpNonce.ts` gains `fetchFreshNonce(apiBase)` = `fetchNonceFrom(apiBase + WP_NONCE_PATH, getWpNonce())`; `useNonceHeartbeat` calls `fetchFreshNonce` + `setWpNonce` and no longer reads/writes the nonce globals directly.
+
+**Design note (P51-D preserved):** the pure helper lives in the transport's own `http/` layer, not in `wpNonce.ts`, so the transport shares one implementation *without* importing WordPress glue — `wpNonce.ts` → `http/fetchNonce` (allowed direction), never the reverse. The heartbeat still reads `enableJwt`/`apiBase` from `window.__WPSG_CONFIG__` (non-nonce config it owns); only the nonce read/fetch/store moved to the helpers.
+
+**Outcome:** `tsc -b` + eslint clean; transport / wpNonce / heartbeat suites + new `fetchNonce.test.ts` green.
+
 ---
 
 ## Track P70-D - Merge gallery-config utility duplication
@@ -145,6 +183,12 @@ Move shared constants/types (`GALLERY_BREAKPOINTS`, scope types) to a single hom
 ### Validation
 
 - Existing gallery-config test coverage passes unmodified (same exported values from the single source of truth).
+
+### Implementation (2026-07-21)
+
+`utils/galleryConfig.ts` is the single home for `GALLERY_BREAKPOINTS`; `components/Common/galleryConfigUtils.ts` now imports it from there (the import direction already established for `cloneGalleryConfig`/`getLegacyViewportBackgroundFieldMap`) and re-exports it for its consumers. Added a top-of-file doc comment to each file stating its side of the boundary (pure transforms vs editor helpers). Per Planning Decision E, the files stay split (not merged). `GALLERY_SCOPES`/`EditableGalleryScope` were not cross-file duplicates, so no change there.
+
+**Outcome:** `tsc -b` + eslint clean; gallery-config suites green. `GALLERY_BREAKPOINTS` now defined exactly once.
 
 ---
 
@@ -194,6 +238,12 @@ Replace with one generic `setTemplateField<K extends keyof LayoutTemplate>(key: 
 - Existing `useLayoutBuilderState` and builder-history test suites pass unmodified.
 - Manual: exercise a handful of the affected fields in the Layout Builder, confirm undo/redo labels are unchanged.
 
+### Implementation (2026-07-21)
+
+Per Planning Decision (maintainer-confirmed): generic setter, drop the named ones. Replaced the 15 pure one-line setters with `setTemplateField<K extends keyof LayoutTemplate>(key, value)`, which records the undo/redo label from a module-level `TEMPLATE_FIELD_LABELS` map (preserving the exact prior labels). Kept `setBackgroundImage` (`'' → undefined`) and `setCanvasHeightVh` (clamp 1–100) as thin transform wrappers over `setTemplateField`. Updated the `LayoutBuilderActions` interface, the return object, the ~23 builder-UI call sites (`builder.setTemplateField('backgroundColor', c)` …, one reference-form `onChange` wrapped), and the test call sites in `BuilderHistory.test.tsx` / `useLayoutBuilderState*.test.*` (no assertions changed — labels/behaviour identical).
+
+**Outcome:** `tsc -b` (which pins every call site to a valid `keyof LayoutTemplate` + correct value type) + eslint clean; builder-state/history/coverage suites green. Adding a new template field now needs only a `TEMPLATE_FIELD_LABELS` entry.
+
 ---
 
 ## Track P70-G - Split `types/index.ts` into per-domain files
@@ -216,6 +266,12 @@ Split into `types/campaign.ts`, `types/media.ts`, `types/layoutTemplate.ts`, `ty
 ### Validation
 
 - `tsc -b` clean, full test suite green — both are strong signals here since a barrel split either works completely or breaks obviously.
+
+### Implementation (2026-07-21)
+
+Split into `types/gallerySettings.ts` (gallery config/runtime + behaviour/card settings, 1078 lines), `types/media.ts` (137), `types/access.ts` (42), `types/campaign.ts` (43), `types/layoutTemplate.ts` (541); `types/index.ts` is now a 5-line `export *` barrel. Cross-domain references use `import type` and form a clean DAG (`campaign → media + gallerySettings`, `layoutTemplate → gallerySettings`; media/access/gallerySettings self-contained — the tail's `Campaign` mentions were all comments, so gallerySettings needs no campaign/layout imports). The three non-exported helpers (`DEFAULT_GALLERY_COMMON_SETTINGS`, `createDefaultGalleryScopeConfig`, `createDefaultGalleryConfig`) stayed module-private in `gallerySettings.ts` beside their consumer.
+
+**Outcome:** all 73 exports preserved (verified mechanically), zero duplicate names, **zero import-site changes**. `tsc -b` clean, eslint clean, full suite green (247 files / 3727 tests).
 
 ---
 
@@ -242,6 +298,14 @@ Extract per-concern hooks mirroring the existing `useAdminCampaignActions` patte
 - Existing AdminPanel and per-tab test suites pass unmodified.
 - New unit tests directly against each extracted hook.
 - Manual: exercise media, access, and audit tabs plus ZIP export/import, confirm no regressions.
+
+### Implementation (2026-07-21) — scope reduced to the ZIP concern
+
+Per a maintainer decision (recorded during execution), this track shipped **`useAdminZipTransfers` only** — the four in-flight flags and the three binary-job handlers (audit ZIP, global-audit ZIP via one shared runner, media ZIP export/import). New `src/hooks/useAdminZipTransfers.ts` (+ unit test); ~8 `AdminPanel` call sites rewired to `zipTransfers.*`. The media-export campaign scope stays AdminPanel-owned and is passed to `exportMediaZip`.
+
+The **audit/access/media tab-state hooks were deferred** to [FUTURE_TASKS.md](FUTURE_TASKS.md) (Code Quality & Refactoring). Rationale surfaced during execution: hook extraction alone does **not** achieve the re-render isolation the original acceptance criterion assumed (the hooks are still called by `AdminPanel`, so its state lives in its render) — real isolation needs splitting each tab into a child component. That tab-state layer is also tightly coupled to the data-fetching/prefetch effects (higher risk, lower reward), so it was carved out with the caveat documented for whoever picks it up.
+
+**Outcome:** `tsc -b` + eslint clean; new `useAdminZipTransfers.test.ts` (5 cases) green; full suite green (249 files / 3737 tests). `AdminPanel.tsx` shed the four flags + three handler bodies with no behavior change.
 
 ---
 
@@ -270,12 +334,52 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| None beyond what's already noted per-track (P70-I is itself opportunistic/deferred by design). | — |
+| **P70-E — `ApiClient` facade → namespaces** | Deferred 2026-07-21 (Planning Decision C). A ~70-call-site incremental codemod behind deprecated shims — long-tail migration economics, not a bounded phase deliverable. Start whenever convenient. |
+| **P70-I — promote inline sub-components** | Deferred 2026-07-21 (Planning Decision C). Opportunistic by design ("do each file as it's next touched"); forcing all six 900+-line files in one big-bang creates churn without behaviour benefit. |
+| **P70-H remainder — AdminPanel tab-state hooks** | Deferred 2026-07-21 (execution decision). Filed to [FUTURE_TASKS.md](FUTURE_TASKS.md) → Code Quality & Refactoring. Hook extraction wouldn't deliver the assumed re-render isolation (needs a tab→child-component split), and the tab-selection state is tightly coupled to data-fetching/prefetch — carved out with a framing caveat. |
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+- Manual-QA companion: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md) — a verification section is added per landed fix.
+- **Batch 1 (P70-A, P70-B) landed 2026-07-21** — see each track's *Implementation* block. `tsc -b` clean, 322 adapter + 18 `_shared` unit tests green, eslint clean.
+- **Batch 2 (P70-G) landed 2026-07-21** — `types/index.ts` split. `tsc -b` + eslint clean, full suite green (247 files / 3727 tests), zero import-site changes.
+- **Batch 3 (P70-C, P70-D, P70-F) landed 2026-07-21** — nonce-refresh consolidation, `GALLERY_BREAKPOINTS` dedupe, generic `setTemplateField`. `tsc -b` + eslint clean, full suite green (248 files / 3732 tests).
+- **Batch 4 (P70-H) landed 2026-07-21** — `useAdminZipTransfers` extraction (zip concern only; tab-state hooks → Follow-On). `tsc -b` + eslint clean, full suite green (249 files / 3737 tests).
+
+## PR Review & Fix Process (2026-07-22)
+
+A dedicated pre-merge review pass was run over the four batched commits on `feature/phase70-react-hardening-3-of-4` (`ab88e069`, `d944863b`, `7dd350c2`, `7af1ce44`). There were **no external review comments** — this was a self-review acting as the reviewer, combining (a) a correctness/equivalence audit of every track's diff against the pre-phase source, (b) a code-review pass (bug-hunt, edge cases, dead code, test quality), and (c) the full automated QA regression gate. Because every track is a claimed *no-behaviour-change* refactor, the review bar was **behavioural equivalence**, not merely "looks reasonable."
+
+**Verdict: approved — zero correctness issues found; no source changes required.** The extractions are faithful; the only non-identity change is benign (documented below). QA confirmed the baseline empirically.
+
+### Per-track review findings
+
+| Track | What was verified against pre-phase source | Result |
+|-------|--------------------------------------------|--------|
+| P70-A | All 14 adapters: heading **icon-vs-label variant** matches each original exactly (icon-Group for the 9 icon adapters incl. Masonry, bare label for the 5 label-only — scroll-snap/spotlight used a multiline `<Title>` but the same plain shape); Masonry's `titleStyle` is the **only** `<Title style=>` and is forwarded; `style={undefined}` elsewhere is DOM-identical; all 14 used the **same 5 `settings.lightbox*` props** so `AdapterLightbox` drops nothing; `useContainerWidth` reproduces the effect verbatim | Byte-identical |
+| P70-B | Diamond/Hex configs reproduce all ~7 differing constants; badge `whiteSpace: 'nowrap'` spread **conditionally last** keeps the serialized `style` byte-identical; debug names preserved; `containerDimensions` was unused (`_`-prefixed) before and is correctly not forwarded | Byte-identical |
+| P70-C | The one real subtlety — `fetchNonceFrom` returning `data.nonce ?? null` vs the originals' `if (data.nonce)` — resolves **identically** because all three consumers (transport `refreshNonce`, heartbeat, `fetchFreshNonce`) gate on a truthy `if (nonce)`, so `''` behaves as before; nonce is still re-read per refresh tick; transport imports only the `http/`-layer helper (stays WordPress-decoupled) | Equivalent |
+| P70-D | `GALLERY_BREAKPOINTS` now defined once in `utils/galleryConfig.ts`, re-exported from the editor module with identical type/value; dependency still points editor → pure only | Equivalent |
+| P70-F | All **17** `TEMPLATE_FIELD_LABELS` entries match the former setters' labels; both transform wrappers (`setBackgroundImage` `''→undefined`, `setCanvasHeightVh` clamp) preserved; **all 20 call-site remappings are field-correct**, including the non-obvious `setAspectRatio`→`'canvasAspectRatio'`; test call-sites are pure mechanical swaps with no weakened assertions; no surviving references to the 15 removed setter names anywhere in `src/` | Equivalent |
+| P70-G | Exported-symbol set is **73 before = 73 after** (mechanical diff, zero delta); **no duplicate export names** across the five files (so no silent `export *` elision); every cross-file reference is `import type` (erased at compile time) → no runtime circular-init risk; runtime consts are self-contained | Equivalent |
+| P70-H | Handlers extracted verbatim (job start → poll to 5-min deadline → download → best-effort delete → toast); `exportMediaZip(mediaCampaignId)` passes the scope **explicitly** (no click-event leaked as `campaignId`); `exportAuditZip`/`exportGlobalAuditZip` bind the correct in-flight setters; **no dangling references** to the four moved flags or three moved handlers remain in `AdminPanel.tsx` | Equivalent |
+
+**Only non-identity change (benign):** `useContainerWidth` declares its effect deps as `[ref]` where the inline Diamond/Hex effect used `[]`. Since a `useRef` object is stable across renders, both run exactly once on mount — no behavioural difference; the change merely satisfies exhaustive-deps cleanly.
+
+**Test-quality notes.** The five added test files are sound: `useContainerWidth.test.tsx` correctly neutralises Testing-Library's auto-cleanup `disconnect` bleed (clears spies in `beforeEach`, not `afterEach`); `useAdminZipTransfers.test.ts` covers the scoped/unscoped export, the error-resets-flag path, import-count toast, and both audit runners; `fetchNonce.test.ts` pins the pure helper's header/omit/null-on-failure branches.
+
+### QA regression gate (2026-07-22)
+
+Run as the empirical backstop for the equivalence argument (execution delegated to a Haiku runner):
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Type-check | `npx tsc -b` | Clean — 0 errors |
+| Lint | `npm run lint` (`eslint .`) | Clean — 0 errors/warnings |
+| Unit/integration suite | `npm run test` (`vitest run`) | **249 files / 3737 tests — all passed** |
+
+No regressions. The review made **no source edits** (documentation-only), so the QA numbers match Batch 4's landing baseline — the point of this pass was to independently re-verify the equivalence claims, and they held.
 
 ## Outcome
 
-Not started.
+**Complete** (in-scope tracks). Landed: P70-A, P70-B, P70-C, P70-D, P70-F, P70-G, and P70-H (zip concern). Deferred to Follow-On Candidates: P70-E, P70-I, and the P70-H tab-state remainder. Delivered across four batched commits on one branch, each `tsc -b` + eslint clean with the full Vitest suite green; every track is a verified no-behavior-change refactor. A pre-merge PR review (2026-07-22, see above) independently re-audited all four commits against the pre-phase source and confirmed zero correctness issues with the QA gate all-green. Companion verification doc: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md).

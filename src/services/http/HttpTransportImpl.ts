@@ -1,4 +1,5 @@
 import type { ApiClientOptions, HttpTransport } from './HttpTransport';
+import { fetchNonceFrom } from './fetchNonce';
 
 /**
  * Structured error thrown by the transport on non-2xx responses or timeouts.
@@ -164,23 +165,10 @@ export class HttpTransportImpl implements HttpTransport {
    */
   private async refreshNonce(): Promise<boolean> {
     if (!this.noncePath) return false;
-    try {
-      const currentNonce = this.getNonce?.();
-      const response = await fetch(
-        `${this.baseUrl}${this.noncePath}`,
-        {
-          credentials: 'same-origin',
-          headers: currentNonce ? { 'X-WP-Nonce': currentNonce } : {},
-        },
-      );
-      if (!response.ok) return false;
-      const data: { nonce?: string } = await response.json();
-      if (data.nonce) {
-        this.setNonce?.(data.nonce);
-        return true;
-      }
-    } catch {
-      // refresh failed — don't retry
+    const nonce = await fetchNonceFrom(`${this.baseUrl}${this.noncePath}`, this.getNonce?.());
+    if (nonce) {
+      this.setNonce?.(nonce);
+      return true;
     }
     return false;
   }

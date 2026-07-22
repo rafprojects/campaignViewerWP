@@ -533,7 +533,7 @@ export function LayoutBuilderModal({
                 )}
                 <TextInput
                   value={builder.template.name}
-                  onChange={(e) => builder.setName(e.currentTarget.value)}
+                  onChange={(e) => builder.setTemplateField('name', e.currentTarget.value)}
                   variant="unstyled"
                   size="lg"
                   styles={{

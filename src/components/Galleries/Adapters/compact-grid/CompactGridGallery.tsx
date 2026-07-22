@@ -17,7 +17,7 @@
  */
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Group, Stack, Title } from '@mantine/core';
+import { Box, Stack } from '@mantine/core';
 import { IconLayoutGrid, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type {
@@ -31,7 +31,8 @@ import type { ReactNode } from 'react';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
@@ -201,14 +202,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
 
   return (
     <Stack {...getWpsgDebugProps('CompactGridGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
-            {common.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} icon={<IconLayoutGrid size={18} />} />
 
       {/* Flex-wrap grid — justify-content distributes items per-row, so
           partially filled last rows can be center/space-between/etc. */}
@@ -245,18 +239,14 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
         ))}
       </Box>
 
-      <Lightbox
+      <AdapterLightbox
         isOpen={lightboxOpen}
         media={media}
         currentIndex={currentIndex}
         onPrev={prev}
         onNext={next}
         onClose={closeLightbox}
-        videoMaxWidth={settings.lightboxVideoMaxWidth}
-        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight}
-        videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight}
+        settings={settings}
       />
     </Stack>
   );

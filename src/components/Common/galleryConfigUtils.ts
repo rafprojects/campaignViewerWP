@@ -1,3 +1,13 @@
+/**
+ * Gallery-config **editor helpers** (P70-D boundary).
+ *
+ * Breakpoint/scope table builders, per-scope field collectors and
+ * adapter-settings shaping used by the settings UI. The editor-free *pure
+ * transforms* (config resolution, the legacy viewport-background field map) and
+ * shared constants such as `GALLERY_BREAKPOINTS` are owned by
+ * `@/utils/galleryConfig` and imported/re-exported here — this module never
+ * redefines them.
+ */
 import { adapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import type {
   AdapterSettingFieldDefinition,
@@ -12,10 +22,12 @@ import {
   type GalleryConfigMode,
   type GalleryConfigScope,
 } from '@/types';
-import { cloneGalleryConfig, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
+import { cloneGalleryConfig, GALLERY_BREAKPOINTS, getLegacyViewportBackgroundFieldMap } from '@/utils/galleryConfig';
 import i18n from '@/i18n';
 
-export const GALLERY_BREAKPOINTS: GalleryConfigBreakpoint[] = ['desktop', 'tablet', 'mobile'];
+// Single source of truth in @/utils/galleryConfig (P70-D); re-exported so
+// editor-side callers can keep importing it from this module.
+export { GALLERY_BREAKPOINTS };
 export type EditableGalleryScope = Extract<GalleryConfigScope, 'unified' | 'image' | 'video'>;
 
 export type SharedCommonSettingKey = keyof Pick<

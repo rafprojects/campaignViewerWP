@@ -23,7 +23,7 @@
  */
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Stack, Text, Title } from '@mantine/core';
+import { Box, Stack, Text } from '@mantine/core';
 import { IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import type {
   GalleryBehaviorSettings,
@@ -34,7 +34,8 @@ import type {
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { useLightbox } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import {
@@ -131,15 +132,7 @@ export function ScrollSnapGallery({
       {...getWpsgDebugProps('ScrollSnapGallery')}
     >
       {/* Optional gallery heading */}
-      {heading.visible && (
-        <Title
-          order={3}
-          size="h5"
-          ta={common.galleryLabelJustification || 'left'}
-        >
-          {heading.label}
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} />
 
       {/* Snap container */}
       <Box
@@ -280,18 +273,14 @@ export function ScrollSnapGallery({
         }
       `}</style>
 
-      <Lightbox
+      <AdapterLightbox
         isOpen={lightboxOpen}
         media={media}
         currentIndex={currentIndex}
         onPrev={prev}
         onNext={next}
         onClose={closeLightbox}
-        videoMaxWidth={settings.lightboxVideoMaxWidth}
-        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight}
-        videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight}
+        settings={settings}
       />
     </Stack>
   );

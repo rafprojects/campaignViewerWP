@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RowsPhotoAlbum } from 'react-photo-album';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
-import { Box, Stack, Title, Group } from '@mantine/core';
+import { Box, Stack } from '@mantine/core';
 import { IconLayoutRows, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import type {
   GalleryBehaviorSettings,
@@ -33,7 +33,8 @@ import type {
 import type { ListingItem } from '../GalleryAdapter';
 import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
@@ -161,14 +162,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
 
   return (
     <Stack {...getWpsgDebugProps('JustifiedGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
-            {common.showGalleryLabelIcon && <IconLayoutRows size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} icon={<IconLayoutRows size={18} />} />
 
       <style>{buildBoxShadowStyles(SCOPE, settings)}</style>
 
@@ -266,11 +260,8 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
         }
       `}</style>
 
-      <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close}
-        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
+      <AdapterLightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
+        onPrev={prev} onNext={next} onClose={close} settings={settings} />
     </Stack>
   );
 }

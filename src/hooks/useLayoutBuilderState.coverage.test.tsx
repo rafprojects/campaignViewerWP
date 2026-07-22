@@ -26,19 +26,19 @@ describe('template setters', () => {
   it('applies every background / canvas setter', () => {
     const { result } = render();
     act(() => {
-      result.current.setName('Renamed');
-      result.current.setBackgroundMode('gradient');
-      result.current.setBackgroundGradientDirection('to-right');
-      result.current.setBackgroundGradientStops([{ color: '#000', position: 0 }, { color: '#fff', position: 100 }] as never);
-      result.current.setBackgroundGradientType('radial');
-      result.current.setBackgroundGradientAngle(45);
-      result.current.setBackgroundRadialShape('circle');
-      result.current.setBackgroundRadialSize('farthest-corner');
-      result.current.setBackgroundGradientCenterX(50);
-      result.current.setBackgroundGradientCenterY(50);
-      result.current.setBackgroundImageFit('contain');
-      result.current.setBackgroundImageOpacity(0.5);
-      result.current.setCanvasHeightMode('fixed-vh');
+      result.current.setTemplateField('name', 'Renamed');
+      result.current.setTemplateField('backgroundMode', 'gradient');
+      result.current.setTemplateField('backgroundGradientDirection', 'to-right');
+      result.current.setTemplateField('backgroundGradientStops', [{ color: '#000', position: 0 }, { color: '#fff', position: 100 }] as never);
+      result.current.setTemplateField('backgroundGradientType', 'radial');
+      result.current.setTemplateField('backgroundGradientAngle', 45);
+      result.current.setTemplateField('backgroundRadialShape', 'circle');
+      result.current.setTemplateField('backgroundRadialSize', 'farthest-corner');
+      result.current.setTemplateField('backgroundGradientCenterX', 50);
+      result.current.setTemplateField('backgroundGradientCenterY', 50);
+      result.current.setTemplateField('backgroundImageFit', 'contain');
+      result.current.setTemplateField('backgroundImageOpacity', 0.5);
+      result.current.setTemplateField('canvasHeightMode', 'fixed-vh');
       result.current.setCanvasHeightVh(150); // clamps to 100
     });
     expect(result.current.template.name).toBe('Renamed');
@@ -169,7 +169,7 @@ describe('history boundaries', () => {
     // redo with empty future is a no-op
     act(() => result.current.redo());
     expect(result.current.template.slots).toHaveLength(1);
-    act(() => result.current.setName('x'));
+    act(() => result.current.setTemplateField('name', 'x'));
     expect(result.current.canUndo).toBe(true);
     act(() => result.current.undo());
     // undo again past the start is inert

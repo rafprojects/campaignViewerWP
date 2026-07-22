@@ -184,7 +184,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           <SegmentedControl
             size="xs"
             value={String(builder.template.canvasAspectRatio)}
-            onChange={(val) => builder.setAspectRatio(Number(val))}
+            onChange={(val) => builder.setTemplateField('canvasAspectRatio', Number(val))}
             data={ASPECT_PRESETS.map((p) => ({ label: p.label, value: p.value }))}
             fullWidth
           />
@@ -195,7 +195,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
             <SegmentedControl
               size="xs"
               value={builder.template.canvasHeightMode || 'aspect-ratio'}
-              onChange={(val) => builder.setCanvasHeightMode(val as 'aspect-ratio' | 'fixed-vh')}
+              onChange={(val) => builder.setTemplateField('canvasHeightMode', val as 'aspect-ratio' | 'fixed-vh')}
               data={[
                 { label: t('lb_props_ratio', 'Ratio'), value: 'aspect-ratio' },
                 { label: t('lb_props_vh', 'vh'), value: 'fixed-vh' },

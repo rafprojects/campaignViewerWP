@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { fetchFreshNonce, getWpNonce, setWpNonce } from '@/services/wpNonce';
 
 /**
  * Periodically refresh the WP REST nonce to prevent 403 errors in
@@ -8,6 +9,11 @@ import { useEffect, useRef } from 'react';
  * calls a lightweight endpoint every `intervalMs` (default: 20 minutes)
  * to obtain a fresh nonce and updates `window.__WPSG_CONFIG__.restNonce`
  * so subsequent API calls use the refreshed value.
+ *
+ * The nonce read (`getWpNonce`), fetch (`fetchFreshNonce`) and store
+ * (`setWpNonce`) all go through the shared `wpNonce.ts` helpers (P70-C) — this
+ * hook no longer touches the nonce globals directly. Only the JWT gate and the
+ * API base URL are read from `window.__WPSG_CONFIG__` here (non-nonce config).
  *
  * Only active when JWT auth is **not** enabled (nonce-only path).
  *
@@ -23,8 +29,7 @@ export function useNonceHeartbeat(intervalMs = 20 * 60 * 1000): void {
       return;
     }
 
-    const nonce = window.__WPSG_CONFIG__?.restNonce ?? window.__WPSG_REST_NONCE__;
-    if (!nonce) {
+    if (!getWpNonce()) {
       return;
     }
 
@@ -34,35 +39,9 @@ export function useNonceHeartbeat(intervalMs = 20 * 60 * 1000): void {
       window.location.origin;
 
     const refresh = async () => {
-      try {
-        const currentNonce =
-          window.__WPSG_CONFIG__?.restNonce ?? window.__WPSG_REST_NONCE__;
-
-        const response = await fetch(
-          `${apiBase}/wp-json/wp-super-gallery/v1/nonce`,
-          {
-            credentials: 'same-origin',
-            headers: currentNonce ? { 'X-WP-Nonce': currentNonce } : {},
-          },
-        );
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data: { nonce?: string } = await response.json();
-        if (data.nonce) {
-          // Update the global config so all future apiClient calls use the
-          // refreshed nonce.
-          if (window.__WPSG_CONFIG__) {
-            window.__WPSG_CONFIG__.restNonce = data.nonce;
-          }
-          // Also update the legacy global for backward compatibility.
-          (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__ =
-            data.nonce;
-        }
-      } catch {
-        // Network errors are non-fatal — we'll retry at the next interval.
+      const nonce = await fetchFreshNonce(apiBase);
+      if (nonce) {
+        setWpNonce(nonce);
       }
     };
 
