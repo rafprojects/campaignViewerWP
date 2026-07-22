@@ -171,6 +171,24 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### `AdminPanel.tsx` — Extract the Remaining Tab-State Concerns (P70-H remainder)
+
+**Origin:** Deferred from [PHASE70_REPORT.md](PHASE70_REPORT.md) § P70-H (2026-07-21), per user direction. P70-H shipped only `useAdminZipTransfers` (the export/import handlers + flags — the self-contained win); the three tab-state concerns were carved out to here.
+
+**Context:** `AdminPanel.tsx` still holds the media/access/audit **tab-selection** state inline — `mediaCampaignId`, `accessCampaignId`, `auditCampaignId`, `selectedCompanyId`, `accessViewMode`, `showExpiredGrants`, `auditFilters`/`globalAuditFilters` — plus the default-selection effects, the `selectedSpaceId` reset effect, and the prefetch orchestration (`*PrefetchedRef`/`cancel*Ref`). These are tightly coupled to the data-fetching hooks (`useAuditEntries`, `useAccessGrants`, `useGlobalAuditEntries`), which key on `activeTab` + these atoms. (Note: `useAdminAccessState` already owns the deeper access **form** state — this task is only the tab-selection layer.)
+
+**Important framing caveat — read before scoping:** the original P70-H plan claimed extraction would stop AdminPanel re-rendering on unrelated tabs' state. **Hook extraction alone does NOT achieve that** — a hook's `useState` re-renders the component that *calls* it, and these hooks would still be called by `AdminPanel`. True re-render isolation requires splitting each tab into a **child component** that owns its own state (so a media-tab state change never re-renders the audit tab). Decide up front which goal you want:
+- **(a) Code-organization only** — extract `useAuditTabState` / `useAccessTabState` / `useMediaTabState` as hooks called by AdminPanel. Shrinks the file and makes each concern independently testable, but does *not* reduce re-renders. Lower effort, lower risk.
+- **(b) Real re-render isolation** — split the media/access/audit tabs into child components that own their own selection state (and colocate their data-fetching + prefetch). Larger change, but the only way to get the isolation benefit.
+
+**What to implement:** Pick (a) or (b) above. Either way, preserve behavior exactly: the `selectedSpaceId` reset, the "default to first campaign/company" effects, and the prefetch-once-per-tab orchestration must move with their state, not get dropped or duplicated. Mirror the existing `useAdminCampaignActions` / `useAdminZipTransfers` / `useAdminAccessState` extraction shape.
+
+**Files:** `src/components/Admin/AdminPanel.tsx`; new `src/hooks/useAuditTabState.ts`, `src/hooks/useAccessTabState.ts`, `src/hooks/useMediaTabState.ts` (option a) or new per-tab child components under `src/components/Admin/` (option b).
+
+**Effort:** Medium (a) / Medium-Large (b) | **Impact:** Low-Medium — maintainability/testability of a 900-line admin surface; option (b) additionally trims re-renders. Nothing is broken today.
+
+---
+
 ## Internationalization
 
 ### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)

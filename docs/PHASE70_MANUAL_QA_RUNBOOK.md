@@ -43,7 +43,7 @@ git checkout feature/phase70-react-hardening-3-of-4   # back to the refactor
 | P70-D | `GALLERY_BREAKPOINTS` now defined once in `utils/galleryConfig.ts` and re-exported from `components/Common/galleryConfigUtils.ts`; boundary docs added | No — same exported value from one source |
 | P70-F | The 15 one-line `set*` template setters collapsed into one generic `builder.setTemplateField(key, value)` (label from a map); `setBackgroundImage`/`setCanvasHeightVh` kept as transform wrappers; ~23 call sites updated | No — same mutations, same undo/redo labels. Optional: exercise Layout Builder fields + undo/redo |
 | P70-G | Split `types/index.ts` (1811 lines) into `types/{gallerySettings,media,access,campaign,layoutTemplate}.ts`, all re-exported from `types/index.ts` | No — every `@/types` import resolves to the same type. `tsc -b` is the proof |
-| P70-H | *(pending)* | — |
+| P70-H | Extracted the admin ZIP export/import flags + handlers from `AdminPanel.tsx` into `hooks/useAdminZipTransfers.ts` (scope reduced to the zip concern; tab-state hooks deferred to FUTURE_TASKS) | No — same jobs, same toasts. Optional: run a ZIP export/import in the admin |
 
 ---
 
@@ -209,6 +209,32 @@ Plus a **diff review** confirming: (1) `index.ts` is now only `export * from './
 
 ---
 
+### P70-H — `useAdminZipTransfers` extraction
+
+**What & why.** `AdminPanel.tsx` (999 lines) held the four ZIP in-flight flags (`auditZipExporting`, `globalAuditZipExporting`, `mediaZipExporting`, `mediaZipImporting`) and the three long-running binary-job handlers inline. P70-H moves them into `hooks/useAdminZipTransfers.ts` — one shared audit-export runner exposed as `exportAuditZip`/`exportGlobalAuditZip`, plus `exportMediaZip(campaignId?)` and `importMediaZip(file)`. The hook calls `useTranslation` itself; the media-export campaign scope stays in `AdminPanel` and is passed to `exportMediaZip`. **Scope note:** per a maintainer decision this track was reduced to the zip concern only — the audit/access/media *tab-state* hooks were deferred to `FUTURE_TASKS.md` because (i) hook extraction wouldn't deliver the re-render isolation the plan assumed and (ii) that state is tightly coupled to data-fetching/prefetch effects (higher risk, lower reward).
+
+**Pre-fix behaviour.** Same handlers, defined inline in `AdminPanel`; `AdminPanel` referenced the flags/handlers directly.
+
+**This is a no-behaviour-change extraction — the meaningful check is equivalence.**
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/hooks/useAdminZipTransfers.test.ts   # new hook unit test
+npx vitest run                                            # full suite — AdminPanel render/interaction tests unchanged
+npx tsc -b
+```
+The new unit test drives each handler: media export (scoped/unscoped job start → download → best-effort delete → success toast), the error path (start throws → error toast, flag resets), media import (imported-count toast), and both audit runners (params + filename passed through). The extraction preserved the exact job-polling/deadline/toast/cleanup logic, so any existing AdminPanel test that renders the media/audit tools is unaffected.
+
+**Why it proves the fix.** The handlers' contract is "start a binary job, poll to completion under a 5-minute deadline, download, toast, clean up." The unit test pins that contract on the extracted hook; `tsc -b` guarantees the ~8 rewired call sites (`zipTransfers.exportMediaZip(mediaCampaignId)`, `zipTransfers.auditZipExporting`, …) are correctly typed; the full suite confirms no consumer regressed.
+
+**Manual check (optional).** As a System Admin: Media tab → **Export ZIP** (with and without a campaign selected) downloads the library ZIP with the "Building media library ZIP…" toast; **Import ZIP** imports and toasts the imported count. Audit / Global Audit tabs → **Export ZIP** downloads the audit-log ZIP. Each button shows its in-flight spinner while the job runs — identical to pre-fix.
+
+**Regression checks.** New: `src/hooks/useAdminZipTransfers.test.ts`. Unchanged: existing AdminPanel tests pass without edits (the UI and behaviour are identical; only where the handlers *live* changed).
+
+**Pitfall.** `exportMediaZip` takes the campaign scope as an **argument** (`zipTransfers.exportMediaZip(mediaCampaignId)`) because `mediaCampaignId` remains AdminPanel-owned tab state — do not re-introduce a `mediaCampaignId` read inside the hook (it would need that state moved too). The two audit methods differ only in which flag they toggle (`exportAuditZip` → `auditZipExporting`, `exportGlobalAuditZip` → `globalAuditZipExporting`); they share one runner, so a fix to the polling/deadline logic applies to both at once.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -219,6 +245,6 @@ Plus a **diff review** confirming: (1) `index.ts` is now only `export * from './
 | P70-D | `tsc -b` clean; gallery-config suites green; `GALLERY_BREAKPOINTS` defined once, re-exported, boundary docs present | Existing gallery-config coverage unchanged | ☐ |
 | P70-F | Builder-state/history + coverage suites green (labels unchanged); `tsc -b` clean; manual Layout Builder field edits + undo/redo behave identically | Test call sites switched to `setTemplateField`, no assertion changes | ☐ |
 | P70-G | `tsc -b` clean + full Vitest suite green **unmodified**; `index.ts` is a re-export barrel; 73 exports preserved, zero import-site changes | Proof = existing type-check + suite passing | ☐ |
-| P70-H | *(pending)* | | ☐ |
+| P70-H | New `useAdminZipTransfers.test.ts` green; full suite green **unmodified**; `tsc -b` clean; optional admin ZIP export/import behaves identically | Existing AdminPanel tests unchanged | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npx eslint` on changed files. See PHASE70_REPORT.md → each track's *Implementation* block for per-track rationale.

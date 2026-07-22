@@ -15,7 +15,7 @@
 | P70-E | `ApiClient` facade — migrate to namespaced domain modules | Deferred (follow-on) | Medium |
 | P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Done | Small |
 | P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Done | Medium |
-| P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Planned | Medium-Large |
+| P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Done (zip only; tab-state hooks → Follow-On) | Medium-Large |
 | P70-I | Promote inline sub-components out of six 900+-line files | Deferred (follow-on) | Small per file, Medium overall |
 
 ---
@@ -299,6 +299,14 @@ Extract per-concern hooks mirroring the existing `useAdminCampaignActions` patte
 - New unit tests directly against each extracted hook.
 - Manual: exercise media, access, and audit tabs plus ZIP export/import, confirm no regressions.
 
+### Implementation (2026-07-21) — scope reduced to the ZIP concern
+
+Per a maintainer decision (recorded during execution), this track shipped **`useAdminZipTransfers` only** — the four in-flight flags and the three binary-job handlers (audit ZIP, global-audit ZIP via one shared runner, media ZIP export/import). New `src/hooks/useAdminZipTransfers.ts` (+ unit test); ~8 `AdminPanel` call sites rewired to `zipTransfers.*`. The media-export campaign scope stays AdminPanel-owned and is passed to `exportMediaZip`.
+
+The **audit/access/media tab-state hooks were deferred** to [FUTURE_TASKS.md](FUTURE_TASKS.md) (Code Quality & Refactoring). Rationale surfaced during execution: hook extraction alone does **not** achieve the re-render isolation the original acceptance criterion assumed (the hooks are still called by `AdminPanel`, so its state lives in its render) — real isolation needs splitting each tab into a child component. That tab-state layer is also tightly coupled to the data-fetching/prefetch effects (higher risk, lower reward), so it was carved out with the caveat documented for whoever picks it up.
+
+**Outcome:** `tsc -b` + eslint clean; new `useAdminZipTransfers.test.ts` (5 cases) green; full suite green (249 files / 3737 tests). `AdminPanel.tsx` shed the four flags + three handler bodies with no behavior change.
+
 ---
 
 ## Track P70-I - Promote inline sub-components out of six 900+-line files
@@ -328,6 +336,7 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 |-----------|--------------------|
 | **P70-E — `ApiClient` facade → namespaces** | Deferred 2026-07-21 (Planning Decision C). A ~70-call-site incremental codemod behind deprecated shims — long-tail migration economics, not a bounded phase deliverable. Start whenever convenient. |
 | **P70-I — promote inline sub-components** | Deferred 2026-07-21 (Planning Decision C). Opportunistic by design ("do each file as it's next touched"); forcing all six 900+-line files in one big-bang creates churn without behaviour benefit. |
+| **P70-H remainder — AdminPanel tab-state hooks** | Deferred 2026-07-21 (execution decision). Filed to [FUTURE_TASKS.md](FUTURE_TASKS.md) → Code Quality & Refactoring. Hook extraction wouldn't deliver the assumed re-render isolation (needs a tab→child-component split), and the tab-selection state is tightly coupled to data-fetching/prefetch — carved out with a framing caveat. |
 
 ## Implementation Notes
 
@@ -335,7 +344,8 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 - **Batch 1 (P70-A, P70-B) landed 2026-07-21** — see each track's *Implementation* block. `tsc -b` clean, 322 adapter + 18 `_shared` unit tests green, eslint clean.
 - **Batch 2 (P70-G) landed 2026-07-21** — `types/index.ts` split. `tsc -b` + eslint clean, full suite green (247 files / 3727 tests), zero import-site changes.
 - **Batch 3 (P70-C, P70-D, P70-F) landed 2026-07-21** — nonce-refresh consolidation, `GALLERY_BREAKPOINTS` dedupe, generic `setTemplateField`. `tsc -b` + eslint clean, full suite green (248 files / 3732 tests).
+- **Batch 4 (P70-H) landed 2026-07-21** — `useAdminZipTransfers` extraction (zip concern only; tab-state hooks → Follow-On). `tsc -b` + eslint clean, full suite green (249 files / 3737 tests).
 
 ## Outcome
 
-In progress. Batches 1–3 complete (adapter-chrome extraction, Diamond/Hexagonal consolidation, `types` split, nonce consolidation, gallery-config dedupe, generic template-field setter); Batch 4 (P70-H `AdminPanel` extraction) pending. P70-E and P70-I deferred to Follow-On Candidates.
+**Complete** (in-scope tracks). Landed: P70-A, P70-B, P70-C, P70-D, P70-F, P70-G, and P70-H (zip concern). Deferred to Follow-On Candidates: P70-E, P70-I, and the P70-H tab-state remainder. Delivered across four batched commits on one branch, each `tsc -b` + eslint clean with the full Vitest suite green; every track is a verified no-behavior-change refactor. Companion verification doc: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md).
