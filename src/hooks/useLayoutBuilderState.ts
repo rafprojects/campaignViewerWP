@@ -95,34 +95,42 @@ export interface LayoutBuilderState {
   activeBreakpoint: ResponsiveBreakpoint;
 }
 
+/**
+ * Undo/redo history labels for each template field settable via
+ * {@link LayoutBuilderActions.setTemplateField} (P70-F). Preserves the exact
+ * labels the former one-line named setters used, so history entries are
+ * unchanged. Adding a new template field only needs a label here.
+ */
+const TEMPLATE_FIELD_LABELS: Partial<Record<keyof LayoutTemplate, string>> = {
+  name: 'Rename template',
+  canvasAspectRatio: 'Change aspect ratio',
+  backgroundColor: 'Change background color',
+  backgroundMode: 'Change background mode',
+  backgroundGradientDirection: 'Change gradient direction',
+  backgroundGradientStops: 'Change gradient stops',
+  backgroundGradientType: 'Change gradient type',
+  backgroundGradientAngle: 'Change gradient angle',
+  backgroundRadialShape: 'Change radial shape',
+  backgroundRadialSize: 'Change radial size',
+  backgroundGradientCenterX: 'Change gradient center X',
+  backgroundGradientCenterY: 'Change gradient center Y',
+  backgroundImage: 'Set background image',
+  backgroundImageFit: 'Change image fit',
+  backgroundImageOpacity: 'Change image opacity',
+  canvasHeightMode: 'Change height mode',
+  canvasHeightVh: 'Change height vh',
+};
+
 export interface LayoutBuilderActions {
   // ── Template-level ──
   /** Replace the entire template (e.g., on load from API). Pass `{ preserveSelection: true }` after save. */
   setTemplate: (template: LayoutTemplate, opts?: { preserveSelection?: boolean }) => void;
-  /** Update template name. */
-  setName: (name: string) => void;
-  /** Update canvas aspect ratio. */
-  setAspectRatio: (ratio: number) => void;
-  /** Update canvas background color. */
-  setBackgroundColor: (color: string) => void;
-  /** Change background mode (none, color, gradient, image). */
-  setBackgroundMode: (mode: LayoutTemplate['backgroundMode']) => void;
-  /** Set gradient direction preset. */
-  setBackgroundGradientDirection: (dir: LayoutTemplate['backgroundGradientDirection']) => void;
-  /** Set gradient color stops (2–3 entries). */
-  setBackgroundGradientStops: (stops: LayoutTemplate['backgroundGradientStops']) => void;
-  /** Set gradient type (linear, radial, conic). */
-  setBackgroundGradientType: (t: LayoutTemplate['backgroundGradientType']) => void;
-  /** Set custom gradient angle in degrees. */
-  setBackgroundGradientAngle: (a: number | undefined) => void;
-  /** Set radial shape (circle/ellipse). */
-  setBackgroundRadialShape: (s: LayoutTemplate['backgroundRadialShape']) => void;
-  /** Set radial size keyword. */
-  setBackgroundRadialSize: (s: LayoutTemplate['backgroundRadialSize']) => void;
-  /** Set radial/conic center X %. */
-  setBackgroundGradientCenterX: (x: number) => void;
-  /** Set radial/conic center Y %. */
-  setBackgroundGradientCenterY: (y: number) => void;
+  /**
+   * Generic template-field setter (P70-F). Records an undo entry labelled per
+   * field (see `TEMPLATE_FIELD_LABELS`). Use the named wrappers below only where
+   * a value transform is required (`setBackgroundImage`, `setCanvasHeightVh`).
+   */
+  setTemplateField: <K extends keyof LayoutTemplate>(key: K, value: LayoutTemplate[K]) => void;
 
   // ── Slot CRUD ──
   /** Add a new slot with defaults. Returns the new slot's ID. */
@@ -167,15 +175,9 @@ export interface LayoutBuilderActions {
   sendBackward: (ids: string[]) => void;
   /** Normalize z-indices to sequential 1..N (no gaps). Returns the normalized template synchronously. */
   normalizeZIndices: () => LayoutTemplate;
-  /** Update canvas background image URL ('' = none). */
+  /** Update canvas background image URL ('' = none). Wrapper: maps '' → undefined. */
   setBackgroundImage: (url: string) => void;
-  /** Update background image fit mode. */
-  setBackgroundImageFit: (fit: 'cover' | 'contain' | 'fill') => void;
-  /** Update background image opacity. */
-  setBackgroundImageOpacity: (opacity: number) => void;
-  /** Set canvas height mode (aspect-ratio or fixed-vh). */
-  setCanvasHeightMode: (mode: 'aspect-ratio' | 'fixed-vh') => void;
-  /** Set canvas height in viewport units (1–100). */
+  /** Set canvas height in viewport units (1–100). Wrapper: clamps to 1–100. */
   setCanvasHeightVh: (vh: number) => void;
 
   // ── Overlay CRUD (P15-H) ──
@@ -381,97 +383,25 @@ export function useLayoutBuilderState(
     }
   }, [resetHistory]);
 
-  const setName = useCallback(
-    (name: string) => mutate((d) => { d.name = name; }, 'Rename template'),
+  // Generic template-field setter (P70-F): replaces the former 15 near-identical
+  // one-line named setters. Records an undo entry labelled per-field via
+  // TEMPLATE_FIELD_LABELS (defined at module scope), preserving the exact
+  // history labels the named setters used.
+  const setTemplateField = useCallback(
+    <K extends keyof LayoutTemplate>(key: K, value: LayoutTemplate[K]) =>
+      mutate((d) => { d[key] = value; }, TEMPLATE_FIELD_LABELS[key] ?? 'Update template'),
     [mutate],
   );
 
-  const setAspectRatio = useCallback(
-    (ratio: number) => mutate((d) => { d.canvasAspectRatio = ratio; }, 'Change aspect ratio'),
-    [mutate],
-  );
-
-  const setBackgroundColor = useCallback(
-    (color: string) => mutate((d) => { d.backgroundColor = color; }, 'Change background color'),
-    [mutate],
-  );
-
-  const setBackgroundMode = useCallback(
-    (mode: LayoutTemplate['backgroundMode']) => mutate((d) => { d.backgroundMode = mode; }, 'Change background mode'),
-    [mutate],
-  );
-
-  const setBackgroundGradientDirection = useCallback(
-    (dir: LayoutTemplate['backgroundGradientDirection']) =>
-      mutate((d) => { d.backgroundGradientDirection = dir; }, 'Change gradient direction'),
-    [mutate],
-  );
-
-  const setBackgroundGradientStops = useCallback(
-    (stops: LayoutTemplate['backgroundGradientStops']) =>
-      mutate((d) => { d.backgroundGradientStops = stops; }, 'Change gradient stops'),
-    [mutate],
-  );
-
-  const setBackgroundGradientType = useCallback(
-    (t: LayoutTemplate['backgroundGradientType']) =>
-      mutate((d) => { d.backgroundGradientType = t; }, 'Change gradient type'),
-    [mutate],
-  );
-
-  const setBackgroundGradientAngle = useCallback(
-    (a: number | undefined) =>
-      mutate((d) => { d.backgroundGradientAngle = a; }, 'Change gradient angle'),
-    [mutate],
-  );
-
-  const setBackgroundRadialShape = useCallback(
-    (s: LayoutTemplate['backgroundRadialShape']) =>
-      mutate((d) => { d.backgroundRadialShape = s; }, 'Change radial shape'),
-    [mutate],
-  );
-
-  const setBackgroundRadialSize = useCallback(
-    (s: LayoutTemplate['backgroundRadialSize']) =>
-      mutate((d) => { d.backgroundRadialSize = s; }, 'Change radial size'),
-    [mutate],
-  );
-
-  const setBackgroundGradientCenterX = useCallback(
-    (x: number) =>
-      mutate((d) => { d.backgroundGradientCenterX = x; }, 'Change gradient center X'),
-    [mutate],
-  );
-
-  const setBackgroundGradientCenterY = useCallback(
-    (y: number) =>
-      mutate((d) => { d.backgroundGradientCenterY = y; }, 'Change gradient center Y'),
-    [mutate],
-  );
-
+  // Thin wrappers kept only where a value transform is needed before storing.
   const setBackgroundImage = useCallback(
-    (url: string) => mutate((d) => { d.backgroundImage = url || undefined; }, 'Set background image'),
-    [mutate],
-  );
-
-  const setBackgroundImageFit = useCallback(
-    (fit: 'cover' | 'contain' | 'fill') => mutate((d) => { d.backgroundImageFit = fit; }, 'Change image fit'),
-    [mutate],
-  );
-
-  const setBackgroundImageOpacity = useCallback(
-    (opacity: number) => mutate((d) => { d.backgroundImageOpacity = opacity; }, 'Change image opacity'),
-    [mutate],
-  );
-
-  const setCanvasHeightMode = useCallback(
-    (mode: 'aspect-ratio' | 'fixed-vh') => mutate((d) => { d.canvasHeightMode = mode; }, 'Change height mode'),
-    [mutate],
+    (url: string) => setTemplateField('backgroundImage', url || undefined),
+    [setTemplateField],
   );
 
   const setCanvasHeightVh = useCallback(
-    (vh: number) => mutate((d) => { d.canvasHeightVh = Math.max(1, Math.min(100, vh)); }, 'Change height vh'),
-    [mutate],
+    (vh: number) => setTemplateField('canvasHeightVh', Math.max(1, Math.min(100, vh))),
+    [setTemplateField],
   );
 
   // ── Slot CRUD ──
@@ -1025,22 +955,8 @@ export function useLayoutBuilderState(
     activeBreakpoint,
     // Template-level
     setTemplate,
-    setName,
-    setAspectRatio,
-    setBackgroundColor,
-    setBackgroundMode,
-    setBackgroundGradientDirection,
-    setBackgroundGradientStops,
-    setBackgroundGradientType,
-    setBackgroundGradientAngle,
-    setBackgroundRadialShape,
-    setBackgroundRadialSize,
-    setBackgroundGradientCenterX,
-    setBackgroundGradientCenterY,
+    setTemplateField,
     setBackgroundImage,
-    setBackgroundImageFit,
-    setBackgroundImageOpacity,
-    setCanvasHeightMode,
     setCanvasHeightVh,
     // Slot CRUD
     addSlot,

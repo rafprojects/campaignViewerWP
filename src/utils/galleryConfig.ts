@@ -1,3 +1,13 @@
+/**
+ * Gallery-config **pure transforms** (P70-D boundary).
+ *
+ * The canonical, editor-free home for gallery-config scope/breakpoint logic:
+ * shared constants (`GALLERY_BREAKPOINTS`), the legacy viewport-background field
+ * map, config cloning and resolution. Editor-only helpers (settings-UI table
+ * builders, field collectors) live in
+ * `@/components/Common/galleryConfigUtils`, which imports from here — the
+ * dependency only ever points that direction.
+ */
 import type {
   BreakpointGalleryConfig,
   GalleryBehaviorSettings,

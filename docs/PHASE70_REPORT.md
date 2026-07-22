@@ -10,10 +10,10 @@
 |-------|-------------|--------|--------|
 | P70-A | Extract shared adapter chrome (heading, Lightbox wiring, container-width hook) | Done | Medium |
 | P70-B | Consolidate `DiamondGallery`/`HexagonalGallery` into a config-driven `ClippedTileGridGallery` | Done | Small-Medium |
-| P70-C | Consolidate nonce-refresh logic into one place | Planned | Small |
-| P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Planned | Small-Medium |
+| P70-C | Consolidate nonce-refresh logic into one place | Done | Small |
+| P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Done | Small-Medium |
 | P70-E | `ApiClient` facade — migrate to namespaced domain modules | Deferred (follow-on) | Medium |
-| P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Planned | Small |
+| P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Done | Small |
 | P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Done | Medium |
 | P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Planned | Medium-Large |
 | P70-I | Promote inline sub-components out of six 900+-line files | Deferred (follow-on) | Small per file, Medium overall |
@@ -153,6 +153,14 @@ Add `fetchFreshNonce(apiBase): Promise<string | null>` to `wpNonce.ts`; have the
 
 - Existing nonce-heartbeat and transport-refresh test coverage passes unmodified.
 
+### Implementation (2026-07-21)
+
+Extracted the fetch-and-parse into a pure, WordPress-agnostic `src/services/http/fetchNonce.ts::fetchNonceFrom(url, currentNonce?)` (+ unit test). `HttpTransportImpl.refreshNonce` now calls it; `wpNonce.ts` gains `fetchFreshNonce(apiBase)` = `fetchNonceFrom(apiBase + WP_NONCE_PATH, getWpNonce())`; `useNonceHeartbeat` calls `fetchFreshNonce` + `setWpNonce` and no longer reads/writes the nonce globals directly.
+
+**Design note (P51-D preserved):** the pure helper lives in the transport's own `http/` layer, not in `wpNonce.ts`, so the transport shares one implementation *without* importing WordPress glue — `wpNonce.ts` → `http/fetchNonce` (allowed direction), never the reverse. The heartbeat still reads `enableJwt`/`apiBase` from `window.__WPSG_CONFIG__` (non-nonce config it owns); only the nonce read/fetch/store moved to the helpers.
+
+**Outcome:** `tsc -b` + eslint clean; transport / wpNonce / heartbeat suites + new `fetchNonce.test.ts` green.
+
 ---
 
 ## Track P70-D - Merge gallery-config utility duplication
@@ -175,6 +183,12 @@ Move shared constants/types (`GALLERY_BREAKPOINTS`, scope types) to a single hom
 ### Validation
 
 - Existing gallery-config test coverage passes unmodified (same exported values from the single source of truth).
+
+### Implementation (2026-07-21)
+
+`utils/galleryConfig.ts` is the single home for `GALLERY_BREAKPOINTS`; `components/Common/galleryConfigUtils.ts` now imports it from there (the import direction already established for `cloneGalleryConfig`/`getLegacyViewportBackgroundFieldMap`) and re-exports it for its consumers. Added a top-of-file doc comment to each file stating its side of the boundary (pure transforms vs editor helpers). Per Planning Decision E, the files stay split (not merged). `GALLERY_SCOPES`/`EditableGalleryScope` were not cross-file duplicates, so no change there.
+
+**Outcome:** `tsc -b` + eslint clean; gallery-config suites green. `GALLERY_BREAKPOINTS` now defined exactly once.
 
 ---
 
@@ -223,6 +237,12 @@ Replace with one generic `setTemplateField<K extends keyof LayoutTemplate>(key: 
 
 - Existing `useLayoutBuilderState` and builder-history test suites pass unmodified.
 - Manual: exercise a handful of the affected fields in the Layout Builder, confirm undo/redo labels are unchanged.
+
+### Implementation (2026-07-21)
+
+Per Planning Decision (maintainer-confirmed): generic setter, drop the named ones. Replaced the 15 pure one-line setters with `setTemplateField<K extends keyof LayoutTemplate>(key, value)`, which records the undo/redo label from a module-level `TEMPLATE_FIELD_LABELS` map (preserving the exact prior labels). Kept `setBackgroundImage` (`'' → undefined`) and `setCanvasHeightVh` (clamp 1–100) as thin transform wrappers over `setTemplateField`. Updated the `LayoutBuilderActions` interface, the return object, the ~23 builder-UI call sites (`builder.setTemplateField('backgroundColor', c)` …, one reference-form `onChange` wrapped), and the test call sites in `BuilderHistory.test.tsx` / `useLayoutBuilderState*.test.*` (no assertions changed — labels/behaviour identical).
+
+**Outcome:** `tsc -b` (which pins every call site to a valid `keyof LayoutTemplate` + correct value type) + eslint clean; builder-state/history/coverage suites green. Adding a new template field now needs only a `TEMPLATE_FIELD_LABELS` entry.
 
 ---
 
@@ -314,7 +334,8 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 - Manual-QA companion: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md) — a verification section is added per landed fix.
 - **Batch 1 (P70-A, P70-B) landed 2026-07-21** — see each track's *Implementation* block. `tsc -b` clean, 322 adapter + 18 `_shared` unit tests green, eslint clean.
 - **Batch 2 (P70-G) landed 2026-07-21** — `types/index.ts` split. `tsc -b` + eslint clean, full suite green (247 files / 3727 tests), zero import-site changes.
+- **Batch 3 (P70-C, P70-D, P70-F) landed 2026-07-21** — nonce-refresh consolidation, `GALLERY_BREAKPOINTS` dedupe, generic `setTemplateField`. `tsc -b` + eslint clean, full suite green (248 files / 3732 tests).
 
 ## Outcome
 
-In progress. Batches 1–2 complete (adapter-chrome extraction, Diamond/Hexagonal consolidation, `types` split); Batches 3–4 (C/D/F; H) pending. P70-E and P70-I deferred to Follow-On Candidates.
+In progress. Batches 1–3 complete (adapter-chrome extraction, Diamond/Hexagonal consolidation, `types` split, nonce consolidation, gallery-config dedupe, generic template-field setter); Batch 4 (P70-H `AdminPanel` extraction) pending. P70-E and P70-I deferred to Follow-On Candidates.

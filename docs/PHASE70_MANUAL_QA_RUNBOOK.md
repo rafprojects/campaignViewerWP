@@ -39,9 +39,9 @@ git checkout feature/phase70-react-hardening-3-of-4   # back to the refactor
 |---|---|---|
 | P70-A | Extracted the per-adapter heading + lightbox JSX and the hand-rolled `ResizeObserver` into shared `_shared/AdapterHeading`, `_shared/AdapterLightbox`, `_shared/useContainerWidth`; migrated the 12 non-clipped adapters | No — identical DOM. Optional: render each gallery type and confirm heading/lightbox unchanged |
 | P70-B | Collapsed `DiamondGallery` + `HexagonalGallery` (byte-identical bar ~7 constants) into one `_shared/ClippedTileGridGallery`; each adapter is now a ~45-line config wrapper | No — identical DOM. Optional: render a Diamond and a Hexagonal gallery |
-| P70-C | *(pending)* | — |
-| P70-D | *(pending)* | — |
-| P70-F | *(pending)* | — |
+| P70-C | Extracted the "GET nonce endpoint, parse" logic into one pure `services/http/fetchNonce.ts`; the transport, `wpNonce.fetchFreshNonce`, and the heartbeat now share it; heartbeat no longer touches the nonce globals | No — same fetch, same store. Optional: watch the heartbeat's `/v1/nonce` request |
+| P70-D | `GALLERY_BREAKPOINTS` now defined once in `utils/galleryConfig.ts` and re-exported from `components/Common/galleryConfigUtils.ts`; boundary docs added | No — same exported value from one source |
+| P70-F | The 15 one-line `set*` template setters collapsed into one generic `builder.setTemplateField(key, value)` (label from a map); `setBackgroundImage`/`setCanvasHeightVh` kept as transform wrappers; ~23 call sites updated | No — same mutations, same undo/redo labels. Optional: exercise Layout Builder fields + undo/redo |
 | P70-G | Split `types/index.ts` (1811 lines) into `types/{gallerySettings,media,access,campaign,layoutTemplate}.ts`, all re-exported from `types/index.ts` | No — every `@/types` import resolves to the same type. `tsc -b` is the proof |
 | P70-H | *(pending)* | — |
 
@@ -116,6 +116,77 @@ Confirm each matches the pre-P70-B behaviour (diff against the pre-phase commit 
 
 ---
 
+### P70-C — Nonce-refresh consolidation
+
+**What & why.** "GET the nonce endpoint (presenting the current nonce as `X-WP-Nonce`), parse the `nonce` field, store it" was implemented three times: `HttpTransportImpl.refreshNonce` (the 403-retry path), `useNonceHeartbeat`'s inline `refresh()` (which bypassed the P51-D helpers and read/wrote `window.__WPSG_*` directly), and — for the store half — `wpNonce.ts`. P70-C extracts the **fetch-and-parse** into one pure `services/http/fetchNonce.ts::fetchNonceFrom(url, currentNonce?)` (WordPress-agnostic — takes URL + nonce as args, touches no globals). The transport calls it directly; `wpNonce.fetchFreshNonce(apiBase)` wraps it with `getWpNonce()` + `WP_NONCE_PATH`; the heartbeat calls `fetchFreshNonce` + `setWpNonce`, so it no longer reads or writes the nonce globals. The transport stays decoupled from WordPress (it imports the pure helper from its own `http/` layer, never `wpNonce.ts`).
+
+**Pre-fix behaviour.** Three separate fetch/parse copies; the heartbeat read `window.__WPSG_CONFIG__.restNonce`/`__WPSG_REST_NONCE__` and wrote both globals inline.
+
+**This is a no-behaviour-change track — the meaningful check is equivalence, backed by the thorough existing coverage.**
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/services/http/HttpTransportImpl.test.ts src/services/http/fetchNonce.test.ts src/services/wpNonce.test.ts src/hooks/useNonceHeartbeat.test.ts
+npx tsc -b
+```
+The pre-existing transport tests (`403 nonce refresh and retry`, `persists via injected setNonce`, `hits baseUrl+noncePath / skips when omitted`, `does NOT retry on non-403`) and heartbeat tests (fetch URL+headers, global updated, network-error, non-OK, no-`nonce`-field) pass **unmodified** — they pin the exact behaviour the shared helper must reproduce. The new `fetchNonce.test.ts` covers the pure helper directly (fresh nonce + `X-WP-Nonce` header; header omitted when no current nonce; null on non-OK / missing field / thrown error).
+
+**Why it proves the fix.** The transport and heartbeat tests assert the *observable* contract (same URL, same header, same stored result, same retry semantics); their passing unmodified means the extraction changed no behaviour. The new unit test pins the single shared implementation so a future regression localises to one place.
+
+**Optional live check.** On a nonce-only (non-JWT) dev site, open DevTools → Network and confirm the heartbeat fires a `…/wp-json/wp-super-gallery/v1/nonce` GET on mount (and every interval) carrying an `X-WP-Nonce` header, and that `window.__WPSG_CONFIG__.restNonce` updates to the returned value — identical to pre-fix.
+
+**Regression checks.** New: `src/services/http/fetchNonce.test.ts`. Unchanged: transport / wpNonce / heartbeat suites all green without edits.
+
+**Pitfall.** The pure helper lives in `services/http/` (transport layer), **not** in `wpNonce.ts`. That is deliberate: the transport must remain publishable without dragging WordPress along (P51-D), so it cannot import `wpNonce.ts` (which touches `window.__WPSG_*`). If you "consolidate" further by moving `fetchNonceFrom` into `wpNonce.ts` and importing it from the transport, you re-couple the transport to WordPress. Also note the heartbeat still reads `enableJwt` and `apiBase` from `window.__WPSG_CONFIG__` — those are non-nonce config the hook legitimately owns; only the *nonce* read/write moved to the helpers.
+
+---
+
+### P70-D — `GALLERY_BREAKPOINTS` deduplication
+
+**What & why.** `src/utils/galleryConfig.ts` (pure config transforms) and `src/components/Common/galleryConfigUtils.ts` (editor helpers) each defined `GALLERY_BREAKPOINTS = ['desktop','tablet','mobile']` independently. P70-D makes `utils/galleryConfig.ts` the single home and has the editor module import + re-export it, and adds a top-of-file doc comment to each stating its side of the boundary (pure transforms vs editor helpers). The files stay split (they have a real boundary; `galleryConfigUtils` already imports from `galleryConfig`, never the reverse).
+
+**This is a no-runtime-surface track — the meaningful check is `tsc -b` + a diff review.** `GALLERY_BREAKPOINTS` is a static `['desktop','tablet','mobile']`; there is nothing to observe at runtime, and both the old duplicate and the new single source produce the identical array.
+
+**Verification (the whole proof).**
+```bash
+npx tsc -b
+npx vitest run src/utils/galleryConfig.test.ts src/components/Common   # gallery-config coverage
+```
+Plus a diff review confirming: the editor module no longer *defines* `GALLERY_BREAKPOINTS` (it imports it from `@/utils/galleryConfig` and re-exports), and every existing importer (`GalleryAdapterSettingsSection`, and any editor-side consumer) still resolves the same value.
+
+**Why it proves the fix.** The only risk in a "define once, re-export" move is a broken import or a changed value; `tsc -b` catches the former and the value is a literal array reviewable by eye. The gallery-config test suites exercise the breakpoint iteration paths in both modules.
+
+**Regression checks.** None new — existing gallery-config tests pass unmodified from the single source of truth.
+
+**Pitfall.** The dependency only ever points editor → pure (`galleryConfigUtils` imports from `galleryConfig`). Do **not** add an import the other way (pure transforms must not depend on editor helpers) — it would create a cycle and violate the documented boundary.
+
+---
+
+### P70-F — Generic `setTemplateField`
+
+**What & why.** `useLayoutBuilderState` defined 17 near-identical one-line template-field setters — `mutate((d) => { d.<field> = v; }, '<label>')`. P70-F replaces the 15 pure ones with a single generic `setTemplateField<K extends keyof LayoutTemplate>(key, value)` that looks the undo/redo label up in a module-level `TEMPLATE_FIELD_LABELS` map (so the labels are byte-identical to before). The two setters with a real value transform stay as thin named wrappers over it: `setBackgroundImage` (`'' → undefined`) and `setCanvasHeightVh` (clamp 1–100). The ~23 builder-UI call sites now call `builder.setTemplateField('backgroundColor', c)` etc.
+
+**Pre-fix behaviour.** Each field had its own named setter (`builder.setBackgroundColor(c)`) with an inline `mutate` + hard-coded label.
+
+**This is a no-behaviour-change track — but it has a real interactive surface (undo/redo labels), so exercise it.**
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/hooks/useLayoutBuilderState.test.ts src/hooks/useLayoutBuilderState.coverage.test.tsx src/components/Admin/LayoutBuilder/BuilderHistory.test.tsx
+npx tsc -b
+```
+The builder-history tests assert the undo/redo label produced by a rename etc.; because the label map preserves the exact strings (`'Rename template'`, `'Change background color'`, …), those assertions pass after the call sites were switched to `setTemplateField`. `tsc -b` guarantees every `setTemplateField('field', value)` uses a real `keyof LayoutTemplate` with a correctly-typed value — a wrong field name or value type is a compile error, which is the safety net for the ~23 mechanical call-site rewrites.
+
+**Why it proves the fix.** The generic setter's only job is "set `d[key] = value` under a per-field history label." The history tests prove the label is unchanged; `tsc` proves each call site targets the right field/type; the coverage test drives `setTemplateField` across every field. Together they show the collapse changed nothing observable.
+
+**Manual check (recommended).** In the Layout Builder, change a handful of the affected fields — template **name**, **aspect ratio**, **background color/mode/gradient**, **canvas height mode**, **image opacity** — and confirm: (1) each edit applies exactly as before; (2) the undo/redo history entry is labelled the same as pre-fix (e.g. "Change background color"); (3) undo/redo steps through them correctly. Also verify the two transform wrappers still behave: clearing the background image (`'' → undefined`) removes it, and a height-vh outside 1–100 is clamped.
+
+**Regression checks.** Updated test call sites (source removal of the named setters required switching test call sites to `setTemplateField`); no assertions changed because behaviour and labels are identical. New: none.
+
+**Pitfall.** `setTemplateField` is generic over *all* `keyof LayoutTemplate`, so it *could* set structural fields (`slots`, `id`) — callers must only use it for scalar template fields (the label map documents the intended set; unmapped keys fall back to a generic "Update template" label). The two transform wrappers must **stay** wrappers — inlining `setBackgroundImage('')` as `setTemplateField('backgroundImage', '')` would store an empty string instead of `undefined` (a behaviour change), and dropping the `setCanvasHeightVh` clamp would allow out-of-range heights.
+
+---
+
 ### P70-G — `types/index.ts` split into per-domain files
 
 **What & why.** `src/types/index.ts` was a 1,811-line barrel with 73 exports spanning unrelated domains — every edit invalidated a very wide TS dependency graph and finding a type meant scrolling a huge file. P70-G moves the definitions into five per-domain files — `types/gallerySettings.ts` (gallery config/runtime + behaviour/card settings), `types/media.ts`, `types/access.ts` (user + RBAC), `types/campaign.ts` (Company + Campaign), `types/layoutTemplate.ts` (Layout Builder model) — and `types/index.ts` becomes a five-line re-export barrel. Cross-domain references use `import type` (a clean DAG: `campaign → media + gallerySettings`, `layoutTemplate → gallerySettings`; the rest self-contained).
@@ -144,9 +215,9 @@ Plus a **diff review** confirming: (1) `index.ts` is now only `export * from './
 |---|---|---|---|
 | P70-A | Adapter smoke + `listingMode` snapshot green **unmodified**; new `_shared` unit tests green; `tsc -b` clean | Existing per-adapter tests unchanged | ☐ |
 | P70-B | Adapter smoke suite green **unmodified**; config diff = the ~7 constants; optional live render of Diamond + Hexagonal matches | No new tests required beyond P70-A's shared units | ☐ |
-| P70-C | *(pending)* | | ☐ |
-| P70-D | *(pending)* | | ☐ |
-| P70-F | *(pending)* | | ☐ |
+| P70-C | Transport + heartbeat + wpNonce tests green **unmodified**; new `fetchNonce.test.ts` green; `tsc -b` clean; optional Network check shows heartbeat GET unchanged | Existing transport/heartbeat/wpNonce suites unchanged | ☐ |
+| P70-D | `tsc -b` clean; gallery-config suites green; `GALLERY_BREAKPOINTS` defined once, re-exported, boundary docs present | Existing gallery-config coverage unchanged | ☐ |
+| P70-F | Builder-state/history + coverage suites green (labels unchanged); `tsc -b` clean; manual Layout Builder field edits + undo/redo behave identically | Test call sites switched to `setTemplateField`, no assertion changes | ☐ |
 | P70-G | `tsc -b` clean + full Vitest suite green **unmodified**; `index.ts` is a re-export barrel; 73 exports preserved, zero import-site changes | Proof = existing type-check + suite passing | ☐ |
 | P70-H | *(pending)* | | ☐ |
 

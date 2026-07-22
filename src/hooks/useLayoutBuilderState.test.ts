@@ -576,7 +576,7 @@ describe('useLayoutBuilderState — Template-level actions', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('New Name'));
+    act(() => result.current.setTemplateField('name', 'New Name'));
     expect(result.current.template.name).toBe('New Name');
   });
 
@@ -584,7 +584,7 @@ describe('useLayoutBuilderState — Template-level actions', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setAspectRatio(4 / 3));
+    act(() => result.current.setTemplateField('canvasAspectRatio', 4 / 3));
     expect(result.current.template.canvasAspectRatio).toBeCloseTo(4 / 3);
   });
 
@@ -592,7 +592,7 @@ describe('useLayoutBuilderState — Template-level actions', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setBackgroundColor('#ff0000'));
+    act(() => result.current.setTemplateField('backgroundColor', '#ff0000'));
     expect(result.current.template.backgroundColor).toBe('#ff0000');
   });
 
@@ -682,7 +682,7 @@ describe('useLayoutBuilderState — Dirty tracking', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('Changed'));
+    act(() => result.current.setTemplateField('name', 'Changed'));
     expect(result.current.isDirty).toBe(true);
   });
 
@@ -690,7 +690,7 @@ describe('useLayoutBuilderState — Dirty tracking', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('Changed'));
+    act(() => result.current.setTemplateField('name', 'Changed'));
     expect(result.current.isDirty).toBe(true);
     act(() => result.current.markSaved());
     expect(result.current.isDirty).toBe(false);
@@ -700,9 +700,9 @@ describe('useLayoutBuilderState — Dirty tracking', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('A'));
+    act(() => result.current.setTemplateField('name', 'A'));
     act(() => result.current.markSaved());
-    act(() => result.current.setName('B'));
+    act(() => result.current.setTemplateField('name', 'B'));
     expect(result.current.isDirty).toBe(true);
   });
 });
@@ -749,7 +749,7 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('Changed'));
+    act(() => result.current.setTemplateField('name', 'Changed'));
     expect(result.current.canUndo).toBe(true);
   });
 
@@ -757,8 +757,8 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('First'));
-    act(() => result.current.setName('Second'));
+    act(() => result.current.setTemplateField('name', 'First'));
+    act(() => result.current.setTemplateField('name', 'Second'));
     expect(result.current.template.name).toBe('Second');
 
     act(() => result.current.undo());
@@ -769,8 +769,8 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('First'));
-    act(() => result.current.setName('Second'));
+    act(() => result.current.setTemplateField('name', 'First'));
+    act(() => result.current.setTemplateField('name', 'Second'));
     act(() => result.current.undo());
     expect(result.current.template.name).toBe('First');
 
@@ -782,8 +782,8 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('A'));
-    act(() => result.current.setName('B'));
+    act(() => result.current.setTemplateField('name', 'A'));
+    act(() => result.current.setTemplateField('name', 'B'));
     // At tip — no redo available
     expect(result.current.canRedo).toBe(false);
     // After undo, redo should be available
@@ -804,7 +804,7 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('A'));
+    act(() => result.current.setTemplateField('name', 'A'));
     const nameAfter = result.current.template.name;
     act(() => result.current.redo());
     expect(result.current.template.name).toBe(nameAfter);
@@ -814,7 +814,7 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('Changed'));
+    act(() => result.current.setTemplateField('name', 'Changed'));
     act(() => result.current.markSaved());
     expect(result.current.isDirty).toBe(false);
     act(() => result.current.undo());
@@ -825,11 +825,11 @@ describe('useLayoutBuilderState — Undo / Redo', () => {
     const { result } = renderHook(() =>
       useLayoutBuilderState(createEmptyTemplate()),
     );
-    act(() => result.current.setName('A'));
-    act(() => result.current.setName('B'));
+    act(() => result.current.setTemplateField('name', 'A'));
+    act(() => result.current.setTemplateField('name', 'B'));
     act(() => result.current.undo()); // back to A
     // New mutation should wipe the "B" redo
-    act(() => result.current.setName('C'));
+    act(() => result.current.setTemplateField('name', 'C'));
     expect(result.current.canRedo).toBe(false);
     expect(result.current.template.name).toBe('C');
   });
