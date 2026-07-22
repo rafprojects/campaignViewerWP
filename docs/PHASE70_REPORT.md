@@ -14,7 +14,7 @@
 | P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Planned | Small-Medium |
 | P70-E | `ApiClient` facade — migrate to namespaced domain modules | Deferred (follow-on) | Medium |
 | P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Planned | Small |
-| P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Planned | Medium |
+| P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Done | Medium |
 | P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Planned | Medium-Large |
 | P70-I | Promote inline sub-components out of six 900+-line files | Deferred (follow-on) | Small per file, Medium overall |
 
@@ -247,6 +247,12 @@ Split into `types/campaign.ts`, `types/media.ts`, `types/layoutTemplate.ts`, `ty
 
 - `tsc -b` clean, full test suite green — both are strong signals here since a barrel split either works completely or breaks obviously.
 
+### Implementation (2026-07-21)
+
+Split into `types/gallerySettings.ts` (gallery config/runtime + behaviour/card settings, 1078 lines), `types/media.ts` (137), `types/access.ts` (42), `types/campaign.ts` (43), `types/layoutTemplate.ts` (541); `types/index.ts` is now a 5-line `export *` barrel. Cross-domain references use `import type` and form a clean DAG (`campaign → media + gallerySettings`, `layoutTemplate → gallerySettings`; media/access/gallerySettings self-contained — the tail's `Campaign` mentions were all comments, so gallerySettings needs no campaign/layout imports). The three non-exported helpers (`DEFAULT_GALLERY_COMMON_SETTINGS`, `createDefaultGalleryScopeConfig`, `createDefaultGalleryConfig`) stayed module-private in `gallerySettings.ts` beside their consumer.
+
+**Outcome:** all 73 exports preserved (verified mechanically), zero duplicate names, **zero import-site changes**. `tsc -b` clean, eslint clean, full suite green (247 files / 3727 tests).
+
 ---
 
 ## Track P70-H - `AdminPanel.tsx` state extraction into per-concern hooks
@@ -307,7 +313,8 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 
 - Manual-QA companion: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md) — a verification section is added per landed fix.
 - **Batch 1 (P70-A, P70-B) landed 2026-07-21** — see each track's *Implementation* block. `tsc -b` clean, 322 adapter + 18 `_shared` unit tests green, eslint clean.
+- **Batch 2 (P70-G) landed 2026-07-21** — `types/index.ts` split. `tsc -b` + eslint clean, full suite green (247 files / 3727 tests), zero import-site changes.
 
 ## Outcome
 
-In progress. Batch 1 (adapter-chrome extraction + Diamond/Hexagonal consolidation) complete; Batches 2–4 (G; C/D/F; H) pending. P70-E and P70-I deferred to Follow-On Candidates.
+In progress. Batches 1–2 complete (adapter-chrome extraction, Diamond/Hexagonal consolidation, `types` split); Batches 3–4 (C/D/F; H) pending. P70-E and P70-I deferred to Follow-On Candidates.

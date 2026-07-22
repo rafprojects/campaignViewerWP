@@ -42,7 +42,7 @@ git checkout feature/phase70-react-hardening-3-of-4   # back to the refactor
 | P70-C | *(pending)* | — |
 | P70-D | *(pending)* | — |
 | P70-F | *(pending)* | — |
-| P70-G | *(pending)* | — |
+| P70-G | Split `types/index.ts` (1811 lines) into `types/{gallerySettings,media,access,campaign,layoutTemplate}.ts`, all re-exported from `types/index.ts` | No — every `@/types` import resolves to the same type. `tsc -b` is the proof |
 | P70-H | *(pending)* | — |
 
 ---
@@ -116,6 +116,28 @@ Confirm each matches the pre-P70-B behaviour (diff against the pre-phase commit 
 
 ---
 
+### P70-G — `types/index.ts` split into per-domain files
+
+**What & why.** `src/types/index.ts` was a 1,811-line barrel with 73 exports spanning unrelated domains — every edit invalidated a very wide TS dependency graph and finding a type meant scrolling a huge file. P70-G moves the definitions into five per-domain files — `types/gallerySettings.ts` (gallery config/runtime + behaviour/card settings), `types/media.ts`, `types/access.ts` (user + RBAC), `types/campaign.ts` (Company + Campaign), `types/layoutTemplate.ts` (Layout Builder model) — and `types/index.ts` becomes a five-line re-export barrel. Cross-domain references use `import type` (a clean DAG: `campaign → media + gallerySettings`, `layoutTemplate → gallerySettings`; the rest self-contained).
+
+**This is a no-runtime-surface track — the meaningful check is `tsc -b`, and that is the correct check.** A barrel split either resolves for *every* consumer or it fails loudly at compile time; there is no partial/subtle runtime failure mode to click through. Inventing a browser step here would be theatre.
+
+**Verification (the whole proof).**
+```bash
+npx tsc -b        # every @/types import site re-resolves; a missed export or bad cross-import errors here
+npx vitest run    # the full suite imports @/types transitively everywhere — green = the barrel is complete
+npx eslint src/types/
+```
+Plus a **diff review** confirming: (1) `index.ts` is now only `export * from './…'` lines; (2) the sum of exported names across the five files equals the original 73 with no duplicates (checked mechanically during implementation); (3) no import site anywhere changed (the whole point).
+
+**Why it proves the fix.** "Zero import-site changes" means the observable surface is identical by construction — the only thing that could break is a mis-split (a type that lost a needed import, or an export that vanished), and `tsc -b` over the whole project catches exactly that. A green full-suite run additionally exercises every module that imports `@/types`.
+
+**Regression checks.** None new. The proof *is* the existing type-check + full suite passing unmodified.
+
+**Pitfall.** The split relies on `import type` for cross-domain references; TypeScript erases these so even a cyclic type reference would be harmless — but this split is acyclic by design. If a future edit adds a *value* (not type) cross-dependency between domain files, use a normal `import` and watch for a real runtime cycle. Also: the three non-exported helper consts/functions (`DEFAULT_GALLERY_COMMON_SETTINGS`, `createDefaultGalleryScopeConfig`, `createDefaultGalleryConfig`) stayed in `gallerySettings.ts` alongside their only consumer (`DEFAULT_GALLERY_BEHAVIOR_SETTINGS`) — don't "promote" them to the barrel; they are intentionally module-private.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -125,7 +147,7 @@ Confirm each matches the pre-P70-B behaviour (diff against the pre-phase commit 
 | P70-C | *(pending)* | | ☐ |
 | P70-D | *(pending)* | | ☐ |
 | P70-F | *(pending)* | | ☐ |
-| P70-G | *(pending)* | | ☐ |
+| P70-G | `tsc -b` clean + full Vitest suite green **unmodified**; `index.ts` is a re-export barrel; 73 exports preserved, zero import-site changes | Proof = existing type-check + suite passing | ☐ |
 | P70-H | *(pending)* | | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npx eslint` on changed files. See PHASE70_REPORT.md → each track's *Implementation* block for per-track rationale.
