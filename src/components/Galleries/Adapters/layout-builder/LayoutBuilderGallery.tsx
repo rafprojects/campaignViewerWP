@@ -34,7 +34,7 @@ import type {
 } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides, resolveSlotForBreakpoint, containerWidthToBreakpoint } from '@/utils/layoutSlotAssignment';
 import { buildSlotEntranceCss, entranceKeyframeName, ENTRANCE_MARKER_CLASS, REVEAL_CLASS } from '@/utils/slotEntrance';
@@ -1000,18 +1000,14 @@ function LayoutBuilderGalleryInner({
 
       {/* Lightbox — not used in listing mode (card owns click) */}
       {!isListingMode && (
-        <Lightbox
+        <AdapterLightbox
           isOpen={lightboxOpen}
           media={media}
           currentIndex={currentIndex}
           onPrev={onPrev}
           onNext={onNext}
           onClose={onCloseLightbox}
-          videoMaxWidth={settings.lightboxVideoMaxWidth}
-          videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-          videoHeight={settings.lightboxVideoHeight}
-          videoHeightUnit={settings.lightboxVideoHeightUnit}
-          mediaMaxHeight={settings.lightboxMediaMaxHeight}
+          settings={settings}
         />
       )}
     </Stack>

@@ -13,7 +13,7 @@
  */
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Chip, Group, Select, Stack, Title } from '@mantine/core';
+import { Box, Chip, Group, Select, Stack } from '@mantine/core';
 import { IconLayoutGrid, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import type {
@@ -25,7 +25,8 @@ import type {
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
 import { useLightbox } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import {
@@ -168,14 +169,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
 
   return (
     <Stack {...getWpsgDebugProps('IsotopeAdapter')} gap="md" style={adapterSizing}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
-            {common.showGalleryLabelIcon && <IconLayoutGrid size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} icon={<IconLayoutGrid size={18} />} />
 
       {/* Controls row */}
       <Group gap="sm" wrap="wrap" align="center">
@@ -324,18 +318,14 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
         }
       `}</style>
 
-      <Lightbox
+      <AdapterLightbox
         isOpen={lightboxOpen}
         media={media}
         currentIndex={currentIndex}
         onPrev={prev}
         onNext={next}
         onClose={closeLightbox}
-        videoMaxWidth={settings.lightboxVideoMaxWidth}
-        videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight}
-        videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight}
+        settings={settings}
       />
     </Stack>
   );

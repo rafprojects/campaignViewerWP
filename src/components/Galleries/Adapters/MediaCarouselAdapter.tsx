@@ -9,7 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { IconPhoto, IconPlayerPlay, IconZoomIn } from '@tabler/icons-react';
-import { Stack, Title, Group, ActionIcon, Image, Text, Box } from '@mantine/core';
+import { Stack, ActionIcon, Image, Text, Box } from '@mantine/core';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import type { GalleryAdapterProps, ListingItem } from './GalleryAdapter';
@@ -19,7 +19,8 @@ import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { useLightbox } from '@wp-super-gallery/shared-utils';
 import { OverlayArrows } from '@/components/Galleries/Shared/OverlayArrows';
 import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from './_shared/AdapterHeading';
+import { AdapterLightbox } from './_shared/AdapterLightbox';
 import { resolveBoxShadow } from '@wp-super-gallery/shared-utils';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@wp-super-gallery/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
@@ -605,14 +606,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
   return (
     <Stack {...getWpsgDebugProps('MediaCarouselAdapter')} gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={commonSettings.galleryLabelJustification || 'left'}>
-          <Group gap={8} component="span" justify={commonSettings.galleryLabelJustification || 'left'}>
-            {commonSettings.showGalleryLabelIcon && <LabelIcon size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={commonSettings} heading={heading} icon={<LabelIcon size={18} />} />
 
       {/* Frame container */}
       <Box
@@ -719,18 +713,14 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
 
       {/* Lightbox — images only */}
       {images.length > 0 && (
-        <Lightbox
+        <AdapterLightbox
           isOpen={isLightboxOpen}
           media={images}
           currentIndex={Math.max(0, currentItem !== undefined ? images.indexOf(currentItem) : -1)}
           onPrev={scrollPrev}
           onNext={scrollNext}
           onClose={closeLightbox}
-          videoMaxWidth={settings.lightboxVideoMaxWidth}
-          videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-          videoHeight={settings.lightboxVideoHeight}
-          videoHeightUnit={settings.lightboxVideoHeightUnit}
-          mediaMaxHeight={settings.lightboxMediaMaxHeight}
+          settings={settings}
         />
       )}
     </Stack>

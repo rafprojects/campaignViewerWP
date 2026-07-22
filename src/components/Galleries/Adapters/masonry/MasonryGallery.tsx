@@ -22,7 +22,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { OVERLAY_BG, OVERLAY_TEXT } from '../_shared/overlayStyles';
 import { MasonryPhotoAlbum } from 'react-photo-album';
-import { Box, Stack, Title, Group } from '@mantine/core';
+import { Box, Stack } from '@mantine/core';
 import { IconColumns, IconZoomIn, IconPlayerPlay } from '@tabler/icons-react';
 import type {
   GalleryBehaviorSettings,
@@ -34,7 +34,8 @@ import type { ListingItem } from '../GalleryAdapter';
 import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { AdapterHeading } from '../_shared/AdapterHeading';
+import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
@@ -163,14 +164,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
 
   return (
     <Stack {...getWpsgDebugProps('MasonryGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
-      {heading.visible && (
-        <Title order={3} size="h5" ta={common.galleryLabelJustification || 'left'} style={galleryLabelStyle}>
-          <Group gap={8} component="span" justify={common.galleryLabelJustification || 'left'}>
-            {common.showGalleryLabelIcon && <IconColumns size={18} />}
-            {heading.label}
-          </Group>
-        </Title>
-      )}
+      <AdapterHeading common={common} heading={heading} icon={<IconColumns size={18} />} titleStyle={galleryLabelStyle} />
 
       <style>{buildBoxShadowStyles(SCOPE, settings)}</style>
 
@@ -288,11 +282,8 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
         }` : ''}
       `}</style>
 
-      <Lightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
-        onPrev={prev} onNext={next} onClose={close}
-        videoMaxWidth={settings.lightboxVideoMaxWidth} videoMaxWidthUnit={settings.lightboxVideoMaxWidthUnit}
-        videoHeight={settings.lightboxVideoHeight} videoHeightUnit={settings.lightboxVideoHeightUnit}
-        mediaMaxHeight={settings.lightboxMediaMaxHeight} />
+      <AdapterLightbox isOpen={lightboxOpen} media={media} currentIndex={currentIndex}
+        onPrev={prev} onNext={next} onClose={close} settings={settings} />
     </Stack>
   );
 }

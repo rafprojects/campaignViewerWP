@@ -8,15 +8,15 @@
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P70-A | Extract shared adapter chrome (heading, Lightbox wiring, container-width hook) | Planned | Medium |
-| P70-B | Consolidate `DiamondGallery`/`HexagonalGallery` into a config-driven `ClippedTileGridGallery` | Planned | Small-Medium |
+| P70-A | Extract shared adapter chrome (heading, Lightbox wiring, container-width hook) | Done | Medium |
+| P70-B | Consolidate `DiamondGallery`/`HexagonalGallery` into a config-driven `ClippedTileGridGallery` | Done | Small-Medium |
 | P70-C | Consolidate nonce-refresh logic into one place | Planned | Small |
 | P70-D | Merge gallery-config utility duplication (`galleryConfig.ts` / `galleryConfigUtils.ts`) | Planned | Small-Medium |
-| P70-E | `ApiClient` facade — migrate to namespaced domain modules | Planned | Medium |
+| P70-E | `ApiClient` facade — migrate to namespaced domain modules | Deferred (follow-on) | Medium |
 | P70-F | `useLayoutBuilderState` — collapse 17 one-line template-field setters into one generic setter | Planned | Small |
 | P70-G | Split `types/index.ts` 1,811-line barrel into per-domain files | Planned | Medium |
 | P70-H | `AdminPanel.tsx` state extraction into per-concern hooks | Planned | Medium-Large |
-| P70-I | Promote inline sub-components out of six 900+-line files | Planned | Small per file, Medium overall |
+| P70-I | Promote inline sub-components out of six 900+-line files | Deferred (follow-on) | Small per file, Medium overall |
 
 ---
 
@@ -34,6 +34,21 @@ Nothing in this phase is broken — the 2026-07-13 review ([REACT_REVIEW_FINDING
 |---|----------|------------|
 | A | C-1/C-2 sequencing | Extract the shared adapter chrome (P70-A, generalizes to all 14 adapters) **before** consolidating Diamond/Hexagonal (P70-B) — so the new `ClippedTileGridGallery` is built on top of the shared chrome hook from day one instead of needing a second pass. Verification found `_shared/` already exports `resolveGalleryHeading`/`resolveAdapterShellStyle` as data/style *logic*; P70-A's job is wrapping that logic in the actual shared JSX (heading block, `<Lightbox>` element, `useContainerWidth`) that's currently hand-copied per file. |
 | B | C-5 scope calibration | Verification found `apiClient.ts` is 422 lines, not the ~300 estimated in the review — same duplication-facade shape, just a larger file than stated. No change to the fix direction, just a note that this track is somewhat bigger than its original Effort estimate suggested. |
+
+## Planning Refinement & Execution Decisions (2026-07-21)
+
+A validation pass re-checked every structural claim against current source (all held: Diamond/Hex 217 lines each, 17 template-field setters, `apiClient.ts` 422 lines, `AdminPanel.tsx` 999 / `types/index.ts` 1811 / `useLayoutBuilderState.ts` 1130, all six P70-I line counts exact, 14 chrome-bearing adapters = 16 main `.tsx` − 2 layer-content files). One path correction surfaced: the report references **flat** adapter paths (`Adapters/DiamondGallery.tsx`) but adapters live in **per-type subdirectories** (`Adapters/diamond/DiamondGallery.tsx`); `_shared/` is `Adapters/_shared/`.
+
+Four execution decisions were taken with the maintainer:
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| C | Scope of P70-E and P70-I | **Deferred to a follow-on.** Both are by-design incremental/opportunistic (E = ~70-call-site codemod behind deprecated shims; I = "do each file as it's next touched") and don't fit a bounded phase. In-scope this phase: **A, B, C, D, F, G.** |
+| D | PR strategy | **One PR, batched commits** on the `feature/phase70-*` branch (Phase 69 precedent). |
+| E | P70-D depth | **Dedupe-and-keep-split** — move `GALLERY_BREAKPOINTS`/scope types to one home and re-export; do *not* merge `galleryConfigUtils.ts` (one consumer) into a ~1000-line file. |
+| F | P70-A container-width | **Custom `useContainerWidth(ref)`**, not Mantine's `useElementSize` — replicates the exact existing effect (initial `clientWidth` seed + `ResizeObserver`) with a consumer-supplied ref, guaranteeing byte-identical behaviour. |
+
+**Execution order (batched commits, single PR):** Batch 1 = P70-A → P70-B (adapter chrome, A first so B builds on it); Batch 2 = P70-G (`types` split); Batch 3 = P70-C / P70-D / P70-F (independent small consolidations); Batch 4 = P70-H (`AdminPanel`, largest, last).
 
 ## Execution Priority
 
@@ -76,6 +91,15 @@ Migrate adapters incrementally — each is a mechanical ~30-line diet with exist
 - Existing per-adapter snapshot tests pass unmodified after migration.
 - New unit tests directly against the shared `AdapterHeading`/`AdapterLightbox`/`useContainerWidth`.
 
+### Implementation (2026-07-21)
+
+Added to `Adapters/_shared/`: `useContainerWidth.ts`, `AdapterLightbox.tsx`, `AdapterHeading.tsx` (+ a unit test each). Verification surfaced that the chrome is **not** uniform across all 14 adapters — three shapes exist, and the extraction was built to preserve each exactly:
+- **Heading:** an *icon variant* (`<Title><Group>{icon}{label}</Group></Title>`, 8 adapters, Masonry with an extra `titleStyle`) and a *label-only variant* (`<Title>{label}</Title>`, 5 adapters). `AdapterHeading` selects between them by **whether an `icon` prop is passed** (not by `showGalleryLabelIcon`). LayoutBuilder's `<Text>`-based heading is a third shape and stays inline (not migrated).
+- **Lightbox:** the five `settings.lightbox*` props were byte-identical across all 14; `AdapterLightbox` owns them, the six variable props stay per-adapter. Migrated all 12 non-clipped adapters (Diamond/Hex get it via P70-B).
+- **Container width:** only Diamond/Hex/LayoutBuilder hand-rolled a `ResizeObserver`. `useContainerWidth` reproduces the Diamond/Hex effect (initial `clientWidth` seed + observer). **LayoutBuilder was intentionally left inline** — its observer uses a different, no-initial-read shape (`containerWidth || 9999` fallback + `runtime.breakpoint`) whose first-render breakpoint must not shift; forcing it onto the seeding hook would be a subtle behaviour change. Its first consumer is `ClippedTileGridGallery` (P70-B).
+
+**Outcome:** `tsc -b` clean; 322 adapter tests + 18 `_shared` unit tests green; eslint clean. No DOM/snapshot change.
+
 ---
 
 ## Track P70-B - Consolidate `DiamondGallery`/`HexagonalGallery`
@@ -99,6 +123,12 @@ Extract a `ClippedTileGridGallery` (in `Adapters/_shared/`, built on P70-A's sha
 
 - Existing snapshot tests for both adapters pass unmodified.
 - Manual: render both gallery types on the dev site, visually confirm no regression.
+
+### Implementation (2026-07-21)
+
+Added `Adapters/_shared/ClippedTileGridGallery.tsx` (built on P70-A's chrome + `useContainerWidth`), driven by a `ClippedTileGridConfig` capturing the ~7 constants that differed: `scope`, `debugName`, `clipPath`, `vOverlap`, heading `icon`, `playIconRatio`/`zoomIconRatio`, and `badge` (`bottom`/`padding`/`fontSize`/optional `whiteSpace`). `DiamondGallery.tsx` and `HexagonalGallery.tsx` are now ~45-line config wrappers (down from 217 each). Inline-style property order is preserved (the diamond badge's `whiteSpace: 'nowrap'` is spread last, conditionally) so the emitted `style` attribute stays byte-identical.
+
+**Outcome:** `tsc -b` clean (after typing the forwarded optional `runtime` prop as `ResolvedGallerySectionRuntime | undefined` for `exactOptionalPropertyTypes`); adapter smoke suite green unmodified; eslint clean. Net −131 lines plus single-source-of-truth for the clipped-grid family.
 
 ---
 
@@ -270,12 +300,14 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| None beyond what's already noted per-track (P70-I is itself opportunistic/deferred by design). | — |
+| **P70-E — `ApiClient` facade → namespaces** | Deferred 2026-07-21 (Planning Decision C). A ~70-call-site incremental codemod behind deprecated shims — long-tail migration economics, not a bounded phase deliverable. Start whenever convenient. |
+| **P70-I — promote inline sub-components** | Deferred 2026-07-21 (Planning Decision C). Opportunistic by design ("do each file as it's next touched"); forcing all six 900+-line files in one big-bang creates churn without behaviour benefit. |
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+- Manual-QA companion: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md) — a verification section is added per landed fix.
+- **Batch 1 (P70-A, P70-B) landed 2026-07-21** — see each track's *Implementation* block. `tsc -b` clean, 322 adapter + 18 `_shared` unit tests green, eslint clean.
 
 ## Outcome
 
-Not started.
+In progress. Batch 1 (adapter-chrome extraction + Diamond/Hexagonal consolidation) complete; Batches 2–4 (G; C/D/F; H) pending. P70-E and P70-I deferred to Follow-On Candidates.
