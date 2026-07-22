@@ -346,6 +346,40 @@ Promote the inline sub-components to sibling files (file moves plus prop-type ex
 - **Batch 3 (P70-C, P70-D, P70-F) landed 2026-07-21** — nonce-refresh consolidation, `GALLERY_BREAKPOINTS` dedupe, generic `setTemplateField`. `tsc -b` + eslint clean, full suite green (248 files / 3732 tests).
 - **Batch 4 (P70-H) landed 2026-07-21** — `useAdminZipTransfers` extraction (zip concern only; tab-state hooks → Follow-On). `tsc -b` + eslint clean, full suite green (249 files / 3737 tests).
 
+## PR Review & Fix Process (2026-07-22)
+
+A dedicated pre-merge review pass was run over the four batched commits on `feature/phase70-react-hardening-3-of-4` (`ab88e069`, `d944863b`, `7dd350c2`, `7af1ce44`). There were **no external review comments** — this was a self-review acting as the reviewer, combining (a) a correctness/equivalence audit of every track's diff against the pre-phase source, (b) a code-review pass (bug-hunt, edge cases, dead code, test quality), and (c) the full automated QA regression gate. Because every track is a claimed *no-behaviour-change* refactor, the review bar was **behavioural equivalence**, not merely "looks reasonable."
+
+**Verdict: approved — zero correctness issues found; no source changes required.** The extractions are faithful; the only non-identity change is benign (documented below). QA confirmed the baseline empirically.
+
+### Per-track review findings
+
+| Track | What was verified against pre-phase source | Result |
+|-------|--------------------------------------------|--------|
+| P70-A | All 14 adapters: heading **icon-vs-label variant** matches each original exactly (icon-Group for the 9 icon adapters incl. Masonry, bare label for the 5 label-only — scroll-snap/spotlight used a multiline `<Title>` but the same plain shape); Masonry's `titleStyle` is the **only** `<Title style=>` and is forwarded; `style={undefined}` elsewhere is DOM-identical; all 14 used the **same 5 `settings.lightbox*` props** so `AdapterLightbox` drops nothing; `useContainerWidth` reproduces the effect verbatim | Byte-identical |
+| P70-B | Diamond/Hex configs reproduce all ~7 differing constants; badge `whiteSpace: 'nowrap'` spread **conditionally last** keeps the serialized `style` byte-identical; debug names preserved; `containerDimensions` was unused (`_`-prefixed) before and is correctly not forwarded | Byte-identical |
+| P70-C | The one real subtlety — `fetchNonceFrom` returning `data.nonce ?? null` vs the originals' `if (data.nonce)` — resolves **identically** because all three consumers (transport `refreshNonce`, heartbeat, `fetchFreshNonce`) gate on a truthy `if (nonce)`, so `''` behaves as before; nonce is still re-read per refresh tick; transport imports only the `http/`-layer helper (stays WordPress-decoupled) | Equivalent |
+| P70-D | `GALLERY_BREAKPOINTS` now defined once in `utils/galleryConfig.ts`, re-exported from the editor module with identical type/value; dependency still points editor → pure only | Equivalent |
+| P70-F | All **17** `TEMPLATE_FIELD_LABELS` entries match the former setters' labels; both transform wrappers (`setBackgroundImage` `''→undefined`, `setCanvasHeightVh` clamp) preserved; **all 20 call-site remappings are field-correct**, including the non-obvious `setAspectRatio`→`'canvasAspectRatio'`; test call-sites are pure mechanical swaps with no weakened assertions; no surviving references to the 15 removed setter names anywhere in `src/` | Equivalent |
+| P70-G | Exported-symbol set is **73 before = 73 after** (mechanical diff, zero delta); **no duplicate export names** across the five files (so no silent `export *` elision); every cross-file reference is `import type` (erased at compile time) → no runtime circular-init risk; runtime consts are self-contained | Equivalent |
+| P70-H | Handlers extracted verbatim (job start → poll to 5-min deadline → download → best-effort delete → toast); `exportMediaZip(mediaCampaignId)` passes the scope **explicitly** (no click-event leaked as `campaignId`); `exportAuditZip`/`exportGlobalAuditZip` bind the correct in-flight setters; **no dangling references** to the four moved flags or three moved handlers remain in `AdminPanel.tsx` | Equivalent |
+
+**Only non-identity change (benign):** `useContainerWidth` declares its effect deps as `[ref]` where the inline Diamond/Hex effect used `[]`. Since a `useRef` object is stable across renders, both run exactly once on mount — no behavioural difference; the change merely satisfies exhaustive-deps cleanly.
+
+**Test-quality notes.** The five added test files are sound: `useContainerWidth.test.tsx` correctly neutralises Testing-Library's auto-cleanup `disconnect` bleed (clears spies in `beforeEach`, not `afterEach`); `useAdminZipTransfers.test.ts` covers the scoped/unscoped export, the error-resets-flag path, import-count toast, and both audit runners; `fetchNonce.test.ts` pins the pure helper's header/omit/null-on-failure branches.
+
+### QA regression gate (2026-07-22)
+
+Run as the empirical backstop for the equivalence argument (execution delegated to a Haiku runner):
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Type-check | `npx tsc -b` | Clean — 0 errors |
+| Lint | `npm run lint` (`eslint .`) | Clean — 0 errors/warnings |
+| Unit/integration suite | `npm run test` (`vitest run`) | **249 files / 3737 tests — all passed** |
+
+No regressions. The review made **no source edits** (documentation-only), so the QA numbers match Batch 4's landing baseline — the point of this pass was to independently re-verify the equivalence claims, and they held.
+
 ## Outcome
 
-**Complete** (in-scope tracks). Landed: P70-A, P70-B, P70-C, P70-D, P70-F, P70-G, and P70-H (zip concern). Deferred to Follow-On Candidates: P70-E, P70-I, and the P70-H tab-state remainder. Delivered across four batched commits on one branch, each `tsc -b` + eslint clean with the full Vitest suite green; every track is a verified no-behavior-change refactor. Companion verification doc: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md).
+**Complete** (in-scope tracks). Landed: P70-A, P70-B, P70-C, P70-D, P70-F, P70-G, and P70-H (zip concern). Deferred to Follow-On Candidates: P70-E, P70-I, and the P70-H tab-state remainder. Delivered across four batched commits on one branch, each `tsc -b` + eslint clean with the full Vitest suite green; every track is a verified no-behavior-change refactor. A pre-merge PR review (2026-07-22, see above) independently re-audited all four commits against the pre-phase source and confirmed zero correctness issues with the QA gate all-green. Companion verification doc: [PHASE70_MANUAL_QA_RUNBOOK.md](PHASE70_MANUAL_QA_RUNBOOK.md).

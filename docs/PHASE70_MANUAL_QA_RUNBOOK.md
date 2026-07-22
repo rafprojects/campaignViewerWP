@@ -239,12 +239,30 @@ The new unit test drives each handler: media export (scoped/unscoped job start �
 
 | Track | Primary assertion | Regression assertion | Done |
 |---|---|---|---|
-| P70-A | Adapter smoke + `listingMode` snapshot green **unmodified**; new `_shared` unit tests green; `tsc -b` clean | Existing per-adapter tests unchanged | ☐ |
-| P70-B | Adapter smoke suite green **unmodified**; config diff = the ~7 constants; optional live render of Diamond + Hexagonal matches | No new tests required beyond P70-A's shared units | ☐ |
-| P70-C | Transport + heartbeat + wpNonce tests green **unmodified**; new `fetchNonce.test.ts` green; `tsc -b` clean; optional Network check shows heartbeat GET unchanged | Existing transport/heartbeat/wpNonce suites unchanged | ☐ |
-| P70-D | `tsc -b` clean; gallery-config suites green; `GALLERY_BREAKPOINTS` defined once, re-exported, boundary docs present | Existing gallery-config coverage unchanged | ☐ |
-| P70-F | Builder-state/history + coverage suites green (labels unchanged); `tsc -b` clean; manual Layout Builder field edits + undo/redo behave identically | Test call sites switched to `setTemplateField`, no assertion changes | ☐ |
-| P70-G | `tsc -b` clean + full Vitest suite green **unmodified**; `index.ts` is a re-export barrel; 73 exports preserved, zero import-site changes | Proof = existing type-check + suite passing | ☐ |
-| P70-H | New `useAdminZipTransfers.test.ts` green; full suite green **unmodified**; `tsc -b` clean; optional admin ZIP export/import behaves identically | Existing AdminPanel tests unchanged | ☐ |
+| P70-A | Adapter smoke + `listingMode` snapshot green **unmodified**; new `_shared` unit tests green; `tsc -b` clean | Existing per-adapter tests unchanged | ☑ (automated) |
+| P70-B | Adapter smoke suite green **unmodified**; config diff = the ~7 constants; optional live render of Diamond + Hexagonal matches | No new tests required beyond P70-A's shared units | ☑ (automated; live render optional, not run) |
+| P70-C | Transport + heartbeat + wpNonce tests green **unmodified**; new `fetchNonce.test.ts` green; `tsc -b` clean; optional Network check shows heartbeat GET unchanged | Existing transport/heartbeat/wpNonce suites unchanged | ☑ (automated; Network check optional, not run) |
+| P70-D | `tsc -b` clean; gallery-config suites green; `GALLERY_BREAKPOINTS` defined once, re-exported, boundary docs present | Existing gallery-config coverage unchanged | ☑ (automated) |
+| P70-F | Builder-state/history + coverage suites green (labels unchanged); `tsc -b` clean; manual Layout Builder field edits + undo/redo behave identically | Test call sites switched to `setTemplateField`, no assertion changes | ☑ (automated; manual builder check optional, not run) |
+| P70-G | `tsc -b` clean + full Vitest suite green **unmodified**; `index.ts` is a re-export barrel; 73 exports preserved, zero import-site changes | Proof = existing type-check + suite passing | ☑ (automated) |
+| P70-H | New `useAdminZipTransfers.test.ts` green; full suite green **unmodified**; `tsc -b` clean; optional admin ZIP export/import behaves identically | Existing AdminPanel tests unchanged | ☑ (automated; admin ZIP live check optional, not run) |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npx eslint` on changed files. See PHASE70_REPORT.md → each track's *Implementation* block for per-track rationale.
+
+---
+
+## 5. Pre-merge review sign-off (2026-07-22)
+
+A pre-merge PR review was performed over the four batched commits (`ab88e069`, `d944863b`, `7dd350c2`, `7af1ce44`) — the reviewer role, with **no external comments to address**. Per this runbook's golden rule, the operative check for a pure refactor is *"existing tests pass unmodified + `tsc -b` clean + a diff review confirms the extraction is faithful"* — that is exactly what this sign-off records. Full rationale and per-track findings live in [PHASE70_REPORT.md](PHASE70_REPORT.md) → **PR Review & Fix Process (2026-07-22)**.
+
+**Method.** For each track, the committed diff was audited **against the pre-phase source** (`git show <commit>^:<path>`) for behavioural equivalence — not just a plausibility read. Specific equivalence points confirmed: the two heading shapes and the five identical lightbox props (P70-A); the conditional-last `whiteSpace` badge spread that keeps the serialized `style` byte-identical (P70-B); that `fetchNonceFrom`'s `?? null` return is gated by truthy `if (nonce)` at all three call sites so `''` behaves as before (P70-C); all 17 preserved history labels and 20 field-correct call-site remappings (P70-F); the 73-export set with no `export *` name collisions (P70-G); and the explicit `mediaCampaignId` argument with no dangling `AdminPanel` references (P70-H).
+
+**Automated gate (the empirical backstop).** Re-run clean in one pass:
+
+| Gate | Command | Result |
+|------|---------|--------|
+| Type-check | `npx tsc -b` | Clean |
+| Lint | `npm run lint` | Clean |
+| Suite | `npm run test` | 249 files / 3737 tests passed |
+
+**Outcome.** Zero correctness issues; **no source changes required** (this pass edited documentation only). The one non-identity change — `useContainerWidth`'s `[ref]` vs `[]` effect deps — is behaviourally inert (stable ref ⇒ mount-once either way). The **optional live/browser checks** in §3 (render galleries on the dev site, watch the heartbeat GET, exercise Layout Builder fields, run an admin ZIP export/import) were **not** performed in this pass — they remain available for a hands-on smoke test but are not required for a no-behaviour-change refactor whose snapshot/unit coverage is green unmodified.
