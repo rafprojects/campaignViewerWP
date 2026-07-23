@@ -2,7 +2,7 @@
 
 **Status:** Complete
 **Created:** 2026-07-14
-**Last updated:** 2026-07-22
+**Last updated:** 2026-07-23
 
 ### Tracks
 
@@ -219,3 +219,47 @@ Test: `src/test/swUploads.test.ts` replicates the handler/helpers/constants (the
 ## Outcome
 
 Complete. Automated baseline green throughout: `npx tsc -b`, `npm run lint` (incl. the new `wpsg/no-untranslated-notification` gate), `npm run i18n:check` + `npm run i18n:check:locales`, and the front-end Vitest suite. Optional live/browser checks (reconnect Network trace, prod-build SW uploads revalidation, non-English locale toasts) documented in the runbook but not run — not required for the automated coverage each track ships.
+
+---
+
+## PR Review & Fix Pass (2026-07-23)
+
+After the five tracks landed, the three feature commits (`176f1fb2` P71-A/B/C, `e9d7a6cd` P71-D, `854ded8f` P71-E) were put through a dedicated **reviewer pass** — a self-review standing in for external PR feedback (there were no reviewer comments to fetch): each implementation's *correctness* was re-validated against current source, followed by a `/code-review`-style adversarial sweep of the whole branch diff for bugs, edge cases, and consistency. This section records what the review checked, what it found, and what it changed. **Net result: all five implementations were confirmed correct; one cosmetic cleanup was applied; no functional defect was found.**
+
+### What was validated (and how the claim held up)
+
+| Track | Reviewer's correctness check | Verdict |
+|-------|------------------------------|---------|
+| P71-A | Confirmed the campaigns query really does carry `enabled: isReady` + `refetchOnReconnect: true` (`App.tsx:305,309`), so the deleted manual effect was a true duplicate on *both* mount and reconnect. `isOnline`/`isReady` remain referenced (offline banner, other effects) — no dead bindings. | ✅ Correct |
+| P71-B | Traced every `useUpdateSettings` **call site**: it is invoked only in `SettingsPanel.tsx`'s **global** branch (`spaceId == null`), where the write key `['settings', baseUrl, null]` matches all global readers (`App`, `MediaTab`, `useExternalMediaModal`, `SettingsPanel`). The **space** branch uses a *separate* path (direct `PUT` + explicit `invalidateQueries` on both the scoped and prefix keys, `SettingsPanel.tsx:516-526`), so dropping the prefix invalidation loses no needed refresh. | ✅ Correct — the "no concurrent multi-space query" premise holds |
+| P71-C | `useMemo(() => new AssetsApi(apiClient), [apiClient])` deps correct; `AssetsApi` is stateless so the change is behaviour-inert. | ✅ Correct |
+| P71-D | Diffed the test's replicated `handleUploadsRequest` against the real `sw.js` handler — byte-faithful. Verified `UPLOADS_CACHE` is in the `activate` keep-set, the uploads branch sits after the `/wp-json/` + hashed-asset bails and before the generic cache-first block, and `stampResponse` reuse is the same mechanism already shipped for the metadata SWR cache (so no new Content-Encoding/reconstruction risk vs. what production already runs). | ✅ Correct |
+| P71-E | Spot-checked the i18n routing across all 10 hooks: `const t = i18n.t.bind(i18n)` binds the shared instance (translations resolve at call time); `App.tsx`/`SettingsPanel.tsx` reuse their `useTranslation` `t` with `t` correctly added to the `useCallback` deps. **Pluralization** was the deepest check — the new `{{count}}` messages (`mediaup_skipped_msg`, `mediaup_complete_msg`, `mediaup_add_fail_clause`) ship a base key **and** a `_other` sibling, matching this repo's established i18next plural convention (base = `_one`; i18next v26 falls back plural-suffix → base), confirmed against dozens of pre-existing `key`/`key_other` pairs. The local ESLint rule's flat-config block correctly inherits the TS parser from the earlier `**/*.{ts,tsx}` block. | ✅ Correct — pluralization is **not** a regression |
+
+### Finding fixed
+
+| # | Severity | Finding | Resolution |
+|---|----------|---------|------------|
+| R-1 | Cosmetic (style) | The `[P71-E]` `const t = i18n.t.bind(i18n)` statement was wedged **between** `import type` lines in `useBuilderDraftRestore.tsx` and `useLayoutBuilderAssets.ts` — legal only because `import type` is erased at compile, but an import-order wart. | Moved the binding (and its comment) below all imports in both files. Commit `05b8e868`. Behaviour-inert. |
+
+### Findings deliberately **not** changed (documented follow-ups, out of F-1 scope)
+
+The review re-confirmed these are pre-existing gaps already flagged in the code/runbook, not regressions introduced by this phase — fixing them would add new catalogue keys requiring the full 5-locale `.po`/`.mo`/`.pot` regeneration for marginal gain, so they stay as follow-ups:
+
+- **Non-notification user-facing strings** still in English: `setExternalError(getErrorMessage(err, 'Failed to load preview.'))` in `useMediaExternal.ts` (the identical text *is* translated in the sibling toast one line down), the a11y `announce()` calls in `useLayoutBuilderAssets.ts`, `validateImportPayload` errors surfaced as `message: result.error`, and the draft-restore modal chrome. All are outside the notification `title`/`message` surface the gate guards (and the rule header documents this precisely).
+
+### QA re-run (post-fix, full suite)
+
+Re-ran the complete gate after R-1 — **all green**:
+
+| Check | Result |
+|-------|--------|
+| `npm run lint` (incl. `wpsg/no-untranslated-notification`) | ✅ 0 violations |
+| `tsc -b` typecheck | ✅ |
+| `vite build` | ✅ |
+| Vitest suite | ✅ 3760 tests / 251 files, 0 failed |
+| `npm run i18n:check` | ✅ manifest in sync |
+| `npm run i18n:check:locales` | ✅ all 5 reference locales complete |
+| The 4 new/changed test files (`App.test.tsx`, `settingsQuery.test.ts`, `swUploads.test.ts`, `noUntranslatedNotification.gate.test.ts`) | ✅ each green |
+
+No regressions. The branch's three feature commits plus the review-cleanup commit (`05b8e868`) are correct and QA-green. Per-track live/browser checks remain optional (documented in the runbook §3, not required for automated coverage).

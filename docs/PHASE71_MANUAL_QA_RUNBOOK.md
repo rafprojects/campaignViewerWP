@@ -196,3 +196,39 @@ Then switch back to English and confirm the exact original wording is intact.
 | P71-E | Gate test green; `npm run lint` green (0 violations, all 60 sites routed through `t()`); `i18n:check` + `i18n:check:locales` green (69 keys × 5 locales); `tsc -b` + full suite green | Existing hook/component tests unchanged (155 verified); rule catches a deliberate violation | ☑ (automated; non-English locale-switch live check optional, not run) |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npm run lint` on changed files. See PHASE71_REPORT.md → each track's section for per-track rationale.
+
+---
+
+## 5. PR review & fix pass (2026-07-23)
+
+After the five tracks landed, the branch's three feature commits were put through a **reviewer pass** (a self-review standing in for external PR feedback — no reviewer comments existed to fetch): each implementation's correctness was re-validated against current source, then a `/code-review`-style adversarial sweep of the full diff. See PHASE71_REPORT.md → **PR Review & Fix Pass (2026-07-23)** for the finding-by-finding record. This runbook section is the **HOW to re-verify** that pass.
+
+**Outcome in one line:** all five implementations confirmed correct; one cosmetic cleanup landed (`05b8e868` — hoisted a `[P71-E]` `const t` binding above the `import type` lines in `useBuilderDraftRestore.tsx` + `useLayoutBuilderAssets.ts`, which were interleaved between imports); no functional defect found; full suite re-run green.
+
+**The two correctness claims worth re-checking by hand** (the review's non-obvious ones):
+
+1. **P71-B is safe because `useUpdateSettings` only runs in the global branch.** Confirm the call graph yourself: `useUpdateSettings.mutateAsync` is called **only** at `SettingsPanel.tsx:537`, inside the `else` of `if (spaceId != null)` — i.e. `spaceId == null`. In that branch `setSettingsQueryData(queryClient, apiClient, data)` writes key `['settings', <baseUrl>, null]`, which is exactly what every global reader subscribes to (`useGetSettings(apiClient)` / `useGetSettings(apiClient, undefined)`). The **space** branch (`spaceId != null`, `:516-535`) never touches the mutation — it `PUT`s directly and calls `invalidateQueries` on both `getSettingsQueryKey(apiClient, spaceId)` and the `SETTINGS_QUERY_KEY` prefix itself. So the removed prefix-invalidation in `onSuccess` was pure redundancy for the only path that reaches it.
+   ```bash
+   grep -rn "updateSettingsMutation\|useUpdateSettings" src --include=*.tsx --include=*.ts | grep -v ".test."
+   # Expect the only mutateAsync call site to be SettingsPanel.tsx's global (spaceId == null) branch.
+   ```
+
+2. **P71-E pluralization is convention-correct, not a regression.** The new `{{count}}` toasts replaced hand-rolled `file${n===1?'':'s'}` ternaries with i18next plural resolution. Confirm each pluralized message ships **both** forms:
+   ```bash
+   grep -nE "mediaup_skipped_msg|mediaup_complete_msg|mediaup_add_fail_clause" src/i18n-strings.en.json
+   # Each must appear as a base key AND a <key>_other sibling.
+   ```
+   This repo's convention is **base key = the `_one`/singular form, `<key>_other` = plural** (i18next v26 resolves `<key>_one`, and when absent falls back to the base key); `grep -c '_other"' src/i18n-strings.en.json` shows the dozens of pre-existing pairs that prove the pattern works in this setup. A count-1 toast renders the base string, count-N renders `_other` — matching the old ternary output. `npm run i18n:check:locales` green additionally proves the `_other` forms are translated in all 5 locales.
+
+**Re-verification commands (the whole pass — must all be green):**
+```bash
+npm run lint                 # incl. wpsg/no-untranslated-notification — 0 violations
+npx tsc -b                   # or `npm run build` for tsc + vite build together
+npm test                     # full Vitest suite — 3760 tests / 251 files, 0 failed
+npm run i18n:check
+npm run i18n:check:locales
+```
+
+**Re-confirm the cosmetic fix changed nothing:** `git show 05b8e868 --stat` should show only `useBuilderDraftRestore.tsx` (+1/-1) and `useLayoutBuilderAssets.ts` (+2/-2) — moved lines only, no logic. The husky pre-commit hook (`eslint --fix` + `tsc --noEmit`) ran clean on both files at commit time.
+
+**Documented follow-ups the review deliberately left (do not treat the swept files as 100% localized):** the non-notification English strings — `setExternalError(…, 'Failed to load preview.')` in `useMediaExternal.ts`, the a11y `announce()` calls in `useLayoutBuilderAssets.ts`, `validateImportPayload` errors shown as `message: result.error`, and draft-restore modal chrome — are a **broader pre-existing i18n gap outside the notification `title`/`message` surface the gate guards**. They are unchanged by this phase and are the natural next i18n slice. See PHASE71_REPORT.md → PR Review & Fix Pass for the full list.
