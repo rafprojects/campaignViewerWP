@@ -10485,3 +10485,19 @@ msgstr ""
 #: wp-super-gallery.php:222
 msgid "Gallery Editor"
 msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Access-Request Retention (days)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Audit-Log Retention (days)"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
+msgstr ""

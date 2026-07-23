@@ -8,11 +8,11 @@
 | Track | Domain | Description | Status | Effort |
 |-------|--------|-------------|--------|--------|
 | P72-A | React / i18n | Non-notification user-facing strings still bypass i18n | Planned | Medium |
-| P72-B | PHP / Privacy | WordPress Core Privacy Integration (DSAR export/erase) | Planned | Medium |
+| P72-B | PHP / Privacy | WordPress Core Privacy Integration (DSAR export/erase) | ✅ Done | Medium |
 | P72-C | PHP / Settings | `update_space_settings()` silently drops global keys instead of returning 403 | ✅ Done | Tiny |
 | P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | ✅ Done | Small |
 | P72-E | React / Refactor | `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder) | Planned | Medium |
-| P72-F | PHP / Privacy | Retention / auto-purge for PII tables (access-requests, audit-log) | Planned | Small-Medium |
+| P72-F | PHP / Privacy + React UI | Retention / auto-purge for PII tables (access-requests, audit-log) | ✅ Done | Small-Medium |
 | P72-G | React / a11y | Structural a11y (axe) gate — fix the 2 known `LayoutTemplateList` violations | Planned | Small (this slice) |
 
 ---
@@ -279,6 +279,14 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** 64 PHPUnit tests green (376 assertions) across `WPSG_P57A_Settings_Split_Save_Test` (rewritten for the new 1A behavior — 2 new methods), `WPSG_Embed_Test` (4 new P72-D methods), and regressions `WPSG_P52A4_Settings_Split_Test`, `WPSG_Settings_Rest_Test`, `WPSG_P47_Spaces_Settings_Test`. See the runbook for the failure-first / manual-QA detail.
 
+### Batch 2 — P72-B + P72-F (landed 2026-07-23)
+
+**P72-B rationale.** New `WPSG_Privacy` class (`includes/class-wpsg-privacy.php`, hooked on `init` like the other registrars) registers WP core `wp_privacy_personal_data_exporters`/`_erasers`. The deliberate asymmetry (decision above): **access-requests get an exporter AND an eraser** (both keyed on email, case-insensitive via `LOWER(email)`), **audit-log gets an exporter but NO eraser** — the eraser registry simply omits it, and both the class docblock and `PRIVACY.md §5` document the legitimate-interest reasoning. Audit rows are attributed to a DSAR email by resolving `get_user_by('email')` then matching `actor_id` OR `actor_login` (legacy rows carry only the login). New DB helpers: `get_access_requests_by_email`, `delete_access_requests_by_email`, `get_audit_entries_by_actor`. Exporters page at 100 rows (`done` when a short page returns).
+
+**P72-F rationale + scope note.** Backend mirrors the analytics purge exactly: two new cron hooks (`ACCESS_REQUESTS_PURGE_HOOK`, `AUDIT_LOG_PURGE_HOOK`) scheduled weekly only when their setting > 0 (opt-in; default 0 = never), batched `DELETE` keyed on `requested_at` / `created_at`. Both hooks were added to the canonical `wpsg_get_cron_hooks()` list (and its test) so deactivate/uninstall clear them. Two settings registered (defaults 0, admin-only, range `[0, 3650]`). **Scope addition beyond the report's original PHP-only Files list** (decided with the user during execution): because the analytics-retention pattern being mirrored *has* a React admin control, a backend-only setting would be unconfigurable from the UI — so matching **NumberInput controls were added to `AdvancedSettingsSection.tsx`** (Data Maintenance), with `accessRequestsRetentionDays`/`auditLogRetentionDays` added to the `GallerySettings` type + defaults, and 4 new i18n keys translated across all 5 reference locales (`.po` + recompiled `.mo`/`.l10n.php`; PHP manifest + `.pot` regenerated). Translations are AI-generated, terminology-aligned to the existing catalogue — they satisfy the coverage gate and keep correct English fallbacks, but warrant an eventual native-speaker review (same caveat as P71-E).
+
+**Verification.** 88 PHPUnit tests green (652 assertions): `WPSG_P72B_Privacy_Test` (9 — incl. the "no audit eraser" assertion), `WPSG_P72F_PII_Retention_Test` (6 — purge window + opt-in + scheduling), `WPSG_Cron_Hooks_Test` (updated), regressions `WPSG_Maintenance_Test` / `WPSG_Settings_Test` / `WPSG_Settings_Extended_Test`. Front-end: `tsc -b` clean, ESLint clean on changed files, `i18n:check` + `i18n:check:locales` green (all 5 locales, 2351 strings each).
+
 ## Outcome
 
-In progress. **Landed:** P72-C, P72-D (Batch 1). **Remaining:** P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4); P72-E (Batch 5).
+In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2). **Remaining:** P72-A (Batch 3); P72-G (Batch 4); P72-E (Batch 5).

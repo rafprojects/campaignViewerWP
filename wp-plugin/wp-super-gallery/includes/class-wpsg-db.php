@@ -692,6 +692,44 @@ class WPSG_DB {
         $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
     }
 
+    /**
+     * P72-B: fetch a page of access requests for an email address, for the WP
+     * core personal-data exporter. Case-insensitive on email, oldest first.
+     *
+     * @return array<int, array<string, mixed>> Rows as associative arrays.
+     */
+    public static function get_access_requests_by_email(string $email, int $limit, int $offset): array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE LOWER(email) = LOWER(%s) ORDER BY requested_at ASC LIMIT %d OFFSET %d",
+                $email,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+        return $rows ?: [];
+    }
+
+    /**
+     * P72-B: delete every access request for an email address, for the WP core
+     * personal-data eraser. Case-insensitive on email.
+     *
+     * @return int Number of rows deleted.
+     */
+    public static function delete_access_requests_by_email(string $email): int {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        // $wpdb->delete() has no case-insensitive option, so use a prepared query.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $deleted = $wpdb->query(
+            $wpdb->prepare("DELETE FROM {$table} WHERE LOWER(email) = LOWER(%s)", $email)
+        );
+        return (int) $deleted;
+    }
+
     // ── P28-G: Audit log table ──────────────────────────────────────────────
 
     public static function maybe_create_audit_log_table(): void {
@@ -949,6 +987,31 @@ class WPSG_DB {
     public static function get_audit_log_table(): string {
         global $wpdb;
         return $wpdb->prefix . 'wpsg_audit_log';
+    }
+
+    /**
+     * P72-B: fetch a page of audit-log rows attributable to a given staff
+     * member, for the WP core personal-data exporter. Matches on either the
+     * numeric actor_id or the actor_login (legacy rows carry only one), oldest
+     * first. Export-only — there is deliberately no by-actor delete counterpart
+     * (audit trails are a legitimate-interest record, exempt from erasure).
+     *
+     * @return array<int, array<string, mixed>> Rows as associative arrays.
+     */
+    public static function get_audit_entries_by_actor(int $actor_id, string $actor_login, int $limit, int $offset): array {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE (actor_id > 0 AND actor_id = %d) OR (actor_login <> '' AND actor_login = %s) ORDER BY created_at ASC LIMIT %d OFFSET %d",
+                $actor_id,
+                $actor_login,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+        return $rows ?: [];
     }
 
     public static function insert_audit_entry(array $data): void {

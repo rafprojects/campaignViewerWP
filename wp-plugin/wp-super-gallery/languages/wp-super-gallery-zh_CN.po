@@ -10477,3 +10477,19 @@ msgstr "正在加载活动…"
 #. [P71-E] Notification / user-facing string added in Phase 71.
 msgid " (page {{completed}} of {{total}})"
 msgstr "（第 {{completed}} 页，共 {{total}} 页）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Access-Request Retention (days)"
+msgstr "访问请求保留（天）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "超过此时长的访客访问请求记录（包括电子邮件）将每周清除。设为 0 则无限期保留。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Audit-Log Retention (days)"
+msgstr "审计日志保留（天）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
+msgstr "超过此时长的审计日志条目将每周清除。设为 0 则无限期保留——审计日志默认保留以确保可问责性。"

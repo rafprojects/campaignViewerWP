@@ -239,6 +239,9 @@ class WPSG_Settings_Registry {
         'archive_purge_days'             => 0,
         'archive_purge_grace_days'       => 30,
         'analytics_retention_days'       => 0,
+        // P72-F: opt-in PII retention windows. 0 = never purge (default).
+        'access_requests_retention_days' => 0,
+        'audit_log_retention_days'       => 0,
         'magic_link_landing_page_id'     => 0,
         'enable_analytics'               => false,
         'default_visibility'             => 'public',
@@ -424,6 +427,8 @@ class WPSG_Settings_Registry {
         'archive_purge_days',
         'archive_purge_grace_days',
         'analytics_retention_days',
+        'access_requests_retention_days',
+        'audit_log_retention_days',
         'magic_link_landing_page_id',
     ];
 
@@ -905,6 +910,8 @@ class WPSG_Settings_Registry {
         'archive_purge_days'           => [0, 365],
         'archive_purge_grace_days'     => [7, 90],
         'analytics_retention_days'     => [0, 730],
+        'access_requests_retention_days' => [0, 3650],
+        'audit_log_retention_days'     => [0, 3650],
         'magic_link_landing_page_id'   => [0, PHP_INT_MAX],
         'card_max_columns'             => [0, 8],
         'card_min_height'              => [0, 600],

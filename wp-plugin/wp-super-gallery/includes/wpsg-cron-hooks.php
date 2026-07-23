@@ -32,6 +32,8 @@ if (!function_exists('wpsg_get_cron_hooks')) {
             'wpsg_trash_purge',              // WPSG_Maintenance::TRASH_PURGE_HOOK
             'wpsg_analytics_purge',          // WPSG_Maintenance::ANALYTICS_PURGE_HOOK
             'wpsg_expired_grants_cleanup',   // WPSG_Maintenance::EXPIRED_GRANTS_HOOK
+            'wpsg_access_requests_purge',    // WPSG_Maintenance::ACCESS_REQUESTS_PURGE_HOOK
+            'wpsg_audit_log_purge',          // WPSG_Maintenance::AUDIT_LOG_PURGE_HOOK
             'wpsg_schedule_auto_archive',    // wp-super-gallery.php hourly auto-archive
             'wpsg_thumbnail_cache_cleanup',  // WPSG_Thumbnail_Cache cleanup event
             'wpsg_process_alert_emails',     // WPSG_Alerts::CRON_HOOK

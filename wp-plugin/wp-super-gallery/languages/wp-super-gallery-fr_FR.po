@@ -10477,3 +10477,19 @@ msgstr "Chargement des campagnes..."
 #. [P71-E] Notification / user-facing string added in Phase 71.
 msgid " (page {{completed}} of {{total}})"
 msgstr " (page {{completed}} sur {{total}})"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Access-Request Retention (days)"
+msgstr "Conservation des demandes d’accès (jours)"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "Les enregistrements de demandes d’accès des visiteurs (y compris les e-mails) plus anciens que cela sont purgés chaque semaine. Réglez sur 0 pour les conserver indéfiniment."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Audit-Log Retention (days)"
+msgstr "Conservation du journal d’audit (jours)"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
+msgstr "Les entrées du journal d’audit plus anciennes que cela sont purgées chaque semaine. Réglez sur 0 pour les conserver indéfiniment — les journaux d’audit sont conservés par défaut à des fins de responsabilité."

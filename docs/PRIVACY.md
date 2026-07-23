@@ -135,10 +135,26 @@ The plugin sets **no cookies of its own.** Standard WordPress login cookies
 
 ## 5. Data-subject requests (access / erasure / portability)
 
-> **Important:** this version of the plugin does **not** yet integrate with WordPress's
-> built-in **Tools → Export/Erase Personal Data** exporters and erasers. Data-subject
-> requests are fulfilled **manually** as described here. Automated integration is a
-> planned enhancement (see Follow-Ons).
+> **As of P72-B**, the plugin integrates with WordPress's built-in **Tools →
+> Export/Erase Personal Data** tools. Registered exporters/erasers fulfil most
+> data-subject requests without manual SQL:
+>
+> | Data | Export | Erase |
+> |------|--------|-------|
+> | **Access requests** (`wp_wpsg_access_requests`, visitor emails) | ✅ *WP Super Gallery — Access Requests* exporter, matched by email | ✅ *WP Super Gallery — Access Requests* eraser deletes all rows for the email |
+> | **Audit log** (`wp_wpsg_audit_log`, staff usernames) | ✅ *WP Super Gallery — Audit Log* exporter, matched by the email's WP user (`actor_id`/`actor_login`) | ❌ **Deliberately not erasable** |
+>
+> **Why the audit log is export-only.** An audit/accountability log is a
+> legitimate-interest record (GDPR Art. 6(1)(f), with Art. 17(3)(b) as the
+> erasure exemption): its purpose is to show *who did what*. A self-service
+> erasure — reachable only when the requester's email matches their own
+> `actor_login` — must not be able to remove the record of their own privileged
+> actions. Bound its lifetime with the **Audit-Log Retention** window (§6)
+> instead. If a specific legal obligation *requires* erasing an audit entry, do
+> it manually (below), as a deliberate administrative act.
+
+**Manual lookup / erasure is still available** (for the audit-log exemption case,
+access grants, or the analytics hashes the core tools don't cover):
 
 **To locate a person's data:**
 - **Access requests (email):** search `wp_wpsg_access_requests` for the address
@@ -171,8 +187,8 @@ privacy policy and obtain consent as your jurisdiction requires.
 | Analytics events | `wpsg_analytics_purge` cron, but **only if** `analytics_retention_days > 0` | Set a retention window; default 0 = never |
 | Expired access grants | `wpsg_expired_grants_cleanup` (daily) removes expired grants | None |
 | Rate-limit counters | Self-expire via transient TTL; no IP stored | None |
-| **Access requests (emails)** | **No automatic purge** | Delete manually / periodically |
-| **Audit log (usernames)** | **No automatic purge** | Delete manually / periodically |
+| **Access requests (emails)** | `wpsg_access_requests_purge` cron (weekly), **only if** `access_requests_retention_days > 0` (P72-F) | Set **Access-Request Retention** in Settings → Advanced → Data Maintenance; default 0 = never |
+| **Audit log (usernames)** | `wpsg_audit_log_purge` cron (weekly), **only if** `audit_log_retention_days > 0` (P72-F) | Set **Audit-Log Retention** in Settings → Advanced → Data Maintenance; default 0 = never (kept for accountability) |
 | Thumbnail cache | `wpsg_thumbnail_cache` cron cleanup | None |
 
 **On uninstall:** unless you tick **"Preserve data on uninstall"** in Settings, deleting

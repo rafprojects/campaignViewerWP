@@ -10477,3 +10477,19 @@ msgstr "Kampagnen werden geladen …"
 #. [P71-E] Notification / user-facing string added in Phase 71.
 msgid " (page {{completed}} of {{total}})"
 msgstr " (Seite {{completed}} von {{total}})"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Access-Request Retention (days)"
+msgstr "Aufbewahrung von Zugriffsanfragen (Tage)"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "Datensätze von Besucher-Zugriffsanfragen (einschließlich E-Mails), die älter sind, werden wöchentlich bereinigt. Auf 0 setzen, um sie unbegrenzt aufzubewahren."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Audit-Log Retention (days)"
+msgstr "Aufbewahrung des Audit-Protokolls (Tage)"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
+msgstr "Audit-Protokoll-Einträge, die älter sind, werden wöchentlich bereinigt. Auf 0 setzen, um sie unbegrenzt aufzubewahren – Audit-Protokolle werden zur Nachvollziehbarkeit standardmäßig aufbewahrt."

@@ -38,8 +38,10 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 |---|---|---|
 | P72-C | `update_space_settings()`'s global-key write now routes through the shared `guard_admin_only_settings()` (promoted to `WPSG_REST_Base`). An admin-only global key written by a non-`manage_options` caller returns a `wpsg_forbidden_settings` 403 instead of being silently dropped; a non-admin-only global key is written (consistency with `/settings`). | **Yes (by response status)** — an editor's admin-only global write is now 403, not a silent 200. |
 | P72-D | `resolve_space_id()` reports (via a new out-param) when an explicit `space=`/`campaign=`/`company=` reference fell back to the default because it did not resolve; `render_shortcode()` emits a `manage_wpsg`-gated inline notice in that case. | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped space now sees an inline notice; visitors never do; omitting the attribute shows nothing. |
+| P72-B | New `WPSG_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
+| P72-F | Two opt-in retention windows (`access_requests_retention_days`, `audit_log_retention_days`, default 0) drive weekly cron purges of the two PII tables, plus admin NumberInput controls in Settings → Advanced → Data Maintenance. | **Yes** — a configured window purges old rows weekly; 0 keeps forever; the controls are settable in the admin UI. |
 
-*(Rows for P72-A/B/E/F/G are added as those tracks land.)*
+*(Rows for P72-A/E/G are added as those tracks land.)*
 
 ---
 
@@ -111,16 +113,70 @@ The four new methods pin all four corners of the behaviour:
 
 ---
 
+### P72-B — WordPress core privacy integration (DSAR export/erase)
+
+**What & why.** The plugin stored visitor emails (`wp_wpsg_access_requests`) and staff usernames (`wp_wpsg_audit_log`) but registered no WP core personal-data exporters/erasers, so DSAR requests were a manual SQL/WP-CLI chore. P72-B adds `WPSG_Privacy` (hooked on `init`), registering: an **access-requests exporter + eraser** (both keyed on email, case-insensitive) and an **audit-log exporter with NO eraser**. The audit-log erasure exemption is the deliberate decision — an audit trail is a legitimate-interest record (GDPR Art. 6(1)(f)/17(3)(b)); a self-service erase reachable only when the requester's email matches their own `actor_login` must not let someone erase the record of their own privileged actions. Time-boxed retention (P72-F) bounds the audit log instead.
+
+**Pre-fix behaviour.** Tools → Export/Erase Personal Data returned/erased nothing from the plugin; a DSAR meant hand-written SQL.
+
+**This track's meaningful check is failure-first for the registration + behaviour** — the new registration/exporter/eraser assertions cannot hold on the pre-fix source (no `WPSG_Privacy` existed), and the "no audit eraser" assertion encodes the exemption decision as an explicit, regression-proof contract.
+
+**Verification (primary — automated).**
+```bash
+# via the /php-testing skill:
+tests/WPSG_P72B_Privacy_Test.php   # 9 methods
+```
+The **decision-locking** methods: `test_both_exporters_are_registered` (audit IS exportable) and `test_only_access_requests_eraser_is_registered` (audit is **not** in the eraser registry — `assertArrayNotHasKey('wpsg-audit-log', …)`). The **behaviour** methods exercise each callback against seeded rows: access-request export returns only the subject email's rows (case-insensitively), the eraser deletes only the subject's rows (another email's survive), and the audit exporter returns the matching user's rows — including a **legacy-shaped row** (`actor_id = 0`, matched by `actor_login`) — and returns empty+done for an email that maps to no WP user.
+
+**Why it proves the fix.** The two registry assertions prove the export/erase *asymmetry* is real and can't silently regress (a future dev adding an audit eraser fails the test). The callback tests prove each path returns/removes exactly the right rows and nothing else — the core DSAR-correctness property. Confirmed: 9 tests / 21 assertions green.
+
+**Live check (recommended — real admin flow).** On the dev site: seed an access request (submit one as a visitor for a private campaign) and perform a couple of audited admin actions while logged in as a user whose email you know. Then Tools → **Export Personal Data** for that email → the report contains a *WP Super Gallery — Access Requests* group and a *WP Super Gallery — Audit Log* group. Then Tools → **Erase Personal Data** for the same email → the access-request rows are removed, and note the audit-log group is **absent from the eraser** (it was export-only). Re-run Export → the access-request group is now empty, the audit-log group still present.
+
+**Regression checks.** No existing behaviour changed — `WPSG_Privacy` is purely additive (new class, new filters, new DB read/delete-by-email helpers). The existing audit/access-request read/write paths are untouched.
+
+**Pitfall.** (1) The audit exporter must match on **either** `actor_id` **or** `actor_login` — legacy rows carry only the login, newer rows carry the id; matching only one silently misses half the history. The `..._matches_by_actor_login_when_id_absent` test guards this. (2) Do **not** add an audit-log eraser "for completeness" — its absence is the whole point of the track; the `test_only_access_requests_eraser_is_registered` assertion will (correctly) fail if you do. (3) The exporter must page (`done === count(rows) < PAGE_SIZE`) — returning `done: true` unconditionally would truncate a subject with more than `PAGE_SIZE` (100) rows.
+
+---
+
+### P72-F — Opt-in retention purge for the PII tables (+ admin UI)
+
+**What & why.** `wp_wpsg_access_requests` (emails) and `wp_wpsg_audit_log` (usernames) grew unbounded — no purge job. P72-F adds two **opt-in** retention windows (`access_requests_retention_days`, `audit_log_retention_days`, both default **0 = never purge**, so existing installs are never surprised), each driving a weekly cron purge (`purge_old_access_requests` / `purge_old_audit_log`, batched `DELETE` keyed on `requested_at` / `created_at`) that mirrors the analytics job exactly. Both hooks are in the canonical `wpsg_get_cron_hooks()` list so they're cleared on deactivate/uninstall. Because the mirrored analytics-retention setting has a React admin control, matching **NumberInput controls** were added to Settings → Advanced → Data Maintenance (scope addition decided with the user), with the two keys added to the `GallerySettings` type + defaults and 4 new i18n strings translated across all 5 locales.
+
+**Pre-fix behaviour.** No purge job for either table; rows accumulated forever, and there was no admin control to configure retention.
+
+**This track's meaningful check is failure-first** — the purge methods didn't exist pre-fix, so the "old rows removed, recent rows survive" assertions can't hold on the pre-fix source; and the opt-in (zero-window) case guards against an accidental always-on purge.
+
+**Verification (primary — automated).**
+```bash
+# via the /php-testing skill:
+tests/WPSG_P72F_PII_Retention_Test.php   # 6 methods
+tests/WPSG_Cron_Hooks_Test.php           # updated: the 2 new hooks in the canonical list
+# front-end:
+npx tsc -b
+npm run i18n:check && npm run i18n:check:locales   # 4 new strings × 5 locales
+```
+The purge methods are proven by seeding a 90-day-old and a 5-day-old row in each table, setting a 30-day window, running the purge, and asserting exactly the old row is gone and the recent one (identified by email/`actor_login`) survives. The **opt-in** methods seed a 9999-day-old row with a **zero** window and assert the purge removes nothing. The **scheduling** methods assert `register()` schedules each hook when its window > 0 and clears it when 0.
+
+**Why it proves the fix.** The old-removed/recent-kept pair proves the window boundary is applied correctly (not "delete all" and not "delete none"); the zero-window pair proves the opt-in default is safe (the criterion that this ships off by default); the scheduling pair proves the cron wiring matches the analytics precedent. Confirmed: 6 tests / 12 assertions green, plus `WPSG_Cron_Hooks_Test` green (the canonical-list count assertion catches a missing hook).
+
+**Live check (recommended — the admin UI + a real purge).** On the dev site as a System Admin: Settings → Advanced → **Data Maintenance** shows the two new controls (*Access-Request Retention*, *Audit-Log Retention*), each defaulting to 0. Set one to e.g. 1 (day), save, and confirm the value round-trips (reload). Seed an old row (or wait), then trigger the cron (`wp cron event run wpsg_access_requests_purge` / `wpsg_audit_log_purge`, or `wp cron event run --due-now`) and confirm old rows are gone while recent ones remain. Switch the site to a non-English locale and confirm the two control labels/descriptions render translated (they were added to all 5 `.po` and recompiled to `.mo`/`.l10n.php`).
+
+**Regression checks.** `WPSG_Maintenance_Test` and the settings tests pass unmodified — the new settings are additive (they don't shift any existing key), and the new cron hooks don't touch the existing jobs. The two new UI controls are appended to an existing accordion panel; `tsc`/ESLint clean.
+
+**Pitfall.** (1) The retention windows **must** default to 0 and treat 0/negative as "never purge" — an accidental non-zero default (or treating 0 as "purge everything") would silently destroy PII on every existing install's next cron run. The zero-window tests are the guard; keep them. (2) Both hooks **must** be in `wpsg_get_cron_hooks()` (and its test's expected list) — omit one and it leaks a scheduled event past deactivation/uninstall. (3) The i18n binaries (`.mo`/`.l10n.php`) must be **recompiled** from the `.po` after adding the strings — `i18n:check:locales` reads the `.po` and will pass without recompiling, but the non-English runtime falls back to English until the binaries are rebuilt (`wp i18n make-mo` / `make-php`).
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
 |---|---|---|---|
 | P72-C | New P57A editor tests green (403 on admin-only global, write on non-admin global; confirmed red pre-fix) | P52A4 / Settings_Rest / P47 Spaces_Settings unchanged | ☑ (automated; live 403 edge-check optional, not run) |
 | P72-D | 4 new Embed tests green (admin sees notice, visitor doesn't, omitted/resolved show none; confirmed red pre-fix) | Existing Embed tests unchanged | ☑ (automated; live stale-shortcode check optional, not run) |
+| P72-B | Privacy tests green (both exporters registered, audit eraser absent, callbacks return/erase correct rows; confirmed red pre-fix) | Additive — no existing behaviour changed | ☑ (automated; live DSAR admin-flow check optional, not run) |
+| P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
 | P72-A | — | — | ☐ (pending) |
-| P72-B | — | — | ☐ (pending) |
 | P72-E | — | — | ☐ (pending) |
-| P72-F | — | — | ☐ (pending) |
 | P72-G | — | — | ☐ (pending) |
 
 **Automated baseline (must be green alongside manual QA):** the PHPUnit suite via `/php-testing` for the PHP tracks; `npx tsc -b`, `npm test`, `npm run lint` for the React tracks. See PHASE72_REPORT.md → each track's section for per-track rationale.

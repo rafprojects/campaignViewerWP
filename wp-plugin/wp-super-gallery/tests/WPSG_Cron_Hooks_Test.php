@@ -15,6 +15,8 @@ class WPSG_Cron_Hooks_Test extends WP_UnitTestCase {
             WPSG_Maintenance::TRASH_PURGE_HOOK,
             WPSG_Maintenance::ANALYTICS_PURGE_HOOK,
             WPSG_Maintenance::EXPIRED_GRANTS_HOOK,
+            WPSG_Maintenance::ACCESS_REQUESTS_PURGE_HOOK,
+            WPSG_Maintenance::AUDIT_LOG_PURGE_HOOK,
             'wpsg_schedule_auto_archive',
             'wpsg_thumbnail_cache_cleanup',
             WPSG_Alerts::CRON_HOOK,
