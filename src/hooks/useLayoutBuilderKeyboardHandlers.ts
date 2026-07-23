@@ -1,7 +1,11 @@
 import { useCallback, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
+import i18n from '@/i18n';
 import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
+
+// [P72-A] Module-level binding so a11y announcements are localizable outside JSX.
+const t = i18n.t.bind(i18n);
 
 export function useLayoutBuilderKeyboardHandlers({
   opened,
@@ -54,7 +58,7 @@ export function useLayoutBuilderKeyboardHandlers({
       // Clipboard (P58-A): copy/paste through an in-memory app clipboard.
       if ((e.metaKey || e.ctrlKey) && e.key === 'c' && !e.shiftKey && !builder.isPreview) {
         const n = builder.copySlots([...builder.selectedSlotIds]);
-        if (n > 0) announce(`Copied ${n} slot${n !== 1 ? 's' : ''}`);
+        if (n > 0) announce(t('lbkbd_copied', 'Copied {{count}} slot', { count: n }));
         e.preventDefault();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === 'v' && !e.shiftKey && !builder.isPreview) {
@@ -62,7 +66,7 @@ export function useLayoutBuilderKeyboardHandlers({
         if (pastedIds.length > 0) {
           setSelectedOverlayId(null);
           setIsBackgroundSelected(false);
-          announce(`Pasted ${pastedIds.length} slot${pastedIds.length !== 1 ? 's' : ''}`);
+          announce(t('lbkbd_pasted', 'Pasted {{count}} slot', { count: pastedIds.length }));
         }
         e.preventDefault();
       }
@@ -86,7 +90,7 @@ export function useLayoutBuilderKeyboardHandlers({
           // Wrap the full group in a new parent group
           const newId = builder.wrapInGroup([fullySelectedGroup.id]);
           builder.selectGroup(newId);
-          announce('Group wrapped in parent group');
+          announce(t('lbkbd_group_wrapped', 'Group wrapped in parent group'));
         } else {
           const touchedGroup = groups.find((g) =>
             g.memberIds.some((id) => builder.selectedSlotIds.has(id))
@@ -94,10 +98,10 @@ export function useLayoutBuilderKeyboardHandlers({
           if (touchedGroup) {
             // Any selected slot belongs to a group — expand selection to all descendants.
             builder.selectGroup(touchedGroup.id);
-            announce(`Group selected`);
+            announce(t('lbkbd_group_selected', 'Group selected'));
           } else if (ids.length >= 2) {
             builder.createGroup(ids);
-            announce(`Group created (${ids.length} slots)`);
+            announce(t('lb_mod_group_created', 'Group created ({{count}} slots)', { count: ids.length }));
           }
         }
         e.preventDefault();
@@ -119,7 +123,7 @@ export function useLayoutBuilderKeyboardHandlers({
             }) ?? groups.find((g) => g.memberIds.some((id) => selectedIds.has(id)));
           if (targetGroup) {
             builder.dissolveGroup(targetGroup.id);
-            announce('Ungrouped');
+            announce(t('lb_mod_ungrouped', 'Ungrouped'));
           }
         }
         e.preventDefault();
@@ -151,7 +155,7 @@ export function useLayoutBuilderKeyboardHandlers({
         builder.selectSlot(id);
         setSelectedOverlayId(null);
         setIsBackgroundSelected(false);
-        announce('New slot added');
+        announce(t('lbkbd_new_slot', 'New slot added'));
         e.preventDefault();
       }
 
@@ -160,19 +164,19 @@ export function useLayoutBuilderKeyboardHandlers({
       if (ids.length > 0) {
         if (e.key === ']' && e.shiftKey) {
           builder.bringToFront(ids);
-          announce('Brought to front');
+          announce(t('lbkbd_brought_front', 'Brought to front'));
           e.preventDefault();
         } else if (e.key === ']') {
           builder.bringForward(ids);
-          announce('Brought forward');
+          announce(t('lb_mod_ann_brought_forward', 'Brought forward'));
           e.preventDefault();
         } else if (e.key === '[' && e.shiftKey) {
           builder.sendToBack(ids);
-          announce('Sent to back');
+          announce(t('lbkbd_sent_back', 'Sent to back'));
           e.preventDefault();
         } else if (e.key === '[') {
           builder.sendBackward(ids);
-          announce('Sent backward');
+          announce(t('lb_mod_ann_sent_backward', 'Sent backward'));
           e.preventDefault();
         }
       }

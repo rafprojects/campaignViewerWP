@@ -10493,3 +10493,115 @@ msgstr "审计日志保留（天）"
 #: includes/i18n/class-wpsg-frontend-strings.php:699
 msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
 msgstr "超过此时长的审计日志条目将每周清除。设为 0 则无限期保留——审计日志默认保留以确保可问责性。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2513
+msgid "Group locked"
+msgstr "组已锁定"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2514
+msgid "Group unlocked"
+msgstr "组已解锁"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2515
+msgid "Group shown"
+msgstr "组已显示"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2516
+msgid "Group hidden"
+msgstr "组已隐藏"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2517
+msgid "Group renamed"
+msgstr "组已重命名"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2518
+msgid "Brought forward"
+msgstr "已上移一层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2519
+msgid "Sent backward"
+msgstr "已下移一层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2520
+msgid "Copied {{count}} slot"
+msgstr "已复制 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2521
+msgid "Copied {{count}} slots"
+msgstr "已复制 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2522
+msgid "Pasted {{count}} slot"
+msgstr "已粘贴 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2523
+msgid "Pasted {{count}} slots"
+msgstr "已粘贴 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2524
+msgid "Group wrapped in parent group"
+msgstr "组已包入父组"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2525
+msgid "Group selected"
+msgstr "已选择组"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2526
+msgid "New slot added"
+msgstr "已添加新插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2527
+msgid "Brought to front"
+msgstr "已置于顶层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2528
+msgid "Sent to back"
+msgstr "已置于底层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2814
+msgid "Draft conflict detected"
+msgstr "检测到草稿冲突"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2815
+msgid "Unsaved draft found"
+msgstr "发现未保存的草稿"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2816
+msgid "This template was saved in another session after your draft was created ({{age}}). Restoring your draft will overwrite those changes."
+msgstr "此模板在您创建草稿后于另一个会话中被保存（{{age}}）。恢复您的草稿将覆盖这些更改。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2817
+msgid "An autosaved draft from {{age}} was found. Would you like to restore it?"
+msgstr "发现来自 {{age}} 的自动保存草稿。是否恢复？"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2818
+msgid "Restore draft"
+msgstr "恢复草稿"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2821
+msgid "Overlay uploaded and added to canvas"
+msgstr "叠加层已上传并添加到画布"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2822
+msgid "Background image uploaded and applied"
+msgstr "背景图片已上传并应用"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2823
+msgid "Mask image uploaded"
+msgstr "遮罩图片已上传"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2847
+msgid "Expected a JSON object."
+msgstr "应为 JSON 对象。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2848
+msgid "Invalid gallery config structure."
+msgstr "画廊配置结构无效。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2849
+msgid "Unknown adapter ID \"{{id}}\" ({{bp}} {{scope}}). Valid IDs: {{ids}}."
+msgstr "未知的适配器 ID“{{id}}”（{{bp}} {{scope}}）。有效 ID：{{ids}}。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2850
+msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
+msgstr "{{bp}} {{scope}} 中存在未知的适配器设置键：{{keys}}。"

@@ -315,7 +315,7 @@ export function LayoutBuilderModal({
     const ids = [...builder.selectedSlotIds];
     if (ids.length < 2) return;
     builder.createGroup(ids);
-    announce(`Group created (${ids.length} slots)`);
+    announce(tr('lb_mod_group_created', 'Group created ({{count}} slots)', { count: ids.length }));
     notifications.show({ message: tr('lb_mod_group_created', 'Group created ({{count}} slots)', { count: ids.length }), color: 'blue', autoClose: 2500 });
   }, [builder, announce, tr]);
 
@@ -324,50 +324,50 @@ export function LayoutBuilderModal({
   // Keyboard Ctrl+Shift+G has its own inline dissolve logic.
   const handleUngroupSelected = useCallback((groupId: string) => {
     builder.dissolveGroup(groupId);
-    announce('Ungrouped');
+    announce(tr('lb_mod_ungrouped', 'Ungrouped'));
     notifications.show({ message: tr('lb_mod_ungrouped', 'Ungrouped'), color: 'gray', autoClose: 2500 });
   }, [builder, announce, tr]);
 
   const handleGroupLockToggle = useCallback(
     (groupId: string, locked: boolean) => {
       builder.updateGroup(groupId, { locked });
-      announce(locked ? 'Group locked' : 'Group unlocked');
+      announce(locked ? tr('lb_mod_ann_group_locked', 'Group locked') : tr('lb_mod_ann_group_unlocked', 'Group unlocked'));
     },
-    [builder, announce],
+    [builder, announce, tr],
   );
 
   const handleGroupVisibilityToggle = useCallback(
     (groupId: string, visible: boolean) => {
       builder.updateGroup(groupId, { visible });
-      announce(visible ? 'Group shown' : 'Group hidden');
+      announce(visible ? tr('lb_mod_ann_group_shown', 'Group shown') : tr('lb_mod_ann_group_hidden', 'Group hidden'));
     },
-    [builder, announce],
+    [builder, announce, tr],
   );
 
   const handleGroupRename = useCallback(
     (groupId: string, name: string) => {
       builder.updateGroup(groupId, { name });
-      announce(`Group renamed`);
+      announce(tr('lb_mod_ann_group_renamed', 'Group renamed'));
     },
-    [builder, announce],
+    [builder, announce, tr],
   );
 
   const handleBringForwardSelected = useCallback(
     (ids: string[]) => {
       if (ids.length === 0) return;
       builder.bringForward(ids);
-      announce('Brought forward');
+      announce(tr('lb_mod_ann_brought_forward', 'Brought forward'));
     },
-    [builder, announce],
+    [builder, announce, tr],
   );
 
   const handleSendBackwardSelected = useCallback(
     (ids: string[]) => {
       if (ids.length === 0) return;
       builder.sendBackward(ids);
-      announce('Sent backward');
+      announce(tr('lb_mod_ann_sent_backward', 'Sent backward'));
     },
-    [builder, announce],
+    [builder, announce, tr],
   );
 
   // ── Auto-assign media ──
@@ -375,7 +375,7 @@ export function LayoutBuilderModal({
     const mediaIds = media.map((m) => m.id);
     builder.autoAssignMedia(mediaIds, media);
     const assignedCount = Math.min(mediaIds.length, builder.template.slots.length);
-    announce(`Auto-assigned ${assignedCount} media items`);
+    announce(tr('lb_mod_media_assigned', '{{count}} media item assigned', { count: assignedCount }));
     notifications.show({
       message: tr('lb_mod_media_assigned', '{{count}} media item assigned', { count: assignedCount }),
       color: 'blue',

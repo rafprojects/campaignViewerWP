@@ -10493,3 +10493,115 @@ msgstr "Retención del registro de auditoría (días)"
 #: includes/i18n/class-wpsg-frontend-strings.php:699
 msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
 msgstr "Las entradas del registro de auditoría más antiguas que esto se purgan semanalmente. Establezca 0 para conservarlas indefinidamente: los registros de auditoría se conservan de forma predeterminada por responsabilidad."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2513
+msgid "Group locked"
+msgstr "Grupo bloqueado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2514
+msgid "Group unlocked"
+msgstr "Grupo desbloqueado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2515
+msgid "Group shown"
+msgstr "Grupo mostrado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2516
+msgid "Group hidden"
+msgstr "Grupo oculto"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2517
+msgid "Group renamed"
+msgstr "Grupo renombrado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2518
+msgid "Brought forward"
+msgstr "Traído adelante"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2519
+msgid "Sent backward"
+msgstr "Enviado atrás"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2520
+msgid "Copied {{count}} slot"
+msgstr "{{count}} ranura copiada"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2521
+msgid "Copied {{count}} slots"
+msgstr "{{count}} ranuras copiadas"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2522
+msgid "Pasted {{count}} slot"
+msgstr "{{count}} ranura pegada"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2523
+msgid "Pasted {{count}} slots"
+msgstr "{{count}} ranuras pegadas"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2524
+msgid "Group wrapped in parent group"
+msgstr "Grupo envuelto en un grupo principal"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2525
+msgid "Group selected"
+msgstr "Grupo seleccionado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2526
+msgid "New slot added"
+msgstr "Nueva ranura añadida"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2527
+msgid "Brought to front"
+msgstr "Traído al frente"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2528
+msgid "Sent to back"
+msgstr "Enviado al fondo"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2814
+msgid "Draft conflict detected"
+msgstr "Conflicto de borrador detectado"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2815
+msgid "Unsaved draft found"
+msgstr "Se encontró un borrador sin guardar"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2816
+msgid "This template was saved in another session after your draft was created ({{age}}). Restoring your draft will overwrite those changes."
+msgstr "Esta plantilla se guardó en otra sesión después de crear tu borrador ({{age}}). Restaurar tu borrador sobrescribirá esos cambios."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2817
+msgid "An autosaved draft from {{age}} was found. Would you like to restore it?"
+msgstr "Se encontró un borrador guardado automáticamente de {{age}}. ¿Deseas restaurarlo?"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2818
+msgid "Restore draft"
+msgstr "Restaurar borrador"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2821
+msgid "Overlay uploaded and added to canvas"
+msgstr "Superposición subida y añadida al lienzo"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2822
+msgid "Background image uploaded and applied"
+msgstr "Imagen de fondo subida y aplicada"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2823
+msgid "Mask image uploaded"
+msgstr "Imagen de máscara subida"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2847
+msgid "Expected a JSON object."
+msgstr "Se esperaba un objeto JSON."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2848
+msgid "Invalid gallery config structure."
+msgstr "Estructura de configuración de galería no válida."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2849
+msgid "Unknown adapter ID \"{{id}}\" ({{bp}} {{scope}}). Valid IDs: {{ids}}."
+msgstr "ID de adaptador desconocido \"{{id}}\" ({{bp}} {{scope}}). ID válidos: {{ids}}."
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2850
+msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
+msgstr "Claves de configuración de adaptador desconocidas en {{bp}} {{scope}}: {{keys}}."

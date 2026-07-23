@@ -40,8 +40,9 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 | P72-D | `resolve_space_id()` reports (via a new out-param) when an explicit `space=`/`campaign=`/`company=` reference fell back to the default because it did not resolve; `render_shortcode()` emits a `manage_wpsg`-gated inline notice in that case. | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped space now sees an inline notice; visitors never do; omitting the attribute shows nothing. |
 | P72-B | New `WPSG_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
 | P72-F | Two opt-in retention windows (`access_requests_retention_days`, `audit_log_retention_days`, default 0) drive weekly cron purges of the two PII tables, plus admin NumberInput controls in Settings → Advanced → Data Maintenance. | **Yes** — a configured window purges old rows weekly; 0 keeps forever; the controls are settable in the admin UI. |
+| P72-A | ~30 hardcoded strings (a11y `announce()`, draft-restore modal chrome, adapter-import validator errors, an external-media error fallback) routed through `i18n.t`; the `wpsg/no-untranslated-notification` gate widened to also guard `announce()` + `openConfirmModal` chrome. | **Yes** — those strings now render translated on a non-English locale; a new hardcoded `announce()`/modal-chrome string now fails `npm run lint`. |
 
-*(Rows for P72-A/E/G are added as those tracks land.)*
+*(Rows for P72-E/G are added as those tracks land.)*
 
 ---
 
@@ -167,6 +168,37 @@ The purge methods are proven by seeding a 90-day-old and a 5-day-old row in each
 
 ---
 
+### P72-A — Non-notification strings routed through i18n + widened gate
+
+**What & why.** P71-E's gate only guarded notification `title`/`message`. Four surfaces sat outside it, hardcoded English: an external-media error fallback (`useMediaExternal.ts`), a11y `announce()` calls (`useLayoutBuilderAssets.ts`), a pure validator's error strings surfaced as `message: result.error` (`useGalleryAdapterSettingsIO.ts`), and draft-restore modal chrome (`useBuilderDraftRestore.tsx`). P72-A routes all four through `i18n.t('key', 'English default')` and **widens the lint gate** to two new sinks — `announce()` first-arg literals and `modals.openConfirmModal` `title`/`labels` — so those categories can't regress. Widening `announce()` forced a repo-wide sweep (the gate is `error` everywhere): ~20 additional hardcoded `announce()` strings in `LayoutBuilderModal.tsx` + `useLayoutBuilderKeyboardHandlers.ts` were swept too (user chose the full sweep). Two categories stay manually-swept by design (documented in the rule header): helper-fallback args and validator-return literals — ESLint can't see through a function call.
+
+**Pre-fix behaviour.** On a non-English site these strings rendered in English regardless of locale; a hardcoded `announce()` or modal-chrome string passed lint silently.
+
+**Unlike the pure refactors, this is a real content + tooling change** — verification borrows the P71-E shape: a locale-switch manual check plus a deliberately-introduced-violation test for the two new gate sinks. **Failure-first** for the gate (the 4 new gate-test cases fail on the pre-widen rule); **behaviour-equivalence** for the swept strings themselves (each `t('key', 'English default')` keeps the exact original English, so the 3764-test suite passes unmodified).
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/test/noUntranslatedNotification.gate.test.ts   # 10 cases (4 new)
+npm run lint                 # widened gate green repo-wide — proves the whole sweep is complete
+npm run i18n:check           # en source ↔ PHP manifest in sync
+npm run i18n:check:locales   # 32 new keys translated in all 5 locales (2379/locale)
+npx tsc -b
+npm test                     # full suite green (English defaults unchanged)
+```
+The gate test's new cases: a hardcoded `announce('…')` flags (1), a `t()`-wrapped `announce()` passes (0), a hardcoded `openConfirmModal` `title` + `labels.confirm` + `labels.cancel` flag (3), and a fully `t()`-wrapped modal passes (0).
+
+**Why it proves the fix.** `npm run lint` green is the strongest signal — because the gate is now repo-wide `error` for all three sinks, a green lint means *every* `announce()`/notification/modal-chrome literal in `src/**` is routed through `t()` (an unswept one would fail the build). `i18n:check:locales` green proves the 32 new keys are translated in all 5 locales, not English-only. The full suite passing unmodified proves the swept strings kept their exact English defaults (behaviour-equivalence). The gate test proves the widened rule catches the next regression in the two new sinks.
+
+**Manual check (recommended — real user-visible behaviour).** Switch the site to a non-English locale (e.g. `de_DE`, with the recompiled `.mo`/`.l10n.php` present) and, in the Layout Builder: upload an overlay/background (screen-reader announcement, inspect via the devtools accessibility tree / live region), trigger a keyboard action like copy/paste slots (pluralized announcement), open the draft-restore modal (title/body/buttons + the "N minutes ago" age label), and import a malformed adapter-settings JSON (the validator error toast). Confirm each renders German, then switch back to English and confirm the exact original wording.
+
+**Deliberate-violation manual check (the gate).** Add `announce('temp hardcoded');` (or `modals.openConfirmModal({ title: 'temp' })`) to any `src/**` file, run `npm run lint`, confirm it fails with `wpsg/no-untranslated-notification`; remove it and confirm green.
+
+**Regression checks.** All existing hook/component tests pass unmodified (English defaults unchanged); the `.po`/`.mo`/`.l10n.php` for the 5 locales gained the new entries; `.pot` + PHP manifest regenerated.
+
+**Pitfall.** (1) Widening `announce()` is all-or-nothing under an `error` gate — you cannot fix "just the in-scope 3" and leave the other ~20; lint fails until every one is swept (that's why the sweep grew). (2) The two documented ESLint limitations are real: a fallback inside `getErrorMessage(err, '…')` and a validator's `return { error: '…' }` are **not** caught — those were translated by hand and a future dev adding such a string won't be caught by the gate (see the rule header). (3) Reused pluralized keys (`lbkbd_copied`, `draftrestore_age_minutes`) need **both** the base (`_one`/singular) and `_other` forms in en.json + every locale — a missing `_other` renders the singular for N>1. (4) The `.mo`/`.l10n.php` must be recompiled from the `.po` (the `i18n:check:locales` gate reads `.po` and passes without recompiling, but the non-English runtime falls back to English until the binaries are rebuilt).
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -175,7 +207,7 @@ The purge methods are proven by seeding a 90-day-old and a 5-day-old row in each
 | P72-D | 4 new Embed tests green (admin sees notice, visitor doesn't, omitted/resolved show none; confirmed red pre-fix) | Existing Embed tests unchanged | ☑ (automated; live stale-shortcode check optional, not run) |
 | P72-B | Privacy tests green (both exporters registered, audit eraser absent, callbacks return/erase correct rows; confirmed red pre-fix) | Additive — no existing behaviour changed | ☑ (automated; live DSAR admin-flow check optional, not run) |
 | P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
-| P72-A | — | — | ☐ (pending) |
+| P72-A | Gate test 10/10 (4 new sink cases; confirmed red on pre-widen rule); lint green repo-wide (whole sweep complete); i18n gates green (32 keys × 5 locales) | Full 3764-test suite green unmodified (English defaults unchanged) | ☑ (automated; non-English locale-switch check optional, not run) |
 | P72-E | — | — | ☐ (pending) |
 | P72-G | — | — | ☐ (pending) |
 

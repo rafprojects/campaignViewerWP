@@ -7,7 +7,7 @@
 
 | Track | Domain | Description | Status | Effort |
 |-------|--------|-------------|--------|--------|
-| P72-A | React / i18n | Non-notification user-facing strings still bypass i18n | Planned | Medium |
+| P72-A | React / i18n | Non-notification user-facing strings still bypass i18n | ✅ Done | Medium (grew: full announce() sweep) |
 | P72-B | PHP / Privacy | WordPress Core Privacy Integration (DSAR export/erase) | ✅ Done | Medium |
 | P72-C | PHP / Settings | `update_space_settings()` silently drops global keys instead of returning 403 | ✅ Done | Tiny |
 | P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | ✅ Done | Small |
@@ -287,6 +287,19 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** 88 PHPUnit tests green (652 assertions): `WPSG_P72B_Privacy_Test` (9 — incl. the "no audit eraser" assertion), `WPSG_P72F_PII_Retention_Test` (6 — purge window + opt-in + scheduling), `WPSG_Cron_Hooks_Test` (updated), regressions `WPSG_Maintenance_Test` / `WPSG_Settings_Test` / `WPSG_Settings_Extended_Test`. Front-end: `tsc -b` clean, ESLint clean on changed files, `i18n:check` + `i18n:check:locales` green (all 5 locales, 2351 strings each).
 
+### Batch 3 — P72-A (landed 2026-07-23)
+
+**Rationale + scope growth.** The four originally-named surfaces were all fixed (route through `i18n.t`): the `useMediaExternal.ts` preview-failed fallback (reused the existing `extmedia_preview_failed_message` key), the three `useLayoutBuilderAssets.ts` `announce()` strings, `validateImportPayload`'s four error strings in `useGalleryAdapterSettingsIO.ts` (interpolated), and the `useBuilderDraftRestore.tsx` draft-restore modal chrome (title/body/labels + the `ageLabel`, pluralized).
+
+**Gate-widen decisions (resolved with the user during execution):**
+- **`modals.openConfirmModal` chrome → widened, essentially free.** Investigation found all 5 *other* `openConfirmModal` call sites already route their `title`/`labels` through `t()`/`tr()`; only the in-scope `useBuilderDraftRestore.tsx` was hardcoded. So enabling the gate for modal chrome added zero sweep beyond the one surface.
+- **`announce()` → widened, but this forced a repo-wide sweep far beyond the plan's 4 surfaces.** Enabling the gate as repo-wide `error` meant *every* hardcoded `announce()` had to be swept: ~23 total, only 3 in-scope. The other ~20 live in `LayoutBuilderModal.tsx` and `useLayoutBuilderKeyboardHandlers.ts`, several with interpolation/pluralization. **The user chose the full sweep** (complete + regression-proof) over deferring. `useLayoutBuilderKeyboardHandlers.ts` gained a module-level `t` binding; `LayoutBuilderModal.tsx` reused its existing `tr` binding and several paired-notification keys (`lb_mod_group_created`, `lb_mod_ungrouped`, `lb_mod_media_assigned`).
+- The two ESLint limitations that *stay* manually-swept (documented in the rule header): helper-fallback args (`getErrorMessage(err, '…')`) and validator-return-value literals surfaced as `message: result.error` — both need cross-function analysis ESLint can't do. Surfaces 1 and 3 above are exactly those cases, translated by hand.
+
+**Implementation.** The `wpsg/no-untranslated-notification` rule (name retained for config continuity) was extended to guard three sinks — notifications (unchanged), `announce()` first-arg literals, and `openConfirmModal` `title`/`labels.confirm`/`labels.cancel`. The gate test gained 4 cases (announce flagged/passing; modal chrome flagged×3/passing). 32 new i18n keys added (several reusing existing English msgids like "Discard"), translated across all 5 locales, PHP manifest + `.pot` regenerated, `.mo`/`.l10n.php` recompiled. Translations AI-generated, terminology-aligned (native-review caveat, as P71-E).
+
+**Verification.** Full front-end suite green (251 files / 3764 tests); gate test 10/10 (4 new); `npm run lint` green repo-wide with the widened gate (proves the whole announce/modal sweep is complete); `tsc -b`, `i18n:check`, `i18n:check:locales` (2379 strings/locale) all green.
+
 ## Outcome
 
-In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2). **Remaining:** P72-A (Batch 3); P72-G (Batch 4); P72-E (Batch 5).
+In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3). **Remaining:** P72-G (Batch 4); P72-E (Batch 5).

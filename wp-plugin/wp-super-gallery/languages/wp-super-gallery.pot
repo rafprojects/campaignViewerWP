@@ -10501,3 +10501,115 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:699
 msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
 msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2513
+msgid "Group locked"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2514
+msgid "Group unlocked"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2515
+msgid "Group shown"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2516
+msgid "Group hidden"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2517
+msgid "Group renamed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2518
+msgid "Brought forward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2519
+msgid "Sent backward"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2520
+msgid "Copied {{count}} slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2521
+msgid "Copied {{count}} slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2522
+msgid "Pasted {{count}} slot"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2523
+msgid "Pasted {{count}} slots"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2524
+msgid "Group wrapped in parent group"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2525
+msgid "Group selected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2526
+msgid "New slot added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2527
+msgid "Brought to front"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2528
+msgid "Sent to back"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2814
+msgid "Draft conflict detected"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2815
+msgid "Unsaved draft found"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2816
+msgid "This template was saved in another session after your draft was created ({{age}}). Restoring your draft will overwrite those changes."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2817
+msgid "An autosaved draft from {{age}} was found. Would you like to restore it?"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2818
+msgid "Restore draft"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2821
+msgid "Overlay uploaded and added to canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2822
+msgid "Background image uploaded and applied"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2823
+msgid "Mask image uploaded"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2847
+msgid "Expected a JSON object."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2848
+msgid "Invalid gallery config structure."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2849
+msgid "Unknown adapter ID \"{{id}}\" ({{bp}} {{scope}}). Valid IDs: {{ids}}."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2850
+msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
+msgstr ""
