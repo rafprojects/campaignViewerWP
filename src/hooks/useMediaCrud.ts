@@ -2,10 +2,14 @@ import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem } from '@/types';
 import type { QueryClient } from '@tanstack/react-query';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+const t = i18n.t.bind(i18n);
 
 export function useMediaCrud({
   apiClient,
@@ -40,11 +44,11 @@ export function useMediaCrud({
       await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
       setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
       queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).filter((x) => x.id !== deleteItem.id));
-      showNotification({ title: 'Deleted', message: 'Media removed.' });
+      showNotification({ title: t('mediacrud_deleted_title', 'Deleted'), message: t('mediacrud_deleted_message', 'Media removed.') });
       onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Delete failed', message: getErrorMessage(err, 'Failed to delete media.'), color: 'red' });
+      showNotification({ title: t('mediacrud_delete_failed_title', 'Delete failed'), message: getErrorMessage(err, t('mediacrud_delete_failed_message', 'Failed to delete media.')), color: 'red' });
     } finally {
       setDeleteItem(null);
     }
@@ -69,9 +73,9 @@ export function useMediaCrud({
       setMedia((m) => m.map((it) => (it.id === updated.id ? updated : it)));
       queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).map((it) => (it.id === updated.id ? updated : it)));
       setEditOpen(false);
-      showNotification({ title: 'Saved', message: 'Media updated.' });
+      showNotification({ title: t('mediacrud_saved_title', 'Saved'), message: t('mediacrud_saved_message', 'Media updated.') });
     } catch (err) {
-      showNotification({ title: 'Save failed', message: getErrorMessage(err, 'Failed to save media.'), color: 'red' });
+      showNotification({ title: t('mediacrud_save_failed_title', 'Save failed'), message: getErrorMessage(err, t('mediacrud_save_failed_message', 'Failed to save media.')), color: 'red' });
     }
   }
 
@@ -83,13 +87,13 @@ export function useMediaCrud({
         {},
       );
       if (result.updated > 0) {
-        showNotification({ title: 'Rescan Complete', message: `Updated ${result.updated} of ${result.total} media items.` });
+        showNotification({ title: t('mediacrud_rescan_complete_title', 'Rescan Complete'), message: t('mediacrud_rescan_updated_message', 'Updated {{updated}} of {{total}} media items.', { updated: result.updated, total: result.total }) });
         await mutateMedia();
       } else {
-        showNotification({ title: 'Rescan Complete', message: 'All media types are correct.' });
+        showNotification({ title: t('mediacrud_rescan_complete_title', 'Rescan Complete'), message: t('mediacrud_rescan_correct_message', 'All media types are correct.') });
       }
     } catch (err) {
-      showNotification({ title: 'Rescan failed', message: getErrorMessage(err, 'Failed to rescan media types.'), color: 'red' });
+      showNotification({ title: t('mediacrud_rescan_failed_title', 'Rescan failed'), message: getErrorMessage(err, t('mediacrud_rescan_failed_message', 'Failed to rescan media types.')), color: 'red' });
     } finally {
       setRescanning(false);
     }

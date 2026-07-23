@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
+import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
+
+// [P71-E] Notification copy is user-facing but lives outside JSX, so route it
+// through the shared i18next instance (the jsx-text-only lint rule can't see it).
+const t = i18n.t.bind(i18n);
 
 interface BuilderBroadcastMessage {
   type: 'template-saved';
@@ -31,8 +36,8 @@ export function useBroadcastStaleness(initialTemplate: LayoutTemplate | undefine
         data.templateId === initialTemplate.id
       ) {
         notifications.show({
-          title: 'Template updated in another tab',
-          message: 'This template was saved elsewhere. Close and reopen to load the latest version.',
+          title: t('stale_tab_title', 'Template updated in another tab'),
+          message: t('stale_tab_message', 'This template was saved elsewhere. Close and reopen to load the latest version.'),
           color: 'yellow',
           autoClose: 0,
         });

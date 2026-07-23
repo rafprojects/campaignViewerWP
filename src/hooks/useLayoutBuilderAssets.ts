@@ -1,8 +1,12 @@
 import { useState, useCallback } from 'react';
 import { notifications } from '@mantine/notifications';
+import i18n from '@/i18n';
 import type { ApiClient } from '@/services/apiClient';
 import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
 import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+const t = i18n.t.bind(i18n);
 
 export function useLayoutBuilderAssets({
   apiClient,
@@ -35,11 +39,11 @@ export function useLayoutBuilderAssets({
         await refetchAssetLibrary();
         builder.addOverlay(entry.url);
         announce('Overlay uploaded and added to canvas');
-        notifications.show({ message: 'Overlay added to canvas', color: 'blue', autoClose: 3000 });
+        notifications.show({ message: t('lbassets_overlay_added', 'Overlay added to canvas'), color: 'blue', autoClose: 3000 });
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Overlay upload failed';
+        const errMsg = err instanceof Error ? err.message : t('lbassets_overlay_upload_failed', 'Overlay upload failed');
         onNotify?.({ type: 'error', text: errMsg });
-        notifications.show({ title: 'Overlay upload failed', message: errMsg, color: 'red', autoClose: 5000 });
+        notifications.show({ title: t('lbassets_overlay_upload_failed', 'Overlay upload failed'), message: errMsg, color: 'red', autoClose: 5000 });
       } finally {
         setIsUploadingAsset(false);
       }
@@ -112,11 +116,11 @@ export function useLayoutBuilderAssets({
         );
         builder.setBackgroundImage(entry.url);
         announce('Background image uploaded and applied');
-        notifications.show({ message: 'Background image applied', color: 'blue', autoClose: 3000 });
+        notifications.show({ message: t('lbassets_bg_applied', 'Background image applied'), color: 'blue', autoClose: 3000 });
       } catch (err) {
-        const errMsg = err instanceof Error ? err.message : 'Background image upload failed';
+        const errMsg = err instanceof Error ? err.message : t('lbassets_bg_upload_failed_msg', 'Background image upload failed');
         onNotify?.({ type: 'error', text: errMsg });
-        notifications.show({ title: 'Background upload failed', message: errMsg, color: 'red', autoClose: 5000 });
+        notifications.show({ title: t('lbassets_bg_upload_failed_title', 'Background upload failed'), message: errMsg, color: 'red', autoClose: 5000 });
       } finally {
         setIsUploadingBg(false);
       }

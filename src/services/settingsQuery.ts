@@ -74,8 +74,13 @@ export function useUpdateSettings(apiClient: ApiClient) {
       normalizeSettingsResponse(await apiClient.updateSettings(settings))
     ),
     onSuccess: (data) => {
+      // [P71-B] Write the normalized server response straight into the cache and
+      // stop there. The previous `invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })`
+      // was a prefix match that invalidated the very entry just written (plus every
+      // other space's settings), scheduling a redundant refetch of data the server
+      // just returned. There is only one call site and no concurrently-mounted
+      // multi-space settings query, so no scoped sibling invalidation is needed.
       setSettingsQueryData(queryClient, apiClient, data);
-      void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     },
   });
 }

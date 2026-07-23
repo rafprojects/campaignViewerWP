@@ -2,10 +2,14 @@ import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem, OEmbedResponse } from '@/types';
 import type { QueryClient } from '@tanstack/react-query';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+const t = i18n.t.bind(i18n);
 
 function getMediaTypeFromUrl(url: string): 'image' | 'video' {
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp', '.tiff'];
@@ -49,7 +53,7 @@ export function useMediaExternal({
   async function handleAddExternal() {
     if (!externalUrl) return;
     if (!isValidExternalUrl(externalUrl)) {
-      showNotification({ title: 'Invalid URL', message: 'Please enter a valid https URL.', color: 'red' });
+      showNotification({ title: t('extmedia_invalid_url_title', 'Invalid URL'), message: t('extmedia_invalid_url_message', 'Please enter a valid https URL.'), color: 'red' });
       return;
     }
     try {
@@ -68,11 +72,11 @@ export function useMediaExternal({
       setExternalUrl('');
       setExternalPreview(null);
       setAddOpen(false);
-      showNotification({ title: 'Added', message: 'External media added.' });
+      showNotification({ title: t('extmedia_added_title', 'Added'), message: t('extmedia_added_message', 'External media added.') });
       onCampaignsUpdated?.();
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Add failed', message: getErrorMessage(err, 'Failed to add external media.'), color: 'red' });
+      showNotification({ title: t('extmedia_add_failed_title', 'Add failed'), message: getErrorMessage(err, t('extmedia_add_failed_message', 'Failed to add external media.')), color: 'red' });
     }
   }
 
@@ -91,14 +95,14 @@ export function useMediaExternal({
       const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
       if (data) {
         setExternalPreview(data);
-        showNotification({ title: 'Preview loaded', message: data.title ?? 'Preview available' });
+        showNotification({ title: t('extmedia_preview_loaded_title', 'Preview loaded'), message: data.title ?? t('extmedia_preview_available', 'Preview available') });
       } else {
         throw new Error('No preview available');
       }
     } catch (err) {
       console.error(err);
       setExternalError(getErrorMessage(err, 'Failed to load preview.'));
-      showNotification({ title: 'Preview failed', message: getErrorMessage(err, 'Failed to load preview.'), color: 'red' });
+      showNotification({ title: t('extmedia_preview_failed_title', 'Preview failed'), message: getErrorMessage(err, t('extmedia_preview_failed_message', 'Failed to load preview.')), color: 'red' });
     } finally {
       setExternalLoading(false);
     }

@@ -171,21 +171,27 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### `AdminPanel.tsx` — Extract the Remaining Tab-State Concerns (P70-H remainder)
+*"`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns (P70-H remainder)" was promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) track **P72-E** (2026-07-23) and removed from this backlog.*
 
-**Origin:** Deferred from [PHASE70_REPORT.md](PHASE70_REPORT.md) § P70-H (2026-07-21), per user direction. P70-H shipped only `useAdminZipTransfers` (the export/import handlers + flags — the self-contained win); the three tab-state concerns were carved out to here.
+---
 
-**Context:** `AdminPanel.tsx` still holds the media/access/audit **tab-selection** state inline — `mediaCampaignId`, `accessCampaignId`, `auditCampaignId`, `selectedCompanyId`, `accessViewMode`, `showExpiredGrants`, `auditFilters`/`globalAuditFilters` — plus the default-selection effects, the `selectedSpaceId` reset effect, and the prefetch orchestration (`*PrefetchedRef`/`cancel*Ref`). These are tightly coupled to the data-fetching hooks (`useAuditEntries`, `useAccessGrants`, `useGlobalAuditEntries`), which key on `activeTab` + these atoms. (Note: `useAdminAccessState` already owns the deeper access **form** state — this task is only the tab-selection layer.)
+### `ApiClient` Facade → Namespaces
 
-**Important framing caveat — read before scoping:** the original P70-H plan claimed extraction would stop AdminPanel re-rendering on unrelated tabs' state. **Hook extraction alone does NOT achieve that** — a hook's `useState` re-renders the component that *calls* it, and these hooks would still be called by `AdminPanel`. True re-render isolation requires splitting each tab into a **child component** that owns its own state (so a media-tab state change never re-renders the audit tab). Decide up front which goal you want:
-- **(a) Code-organization only** — extract `useAuditTabState` / `useAccessTabState` / `useMediaTabState` as hooks called by AdminPanel. Shrinks the file and makes each concern independently testable, but does *not* reduce re-renders. Lower effort, lower risk.
-- **(b) Real re-render isolation** — split the media/access/audit tabs into child components that own their own selection state (and colocate their data-fetching + prefetch). Larger change, but the only way to get the isolation benefit.
+**Origin:** [PHASE70_REPORT.md](archive/phases/PHASE70_REPORT.md) Follow-On Candidates, track **P70-E** (Planning Decision C, deferred 2026-07-21).
 
-**What to implement:** Pick (a) or (b) above. Either way, preserve behavior exactly: the `selectedSpaceId` reset, the "default to first campaign/company" effects, and the prefetch-once-per-tab orchestration must move with their state, not get dropped or duplicated. Mirror the existing `useAdminCampaignActions` / `useAdminZipTransfers` / `useAdminAccessState` extraction shape.
+**Context:** `ApiClient` is a single flat facade class with ~70 call sites across the front end. Splitting it into per-domain namespaces (e.g. `apiClient.campaigns.*`, `apiClient.media.*`) would improve discoverability and file size, but is a long-tail incremental codemod behind deprecated shims — not a single bounded change.
 
-**Files:** `src/components/Admin/AdminPanel.tsx`; new `src/hooks/useAuditTabState.ts`, `src/hooks/useAccessTabState.ts`, `src/hooks/useMediaTabState.ts` (option a) or new per-tab child components under `src/components/Admin/` (option b).
+**Effort:** Medium-Large (spread across ~70 call sites) | **Impact:** Low-Medium — maintainability only, nothing broken today. **Start whenever convenient**, not phase-scheduled; a natural fit for opportunistic touch-ups alongside unrelated work in files that import `ApiClient`.
 
-**Effort:** Medium (a) / Medium-Large (b) | **Impact:** Low-Medium — maintainability/testability of a 900-line admin surface; option (b) additionally trims re-renders. Nothing is broken today.
+---
+
+### Promote Inline Sub-Components (large-file decomposition, opportunistic)
+
+**Origin:** [PHASE70_REPORT.md](archive/phases/PHASE70_REPORT.md) Follow-On Candidates, track **P70-I** (Planning Decision C, deferred 2026-07-21).
+
+**Context:** Several 900+-line files (e.g. `AdminPanel.tsx`, others surfaced during Phase 70 planning) define sub-components inline rather than as extracted, independently-testable files. Deferred deliberately as **opportunistic by design** — "do each file as it's next touched" — rather than a big-bang decomposition across all six candidate files in one pass, which would create churn without a behavior benefit.
+
+**Effort:** Medium, spread thin across many files | **Impact:** Low — maintainability/readability only. No phase scheduling intended; revisit per-file whenever that file is next substantially touched for an unrelated reason.
 
 ---
 
@@ -214,18 +220,17 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ## Accessibility
 
-### Structural a11y (axe) gate — grow coverage + fix found issues
+### Structural a11y (axe) gate — grow coverage beyond `LayoutTemplateList`
 
-**Origin:** [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H (component structural axe harness, 2026-07-11) — the automatable half of the structural work, deferred here after the harness landed.
+**Origin:** [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H (component structural axe harness, 2026-07-11) — the automatable half of the structural work, deferred here after the harness landed. *The concrete `LayoutTemplateList` fixes this entry used to include (icon-only SegmentedControl accessible names; nested-interactive Card/Menu button) were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) track **P72-G** (2026-07-23) — this entry now covers only the open-ended remainder below.*
 
-**Context:** A jsdom axe harness (`src/test/axe.ts` → `expectNoA11yViolations`) runs structural WCAG A/AA checks (roles/names/labels/ARIA; contrast excluded) in the blocking Vitest CI, and `test-utils` mirrors the app's global Mantine CloseButton `aria-label`. Two clean surfaces are gated (`ConfirmModal`, `LayoutBuilderLayersPanel`). Growing the gate is a living, component-by-component effort — the full backlog + the "how to add coverage" pattern are in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) ("structural a11y backlog"). Two parts:
+**Context:** A jsdom axe harness (`src/test/axe.ts` → `expectNoA11yViolations`) runs structural WCAG A/AA checks (roles/names/labels/ARIA; contrast excluded) in the blocking Vitest CI, and `test-utils` mirrors the app's global Mantine CloseButton `aria-label`. Two clean surfaces are gated (`ConfirmModal`, `LayoutBuilderLayersPanel`); `LayoutTemplateList` becomes a third once P72-G lands. Growing the gate further is a living, component-by-component effort — the full backlog + the "how to add coverage" pattern are in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) ("structural a11y backlog").
 
-1. **Fix the concrete issues the harness already found in `LayoutTemplateList`:** (a) the icon-only view-toggle `SegmentedControl` segments have no accessible name (`label`, critical) — give each an i18n'd name (visually-hidden text or `aria-label`; requires the 5-locale i18n step); (b) the `role="button"` template `Card` nests a Menu button (`nested-interactive`, serious) — restructure so the primary action is a real button/link (e.g. on the title), not a button wrapping buttons.
-2. **Extend `expectNoA11yViolations` coverage** to the remaining high-value surfaces — the LayoutBuilder property panels (Slot/Text/Graphic/Mask/Background/Image), the modals (`GalleryConfigEditorModal`, `UnifiedCampaignModal`, campaign/admin modals), `AdminPanel`, `SettingsPanel`, and the gallery adapters — fixing what each surfaces (typically missing form labels or nested interactives).
+**What to implement:** Extend `expectNoA11yViolations` coverage to the remaining high-value surfaces — the LayoutBuilder property panels (Slot/Text/Graphic/Mask/Background/Image), the modals (`GalleryConfigEditorModal`, `UnifiedCampaignModal`, campaign/admin modals), `AdminPanel`, `SettingsPanel`, and the gallery adapters — fixing what each surfaces (typically missing form labels or nested interactives).
 
 The **manual** assistive-tech audit ([guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md)) is the separate human half of P62-H.
 
-**Status:** harness + 2 gated surfaces done (P62-H); coverage growth + the `LayoutTemplateList` fixes deferred. **WCAG AA is a quality bar, not a hard WP.org submission gate**, so this can grow post-launch.
+**Status:** harness + 2 gated surfaces done (P62-H); `LayoutTemplateList` fixes scheduled as P72-G; further coverage growth remains open-ended here. **WCAG AA is a quality bar, not a hard WP.org submission gate**, so this can grow post-launch.
 
 **Effort:** Medium (ongoing/incremental; per-surface fixes often pull in the i18n pipeline or an interaction restructure) | **Impact:** Medium — raises the public-listing a11y bar and prevents structural-a11y regressions via CI.
 
@@ -241,21 +246,19 @@ Nothing yet.
 
 **Origin:** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
 
-### WordPress Core Privacy Integration (DSAR Export/Erase) — *highest-value*
+*"WordPress Core Privacy Integration (DSAR Export/Erase)" and "Retention / Auto-Purge for Email & Audit-Log Tables" were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-B** and **P72-F** (2026-07-23) and removed from this backlog.*
 
-**Files:** new privacy-tools registrations (`wp_privacy_personal_data_exporters` / `wp_privacy_personal_data_erasers`); data sources in `class-wpsg-db.php` (`wp_wpsg_access_requests`, `wp_wpsg_audit_log`, `access_grants` meta).
+### Google Fonts Self-Host Variant
 
-**Context:** The plugin stores visitor emails (`wp_wpsg_access_requests.email`) and staff usernames (`wp_wpsg_audit_log`) but registers **no** exporters/erasers, so admins cannot fulfil data-subject access/erasure requests via **Tools → Export/Erase Personal Data** — today it is a manual SQL/WP-CLI process (documented in `PRIVACY.md §5`). Registering exporters/erasers keyed on email (and username) is the standard, expected integration for a plugin that holds PII.
+**Origin:** Deferred from [PHASE69_REPORT.md](archive/phases/PHASE69_REPORT.md) Follow-On Candidates (2026-07-21) — the docs-only fix (P69-A, documenting the existing Google Fonts data flow in `PRIVACY.md`) shipped; this is the both-sides code change split off from it.
 
-**Effort:** Medium | **Impact:** High for GDPR-serious buyers / EU deployments; strengthens the public-listing story.
+**Files:** server-side font-file download/caching at settings-save time; client-side `loadGoogleFont.ts` (serve locally instead of injecting a Google-hosted `<link>`/`@font-face`); a system-font-stack fallback.
 
-### Retention / Auto-Purge for Email & Audit-Log Tables
+**Context:** The plugin's Google Fonts integration currently fires a third-party request (server-side `wp_enqueue_style` `<link>`, or client-side injection) whenever a Google Font is selected, disclosing the visitor's IP to Google. `PRIVACY.md §3` documents this data flow and its opt-outs, but a self-hosted variant — download the selected font files server-side at settings-save time, serve them locally — would eliminate the third-party request entirely for GDPR-conscious deployments.
 
-**Files:** `class-wpsg-maintenance.php` (mirror the existing `wpsg_analytics_purge` cron), settings in `class-wpsg-settings-registry.php`.
+**Effort:** Medium (a real, both-sides feature, not a documentation fix) | **Impact:** Low-Medium today — revisit if GDPR-conscious buyers specifically ask for a zero-third-party-request option.
 
-**Context:** `wp_wpsg_access_requests` (emails) and `wp_wpsg_audit_log` (usernames/attempted logins) have **no purge job** and grow unbounded. Analytics already has a retention job — but it defaults to `analytics_retention_days = 0` (never purge). Add optional retention windows for the two PII tables and consider a sane non-zero analytics default.
-
-**Effort:** Small-Medium | **Impact:** Medium — data-minimisation hygiene.
+---
 
 ### Server-Side (PHP) Sentry PII Scrubber
 
@@ -276,6 +279,16 @@ Nothing yet.
 ---
 
 ## Campaign Management
+
+### Full Server-Driven `CardGallery` Host Pagination
+
+**Origin:** [PHASE68_REPORT.md](archive/phases/PHASE68_REPORT.md) Follow-On Candidates (2026-07-21). P68-A's fix loops all pages of `fetchCampaigns`/`fetchAllCampaignOptions` up front (via the shared `fetchAllPages` helper in `src/services/pagination.ts`) rather than truly paging the UI — that closed the original data-loss bug (only page 1 was ever fetched) without the larger UX change of true infinite/paged public browsing.
+
+**Context:** `fetchAllPages`'s current usage still has a hard cap (`DEFAULT_MAX_PAGES × 50 = 1,000` campaigns/space) — structurally the same class of truncation as the original bug, just at a 100× higher, currently-unhit threshold, and with no user-facing signal if it is ever hit. True server-driven host pagination in `CardGallery` (fetch one page at a time as the visitor scrolls/pages, not all pages up front) would remove this cap entirely and reduce initial-load payload for large campaign counts.
+
+**Effort:** Medium-Large (new host-pagination UX in the public gallery component, not just the data-fetching layer) | **Impact:** Low today — revisit only if a site's campaign count grows large enough that fetching all pages up front becomes its own performance concern.
+
+---
 
 ### Campaign Binary Export — Stream Large Media Sets
 
@@ -415,31 +428,7 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ## Settings & Admin UI
 
-### Admin Notice on Unresolved Shortcode Space Reference
-
-**Origin:** Phase 62 QA (2026-07-06). Surfaced while diagnosing a "fresh reinstall" report where a page with three `[super-gallery space="…"]` shortcodes (originally three distinct spaces) silently collapsed all three onto the default space after the referenced spaces no longer existed — confusing an admin who expected the original layout. Confirmed benign (user oversight), but the silent fallback hid the real cause.
-
-**Context:** `WPSG_Embed::resolve_space_id()` ([class-wpsg-embed.php](../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)) resolves an explicit `space=` / `campaign=` / `company=` attribute and, when the target does not exist, **silently** falls through to `wpsg_default_space_id`. Visitors should never see an error, but an admin has no signal that a shortcode is pointing at a deleted/renamed/mistyped space and is quietly rendering the default instead.
-
-**What to implement:** When an *explicit* `space`/`campaign`/`company` attribute is provided but does not resolve (i.e. the fallback to default is taken because the requested target is missing — not merely omitted), render an **admin-only** inline notice on that gallery instance, e.g. *"This gallery references a space that no longer exists — showing the default space."* Gate it to `manage_wpsg` (never shown to visitors). Self-contained PHP change in the shortcode render path; no JS. Catches the general dangling-reference case (deleted/renamed space, typo, or destructive reinstall), not just reinstalls.
-
-**Files:** `wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php` (`resolve_space_id()` to distinguish "attribute given but unresolved" from "omitted", and `render_shortcode()` to emit the capability-gated notice).
-
-**Effort:** Small | **Impact:** Low — a robustness/diagnostic nicety for a rare, self-inflicted (data-loss) condition; not urgent, no live users affected. Explicitly **not** a "reinstall detection/warning" system (disproportionate); this is the proportionate general-purpose signal.
-
----
-
-### Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)
-
-**Origin:** Phase 67 planning verification (2026-07-19), deferred from track P67-D.
-
-**Context:** P67-D unified the three global-settings write call sites' *mechanics* (sanitize/merge/audit) behind `WPSG_REST_Base::write_global_settings()`, but deliberately preserved a pre-existing behavioral inconsistency: `update_settings()`/`patch_settings()` return an explicit 403 naming the blocked fields when a non-`manage_options` caller attempts to write admin-only keys (via `guard_admin_only_settings()`); `update_space_settings()`'s global-key block instead **silently drops** those keys with no error. Keeping the difference kept P67-D a pure no-behavior-change refactor.
-
-**What to implement:** Decide whether `update_space_settings()` should return the same explicit 403 as the other two paths for unauthorized global-key writes, then implement it using the shared `write_global_settings()` helper (e.g. by moving the `guard_admin_only_settings()` check into, or ahead of, the space-panel global branch). Silent data loss on a permission boundary is worth a deliberate decision rather than leaving it as an accident.
-
-**Files:** `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-space-controller.php` (`update_space_settings()`), `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-settings-controller.php` (`guard_admin_only_settings()`), `wp-plugin/wp-super-gallery/includes/rest/class-wpsg-rest-base.php` (`write_global_settings()`).
-
-**Effort:** Tiny | **Impact:** Low — a latent inconsistency, not a live bug (the System & Admin tab is already gated to `manage_options` client-side), but it is a silent-data-loss corner on a permission boundary.
+Nothing yet. Both prior entries — "Admin Notice on Unresolved Shortcode Space Reference" and "Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)" — were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-D** and **P72-C** (2026-07-23) and removed from this backlog.
 
 ---
 
@@ -549,3 +538,5 @@ When promoting future tasks to an active phase:
 *Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*
 
 *Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*
+
+*Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*

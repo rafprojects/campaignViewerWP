@@ -10,6 +10,11 @@ import tseslint from 'typescript-eslint'
 // Set to 'off' globally until the string-migration sprint completes; flip to
 // 'error' once all components use t() so regressions are caught at lint time.
 import i18next from 'eslint-plugin-i18next'
+// [P71-E] Local rule: flags hardcoded string/template literals in a notification
+// title/message. The i18next rule above runs jsx-text-only and cannot see these
+// (they live in plain-object args inside .ts/.tsx hooks, not JSX text), so this
+// closes that gap precisely — see eslint-rules/no-untranslated-notification.js.
+import noUntranslatedNotification from './eslint-rules/no-untranslated-notification.js'
 
 export default tseslint.config({
   ignores: [
@@ -101,5 +106,19 @@ export default tseslint.config({
     // carry role/data-testid/style noise). The earlier `markupOnly` key was
     // not in the v6 schema and was silently ignored.
     'i18next/no-literal-string': ['error', { mode: 'jsx-text-only' }],
+  },
+}, {
+  // [P71-E] The notification-string gate. Applies wherever a Mantine
+  // notification can be raised (all of src/), so a hardcoded title/message
+  // literal can't silently ship in a .ts hook again (the P60/61 i18n milestone
+  // regressed exactly because the jsx-text-only rule doesn't cover these).
+  files: ['src/**/*.{ts,tsx}'],
+  ignores: [
+    '**/*.test.{ts,tsx}',
+    '**/*.stories.{ts,tsx}',
+  ],
+  plugins: { wpsg: { rules: { 'no-untranslated-notification': noUntranslatedNotification } } },
+  rules: {
+    'wpsg/no-untranslated-notification': 'error',
   },
 });

@@ -2,8 +2,14 @@ import { useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { Text } from '@mantine/core';
+import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
 import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+// (The surrounding modal title/labels are a separate, pre-existing i18n gap not
+// in F-1's notification scope and are intentionally left untouched here.)
+const t = i18n.t.bind(i18n);
 
 interface UseBuilderDraftRestoreOptions {
   opened: boolean;
@@ -99,8 +105,8 @@ export function useBuilderDraftRestore({
       onConfirm: () => {
         onRestoreDraftRef.current(draftSnapshot);
         notifications.show({
-          title: 'Draft restored',
-          message: 'Your previous session has been restored.',
+          title: t('draft_restored_title', 'Draft restored'),
+          message: t('draft_restored_message', 'Your previous session has been restored.'),
           color: 'blue',
           autoClose: 4000,
         });
@@ -108,7 +114,7 @@ export function useBuilderDraftRestore({
       onCancel: () => {
         onDiscardDraftRef.current();
         notifications.show({
-          message: 'Draft discarded.',
+          message: t('draft_discarded_message', 'Draft discarded.'),
           color: 'gray',
           autoClose: 3000,
         });

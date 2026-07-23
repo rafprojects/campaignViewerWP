@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
 import { useXhrUpload } from '@wp-super-gallery/shared-utils';
 import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';
 import type {
@@ -22,6 +23,9 @@ export interface NearDuplicateEntry {
   similarName: string;
   campaigns: UploadDuplicateCampaign[];
 }
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+const t = i18n.t.bind(i18n);
 
 function normalizeSelectedFiles(value: File | File[] | null): File[] {
   if (!value) return [];
@@ -68,8 +72,8 @@ export function useMediaUpload({
 
     if (skippedCount > 0) {
       showNotification({
-        title: 'Some files were skipped',
-        message: `${skippedCount} non-media file${skippedCount === 1 ? '' : 's'} ${skippedCount === 1 ? 'was' : 'were'} ignored.`,
+        title: t('mediaup_skipped_title', 'Some files were skipped'),
+        message: t('mediaup_skipped_msg', '{{count}} non-media file was ignored.', { count: skippedCount }),
         color: 'yellow',
       });
     }
@@ -82,8 +86,8 @@ export function useMediaUpload({
 
     if (merged.length > maxBatchUploadSize) {
       showNotification({
-        title: 'Batch limit reached',
-        message: `Only the first ${maxBatchUploadSize} files were kept.`,
+        title: t('mediaup_batch_limit_title', 'Batch limit reached'),
+        message: t('mediaup_batch_limit_msg', 'Only the first {{count}} files were kept.', { count: maxBatchUploadSize }),
         color: 'yellow',
       });
     }
@@ -219,14 +223,18 @@ export function useMediaUpload({
         setAddOpen(false);
       }
 
+      const completeMessage = t('mediaup_complete_msg', '{{uploaded}} of {{total}} file uploaded successfully.', { uploaded: uploadedCount, total: totalCount, count: totalCount });
+      const addFailClause = batchAddFailures > 0
+        ? ' ' + t('mediaup_add_fail_clause', '{{count}} file could not be added to the campaign.', { count: batchAddFailures })
+        : '';
       showNotification({
-        title: hasFailures ? 'Upload complete with issues' : 'Upload complete',
-        message: `${uploadedCount} of ${totalCount} file${totalCount === 1 ? '' : 's'} uploaded successfully.${batchAddFailures > 0 ? ` ${batchAddFailures} file${batchAddFailures === 1 ? '' : 's'} could not be added to the campaign.` : ''}`,
+        title: hasFailures ? t('mediaup_complete_issues_title', 'Upload complete with issues') : t('mediaup_complete_title', 'Upload complete'),
+        message: completeMessage + addFailClause,
         color: hasFailures ? 'yellow' : 'blue',
       });
     } catch (err) {
       console.error(err);
-      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
+      showNotification({ title: t('mediaup_upload_failed_title', 'Upload failed'), message: getErrorMessage(err, t('mediaup_upload_failed_msg', 'Upload failed.')), color: 'red' });
     } finally {
       resetProgress();
     }
@@ -256,10 +264,10 @@ export function useMediaUpload({
           (prev) => [...(prev ?? []), ...batchAddResponse.added],
         );
         onCampaignsUpdated?.();
-        showNotification({ title: 'Existing image added', message: `Using existing image for "${entry.filename}".`, color: 'blue' });
+        showNotification({ title: t('mediaup_existing_added_title', 'Existing image added'), message: t('mediaup_existing_added_msg', 'Using existing image for "{{filename}}".', { filename: entry.filename }), color: 'blue' });
       }
     } catch (err) {
-      showNotification({ title: 'Failed to add image', message: getErrorMessage(err, 'Could not add existing image.'), color: 'red' });
+      showNotification({ title: t('mediaup_add_image_failed_title', 'Failed to add image'), message: getErrorMessage(err, t('mediaup_add_image_failed_msg', 'Could not add existing image.')), color: 'red' });
     } finally {
       setNearDupLoading(false);
       setPendingNearDuplicates((prev) => prev.slice(1));
@@ -296,10 +304,10 @@ export function useMediaUpload({
           (prev) => [...(prev ?? []), ...batchAddResponse.added],
         );
         onCampaignsUpdated?.();
-        showNotification({ title: 'Image uploaded', message: `"${entry.filename}" uploaded successfully.`, color: 'blue' });
+        showNotification({ title: t('mediaup_uploaded_title', 'Image uploaded'), message: t('mediaup_uploaded_msg', '"{{filename}}" uploaded successfully.', { filename: entry.filename }), color: 'blue' });
       }
     } catch (err) {
-      showNotification({ title: 'Upload failed', message: getErrorMessage(err, 'Upload failed.'), color: 'red' });
+      showNotification({ title: t('mediaup_upload_failed_title', 'Upload failed'), message: getErrorMessage(err, t('mediaup_upload_failed_msg', 'Upload failed.')), color: 'red' });
     } finally {
       setNearDupLoading(false);
       setPendingNearDuplicates((prev) => prev.slice(1));

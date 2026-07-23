@@ -451,8 +451,8 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       onConfirm: () => {
         applySettingsUpdate(() => persistedDraft!.settings);
         notifications.show({
-          title: 'Settings restored',
-          message: 'Your previous unsaved changes have been restored.',
+          title: t('set_restored_title', 'Settings restored'),
+          message: t('set_restored_message', 'Your previous unsaved changes have been restored.'),
           color: 'blue',
           autoClose: 4000,
         });
@@ -461,7 +461,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         resetToOriginal();
         clearSettingsDraft(rootId);
         notifications.show({
-          message: 'Unsaved settings discarded.',
+          message: t('set_discarded_message', 'Unsaved settings discarded.'),
           color: 'gray',
           autoClose: 3000,
         });

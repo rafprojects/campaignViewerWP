@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent } from './test/test-utils';
+import { render, screen, fireEvent, act } from './test/test-utils';
 import App from './App';
 
 const campaignResponse = {
@@ -302,6 +302,63 @@ describe('App', () => {
     expect(listCalls).toHaveLength(2);
     expect(String(listCalls[0][0])).toContain('page=1');
     expect(String(listCalls[1][0])).toContain('page=2');
+  });
+
+  // [P71-A] The campaigns query relies solely on React Query's
+  // `refetchOnReconnect: true`; the old manual `isOnline && isReady` effect that
+  // called `refetch()` was removed. `refetchOnReconnect` respects `staleTime`
+  // (it skips a still-fresh query), whereas the manual effect's `refetch()` was
+  // an UNCONDITIONAL refetch that fired on every offline→online transition. So a
+  // reconnect while the just-loaded (fresh, staleTime 5s) query is still valid
+  // must produce NO additional campaign-list request post-fix; pre-fix the
+  // manual effect forced one.
+  it('does not refetch the fresh campaign list on reconnect (no manual forced refetch) [P71-A]', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+
+      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => campaignResponse,
+        } as Response;
+      }
+      return { ok: true, status: 200, json: async () => ({ items: [] }) } as Response;
+    });
+
+    vi.spyOn(globalThis, 'fetch').mockImplementation(fetchMock as typeof fetch);
+
+    render(<App />);
+
+    expect(await screen.findByText('Campaign Alpha')).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const listCallCount = () =>
+      fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+      ).length;
+
+    const afterLoad = listCallCount();
+    expect(afterLoad).toBe(1);
+
+    // Simulate a genuine reconnect (offline → online). Both React Query's
+    // onlineManager and useOnlineStatus listen to these window events. The two
+    // transitions must be committed separately, otherwise React batches
+    // false→true back into "no change" and useOnlineStatus never re-fires.
+    await act(async () => {
+      window.dispatchEvent(new Event('offline'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    await act(async () => {
+      window.dispatchEvent(new Event('online'));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    // The query is still fresh (staleTime 5s hasn't elapsed), so
+    // refetchOnReconnect skips it and no extra request fires. Pre-fix, the
+    // manual effect's unconditional refetch() bumped this to 2.
+    expect(listCallCount()).toBe(afterLoad);
   });
 
   it('shows session expired message on 401 responses', async () => {
