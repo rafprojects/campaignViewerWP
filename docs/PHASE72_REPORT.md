@@ -310,6 +310,26 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** New `LayoutTemplateList.a11y.test.tsx` gates **both** the grid and list views with `expectNoA11yViolations` — green (was red on both violations pre-fix). All 18 `LayoutTemplateList` tests pass; `tsc -b`, ESLint, `i18n:check`, `i18n:check:locales` green. **Scope note (unchanged from plan):** extending axe coverage to further surfaces stays in FUTURE_TASKS.md — P72-G fixed only the two known `LayoutTemplateList` violations.
 
+### Batch 5 — P72-E (NOT STARTED — handed off to a fresh session 2026-07-23)
+
+Deliberately **not** attempted in the execution session that landed Batches 1–4: option (b) is a large, high-risk restructure of the 927-line `AdminPanel.tsx`, and the user chose to hand it off to a fresh session rather than run it on an already-loaded context. All prior tracks are committed and green, so this is a clean handoff point.
+
+**Handoff guidance (gathered while sizing the track — verified against current source 2026-07-23):**
+
+The tab-selection state to move into per-tab child components, and every consumer that must move *with* it (or be threaded as props), grouped by tab:
+
+- **Media tab** → `mediaCampaignId` (`AdminPanel.tsx:129`), `addMediaCampaign` (`:131`); the default-select effect (`:232-234`); the media prefetch (`mediaPrefetchedRef`/`cancelMediaRef`, `:251-256`); the media toolbar (`CampaignSelector` at `:574`, the ZIP export button at `:583` calling `zipTransfers.exportMediaZip`), and the `<MediaTab>` render (`:632`). `MediaTab` is `lazy`.
+- **Access tab** → `accessCampaignId` (`:136`), `accessViewMode` (`:137`), `selectedCompanyId` (`:138`), `showExpiredGrants` (`:144`); data hooks `useAccessGrants` (`:178`, gated on `activeTab==='access'`), `useCompanies` (`:182`, `companiesEnabled`); `useAdminAccessState` (`:217`, depends on the three access atoms); the `useAccessRows` row-builder (`:328`); default-select effects (`:235-237`, `:241-243`); the access prefetch (`:257-262`); the `<AccessTab>` render (`:653`).
+- **Audit tab** → `auditCampaignId` (`:139`), `auditFilters` (`:140`); `useAuditEntries` (`:183`); `useAuditRows` (`:329`); default-select effect (`:238-240`); the audit prefetch (`:263-268`); the `<AuditTab>` render (`:678`).
+
+**Behaviour that MUST be preserved exactly (the acceptance criteria):**
+1. **`selectedSpaceId` reset** (`:225-230`) — changing the space clears the media/access/audit/company selections. With child components owning their own state, this needs a deliberate mechanism (e.g. a `key={selectedSpaceId}` on each child to remount-and-reset, or an effect inside each child keyed on a `selectedSpaceId` prop). Don't drop it.
+2. **Default-to-first-campaign/company** — when a tab activates with no selection and options exist, select the first. Naturally becomes a mount-time effect in the child.
+3. **Prefetch-once-per-tab** — the `*PrefetchedRef` guards fire the bulk prefetch exactly once; the cleanup (`:269`) cancels in-flight prefetches on unmount. Moving these into the child changes "once per AdminPanel lifetime" to "once per child mount" — decide whether that's acceptable (it likely is, and is arguably better) and note it.
+4. **The `activeTab === '<tab>' ? … : ''` gating** on the data hooks exists so inactive tabs don't fetch. If each tab becomes a child rendered only when active (mounted/unmounted with the tab), that gating is achieved by mount/unmount instead — simpler, but verify the `Tabs.Panel` `keepMounted`/lazy behaviour so an inactive child truly unmounts (Mantine `Tabs.Panel` unmounts inactive panels by default unless `keepMounted`).
+
+**Validation for the next agent:** the re-render-isolation benefit is only real under (b), so a "same identity / re-render-count" assertion is meaningful here (unlike (a)); add one. Keep the full existing AdminPanel/tab test coverage green, and re-run the full front-end suite. Follow the Batch-1..4 pattern: add a `## Track P72-E` section to `PHASE72_MANUAL_QA_RUNBOOK.md` when it lands.
+
 ## Outcome
 
-In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **Remaining:** P72-E (Batch 5).
+In progress — **6 of 7 tracks landed.** **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **Remaining:** P72-E (Batch 5) — handed off to a fresh session (see handoff guidance above). Branch: `feature/phase72-backlogged-hardening-1`.

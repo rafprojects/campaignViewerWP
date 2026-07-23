@@ -241,6 +241,6 @@ The a11y test gates **both** views: grid (covers the SegmentedControl toolbar + 
 | P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
 | P72-A | Gate test 10/10 (4 new sink cases; confirmed red on pre-widen rule); lint green repo-wide (whole sweep complete); i18n gates green (32 keys × 5 locales) | Full 3764-test suite green unmodified (English defaults unchanged) | ☑ (automated; non-English locale-switch check optional, not run) |
 | P72-G | New a11y test green (grid + list; confirmed red pre-fix — 2 violations) | All 18 LayoutTemplateList tests + full 3766-test suite green | ☑ (automated; live screen-reader check optional, not run) |
-| P72-E | — | — | ☐ (pending) |
+| P72-E | — | — | ☐ (not started — handed off to a fresh session; see PHASE72_REPORT.md → Batch 5 handoff guidance) |
 
 **Automated baseline (must be green alongside manual QA):** the PHPUnit suite via `/php-testing` for the PHP tracks; `npx tsc -b`, `npm test`, `npm run lint` for the React tracks. See PHASE72_REPORT.md → each track's section for per-track rationale.
