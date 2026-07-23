@@ -312,7 +312,12 @@ function AppContent({
 
   const { data: settingsResponse } = useGetSettings(apiClient, spaceId);
 
-  useEffect(() => { if (isOnline && isReady) void mutateCampaigns(); }, [isOnline, isReady, mutateCampaigns]);
+  // [P71-A] No manual reconnect refetch here: the campaigns query already sets
+  // `refetchOnReconnect: true`, and React Query's onlineManager listens to the
+  // same native `online` event this effect used to. Keeping both fired two
+  // refetches per reconnect; the effect also duplicated the query's own
+  // `enabled: isReady` initial fetch on mount. `isOnline` remains used for the
+  // offline banner below.
 
   const campaignsMutator = useCallback(() => mutateCampaigns() as Promise<unknown>, [mutateCampaigns]);
 

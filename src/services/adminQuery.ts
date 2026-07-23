@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   useQuery,
   useMutation,
@@ -845,7 +846,9 @@ export { ASSET_IN_USE_CODE } from '@/services/api/assetsApi';
 
 export function useUploadGlobalAsset(apiClient: ApiClient) {
   const queryClient = useQueryClient();
-  const api = new AssetsApi(apiClient);
+  // [P71-C] Memoize the facade instead of constructing a throwaway per render,
+  // matching how every other API facade is created (once per apiClient identity).
+  const api = useMemo(() => new AssetsApi(apiClient), [apiClient]);
   return useMutation<AssetLibraryItem, Error, { file: File; opts?: AssetUploadOptions }>({
     mutationFn: ({ file, opts }) => api.upload(file, opts),
     onSuccess: () => {
@@ -856,7 +859,8 @@ export function useUploadGlobalAsset(apiClient: ApiClient) {
 
 export function useUpdateGlobalAsset(apiClient: ApiClient) {
   const queryClient = useQueryClient();
-  const api = new AssetsApi(apiClient);
+  // [P71-C] See useUploadGlobalAsset — memoized per apiClient identity.
+  const api = useMemo(() => new AssetsApi(apiClient), [apiClient]);
   return useMutation<unknown, Error, { id: string; is_universal?: boolean; tags?: string[] }>({
     mutationFn: ({ id, ...patch }) => api.update(id, patch),
     onSuccess: () => {
@@ -867,7 +871,8 @@ export function useUpdateGlobalAsset(apiClient: ApiClient) {
 
 export function useDeleteGlobalAsset(apiClient: ApiClient) {
   const queryClient = useQueryClient();
-  const api = new AssetsApi(apiClient);
+  // [P71-C] See useUploadGlobalAsset — memoized per apiClient identity.
+  const api = useMemo(() => new AssetsApi(apiClient), [apiClient]);
   return useMutation<unknown, Error, { id: string; force?: boolean }>({
     mutationFn: ({ id, force }) => api.delete(id, force),
     onSuccess: () => {

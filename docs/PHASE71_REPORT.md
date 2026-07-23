@@ -24,6 +24,30 @@ The 2026-07-13 review ([REACT_REVIEW_FINDINGS.md](REACT_REVIEW_FINDINGS.md)) fou
 2. **Why it belongs together.** None of these five items share code, but all are "no functionality risk, mechanical fix, do opportunistically" — the same shape as the PHP-side efficiency cluster (Phase 67), kept as one phase rather than five thin ones.
 3. **Success.** Reconnect fires one refetch, not two; a settings save doesn't immediately refetch the data it just wrote; asset-mutation hooks don't construct a throwaway class instance every render; long-lived visitors see updated media after it's edited server-side; every user-facing notification string is translatable, and the lint suite catches the next one before it ships.
 
+## Planning Refinement Pass (2026-07-22)
+
+A validation pass re-checked every track's claims against current source before execution — this plan predates the P68/P69/P70 changes that landed 2026-07-21/22, and P68 in particular rewrote the `App.tsx` region P71-A cites. All five tracks' core claims still hold; the drift was confined to line numbers, and three either/or design choices the original prose left open were resolved with the maintainer.
+
+**Line-number corrections** (logic unchanged in every case):
+
+| Track | Original citation | Current location |
+|-------|-------------------|------------------|
+| P71-A | `App.tsx:285` (refetchOnReconnect), `:291` (manual effect) | `App.tsx:309`, `:315` — shifted ~24 lines by P68's `campaignsKey`/`fetchCampaigns` rewrite |
+| P71-B | `settingsQuery.ts:76-79` | unchanged |
+| P71-C | `adminQuery.ts:852,863,874` | `adminQuery.ts:848,859,870` — drifted ~4 lines |
+| P71-D | `sw.js` default fetch branch | `sw.js:120-144`; SWR reference impl `handleMetaRequest` at `:185-225` |
+| P71-E | `eslint.config.js:103`; App.tsx literals | `eslint.config.js:103` unchanged; App.tsx literals now at `:223,:382,:466` |
+
+**Execution decisions taken with the maintainer:**
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| P71-A | Which reconnect mechanism to keep | **Delete the manual `isOnline`-driven effect; keep only `refetchOnReconnect: true`.** Strictly better, not just "pick one": the query already has `enabled: isReady`, so React Query fires the initial fetch itself when `isReady` flips — the manual effect's mount fetch was *always* a pure duplicate. Deleting it fixes both the reconnect double-refetch and the extra mount fetch at once. |
+| P71-B | Scope of the invalidation fix | **Drop the `invalidateQueries` call entirely.** `setSettingsQueryData` already writes the canonical response; only one `useUpdateSettings` call site exists (`SettingsPanel.tsx`) and no code path mounts settings queries for >1 space concurrently, so no sibling-invalidation fallback is needed. |
+| P71-D | Breadth of the SWR treatment | **Scope SWR to `/wp-content/uploads/` paths only**, leaving fonts/favicon/other static assets on their current cache-first-forever behavior (matches the acceptance criteria's "no regression in the common case that motivated cache-first"). Reuse the `stampResponse`/`META_TTL_MS` pattern from `handleMetaRequest`, in a dedicated cache (e.g. `wpsg-uploads-swr-v1`) so eviction/versioning stays independent of `RUNTIME_CACHE`/`META_CACHE`. |
+
+**P71-E lint-gate mechanism (worked out concretely — the original prose only gestured at "extend scope to `src/hooks/**`"):** the existing blanket rule (`eslint.config.js:87-103`) *already* covers `src/**/*.{ts,tsx}` at the file level — the only gap is `mode: 'jsx-text-only'`, which validates JSX text children exclusively. Reading the `eslint-plugin-i18next` v6 rule source directly, a precise low-noise gate is achievable with **no custom rule or grep script**: a *separate* flat-config block (flat config replaces same-rule settings per matching file rather than merging, so it must not fold into the `jsx-text-only` block) targeting the notification-call sites, configured `mode: 'all'` + `callees: { include: ['notifications\\.show', 'showNotification', 'notifications\\.update'] }` + `'object-properties': { include: ['title', 'message'] }`. That checks only `title`/`message` literals inside those specific calls; everything else stays exempt. The block's `files` glob must include `.tsx` (for `SettingsPanel.tsx`'s draft-restore toasts), not just `.ts`. **Caveat for the executing agent:** the existing rule already silently fails to flag `"Loading campaigns..."`-shaped strings (2+ trailing periods) as JSXText — root cause not fully traced. The new gate's acceptance test must therefore assert against a string reproducing *that specific shape*, not just a generic literal, before trusting the coverage claim.
+
 ## Execution Priority
 
 No cross-track dependencies. Suggested order:
@@ -56,6 +80,10 @@ Drop the manual effect and rely on `refetchOnReconnect` (or vice-versa, if the c
 - Test: simulate an `online` event, assert `fetchCampaigns`/the query function is called exactly once.
 - Manual: toggle network offline/online in devtools, confirm only one network request for campaigns fires on reconnect.
 
+### Implementation (2026-07-22)
+
+Deleted the manual `useEffect(() => { if (isOnline && isReady) void mutateCampaigns(); }, …)` in `src/App.tsx`; the campaigns query keeps only `refetchOnReconnect: true`. `isOnline`/`useOnlineStatus` are retained (still used by the offline banner). Added `src/App.test.tsx` → *"does not refetch the fresh campaign list on reconnect …"*: renders `<App>`, waits for the single initial load, dispatches `window` `offline` then `online` in **separate** `act()` blocks (batching collapses a same-tick false→true into no change), and asserts the campaign-list request count is unchanged. The test exploits that `refetchOnReconnect` respects `staleTime` (skips the fresh query) while the deleted manual `refetch()` was unconditional. **Confirmed red on the pre-fix source** (`expected 2 to be 1`) before landing — an earlier mount-count draft was discarded because React Query dedupes the mount-time refetch, making it hollow (passed pre-fix). See runbook §3 P71-A.
+
 ---
 
 ## Track P71-B - `useUpdateSettings` sets fresh data then immediately invalidates it
@@ -79,6 +107,10 @@ Invalidate only sibling keys (other spaces) if that's the actual intent, or skip
 
 - Test: save settings, assert no refetch fires for the just-written space's query key; assert sibling-space invalidation still happens if that's the chosen behavior.
 
+### Implementation (2026-07-22)
+
+Removed the single line `void queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })` from `useUpdateSettings`'s `onSuccess` in `src/services/settingsQuery.ts`; `setSettingsQueryData(...)` still writes the canonical normalized response. Per the refinement-pass decision, no scoped sibling invalidation was added (single call site, no concurrent multi-space queries). Added `src/services/settingsQuery.test.ts` → *"does not refetch the just-written settings after a successful save"*: mounts an **active** `useGetSettings` observer beside `useUpdateSettings`, saves, and asserts `getSettings` is still called exactly once (plus a cache-content check). **Confirmed red on the pre-fix source** (`got 2 times`) before landing. See runbook §3 P71-B.
+
 ---
 
 ## Track P71-C - Per-render `AssetsApi` construction in global-asset mutation hooks
@@ -100,6 +132,10 @@ Invalidate only sibling keys (other spaces) if that's the actual intent, or skip
 ### Validation
 
 - Existing global-asset mutation test coverage passes unmodified (stateless class, so no behavior change expected — this is a consistency fix, not a bug fix).
+
+### Implementation (2026-07-22)
+
+Added `import { useMemo } from 'react'` to `src/services/adminQuery.ts` and wrapped each of the three hooks' facade construction in `useMemo(() => new AssetsApi(apiClient), [apiClient])`. No new test authored — a stateless facade produces byte-identical calls whether built once or per render, so the existing `GlobalAssetManager.test.tsx` / `assetsApi.test.ts` passing **unmodified** is the honest proof; a "same identity across renders" test would exercise React's `useMemo`, not our code. See runbook §3 P71-C.
 
 ---
 

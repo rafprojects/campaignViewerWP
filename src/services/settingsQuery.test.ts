@@ -86,6 +86,43 @@ describe('settingsQuery', () => {
       theme: 'github-light',
     });
   });
+
+  it('does not refetch the just-written settings after a successful save [P71-B]', async () => {
+    const { client, getSettings, updateSettings } = createMockApiClient();
+    const queryClient = createTestQueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      createElement(QueryClientProvider, { client: queryClient }, children)
+    );
+
+    // Mount an active settings observer alongside the mutation so a stray
+    // invalidation would produce an observable refetch (invalidateQueries only
+    // refetches queries with active observers).
+    const { result } = renderHook(
+      () => ({ get: useGetSettings(client), update: useUpdateSettings(client) }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.get.data?.theme).toBe('nord'));
+    expect(getSettings).toHaveBeenCalledTimes(1);
+
+    // Saving writes the canonical response into the cache via setSettingsQueryData.
+    // Pre-fix, onSuccess also invalidated the ['settings'] prefix — which matches
+    // the just-written entry — scheduling a redundant refetch. Post-fix it must not.
+    await result.current.update.mutateAsync({ appMaxWidth: 960, theme: 'github-light' });
+
+    // Give any erroneously-scheduled refetch a tick to fire.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateSettings).toHaveBeenCalledTimes(1);
+    // Still exactly one — the initial fetch, with no post-save refetch.
+    expect(getSettings).toHaveBeenCalledTimes(1);
+    // The cache holds the saved values (which a refetch would have clobbered back
+    // to the mock's 'nord'/1440 defaults).
+    expect(queryClient.getQueryData(getSettingsQueryKey(client))).toMatchObject({
+      appMaxWidth: 960,
+      theme: 'github-light',
+    });
+  });
 });
 
 describe('settingsQuery space scoping (P47)', () => {
