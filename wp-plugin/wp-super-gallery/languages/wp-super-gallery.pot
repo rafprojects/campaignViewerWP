@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-18T21:04:47+00:00\n"
+"POT-Creation-Date: 2026-07-23T02:54:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: wp-super-gallery\n"
@@ -60,177 +60,177 @@ msgstr ""
 msgid "Public visibility, ready for external sharing straight after creation."
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:67
-#: includes/class-wpsg-cpt.php:69
+#: includes/class-wpsg-cpt.php:70
 #: includes/class-wpsg-cpt.php:72
-#: includes/class-wpsg-cpt.php:411
+#: includes/class-wpsg-cpt.php:75
+#: includes/class-wpsg-cpt.php:414
 #: includes/i18n/class-wpsg-frontend-strings.php:141
 #: includes/i18n/class-wpsg-frontend-strings.php:1988
 msgid "Campaigns"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:70
+#: includes/class-wpsg-cpt.php:73
 #: includes/i18n/class-wpsg-frontend-strings.php:35
 #: includes/i18n/class-wpsg-frontend-strings.php:1722
 #: includes/i18n/class-wpsg-frontend-strings.php:1875
 msgid "Campaign"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:71
+#: includes/class-wpsg-cpt.php:74
 msgid "SuperGallery"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:73
+#: includes/class-wpsg-cpt.php:76
 msgid "Add New"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:74
+#: includes/class-wpsg-cpt.php:77
 msgid "Add New Campaign"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:75
+#: includes/class-wpsg-cpt.php:78
 #: includes/i18n/class-wpsg-frontend-strings.php:36
 #: includes/i18n/class-wpsg-frontend-strings.php:369
 msgid "Edit Campaign"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:76
+#: includes/class-wpsg-cpt.php:79
 #: includes/i18n/class-wpsg-frontend-strings.php:131
 #: includes/i18n/class-wpsg-frontend-strings.php:370
 msgid "New Campaign"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:77
+#: includes/class-wpsg-cpt.php:80
 msgid "View Campaign"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:78
+#: includes/class-wpsg-cpt.php:81
 msgid "View Campaigns"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:79
+#: includes/class-wpsg-cpt.php:82
 msgid "Search Campaigns"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:80
+#: includes/class-wpsg-cpt.php:83
 msgid "No campaigns found"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:81
+#: includes/class-wpsg-cpt.php:84
 msgid "No campaigns found in Trash"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:95
-#: includes/class-wpsg-cpt.php:97
-#: includes/class-wpsg-cpt.php:99
+#: includes/class-wpsg-cpt.php:98
+#: includes/class-wpsg-cpt.php:100
+#: includes/class-wpsg-cpt.php:102
 msgid "Companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:98
+#: includes/class-wpsg-cpt.php:101
 #: includes/i18n/class-wpsg-frontend-strings.php:249
 #: includes/i18n/class-wpsg-frontend-strings.php:309
 msgid "Company"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:100
+#: includes/class-wpsg-cpt.php:103
 msgid "All Companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:101
+#: includes/class-wpsg-cpt.php:104
 msgid "Edit Company"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:102
+#: includes/class-wpsg-cpt.php:105
 msgid "View Company"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:103
+#: includes/class-wpsg-cpt.php:106
 msgid "Update Company"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:104
+#: includes/class-wpsg-cpt.php:107
 msgid "Add New Company"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:105
+#: includes/class-wpsg-cpt.php:108
 msgid "New Company Name"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:106
+#: includes/class-wpsg-cpt.php:109
 msgid "Search Companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:107
+#: includes/class-wpsg-cpt.php:110
 msgid "Popular Companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:108
+#: includes/class-wpsg-cpt.php:111
 #: includes/i18n/class-wpsg-frontend-strings.php:2647
 msgid "No companies found"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:109
+#: includes/class-wpsg-cpt.php:112
 msgid "← Back to Companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:110
+#: includes/class-wpsg-cpt.php:113
 msgid "Separate companies with commas"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:111
+#: includes/class-wpsg-cpt.php:114
 msgid "Add or remove companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:112
+#: includes/class-wpsg-cpt.php:115
 msgid "Choose from the most used companies"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:122
+#: includes/class-wpsg-cpt.php:125
 #: includes/i18n/class-wpsg-frontend-strings.php:1900
 msgid "Campaign Tags"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:132
+#: includes/class-wpsg-cpt.php:135
 msgid "Campaign Categories"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:143
+#: includes/class-wpsg-cpt.php:146
 #: includes/i18n/class-wpsg-frontend-strings.php:1901
 msgid "Media Tags"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:152
+#: includes/class-wpsg-cpt.php:155
 msgid "Layout Templates"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:423
+#: includes/class-wpsg-cpt.php:426
 msgid "Space"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:456
+#: includes/class-wpsg-cpt.php:459
 #: includes/i18n/class-wpsg-frontend-strings.php:139
 #: includes/i18n/class-wpsg-frontend-strings.php:1998
 msgid "All spaces"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:494
+#: includes/class-wpsg-cpt.php:517
 msgid "+ New Space"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:499
+#: includes/class-wpsg-cpt.php:522
 #: includes/i18n/class-wpsg-frontend-strings.php:1779
 msgid "Space name"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:501
+#: includes/class-wpsg-cpt.php:524
 msgid "Slug (auto)"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:503
+#: includes/class-wpsg-cpt.php:526
 msgid "Create"
 msgstr ""
 
-#: includes/class-wpsg-cpt.php:513
+#: includes/class-wpsg-cpt.php:536
 msgid "Forbidden"
 msgstr ""
 
@@ -812,6 +812,7 @@ msgid "Rescanned: {{media}} media items updated across {{campaigns}} campaigns."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:170
+#: includes/i18n/class-wpsg-frontend-strings.php:2830
 msgid "All media types are correct."
 msgstr ""
 
@@ -2067,10 +2068,12 @@ msgid "{{failures}} of {{total}} files could not be uploaded."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:496
+#: includes/i18n/class-wpsg-frontend-strings.php:2844
 msgid "Upload failed"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:497
+#: includes/i18n/class-wpsg-frontend-strings.php:2845
 msgid "Upload failed."
 msgstr ""
 
@@ -8898,6 +8901,7 @@ msgid "Layout \"{{name}}\" saved"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2497
+#: includes/i18n/class-wpsg-frontend-strings.php:2826
 msgid "Save failed"
 msgstr ""
 
@@ -9218,6 +9222,7 @@ msgid "Add {{type}} media: {{label}}"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:2600
+#: includes/i18n/class-wpsg-frontend-strings.php:2804
 msgid "Added"
 msgstr ""
 
@@ -9794,6 +9799,284 @@ msgstr ""
 msgid "The starter template library is a Pro feature. Upgrade to start from a curated preset."
 msgstr ""
 
+#: includes/i18n/class-wpsg-frontend-strings.php:2782
+msgid "Template updated in another tab"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2783
+msgid "This template was saved elsewhere. Close and reopen to load the latest version."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2784
+msgid "Reordered"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2785
+msgid "Media order updated."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2786
+msgid "Reorder failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2787
+msgid "Failed to reorder media."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2788
+msgid "Draft restored"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2789
+msgid "Your previous session has been restored."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2790
+msgid "Draft discarded."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2791
+msgid "Overlay added to canvas"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2792
+msgid "Overlay upload failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2793
+msgid "Background image applied"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2794
+msgid "Background image upload failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2795
+msgid "Background upload failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2796
+msgid "Invalid layout file"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2797
+msgid "The file is missing required fields (name, slots, canvasAspectRatio)."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2798
+msgid "Layout imported"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2799
+msgid "\"{{name}}\" loaded successfully."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2800
+#: includes/i18n/class-wpsg-frontend-strings.php:2817
+msgid "Import failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2801
+#: includes/i18n/class-wpsg-frontend-strings.php:2818
+msgid "Could not parse JSON file."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2802
+msgid "Invalid URL"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2803
+msgid "Please enter a valid https URL."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2805
+msgid "External media added."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2806
+msgid "Add failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2807
+msgid "Failed to add external media."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2808
+msgid "Preview loaded"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2809
+msgid "Preview available"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2810
+msgid "Preview failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2811
+msgid "Failed to load preview."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2812
+msgid "Nothing to export"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2813
+msgid "No gallery adapter settings have been configured yet."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2814
+msgid "Invalid settings file"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2815
+msgid "Adapter settings imported"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2816
+msgid "Gallery adapter settings applied. Save to persist."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2819
+msgid "Could not read the selected file."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2820
+msgid "Deleted"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2821
+msgid "Media removed."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2822
+msgid "Delete failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2823
+msgid "Failed to delete media."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2824
+msgid "Saved"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2825
+msgid "Media updated."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2827
+msgid "Failed to save media."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2828
+msgid "Rescan Complete"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2829
+msgid "Updated {{updated}} of {{total}} media items."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2831
+msgid "Rescan failed"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2832
+msgid "Failed to rescan media types."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2833
+msgid "Some files were skipped"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2834
+msgid "{{count}} non-media file was ignored."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2835
+msgid "{{count}} non-media files were ignored."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2836
+msgid "Batch limit reached"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2837
+msgid "Only the first {{count}} files were kept."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2838
+msgid "{{uploaded}} of {{total}} file uploaded successfully."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2839
+msgid "{{uploaded}} of {{total}} files uploaded successfully."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2840
+msgid "{{count}} file could not be added to the campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2841
+msgid "{{count}} files could not be added to the campaign."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2842
+msgid "Upload complete with issues"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2843
+msgid "Upload complete"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2846
+msgid "Existing image added"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2847
+msgid "Using existing image for \"{{filename}}\"."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2848
+msgid "Failed to add image"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2849
+msgid "Could not add existing image."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2850
+msgid "Image uploaded"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2851
+msgid "\"{{filename}}\" uploaded successfully."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2852
+msgid "Settings restored"
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2853
+msgid "Your previous unsaved changes have been restored."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2854
+msgid "Unsaved settings discarded."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2855
+msgid "Session expired. Please sign in again."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2856
+msgid "Loading campaigns..."
+msgstr ""
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2857
+msgid " (page {{completed}} of {{total}})"
+msgstr ""
+
 #: includes/settings/class-wpsg-settings-core-fields.php:23
 msgid "Configure how the gallery authenticates with the WordPress REST API."
 msgstr ""
@@ -10199,6 +10482,6 @@ msgstr ""
 msgid "Unexpected response: HTTP %d"
 msgstr ""
 
-#: wp-super-gallery.php:225
+#: wp-super-gallery.php:222
 msgid "Gallery Editor"
 msgstr ""

@@ -36,7 +36,7 @@ git checkout feature/phase71-react-hardening-4-of-4   # back to the fixes
 | P71-B | Removed the `invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })` in `useUpdateSettings`'s `onSuccess`; the normalized response is still written to cache via `setSettingsQueryData`. | **Yes (by network count)** — saving settings no longer schedules a redundant refetch of the just-written data |
 | P71-C | The three global-asset mutation hooks (`useUploadGlobalAsset`/`useUpdateGlobalAsset`/`useDeleteGlobalAsset`) now `useMemo(() => new AssetsApi(apiClient), [apiClient])` instead of constructing a new instance every render. | No — `AssetsApi` is stateless; identical calls, identical results. Consistency/footgun fix only |
 | P71-D | Uploaded media (`/wp-content/uploads/`) moved from the cache-first-forever runtime branch into a dedicated stale-while-revalidate cache (`wpsg-uploads-swr-v1`): served from cache immediately, revalidated in the background once older than 1h. Fonts/other static assets keep cache-first. | **Yes (eventually)** — an image edited under the same URL is refreshed for returning visitors after the TTL, instead of never |
-| P71-E | *(section added when the track lands)* | — |
+| P71-E | 60 hardcoded notification title/message strings (across 10 files) + 3 App.tsx literals routed through `i18n.t`; 69 new catalogue keys translated into all 5 reference locales; a new `wpsg/no-untranslated-notification` ESLint rule enforces it repo-wide. | **Yes** — those toasts now render translated on a non-English locale; a new hardcoded notification string now fails `npm run lint` |
 
 ---
 
@@ -149,6 +149,42 @@ Because `sw.js` is a standalone non-module file (not importable), the test **rep
 
 ---
 
+### P71-E — Notification strings routed through i18n + a lint gate
+
+**What & why.** `eslint-plugin-i18next` runs `jsx-text-only`, so it only guards literal JSX **text** — strings passed to `notifications.show()`/`showNotification()`/`notifications.update()` inside plain-object arguments (in `.ts`/`.tsx` hooks) escaped it entirely. Since the P60/61 i18n milestone shipped "fully localizable," 60 hardcoded English notification strings had crept back across 10 files, plus 3 non-notification literals in `App.tsx`. P71-E (a) routes every one through `i18n.t('key', 'English default')` (the `wpsgUpsell.tsx` precedent: `const t = i18n.t.bind(i18n)` for use outside JSX), (b) adds 69 new keys to `src/i18n-strings.en.json`, regenerates the PHP manifest, and translates all 69 into the 5 reference locales (de/es/fr/ru/zh), and (c) adds a **new local ESLint rule** `wpsg/no-untranslated-notification` (in `eslint-rules/`, wired into `eslint.config.js` over all `src/**`) that fails the build on a bare string/template literal in a notification `title`/`message` — closing the lint hole so this can't regress a third time.
+
+**Unlike P71-A–D, this is a real content + tooling change, not a refactor** — so its verification borrows the [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) shape: a locale-switch manual check plus a deliberately-introduced-violation test for the new gate.
+
+**Pre-fix behaviour.** On a non-English site, the 60 notification strings + 3 App.tsx literals rendered in **English** regardless of locale; a newly-added hardcoded notification string passed lint silently.
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/test/noUntranslatedNotification.gate.test.ts   # the gate itself
+npm run lint          # the gate is green repo-wide (0 violations after the sweep)
+npm run i18n:check          # en source ↔ PHP manifest in sync
+npm run i18n:check:locales  # all 5 reference locales fully translate every front-end string
+npx tsc -b
+npm test                    # affected hook/component tests still green (English defaults unchanged)
+```
+The **gate test** (`noUntranslatedNotification.gate.test.ts`) lints code strings through the *real* `eslint.config.js` via the ESLint Node API and asserts: a hardcoded `title` **and** `message` each flag (2); a bare `showNotification` message flags (1); a **`"Loading campaigns..."`-shaped (2+ trailing periods)** string flags (1) — the exact blind spot the old `i18next` rule had; a hardcoded branch inside a **conditional** title flags (1); and `t(...)`/`i18n.t(...)`-wrapped strings and non-`title`/`message` literals (`color`) flag **zero**. That is the "introduce a violation → caught; wrap in t() → passes" proof the acceptance criteria require, exercised against the wired rule (not the rule in isolation).
+
+**Why it proves the fix.** `npm run lint` green proves all 60 sites are actually routed through `t()` (the rule would fail otherwise); `i18n:check:locales` green proves every new string is translated in all 5 locales (not English-only); the gate test proves the rule catches the next regression. Because each `t('key', 'English default')` keeps the **exact** original English as the default, the existing hook/component tests (which assert on the English toast text) pass **unmodified** — the observable English behaviour is unchanged, only localizability was added.
+
+**Manual check (recommended — this track has real user-visible behaviour).** Switch the WP site to a non-English locale (e.g. `de_DE` via Settings → General → Site Language, with the compiled `.mo`/`.l10n.php` present) and trigger a handful of the affected toasts as an admin:
+1. **External media** (add an invalid URL → "Invalid URL"/"Please enter a valid https URL."; add a valid one → "External media added.") — confirm German copy, not English.
+2. **Media upload** (upload a batch, including a non-media file → the "Some files were skipped" + pluralized "N non-media files were ignored." toast) — confirm the `{{count}}` interpolation renders the number and the surrounding text is German.
+3. **Layout Builder** (import a malformed layout JSON → "Invalid layout file"; import a valid one → the `"{{name}}" loaded successfully.` toast with the name interpolated).
+4. **Session expired** (let the session lapse / force a 401) → the `App.tsx` "Session expired…" banner in German.
+Then switch back to English and confirm the exact original wording is intact.
+
+**Deliberate-violation manual check (the gate).** Add a line like `notifications.show({ message: 'temp hardcoded' });` to any `src/**` hook, run `npm run lint`, and confirm it fails with `wpsg/no-untranslated-notification`; remove it and confirm lint is green. (The automated gate test already encodes this, but it's a 20-second hands-on confirmation the CI gate is live.)
+
+**Regression checks.** New: `src/test/noUntranslatedNotification.gate.test.ts`; `eslint-rules/no-untranslated-notification.js`. Unchanged: all existing hook/component tests pass without edits (155 across the swept files verified green); the `.po`/`.mo`/`.l10n.php` for the 5 locales gained the 69 entries; `.pot` regenerated (+69 msgids, none removed).
+
+**Pitfall.** (1) The rule inspects only a notification `title`/`message` **direct value** (incl. conditional/logical branches), **not** strings nested inside a helper — e.g. `message: getErrorMessage(err, 'Failed…')`'s fallback is *not* flagged, so those fallbacks were translated by hand during the sweep; a future dev adding such a fallback won't be caught by the gate (documented in the rule header). (2) Non-notification user-facing strings (a11y `announce()`, `onNotify()` banners, the `validateImportPayload` error strings shown as `message: result.error`, and the draft-restore modal title/labels) are a **broader pre-existing i18n gap outside F-1's notification scope** and were intentionally left — don't assume the swept files are now 100% localized. (3) Translations for the 69 new strings are AI-generated (short UI phrases; terminology aligned to the existing catalogue — e.g. zh "campaign" → 活动); they warrant a native-speaker review pass but satisfy the coverage gate and are correct English-default fallbacks regardless.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -157,6 +193,6 @@ Because `sw.js` is a standalone non-module file (not importable), the test **rep
 | P71-B | New save-no-refetch test green (confirmed red pre-fix); `tsc -b` clean | Existing `settingsQuery.test.ts` cases unchanged | ☑ (automated; live Network check optional, not run) |
 | P71-C | Existing global-asset mutation tests green **unmodified**; `tsc -b` clean | Same suite is the regression proof | ☑ (automated) |
 | P71-D | New `swUploads.test.ts` green (SWR stale→revalidate→fresh flow + matcher/guards/eviction); `tsc -b` clean | `swMeta.test.ts` unchanged; fonts/static stay cache-first | ☑ (automated; prod-build SW live check optional, not run) |
-| P71-E | *(added when the track lands)* | — | ☐ |
+| P71-E | Gate test green; `npm run lint` green (0 violations, all 60 sites routed through `t()`); `i18n:check` + `i18n:check:locales` green (69 keys × 5 locales); `tsc -b` + full suite green | Existing hook/component tests unchanged (155 verified); rule catches a deliberate violation | ☑ (automated; non-English locale-switch live check optional, not run) |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npm run lint` on changed files. See PHASE71_REPORT.md → each track's section for per-track rationale.

@@ -1,18 +1,18 @@
 # Phase 71 - React Efficiency & i18n Consistency Sweep
 
-**Status:** Planned
+**Status:** Complete
 **Created:** 2026-07-14
-**Last updated:** 2026-07-14
+**Last updated:** 2026-07-22
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P71-A | Reconnect triggers a double refetch of campaigns | Planned | Small |
-| P71-B | `useUpdateSettings` sets fresh data then immediately invalidates it | Planned | Small |
-| P71-C | Per-render `AssetsApi` construction in global-asset mutation hooks | Planned | Small |
-| P71-D | Runtime SW cache is cache-first with no revalidation for same-origin static assets | Planned | Small-Medium |
-| P71-E | User-facing strings in notification calls bypass i18n (regression vs. P60/61) | Planned | Medium |
+| P71-A | Reconnect triggers a double refetch of campaigns | Complete | Small |
+| P71-B | `useUpdateSettings` sets fresh data then immediately invalidates it | Complete | Small |
+| P71-C | Per-render `AssetsApi` construction in global-asset mutation hooks | Complete | Small |
+| P71-D | Runtime SW cache is cache-first with no revalidation for same-origin static assets | Complete | Small-Medium |
+| P71-E | User-facing strings in notification calls bypass i18n (regression vs. P60/61) | Complete | Medium |
 
 ---
 
@@ -195,6 +195,16 @@ Test: `src/test/swUploads.test.ts` replicates the handler/helpers/constants (the
 - New lint-rule/CI-check test: introduce a hardcoded notification string, confirm the new gate catches it; remove it, confirm the gate passes.
 - Manual: switch the site to a non-English locale, trigger a handful of the affected toasts (external media add failure, layout builder asset upload, session-expired), confirm they render translated.
 
+### Implementation (2026-07-22)
+
+**Scope (per the refinement-pass decision, confirmed with the maintainer): full repo-wide.** A fresh sweep found **60** hardcoded notification `title`/`message` literals across **10** files — the 7 the review named plus 3 the sweep turned up (`useMediaCrud` 11, `useBuilderDraftRestore` 3, `useMediaDisplay` 3) — all routed through `i18n.t('key', 'English default')` using the `wpsgUpsell.tsx` pattern (`const t = i18n.t.bind(i18n)` in each hook; `SettingsPanel.tsx`/`App.tsx` reuse their existing `useTranslation` `t`). The 3 `App.tsx` literals were translated too (`auth_sign_in` reused for the modal title). getErrorMessage/`??` **fallbacks feeding a notification message** were translated inline; non-notification surfaces (a11y `announce()`, `onNotify()` banners, `validateImportPayload` error strings, draft-restore modal chrome) were left as a broader pre-existing gap, out of F-1 scope.
+
+**Lint gate:** the planned `mode: 'all'` i18next approach was empirically rejected (it flags internal literals — extension arrays, `return 'video'` — 10 false positives in one file). Instead a precise local rule `eslint-rules/no-untranslated-notification.js` (wired into `eslint.config.js` over all `src/**`) flags a bare string/template literal in a notification `title`/`message`, recursing through conditional/logical branches (catches `App.tsx`-style `hasFailures ? 'A' : 'B'`); it has **zero** false positives and no `mode:'all'` word-heuristic blind spot (so it flags `"Loading campaigns..."`-shaped strings). Verified via `src/test/noUntranslatedNotification.gate.test.ts`, which lints code strings through the **real** config.
+
+**i18n catalogue:** 76 keys added to `src/i18n-strings.en.json` (74 unique English strings; 69 new to the reference locales, 5 already present), PHP manifest regenerated (`npm run i18n:generate` → 2829 strings). All 69 new strings translated into de/es/fr/ru/zh (terminology aligned to the existing catalogue, e.g. zh "campaign" → 活动); `.po` updated, `.mo`/`.l10n.php` recompiled and `.pot` regenerated via WP-CLI (`make-mo`/`make-php`/`make-pot`; +69 msgids, none removed). Pluralized messages use the project's base-key/`_other` i18next plural convention; interpolated ones use `{{var}}` placeholders. Translations are AI-generated (short UI strings) and flagged for an optional native-speaker review — the English defaults are the runtime fallback regardless.
+
+**Verification:** `npm run lint` (gate green, 0 violations), `npm run i18n:check` + `npm run i18n:check:locales` (all 5 locales complete), `tsc -b`, and the affected hook/component suites (155 tests) all green **unmodified** — the English defaults preserve the exact original toast text, so no assertion changed. See runbook §3 P71-E.
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -203,8 +213,9 @@ Test: `src/test/swUploads.test.ts` replicates the handler/helpers/constants (the
 
 ## Implementation Notes
 
-- Record completed work here as tracks land; nothing executed yet.
+- All five tracks landed 2026-07-22 in three batched commits on `feature/phase71-react-hardening-4-of-4`: (1) P71-A/B/C, (2) P71-D, (3) P71-E. Per-track detail in each track's **Implementation (2026-07-22)** block above.
+- Companion QA doc: [PHASE71_MANUAL_QA_RUNBOOK.md](PHASE71_MANUAL_QA_RUNBOOK.md), built incrementally per landed track.
 
 ## Outcome
 
-Not started.
+Complete. Automated baseline green throughout: `npx tsc -b`, `npm run lint` (incl. the new `wpsg/no-untranslated-notification` gate), `npm run i18n:check` + `npm run i18n:check:locales`, and the front-end Vitest suite. Optional live/browser checks (reconnect Network trace, prod-build SW uploads revalidation, non-English locale toasts) documented in the runbook but not run — not required for the automated coverage each track ships.

@@ -1,8 +1,12 @@
 import { useCallback, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
+import i18n from '@/i18n';
 import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
 import { createEmptyTemplate } from './useLayoutBuilderState';
 import type { LayoutTemplate } from '@/types';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+const t = i18n.t.bind(i18n);
 
 export function useLayoutBuilderFileIO({ builder }: { builder: UseLayoutBuilderReturn }) {
   const importFileRef = useRef<HTMLInputElement>(null);
@@ -36,8 +40,8 @@ export function useLayoutBuilderFileIO({ builder }: { builder: UseLayoutBuilderR
             !('canvasAspectRatio' in parsed)
           ) {
             notifications.show({
-              title: 'Invalid layout file',
-              message: 'The file is missing required fields (name, slots, canvasAspectRatio).',
+              title: t('lbfileio_invalid_title', 'Invalid layout file'),
+              message: t('lbfileio_invalid_message', 'The file is missing required fields (name, slots, canvasAspectRatio).'),
               color: 'red',
               autoClose: 5000,
             });
@@ -53,15 +57,15 @@ export function useLayoutBuilderFileIO({ builder }: { builder: UseLayoutBuilderR
           };
           builder.setTemplate(imported, { preserveSelection: false });
           notifications.show({
-            title: 'Layout imported',
-            message: `"${imported.name}" loaded successfully.`,
+            title: t('lbfileio_imported_title', 'Layout imported'),
+            message: t('lbfileio_imported_message', '"{{name}}" loaded successfully.', { name: imported.name }),
             color: 'green',
             autoClose: 3000,
           });
         } catch {
           notifications.show({
-            title: 'Import failed',
-            message: 'Could not parse JSON file.',
+            title: t('lbfileio_import_failed_title', 'Import failed'),
+            message: t('lbfileio_import_failed_message', 'Could not parse JSON file.'),
             color: 'red',
             autoClose: 5000,
           });

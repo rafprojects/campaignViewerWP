@@ -1,9 +1,16 @@
 import { useCallback, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
+import i18n from '@/i18n';
 import { BUILTIN_ADAPTERS, SETTING_GROUP_DEFINITIONS } from '@/data/adapterSettingGroups';
 import { GalleryConfigSchema } from '@/types/settingsSchemas';
 import type { GalleryConfig } from '@/types';
 import type { UpdateGallerySetting } from '@/components/Settings/GalleryAdapterSettingsSection';
+
+// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
+// (The `validateImportPayload` error strings shown as `message: result.error`
+// live in a separate pure validator and are a broader pre-existing i18n gap,
+// intentionally out of F-1's direct notification-literal scope.)
+const t = i18n.t.bind(i18n);
 
 const VALID_ADAPTER_IDS: ReadonlySet<string> = new Set(BUILTIN_ADAPTERS.map((a) => a.id));
 
@@ -82,8 +89,8 @@ export function useGalleryAdapterSettingsIO({
   const handleExport = useCallback(() => {
     if (!galleryConfig) {
       notifications.show({
-        title: 'Nothing to export',
-        message: 'No gallery adapter settings have been configured yet.',
+        title: t('gasettings_nothing_title', 'Nothing to export'),
+        message: t('gasettings_nothing_message', 'No gallery adapter settings have been configured yet.'),
         color: 'yellow',
         autoClose: 4000,
       });
@@ -119,7 +126,7 @@ export function useGalleryAdapterSettingsIO({
 
           if (!result.ok) {
             notifications.show({
-              title: 'Invalid settings file',
+              title: t('gasettings_invalid_title', 'Invalid settings file'),
               message: result.error,
               color: 'red',
               autoClose: 6000,
@@ -129,15 +136,15 @@ export function useGalleryAdapterSettingsIO({
 
           updateSetting('galleryConfig', result.config);
           notifications.show({
-            title: 'Adapter settings imported',
-            message: 'Gallery adapter settings applied. Save to persist.',
+            title: t('gasettings_imported_title', 'Adapter settings imported'),
+            message: t('gasettings_imported_message', 'Gallery adapter settings applied. Save to persist.'),
             color: 'green',
             autoClose: 3000,
           });
         } catch {
           notifications.show({
-            title: 'Import failed',
-            message: 'Could not parse JSON file.',
+            title: t('gasettings_import_failed_title', 'Import failed'),
+            message: t('gasettings_import_failed_message', 'Could not parse JSON file.'),
             color: 'red',
             autoClose: 5000,
           });
@@ -147,8 +154,8 @@ export function useGalleryAdapterSettingsIO({
       };
       reader.onerror = () => {
         notifications.show({
-          title: 'Import failed',
-          message: 'Could not read the selected file.',
+          title: t('gasettings_import_failed_title', 'Import failed'),
+          message: t('gasettings_read_failed_message', 'Could not read the selected file.'),
           color: 'red',
           autoClose: 5000,
         });

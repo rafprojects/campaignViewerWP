@@ -10201,3 +10201,279 @@ msgstr "Unternehmensweit widerrufen"
 #: includes/i18n/class-wpsg-frontend-strings.php:2702
 msgid "Request submitted. You will receive an email once an administrator reviews it."
 msgstr "Anfrage gesendet. Sie erhalten eine E-Mail, sobald ein Administrator sie geprüft hat."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Template updated in another tab"
+msgstr "Vorlage in einem anderen Tab aktualisiert"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "This template was saved elsewhere. Close and reopen to load the latest version."
+msgstr "Diese Vorlage wurde an anderer Stelle gespeichert. Schließen und erneut öffnen, um die neueste Version zu laden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Reordered"
+msgstr "Neu angeordnet"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media order updated."
+msgstr "Medienreihenfolge aktualisiert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Reorder failed"
+msgstr "Neuanordnung fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to reorder media."
+msgstr "Medien konnten nicht neu angeordnet werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Draft restored"
+msgstr "Entwurf wiederhergestellt"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Your previous session has been restored."
+msgstr "Ihre vorherige Sitzung wurde wiederhergestellt."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Draft discarded."
+msgstr "Entwurf verworfen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Overlay added to canvas"
+msgstr "Overlay zur Leinwand hinzugefügt"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Overlay upload failed"
+msgstr "Overlay-Upload fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background image applied"
+msgstr "Hintergrundbild angewendet"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background image upload failed"
+msgstr "Upload des Hintergrundbilds fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background upload failed"
+msgstr "Hintergrund-Upload fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid layout file"
+msgstr "Ungültige Layout-Datei"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "The file is missing required fields (name, slots, canvasAspectRatio)."
+msgstr "In der Datei fehlen erforderliche Felder (name, slots, canvasAspectRatio)."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Layout imported"
+msgstr "Layout importiert"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "\"{{name}}\" loaded successfully."
+msgstr "„{{name}}“ erfolgreich geladen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Import failed"
+msgstr "Import fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not parse JSON file."
+msgstr "JSON-Datei konnte nicht analysiert werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid URL"
+msgstr "Ungültige URL"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Please enter a valid https URL."
+msgstr "Bitte geben Sie eine gültige https-URL ein."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "External media added."
+msgstr "Externe Medien hinzugefügt."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Add failed"
+msgstr "Hinzufügen fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to add external media."
+msgstr "Externe Medien konnten nicht hinzugefügt werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview loaded"
+msgstr "Vorschau geladen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview available"
+msgstr "Vorschau verfügbar"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview failed"
+msgstr "Vorschau fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to load preview."
+msgstr "Vorschau konnte nicht geladen werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Nothing to export"
+msgstr "Nichts zu exportieren"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "No gallery adapter settings have been configured yet."
+msgstr "Es wurden noch keine Galerie-Adapter-Einstellungen konfiguriert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid settings file"
+msgstr "Ungültige Einstellungsdatei"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Adapter settings imported"
+msgstr "Adapter-Einstellungen importiert"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Gallery adapter settings applied. Save to persist."
+msgstr "Galerie-Adapter-Einstellungen angewendet. Zum Speichern sichern."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not read the selected file."
+msgstr "Die ausgewählte Datei konnte nicht gelesen werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Deleted"
+msgstr "Gelöscht"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media removed."
+msgstr "Medien entfernt."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Delete failed"
+msgstr "Löschen fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to delete media."
+msgstr "Medien konnten nicht gelöscht werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Saved"
+msgstr "Gespeichert"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media updated."
+msgstr "Medien aktualisiert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to save media."
+msgstr "Medien konnten nicht gespeichert werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Rescan Complete"
+msgstr "Erneuter Scan abgeschlossen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Updated {{updated}} of {{total}} media items."
+msgstr "{{updated}} von {{total}} Medienelementen aktualisiert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Rescan failed"
+msgstr "Erneuter Scan fehlgeschlagen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to rescan media types."
+msgstr "Medientypen konnten nicht erneut gescannt werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Some files were skipped"
+msgstr "Einige Dateien wurden übersprungen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} non-media file was ignored."
+msgstr "{{count}} Nicht-Mediendatei wurde ignoriert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} non-media files were ignored."
+msgstr "{{count}} Nicht-Mediendateien wurden ignoriert."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Batch limit reached"
+msgstr "Batch-Limit erreicht"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Only the first {{count}} files were kept."
+msgstr "Nur die ersten {{count}} Dateien wurden beibehalten."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{uploaded}} of {{total}} file uploaded successfully."
+msgstr "{{uploaded}} von {{total}} Datei erfolgreich hochgeladen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{uploaded}} of {{total}} files uploaded successfully."
+msgstr "{{uploaded}} von {{total}} Dateien erfolgreich hochgeladen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} file could not be added to the campaign."
+msgstr "{{count}} Datei konnte nicht zur Kampagne hinzugefügt werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} files could not be added to the campaign."
+msgstr "{{count}} Dateien konnten nicht zur Kampagne hinzugefügt werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Upload complete with issues"
+msgstr "Upload mit Problemen abgeschlossen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Upload complete"
+msgstr "Upload abgeschlossen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Existing image added"
+msgstr "Vorhandenes Bild hinzugefügt"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Using existing image for \"{{filename}}\"."
+msgstr "Vorhandenes Bild für „{{filename}}“ wird verwendet."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to add image"
+msgstr "Bild konnte nicht hinzugefügt werden"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not add existing image."
+msgstr "Vorhandenes Bild konnte nicht hinzugefügt werden."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Image uploaded"
+msgstr "Bild hochgeladen"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "\"{{filename}}\" uploaded successfully."
+msgstr "„{{filename}}“ erfolgreich hochgeladen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Settings restored"
+msgstr "Einstellungen wiederhergestellt"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Your previous unsaved changes have been restored."
+msgstr "Ihre vorherigen, nicht gespeicherten Änderungen wurden wiederhergestellt."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Unsaved settings discarded."
+msgstr "Nicht gespeicherte Einstellungen verworfen."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Session expired. Please sign in again."
+msgstr "Sitzung abgelaufen. Bitte melden Sie sich erneut an."
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Loading campaigns..."
+msgstr "Kampagnen werden geladen …"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid " (page {{completed}} of {{total}})"
+msgstr " (Seite {{completed}} von {{total}})"

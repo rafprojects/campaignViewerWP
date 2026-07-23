@@ -220,9 +220,9 @@ function AppContent({
   const handleLogin = async (email: string, password: string) => { await login(email, password); closeSignIn(); };
 
   const handleUnauthorized = useCallback(() => {
-    setActionMessage({ type: 'error', text: 'Session expired. Please sign in again.' });
+    setActionMessage({ type: 'error', text: t('app_session_expired', 'Session expired. Please sign in again.') });
     setTimeout(() => { void (async () => { try { await logout(); } catch { /* no-op */ } })(); }, 100);
-  }, [logout]);
+  }, [logout, t]);
 
   const apiClient = useMemo(
     () => new ApiClient({
@@ -384,7 +384,7 @@ function AppContent({
         style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
       >
         {!isAuthenticated && isReady && (
-          <Modal opened={isSignInOpen} onClose={closeSignIn} title="Sign in" centered withinPortal={false}>
+          <Modal opened={isSignInOpen} onClose={closeSignIn} title={t('auth_sign_in', 'Sign in')} centered withinPortal={false}>
             <LoginForm onSubmit={handleLogin} compact minPasswordLength={resolvedSettings.loginMinPasswordLength} />
           </Modal>
         )}
@@ -468,7 +468,7 @@ function AppContent({
                     {/* [P68-D] Only show the page counter when the listing
                         actually spans multiple pages; single-page loads (the
                         common case) just show the spinner + label. */}
-                    Loading campaigns...{campaignLoadProgress.total > 1 ? ` (page ${campaignLoadProgress.completed} of ${campaignLoadProgress.total})` : ''}
+                    {t('app_loading_campaigns', 'Loading campaigns...')}{campaignLoadProgress.total > 1 ? t('app_loading_page', ' (page {{completed}} of {{total}})', { completed: campaignLoadProgress.completed, total: campaignLoadProgress.total }) : ''}
                   </Alert>
                 </Container>
               </Stack>

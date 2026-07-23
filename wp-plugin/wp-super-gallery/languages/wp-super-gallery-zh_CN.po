@@ -10201,3 +10201,279 @@ msgstr "撤销公司范围权限"
 #: includes/i18n/class-wpsg-frontend-strings.php:2702
 msgid "Request submitted. You will receive an email once an administrator reviews it."
 msgstr "请求已提交。管理员审核后您将收到一封电子邮件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Template updated in another tab"
+msgstr "模板已在另一个标签页中更新"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "This template was saved elsewhere. Close and reopen to load the latest version."
+msgstr "此模板已在别处保存。请关闭并重新打开以加载最新版本。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Reordered"
+msgstr "已重新排序"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media order updated."
+msgstr "媒体顺序已更新。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Reorder failed"
+msgstr "重新排序失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to reorder media."
+msgstr "无法重新排序媒体。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Draft restored"
+msgstr "草稿已恢复"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Your previous session has been restored."
+msgstr "已恢复您之前的会话。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Draft discarded."
+msgstr "草稿已放弃。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Overlay added to canvas"
+msgstr "叠加层已添加到画布"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Overlay upload failed"
+msgstr "叠加层上传失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background image applied"
+msgstr "背景图片已应用"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background image upload failed"
+msgstr "背景图片上传失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Background upload failed"
+msgstr "背景上传失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid layout file"
+msgstr "无效的布局文件"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "The file is missing required fields (name, slots, canvasAspectRatio)."
+msgstr "文件缺少必填字段（name、slots、canvasAspectRatio）。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Layout imported"
+msgstr "布局已导入"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "\"{{name}}\" loaded successfully."
+msgstr "“{{name}}”加载成功。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Import failed"
+msgstr "导入失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not parse JSON file."
+msgstr "无法解析 JSON 文件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid URL"
+msgstr "无效的网址"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Please enter a valid https URL."
+msgstr "请输入有效的 https 网址。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "External media added."
+msgstr "已添加外部媒体。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Add failed"
+msgstr "添加失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to add external media."
+msgstr "无法添加外部媒体。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview loaded"
+msgstr "预览已加载"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview available"
+msgstr "预览可用"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Preview failed"
+msgstr "预览失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to load preview."
+msgstr "无法加载预览。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Nothing to export"
+msgstr "没有可导出的内容"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "No gallery adapter settings have been configured yet."
+msgstr "尚未配置任何图库适配器设置。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Invalid settings file"
+msgstr "无效的设置文件"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Adapter settings imported"
+msgstr "适配器设置已导入"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Gallery adapter settings applied. Save to persist."
+msgstr "已应用图库适配器设置。保存以永久生效。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not read the selected file."
+msgstr "无法读取所选文件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Deleted"
+msgstr "已删除"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media removed."
+msgstr "媒体已移除。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Delete failed"
+msgstr "删除失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to delete media."
+msgstr "无法删除媒体。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Saved"
+msgstr "已保存"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Media updated."
+msgstr "媒体已更新。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to save media."
+msgstr "无法保存媒体。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Rescan Complete"
+msgstr "重新扫描完成"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Updated {{updated}} of {{total}} media items."
+msgstr "已更新 {{total}} 个媒体项中的 {{updated}} 个。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Rescan failed"
+msgstr "重新扫描失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to rescan media types."
+msgstr "无法重新扫描媒体类型。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Some files were skipped"
+msgstr "已跳过部分文件"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} non-media file was ignored."
+msgstr "已忽略 {{count}} 个非媒体文件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} non-media files were ignored."
+msgstr "已忽略 {{count}} 个非媒体文件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Batch limit reached"
+msgstr "已达到批处理上限"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Only the first {{count}} files were kept."
+msgstr "仅保留了前 {{count}} 个文件。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{uploaded}} of {{total}} file uploaded successfully."
+msgstr "{{total}} 个文件中已成功上传 {{uploaded}} 个。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{uploaded}} of {{total}} files uploaded successfully."
+msgstr "{{total}} 个文件中已成功上传 {{uploaded}} 个。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} file could not be added to the campaign."
+msgstr "{{count}} 个文件无法添加到活动。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "{{count}} files could not be added to the campaign."
+msgstr "{{count}} 个文件无法添加到活动。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Upload complete with issues"
+msgstr "上传完成但有问题"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Upload complete"
+msgstr "上传完成"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Existing image added"
+msgstr "已添加现有图片"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Using existing image for \"{{filename}}\"."
+msgstr "正在为“{{filename}}”使用现有图片。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Failed to add image"
+msgstr "添加图片失败"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Could not add existing image."
+msgstr "无法添加现有图片。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Image uploaded"
+msgstr "图片已上传"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "\"{{filename}}\" uploaded successfully."
+msgstr "“{{filename}}”上传成功。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Settings restored"
+msgstr "设置已恢复"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Your previous unsaved changes have been restored."
+msgstr "已恢复您之前未保存的更改。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Unsaved settings discarded."
+msgstr "已放弃未保存的设置。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Session expired. Please sign in again."
+msgstr "会话已过期。请重新登录。"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid "Loading campaigns..."
+msgstr "正在加载活动…"
+
+#. [P71-E] Notification / user-facing string added in Phase 71.
+msgid " (page {{completed}} of {{total}})"
+msgstr "（第 {{completed}} 页，共 {{total}} 页）"
