@@ -15,6 +15,23 @@ const META_TTL_MS = 5 * 60 * 1000; // 5 minutes
 // under 100 kB, so 50 entries stays comfortably small.
 const META_MAX_ENTRIES = 50;
 
+// [P71-D] Stale-while-revalidate cache for uploaded media (/wp-content/uploads/).
+// The default runtime branch below is cache-first-forever, so a WP-media image
+// edited or regenerated under the SAME URL (media editor, thumbnail-regeneration
+// plugins) is served stale indefinitely to a returning visitor with a warm
+// cache. Uploads get their own SWR cache instead: served immediately from cache,
+// revalidated in the background once the entry ages past UPLOADS_TTL_MS. Kept
+// separate from META_CACHE (different TTL/size profile) and from RUNTIME_CACHE
+// (which stays cache-first for fonts / immutable static assets).
+const UPLOADS_CACHE = 'wpsg-uploads-swr-v1';
+const UPLOADS_PATH_RE = /\/wp-content\/uploads\//;
+// Images change rarely and are bandwidth-heavy, so revalidate at most hourly
+// (vs the metadata cache's 5 min) — long enough to avoid re-downloading a
+// gallery's worth of unchanged images on every revisit, short enough that an
+// edit is not served stale "indefinitely" (the exact property this fixes).
+const UPLOADS_TTL_MS = 60 * 60 * 1000; // 1 hour
+const UPLOADS_MAX_ENTRIES = 100;
+
 // Matches the two public gallery metadata endpoints (pathname only):
 //   /wp-json/wp-super-gallery/v1/campaigns              (campaign list)
 //   /wp-json/wp-super-gallery/v1/campaigns/{id}/media   (per-campaign media list)
@@ -65,7 +82,8 @@ self.addEventListener('activate', (event) => {
               key.startsWith('wpsg-') &&
               key !== RUNTIME_CACHE &&
               key !== META_CACHE &&
-              key !== SHELL_CACHE,
+              key !== SHELL_CACHE &&
+              key !== UPLOADS_CACHE,
           )
           .map((key) => caches.delete(key)),
       );
@@ -116,6 +134,15 @@ self.addEventListener('fetch', (event) => {
   // already provides perfect cache busting. SW caching these causes
   // stale bundles after deploy.
   if (HASHED_ASSET_RE.test(url.pathname)) return;
+
+  // [P71-D] Uploaded media uses stale-while-revalidate (see UPLOADS_CACHE) so an
+  // image edited/regenerated under the same URL is eventually refreshed for
+  // returning visitors, rather than served cache-first indefinitely. Everything
+  // else (fonts, favicon, other static assets) keeps the cache-first branch below.
+  if (UPLOADS_PATH_RE.test(url.pathname)) {
+    event.respondWith(handleUploadsRequest(event, request));
+    return;
+  }
 
   event.respondWith(
     (async () => {
@@ -222,6 +249,86 @@ async function handleMetaRequest(event, request) {
   } catch {
     return Response.error();
   }
+}
+
+/**
+ * [P71-D] Stale-while-revalidate handler for /wp-content/uploads/ media.
+ *
+ * - Cache hit: respond immediately with the cached (possibly stale) asset;
+ *   trigger a background revalidation only when the entry is older than
+ *   UPLOADS_TTL_MS (throttles image re-downloads on hot pages).
+ * - Cache miss: fetch synchronously, cache if eligible, respond.
+ *
+ * Mirrors handleMetaRequest (same `x-wpsg-cached-at` timestamp mechanism) but
+ * uses UPLOADS_CACHE and preserves the original runtime branch's caching guards
+ * (200 only, honour `no-store`, skip responses over 5 MB) since uploads are
+ * arbitrary binary rather than the trusted small JSON the metadata cache holds.
+ */
+async function handleUploadsRequest(event, request) {
+  const cache = await caches.open(UPLOADS_CACHE);
+  const cached = await cache.match(request);
+
+  const revalidate = async () => {
+    try {
+      const fresh = await fetch(request.clone());
+      if (isCacheableUpload(fresh)) {
+        const stamped = await stampResponse(fresh);
+        await cache.put(request, stamped);
+        await evictOldestUploadEntries(cache);
+      }
+    } catch {
+      // Network failure — keep serving stale until connectivity returns.
+    }
+  };
+
+  if (cached) {
+    const cachedAt = parseInt(cached.headers.get('x-wpsg-cached-at') || '0', 10);
+    const age = Date.now() - cachedAt;
+    if (age >= UPLOADS_TTL_MS) {
+      event.waitUntil(revalidate());
+    }
+    return cached;
+  }
+
+  // Cache miss — fetch synchronously so the first load is not degraded.
+  try {
+    const fresh = await fetch(request);
+    if (isCacheableUpload(fresh)) {
+      const stamped = await stampResponse(fresh.clone());
+      await cache.put(request, stamped);
+      await evictOldestUploadEntries(cache);
+    }
+    return fresh;
+  } catch {
+    return cached ?? Response.error();
+  }
+}
+
+/**
+ * [P71-D] Caching eligibility for an uploads response — mirrors the guards the
+ * original cache-first RUNTIME_CACHE branch applied: cache only 200s, never
+ * `no-store`, and skip anything over 5 MB (an absent Content-Length parses as 0
+ * and is treated as cacheable, matching the pre-existing behaviour).
+ */
+function isCacheableUpload(response) {
+  if (!response || response.status !== 200) return false;
+  const cacheControl = response.headers.get('Cache-Control') || '';
+  if (cacheControl.includes('no-store')) return false;
+  const contentLength = Number(response.headers.get('Content-Length') || '0');
+  if (contentLength > 5 * 1024 * 1024) return false;
+  return true;
+}
+
+/**
+ * [P71-D] FIFO eviction for the uploads cache, mirroring evictOldestMetaEntries
+ * but capped at UPLOADS_MAX_ENTRIES. (The pre-fix RUNTIME_CACHE branch had no
+ * count cap at all, so this is a strict improvement, not a new limitation.)
+ */
+async function evictOldestUploadEntries(cache) {
+  const keys = await cache.keys();
+  if (keys.length <= UPLOADS_MAX_ENTRIES) return;
+  const toDelete = keys.slice(0, keys.length - UPLOADS_MAX_ENTRIES);
+  await Promise.all(toDelete.map((req) => cache.delete(req)));
 }
 
 /**

@@ -35,7 +35,7 @@ git checkout feature/phase71-react-hardening-4-of-4   # back to the fixes
 | P71-A | Deleted the manual `isOnline && isReady` effect in `App.tsx` that called `refetch()`; the campaigns query now relies solely on its own `refetchOnReconnect: true`. | **Yes (by network count)** — a reconnect while the query is fresh no longer fires an extra `/campaigns` request; the offline banner (`!isOnline`) is unchanged |
 | P71-B | Removed the `invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })` in `useUpdateSettings`'s `onSuccess`; the normalized response is still written to cache via `setSettingsQueryData`. | **Yes (by network count)** — saving settings no longer schedules a redundant refetch of the just-written data |
 | P71-C | The three global-asset mutation hooks (`useUploadGlobalAsset`/`useUpdateGlobalAsset`/`useDeleteGlobalAsset`) now `useMemo(() => new AssetsApi(apiClient), [apiClient])` instead of constructing a new instance every render. | No — `AssetsApi` is stateless; identical calls, identical results. Consistency/footgun fix only |
-| P71-D | *(section added when the track lands)* | — |
+| P71-D | Uploaded media (`/wp-content/uploads/`) moved from the cache-first-forever runtime branch into a dedicated stale-while-revalidate cache (`wpsg-uploads-swr-v1`): served from cache immediately, revalidated in the background once older than 1h. Fonts/other static assets keep cache-first. | **Yes (eventually)** — an image edited under the same URL is refreshed for returning visitors after the TTL, instead of never |
 | P71-E | *(section added when the track lands)* | — |
 
 ---
@@ -119,6 +119,36 @@ The existing global-asset mutation coverage passes **unmodified** — that is th
 
 ---
 
+### P71-D — Stale-while-revalidate for uploaded media
+
+**What & why.** `public/sw.js`'s default fetch branch served every same-origin non-hashed GET (fonts, favicon, **and** `/wp-content/uploads/` images) cache-first *forever* — an entry only changed when `CACHE_VERSION` bumped. So a WP-media image edited or regenerated under the same URL (media editor, thumbnail-regeneration plugins) rendered stale indefinitely for any returning visitor with a warm cache. P71-D routes only `/wp-content/uploads/` requests (matched by `UPLOADS_PATH_RE`) into a dedicated SWR cache (`UPLOADS_CACHE = 'wpsg-uploads-swr-v1'`) via `handleUploadsRequest`, mirroring the metadata cache's `x-wpsg-cached-at`/`stampResponse` mechanism: cached asset served immediately, background revalidation fired only when the entry is older than `UPLOADS_TTL_MS` (1 hour). Fonts and other static assets stay on the unchanged cache-first branch. `UPLOADS_CACHE` was added to the `activate` keep-set so it isn't swept.
+
+**Pre-fix behaviour.** An uploads image, once cached, was returned from `RUNTIME_CACHE` on every subsequent request with no revalidation — a server-side edit under the same URL was never picked up until a `CACHE_VERSION` bump.
+
+**This track's meaningful check is the failure-first SWR-flow test; the pre-fix branch has no revalidation path at all, so its "second request still serves NEW" assertion cannot hold pre-fix.**
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/test/swUploads.test.ts
+npx tsc -b
+```
+Because `sw.js` is a standalone non-module file (not importable), the test **replicates** the constants + `handleUploadsRequest`/`isCacheableUpload`/`evictOldestUploadEntries` and exercises them against a mock Cache/fetch/event — the exact pattern `swMeta.test.ts` established. **Keep the two in sync** (the test header says so). The key case (`serves the stale asset immediately, then revalidates …`) seeds a stale (`> TTL`) `OLD` entry, asserts the first request returns `OLD` *and* starts one background fetch, settles `waitUntil`, then asserts a **second** request returns the revalidated `NEW` — the precise behaviour the pre-fix cache-first branch lacked. Companion cases pin: fresh entry → served without any fetch; cache miss → synchronous fetch + cache; non-200 → not cached; the `UPLOADS_PATH_RE` matcher (incl. subdirectory installs, and *non*-matches for fonts/themes/API); the `isCacheableUpload` guards (200-only, `no-store`, >5 MB, absent Content-Length ⇒ cacheable); FIFO eviction at `UPLOADS_MAX_ENTRIES`.
+
+**Why it proves the fix.** The replicated handler is byte-faithful to `sw.js`, and the stale→revalidate→fresh sequence is exactly the property the acceptance criteria demand ("no longer served stale indefinitely"). The matcher tests prove fonts/static assets are **not** pulled into SWR (the "no regression in the common case" criterion).
+
+**Live check (recommended — SWR is only real against an actual service worker).** On a **production** build served through the shortcode (jsdom can't register a SW):
+1. Load a public gallery, let images cache. DevTools → Application → Cache Storage shows a `wpsg-uploads-swr-v1` cache populated with `/wp-content/uploads/...` entries, each carrying an `x-wpsg-cached-at` header.
+2. Edit one of those images server-side under the **same URL** (WP media editor "Edit image" → overwrite, or a thumbnail-regeneration plugin).
+3. Reload within the hour → the **old** image is still shown immediately (stale-while-revalidate serves cache first) — this is expected, not a bug.
+4. Reload again after the entry has aged past the 1h TTL (or temporarily lower `UPLOADS_TTL_MS` to force it) → the request triggers a background revalidation; the **next** reload shows the updated image. Contrast with `main` pre-P71-D, where it never updates without a `CACHE_VERSION` bump.
+5. Confirm a **font** or other `/wp-content/plugins/...` static asset is still served from the original `wpsg-runtime-*` cache (cache-first), not from `wpsg-uploads-swr-v1`.
+
+**Regression checks.** `swMeta.test.ts` passes unmodified (the metadata SWR path is untouched). The navigation/shell and hashed-asset branches are unchanged. New: `src/test/swUploads.test.ts`.
+
+**Pitfall.** The uploads branch must sit **after** the `/wp-json/` and `HASHED_ASSET_RE` bails and **before** the generic `RUNTIME_CACHE` block — an uploads URL must never fall through to cache-first. Also, `UPLOADS_CACHE` **must** be in the `activate` keep-set alongside `RUNTIME_CACHE`/`META_CACHE`/`SHELL_CACHE`; omit it and every activation wipes the uploads cache (correctness-safe but defeats the caching). The 1h `UPLOADS_TTL_MS` is a deliberate freshness-vs-bandwidth trade (images are heavy and change rarely; a 5-min TTL like the metadata cache would re-download a gallery's worth of unchanged images on every revisit) — tune it, but any finite value satisfies the "not indefinite" criterion.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -126,7 +156,7 @@ The existing global-asset mutation coverage passes **unmodified** — that is th
 | P71-A | New reconnect-count test green (confirmed red pre-fix); `tsc -b` clean | Existing `App.test.tsx` cases unchanged | ☑ (automated; live Network check optional, not run) |
 | P71-B | New save-no-refetch test green (confirmed red pre-fix); `tsc -b` clean | Existing `settingsQuery.test.ts` cases unchanged | ☑ (automated; live Network check optional, not run) |
 | P71-C | Existing global-asset mutation tests green **unmodified**; `tsc -b` clean | Same suite is the regression proof | ☑ (automated) |
-| P71-D | *(added when the track lands)* | — | ☐ |
+| P71-D | New `swUploads.test.ts` green (SWR stale→revalidate→fresh flow + matcher/guards/eviction); `tsc -b` clean | `swMeta.test.ts` unchanged; fonts/static stay cache-first | ☑ (automated; prod-build SW live check optional, not run) |
 | P71-E | *(added when the track lands)* | — | ☐ |
 
 **Automated baseline (must be green alongside manual QA):** `npx tsc -b`, the front-end Vitest suite (`npm test`), and `npm run lint` on changed files. See PHASE71_REPORT.md → each track's section for per-track rationale.

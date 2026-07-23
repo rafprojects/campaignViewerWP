@@ -161,6 +161,12 @@ Give the runtime cache the same SWR treatment as the metadata cache (serve cache
 - Test: simulate a cached upload-dir asset going stale (content changes server-side under the same URL), assert the SW eventually serves the updated version.
 - Manual: edit an image via the WP media editor (same URL, new content), confirm a returning visitor with a warm cache eventually sees the update.
 
+### Implementation (2026-07-22)
+
+Scoped the SWR treatment to `/wp-content/uploads/` only (per the refinement-pass decision). In `public/sw.js`: added `UPLOADS_CACHE = 'wpsg-uploads-swr-v1'`, `UPLOADS_PATH_RE`, `UPLOADS_TTL_MS` (1h), `UPLOADS_MAX_ENTRIES` (100); added `UPLOADS_CACHE` to the `activate` keep-set; inserted an uploads branch in the fetch handler (after the `/wp-json/` + hashed-asset bails, before the generic cache-first block) delegating to a new `handleUploadsRequest` that mirrors `handleMetaRequest`'s `stampResponse`/`x-wpsg-cached-at` SWR mechanism, plus `isCacheableUpload` (preserves the original branch's 200/`no-store`/5 MB guards) and `evictOldestUploadEntries`. Fonts/favicon/other static assets stay on the unchanged cache-first `RUNTIME_CACHE` branch. **TTL rationale:** 1h (vs the metadata cache's 5 min) balances freshness against re-downloading a gallery's worth of heavy, rarely-changing images every 5 min; any finite TTL satisfies the "not indefinite" criterion.
+
+Test: `src/test/swUploads.test.ts` replicates the handler/helpers/constants (the non-importable-`sw.js` pattern from `swMeta.test.ts`) and drives the full SWR flow against a mock Cache/fetch/event — the central case seeds a stale entry, asserts stale-served-immediately + one background revalidation, then asserts a subsequent request serves the updated content (the property the pre-fix cache-first branch structurally lacked). See runbook §3 P71-D.
+
 ---
 
 ## Track P71-E - User-facing strings in notification calls bypass i18n
