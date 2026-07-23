@@ -1938,6 +1938,8 @@ class WPSG_Frontend_Strings {
             'admin_lt_search_ph' => __('Search layouts…', 'wp-super-gallery'),
             'admin_lt_search_aria' => __('Search layout templates', 'wp-super-gallery'),
             'admin_lt_view_mode' => __('View mode', 'wp-super-gallery'),
+            'admin_lt_view_grid' => __('Grid view', 'wp-super-gallery'),
+            'admin_lt_view_list' => __('List view', 'wp-super-gallery'),
             'admin_lt_import' => __('Import', 'wp-super-gallery'),
             'admin_lt_new' => __('New Layout', 'wp-super-gallery'),
             'admin_lt_from_preset' => __('From Preset', 'wp-super-gallery'),

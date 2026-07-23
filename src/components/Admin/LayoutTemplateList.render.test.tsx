@@ -38,11 +38,14 @@ describe('LayoutTemplateList render/effect branches', () => {
     expect(await screen.findByTestId('layout-builder-modal')).toBeInTheDocument();
   });
 
-  it('renders a non-rectangle slot (shape ternary) and keyboard-activates a card', async () => {
+  it('renders a non-rectangle slot (shape ternary) and activates a card', async () => {
     const apiClient = makeApiClient([tpl('t1', 'CircleCard', 'circle')]);
     render(<LayoutTemplateList apiClient={apiClient} onNotify={vi.fn()} />);
+    // P72-G: the primary edit action is now a real <button> (UnstyledButton),
+    // which activates on click (and, in a real browser, Enter/Space natively) —
+    // no longer a role="button" div with a manual onKeyDown.
     const card = await screen.findByLabelText('Edit layout CircleCard');
-    fireEvent.keyDown(card, { key: 'Enter' });
+    fireEvent.click(card);
     expect(await screen.findByTestId('layout-builder-modal')).toBeInTheDocument();
   });
 

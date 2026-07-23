@@ -13,7 +13,7 @@
 | P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | ✅ Done | Small |
 | P72-E | React / Refactor | `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder) | Planned | Medium |
 | P72-F | PHP / Privacy + React UI | Retention / auto-purge for PII tables (access-requests, audit-log) | ✅ Done | Small-Medium |
-| P72-G | React / a11y | Structural a11y (axe) gate — fix the 2 known `LayoutTemplateList` violations | Planned | Small (this slice) |
+| P72-G | React / a11y | Structural a11y (axe) gate — fix the 2 known `LayoutTemplateList` violations | ✅ Done | Small (this slice) |
 
 ---
 
@@ -300,6 +300,16 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** Full front-end suite green (251 files / 3764 tests); gate test 10/10 (4 new); `npm run lint` green repo-wide with the widened gate (proves the whole announce/modal sweep is complete); `tsc -b`, `i18n:check`, `i18n:check:locales` (2379 strings/locale) all green.
 
+### Batch 4 — P72-G (landed 2026-07-23)
+
+**Nuance resolved (the planning flag).** The plan warned that `LayoutTemplateList`'s icon-only `SegmentedControl` already carried a group-level `aria-label`, so whether axe still flagged the individual segments was unprovable by reading code. Following the plan, the axe test was **written first and run against current source**: **both** violations reproduced — the group-level `aria-label` does **not** give the individual segment radio inputs accessible names (`label`, critical), and the `role="button"` Card nesting the Menu button flags (`nested-interactive`, serious). So both fixes were genuinely needed.
+
+**Fixes.**
+- **(a) label:** each icon-only segment now carries a `<VisuallyHidden>` accessible name (`admin_lt_view_grid` "Grid view" / `admin_lt_view_list` "List view", both already-translated msgids in every locale), wrapping the icon so the segment's radio input gets a name. The group `aria-label` stays.
+- **(b) nested-interactive:** the Card is no longer `role="button"`. The primary edit action is a real `UnstyledButton` (native `<button>`) wrapping the preview + title; the action Menu moved to an absolutely-positioned sibling (top-right), so no interactive control nests inside another. One existing test that fired `keyDown(Enter)` on the old div was updated to `click` (the correct interaction for a real button; native keyboard activation is free in a real browser).
+
+**Verification.** New `LayoutTemplateList.a11y.test.tsx` gates **both** the grid and list views with `expectNoA11yViolations` — green (was red on both violations pre-fix). All 18 `LayoutTemplateList` tests pass; `tsc -b`, ESLint, `i18n:check`, `i18n:check:locales` green. **Scope note (unchanged from plan):** extending axe coverage to further surfaces stays in FUTURE_TASKS.md — P72-G fixed only the two known `LayoutTemplateList` violations.
+
 ## Outcome
 
-In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3). **Remaining:** P72-G (Batch 4); P72-E (Batch 5).
+In progress. **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **Remaining:** P72-E (Batch 5).

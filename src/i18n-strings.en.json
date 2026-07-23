@@ -1911,6 +1911,8 @@
   "admin_lt_search_ph": "Search layouts…",
   "admin_lt_search_aria": "Search layout templates",
   "admin_lt_view_mode": "View mode",
+  "admin_lt_view_grid": "Grid view",
+  "admin_lt_view_list": "List view",
   "admin_lt_import": "Import",
   "admin_lt_new": "New Layout",
   "admin_lt_from_preset": "From Preset",

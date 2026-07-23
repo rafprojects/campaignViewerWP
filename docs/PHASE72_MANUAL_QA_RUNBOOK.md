@@ -41,8 +41,9 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 | P72-B | New `WPSG_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
 | P72-F | Two opt-in retention windows (`access_requests_retention_days`, `audit_log_retention_days`, default 0) drive weekly cron purges of the two PII tables, plus admin NumberInput controls in Settings → Advanced → Data Maintenance. | **Yes** — a configured window purges old rows weekly; 0 keeps forever; the controls are settable in the admin UI. |
 | P72-A | ~30 hardcoded strings (a11y `announce()`, draft-restore modal chrome, adapter-import validator errors, an external-media error fallback) routed through `i18n.t`; the `wpsg/no-untranslated-notification` gate widened to also guard `announce()` + `openConfirmModal` chrome. | **Yes** — those strings now render translated on a non-English locale; a new hardcoded `announce()`/modal-chrome string now fails `npm run lint`. |
+| P72-G | `LayoutTemplateList` icon-only view-toggle segments gained visually-hidden accessible names; the grid card stopped being a `role="button"` wrapping the menu button — the primary action is now a real `UnstyledButton` with the menu as a sibling. A new axe test gates the component. | **Screen-reader only** — the view-toggle now announces "Grid view"/"List view"; the card is no longer a button-in-a-button. No visible change. |
 
-*(Rows for P72-E/G are added as those tracks land.)*
+*(Row for P72-E is added as that track lands.)*
 
 ---
 
@@ -199,6 +200,37 @@ The gate test's new cases: a hardcoded `announce('…')` flags (1), a `t()`-wrap
 
 ---
 
+### P72-G — Fix the two known `LayoutTemplateList` axe violations + gate it
+
+**What & why.** The jsdom axe harness (`expectNoA11yViolations`) had flagged two `LayoutTemplateList` issues during the P62-H rollout that were never fixed (and, it turned out, never had a committed test). **(a)** the icon-only view-toggle `SegmentedControl` segments have no accessible name (`label`, critical); **(b)** a `role="button"` template Card nests the action Menu button (`nested-interactive`, serious). P72-G fixes both and adds a committed axe test gating the component.
+
+**The plan's nuance — resolved by running the test first.** The `SegmentedControl` already carried a *group-level* `aria-label`, so it was unprovable from the code whether the individual segments still flagged. The axe test was **written and run against current source before any fix** — and confirmed **both** violations still reproduce (a group `aria-label` does not name the individual segment radio inputs). So both fixes were real, not speculative.
+
+**The fixes.** (a) each segment wraps its icon with a `<VisuallyHidden>` i18n'd name ("Grid view"/"List view"), giving the radio input an accessible name; the group `aria-label` stays. (b) the Card is no longer `role="button"` — the primary edit action is a real `UnstyledButton` (native `<button>`) around the preview + title, and the Menu is an absolutely-positioned sibling (top-right), so no interactive nests inside another.
+
+**Pre-fix behaviour.** Screen readers announced the view toggle segments with no name (just "radio button"); the card was a button containing a button (ambiguous focus/activation). No *visible* change either way.
+
+**This track's meaningful check is failure-first** — the axe test was confirmed **red** (2 violations) on pre-fix source and **green** after; that is the whole proof, per the golden rule.
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/components/Admin/LayoutTemplateList.a11y.test.tsx   # grid + list views, both green
+npx vitest run src/components/Admin/LayoutTemplateList                 # all 18 tests (incl. the updated render test)
+npx tsc -b
+npm run i18n:check && npm run i18n:check:locales   # the 2 new accessible-name keys (already-translated msgids)
+```
+The a11y test gates **both** views: grid (covers the SegmentedControl toolbar + the grid card) and list (the Table). Confirmed red→green: on pre-fix source it reports `2 accessibility violation(s)` (`label` ×2 segments + `nested-interactive`); post-fix, zero.
+
+**Why it proves the fix.** axe reproduces the exact WCAG failures the fix targets; a green run means the segments now have names and no interactive control nests in another. The updated render test (`click` instead of `keyDown(Enter)`) proves the primary action still works as a native button.
+
+**Live check (recommended — this is screen-reader behaviour, invisible visually).** In the Layout Builder template list: with a screen reader (VoiceOver/NVDA), Tab to the view toggle and confirm each segment announces "Grid view" / "List view" (not an unnamed radio). Tab through a template card and confirm the card body is announced as one "Edit layout {name}" button and the "Actions for {name}" menu is a separate button — not a button inside a button. Visually confirm the card looks unchanged (menu top-right, click card body to edit).
+
+**Regression checks.** All 18 `LayoutTemplateList` tests green; full 3766-test suite green (the restructure is contained to one component). The one behavioural test change (`keyDown`→`click`) reflects the improved semantics, not a regression.
+
+**Pitfall.** (1) A group-level `aria-label` on a `SegmentedControl` does **not** satisfy the `label` rule for its individual segments — each option needs its own accessible name (the visually-hidden text). Don't "fix" this by only adding/adjusting the group label. (2) The menu must be a real DOM **sibling** of the primary button, not a descendant — an absolutely-positioned child that is still inside the `UnstyledButton` in the DOM would re-introduce `nested-interactive` (and make clicking the menu also trigger edit). (3) After removing the Card's manual `onKeyDown`, don't assert keyboard activation with `fireEvent.keyDown` — a native `<button>` activates on `click` in jsdom; keyboard is the browser's job. (4) Scope: this track fixes only the two known violations — do not treat `LayoutTemplateList` as "fully audited" or extend the gate to other components here (that stays in FUTURE_TASKS.md).
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -208,7 +240,7 @@ The gate test's new cases: a hardcoded `announce('…')` flags (1), a `t()`-wrap
 | P72-B | Privacy tests green (both exporters registered, audit eraser absent, callbacks return/erase correct rows; confirmed red pre-fix) | Additive — no existing behaviour changed | ☑ (automated; live DSAR admin-flow check optional, not run) |
 | P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
 | P72-A | Gate test 10/10 (4 new sink cases; confirmed red on pre-widen rule); lint green repo-wide (whole sweep complete); i18n gates green (32 keys × 5 locales) | Full 3764-test suite green unmodified (English defaults unchanged) | ☑ (automated; non-English locale-switch check optional, not run) |
+| P72-G | New a11y test green (grid + list; confirmed red pre-fix — 2 violations) | All 18 LayoutTemplateList tests + full 3766-test suite green | ☑ (automated; live screen-reader check optional, not run) |
 | P72-E | — | — | ☐ (pending) |
-| P72-G | — | — | ☐ (pending) |
 
 **Automated baseline (must be green alongside manual QA):** the PHPUnit suite via `/php-testing` for the PHP tracks; `npx tsc -b`, `npm test`, `npm run lint` for the React tracks. See PHASE72_REPORT.md → each track's section for per-track rationale.
