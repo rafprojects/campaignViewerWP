@@ -2,11 +2,11 @@ import { useState, useCallback } from 'react';
 import { notifications } from '@mantine/notifications';
 import i18n from '@/i18n';
 import type { ApiClient } from '@/services/apiClient';
+import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
+import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
 
 // [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
 const t = i18n.t.bind(i18n);
-import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
-import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
 
 export function useLayoutBuilderAssets({
   apiClient,

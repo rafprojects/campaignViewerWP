@@ -4,12 +4,12 @@ import { modals } from '@mantine/modals';
 import { Text } from '@mantine/core';
 import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
+import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
 
 // [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
 // (The surrounding modal title/labels are a separate, pre-existing i18n gap not
 // in F-1's notification scope and are intentionally left untouched here.)
 const t = i18n.t.bind(i18n);
-import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
 
 interface UseBuilderDraftRestoreOptions {
   opened: boolean;
