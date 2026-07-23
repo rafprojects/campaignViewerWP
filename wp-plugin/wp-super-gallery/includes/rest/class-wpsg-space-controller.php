@@ -458,13 +458,20 @@ class WPSG_Space_Controller extends WPSG_REST_Base {
         // manage_options (the System & Admin tab is already gated to that tier
         // client-side); editors writing only display keys are unaffected.
         $global_input = array_diff_key($snake_input, $allowed);
-        // P67-D: route the changed global keys through the shared write path.
-        // NOTE: this branch still *silently drops* the global keys when the caller
-        // lacks manage_options (unlike /settings, which returns a 403). That
-        // pre-existing inconsistency is deliberately preserved here; unifying the
-        // guard is tracked in docs/FUTURE_TASKS.md. Passing false for $bump_cache
-        // because bump_cache_version() is called once below after the override write.
-        if (!empty($global_input) && current_user_can('manage_options')) {
+        // P72-C: unify the authorization boundary with /settings. Previously this
+        // branch required manage_options for *any* global key and silently dropped
+        // the write otherwise; now it routes through the shared guard, which 403s
+        // only on admin-only (system) keys and lets editors write the non-admin
+        // global keys they can already write via /settings. Guard runs before any
+        // write so a rejected request applies nothing (no partial override write).
+        if (!empty($global_input)) {
+            $denied = self::guard_admin_only_settings(array_keys($global_input));
+            if (is_wp_error($denied)) {
+                return $denied;
+            }
+            // P67-D: route the changed global keys through the shared write path.
+            // Passing false for $bump_cache because bump_cache_version() is called
+            // once below after the override write.
             self::write_global_settings(
                 $global_input,
                 'changed',

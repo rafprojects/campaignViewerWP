@@ -8,10 +8,11 @@
  * settings_panel_animation. update_space_settings() must:
  *   - keep space-overridable keys in the per-space override (as before);
  *   - route the remaining global-only keys that actually changed to the GLOBAL
- *     option — but only for manage_options users (system-level write);
- *   - leave global settings untouched for editors (manage_wpsg, not
- *     manage_options): their global keys are silently dropped, not 403'd, and
- *     the space save still succeeds for the overridable keys.
+ *     option, subject to the shared settings guard (P72-C):
+ *       · non-admin-only globals (e.g. settings_panel_animation) may be written
+ *         by an editor (manage_wpsg) — the same keys they can write via /settings;
+ *       · admin-only globals (e.g. cache_ttl) require manage_options and return
+ *         an explicit 403 for editors (no longer silently dropped).
  *
  * Also locks the registry contract: settings_panel_animation is a validated
  * global enum and is NOT space-overridable.
@@ -151,15 +152,14 @@ class WPSG_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // Permission: editors cannot write global keys via the space panel
+    // Permission (P72-C): the space panel shares /settings' guard exactly.
+    //   · non-admin-only globals → an editor may write them (same as /settings);
+    //   · admin-only globals     → an editor gets an explicit 403 (was silently
+    //     dropped before P72-C).
     // -------------------------------------------------------------------------
 
-    public function test_space_admin_editor_cannot_write_global_key_but_space_save_succeeds() {
-        $animation_before = WPSG_Settings::get_settings()['settings_panel_animation'];
-
-        // A space-admin editor reaches the space-settings endpoint (manage_wpsg +
-        // an explicit space grant) but does NOT hold manage_options — exactly the
-        // tier the split-save's global write must refuse.
+    /** Space-admin editor (manage_wpsg + space grant, no manage_options). */
+    private function make_editor_space(): array {
         $editor_id = $this->set_editor();
         $space_id  = WPSG_DB::insert_space([
             'name'           => 'P57 Editor Space',
@@ -167,27 +167,67 @@ class WPSG_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
             'isolation_mode' => 'open',
             'access_grants'  => [['userId' => $editor_id, 'access_level' => 'admin']],
         ]);
+        return [$editor_id, $space_id];
+    }
 
-        // Mixed payload: an overridable key (theme) + a global-only key (animation).
+    public function test_editor_may_write_a_non_admin_global_key_via_space_panel() {
+        // settings_panel_animation is a global (non-overridable) key that is NOT
+        // admin-only, so an editor can write it via /settings — and, since P72-C
+        // unified the guard, via the space panel too.
+        $this->assertNotContains('settings_panel_animation', WPSG_Settings_Registry::get_admin_only_fields());
+
+        [, $space_id] = $this->make_editor_space();
+
+        // Mixed payload: an overridable key (theme) + a non-admin global (animation).
         $response = $this->put_space_settings($space_id, [
             'theme'                  => 'github-light',
             'settingsPanelAnimation' => 'none',
         ]);
 
-        // The space save succeeds — global keys are silently skipped for a
-        // non-manage_options user (not 403'd), matching how non-overridable keys
-        // have always been dropped at this endpoint.
         $this->assertSame(200, $response->get_status());
 
         $overrides = $this->persisted_overrides($space_id);
         $this->assertSame('github-light', $overrides['theme'] ?? null, 'editor may still write the overridable key');
-        $this->assertArrayNotHasKey('settings_panel_animation', $overrides);
+        $this->assertArrayNotHasKey('settings_panel_animation', $overrides, 'global key must not land in the space override');
 
-        // The global option must be untouched by a non-manage_options user.
+        // The non-admin global IS written now (consistency with /settings).
         $this->assertSame(
-            $animation_before,
+            'none',
             WPSG_Settings::get_settings()['settings_panel_animation'],
-            'space-admin editor (no manage_options) must not change a global setting via split-save'
+            'editor may write a non-admin-only global via the space panel (P72-C)'
+        );
+    }
+
+    public function test_editor_gets_403_on_admin_only_global_via_space_panel() {
+        // cache_ttl is an admin-only (system) global — writing it requires
+        // manage_options. Before P72-C the space panel silently dropped it; now
+        // it returns the same explicit 403 as /settings, and applies nothing.
+        $this->assertContains('cache_ttl', WPSG_Settings_Registry::get_admin_only_fields());
+        $cache_ttl_before = WPSG_Settings::get_settings()['cache_ttl'];
+
+        [, $space_id] = $this->make_editor_space();
+
+        // Mixed payload: an overridable key (theme) + an admin-only global (cacheTtl).
+        $response = $this->put_space_settings($space_id, [
+            'theme'    => 'github-light',
+            'cacheTtl' => 999,
+        ]);
+
+        // Explicit 403 — the whole request is rejected, matching /settings.
+        $this->assertSame(403, $response->get_status());
+        $this->assertSame('wpsg_forbidden_settings', $response->get_data()['code'] ?? null);
+
+        // Nothing was applied: neither the admin-only global nor the overridable
+        // key (guard runs before any write, so the request is atomic).
+        $this->assertSame(
+            $cache_ttl_before,
+            WPSG_Settings::get_settings()['cache_ttl'],
+            'admin-only global must not change for a non-manage_options user'
+        );
+        $this->assertArrayNotHasKey(
+            'theme',
+            $this->persisted_overrides($space_id),
+            'a rejected request applies no partial override write'
         );
     }
 }

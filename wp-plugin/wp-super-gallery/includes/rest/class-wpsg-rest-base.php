@@ -752,7 +752,44 @@ abstract class WPSG_REST_Base {
         update_option('wpsg_cache_version', $v + 1, true);
     }
 
-    // ── P67-D: shared global-settings write path ───────────────────────────────
+    // ── P67-D / P72-C: shared global-settings guard + write path ───────────────
+
+    /**
+     * P52-A4 / P72-C: enforce the system-vs-display settings boundary.
+     *
+     * Writing settings requires manage_wpsg (the route gate). Writing any
+     * *system-level* key (the registry's $admin_only_fields — cache, uploads,
+     * auth provider, retention, etc.) additionally requires manage_options.
+     * A space editor (manage_wpsg only) may write display/campaign keys but
+     * not system ones.
+     *
+     * Shared by every global-settings write path — update_settings(),
+     * patch_settings(), and (as of P72-C) update_space_settings()'s global-key
+     * branch — so all three return the same explicit 403 instead of one path
+     * silently dropping the keys.
+     *
+     * @param string[] $requested_keys snake_case keys the caller is writing.
+     * @return WP_Error|null WP_Error (403) if a system key is written without
+     *                       manage_options; null when the write is permitted.
+     */
+    protected static function guard_admin_only_settings(array $requested_keys) {
+        if (current_user_can('manage_options')) {
+            return null;
+        }
+
+        $admin_only = WPSG_Settings_Registry::get_admin_only_fields();
+        $blocked    = array_values(array_intersect($requested_keys, $admin_only));
+
+        if (!empty($blocked)) {
+            return new WP_Error(
+                'wpsg_forbidden_settings',
+                'These settings require a System Administrator (manage_options): ' . implode(', ', $blocked),
+                ['status' => 403, 'fields' => $blocked]
+            );
+        }
+
+        return null;
+    }
 
     /**
      * Single global-settings write path shared by update_settings(),
@@ -760,11 +797,9 @@ abstract class WPSG_REST_Base {
      * merges per $mode, writes wpsg_settings, and emits the settings.updated
      * audit entry.
      *
-     * The permission guard stays with each caller — they differ deliberately:
-     * the settings controller returns an explicit 403 for a non-manage_options
-     * write, while the space panel silently drops the keys — so this helper
-     * assumes the write is already authorized (see docs/FUTURE_TASKS.md for the
-     * decision to unify that guard later).
+     * Callers guard authorization first via guard_admin_only_settings() (P72-C
+     * unified this — all three write paths now return the same 403), so this
+     * helper assumes the write is already authorized.
      *
      * @param array  $snake_input    snake_case settings the caller is writing.
      * @param string $mode           'replace' — merge all sanitized keys (full save);

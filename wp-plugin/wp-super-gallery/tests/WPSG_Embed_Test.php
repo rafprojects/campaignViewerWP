@@ -192,6 +192,71 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $this->assertStringNotContainsString( 'wpsg-full-bleed', $output );
     }
 
+    // ------------------------------------- P72-D: unresolved-space admin notice
+
+    /** System admin: administrator + manage_wpsg. */
+    private function set_manage_wpsg_admin(): int {
+        $uid  = self::factory()->user->create( [ 'role' => 'administrator' ] );
+        $user = get_user_by( 'id', $uid );
+        $user->add_cap( 'manage_wpsg' );
+        wp_set_current_user( $uid );
+        return $uid;
+    }
+
+    public function test_unresolved_explicit_space_shows_admin_notice() {
+        $this->set_manage_wpsg_admin();
+
+        // An explicit space= that does not resolve to any space.
+        $output = WPSG_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
+
+        $this->assertStringContainsString( 'wpsg-shortcode-notice', $output, 'admin should see the fallback notice' );
+        // The stale reference is named in the notice.
+        $this->assertStringContainsString( 'deleted-space-xyz', $output );
+        // The gallery still renders normally alongside the notice.
+        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_unresolved_explicit_space_hidden_from_visitor() {
+        wp_set_current_user( 0 ); // anonymous visitor, no manage_wpsg
+
+        $output = WPSG_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'visitors must never see the notice' );
+        // The gallery still renders normally (falls back to the default space).
+        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+    }
+
+    public function test_omitted_space_reference_shows_no_notice_even_for_admin() {
+        $this->set_manage_wpsg_admin();
+
+        // No explicit space/campaign/company: the default is intentional, not an error.
+        $output = WPSG_Embed::render_shortcode();
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'the intentional-default case must not warn' );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_resolved_explicit_space_shows_no_notice() {
+        $this->set_manage_wpsg_admin();
+
+        $space_id = WPSG_DB::insert_space( [
+            'name'           => 'P72D Real Space',
+            'slug'           => 'p72d-real-' . wp_generate_password( 6, false ),
+            'isolation_mode' => 'open',
+        ] );
+        $space = WPSG_DB::get_space( $space_id );
+
+        // An explicit space= that DOES resolve must not trigger the notice.
+        $output = WPSG_Embed::render_shortcode( [ 'space' => $space->slug ] );
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'a valid reference must not warn' );
+
+        wp_set_current_user( 0 );
+    }
+
     // --------------------------------------------------------- add_module_type()
 
     public function test_add_module_type_modifies_app_handle() {

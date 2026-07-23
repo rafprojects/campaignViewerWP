@@ -190,7 +190,8 @@ class WPSG_Embed {
             'auth_bar_mode' => '',
         ], $atts, 'super-gallery');
 
-        $space_id = self::resolve_space_id($atts);
+        $unresolved_space_ref = false;
+        $space_id = self::resolve_space_id($atts, $unresolved_space_ref);
         $space_obj  = class_exists('WPSG_DB') ? WPSG_DB::get_space($space_id) : null;
         $space_slug = ($space_obj && !empty($space_obj->slug)) ? $space_obj->slug : (string) $space_id;
         $space_name = ($space_obj && !empty($space_obj->name)) ? $space_obj->name : $space_slug;
@@ -409,7 +410,12 @@ class WPSG_Embed {
             $bleed_close = '</div>';
         }
 
-        return $config_script . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
+        // P72-D: admin-only notice when an explicit space reference fell back to
+        // the default. Placed outside the full-bleed wrapper so it isn't pulled
+        // edge-to-edge, and before the mount node so it reads as a page-level hint.
+        $unresolved_notice = $unresolved_space_ref ? self::render_unresolved_space_notice($atts) : '';
+
+        return $config_script . $unresolved_notice . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
     }
 
     /**
@@ -418,10 +424,22 @@ class WPSG_Embed {
      * Priority: explicit space= attr (ID or slug) → campaign's _wpsg_space_id →
      * company's _wpsg_space_id → Default Space.
      *
-     * @param array $atts Shortcode attributes.
+     * P72-D: `$unresolved` distinguishes "an explicit reference was given but did
+     * not resolve" (a stale/mistyped space=/campaign=/company= that silently
+     * collapsed onto the default — worth an admin-facing signal) from "no explicit
+     * reference was given" (the intentional default, no signal). It is set true
+     * only when at least one explicit attribute was provided AND every resolution
+     * path failed, so the final default fallback was taken.
+     *
+     * @param array $atts       Shortcode attributes.
+     * @param bool  $unresolved Out-param: true when an explicit reference fell
+     *                          through to the default because none resolved.
      * @return int Resolved space ID (always ≥ 1).
      */
-    private static function resolve_space_id(array $atts): int {
+    private static function resolve_space_id(array $atts, bool &$unresolved = false): int {
+        $unresolved   = false;
+        $had_explicit = !empty($atts['space']) || !empty($atts['campaign']) || !empty($atts['company']);
+
         if (!empty($atts['space'])) {
             $s = $atts['space'];
             if (is_numeric($s) && class_exists('WPSG_DB')) {
@@ -461,7 +479,51 @@ class WPSG_Embed {
             }
         }
 
+        // Reached the default fallback. If the caller named an explicit target
+        // that never resolved, flag it so render_shortcode() can surface an
+        // admin-only notice (P72-D).
+        $unresolved = $had_explicit;
         return (int) get_option('wpsg_default_space_id', 1);
+    }
+
+    /**
+     * P72-D: admin-only inline notice shown when a shortcode's explicit
+     * space=/campaign=/company= reference did not resolve and the gallery
+     * silently fell back to the default space. Gated on manage_wpsg so it is
+     * never shown to visitors; returns '' for non-admins and for the
+     * omitted-attribute (intentional default) case.
+     *
+     * @param array $atts Shortcode attributes (for naming the stale reference).
+     * @return string Notice HTML, or '' when no notice should render.
+     */
+    private static function render_unresolved_space_notice(array $atts): string {
+        if (!current_user_can('manage_wpsg')) {
+            return '';
+        }
+
+        // Name the explicit reference(s) that were provided, in priority order.
+        $refs = [];
+        foreach (['space', 'campaign', 'company'] as $attr) {
+            if (!empty($atts[$attr])) {
+                $refs[] = $attr . '="' . $atts[$attr] . '"';
+            }
+        }
+        $ref_label = implode(' ', $refs);
+
+        $message = sprintf(
+            /* translators: %s: the shortcode reference that did not resolve, e.g. space="acme". */
+            __(
+                'WP Super Gallery: this gallery references a space that no longer exists (%s) — showing the default space instead. Only site administrators see this notice.',
+                'wp-super-gallery'
+            ),
+            $ref_label
+        );
+
+        return '<div class="wpsg-shortcode-notice" role="status" style="'
+            . 'margin:0 0 12px;padding:10px 14px;border:1px solid #f0b849;border-left-width:4px;'
+            . 'background:#fcf9e8;color:#3c2f00;border-radius:4px;font-size:14px;line-height:1.5;">'
+            . esc_html($message)
+            . '</div>';
     }
 
     /**

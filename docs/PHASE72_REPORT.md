@@ -1,6 +1,6 @@
 # Phase 72 - Mixed-Domain Hardening: i18n Gaps, Privacy, Permissions & Refactoring
 
-**Status:** Planned
+**Status:** In progress (Batch 1 landed 2026-07-23)
 **Created:** 2026-07-23
 
 ### Tracks
@@ -9,8 +9,8 @@
 |-------|--------|-------------|--------|--------|
 | P72-A | React / i18n | Non-notification user-facing strings still bypass i18n | Planned | Medium |
 | P72-B | PHP / Privacy | WordPress Core Privacy Integration (DSAR export/erase) | Planned | Medium |
-| P72-C | PHP / Settings | `update_space_settings()` silently drops global keys instead of returning 403 | Planned | Tiny |
-| P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | Planned | Small |
+| P72-C | PHP / Settings | `update_space_settings()` silently drops global keys instead of returning 403 | ✅ Done | Tiny |
+| P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | ✅ Done | Small |
 | P72-E | React / Refactor | `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder) | Planned | Medium |
 | P72-F | PHP / Privacy | Retention / auto-purge for PII tables (access-requests, audit-log) | Planned | Small-Medium |
 | P72-G | React / a11y | Structural a11y (axe) gate — fix the 2 known `LayoutTemplateList` violations | Planned | Small (this slice) |
@@ -58,7 +58,9 @@ P71-E's sweep and its `wpsg/no-untranslated-notification` lint gate only guard `
 
 ### Fix
 
-Route all four through `i18n.t('key', 'English default')`, the same pattern P71-E used (`useBuilderDraftRestore.tsx` and `useLayoutBuilderAssets.ts` already import `i18n` for their P71-E fixes, so wiring is minimal). Make an explicit, documented decision on whether the `wpsg/no-untranslated-notification` gate's scope should widen to catch one or more of these categories (e.g. a sibling rule for `modals.openConfirmModal` chrome), or whether they stay as manually-swept exceptions — write the decision down rather than leaving it implicit.
+Route all four through `i18n.t('key', 'English default')`, the same pattern P71-E used (`useBuilderDraftRestore.tsx` and `useLayoutBuilderAssets.ts` already import `i18n` for their P71-E fixes, so wiring is minimal).
+
+**Decided (2026-07-23 planning — gate scope: partial widen).** Widen the `wpsg/no-untranslated-notification` gate to also catch (2) `announce()` literal arguments and (4) `modals.openConfirmModal` chrome (`title`/`labels.confirm`/`labels.cancel`) — both are the same mechanical AST shape the existing rule already handles (a known-function call with a literal argument/property), cheap to add, and genuine regression risks (screen-reader-only text is invisible to visual QA; modal chrome is trivially re-hardcoded). Do **not** widen for (1) helper-fallback args (e.g. `getErrorMessage(err, 'literal')`) or (3) validator-return-value literals: (1) would require hardcoding specific helper names into the rule (fragile; the rule header already disclaims this) and (3) needs interprocedural data-flow analysis ESLint cannot do. Those two stay manually-swept, documented as intentional non-goals in the rule header.
 
 ### Acceptance criteria
 
@@ -88,7 +90,7 @@ Register exporters/erasers keyed on email (`wp_wpsg_access_requests`) and userna
 
 - A DSAR export request for a known email surfaces the visitor's access-request records via **Tools → Export Personal Data**.
 - An erase request removes or anonymizes the matching access-request rows.
-- **Open question requiring an explicit decision during implementation:** how the audit-log (staff-action) side interacts with erasure requests — audit trails commonly carry a legitimate-interest retention override that should not be silently bypassed by a self-service erase request. Resolve this deliberately, not by default assumption.
+- **Decided (2026-07-23 planning — audit-log is export-only, exempt from erasure).** Register a `wp_privacy_personal_data_exporters` callback for `wp_wpsg_audit_log` (a DSAR export includes a staff member's own logged actions) but **no eraser** for it. Rationale: audit/accountability logs are a legitimate-interest exception to erasure (GDPR Art. 6(1)(f) / 17(3)(b)) — the log's whole purpose is to show who did what, and a self-service erase reachable only when the requester's email matches their own `actor_login` would let someone erase the record of their own privileged actions. `wp_wpsg_access_requests` (visitor emails, no accountability purpose) gets **both** an exporter and an eraser — full DSAR support, no exemption. This asymmetry must be documented explicitly in code + `PRIVACY.md`, not left implicit.
 
 ### Validation
 
@@ -111,12 +113,16 @@ New privacy-tools registrations (`wp_privacy_personal_data_exporters` / `_eraser
 
 ### Fix
 
-Decide whether `update_space_settings()` should return the same explicit 403 as the other two write paths for an unauthorized global-key write, then implement it via the shared `write_global_settings()` / `guard_admin_only_settings()` helpers already in place — no new authorization logic needed, just routing this call site through the existing guard.
+**Decided (2026-07-23 execution, option 1A — full consistency with `/settings`):** route the space panel's global-key branch through the shared `guard_admin_only_settings()` guard, exactly like `update_settings()`/`patch_settings()`. `guard_admin_only_settings()` was promoted from `private` on `WPSG_Settings_Controller` to `protected static` on the shared base `WPSG_REST_Base` so all three write paths call the same method.
+
+**Why 1A over the stricter alternative (1B):** an investigation during implementation found a **98-key gap** — keys that are global (non-overridable) but *not* admin-only (advanced-display settings: `settings_panel_animation`, `image_border_radius`, breakpoints, etc.). Crucially, `/settings` is gated `require_admin` = `manage_wpsg`, so an **editor already can write all 98 non-admin-only globals via `/settings` today**; only the 29 admin-only keys 403 there. The space panel silently dropping *all* global keys was therefore an *accidental inconsistency*, not a deliberate policy. 1A makes the space panel identical to `/settings` (editors write non-admin globals; admin-only globals 403) — granting editors no capability they lack elsewhere, just closing the anomaly. The stricter 1B (any global key via the space panel needs `manage_options`) was considered and rejected because it would perpetuate the inconsistency. The guard runs **before any write**, so a rejected request applies nothing (no partial override write).
 
 ### Acceptance criteria
 
-- A non-`manage_options` caller attempting to change a global key via the space panel receives the same explicit 403 (or a deliberately-chosen and documented alternative) as the other two settings-write paths.
-- No more silent data loss on this permission boundary.
+- A non-`manage_options` caller writing an **admin-only** global key via the space panel receives the same explicit `wpsg_forbidden_settings` 403 as `/settings`. ✅
+- A non-`manage_options` editor writing a **non-admin-only** global key via the space panel succeeds (consistency with `/settings`). ✅
+- No more silent data loss on this permission boundary. ✅
+- The `P57A` editor test was rewritten to encode the new behavior (was: "200 + silent drop"; now: two cases — non-admin global succeeds, admin-only global 403s).
 
 ### Validation
 
@@ -173,7 +179,9 @@ In `resolve_space_id()`, distinguish "an explicit attribute was given but did no
 
 ### Fix
 
-Pick (a) or (b) explicitly before starting — this is a required decision point, not an implementation detail to resolve along the way. Either way, preserve behavior exactly: the `selectedSpaceId` reset, the "default to first campaign/company" effects, and the prefetch-once-per-tab orchestration must move with their state, not get dropped or duplicated. Mirror the existing `useAdminCampaignActions` / `useAdminZipTransfers` / `useAdminAccessState` extraction shape.
+**Decided (2026-07-23 planning — option (b): real re-render isolation).** Split the media/access/audit tabs into child components that each own their own tab-selection state (colocated with their data-fetching + prefetch orchestration). Option (a) (hook extraction only) was rejected because it does not reduce re-renders — a hook's `useState` still re-renders whoever calls it, and `AdminPanel` would still be the caller; only a component split achieves the isolation benefit. This is the larger, last, riskiest track in the phase.
+
+Either way, preserve behavior exactly: the `selectedSpaceId` reset, the "default to first campaign/company" effects, and the prefetch-once-per-tab orchestration must move with their state, not get dropped or duplicated. Mirror the existing `useAdminCampaignActions` / `useAdminZipTransfers` / `useAdminAccessState` extraction shape.
 
 ### Acceptance criteria
 
@@ -261,8 +269,16 @@ Extending `expectNoA11yViolations` coverage to further surfaces (the LayoutBuild
 
 ## Implementation Notes
 
-Not yet started. This report was created 2026-07-23 during a planning pass on `feature/phase71-react-hardening-4-of-4`; execution will happen in a later session. See Execution Priority above for the suggested batching.
+Report created 2026-07-23 during a planning pass on `feature/phase71-react-hardening-4-of-4`. A follow-up execution session (2026-07-23, model Opus) re-verified all seven tracks' claims against current source (all confirmed, zero drift), resolved the four open decisions with the user (recorded per-track above), and began execution. A companion manual-QA runbook — [PHASE72_MANUAL_QA_RUNBOOK.md](PHASE72_MANUAL_QA_RUNBOOK.md) — is built incrementally, one section per track as it lands.
+
+### Batch 1 — P72-C + P72-D (landed 2026-07-23)
+
+**P72-C rationale.** The investigation that drove the 1A-vs-1B decision (see the P72-C Fix section) hinged on one discovered fact: `/settings` is gated at the `manage_wpsg` (editor) tier and already lets editors write the 98 non-admin-only global keys, so the space panel's stricter "manage_options for *any* global key" was an accidental inconsistency, not policy. Implementation promoted `guard_admin_only_settings()` from `private` on `WPSG_Settings_Controller` to `protected static` on `WPSG_REST_Base` (the two `self::` call sites resolve to the inherited method unchanged), then routed `update_space_settings()`'s global-key branch through it, guarding before any write so a rejected request is atomic. The stale `write_global_settings()` docblock note ("space panel silently drops the keys… unify later") was updated to reflect the now-unified guard.
+
+**P72-D rationale.** `resolve_space_id()` gained a `bool &$unresolved` out-param set true only when at least one explicit `space=`/`campaign=`/`company=` attribute was given *and* every resolution path failed (so the default fallback was taken) — this precisely distinguishes "given but unresolved" from "omitted" (the precedence subtlety is handled naturally: a successful lower-priority resolution returns early, leaving `$unresolved` false). `render_shortcode()` captures the flag and, via the new `render_unresolved_space_notice()` helper, emits a `manage_wpsg`-gated inline notice naming the stale reference — placed outside the full-bleed wrapper and before the mount node. The notice string is routed through WP's `__()`/`esc_html()` (text domain `wp-super-gallery`).
+
+**Verification.** 64 PHPUnit tests green (376 assertions) across `WPSG_P57A_Settings_Split_Save_Test` (rewritten for the new 1A behavior — 2 new methods), `WPSG_Embed_Test` (4 new P72-D methods), and regressions `WPSG_P52A4_Settings_Split_Test`, `WPSG_Settings_Rest_Test`, `WPSG_P47_Spaces_Settings_Test`. See the runbook for the failure-first / manual-QA detail.
 
 ## Outcome
 
-Planned — no tracks have landed yet.
+In progress. **Landed:** P72-C, P72-D (Batch 1). **Remaining:** P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4); P72-E (Batch 5).
