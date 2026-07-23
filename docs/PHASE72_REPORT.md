@@ -310,9 +310,17 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** New `LayoutTemplateList.a11y.test.tsx` gates **both** the grid and list views with `expectNoA11yViolations` — green (was red on both violations pre-fix). All 18 `LayoutTemplateList` tests pass; `tsc -b`, ESLint, `i18n:check`, `i18n:check:locales` green. **Scope note (unchanged from plan):** extending axe coverage to further surfaces stays in FUTURE_TASKS.md — P72-G fixed only the two known `LayoutTemplateList` violations.
 
-### Batch 5 — P72-E (NOT STARTED — handed off to a fresh session 2026-07-23)
+### Batch 5 — P72-E (IN PROGRESS — incremental; **Audit sub-panel landed 2026-07-23**)
 
-Deliberately **not** attempted in the execution session that landed Batches 1–4: option (b) is a large, high-risk restructure of the 927-line `AdminPanel.tsx`, and the user chose to hand it off to a fresh session rather than run it on an already-loaded context. All prior tracks are committed and green, so this is a clean handoff point.
+Picked up in a fresh session (2026-07-23). Per user direction, option (b) is being landed **incrementally, one panel per commit**, starting with the least-coupled tab. **Landed:** `AuditPanel` — the audit tab's `auditCampaignId` + `auditFilters` state, its `useAuditEntries`/`useAuditRows` calls, its default-to-first effect, and its once-per-mount prefetch all moved into `src/components/Admin/AuditPanel.tsx`. `AdminPanel` now renders `<AuditPanel key={selectedSpaceId} active={activeTab === 'audit'} … />`. **Remaining follow-up commits:** `AccessPanel` (the heavy one — must also absorb the root-level `ArchiveCompanyModal` + `QuickAddUserModal` that consume `accessState`), then `MediaPanel`.
+
+**Verification finding that corrected the handoff (below): the plan's Mantine/lifecycle assumption was wrong for this stack.** The handoff (behaviours #3/#4) assumed Mantine `Tabs.Panel` unmounts inactive panels, so moving state into a child would fetch-gate via mount/unmount. This repo is **Mantine v9** (`Tabs` defaults `keepMounted: true`, `keepMountedMode: "activity"`) on **React 19** — inactive panels stay **mounted** in `<Activity mode="hidden">` (state preserved, effects torn down; `env="test"` skips Activity, so all panels render in tests). Fetch-gating therefore stays an **explicit `active` prop** threaded to `useAuditEntries`, exactly as the inline code did — nothing about *when* data fetches changed. Two coupling facts in the handoff were also corrected: `addMediaCampaign` is **not** Media-local (its setter feeds `useCampaignsRows` on the Campaigns tab; its modal renders at root) so it stays in `AdminPanel`; and the Access split must move its two root modals into the child.
+
+**Reset mechanism (behaviour #1): chose `key={selectedSpaceId}`** on the child (user-confirmed) over a prop+effect — remount cleanly resets selection + refetch + re-runs default-select/prefetch, matching the old "reset to empty then default-select" sequence. The shared `selectedSpaceId` reset effect in `AdminPanel` dropped only its `setAuditCampaignId('')` line.
+
+**Validation.** New `AuditPanel.test.tsx` — 4 tests: default-select drives the audit fetch; `active={false}` fetches nothing (gating preserved); and the **isolation assertion only meaningful under (b)** — a stable-prop parent harness renders `<AuditPanel>`, the child's own default-select drives a fetch, yet the parent's render count stays `1`. The 3 existing `AdminPanel` tests pass unmodified. `tsc -b` + ESLint clean on both files. See `PHASE72_MANUAL_QA_RUNBOOK.md` → P72-E.
+
+**Original handoff guidance (retained for the Access + Media follow-ups):**
 
 **Handoff guidance (gathered while sizing the track — verified against current source 2026-07-23):**
 
@@ -332,4 +340,4 @@ The tab-selection state to move into per-tab child components, and every consume
 
 ## Outcome
 
-In progress — **6 of 7 tracks landed.** **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **Remaining:** P72-E (Batch 5) — handed off to a fresh session (see handoff guidance above). Branch: `feature/phase72-backlogged-hardening-1`.
+In progress — **6 of 7 tracks landed; P72-E in progress (incremental).** **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **P72-E (Batch 5):** landing one panel per commit — **AuditPanel landed**; AccessPanel + MediaPanel remain as follow-up commits. Branch: `feature/phase72-backlogged-hardening-1`.

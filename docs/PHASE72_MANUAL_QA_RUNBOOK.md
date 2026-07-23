@@ -231,6 +231,35 @@ The a11y test gates **both** views: grid (covers the SegmentedControl toolbar + 
 
 ---
 
+### P72-E — Split AdminPanel tabs into re-render-isolated child components (incremental; **Audit landed**)
+
+**What & why.** `AdminPanel.tsx` (~925 lines) held every tab's selection state inline, so changing (say) the audit-tab campaign selector set state on `AdminPanel` and re-rendered the *entire* panel — the campaigns table, the media toolbar, every memo. Option (b) of the track splits each data tab into a child component that owns its own selection state, so a selection change re-renders only that child. Delivered **incrementally, one panel per commit**; this commit is **AuditPanel** (the least-coupled tab, done first). Access and Media remain follow-ups.
+
+**Corrected foundation (the handoff's assumption was wrong for this stack).** The plan assumed Mantine `Tabs.Panel` unmounts inactive panels, so moving state into a child would give fetch-gating "for free" via mount/unmount. This repo is **Mantine v9** (`keepMounted: true`, `keepMountedMode: "activity"`) on **React 19** — inactive panels stay **mounted** (wrapped in `<Activity mode="hidden">`, which preserves state but tears down effects; `env="test"` skips Activity entirely, so all panels' children render in tests). So fetch-gating stays an **explicit `active` prop** (`activeTab === 'audit'`) threaded into `useAuditEntries`, exactly as the inline code did. Nothing about *when* data fetches changed.
+
+**What moved.** `AuditPanel.tsx` now owns `auditCampaignId` + `auditFilters`, calls `useAuditEntries`/`useAuditRows`, runs the default-to-first-campaign effect, and runs the once-per-mount audit prefetch. `AdminPanel` renders `<AuditPanel key={selectedSpaceId} active={activeTab === 'audit'} apiClient=… campaignSelectData=… zipTransfers=… />`. The `key={selectedSpaceId}` remounts the child on space change — that is what now resets the audit selection (the shared `selectedSpaceId` reset effect dropped only its `setAuditCampaignId('')` line; it still resets the inline media/access atoms).
+
+**Behaviour preserved (the acceptance criteria).** (1) space-change reset → `key` remount; (2) default-to-first-campaign → mount-time effect in the child; (3) prefetch-once → ref-guarded effect (now once per child mount rather than once per AdminPanel lifetime — equivalent, arguably cleaner); (4) inactive tabs don't fetch → the `active` prop gates the query. No user-visible change.
+
+**Pre-refactor behaviour to compare against.** Functionally identical: pick the audit tab, pick a campaign, see its activity; change the space and the audit campaign resets to the new space's first campaign; CSV/ZIP export use the current selection + filters. The *only* difference is internal (fewer re-renders).
+
+**Verification (primary — automated).**
+```bash
+npx vitest run src/components/Admin/AuditPanel.test.tsx   # 4 tests: default-select+fetch, inactive no-fetch, parent-isolation
+npx vitest run src/components/Admin/AdminPanel.test.tsx    # 3 existing tests, unchanged, green
+npx tsc -b
+npx eslint src/components/Admin/AuditPanel.tsx src/components/Admin/AdminPanel.tsx
+```
+The **isolation test is the "only meaningful under (b)" assertion**: a stable-prop parent harness renders `<AuditPanel>`; the child's mount-time default-select drives an audit fetch (proof its own state changed), yet the parent's render count stays exactly `1`. Under option (a) — hook extraction with the state still living in `AdminPanel` — that default-select would have bumped the parent. The fetch-gating test (`active={false}` ⇒ no `/audit` request) proves the mount-stays-mounted correction didn't leak fetches.
+
+**Live check (recommended).** In the admin panel: Campaign Activity tab → confirm the first campaign is auto-selected and its activity loads; switch campaigns and confirm the table updates; change the space dropdown and confirm the audit campaign resets (to the new space's first). Confirm CSV/ZIP export still download for the current selection + filters. Switch to another tab and back — no double-fetch, selection retained.
+
+**Regression checks.** All 3 existing `AdminPanel` tests pass unmodified; full front-end suite green. The diff is contained to `AdminPanel.tsx` (state/hook/effect removals + one child render) and the new `AuditPanel.tsx` — no shared hook or query changed.
+
+**Pitfall.** (1) Do **not** rely on Mantine v9 `Tabs.Panel` unmounting inactive tabs — it doesn't (`keepMounted` defaults true); keep the explicit `active` prop for fetch-gating. (2) `addMediaCampaign` is **not** a Media-tab-local atom (its setter feeds `useCampaignsRows` on the Campaigns tab and its modal renders at the panel root) — it must stay in `AdminPanel` when Media is split next. (3) The Access split is the heavy one: `accessState` drives two **root-level** modals (`ArchiveCompanyModal`, `QuickAddUserModal`) that must move *into* the child, or the isolation is lost. (4) Scope: this commit lands only Audit; Access + Media are separate follow-up commits.
+
+---
+
 ## 4. Sign-off checklist
 
 | Track | Primary assertion | Regression assertion | Done |
@@ -241,6 +270,6 @@ The a11y test gates **both** views: grid (covers the SegmentedControl toolbar + 
 | P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
 | P72-A | Gate test 10/10 (4 new sink cases; confirmed red on pre-widen rule); lint green repo-wide (whole sweep complete); i18n gates green (32 keys × 5 locales) | Full 3764-test suite green unmodified (English defaults unchanged) | ☑ (automated; non-English locale-switch check optional, not run) |
 | P72-G | New a11y test green (grid + list; confirmed red pre-fix — 2 violations) | All 18 LayoutTemplateList tests + full 3766-test suite green | ☑ (automated; live screen-reader check optional, not run) |
-| P72-E | — | — | ☐ (not started — handed off to a fresh session; see PHASE72_REPORT.md → Batch 5 handoff guidance) |
+| P72-E | AuditPanel isolation test green (parent renders once despite child state change; only meaningful under option b); fetch-gating test green | 3 existing AdminPanel tests unchanged; full front-end suite green | ◐ (Audit sub-panel landed; Access + Media are follow-up commits — see PHASE72_REPORT.md → Batch 5) |
 
 **Automated baseline (must be green alongside manual QA):** the PHPUnit suite via `/php-testing` for the PHP tracks; `npx tsc -b`, `npm test`, `npm run lint` for the React tracks. See PHASE72_REPORT.md → each track's section for per-track rationale.

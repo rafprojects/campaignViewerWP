@@ -9,7 +9,7 @@ import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
 import { CampaignsMobileList } from './CampaignsMobileList';
 import { BulkActionsBar } from './BulkActionsBar';
-import { AuditTab } from './AuditTab';
+import { AuditPanel } from './AuditPanel';
 import { GlobalAuditTab } from './GlobalAuditTab';
 import { AccessTab } from './AccessTab';
 import { LayoutTemplateList } from './LayoutTemplateList';
@@ -19,10 +19,10 @@ import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import { SpaceSelector } from '@/components/Common/SpaceSelector';
 import type { SpaceSelectItem } from '@/components/Common/SpaceSelector';
 import {
-  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
+  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies,
   useGlobalAuditEntries, useSpaces,
   useCampaignCategories, useCampaignTags,
-  prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
+  prefetchAllCampaignMedia, prefetchAllCampaignAccess,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import type { AccessSummaryItem, AuditFilters, CampaignFilters, AdminCampaign } from '@/services/adminQuery';
@@ -34,7 +34,6 @@ import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal
 import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useAccessRows } from '@/hooks/useAccessRows';
-import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
@@ -136,8 +135,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [accessCampaignId, setAccessCampaignId] = useState('');
   const [accessViewMode, setAccessViewMode] = useState<'campaign' | 'company' | 'all'>('campaign');
   const [selectedCompanyId, setSelectedCompanyId] = useState('');
-  const [auditCampaignId, setAuditCampaignId] = useState('');
-  const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const zipTransfers = useAdminZipTransfers({ apiClient, onNotify });
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
@@ -180,7 +177,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   );
   const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
   const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, selectedSpaceId, companiesEnabled);
-  const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
   const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {}, isSystemAdmin);
 
   // P47-J: pass the active space to the campaign modal so new campaigns get space_id set.
@@ -222,10 +218,11 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     onNotify,
   });
 
+  // P72-E: the audit tab's selection now resets via `key={selectedSpaceId}` on
+  // <AuditPanel>; this effect keeps resetting the still-inline media/access atoms.
   useEffect(() => {
     setMediaCampaignId('');
     setAccessCampaignId('');
-    setAuditCampaignId('');
     setSelectedCompanyId('');
   }, [selectedSpaceId]);
 
@@ -236,18 +233,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
   useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, auditCampaignId, allCampaigns]);
-  useEffect(() => {
     if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
   }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
   const mediaPrefetchedRef = useRef(false);
   const accessPrefetchedRef = useRef(false);
-  const auditPrefetchedRef = useRef(false);
   const cancelMediaRef = useRef<(() => void) | null>(null);
   const cancelAccessRef = useRef<(() => void) | null>(null);
-  const cancelAuditRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
@@ -260,13 +252,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
       cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
   }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => {
-    if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
-      auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
+  useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); }, []);
 
   const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
     { value: 'all', label: t('admin_all_spaces', 'All spaces') },
@@ -326,7 +312,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
 
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign, categoryItems: campaignCategories });
   const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole: accessState.handleChangeRole });
-  const auditRows = useAuditRows(auditEntries);
 
   return (
     <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
@@ -675,26 +660,14 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section">
-          <AuditTab
+          {/* P72-E: audit tab-selection + filter state lives in AuditPanel now;
+              key={selectedSpaceId} resets that state when the space changes. */}
+          <AuditPanel
+            key={selectedSpaceId}
+            active={activeTab === 'audit'}
+            apiClient={apiClient}
             campaignSelectData={campaignSelectData}
-            auditCampaignId={auditCampaignId}
-            onAuditCampaignChange={(v) => setAuditCampaignId(v ?? '')}
-            auditLoading={auditLoading}
-            auditEntriesCount={auditEntries.length}
-            auditRows={auditRows}
-            filters={auditFilters}
-            onFiltersChange={setAuditFilters}
-            auditError={auditError}
-            onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
-            onExportZip={() => zipTransfers.exportAuditZip({
-              ...(auditCampaignId ? { campaignId: auditCampaignId } : {}),
-              ...(auditFilters.from ? { from: auditFilters.from } : {}),
-              ...(auditFilters.to ? { to: auditFilters.to } : {}),
-              ...(auditFilters.action ? { action: auditFilters.action } : {}),
-              ...(auditFilters.scope ? { scope: auditFilters.scope } : {}),
-              ...(auditFilters.severity ? { severity: auditFilters.severity } : {}),
-            }, `audit-log-${Date.now()}.zip`)}
-            exportingZip={zipTransfers.auditZipExporting}
+            zipTransfers={zipTransfers}
           />
         </Tabs.Panel>
 
