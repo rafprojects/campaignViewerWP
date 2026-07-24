@@ -230,4 +230,72 @@ class WPSG_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
             'a rejected request applies no partial override write'
         );
     }
+
+    // -------------------------------------------------------------------------
+    // P72-C review follow-up: the guard blocks an admin-only *change*, not the
+    // mere presence of an admin-only key in the payload.
+    //
+    // SettingsPanel.handleSave() PUTs the WHOLE settings object (it hydrates from
+    // to_js(), which includes every admin-only field for a manage_wpsg user, and
+    // mergeSettingsWithDefaults() re-adds any the server stripped). Guarding on
+    // presence therefore 403'd every save an editor made — including saves that
+    // only touched a display key — and, because the guard is atomic, dropped
+    // their space overrides too. These lock the corrected boundary.
+    // -------------------------------------------------------------------------
+
+    /** The exact payload shape the settings panel round-trips, plus $changes. */
+    private function full_panel_payload(array $changes = []): array {
+        $payload = WPSG_Settings::to_js(WPSG_Settings::get_settings(), true);
+        return array_merge($payload, $changes);
+    }
+
+    public function test_editor_full_payload_roundtrip_saves_space_overrides() {
+        [, $space_id] = $this->make_editor_space();
+
+        // Every admin-only key is present but carries its stored value — nothing
+        // system-level is actually being changed.
+        $response = $this->put_space_settings($space_id, $this->full_panel_payload([
+            'theme' => 'github-light',
+        ]));
+
+        $this->assertSame(
+            200,
+            $response->get_status(),
+            'echoing back unchanged admin-only keys is not a privileged write'
+        );
+        $this->assertSame(
+            'github-light',
+            $this->persisted_overrides($space_id)['theme'] ?? null,
+            'the display override must persist'
+        );
+    }
+
+    public function test_editor_full_payload_still_403s_when_an_admin_only_key_changes() {
+        $cache_ttl_before = WPSG_Settings::get_settings()['cache_ttl'];
+        [, $space_id]     = $this->make_editor_space();
+
+        $response = $this->put_space_settings($space_id, $this->full_panel_payload([
+            'theme'    => 'github-light',
+            'cacheTtl' => $cache_ttl_before + 111,
+        ]));
+
+        $this->assertSame(403, $response->get_status());
+        $this->assertSame('wpsg_forbidden_settings', $response->get_data()['code'] ?? null);
+        $this->assertSame(['cache_ttl'], $response->get_data()['data']['fields'] ?? null,
+            'only the key that would actually change is reported');
+        $this->assertSame($cache_ttl_before, WPSG_Settings::get_settings()['cache_ttl']);
+    }
+
+    public function test_editor_full_payload_roundtrip_on_global_settings_endpoint() {
+        // Same boundary on POST /settings — the panel's non-space (global) save.
+        $this->set_editor();
+
+        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request->set_header('Content-Type', 'application/json');
+        $request->set_body(wp_json_encode($this->full_panel_payload(['theme' => 'github-light'])));
+        $response = rest_do_request($request);
+
+        $this->assertSame(200, $response->get_status(), 'an unchanged admin-only round-trip must not 403');
+        $this->assertSame('github-light', WPSG_Settings::get_settings()['theme']);
+    }
 }

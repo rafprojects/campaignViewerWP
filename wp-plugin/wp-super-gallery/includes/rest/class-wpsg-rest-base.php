@@ -768,17 +768,43 @@ abstract class WPSG_REST_Base {
      * branch — so all three return the same explicit 403 instead of one path
      * silently dropping the keys.
      *
-     * @param string[] $requested_keys snake_case keys the caller is writing.
-     * @return WP_Error|null WP_Error (403) if a system key is written without
+     * What counts as a "write" is an *effective change*, not the mere presence
+     * of the key in the payload. The settings panel PUTs the whole settings
+     * object on every save — `to_js()` hands a manage_wpsg user every admin-only
+     * field, and the client's `mergeSettingsWithDefaults()` re-adds any the
+     * server stripped — so blocking on presence would 403 every editor save,
+     * including one that only touched a display key, and (the guard being
+     * atomic) discard their space overrides with it. The comparison mirrors
+     * write_global_settings()'s own changed-key computation exactly: sanitize,
+     * then strict-compare against the stored option. An editor still cannot
+     * change a system setting; they may only echo back its current value.
+     *
+     * @param array $snake_input snake_case key => value map the caller is writing.
+     * @return WP_Error|null WP_Error (403) if a system key would change without
      *                       manage_options; null when the write is permitted.
      */
-    protected static function guard_admin_only_settings(array $requested_keys) {
+    protected static function guard_admin_only_settings(array $snake_input) {
         if (current_user_can('manage_options')) {
             return null;
         }
 
-        $admin_only = WPSG_Settings_Registry::get_admin_only_fields();
-        $blocked    = array_values(array_intersect($requested_keys, $admin_only));
+        $admin_only = array_flip(WPSG_Settings_Registry::get_admin_only_fields());
+        $requested  = array_intersect_key($snake_input, $admin_only);
+        if (empty($requested)) {
+            return null;
+        }
+
+        $sanitized = WPSG_Settings::sanitize_settings($snake_input);
+        $current   = WPSG_Settings::get_settings();
+        $blocked   = [];
+        foreach (array_keys($requested) as $key) {
+            if (!array_key_exists($key, $sanitized)) {
+                continue; // dropped by the sanitizer — nothing would be written
+            }
+            if (!array_key_exists($key, $current) || $current[$key] !== $sanitized[$key]) {
+                $blocked[] = $key;
+            }
+        }
 
         if (!empty($blocked)) {
             return new WP_Error(

@@ -75,7 +75,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
 
         // P52-A4: system-level keys require manage_options; editors may write
         // display/campaign keys only.
-        $denied = self::guard_admin_only_settings(array_keys($input));
+        $denied = self::guard_admin_only_settings($input);
         if (is_wp_error($denied)) {
             return $denied;
         }
@@ -98,7 +98,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
 
         // P52-A4: system-level keys require manage_options; editors may write
         // display/campaign keys only.
-        $denied = self::guard_admin_only_settings(array_keys($input));
+        $denied = self::guard_admin_only_settings($input);
         if (is_wp_error($denied)) {
             return $denied;
         }
