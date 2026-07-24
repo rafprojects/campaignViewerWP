@@ -10605,3 +10605,36 @@ msgstr "未知的适配器 ID“{{id}}”（{{bp}} {{scope}}）。有效 ID：{{
 #: includes/i18n/class-wpsg-frontend-strings.php:2850
 msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
 msgstr "{{bp}} {{scope}} 中存在未知的适配器设置键：{{keys}}。"
+
+#: includes/class-wpsg-privacy.php:47
+msgid "WP Super Gallery — Access Requests"
+msgstr "WP Super Gallery — 访问请求"
+
+#: includes/class-wpsg-privacy.php:52
+msgid "WP Super Gallery — Audit Log"
+msgstr "WP Super Gallery — 审计日志"
+
+#: includes/class-wpsg-privacy.php:95
+msgid "Gallery access requests submitted with this email address."
+msgstr "使用此电子邮件地址提交的图库访问请求。"
+
+#: includes/class-wpsg-privacy.php:101
+msgid "Requested at"
+msgstr "请求时间"
+
+#: includes/class-wpsg-privacy.php:102
+msgid "Resolved at"
+msgstr "处理时间"
+
+#: includes/class-wpsg-privacy.php:165
+msgid "Administrative actions recorded under this account. Retained for accountability and not erased on request."
+msgstr "在此账户下记录的管理操作。出于问责考虑予以保留，不会应请求删除。"
+
+#: includes/class-wpsg-privacy.php:171
+msgid "Date"
+msgstr "日期"
+
+#. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
+#: includes/class-wpsg-embed.php:519
+msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr "WP Super Gallery：无法解析此简码引用 (%s)——将改为显示默认空间。只有站点管理员才能看到此提示。"

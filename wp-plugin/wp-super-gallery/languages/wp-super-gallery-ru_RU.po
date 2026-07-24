@@ -10605,3 +10605,36 @@ msgstr "Неизвестный ID адаптера \"{{id}}\" ({{bp}} {{scope}})
 #: includes/i18n/class-wpsg-frontend-strings.php:2850
 msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
 msgstr "Неизвестные ключи настроек адаптера в {{bp}} {{scope}}: {{keys}}."
+
+#: includes/class-wpsg-privacy.php:47
+msgid "WP Super Gallery — Access Requests"
+msgstr "WP Super Gallery — Запросы доступа"
+
+#: includes/class-wpsg-privacy.php:52
+msgid "WP Super Gallery — Audit Log"
+msgstr "WP Super Gallery — Журнал аудита"
+
+#: includes/class-wpsg-privacy.php:95
+msgid "Gallery access requests submitted with this email address."
+msgstr "Запросы доступа к галерее, отправленные с этого адреса электронной почты."
+
+#: includes/class-wpsg-privacy.php:101
+msgid "Requested at"
+msgstr "Запрошено"
+
+#: includes/class-wpsg-privacy.php:102
+msgid "Resolved at"
+msgstr "Обработано"
+
+#: includes/class-wpsg-privacy.php:165
+msgid "Administrative actions recorded under this account. Retained for accountability and not erased on request."
+msgstr "Административные действия, записанные под этой учётной записью. Сохраняются для подотчётности и не удаляются по запросу."
+
+#: includes/class-wpsg-privacy.php:171
+msgid "Date"
+msgstr "Дата"
+
+#. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
+#: includes/class-wpsg-embed.php:519
+msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr "WP Super Gallery: не удалось разрешить эту ссылку шорткода (%s) — вместо этого показано пространство по умолчанию. Это уведомление видят только администраторы сайта."

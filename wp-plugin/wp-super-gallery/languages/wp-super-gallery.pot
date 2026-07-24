@@ -10613,3 +10613,36 @@ msgstr ""
 #: includes/i18n/class-wpsg-frontend-strings.php:2850
 msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
 msgstr ""
+
+#: includes/class-wpsg-privacy.php:47
+msgid "WP Super Gallery — Access Requests"
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:52
+msgid "WP Super Gallery — Audit Log"
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:95
+msgid "Gallery access requests submitted with this email address."
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:101
+msgid "Requested at"
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:102
+msgid "Resolved at"
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:165
+msgid "Administrative actions recorded under this account. Retained for accountability and not erased on request."
+msgstr ""
+
+#: includes/class-wpsg-privacy.php:171
+msgid "Date"
+msgstr ""
+
+#. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
+#: includes/class-wpsg-embed.php:519
+msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr ""

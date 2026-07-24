@@ -10605,3 +10605,36 @@ msgstr "ID d’adaptateur inconnu \"{{id}}\" ({{bp}} {{scope}}). ID valides : {{
 #: includes/i18n/class-wpsg-frontend-strings.php:2850
 msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
 msgstr "Clés de paramètre d’adaptateur inconnues dans {{bp}} {{scope}} : {{keys}}."
+
+#: includes/class-wpsg-privacy.php:47
+msgid "WP Super Gallery — Access Requests"
+msgstr "WP Super Gallery — Demandes d'accès"
+
+#: includes/class-wpsg-privacy.php:52
+msgid "WP Super Gallery — Audit Log"
+msgstr "WP Super Gallery — Journal d'audit"
+
+#: includes/class-wpsg-privacy.php:95
+msgid "Gallery access requests submitted with this email address."
+msgstr "Demandes d'accès à la galerie envoyées avec cette adresse e-mail."
+
+#: includes/class-wpsg-privacy.php:101
+msgid "Requested at"
+msgstr "Demandé le"
+
+#: includes/class-wpsg-privacy.php:102
+msgid "Resolved at"
+msgstr "Traité le"
+
+#: includes/class-wpsg-privacy.php:165
+msgid "Administrative actions recorded under this account. Retained for accountability and not erased on request."
+msgstr "Actions administratives enregistrées sous ce compte. Conservées à des fins de responsabilité et non supprimées sur demande."
+
+#: includes/class-wpsg-privacy.php:171
+msgid "Date"
+msgstr "Date"
+
+#. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
+#: includes/class-wpsg-embed.php:519
+msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr "WP Super Gallery : cette référence du shortcode n'a pas pu être résolue (%s) — l'espace par défaut est affiché à la place. Seuls les administrateurs du site voient cet avis."
