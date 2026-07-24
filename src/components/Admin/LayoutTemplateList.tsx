@@ -616,52 +616,53 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
     <Card shadow="xs" radius="md" withBorder padding="sm" pos="relative">
       {/* P72-G: the primary "edit" action is a real button wrapping the preview +
           title, not a role="button" Card wrapping the menu button (which axe
-          flagged as nested-interactive). The menu is a sibling below. */}
+          flagged as nested-interactive). The menu is a sibling, rendered after. */}
       <UnstyledButton
         onClick={() => onEdit(t)}
         aria-label={tr('admin_lt_edit_layout', 'Edit layout {{name}}', { name: t.name })}
         style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer' }}
       >
-      {/* Mini canvas preview (metadata only for v1) */}
-      <Box
-        style={{
-          height: 80,
-          background: t.backgroundColor || '#1a1a1a',
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Miniature slot indicators */}
-        {t.slots.slice(0, 8).map((slot) => (
-          <div
-            key={slot.id}
-            style={{
-              position: 'absolute',
-              left: `${slot.x}%`,
-              top: `${slot.y}%`,
-              width: `${slot.width}%`,
-              height: `${slot.height}%`,
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: slot.shape === 'rectangle' ? Math.min(slot.borderRadius, 4) : undefined,
-            }}
-          />
-        ))}
-        <Badge
-          size="xs"
-          variant="filled"
-          color="dark"
-          style={{ position: 'absolute', bottom: 4, right: 4 }}
+        {/* Mini canvas preview (metadata only for v1) */}
+        <Box
+          style={{
+            height: 80,
+            background: t.backgroundColor || '#1a1a1a',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 8,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
         >
-          {aspectLabel(t.canvasAspectRatio)}
-        </Badge>
-      </Box>
+          {/* Miniature slot indicators */}
+          {t.slots.slice(0, 8).map((slot) => (
+            <div
+              key={slot.id}
+              style={{
+                position: 'absolute',
+                left: `${slot.x}%`,
+                top: `${slot.y}%`,
+                width: `${slot.width}%`,
+                height: `${slot.height}%`,
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: slot.shape === 'rectangle' ? Math.min(slot.borderRadius, 4) : undefined,
+              }}
+            />
+          ))}
+          <Badge
+            size="xs"
+            variant="filled"
+            color="dark"
+            style={{ position: 'absolute', bottom: 4, right: 4 }}
+          >
+            {aspectLabel(t.canvasAspectRatio)}
+          </Badge>
+        </Box>
 
+        {/* paddingRight reserves the gutter the absolutely-positioned menu occupies. */}
         <Box style={{ overflow: 'hidden', paddingRight: 28 }}>
           <Text size="sm" fw={600} lineClamp={1}>{t.name}</Text>
           <Text size="xs" c="dimmed">
@@ -670,8 +671,11 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
         </Box>
       </UnstyledButton>
 
-      {/* Action menu — a sibling of the primary button (not nested), pinned top-right. */}
-      <Box pos="absolute" top={8} right={8}>
+      {/* Action menu — a sibling of the primary button (not nested). Pinned to the
+          bottom-right so it sits beside the title on the card background, as it did
+          pre-P72-G: over the dark preview canvas a `subtle` ActionIcon has almost no
+          contrast in light mode. */}
+      <Box pos="absolute" bottom={8} right={8}>
         <Menu position="bottom-end" withArrow>
           <Menu.Target>
             <ActionIcon
