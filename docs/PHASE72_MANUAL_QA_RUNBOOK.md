@@ -36,14 +36,16 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 
 | Track | The change | Observable at runtime? |
 |---|---|---|
-| P72-C | `update_space_settings()`'s global-key write now routes through the shared `guard_admin_only_settings()` (promoted to `WPSG_REST_Base`). An admin-only global key written by a non-`manage_options` caller returns a `wpsg_forbidden_settings` 403 instead of being silently dropped; a non-admin-only global key is written (consistency with `/settings`). | **Yes (by response status)** — an editor's admin-only global write is now 403, not a silent 200. |
-| P72-D | `resolve_space_id()` reports (via a new out-param) when an explicit `space=`/`campaign=`/`company=` reference fell back to the default because it did not resolve; `render_shortcode()` emits a `manage_wpsg`-gated inline notice in that case. | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped space now sees an inline notice; visitors never do; omitting the attribute shows nothing. |
+| P72-C | `update_space_settings()`'s global-key write now routes through the shared `guard_admin_only_settings()` (promoted to `WPSG_REST_Base`). An admin-only global key **whose value would actually change** returns a `wpsg_forbidden_settings` 403 for a non-`manage_options` caller instead of being silently dropped; a non-admin-only global key is written (consistency with `/settings`). *(Batch 6 narrowed this from presence to effective change — see §3 P72-C.)* | **Yes (by response status)** — an editor *changing* an admin-only global is now 403, not a silent 200; an editor changing only display keys still gets a 200. |
+| P72-D | `resolve_space_id()` reports (via a new out-param) which explicit `space=`/`campaign=`/`company=` references name an entity that **does not exist**; `render_shortcode()` emits a `manage_wpsg`-gated inline notice naming only those. *(Batch 6 narrowed this from "fell back to the default" — see §3 P72-D.)* | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped reference sees an inline notice; visitors never do; omitting the attribute, or naming an entity that merely inherits the default space, shows nothing. |
 | P72-B | New `WPSG_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
 | P72-F | Two opt-in retention windows (`access_requests_retention_days`, `audit_log_retention_days`, default 0) drive weekly cron purges of the two PII tables, plus admin NumberInput controls in Settings → Advanced → Data Maintenance. | **Yes** — a configured window purges old rows weekly; 0 keeps forever; the controls are settable in the admin UI. |
 | P72-A | ~30 hardcoded strings (a11y `announce()`, draft-restore modal chrome, adapter-import validator errors, an external-media error fallback) routed through `i18n.t`; the `wpsg/no-untranslated-notification` gate widened to also guard `announce()` + `openConfirmModal` chrome. | **Yes** — those strings now render translated on a non-English locale; a new hardcoded `announce()`/modal-chrome string now fails `npm run lint`. |
 | P72-G | `LayoutTemplateList` icon-only view-toggle segments gained visually-hidden accessible names; the grid card stopped being a `role="button"` wrapping the menu button — the primary action is now a real `UnstyledButton` with the menu as a sibling. A new axe test gates the component. | **Screen-reader only** — the view-toggle now announces "Grid view"/"List view"; the card is no longer a button-in-a-button. No visible change. |
 
-*(Row for P72-E is added as that track lands.)*
+| P72-E | The three data tabs (Media / Access / Audit) moved into child components that own their own selection state; `AdminPanel` renders each with `key={selectedSpaceId}` (reset) and `active={activeTab === '…'}` (fetch-gating). | **No** — behaviour is unchanged by design; what changed is *which* subtree re-renders. Verify with the React DevTools Profiler (see §3 P72-E). |
+
+**Batch 6 (PR review pass) revised the observable behaviour of P72-C, P72-D and P72-G.** Each track's section below carries a `⚠ Batch 6 correction` callout with what changed, why the original was wrong, and the re-verification steps. Read the callout before trusting the paragraphs above it — the pre-Batch-6 description is kept for the *what was landed and why* history, not as the current contract.
 
 ---
 
@@ -75,7 +77,20 @@ tests/WPSG_P47_Spaces_Settings_Test.php        # regression: space-settings path
 
 **Regression checks.** `WPSG_P52A4_Settings_Split_Test`, `WPSG_Settings_Rest_Test`, `WPSG_P47_Spaces_Settings_Test` all green unmodified. The overridable-key write path (the common case) is untouched.
 
-**Pitfall.** The guard must be checked **before** the override write, not after — otherwise a rejected admin-only write would still have persisted the overridable keys in the same request (a partial apply). The test's `assertArrayNotHasKey('theme', …)` after a 403 is exactly the assertion that catches a misordered guard. Also: do **not** guard on `array_keys($snake_input)` (all keys) — guard on `array_keys($global_input)` (the global branch only); overridable keys are legitimately writable by space admins and are never admin-only, so the two happen to be equivalent here, but guarding the global branch reads correctly and stays correct if the key sets ever change.
+**Pitfall.** The guard must be checked **before** the override write, not after — otherwise a rejected admin-only write would still have persisted the overridable keys in the same request (a partial apply). The test's `assertArrayNotHasKey('theme', …)` after a 403 is exactly the assertion that catches a misordered guard. Also: do **not** guard on the whole `$snake_input` — guard on the global branch (`$global_input`) only; overridable keys are legitimately writable by space admins and are never admin-only, so the two happen to be equivalent here, but guarding the global branch reads correctly and stays correct if the key sets ever change.
+
+> **⚠ Batch 6 correction — the guard blocks an effective *change*, not the presence of a key.**
+> As landed, the guard 403'd whenever an admin-only key merely *appeared* in the payload. `SettingsPanel.handleSave()` PUTs the **whole settings object** every time — `to_js()` computes `$is_admin` from `manage_wpsg`, so an editor's GET already carries every admin-only field, and the client's `mergeSettingsWithDefaults()` re-adds any the server stripped. All 31 `admin_only_fields` are disjoint from the 227 overridable ones, so **every editor save** (even a pure theme change) 403'd naming all 31 system keys and, the guard being atomic, threw away their display overrides. The same defect existed on `POST /settings` (pre-existing since P52-A4).
+> The guard now sanitizes the input and strict-compares each admin-only key against the stored option — the same computation `write_global_settings()` uses for its changed-key set — so an editor may echo back a system value but still cannot change one. All three call sites pass the key⇒value map instead of `array_keys(...)`.
+> **When re-verifying this track, the payload shape is the whole point:** a mixed payload of two or three keys will *not* reproduce the bug. Use `WPSG_Settings::to_js(WPSG_Settings::get_settings(), true)` as the body (that is what the panel sends) plus the one key you mean to change. The three Batch-6 methods do exactly this:
+> ```bash
+> tests/WPSG_P57A_Settings_Split_Save_Test.php
+> #   test_editor_full_payload_roundtrip_saves_space_overrides              → 200, theme override persisted
+> #   test_editor_full_payload_still_403s_when_an_admin_only_key_changes    → 403, fields == ['cache_ttl'] only
+> #   test_editor_full_payload_roundtrip_on_global_settings_endpoint        → 200 on POST /settings
+> ```
+> The middle one is the boundary check: the 403 body must list **only** the key that would actually change. If it lists all 31 again, the guard has regressed to presence-matching.
+> **Live check (now a normal-UI flow, not an edge case).** Sign in as a **Space Editor**, open a space's Settings panel, change only the theme, save → expect a **200** and the theme to persist. Pre-Batch-6 this failed with a 403 listing every system key.
 
 ---
 
@@ -107,11 +122,24 @@ The four new methods pin all four corners of the behaviour:
 4. Reload **as a logged-out visitor** (or a non-`manage_wpsg` user) → **no** notice; the gallery renders normally.
 5. Edit the shortcode to omit the attribute entirely (`[super-gallery]`) → **no** notice even as admin (intentional default).
 
-**i18n check.** The notice string uses WP's `__()` with text domain `wp-super-gallery`. Confirm it is picked up by the plugin's `.pot` regeneration (`wp i18n make-pot` or the project's string-extraction step) so translators can localize it — it is a *PHP/WordPress* string, so it goes through the WP `.pot`, **not** the front-end `src/i18n-strings.en.json` catalogue that `npm run i18n:check` guards.
+**i18n check.** The notice string uses WP's `__()` with text domain `wp-super-gallery`. It is a *PHP/WordPress* string, so it goes through the WP `.pot`, **not** the front-end `src/i18n-strings.en.json` catalogue that `npm run i18n:check` guards. Confirm it is present in `wp-super-gallery.pot` and translated in all five reference `.po` files — **`npm run i18n:check:locales` will not tell you**, because it only walks the front-end manifest. Batch 6 found this string (and ten from P72-B) missing from every catalog; see §3 → *Batch 6 — i18n catalog gap* below.
 
 **Regression checks.** All pre-existing `WPSG_Embed_Test` methods pass unmodified — the notice is additive and only prepends output in the narrow (admin ∧ explicit ∧ unresolved) case; every other render path returns the same HTML as before.
 
-**Pitfall.** The out-param must be set true **only** at the final default-fallback return **and only** when an explicit attribute was given — not on every default. The precedence subtlety is the trap: if `space=` is stale but `campaign=` resolves, the function returns early in the campaign branch with `$unresolved` still false (correct — a lower-priority reference succeeded, so nothing is stale). A naive "any time we hit the default" flag would false-positive whenever the attribute was simply omitted; a naive "space didn't resolve" flag would false-positive when a lower-priority attribute saved the resolution. The `test_omitted_…` and `test_resolved_…` methods are precisely the guards against those two mistakes — do not delete them thinking they're redundant with the positive case.
+**Pitfall.** The out-param must be populated **only** for references that name something that does not exist, and only on the path that reaches the default fallback. Three distinct false-positive directions have to stay closed, and each has a test: the attribute was simply **omitted** (`test_omitted_…`), the reference **resolved** (`test_resolved_…`), and — the one Batch 6 had to fix — the named entity **exists but has no space assignment**.
+
+> **⚠ Batch 6 correction — "reached the default" is not the same as "the reference is stale".**
+> As landed, the flag was `$unresolved = $had_explicit` at the fallback return. But `campaign=`/`company=` only return early when the entity carries a `_wpsg_space_id`; a campaign or company that **exists and simply has no space assignment** — the normal case on a single-space install, and on any campaign predating spaces — fell through to the default and was reported to the admin as *"references a space that no longer exists"*. The notice also named every attribute supplied, including ones that had resolved.
+> The out-param is now `array &$unresolved_refs`, populated per reference and only when the lookup found **nothing**: a missing space id/slug, a campaign post that cannot be found, a company term that cannot be found. An entity that exists but inherits the default space is explicitly not an error. The notice names only the failing references, and the message was corrected to *"this shortcode reference could not be resolved (%s)"* (the failing reference may be a campaign or company, not just a space).
+> **Batch-6 regression tests (all four in `WPSG_Embed_Test`):**
+> ```bash
+> #   test_campaign_without_space_meta_shows_no_notice   → campaign exists, no meta  → NO notice
+> #   test_company_without_space_meta_shows_no_notice    → company  exists, no meta  → NO notice
+> #   test_nonexistent_campaign_reference_shows_notice   → campaign truly missing    → notice, names it
+> #   test_notice_names_only_the_reference_that_failed   → stale space= + good campaign= → notice names only space=
+> ```
+> **Live check to add to the sequence above:** put `[super-gallery campaign="<slug-of-a-campaign-with-no-space-assigned>"]` on a page and view it **as a System Admin** → there must be **no** notice. Pre-Batch-6 this warned, which on a single-space install meant a false warning on essentially every campaign shortcode.
+> **Pitfall when re-verifying the "names only the failing ref" case:** assert against the notice `<div>` only, not the whole output — the mount node's `data-wpsg-props` legitimately echoes every attribute back, so a naive `assertStringNotContainsString` over the full HTML fails for the wrong reason.
 
 ---
 
@@ -223,7 +251,12 @@ The a11y test gates **both** views: grid (covers the SegmentedControl toolbar + 
 
 **Why it proves the fix.** axe reproduces the exact WCAG failures the fix targets; a green run means the segments now have names and no interactive control nests in another. The updated render test (`click` instead of `keyDown(Enter)`) proves the primary action still works as a native button.
 
-**Live check (recommended — this is screen-reader behaviour, invisible visually).** In the Layout Builder template list: with a screen reader (VoiceOver/NVDA), Tab to the view toggle and confirm each segment announces "Grid view" / "List view" (not an unnamed radio). Tab through a template card and confirm the card body is announced as one "Edit layout {name}" button and the "Actions for {name}" menu is a separate button — not a button inside a button. Visually confirm the card looks unchanged (menu top-right, click card body to edit).
+**Live check (recommended — this is screen-reader behaviour, invisible visually).** In the Layout Builder template list: with a screen reader (VoiceOver/NVDA), Tab to the view toggle and confirm each segment announces "Grid view" / "List view" (not an unnamed radio). Tab through a template card and confirm the card body is announced as one "Edit layout {name}" button and the "Actions for {name}" menu is a separate button — not a button inside a button. Visually confirm the card looks unchanged (menu beside the title at the bottom-right, click card body to edit).
+
+> **⚠ Batch 6 correction — the fix was not visually neutral, and axe could not see why.**
+> Making the Menu a sibling also moved it to `pos="absolute" top={8} right={8}`, which puts a `variant="subtle"` `ActionIcon` **on top of the preview canvas** (`background: '#1a1a1a'` unless the template overrides it). In light mode that is a dark icon on a near-black panel — very low contrast, and invisible to axe, which cannot evaluate a control layered over an arbitrary element background. The title `Box` also kept a `paddingRight: 28` that had reserved the menu's gutter in the pre-P72-G layout and was now dead.
+> Both are resolved by pinning the menu to `bottom={8} right={8}`: it sits beside the title on the card background exactly as it did pre-P72-G, the reserved gutter is meaningful again, and the a11y fix is untouched (still a sibling of the primary button, never nested). The axe test stays green.
+> **When re-verifying, do the visual check, not only the axe run** — "no violations" was true of the low-contrast placement too. Load the template list in **light** mode and confirm the ⋯ menu is clearly legible and does not overlap the preview thumbnail.
 
 **Regression checks.** All 18 `LayoutTemplateList` tests green; full 3766-test suite green (the restructure is contained to one component). The one behavioural test change (`keyDown`→`click`) reflects the improved semantics, not a regression.
 
@@ -265,6 +298,35 @@ The **isolation test is the "only meaningful under (b)" assertion**: a stable-pr
 
 **Pitfall.** (1) Do **not** rely on Mantine v9 `Tabs.Panel` unmounting inactive tabs — it doesn't (`keepMounted` defaults true); keep the explicit `active` prop for fetch-gating. (2) `addMediaCampaign` is **not** a Media-tab-local atom (its setter feeds `useCampaignsRows` on the Campaigns tab and its modal renders at the panel root) — it correctly **stayed in `AdminPanel`**; don't sweep it into MediaPanel. (3) Access carried a hidden dependency: `accessState` drives two **root-level** modals (`ArchiveCompanyModal`, `QuickAddUserModal`) — these had to move *into* AccessPanel, or `accessState` stays lifted and the isolation is lost. `QuickAddUserModal` also needs the **paginated** `campaigns` list (not `allCampaigns`), threaded as a prop. (4) `useCompanies` keys on `selectedSpaceId`, so AccessPanel takes it as a prop *and* is remounted by `key={selectedSpaceId}` — consistent, but don't drop the prop thinking the key covers it. (5) After extracting all three, remove the now-empty shared `selectedSpaceId` reset effect — leaving it referencing deleted setters is a compile error; leaving a stale one that only resets a moved atom is dead code.
 
+> **⚠ Batch 6 correction — the isolation assertion was tautological.**
+> Each panel test asserted `parentRenders.count === 1` after the child's mount-time default-select. But the harness holds no state and receives stable props, so its render count is `1` no matter where the child's state lives — the assertion could not fail, in either direction. All three tests now additionally drive a **user-initiated** selection change through the child's `CampaignSelector` (`fireEvent.click` the combobox → click `Second Campaign`), assert the child acted on it (a new `/campaigns/102/audit` or `/campaigns/102/access` fetch; `Second Campaign` displayed in Media), and only then re-assert the parent's render count is unchanged. That interaction is exactly the one that would run through a parent-owned setter had the selection stayed lifted, so it is a real structural guard.
+> **When re-verifying:** the assertion that matters is the one *after* the click. A version that only checks the post-mount count proves nothing — if you find yourself able to delete the `fireEvent` lines and still see green, the test has regressed to the tautology.
+
+---
+
+### Batch 6 — i18n catalog gap for PHP-side strings (P72-B + P72-D)
+
+**What & why.** Batches 2 and 3 regenerated the `.pot` and the five reference `.po` files for the *front-end* manifest strings, but the PHP `__()` strings added by **P72-B** (`WPSG_Privacy`: exporter/eraser friendly names, group descriptions, the `Requested at` / `Resolved at` / `Date` field labels) and **P72-D** (the shortcode notice) were never harvested — **zero** of them appeared in `wp-super-gallery.pot`. They would have shipped English-only in every reference locale. This is not the project's convention: the `.pot` already covers PHP-only sources (`class-wpsg-cpt.php`, the settings renderers, `wp-super-gallery.php`).
+
+**Why no gate caught it.** `scripts/check-i18n-locales.mjs` asserts coverage only for values in `src/i18n-strings.en.json`. A PHP-only `__()` string is outside its remit, so `npm run i18n:check` and `npm run i18n:check:locales` were both green with eleven strings missing. **Treat those two commands as necessary but not sufficient for any track that adds a PHP `__()` string.**
+
+**Verification.**
+```bash
+cd wp-plugin/wp-super-gallery/languages
+# every new PHP msgid must be in the .pot …
+grep -c 'msgid "WP Super Gallery — Access Requests"' wp-super-gallery.pot     # → 1
+grep -c 'msgid "this shortcode reference could not be resolved' wp-super-gallery.pot
+# … and carry a non-empty msgstr in each locale
+for l in de_DE es_ES fr_FR ru_RU zh_CN; do
+  grep -A1 'msgid "WP Super Gallery — Audit Log"' wp-super-gallery-$l.po
+done
+```
+Then confirm the binaries were rebuilt from the `.po` (not hand-edited): `wp i18n make-mo wp-super-gallery-<locale>.po .` and `wp i18n make-php .` should produce **no** further diff.
+
+**What was added.** Eight new msgids × 5 locales. Six of the exporter's field labels (`Email`, `Campaign ID`, `Status`, `Action`, `Summary`, `Actor`) were **already** translated msgids in every locale and are deliberately not duplicated — gettext dedupes on msgid, so re-adding them would only create conflicting duplicate entries. Terminology follows the existing catalogue (`space` → Bereich / Espacio / Espace / Пространство / 空间). Translations are AI-generated with the same native-review caveat as P71-E and Batches 2–3.
+
+**Pitfall.** Do **not** run a bare `wp i18n make-pot` over the plugin to fix this — it regenerates the whole file and will drop the hand-maintained `class-wpsg-frontend-strings.php` reference block style used by the rest of the catalog. Append the missing entries in the existing block format (`#: <file>:<line>` / `msgid` / `msgstr`), then recompile the `.mo`/`.l10n.php` from the `.po`.
+
 ---
 
 ## 4. Sign-off checklist
@@ -277,6 +339,9 @@ The **isolation test is the "only meaningful under (b)" assertion**: a stable-pr
 | P72-F | Retention tests green (old purged, recent kept, zero-window no-op, scheduling; confirmed red pre-fix); tsc + i18n gates green | Maintenance/settings tests unchanged; cron-hooks list test green | ☑ (automated; live UI + cron purge check optional, not run) |
 | P72-A | Gate test 10/10 (4 new sink cases; confirmed red on pre-widen rule); lint green repo-wide (whole sweep complete); i18n gates green (32 keys × 5 locales) | Full 3764-test suite green unmodified (English defaults unchanged) | ☑ (automated; non-English locale-switch check optional, not run) |
 | P72-G | New a11y test green (grid + list; confirmed red pre-fix — 2 violations) | All 18 LayoutTemplateList tests + full 3766-test suite green | ☑ (automated; live screen-reader check optional, not run) |
-| P72-E | Audit + Access + Media isolation tests green (parent renders once despite child state change; only meaningful under option b); fetch-gating tests green | Existing AdminPanel tests unchanged; full suite green (255 files / 3775 tests) | ☑ (all 3 data tabs split into child panels; option b re-render isolation achieved) |
+| P72-E | Audit + Access + Media isolation tests green (parent render count unchanged across a **user-driven** child selection change — strengthened in Batch 6); fetch-gating tests green | Existing AdminPanel tests unchanged; full suite green (255 files / 3775 tests) | ☑ (all 3 data tabs split into child panels; option b re-render isolation achieved) |
+| **Batch 6** (PR review) | 7 findings fixed, each failure-first: P72-C guard narrowed to effective change (3 new P57A methods, red pre-fix — 403 listed all 31 system keys on a theme-only save); P72-D narrowed to genuinely-missing entities (4 new Embed methods, 2 red pre-fix); 8 PHP msgids added × 5 locales + `.mo`/`.l10n.php` rebuilt; PRIVACY.md Follow-Ons, 2 stale hook comments, P72-G menu contrast/dead padding, and the tautological isolation assertion all corrected | PHP **1304 / 13683 / 2 skipped** green (+7 from the 1297 baseline); front-end **255 files / 3775 tests** green; `tsc -b`, lint, `i18n:check`, `i18n:check:locales` green | ☑ (automated; the two new live checks — editor theme-only save returns 200, and a campaign with no space assignment shows no notice — are called out in §3 P72-C / P72-D) |
 
 **Automated baseline (must be green alongside manual QA):** the PHPUnit suite via `/php-testing` for the PHP tracks; `npx tsc -b`, `npm test`, `npm run lint` for the React tracks. See PHASE72_REPORT.md → each track's section for per-track rationale.
+
+**Known flake (not a regression).** `src/contexts/AuthContext.test.tsx` → *"re-hydrates on visibilitychange"* failed once during the Batch-6 full-suite run and passed both in isolation and on a full re-run. The file is untouched by Phase 72; the test mutates the global `document.visibilityState` and dispatches `visibilitychange`, which is order/parallelism sensitive. If you see it red, re-run before investigating — but a *repeatable* failure is a real signal and should not be waved off.

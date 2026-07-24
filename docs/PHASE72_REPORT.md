@@ -344,6 +344,79 @@ The tab-selection state to move into per-tab child components, and every consume
 
 **Validation for the next agent:** the re-render-isolation benefit is only real under (b), so a "same identity / re-render-count" assertion is meaningful here (unlike (a)); add one. Keep the full existing AdminPanel/tab test coverage green, and re-run the full front-end suite. Follow the Batch-1..4 pattern: add a `## Track P72-E` section to `PHASE72_MANUAL_QA_RUNBOOK.md` when it lands.
 
+## Batch 6 — PR review pass over the whole branch (2026-07-23)
+
+After all seven tracks landed, the branch was re-reviewed end-to-end as a pull request (self-review; there were no external reviewer comments to fetch). The review read every changed file against `main`, re-derived each track's claims from source rather than from the report, and re-ran both baselines first (front-end **255 files / 3775 tests**, PHP **1297 tests / 13665 assertions / 2 skipped** — both green) so any new red was attributable. Seven findings were raised and all seven were fixed; each behavioural fix was **failure-first** — the test was written and observed red against the landed source before the fix.
+
+### Finding 1 (HIGH, correctness) — P72-C's guard blocked *every* editor settings save
+
+**What was wrong.** `guard_admin_only_settings()` 403'd on the mere **presence** of an admin-only key in the payload. But `SettingsPanel.handleSave()` PUTs the **whole settings object** on every save: `WPSG_Settings::to_js($effective, $is_admin)` computes `$is_admin` from `manage_wpsg` (true for a `wpsg_editor`), so an editor's GET already carries every admin-only field, and the client's `mergeSettingsWithDefaults()` re-adds from `DEFAULT_GALLERY_BEHAVIOR_SETTINGS` any the server stripped. The 31 `admin_only_fields` are disjoint from the 227 `space_overridable_fields`, so all 31 land in `$global_input` on every save.
+
+Net effect: a space editor saving *anything* in the space settings panel — even a pure theme change — got a 403 naming all 31 system keys, and because the guard is deliberately atomic, **their display overrides were discarded too**. Pre-P72-C those keys were silently dropped and the save succeeded, so P72-C converted a cosmetic inconsistency into a hard break of the editor's primary save path. The same defect existed (pre-existing, since P52-A4) on `POST /settings`; unifying the guard is what made it uniform.
+
+**Reproduced first.** Three new methods in `WPSG_P57A_Settings_Split_Save_Test` build the payload the way the panel does (`to_js(get_settings(), true)` plus one changed display key) and were red on the landed source: the 403 body listed `auth_provider, api_base, … magic_link_landing_page_id` — all 31 keys — on a save that changed only `theme`.
+
+**Fix.** The guard now blocks an *effective change*, not presence. It sanitizes the input and strict-compares each admin-only key against the stored option — mirroring `write_global_settings()`'s own changed-key computation exactly — so an editor may echo back a system setting's current value but still cannot change it. All three call sites (`update_settings`, `patch_settings`, `update_space_settings`) now pass the key⇒value map instead of `array_keys(...)`. This fixes the space panel *and* the pre-existing `/settings` case, keeping the two paths identical as P72-C intended. The two P72-C tests that assert the 403 on a real admin-only change still pass unchanged — the boundary is narrowed, not removed.
+
+### Finding 2 (MEDIUM, correctness) — P72-D warned on references that were perfectly valid
+
+**What was wrong.** `resolve_space_id()` set `$unresolved = $had_explicit` whenever the default fallback was reached. But `campaign=`/`company=` only return early when the entity carries a `_wpsg_space_id`; a campaign or company that **exists and simply has no space assignment** — the normal case on a single-space install, and on any campaign predating spaces — fell through to the default and was reported to the admin as *"references a space that no longer exists"*. The notice also named every attribute provided, including ones that had resolved.
+
+**Reproduced first.** Four new `WPSG_Embed_Test` methods; two were red on the landed source (a campaign with no space meta, and a company with no space meta, both produced the notice).
+
+**Fix.** The out-param became `array &$unresolved_refs`, populated per reference and only when the named entity **does not exist**: a missing space id/slug, a campaign post that cannot be found, a company term that cannot be found. An entity that exists but inherits the default space is explicitly not an error (commented as such). `render_unresolved_space_notice()` now takes that list and names only the references that actually failed, and the message was corrected from the space-specific wording to *"this shortcode reference could not be resolved (%s)"*, since the failing reference may be a campaign or company. The four original P72-D tests still pass.
+
+### Finding 3 (MEDIUM, i18n) — the new PHP-side strings never reached the catalogs
+
+Batch 2/3 regenerated the `.pot` and the five `.po` files for the *front-end* manifest strings, but the PHP `__()` strings introduced by **P72-B** (`WPSG_Privacy`: exporter/eraser names, group descriptions, field labels) and **P72-D** (the shortcode notice) were never harvested — zero of them appeared in `wp-super-gallery.pot`. They would have shipped English-only in every reference locale. This is not a project convention: the `.pot` already covers PHP-only sources (`class-wpsg-cpt.php`, the settings renderers, `wp-super-gallery.php`).
+
+**Root cause of the miss:** `scripts/check-i18n-locales.mjs` gates coverage only for values in `src/i18n-strings.en.json` — PHP-only `__()` strings are outside its remit, so nothing failed. (Extending that gate is recorded as a follow-on below.)
+
+**Fix.** Eight new msgids added to the `.pot` and translated across all five reference locales, then `.mo` and `.l10n.php` recompiled with `wp i18n make-mo` / `make-php`. Six of the exporter's field labels (`Email`, `Campaign ID`, `Status`, `Action`, `Summary`, `Actor`) were already-translated msgids in every locale and are deliberately not duplicated — gettext dedupes on msgid. Translations are AI-generated and terminology-aligned to the existing catalogue (`space` → Bereich / Espacio / Espace / Пространство / 空间), carrying the same native-review caveat as P71-E and Batch 2/3. `i18n:check` and `i18n:check:locales` (2379 strings/locale) stay green.
+
+### Finding 4 (LOW, docs) — `PRIVACY.md` still listed the shipped work as planned
+
+§5 and §6 were updated by Batch 2, but the **Follow-Ons** list at the end still advertised "WordPress core privacy integration" and "Retention jobs for emails & audit log" as future work — directly contradicting the sections above them in a compliance-facing document. Both entries were removed and replaced with an explicit *"Shipped since this list was written"* pointer to §5 / §6.
+
+### Finding 5 (LOW, docs) — stale `[P71-E]` scope comments in two hooks
+
+`useGalleryAdapterSettingsIO.ts` said its validator error strings were "intentionally out of F-1's direct notification-literal scope" and `useBuilderDraftRestore.tsx` said the modal title/labels were "intentionally left untouched" — both describing exactly the strings P72-A then translated. Rewritten to describe the current state (and, for the validator, *why* the ESLint gate still cannot see those strings across the function boundary).
+
+### Finding 6 (LOW, visual/contrast) — P72-G's action menu moved onto the dark preview canvas
+
+The `nested-interactive` fix repositioned the card's action `Menu` to `pos="absolute" top={8} right={8}`, which places a `variant="subtle"` `ActionIcon` over the preview canvas (`background: '#1a1a1a'` by default) — near-invisible in light mode, and something axe cannot detect. The title `Box` also kept a now-dead `paddingRight: 28` that had reserved the menu's gutter in the pre-P72-G layout. Both resolved by pinning the menu to `bottom={8} right={8}`: it sits beside the title on the card background exactly as it did pre-P72-G, the reserved gutter is meaningful again, and the a11y fix is untouched (still a sibling of the primary button, never nested). The block's indentation, left un-reflowed when the `UnstyledButton` wrapper was introduced, was also corrected.
+
+### Finding 7 (LOW, test quality) — the P72-E isolation assertion could not fail
+
+Each panel test asserted `parentRenders.count === 1` after the child's mount-time default-select. But the harness holds no state and receives stable props, so its render count is `1` regardless of where the child's state lives — the assertion the report calls "only meaningful under (b)" was tautological. All three tests now additionally drive a **user-initiated** selection change through the child's `CampaignSelector` (open combobox → pick the second campaign), assert the child acted on it (new `/campaigns/102/audit` and `/campaigns/102/access` fetches; `Second Campaign` displayed in Media), and re-assert the parent's render count is unchanged. That is a real structural guard: the interaction is exactly the one that would run through a parent-owned setter had the selection stayed lifted.
+
+### Reviewed and accepted without change
+
+- **The P72-B export/erase asymmetry.** Re-checked against the registrations: `wpsg-audit-log` appears in the exporter registry and is absent from the eraser registry, with the GDPR Art. 6(1)(f) / 17(3)(b) reasoning documented in both the class docblock and `PRIVACY.md §5`, and a test that pins the absence. Correct and well-evidenced.
+- **`LOWER(email) = LOWER(%s)`** in the DSAR queries defeats any index on `email`. Kept: case-insensitive matching is the correct DSAR behaviour, and these run at human request frequency, not per page-view.
+- **P72-F scheduling from `time()`** means enabling a retention window purges on the next cron tick rather than a week out. This exactly mirrors the existing analytics purge, and the windows are opt-in with a 0 default; consistency wins.
+- **`isAnnounceCall` matching any identifier named `announce`.** Deliberately name-based, in keeping with the rule's stated zero-false-positive/no-heuristics design; a same-named non-user-facing helper would be a false positive, but none exists and the fix (route through `t()`) is harmless anyway.
+
+### Verification
+
+Every fix landed with its test. Suites after the pass:
+
+| Suite | Before the pass | After |
+|---|---|---|
+| PHPUnit | 1297 tests / 13665 assertions / 2 skipped | **1304 tests / 13683 assertions / 2 skipped — green** (+7: 3 P57A, 4 Embed) |
+| Vitest | 255 files / 3775 tests | **255 files / 3775 tests — green** (3 strengthened in place, no count change) |
+| `npx tsc -b` | green | green |
+| `npm run lint` | green | green |
+| `i18n:check` / `i18n:check:locales` | green | green (2379 strings × 5 locales) |
+
+**One unrelated flake observed and chased down, not a regression.** The first post-fix full front-end run showed `AuthContext.test.tsx` → "re-hydrates on visibilitychange" red. That file is untouched by this branch and by this review pass; it passes in isolation and on re-run of the full suite. The test mutates the global `document.visibilityState` and dispatches `visibilitychange`, which is order/parallelism sensitive — a pre-existing flake shape. Recorded here rather than silently re-run.
+
+### Follow-on candidate raised by this pass
+
+| Candidate | Why |
+|---|---|
+| Extend the locale-coverage gate to PHP `__()` strings | `check-i18n-locales.mjs` only walks `src/i18n-strings.en.json`, so a PHP-only user-facing string can ship untranslated with every gate green — exactly how Finding 3 slipped through two batches. Catching it needs a `.pot`-vs-source harvest step (`wp i18n make-pot --dry-run` diff, or parsing `__()`/`_x()` call sites), which is its own piece of tooling. |
+
 ## Outcome
 
-**All 7 tracks landed.** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4); **P72-E (Batch 5) — option (b), three incremental commits: AuditPanel → AccessPanel → MediaPanel, all data tabs now re-render-isolated child components.** Full front-end suite green (255 files / 3775 tests); PHP suite green from the earlier batches. Branch: `feature/phase72-backlogged-hardening-1`.
+**All 7 tracks landed, then hardened by a full PR-review pass (Batch 6).** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4); **P72-E (Batch 5) — option (b), three incremental commits: AuditPanel → AccessPanel → MediaPanel, all data tabs now re-render-isolated child components**; **Batch 6 — 7 review findings fixed, including one HIGH-severity regression (P72-C 403'ing every space-editor settings save) and one MEDIUM false-positive admin notice (P72-D)**. Final state: front-end 255 files / 3775 tests green, PHP 1304 tests / 13683 assertions green, `tsc -b` / lint / both i18n gates green. Branch: `feature/phase72-backlogged-hardening-1`.

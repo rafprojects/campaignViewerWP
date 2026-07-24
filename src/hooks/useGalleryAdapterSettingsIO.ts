@@ -6,10 +6,10 @@ import { GalleryConfigSchema } from '@/types/settingsSchemas';
 import type { GalleryConfig } from '@/types';
 import type { UpdateGallerySetting } from '@/components/Settings/GalleryAdapterSettingsSection';
 
-// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
-// (The `validateImportPayload` error strings shown as `message: result.error`
-// live in a separate pure validator and are a broader pre-existing i18n gap,
-// intentionally out of F-1's direct notification-literal scope.)
+// [P71-E, extended P72-A] Notification copy routed through the shared i18next
+// instance (outside JSX). Also used by `validateImportPayload`, whose returned
+// error strings surface as `message: result.error` — the ESLint gate cannot see
+// those across the function boundary, so they are translated here by hand.
 const t = i18n.t.bind(i18n);
 
 const VALID_ADAPTER_IDS: ReadonlySet<string> = new Set(BUILTIN_ADAPTERS.map((a) => a.id));

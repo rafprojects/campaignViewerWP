@@ -243,16 +243,13 @@ Buyer-facing view: [guides/LICENSE_ACTIVATION.md](guides/LICENSE_ACTIVATION.md);
 These are known gaps documented for transparency; they are tracked as future work, not
 claimed as present features:
 
-1. **WordPress core privacy integration** — register `wp_privacy_personal_data_exporters`
-   and `..._erasers` so admins can fulfill DSAR requests from **Tools → Export/Erase
-   Personal Data** instead of manual SQL.
-2. **Retention jobs for emails & audit log** — optional auto-purge windows for
-   `wp_wpsg_access_requests` and `wp_wpsg_audit_log`, mirroring the analytics retention
-   setting.
-3. **Server-side Sentry PII scrubber** — bring the PHP error-reporting path to parity with
+1. **Server-side Sentry PII scrubber** — bring the PHP error-reporting path to parity with
    the browser side's redaction.
-4. **Per-day salt rotation for analytics hashing** — reduce re-identifiability of the
+2. **Per-day salt rotation for analytics hashing** — reduce re-identifiability of the
    visitor hash.
+
+*Shipped since this list was written:* **WordPress core privacy integration** (P72-B — see
+§5) and **retention jobs for emails & the audit log** (P72-F — see §6).
 
 ---
 
