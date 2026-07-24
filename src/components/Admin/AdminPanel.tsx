@@ -11,7 +11,7 @@ import { CampaignsMobileList } from './CampaignsMobileList';
 import { BulkActionsBar } from './BulkActionsBar';
 import { AuditPanel } from './AuditPanel';
 import { GlobalAuditTab } from './GlobalAuditTab';
-import { AccessTab } from './AccessTab';
+import { AccessPanel } from './AccessPanel';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { TemplatePickerModal } from './TemplatePickerModal';
 import { TemplatesTab } from './TemplatesTab';
@@ -19,10 +19,10 @@ import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import { SpaceSelector } from '@/components/Common/SpaceSelector';
 import type { SpaceSelectItem } from '@/components/Common/SpaceSelector';
 import {
-  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies,
+  useAdminCampaigns, useAllCampaignOptions, useAccessSummary,
   useGlobalAuditEntries, useSpaces,
   useCampaignCategories, useCampaignTags,
-  prefetchAllCampaignMedia, prefetchAllCampaignAccess,
+  prefetchAllCampaignMedia,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import type { AccessSummaryItem, AuditFilters, CampaignFilters, AdminCampaign } from '@/services/adminQuery';
@@ -31,9 +31,7 @@ import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useAdminZipTransfers } from '@/hooks/useAdminZipTransfers';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
-import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
-import { useAccessRows } from '@/hooks/useAccessRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
@@ -53,8 +51,6 @@ const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal
 const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
 const AdminCampaignBulkDeleteModal = lazy(() => import('./AdminCampaignBulkDeleteModal').then((m) => ({ default: m.AdminCampaignBulkDeleteModal })));
 const AdminCampaignBulkConfirmModal = lazy(() => import('./AdminCampaignBulkConfirmModal').then((m) => ({ default: m.AdminCampaignBulkConfirmModal })));
-const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
-const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
 const SpaceManagementModal = lazy(() => import('./SpaceManagementModal').then((m) => ({ default: m.SpaceManagementModal })));
 
@@ -132,13 +128,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
     () => initialBuilderTemplateId ?? null,
   );
-  const [accessCampaignId, setAccessCampaignId] = useState('');
-  const [accessViewMode, setAccessViewMode] = useState<'campaign' | 'company' | 'all'>('campaign');
-  const [selectedCompanyId, setSelectedCompanyId] = useState('');
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const zipTransfers = useAdminZipTransfers({ apiClient, onNotify });
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
-  const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<CampaignFilters['sort']>('created_desc');
@@ -171,12 +163,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const { campaignCategories } = useCampaignCategories(apiClient);
   const { campaignTags } = useCampaignTags(apiClient);
 
-  const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
-  const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
-    apiClient, accessViewMode, activeTab === 'access' ? accessTargetId : '', showExpiredGrants,
-  );
-  const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
-  const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, selectedSpaceId, companiesEnabled);
   const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {}, isSystemAdmin);
 
   // P47-J: pass the active space to the campaign modal so new campaigns get space_id set.
@@ -207,52 +193,26 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     createModalOpen: unifiedModal.opened,
   });
 
-  const mutateAccessWrapped = useCallback(() => mutateAccess() as Promise<unknown>, [mutateAccess]);
-  const mutateCompaniesWrapped = useCallback(() => mutateCompanies() as Promise<unknown>, [mutateCompanies]);
-
-  const accessState = useAdminAccessState({
-    apiClient, accessCampaignId, selectedCompanyId, accessViewMode,
-    mutateAccess: mutateAccessWrapped,
-    mutateCompanies: mutateCompaniesWrapped,
-    mutateCampaigns: campaignsMutator,
-    onNotify,
-  });
-
-  // P72-E: the audit tab's selection now resets via `key={selectedSpaceId}` on
-  // <AuditPanel>; this effect keeps resetting the still-inline media/access atoms.
+  // P72-E: the audit + access tabs reset their own selection via
+  // `key={selectedSpaceId}` on <AuditPanel>/<AccessPanel>; this effect keeps
+  // resetting the still-inline media atom.
   useEffect(() => {
     setMediaCampaignId('');
-    setAccessCampaignId('');
-    setSelectedCompanyId('');
   }, [selectedSpaceId]);
 
   useEffect(() => {
     if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
   }, [activeTab, allCampaigns, mediaCampaignId]);
-  useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
-  useEffect(() => {
-    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
-  }, [activeTab, accessViewMode, selectedCompanyId, companies]);
 
   const mediaPrefetchedRef = useRef(false);
-  const accessPrefetchedRef = useRef(false);
   const cancelMediaRef = useRef<(() => void) | null>(null);
-  const cancelAccessRef = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
       mediaPrefetchedRef.current = true;
       cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
     }
   }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => {
-    if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
-      accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); }, []);
+  useEffect(() => () => { cancelMediaRef.current?.(); }, []);
 
   const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
     { value: 'all', label: t('admin_all_spaces', 'All spaces') },
@@ -265,19 +225,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
     [allCampaigns],
   );
-  const companySelectData = useMemo(
-    () => companies.map((c) => ({ value: String(c.id), label: `${c.name} (${c.activeCampaigns} active, ${c.archivedCampaigns} archived)` })),
-    [companies],
-  );
-  const selectedCampaign = useMemo(
-    () => allCampaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
-    [accessCampaignId, allCampaigns],
-  );
-  const selectedCompany = useMemo(
-    () => companies.find((c) => String(c.id) === selectedCompanyId) ?? null,
-    [selectedCompanyId, companies],
-  );
-
   // Reset to page 1 whenever any filter changes.
   useEffect(() => { setCampaignPage(1); }, [categoryFilter, tagFilter, sortOrder, includeArchived]);
   // Clamp page into [1, totalPages] when dataset shrinks (deletions, server-side changes).
@@ -311,7 +258,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
 
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign, categoryItems: campaignCategories });
-  const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole: accessState.handleChangeRole });
 
   return (
     <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
@@ -635,25 +581,18 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
-          <AccessTab
-            accessViewMode={accessViewMode}
-            onAccessViewModeChange={setAccessViewMode}
-            campaignSelectData={campaignSelectData}
-            accessCampaignId={accessCampaignId}
-            onAccessCampaignChange={setAccessCampaignId}
-            companySelectData={companySelectData}
-            selectedCompanyId={selectedCompanyId}
-            onSelectedCompanyChange={setSelectedCompanyId}
-            companiesLoading={companiesLoading}
-            selectedCampaign={selectedCampaign}
-            selectedCompany={selectedCompany}
-            accessEntriesCount={accessEntries.length}
-            accessLoading={accessLoading}
-            accessRows={accessRows}
-            accessState={accessState}
+          {/* P72-E: access tab-selection state + its two modals live in AccessPanel now;
+              key={selectedSpaceId} resets that state when the space changes. */}
+          <AccessPanel
+            key={selectedSpaceId}
+            active={activeTab === 'access'}
             apiClient={apiClient}
-            showExpiredGrants={showExpiredGrants}
-            onShowExpiredGrantsChange={setShowExpiredGrants}
+            selectedSpaceId={selectedSpaceId}
+            allCampaigns={allCampaigns}
+            campaignSelectData={campaignSelectData}
+            campaigns={campaigns}
+            campaignsMutator={campaignsMutator}
+            onNotify={onNotify}
             isMobile={isMobile}
             isSystemAdmin={isSystemAdmin}
           />
@@ -793,42 +732,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           onUploaded={onCampaignsUpdated}
           title={t('admin_add_media_title', 'Add media — {{title}}', { title: addMediaCampaign.title })}
         />
-      )}
-      {!!accessState.confirmArchiveCompany && (
-        <Suspense fallback={null}>
-          <ArchiveCompanyModal
-            opened={!!accessState.confirmArchiveCompany}
-            company={accessState.confirmArchiveCompany}
-            archiveRevokeAccess={accessState.archiveRevokeAccess}
-            onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
-            onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
-            onConfirm={accessState.handleArchiveCompany}
-            accessSaving={accessState.accessSaving}
-          />
-        </Suspense>
-      )}
-      {accessState.quickAddUserOpen && (
-        <Suspense fallback={null}>
-          <QuickAddUserModal
-            opened={accessState.quickAddUserOpen}
-            onClose={accessState.closeQuickAddUser}
-            quickAddResult={accessState.quickAddResult}
-            quickAddEmail={accessState.quickAddEmail}
-            setQuickAddEmail={accessState.setQuickAddEmail}
-            quickAddName={accessState.quickAddName}
-            setQuickAddName={accessState.setQuickAddName}
-            quickAddRole={accessState.quickAddRole}
-            setQuickAddRole={accessState.setQuickAddRole}
-            quickAddCampaignId={accessState.quickAddCampaignId}
-            setQuickAddCampaignId={accessState.setQuickAddCampaignId}
-            quickAddTestMode={accessState.quickAddTestMode}
-            setQuickAddTestMode={accessState.setQuickAddTestMode}
-            campaigns={campaigns}
-            onSubmit={accessState.handleQuickAddUser}
-            quickAddSaving={accessState.quickAddSaving}
-            onNotify={onNotify}
-          />
-        </Suspense>
       )}
       {!!campaignActions.duplicateSource && (
         <Suspense fallback={null}>
