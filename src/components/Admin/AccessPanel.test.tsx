@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useRef } from 'react';
-import { render, screen, waitFor } from '../../test/test-utils';
+import { render, screen, waitFor, fireEvent } from '../../test/test-utils';
 import { AccessPanel } from './AccessPanel';
 import type { CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import type { AdminCampaign } from '@/services/adminQuery';
@@ -80,9 +80,20 @@ describe('AccessPanel (P72-E)', () => {
     await waitFor(() => {
       expect(get).toHaveBeenCalledWith(expect.stringContaining('/campaigns/101/access'));
     });
-
     expect(screen.getByText('View By')).toBeInTheDocument();
-    // The parent rendered exactly once despite the child's state change.
+    const rendersAfterMount = parentRenders.count;
+
+    // Now drive a *user-initiated* selection change through the child — the
+    // assertion that actually discriminates option (b) from (a). Had the
+    // selection stayed lifted in AdminPanel, this would run through a
+    // parent-owned setter and bump the parent's render count.
+    fireEvent.click(screen.getByRole('combobox', { name: /campaign/i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Second Campaign' }));
+
+    await waitFor(() => {
+      expect(get).toHaveBeenCalledWith(expect.stringContaining('/campaigns/102/access'));
+    });
+    expect(parentRenders.count).toBe(rendersAfterMount);
     expect(parentRenders.count).toBe(1);
   });
 });

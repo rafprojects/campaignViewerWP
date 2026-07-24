@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { useRef } from 'react';
-import { render, screen, waitFor } from '../../test/test-utils';
+import { render, screen, waitFor, fireEvent } from '../../test/test-utils';
 import { MediaPanel } from './MediaPanel';
 import type { CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import type { ApiClient } from '@/services/apiClient';
@@ -66,8 +66,19 @@ describe('MediaPanel (P72-E)', () => {
     await waitFor(() => {
       expect(screen.getByDisplayValue('First Campaign')).toBeInTheDocument();
     });
+    const rendersAfterMount = parentRenders.count;
 
-    // The parent rendered exactly once despite the child's state change.
+    // Now drive a *user-initiated* selection change through the child. This is
+    // the assertion that actually discriminates option (b) from (a): had the
+    // selection stayed lifted in AdminPanel, this change would run through a
+    // parent-owned setter and bump the parent's render count.
+    fireEvent.click(screen.getByRole('combobox', { name: /campaign/i }));
+    fireEvent.click(screen.getByRole('option', { name: 'Second Campaign' }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('Second Campaign')).toBeInTheDocument();
+    });
+    expect(parentRenders.count).toBe(rendersAfterMount);
     expect(parentRenders.count).toBe(1);
   });
 });
