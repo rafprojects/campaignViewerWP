@@ -1,6 +1,6 @@
 # Phase 72 - Mixed-Domain Hardening: i18n Gaps, Privacy, Permissions & Refactoring
 
-**Status:** In progress (Batch 1 landed 2026-07-23)
+**Status:** All 7 tracks landed 2026-07-23
 **Created:** 2026-07-23
 
 ### Tracks
@@ -11,7 +11,7 @@
 | P72-B | PHP / Privacy | WordPress Core Privacy Integration (DSAR export/erase) | ✅ Done | Medium |
 | P72-C | PHP / Settings | `update_space_settings()` silently drops global keys instead of returning 403 | ✅ Done | Tiny |
 | P72-D | PHP / Shortcode | Admin notice on unresolved shortcode space reference | ✅ Done | Small |
-| P72-E | React / Refactor | `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder) | Planned | Medium |
+| P72-E | React / Refactor | `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder) | ✅ Done (option b; 3 child panels) | Medium-Large |
 | P72-F | PHP / Privacy + React UI | Retention / auto-purge for PII tables (access-requests, audit-log) | ✅ Done | Small-Medium |
 | P72-G | React / a11y | Structural a11y (axe) gate — fix the 2 known `LayoutTemplateList` violations | ✅ Done | Small (this slice) |
 
@@ -310,19 +310,21 @@ Report created 2026-07-23 during a planning pass on `feature/phase71-react-harde
 
 **Verification.** New `LayoutTemplateList.a11y.test.tsx` gates **both** the grid and list views with `expectNoA11yViolations` — green (was red on both violations pre-fix). All 18 `LayoutTemplateList` tests pass; `tsc -b`, ESLint, `i18n:check`, `i18n:check:locales` green. **Scope note (unchanged from plan):** extending axe coverage to further surfaces stays in FUTURE_TASKS.md — P72-G fixed only the two known `LayoutTemplateList` violations.
 
-### Batch 5 — P72-E (IN PROGRESS — incremental; **Audit sub-panel landed 2026-07-23**)
+### Batch 5 — P72-E (**LANDED 2026-07-23** — incremental, three commits)
 
-Picked up in a fresh session (2026-07-23). Per user direction, option (b) is being landed **incrementally, one panel per commit**, starting with the least-coupled tab. **Landed so far:**
+Picked up in a fresh session (2026-07-23). Per user direction, option (b) was landed **incrementally, one panel per commit**, starting with the least-coupled tab. **All three data tabs are now split:**
 - **`AuditPanel`** — the audit tab's `auditCampaignId` + `auditFilters` state, its `useAuditEntries`/`useAuditRows` calls, its default-to-first effect, and its once-per-mount prefetch all moved into `src/components/Admin/AuditPanel.tsx`. `AdminPanel` renders `<AuditPanel key={selectedSpaceId} active={activeTab === 'audit'} … />`.
 - **`AccessPanel`** — the heavy one. Moved the four selection atoms (`accessCampaignId`/`accessViewMode`/`selectedCompanyId`/`showExpiredGrants`), the `useAccessGrants` + `useCompanies` data hooks, the `useAdminAccessState` form-state hook and its two `mutate*Wrapped` callbacks, the `companySelectData`/`selectedCampaign`/`selectedCompany` memos, `useAccessRows`, both default-select effects, and the once-per-mount access prefetch into `src/components/Admin/AccessPanel.tsx`. Crucially, the two access modals (`ArchiveCompanyModal`, `QuickAddUserModal`) — driven entirely by `accessState` — **moved into the child too** (their lazy imports came along); leaving them at the root would have kept `accessState` lifted and defeated the isolation. `AdminPanel` renders `<AccessPanel key={selectedSpaceId} active={activeTab === 'access'} … />`, threading `selectedSpaceId` (for `useCompanies`), `allCampaigns`/`campaignSelectData`, the paginated `campaigns` (for QuickAddUserModal), `campaignsMutator`, `onNotify`, `isMobile`, `isSystemAdmin`.
 
-**Remaining follow-up commit:** `MediaPanel` (`mediaCampaignId` only — `addMediaCampaign` stays in `AdminPanel`, see below).
+- **`MediaPanel`** — the last and smallest. Moved `mediaCampaignId` + the `rescanAllLoading` flag, the media default-select effect, and the once-per-mount media prefetch, plus the whole media toolbar (CampaignSelector + the system-admin ZIP export/import + Rescan-All controls) and the lazy `MediaTab` into `src/components/Admin/MediaPanel.tsx`. As flagged during sizing, **`addMediaCampaign` stayed in `AdminPanel`** — it is a Campaigns-tab row action (its setter feeds `useCampaignsRows`) whose `MediaUploadController` modal renders at the panel root, not a media-tab-local atom. With Media extracted, the shared `selectedSpaceId` reset effect is gone entirely (each child now self-resets via its `key`).
+
+`AdminPanel` dropped to ~800 lines and no longer owns any of the three data tabs' selection state, hooks, effects, prefetch, or the access modals — it renders `<MediaPanel key={selectedSpaceId} active={activeTab === 'media'} … />` alongside the other two.
 
 **Verification finding that corrected the handoff (below): the plan's Mantine/lifecycle assumption was wrong for this stack.** The handoff (behaviours #3/#4) assumed Mantine `Tabs.Panel` unmounts inactive panels, so moving state into a child would fetch-gate via mount/unmount. This repo is **Mantine v9** (`Tabs` defaults `keepMounted: true`, `keepMountedMode: "activity"`) on **React 19** — inactive panels stay **mounted** in `<Activity mode="hidden">` (state preserved, effects torn down; `env="test"` skips Activity, so all panels render in tests). Fetch-gating therefore stays an **explicit `active` prop** threaded to `useAuditEntries`, exactly as the inline code did — nothing about *when* data fetches changed. Two coupling facts in the handoff were also corrected: `addMediaCampaign` is **not** Media-local (its setter feeds `useCampaignsRows` on the Campaigns tab; its modal renders at root) so it stays in `AdminPanel`; and the Access split must move its two root modals into the child.
 
 **Reset mechanism (behaviour #1): chose `key={selectedSpaceId}`** on the child (user-confirmed) over a prop+effect — remount cleanly resets selection + refetch + re-runs default-select/prefetch, matching the old "reset to empty then default-select" sequence. The shared `selectedSpaceId` reset effect in `AdminPanel` dropped only its `setAuditCampaignId('')` line.
 
-**Validation.** New `AuditPanel.test.tsx` + `AccessPanel.test.tsx` — 3 tests each: default-select drives the tab's data fetch (`/campaigns/101/audit`, `/campaigns/101/access`); `active={false}` fetches nothing (gating preserved); and the **isolation assertion only meaningful under (b)** — a stable-prop parent harness renders the child, the child's own default-select drives a fetch, yet the parent's render count stays `1`. The existing `AdminPanel` tests pass unmodified. Full front-end suite green: **254 files / 3772 tests** (+6). `tsc -b` + ESLint clean on all changed files. See `PHASE72_MANUAL_QA_RUNBOOK.md` → P72-E.
+**Validation.** New `AuditPanel.test.tsx` + `AccessPanel.test.tsx` + `MediaPanel.test.tsx` — 3 tests each: default-select drives the tab's data fetch / selection (`/campaigns/101/audit`, `/campaigns/101/access`, and the media CampaignSelector showing the first campaign); `active={false}` does nothing (gating preserved); and the **isolation assertion only meaningful under (b)** — a stable-prop parent harness renders the child, the child's own default-select changes its state, yet the parent's render count stays `1`. The existing `AdminPanel` tests pass unmodified. Full front-end suite green: **255 files / 3775 tests** (+9). `tsc -b` + ESLint clean on all changed files. See `PHASE72_MANUAL_QA_RUNBOOK.md` → P72-E.
 
 **Original handoff guidance (retained for the Access + Media follow-ups):**
 
@@ -344,4 +346,4 @@ The tab-selection state to move into per-tab child components, and every consume
 
 ## Outcome
 
-In progress — **6 of 7 tracks landed; P72-E in progress (incremental).** **Landed:** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4). **P72-E (Batch 5):** landing one panel per commit — **AuditPanel + AccessPanel landed**; only MediaPanel remains as a follow-up commit. Branch: `feature/phase72-backlogged-hardening-1`.
+**All 7 tracks landed.** P72-C, P72-D (Batch 1); P72-B, P72-F (Batch 2); P72-A (Batch 3); P72-G (Batch 4); **P72-E (Batch 5) — option (b), three incremental commits: AuditPanel → AccessPanel → MediaPanel, all data tabs now re-render-isolated child components.** Full front-end suite green (255 files / 3775 tests); PHP suite green from the earlier batches. Branch: `feature/phase72-backlogged-hardening-1`.

@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box, FileButton } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
 import { useReloadSafeView } from '@/hooks/useReloadSafeView';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments, IconStack2 } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
@@ -12,17 +12,16 @@ import { BulkActionsBar } from './BulkActionsBar';
 import { AuditPanel } from './AuditPanel';
 import { GlobalAuditTab } from './GlobalAuditTab';
 import { AccessPanel } from './AccessPanel';
+import { MediaPanel } from './MediaPanel';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { TemplatePickerModal } from './TemplatePickerModal';
 import { TemplatesTab } from './TemplatesTab';
-import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import { SpaceSelector } from '@/components/Common/SpaceSelector';
 import type { SpaceSelectItem } from '@/components/Common/SpaceSelector';
 import {
   useAdminCampaigns, useAllCampaignOptions, useAccessSummary,
   useGlobalAuditEntries, useSpaces,
   useCampaignCategories, useCampaignTags,
-  prefetchAllCampaignMedia,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import type { AccessSummaryItem, AuditFilters, CampaignFilters, AdminCampaign } from '@/services/adminQuery';
@@ -39,7 +38,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
 
-const MediaTab = lazy(() => import('./MediaTab'));
 const GlobalAssetTab = lazy(() => import('./GlobalAssetTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
 const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
@@ -121,8 +119,9 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', initialSpaceId ?? 'all');
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
-  const [mediaCampaignId, setMediaCampaignId] = useState('');
   // P50-I: campaign targeted by the per-row "Add media" unified upload modal.
+  // Not media-tab-local: its setter feeds useCampaignsRows (Campaigns tab) and
+  // its modal (MediaUploadController) renders at the panel root — so it stays here.
   const [addMediaCampaign, setAddMediaCampaign] = useState<AdminCampaign | null>(null);
   // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
@@ -130,7 +129,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   );
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const zipTransfers = useAdminZipTransfers({ apiClient, onNotify });
-  const [rescanAllLoading, setRescanAllLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<CampaignFilters['sort']>('created_desc');
@@ -193,26 +191,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     createModalOpen: unifiedModal.opened,
   });
 
-  // P72-E: the audit + access tabs reset their own selection via
-  // `key={selectedSpaceId}` on <AuditPanel>/<AccessPanel>; this effect keeps
-  // resetting the still-inline media atom.
-  useEffect(() => {
-    setMediaCampaignId('');
-  }, [selectedSpaceId]);
-
-  useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, allCampaigns, mediaCampaignId]);
-
-  const mediaPrefetchedRef = useRef(false);
-  const cancelMediaRef = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
-      mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => () => { cancelMediaRef.current?.(); }, []);
+  // P72-E: the media/audit/access tabs each reset their own selection via
+  // `key={selectedSpaceId}` on their child panels; no shared reset effect remains.
 
   const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
     { value: 'all', label: t('admin_all_spaces', 'All spaces') },
@@ -501,68 +481,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         />
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
-          <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
-            <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
-            {/* P53-A: library-wide media tools (binary export/import, cross-space rescan) are system-admin only. */}
-            {isSystemAdmin && (
-              <>
-                <Button
-                  size="sm"
-                  variant="light"
-                  loading={zipTransfers.mediaZipExporting}
-                  style={{ flex: '0 0 auto' }}
-                  onClick={() => zipTransfers.exportMediaZip(mediaCampaignId)}
-                  aria-label={t('admin_export_zip_aria', 'Export media library as ZIP')}
-                >
-                  {t('admin_export_zip', 'Export ZIP')}
-                </Button>
-                <FileButton
-                  onChange={(file) => { if (file) zipTransfers.importMediaZip(file); }}
-                  accept=".zip,application/zip"
-                >
-                  {(props) => (
-                    <Button
-                      {...props}
-                      size="sm"
-                      variant="light"
-                      loading={zipTransfers.mediaZipImporting}
-                      style={{ flex: '0 0 auto' }}
-                      aria-label={t('admin_import_zip_aria', 'Import media library from ZIP')}
-                    >
-                      {t('admin_import_zip', 'Import ZIP')}
-                    </Button>
-                  )}
-                </FileButton>
-                <Button
-                  variant="outline"
-                  loading={rescanAllLoading}
-                  style={{ flex: '0 0 auto' }}
-                  onClick={async () => {
-                    setRescanAllLoading(true);
-                    try {
-                      const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
-                        '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
-                      );
-                      onNotify({
-                        type: 'success', text: result.media_updated > 0
-                          ? t('admin_rescan_done', 'Rescanned: {{media}} media items updated across {{campaigns}} campaigns.', { media: result.media_updated, campaigns: result.campaigns_updated })
-                          : t('admin_rescan_none', 'All media types are correct.')
-                      });
-                      onCampaignsUpdated();
-                    } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
-                    finally { setRescanAllLoading(false); }
-                  }}
-                >
-                  {t('admin_rescan_all', 'Rescan All')}
-                </Button>
-              </>
-            )}
-          </Group>
-          <ErrorBoundary isAdmin={true}>
-            <Suspense fallback={<Center py="md"><Loader /></Center>}>
-              <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
-            </Suspense>
-          </ErrorBoundary>
+          {/* P72-E: media tab-selection (+ rescan loading) lives in MediaPanel now;
+              key={selectedSpaceId} resets it on space change. `addMediaCampaign`
+              stays in AdminPanel — it's a Campaigns-tab row action, not media-local. */}
+          <MediaPanel
+            key={selectedSpaceId}
+            active={activeTab === 'media'}
+            apiClient={apiClient}
+            campaignSelectData={campaignSelectData}
+            zipTransfers={zipTransfers}
+            onNotify={onNotify}
+            onCampaignsUpdated={onCampaignsUpdated}
+            isSystemAdmin={isSystemAdmin}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
