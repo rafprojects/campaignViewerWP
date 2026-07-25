@@ -197,6 +197,15 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   // width reactively via ResizeObserver; useMergedRef attaches it to the same
   // element as canvasAreaRef (still needed for the imperative
   // getBoundingClientRect() read in handleFitCanvas below).
+  // Known trade-off: canvasAreaWidth starts at 0 until the ResizeObserver's
+  // first async callback fires, so the width calc below can briefly fall
+  // back to the unclamped activePresetWidth for one paint (e.g. opening the
+  // builder already in preview mode with a persisted device preset). A
+  // synchronous canvasAreaRef.current?.clientWidth fallback would close that
+  // gap but means reading a ref during render — reintroducing the exact
+  // react-hooks/refs violation this fix exists to eliminate. Left as-is:
+  // self-corrects within one frame, judged not worth trading one anti-pattern
+  // for another.
   const { ref: canvasAreaSizeRef, width: canvasAreaWidth } = useElementSize<HTMLDivElement>();
   const mergedCanvasAreaRef = useMergedRef(canvasAreaRef, canvasAreaSizeRef);
 
