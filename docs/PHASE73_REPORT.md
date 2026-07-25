@@ -1,6 +1,6 @@
 # Phase 73 - eslint-plugin-react-hooks v7 Rule Spike + various fixes
 
-**Status:** Planned
+**Status:** In Progress (P73-B done; P73-A planned)
 **Created:** 2026-07-25
 **Last updated:** 2026-07-25
 
@@ -14,7 +14,7 @@ This phase carries **two unrelated track groups**, bundled opportunistically rat
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P73-A | Spike — catalog what adopting `eslint-plugin-react-hooks` v7's full `recommended` config (the React Compiler rule suite) would require | Planned | Medium |
-| P73-B | Wrap the shared test harness in `<ThemeProvider>` so `useTheme()` consumers render with real context instead of the outside-provider fallback | Planned | Small |
+| P73-B | Wrap the shared test harness in `<ThemeProvider>` so `useTheme()` consumers render with real context instead of the outside-provider fallback | ✅ Done | Small |
 
 ---
 
@@ -107,6 +107,14 @@ This makes tests render through the real provider (closer to production shape) i
 - `npm run test:silent` — full suite green, warning gone.
 - `npm run lint` / `npm run build` — unaffected by this change but cheap to confirm.
 - Spot-check a couple of the affected components' test output before/after to confirm no new failures from real theme values now flowing through (vs. the hand-rolled fallback object in `useTheme.ts`).
+
+### Implementation Notes (2026-07-25)
+
+- Added `import { ThemeProvider } from '@/contexts/ThemeContext';` to [src/test/test-utils.tsx](../src/test/test-utils.tsx) and nested it `QueryClientProvider > ThemeProvider > MantineProvider > ModalsProvider` — matching production's nesting order in [src/main.tsx](../src/main.tsx) (`ThemeProvider` wraps the Mantine layer there too), rather than an arbitrary order. `testTheme` (the static Mantine override object) was left untouched — this track only closes the missing-context gap, it does not wire `MantineProvider`'s theme to derive from `useTheme()`'s output, which would be a larger, separate change.
+- Checked for conflicts first: `grep` found 3 test files that already `vi.mock()` `@/hooks/useTheme` directly (`SettingsPanel.test.tsx`, `ThemeSelector.test.tsx`, `useBuilderColors.test.ts`). Module-level mocks replace the hook regardless of what real context wraps it, so adding the real provider underneath doesn't conflict with them.
+- Confirmed the negative case (the warning must still be reachable, not just silenced) is already covered by an existing dedicated test — [src/hooks/useTheme.test.ts](../src/hooks/useTheme.test.ts) calls `renderHook(() => useTheme())` directly via `@testing-library/react` (bypassing the shared `Providers` wrapper entirely) and spies on `console.warn`. No new test was needed.
+- Verification (Haiku subagent, isolated from implementation per this session's usual split): `npm run test:silent` → 255 files / 3775 tests passed, zero occurrences of "called outside `<ThemeProvider>`" or "portal rendering issue" in output; `npm run build` → tsc + vite build both clean, no regressions from the new import. Ran `npm run lint` myself → clean.
+- No snapshot or assertion changes were needed anywhere in the suite — the real default-theme context values didn't diverge from what components expected.
 
 ## Follow-On Candidates
 

@@ -4,6 +4,7 @@ import { render, type RenderOptions } from '@testing-library/react';
 import { MantineProvider, mergeThemeOverrides } from '@mantine/core';
 import { ModalsProvider } from '@mantine/modals';
 import { createTestQueryClient } from '@/services/queryClient';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { theme } from '../theme';
 
 // P62-H: mirror the app's global a11y component defaults (see main.tsx) so component-level
@@ -20,9 +21,11 @@ function Providers({ children }: PropsWithChildren) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider theme={testTheme} env="test">
-        <ModalsProvider>{children}</ModalsProvider>
-      </MantineProvider>
+      <ThemeProvider>
+        <MantineProvider theme={testTheme} env="test">
+          <ModalsProvider>{children}</ModalsProvider>
+        </MantineProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
