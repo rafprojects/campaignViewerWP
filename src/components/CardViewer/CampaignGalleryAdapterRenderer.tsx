@@ -53,8 +53,15 @@ export function CampaignGalleryAdapterRenderer({
     );
   }
 
+  // react-hooks/static-components: `resolveAdapter` is a stable Map lookup into a
+  // registry populated once at module load (see adapterRegistry.ts) — it always
+  // returns the same component reference for a given `adapterId`, not a fresh
+  // component definition. The dynamic-component-from-registry pattern is safe;
+  // the rule can't see into `resolveAdapter` to confirm that statically.
+  /* eslint-disable react-hooks/static-components */
   const Adapter = resolveAdapter(adapterId);
   return <Adapter media={media} settings={settings} runtime={runtime} containerDimensions={containerDimensions} />;
+  /* eslint-enable react-hooks/static-components */
 }
 
 setWpsgDebugDisplayName(CampaignGalleryAdapterRenderer, 'CampaignGalleryAdapterRenderer');

@@ -22,6 +22,10 @@ export function TextLayerContent({ layer }: { layer: LayoutTextLayer }) {
     if (GOOGLE_FONT_NAMES.has(name)) loadGoogleFont(name);
   }, [fontFamily]);
 
+  // react-hooks/static-components: `Tag` is a plain HTML tag name string
+  // ('h2' | 'h3' | 'p'), not a component — DOM elements are reconciled by tag
+  // name, so there's no identity/remount concern the rule is meant to catch.
+  /* eslint-disable react-hooks/static-components */
   const Tag = textLayerElement(layer.semanticTag);
   return (
     <div style={TEXT_LAYER_WRAPPER_STYLE}>
@@ -30,4 +34,5 @@ export function TextLayerContent({ layer }: { layer: LayoutTextLayer }) {
       </Tag>
     </div>
   );
+  /* eslint-enable react-hooks/static-components */
 }

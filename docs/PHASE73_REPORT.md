@@ -1,6 +1,6 @@
 # Phase 73 - eslint-plugin-react-hooks v7 Rule Spike + various fSure ixes
 
-**Status:** In Progress (P73-A, P73-B, P73-C done; P73-D–F planned)
+**Status:** In Progress (P73-A, P73-B, P73-C, P73-D done; P73-E, P73-F planned)
 **Created:** 2026-07-25
 **Last updated:** 2026-07-25
 
@@ -16,7 +16,7 @@ This phase carries **two unrelated origin threads**, bundled opportunistically r
 | P73-A | Spike — catalog what adopting `eslint-plugin-react-hooks` v7's full `recommended` config (the React Compiler rule suite) would require | ✅ Done | Medium |
 | P73-B | Wrap the shared test harness in `<ThemeProvider>` so `useTheme()` consumers render with real context instead of the outside-provider fallback | ✅ Done | Small |
 | P73-C | Turn on the 11 "adopt now" rules (9 zero-finding + 2 tiny-fix-then-flip) from the P73-A spike | ✅ Done | Small |
-| P73-D | Fix the `react-hooks/static-components` findings (components defined inside a parent's render body) | Planned | Small-Medium |
+| P73-D | Fix the `react-hooks/static-components` findings (components defined inside a parent's render body) | ✅ Done | Small-Medium |
 | P73-E | Fix/triage the `react-hooks/refs` findings (ref `.current` read/written during render) | Planned | Medium |
 | P73-F | Triage the `react-hooks/set-state-in-effect` findings (42 across 36 files) into real-bug vs. legitimate-external-sync buckets, then decide adoption severity | Planned | Medium |
 
@@ -50,7 +50,7 @@ No dependency between the original two tracks. P73-C–F (produced by P73-A) hav
 1. ~~P73-B~~ — done.
 2. ~~P73-A~~ — done; produced P73-C–F.
 3. ~~P73-C~~ — done.
-4. P73-D — small-medium, concentrated in 3 files.
+4. ~~P73-D~~ — done.
 5. P73-E — medium, touches a common codebase idiom across 12 files; needs a design call before fixing.
 6. P73-F — medium, triage-first (broadest/noisiest rule); do last since it may inform E's approach.
 
@@ -196,6 +196,29 @@ For each of the 3 files, hoist the inline component definition (e.g. `ResetLink`
 - `npm run lint`, `npm run test:silent`, `npm run build`.
 - Manual smoke test of the 3 affected areas (Settings panel card section, CardViewer adapter renderer, Layout Builder text layer) since remount-on-render bugs can be subtle (e.g. lost focus/selection) and won't always show up in automated tests.
 
+### Implementation Notes (2026-07-25)
+
+- **`CampaignCardSettingsSection.tsx` (43/45 findings, the real bug):** confirmed `ResetLink` was defined inside the parent's render body, closing over `isDesktop`, `hasOverride`, `clearField`, `clearDimField`, `t`. Hoisted it to module scope as `ResetLink({ fieldKey, unitKey, hasOverride, onReset })`. Two things simplified the prop surface below the 4 originally-closed-over values:
+  - `isDesktop` didn't need to be a separate prop — `hasOverride(key)` already returns `false` whenever `isDesktop` is true (checked its own definition), so `ResetLink`'s old `if (isDesktop || !hasOverride(fieldKey))` had a redundant first clause. Dropped it; behavior is identical.
+  - `t()` didn't need to be threaded through — `ResetLink` calls its own `useTranslation('wpsg')` directly (same namespace, standard i18next usage), rather than receiving the parent's translation function as a prop.
+  - `clearField`/`clearDimField` collapsed into one `onReset(fieldKey, unitKey)` prop, backed by a new `handleReset` function in the parent with the same `unitKey ? clearDimField(...) : clearField(...)` branching the old inline `onClick` had.
+  - All 43 JSX call sites got `hasOverride={hasOverride} onReset={handleReset}` added via a scoped `sed` substitution (matched only `<ResetLink...` lines), then spot-checked and lint-verified rather than hand-edited 43 times.
+- **`CampaignGalleryAdapterRenderer.tsx` (1 finding) and `TextLayerContent.tsx` (1 finding):** inspected both and found genuine false positives, not bugs — suppressed rather than restructured:
+  - `resolveAdapter(adapterId)` returns a component reference from a `Map` populated once at module load ([adapterRegistry.ts](../src/components/Galleries/Adapters/adapterRegistry.ts)); same `adapterId` always yields the same reference, so there's no remount-on-render risk despite the rule's static analysis being unable to see that.
+  - `textLayerElement(...)` returns a plain string type (`'h2' | 'h3' | 'p'`), not a component — DOM elements are reconciled by tag-name string, not object identity, so this pattern has no remount concern at all.
+  - Both needed a paired `/* eslint-disable */` / `/* eslint-enable */` block rather than `eslint-disable-next-line`: the rule reports the violation at *two* locations (the variable declaration **and** the JSX usage line), and a single `-next-line` comment only silenced the first — caught via a follow-up `npm run lint` showing both a missed violation and an "unused eslint-disable directive" warning, same class of mistake as one made earlier in P73-C.
+- Updated the block comment in [eslint.config.js](../eslint.config.js) to reflect `static-components` now being adopted (P73-C's comment was already stale for this).
+- **Manual smoke test (2026-07-25, live browser click-through):** performed against the real local dev site (`https://wordpress.lan`, per `.claude/skills/see-wp`) after the user deployed the build via `update_dev_plugin.sh`. Drove headless Chromium (`@playwright/test`'s `chromium.launch`, no `chromium-cli` available in this environment) through the actual admin UI:
+  - Logged in, navigated SuperGallery → Spaces → Default → Settings → "Configure display settings" → Campaign Cards tab.
+  - Switched to the **Tablet** breakpoint, set an explicit **Border Radius** override (8 → 20) — confirmed the field label switched to "Override for tablet" and exactly one "↻ Reset to inherited" `ResetLink` appeared, with every other field correctly reading "Inherited from desktop".
+  - Clicked the Reset link — confirmed the override cleared (value reverted to `8`, label back to "Inherited from desktop", link disappeared).
+  - Cycled Mobile → Desktop → Tablet with no crash, no stale UI.
+  - Zero `console.error` / uncaught page errors across the whole flow. No changes were saved (never clicked "Save Changes"), so the live dev site's actual settings are untouched.
+  - Separately loaded two public gallery pages (`/` and `/meower/`, found via `wp post list`/`wp db query` rather than creating new content) to spot-check `TextLayerContent`: the Layout Builder hero text ("Tell your story" heading + paragraph) rendered live on `/meower/` — that's the exact `<Tag>` dynamic-tag-name component from this track's fix — with zero console errors.
+  - `CampaignGalleryAdapterRenderer`'s suppression (the registry-lookup pattern) was not separately live-verified — reaching an authenticated campaign gallery view was more setup than the fix's risk warranted, given it's the same well-understood pattern already confirmed safe by code inspection (stable `Map` lookup) and covered by the passing automated suite.
+  - Screenshots and driver scripts were scratch artifacts (temp `.tmp-explore*.mjs` at the repo root, deleted after use); nothing committed from this pass beyond the doc update.
+- Verification (Haiku subagent): `npm run test:silent` → 255 files / 3775 tests passed; `npm run build` → tsc + vite build both clean. `npm run lint` confirmed clean repo-wide by me directly beforehand.
+
 ## Track P73-E - Fix/Triage `react-hooks/refs` Findings
 
 ### Problem
@@ -249,8 +272,8 @@ None beyond P73-C–F — those cover all 5 rules that produced findings in the 
 
 ## Implementation Notes
 
-- P73-A, P73-B, and P73-C are complete; see their own Implementation Notes / Findings Catalog subsections above.
-- P73-D–F are scoped but not started.
+- P73-A, P73-B, P73-C, and P73-D are complete; see their own Implementation Notes / Findings Catalog subsections above.
+- P73-E and P73-F are scoped but not started.
 
 ## Outcome
 
