@@ -52,6 +52,11 @@ export function useDirtyGuard<T>(options: UseDirtyGuardOptions<T>): UseDirtyGuar
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
+  // react-hooks/refs: snapshotRef is only ever written inside the committed
+  // effect above (on the isOpen toggle), never read anywhere else during
+  // render — deliberately kept as a ref (not state) so opening the modal
+  // doesn't cost an extra render just to capture the baseline snapshot.
+  // eslint-disable-next-line react-hooks/refs
   const isDirty = isOpen && !eq(current, snapshotRef.current || serialize(current));
 
   const guardedClose = useCallback(() => {

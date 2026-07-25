@@ -46,12 +46,15 @@ export default tseslint.config({
     // eslint-plugin-react-hooks v7's `recommended` config bundles the newer
     // React Compiler rule suite on top of the classic two. P73-A spiked all
     // 14 non-adopted rules; P73-C adopted the 11 with no/trivial backlog,
-    // P73-D adopted static-components (fixed the 1 real finding, suppressed
-    // 2 confirmed false positives). refs and set-state-in-effect still need
-    // their own fix/triage tracks (P73-E/F) before adoption.
+    // P73-D adopted static-components, P73-E adopted refs (centralized the
+    // codebase's "ref mirrors latest value" idiom into shared-utils'
+    // useLatestRef, fixed one real DOM-read staleness bug, suppressed the
+    // rest as confirmed false positives / React-documented patterns).
+    // set-state-in-effect still needs its own triage track (P73-F).
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/static-components': 'error',
+    'react-hooks/refs': 'error',
     'react-hooks/use-memo': 'error',
     'react-hooks/preserve-manual-memoization': 'error',
     'react-hooks/incompatible-library': 'warn',

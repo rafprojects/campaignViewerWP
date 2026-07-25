@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActionIcon,
   Badge,
@@ -12,7 +12,7 @@ import {
 import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
-import { type FontLibraryEntry, loadCustomFonts } from '@wp-super-gallery/shared-utils';
+import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@wp-super-gallery/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';
@@ -33,8 +33,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
-  const onFontsChangeRef = useRef(onFontsChange);
-  onFontsChangeRef.current = onFontsChange;
+  const onFontsChangeRef = useLatestRef(onFontsChange);
 
   const fetchFonts = useCallback(async () => {
     try {
@@ -49,7 +48,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
     } finally {
       setIsLoading(false);
     }
-  }, [apiClient]);
+  }, [apiClient, onFontsChangeRef]);
 
   useEffect(() => { fetchFonts(); }, [fetchFonts]);
 

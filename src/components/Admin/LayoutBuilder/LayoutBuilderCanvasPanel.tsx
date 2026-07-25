@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getHotkeyHandler } from '@mantine/hooks';
+import { getHotkeyHandler, useElementSize, useMergedRef } from '@mantine/hooks';
 import {
   Box, Group, Text, NumberInput, Switch, Slider,
   Button, Divider, ActionIcon, Tooltip, SegmentedControl, Alert,
@@ -190,6 +190,15 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   const [showSlotIndices, setShowSlotIndices] = useState(true);
   const transformRef = useRef<ReactZoomPanPinchRef>(null);
   const canvasAreaRef = useRef<HTMLDivElement>(null);
+  // react-hooks/refs: the device-preview frame's width used to be computed by
+  // reading canvasAreaRef.current?.clientWidth directly during render, which
+  // never updated on a window/container resize (refs don't trigger re-renders)
+  // — a real staleness bug, not just a lint nit. useElementSize tracks the
+  // width reactively via ResizeObserver; useMergedRef attaches it to the same
+  // element as canvasAreaRef (still needed for the imperative
+  // getBoundingClientRect() read in handleFitCanvas below).
+  const { ref: canvasAreaSizeRef, width: canvasAreaWidth } = useElementSize<HTMLDivElement>();
+  const mergedCanvasAreaRef = useMergedRef(canvasAreaRef, canvasAreaSizeRef);
 
   const handleResetZoom = useCallback(() => {
     transformRef.current?.resetTransform();
@@ -214,6 +223,12 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     transformRef.current?.centerView(Math.max(0.1, fitScale));
   }, [builder.template]);
 
+  // react-hooks/refs: getHotkeyHandler (@mantine/hooks) just registers these
+  // callbacks for a later keydown event — it doesn't invoke them synchronously
+  // during this call, so the transformRef.current reads inside never actually
+  // happen during render. The rule can't see into Mantine's implementation to
+  // confirm that.
+  /* eslint-disable react-hooks/refs */
   const handleCanvasHotkeys = getHotkeyHandler([
     ['h', () => setIsHandTool((v) => !v)],
     ['v', () => setIsHandTool(false)],
@@ -223,6 +238,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     ['+', () => transformRef.current?.zoomIn()],
     ['-', () => transformRef.current?.zoomOut()],
   ]);
+  /* eslint-enable react-hooks/refs */
 
   // ── P30-C: Device preview presets (root-scoped per P37-KS1) ─────────────
   const [previewPreset, setPreviewPreset] = useState<PreviewPreset>(() =>
@@ -344,7 +360,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
         {/* Canvas area */}
         <Box
-          ref={canvasAreaRef}
+          ref={mergedCanvasAreaRef}
           style={{
             flex: 1,
             overflow: 'hidden',
@@ -359,7 +375,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
           <Box
             style={{
               flex: 1,
-              width: activePresetWidth ? Math.min(activePresetWidth, canvasAreaRef.current?.clientWidth ?? activePresetWidth) : '100%',
+              width: activePresetWidth ? Math.min(activePresetWidth, canvasAreaWidth || activePresetWidth) : '100%',
               maxWidth: activePresetWidth ?? undefined,
               overflow: 'hidden',
               // Device chrome frame

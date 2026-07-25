@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { Text } from '@mantine/core';
+import { useLatestRef } from '@wp-super-gallery/shared-utils';
 import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
 import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
@@ -32,10 +33,8 @@ export function useBuilderDraftRestore({
   onDiscardDraft,
 }: UseBuilderDraftRestoreOptions): void {
   // Kept as refs so the effect always calls the latest version without re-running.
-  const onRestoreDraftRef = useRef(onRestoreDraft);
-  onRestoreDraftRef.current = onRestoreDraft;
-  const onDiscardDraftRef = useRef(onDiscardDraft);
-  onDiscardDraftRef.current = onDiscardDraft;
+  const onRestoreDraftRef = useLatestRef(onRestoreDraft);
+  const onDiscardDraftRef = useLatestRef(onDiscardDraft);
 
   const draftCheckedRef = useRef(false);
 

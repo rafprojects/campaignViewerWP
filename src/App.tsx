@@ -371,6 +371,12 @@ function AppContent({
       });
     },
   });
+  // Can't use the shared useLatestRef helper here: the ref must exist *before*
+  // resetIdleTimer does, to break the circular dependency above (onWarning
+  // reads idleResetRef.current, but resetIdleTimer is useIdleTimeout's own
+  // return value) — so this is a genuine two-step create-then-sync, not the
+  // simple every-render mirror the helper centralizes.
+  // eslint-disable-next-line react-hooks/refs
   idleResetRef.current = resetIdleTimer;
 
   return (

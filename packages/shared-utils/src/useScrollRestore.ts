@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { ViewScopeOptions } from './usePersistentAccordion';
+import { useLatestRef } from './useLatestRef';
 
 /**
  * P36-A2: Persist and restore scroll position for a DOM element.
@@ -31,8 +32,7 @@ export function useScrollRestore(
 
   // Keep the storage key in a ref so the scroll handler always uses the latest
   // without needing to be re-registered on every tab change.
-  const storageKeyRef = useRef(storageKey);
-  storageKeyRef.current = storageKey;
+  const storageKeyRef = useLatestRef(storageKey);
 
   // Stable scroll handler — reads only through refs, never stale.
   const handleScroll = useCallback(() => {
@@ -44,7 +44,7 @@ export function useScrollRestore(
         localStorage.setItem(storageKeyRef.current, JSON.stringify(el.scrollTop));
       } catch { /* ignore */ }
     }, 200);
-  }, []);
+  }, [storageKeyRef]);
 
   // Stable callback ref — memoized so React does not detach/reattach on every
   // render, which would re-apply the stored scroll position on each re-render
@@ -67,7 +67,7 @@ export function useScrollRestore(
     } catch { /* ignore */ }
 
     el.addEventListener('scroll', handleScroll, { passive: true });
-  }, [handleScroll]);
+  }, [handleScroll, storageKeyRef]);
 
   // When the tabKey changes, restore scroll for the new tab.
   // Cancel any pending debounced save first — otherwise a save scheduled on

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState, type ReactElement } from 'react';
 import {
   ActionIcon, Badge, Box, Button, Card, Center, FileButton, Group, Image, Loader,
   Modal, MultiSelect, Progress, SimpleGrid, Stack, Tabs, TagsInput, Text, TextInput, Textarea, Tooltip,
@@ -14,7 +14,7 @@ import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInp
 import { ModalSelect as Select } from '@/components/Common/ModalSelect';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type LayoutTemplate, type MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { useDirtyGuard } from '@wp-super-gallery/shared-utils';
+import { useDirtyGuard, useLatestRef } from '@wp-super-gallery/shared-utils';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 import { MediaLibraryPicker } from '@/components/Campaign/MediaLibraryPicker';
@@ -549,10 +549,8 @@ export function UnifiedCampaignModal({
   const { activeCampaign, onEditGalleryConfig, setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   // Live mirrors of the context so the edit-modal effect can snapshot whatever was
   // active *before* it took over, and restore it on close instead of nulling.
-  const prevActiveCampaignRef = useRef(activeCampaign);
-  prevActiveCampaignRef.current = activeCampaign;
-  const prevOnEditGalleryConfigRef = useRef(onEditGalleryConfig);
-  prevOnEditGalleryConfigRef.current = onEditGalleryConfig;
+  const prevActiveCampaignRef = useLatestRef(activeCampaign);
+  const prevOnEditGalleryConfigRef = useLatestRef(onEditGalleryConfig);
   const {
     opened, mode, formState, updateForm, isSaving,
     editingCampaign,
@@ -590,7 +588,7 @@ export function UnifiedCampaignModal({
       setActiveCampaign(prevCampaign);
       setOnEditGalleryConfig(prevOnEditGalleryConfig);
     };
-  }, [opened, mode, editingCampaign, openGalleryConfigFromAuthBar, setActiveCampaign, setOnEditGalleryConfig]);
+  }, [opened, mode, editingCampaign, openGalleryConfigFromAuthBar, setActiveCampaign, setOnEditGalleryConfig, prevActiveCampaignRef, prevOnEditGalleryConfigRef]);
 
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: formState,

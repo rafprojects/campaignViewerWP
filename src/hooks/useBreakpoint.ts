@@ -1,5 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useMantineTheme } from '@mantine/core';
+import { useLatestRef } from '@wp-super-gallery/shared-utils';
 import type { ResponsiveBreakpoint } from '@/types';
 
 /**
@@ -100,8 +101,7 @@ export function useBreakpoint(
   const [width, setWidth] = useState<number>(0);
 
   // Keep a ref to avoid stale closures inside the ResizeObserver callback.
-  const resolveRef = useRef(resolve);
-  resolveRef.current = resolve;
+  const resolveRef = useLatestRef(resolve);
 
   // ── Viewport mode ──────────────────────────────────────────────────────────
   // Straightforward: measure on mount, update on window resize.
@@ -121,7 +121,7 @@ export function useBreakpoint(
     return () => {
       window.removeEventListener('resize', updateFromViewport);
     };
-  }, [source]);
+  }, [source, resolveRef]);
 
   // ── Container mode — Cases 1 & 2 (mount and late-bind) ────────────────────
   //

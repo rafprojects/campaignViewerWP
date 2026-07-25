@@ -1,6 +1,6 @@
 # Phase 73 - eslint-plugin-react-hooks v7 Rule Spike + various fSure ixes
 
-**Status:** In Progress (P73-A, P73-B, P73-C, P73-D done; P73-E, P73-F planned)
+**Status:** In Progress (P73-A, P73-B, P73-C, P73-D, P73-E done; P73-F planned)
 **Created:** 2026-07-25
 **Last updated:** 2026-07-25
 
@@ -17,7 +17,7 @@ This phase carries **two unrelated origin threads**, bundled opportunistically r
 | P73-B | Wrap the shared test harness in `<ThemeProvider>` so `useTheme()` consumers render with real context instead of the outside-provider fallback | ✅ Done | Small |
 | P73-C | Turn on the 11 "adopt now" rules (9 zero-finding + 2 tiny-fix-then-flip) from the P73-A spike | ✅ Done | Small |
 | P73-D | Fix the `react-hooks/static-components` findings (components defined inside a parent's render body) | ✅ Done | Small-Medium |
-| P73-E | Fix/triage the `react-hooks/refs` findings (ref `.current` read/written during render) | Planned | Medium |
+| P73-E | Fix/triage the `react-hooks/refs` findings (ref `.current` read/written during render) | ✅ Done | Medium |
 | P73-F | Triage the `react-hooks/set-state-in-effect` findings (42 across 36 files) into real-bug vs. legitimate-external-sync buckets, then decide adoption severity | Planned | Medium |
 
 ---
@@ -51,7 +51,7 @@ No dependency between the original two tracks. P73-C–F (produced by P73-A) hav
 2. ~~P73-A~~ — done; produced P73-C–F.
 3. ~~P73-C~~ — done.
 4. ~~P73-D~~ — done.
-5. P73-E — medium, touches a common codebase idiom across 12 files; needs a design call before fixing.
+5. ~~P73-E~~ — done.
 6. P73-F — medium, triage-first (broadest/noisiest rule); do last since it may inform E's approach.
 
 ## Track P73-A - Recommended Rule Set Spike
@@ -242,6 +242,40 @@ Needs a design decision before blind fixing, since a mechanical per-site fix ris
 
 - `npm run lint`, `npm run test:silent`, `npm run build`.
 
+### Classification (2026-07-25)
+
+All 29 findings fell into 4 categories, not the 2 originally anticipated:
+
+| Category | Sites | Disposition |
+|---|---|---|
+| **A — mirror-latest-value write** (`ref.current = value` unconditionally, every render, so a stable callback/effect reads the freshest value without re-subscribing) | 9 files, 16 findings: `useScrollRestore.ts`, `FontLibraryManager.tsx`, `LayoutBuilderModal.tsx`, `LayoutCanvas.tsx` (×5), `UnifiedCampaignModal.tsx` (×2), `useBreakpoint.ts`, `useBuilderDraftRestore.tsx` (×2), `useInContextSave.ts` (×3) | **Fixed**: centralized into a new shared `useLatestRef` hook — see below. |
+| **B — genuine DOM-read staleness bug** (reading a live layout property from a ref during render, with no mechanism to re-render on change) | `LayoutBuilderCanvasPanel.tsx` — `canvasAreaRef.current?.clientWidth` used to compute the device-preview-frame width | **Fixed for real**: swapped for Mantine's `useElementSize` (ResizeObserver-backed, reactive). |
+| **C — React's documented "cache between renders" pattern** (conditional write, guarded so it only changes the *value*, never produces different output within the same render) | `CardGallery.tsx` — `if (selectedCampaign) lastCampaignRef.current = selectedCampaign` | **Suppressed** with rationale citing [React's own docs](https://react.dev/reference/react/useRef#caching-information-between-re-renders) for this exact pattern. |
+| **D — false positive via an opaque third-party function** (the rule can't see that the function only registers a callback for later, doesn't invoke it during its own call) | `LayoutBuilderCanvasPanel.tsx` — `getHotkeyHandler` (`@mantine/hooks`) closures reading `transformRef.current`, only invoked on keydown | **Suppressed** with rationale. |
+| **(one-off) low-risk read, deliberately not state** | `useDirtyGuard.ts` — `snapshotRef.current` read to compute `isDirty`; only ever written inside a committed effect | **Suppressed** with rationale — converting to state would cost an extra render on every modal open, which the ref was deliberately chosen to avoid. |
+| **(one-off) circular-dependency-breaking ref** | `App.tsx` — `idleResetRef` must exist before `resetIdleTimer` (its own eventual value) because the `onWarning` callback passed *into* `useIdleTimeout` needs to reference it | **Suppressed** with rationale — doesn't fit the `useLatestRef` shape since the ref must be created before the value it will hold exists. |
+
+Category A's volume (16 of 29 findings, 9 independent files, byte-for-byte the same 2-line shape every time, several with near-identical explanatory comments already written by prior phases) is what tipped the original "standard replacement pattern" decision toward a shared hook rather than 9 scattered suppressions:
+
+- **New:** [`packages/shared-utils/src/useLatestRef.ts`](../packages/shared-utils/src/useLatestRef.ts) — `const ref = useRef(value); ref.current = value; return ref;`, with the one `react-hooks/refs` suppression living in this single documented place instead of 9+ call sites.
+- All 9 sites converted from `const xRef = useRef(v); xRef.current = v;` to `const xRef = useLatestRef(v);`.
+- This surfaced two incidental findings the mechanical pattern had been hiding:
+  - **Dead code:** `LayoutCanvas.tsx`'s `templateSlotsRef` was never read anywhere (`.current` never accessed) — genuinely unused even before this track, just invisible to `no-unused-vars` because the old two-line form's assignment counted as a "use" of the identifier. Deleted.
+  - **New (correct) `exhaustive-deps` warnings:** ESLint's stability-detection for `exhaustive-deps` is a hardcoded syntactic check for literal `useRef(...)` calls — a custom hook wrapping `useRef` doesn't get that recognition, so 8 `useCallback`/`useEffect`s that used to omit their ref from the deps array (correctly, since raw `useRef()` identity is stable) started warning once the refs came from `useLatestRef` instead. Fixed by adding each ref to its dependency array — always safe (the identity never changes) and was going to surface eventually the moment any of these refs got wrapped in any custom hook.
+
+### Implementation Notes (2026-07-25)
+
+- Read live code at every one of the 29 sites before deciding a disposition — did not trust the finding counts or the original track plan's 2-category assumption (which undercounted; see Classification above).
+- `eslint.config.js`: `react-hooks/refs` now `error`, comment updated to reflect P73-C/D/E history and point at the remaining P73-F gap.
+- Automated verification (Haiku subagent): `npm run test:silent` → 255 files / 3775 tests passed; `npm run build` → tsc + vite build both clean. `npm run lint` confirmed clean by me directly.
+- Live browser click-through (`@playwright/test`'s `chromium.launch`, same approach as P73-D — user built + deployed via `update_dev_plugin.sh` each time) against `https://wordpress.lan`:
+  - **Public gallery pages** (`/`, `/meower/`) load with zero console errors, both signed out and signed in — exercises `CardGallery.tsx`'s conditional-cache pattern (Category C) on every render.
+  - **Admin Panel** (opened from the front-end gallery's admin menu → "Admin Panel") — campaigns table, Templates tab, Layouts tab all load and navigate with zero console errors — exercises `useInContextSave.ts` and more of `CardGallery.tsx`.
+  - **Layout Builder canvas** (Admin Panel → Layouts → "Edit layout Magazine Spread") — the actual `LayoutBuilderCanvasPanel.tsx`/`LayoutCanvas.tsx` surface:
+    - Pressed the canvas hotkeys (`=`, `-`, `0`, `f`) — exercises the `getHotkeyHandler` suppression (Category D). Zero errors.
+    - Entered preview mode and selected the "Laptop" device preset (sets `activePresetWidth`), then resized the browser viewport from 1500px down to 700px and back — **visually confirmed the device-preview frame width shrank to match the narrower container**, proving the `useElementSize` fix (Category B) actually tracks resizes reactively now, not just "doesn't crash." Zero errors throughout.
+  - Cleanup: a throwaway "P73-E manual QA (delete me)" Campaign Template created to navigate the admin UI was deleted via the UI's own delete action before finishing — no residue left on the dev site. No settings were saved from the Layout Builder session (closed without clicking Save).
+
 ## Track P73-F - Triage `react-hooks/set-state-in-effect` Findings
 
 ### Problem
@@ -272,8 +306,8 @@ None beyond P73-C–F — those cover all 5 rules that produced findings in the 
 
 ## Implementation Notes
 
-- P73-A, P73-B, P73-C, and P73-D are complete; see their own Implementation Notes / Findings Catalog subsections above.
-- P73-E and P73-F are scoped but not started.
+- P73-A, P73-B, P73-C, P73-D, and P73-E are complete; see their own Implementation Notes / Findings Catalog subsections above.
+- P73-F is scoped but not started.
 
 ## Outcome
 
