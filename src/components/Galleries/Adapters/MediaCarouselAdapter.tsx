@@ -200,6 +200,12 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
         originalIndex: index,
       }));
     }).flat();
+  // react-hooks/preserve-manual-memoization: the compiler can't prove `media` is
+  // immutable, so it would skip auto-memoizing this if React Compiler were ever
+  // adopted (it isn't). The manual deps here are correct for how this actually
+  // runs today — narrowing them to chase the compiler's inference would be
+  // speculative and risks a real stale-closure bug for zero current benefit.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   }, [media, syntheticLoopEnabled]);
   const autoplayEnabled = settings.carouselAutoplay && media.length > 1;
 
@@ -437,6 +443,13 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
   // ── Keyboard nav ─────────────────────────────────────────────────
 
   const handleKeyDown = useCallback(
+    // react-hooks/preserve-manual-memoization: the compiler's inferred deps
+    // (just `setPlayingSlides`) disagree with these — but `setPlayingSlides`
+    // is a stable setState setter that doesn't need to be a dep at all, and
+    // the body genuinely reads all 5 listed values. Matching the compiler's
+    // inference would drop real dependencies and reintroduce stale closures
+    // in real (non-compiled) React; keeping the correct manual deps instead.
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     (event: React.KeyboardEvent) => {
       if (event.key === 'ArrowLeft') {
         event.preventDefault();

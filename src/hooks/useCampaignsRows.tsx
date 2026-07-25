@@ -61,6 +61,11 @@ export function useCampaignsRows({ campaigns, campaignActions, grantSummary, api
       const overrideText = galleryOverrideSummary.join(', ') || t('admin_camprow_nested_fallback', 'Nested campaign gallery overrides');
       const summary = grantSummary?.get(Number(c.id));
 
+      // Wall-clock read for a display-only schedule badge (Scheduled/Expiring/Expired).
+      // This memo already re-runs whenever `campaigns` (or other deps) change, so the
+      // badge is refreshed on the same cadence as the rest of the row — a live-ticking
+      // clock isn't needed here, so this doesn't need an effect/interval to be "pure".
+      // eslint-disable-next-line react-hooks/purity
       const now = Date.now();
       let sched: { text: string; color: string } | null = null;
       if (c.publishAt && new Date(c.publishAt).getTime() > now) {

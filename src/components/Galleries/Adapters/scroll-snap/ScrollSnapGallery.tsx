@@ -119,6 +119,11 @@ export function ScrollSnapGallery({
     if (newIndex !== currentIndex) {
       setCurrentIndex(Math.max(0, Math.min(newIndex, media.length - 1)));
     }
+  // react-hooks/preserve-manual-memoization: the compiler can't prove
+  // `snapHeight` is immutable, so it would skip auto-memoizing this if React
+  // Compiler were ever adopted (it isn't). The manual deps are correct for
+  // how this actually runs today.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   }, [currentIndex, media.length, setCurrentIndex, snapHeight]);
 
   // ── Render ────────────────────────────────────────────────────────────────

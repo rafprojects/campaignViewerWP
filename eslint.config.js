@@ -44,12 +44,25 @@ export default tseslint.config({
   },
   rules: {
     // eslint-plugin-react-hooks v7's `recommended` config bundles the newer
-    // React Compiler rule suite (refs/purity/set-state-in-effect/etc) on top
-    // of the classic two. That's a real, separate code-review pass — keep
-    // only the rules this config enforced pre-v7 so the eslint 10 bump
-    // (which required this plugin major) doesn't silently expand scope.
+    // React Compiler rule suite on top of the classic two. P73-A spiked all
+    // 14 non-adopted rules and found 3 (static-components, refs,
+    // set-state-in-effect) have real findings needing dedicated fix/triage
+    // tracks (P73-D/E/F) before adoption — left off here until those land.
+    // The other 11 are adopted below (P73-C): 9 had zero findings, and
+    // preserve-manual-memoization/purity had a handful already fixed.
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/use-memo': 'error',
+    'react-hooks/preserve-manual-memoization': 'error',
+    'react-hooks/incompatible-library': 'warn',
+    'react-hooks/immutability': 'error',
+    'react-hooks/globals': 'error',
+    'react-hooks/error-boundaries': 'error',
+    'react-hooks/purity': 'error',
+    'react-hooks/set-state-in-render': 'error',
+    'react-hooks/unsupported-syntax': 'warn',
+    'react-hooks/config': 'error',
+    'react-hooks/gating': 'error',
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },
