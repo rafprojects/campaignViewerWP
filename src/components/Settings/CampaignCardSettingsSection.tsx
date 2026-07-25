@@ -21,6 +21,31 @@ import type { ApiClient } from '@/services/apiClient';
 
 import type { UpdateGallerySetting } from './GalleryAdapterSettingsSection';
 
+interface ResetLinkProps {
+  fieldKey: keyof CardBreakpointOverrides;
+  unitKey?: keyof CardBreakpointOverrides;
+  /** `hasOverride` already returns `false` on desktop, so no separate `isDesktop` prop is needed. */
+  hasOverride: (key: keyof CardBreakpointOverrides) => boolean;
+  onReset: (fieldKey: keyof CardBreakpointOverrides, unitKey?: keyof CardBreakpointOverrides) => void;
+  /** Resolved once by the parent (same string at every call site) instead of each instance re-translating it. */
+  label: string;
+}
+
+/** Small "Reset to inherited" link shown when a field has a breakpoint override. */
+function ResetLink({ fieldKey, unitKey, hasOverride, onReset, label }: ResetLinkProps) {
+  if (!hasOverride(fieldKey)) return null;
+  return (
+    <Text
+      size="xs"
+      c="dimmed"
+      style={{ cursor: 'pointer' }}
+      onClick={() => onReset(fieldKey, unitKey)}
+    >
+      {label}
+    </Text>
+  );
+}
+
 interface CampaignCardSettingsSectionProps {
   settings: GalleryBehaviorSettings;
   updateSetting: UpdateGallerySetting;
@@ -114,20 +139,12 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
     updateSetting('cardConfig', next);
   }
 
-  /** Render a small "Reset to inherited" link when a field has an override. */
-  function ResetLink({ fieldKey, unitKey }: { fieldKey: keyof CardBreakpointOverrides; unitKey?: keyof CardBreakpointOverrides }) {
-    if (isDesktop || !hasOverride(fieldKey)) return null;
-    return (
-      <Text
-        size="xs"
-        c="dimmed"
-        style={{ cursor: 'pointer' }}
-        onClick={() => unitKey ? clearDimField(fieldKey, unitKey) : clearField(fieldKey)}
-      >
-        {t('set_card_reset_inherited', '↻ Reset to inherited')}
-      </Text>
-    );
+  /** Reset a field (or a dimension value+unit pair) back to inherited. Passed to `ResetLink`. */
+  function handleReset(fieldKey: keyof CardBreakpointOverrides, unitKey?: keyof CardBreakpointOverrides): void {
+    if (unitKey) clearDimField(fieldKey, unitKey);
+    else clearField(fieldKey);
   }
+  const resetLinkLabel = t('set_card_reset_inherited', '↻ Reset to inherited');
   return (
     <>
       <Accordion.Item value="appearance">
@@ -145,7 +162,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={24}
               step={1}
             />
-            <ResetLink fieldKey="cardBorderRadius" unitKey="cardBorderRadiusUnit" />
+            <ResetLink fieldKey="cardBorderRadius" unitKey="cardBorderRadiusUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_border_width', 'Border Width (px)')}
               description={desc(t('set_card_border_width_desc', 'Left accent border thickness'), 'cardBorderWidth')}
@@ -155,7 +172,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={8}
               step={1}
             />
-            <ResetLink fieldKey="cardBorderWidth" />
+            <ResetLink fieldKey="cardBorderWidth" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <ModalSelect
               label={t('set_card_border_mode', 'Border Color Mode')}
               description={desc(t('set_card_border_mode_desc', 'How card accent border colors are determined'), 'cardBorderMode')}
@@ -167,7 +184,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolvedBorderMode}
               onChange={(value) => writeField('cardBorderMode', (value ?? 'auto') as GalleryBehaviorSettings['cardBorderMode'])}
             />
-            <ResetLink fieldKey="cardBorderMode" />
+            <ResetLink fieldKey="cardBorderMode" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             {resolvedBorderMode === 'single' && (
               <ColorInput
                 label={t('set_card_border_color', 'Border Color')}
@@ -176,7 +193,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                 onChange={(value) => writeField('cardBorderColor', value)}
               />
             )}
-            {resolvedBorderMode === 'single' && <ResetLink fieldKey="cardBorderColor" />}
+            {resolvedBorderMode === 'single' && <ResetLink fieldKey="cardBorderColor" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />}
             <ModalSelect
               label={t('set_card_shadow', 'Card Shadow')}
               description={desc(t('set_card_shadow_desc', 'Depth effect for campaign cards'), 'cardShadowPreset')}
@@ -189,7 +206,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardShadowPreset}
               onChange={(value) => writeField('cardShadowPreset', value ?? 'subtle')}
             />
-            <ResetLink fieldKey="cardShadowPreset" />
+            <ResetLink fieldKey="cardShadowPreset" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <DimensionInput
               label={t('set_card_thumb_h', 'Thumbnail Height')}
               description={desc(t('set_card_thumb_h_desc', 'Height of the card thumbnail area'), 'cardThumbnailHeight')}
@@ -201,7 +218,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={400}
               step={10}
             />
-            <ResetLink fieldKey="cardThumbnailHeight" unitKey="cardThumbnailHeightUnit" />
+            <ResetLink fieldKey="cardThumbnailHeight" unitKey="cardThumbnailHeightUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <ModalSelect
               label={t('set_card_thumb_fit', 'Thumbnail Fit')}
               description={desc(t('set_card_thumb_fit_desc', 'How the thumbnail image fills the card'), 'cardThumbnailFit')}
@@ -212,7 +229,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardThumbnailFit}
               onChange={(value) => writeField('cardThumbnailFit', value ?? 'cover')}
             />
-            <ResetLink fieldKey="cardThumbnailFit" />
+            <ResetLink fieldKey="cardThumbnailFit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <Divider label={t('set_card_element_vis', 'Element Visibility')} labelPosition="center" />
 
@@ -222,56 +239,56 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               checked={resolved.showCardCompanyName ?? true}
               onChange={(event) => writeField('showCardCompanyName', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardCompanyName" />
+            <ResetLink fieldKey="showCardCompanyName" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_access', 'Show access badge')}
               description={desc(t('set_card_show_access_desc', "Green 'Access' badge on accessible cards"), 'showCardAccessBadge')}
               checked={resolved.showCardAccessBadge ?? true}
               onChange={(event) => writeField('showCardAccessBadge', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardAccessBadge" />
+            <ResetLink fieldKey="showCardAccessBadge" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_title', 'Show card title')}
               description={desc(t('set_card_show_title_desc', 'Show the campaign title in the card info panel'), 'showCardTitle')}
               checked={resolved.showCardTitle ?? true}
               onChange={(event) => writeField('showCardTitle', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardTitle" />
+            <ResetLink fieldKey="showCardTitle" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_desc', 'Show card description')}
               description={desc(t('set_card_show_desc_desc', 'Show the campaign description in the card info panel'), 'showCardDescription')}
               checked={resolved.showCardDescription ?? true}
               onChange={(event) => writeField('showCardDescription', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardDescription" />
+            <ResetLink fieldKey="showCardDescription" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_counts', 'Show media counts')}
               description={desc(t('set_card_show_counts_desc', 'Video and image count below description'), 'showCardMediaCounts')}
               checked={resolved.showCardMediaCounts ?? true}
               onChange={(event) => writeField('showCardMediaCounts', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardMediaCounts" />
+            <ResetLink fieldKey="showCardMediaCounts" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_border', 'Show card border')}
               description={desc(t('set_card_show_border_desc', 'Accent border and hover border effect'), 'showCardBorder')}
               checked={resolved.showCardBorder ?? true}
               onChange={(event) => writeField('showCardBorder', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardBorder" />
+            <ResetLink fieldKey="showCardBorder" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_fade', 'Show thumbnail fade')}
               description={desc(t('set_card_show_fade_desc', 'Gradient overlay at bottom of thumbnail'), 'showCardThumbnailFade')}
               checked={resolved.showCardThumbnailFade ?? true}
               onChange={(event) => writeField('showCardThumbnailFade', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardThumbnailFade" />
+            <ResetLink fieldKey="showCardThumbnailFade" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Switch
               label={t('set_card_show_info', 'Show card info panel')}
               description={desc(t('set_card_show_info_desc', 'Show title, description, tags & media counts below thumbnail'), 'showCardInfoPanel')}
               checked={resolved.showCardInfoPanel ?? true}
               onChange={(event) => writeField('showCardInfoPanel', event.currentTarget.checked)}
             />
-            <ResetLink fieldKey="showCardInfoPanel" />
+            <ResetLink fieldKey="showCardInfoPanel" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>
@@ -294,7 +311,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={String(resolved.cardGridColumns)}
               onChange={(value) => writeField('cardGridColumns', parseInt(value ?? '0', 10))}
             />
-            <ResetLink fieldKey="cardGridColumns" />
+            <ResetLink fieldKey="cardGridColumns" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             {resolved.cardGridColumns === 0 && (
               <>
@@ -306,7 +323,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                   min={0}
                   max={8}
                 />
-                <ResetLink fieldKey="cardMaxColumns" />
+                <ResetLink fieldKey="cardMaxColumns" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
               </>
             )}
 
@@ -321,7 +338,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={48}
               step={2}
             />
-            <ResetLink fieldKey="cardGapH" unitKey="cardGapHUnit" />
+            <ResetLink fieldKey="cardGapH" unitKey="cardGapHUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_vgap', 'Vertical Gap')}
@@ -334,7 +351,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={48}
               step={2}
             />
-            <ResetLink fieldKey="cardGapV" unitKey="cardGapVUnit" />
+            <ResetLink fieldKey="cardGapV" unitKey="cardGapVUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_maxw', 'Card Max Width')}
@@ -348,7 +365,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={10}
               placeholder={t('set_card_ph_unlimited', '0 = unlimited')}
             />
-            <ResetLink fieldKey="cardMaxWidth" unitKey="cardMaxWidthUnit" />
+            <ResetLink fieldKey="cardMaxWidth" unitKey="cardMaxWidthUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <NumberInput
               label={t('set_card_scale', 'Card Scale')}
@@ -360,7 +377,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={0.05}
               decimalScale={2}
             />
-            <ResetLink fieldKey="cardScale" />
+            <ResetLink fieldKey="cardScale" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <ModalSelect
               label={t('set_card_justify', 'Card Justification')}
@@ -375,7 +392,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardJustifyContent ?? 'center'}
               onChange={(value) => writeField('cardJustifyContent', (value ?? 'center') as GalleryBehaviorSettings['cardJustifyContent'])}
             />
-            <ResetLink fieldKey="cardJustifyContent" />
+            <ResetLink fieldKey="cardJustifyContent" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <ModalSelect
               label={t('set_card_valign', 'Vertical Alignment')}
@@ -388,7 +405,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardGalleryVerticalAlign ?? 'start'}
               onChange={(value) => writeField('cardGalleryVerticalAlign', (value ?? 'start') as GalleryBehaviorSettings['cardGalleryVerticalAlign'])}
             />
-            <ResetLink fieldKey="cardGalleryVerticalAlign" />
+            <ResetLink fieldKey="cardGalleryVerticalAlign" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_grid_minh', 'Grid Minimum Height')}
@@ -402,7 +419,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={50}
               placeholder={t('set_card_ph_no_min', '0 = no minimum')}
             />
-            <ResetLink fieldKey="cardGalleryMinHeight" unitKey="cardGalleryMinHeightUnit" />
+            <ResetLink fieldKey="cardGalleryMinHeight" unitKey="cardGalleryMinHeightUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_grid_maxh', 'Grid Maximum Height')}
@@ -416,7 +433,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={50}
               placeholder={t('set_card_ph_no_max', '0 = no maximum')}
             />
-            <ResetLink fieldKey="cardGalleryMaxHeight" unitKey="cardGalleryMaxHeightUnit" />
+            <ResetLink fieldKey="cardGalleryMaxHeight" unitKey="cardGalleryMaxHeightUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_grid_offx', 'Grid Horizontal Offset')}
@@ -430,7 +447,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={4}
               allowNegative
             />
-            <ResetLink fieldKey="cardGalleryOffsetX" unitKey="cardGalleryOffsetXUnit" />
+            <ResetLink fieldKey="cardGalleryOffsetX" unitKey="cardGalleryOffsetXUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_grid_offy', 'Grid Vertical Offset')}
@@ -444,7 +461,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={4}
               allowNegative
             />
-            <ResetLink fieldKey="cardGalleryOffsetY" unitKey="cardGalleryOffsetYUnit" />
+            <ResetLink fieldKey="cardGalleryOffsetY" unitKey="cardGalleryOffsetYUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <ModalSelect
               label={t('set_card_aspect', 'Card Aspect Ratio')}
@@ -463,7 +480,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardAspectRatio ?? 'auto'}
               onChange={(value) => writeField('cardAspectRatio', (value ?? 'auto') as GalleryBehaviorSettings['cardAspectRatio'])}
             />
-            <ResetLink fieldKey="cardAspectRatio" />
+            <ResetLink fieldKey="cardAspectRatio" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <DimensionInput
               label={t('set_card_minh', 'Card Min Height')}
@@ -476,7 +493,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={600}
               step={10}
             />
-            <ResetLink fieldKey="cardMinHeight" unitKey="cardMinHeightUnit" />
+            <ResetLink fieldKey="cardMinHeight" unitKey="cardMinHeightUnit" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             <Divider label={t('set_card_pagination', 'Pagination')} labelPosition="left" />
             <ModalSelect
@@ -490,7 +507,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               value={resolved.cardDisplayMode}
               onChange={(value) => writeField('cardDisplayMode', (value ?? 'load-more') as GalleryBehaviorSettings['cardDisplayMode'])}
             />
-            <ResetLink fieldKey="cardDisplayMode" />
+            <ResetLink fieldKey="cardDisplayMode" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
 
             {resolved.cardDisplayMode === 'paginated' && (
               <>
@@ -503,14 +520,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                   max={10}
                   step={1}
                 />
-                <ResetLink fieldKey="cardRowsPerPage" />
+                <ResetLink fieldKey="cardRowsPerPage" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
                 <Switch
                   label={t('set_card_dot_nav', 'Dot Navigator')}
                   description={desc(t('set_card_dot_nav_desc', 'Show dot navigator below the card grid'), 'cardPageDotNav')}
                   checked={resolved.cardPageDotNav}
                   onChange={(event) => writeField('cardPageDotNav', event.currentTarget.checked)}
                 />
-                <ResetLink fieldKey="cardPageDotNav" />
+                <ResetLink fieldKey="cardPageDotNav" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
                 <NumberInput
                   label={t('set_card_page_trans', 'Page Transition Duration (ms)')}
                   description={desc(t('set_card_page_trans_desc', 'Slide animation speed between pages'), 'cardPageTransitionMs')}
@@ -520,7 +537,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
                   max={800}
                   step={50}
                 />
-                <ResetLink fieldKey="cardPageTransitionMs" />
+                <ResetLink fieldKey="cardPageTransitionMs" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
               </>
             )}
           </Stack>
@@ -540,7 +557,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               step={0.05}
               marks={[{ value: 0, label: '0' }, { value: 0.5, label: '0.5' }, { value: 1, label: '1' }]}
             />
-            <ResetLink fieldKey="cardLockedOpacity" />
+            <ResetLink fieldKey="cardLockedOpacity" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Text size="sm" fw={500}>{t('set_card_grad_start', 'Gradient Start Opacity')}</Text>
             <Slider
               value={resolved.cardGradientStartOpacity}
@@ -549,7 +566,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={1}
               step={0.05}
             />
-            <ResetLink fieldKey="cardGradientStartOpacity" />
+            <ResetLink fieldKey="cardGradientStartOpacity" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Text size="sm" fw={500}>{t('set_card_grad_end', 'Gradient End Opacity')}</Text>
             <Slider
               value={resolved.cardGradientEndOpacity}
@@ -558,7 +575,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={1}
               step={0.05}
             />
-            <ResetLink fieldKey="cardGradientEndOpacity" />
+            <ResetLink fieldKey="cardGradientEndOpacity" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_lock_icon', 'Lock Icon Size (px)')}
               description={desc(t('set_card_lock_icon_desc', 'Size of the lock icon shown on inaccessible cards'), 'cardLockIconSize')}
@@ -567,7 +584,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               min={12}
               max={64}
             />
-            <ResetLink fieldKey="cardLockIconSize" />
+            <ResetLink fieldKey="cardLockIconSize" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_access_icon', 'Access Icon Size (px)')}
               description={desc(t('set_card_access_icon_desc', 'Size of the icon inside the access badge'), 'cardAccessIconSize')}
@@ -576,7 +593,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               min={8}
               max={32}
             />
-            <ResetLink fieldKey="cardAccessIconSize" />
+            <ResetLink fieldKey="cardAccessIconSize" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_badge_offy', 'Badge Offset Y (px)')}
               description={desc(t('set_card_badge_offy_desc', 'Vertical offset from the top edge for access and company badges'), 'cardBadgeOffsetY')}
@@ -585,7 +602,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               min={0}
               max={32}
             />
-            <ResetLink fieldKey="cardBadgeOffsetY" />
+            <ResetLink fieldKey="cardBadgeOffsetY" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_company_maxw', 'Company Badge Max Width (px)')}
               description={desc(t('set_card_company_maxw_desc', 'Maximum width of the company badge before truncation'), 'cardCompanyBadgeMaxWidth')}
@@ -594,7 +611,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               min={60}
               max={400}
             />
-            <ResetLink fieldKey="cardCompanyBadgeMaxWidth" />
+            <ResetLink fieldKey="cardCompanyBadgeMaxWidth" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <NumberInput
               label={t('set_card_thumb_hover', 'Thumbnail Hover Transition (ms)')}
               description={desc(t('set_card_thumb_hover_desc', 'Duration of the thumbnail hover zoom effect'), 'cardThumbnailHoverTransitionMs')}
@@ -603,7 +620,7 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               min={0}
               max={1000}
             />
-            <ResetLink fieldKey="cardThumbnailHoverTransitionMs" />
+            <ResetLink fieldKey="cardThumbnailHoverTransitionMs" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <Text size="sm" fw={500}>{t('set_card_page_opacity', 'Page Transition Opacity')}</Text>
             <Slider
               value={resolved.cardPageTransitionOpacity}
@@ -612,14 +629,14 @@ export function CampaignCardSettingsSection({ settings, updateSetting, activeBre
               max={1}
               step={0.05}
             />
-            <ResetLink fieldKey="cardPageTransitionOpacity" />
+            <ResetLink fieldKey="cardPageTransitionOpacity" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
             <TextInput
               label={t('set_card_auto_cols_bp', 'Auto Columns Breakpoints')}
               description={desc(t('set_card_auto_cols_bp_desc', 'Format: 480:1,768:2,1024:3,1280:4'), 'cardAutoColumnsBreakpoints')}
               value={resolved.cardAutoColumnsBreakpoints}
               onChange={(event) => writeField('cardAutoColumnsBreakpoints', event.currentTarget.value)}
             />
-            <ResetLink fieldKey="cardAutoColumnsBreakpoints" />
+            <ResetLink fieldKey="cardAutoColumnsBreakpoints" hasOverride={hasOverride} onReset={handleReset} label={resetLinkLabel} />
           </Stack>
         </Accordion.Panel>
       </Accordion.Item>

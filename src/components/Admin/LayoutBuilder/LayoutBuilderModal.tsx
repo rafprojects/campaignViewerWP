@@ -28,6 +28,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
+import { useLatestRef } from '@wp-super-gallery/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
@@ -190,13 +191,12 @@ export function LayoutBuilderModal({
   // ── P30-G: migrate flat P29-G-C groups to hierarchical format on open ──
   // The ref keeps a stable pointer to the latest `migrateGroupsIfNeeded` so
   // the effect dep array stays minimal (only [opened]).
-  const migrateGroupsRef = useRef(builder.migrateGroupsIfNeeded);
-  migrateGroupsRef.current = builder.migrateGroupsIfNeeded;
+  const migrateGroupsRef = useLatestRef(builder.migrateGroupsIfNeeded);
   useEffect(() => {
     if (!opened) return;
     migrateGroupsRef.current();
 
-  }, [opened]);
+  }, [opened, migrateGroupsRef]);
 
   // ── A11y announce helper ──
   const announce = useCallback((msg: string) => {

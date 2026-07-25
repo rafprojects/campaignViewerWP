@@ -16,6 +16,7 @@ import {
 } from '@wp-super-gallery/shared-utils';
 import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
 import { useViewportHeight } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@wp-super-gallery/shared-utils';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';
@@ -235,8 +236,7 @@ export function LayoutCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [template.slots, template.breakpointOverrides, activeBreakpoint],
   );
-  const effectiveSlotsRef = useRef(effectiveSlots);
-  effectiveSlotsRef.current = effectiveSlots;
+  const effectiveSlotsRef = useLatestRef(effectiveSlots);
 
   // ── Contextual toolbar: union bounding rect of selected slots ─
 
@@ -273,11 +273,8 @@ export function LayoutCanvas({
 
   // ── Marquee (rubber-band) selection state (P58-D) ──────────
   const [marqueeRect, setMarqueeRect] = useState<PctRect | null>(null);
-  // Refs so drag-stop callback reads latest values without recreating on every selection change.
-  const selectedSlotIdsRef = useRef(selectedSlotIds);
-  selectedSlotIdsRef.current = selectedSlotIds;
-  const templateSlotsRef = useRef(template.slots);
-  templateSlotsRef.current = template.slots;
+  // Ref so drag-stop callback reads latest value without recreating on every selection change.
+  const selectedSlotIdsRef = useLatestRef(selectedSlotIds);
 
   // Pre-compute per-slot "others" arrays so every drag frame avoids O(n) allocations.
   // Rebuilds only when template.slots changes (on committed moves/adds/removes, not drag frames).
@@ -290,12 +287,10 @@ export function LayoutCanvas({
     return map;
   }, [effectiveSlots]);
   // Stable ref so handleDragFrame reads the latest map without listing it as a dependency.
-  const slotOthersMapRef = useRef(slotOthersMap);
-  slotOthersMapRef.current = slotOthersMap;
+  const slotOthersMapRef = useLatestRef(slotOthersMap);
 
   // Stable ref for persistent guides so handleDragFrame doesn't re-create on guide changes.
-  const guidesRef = useRef(guides);
-  guidesRef.current = guides;
+  const guidesRef = useLatestRef(guides);
 
   /** Called on every drag frame from a slot. */
   const handleDragFrame = useCallback(
@@ -383,7 +378,7 @@ export function LayoutCanvas({
 
       lastGuideResultRef.current = { snapX, snapY };
     },
-    [snapMode, isPreview, pxToPct, pctToPx, canvasWidth, canvasHeight, snapThresholdPx, gridSizePx],
+    [snapMode, isPreview, pxToPct, pctToPx, canvasWidth, canvasHeight, snapThresholdPx, gridSizePx, selectedSlotIdsRef, effectiveSlotsRef, slotOthersMapRef, guidesRef],
   );
 
   /** On drag stop: apply snapping, commit dragged slot, then move all co-selected slots by the same delta. */
@@ -420,7 +415,7 @@ export function LayoutCanvas({
 
       onAnnounce?.(`Slot moved to ${finalX.toFixed(1)}%, ${finalY.toFixed(1)}%`);
     },
-    [pxToPct, onSlotMove, onAnnounce],
+    [pxToPct, onSlotMove, onAnnounce, selectedSlotIdsRef, effectiveSlotsRef],
   );
 
   /** On resize stop: commit and announce. */
@@ -501,7 +496,7 @@ export function LayoutCanvas({
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
     },
-    [isPreview, isHandTool, onCanvasClick, onMarqueeSelect],
+    [isPreview, isHandTool, onCanvasClick, onMarqueeSelect, effectiveSlotsRef],
   );
 
   const handleCanvasDblClick = useCallback(

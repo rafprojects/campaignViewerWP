@@ -73,9 +73,15 @@ export function CardGallery({
   // ── Modal state ───────────────────────────────────────────────────────────
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation.
+  // This is React's own documented "cache information between re-renders" exception
+  // (conditional write during render, guarded so it only ever changes the value, never
+  // causes visibly different output for the *same* render) — see
+  // https://react.dev/reference/react/useRef#caching-information-between-re-renders.
+  /* eslint-disable react-hooks/refs */
   const lastCampaignRef = useRef<Campaign | null>(null);
   if (selectedCampaign) lastCampaignRef.current = selectedCampaign;
   const displayedCampaign = selectedCampaign ?? lastCampaignRef.current;
+  /* eslint-enable react-hooks/refs */
 
   // ── Filter / search state ─────────────────────────────────────────────────
   const [filter, setFilter] = useState<string>('all');

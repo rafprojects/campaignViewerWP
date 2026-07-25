@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useLatestRef } from '@wp-super-gallery/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
 import {
@@ -24,12 +25,9 @@ export function useInContextSave(
   const pendingRef = useRef<Record<string, unknown>>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // Refs to latest values avoid stale closures in the debounced callback
-  const settingsRef = useRef(settings);
-  settingsRef.current = settings;
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
-  const spaceIdRef = useRef(spaceId);
-  spaceIdRef.current = spaceId;
+  const settingsRef = useLatestRef(settings);
+  const onErrorRef = useLatestRef(onError);
+  const spaceIdRef = useLatestRef(spaceId);
 
   const save = useCallback(
     (key: string, value: unknown) => {
@@ -72,7 +70,7 @@ export function useInContextSave(
         }
       }, delay);
     },
-    [apiClient, delay, queryClient],
+    [apiClient, delay, queryClient, spaceIdRef, settingsRef, onErrorRef],
   );
 
   // Clear pending debounce timer on unmount to prevent stale network calls

@@ -58,5 +58,8 @@ export * from './useXhrUpload'
 export * from './useBuilderDeepLink'
 export * from './useLightbox'
 
+// --- P73-E: shared "ref mirrors latest value" helper ---
+export * from './useLatestRef'
+
 // --- P51-J: stable per-instance space color (AuthBar carry-over) ---
 export * from './spaceColor'

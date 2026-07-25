@@ -44,12 +44,35 @@ export default tseslint.config({
   },
   rules: {
     // eslint-plugin-react-hooks v7's `recommended` config bundles the newer
-    // React Compiler rule suite (refs/purity/set-state-in-effect/etc) on top
-    // of the classic two. That's a real, separate code-review pass — keep
-    // only the rules this config enforced pre-v7 so the eslint 10 bump
-    // (which required this plugin major) doesn't silently expand scope.
+    // React Compiler rule suite on top of the classic two. P73-A spiked all
+    // 14 non-adopted rules; P73-C adopted the 11 with no/trivial backlog,
+    // P73-D adopted static-components, P73-E adopted refs (centralized the
+    // codebase's "ref mirrors latest value" idiom into shared-utils'
+    // useLatestRef, fixed one real DOM-read staleness bug, suppressed the
+    // rest as confirmed false positives / React-documented patterns).
+    // `set-state-in-effect` is deliberately NOT adopted (P73-F): a full
+    // manual audit of all 42 findings across 36 files found zero real bugs —
+    // every site is a standard, often already-commented React pattern
+    // (reset-on-open, default-to-first-item, sync-local-from-prop, object-URL
+    // lifecycle, cancellation-guarded async fetches). Suppressing all 42
+    // individually would add noise for zero signal; see docs/PHASE73_REPORT.md
+    // Track P73-F for the full per-file classification. Revisit only if this
+    // codebase ever adopts the React Compiler for real.
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
+    'react-hooks/static-components': 'error',
+    'react-hooks/refs': 'error',
+    'react-hooks/use-memo': 'error',
+    'react-hooks/preserve-manual-memoization': 'error',
+    'react-hooks/incompatible-library': 'warn',
+    'react-hooks/immutability': 'error',
+    'react-hooks/globals': 'error',
+    'react-hooks/error-boundaries': 'error',
+    'react-hooks/purity': 'error',
+    'react-hooks/set-state-in-render': 'error',
+    'react-hooks/unsupported-syntax': 'warn',
+    'react-hooks/config': 'error',
+    'react-hooks/gating': 'error',
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },
