@@ -43,7 +43,13 @@ export default tseslint.config({
     'react-refresh': reactRefresh,
   },
   rules: {
-    ...reactHooks.configs.recommended.rules,
+    // eslint-plugin-react-hooks v7's `recommended` config bundles the newer
+    // React Compiler rule suite (refs/purity/set-state-in-effect/etc) on top
+    // of the classic two. That's a real, separate code-review pass — keep
+    // only the rules this config enforced pre-v7 so the eslint 10 bump
+    // (which required this plugin major) doesn't silently expand scope.
+    'react-hooks/rules-of-hooks': 'error',
+    'react-hooks/exhaustive-deps': 'warn',
     'react-refresh/only-export-components': [
       'warn',
       { allowConstantExport: true },

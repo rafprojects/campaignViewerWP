@@ -29,7 +29,7 @@ if (!fs.existsSync(configPath)) {
 const contents = fs.readFileSync(configPath, 'utf8');
 const defineRegex = /define\(\s*['"]JWT_AUTH_SECRET_KEY['"]\s*,\s*['"][^'"]*['"]\s*\);/;
 
-let updated = contents;
+let updated;
 if (defineRegex.test(contents)) {
   updated = contents.replace(defineRegex, `define('JWT_AUTH_SECRET_KEY', '${escapedSecret}');`);
 } else {
