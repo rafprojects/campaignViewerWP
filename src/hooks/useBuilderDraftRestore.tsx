@@ -6,9 +6,10 @@ import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
 import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
 
-// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
-// (The surrounding modal title/labels are a separate, pre-existing i18n gap not
-// in F-1's notification scope and are intentionally left untouched here.)
+// [P71-E, extended P72-A] Notification copy routed through the shared i18next
+// instance (outside JSX). P72-A brought the confirm-modal chrome (title, body,
+// labels, and the relative age label) through the same binding — the ESLint gate
+// now covers `modals.openConfirmModal` title/labels too.
 const t = i18n.t.bind(i18n);
 
 interface UseBuilderDraftRestoreOptions {
@@ -88,19 +89,30 @@ export function useBuilderDraftRestore({
 
     const isConflict = payload.serverUpdatedAt !== (initialTemplate?.updatedAt ?? '');
     const draftAge = Math.round((Date.now() - payload.savedAt) / 60_000);
-    const ageLabel = draftAge < 1 ? 'just now' : draftAge === 1 ? '1 minute ago' : `${draftAge} minutes ago`;
+    const ageLabel =
+      draftAge < 1
+        ? t('draftrestore_age_just_now', 'just now')
+        : t('draftrestore_age_minutes', '{{count}} minute ago', { count: draftAge });
 
     const draftSnapshot = payload.template;
     modals.openConfirmModal({
-      title: isConflict ? 'Draft conflict detected' : 'Unsaved draft found',
+      title: isConflict
+        ? t('draftrestore_conflict_title', 'Draft conflict detected')
+        : t('draftrestore_found_title', 'Unsaved draft found'),
       children: (
         <Text size="sm">
           {isConflict
-            ? `This template was saved in another session after your draft was created (${ageLabel}). Restoring your draft will overwrite those changes.`
-            : `An autosaved draft from ${ageLabel} was found. Would you like to restore it?`}
+            ? t(
+                'draftrestore_conflict_body',
+                'This template was saved in another session after your draft was created ({{age}}). Restoring your draft will overwrite those changes.',
+                { age: ageLabel },
+              )
+            : t('draftrestore_found_body', 'An autosaved draft from {{age}} was found. Would you like to restore it?', {
+                age: ageLabel,
+              })}
         </Text>
       ),
-      labels: { confirm: 'Restore draft', cancel: 'Discard' },
+      labels: { confirm: t('draftrestore_confirm', 'Restore draft'), cancel: t('draftrestore_discard', 'Discard') },
       confirmProps: { color: isConflict ? 'orange' : 'blue' },
       onConfirm: () => {
         onRestoreDraftRef.current(draftSnapshot);

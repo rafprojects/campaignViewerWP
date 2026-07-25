@@ -190,7 +190,8 @@ class WPSG_Embed {
             'auth_bar_mode' => '',
         ], $atts, 'super-gallery');
 
-        $space_id = self::resolve_space_id($atts);
+        $unresolved_space_refs = [];
+        $space_id = self::resolve_space_id($atts, $unresolved_space_refs);
         $space_obj  = class_exists('WPSG_DB') ? WPSG_DB::get_space($space_id) : null;
         $space_slug = ($space_obj && !empty($space_obj->slug)) ? $space_obj->slug : (string) $space_id;
         $space_name = ($space_obj && !empty($space_obj->name)) ? $space_obj->name : $space_slug;
@@ -409,7 +410,12 @@ class WPSG_Embed {
             $bleed_close = '</div>';
         }
 
-        return $config_script . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
+        // P72-D: admin-only notice when an explicit space reference fell back to
+        // the default. Placed outside the full-bleed wrapper so it isn't pulled
+        // edge-to-edge, and before the mount node so it reads as a page-level hint.
+        $unresolved_notice = self::render_unresolved_space_notice($unresolved_space_refs);
+
+        return $config_script . $unresolved_notice . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
     }
 
     /**
@@ -418,24 +424,39 @@ class WPSG_Embed {
      * Priority: explicit space= attr (ID or slug) → campaign's _wpsg_space_id →
      * company's _wpsg_space_id → Default Space.
      *
-     * @param array $atts Shortcode attributes.
+     * P72-D: `$unresolved_refs` collects the explicit references that name
+     * something which *does not exist* — a stale/mistyped space=/campaign=/company=
+     * that silently collapsed onto the default, which is worth an admin-facing
+     * signal. It is deliberately NOT populated for two non-error cases:
+     *   - no explicit reference at all (the intentional default), and
+     *   - a reference whose entity exists but carries no `_wpsg_space_id`
+     *     (a campaign/company that legitimately *inherits* the default space —
+     *     the common case on a single-space install, and not a misconfiguration).
+     * It is also only populated on the path that actually reaches the default
+     * fallback: a higher-priority reference that resolved returns early.
+     *
+     * @param array $atts            Shortcode attributes.
+     * @param array $unresolved_refs Out-param: attr => value for each explicit
+     *                               reference naming a nonexistent entity.
      * @return int Resolved space ID (always ≥ 1).
      */
-    private static function resolve_space_id(array $atts): int {
-        if (!empty($atts['space'])) {
+    private static function resolve_space_id(array $atts, array &$unresolved_refs = []): int {
+        $unresolved_refs = [];
+
+        if (!empty($atts['space']) && class_exists('WPSG_DB')) {
             $s = $atts['space'];
-            if (is_numeric($s) && class_exists('WPSG_DB')) {
+            if (is_numeric($s)) {
                 $space = WPSG_DB::get_space((int) $s);
                 if ($space) {
                     return (int) $space->id;
                 }
             }
-            if (class_exists('WPSG_DB')) {
-                $space = WPSG_DB::get_space_by_slug($s);
-                if ($space) {
-                    return (int) $space->id;
-                }
+            $space = WPSG_DB::get_space_by_slug($s);
+            if ($space) {
+                return (int) $space->id;
             }
+            // space= names a space directly, so "not found" is always stale.
+            $unresolved_refs['space'] = $s;
         }
 
         if (!empty($atts['campaign'])) {
@@ -448,6 +469,9 @@ class WPSG_Embed {
                 if ($sid > 0) {
                     return $sid;
                 }
+                // Campaign exists, just unassigned — inherits the default space.
+            } else {
+                $unresolved_refs['campaign'] = $atts['campaign'];
             }
         }
 
@@ -458,10 +482,51 @@ class WPSG_Embed {
                 if ($sid > 0) {
                     return $sid;
                 }
+                // Company exists, just unassigned — inherits the default space.
+            } else {
+                $unresolved_refs['company'] = $atts['company'];
             }
         }
 
         return (int) get_option('wpsg_default_space_id', 1);
+    }
+
+    /**
+     * P72-D: admin-only inline notice shown when a shortcode names a
+     * space=/campaign=/company= that does not exist and the gallery silently
+     * fell back to the default space. Gated on manage_wpsg so it is never shown
+     * to visitors; returns '' for non-admins and when nothing was stale (the
+     * omitted-attribute default, or an entity that merely inherits the default).
+     *
+     * @param array $unresolved_refs attr => value pairs that failed to resolve.
+     * @return string Notice HTML, or '' when no notice should render.
+     */
+    private static function render_unresolved_space_notice(array $unresolved_refs): string {
+        if (empty($unresolved_refs) || !current_user_can('manage_wpsg')) {
+            return '';
+        }
+
+        // Name only the reference(s) that failed, in priority order.
+        $refs = [];
+        foreach ($unresolved_refs as $attr => $value) {
+            $refs[] = $attr . '="' . $value . '"';
+        }
+        $ref_label = implode(' ', $refs);
+
+        $message = sprintf(
+            /* translators: %s: the shortcode reference that did not resolve, e.g. space="acme". */
+            __(
+                'WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice.',
+                'wp-super-gallery'
+            ),
+            $ref_label
+        );
+
+        return '<div class="wpsg-shortcode-notice" role="status" style="'
+            . 'margin:0 0 12px;padding:10px 14px;border:1px solid #f0b849;border-left-width:4px;'
+            . 'background:#fcf9e8;color:#3c2f00;border-radius:4px;font-size:14px;line-height:1.5;">'
+            . esc_html($message)
+            . '</div>';
     }
 
     /**

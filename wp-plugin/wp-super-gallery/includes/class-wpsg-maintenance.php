@@ -9,6 +9,9 @@ class WPSG_Maintenance {
     const TRASH_PURGE_HOOK          = 'wpsg_trash_purge';
     const ANALYTICS_PURGE_HOOK      = 'wpsg_analytics_purge';
     const EXPIRED_GRANTS_HOOK       = 'wpsg_expired_grants_cleanup';
+    // P72-F: opt-in retention purge for the two PII tables.
+    const ACCESS_REQUESTS_PURGE_HOOK = 'wpsg_access_requests_purge';
+    const AUDIT_LOG_PURGE_HOOK       = 'wpsg_audit_log_purge';
 
     /**
      * Hook cron actions and schedule events based on settings.
@@ -18,6 +21,8 @@ class WPSG_Maintenance {
         add_action(self::TRASH_PURGE_HOOK, [self::class, 'purge_trashed_campaigns']);
         add_action(self::ANALYTICS_PURGE_HOOK, [self::class, 'purge_old_analytics']);
         add_action(self::EXPIRED_GRANTS_HOOK, [self::class, 'purge_expired_grants']);
+        add_action(self::ACCESS_REQUESTS_PURGE_HOOK, [self::class, 'purge_old_access_requests']);
+        add_action(self::AUDIT_LOG_PURGE_HOOK, [self::class, 'purge_old_audit_log']);
 
         // Register a weekly interval — core only ships hourly/twicedaily/daily.
         add_filter('cron_schedules', [self::class, 'add_weekly_schedule']);
@@ -48,6 +53,27 @@ class WPSG_Maintenance {
             }
         } else {
             wp_clear_scheduled_hook(self::ANALYTICS_PURGE_HOOK);
+        }
+
+        // P72-F: opt-in PII retention. Both default to 0 (never purge) so existing
+        // installs are never surprised by unexpected data loss; a non-zero window
+        // schedules a weekly purge, mirroring the analytics job above.
+        $access_requests_days = self::get_setting('access_requests_retention_days');
+        if ($access_requests_days > 0) {
+            if (!wp_next_scheduled(self::ACCESS_REQUESTS_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'weekly', self::ACCESS_REQUESTS_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::ACCESS_REQUESTS_PURGE_HOOK);
+        }
+
+        $audit_log_days = self::get_setting('audit_log_retention_days');
+        if ($audit_log_days > 0) {
+            if (!wp_next_scheduled(self::AUDIT_LOG_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'weekly', self::AUDIT_LOG_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::AUDIT_LOG_PURGE_HOOK);
         }
 
         // P28-B: always schedule the expired grants cleanup — no setting gate needed.
@@ -164,6 +190,67 @@ class WPSG_Maintenance {
             $deleted = $wpdb->query(
                 $wpdb->prepare(
                     "DELETE FROM {$table} WHERE occurred_at < %s LIMIT %d",
+                    $before,
+                    $batch_size
+                )
+            );
+        } while ($deleted === $batch_size);
+    }
+
+    // ── P72-F: Opt-in retention purge for the PII tables ────────────────────
+
+    /**
+     * Delete access-request rows (visitor emails) older than the configured
+     * retention window. Keyed off requested_at. Opt-in: a zero/unset window
+     * (the default) purges nothing. Batched to avoid long table locks, exactly
+     * like purge_old_analytics().
+     */
+    public static function purge_old_access_requests() {
+        $days = self::get_setting('access_requests_retention_days');
+        if ($days <= 0 || !class_exists('WPSG_DB')) {
+            return;
+        }
+
+        global $wpdb;
+        $table  = WPSG_DB::get_access_requests_table();
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        $batch_size = 1000;
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE requested_at < %s LIMIT %d",
+                    $before,
+                    $batch_size
+                )
+            );
+        } while ($deleted === $batch_size);
+    }
+
+    /**
+     * Delete audit-log rows (staff usernames / attempted logins) older than the
+     * configured retention window. Keyed off created_at. Opt-in: a zero/unset
+     * window (the default) purges nothing — audit trails carry a legitimate-
+     * interest retention purpose, so this is deliberately never on by default.
+     * Batched, like purge_old_analytics().
+     */
+    public static function purge_old_audit_log() {
+        $days = self::get_setting('audit_log_retention_days');
+        if ($days <= 0 || !class_exists('WPSG_DB')) {
+            return;
+        }
+
+        global $wpdb;
+        $table  = WPSG_DB::get_audit_log_table();
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        $batch_size = 1000;
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE created_at < %s LIMIT %d",
                     $before,
                     $batch_size
                 )

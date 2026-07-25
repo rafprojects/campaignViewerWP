@@ -6,10 +6,10 @@ import { GalleryConfigSchema } from '@/types/settingsSchemas';
 import type { GalleryConfig } from '@/types';
 import type { UpdateGallerySetting } from '@/components/Settings/GalleryAdapterSettingsSection';
 
-// [P71-E] Notification copy routed through the shared i18next instance (outside JSX).
-// (The `validateImportPayload` error strings shown as `message: result.error`
-// live in a separate pure validator and are a broader pre-existing i18n gap,
-// intentionally out of F-1's direct notification-literal scope.)
+// [P71-E, extended P72-A] Notification copy routed through the shared i18next
+// instance (outside JSX). Also used by `validateImportPayload`, whose returned
+// error strings surface as `message: result.error` — the ESLint gate cannot see
+// those across the function boundary, so they are translated here by hand.
 const t = i18n.t.bind(i18n);
 
 const VALID_ADAPTER_IDS: ReadonlySet<string> = new Set(BUILTIN_ADAPTERS.map((a) => a.id));
@@ -32,7 +32,7 @@ type ValidationResult =
 
 function validateImportPayload(parsed: unknown): ValidationResult {
   if (typeof parsed !== 'object' || parsed === null) {
-    return { ok: false, error: 'Expected a JSON object.' };
+    return { ok: false, error: t('gasettings_val_not_object', 'Expected a JSON object.') };
   }
 
   const raw = parsed as Record<string, unknown>;
@@ -41,7 +41,7 @@ function validateImportPayload(parsed: unknown): ValidationResult {
 
   const schemaResult = GalleryConfigSchema.safeParse(configInput);
   if (!schemaResult.success) {
-    return { ok: false, error: 'Invalid gallery config structure.' };
+    return { ok: false, error: t('gasettings_val_bad_structure', 'Invalid gallery config structure.') };
   }
 
   const config = schemaResult.data;
@@ -56,7 +56,11 @@ function validateImportPayload(parsed: unknown): ValidationResult {
       if (adapterId !== undefined && !VALID_ADAPTER_IDS.has(adapterId)) {
         return {
           ok: false,
-          error: `Unknown adapter ID "${adapterId}" (${bp} ${scope}). Valid IDs: ${[...VALID_ADAPTER_IDS].join(', ')}.`,
+          error: t(
+            'gasettings_val_unknown_adapter',
+            'Unknown adapter ID "{{id}}" ({{bp}} {{scope}}). Valid IDs: {{ids}}.',
+            { id: adapterId, bp, scope, ids: [...VALID_ADAPTER_IDS].join(', ') },
+          ),
         };
       }
 
@@ -67,7 +71,11 @@ function validateImportPayload(parsed: unknown): ValidationResult {
         if (unknownKeys.length > 0) {
           return {
             ok: false,
-            error: `Unknown adapter setting keys in ${bp} ${scope}: ${unknownKeys.join(', ')}.`,
+            error: t('gasettings_val_unknown_keys', 'Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}.', {
+              bp,
+              scope,
+              keys: unknownKeys.join(', '),
+            }),
           };
         }
       }

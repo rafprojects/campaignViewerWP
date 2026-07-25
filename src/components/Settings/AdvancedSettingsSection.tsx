@@ -367,6 +367,22 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
                   min={0}
                   max={730}
                 />
+                <NumberInput
+                  label={tooltipLabel(t('set_adv_access_req_ret', 'Access-Request Retention (days)'), 'accessRequestsRetentionDays')}
+                  description={t('set_adv_access_req_ret_desc', 'Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely.')}
+                  value={settings.accessRequestsRetentionDays ?? 0}
+                  onChange={(value) => updateSetting('accessRequestsRetentionDays', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3650}
+                />
+                <NumberInput
+                  label={tooltipLabel(t('set_adv_audit_log_ret', 'Audit-Log Retention (days)'), 'auditLogRetentionDays')}
+                  description={t('set_adv_audit_log_ret_desc', 'Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability.')}
+                  value={settings.auditLogRetentionDays ?? 0}
+                  onChange={(value) => updateSetting('auditLogRetentionDays', typeof value === 'number' ? value : 0)}
+                  min={0}
+                  max={3650}
+                />
               </Stack>
             ) : null}
           </Accordion.Panel>

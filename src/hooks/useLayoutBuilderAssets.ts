@@ -38,7 +38,7 @@ export function useLayoutBuilderAssets({
         );
         await refetchAssetLibrary();
         builder.addOverlay(entry.url);
-        announce('Overlay uploaded and added to canvas');
+        announce(t('lbassets_ann_overlay', 'Overlay uploaded and added to canvas'));
         notifications.show({ message: t('lbassets_overlay_added', 'Overlay added to canvas'), color: 'blue', autoClose: 3000 });
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : t('lbassets_overlay_upload_failed', 'Overlay upload failed');
@@ -115,7 +115,7 @@ export function useLayoutBuilderAssets({
           formData,
         );
         builder.setBackgroundImage(entry.url);
-        announce('Background image uploaded and applied');
+        announce(t('lbassets_ann_background', 'Background image uploaded and applied'));
         notifications.show({ message: t('lbassets_bg_applied', 'Background image applied'), color: 'blue', autoClose: 3000 });
       } catch (err) {
         const errMsg = err instanceof Error ? err.message : t('lbassets_bg_upload_failed_msg', 'Background image upload failed');
@@ -138,7 +138,7 @@ export function useLayoutBuilderAssets({
           '/wp-json/wp-super-gallery/v1/admin/asset-library',
           formData,
         );
-        announce('Mask image uploaded');
+        announce(t('lbassets_ann_mask', 'Mask image uploaded'));
         return entry.url;
       } catch (err) {
         onNotify?.({

@@ -117,6 +117,7 @@ require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-utils.php'
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
+require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-privacy.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-logger.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
 require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
@@ -280,6 +281,7 @@ add_action('init', ['WPSG_Embed', 'maybe_serve_service_worker'], 1);
 add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
 add_action('init', ['WPSG_DB', 'maybe_upgrade']);
 add_action('init', ['WPSG_Maintenance', 'register']);
+add_action('init', ['WPSG_Privacy', 'register']);
 add_action('init', ['WPSG_Monitoring', 'register']);
 add_action('init', ['WPSG_Alerts', 'register']);
 add_action('init', ['WPSG_Webhooks', 'register']);

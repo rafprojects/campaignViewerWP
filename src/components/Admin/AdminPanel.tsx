@@ -2,27 +2,26 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useQueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
-import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box, FileButton } from '@mantine/core';
+import { Tabs, Button, Group, Card, Title, ActionIcon, Center, Loader, Chip, Tooltip, Select, Switch, Menu, Collapse, Badge, Box } from '@mantine/core';
 import { useReloadSafeView } from '@/hooks/useReloadSafeView';
 import { IconPlus, IconArrowLeft, IconFileImport, IconKeyboard, IconSettings, IconDotsVertical, IconAdjustments, IconStack2 } from '@tabler/icons-react';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { CampaignsTab } from './CampaignsTab';
 import { CampaignsMobileList } from './CampaignsMobileList';
 import { BulkActionsBar } from './BulkActionsBar';
-import { AuditTab } from './AuditTab';
+import { AuditPanel } from './AuditPanel';
 import { GlobalAuditTab } from './GlobalAuditTab';
-import { AccessTab } from './AccessTab';
+import { AccessPanel } from './AccessPanel';
+import { MediaPanel } from './MediaPanel';
 import { LayoutTemplateList } from './LayoutTemplateList';
 import { TemplatePickerModal } from './TemplatePickerModal';
 import { TemplatesTab } from './TemplatesTab';
-import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import { SpaceSelector } from '@/components/Common/SpaceSelector';
 import type { SpaceSelectItem } from '@/components/Common/SpaceSelector';
 import {
-  useAdminCampaigns, useAllCampaignOptions, useAccessGrants, useAccessSummary, useCompanies, useAuditEntries,
+  useAdminCampaigns, useAllCampaignOptions, useAccessSummary,
   useGlobalAuditEntries, useSpaces,
   useCampaignCategories, useCampaignTags,
-  prefetchAllCampaignMedia, prefetchAllCampaignAccess, prefetchAllCampaignAudit,
   getAdminCampaignOptionsQueryKey,
 } from '@/services/adminQuery';
 import type { AccessSummaryItem, AuditFilters, CampaignFilters, AdminCampaign } from '@/services/adminQuery';
@@ -31,10 +30,7 @@ import { useAdminCampaignActions } from '@/hooks/useAdminCampaignActions';
 import { useAdminZipTransfers } from '@/hooks/useAdminZipTransfers';
 import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
-import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
-import { useAccessRows } from '@/hooks/useAccessRows';
-import { useAuditRows } from '@/hooks/useAuditRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { spaceColor } from '@wp-super-gallery/shared-utils';
@@ -42,7 +38,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
 
-const MediaTab = lazy(() => import('./MediaTab'));
 const GlobalAssetTab = lazy(() => import('./GlobalAssetTab'));
 const AnalyticsDashboard = lazy(() => import('./AnalyticsDashboard').then((m) => ({ default: m.AnalyticsDashboard })));
 const CampaignDuplicateModal = lazy(() => import('./CampaignDuplicateModal').then((m) => ({ default: m.CampaignDuplicateModal })));
@@ -54,8 +49,6 @@ const AdminCampaignRestoreModal = lazy(() => import('./AdminCampaignRestoreModal
 const AdminCampaignDeleteModal = lazy(() => import('./AdminCampaignDeleteModal').then((m) => ({ default: m.AdminCampaignDeleteModal })));
 const AdminCampaignBulkDeleteModal = lazy(() => import('./AdminCampaignBulkDeleteModal').then((m) => ({ default: m.AdminCampaignBulkDeleteModal })));
 const AdminCampaignBulkConfirmModal = lazy(() => import('./AdminCampaignBulkConfirmModal').then((m) => ({ default: m.AdminCampaignBulkConfirmModal })));
-const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
-const QuickAddUserModal = lazy(() => import('./QuickAddUserModal').then((m) => ({ default: m.QuickAddUserModal })));
 const TaxonomyManagerModal = lazy(() => import('./TaxonomyManagerModal').then((m) => ({ default: m.TaxonomyManagerModal })));
 const SpaceManagementModal = lazy(() => import('./SpaceManagementModal').then((m) => ({ default: m.SpaceManagementModal })));
 
@@ -126,22 +119,16 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const [selectedSpaceId, setSelectedSpaceId] = useReloadSafeView<string>('admin_space', initialSpaceId ?? 'all');
   const [spaceManagementOpen, setSpaceManagementOpen] = useState(false);
 
-  const [mediaCampaignId, setMediaCampaignId] = useState('');
   // P50-I: campaign targeted by the per-row "Add media" unified upload modal.
+  // Not media-tab-local: its setter feeds useCampaignsRows (Campaigns tab) and
+  // its modal (MediaUploadController) renders at the panel root — so it stays here.
   const [addMediaCampaign, setAddMediaCampaign] = useState<AdminCampaign | null>(null);
   // P30-D: seed pendingEditLayoutId from deep-link (stable initializer only runs once)
   const [pendingEditLayoutId, setPendingEditLayoutId] = useState<string | null>(
     () => initialBuilderTemplateId ?? null,
   );
-  const [accessCampaignId, setAccessCampaignId] = useState('');
-  const [accessViewMode, setAccessViewMode] = useState<'campaign' | 'company' | 'all'>('campaign');
-  const [selectedCompanyId, setSelectedCompanyId] = useState('');
-  const [auditCampaignId, setAuditCampaignId] = useState('');
-  const [auditFilters, setAuditFilters] = useState<AuditFilters>({});
   const [globalAuditFilters, setGlobalAuditFilters] = useState<AuditFilters & { campaignId?: string }>({});
   const zipTransfers = useAdminZipTransfers({ apiClient, onNotify });
-  const [rescanAllLoading, setRescanAllLoading] = useState(false);
-  const [showExpiredGrants, setShowExpiredGrants] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<CampaignFilters['sort']>('created_desc');
@@ -174,13 +161,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const { campaignCategories } = useCampaignCategories(apiClient);
   const { campaignTags } = useCampaignTags(apiClient);
 
-  const accessTargetId = accessViewMode === 'campaign' ? accessCampaignId : selectedCompanyId;
-  const { accessEntries, accessLoading, mutateAccess } = useAccessGrants(
-    apiClient, accessViewMode, activeTab === 'access' ? accessTargetId : '', showExpiredGrants,
-  );
-  const companiesEnabled = activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all');
-  const { companies, companiesLoading, mutateCompanies } = useCompanies(apiClient, selectedSpaceId, companiesEnabled);
-  const { auditEntries, auditLoading, auditError } = useAuditEntries(apiClient, activeTab === 'audit' ? auditCampaignId : '', auditFilters);
   const { globalAuditEntries, globalAuditLoading } = useGlobalAuditEntries(apiClient, selectedSpaceId, activeTab === 'globalAudit' ? globalAuditFilters : {}, isSystemAdmin);
 
   // P47-J: pass the active space to the campaign modal so new campaigns get space_id set.
@@ -211,62 +191,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     createModalOpen: unifiedModal.opened,
   });
 
-  const mutateAccessWrapped = useCallback(() => mutateAccess() as Promise<unknown>, [mutateAccess]);
-  const mutateCompaniesWrapped = useCallback(() => mutateCompanies() as Promise<unknown>, [mutateCompanies]);
-
-  const accessState = useAdminAccessState({
-    apiClient, accessCampaignId, selectedCompanyId, accessViewMode,
-    mutateAccess: mutateAccessWrapped,
-    mutateCompanies: mutateCompaniesWrapped,
-    mutateCampaigns: campaignsMutator,
-    onNotify,
-  });
-
-  useEffect(() => {
-    setMediaCampaignId('');
-    setAccessCampaignId('');
-    setAuditCampaignId('');
-    setSelectedCompanyId('');
-  }, [selectedSpaceId]);
-
-  useEffect(() => {
-    if (activeTab === 'media' && !mediaCampaignId && allCampaigns.length > 0) setMediaCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, allCampaigns, mediaCampaignId]);
-  useEffect(() => {
-    if (activeTab === 'access' && !accessCampaignId && allCampaigns.length > 0 && accessViewMode === 'campaign') setAccessCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, accessCampaignId, allCampaigns, accessViewMode]);
-  useEffect(() => {
-    if (activeTab === 'audit' && !auditCampaignId && allCampaigns.length > 0) setAuditCampaignId(String(allCampaigns[0]!.id));
-  }, [activeTab, auditCampaignId, allCampaigns]);
-  useEffect(() => {
-    if (activeTab === 'access' && (accessViewMode === 'company' || accessViewMode === 'all') && !selectedCompanyId && companies.length > 0) setSelectedCompanyId(String(companies[0]!.id));
-  }, [activeTab, accessViewMode, selectedCompanyId, companies]);
-
-  const mediaPrefetchedRef = useRef(false);
-  const accessPrefetchedRef = useRef(false);
-  const auditPrefetchedRef = useRef(false);
-  const cancelMediaRef = useRef<(() => void) | null>(null);
-  const cancelAccessRef = useRef<(() => void) | null>(null);
-  const cancelAuditRef = useRef<(() => void) | null>(null);
-  useEffect(() => {
-    if (activeTab === 'media' && allCampaigns.length > 0 && !mediaPrefetchedRef.current) {
-      mediaPrefetchedRef.current = true;
-      cancelMediaRef.current = prefetchAllCampaignMedia(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => {
-    if (activeTab === 'access' && allCampaigns.length > 0 && !accessPrefetchedRef.current) {
-      accessPrefetchedRef.current = true;
-      cancelAccessRef.current = prefetchAllCampaignAccess(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => {
-    if (activeTab === 'audit' && allCampaigns.length > 0 && !auditPrefetchedRef.current) {
-      auditPrefetchedRef.current = true;
-      cancelAuditRef.current = prefetchAllCampaignAudit(apiClient, allCampaigns.map((c) => String(c.id)), queryClient);
-    }
-  }, [activeTab, allCampaigns, apiClient, queryClient]);
-  useEffect(() => () => { cancelMediaRef.current?.(); cancelAccessRef.current?.(); cancelAuditRef.current?.(); }, []);
+  // P72-E: the media/audit/access tabs each reset their own selection via
+  // `key={selectedSpaceId}` on their child panels; no shared reset effect remains.
 
   const spaceSelectData = useMemo<SpaceSelectItem[]>(() => [
     { value: 'all', label: t('admin_all_spaces', 'All spaces') },
@@ -279,19 +205,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     () => allCampaigns.map((c) => ({ value: String(c.id), label: c.companyId ? `${c.title} (${c.companyId})` : c.title })),
     [allCampaigns],
   );
-  const companySelectData = useMemo(
-    () => companies.map((c) => ({ value: String(c.id), label: `${c.name} (${c.activeCampaigns} active, ${c.archivedCampaigns} archived)` })),
-    [companies],
-  );
-  const selectedCampaign = useMemo(
-    () => allCampaigns.find((c) => String(c.id) === String(accessCampaignId)) ?? null,
-    [accessCampaignId, allCampaigns],
-  );
-  const selectedCompany = useMemo(
-    () => companies.find((c) => String(c.id) === selectedCompanyId) ?? null,
-    [selectedCompanyId, companies],
-  );
-
   // Reset to page 1 whenever any filter changes.
   useEffect(() => { setCampaignPage(1); }, [categoryFilter, tagFilter, sortOrder, includeArchived]);
   // Clamp page into [1, totalPages] when dataset shrinks (deletions, server-side changes).
@@ -325,8 +238,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
     && spaces.some((s) => !s.archived && s.effectiveLevel === 'owner' && s.id !== activeSpace.id);
 
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign, categoryItems: campaignCategories });
-  const accessRows = useAccessRows({ accessEntries, accessViewMode, onRevokeAccess: accessState.handleRevokeAccess, onChangeRole: accessState.handleChangeRole });
-  const auditRows = useAuditRows(auditEntries);
 
   return (
     <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
@@ -570,68 +481,19 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         />
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
-          <Group mb="md" justify="space-between" wrap="wrap" gap="sm">
-            <CampaignSelector data={campaignSelectData} value={mediaCampaignId} onChange={setMediaCampaignId} style={{ minWidth: 200, flex: '1 1 200px' }} />
-            {/* P53-A: library-wide media tools (binary export/import, cross-space rescan) are system-admin only. */}
-            {isSystemAdmin && (
-              <>
-                <Button
-                  size="sm"
-                  variant="light"
-                  loading={zipTransfers.mediaZipExporting}
-                  style={{ flex: '0 0 auto' }}
-                  onClick={() => zipTransfers.exportMediaZip(mediaCampaignId)}
-                  aria-label={t('admin_export_zip_aria', 'Export media library as ZIP')}
-                >
-                  {t('admin_export_zip', 'Export ZIP')}
-                </Button>
-                <FileButton
-                  onChange={(file) => { if (file) zipTransfers.importMediaZip(file); }}
-                  accept=".zip,application/zip"
-                >
-                  {(props) => (
-                    <Button
-                      {...props}
-                      size="sm"
-                      variant="light"
-                      loading={zipTransfers.mediaZipImporting}
-                      style={{ flex: '0 0 auto' }}
-                      aria-label={t('admin_import_zip_aria', 'Import media library from ZIP')}
-                    >
-                      {t('admin_import_zip', 'Import ZIP')}
-                    </Button>
-                  )}
-                </FileButton>
-                <Button
-                  variant="outline"
-                  loading={rescanAllLoading}
-                  style={{ flex: '0 0 auto' }}
-                  onClick={async () => {
-                    setRescanAllLoading(true);
-                    try {
-                      const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
-                        '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
-                      );
-                      onNotify({
-                        type: 'success', text: result.media_updated > 0
-                          ? t('admin_rescan_done', 'Rescanned: {{media}} media items updated across {{campaigns}} campaigns.', { media: result.media_updated, campaigns: result.campaigns_updated })
-                          : t('admin_rescan_none', 'All media types are correct.')
-                      });
-                      onCampaignsUpdated();
-                    } catch (err) { onNotify({ type: 'error', text: (err as Error).message }); }
-                    finally { setRescanAllLoading(false); }
-                  }}
-                >
-                  {t('admin_rescan_all', 'Rescan All')}
-                </Button>
-              </>
-            )}
-          </Group>
-          <ErrorBoundary isAdmin={true}>
-            <Suspense fallback={<Center py="md"><Loader /></Center>}>
-              <MediaTab campaignId={mediaCampaignId} apiClient={apiClient} onCampaignsUpdated={onCampaignsUpdated} />
-            </Suspense>
-          </ErrorBoundary>
+          {/* P72-E: media tab-selection (+ rescan loading) lives in MediaPanel now;
+              key={selectedSpaceId} resets it on space change. `addMediaCampaign`
+              stays in AdminPanel — it's a Campaigns-tab row action, not media-local. */}
+          <MediaPanel
+            key={selectedSpaceId}
+            active={activeTab === 'media'}
+            apiClient={apiClient}
+            campaignSelectData={campaignSelectData}
+            zipTransfers={zipTransfers}
+            onNotify={onNotify}
+            onCampaignsUpdated={onCampaignsUpdated}
+            isSystemAdmin={isSystemAdmin}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
@@ -650,51 +512,32 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
-          <AccessTab
-            accessViewMode={accessViewMode}
-            onAccessViewModeChange={setAccessViewMode}
-            campaignSelectData={campaignSelectData}
-            accessCampaignId={accessCampaignId}
-            onAccessCampaignChange={setAccessCampaignId}
-            companySelectData={companySelectData}
-            selectedCompanyId={selectedCompanyId}
-            onSelectedCompanyChange={setSelectedCompanyId}
-            companiesLoading={companiesLoading}
-            selectedCampaign={selectedCampaign}
-            selectedCompany={selectedCompany}
-            accessEntriesCount={accessEntries.length}
-            accessLoading={accessLoading}
-            accessRows={accessRows}
-            accessState={accessState}
+          {/* P72-E: access tab-selection state + its two modals live in AccessPanel now;
+              key={selectedSpaceId} resets that state when the space changes. */}
+          <AccessPanel
+            key={selectedSpaceId}
+            active={activeTab === 'access'}
             apiClient={apiClient}
-            showExpiredGrants={showExpiredGrants}
-            onShowExpiredGrantsChange={setShowExpiredGrants}
+            selectedSpaceId={selectedSpaceId}
+            allCampaigns={allCampaigns}
+            campaignSelectData={campaignSelectData}
+            campaigns={campaigns}
+            campaignsMutator={campaignsMutator}
+            onNotify={onNotify}
             isMobile={isMobile}
             isSystemAdmin={isSystemAdmin}
           />
         </Tabs.Panel>
 
         <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section">
-          <AuditTab
+          {/* P72-E: audit tab-selection + filter state lives in AuditPanel now;
+              key={selectedSpaceId} resets that state when the space changes. */}
+          <AuditPanel
+            key={selectedSpaceId}
+            active={activeTab === 'audit'}
+            apiClient={apiClient}
             campaignSelectData={campaignSelectData}
-            auditCampaignId={auditCampaignId}
-            onAuditCampaignChange={(v) => setAuditCampaignId(v ?? '')}
-            auditLoading={auditLoading}
-            auditEntriesCount={auditEntries.length}
-            auditRows={auditRows}
-            filters={auditFilters}
-            onFiltersChange={setAuditFilters}
-            auditError={auditError}
-            onExportCsv={() => apiClient.downloadGlobalAuditCsv({ campaignId: auditCampaignId, ...auditFilters })}
-            onExportZip={() => zipTransfers.exportAuditZip({
-              ...(auditCampaignId ? { campaignId: auditCampaignId } : {}),
-              ...(auditFilters.from ? { from: auditFilters.from } : {}),
-              ...(auditFilters.to ? { to: auditFilters.to } : {}),
-              ...(auditFilters.action ? { action: auditFilters.action } : {}),
-              ...(auditFilters.scope ? { scope: auditFilters.scope } : {}),
-              ...(auditFilters.severity ? { severity: auditFilters.severity } : {}),
-            }, `audit-log-${Date.now()}.zip`)}
-            exportingZip={zipTransfers.auditZipExporting}
+            zipTransfers={zipTransfers}
           />
         </Tabs.Panel>
 
@@ -820,42 +663,6 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           onUploaded={onCampaignsUpdated}
           title={t('admin_add_media_title', 'Add media — {{title}}', { title: addMediaCampaign.title })}
         />
-      )}
-      {!!accessState.confirmArchiveCompany && (
-        <Suspense fallback={null}>
-          <ArchiveCompanyModal
-            opened={!!accessState.confirmArchiveCompany}
-            company={accessState.confirmArchiveCompany}
-            archiveRevokeAccess={accessState.archiveRevokeAccess}
-            onArchiveRevokeAccessChange={accessState.setArchiveRevokeAccess}
-            onClose={() => { accessState.setConfirmArchiveCompany(null); accessState.setArchiveRevokeAccess(false); }}
-            onConfirm={accessState.handleArchiveCompany}
-            accessSaving={accessState.accessSaving}
-          />
-        </Suspense>
-      )}
-      {accessState.quickAddUserOpen && (
-        <Suspense fallback={null}>
-          <QuickAddUserModal
-            opened={accessState.quickAddUserOpen}
-            onClose={accessState.closeQuickAddUser}
-            quickAddResult={accessState.quickAddResult}
-            quickAddEmail={accessState.quickAddEmail}
-            setQuickAddEmail={accessState.setQuickAddEmail}
-            quickAddName={accessState.quickAddName}
-            setQuickAddName={accessState.setQuickAddName}
-            quickAddRole={accessState.quickAddRole}
-            setQuickAddRole={accessState.setQuickAddRole}
-            quickAddCampaignId={accessState.quickAddCampaignId}
-            setQuickAddCampaignId={accessState.setQuickAddCampaignId}
-            quickAddTestMode={accessState.quickAddTestMode}
-            setQuickAddTestMode={accessState.setQuickAddTestMode}
-            campaigns={campaigns}
-            onSubmit={accessState.handleQuickAddUser}
-            quickAddSaving={accessState.quickAddSaving}
-            onNotify={onNotify}
-          />
-        </Suspense>
       )}
       {!!campaignActions.duplicateSource && (
         <Suspense fallback={null}>

@@ -1,31 +1,39 @@
 /**
- * [P71-E] ESLint rule: no-untranslated-notification
+ * [P71-E / P72-A] ESLint rule: no-untranslated-notification
  *
- * Flags a hardcoded string (or non-empty template) literal passed as the
- * `title` or `message` of a Mantine notification call — the exact gap the
- * project-wide `i18next/no-literal-string` rule cannot see, because it runs in
- * `jsx-text-only` mode and these strings live in plain-object arguments inside
- * `.ts`/`.tsx` hooks, not in JSX text.
+ * Flags a hardcoded string (or non-empty template) literal passed to one of the
+ * known non-JSX user-facing string sinks — the exact gap the project-wide
+ * `i18next/no-literal-string` rule cannot see, because it runs in `jsx-text-only`
+ * mode and these strings live in plain-object / call arguments inside `.ts`/`.tsx`
+ * hooks, not in JSX text.
  *
- * Matched call shapes:
- *   - `showNotification({ title, message })`
- *   - `notifications.show({ title, message })`
- *   - `notifications.update({ title, message })`
+ * The rule name is retained from P71-E for config/continuity; as of P72-A it
+ * guards three sinks, not only notifications:
+ *   - Notifications: `showNotification({ title, message })`,
+ *     `notifications.show({ title, message })`, `notifications.update({...})`.
+ *   - A11y live-region announcements: `announce('…')` — the screen-reader-only
+ *     text is invisible to any visual QA, so an unenforced literal here is a
+ *     silent i18n regression (P72-A).
+ *   - Confirm-modal chrome: `modals.openConfirmModal({ title, labels: { confirm,
+ *     cancel } })` — the modal `children` body is JSX and already covered by the
+ *     `i18next` jsx rule; this guards the non-JSX `title`/`labels` props.
  *
- * The value of `title`/`message` is inspected for a bare static string — a
- * string Literal, a TemplateLiteral with static text, or such a literal reached
- * through a conditional/logical branch (`cond ? 'a' : 'b'`, `x ?? 'default'`).
- * This is deliberately narrow: it gives a zero-false-positive gate (it never
- * touches `color`, `id`, or internal string constants elsewhere in the file —
- * unlike `i18next`'s `mode: 'all'`, which flags things like extension arrays and
- * `return 'video'`). The fix is to route the string through
- * `i18n.t('key', 'English default')`, which is a CallExpression and not flagged.
+ * The inspected value is checked for a bare static string — a string Literal, a
+ * TemplateLiteral with static text, or such a literal reached through a
+ * conditional/logical branch (`cond ? 'a' : 'b'`, `x ?? 'default'`). This is
+ * deliberately narrow: it gives a zero-false-positive gate (it never touches
+ * `color`, `id`, or internal string constants). The fix is to route the string
+ * through `i18n.t('key', 'English default')` (or a `useTranslation` binding),
+ * which is a CallExpression and not flagged.
  *
- * Known, accepted limitation: a fallback string nested inside a helper — e.g.
- * `message: getErrorMessage(err, 'Failed…')` — is NOT flagged (the value is a
- * CallExpression, not a literal). Those are handled by translating the helper's
- * fallback argument during the sweep; the rule intentionally stays precise
- * rather than recursing into arbitrary expressions.
+ * Known, accepted limitations (both require interprocedural / cross-file
+ * analysis ESLint cannot do, so they stay manually swept):
+ *   - A fallback string nested inside a helper — e.g.
+ *     `message: getErrorMessage(err, 'Failed…')` — is NOT flagged (the value is a
+ *     CallExpression, not a literal).
+ *   - A validator's own `return { error: '…' }` literals surfaced elsewhere as
+ *     `message: result.error` are NOT flagged (the literal lives in another
+ *     function). These are translated by hand at the validator during the sweep.
  *
  * Unlike the `i18next` plugin, this rule has no word-exclusion heuristics, so it
  * does NOT share that plugin's blind spot for `"…"`-style strings with two or
@@ -48,6 +56,23 @@ function isNotificationCall(callee) {
     callee.object.name === 'notifications' &&
     callee.property.type === 'Identifier' &&
     NOTIFY_METHODS.has(callee.property.name)
+  );
+}
+
+// announce('…') — the a11y live-region announcer (P72-A).
+function isAnnounceCall(callee) {
+  return callee.type === 'Identifier' && callee.name === 'announce';
+}
+
+// modals.openConfirmModal({ ... }) — confirm-dialog chrome (P72-A).
+function isOpenConfirmModalCall(callee) {
+  return (
+    callee.type === 'MemberExpression' &&
+    !callee.computed &&
+    callee.object.type === 'Identifier' &&
+    callee.object.name === 'modals' &&
+    callee.property.type === 'Identifier' &&
+    callee.property.name === 'openConfirmModal'
   );
 }
 
@@ -94,24 +119,49 @@ export default {
     schema: [],
     messages: {
       untranslated:
-        "Untranslated notification {{prop}} string. Wrap it in i18n.t('key', 'English default') so it is localizable.",
+        "Untranslated user-facing {{prop}} string. Wrap it in i18n.t('key', 'English default') so it is localizable.",
     },
   },
   create(context) {
+    const report = (valueNode, prop) => {
+      if (containsStaticText(valueNode)) {
+        context.report({ node: valueNode, messageId: 'untranslated', data: { prop } });
+      }
+    };
+
+    // In an object argument, report the named props whose value is a bare literal.
+    const checkObjectProps = (objectNode, names) => {
+      if (!objectNode || objectNode.type !== 'ObjectExpression') return;
+      for (const prop of objectNode.properties) {
+        const name = propertyName(prop);
+        if (name && names.includes(name)) report(prop.value, name);
+      }
+    };
+
     return {
       CallExpression(node) {
-        if (!isNotificationCall(node.callee)) return;
-        const arg = node.arguments[0];
-        if (!arg || arg.type !== 'ObjectExpression') return;
-        for (const prop of arg.properties) {
-          const name = propertyName(prop);
-          if (name !== 'title' && name !== 'message') continue;
-          if (containsStaticText(prop.value)) {
-            context.report({
-              node: prop.value,
-              messageId: 'untranslated',
-              data: { prop: name },
-            });
+        const callee = node.callee;
+
+        if (isNotificationCall(callee)) {
+          checkObjectProps(node.arguments[0], ['title', 'message']);
+          return;
+        }
+
+        if (isAnnounceCall(callee)) {
+          // First argument is the announced string.
+          report(node.arguments[0], 'announce()');
+          return;
+        }
+
+        if (isOpenConfirmModalCall(callee)) {
+          const arg = node.arguments[0];
+          if (!arg || arg.type !== 'ObjectExpression') return;
+          checkObjectProps(arg, ['title']);
+          // labels: { confirm, cancel } — inspect the nested object.
+          for (const prop of arg.properties) {
+            if (propertyName(prop) === 'labels') {
+              checkObjectProps(prop.value, ['confirm', 'cancel']);
+            }
           }
         }
       },

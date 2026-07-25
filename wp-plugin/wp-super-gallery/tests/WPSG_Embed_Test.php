@@ -192,6 +192,158 @@ class WPSG_Embed_Test extends WP_UnitTestCase {
         $this->assertStringNotContainsString( 'wpsg-full-bleed', $output );
     }
 
+    // ------------------------------------- P72-D: unresolved-space admin notice
+
+    /** System admin: administrator + manage_wpsg. */
+    private function set_manage_wpsg_admin(): int {
+        $uid  = self::factory()->user->create( [ 'role' => 'administrator' ] );
+        $user = get_user_by( 'id', $uid );
+        $user->add_cap( 'manage_wpsg' );
+        wp_set_current_user( $uid );
+        return $uid;
+    }
+
+    public function test_unresolved_explicit_space_shows_admin_notice() {
+        $this->set_manage_wpsg_admin();
+
+        // An explicit space= that does not resolve to any space.
+        $output = WPSG_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
+
+        $this->assertStringContainsString( 'wpsg-shortcode-notice', $output, 'admin should see the fallback notice' );
+        // The stale reference is named in the notice.
+        $this->assertStringContainsString( 'deleted-space-xyz', $output );
+        // The gallery still renders normally alongside the notice.
+        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_unresolved_explicit_space_hidden_from_visitor() {
+        wp_set_current_user( 0 ); // anonymous visitor, no manage_wpsg
+
+        $output = WPSG_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'visitors must never see the notice' );
+        // The gallery still renders normally (falls back to the default space).
+        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+    }
+
+    public function test_omitted_space_reference_shows_no_notice_even_for_admin() {
+        $this->set_manage_wpsg_admin();
+
+        // No explicit space/campaign/company: the default is intentional, not an error.
+        $output = WPSG_Embed::render_shortcode();
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'the intentional-default case must not warn' );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_resolved_explicit_space_shows_no_notice() {
+        $this->set_manage_wpsg_admin();
+
+        $space_id = WPSG_DB::insert_space( [
+            'name'           => 'P72D Real Space',
+            'slug'           => 'p72d-real-' . wp_generate_password( 6, false ),
+            'isolation_mode' => 'open',
+        ] );
+        $space = WPSG_DB::get_space( $space_id );
+
+        // An explicit space= that DOES resolve must not trigger the notice.
+        $output = WPSG_Embed::render_shortcode( [ 'space' => $space->slug ] );
+
+        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'a valid reference must not warn' );
+
+        wp_set_current_user( 0 );
+    }
+
+    // P72-D review follow-up: "the named entity exists but carries no space" is
+    // NOT a stale reference — a campaign/company with no `_wpsg_space_id` legitimately
+    // inherits the default space (the common case on a single-space install).
+    // Only a reference naming something that does not exist is worth a notice.
+
+    public function test_campaign_without_space_meta_shows_no_notice() {
+        $this->set_manage_wpsg_admin();
+
+        $post_id = self::factory()->post->create( [
+            'post_type'  => 'wpsg_campaign',
+            'post_name'  => 'p72d-inherits-default',
+            'post_status' => 'publish',
+        ] );
+        $this->assertNotEmpty( get_post( $post_id ) );
+        // Deliberately no _wpsg_space_id meta — inherits the default space.
+
+        $output = WPSG_Embed::render_shortcode( [ 'campaign' => 'p72d-inherits-default' ] );
+
+        $this->assertStringNotContainsString(
+            'wpsg-shortcode-notice',
+            $output,
+            'a campaign that exists but has no space assignment must not be reported as stale'
+        );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_company_without_space_meta_shows_no_notice() {
+        $this->set_manage_wpsg_admin();
+
+        $term = wp_insert_term( 'P72D Co', 'wpsg_company', [ 'slug' => 'p72d-co' ] );
+        $this->assertNotWPError( $term );
+        // Deliberately no _wpsg_space_id term meta.
+
+        $output = WPSG_Embed::render_shortcode( [ 'company' => 'p72d-co' ] );
+
+        $this->assertStringNotContainsString(
+            'wpsg-shortcode-notice',
+            $output,
+            'a company that exists but has no space assignment must not be reported as stale'
+        );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_nonexistent_campaign_reference_shows_notice() {
+        $this->set_manage_wpsg_admin();
+
+        $output = WPSG_Embed::render_shortcode( [ 'campaign' => 'no-such-campaign-xyz' ] );
+
+        $this->assertStringContainsString( 'wpsg-shortcode-notice', $output );
+        $this->assertStringContainsString( 'no-such-campaign-xyz', $output );
+
+        wp_set_current_user( 0 );
+    }
+
+    public function test_notice_names_only_the_reference_that_failed() {
+        $this->set_manage_wpsg_admin();
+
+        $post_id = self::factory()->post->create( [
+            'post_type'   => 'wpsg_campaign',
+            'post_name'   => 'p72d-real-campaign',
+            'post_status' => 'publish',
+        ] );
+        $this->assertNotEmpty( get_post( $post_id ) );
+
+        // space= is stale; campaign= resolves (it just inherits the default space).
+        $output = WPSG_Embed::render_shortcode( [
+            'space'    => 'deleted-space-xyz',
+            'campaign' => 'p72d-real-campaign',
+        ] );
+
+        // Scope the assertion to the notice itself — the mount node's
+        // data-wpsg-props legitimately echoes every attribute back.
+        $this->assertSame( 1, preg_match( '/<div class="wpsg-shortcode-notice".*?<\/div>/s', $output, $m ) );
+        $notice = $m[0];
+
+        $this->assertStringContainsString( 'deleted-space-xyz', $notice, 'the stale ref is named' );
+        $this->assertStringNotContainsString(
+            'p72d-real-campaign',
+            $notice,
+            'a reference that resolved must not be named in the notice'
+        );
+
+        wp_set_current_user( 0 );
+    }
+
     // --------------------------------------------------------- add_module_type()
 
     public function test_add_module_type_modifies_app_handle() {

@@ -75,7 +75,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
 
         // P52-A4: system-level keys require manage_options; editors may write
         // display/campaign keys only.
-        $denied = self::guard_admin_only_settings(array_keys($input));
+        $denied = self::guard_admin_only_settings($input);
         if (is_wp_error($denied)) {
             return $denied;
         }
@@ -98,7 +98,7 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
 
         // P52-A4: system-level keys require manage_options; editors may write
         // display/campaign keys only.
-        $denied = self::guard_admin_only_settings(array_keys($input));
+        $denied = self::guard_admin_only_settings($input);
         if (is_wp_error($denied)) {
             return $denied;
         }
@@ -112,36 +112,8 @@ class WPSG_Settings_Controller extends WPSG_REST_Base {
         );
     }
 
-    /**
-     * P52-A4: enforce the system-vs-display settings boundary.
-     *
-     * Writing settings requires manage_wpsg (the route gate). Writing any
-     * *system-level* key (the registry's $admin_only_fields — cache, uploads,
-     * auth provider, retention, etc.) additionally requires manage_options.
-     * A space editor (manage_wpsg only) may write display/campaign keys but
-     * not system ones.
-     *
-     * @param string[] $requested_keys snake_case keys the caller is writing.
-     * @return WP_Error|null WP_Error (403) if a system key is written without
-     *                       manage_options; null when the write is permitted.
-     */
-    private static function guard_admin_only_settings(array $requested_keys) {
-        if (current_user_can('manage_options')) {
-            return null;
-        }
-
-        $admin_only = WPSG_Settings_Registry::get_admin_only_fields();
-        $blocked    = array_values(array_intersect($requested_keys, $admin_only));
-
-        if (!empty($blocked)) {
-            return new WP_Error(
-                'wpsg_forbidden_settings',
-                'These settings require a System Administrator (manage_options): ' . implode(', ', $blocked),
-                ['status' => 403, 'fields' => $blocked]
-            );
-        }
-
-        return null;
-    }
+    // P72-C: guard_admin_only_settings() moved to WPSG_REST_Base so the space
+    // controller shares the same 403 boundary; the self:: calls above resolve
+    // to the inherited method.
 
 }

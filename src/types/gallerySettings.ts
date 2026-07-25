@@ -397,6 +397,9 @@ export interface GalleryBehaviorSettings {
   archivePurgeGraceDays: number;
   // D-20: Analytics data retention
   analyticsRetentionDays: number;
+  // P72-F: opt-in PII retention windows (0 = never purge)
+  accessRequestsRetentionDays: number;
+  auditLogRetentionDays: number;
   // P21-B: Card visibility toggles
   showCardCompanyName: boolean;
   showCardMediaCounts: boolean;
@@ -894,6 +897,9 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   archivePurgeGraceDays: 30,
   // D-20: Analytics data retention
   analyticsRetentionDays: 0,
+  // P72-F: opt-in PII retention windows default to never-purge
+  accessRequestsRetentionDays: 0,
+  auditLogRetentionDays: 0,
   gridCardWidth: 160,
   gridCardWidthUnit: 'px',
   gridCardAspectRatio: 'auto',

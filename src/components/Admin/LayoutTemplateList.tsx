@@ -26,6 +26,8 @@ import {
   Text,
   TextInput,
   Tooltip,
+  UnstyledButton,
+  VisuallyHidden,
 } from '@mantine/core';
 import {
   IconCopy,
@@ -362,8 +364,24 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
             value={viewMode}
             onChange={(v) => setViewMode(v as 'grid' | 'list')}
             data={[
-              { value: 'grid', label: <IconGridDots size={16} /> },
-              { value: 'list', label: <IconList size={16} /> },
+              {
+                value: 'grid',
+                label: (
+                  <Center>
+                    <IconGridDots size={16} />
+                    <VisuallyHidden>{tr('admin_lt_view_grid', 'Grid view')}</VisuallyHidden>
+                  </Center>
+                ),
+              },
+              {
+                value: 'list',
+                label: (
+                  <Center>
+                    <IconList size={16} />
+                    <VisuallyHidden>{tr('admin_lt_view_list', 'List view')}</VisuallyHidden>
+                  </Center>
+                ),
+              },
             ]}
             aria-label={tr('admin_lt_view_mode', 'View mode')}
           />
@@ -595,84 +613,80 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
   const { t: tr } = useTranslation('wpsg');
   const t = template;
   return (
-    <Card
-      shadow="xs"
-      radius="md"
-      withBorder
-      padding="sm"
-      style={{ cursor: 'pointer' }}
-      onClick={() => onEdit(t)}
-      role="button"
-      tabIndex={0}
-      aria-label={tr('admin_lt_edit_layout', 'Edit layout {{name}}', { name: t.name })}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onEdit(t);
-        }
-      }}
-    >
-      {/* Mini canvas preview (metadata only for v1) */}
-      <Box
-        style={{
-          height: 80,
-          background: t.backgroundColor || '#1a1a1a',
-          borderRadius: 6,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 8,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
+    <Card shadow="xs" radius="md" withBorder padding="sm" pos="relative">
+      {/* P72-G: the primary "edit" action is a real button wrapping the preview +
+          title, not a role="button" Card wrapping the menu button (which axe
+          flagged as nested-interactive). The menu is a sibling, rendered after. */}
+      <UnstyledButton
+        onClick={() => onEdit(t)}
+        aria-label={tr('admin_lt_edit_layout', 'Edit layout {{name}}', { name: t.name })}
+        style={{ display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer' }}
       >
-        {/* Miniature slot indicators */}
-        {t.slots.slice(0, 8).map((slot) => (
-          <div
-            key={slot.id}
-            style={{
-              position: 'absolute',
-              left: `${slot.x}%`,
-              top: `${slot.y}%`,
-              width: `${slot.width}%`,
-              height: `${slot.height}%`,
-              background: 'rgba(255,255,255,0.2)',
-              border: '1px solid rgba(255,255,255,0.3)',
-              borderRadius: slot.shape === 'rectangle' ? Math.min(slot.borderRadius, 4) : undefined,
-            }}
-          />
-        ))}
-        <Badge
-          size="xs"
-          variant="filled"
-          color="dark"
-          style={{ position: 'absolute', bottom: 4, right: 4 }}
+        {/* Mini canvas preview (metadata only for v1) */}
+        <Box
+          style={{
+            height: 80,
+            background: t.backgroundColor || '#1a1a1a',
+            borderRadius: 6,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 8,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
         >
-          {aspectLabel(t.canvasAspectRatio)}
-        </Badge>
-      </Box>
+          {/* Miniature slot indicators */}
+          {t.slots.slice(0, 8).map((slot) => (
+            <div
+              key={slot.id}
+              style={{
+                position: 'absolute',
+                left: `${slot.x}%`,
+                top: `${slot.y}%`,
+                width: `${slot.width}%`,
+                height: `${slot.height}%`,
+                background: 'rgba(255,255,255,0.2)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: slot.shape === 'rectangle' ? Math.min(slot.borderRadius, 4) : undefined,
+              }}
+            />
+          ))}
+          <Badge
+            size="xs"
+            variant="filled"
+            color="dark"
+            style={{ position: 'absolute', bottom: 4, right: 4 }}
+          >
+            {aspectLabel(t.canvasAspectRatio)}
+          </Badge>
+        </Box>
 
-      <Group justify="space-between" wrap="nowrap" gap={4}>
-        <Box style={{ overflow: 'hidden' }}>
+        {/* paddingRight reserves the gutter the absolutely-positioned menu occupies. */}
+        <Box style={{ overflow: 'hidden', paddingRight: 28 }}>
           <Text size="sm" fw={600} lineClamp={1}>{t.name}</Text>
           <Text size="xs" c="dimmed">
             {tr('admin_lt_n_slots', '{{count}} slot', { count: t.slots.length })} · {shortDate(t.updatedAt)}
           </Text>
         </Box>
+      </UnstyledButton>
 
-        {/* Action menu */}
+      {/* Action menu — a sibling of the primary button (not nested). Pinned to the
+          bottom-right so it sits beside the title on the card background, as it did
+          pre-P72-G: over the dark preview canvas a `subtle` ActionIcon has almost no
+          contrast in light mode. */}
+      <Box pos="absolute" bottom={8} right={8}>
         <Menu position="bottom-end" withArrow>
           <Menu.Target>
             <ActionIcon
               variant="subtle"
               size="sm"
-              onClick={(e) => e.stopPropagation()}
               aria-label={tr('admin_lt_actions_for', 'Actions for {{name}}', { name: t.name })}
             >
               <IconDots size={16} />
             </ActionIcon>
           </Menu.Target>
-          <Menu.Dropdown onClick={(e) => e.stopPropagation()}>
+          <Menu.Dropdown>
             <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => onEdit(t)}>
               {tr('admin_lt_edit', 'Edit')}
             </Menu.Item>
@@ -688,7 +702,7 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-      </Group>
+      </Box>
     </Card>
   );
 }

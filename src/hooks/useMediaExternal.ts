@@ -101,7 +101,7 @@ export function useMediaExternal({
       }
     } catch (err) {
       console.error(err);
-      setExternalError(getErrorMessage(err, 'Failed to load preview.'));
+      setExternalError(getErrorMessage(err, t('extmedia_preview_failed_message', 'Failed to load preview.')));
       showNotification({ title: t('extmedia_preview_failed_title', 'Preview failed'), message: getErrorMessage(err, t('extmedia_preview_failed_message', 'Failed to load preview.')), color: 'red' });
     } finally {
       setExternalLoading(false);

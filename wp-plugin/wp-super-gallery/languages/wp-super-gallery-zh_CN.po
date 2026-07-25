@@ -10477,3 +10477,164 @@ msgstr "正在加载活动…"
 #. [P71-E] Notification / user-facing string added in Phase 71.
 msgid " (page {{completed}} of {{total}})"
 msgstr "（第 {{completed}} 页，共 {{total}} 页）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:696
+msgid "Access-Request Retention (days)"
+msgstr "访问请求保留（天）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:697
+msgid "Visitor access-request records (including emails) older than this are purged weekly. Set to 0 to keep indefinitely."
+msgstr "超过此时长的访客访问请求记录（包括电子邮件）将每周清除。设为 0 则无限期保留。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:698
+msgid "Audit-Log Retention (days)"
+msgstr "审计日志保留（天）"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:699
+msgid "Audit-log entries older than this are purged weekly. Set to 0 to keep indefinitely — audit trails are kept by default for accountability."
+msgstr "超过此时长的审计日志条目将每周清除。设为 0 则无限期保留——审计日志默认保留以确保可问责性。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2513
+msgid "Group locked"
+msgstr "组已锁定"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2514
+msgid "Group unlocked"
+msgstr "组已解锁"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2515
+msgid "Group shown"
+msgstr "组已显示"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2516
+msgid "Group hidden"
+msgstr "组已隐藏"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2517
+msgid "Group renamed"
+msgstr "组已重命名"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2518
+msgid "Brought forward"
+msgstr "已上移一层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2519
+msgid "Sent backward"
+msgstr "已下移一层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2520
+msgid "Copied {{count}} slot"
+msgstr "已复制 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2521
+msgid "Copied {{count}} slots"
+msgstr "已复制 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2522
+msgid "Pasted {{count}} slot"
+msgstr "已粘贴 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2523
+msgid "Pasted {{count}} slots"
+msgstr "已粘贴 {{count}} 个插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2524
+msgid "Group wrapped in parent group"
+msgstr "组已包入父组"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2525
+msgid "Group selected"
+msgstr "已选择组"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2526
+msgid "New slot added"
+msgstr "已添加新插槽"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2527
+msgid "Brought to front"
+msgstr "已置于顶层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2528
+msgid "Sent to back"
+msgstr "已置于底层"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2814
+msgid "Draft conflict detected"
+msgstr "检测到草稿冲突"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2815
+msgid "Unsaved draft found"
+msgstr "发现未保存的草稿"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2816
+msgid "This template was saved in another session after your draft was created ({{age}}). Restoring your draft will overwrite those changes."
+msgstr "此模板在您创建草稿后于另一个会话中被保存（{{age}}）。恢复您的草稿将覆盖这些更改。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2817
+msgid "An autosaved draft from {{age}} was found. Would you like to restore it?"
+msgstr "发现来自 {{age}} 的自动保存草稿。是否恢复？"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2818
+msgid "Restore draft"
+msgstr "恢复草稿"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2821
+msgid "Overlay uploaded and added to canvas"
+msgstr "叠加层已上传并添加到画布"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2822
+msgid "Background image uploaded and applied"
+msgstr "背景图片已上传并应用"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2823
+msgid "Mask image uploaded"
+msgstr "遮罩图片已上传"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2847
+msgid "Expected a JSON object."
+msgstr "应为 JSON 对象。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2848
+msgid "Invalid gallery config structure."
+msgstr "画廊配置结构无效。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2849
+msgid "Unknown adapter ID \"{{id}}\" ({{bp}} {{scope}}). Valid IDs: {{ids}}."
+msgstr "未知的适配器 ID“{{id}}”（{{bp}} {{scope}}）。有效 ID：{{ids}}。"
+
+#: includes/i18n/class-wpsg-frontend-strings.php:2850
+msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
+msgstr "{{bp}} {{scope}} 中存在未知的适配器设置键：{{keys}}。"
+
+#: includes/class-wpsg-privacy.php:47
+msgid "WP Super Gallery — Access Requests"
+msgstr "WP Super Gallery — 访问请求"
+
+#: includes/class-wpsg-privacy.php:52
+msgid "WP Super Gallery — Audit Log"
+msgstr "WP Super Gallery — 审计日志"
+
+#: includes/class-wpsg-privacy.php:95
+msgid "Gallery access requests submitted with this email address."
+msgstr "使用此电子邮件地址提交的图库访问请求。"
+
+#: includes/class-wpsg-privacy.php:101
+msgid "Requested at"
+msgstr "请求时间"
+
+#: includes/class-wpsg-privacy.php:102
+msgid "Resolved at"
+msgstr "处理时间"
+
+#: includes/class-wpsg-privacy.php:165
+msgid "Administrative actions recorded under this account. Retained for accountability and not erased on request."
+msgstr "在此账户下记录的管理操作。出于问责考虑予以保留，不会应请求删除。"
+
+#: includes/class-wpsg-privacy.php:171
+msgid "Date"
+msgstr "日期"
+
+#. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
+#: includes/class-wpsg-embed.php:519
+msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr "WP Super Gallery：无法解析此简码引用 (%s)——将改为显示默认空间。只有站点管理员才能看到此提示。"

@@ -67,4 +67,30 @@ describe('wpsg/no-untranslated-notification gate', () => {
     );
     expect(msgs).toHaveLength(0);
   });
+
+  // [P72-A] a11y announce() literal-argument sink.
+  it('flags a hardcoded announce() string', async () => {
+    const msgs = await ruleMessages(`announce('Overlay uploaded');\n`);
+    expect(msgs).toHaveLength(1);
+  });
+
+  it('passes when announce() is routed through i18n.t', async () => {
+    const msgs = await ruleMessages(`announce(t('k_ann', 'Overlay uploaded'));\n`);
+    expect(msgs).toHaveLength(0);
+  });
+
+  // [P72-A] modals.openConfirmModal chrome sink (title + labels.confirm/cancel).
+  it('flags hardcoded openConfirmModal title and labels', async () => {
+    const msgs = await ruleMessages(
+      `modals.openConfirmModal({ title: 'Discard changes?', labels: { confirm: 'Discard', cancel: 'Keep' } });\n`,
+    );
+    expect(msgs).toHaveLength(3);
+  });
+
+  it('passes when openConfirmModal chrome is routed through i18n.t', async () => {
+    const msgs = await ruleMessages(
+      `modals.openConfirmModal({ title: t('k_t', 'Discard changes?'), labels: { confirm: t('k_c', 'Discard'), cancel: t('k_x', 'Keep') }, children: someJsx });\n`,
+    );
+    expect(msgs).toHaveLength(0);
+  });
 });
