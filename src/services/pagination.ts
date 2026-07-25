@@ -52,7 +52,7 @@ export async function fetchAllPages<TResponse extends PagedResponse>(
   const maxPages = options.maxPages ?? DEFAULT_MAX_PAGES;
   const pages: TResponse[] = [];
   let page = 1;
-  let totalPages = 1;
+  let totalPages: number;
 
   do {
     const response = await fetchPage(page);
