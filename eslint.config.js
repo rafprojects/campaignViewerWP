@@ -50,7 +50,14 @@ export default tseslint.config({
     // codebase's "ref mirrors latest value" idiom into shared-utils'
     // useLatestRef, fixed one real DOM-read staleness bug, suppressed the
     // rest as confirmed false positives / React-documented patterns).
-    // set-state-in-effect still needs its own triage track (P73-F).
+    // `set-state-in-effect` is deliberately NOT adopted (P73-F): a full
+    // manual audit of all 42 findings across 36 files found zero real bugs —
+    // every site is a standard, often already-commented React pattern
+    // (reset-on-open, default-to-first-item, sync-local-from-prop, object-URL
+    // lifecycle, cancellation-guarded async fetches). Suppressing all 42
+    // individually would add noise for zero signal; see docs/PHASE73_REPORT.md
+    // Track P73-F for the full per-file classification. Revisit only if this
+    // codebase ever adopts the React Compiler for real.
     'react-hooks/rules-of-hooks': 'error',
     'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/static-components': 'error',

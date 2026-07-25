@@ -1,6 +1,6 @@
 # Phase 73 - eslint-plugin-react-hooks v7 Rule Spike + various fSure ixes
 
-**Status:** In Progress (P73-A, P73-B, P73-C, P73-D, P73-E done; P73-F planned)
+**Status:** All 6 tracks complete (2026-07-25)
 **Created:** 2026-07-25
 **Last updated:** 2026-07-25
 
@@ -18,7 +18,7 @@ This phase carries **two unrelated origin threads**, bundled opportunistically r
 | P73-C | Turn on the 11 "adopt now" rules (9 zero-finding + 2 tiny-fix-then-flip) from the P73-A spike | ✅ Done | Small |
 | P73-D | Fix the `react-hooks/static-components` findings (components defined inside a parent's render body) | ✅ Done | Small-Medium |
 | P73-E | Fix/triage the `react-hooks/refs` findings (ref `.current` read/written during render) | ✅ Done | Medium |
-| P73-F | Triage the `react-hooks/set-state-in-effect` findings (42 across 36 files) into real-bug vs. legitimate-external-sync buckets, then decide adoption severity | Planned | Medium |
+| P73-F | Triage the `react-hooks/set-state-in-effect` findings (42 across 36 files) into real-bug vs. legitimate-external-sync buckets, then decide adoption severity | ✅ Done | Medium |
 
 ---
 
@@ -52,6 +52,7 @@ No dependency between the original two tracks. P73-C–F (produced by P73-A) hav
 3. ~~P73-C~~ — done.
 4. ~~P73-D~~ — done.
 5. ~~P73-E~~ — done.
+6. ~~P73-F~~ — done.
 6. P73-F — medium, triage-first (broadest/noisiest rule); do last since it may inform E's approach.
 
 ## Track P73-A - Recommended Rule Set Spike
@@ -292,13 +293,42 @@ This track is triage, not blind fixing:
 
 ### Acceptance criteria
 
-- All 42 findings triaged with a documented disposition.
-- Real bugs fixed; legitimate patterns have a suppression comment explaining why (not just a bare `eslint-disable`).
-- A final severity decision recorded here once triage completes.
+- ✅ All 42 findings triaged with a documented disposition — see Classification below.
+- ✅ Real bugs fixed (none found); legitimate patterns documented (grouped, not individually suppressed — see rationale below).
+- ✅ A final severity decision recorded: **not adopted**.
 
 ### Validation
 
 - `npm run lint`, `npm run test:silent`, `npm run build`.
+
+### Classification (2026-07-25)
+
+Read the actual code at all 42 findings across all 36 files — not sampled, not estimated from filenames. Every single one fell into one of these established, legitimate React patterns; **zero were real bugs**:
+
+| Pattern | Representative files | Count (approx.) |
+|---|---|---|
+| Reset local state when a modal opens/re-targets (`opened`/`source` toggles) | `AdminCampaignBulkDeleteModal`, `AdminCampaignDeleteModal`, `CampaignDuplicateModal`, `CampaignMoveSpaceModal`, `MediaUploadController`, `GalleryConfigEditorModal`, `TemplatePickerModal`, `SpaceManagementView`, `useExternalMediaModal` | ~10 |
+| Default a selection to the first available item once data loads | `AccessPanel` (×2), `AuditPanel`, `MediaPanel`, `AdminPanel` (pagination reset/clamp, ×2) | ~6 |
+| Sync local editable/display state from an external prop/context that can change from elsewhere | `TextPropertiesPanel` (×2), `LayerPanel`, `ThemeSelector`, `CompanyCombobox`, `ThemeContext`, `CampaignViewer`, `MediaTab` | ~9 |
+| Derive from a browser API only available post-mount (SSR/hydration-unsafe during render) | `AuthBarFloating` | 1 |
+| Animation/transition state machines (explicit rAF/timeout sequencing) | `Lightbox`, `SettingsPanel` (drawer open, has a detailed pre-existing comment on *why* a plain effect isn't enough) | 2 |
+| Object URL lifecycle (create on change, revoke on cleanup — genuinely needs an effect) | `MediaAddModal`, `useExternalMediaModal` | 2 |
+| Cancellation-guarded async fetch/probe with a stale-response guard | `useMediaDimensions`, `useFeatheredMask`, `useMediaUsageSummary`, `TemplatePickerModal`, `TemplatesTab`, `FontLibraryManager` | 6 |
+| Clamp/derive interactive state when a dependency shrinks (pagination, carousel index) | `useCarousel`, `CardGalleryHostPagination` (×3), `AdminPanel` | ~5 |
+| One-time deep-link / prefetch-once effects (guarded by a ref flag) | `LayoutTemplateList`, `AccessPanel`, `AuditPanel`, `MediaPanel`, `MediaTab` | ~5 |
+| Prune derived state when an external observation changes (e.g. videos scrolled out of view) | `MediaCarouselAdapter` (×2), `OverlayArrows` | 3 |
+
+(Categories overlap for a few multi-effect files, so counts don't sum exactly to 42 — every finding was individually read regardless.)
+
+**Decision: do not adopt this rule.** Every one of the 42 sites is either already commented explaining the deliberate design (several predate this triage entirely) or is an unambiguous instance of a textbook effect use case (data fetching, DOM/browser API access, external subscriptions, imperative animation). Suppressing all 42 individually would mean 42 near-identical `eslint-disable` comments for patterns that are already correct — pure noise, not signal, and a real maintenance cost (every new component touching these same patterns would need yet another suppression). The rule's premise — flag `setState` calls inside effects because the React Compiler's stricter purity model can't verify they're safe — doesn't produce actionable findings in a codebase that doesn't run the Compiler and where this exact style is the established idiom throughout.
+
+This is different from P73-D/E's false positives (a handful of specific, identifiable safe patterns worth naming and suppressing individually) — here the "false positive" rate is 100% across a large, structurally-repeated sample, which is a signal about the *rule's fit for this codebase* rather than about individual call sites. Recorded in [eslint.config.js](../eslint.config.js)'s block comment so this isn't re-litigated without cause; revisit if this codebase ever adopts the React Compiler for real, since only then would the rule's underlying concern (compiler-safety, not correctness) start to matter here.
+
+### Implementation Notes (2026-07-25)
+
+- Temporarily enabled `react-hooks/set-state-in-effect` at `error`, ran `npx eslint . --format json`, and read the code at all 42 reported locations across all 36 files (not a sample) before reverting the temporary enable.
+- No source files changed — the only diff is the updated block comment in [eslint.config.js](../eslint.config.js) explaining the non-adoption decision and pointing back to this section.
+- `npm run lint` confirmed clean (no net change) after reverting. `npm run test:silent` (255 files / 3775 tests) and `npm run build` both confirmed clean via a Haiku subagent sanity check — a config-comment-only change carries negligible risk, but the phase's established pattern is to verify every track regardless.
 
 ## Follow-On Candidates
 
@@ -306,9 +336,16 @@ None beyond P73-C–F — those cover all 5 rules that produced findings in the 
 
 ## Implementation Notes
 
-- P73-A, P73-B, P73-C, P73-D, and P73-E are complete; see their own Implementation Notes / Findings Catalog subsections above.
-- P73-F is scoped but not started.
+All six tracks (P73-A through P73-F) are complete; see their own Implementation Notes / Findings Catalog / Classification subsections above.
 
 ## Outcome
 
-_(Summarize once P73-C–F land, or once a decision is made not to pursue some of them.)_
+**Phase 73 shipped in full** (2026-07-25). Starting point: an eslint 9→10 major bump (a standalone dependency-security fix, tracked outside this phase) forced `eslint-plugin-react-hooks` to a major that bundles 14 new React Compiler rules. This phase resolved all 14 via a spike (P73-A) plus four scoped follow-on tracks:
+
+- **11 rules adopted immediately** (P73-C) — 9 had zero findings, 2 had a handful fixed with a one-line suppression each (both judgment calls: don't restructure working code to satisfy a hypothetical future compiler pass).
+- **`static-components` adopted** (P73-D) — found and fixed one real bug (a component defined inside its parent's render body, causing remount-on-every-render), suppressed two confirmed false positives (a registry-lookup pattern and a dynamic-tag-name pattern).
+- **`refs` adopted** (P73-E) — classified 29 findings into 4 categories; centralized the codebase's dominant "ref mirrors latest value" idiom (16 findings, 9 files) into a new shared `useLatestRef` hook; fixed one real bug (a device-preview-frame width that never updated on window resize, now reactive via `useElementSize`); suppressed the rest with rationale (a React-documented cache pattern, a false positive through an opaque Mantine callback, and two deliberate low-risk exceptions).
+- **`set-state-in-effect` NOT adopted** (P73-F) — full manual audit of all 42 findings across 36 files found zero real bugs; every site is a standard, often already-documented React pattern. Adopting would mean 42 near-identical suppressions for zero signal, so the rule stays off with the reasoning recorded for future reference.
+- Unrelated to the rule work but landed alongside it: **P73-B**, a test-harness fix so `useTheme()` stops logging a spurious "outside `<ThemeProvider>`" warning in every component test.
+
+Net result: 2 real bugs found and fixed, 1 dead ref deleted, 1 shared utility added, and a documented, defensible position on every one of the 14 new lint rules — 13 resolved one way or another, 1 deliberately declined. Every track that touched behavior was verified with the full automated suite (3775 tests) plus a live browser click-through against the local WP dev site. Nothing deferred; no further P73 work is planned.
