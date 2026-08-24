@@ -251,7 +251,7 @@ class WPSG_Settings_Renderer {
 
             <h2><?php esc_html_e('Shortcode Usage', 'wp-super-gallery'); ?></h2>
             <p><?php esc_html_e('Embed a gallery using the following shortcode:', 'wp-super-gallery'); ?></p>
-            <code>[super-gallery campaign="your-campaign-slug"]</code>
+            <code>[mullion-gallery campaign="your-campaign-slug"]</code>
 
             <h3><?php esc_html_e('Shortcode Attributes', 'wp-super-gallery'); ?></h3>
             <table class="widefat" style="max-width: 600px;">

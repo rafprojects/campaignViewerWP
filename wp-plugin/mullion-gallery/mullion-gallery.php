@@ -561,7 +561,7 @@ function wpsg_page_has_gallery_shortcode() {
         return false;
     }
     $post = get_post();
-    return $post instanceof WP_Post && has_shortcode((string) $post->post_content, 'super-gallery');
+    return $post instanceof WP_Post && has_shortcode((string) $post->post_content, 'mullion-gallery');
 }
 
 /**

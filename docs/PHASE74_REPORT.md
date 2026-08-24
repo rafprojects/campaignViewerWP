@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-D landed, remaining tracks Planned
 **Created:** 2026-08-23
-**Last updated:** 2026-08-23
+**Last updated:** 2026-08-23 (P74-D landed — shortcode renamed outright, no backward-compat alias, per explicit user instruction since the plugin is pre-release)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P74-A | Plugin folder rename (`wp-plugin/wp-super-gallery/` → `wp-plugin/mullion-gallery/`) and every tooling path reference | Done | High (mechanical, broad) |
 | P74-B | Plugin metadata: header, `package.json` name | Done | Low |
 | P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Planned | Medium |
-| P74-D | Shortcode rename with a `super-gallery` backward-compat alias | Planned | Low |
+| P74-D | Shortcode rename, outright (no backward-compat alias) | Done | Low |
 | P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Planned | High (data migration) |
 | P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
 | P74-G | PHP class + file rename (56 classes, 56 files) | Planned | Medium (large, mechanical) |
@@ -43,7 +43,7 @@ The plugin's designer, working from [.wordpress-org/DESIGN_BRIEF.md](../.wordpre
 | A | Rename depth: user-facing only, slug/text-domain only, or full internal rename | **Full technical rename.** Pre-launch is the only time this is cheap; a partial rename would leave the codebase permanently describing itself by its old name internally. |
 | B | PHP naming convention for a real-word brand name (vs. the old `WPSG` acronym convention) | **TitleCase class prefix (`Mullion_License`, not `MULLION_LICENSE`)**, matching the common WordPress-ecosystem idiom for a real product name (e.g. WooCommerce's `WC_Product`) rather than the all-caps convention that made sense for the `WPSG` initialism. Functions/hooks/options/slugs stay lowercase-snake (`mullion_*`), which is universal WP convention regardless of prefix style. |
 | C | Plugin slug/text-domain strategy for the two editions | **One slug for both**: `mullion-gallery`. `-lite` remains a release-ZIP-filename-only convention (`mullion-gallery-lite-v${VERSION}.zip`), an exact carry-forward of the existing `wp-super-gallery-lite-v${VERSION}.zip` pattern from the (now-)Phase 75 plan. No structural change to the free/premium split logic. |
-| D | Shortcode tag: rename outright, or preserve `super-gallery` | **Rename to `mullion-gallery`, register `super-gallery` as a backward-compat alias** to the same handler. The shortcode is the one identifier that can land inside actual post content; aliasing it costs one line and removes any risk to already-written examples or docs. |
+| D | Shortcode tag: rename outright, or preserve `super-gallery` | **Rename to `mullion-gallery` outright, no alias.** Originally planned as an aliased rename (see the track's own history below) on the theory that the shortcode is the one identifier that could land inside real post content. Revisited during implementation: the plugin has no public installs (v0.90.0, pre-release), so there is no live content anywhere depending on the old tag — the entire rationale for keeping an alias doesn't apply yet. Aliasing can be reintroduced later if a real deprecation ever becomes necessary post-launch. |
 | E | CPT slug `wpsg_campaign` and the 276 `wpsg_*` option keys: rename and accept data loss on existing dev/staging installs, or migrate | **Migrate.** A one-time routine, self-disabling after it runs, bulk-updates `post_type`/taxonomy rows and copies-then-deletes each `wpsg_*` option to its `mullion_*` name. 63+ phases of manual QA runbooks have plausibly left real data in local wp-env instances; a silent post-rename data loss there is avoidable for cheap. |
 | F | Default theme approach: overwrite `default-dark.json`'s colors in place, or add a new theme id and flip `DEFAULT_THEME_ID` | **Overwrite in place, keep `id: "default-dark"`.** Only the color values are changing, not the theme's role as *the* default — keeping the id avoids touching `DEFAULT_THEME_ID`, the 8+ tests that hardcode `'default-dark'` as an id assertion, and the catalog's default-entry ordering. The literal old navy-blue palette is retired rather than preserved as a selectable alternate, consistent with the design brief's own note that blue is the most crowded color in this product category. |
 | G | The "ink-safe" swatch (`#0f857c`) from the designer's palette comparison | **Rejected as submitted, sent back to the designer.** It fails WCAG AA (4.5:1 minimum) as text against every surface tested: ground 4.14:1, surface 3.51:1, and the light "form" color 4.10:1. The raw accent (`#1ad1c4`) already clears AA comfortably as text on both dark surfaces (9.73:1 / 8.25:1) without it. See the color-system explanation in the updated design brief for what a corrected submission should look like — this track proceeds on every part of the new theme *except* whatever role ink-safe was meant to fill. |
@@ -186,7 +186,7 @@ The `'wp-super-gallery'` text-domain literal appears in ~3,066 `__()`/`_e()`/`_x
 
 ---
 
-## Track P74-D - Shortcode rename with backward-compat alias
+## Track P74-D - Shortcode rename, outright (no backward-compat alias)
 
 ### Problem
 
@@ -194,16 +194,31 @@ The `'wp-super-gallery'` text-domain literal appears in ~3,066 `__()`/`_e()`/`_x
 
 ### Fix
 
-Register `mullion-gallery` as the primary shortcode tag, and keep `add_shortcode('super-gallery', [self::class, 'render_shortcode'])` registered alongside it as a backward-compat alias to the same handler — one extra line, zero behavioral difference, and it removes any risk to already-written documentation or content using the old tag.
+Originally scoped as an aliased rename (register `mullion-gallery` as primary, keep `add_shortcode('super-gallery', ...)` registered alongside it as a backward-compat alias). **Revised per explicit user instruction before implementation**: no fallback needed, since the plugin has never been publicly released (v0.90.0, no real installs) — there is no existing content anywhere that could depend on the old tag, so the entire premise for keeping an alias doesn't hold yet. Renamed the tag outright with no alias:
+
+- `includes/class-wpsg-embed.php` — `add_shortcode('super-gallery', ...)` → `add_shortcode('mullion-gallery', ...)`; the `shortcode_atts([...], $atts, 'super-gallery')` third-argument tag name updated to match.
+- `mullion-gallery.php` — `wpsg_page_has_gallery_shortcode()`'s `has_shortcode(..., 'super-gallery')` check updated.
+- `includes/settings/class-wpsg-settings-renderer.php` — the Settings Panel's own "Shortcode Usage" example (`<code>[super-gallery ...]</code>`) updated.
+- `readme.txt` — the installation-instructions shortcode example updated.
+- `tests/WPSG_Coverage_Extras_Test.php`, `tests/WPSG_P63C_Security_Headers_Test.php` — updated to assert against/seed the new tag string.
 
 ### Acceptance criteria
 
-- Both `[mullion-gallery ...]` and `[super-gallery ...]` render identically.
-- Documentation examples (P74-M) are updated to show the new tag as primary, with a note that the old one still works.
+- `[mullion-gallery ...]` renders correctly; `[super-gallery ...]` renders as unprocessed literal text (no shortcode registered under that tag).
+- Documentation examples (P74-M) are updated to show only the new tag — no "old one still works" note, since there is no old-tag support to describe.
 
 ### Validation
 
-- Front-end render test for both tags in wp-env.
+- `php -l` across all 167 non-vendor PHP files in `wp-plugin/mullion-gallery/` — clean, zero syntax errors.
+- Full-repo grep for shortcode-tag-specific patterns (`add_shortcode`, `has_shortcode`, `shortcode_atts`, `[super-gallery`, `shortcode_exists`, `remove_shortcode`, each paired with the old `super-gallery` literal) — zero hits. The ~3,689 remaining bare `super-gallery` string matches are all non-tag references (text-domain literal, REST namespace, script/style handles, CSS class, filenames) — none are shortcode-tag usages, none in scope for this track.
+- PHPUnit full suite (via `php-testing` skill, wp-env): **1,304 tests, 13,683 assertions, 2 skipped, 0 failures.** A focused run of `WPSG_Embed_Test.php` + `WPSG_Coverage_Extras_Test.php` + `WPSG_P63C_Security_Headers_Test.php` alone: 26 tests, 47 assertions, 0 skips — confirms the 2 full-suite skips are pre-existing and unrelated.
+- Full Vitest suite (unaffected, no JS/TS touched): 3,775/3,775 tests passing across 255 files.
+
+### Implementation Notes (2026-08-23)
+
+- Confirmed with the user before implementing, since this is a direct deviation from the phase doc's own Fix/Acceptance text (which specified an alias): dropped the alias entirely rather than keep it "just in case," per the user's own framing (plugin not yet released → no fallback needed).
+- Scope check: grepped `src/` and `packages/*/src` for the shortcode-tag literal — no JS/TS references exist (no block-editor registration mirrors the tag name), so this was a PHP-only change.
+- Left `docs/guides/THEME_AUTHORING_GUIDE.md`, `docs/guides/INSTALL_AND_TROUBLESHOOTING.md`, `docs/guides/ACCESSIBILITY_MANUAL_AUDIT.md`, `docs/testing/THEME_QA_GUIDE.md`, `docs/testing/SERVICE_WORKER_MANUAL_TEST.md`, `docs/old/ARCHITECTURE_INIT.md`, `docs/PHASE63_MANUAL_QA_RUNBOOK.md`, and `docs/PHASE72_MANUAL_QA_RUNBOOK.md` untouched — all reference the old `[super-gallery]` tag in prose/QA-step examples, but `docs/` prose is P74-M's explicit territory per the precedent already set twice in this phase (P74-A §Implementation Notes, P74-B §Implementation Notes both deferred non-owned doc/JS references to their proper tracks rather than fixing them piecemeal). Flagged here as a pointer for P74-M.
 
 ---
 

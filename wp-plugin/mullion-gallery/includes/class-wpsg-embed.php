@@ -8,7 +8,7 @@ class WPSG_Embed {
     private static $manifest_cache = null;
 
     public static function register_shortcode() {
-        add_shortcode('super-gallery', [self::class, 'render_shortcode']);
+        add_shortcode('mullion-gallery', [self::class, 'render_shortcode']);
     }
 
     public static function register_assets() {
@@ -188,7 +188,7 @@ class WPSG_Embed {
             'compact'       => 'false',
             'space'         => '',
             'auth_bar_mode' => '',
-        ], $atts, 'super-gallery');
+        ], $atts, 'mullion-gallery');
 
         $unresolved_space_refs = [];
         $space_id = self::resolve_space_id($atts, $unresolved_space_refs);

@@ -43,7 +43,7 @@ Layouts that already use these features keep rendering on the free plugin — a 
 1. Upload the `mullion-gallery` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the **Plugins** screen in WordPress.
 3. Navigate to **WP Super Gallery** in the admin menu to create your first campaign.
-4. Use the shortcode `[super-gallery campaign="my-campaign-slug"]` (a campaign slug or numeric ID), or the block editor embed, to display a gallery on any page.
+4. Use the shortcode `[mullion-gallery campaign="my-campaign-slug"]` (a campaign slug or numeric ID), or the block editor embed, to display a gallery on any page.
 
 Supported shortcode attributes: `campaign` (slug or ID), `company` (slug or ID), `space` (slug or ID), `compact` (true/false), and `auth_bar_mode`.
 

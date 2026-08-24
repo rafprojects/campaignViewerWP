@@ -49,7 +49,7 @@ class WPSG_P63C_Security_Headers_Test extends WP_UnitTestCase {
         $page_id = self::factory()->post->create( [
             'post_type'    => 'page',
             'post_status'  => 'publish',
-            'post_content' => 'Intro copy [super-gallery campaign="x"] outro copy',
+            'post_content' => 'Intro copy [mullion-gallery campaign="x"] outro copy',
         ] );
 
         $this->go_to( get_permalink( $page_id ) );

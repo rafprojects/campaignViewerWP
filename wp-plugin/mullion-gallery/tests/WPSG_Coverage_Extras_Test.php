@@ -48,11 +48,11 @@ class WPSG_Coverage_Extras_Test extends WP_UnitTestCase {
 
     public function test_embed_register_shortcode() {
         // Remove if already registered.
-        remove_shortcode('super-gallery');
-        $this->assertFalse(shortcode_exists('super-gallery'));
+        remove_shortcode('mullion-gallery');
+        $this->assertFalse(shortcode_exists('mullion-gallery'));
 
         WPSG_Embed::register_shortcode();
-        $this->assertTrue(shortcode_exists('super-gallery'));
+        $this->assertTrue(shortcode_exists('mullion-gallery'));
     }
 
     public function test_embed_register_assets() {
