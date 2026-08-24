@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: WP Super Gallery 0.90.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-super-gallery\n"
+"Project-Id-Version: Mullion 0.90.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/mullion-gallery\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -11,7 +11,7 @@ msgstr ""
 "PO-Revision-Date: 2026-07-18T21:05:14+00:00\n"
 "Language: de_DE\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Domain: wp-super-gallery\n"
+"X-Domain: mullion-gallery\n"
 
 #. Plugin Name of the plugin
 #. Author of the plugin

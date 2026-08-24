@@ -35,7 +35,7 @@ const TARGET = path.join(
   'i18n',
   'class-wpsg-frontend-strings.php',
 );
-const TEXT_DOMAIN = 'wp-super-gallery';
+const TEXT_DOMAIN = 'mullion-gallery';
 
 /** Escape a JS string for embedding in a PHP single-quoted literal. */
 function phpSingleQuote(value) {

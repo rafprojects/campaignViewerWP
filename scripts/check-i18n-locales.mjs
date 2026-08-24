@@ -99,7 +99,7 @@ function main() {
   const summary = [];
 
   for (const loc of LOCALES) {
-    const poPath = path.join(LANG_DIR, `wp-super-gallery-${loc}.po`);
+    const poPath = path.join(LANG_DIR, `mullion-gallery-${loc}.po`);
     if (!fs.existsSync(poPath)) {
       failed = true;
       summary.push(`${loc}: MISSING .po file (${poPath})`);
@@ -146,8 +146,8 @@ function main() {
     console.error(
       '\n✗ i18n locale coverage incomplete. After adding front-end strings, run:\n' +
       '    npm run i18n:generate\n' +
-      '    wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/wp-super-gallery.pot --domain=wp-super-gallery --exclude=node_modules,vendor,tests,build\n' +
-      '  then translate the new msgstr in each languages/wp-super-gallery-*.po and recompile:\n' +
+      '    wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/mullion-gallery.pot --domain=mullion-gallery --exclude=node_modules,vendor,tests,build\n' +
+      '  then translate the new msgstr in each languages/mullion-gallery-*.po and recompile:\n' +
       '    wp i18n make-mo  wp-plugin/mullion-gallery/languages\n' +
       '    wp i18n make-php wp-plugin/mullion-gallery/languages\n' +
       '  See docs/guides/TRANSLATING.md.',

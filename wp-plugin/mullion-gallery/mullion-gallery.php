@@ -220,7 +220,7 @@ function wpsg_ensure_editor_role() {
 
     $role = get_role('wpsg_editor');
     if (!$role) {
-        add_role('wpsg_editor', __('Gallery Editor', 'wp-super-gallery'), $editor_caps);
+        add_role('wpsg_editor', __('Gallery Editor', 'mullion-gallery'), $editor_caps);
         return;
     }
 
@@ -268,7 +268,7 @@ function wpsg_maybe_migrate_roles() {
 }
 
 add_action('init', function () {
-    load_plugin_textdomain('wp-super-gallery', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    load_plugin_textdomain('mullion-gallery', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }, 0);
 add_action('init', ['WPSG_CPT', 'register']);
 add_action('rest_api_init', ['WPSG_REST', 'register_routes']);

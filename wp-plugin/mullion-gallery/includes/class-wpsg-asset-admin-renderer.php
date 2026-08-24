@@ -34,8 +34,8 @@ class WPSG_Asset_Admin_Renderer {
         // the in-app Admin Panel "Assets" tab instead.
         self::$page_hook = (string) add_submenu_page(
             'edit.php?post_type=wpsg_campaign',
-            __('Asset Library', 'wp-super-gallery'),
-            __('Asset Library', 'wp-super-gallery'),
+            __('Asset Library', 'mullion-gallery'),
+            __('Asset Library', 'mullion-gallery'),
             'manage_options',
             self::PAGE_SLUG,
             [self::class, 'render_page']
@@ -69,8 +69,8 @@ class WPSG_Asset_Admin_Renderer {
 
     public static function render_page() {
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html__('Asset Library', 'wp-super-gallery') . '</h1>';
-        echo '<p>' . esc_html__('Upload and manage global overlay/graphic assets available across all spaces.', 'wp-super-gallery') . '</p>';
+        echo '<h1>' . esc_html__('Asset Library', 'mullion-gallery') . '</h1>';
+        echo '<p>' . esc_html__('Upload and manage global overlay/graphic assets available across all spaces.', 'mullion-gallery') . '</p>';
         echo '<div id="wpsg-assets-admin"></div>';
         echo '</div>';
     }

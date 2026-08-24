@@ -44,12 +44,12 @@ class WPSG_Privacy {
      */
     public static function register_exporters($exporters) {
         $exporters['wpsg-access-requests'] = [
-            'exporter_friendly_name' => __('Mullion — Access Requests', 'wp-super-gallery'),
+            'exporter_friendly_name' => __('Mullion — Access Requests', 'mullion-gallery'),
             'callback'               => [self::class, 'export_access_requests'],
         ];
         // Export-only for the audit log (see class docblock). No eraser below.
         $exporters['wpsg-audit-log'] = [
-            'exporter_friendly_name' => __('Mullion — Audit Log', 'wp-super-gallery'),
+            'exporter_friendly_name' => __('Mullion — Audit Log', 'mullion-gallery'),
             'callback'               => [self::class, 'export_audit_log'],
         ];
         return $exporters;
@@ -63,7 +63,7 @@ class WPSG_Privacy {
         // Access-request rows (visitor emails) are fully erasable. The audit log
         // is deliberately absent — it is export-only (legitimate-interest record).
         $erasers['wpsg-access-requests'] = [
-            'eraser_friendly_name' => __('Mullion — Access Requests', 'wp-super-gallery'),
+            'eraser_friendly_name' => __('Mullion — Access Requests', 'mullion-gallery'),
             'callback'             => [self::class, 'erase_access_requests'],
         ];
         return $erasers;
@@ -91,15 +91,15 @@ class WPSG_Privacy {
         foreach ($rows as $row) {
             $items[] = [
                 'group_id'          => 'wpsg-access-requests',
-                'group_label'       => __('Mullion — Access Requests', 'wp-super-gallery'),
-                'group_description' => __('Gallery access requests submitted with this email address.', 'wp-super-gallery'),
+                'group_label'       => __('Mullion — Access Requests', 'mullion-gallery'),
+                'group_description' => __('Gallery access requests submitted with this email address.', 'mullion-gallery'),
                 'item_id'           => 'wpsg-access-request-' . $row['id'],
                 'data'              => [
-                    ['name' => __('Email', 'wp-super-gallery'),        'value' => $row['email']],
-                    ['name' => __('Campaign ID', 'wp-super-gallery'),  'value' => $row['campaign_id']],
-                    ['name' => __('Status', 'wp-super-gallery'),       'value' => $row['status']],
-                    ['name' => __('Requested at', 'wp-super-gallery'), 'value' => $row['requested_at']],
-                    ['name' => __('Resolved at', 'wp-super-gallery'),  'value' => $row['resolved_at'] ?? ''],
+                    ['name' => __('Email', 'mullion-gallery'),        'value' => $row['email']],
+                    ['name' => __('Campaign ID', 'mullion-gallery'),  'value' => $row['campaign_id']],
+                    ['name' => __('Status', 'mullion-gallery'),       'value' => $row['status']],
+                    ['name' => __('Requested at', 'mullion-gallery'), 'value' => $row['requested_at']],
+                    ['name' => __('Resolved at', 'mullion-gallery'),  'value' => $row['resolved_at'] ?? ''],
                 ],
             ];
         }
@@ -161,14 +161,14 @@ class WPSG_Privacy {
         foreach ($rows as $row) {
             $items[] = [
                 'group_id'          => 'wpsg-audit-log',
-                'group_label'       => __('Mullion — Audit Log', 'wp-super-gallery'),
-                'group_description' => __('Administrative actions recorded under this account. Retained for accountability and not erased on request.', 'wp-super-gallery'),
+                'group_label'       => __('Mullion — Audit Log', 'mullion-gallery'),
+                'group_description' => __('Administrative actions recorded under this account. Retained for accountability and not erased on request.', 'mullion-gallery'),
                 'item_id'           => 'wpsg-audit-' . $row['id'],
                 'data'              => [
-                    ['name' => __('Action', 'wp-super-gallery'),  'value' => $row['action']],
-                    ['name' => __('Summary', 'wp-super-gallery'), 'value' => $row['summary']],
-                    ['name' => __('Actor', 'wp-super-gallery'),   'value' => $row['actor_login']],
-                    ['name' => __('Date', 'wp-super-gallery'),    'value' => $row['created_at']],
+                    ['name' => __('Action', 'mullion-gallery'),  'value' => $row['action']],
+                    ['name' => __('Summary', 'mullion-gallery'), 'value' => $row['summary']],
+                    ['name' => __('Actor', 'mullion-gallery'),   'value' => $row['actor_login']],
+                    ['name' => __('Date', 'mullion-gallery'),    'value' => $row['created_at']],
                 ],
             ];
         }

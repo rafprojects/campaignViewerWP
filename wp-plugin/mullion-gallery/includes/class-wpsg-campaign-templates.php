@@ -45,12 +45,12 @@ class WPSG_Campaign_Templates {
     private static function translate_builtin(array $t): array {
         switch ($t['id']) {
             case 'builtin_blank':
-                $t['name']        = __('Blank Gallery', 'wp-super-gallery');
-                $t['description'] = __('A clean starting point with no pre-configured settings.', 'wp-super-gallery');
+                $t['name']        = __('Blank Gallery', 'mullion-gallery');
+                $t['description'] = __('A clean starting point with no pre-configured settings.', 'mullion-gallery');
                 break;
             case 'builtin_public_showcase':
-                $t['name']        = __('Public Showcase', 'wp-super-gallery');
-                $t['description'] = __('Public visibility, ready for external sharing straight after creation.', 'wp-super-gallery');
+                $t['name']        = __('Public Showcase', 'mullion-gallery');
+                $t['description'] = __('Public visibility, ready for external sharing straight after creation.', 'mullion-gallery');
                 break;
         }
         return $t;

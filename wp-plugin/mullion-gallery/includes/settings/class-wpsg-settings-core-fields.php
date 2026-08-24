@@ -20,7 +20,7 @@ class WPSG_Settings_Core_Fields {
      * @return void
      */
     public static function render_auth_section() {
-        echo '<p>' . esc_html__('Configure how the gallery authenticates with the WordPress REST API.', 'wp-super-gallery') . '</p>';
+        echo '<p>' . esc_html__('Configure how the gallery authenticates with the WordPress REST API.', 'mullion-gallery') . '</p>';
     }
 
     /**
@@ -29,7 +29,7 @@ class WPSG_Settings_Core_Fields {
      * @return void
      */
     public static function render_display_section() {
-        echo '<p>' . esc_html__('Configure default display settings for galleries.', 'wp-super-gallery') . '</p>';
+        echo '<p>' . esc_html__('Configure default display settings for galleries.', 'mullion-gallery') . '</p>';
     }
 
     /**
@@ -38,7 +38,7 @@ class WPSG_Settings_Core_Fields {
      * @return void
      */
     public static function render_authbar_section() {
-        echo '<p>' . esc_html__('Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute.', 'wp-super-gallery') . '</p>';
+        echo '<p>' . esc_html__('Global auth bar appearance. Override per-page with the auth_bar_mode shortcode attribute.', 'mullion-gallery') . '</p>';
     }
 
     /**
@@ -49,11 +49,11 @@ class WPSG_Settings_Core_Fields {
     public static function render_auth_bar_display_mode_field() {
         $value   = WPSG_Settings::get_setting('auth_bar_display_mode') ?: 'floating';
         $options = [
-            'floating'  => __('Floating (circular icon, bottom-right)', 'wp-super-gallery'),
-            'draggable' => __('Draggable (movable floating icon)', 'wp-super-gallery'),
-            'bar'       => __('Bar (full-width sticky bar)', 'wp-super-gallery'),
-            'auto-hide' => __('Auto-hide (bar hides on scroll)', 'wp-super-gallery'),
-            'minimal'   => __('Minimal (thin strip, ≤32px)', 'wp-super-gallery'),
+            'floating'  => __('Floating (circular icon, bottom-right)', 'mullion-gallery'),
+            'draggable' => __('Draggable (movable floating icon)', 'mullion-gallery'),
+            'bar'       => __('Bar (full-width sticky bar)', 'mullion-gallery'),
+            'auto-hide' => __('Auto-hide (bar hides on scroll)', 'mullion-gallery'),
+            'minimal'   => __('Minimal (thin strip, ≤32px)', 'mullion-gallery'),
         ];
         ?>
         <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[auth_bar_display_mode]" id="wpsg_auth_bar_display_mode">
@@ -64,7 +64,7 @@ class WPSG_Settings_Core_Fields {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('How the authentication bar appears on all gallery pages. Use the auth_bar_mode shortcode attribute to override on a specific page.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -85,7 +85,7 @@ class WPSG_Settings_Core_Fields {
                min="0"
                max="64">
         <p class="description">
-            <?php esc_html_e('Minimum distance from viewport edges when dragging (draggable mode only).', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Minimum distance from viewport edges when dragging (draggable mode only).', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -96,7 +96,7 @@ class WPSG_Settings_Core_Fields {
      * @return void
      */
     public static function render_performance_section() {
-        echo '<p>' . esc_html__('Configure caching and performance settings.', 'wp-super-gallery') . '</p>';
+        echo '<p>' . esc_html__('Configure caching and performance settings.', 'mullion-gallery') . '</p>';
     }
 
     /**
@@ -107,8 +107,8 @@ class WPSG_Settings_Core_Fields {
     public static function render_auth_provider_field() {
         $value = WPSG_Settings::get_setting('auth_provider');
         $options = [
-            'wp-jwt' => __('WordPress JWT (Recommended)', 'wp-super-gallery'),
-            'none'   => __('None (Public Access Only)', 'wp-super-gallery'),
+            'wp-jwt' => __('WordPress JWT (Recommended)', 'mullion-gallery'),
+            'none'   => __('None (Public Access Only)', 'mullion-gallery'),
         ];
         ?>
         <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[auth_provider]" id="wpsg_auth_provider">
@@ -119,11 +119,11 @@ class WPSG_Settings_Core_Fields {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('Select the authentication method for REST API access.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Select the authentication method for REST API access.', 'mullion-gallery'); ?>
         </p>
         <p style="margin-top: 10px;">
             <button type="button" class="button" id="wpsg-test-auth">
-                <?php esc_html_e('Test Connection', 'wp-super-gallery'); ?>
+                <?php esc_html_e('Test Connection', 'mullion-gallery'); ?>
             </button>
             <span id="wpsg-test-auth-result" style="margin-left: 10px;"></span>
         </p>
@@ -145,7 +145,7 @@ class WPSG_Settings_Core_Fields {
                class="regular-text"
                placeholder="<?php echo esc_attr(home_url()); ?>">
         <p class="description">
-            <?php esc_html_e('Leave empty to use the current site URL. Only change this for multi-site or headless setups.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Leave empty to use the current site URL. Only change this for multi-site or headless setups.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -189,46 +189,46 @@ class WPSG_Settings_Core_Fields {
 
         // Fallback: hard-coded full list matching the catalog (all 23 themes).
         return [
-            __('Default', 'wp-super-gallery') => [
-                'default-dark'  => __('Default Dark', 'wp-super-gallery'),
-                'default-light' => __('Default Light', 'wp-super-gallery'),
+            __('Default', 'mullion-gallery') => [
+                'default-dark'  => __('Default Dark', 'mullion-gallery'),
+                'default-light' => __('Default Light', 'mullion-gallery'),
             ],
-            __('Material', 'wp-super-gallery') => [
-                'material-dark'  => __('Material Dark', 'wp-super-gallery'),
-                'material-light' => __('Material Light', 'wp-super-gallery'),
+            __('Material', 'mullion-gallery') => [
+                'material-dark'  => __('Material Dark', 'mullion-gallery'),
+                'material-light' => __('Material Light', 'mullion-gallery'),
             ],
-            __('Classic', 'wp-super-gallery') => [
-                'darcula' => __('Darcula', 'wp-super-gallery'),
-                'nord'    => __('Nord', 'wp-super-gallery'),
+            __('Classic', 'mullion-gallery') => [
+                'darcula' => __('Darcula', 'mullion-gallery'),
+                'nord'    => __('Nord', 'mullion-gallery'),
             ],
-            __('Solarized', 'wp-super-gallery') => [
-                'solarized-dark'  => __('Solarized Dark', 'wp-super-gallery'),
-                'solarized-light' => __('Solarized Light', 'wp-super-gallery'),
+            __('Solarized', 'mullion-gallery') => [
+                'solarized-dark'  => __('Solarized Dark', 'mullion-gallery'),
+                'solarized-light' => __('Solarized Light', 'mullion-gallery'),
             ],
-            __('Accessibility', 'wp-super-gallery') => [
-                'high-contrast' => __('High Contrast', 'wp-super-gallery'),
+            __('Accessibility', 'mullion-gallery') => [
+                'high-contrast' => __('High Contrast', 'mullion-gallery'),
             ],
-            __('Community', 'wp-super-gallery') => [
-                'catppuccin-mocha' => __('Catppuccin Mocha', 'wp-super-gallery'),
-                'catppuccin-latte' => __('Catppuccin Latte', 'wp-super-gallery'),
-                'tokyo-night'      => __('Tokyo Night', 'wp-super-gallery'),
-                'gruvbox-dark'     => __('Gruvbox Dark', 'wp-super-gallery'),
-                'github-light'     => __('GitHub Light', 'wp-super-gallery'),
+            __('Community', 'mullion-gallery') => [
+                'catppuccin-mocha' => __('Catppuccin Mocha', 'mullion-gallery'),
+                'catppuccin-latte' => __('Catppuccin Latte', 'mullion-gallery'),
+                'tokyo-night'      => __('Tokyo Night', 'mullion-gallery'),
+                'gruvbox-dark'     => __('Gruvbox Dark', 'mullion-gallery'),
+                'github-light'     => __('GitHub Light', 'mullion-gallery'),
             ],
-            __('Neon', 'wp-super-gallery') => [
-                'cyberpunk' => __('Cyberpunk', 'wp-super-gallery'),
-                'synthwave' => __("Synthwave '84", 'wp-super-gallery'),
+            __('Neon', 'mullion-gallery') => [
+                'cyberpunk' => __('Cyberpunk', 'mullion-gallery'),
+                'synthwave' => __("Synthwave '84", 'mullion-gallery'),
             ],
-            __('Artistic', 'wp-super-gallery') => [
-                'sunset-boulevard' => __('Sunset Boulevard', 'wp-super-gallery'),
-                'ocean-breeze'     => __('Ocean Breeze', 'wp-super-gallery'),
-                'crimson-canvas'   => __('Crimson Canvas', 'wp-super-gallery'),
-                'forest-whisper'   => __('Forest Whisper', 'wp-super-gallery'),
-                'midnight-rose'    => __('Midnight Rose', 'wp-super-gallery'),
+            __('Artistic', 'mullion-gallery') => [
+                'sunset-boulevard' => __('Sunset Boulevard', 'mullion-gallery'),
+                'ocean-breeze'     => __('Ocean Breeze', 'mullion-gallery'),
+                'crimson-canvas'   => __('Crimson Canvas', 'mullion-gallery'),
+                'forest-whisper'   => __('Forest Whisper', 'mullion-gallery'),
+                'midnight-rose'    => __('Midnight Rose', 'mullion-gallery'),
             ],
-            __('Seasonal', 'wp-super-gallery') => [
-                'halloween'         => __('Halloween', 'wp-super-gallery'),
-                'reverse-halloween' => __('Reverse Halloween', 'wp-super-gallery'),
+            __('Seasonal', 'mullion-gallery') => [
+                'halloween'         => __('Halloween', 'mullion-gallery'),
+                'reverse-halloween' => __('Reverse Halloween', 'mullion-gallery'),
             ],
         ];
     }
@@ -249,7 +249,7 @@ class WPSG_Settings_Core_Fields {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('Default color theme for gallery display. Users can override this if allowed below.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Default color theme for gallery display. Users can override this if allowed below.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -271,10 +271,10 @@ class WPSG_Settings_Core_Fields {
                    id="wpsg_allow_user_theme_override"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
-            <?php esc_html_e('Allow visitors to switch themes via the gallery UI.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Allow visitors to switch themes via the gallery UI.', 'mullion-gallery'); ?>
         </label>
         <p class="description">
-            <?php esc_html_e('When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('When disabled, the gallery will always use the theme selected above and hide the theme picker from visitors.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -296,10 +296,10 @@ class WPSG_Settings_Core_Fields {
                    id="wpsg_debug_component_markers"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
-            <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'mullion-gallery'); ?>
         </label>
         <p class="description">
-            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -312,9 +312,9 @@ class WPSG_Settings_Core_Fields {
     public static function render_layout_field() {
         $value = WPSG_Settings::get_setting('gallery_layout');
         $options = [
-            'grid'     => __('Grid', 'wp-super-gallery'),
-            'masonry'  => __('Masonry', 'wp-super-gallery'),
-            'carousel' => __('Carousel', 'wp-super-gallery'),
+            'grid'     => __('Grid', 'mullion-gallery'),
+            'masonry'  => __('Masonry', 'mullion-gallery'),
+            'carousel' => __('Carousel', 'mullion-gallery'),
         ];
         ?>
         <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[gallery_layout]" id="wpsg_gallery_layout">
@@ -325,7 +325,7 @@ class WPSG_Settings_Core_Fields {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('Default layout for displaying gallery items.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Default layout for displaying gallery items.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -347,7 +347,7 @@ class WPSG_Settings_Core_Fields {
                step="1"
                class="small-text">
         <p class="description">
-            <?php esc_html_e('Number of items to display per page (1-100).', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Number of items to display per page (1-100).', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -369,7 +369,7 @@ class WPSG_Settings_Core_Fields {
                    id="wpsg_enable_lightbox"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
-            <?php esc_html_e('Enable fullscreen lightbox when clicking gallery items.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Enable fullscreen lightbox when clicking gallery items.', 'mullion-gallery'); ?>
         </label>
         <?php
     }
@@ -391,10 +391,10 @@ class WPSG_Settings_Core_Fields {
                    id="wpsg_enable_animations"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
-            <?php esc_html_e('Enable smooth animations and transitions.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Enable smooth animations and transitions.', 'mullion-gallery'); ?>
         </label>
         <p class="description">
-            <?php esc_html_e('Disable for better performance on low-end devices.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('Disable for better performance on low-end devices.', 'mullion-gallery'); ?>
         </p>
         <?php
     }
@@ -407,23 +407,23 @@ class WPSG_Settings_Core_Fields {
     public static function render_cache_ttl_field() {
         $value = WPSG_Settings::get_setting('cache_ttl');
         $options = [
-            0      => __('Disabled', 'wp-super-gallery'),
-            10     => __('10 seconds', 'wp-super-gallery'),
-            30     => __('30 seconds', 'wp-super-gallery'),
-            60     => __('1 minute', 'wp-super-gallery'),
-            300    => __('5 minutes', 'wp-super-gallery'),
-            900    => __('15 minutes', 'wp-super-gallery'),
-            1200   => __('20 minutes', 'wp-super-gallery'),
-            1800   => __('30 minutes', 'wp-super-gallery'),
-            2700   => __('45 minutes', 'wp-super-gallery'),
-            3600   => __('1 hour', 'wp-super-gallery'),
-            7200   => __('2 hours', 'wp-super-gallery'),
-            14400  => __('4 hours', 'wp-super-gallery'),
-            28800  => __('8 hours', 'wp-super-gallery'),
-            43200  => __('12 hours', 'wp-super-gallery'),
-            86400  => __('1 day', 'wp-super-gallery'),
-            259200 => __('3 days', 'wp-super-gallery'),
-            604800 => __('1 week', 'wp-super-gallery'),
+            0      => __('Disabled', 'mullion-gallery'),
+            10     => __('10 seconds', 'mullion-gallery'),
+            30     => __('30 seconds', 'mullion-gallery'),
+            60     => __('1 minute', 'mullion-gallery'),
+            300    => __('5 minutes', 'mullion-gallery'),
+            900    => __('15 minutes', 'mullion-gallery'),
+            1200   => __('20 minutes', 'mullion-gallery'),
+            1800   => __('30 minutes', 'mullion-gallery'),
+            2700   => __('45 minutes', 'mullion-gallery'),
+            3600   => __('1 hour', 'mullion-gallery'),
+            7200   => __('2 hours', 'mullion-gallery'),
+            14400  => __('4 hours', 'mullion-gallery'),
+            28800  => __('8 hours', 'mullion-gallery'),
+            43200  => __('12 hours', 'mullion-gallery'),
+            86400  => __('1 day', 'mullion-gallery'),
+            259200 => __('3 days', 'mullion-gallery'),
+            604800 => __('1 week', 'mullion-gallery'),
         ];
         ?>
         <select name="<?php echo esc_attr(WPSG_Settings::OPTION_NAME); ?>[cache_ttl]" id="wpsg_cache_ttl">
@@ -434,7 +434,7 @@ class WPSG_Settings_Core_Fields {
             <?php endforeach; ?>
         </select>
         <p class="description">
-            <?php esc_html_e('How long to cache API responses. Higher values improve performance but show stale data.', 'wp-super-gallery'); ?>
+            <?php esc_html_e('How long to cache API responses. Higher values improve performance but show stale data.', 'mullion-gallery'); ?>
         </p>
         <?php
     }

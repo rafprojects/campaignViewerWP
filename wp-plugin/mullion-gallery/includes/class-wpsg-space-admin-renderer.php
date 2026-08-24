@@ -32,8 +32,8 @@ class WPSG_Space_Admin_Renderer {
         // menu is already hidden for them since they hold no CPT caps).
         self::$page_hook = (string) add_submenu_page(
             'edit.php?post_type=wpsg_campaign',
-            __('Gallery Spaces', 'wp-super-gallery'),
-            __('Spaces', 'wp-super-gallery'),
+            __('Gallery Spaces', 'mullion-gallery'),
+            __('Spaces', 'mullion-gallery'),
             'manage_options',
             self::PAGE_SLUG,
             [self::class, 'render_page']
@@ -67,8 +67,8 @@ class WPSG_Space_Admin_Renderer {
 
     public static function render_page() {
         echo '<div class="wrap">';
-        echo '<h1>' . esc_html__('Gallery Spaces', 'wp-super-gallery') . '</h1>';
-        echo '<p>' . esc_html__('Create spaces, edit per-space settings, and manage access grants.', 'wp-super-gallery') . '</p>';
+        echo '<h1>' . esc_html__('Gallery Spaces', 'mullion-gallery') . '</h1>';
+        echo '<p>' . esc_html__('Create spaces, edit per-space settings, and manage access grants.', 'mullion-gallery') . '</p>';
         echo '<div id="wpsg-spaces-admin"></div>';
         echo '</div>';
     }

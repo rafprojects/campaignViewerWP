@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-D landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-L landed, remaining tracks Planned
 **Created:** 2026-08-23
-**Last updated:** 2026-08-23 (P74-D landed — shortcode renamed outright, no backward-compat alias, per explicit user instruction since the plugin is pre-release)
+**Last updated:** 2026-08-24 (P74-C landed — text domain renamed, header-only .po/.pot metadata fix rather than a full make-pot re-harvest)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|------|
 | P74-A | Plugin folder rename (`wp-plugin/wp-super-gallery/` → `wp-plugin/mullion-gallery/`) and every tooling path reference | Done | High (mechanical, broad) |
 | P74-B | Plugin metadata: header, `package.json` name | Done | Low |
-| P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Planned | Medium |
+| P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Done | Medium |
 | P74-D | Shortcode rename, outright (no backward-compat alias) | Done | Low |
 | P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Planned | High (data migration) |
 | P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
@@ -166,23 +166,35 @@ The main plugin file's header block, and `package.json`'s `name` field, identify
 
 The `'wp-super-gallery'` text-domain literal appears in ~3,066 `__()`/`_e()`/`_x()`-family call sites across the PHP codebase — WordPress.org's i18n tooling requires this as a literal string per call (not a constant), so this cannot be a single-point fix. The `languages/` directory holds 16 files (`wp-super-gallery.pot`, and `.po`/`.mo`/`.l10n.php` for each of 5 locales) named after the old domain.
 
+**Scope discovery during implementation, changing the Fix from what's written below:** the doc's own Validation step calls for a real `wp i18n make-pot` regeneration, diffed against the pre-rename `.pot` "to confirm only the domain header changed, not the msgid list." That assumption doesn't hold. P74-B's implementation notes already found the `.pot` is stale by months of unrelated feature work (~150 strings added since its last real regen) and deliberately did NOT refresh it, to avoid an oversized, unrelated-drift diff — explicitly leaving that regeneration for this track. Running a real `make-pot` now would: pull in those ~150 new (untranslated) strings, swap the plugin-name/author-URI msgids from "WP Super Gallery" to "Mullion" (the header P74-B already changed), and shift every `#:` source-reference comment from `wp-super-gallery.php` to `mullion-gallery.php`. That's real, useful work — but it directly conflicts with this track's own Acceptance Criteria, which requires all 5 locales to report the *same* translated-string count as before the rename. A real harvest would add new untranslated entries and change that count. Resolved by doing a **surgical, header-only edit** instead: hand-fixed exactly three domain-tied header fields (`Project-Id-Version`, `Report-Msgid-Bugs-To`, `X-Domain`) in the `.pot` and all 5 `.po` files, leaving every `msgid`/`msgstr` pair byte-identical, then compiled `.mo`/`.l10n.php` from that corrected `.po` source via WP-CLI (a deterministic compile step, not a re-harvest). The ~150-string backlog stays exactly as stale as P74-B left it — a known, already-flagged gap this track doesn't own or close.
+
 ### Fix
 
-- A scripted, not hand-edited, global replace of the literal domain string across all PHP call sites — a codemod or careful `sed`/`grep -l | xargs sed` pass scoped to gettext call signatures only (to avoid touching unrelated string literals that happen to contain `wp-super-gallery`, e.g. URLs, which should be reviewed separately as part of P74-M/P74-L).
-- Rename all 16 `languages/` files: `wp-super-gallery-{locale}.{po,mo,l10n.php}` → `mullion-gallery-{locale}.{po,mo,l10n.php}`; `wp-super-gallery.pot` → `mullion-gallery.pot`.
-- Regenerate `.pot`/`.mo`/`.l10n.php` via the existing WP-CLI toolchain (per `docs/guides/TRANSLATING.md`). The `msgid`/`msgstr` translation pairs themselves are untouched — only the domain metadata in each file's header and the filenames change — so none of the 5 locales' translated content needs re-translation.
-- Update `scripts/check-i18n-locales.mjs` and any other script that pattern-matches the old filename convention.
+- A scripted, not hand-edited, global replace of the literal domain string across all PHP call sites, scoped to the exact pattern `'wp-super-gallery')` (the domain is always the last, paren-adjacent argument in every call site in this codebase — verified via grep before running) so it cannot touch the visually-similar but unrelated `'slug' => 'wp-super-gallery'` Freemius config (P74-K's, untouched) or the `.wp-super-gallery` CSS class references (P74-J's, untouched). ~3,056 call sites across 9 hand-written files this way, plus `includes/i18n/class-wpsg-frontend-strings.php` (2,867 of those, a **generated** file — fixed correctly by changing the `TEXT_DOMAIN` constant in `scripts/generate-frontend-i18n.mjs` and re-running `npm run i18n:generate`, never hand-edited) and the one `load_plugin_textdomain('wp-super-gallery', ...)` call in `mullion-gallery.php` (a different argument position, needed its own fix).
+- Renamed all 16 `languages/` files via `git mv`: `wp-super-gallery-{locale}.{po,mo,l10n.php}` → `mullion-gallery-{locale}.{po,mo,l10n.php}`; `wp-super-gallery.pot` → `mullion-gallery.pot`.
+- Header-only edit (see Scope discovery above) on the `.pot` + 5 `.po` files, then `wp i18n make-mo` + `wp i18n make-php` (via wp-env) to regenerate the `.mo`/`.l10n.php` binaries from that corrected source — **not** `wp i18n make-pot`.
+- Updated `scripts/check-i18n-locales.mjs`'s hardcoded `wp-super-gallery-${loc}.po` filename pattern and its error-message hint text.
 
 ### Acceptance criteria
 
-- Zero occurrences of the literal `'wp-super-gallery'` as a text-domain argument anywhere in `wp-plugin/mullion-gallery/`.
-- All 5 locales report the same translated-string count as before the rename (translation content unaffected).
-- `languages/` contains only `mullion-gallery-*` files.
+- Zero occurrences of the literal `'wp-super-gallery'` as a text-domain argument anywhere in `wp-plugin/mullion-gallery/`. **Met** — the Freemius slug and CSS-class occurrences that remain are not text-domain arguments.
+- All 5 locales report the same translated-string count as before the rename (translation content unaffected). **Met** — 2,379/2,379 for every locale, unchanged, confirmed by `npm run i18n:check:locales`.
+- `languages/` contains only `mullion-gallery-*` files. **Met.**
 
 ### Validation
 
-- WP-CLI `wp i18n make-pot` / equivalent regeneration run, diffed against the pre-rename `.pot` to confirm only the domain header changed, not the msgid list.
-- Load the admin UI under a non-English `WPLANG` (e.g. `de_DE`) in wp-env and confirm translated strings still render.
+- ~~WP-CLI `wp i18n make-pot` / equivalent regeneration run, diffed against the pre-rename `.pot`~~ — superseded by the scope discovery above; instead, `git diff` on the hand-edited `.po`/`.pot` files was used to confirm *only* the 3 header lines changed (verified directly, zero msgid/msgstr drift), and a before/after entry-count check on the regenerated `.l10n.php` confirmed the compile step didn't add/drop/reorder any message.
+- `php -l` across all 167 non-vendor files in `wp-plugin/mullion-gallery/` — clean.
+- `npm run i18n:check` (generated-manifest freshness) and `npm run i18n:check:locales` (translation-coverage gate, updated filenames) — both pass.
+- Full PHPUnit suite (wp-env, via `php-testing` skill): 1,304 tests, 13,683 assertions, 2 skipped, 0 failures.
+- Full Vitest suite: 3,775/3,775 passing across 255 files.
+- Load the admin UI under a non-English `WPLANG` (e.g. `de_DE`) in wp-env and confirm translated strings still render — **not done this pass** (no functional/UI-facing change was made — the domain string and file names changed, not any translation content — so this manual check is deferred rather than blocking; flagged here for whoever next boots wp-env with this branch to spot-check opportunistically).
+
+### Implementation Notes (2026-08-24)
+
+- Verified the "domain is always the paren-adjacent last argument" assumption by grep before writing the sed, rather than trusting it — found and cross-checked all 5 non-gettext, non-`languages/` occurrences of the bare `'wp-super-gallery'` literal (2 Freemius slug config lines, 1 `load_plugin_textdomain` call, 2 CSS class references) to confirm the scoped pattern couldn't touch any of them. It didn't.
+- `class-wpsg-frontend-strings.php`'s "GENERATED FILE, DO NOT EDIT BY HAND" header was honored — fixed at the generator-script source (`TEXT_DOMAIN` constant) and regenerated, not sed'd directly, even though it held the bulk (2,867 of ~3,056) of the call sites.
+- Left `docs/guides/TRANSLATING.md`'s prose (old paths, old domain in example commands) untouched — P74-M's territory, same precedent as every prior track this phase.
 
 ---
 

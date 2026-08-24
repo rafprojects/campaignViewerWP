@@ -44,7 +44,7 @@ class WPSG_Settings_Service {
         check_ajax_referer('wpsg_test_auth');
 
         if (!current_user_can('manage_options')) {
-            wp_send_json_error(['message' => __('Permission denied.', 'wp-super-gallery')]);
+            wp_send_json_error(['message' => __('Permission denied.', 'mullion-gallery')]);
         }
 
         $settings = WPSG_Settings::get_settings();
@@ -60,7 +60,7 @@ class WPSG_Settings_Service {
             wp_send_json_error([
                 'message' => sprintf(
                     /* translators: %s: WordPress HTTP API error message. */
-                    __('Connection failed: %s', 'wp-super-gallery'),
+                    __('Connection failed: %s', 'mullion-gallery'),
                     $response->get_error_message()
                 ),
             ]);
@@ -70,20 +70,20 @@ class WPSG_Settings_Service {
 
         if ($code === 200) {
             wp_send_json_success([
-                'message' => __('API connection successful!', 'wp-super-gallery'),
+                'message' => __('API connection successful!', 'mullion-gallery'),
             ]);
         }
 
         if ($code === 401 || $code === 403) {
             wp_send_json_success([
-                'message' => __('API reachable. Authentication required for protected endpoints.', 'wp-super-gallery'),
+                'message' => __('API reachable. Authentication required for protected endpoints.', 'mullion-gallery'),
             ]);
         }
 
         wp_send_json_error([
             'message' => sprintf(
                 /* translators: %d: HTTP response status code. */
-                __('Unexpected response: HTTP %d', 'wp-super-gallery'),
+                __('Unexpected response: HTTP %d', 'mullion-gallery'),
                 $code
             ),
         ]);

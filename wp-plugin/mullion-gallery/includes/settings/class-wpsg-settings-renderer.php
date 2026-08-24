@@ -42,8 +42,8 @@ class WPSG_Settings_Renderer {
     public static function add_menu_page() {
         self::$settings_page_hook = add_submenu_page(
             'edit.php?post_type=wpsg_campaign',
-            __('Super Gallery Settings', 'wp-super-gallery'),
-            __('Settings', 'wp-super-gallery'),
+            __('Super Gallery Settings', 'mullion-gallery'),
+            __('Settings', 'mullion-gallery'),
             'manage_options',
             WPSG_Settings::PAGE_SLUG,
             [self::class, 'render_settings_page']
@@ -75,11 +75,11 @@ class WPSG_Settings_Renderer {
             [
                 'ajaxUrl'              => admin_url('admin-ajax.php'),
                 'nonce'                => wp_create_nonce('wpsg_test_auth'),
-                'testingText'          => __('Testing...', 'wp-super-gallery'),
-                'connectionFailedText' => __('Connection failed', 'wp-super-gallery'),
-                'requestFailedText'    => __('Request failed', 'wp-super-gallery'),
-                'authRejectedText'     => __('Authentication test was rejected. Refresh the page and try again.', 'wp-super-gallery'),
-                'unexpectedResponseText' => __('Unexpected server response while testing authentication.', 'wp-super-gallery'),
+                'testingText'          => __('Testing...', 'mullion-gallery'),
+                'connectionFailedText' => __('Connection failed', 'mullion-gallery'),
+                'requestFailedText'    => __('Request failed', 'mullion-gallery'),
+                'authRejectedText'     => __('Authentication test was rejected. Refresh the page and try again.', 'mullion-gallery'),
+                'unexpectedResponseText' => __('Unexpected server response while testing authentication.', 'mullion-gallery'),
             ]
         );
 
@@ -104,14 +104,14 @@ class WPSG_Settings_Renderer {
 
         add_settings_section(
             'wpsg_auth_section',
-            __('Authentication', 'wp-super-gallery'),
+            __('Authentication', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_auth_section'],
             WPSG_Settings::PAGE_SLUG
         );
 
         add_settings_field(
             'auth_provider',
-            __('Auth Provider', 'wp-super-gallery'),
+            __('Auth Provider', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_auth_provider_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_auth_section'
@@ -119,7 +119,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'api_base',
-            __('API Base URL', 'wp-super-gallery'),
+            __('API Base URL', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_api_base_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_auth_section'
@@ -127,14 +127,14 @@ class WPSG_Settings_Renderer {
 
         add_settings_section(
             'wpsg_display_section',
-            __('Display Settings', 'wp-super-gallery'),
+            __('Display Settings', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_display_section'],
             WPSG_Settings::PAGE_SLUG
         );
 
         add_settings_field(
             'theme',
-            __('Theme', 'wp-super-gallery'),
+            __('Theme', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_theme_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -142,7 +142,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'allow_user_theme_override',
-            __('Allow User Theme Override', 'wp-super-gallery'),
+            __('Allow User Theme Override', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_allow_user_theme_override_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -150,7 +150,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'debug_component_markers',
-            __('Component Debug Names & Markers', 'wp-super-gallery'),
+            __('Component Debug Names & Markers', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_debug_component_markers_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -158,7 +158,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'gallery_layout',
-            __('Default Layout', 'wp-super-gallery'),
+            __('Default Layout', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_layout_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -166,7 +166,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'items_per_page',
-            __('Items Per Page', 'wp-super-gallery'),
+            __('Items Per Page', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_items_per_page_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -174,7 +174,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'enable_lightbox',
-            __('Enable Lightbox', 'wp-super-gallery'),
+            __('Enable Lightbox', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_lightbox_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -182,7 +182,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'enable_animations',
-            __('Enable Animations', 'wp-super-gallery'),
+            __('Enable Animations', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_animations_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_display_section'
@@ -190,14 +190,14 @@ class WPSG_Settings_Renderer {
 
         add_settings_section(
             'wpsg_authbar_section',
-            __('Auth Bar', 'wp-super-gallery'),
+            __('Auth Bar', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_authbar_section'],
             WPSG_Settings::PAGE_SLUG
         );
 
         add_settings_field(
             'auth_bar_display_mode',
-            __('Display Mode', 'wp-super-gallery'),
+            __('Display Mode', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_auth_bar_display_mode_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_authbar_section'
@@ -205,7 +205,7 @@ class WPSG_Settings_Renderer {
 
         add_settings_field(
             'auth_bar_drag_margin',
-            __('Drag Margin (px)', 'wp-super-gallery'),
+            __('Drag Margin (px)', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_auth_bar_drag_margin_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_authbar_section'
@@ -213,14 +213,14 @@ class WPSG_Settings_Renderer {
 
         add_settings_section(
             'wpsg_performance_section',
-            __('Performance', 'wp-super-gallery'),
+            __('Performance', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_performance_section'],
             WPSG_Settings::PAGE_SLUG
         );
 
         add_settings_field(
             'cache_ttl',
-            __('Cache Duration', 'wp-super-gallery'),
+            __('Cache Duration', 'mullion-gallery'),
             ['WPSG_Settings_Core_Fields', 'render_cache_ttl_field'],
             WPSG_Settings::PAGE_SLUG,
             'wpsg_performance_section'
@@ -243,39 +243,39 @@ class WPSG_Settings_Renderer {
                 <?php
                 settings_fields('wpsg_settings_group');
                 do_settings_sections(WPSG_Settings::PAGE_SLUG);
-                submit_button(__('Save Settings', 'wp-super-gallery'));
+                submit_button(__('Save Settings', 'mullion-gallery'));
                 ?>
             </form>
 
             <hr>
 
-            <h2><?php esc_html_e('Shortcode Usage', 'wp-super-gallery'); ?></h2>
-            <p><?php esc_html_e('Embed a gallery using the following shortcode:', 'wp-super-gallery'); ?></p>
+            <h2><?php esc_html_e('Shortcode Usage', 'mullion-gallery'); ?></h2>
+            <p><?php esc_html_e('Embed a gallery using the following shortcode:', 'mullion-gallery'); ?></p>
             <code>[mullion-gallery campaign="your-campaign-slug"]</code>
 
-            <h3><?php esc_html_e('Shortcode Attributes', 'wp-super-gallery'); ?></h3>
+            <h3><?php esc_html_e('Shortcode Attributes', 'mullion-gallery'); ?></h3>
             <table class="widefat" style="max-width: 600px;">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e('Attribute', 'wp-super-gallery'); ?></th>
-                        <th><?php esc_html_e('Description', 'wp-super-gallery'); ?></th>
-                        <th><?php esc_html_e('Default', 'wp-super-gallery'); ?></th>
+                        <th><?php esc_html_e('Attribute', 'mullion-gallery'); ?></th>
+                        <th><?php esc_html_e('Description', 'mullion-gallery'); ?></th>
+                        <th><?php esc_html_e('Default', 'mullion-gallery'); ?></th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><code>campaign</code></td>
-                        <td><?php esc_html_e('Campaign slug or ID to display', 'wp-super-gallery'); ?></td>
+                        <td><?php esc_html_e('Campaign slug or ID to display', 'mullion-gallery'); ?></td>
                         <td>—</td>
                     </tr>
                     <tr>
                         <td><code>company</code></td>
-                        <td><?php esc_html_e('Filter by company slug', 'wp-super-gallery'); ?></td>
+                        <td><?php esc_html_e('Filter by company slug', 'mullion-gallery'); ?></td>
                         <td>—</td>
                     </tr>
                     <tr>
                         <td><code>compact</code></td>
-                        <td><?php esc_html_e('Use compact display mode', 'wp-super-gallery'); ?></td>
+                        <td><?php esc_html_e('Use compact display mode', 'mullion-gallery'); ?></td>
                         <td>false</td>
                     </tr>
                 </tbody>

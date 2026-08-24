@@ -67,21 +67,21 @@ class WPSG_CPT {
         register_post_type(self::POST_TYPE, [
             // P51-G: rename the top-level WP menu to "SuperGallery" (menu_name)
             // while keeping the campaign list item labelled "Campaigns" (all_items).
-            'label' => __('Campaigns', 'wp-super-gallery'),
+            'label' => __('Campaigns', 'mullion-gallery'),
             'labels' => [
-                'name'               => __('Campaigns', 'wp-super-gallery'),
-                'singular_name'      => __('Campaign', 'wp-super-gallery'),
-                'menu_name'          => __('SuperGallery', 'wp-super-gallery'),
-                'all_items'          => __('Campaigns', 'wp-super-gallery'),
-                'add_new'            => __('Add New', 'wp-super-gallery'),
-                'add_new_item'       => __('Add New Campaign', 'wp-super-gallery'),
-                'edit_item'          => __('Edit Campaign', 'wp-super-gallery'),
-                'new_item'           => __('New Campaign', 'wp-super-gallery'),
-                'view_item'          => __('View Campaign', 'wp-super-gallery'),
-                'view_items'         => __('View Campaigns', 'wp-super-gallery'),
-                'search_items'       => __('Search Campaigns', 'wp-super-gallery'),
-                'not_found'          => __('No campaigns found', 'wp-super-gallery'),
-                'not_found_in_trash' => __('No campaigns found in Trash', 'wp-super-gallery'),
+                'name'               => __('Campaigns', 'mullion-gallery'),
+                'singular_name'      => __('Campaign', 'mullion-gallery'),
+                'menu_name'          => __('SuperGallery', 'mullion-gallery'),
+                'all_items'          => __('Campaigns', 'mullion-gallery'),
+                'add_new'            => __('Add New', 'mullion-gallery'),
+                'add_new_item'       => __('Add New Campaign', 'mullion-gallery'),
+                'edit_item'          => __('Edit Campaign', 'mullion-gallery'),
+                'new_item'           => __('New Campaign', 'mullion-gallery'),
+                'view_item'          => __('View Campaign', 'mullion-gallery'),
+                'view_items'         => __('View Campaigns', 'mullion-gallery'),
+                'search_items'       => __('Search Campaigns', 'mullion-gallery'),
+                'not_found'          => __('No campaigns found', 'mullion-gallery'),
+                'not_found_in_trash' => __('No campaigns found in Trash', 'mullion-gallery'),
             ],
             'public' => false,
             'show_ui' => true,
@@ -95,24 +95,24 @@ class WPSG_CPT {
         register_taxonomy('wpsg_company', self::POST_TYPE, [
             // P51-G: explicit non-hierarchical labels. Without these WP falls back
             // to the default tag strings ("Add New Tag", "Separate tags with commas").
-            'label' => __('Companies', 'wp-super-gallery'),
+            'label' => __('Companies', 'mullion-gallery'),
             'labels' => [
-                'name'                       => __('Companies', 'wp-super-gallery'),
-                'singular_name'              => __('Company', 'wp-super-gallery'),
-                'menu_name'                  => __('Companies', 'wp-super-gallery'),
-                'all_items'                  => __('All Companies', 'wp-super-gallery'),
-                'edit_item'                  => __('Edit Company', 'wp-super-gallery'),
-                'view_item'                  => __('View Company', 'wp-super-gallery'),
-                'update_item'                => __('Update Company', 'wp-super-gallery'),
-                'add_new_item'               => __('Add New Company', 'wp-super-gallery'),
-                'new_item_name'              => __('New Company Name', 'wp-super-gallery'),
-                'search_items'               => __('Search Companies', 'wp-super-gallery'),
-                'popular_items'              => __('Popular Companies', 'wp-super-gallery'),
-                'not_found'                  => __('No companies found', 'wp-super-gallery'),
-                'back_to_items'              => __('← Back to Companies', 'wp-super-gallery'),
-                'separate_items_with_commas' => __('Separate companies with commas', 'wp-super-gallery'),
-                'add_or_remove_items'        => __('Add or remove companies', 'wp-super-gallery'),
-                'choose_from_most_used'      => __('Choose from the most used companies', 'wp-super-gallery'),
+                'name'                       => __('Companies', 'mullion-gallery'),
+                'singular_name'              => __('Company', 'mullion-gallery'),
+                'menu_name'                  => __('Companies', 'mullion-gallery'),
+                'all_items'                  => __('All Companies', 'mullion-gallery'),
+                'edit_item'                  => __('Edit Company', 'mullion-gallery'),
+                'view_item'                  => __('View Company', 'mullion-gallery'),
+                'update_item'                => __('Update Company', 'mullion-gallery'),
+                'add_new_item'               => __('Add New Company', 'mullion-gallery'),
+                'new_item_name'              => __('New Company Name', 'mullion-gallery'),
+                'search_items'               => __('Search Companies', 'mullion-gallery'),
+                'popular_items'              => __('Popular Companies', 'mullion-gallery'),
+                'not_found'                  => __('No companies found', 'mullion-gallery'),
+                'back_to_items'              => __('← Back to Companies', 'mullion-gallery'),
+                'separate_items_with_commas' => __('Separate companies with commas', 'mullion-gallery'),
+                'add_or_remove_items'        => __('Add or remove companies', 'mullion-gallery'),
+                'choose_from_most_used'      => __('Choose from the most used companies', 'mullion-gallery'),
             ],
             'public' => false,
             'show_ui' => true,
@@ -122,7 +122,7 @@ class WPSG_CPT {
 
         // P14-G: Campaign tags (non-hierarchical, like WordPress post tags).
         register_taxonomy('wpsg_campaign_tag', self::POST_TYPE, [
-            'label' => __('Campaign Tags', 'wp-super-gallery'),
+            'label' => __('Campaign Tags', 'mullion-gallery'),
             'public' => false,
             'show_ui' => true,
             'show_in_rest' => true,
@@ -132,7 +132,7 @@ class WPSG_CPT {
 
         // P18-H: Campaign categories (flat, organisational grouping).
         register_taxonomy('wpsg_campaign_category', self::POST_TYPE, [
-            'label'             => __('Campaign Categories', 'wp-super-gallery'),
+            'label'             => __('Campaign Categories', 'mullion-gallery'),
             'public'            => false,
             'show_ui'           => true,
             'show_in_rest'      => true,
@@ -143,7 +143,7 @@ class WPSG_CPT {
 
         // P14-G: Media tags (attached to attachments for cross-campaign organization).
         register_taxonomy('wpsg_media_tag', 'attachment', [
-            'label' => __('Media Tags', 'wp-super-gallery'),
+            'label' => __('Media Tags', 'mullion-gallery'),
             'public' => false,
             'show_ui' => true,
             'show_in_rest' => true,
@@ -152,7 +152,7 @@ class WPSG_CPT {
 
         // P20-I-1: Layout templates CPT (replaces wp_options storage).
         register_post_type('wpsg_layout_tpl', [
-            'label' => __('Layout Templates', 'wp-super-gallery'),
+            'label' => __('Layout Templates', 'mullion-gallery'),
             'public' => false,
             'show_ui' => false,
             'show_in_rest' => false,
@@ -411,7 +411,7 @@ class WPSG_CPT {
      */
     public static function rename_company_count_column(array $columns): array {
         if (isset($columns['posts'])) {
-            $columns['posts'] = __('Campaigns', 'wp-super-gallery');
+            $columns['posts'] = __('Campaigns', 'mullion-gallery');
         }
         return $columns;
     }
@@ -423,7 +423,7 @@ class WPSG_CPT {
         foreach ($columns as $key => $label) {
             $new[$key] = $label;
             if ($key === 'title') {
-                $new['wpsg_space'] = __('Space', 'wp-super-gallery');
+                $new['wpsg_space'] = __('Space', 'mullion-gallery');
             }
         }
         return $new;
@@ -456,7 +456,7 @@ class WPSG_CPT {
         }
         $selected = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
         echo '<select name="wpsg_space_filter">';
-        echo '<option value="">' . esc_html__('All spaces', 'wp-super-gallery') . '</option>';
+        echo '<option value="">' . esc_html__('All spaces', 'mullion-gallery') . '</option>';
         foreach ($spaces as $s) {
             printf(
                 '<option value="%d"%s>%s</option>',
@@ -514,16 +514,16 @@ class WPSG_CPT {
         ?>
         <div class="wpsg-create-space" style="display:inline-block;margin-left:4px;vertical-align:middle;">
             <details>
-                <summary class="button" style="cursor:pointer;"><?php esc_html_e('+ New Space', 'wp-super-gallery'); ?></summary>
+                <summary class="button" style="cursor:pointer;"><?php esc_html_e('+ New Space', 'mullion-gallery'); ?></summary>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
                       style="margin-top:6px;padding:8px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;">
                     <input type="hidden" name="action" value="wpsg_create_space">
                     <?php wp_nonce_field('wpsg_create_space', '_wpsg_nonce'); ?>
-                    <input type="text" name="wpsg_space_name" placeholder="<?php esc_attr_e('Space name', 'wp-super-gallery'); ?>"
+                    <input type="text" name="wpsg_space_name" placeholder="<?php esc_attr_e('Space name', 'mullion-gallery'); ?>"
                            required style="margin-right:4px;vertical-align:middle;">
-                    <input type="text" name="wpsg_space_slug" placeholder="<?php esc_attr_e('Slug (auto)', 'wp-super-gallery'); ?>"
+                    <input type="text" name="wpsg_space_slug" placeholder="<?php esc_attr_e('Slug (auto)', 'mullion-gallery'); ?>"
                            style="margin-right:4px;vertical-align:middle;">
-                    <button type="submit" class="button button-primary"><?php esc_html_e('Create', 'wp-super-gallery'); ?></button>
+                    <button type="submit" class="button button-primary"><?php esc_html_e('Create', 'mullion-gallery'); ?></button>
                 </form>
             </details>
         </div>
@@ -533,7 +533,7 @@ class WPSG_CPT {
     public static function handle_create_space(): void {
         // P52-A3: creating spaces is a System Admin action (manage_options).
         if (!current_user_can('manage_options') || !check_admin_referer('wpsg_create_space', '_wpsg_nonce')) {
-            wp_die(esc_html__('Forbidden', 'wp-super-gallery'));
+            wp_die(esc_html__('Forbidden', 'mullion-gallery'));
         }
         $name     = sanitize_text_field(wp_unslash($_POST['wpsg_space_name'] ?? ''));
         $raw_slug = sanitize_text_field(wp_unslash($_POST['wpsg_space_slug'] ?? ''));
