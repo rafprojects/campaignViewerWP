@@ -73,11 +73,11 @@ export default defineConfig({
   base: './',
   // P62-F: build-time premium flag, substituted as a literal boolean so Rollup can
   // dead-code-eliminate Pro authoring code. Default build = premium (flag true, all Pro
-  // code present); `WPSG_PREMIUM=false npm run build` produces the WordPress.org-compliant
+  // code present); `MULLION_PREMIUM=false npm run build` produces the WordPress.org-compliant
   // free build with the Pro authoring code (and its lazy chunks) stripped. The runtime
   // `isPro` license check is a separate, orthogonal layer. See docs/guides/PRO_FEATURES.md.
   define: {
-    __WPSG_PREMIUM__: JSON.stringify(process.env.WPSG_PREMIUM !== 'false'),
+    __MULLION_PREMIUM__: JSON.stringify(process.env.MULLION_PREMIUM !== 'false'),
   },
   plugins: [
     react(),
@@ -87,9 +87,9 @@ export default defineConfig({
       : []),
     // P52-D: inject a deploy-unique hash into dist/sw.js so a new build produces
     // a new SW file. The browser detects the changed script, installs the new SW,
-    // and the activate handler clears the old wpsg-shell-* cache automatically.
+    // and the activate handler clears the old mullion-shell-* cache automatically.
     {
-      name: 'wpsg-sw-hash-inject',
+      name: 'mullion-sw-hash-inject',
       apply: 'build' as const,
       enforce: 'post' as const,
       closeBundle() {
@@ -100,7 +100,7 @@ export default defineConfig({
             .update(readFileSync(manifestPath, 'utf-8'))
             .digest('hex')
             .slice(0, 8)
-          writeFileSync(swPath, readFileSync(swPath, 'utf-8').replaceAll('__WPSG_BUILD_HASH__', buildHash))
+          writeFileSync(swPath, readFileSync(swPath, 'utf-8').replaceAll('__MULLION_BUILD_HASH__', buildHash))
         } catch {
           // Non-fatal: dist/sw.js retains the placeholder if the manifest is not
           // found (e.g. during a partial build). The shell cache still works; its
@@ -112,9 +112,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': new URL('./src', import.meta.url).pathname,
-      '@wp-super-gallery/shared-utils': new URL('./packages/shared-utils/src/index.ts', import.meta.url).pathname,
-      '@wp-super-gallery/shared-ui': new URL('./packages/shared-ui/src/index.ts', import.meta.url).pathname,
-      '@wp-super-gallery/theme-engine': new URL('./packages/theme-engine/src/index.ts', import.meta.url).pathname,
+      '@mullion/shared-utils': new URL('./packages/shared-utils/src/index.ts', import.meta.url).pathname,
+      '@mullion/shared-ui': new URL('./packages/shared-ui/src/index.ts', import.meta.url).pathname,
+      '@mullion/theme-engine': new URL('./packages/theme-engine/src/index.ts', import.meta.url).pathname,
     },
   },
   // Dev-only: pin the dependency pre-bundler to esnext so esbuild does no

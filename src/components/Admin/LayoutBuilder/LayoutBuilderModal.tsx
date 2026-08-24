@@ -28,7 +28,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
@@ -46,7 +46,7 @@ import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useRootId } from '@mullion/shared-ui';
 import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
 import { useBroadcastStaleness } from '@/hooks/useBroadcastStaleness';

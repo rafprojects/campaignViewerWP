@@ -1,6 +1,6 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { useDirtyGuard } from '@wp-super-gallery/shared-utils';
+import { useDirtyGuard } from '@mullion/shared-utils';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

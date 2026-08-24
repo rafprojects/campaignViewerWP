@@ -1,7 +1,7 @@
 import { type ReactNode, useRef } from 'react';
 import { NumberInput, Select, type NumberInputProps } from '@mantine/core';
 import { IconArrowsHorizontal } from '@tabler/icons-react';
-import { UNIT_MAX_DEFAULTS } from '@wp-super-gallery/shared-utils';
+import { UNIT_MAX_DEFAULTS } from '@mullion/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface UnitScrubFieldProps {

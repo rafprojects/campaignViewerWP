@@ -31,16 +31,16 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
-import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
+import { useMediaDimensions } from '@mullion/shared-utils';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
 import { resolveListingColumns } from '@/utils/gridLayout';
-import { resolveColumnsFromWidth } from '@wp-super-gallery/shared-utils';
+import { resolveColumnsFromWidth } from '@mullion/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 

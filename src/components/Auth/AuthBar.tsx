@@ -7,8 +7,8 @@ import type { GalleryBehaviorSettings } from '@/types';
 import { getWpsgDebugProps } from '@/utils/wpsgDebug';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { usePageSpaces } from '@/hooks/usePageSpaces';
-import { AuthBarFloating, AuthBarMinimal, SpaceSwitcher } from '@wp-super-gallery/shared-ui';
-import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { AuthBarFloating, AuthBarMinimal, SpaceSwitcher } from '@mullion/shared-ui';
+import { spaceColor } from '@mullion/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface AuthBarProps {
@@ -180,7 +180,7 @@ function AuthBarFull({
   onLogout,
   instanceId,
   pageSpaces,
-}: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean; pageSpaces?: import('@wp-super-gallery/shared-ui').SpaceSwitcherSpace[] | undefined }) {
+}: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean; pageSpaces?: import('@mullion/shared-ui').SpaceSwitcherSpace[] | undefined }) {
   const { t } = useTranslation('wpsg');
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;

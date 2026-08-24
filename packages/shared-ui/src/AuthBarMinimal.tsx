@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Box, Container, Group, Text, Menu, ActionIcon } from '@mantine/core';
 import { IconUser, IconSettings, IconLogout, IconDashboard, IconChevronDown, IconLogin } from '@tabler/icons-react';
 import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
-import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { spaceColor } from '@mullion/shared-utils';
 
 interface AuthBarMinimalProps {
   email: string;

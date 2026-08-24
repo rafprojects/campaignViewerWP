@@ -44,8 +44,8 @@ import {
   useCampaignAnalytics,
   useCampaignMediaAnalytics,
 } from '@/services/adminQuery';
-import { useTabVisibility } from '@wp-super-gallery/shared-utils';
-import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
+import { useTabVisibility } from '@mullion/shared-utils';
+import { useOnlineStatus } from '@mullion/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 interface SelectItem {

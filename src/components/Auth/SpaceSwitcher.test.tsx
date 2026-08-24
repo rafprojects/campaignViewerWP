@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@/test/test-utils';
-import { SpaceSwitcher, type SpaceSwitcherSpace } from '@wp-super-gallery/shared-ui';
+import { SpaceSwitcher, type SpaceSwitcherSpace } from '@mullion/shared-ui';
 
 // [P51-J] SpaceSwitcher moved to shared-ui and now takes `pageSpaces` as a prop
 // (the WP-global read via usePageSpaces lives app-side, injected by AuthBar).

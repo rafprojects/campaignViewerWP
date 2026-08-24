@@ -15,9 +15,9 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCssOrNumber, useSwipe } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { useLightbox } from '@wp-super-gallery/shared-utils';
+import { toCssOrNumber, useSwipe } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
+import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -27,7 +27,7 @@ import {
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
-import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
+import { resolveBoundedSectionHeight } from '@mullion/shared-utils';
 
 const FALLBACK_HEIGHT_PX = 500;
 /** Width of each item as a fraction of the container width */

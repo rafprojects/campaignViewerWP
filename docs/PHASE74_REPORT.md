@@ -19,7 +19,7 @@
 | P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Planned | Medium |
 | P74-J | Remaining JS/TS identifier cleanup | Planned | Low-Medium |
 | P74-K | Freemius slug wiring | Planned | Low (hard sequencing dependency on Phase 75) |
-| P74-L | Build/CI/tooling string literals | Planned | Low |
+| P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Planned | Low (volume) |
 | P74-N | New default theme: Mullion / Rig Cyan | Planned — partially blocked | Low-Medium |
 | P74-O | CSS fallback-color reconciliation (depends on P74-N) | Planned | Low |
@@ -388,21 +388,42 @@ Update both slug arguments to `'mullion-gallery'` as part of the same edit that 
 
 ### Problem
 
-`vite.config.ts`, both GitHub Actions workflows' ZIP-filename construction (`wp-super-gallery-v${VERSION}.zip`, `wp-super-gallery-lite-v${VERSION}.zip`), and any remaining `scripts/*.js`/`*.mjs` string literals reference the old name.
+`vite.config.ts`, both GitHub Actions workflows' ZIP-filename construction (`wp-super-gallery-v${VERSION}.zip`), and any remaining `scripts/*.js`/`*.mjs` string literals reference the old name.
+
+During implementation, two more build/tooling-adjacent items surfaced that weren't claimed by this track's Fix text or by any other track:
+
+1. **The `@wp-super-gallery/*` npm workspace package scope** — three internal monorepo packages (`shared-utils`, `shared-ui`, `theme-engine`) published under that scope, aliased in `vite.config.ts`'s `resolve.alias` and `tsconfig.json`'s `paths`, and imported directly in 138 source files across `src/` and `packages/*/src`. Not mentioned by P74-L's own Fix bullets (which only named "name-derived output paths or `define` values"), and not caught by P74-J's acceptance criteria either (that track's grep only scans `src/`/`packages/*/src` for the bare tokens `wpsg`/`WPSG` — `@wp-super-gallery` doesn't contain either substring, so it would have silently survived P74-J too).
+2. **The WordPress.org SVN deploy `SLUG: wp-super-gallery` env var** in both workflows — adjacent to the ZIP_NAME work but not named in the Fix text; not P74-K's job either (that track is specifically `wpsg_fs()`'s Freemius slug args, a different config surface).
+
+Both were confirmed with the user before proceeding (folded into this track rather than split out or deferred — see Implementation Notes).
 
 ### Fix
 
-- `vite.config.ts` — any name-derived output paths or `define` values.
-- `.github/workflows/release.yml`, `.github/workflows/svn-deploy.yml` — ZIP filenames become `mullion-gallery-v${VERSION}.zip` / `mullion-gallery-lite-v${VERSION}.zip`.
-- Remaining `scripts/*` literals.
+- `vite.config.ts` — the `__WPSG_PREMIUM__` build-time `define` (+ its `vite-env.d.ts` declaration and ~10 usage sites in `src/`), the `wpsg-sw-hash-inject` plugin's own name, the `__WPSG_BUILD_HASH__` placeholder token (shared with `public/sw.js`), and the `@wp-super-gallery/*` → `@mullion/*` resolve aliases.
+- `.github/workflows/release.yml`, `.github/workflows/svn-deploy.yml` — ZIP filenames become `mullion-gallery-v${VERSION}.zip`; `SLUG: wp-super-gallery` → `SLUG: mullion-gallery`.
+- `package.json`'s `WPSG_PREMIUM=false` script literals (×3), `.github/workflows/ci.yml`'s matching comment, `scripts/check-free-build-clean.mjs`'s comments/messages — all `WPSG_PREMIUM`/`__WPSG_PREMIUM__` → `MULLION_PREMIUM`/`__MULLION_PREMIUM__`.
+- The npm workspace scope rename: `packages/{shared-utils,shared-ui,theme-engine}/package.json` `name` fields + the inter-package `@wp-super-gallery/shared-utils` dependency/`prepack` references, both packages' `tsconfig.build.json` path-mapping comments/entries, `tsconfig.json`'s 3 `paths` entries, and all 138 importing files' import specifiers — `@wp-super-gallery/*` → `@mullion/*`.
+- `public/sw.js` — cache-key prefixes (`CACHE_VERSION`, `RUNTIME_CACHE`, `META_CACHE`, `UPLOADS_CACHE`, `SHELL_CACHE`, the `startsWith('wpsg-')` activate-time sweep) and the custom `x-wpsg-cached-at` cache-timestamp header (+ its 2 test files, `swMeta.test.ts`/`swUploads.test.ts`) — all `wpsg-*` → `mullion-*`. **Explicitly not touched**: the `/wp-json/wp-super-gallery/v1/campaigns` REST-endpoint regex and its surrounding comments in the same file — that string mirrors the actual backend REST namespace, which is still registered under the old name (an unclaimed gap flagged back in P74-A's implementation notes, not this track's to fix; changing only the SW's copy would silently break its cache-matching regex against the still-unrenamed real endpoint).
 
 ### Acceptance criteria
 
 - A local dry-run of the release build (per the existing Phase 75/old-74 verification pattern) produces correctly-named ZIPs with the new plugin folder structure inside.
+- `grep -rn "@wp-super-gallery"` across the repo (excluding `package-lock.json`, `node_modules/`) returns zero results.
+- `tsc --noEmit` and the full Vitest suite pass with the renamed package scope resolving correctly through both the Vite alias and `tsconfig.json` paths.
 
 ### Validation
 
 - Local build dry-run: `npm run build:wp` → zip → `unzip -l` to confirm internal paths and filename.
+- Full Vitest suite (workspace-package imports exercised by nearly every test file via `@mullion/*`).
+- `tsc --noEmit` across the whole project, including both `packages/*/tsconfig.build.json` builds.
+- `npm install` (not `--package-lock-only`, since real workspace package names changed and `node_modules/@mullion/*` symlinks needed regenerating) — confirmed `package-lock.json` has zero remaining `@wp-super-gallery` references afterward.
+
+### Implementation Notes (2026-08-24)
+
+- Confirmed both scope expansions with the user before proceeding (see Problem section) rather than deciding unilaterally — the workspace-package rename in particular is comparable in size/risk to a dedicated track (138 files) and no existing track's Fix or Acceptance text actually covered it.
+- `__WPSG_PREMIUM__`/`WPSG_PREMIUM` renamed together as one unit (build-time `define` derives directly from the env var of the same name) even though the doc's Fix text only explicitly named `define` values — same reasoning as P74-A's "found but would actively break things if left" standard: leaving the env var renamed-if-touched-elsewhere but the define stale (or vice versa) would desync the two ends of the same mechanism.
+- `public/sw.js`'s cache-prefix rename was done alongside the `__WPSG_BUILD_HASH__` placeholder fix (same file, same edit pass) since leaving the placeholder renamed but every surrounding cache-key string still `wpsg-*` would be an inconsistent half-rename with no other track claiming the rest of that file. Deliberately stopped short of the REST-endpoint regex in the same file — that one really does belong to whatever track eventually renames the backend's REST namespace (still an open gap, not created or closed by this track).
+- Left `docs/` prose referencing the old shortcode/package names untouched (P74-M's territory, same precedent as every prior track this phase).
 
 ---
 

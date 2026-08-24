@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';

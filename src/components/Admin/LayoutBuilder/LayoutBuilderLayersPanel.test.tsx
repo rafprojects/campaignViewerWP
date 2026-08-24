@@ -17,7 +17,7 @@ vi.mock('@/utils/wpsgUpsell', () => ({
 // Isolate the toolbar: stub the heavy layer tree and its data builder.
 vi.mock('./LayerPanel', () => ({ LayerPanel: () => null }));
 vi.mock('@/utils/layerList', () => ({ buildLayerList: () => [] }));
-vi.mock('@wp-super-gallery/shared-ui', () => ({ useRootId: () => 'test-root' }));
+vi.mock('@mullion/shared-ui', () => ({ useRootId: () => 'test-root' }));
 
 const addText = vi.fn(() => 'new-text-id');
 

@@ -18,7 +18,7 @@ const META_MAX_ENTRIES = 50;
 async function stampResponse(response: Response): Promise<Response> {
   const body = await response.arrayBuffer();
   const headers = new Headers(response.headers);
-  headers.set('x-wpsg-cached-at', Date.now().toString());
+  headers.set('x-mullion-cached-at', Date.now().toString());
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
@@ -106,7 +106,7 @@ describe('META_ENDPOINT_RE', () => {
 // ── stampResponse ─────────────────────────────────────────────────────────────
 
 describe('stampResponse', () => {
-  it('adds x-wpsg-cached-at header to the response', async () => {
+  it('adds x-mullion-cached-at header to the response', async () => {
     const before = Date.now();
     const original = new Response(JSON.stringify({ id: 1 }), {
       status: 200,
@@ -115,7 +115,7 @@ describe('stampResponse', () => {
     const stamped = await stampResponse(original);
     const after = Date.now();
 
-    const ts = parseInt(stamped.headers.get('x-wpsg-cached-at') || '0', 10);
+    const ts = parseInt(stamped.headers.get('x-mullion-cached-at') || '0', 10);
     expect(ts).toBeGreaterThanOrEqual(before);
     expect(ts).toBeLessThanOrEqual(after);
   });

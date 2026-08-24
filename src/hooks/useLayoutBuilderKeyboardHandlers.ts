@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
-import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
+import { buildGroupMap, collectDescendantSlotIds } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import type { UseLayoutBuilderReturn } from './useLayoutBuilderState';
 

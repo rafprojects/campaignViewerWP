@@ -17,8 +17,8 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';

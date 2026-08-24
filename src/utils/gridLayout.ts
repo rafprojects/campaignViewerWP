@@ -2,9 +2,9 @@
  * Pure grid-layout math shared between CardGallery and CompactGridGallery.
  * React-free and fully testable without hooks.
  */
-import { toCss, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
+import { toCss, type CssWidthUnit } from '@mullion/shared-utils';
 import type { GalleryBehaviorSettings } from '@/types';
-import { resolveColumnsFromWidth } from '@wp-super-gallery/shared-utils';
+import { resolveColumnsFromWidth } from '@mullion/shared-utils';
 
 /**
  * Scale a card width and optionally resolve a percent width against a

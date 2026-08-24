@@ -33,7 +33,7 @@ import type { MediaItem, OEmbedResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useRootId } from '@mullion/shared-ui';
 import {
   buildMediaGridShellVars,
   mapToMediaGridBreakpoint,
@@ -44,7 +44,7 @@ import {
 } from './mediaTabLayout';
 import { SortableListRow, SortableGridItem, type SharedSortableProps } from './MediaTabSortableItems';
 import { useMediaViewPrefs, type ViewMode, type CardSize } from '@/hooks/useMediaViewPrefs';
-import { useMediaLightbox } from '@wp-super-gallery/shared-utils';
+import { useMediaLightbox } from '@mullion/shared-utils';
 import { useMediaUsageSummary } from '@/hooks/useMediaUsageSummary';
 import { type MediaSortMode } from './applySortMode';
 import { useMediaUpload } from '@/hooks/useMediaUpload';

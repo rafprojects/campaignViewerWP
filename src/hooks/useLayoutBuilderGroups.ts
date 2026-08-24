@@ -9,7 +9,7 @@ import {
   reparentGroup as reparentGroupInHierarchy,
   dissolveGroupInHierarchy,
   computeGroupMoveDelta,
-} from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
 import type { MutateFn } from './useLayoutBuilderHistory';
 
 export function useLayoutBuilderGroups({

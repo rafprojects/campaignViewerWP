@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
 import {

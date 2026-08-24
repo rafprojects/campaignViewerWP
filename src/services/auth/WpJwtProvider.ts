@@ -1,6 +1,6 @@
 import type { AuthProvider, AuthSession, AuthUser } from './AuthProvider';
 import { resolveRole } from './AuthProvider';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage } from '@mullion/shared-utils';
 
 interface WpJwtProviderOptions {
   apiBaseUrl: string;

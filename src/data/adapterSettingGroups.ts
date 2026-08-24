@@ -6,7 +6,7 @@
  * logic lives in adapterRegistry.ts; this module owns the definitions.
  */
 import { createElement, lazy, type ComponentType } from 'react';
-import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 import type {
   AdapterRegistration,
   AdapterSettingGroupDefinition,

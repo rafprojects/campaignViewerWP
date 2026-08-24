@@ -12,7 +12,7 @@ import {
 import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
-import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@wp-super-gallery/shared-utils';
+import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@mullion/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';

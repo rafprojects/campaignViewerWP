@@ -14,7 +14,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
 const { lightboxSpy } = vi.hoisted(() => ({ lightboxSpy: vi.fn() }));
 
-vi.mock('@wp-super-gallery/shared-ui', () => ({
+vi.mock('@mullion/shared-ui', () => ({
   Lightbox: (props: Record<string, unknown>) => {
     lightboxSpy(props);
     return null;

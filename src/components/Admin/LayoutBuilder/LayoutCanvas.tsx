@@ -4,7 +4,7 @@ import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
 import { assignMediaToSlots, resolveSlotForBreakpoint } from '@/utils/layoutSlotAssignment';
-import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
+import { computeGuides, type GuideLine, type SlotRect } from '@mullion/shared-utils';
 import {
   type SnapMode,
   snapToGrid,
@@ -13,10 +13,10 @@ import {
   normalizeDragRect,
   pctRectsIntersect,
   type PctRect,
-} from '@wp-super-gallery/shared-utils';
-import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
-import { useViewportHeight } from '@wp-super-gallery/shared-utils';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
+import { useCanvasTransform } from '@mullion/shared-ui';
+import { useViewportHeight } from '@mullion/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';
@@ -27,8 +27,8 @@ import { GraphicLayerContent } from '@/components/Galleries/Adapters/layout-buil
 import { TextLayerContent } from '@/components/Galleries/Adapters/layout-builder/TextLayerContent';
 import { textLayerTextStyle } from '@/utils/textLayerStyle';
 import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
-import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
-import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss, templateToGradientOpts } from '@mullion/shared-utils';
+import { sanitizeCssUrl } from '@mullion/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

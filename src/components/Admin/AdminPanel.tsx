@@ -33,7 +33,7 @@ import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { spaceColor } from '@mullion/shared-utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 

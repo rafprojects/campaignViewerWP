@@ -14,9 +14,9 @@
  */
 import type { CSSProperties } from 'react';
 import type { LayoutGraphicLayer } from '@/types';
-import { getClipPathForShape } from '@wp-super-gallery/shared-utils';
-import { buildFilterCss, getBlendModeCss } from '@wp-super-gallery/shared-utils';
-import { buildGraphicLayerTransform } from '@wp-super-gallery/shared-utils';
+import { getClipPathForShape } from '@mullion/shared-utils';
+import { buildFilterCss, getBlendModeCss } from '@mullion/shared-utils';
+import { buildGraphicLayerTransform } from '@mullion/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

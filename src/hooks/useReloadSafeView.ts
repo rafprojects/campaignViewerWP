@@ -1,5 +1,5 @@
-import { useReloadSafeView as useReloadSafeViewBase } from '@wp-super-gallery/shared-utils';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useReloadSafeView as useReloadSafeViewBase } from '@mullion/shared-utils';
+import { useRootId } from '@mullion/shared-ui';
 
 /**
  * App-side wrapper around the context-free

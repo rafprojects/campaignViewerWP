@@ -2,7 +2,7 @@
  * P62-A gating test for LayoutBuilderPropertiesPanel — text-layer editor.
  *
  * Regression guard: in the premium build the text properties editor must be
- * gated on the runtime `isPro` license, not only the `__WPSG_PREMIUM__` build
+ * gated on the runtime `isPro` license, not only the `__MULLION_PREMIUM__` build
  * flag. An unlicensed premium user editing an existing text layer would have
  * their edits silently discarded by the server-side freeze
  * (WPSG_Layout_Templates::enforce_license_gates) on save — so we show the

@@ -1,4 +1,4 @@
-import { Lightbox } from '@wp-super-gallery/shared-ui';
+import { Lightbox } from '@mullion/shared-ui';
 import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 
 interface AdapterLightboxProps {

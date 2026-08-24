@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { AuthBarMinimal, type SpaceSwitcherSpace } from '@wp-super-gallery/shared-ui';
+import { AuthBarMinimal, type SpaceSwitcherSpace } from '@mullion/shared-ui';
 
 type Win = typeof window & { [key: string]: unknown };
 

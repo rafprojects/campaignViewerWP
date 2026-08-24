@@ -19,7 +19,7 @@ import {
   type ShadowPreset,
 } from '@/types';
 import { ModalSelect } from '@/components/Common/ModalSelect';
-import { CSS_BORDER_RADIUS_UNITS, CSS_SPACING_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_BORDER_RADIUS_UNITS, CSS_SPACING_UNITS } from '@mullion/shared-utils';
 import {
   collectGalleryAdapterSettingValues,
   getRepresentativeGalleryCommonSetting,

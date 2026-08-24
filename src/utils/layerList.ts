@@ -16,7 +16,7 @@
  * subtrees without rescanning the tree on every render.
  */
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutTextLayer, LayoutGroup } from '@/types';
-import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
+import { buildGroupMap, collectDescendantSlotIds } from '@mullion/shared-utils';
 
 // ── Types ──────────────────────────────────────────────────────────────
 

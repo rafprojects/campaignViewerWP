@@ -1,7 +1,7 @@
 import { Badge, Menu, Text } from '@mantine/core';
 import { IconChevronDown, IconCheck } from '@tabler/icons-react';
 import i18n from 'i18next';
-import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { spaceColor } from '@mullion/shared-utils';
 
 /** Minimal structural shape of a gallery space the switcher needs.
  *  The app's `PageSpace` (which also has `id`/`slug`) is assignable to this. */

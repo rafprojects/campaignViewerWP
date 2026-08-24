@@ -19,8 +19,8 @@ import {
   getFailedFonts,
   CSS_SPACING_UNITS,
   CSS_TRACKING_UNITS,
-} from '@wp-super-gallery/shared-utils';
-import { useRecentFonts } from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
+import { useRecentFonts } from '@mullion/shared-utils';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
 import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';

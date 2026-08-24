@@ -1,5 +1,5 @@
 {
-  "name": "@wp-super-gallery/theme-engine",
+  "name": "@mullion/theme-engine",
   "version": "1.0.0",
   "private": false,
   "type": "module",
@@ -19,10 +19,10 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json && rm -rf dist/definitions && cp -r src/definitions dist/definitions",
     "clean": "rm -rf dist",
-    "prepack": "npm run clean && npm -w @wp-super-gallery/shared-utils run build && npm run build"
+    "prepack": "npm run clean && npm -w @mullion/shared-utils run build && npm run build"
   },
   "dependencies": {
-    "@wp-super-gallery/shared-utils": "^1.0.0",
+    "@mullion/shared-utils": "^1.0.0",
     "chroma-js": "^3.2.0"
   }
 }

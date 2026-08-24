@@ -54,11 +54,11 @@ import { SettingsIntegrationsTab } from '../Settings/tabs/SettingsIntegrationsTa
 import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useRootId } from '@mullion/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage, spaceColor } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage, spaceColor } from '@mullion/shared-utils';
 
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
 
@@ -69,7 +69,7 @@ import {
 import { normalizeCardConfigSettings } from '@/utils/cardConfig';
 import { useGetSettings, useUpdateSettings, SETTINGS_QUERY_KEY, getSettingsQueryKey, normalizeSettingsResponse } from '@/services/settingsQuery';
 import { SETTING_TOOLTIPS } from '@/data/settingTooltips';
-import { toCss } from '@wp-super-gallery/shared-utils';
+import { toCss } from '@mullion/shared-utils';
 import { resolveSettingsPanelTransition } from './settingsPanelTransition';
 
 /**

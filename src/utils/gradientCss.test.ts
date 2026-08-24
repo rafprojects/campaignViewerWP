@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@mullion/shared-utils';
 import type { GradientStop } from '@/types';
 
 const twoStops: GradientStop[] = [

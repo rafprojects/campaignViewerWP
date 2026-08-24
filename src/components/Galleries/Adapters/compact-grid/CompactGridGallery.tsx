@@ -28,9 +28,9 @@ import type {
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';

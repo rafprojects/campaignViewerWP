@@ -23,7 +23,7 @@ import { IconCopy, IconRefresh, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient, WebhookEndpoint } from '@/services/apiClient';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 
 // value + English default; the label is translated at the use site (t key set_wh_<event>).
 const WEBHOOK_EVENTS = [

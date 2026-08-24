@@ -9,7 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { WpNonceProvider } from './services/auth/WpNonceProvider';
 import { useAuth } from './hooks/useAuth';
-import { LoginForm } from '@wp-super-gallery/shared-ui';
+import { LoginForm } from '@mullion/shared-ui';
 import { AuthBar } from './components/Auth/AuthBar';
 import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
@@ -24,14 +24,14 @@ import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './ty
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
-import { sortByOrder } from '@wp-super-gallery/shared-utils';
-import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { sortByOrder } from '@mullion/shared-utils';
+import { useBuilderDeepLink } from '@mullion/shared-utils';
 import { useTranslation } from 'react-i18next';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
-import { useRootId } from '@wp-super-gallery/shared-ui';
-import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
+import { useRootId } from '@mullion/shared-ui';
+import { useOnlineStatus } from '@mullion/shared-utils';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
-import { useIdleTimeout } from '@wp-super-gallery/shared-utils';
+import { useIdleTimeout } from '@mullion/shared-utils';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
@@ -41,7 +41,7 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-import { toCss } from '@wp-super-gallery/shared-utils';
+import { toCss } from '@mullion/shared-utils';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));

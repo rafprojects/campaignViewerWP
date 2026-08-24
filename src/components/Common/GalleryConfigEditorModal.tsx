@@ -19,7 +19,7 @@ import {
   type GalleryConfig,
   type GalleryConfigBreakpoint,
 } from '@/types';
-import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
+import { useLazyAccordion } from '@mullion/shared-utils';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
 import {

@@ -21,8 +21,8 @@ vi.mock('react-zoom-pan-pinch', () => ({
   TransformComponent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('./LayoutCanvas', () => ({ LayoutCanvas: () => null }));
-vi.mock('@wp-super-gallery/shared-ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@wp-super-gallery/shared-ui')>()),
+vi.mock('@mullion/shared-ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@mullion/shared-ui')>()),
   useRootId: () => 'test-root',
 }));
 

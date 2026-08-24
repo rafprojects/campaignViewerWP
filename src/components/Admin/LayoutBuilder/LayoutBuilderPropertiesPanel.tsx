@@ -13,7 +13,7 @@ import { useWpsgLicense } from '@/hooks/useWpsgLicense';
 
 // P62-G: gate the Pro text editor behind the build flag so the free WP.org build
 // dead-code-eliminates TextPropertiesPanel (and its heavyweight TypographyEditor).
-const TextPropertiesPanel = __WPSG_PREMIUM__
+const TextPropertiesPanel = __MULLION_PREMIUM__
   ? lazy(() => import('./TextPropertiesPanel').then((m) => ({ default: m.TextPropertiesPanel })))
   : null;
 
@@ -128,7 +128,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     return (
       <Box style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_text', 'TEXT LAYER')}</Text>
-        {__WPSG_PREMIUM__ && TextPropertiesPanel && isPro ? (
+        {__MULLION_PREMIUM__ && TextPropertiesPanel && isPro ? (
           <Suspense fallback={null}>
             <TextPropertiesPanel
               key={selectedText.id}
@@ -148,7 +148,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           </Suspense>
         ) : (
           // Text-layer editing is a Pro feature. Two paths reach here:
-          //  • free WP.org build (__WPSG_PREMIUM__ false) — TextPropertiesPanel is
+          //  • free WP.org build (__MULLION_PREMIUM__ false) — TextPropertiesPanel is
           //    dead-code-eliminated entirely; existing text still renders on canvas.
           //  • premium build, unlicensed runtime (!isPro) — we must NOT show a live
           //    editor: the server freezes `texts` on save (enforce_license_gates),

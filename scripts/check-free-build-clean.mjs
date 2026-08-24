@@ -1,10 +1,10 @@
 /**
  * P62-G(g): assert the WordPress.org "free" build excludes all Pro authoring code.
  *
- * Run this AFTER a free build (`WPSG_PREMIUM=false npm run build`) — e.g. via
+ * Run this AFTER a free build (`MULLION_PREMIUM=false npm run build`) — e.g. via
  * `npm run check:free-build`, which builds then checks. It fails (exit 1) if any
  * Pro-only marker appears in `dist/assets`, which would mean the free build ships
- * locked functionality that WordPress.org disallows (a `__WPSG_PREMIUM__` regression).
+ * locked functionality that WordPress.org disallows (a `__MULLION_PREMIUM__` regression).
  *
  * Markers are chosen to survive minification:
  *   - forbidden chunk filenames (Pro lazy chunks Rollup names after their module), and
@@ -36,7 +36,7 @@ let jsFiles;
 try {
   jsFiles = readdirSync(DIST_ASSETS).filter((f) => f.endsWith('.js'));
 } catch {
-  console.error(`FAIL — ${DIST_ASSETS} not found. Run a free build first: WPSG_PREMIUM=false npm run build`);
+  console.error(`FAIL — ${DIST_ASSETS} not found. Run a free build first: MULLION_PREMIUM=false npm run build`);
   process.exit(1);
 }
 
@@ -63,7 +63,7 @@ if (violations.length > 0) {
   console.error('FAIL — the free build contains Pro code that WordPress.org disallows:\n');
   for (const v of violations) console.error(`  - ${v}`);
   console.error(
-    '\nGate the offending code behind `__WPSG_PREMIUM__` so Rollup strips it from the free build.\n' +
+    '\nGate the offending code behind `__MULLION_PREMIUM__` so Rollup strips it from the free build.\n' +
       'See docs/guides/PRO_FEATURES.md §7.',
   );
   process.exit(1);

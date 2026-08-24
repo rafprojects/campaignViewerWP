@@ -13,8 +13,8 @@ import type {
   OEmbedResponse,
 } from '@/types';
 import { ApiError } from '@/services/apiClient';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
-import { useXhrUpload } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
+import { useXhrUpload } from '@mullion/shared-utils';
 
 function normalizeSelectedFiles(value: File | File[] | null): File[] {
   if (!value) {

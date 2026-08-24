@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { adaptTheme, themeStateClasses } from '../adapter';
 // [P51-L] Theme types + bundled definitions now live in the theme-engine package.
-import { type ThemeDefinition, baseThemeDefaults, bundledThemeDefinitions } from '@wp-super-gallery/theme-engine';
+import { type ThemeDefinition, baseThemeDefaults, bundledThemeDefinitions } from '@mullion/theme-engine';
 
 const baseDefaults = baseThemeDefaults;
 const defaultDarkDef = bundledThemeDefinitions.find((t) => t.id === 'default-dark')!;

@@ -19,7 +19,7 @@ import type {
 } from '@/services/apiClient';
 import type { GalleryConfig, MediaItem } from '@/types';
 import { fetchAllPages } from '@/services/pagination';
-import { sortByOrder } from '@wp-super-gallery/shared-utils';
+import { sortByOrder } from '@mullion/shared-utils';
 
 type ListResponse<T> = T[] | { items?: T[]; entries?: T[]; grants?: T[]; data?: T[] };
 

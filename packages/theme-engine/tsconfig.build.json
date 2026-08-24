@@ -18,7 +18,7 @@
     // program; the emitted JS keeps the bare import as a real dependency.
     // Requires shared-utils to be built first (see prepack).
     "paths": {
-      "@wp-super-gallery/shared-utils": ["../shared-utils/dist/index.d.ts"]
+      "@mullion/shared-utils": ["../shared-utils/dist/index.d.ts"]
     },
     "tsBuildInfoFile": "./node_modules/.tmp/theme-engine.build.tsbuildinfo"
   },

@@ -21,7 +21,7 @@ import { ThemeProvider } from './contexts/ThemeContext'
 import { resolveWpThemeIds } from './services/wpThemeId'
 import { useTheme } from './hooks/useTheme'
 import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/themeScope'
-import { RootIdProvider } from '@wp-super-gallery/shared-ui'
+import { RootIdProvider } from '@mullion/shared-ui'
 import { parseProps, parseNodeConfig, type MountProps, type NodeConfig } from './mountConfig'
 import { ErrorBoundary } from './components/ErrorBoundary'
 

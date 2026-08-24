@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
-import { safeLocalStorage, spaceColor } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage, spaceColor } from '@mullion/shared-utils';
 import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
 
 const STORAGE_KEY = 'wpsg-authbar-pos';

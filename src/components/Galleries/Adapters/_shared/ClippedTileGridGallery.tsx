@@ -19,7 +19,7 @@ import type {
   MediaItem,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber, useCarousel, resolveTileGridLayout } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber, useCarousel, resolveTileGridLayout } from '@mullion/shared-utils';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from './tileHoverStyles';
 import { getWpsgDebugProps } from '@/utils/wpsgDebug';

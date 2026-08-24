@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from '@/test/test-utils';
 import { GraphicLayerContent } from './GraphicLayerContent';
-import { buildGraphicLayerTransform } from '@wp-super-gallery/shared-utils';
+import { buildGraphicLayerTransform } from '@mullion/shared-utils';
 import type { LayoutGraphicLayer } from '@/types';
 
 const base: LayoutGraphicLayer = {

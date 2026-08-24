@@ -15,14 +15,14 @@ import {
   centerSlotsHorizontally, centerSlotsVertically,
   distributeSlotsHorizontally, distributeSlotsVertically,
   distributeSlotsHorizontallyByGap, distributeSlotsVerticallyByGap,
-} from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { useRootId } from '@mullion/shared-ui';
 import { useWpsgLicense } from '@/hooks/useWpsgLicense';
 import { showProUpsell } from '@/utils/wpsgUpsell';
 
@@ -226,7 +226,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           {/* P62-G: text layers are Pro — the add-text control is absent from the free
               WP.org build. In the premium build the runtime isPro check below still
               upsells expired/unlicensed installs. */}
-          {__WPSG_PREMIUM__ && (
+          {__MULLION_PREMIUM__ && (
             <Tooltip label={tr('lb_layers_add_text', 'Add text')}>
               <ActionIcon
                 size="sm"

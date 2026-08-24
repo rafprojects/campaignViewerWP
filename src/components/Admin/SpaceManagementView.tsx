@@ -14,7 +14,7 @@ import { useSpaces } from '@/services/adminQuery';
 import { SettingsPanel } from './SettingsPanel';
 import { SpaceAssetLibrary } from './SpaceAssetLibrary';
 import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
-import type { FontLibraryEntry } from '@wp-super-gallery/shared-utils';
+import type { FontLibraryEntry } from '@mullion/shared-utils';
 
 interface SpaceGrant {
   userId: number;

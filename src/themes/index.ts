@@ -31,7 +31,7 @@ import {
   resolveColors,
   baseThemeDefaults,
   bundledThemeDefinitions,
-} from '@wp-super-gallery/theme-engine';
+} from '@mullion/theme-engine';
 import { adaptTheme } from './adapter';
 import catalogData from '../../wp-plugin/mullion-gallery/theme-catalog.json';
 

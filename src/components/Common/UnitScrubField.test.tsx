@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { UnitScrubField } from './UnitScrubField';
-import { CSS_WIDTH_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_WIDTH_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS } from '@mullion/shared-utils';
 
 describe('UnitScrubField', () => {
 	it('renders label and value', () => {

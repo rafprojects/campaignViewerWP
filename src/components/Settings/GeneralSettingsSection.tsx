@@ -5,9 +5,9 @@ import { GradientEditor } from '@/components/Common/GradientEditor';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
-import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
+import { useLazyAccordion } from '@mullion/shared-utils';
 import { type GalleryBehaviorSettings } from '@/types';
-import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_WIDTH_UNITS, CSS_SPACING_UNITS } from '@mullion/shared-utils';
 
 import { ThemeSelector } from '../Admin/ThemeSelector';
 

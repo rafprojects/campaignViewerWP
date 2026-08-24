@@ -31,9 +31,9 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { useLightbox } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
+import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
@@ -43,7 +43,7 @@ import {
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
-import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
+import { resolveBoundedSectionHeight } from '@mullion/shared-utils';
 
 /** Fallback snap container height when the section has no measured height. */
 const FALLBACK_HEIGHT_PX = 500;

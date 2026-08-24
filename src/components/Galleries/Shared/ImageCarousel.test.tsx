@@ -79,7 +79,7 @@ const images: MediaItem[] = [
 
 describe('ImageCarousel', () => {
   beforeAll(async () => {
-    await import('@wp-super-gallery/shared-ui');
+    await import('@mullion/shared-ui');
   });
 
   beforeEach(() => {

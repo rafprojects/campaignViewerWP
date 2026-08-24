@@ -33,21 +33,21 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import { useLayoutTemplate } from '@/hooks/useLayoutTemplate';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { assignMediaToSlots, resolveSlotWithOverrides, resolveSlotForBreakpoint, containerWidthToBreakpoint } from '@/utils/layoutSlotAssignment';
 import { buildSlotEntranceCss, entranceKeyframeName, ENTRANCE_MARKER_CLASS, REVEAL_CLASS } from '@/utils/slotEntrance';
 import { buildTileStyles, buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
 import { getClipPath, usesClipPath } from '@/utils/clipPath';
-import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
-import { computeBreakpointBand } from '@wp-super-gallery/shared-utils';
-import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss, templateToGradientOpts } from '@mullion/shared-utils';
+import { computeBreakpointBand } from '@mullion/shared-utils';
+import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@mullion/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { GraphicLayerContent } from './GraphicLayerContent';
 import { TextLayerContent } from './TextLayerContent';
-import { useViewportHeight } from '@wp-super-gallery/shared-utils';
-import { sanitizeCssUrl, toCssOrNumber } from '@wp-super-gallery/shared-utils';
+import { useViewportHeight } from '@mullion/shared-utils';
+import { sanitizeCssUrl, toCssOrNumber } from '@mullion/shared-utils';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 

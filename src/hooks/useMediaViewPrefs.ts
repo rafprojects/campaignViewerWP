@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocalStorage } from '@mantine/hooks';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage } from '@mullion/shared-utils';
 import type { MediaSortMode } from '@/components/Admin/applySortMode';
 
 export type ViewMode = 'grid' | 'list' | 'compact';

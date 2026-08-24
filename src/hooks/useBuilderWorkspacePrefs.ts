@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
-import type { SnapMode } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage } from '@mullion/shared-utils';
+import type { SnapMode } from '@mullion/shared-utils';
 
 export type LayoutScope = 'global' | 'per-template';
 

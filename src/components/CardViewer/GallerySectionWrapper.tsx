@@ -12,8 +12,8 @@ import type {
   GalleryBehaviorSettings,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { clampDimension } from '@wp-super-gallery/shared-utils';
-import { toCss, sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
+import { clampDimension } from '@mullion/shared-utils';
+import { toCss, sanitizeCssUrl } from '@mullion/shared-utils';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
 import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 

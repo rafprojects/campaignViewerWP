@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { Text } from '@mantine/core';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
 import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';

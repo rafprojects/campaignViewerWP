@@ -31,8 +31,8 @@ afterAll(() => {
 
 // useCarousel now lives in the shared-utils barrel (P51-B): spread the real
 // module and override just the hook.
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
   return {
     ...actual,
     useCarousel: () => ({
@@ -44,7 +44,7 @@ vi.mock('@wp-super-gallery/shared-utils', async () => {
   };
 });
 
-vi.mock('@wp-super-gallery/shared-ui', () => ({
+vi.mock('@mullion/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { AuthBarFloating, type SpaceSwitcherSpace } from '@wp-super-gallery/shared-ui';
+import { AuthBarFloating, type SpaceSwitcherSpace } from '@mullion/shared-ui';
 import type { Campaign, Company, MediaItem } from '@/types';
 
 type Win = typeof window & { [key: string]: unknown };

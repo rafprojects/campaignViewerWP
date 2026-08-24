@@ -4,10 +4,10 @@ import { Accordion, Alert, Badge, Divider, Group, Loader, NumberInput, Select, S
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 
-import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
+import { useLazyAccordion } from '@mullion/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_HEIGHT_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 
 import { DimensionInput } from './DimensionInput';
 

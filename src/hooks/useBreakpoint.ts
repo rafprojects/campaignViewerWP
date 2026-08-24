@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useMantineTheme } from '@mantine/core';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import type { ResponsiveBreakpoint } from '@/types';
 
 /**

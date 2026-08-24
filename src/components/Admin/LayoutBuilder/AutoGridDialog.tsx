@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, NumberInput, Switch, Button, Stack, Group, Text } from '@mantine/core';
-import { computeGridSlots } from '@wp-super-gallery/shared-utils';
+import { computeGridSlots } from '@mullion/shared-utils';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
 
 export interface AutoGridDialogProps {

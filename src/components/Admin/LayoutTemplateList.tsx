@@ -48,9 +48,9 @@ const LayoutBuilderModal = lazy(() =>
   import('./LayoutBuilder/LayoutBuilderModal').then((m) => ({ default: m.LayoutBuilderModal }))
 );
 // P62-F: gate the Pro starter-library chunk behind the build-time premium flag. In the
-// free build (WPSG_PREMIUM=false) __WPSG_PREMIUM__ is a literal `false`, so Rollup drops
+// free build (MULLION_PREMIUM=false) __MULLION_PREMIUM__ is a literal `false`, so Rollup drops
 // this dynamic import and, transitively, PresetGalleryModal + LAYOUT_PRESETS (layoutPresets).
-const PresetGalleryModal = __WPSG_PREMIUM__
+const PresetGalleryModal = __MULLION_PREMIUM__
   ? lazy(() =>
       import('./LayoutBuilder/PresetGalleryModal').then((m) => ({ default: m.PresetGalleryModal }))
     )
@@ -64,7 +64,7 @@ import {
   useLayoutTemplates,
 } from '@/services/layoutTemplateQuery';
 import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { useBuilderDeepLink } from '@mullion/shared-utils';
 import { useWpsgLicense } from '@/hooks/useWpsgLicense';
 import { showProUpsell } from '@/utils/wpsgUpsell';
 
@@ -400,7 +400,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
           {/* P62-F: the "From Preset" CTA is Pro-only and absent from the free build, so
               the WP.org listing ships no locked feature. In the premium build the runtime
               isPro check below still upsells expired/unlicensed installs. */}
-          {__WPSG_PREMIUM__ && (
+          {__MULLION_PREMIUM__ && (
             <Button
               variant="light"
               leftSection={<IconLayoutDashboard size={16} />}
@@ -582,7 +582,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
 
       {/* Preset gallery (P15-J.2). P62-F: Pro-only — this whole block (and the lazy import
           above) is dead-code-eliminated from the free build. */}
-      {__WPSG_PREMIUM__ && PresetGalleryModal && (
+      {__MULLION_PREMIUM__ && PresetGalleryModal && (
         <Suspense fallback={null}>
           {presetGalleryOpen && (
             <PresetGalleryModal
