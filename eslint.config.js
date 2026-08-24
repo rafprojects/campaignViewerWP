@@ -26,9 +26,9 @@ export default tseslint.config({
     '.claude',
     'coverage',
     'node_modules',
-    'wp-plugin/wp-super-gallery/admin/build/**',
-    'wp-plugin/wp-super-gallery/assets',
-    'wp-plugin/wp-super-gallery/vendor',
+    'wp-plugin/mullion-gallery/admin/build/**',
+    'wp-plugin/mullion-gallery/assets',
+    'wp-plugin/mullion-gallery/vendor',
     'storybook-static',
   ],
 }, {

@@ -25,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const EN_JSON = path.join(ROOT, 'src', 'i18n-strings.en.json');
-const LANG_DIR = path.join(ROOT, 'wp-plugin', 'wp-super-gallery', 'languages');
+const LANG_DIR = path.join(ROOT, 'wp-plugin', 'mullion-gallery', 'languages');
 
 /** Reference locales that ship complete (see docs/guides/TRANSLATING.md). */
 const LOCALES = ['de_DE', 'es_ES', 'fr_FR', 'ru_RU', 'zh_CN'];
@@ -146,10 +146,10 @@ function main() {
     console.error(
       '\n✗ i18n locale coverage incomplete. After adding front-end strings, run:\n' +
       '    npm run i18n:generate\n' +
-      '    wp i18n make-pot wp-plugin/wp-super-gallery wp-plugin/wp-super-gallery/languages/wp-super-gallery.pot --domain=wp-super-gallery --exclude=node_modules,vendor,tests,build\n' +
+      '    wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/wp-super-gallery.pot --domain=wp-super-gallery --exclude=node_modules,vendor,tests,build\n' +
       '  then translate the new msgstr in each languages/wp-super-gallery-*.po and recompile:\n' +
-      '    wp i18n make-mo  wp-plugin/wp-super-gallery/languages\n' +
-      '    wp i18n make-php wp-plugin/wp-super-gallery/languages\n' +
+      '    wp i18n make-mo  wp-plugin/mullion-gallery/languages\n' +
+      '    wp i18n make-php wp-plugin/mullion-gallery/languages\n' +
       '  See docs/guides/TRANSLATING.md.',
     );
     process.exit(1);

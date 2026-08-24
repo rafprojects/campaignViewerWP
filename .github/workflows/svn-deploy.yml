@@ -81,8 +81,8 @@ jobs:
 
           mkdir -p deploy-dir
           unzip "$ZIP_NAME" -d deploy-dir
-          echo "Extracted to deploy-dir/wp-super-gallery/"
-          ls -la deploy-dir/wp-super-gallery/
+          echo "Extracted to deploy-dir/mullion-gallery/"
+          ls -la deploy-dir/mullion-gallery/
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to WordPress.org SVN
@@ -94,4 +94,4 @@ jobs:
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: wp-super-gallery
           VERSION: ${{ steps.extract.outputs.version }}
-          BUILD_DIR: deploy-dir/wp-super-gallery
+          BUILD_DIR: deploy-dir/mullion-gallery

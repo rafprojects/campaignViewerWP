@@ -33,7 +33,7 @@ import {
   bundledThemeDefinitions,
 } from '@wp-super-gallery/theme-engine';
 import { adaptTheme } from './adapter';
-import catalogData from '../../wp-plugin/wp-super-gallery/theme-catalog.json';
+import catalogData from '../../wp-plugin/mullion-gallery/theme-catalog.json';
 
 // ---------------------------------------------------------------------------
 // Catalog lookup — keyed by theme ID

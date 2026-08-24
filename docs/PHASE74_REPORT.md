@@ -1,6 +1,6 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** Planned — no code yet
+**Status:** In progress — P74-A landed, remaining tracks Planned
 **Created:** 2026-08-23
 **Last updated:** 2026-08-23
 
@@ -8,7 +8,7 @@
 
 | Track | Description | Status | Risk |
 |-------|-------------|--------|------|
-| P74-A | Plugin folder rename (`wp-plugin/wp-super-gallery/` → `wp-plugin/mullion-gallery/`) and every tooling path reference | Planned | High (mechanical, broad) |
+| P74-A | Plugin folder rename (`wp-plugin/wp-super-gallery/` → `wp-plugin/mullion-gallery/`) and every tooling path reference | Done | High (mechanical, broad) |
 | P74-B | Plugin metadata: header, `package.json` name | Planned | Low |
 | P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Planned | Medium |
 | P74-D | Shortcode rename with a `super-gallery` backward-compat alias | Planned | Low |
@@ -88,6 +88,21 @@ The plugin's entire PHP/WordPress footprint lives at `wp-plugin/wp-super-gallery
 
 - Local `wp-env` boot + admin screen load.
 - `git status` shows a clean rename (not a delete+add that loses history) where the tooling supports it.
+
+### Implementation Notes (2026-08-23)
+
+- **Scope call, confirmed with the user first:** the track's own Fix section and Acceptance Criteria disagreed — Fix lists only tooling/config files, but the criteria demanded zero `wp-plugin/wp-super-gallery` hits repo-wide except `docs/archive/`, which would also require touching 21 non-archive `docs/*.md` files that P74-M ("Documentation sweep") explicitly owns. Chose **tooling/config only**, deferring all `docs/` prose (including the literal path string) to P74-M, to avoid piecemeal drift ahead of that track's full sweep.
+- `git mv wp-plugin/wp-super-gallery wp-plugin/mullion-gallery` — git recorded a clean rename (189 files, `R` status) for the whole tree.
+- Updated every non-docs tooling/build/test path reference to the old folder, found via repeated `grep -rln "wp-plugin/wp-super-gallery"` passes (extension-filtered first, then a final unfiltered repo-wide pass to catch anything the filtered pass missed): `.wp-env.json`, `.gitignore`, `eslint.config.js`, `.github/workflows/{ci,release,svn-deploy}.yml`, `scripts/{copy-wp-assets.js,generate-frontend-i18n.mjs,check-i18n-locales.mjs,validate-themes.mjs,validate-adapter-settings-parity.mjs}`, `update_dev_plugin.sh`.
+- **Beyond the phase doc's explicit file list** (its Fix section names `.wp-env.json`, CI workflows, `scripts/copy-wp-assets.js`, `.distignore`, PHPUnit config — the doc did not anticipate these), the unfiltered grep pass surfaced four more path references that would have actively broken things had they been left:
+  - [src/themes/index.ts](../src/themes/index.ts) statically imports `../../wp-plugin/wp-super-gallery/theme-catalog.json` — a stale path here fails module resolution outright (Vite build error, not just a broken dev script). This was the highest-risk miss the doc didn't call out.
+  - [src/components/Galleries/Adapters/adapterSettingsParity.test.ts](../src/components/Galleries/Adapters/adapterSettingsParity.test.ts) reads four PHP/JSON files from the plugin tree at test-run time (schema JSON, settings registry, CPT class, sanitizer class) via `readFileSync` — a stale path here fails the test with ENOENT rather than a real assertion failure.
+  - `update_dev_plugin.sh` (local dev convenience script, both its source and destination plugin-dir variables).
+  - `public/.htaccess` and its committed copy `wp-plugin/mullion-gallery/assets/.htaccess` — an Nginx config example in a comment hardcodes `/wp-content/plugins/wp-super-gallery/assets/...`; updated for path-fidelity even though it's non-executable prose, since (unlike the docs/ sweep) this is a real on-disk-path reference site admins would copy verbatim.
+  - Left `wp-plugin/mullion-gallery/tests/WPSG_Logger_Test.php`'s `/var/www/html/wp-content/plugins/wp-super-gallery/test.php` fixture value untouched — it's arbitrary sample data for a logger test, no assertion depends on the string, not a real path-tooling reference.
+- **Held back on purpose**, staying inside files this track legitimately owns rather than reaching into P74-B/C/G/K/L territory: `wp-super-gallery.php`/`readme.txt` filenames (still named per-old-brand pending P74-B), the `wp-super-gallery` text-domain and `TEXT_DOMAIN` constant / `--domain=` flags (P74-C), the `SLUG:`/`ZIP_NAME=` literals in the release/SVN-deploy workflows (P74-B/K/L), and the `class-wpsg-*.php` filenames referenced by path (P74-G). Two spots in `release.yml`/`svn-deploy.yml` *did* need their folder-name literal changed to `mullion-gallery` despite looking adjacent to that ZIP-naming/slug scope — the `zip -r`/`-x` exclude list and the `deploy-dir/…` extraction paths reference the actual on-disk directory being archived/extracted, which really is `mullion-gallery` now (independent of what the output ZIP is *named*, which stays `wp-super-gallery-v*.zip` per P74-L).
+- Verification: `php -l` across all of `wp-plugin/mullion-gallery` (excluding `vendor/`) — zero syntax errors. `npx eslint` on the changed config/script/TS files — clean. Full Vitest suite (Haiku subagent, isolated from implementation) — 3,775/3,775 tests passing across 255 files (one unhandled error in `TemplatesTab.test.tsx`'s `useTransition` timing, confirmed pre-existing and unrelated). `tsc --noEmit` — clean. `npm run build:wp` — succeeds end-to-end, assets land correctly under `wp-plugin/mullion-gallery/assets`. `node scripts/check-i18n-locales.mjs` — passes (all 5 locales, 2,379 strings). `node scripts/validate-themes.mjs` — fails, but on a pre-existing, unrelated defect: it reads theme definitions from `src/themes/definitions/`, a path that hasn't existed since Phase 51-L moved definitions to `packages/theme-engine/src/definitions/`; the script's own `theme-catalog.json` path (the one this track touched) resolves correctly.
+- Live `npx @wordpress/env start` boot check (separate Haiku subagent, WSL/Docker): boots cleanly with the plugin mounted and active at `/var/www/html/wp-content/plugins/mullion-gallery` inside the container; `wp plugin list` reports `name: mullion-gallery`, `status: active`, `version: 0.90.0` (WP-CLI derives this displayed name from the folder slug — the plugin header itself still reads "WP Super Gallery" until P74-B); `wp eval` sanity check and clean `wp-env stop` both succeeded. No errors referencing the old path.
 
 ---
 

@@ -6,7 +6,7 @@
  * gettext pipeline. Reads the canonical English source (src/i18n-strings.en.json)
  * and emits a generated PHP "strings manifest":
  *
- *   wp-plugin/wp-super-gallery/includes/i18n/class-wpsg-frontend-strings.php
+ *   wp-plugin/mullion-gallery/includes/i18n/class-wpsg-frontend-strings.php
  *
  * Each i18next key becomes an entry mapping to its English default wrapped in
  * __(), which achieves two things at once:
@@ -30,7 +30,7 @@ const SOURCE = path.join(projectRoot, 'src', 'i18n-strings.en.json');
 const TARGET = path.join(
   projectRoot,
   'wp-plugin',
-  'wp-super-gallery',
+  'mullion-gallery',
   'includes',
   'i18n',
   'class-wpsg-frontend-strings.php',

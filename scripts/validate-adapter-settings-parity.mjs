@@ -60,7 +60,7 @@ const registryKeys = [
 const phpSource = readFileSync(
   resolve(
     root,
-    'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
+    'wp-plugin/mullion-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
   ),
   'utf8',
 );

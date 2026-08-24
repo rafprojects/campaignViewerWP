@@ -3,7 +3,7 @@ import path from 'path';
 
 const projectRoot = process.cwd();
 const distDir = path.join(projectRoot, 'dist');
-const pluginAssetsDir = path.join(projectRoot, 'wp-plugin', 'wp-super-gallery', 'assets');
+const pluginAssetsDir = path.join(projectRoot, 'wp-plugin', 'mullion-gallery', 'assets');
 
 if (!fs.existsSync(distDir)) {
   console.error('dist folder not found. Run the build first.');

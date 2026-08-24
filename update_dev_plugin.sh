@@ -3,8 +3,8 @@
 # This script updates the dev plugin to the latest version of the plugin.
 
 WORDPRESS_DIR="${HOME}/wordpress"
-PLUGIN_DIR="${WORDPRESS_DIR}/wp-content/plugins/wp-super-gallery"
-SOURCE_PLUGIN_DIR="$(pwd)/wp-plugin/wp-super-gallery"
+PLUGIN_DIR="${WORDPRESS_DIR}/wp-content/plugins/mullion-gallery"
+SOURCE_PLUGIN_DIR="$(pwd)/wp-plugin/mullion-gallery"
 
 # Check if the plugin directory exists
 if [ ! -d "$PLUGIN_DIR" ]; then

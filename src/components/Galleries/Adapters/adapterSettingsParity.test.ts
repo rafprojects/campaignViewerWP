@@ -37,7 +37,7 @@ interface SchemaField {
   snakeSlug: string;
 }
 
-const schemaPath = 'wp-plugin/wp-super-gallery/includes/schema/adapter-fields.json';
+const schemaPath = 'wp-plugin/mullion-gallery/includes/schema/adapter-fields.json';
 const schema: { version: string; fields: SchemaField[] } = JSON.parse(readSource(schemaPath));
 const schemaFields = schema.fields;
 const schemaCamelKeys = new Set(schemaFields.map((f) => f.camelKey));
@@ -105,7 +105,7 @@ describe('adapter fields schema contract (P55-C)', () => {
 
   it('every schema snakeSlug is registered in PHP $defaults', () => {
     const registryPhpSource = readSource(
-      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php',
+      'wp-plugin/mullion-gallery/includes/settings/class-wpsg-settings-registry.php',
     );
     const defaultsStart = registryPhpSource.indexOf('private static $defaults = [');
     const defaultsEnd   = registryPhpSource.indexOf('\n    ];', defaultsStart);
@@ -126,7 +126,7 @@ describe('adapter fields schema contract (P55-C)', () => {
 
   it('every canonical adapter id is in WPSG_CPT::VALID_ADAPTERS', () => {
     const dataSource = readSource('src/data/adapterSettingGroups.ts');
-    const cptSource  = readSource('wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php');
+    const cptSource  = readSource('wp-plugin/mullion-gallery/includes/class-wpsg-cpt.php');
 
     const adaptersBlockStart = dataSource.indexOf('const BUILTIN_ADAPTERS');
     const adaptersBlockEnd   = dataSource.indexOf('\n];', adaptersBlockStart);
@@ -151,7 +151,7 @@ describe('adapter fields schema contract (P55-C)', () => {
 
   it('PHP sanitizer sources adapter map from WPSG_Adapter_Field_Schema, not a hand-maintained array', () => {
     const sanitizerSource = readSource(
-      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
+      'wp-plugin/mullion-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
     );
     expect(sanitizerSource).toContain('WPSG_Adapter_Field_Schema::get_map()');
     expect(sanitizerSource).not.toContain("private static $nested_adapter_field_map = [");

@@ -143,23 +143,23 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.composer/cache
-          key: composer-${{ matrix.php-version }}-${{ hashFiles('wp-plugin/wp-super-gallery/composer.lock') }}
+          key: composer-${{ matrix.php-version }}-${{ hashFiles('wp-plugin/mullion-gallery/composer.lock') }}
           restore-keys: composer-${{ matrix.php-version }}-
 
       - name: PHP syntax check
         run: |
           set -o pipefail
-          find wp-plugin/wp-super-gallery/includes -name '*.php' -exec php -l {} + 2>&1 | (! grep -q "Errors parsing")
+          find wp-plugin/mullion-gallery/includes -name '*.php' -exec php -l {} + 2>&1 | (! grep -q "Errors parsing")
 
       - name: Install Composer dependencies
-        working-directory: wp-plugin/wp-super-gallery
+        working-directory: wp-plugin/mullion-gallery
         run: composer install --prefer-dist --no-interaction
 
       # P60-C: security-scoped PHPCS gate (escaping / sanitization / nonce).
       # Runs once (not per matrix PHP version) since the ruleset is version-independent.
       - name: PHP lint (PHPCS security)
         if: matrix.php-version == '8.3'
-        working-directory: wp-plugin/wp-super-gallery
+        working-directory: wp-plugin/mullion-gallery
         run: composer lint:php
 
       - name: Download WordPress core and test library
@@ -200,7 +200,7 @@ jobs:
           EOF
 
       - name: Run PHPUnit
-        working-directory: wp-plugin/wp-super-gallery
+        working-directory: wp-plugin/mullion-gallery
         env:
           WP_TESTS_DIR: /tmp/wordpress-tests-lib
           WP_CORE_DIR: /tmp/wordpress
