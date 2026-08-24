@@ -1,0 +1,923 @@
+<title>WP Super Gallery Identity Brief</title>
+
+<style>
+  /* ============================================================
+     Palette note: this page holds its own color back on purpose.
+     The brand palette is the open question in this brief, so the
+     only saturated color here belongs to the product's own themes.
+     Neutrals carry a slight cool bias; one restrained pine accent.
+     ============================================================ */
+
+  :root {
+    --ground:      #fbfbfc;
+    --surface:     #f3f4f7;
+    --surface-2:   #ebedf1;
+    --ink:         #14171d;
+    --ink-2:       #39404d;
+    --muted:       #5c6472;
+    --faint:       #8b93a1;
+    --rule:        #dde0e6;
+    --rule-strong: #c3c8d2;
+    --accent:      #2b6b5f;
+    --accent-soft: #e2ede9;
+    --flag:        #8a4b2a;
+
+    --display: "Helvetica Neue", Helvetica, "Arial Nova", Arial, sans-serif;
+    --body: Charter, "Bitstream Charter", "Sitka Text", Cambria, Georgia, serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #101318;
+      --surface:     #171b22;
+      --surface-2:   #1f242d;
+      --ink:         #e9ebef;
+      --ink-2:       #c3c8d2;
+      --muted:       #99a1af;
+      --faint:       #6f7887;
+      --rule:        #262c36;
+      --rule-strong: #39414e;
+      --accent:      #6ab5a2;
+      --accent-soft: #17302b;
+      --flag:        #d0906a;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #101318;
+    --surface:     #171b22;
+    --surface-2:   #1f242d;
+    --ink:         #e9ebef;
+    --ink-2:       #c3c8d2;
+    --muted:       #99a1af;
+    --faint:       #6f7887;
+    --rule:        #262c36;
+    --rule-strong: #39414e;
+    --accent:      #6ab5a2;
+    --accent-soft: #17302b;
+    --flag:        #d0906a;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+    padding: 0 1.5rem 8rem;
+  }
+
+  .page { max-width: 68rem; margin: 0 auto; }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: 5rem 0 3rem;
+    border-bottom: 2px solid var(--ink);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 3rem;
+    align-items: end;
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1.25rem;
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 6.5vw, 4.25rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+    text-wrap: balance;
+    margin: 0 0 1.25rem;
+  }
+
+  .standfirst {
+    font-size: 1.1875rem;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 34ch;
+    margin: 0;
+  }
+
+  .masthead-mark { display: flex; align-items: flex-end; }
+
+  /* ---------- status strip ---------- */
+
+  .status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2.5rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+  }
+  .status b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- sections ---------- */
+
+  .sec {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    gap: 0 2.75rem;
+    padding: 3.5rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .rail { position: relative; }
+
+  .eyebrow {
+    position: sticky;
+    top: 1.5rem;
+    display: block;
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--faint);
+    padding-top: 0.6rem;
+    border-top: 2px solid var(--rule-strong);
+  }
+
+  .col { max-width: 78ch; }
+  .col > * { margin-top: 0; }
+  .col > * + * { margin-top: 1.15rem; }
+  .col p, .col ul, .col ol { max-width: 68ch; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.2vw, 2.1rem);
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 1.0625rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.35;
+    margin: 2.5rem 0 0;
+  }
+  .col > h3 + * { margin-top: 0.6rem; }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2rem 0 0;
+  }
+  .col > h4 + * { margin-top: 0.7rem; }
+
+  p { margin: 0; }
+  strong { font-weight: 700; color: var(--ink); }
+  em { font-style: italic; }
+
+  a {
+    color: var(--accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ul, ol { padding-left: 1.15rem; margin: 0; }
+  li + li { margin-top: 0.5rem; }
+  li::marker { color: var(--faint); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.8125em;
+    background: var(--surface-2);
+    padding: 0.12em 0.4em;
+    border-radius: 3px;
+    color: var(--ink-2);
+    word-break: break-word;
+  }
+
+  pre {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.75;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 2px solid var(--accent);
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+    margin: 0;
+  }
+  pre code { background: none; padding: 0; font-size: 1em; }
+
+  .lede {
+    font-size: 1.1875rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+
+  /* ---------- callouts ---------- */
+
+  .note {
+    border-left: 2px solid var(--rule-strong);
+    padding: 0.15rem 0 0.15rem 1.15rem;
+    color: var(--muted);
+    font-size: 0.9375rem;
+    line-height: 1.65;
+  }
+
+  .flag {
+    border-left: 2px solid var(--flag);
+    padding: 0.15rem 0 0.15rem 1.15rem;
+    font-size: 0.9375rem;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+  .flag b { color: var(--flag); }
+
+  .pull {
+    font-family: var(--display);
+    font-size: clamp(1.35rem, 3vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
+    text-wrap: balance;
+    color: var(--ink);
+    border-top: 2px solid var(--ink);
+    border-bottom: 1px solid var(--rule);
+    padding: 1.25rem 0;
+    margin: 2rem 0 !important;
+    max-width: 30ch;
+  }
+
+  /* ---------- tables ---------- */
+
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.9rem;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-align: left;
+    padding: 0 1.25rem 0.6rem 0;
+    border-bottom: 1px solid var(--rule-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.7rem 1.25rem 0.7rem 0;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  tr:last-child td { border-bottom: none; }
+  td:last-child, th:last-child { padding-right: 0; }
+
+  /* ---------- layout name chips ---------- */
+
+  .layouts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .layouts span {
+    font-family: var(--display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    color: var(--ink-2);
+  }
+  .layouts span.hero {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  /* ---------- swatches ---------- */
+
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.5rem;
+  }
+  .sw {
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .sw-chip {
+    height: 3.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sw-dot {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(127, 127, 127, 0.22);
+  }
+  .sw-meta {
+    padding: 0.5rem 0.6rem 0.6rem;
+    background: var(--surface);
+  }
+  .sw-name {
+    font-family: var(--display);
+    font-size: 0.75rem;
+    font-weight: 650;
+    letter-spacing: -0.005em;
+    line-height: 1.3;
+    color: var(--ink);
+  }
+  .sw-hex {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.01em;
+    color: var(--faint);
+    margin-top: 0.15rem;
+  }
+
+  /* core palette rows */
+  .corepal {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+    gap: 0.5rem;
+  }
+  .cp { border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .cp-chip { height: 2.75rem; }
+  .cp-meta { padding: 0.4rem 0.55rem 0.5rem; background: var(--surface); }
+  .cp-role {
+    font-family: var(--display);
+    font-size: 0.6875rem;
+    font-weight: 650;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .cp-hex {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    color: var(--faint);
+    margin-top: 0.1rem;
+  }
+
+  /* ---------- the size-test rig ---------- */
+
+  .rig {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 2.5rem;
+    padding: 2rem 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+  }
+  .rig-item { text-align: center; }
+  .rig-label {
+    font-family: var(--mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.75rem;
+    line-height: 1.5;
+  }
+  .rig-label b { display: block; color: var(--ink); font-weight: 600; }
+
+  /* the Freemius opt-in reproduction: white ground, 1px #efefef, 3px pad, circle */
+  .fs-crop {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #efefef;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    --mark-cut: #ffffff;
+  }
+
+  .mark { display: block; }
+
+  /* ---------- geometry demo ---------- */
+
+  .geo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    align-items: flex-end;
+  }
+  .geo-item { text-align: center; }
+  .geo-shape {
+    width: 74px;
+    height: 74px;
+    background: var(--accent);
+  }
+  .geo-hex { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+  .geo-dia { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+  .geo-sq  { border-radius: 8px; }
+  .geo-cap {
+    font-family: var(--mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  /* ---------- deliverable checklist ---------- */
+
+  .files { font-family: var(--mono); font-size: 0.8125rem; }
+
+  .footer {
+    padding: 3rem 0 0;
+    font-family: var(--mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 2rem;
+  }
+
+  @media (max-width: 760px) {
+    body { font-size: 16px; padding: 0 1.15rem 5rem; }
+    .masthead {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 2rem;
+      padding: 3rem 0 2rem;
+    }
+    .masthead-mark { order: -1; }
+    .sec { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 2.5rem 0; }
+    .eyebrow { position: static; }
+    .status { gap: 0.35rem 1.75rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="page">
+
+  <header class="masthead">
+    <div>
+      <p class="kicker">Design brief — visual identity</p>
+      <h1>WP&nbsp;Super Gallery</h1>
+      <p class="standfirst">A WordPress gallery plugin with a real layout builder underneath it. It has never had a logo. That's the job.</p>
+    </div>
+    <div class="masthead-mark">
+      <!-- Aperture study: a ring cut by six blades onto a hexagonal opening.
+           Placeholder only — it demonstrates the size tests, it is not a proposed mark. -->
+      <svg class="mark" width="132" height="132" viewBox="0 0 100 100" aria-label="Aperture study used as a size-test placeholder" role="img">
+        <path fill="var(--accent)" fill-rule="evenodd"
+              d="M6,50 A44,44 0 1,0 94,50 A44,44 0 1,0 6,50 Z
+                 M50,30 L67.32,40 L67.32,60 L50,70 L32.68,60 L32.68,40 Z"/>
+        <g stroke="var(--mark-cut, var(--ground))" stroke-width="3.4" stroke-linecap="butt">
+          <line x1="50"    y1="30" x2="22.91" y2="15.33"/>
+          <line x1="67.32" y1="40" x2="66.48" y2="9.20"/>
+          <line x1="67.32" y1="60" x2="93.57" y2="43.88"/>
+          <line x1="50"    y1="70" x2="77.09" y2="84.67"/>
+          <line x1="32.68" y1="60" x2="33.52" y2="90.80"/>
+          <line x1="32.68" y1="40" x2="6.43"  y2="56.12"/>
+        </g>
+      </svg>
+    </div>
+  </header>
+
+  <div class="status">
+    <span><b>Version</b> 0.90.0</span>
+    <span><b>Assets existing</b> none</span>
+    <span><b>Channels</b> WordPress.org + Freemius</span>
+    <span><b>Model</b> Freemium</span>
+    <span><b>Blocks</b> first paid release</span>
+  </div>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">The product</span></div>
+    <div class="col">
+      <h2>What is WP Super Gallery</h2>
+
+      <p class="lede">WP Super Gallery is a WordPress plugin for building and embedding image galleries. That sentence undersells it, so here is the fuller version.</p>
+
+      <p>Most WordPress gallery plugins give you a grid and a handful of settings. WP Super Gallery gives you <strong>a visual layout builder</strong> — a canvas with layers, masks, overlays, rulers, snapping guides and drag-and-drop composition — plus <strong>fourteen different gallery layout engines</strong> and <strong>twenty-three visual themes</strong>.</p>
+
+      <p>You can produce something as restrained as a plain justified grid, or something with hexagonal tiles, neon glow on hover and hand-composed overlapping layers. Corners sharp or rounded, typography heavily configurable, layouts built from scratch. <strong>The range is the point.</strong></p>
+
+      <p>The second unusual thing is technical but matters commercially: galleries render inside a <strong>Shadow DOM</strong>, completely isolated from the host theme's CSS. A gallery looks the way it was designed regardless of what WordPress theme the site runs, and it cannot break the surrounding page. Galleries can also be embedded on external sites entirely outside WordPress.</p>
+
+      <p>Underneath it is a substantial piece of software: a React 19 single-page application mounted inside WordPress — roughly 118,000 lines of TypeScript and 28,000 of PHP, about 5,000 automated tests, WCAG AA accessibility enforced as a blocking build gate across every shipped theme, and five translated languages.</p>
+
+      <h3>What a user actually does with it</h3>
+      <ol>
+        <li>Creates a <strong>campaign</strong> — the plugin's word for a gallery, carrying its own media, settings, categories, tags and access rules.</li>
+        <li>Adds media, uploaded or embedded from YouTube, Vimeo, Spotify, SoundCloud and others.</li>
+        <li>Picks a <strong>layout adapter</strong> — or opens the <strong>Layout Builder</strong> and composes the arrangement by hand.</li>
+        <li>Themes it, from twenty-three presets or their own.</li>
+        <li>Drops it on a page with a shortcode, or embeds it on an external site.</li>
+      </ol>
+
+      <h3>The fourteen layouts</h3>
+      <p>This list is the single best summary of the product's personality. It is not one gallery with options; it is fourteen genuinely different ways of showing pictures, plus a blank canvas.</p>
+      <div class="layouts">
+        <span>Classic</span><span>Compact Grid</span><span>Justified</span><span>Masonry</span><span>Hexagonal</span><span>Circular</span><span>Diamond</span><span>Scroll Snap</span><span>Coverflow</span><span>Pinterest</span><span>Stacked</span><span>Filterable Grid</span><span>Spotlight</span><span class="hero">Layout Builder</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Audience</span></div>
+    <div class="col">
+      <h2>Who it is for</h2>
+      <p>Four audiences, roughly in order of how much they will pay.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Audience</th><th>What they care about</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Agencies &amp; developers</strong></td><td>Control, multi-client management, access permissions, audit logs. The pricing model assumes them — there is an agency/unlimited tier.</td></tr>
+            <tr><td><strong>Photographers &amp; creatives</strong></td><td>Image fidelity, and layouts that don't upstage the work.</td></tr>
+            <tr><td><strong>E-commerce</strong></td><td>Product imagery, catalogues, conversion.</td></tr>
+            <tr><td><strong>Small business &amp; general WP users</strong></td><td>Something good-looking and fast, without hiring anyone.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>The brand has to earn the agency buyer's trust without alienating the small-business user. Practically: <strong>credible and design-led rather than cute.</strong></p>
+
+      <h3>Business model</h3>
+      <p>Freemium. A free edition (&ldquo;lite&rdquo;) on the WordPress.org directory, and a Pro edition sold through Freemius. The core gallery <em>and the entire Layout Builder</em> are free and fully functional — Pro unlocks exactly three extra Layout Builder capabilities: text layers, per-breakpoint responsive editing, and a starter template library.</p>
+
+      <p class="note"><b>Design implication:</b> Pro is a small accent on the same product, not a different product. The Pro mark should be a badge or lockup variant on one brand — never a separate premium identity.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Positioning</span></div>
+    <div class="col">
+      <h2>A builder that makes galleries</h2>
+
+      <p>The competitive set is Envira, FooGallery, Modula and NextGEN. They all do galleries. None of them has a real visual layout builder. That is the differentiator, and the artwork should lead with it rather than showing yet another neat grid of stock photos.</p>
+
+      <p>Two hero claims, in priority order:</p>
+      <ol>
+        <li><strong>A visual, layer-based layout builder</strong> — compose galleries by hand, not by dropdown.</li>
+        <li><strong>Embeds anywhere without breaking your theme</strong> — Shadow DOM isolation.</li>
+      </ol>
+
+      <h3>Tagline</h3>
+      <p class="pull">Design galleries visually. Embed anywhere.</p>
+      <p>Two short beats, one for each hero claim, legible at banner size. <strong>This is not locked</strong> — alternatives are welcome and expected as part of the design pass. Prior candidates, for reference: <em>&ldquo;Embeddable galleries with a visual layout builder&rdquo;</em> and <em>&ldquo;The visual layout builder for WordPress galleries&rdquo;</em> — the plainest, and the best for search intent.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Direction</span></div>
+    <div class="col">
+      <h2>Creative direction</h2>
+      <p>These two calls are decided. Everything under <a href="#open">What's open</a> is not.</p>
+
+      <h3>One confident mark, range in the banner</h3>
+      <p>The product's defining quality is configurability — it can look minimalist or chaotic. It is tempting to make the <em>icon</em> express that range. Don't. An icon that tries to say &ldquo;this can be anything&rdquo; says nothing, and it will not survive 16px.</p>
+      <p><strong>The icon is one disciplined mark. The banner and screenshots carry the range story.</strong></p>
+
+      <h3>Icon motif: aperture / frame</h3>
+      <p>A photographic frame or aperture form, executed with precision. It is the most direct signifier in the category — which is both its strength (instantly legible, no explanation needed) and its risk (the most crowded visual space in gallery plugins).</p>
+      <p>The way to win with it is <strong>execution and restraint, not novelty</strong>: a mark that is geometrically exact, confident at every size, and paired with a palette that isn't the category-standard blue. Think precision instrument rather than clip-art camera.</p>
+
+      <h4>Optional geometry to draw on</h4>
+      <p>If it helps the mark feel specific to this product rather than generically photographic — these are the actual shapes the plugin renders, live:</p>
+
+      <div class="geo">
+        <div class="geo-item"><div class="geo-shape geo-hex"></div><div class="geo-cap">hexagonal</div></div>
+        <div class="geo-item"><div class="geo-shape geo-dia"></div><div class="geo-cap">diamond</div></div>
+        <div class="geo-item"><div class="geo-shape geo-sq"></div><div class="geo-cap">standard 8px</div></div>
+      </div>
+
+      <pre><code>hexagonal tile:  polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)
+diamond tile:    polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)</code></pre>
+
+      <p>An aperture whose blades echo those angles would tie the mark to the product without sacrificing legibility.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Constraints</span></div>
+    <div class="col">
+      <h2>Hard constraints</h2>
+      <p>None of these were in the original asset spec, and every one of them will make artwork look broken if it's missed.</p>
+
+      <h3>The Freemius opt-in screen circle-crops the icon at 80&times;80</h3>
+      <p>The bundled Freemius SDK applies <code>border-radius: 50%</code> with <code>overflow: hidden</code> to an 80&times;80 box, on a <strong>white</strong> background with a 1px <code>#efefef</code> border and 3px padding. The mark must sit safely inside a circle, must not rely on its square corners, and <strong>must not assume a dark background</strong>.</p>
+
+      <p>Here is that crop reproduced exactly, alongside the two other sizes that ship. Any candidate mark should be dropped into this rig before it's called finished:</p>
+
+      <div class="rig">
+        <div class="rig-item">
+          <svg class="mark" width="112" height="112" viewBox="0 0 100 100" aria-hidden="true">
+            <path fill="var(--accent)" fill-rule="evenodd" d="M6,50 A44,44 0 1,0 94,50 A44,44 0 1,0 6,50 Z M50,30 L67.32,40 L67.32,60 L50,70 L32.68,60 L32.68,40 Z"/>
+            <g stroke="var(--surface)" stroke-width="3.4">
+              <line x1="50" y1="30" x2="22.91" y2="15.33"/><line x1="67.32" y1="40" x2="66.48" y2="9.20"/>
+              <line x1="67.32" y1="60" x2="93.57" y2="43.88"/><line x1="50" y1="70" x2="77.09" y2="84.67"/>
+              <line x1="32.68" y1="60" x2="33.52" y2="90.80"/><line x1="32.68" y1="40" x2="6.43" y2="56.12"/>
+            </g>
+          </svg>
+          <div class="rig-label"><b>256 / 128px</b>WP.org listing</div>
+        </div>
+
+        <div class="rig-item">
+          <div class="fs-crop">
+            <svg class="mark" width="80" height="80" viewBox="0 0 100 100" aria-hidden="true">
+              <path fill="var(--accent)" fill-rule="evenodd" d="M6,50 A44,44 0 1,0 94,50 A44,44 0 1,0 6,50 Z M50,30 L67.32,40 L67.32,60 L50,70 L32.68,60 L32.68,40 Z"/>
+              <g stroke="#ffffff" stroke-width="3.4">
+                <line x1="50" y1="30" x2="22.91" y2="15.33"/><line x1="67.32" y1="40" x2="66.48" y2="9.20"/>
+                <line x1="67.32" y1="60" x2="93.57" y2="43.88"/><line x1="50" y1="70" x2="77.09" y2="84.67"/>
+                <line x1="32.68" y1="60" x2="33.52" y2="90.80"/><line x1="32.68" y1="40" x2="6.43" y2="56.12"/>
+              </g>
+            </svg>
+          </div>
+          <div class="rig-label"><b>80px circle</b>Freemius opt-in</div>
+        </div>
+
+        <div class="rig-item">
+          <svg class="mark" width="16" height="16" viewBox="0 0 100 100" aria-hidden="true">
+            <path fill="var(--accent)" fill-rule="evenodd" d="M6,50 A44,44 0 1,0 94,50 A44,44 0 1,0 6,50 Z M50,30 L67.32,40 L67.32,60 L50,70 L32.68,60 L32.68,40 Z"/>
+            <g stroke="var(--surface)" stroke-width="3.4">
+              <line x1="50" y1="30" x2="22.91" y2="15.33"/><line x1="67.32" y1="40" x2="66.48" y2="9.20"/>
+              <line x1="67.32" y1="60" x2="93.57" y2="43.88"/><line x1="50" y1="70" x2="77.09" y2="84.67"/>
+              <line x1="32.68" y1="60" x2="33.52" y2="90.80"/><line x1="32.68" y1="40" x2="6.43" y2="56.12"/>
+            </g>
+          </svg>
+          <div class="rig-label"><b>16px</b>admin favicon</div>
+        </div>
+      </div>
+
+      <p class="note">The aperture above is a <strong>study, not a proposal</strong> — it exists to show the rig and the hexagonal-opening idea. The mark is entirely open.</p>
+
+      <h3>The other four</h3>
+      <ol>
+        <li><strong>16px is a real, shipped size.</strong> The icon appears as a favicon in the WordPress admin plugin list. No fine detail, no hairline strokes. Test at 16px before calling the mark finished.</li>
+        <li><strong>Keep banner text clear of the extreme edges.</strong> The WordPress.org listing page overlays an author avatar and badges on the banner.</li>
+        <li><strong>Design the banner at 1544&times;500 and downscale to 772&times;250</strong> — then verify. Most banners that fail, fail at the small size.</li>
+        <li><strong>The mark must work on light and dark.</strong> WordPress admin has both colour schemes, the Freemius screen is white, and the product itself is dark-first.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Deliverables</span></div>
+    <div class="col">
+      <h2>What to deliver</h2>
+
+      <h3>WordPress.org listing</h3>
+      <p class="flag"><b>Filenames must match exactly.</b> WordPress.org keys off these names and a GitHub Action uploads the directory automatically — a typo means the asset silently doesn't appear.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>File</th><th>Size</th><th>Format</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="files">banner-1544x500.png</td><td>1544 &times; 500</td><td>PNG / JPG</td><td>Design here, then downscale</td></tr>
+            <tr><td class="files">banner-772x250.png</td><td>772 &times; 250</td><td>PNG / JPG</td><td>Must stay legible at this size</td></tr>
+            <tr><td class="files">icon-256x256.png</td><td>256 &times; 256</td><td>PNG</td><td>High-DPI</td></tr>
+            <tr><td class="files">icon-128x128.png</td><td>128 &times; 128</td><td>PNG</td><td>Standard</td></tr>
+            <tr><td class="files">icon.svg</td><td>vector</td><td>SVG</td><td>Optional, but WP.org prefers it when present</td></tr>
+            <tr><td class="files">screenshot-1…5.png</td><td>&ge; 1200px wide</td><td>PNG</td><td>Captured by the product owner — see below</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Freemius listing</h3>
+      <p>Product icon: max <strong>300 &times; 300</strong>, JPG/PNG/GIF, <strong>&le; 200KB</strong>.</p>
+      <p class="note">Freemius's public documentation only says &ldquo;optionally upload a product icon&rdquo; without stating limits. The above is the widely-reported constraint and should be <strong>confirmed in the Freemius developer dashboard at upload time</strong>. A 300&times;300 PNG under 200KB is safe regardless.</p>
+
+      <h3>Additional marks</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Deliverable</th><th>Why</th><th>Constraints</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>wp-admin menu icon</strong><br><span class="files">SVG</span></td>
+              <td>Currently the stock <code>dashicons-images-alt2</code>. This is the mark users see every single day — the cheapest high-visibility upgrade available.</td>
+              <td>Single colour, legible at <strong>~20px</strong>, working in both light and dark admin colour schemes. WordPress recolours it, so build it to inherit fill.</td>
+            </tr>
+            <tr>
+              <td><strong>Pro / Lite lockups</strong></td>
+              <td>For the Freemius listing and the in-app upgrade panels.</td>
+              <td>One brand, two states. A badge or accent, not a redesign.</td>
+            </tr>
+            <tr>
+              <td><strong>Favicon</strong></td>
+              <td><code>index.html</code> still ships Vite's default logo.</td>
+              <td>Derived from the icon; must read at 16px.</td>
+            </tr>
+            <tr>
+              <td><strong>&ldquo;No image&rdquo; placeholder</strong></td>
+              <td>The current fallback is grey Arial text on a grey gradient, visible whenever media fails to load.</td>
+              <td>Should feel like the brand, quietly. Not attention-grabbing.</td>
+            </tr>
+            <tr>
+              <td><strong>Colour palette + type spec</strong></td>
+              <td>Written, so the brand survives past this engagement and can be applied by others.</td>
+              <td>Hex values, roles, and contrast notes.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Raw material</span></div>
+    <div class="col">
+      <h2>Visual context</h2>
+      <p class="lede">The palette is deliberately open. What follows is what the product looks like today, so the brand can either build on it or knowingly depart from it.</p>
+
+      <h3>The de-facto current palette</h3>
+      <p>The flagship <code>default-dark</code> theme, which is what most users see:</p>
+
+      <div class="corepal">
+        <div class="cp"><div class="cp-chip" style="background:#0f172a"></div><div class="cp-meta"><div class="cp-role">Background</div><div class="cp-hex">#0f172a</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#1e293b"></div><div class="cp-meta"><div class="cp-role">Surface</div><div class="cp-hex">#1e293b</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#334155"></div><div class="cp-meta"><div class="cp-role">Border</div><div class="cp-hex">#334155</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#3b82f6"></div><div class="cp-meta"><div class="cp-role">Primary</div><div class="cp-hex">#3b82f6</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#a855f7"></div><div class="cp-meta"><div class="cp-role">Accent 2</div><div class="cp-hex">#a855f7</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#22c55e"></div><div class="cp-meta"><div class="cp-role">Success</div><div class="cp-hex">#22c55e</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#f59e0b"></div><div class="cp-meta"><div class="cp-role">Warning</div><div class="cp-hex">#f59e0b</div></div></div>
+        <div class="cp"><div class="cp-chip" style="background:#ef4444"></div><div class="cp-meta"><div class="cp-role">Error</div><div class="cp-hex">#ef4444</div></div></div>
+      </div>
+
+      <p><code>#3b82f6</code> is the one colour that survives both the light and dark default themes, so it is the closest thing to an existing brand colour.</p>
+
+      <p class="flag"><b>The open question is whether to keep it.</b> Envira, FooGallery, Modula and NextGEN all live in blue and green. A directory listing page is a grid of small icons, most of them blue. There is a real argument for a deliberately non-blue brand — and the product's own chrome stays themeable regardless, so the brand colour does not have to match the UI.</p>
+
+      <h3>Range material — the shipped themes</h3>
+      <p>Twenty-three themes ship with the plugin, many borrowed from the code-editor world. Useful both as evidence of range and as a palette source. Background with its primary:</p>
+
+      <div class="swatches">
+        <div class="sw"><div class="sw-chip" style="background:#0a0a0f"><span class="sw-dot" style="background:#ff2d95"></span></div><div class="sw-meta"><div class="sw-name">Cyberpunk</div><div class="sw-hex">#0a0a0f · #ff2d95</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#191928"><span class="sw-dot" style="background:#f97e72"></span></div><div class="sw-meta"><div class="sw-name">Synthwave '84</div><div class="sw-hex">#191928 · #f97e72</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#1a1b26"><span class="sw-dot" style="background:#7aa2f7"></span></div><div class="sw-meta"><div class="sw-name">Tokyo Night</div><div class="sw-hex">#1a1b26 · #7aa2f7</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#282828"><span class="sw-dot" style="background:#fe8019"></span></div><div class="sw-meta"><div class="sw-name">Gruvbox Dark</div><div class="sw-hex">#282828 · #fe8019</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#121212"><span class="sw-dot" style="background:#bb86fc"></span></div><div class="sw-meta"><div class="sw-name">Material Dark</div><div class="sw-hex">#121212 · #bb86fc</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#2e3440"><span class="sw-dot" style="background:#88c0d0"></span></div><div class="sw-meta"><div class="sw-name">Nord</div><div class="sw-hex">#2e3440 · #88c0d0</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#1e1e2e"><span class="sw-dot" style="background:#89b4fa"></span></div><div class="sw-meta"><div class="sw-name">Catppuccin Mocha</div><div class="sw-hex">#1e1e2e · #89b4fa</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#002b36"><span class="sw-dot" style="background:#268bd2"></span></div><div class="sw-meta"><div class="sw-name">Solarized Dark</div><div class="sw-hex">#002b36 · #268bd2</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#0f172a"><span class="sw-dot" style="background:#3b82f6"></span></div><div class="sw-meta"><div class="sw-name">Default Dark</div><div class="sw-hex">#0f172a · #3b82f6</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#2b2b2b"><span class="sw-dot" style="background:#6897bb"></span></div><div class="sw-meta"><div class="sw-name">Darcula</div><div class="sw-hex">#2b2b2b · #6897bb</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#0a0a0a"><span class="sw-dot" style="background:#e91e63"></span></div><div class="sw-meta"><div class="sw-name">Midnight Rose</div><div class="sw-hex">#0a0a0a · #e91e63</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#1e0a1f"><span class="sw-dot" style="background:#dc2626"></span></div><div class="sw-meta"><div class="sw-name">Crimson Canvas</div><div class="sw-hex">#1e0a1f · #dc2626</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#000000"><span class="sw-dot" style="background:#6ec1ff"></span></div><div class="sw-meta"><div class="sw-name">High Contrast</div><div class="sw-hex">#000000 · #6ec1ff</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#121212"><span class="sw-dot" style="background:#FF8C00"></span></div><div class="sw-meta"><div class="sw-name">Halloween</div><div class="sw-hex">#121212 · #ff8c00</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#fffbeb"><span class="sw-dot" style="background:#f97316"></span></div><div class="sw-meta"><div class="sw-name">Sunset Boulevard</div><div class="sw-hex">#fffbeb · #f97316</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#f0f9ff"><span class="sw-dot" style="background:#0284c7"></span></div><div class="sw-meta"><div class="sw-name">Ocean Breeze</div><div class="sw-hex">#f0f9ff · #0284c7</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#f3f5f4"><span class="sw-dot" style="background:#15803d"></span></div><div class="sw-meta"><div class="sw-name">Forest Whisper</div><div class="sw-hex">#f3f5f4 · #15803d</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#fdf6e3"><span class="sw-dot" style="background:#268bd2"></span></div><div class="sw-meta"><div class="sw-name">Solarized Light</div><div class="sw-hex">#fdf6e3 · #268bd2</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#ffffff"><span class="sw-dot" style="background:#0969da"></span></div><div class="sw-meta"><div class="sw-name">GitHub Light</div><div class="sw-hex">#ffffff · #0969da</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#eff1f5"><span class="sw-dot" style="background:#1e66f5"></span></div><div class="sw-meta"><div class="sw-name">Catppuccin Latte</div><div class="sw-hex">#eff1f5 · #1e66f5</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#fafafa"><span class="sw-dot" style="background:#6200ee"></span></div><div class="sw-meta"><div class="sw-name">Material Light</div><div class="sw-hex">#fafafa · #6200ee</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#f8fafc"><span class="sw-dot" style="background:#3b82f6"></span></div><div class="sw-meta"><div class="sw-name">Default Light</div><div class="sw-hex">#f8fafc · #3b82f6</div></div></div>
+        <div class="sw"><div class="sw-chip" style="background:#FFFFFF"><span class="sw-dot" style="background:#4B0082"></span></div><div class="sw-meta"><div class="sw-name">Reverse Halloween</div><div class="sw-hex">#ffffff · #4b0082</div></div></div>
+      </div>
+
+      <h3>Typography</h3>
+      <p><strong>Inter</strong> for everything — body and headings. <strong>JetBrains Mono</strong> for code. Weights in use: 400 regular, 500 medium, 600 semibold, 700 bold. Buttons and badges are 600; badges are uppercase with <code>0.02em</code> letter-spacing.</p>
+      <p>The product also exposes about 45 Google Fonts to end users, so the brand typeface is a brand decision, not a technical constraint.</p>
+
+      <h3>The product's visual signature</h3>
+      <p>Worth absorbing before designing the banner, because the banner should feel like the product:</p>
+      <ul>
+        <li><strong>Dark-first</strong>, and deliberately <em>not</em> WordPress admin blue — there is no <code>#007cba</code> or <code>#2271b1</code> anywhere in the codebase, and there is a stylesheet whose only job is to override WordPress's native control styling.</li>
+        <li>Media tiles at <strong>8px radius</strong> on a subtle <strong>135&deg; dark gradient</strong> shell.</li>
+        <li>A <strong>frosted, blurred sticky header</strong> — <code>backdrop-filter: blur(12px)</code>.</li>
+        <li>Caption chips in <code>rgba(0,0,0,0.7)</code> with white 600-weight text.</li>
+        <li>On hover: a springy scale-bounce (1.0 &rarr; 1.07 &rarr; 0.97 &rarr; 1.0 over 380ms) and a periwinkle <code>#7c9ef8</code> glow.</li>
+        <li>Soft, layered shadows. Nothing harsh.</li>
+        <li>All motion is <strong>150–380ms <code>ease</code></strong> — there is not a single <code>cubic-bezier</code> in the codebase. <code>prefers-reduced-motion</code> is honoured everywhere.</li>
+        <li>Iconography is <strong>Tabler Icons</strong> throughout: thin 2px rounded strokes. That is the house line weight, and a mark drawn in that spirit will sit naturally alongside the UI.</li>
+      </ul>
+
+      <h3>Voice</h3>
+      <p>Terse, technical, sentence-case, second person. No exclamation marks, no jokes, no mascot — close to WordPress core's own admin voice. Empty states read <em>&ldquo;No layout templates yet.&rdquo;</em>, not <em>&ldquo;Nothing here yet! 🎨&rdquo;</em>.</p>
+      <p class="note"><strong>The artwork should not be more playful than the product.</strong></p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Screenshots</span></div>
+    <div class="col">
+      <h2>Five slots, and the order matters</h2>
+      <p>The product owner captures these; the designer is invited to art-direct and to push back on the selection. WordPress.org gives the first shot the most prominence.</p>
+      <p>Suggested order, reflecting the builder-led positioning:</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Subject</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><strong>Layout Builder canvas, layer panels docked</strong></td><td>Rulers and smart guides visible, a layout mid-composition. This is the shot no competitor can take.</td></tr>
+            <tr><td>2</td><td><strong>Front-end gallery, a distinctive adapter</strong></td><td>Hexagonal or justified rather than plain grid — proves the range immediately.</td></tr>
+            <tr><td>3</td><td><strong>Admin campaign management panel</strong></td><td>Campaigns tab, populated. Shows a real management tool, not a widget.</td></tr>
+            <tr><td>4</td><td><strong>Lightbox viewer</strong></td><td>Open over a gallery, navigation controls visible.</td></tr>
+            <tr><td>5</td><td><strong>Theme / adapter variety</strong></td><td>The theme selector, or one gallery across several adapters. Sells configurability better than a settings panel does.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="flag"><b>Housekeeping.</b> This reorders the manifest currently recorded in the repo, which leads with the classic grid. The reorder is a recommendation pending sign-off — if adopted, the captions in <code>readme.txt</code> and the manifest table in <code>.wordpress-org/README.md</code> must be updated together. WordPress.org matches captions to files by number, and they will silently mismatch otherwise.</p>
+
+      <p>Capture rules: real UI, real-looking media, <strong>no Lorem or placeholder art</strong>, no visible debug chrome, clean wide viewport.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec" id="open">
+    <div class="rail"><span class="eyebrow">Open</span></div>
+    <div class="col">
+      <h2>What's open</h2>
+      <p>Deliberately unresolved, and expected to take iteration:</p>
+      <ul>
+        <li><strong>The brand palette.</strong> No obligation to match any shipped theme. If one of them works, use it; if a departure works better, propose it. Expect a couple of rounds before this is pinned down.</li>
+        <li><strong>The tagline.</strong> A lead candidate exists; alternatives are welcome.</li>
+        <li><strong>Whether the mark carries &ldquo;Super&rdquo;.</strong> The name contains it and nothing in the product currently acknowledges it. Worth a look — but not at the cost of the serious tone.</li>
+        <li><strong>Wordmark treatment.</strong> Whether the product name is set in Inter alongside the mark, or gets its own lettering.</li>
+      </ul>
+      <p class="note">Useful to propose as options rather than a single answer: two or three palette directions on the same mark would make the decision much easier.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================== -->
+
+  <section class="sec">
+    <div class="rail"><span class="eyebrow">Practical</span></div>
+    <div class="col">
+      <h2>Practical notes</h2>
+      <ul>
+        <li>Finished WordPress.org assets drop straight into the repo's <code>.wordpress-org/</code> directory with the exact filenames above. That directory is <strong>not</strong> shipped inside the plugin ZIP; a GitHub Action publishes it to the WordPress.org listing.</li>
+        <li>The same source graphics serve both the free WordPress.org listing and the Freemius premium listing. <strong>Design once.</strong></li>
+        <li>Compress the PNGs. Keep total asset weight sensible.</li>
+        <li><strong>Implementation follow-up, not a design task:</strong> the Freemius SDK locates the product icon by globbing <code>vendor/freemius/wordpress-sdk/assets/img/{slug}.*</code>, or accepts a <code>plugin_icon</code> filter override. Wiring the delivered icon into that path is an engineering step after handoff.</li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="footer">
+    <span>WP Super Gallery</span>
+    <span>v0.90.0</span>
+    <span>Identity brief</span>
+    <span>Companion spec: .wordpress-org/README.md</span>
+  </div>
+
+</div>

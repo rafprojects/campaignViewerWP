@@ -11,6 +11,11 @@ the listing. For a premium/Freemius or CodeCanyon listing, reuse the same source
 > designer (or a later screenshot-capture pass) can drop finals straight in — no further
 > spec work needed. Filenames must match **exactly**; WordPress.org keys off them.
 
+> **Designers start here:** [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) is the creative brief — what the
+> product is, who it's for, the agreed direction for the icon and banner, the Freemius asset
+> requirements, and the rendering constraints (notably: the Freemius opt-in screen circle-crops
+> the icon at 80×80 on white). This file remains the authoritative **filename and dimension spec**.
+
 ---
 
 ## Required files & dimensions
