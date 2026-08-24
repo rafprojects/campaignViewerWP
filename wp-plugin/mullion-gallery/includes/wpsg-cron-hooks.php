@@ -1,6 +1,6 @@
 <?php
 /**
- * Canonical list of the WP-Cron hooks WP Super Gallery may schedule.
+ * Canonical list of the WP-Cron hooks Mullion may schedule.
  *
  * Single source of truth shared by wpsg_deactivate() (clears them on
  * deactivation) and uninstall.php (clears them on delete), so the two lists can
@@ -13,7 +13,7 @@
  * literal here against its originating constant so a rename can never silently
  * desync them.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {
@@ -34,7 +34,7 @@ if (!function_exists('wpsg_get_cron_hooks')) {
             'wpsg_expired_grants_cleanup',   // WPSG_Maintenance::EXPIRED_GRANTS_HOOK
             'wpsg_access_requests_purge',    // WPSG_Maintenance::ACCESS_REQUESTS_PURGE_HOOK
             'wpsg_audit_log_purge',          // WPSG_Maintenance::AUDIT_LOG_PURGE_HOOK
-            'wpsg_schedule_auto_archive',    // wp-super-gallery.php hourly auto-archive
+            'wpsg_schedule_auto_archive',    // mullion-gallery.php hourly auto-archive
             'wpsg_thumbnail_cache_cleanup',  // WPSG_Thumbnail_Cache cleanup event
             'wpsg_process_alert_emails',     // WPSG_Alerts::CRON_HOOK
             'wpsg_webhook_retry',            // WPSG_Webhooks::RETRY_HOOK

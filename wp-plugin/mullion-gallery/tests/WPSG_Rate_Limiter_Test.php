@@ -2,7 +2,7 @@
 /**
  * Tests for WPSG_Rate_Limiter class.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Rate_Limiter_Test extends WP_UnitTestCase {

@@ -12,7 +12,7 @@
  *   - rate-limit reset
  *   - CLI-only guard (class not loaded when WP_CLI constant is absent)
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 /**
@@ -609,7 +609,7 @@ class WPSG_CLI_Test extends WP_UnitTestCase {
      * that the main plugin file gates the include on defined('WP_CLI').
      */
     public function test_main_plugin_guards_cli_on_wp_cli_constant(): void {
-        $plugin_file = WPSG_PLUGIN_DIR . 'wp-super-gallery.php';
+        $plugin_file = WPSG_PLUGIN_DIR . 'mullion-gallery.php';
         $source      = file_get_contents( $plugin_file );
         $this->assertStringContainsString( "defined( 'WP_CLI' )", $source, "Main plugin must guard CLI include on WP_CLI constant" );
     }

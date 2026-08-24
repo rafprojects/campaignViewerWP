@@ -1127,8 +1127,8 @@ msgid "Import Campaign"
 msgstr "导入活动"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:256
-msgid "Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value."
-msgstr "选择从 WP Super Gallery 导出的 {{json}} 或 {{zip}} 文件。活动将创建为草稿 — 媒体和布局模板按值导入。"
+msgid "Select a {{json}} or {{zip}} file exported from Mullion. Campaigns will be created as drafts — media and layout templates are imported by value."
+msgstr "选择从 Mullion 导出的 {{json}} 或 {{zip}} 文件。活动将创建为草稿 — 媒体和布局模板按值导入。"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:257
 msgid "Change file"
@@ -10607,12 +10607,12 @@ msgid "Unknown adapter setting keys in {{bp}} {{scope}}: {{keys}}."
 msgstr "{{bp}} {{scope}} 中存在未知的适配器设置键：{{keys}}。"
 
 #: includes/class-wpsg-privacy.php:47
-msgid "WP Super Gallery — Access Requests"
-msgstr "WP Super Gallery — 访问请求"
+msgid "Mullion — Access Requests"
+msgstr "Mullion — 访问请求"
 
 #: includes/class-wpsg-privacy.php:52
-msgid "WP Super Gallery — Audit Log"
-msgstr "WP Super Gallery — 审计日志"
+msgid "Mullion — Audit Log"
+msgstr "Mullion — 审计日志"
 
 #: includes/class-wpsg-privacy.php:95
 msgid "Gallery access requests submitted with this email address."
@@ -10636,5 +10636,5 @@ msgstr "日期"
 
 #. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
 #: includes/class-wpsg-embed.php:519
-msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
-msgstr "WP Super Gallery：无法解析此简码引用 (%s)——将改为显示默认空间。只有站点管理员才能看到此提示。"
+msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr "Mullion：无法解析此简码引用 (%s)——将改为显示默认空间。只有站点管理员才能看到此提示。"

@@ -516,7 +516,7 @@ class WPSG_Embed {
         $message = sprintf(
             /* translators: %s: the shortcode reference that did not resolve, e.g. space="acme". */
             __(
-                'WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice.',
+                'Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice.',
                 'wp-super-gallery'
             ),
             $ref_label
@@ -615,7 +615,7 @@ JS;
 
         $wp_admin_bar->add_node([
             'id'    => 'wpsg-root',
-            'title' => 'WP Super Gallery',
+            'title' => 'Mullion',
             'href'  => false,
         ]);
 

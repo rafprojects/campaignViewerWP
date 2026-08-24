@@ -7,7 +7,7 @@
  * settings / access-grant management — reusing the REST API and the same
  * Vite bundle the shortcode uses, rather than re-implementing CRUD in PHP.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

@@ -63,7 +63,7 @@ function buildManifest(strings) {
  * get_translated() can resolve the active-locale translation for injection
  * into window.__WPSG_I18N__.strings (consumed by src/i18n.ts).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

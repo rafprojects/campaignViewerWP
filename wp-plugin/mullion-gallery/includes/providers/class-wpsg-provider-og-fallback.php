@@ -5,7 +5,7 @@
  * Last-resort handler that scrapes Open Graph meta tags from the
  * target page to extract title and thumbnail.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

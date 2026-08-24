@@ -2,7 +2,7 @@
 /**
  * Tests for sanitize_card_config_payload() in WPSG_Settings_Sanitizer.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Card_Config_Sanitizer_Test extends WP_UnitTestCase {

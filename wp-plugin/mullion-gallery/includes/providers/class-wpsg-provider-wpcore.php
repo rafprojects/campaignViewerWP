@@ -4,7 +4,7 @@
  *
  * Delegates to WordPress's built-in oembed/1.0 endpoint.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

@@ -6,7 +6,7 @@
  * to assert the newly-covered ranges are blocked and that no regression was
  * introduced on adjacent public space.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63F_Private_IP_Test extends WP_UnitTestCase {
 

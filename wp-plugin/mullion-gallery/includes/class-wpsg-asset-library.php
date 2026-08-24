@@ -1,6 +1,6 @@
 <?php
 /**
- * WP Super Gallery — Asset Library (visual assets)
+ * Mullion — Asset Library (visual assets)
  *
  * Manages a campaign-agnostic library of reusable visual assets (images used
  * as canvas overlays, backgrounds, masks, etc.) shared across layout templates.
@@ -12,7 +12,7 @@
  * Files are uploaded into wp-content/uploads/wpsg-overlays/ (legacy path kept
  * so existing stored URLs continue to resolve).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.13.0
  */
 
@@ -406,7 +406,7 @@ class WPSG_Asset_Library {
         }
 
         $rules = <<<'HTACCESS'
-# WP Super Gallery — Overlay directory security (P20-L)
+# Mullion — Overlay directory security (P20-L)
 # Prevents script execution in SVG files served directly.
 
 # Disable PHP execution.

@@ -2,7 +2,7 @@
 /**
  * Tests for WPSG_Asset_Library class (P41-OL1: DB-backed storage).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Asset_Library_Test extends WP_UnitTestCase {

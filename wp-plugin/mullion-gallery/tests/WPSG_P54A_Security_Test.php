@@ -8,7 +8,7 @@
  * the PHP layer is defence-in-depth: it must reject CSS injection vectors
  * while accepting valid box-shadow strings.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.55.0
  */
 class WPSG_P54A_Security_Test extends WP_UnitTestCase {

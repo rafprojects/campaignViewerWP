@@ -1,11 +1,11 @@
 <?php
 /**
- * WP Super Gallery Settings Registry
+ * Mullion Settings Registry
  *
  * Centralizes settings metadata for defaults, admin-only visibility,
  * select options, and numeric ranges.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

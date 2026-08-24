@@ -2,7 +2,7 @@
 /**
  * Tests for WPSG_Layout_Templates class.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Layout_Templates_Test extends WP_UnitTestCase {

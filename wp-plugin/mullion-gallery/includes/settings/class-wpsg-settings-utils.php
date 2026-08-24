@@ -1,12 +1,12 @@
 <?php
 /**
- * Settings utility helpers for WP Super Gallery.
+ * Settings utility helpers for Mullion.
  *
  * This is the first extraction from the legacy monolithic settings class.
  * It centralizes the snake_case <-> camelCase conversion helpers and REST
  * payload shaping so later decomposition can move more logic out safely.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

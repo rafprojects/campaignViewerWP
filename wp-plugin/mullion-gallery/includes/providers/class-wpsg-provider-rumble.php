@@ -5,7 +5,7 @@
  * Handles Rumble video URLs by scraping the page for embed ID, OG tags,
  * and constructing an iframe embed.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

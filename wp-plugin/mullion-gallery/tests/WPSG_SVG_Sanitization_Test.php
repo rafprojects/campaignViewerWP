@@ -7,7 +7,7 @@
  * URIs, CSS exfiltration) while preserving legitimate SVG features
  * (gradients, filters, clip-paths, embedded raster images).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_SVG_Sanitization_Test extends WP_UnitTestCase {

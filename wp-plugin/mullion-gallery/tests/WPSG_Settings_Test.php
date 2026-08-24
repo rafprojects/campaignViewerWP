@@ -2,7 +2,7 @@
 /**
  * Tests for WPSG_Settings class.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Settings_Test extends WP_UnitTestCase {

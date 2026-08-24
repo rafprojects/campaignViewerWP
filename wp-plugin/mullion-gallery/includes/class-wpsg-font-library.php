@@ -1,6 +1,6 @@
 <?php
 /**
- * WP Super Gallery — Custom Font Library
+ * Mullion — Custom Font Library
  *
  * Manages custom font uploads for use in typography overrides.
  * Files are stored in wp-content/uploads/wpsg-fonts/.
@@ -8,7 +8,7 @@
  *
  * Modeled on class-wpsg-asset-library.php.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.21.0
  */
 
@@ -273,7 +273,7 @@ class WPSG_Font_Library {
         }
 
         $rules = <<<'HTACCESS'
-# WP Super Gallery — Font directory security (P22-L5)
+# Mullion — Font directory security (P22-L5)
 
 # Disable PHP execution.
 <IfModule mod_php.c>

@@ -47,7 +47,7 @@ class WPSG_Alerts {
         }
 
         $subject = '[WPSG] Fatal error detected';
-        $message = "A fatal error occurred in WP Super Gallery.\n\n" . wp_json_encode($payload, JSON_PRETTY_PRINT);
+        $message = "A fatal error occurred in Mullion.\n\n" . wp_json_encode($payload, JSON_PRETTY_PRINT);
         self::queue_email($subject, $message);
         if (class_exists('WPSG_Sentry')) {
             WPSG_Sentry::capture_message('WPSG fatal error', $payload);

@@ -64,7 +64,7 @@ function wpsg_filter_test_upload_dir( $uploads ) {
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	require dirname( dirname( __FILE__ ) ) . '/wp-super-gallery.php';
+	require dirname( dirname( __FILE__ ) ) . '/mullion-gallery.php';
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );

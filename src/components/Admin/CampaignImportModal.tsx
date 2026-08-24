@@ -49,7 +49,7 @@ function CampaignImportModalContent({
   return (
     <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
       <Text size="sm" c="dimmed">
-        {t('admin_import_desc', 'Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value.', { json: '.json', zip: '.zip' })}
+        {t('admin_import_desc', 'Select a {{json}} or {{zip}} file exported from Mullion. Campaigns will be created as drafts — media and layout templates are imported by value.', { json: '.json', zip: '.zip' })}
       </Text>
 
       <FileButton resetRef={resetRef} onChange={onHandleFile} accept="application/json,.json,.zip,application/zip">

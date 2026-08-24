@@ -97,7 +97,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          PLUGIN_FILE="wp-plugin/mullion-gallery/wp-super-gallery.php"
+          PLUGIN_FILE="wp-plugin/mullion-gallery/mullion-gallery.php"
 
           # 1. package.json
           npm version "$VERSION" --no-git-tag-version
@@ -185,7 +185,7 @@ jobs:
           # Stage only the files touched by the version bump step.
           # (The ZIP is left intact for the GitHub Release upload step.)
           git add package.json package-lock.json \
-            wp-plugin/mullion-gallery/wp-super-gallery.php \
+            wp-plugin/mullion-gallery/mullion-gallery.php \
             wp-plugin/mullion-gallery/readme.txt
           git commit -m "chore(release): ${TAG}" --no-verify
           git tag -a "$TAG" -m "Release ${TAG}"

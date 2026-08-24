@@ -1,17 +1,17 @@
 <?php
 /**
- * Plugin Name:       WP Super Gallery
- * Plugin URI:        https://github.com/rafprojects/wp-super-gallery
+ * Plugin Name:       Mullion
+ * Plugin URI:        https://github.com/rafprojects/mullion-gallery
  * Description:       Embeddable campaign gallery with Shadow DOM rendering.
  * Version:           0.90.0
  * Requires at least: 6.4
  * Tested up to:      7.0
  * Requires PHP:      8.2
- * Author:            WP Super Gallery
- * Author URI:        https://github.com/rafprojects/wp-super-gallery
+ * Author:            Mullion
+ * Author URI:        https://github.com/rafprojects/mullion-gallery
  * License:           GPLv2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
- * Text Domain:       wp-super-gallery
+ * Text Domain:       mullion-gallery
  * Domain Path:       /languages
  */
 

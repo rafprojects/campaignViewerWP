@@ -1,4 +1,4 @@
-=== WP Super Gallery ===
+=== Mullion ===
 Contributors: wpsupergallery
 Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.4
@@ -12,7 +12,7 @@ Embeddable campaign gallery with Shadow DOM rendering, a visual layout builder, 
 
 == Description ==
 
-WP Super Gallery lets you create rich, embeddable campaign galleries directly inside WordPress.
+Mullion lets you create rich, embeddable campaign galleries directly inside WordPress.
 
 **Key features:**
 
@@ -28,7 +28,7 @@ WP Super Gallery lets you create rich, embeddable campaign galleries directly in
 * **Image optimisation** — automatic resize, compression, and optional WebP conversion on upload.
 * **Extensible** — hooks, filters, and a REST API for custom integrations.
 
-**WP Super Gallery Pro (optional upgrade):**
+**Mullion Pro (optional upgrade):**
 
 Everything above is free and fully functional. A Pro license (sold via Freemius) unlocks three advanced LayoutBuilder authoring capabilities:
 
@@ -40,7 +40,7 @@ Layouts that already use these features keep rendering on the free plugin — a 
 
 == Installation ==
 
-1. Upload the `wp-super-gallery` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
+1. Upload the `mullion-gallery` folder to the `/wp-content/plugins/` directory, or install directly through the WordPress plugin screen.
 2. Activate the plugin through the **Plugins** screen in WordPress.
 3. Navigate to **WP Super Gallery** in the admin menu to create your first campaign.
 4. Use the shortcode `[super-gallery campaign="my-campaign-slug"]` (a campaign slug or numeric ID), or the block editor embed, to display a gallery on any page.

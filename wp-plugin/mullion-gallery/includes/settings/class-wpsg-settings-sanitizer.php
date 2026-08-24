@@ -1,11 +1,11 @@
 <?php
 /**
- * Settings sanitization helpers for WP Super Gallery.
+ * Settings sanitization helpers for Mullion.
  *
  * Keeps the legacy settings facade thin while preserving the existing
  * sanitization behavior and compatibility rules.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

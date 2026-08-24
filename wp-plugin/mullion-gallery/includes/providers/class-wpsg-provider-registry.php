@@ -9,7 +9,7 @@
  * Third-party plugins can register additional handlers via the
  * `wpsg_register_providers` action hook.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

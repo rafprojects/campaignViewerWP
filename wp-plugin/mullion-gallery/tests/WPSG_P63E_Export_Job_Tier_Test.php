@@ -7,7 +7,7 @@
  * ID. create_job() stamps `created_by` + `required_tier`; the three job endpoints
  * re-check the stamped tier.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
 

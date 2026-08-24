@@ -1,6 +1,6 @@
 <?php
 /**
- * WP Super Gallery — WordPress core privacy integration (P72-B).
+ * Mullion — WordPress core privacy integration (P72-B).
  *
  * Registers personal-data exporters/erasers so a site admin can fulfil DSAR
  * (data-subject access / erasure) requests through the core WordPress tools at
@@ -18,7 +18,7 @@
  *     remove the record of their own privileged actions. There is intentionally
  *     no audit-log eraser; time-boxed retention (P72-F) bounds it instead.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {
@@ -44,12 +44,12 @@ class WPSG_Privacy {
      */
     public static function register_exporters($exporters) {
         $exporters['wpsg-access-requests'] = [
-            'exporter_friendly_name' => __('WP Super Gallery — Access Requests', 'wp-super-gallery'),
+            'exporter_friendly_name' => __('Mullion — Access Requests', 'wp-super-gallery'),
             'callback'               => [self::class, 'export_access_requests'],
         ];
         // Export-only for the audit log (see class docblock). No eraser below.
         $exporters['wpsg-audit-log'] = [
-            'exporter_friendly_name' => __('WP Super Gallery — Audit Log', 'wp-super-gallery'),
+            'exporter_friendly_name' => __('Mullion — Audit Log', 'wp-super-gallery'),
             'callback'               => [self::class, 'export_audit_log'],
         ];
         return $exporters;
@@ -63,7 +63,7 @@ class WPSG_Privacy {
         // Access-request rows (visitor emails) are fully erasable. The audit log
         // is deliberately absent — it is export-only (legitimate-interest record).
         $erasers['wpsg-access-requests'] = [
-            'eraser_friendly_name' => __('WP Super Gallery — Access Requests', 'wp-super-gallery'),
+            'eraser_friendly_name' => __('Mullion — Access Requests', 'wp-super-gallery'),
             'callback'             => [self::class, 'erase_access_requests'],
         ];
         return $erasers;
@@ -91,7 +91,7 @@ class WPSG_Privacy {
         foreach ($rows as $row) {
             $items[] = [
                 'group_id'          => 'wpsg-access-requests',
-                'group_label'       => __('WP Super Gallery — Access Requests', 'wp-super-gallery'),
+                'group_label'       => __('Mullion — Access Requests', 'wp-super-gallery'),
                 'group_description' => __('Gallery access requests submitted with this email address.', 'wp-super-gallery'),
                 'item_id'           => 'wpsg-access-request-' . $row['id'],
                 'data'              => [
@@ -161,7 +161,7 @@ class WPSG_Privacy {
         foreach ($rows as $row) {
             $items[] = [
                 'group_id'          => 'wpsg-audit-log',
-                'group_label'       => __('WP Super Gallery — Audit Log', 'wp-super-gallery'),
+                'group_label'       => __('Mullion — Audit Log', 'wp-super-gallery'),
                 'group_description' => __('Administrative actions recorded under this account. Retained for accountability and not erased on request.', 'wp-super-gallery'),
                 'item_id'           => 'wpsg-audit-' . $row['id'],
                 'data'              => [

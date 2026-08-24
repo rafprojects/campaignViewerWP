@@ -1,11 +1,11 @@
 <?php
 /**
- * WP Super Gallery — Uninstall handler.
+ * Mullion — Uninstall handler.
  *
  * Fired when the plugin is deleted through the WordPress admin.
  * Removes all plugin data unless the user opted to preserve it.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.18.0
  */
 

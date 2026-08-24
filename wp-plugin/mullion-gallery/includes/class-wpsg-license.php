@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
  * WPSG_Permissions::MAP.
  *
  * ── Credential-ready (mirrors WPSG_Sentry / wpsg_sentry_dsn) ────────────────
- * With no Freemius credentials configured, wpsg_fs() (wp-super-gallery.php)
+ * With no Freemius credentials configured, wpsg_fs() (mullion-gallery.php)
  * returns null and every check below falls back to the `wpsg_license_is_pro`
  * filter, which defaults to false (free tier). This lets the whole plugin run
  * correctly — and lets QA simulate a licensed state via
@@ -42,7 +42,7 @@ final class WPSG_License {
 
     /**
      * Raw Freemius credential bag. Default empty — never commit real values.
-     * Shared with wp-super-gallery.php's wpsg_fs() bootstrap via the same filter.
+     * Shared with mullion-gallery.php's wpsg_fs() bootstrap via the same filter.
      *
      * @return array{id:string,public_key:string,is_premium:bool}
      */

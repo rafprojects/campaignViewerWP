@@ -5,7 +5,7 @@
  * Validates WPSG_Layout_Templates::sanitize_css_value() against both
  * legitimate CSS values and known injection vectors.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.18.0
  */
 

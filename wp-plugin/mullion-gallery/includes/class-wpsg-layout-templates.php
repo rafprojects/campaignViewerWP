@@ -1,12 +1,12 @@
 <?php
 /**
- * WP Super Gallery — Layout Templates CRUD
+ * Mullion — Layout Templates CRUD
  *
  * Manages globally-stored layout templates via the
  * `wpsg_layout_templates` WP option. Each template defines
  * a canvas with positioned media slots.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.13.0
  */
 

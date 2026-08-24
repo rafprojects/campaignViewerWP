@@ -1,8 +1,8 @@
 <?php
 /**
- * Typography settings metadata and helpers for WP Super Gallery.
+ * Typography settings metadata and helpers for Mullion.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

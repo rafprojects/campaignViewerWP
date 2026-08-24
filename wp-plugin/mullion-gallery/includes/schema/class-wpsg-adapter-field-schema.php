@@ -6,7 +6,7 @@
  * field-map contract. Reads adapter-fields.json once per request and caches
  * the result statically so subsequent calls pay no I/O cost.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

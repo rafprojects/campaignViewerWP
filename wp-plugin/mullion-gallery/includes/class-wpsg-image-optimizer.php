@@ -6,7 +6,7 @@
  * through the WPSG plugin. Supports WebP conversion and max dimension
  * constraints. Leverages WordPress image editor API.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

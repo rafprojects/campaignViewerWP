@@ -8,7 +8,7 @@
     </description>
 
     <!-- Scan the runtime PHP surface. -->
-    <file>wp-super-gallery.php</file>
+    <file>mullion-gallery.php</file>
     <file>uninstall.php</file>
     <file>includes</file>
 

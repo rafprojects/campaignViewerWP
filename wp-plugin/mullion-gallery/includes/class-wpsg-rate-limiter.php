@@ -5,7 +5,7 @@
  * Per-IP rate limiting for the public oEmbed proxy endpoint using
  * WordPress transients. Lightweight, no external dependencies.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

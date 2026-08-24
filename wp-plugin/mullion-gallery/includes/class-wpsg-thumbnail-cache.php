@@ -8,7 +8,7 @@
  * P49-F: Per-hash wp_options storage — each cached URL is a separate
  * `wpsg_thumb_<sha256>` option row with autoload='no'.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

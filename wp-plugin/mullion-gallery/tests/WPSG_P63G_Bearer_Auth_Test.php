@@ -7,7 +7,7 @@
  * predicate bearer_auth_is_verified() now requires BOTH a real logged-in user AND
  * an explicit `wpsg_bearer_auth_verified` filter assertion (default false).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63G_Bearer_Auth_Test extends WP_UnitTestCase {
 

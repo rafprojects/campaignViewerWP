@@ -1,11 +1,11 @@
 <?php
 /**
- * Settings support service helpers for WP Super Gallery.
+ * Settings support service helpers for Mullion.
  *
  * This extraction keeps non-rendering helper behavior out of the legacy
  * settings class while preserving its public API through delegation.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

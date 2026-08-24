@@ -7,7 +7,7 @@
  * (=, +, -, @, TAB, CR) so a crafted actor_login / value cannot execute as a
  * formula when the CSV is opened in a spreadsheet.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63D_Audit_Csv_Injection_Test extends WP_UnitTestCase {
 

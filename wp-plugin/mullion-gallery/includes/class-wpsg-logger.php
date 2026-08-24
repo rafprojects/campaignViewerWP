@@ -1,6 +1,6 @@
 <?php
 /**
- * Structured logging facade for WP Super Gallery.
+ * Structured logging facade for Mullion.
  *
  * Emits one consistent JSON record per log event to two sinks in parallel:
  *   1. The PHP error log (via error_log), preserving existing server-log behavior.
@@ -41,7 +41,7 @@
  * programmatically.  Any REST endpoint that exposes it must enforce a
  * capability check (e.g. manage_options) before calling this method.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.32.0  P32-D
  */
 

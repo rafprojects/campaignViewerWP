@@ -2,7 +2,7 @@
 /**
  * Tests for WPSG_Embed class.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Embed_Test extends WP_UnitTestCase {

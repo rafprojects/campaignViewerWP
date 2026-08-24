@@ -7,7 +7,7 @@
  * callback registered on an already-fired hook). These tests pin the corrected
  * wiring and the now-testable decision/emission logic.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63C_Security_Headers_Test extends WP_UnitTestCase {
 

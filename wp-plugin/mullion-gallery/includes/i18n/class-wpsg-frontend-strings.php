@@ -11,7 +11,7 @@
  * get_translated() can resolve the active-locale translation for injection
  * into window.__WPSG_I18N__.strings (consumed by src/i18n.ts).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {
@@ -253,7 +253,7 @@ class WPSG_Frontend_Strings {
             'admin_col_actions' => __('Actions', 'wp-super-gallery'),
             'admin_campaign_count' => __('{{count}} campaigns', 'wp-super-gallery'),
             'admin_import_title' => __('Import Campaign', 'wp-super-gallery'),
-            'admin_import_desc' => __('Select a {{json}} or {{zip}} file exported from WP Super Gallery. Campaigns will be created as drafts — media and layout templates are imported by value.', 'wp-super-gallery'),
+            'admin_import_desc' => __('Select a {{json}} or {{zip}} file exported from Mullion. Campaigns will be created as drafts — media and layout templates are imported by value.', 'wp-super-gallery'),
             'admin_import_change_file' => __('Change file', 'wp-super-gallery'),
             'admin_import_select_file' => __('Select .json or .zip file', 'wp-super-gallery'),
             'admin_import_ready' => __('Ready to import:', 'wp-super-gallery'),

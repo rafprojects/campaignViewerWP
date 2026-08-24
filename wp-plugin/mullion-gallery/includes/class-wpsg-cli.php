@@ -1,6 +1,6 @@
 <?php
 /**
- * WP-CLI command surface for WP Super Gallery.
+ * WP-CLI command surface for Mullion.
  *
  * Registers the `wp wpsg` command group. All sub-commands bypass
  * the HTTP-layer permission checks (no `manage_wpsg` capability check)
@@ -22,7 +22,7 @@
  *   wp wpsg analytics clear 42
  *   wp wpsg rate-limit reset 192.168.1.1
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.17.0
  */
 
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Manage WP Super Gallery campaigns, media, cache, analytics, and rate-limits.
+ * Manage Mullion campaigns, media, cache, analytics, and rate-limits.
  */
 class WPSG_CLI {
 

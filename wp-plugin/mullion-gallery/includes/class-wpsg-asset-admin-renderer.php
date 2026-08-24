@@ -10,7 +10,7 @@
  * Capability: manage_options (System Admin only).  Editors manage assets
  * through the Admin Panel "Assets" tab; only a System Admin can reach WP admin.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

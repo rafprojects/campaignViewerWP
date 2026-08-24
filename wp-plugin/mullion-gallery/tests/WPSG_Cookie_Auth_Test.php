@@ -2,7 +2,7 @@
 /**
  * Tests for the cookie-based auth/login and auth/logout REST endpoints (P20-K).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.18.0
  */
 

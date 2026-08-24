@@ -6,7 +6,7 @@
  * iterates registered handlers in priority order, calling can_handle()
  * then fetch() on the first match.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

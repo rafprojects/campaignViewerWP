@@ -1,10 +1,10 @@
 <?php
 /**
- * WP Super Gallery Settings Page
+ * Mullion Settings Page
  *
  * Handles plugin configuration through WordPress admin.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Settings class for WP Super Gallery.
+ * Settings class for Mullion.
  *
  * This class owns the canonical settings interface: reading, writing, sanitizing,
  * and converting settings between PHP and JS representations.  Rendering, field

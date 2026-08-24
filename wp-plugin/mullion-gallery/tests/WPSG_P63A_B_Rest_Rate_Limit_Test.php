@@ -16,7 +16,7 @@
  * These exercise the private rate_limit_check() through the public
  * rate_limit_public() permission callback.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
 

@@ -15,7 +15,7 @@
  *   - datetime: schedule fields are normalized on every transport.
  *   - MD5 dedup + streaming for ZIP media.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_P65A_Campaign_IO_Test extends WP_UnitTestCase {

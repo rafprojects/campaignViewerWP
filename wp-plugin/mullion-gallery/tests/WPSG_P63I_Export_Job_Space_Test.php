@@ -13,7 +13,7 @@
  * manage_wpsg WITHOUT manage_options and gains space access only via an explicit
  * grant (P53-A: open mode confers no implicit editor access).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 class WPSG_P63I_Export_Job_Space_Test extends WP_UnitTestCase {
 

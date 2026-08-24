@@ -5,7 +5,7 @@
  * Tries well-known oEmbed endpoints for major providers (YouTube, Vimeo)
  * and the noembed.com aggregator as a catch-all.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

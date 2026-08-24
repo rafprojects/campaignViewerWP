@@ -8,7 +8,7 @@
  *
  * Individual provider handlers live in includes/providers/.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  * @since   0.10.0
  */
 

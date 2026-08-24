@@ -1,12 +1,12 @@
 <?php
 /**
- * Admin renderer and Settings API registration for WP Super Gallery settings.
+ * Admin renderer and Settings API registration for Mullion settings.
  *
  * This is an intermediate extraction from the legacy settings class. It keeps
  * the existing WPSG_Settings field callbacks intact while moving the admin
  * wiring and page shell into a dedicated module.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

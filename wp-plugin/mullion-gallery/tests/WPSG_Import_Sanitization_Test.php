@@ -7,7 +7,7 @@
  * normal save path, stripping <script> tags, javascript: URIs,
  * CSS injection payloads, and other malicious content.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_Import_Sanitization_Test extends WP_UnitTestCase {

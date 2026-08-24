@@ -1,11 +1,11 @@
 <?php
 /**
- * Core settings sections and field renderers for WP Super Gallery.
+ * Core settings sections and field renderers for Mullion.
  *
  * Keeps the Settings API registration layer thin by moving the initial
  * auth/display/performance callbacks into a dedicated module.
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {

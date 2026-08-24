@@ -7,7 +7,7 @@
  * paths; the real-SDK path is validated only against a Freemius sandbox (M1-M3,
  * blocked pre-account).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 class WPSG_License_Test extends WP_UnitTestCase {
