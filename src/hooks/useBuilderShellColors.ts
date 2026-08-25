@@ -29,7 +29,7 @@ export function useBuilderShellColors(applyThemeEverywhere = false): BuilderShel
 
   return useMemo(() => {
     const colors = resolveColors(chromeEntry.definition.colors, chromeScheme);
-    const accent = colors.primary[5] ?? colors.accent;
+    const accent = colors.primaryStroke;
 
     return {
       surface: colors.surface,

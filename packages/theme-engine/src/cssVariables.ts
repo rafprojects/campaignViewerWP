@@ -60,7 +60,9 @@ export function generateCssVariables(
   vars.push(`${PREFIX}-color-text-muted2: ${rc.textMuted2};`);
   vars.push(`${PREFIX}-color-border: ${rc.border};`);
   vars.push(`${PREFIX}-color-border-strong: ${rc.borderStrong};`);
-  vars.push(`${PREFIX}-color-primary: ${rc.primary[5]};`);
+  vars.push(`${PREFIX}-color-primary: ${rc.primaryFill};`);
+  vars.push(`${PREFIX}-color-primary-stroke: ${rc.primaryStroke};`);
+  vars.push(`${PREFIX}-color-primary-on: ${rc.primaryOnFill};`);
   vars.push(`${PREFIX}-color-success: ${rc.success};`);
   vars.push(`${PREFIX}-color-warning: ${rc.warning};`);
   vars.push(`${PREFIX}-color-error: ${rc.error};`);

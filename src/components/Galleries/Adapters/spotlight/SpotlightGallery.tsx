@@ -287,7 +287,7 @@ export function SpotlightGallery({
                   flexShrink: 0,
                   padding: 0,
                   border: isActive
-                    ? '2px solid var(--mullion-color-primary, #1ad1c4)'
+                    ? '2px solid var(--mullion-color-primary-stroke, var(--mullion-color-primary, #1ad1c4))'
                     : '2px solid transparent',
                   borderRadius: thumbBr,
                   overflow: 'hidden',

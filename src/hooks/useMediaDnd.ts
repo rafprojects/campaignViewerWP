@@ -54,9 +54,9 @@ export function useMediaDnd(
       return undefined;
     }
     const position = getDropPosition(activeMediaId, overMediaId);
-    // --mullion-color-primary is a gallery-side token; fall back to Mantine blue in the admin context.
-    const c = 'var(--mullion-color-primary, var(--mantine-color-blue-5))';
-    const glow = `color-mix(in srgb, var(--mullion-color-primary, var(--mantine-color-blue-5)) 40%, transparent)`;
+    // Stroke token is the 1.4.11 affordance color; fall back to fill, then Mantine blue.
+    const c = 'var(--mullion-color-primary-stroke, var(--mullion-color-primary, var(--mantine-color-blue-5)))';
+    const glow = `color-mix(in srgb, var(--mullion-color-primary-stroke, var(--mullion-color-primary, var(--mantine-color-blue-5))) 40%, transparent)`;
     if (axis === 'horizontal') {
       return {
         boxShadow: position === 'before'

@@ -46,6 +46,11 @@ const FONT_WEIGHT_SEMIBOLD = FONT_WEIGHTS.semibold;
 function generateComponentOverrides(
   rc: ResolvedColors,
 ): NonNullable<MantineThemeOverride['components']> {
+  const fill = rc.primaryFill;
+  const fillHover = rc.primary[Math.max(0, rc.primaryFillIndex - 1)] ?? fill;
+  const stroke = rc.primaryStroke;
+  const onFill = rc.primaryOnFill;
+
   return {
     Button: {
       defaultProps: { variant: 'filled', autoContrast: true },
@@ -83,7 +88,7 @@ function generateComponentOverrides(
           borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: rc.primary[5] },
+          '&:focus': { borderColor: stroke },
         },
       }),
     },
@@ -95,7 +100,7 @@ function generateComponentOverrides(
           borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: rc.primary[5] },
+          '&:focus': { borderColor: stroke },
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
       }),
@@ -108,7 +113,7 @@ function generateComponentOverrides(
           borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: rc.primary[5] },
+          '&:focus': { borderColor: stroke },
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         innerInput: { color: rc.text },
@@ -232,7 +237,7 @@ function generateComponentOverrides(
         root: {
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
-          '&::before': { backgroundColor: rc.primary[5] },
+          '&::before': { backgroundColor: fill },
         },
         title: { color: rc.text },
         description: { color: rc.textMuted },
@@ -274,6 +279,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface2,
           borderColor: rc.borderStrong,
           color: rc.text,
+          '&:focus': { borderColor: stroke },
         },
         dropdown: {
           backgroundColor: rc.surfaceRaised,
@@ -291,8 +297,8 @@ function generateComponentOverrides(
         input: {
           borderColor: rc.borderStrong,
           '&:checked': {
-            backgroundColor: rc.primary[5],
-            borderColor: rc.primary[5],
+            backgroundColor: fill,
+            borderColor: fill,
           },
         },
         label: { color: rc.text },
@@ -312,8 +318,8 @@ function generateComponentOverrides(
     Anchor: {
       styles: () => ({
         root: {
-          color: rc.primary[5],
-          '&:hover': { color: rc.primary[4] },
+          color: fill,
+          '&:hover': { color: fillHover },
         },
       }),
     },
@@ -353,9 +359,9 @@ function generateComponentOverrides(
     Slider: {
       styles: () => ({
         track: { backgroundColor: rc.surface3 },
-        bar: { backgroundColor: rc.primary[5] },
-        thumb: { borderColor: rc.primary[5], backgroundColor: rc.surface },
-        label: { backgroundColor: rc.primary[5] },
+        bar: { backgroundColor: fill },
+        thumb: { borderColor: stroke, backgroundColor: rc.surface },
+        label: { backgroundColor: fill, color: onFill },
       }),
     },
 
@@ -365,6 +371,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface2,
           borderColor: rc.borderStrong,
           color: rc.text,
+          '&:focus': { borderColor: stroke },
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         control: { borderColor: rc.borderStrong, color: rc.text },
@@ -377,6 +384,7 @@ function generateComponentOverrides(
           backgroundColor: rc.surface2,
           borderColor: rc.borderStrong,
           color: rc.text,
+          '&:focus': { borderColor: stroke },
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
@@ -398,7 +406,8 @@ function generateComponentOverrides(
           color: rc.text,
           borderColor: rc.border,
           '&[data-checked]': {
-            backgroundColor: rc.primary[5],
+            backgroundColor: fill,
+            color: onFill,
           },
         },
       }),
@@ -529,6 +538,8 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
         textMuted2: rc.textMuted2,
         border: rc.border,
         borderStrong: rc.borderStrong,
+        primaryFill: rc.primaryFill,
+        primaryStroke: rc.primaryStroke,
         success: rc.success,
         warning: rc.warning,
         error: rc.error,

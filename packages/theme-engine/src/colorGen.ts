@@ -39,8 +39,8 @@ export const DEFAULT_PRIMARY_SHADE: PrimaryShade = { light: 6, dark: 5 };
 /** WCAG AA normal-text bar — the COLOR-SPEC.md §2 primaryShade criterion. */
 export const PRIMARY_SHADE_CONTRAST_MIN = 4.5;
 
-/** WCAG 1.4.11 non-text contrast bar for affordance borders. */
-const UI_CONTRAST_MIN = 3;
+/** WCAG 1.4.11 non-text contrast bar for affordance borders / indicators. */
+export const UI_CONTRAST_MIN = 3;
 
 /** Binary-search iterations for chroma reduction (~1e-7 C resolution). */
 const GAMUT_SEARCH_ITERS = 24;
@@ -267,6 +267,56 @@ export function derivePrimaryShade(colors: ThemeColors): PrimaryShade {
   };
 }
 
+function contrastPasses(fg: string, bg: string, minRatio: number): boolean {
+  return chroma.contrast(fg, bg) >= minRatio;
+}
+
+/**
+ * Nearest ramp index that clears `minRatio` against every `surfaces` colour.
+ * Keeps `preferred` when it already passes (P75-E: no regression on themes
+ * that were already fine). Tie at the same distance: step toward more
+ * contrast (darker on light surfaces, lighter on dark).
+ */
+export function selectUiContrastIndex(
+  ramp: readonly string[],
+  surfaces: readonly string[],
+  preferred: number,
+  minRatio: number = UI_CONTRAST_MIN,
+): number {
+  const n = ramp.length;
+  if (n === 0) return 0;
+  const start = Math.min(Math.max(0, preferred), n - 1);
+  const grounds = surfaces.length > 0 ? surfaces : ['#ffffff'];
+  const passes = (i: number): boolean =>
+    grounds.every((s) => contrastPasses(ramp[i]!, s, minRatio));
+
+  if (passes(start)) return start;
+
+  const meanL =
+    grounds.reduce((sum, s) => sum + oklchL(s), 0) / grounds.length;
+  const surfaceIsLight = meanL >= LIGHT_GROUND_L_MIN;
+
+  for (let d = 1; d < n; d++) {
+    const hi = start + d;
+    const lo = start - d;
+    const ordered = surfaceIsLight ? [hi, lo] : [lo, hi];
+    for (const i of ordered) {
+      if (i >= 0 && i < n && passes(i)) return i;
+    }
+  }
+
+  let best = start;
+  let bestScore = 0;
+  for (let i = 0; i < n; i++) {
+    const score = grounds.reduce((sum, s) => sum + chroma.contrast(ramp[i]!, s), 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = i;
+    }
+  }
+  return best;
+}
+
 // ---------------------------------------------------------------------------
 // Color resolution pipeline
 // ---------------------------------------------------------------------------
@@ -323,6 +373,23 @@ export function resolveColors(
 
   const borderStrong = colors.borderStrong ?? deriveBorderStrong(colors.surface);
 
+  const primaryShade = colors.primaryShade ?? derivePrimaryShade(colors);
+  const fillIndex = Math.min(
+    Math.max(0, primaryShade[colorScheme]),
+    SHADE_COUNT - 1,
+  );
+  const primaryFill = primaryArray[fillIndex]!;
+  const strokeIndex = selectUiContrastIndex(
+    primaryArray,
+    [colors.surface, surface2, surfaceRaised],
+    fillIndex,
+  );
+  const primaryStroke = primaryArray[strokeIndex]!;
+  const primaryOnFill =
+    chroma.contrast('#ffffff', primaryFill) >= chroma.contrast('#000000', primaryFill)
+      ? '#ffffff'
+      : '#000000';
+
   return {
     background: colors.background,
     surface: colors.surface,
@@ -338,7 +405,11 @@ export function resolveColors(
     borderStrong,
 
     primary: primaryArray,
-    primaryShade: colors.primaryShade ?? derivePrimaryShade(colors),
+    primaryShade,
+    primaryFill,
+    primaryFillIndex: fillIndex,
+    primaryStroke,
+    primaryOnFill,
 
     success: colors.success,
     warning: colors.warning ?? '#f59e0b',

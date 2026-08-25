@@ -148,8 +148,32 @@ describe('adaptTheme', () => {
       | { styles?: () => { input?: { '&:checked'?: { backgroundColor?: string; borderColor?: string } } } }
       | undefined;
     const checked = checkbox?.styles?.().input?.['&:checked'];
-    expect(checked?.backgroundColor).toBe(result.colors?.primary?.[5]);
-    expect(checked?.borderColor).toBe(result.colors?.primary?.[5]);
+    expect(checked?.backgroundColor).toBe(colors['primaryFill']);
+    expect(checked?.borderColor).toBe(colors['primaryFill']);
+
+    const input = result.components?.Input as
+      | { styles?: () => { input?: { '&:focus'?: { borderColor?: string } } } }
+      | undefined;
+    expect(input?.styles?.().input?.['&:focus']?.borderColor).toBe(colors['primaryStroke']);
+  });
+
+  it('uses the authored primaryFill, not hardcoded primary[5], on a theme whose shade is not 5', () => {
+    const tokyo = bundledThemeDefinitions.find((t) => t.id === 'tokyo-night')!;
+    const def = deepMerge(
+      JSON.parse(JSON.stringify(baseDefaults)),
+      JSON.parse(JSON.stringify(tokyo)),
+    ) as unknown as ThemeDefinition;
+    const result = adaptTheme(def);
+    const colors = (result.other as Record<string, unknown>)['colors'] as Record<string, string>;
+    const fill = colors['primaryFill'];
+    const fillIndex = result.colors?.primary?.indexOf(fill);
+    expect(fillIndex).not.toBe(5);
+    expect(fillIndex).toBeGreaterThanOrEqual(0);
+
+    const checkbox = result.components?.Checkbox as
+      | { styles?: () => { input?: { '&:checked'?: { backgroundColor?: string } } } }
+      | undefined;
+    expect(checkbox?.styles?.().input?.['&:checked']?.backgroundColor).toBe(colors['primaryFill']);
   });
 
   it('works with a light theme definition', () => {

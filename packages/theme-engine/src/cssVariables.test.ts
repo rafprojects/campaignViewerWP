@@ -74,8 +74,10 @@ describe('generateCssVariables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    // primary is rc.primary[5], which is a generated shade
     expect(result).toContain('--mullion-color-primary:');
+    expect(result).toContain(`--mullion-color-primary: ${rc.primaryFill}`);
+    expect(result).toContain(`--mullion-color-primary-stroke: ${rc.primaryStroke}`);
+    expect(result).toContain(`--mullion-color-primary-on: ${rc.primaryOnFill}`);
   });
 
   it('includes all 10 primary shade variables', () => {

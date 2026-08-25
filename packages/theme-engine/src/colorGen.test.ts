@@ -16,7 +16,9 @@ import {
   derivePrimaryShade,
   inkContrastGround,
   selectPrimaryShadeIndex,
+  selectUiContrastIndex,
   PRIMARY_SHADE_CONTRAST_MIN,
+  UI_CONTRAST_MIN,
 } from './colorGen';
 import { bundledThemeDefinitions } from './bundledThemes';
 import type { ThemeColors } from './types';
@@ -394,5 +396,32 @@ describe('primaryShade criterion (P75-F)', () => {
       expect(colors.primaryShade, `${def.id} must author primaryShade after P75-F`).toBeDefined();
       expect(colors.primaryShade).toEqual(derivePrimaryShade(colors));
     }
+  });
+});
+
+describe('selectUiContrastIndex (P75-E)', () => {
+  it('keeps the preferred index when it already clears 3:1', () => {
+    const ramp = generateColorScale('#1ad1c4', 'dark');
+    const preferred = selectPrimaryShadeIndex(ramp, '#eef8fb');
+    // Authored fill is ink-safe on a light ground; that ground is the
+    // case where 3:1 is already satisfied (not the dark panel).
+    expect(selectUiContrastIndex(ramp, ['#eef8fb'], preferred)).toBe(preferred);
+  });
+
+  it('Rig Cyan authored fill fails 3:1 on its own panel — stroke steps one rung', () => {
+    const ramp = generateColorScale('#1ad1c4', 'dark');
+    const preferred = selectPrimaryShadeIndex(ramp, '#eef8fb');
+    expect(chroma.contrast(ramp[preferred]!, '#102530')).toBeLessThan(UI_CONTRAST_MIN);
+    const stroke = selectUiContrastIndex(ramp, ['#102530'], preferred);
+    expect(stroke).not.toBe(preferred);
+    expect(chroma.contrast(ramp[stroke]!, '#102530')).toBeGreaterThanOrEqual(UI_CONTRAST_MIN);
+  });
+
+  it('steps to the nearest passing rung when preferred fails', () => {
+    // Pale preferred rung against a near-identical surface.
+    const ramp = ['#102530', '#1a3542', '#577577', '#007870'];
+    const idx = selectUiContrastIndex(ramp, ['#102530'], 0, UI_CONTRAST_MIN);
+    expect(idx).not.toBe(0);
+    expect(chroma.contrast(ramp[idx]!, '#102530')).toBeGreaterThanOrEqual(UI_CONTRAST_MIN);
   });
 });

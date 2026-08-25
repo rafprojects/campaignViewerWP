@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A, P75-B, P75-C, P75-D, P75-F, and P75-H landed
+**Status:** In progress — P75-A through P75-F and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-F OKLCH ramp + criterion-derived `primaryShade`. Remaining: E, G.)
+**Last updated:** 2026-08-25 (P75-E 1.4.11 fill/stroke + authored `primaryShade`. Remaining: G.)
 
 ### Tracks
 
@@ -12,7 +12,7 @@
 | P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Done | Medium |
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Done | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Done | Medium |
-| P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
+| P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Done | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Done | Small-Medium |
 | P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
 | P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
@@ -310,7 +310,38 @@ The spike carries two methodology requirements from a second designer review rou
 
 ### Validation
 
-- Not yet started. The spike itself (step 2) is the first deliverable and directly informs the shape of automated test coverage for step 3.
+- `uiContrastAudit.test.ts` — 23 themes × (3:1 stroke sites + authored-fill lock + fill-equals-stroke-when-already-passing). Blocking CI.
+- Focused Vitest: colorGen + uiContrast + contrastAudit + cssVariables + adapter + useBuilderColors.
+- `tsc -b` clean. No remaining `primary[5]` lookups in production TS/SCSS.
+- Theme-QA: 14 Phase-1 snapshots captured (6 gallery shells, 6 settings dialogs, 2 theme-selector dropdowns). Settings locator had drifted (`Display Settings` → accessible name `Settings`). Combobox shows the display name (`Tokyo Night`), not the id.
+
+### Implementation Notes (2026-08-25)
+
+Verified against the live adapter, CSS vars, Builder shell, and gallery focus/selection sites — not only this plan. P75-F has landed, so step 3 uses the OKLCH ramp.
+
+**Step 1 — authored shade, not `[5]`.** `resolveColors` now emits `primaryFill` / `primaryFillIndex` from `primaryShade[colorScheme]`. `--mullion-color-primary` and every previous `rc.primary[5]` site consume that hex. Confirmed: 16/23 themes (post-F) have a fill index other than 5; tokyo-night adapter test fails if Checkbox checked fill regresses to `[5]`.
+
+**Step 2 — classify, then measure.** 1.4.11 3:1 applies only when the colour is the *sole* indicator of a component or state.
+
+| Site | Class | Token |
+|---|---|---|
+| Input / TextInput / PasswordInput / NumberInput / ColorInput / Select `:focus` border | Affordance (focus) | `primaryStroke` vs surface2 |
+| CampaignCard / MediaCard `:focus-visible` ring | Affordance (focus) | `--mullion-color-primary-stroke` |
+| Tabs `[data-active]` border | Affordance (active tab) | stroke |
+| SpotlightGallery active thumb border | Affordance (selected) | stroke |
+| useMediaDnd insertion line | Affordance (drop target) | stroke |
+| Builder `--dv-paneview-active-outline` / `--dv-drag-over-border` | Affordance | `useBuilderShellColors().accent` = stroke |
+| Slider thumb border | Affordance | stroke |
+| Checkbox / Chip checked fill, Slider bar, Select option selected | Fill (label or check is also present; 4.5:1 under `primaryOnFill`) | `primaryFill` |
+| `.mullion-admin-btn:hover` border, MediaTab/MediaCard hover, badge glow, 5% company-row tint | Decorative (transform / shadow / other signal) | left on fill, not repaired |
+| Notification `::before` stripe | Decorative (title + description carry the meaning) | fill |
+| Anchor color | Text (1.4.3), not 1.4.11 | fill |
+
+**Fill-vs-stroke hypothesis: confirmed.** `primaryShade` answers 4.5:1 under white text. That rung often **fails** 3:1 as a thin stroke on a dark panel. After P75-F, **13 of 23** themes need a different stroke index (nearest passing vs surface + surface2 + surfaceRaised). The plan's "8 of 23" was measured against HSL + hardcoded `[5]` and is obsolete. Light themes mostly already pass (fill = stroke). Notable: Rig Cyan fill `#007870` vs surface `#102530` is **2.95:1** — one hundredth under the bar — stroke steps to index 4 `#008e85`. forest-whisper, flagged in the old 8, now passes with its F-derived fill.
+
+**Step 3 — one repair, only where needed.** `selectUiContrastIndex(ramp, [surface, surface2, surfaceRaised], fillIndex)` keeps the authored index when it already clears 3:1 on all three (the "provably unchanged" test). Otherwise steps to the nearest passing rung (darker on light surfaces, lighter on dark). Result is `primaryStroke` / `--mullion-color-primary-stroke`. Two CSS extras: `--mullion-color-primary-on` (white/black on fill) for selected options and chips.
+
+**Hardcoded-index regression gate.** `uiContrastAudit.ts` is the 1.4.11 sibling of `auditThemeContrast`. A return to `primary[5]` would make tokyo-night / darcula fill tests fail; a stroke that drops below 3:1 fails the 23-theme UI audit.
 
 ---
 
@@ -484,12 +515,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, P75-C, P75-D, and P75-F have landed — see those tracks' Implementation Notes. E and G remain planned (G blocked on designer light hexes).
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-A through P75-F and P75-H have landed — see those tracks' Implementation Notes. G remains planned (blocked on designer light hexes).
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — F closes the second of those; E step 3 can now use the OKLCH ramp.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E landed (authored `primaryFill` replaces hardcoded `[5]`; `primaryStroke` is the nearest 3:1 rung — two roles, 13/23 dark-ish themes split; `uiContrastAudit` is the 1.4.11 CI gate).
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-E (non-text contrast spike + repair; step 3 unblocked now that F exists) and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the remaining color-system tracks. P75-D (chrome-locking toggle), P75-F (OKLCH + `primaryShade`), and P75-H (Checkbox/Switch outlines) have landed. Once E/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-G (Rig Cyan light companion, blocked on a light spec from them) is the remaining color-system track. Once G lands, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once the remaining tracks land, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

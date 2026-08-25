@@ -218,6 +218,21 @@ export interface ResolvedColors {
   /** Fully expanded 10-step array */
   primary: string[];
   primaryShade: PrimaryShade;
+  /**
+   * Authored `primaryShade[scheme]` hex — filled controls and selected
+   * backgrounds (P75-E). Not a hardcoded ramp index.
+   */
+  primaryFill: string;
+  /** Index of `primaryFill` in `primary` (0–9). */
+  primaryFillIndex: number;
+  /**
+   * Nearest ramp rung that clears 3:1 against surface / surface2 /
+   * surfaceRaised. Equals `primaryFill` when the authored shade already
+   * passes (P75-E repair layer).
+   */
+  primaryStroke: string;
+  /** White or black, whichever contrasts better with `primaryFill`. */
+  primaryOnFill: string;
 
   success: string;
   warning: string;

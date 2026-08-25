@@ -9,7 +9,7 @@
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary-stroke) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }

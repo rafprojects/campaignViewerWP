@@ -6,6 +6,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useBuilderOverlayColors } from './useBuilderOverlayColors';
 import { useBuilderShellColors } from './useBuilderShellColors';
+import { resolveColors } from '@mullion/theme-engine';
+import { getTheme } from '@/themes/index';
 
 // Spy on useTheme to control colorScheme
 const useThemeMock = vi.hoisted(() => vi.fn());
@@ -55,5 +57,13 @@ describe('useBuilderShellColors', () => {
     const locked = renderHook(() => useBuilderShellColors(false));
     const following = renderHook(() => useBuilderShellColors(true));
     expect(locked.result.current.surface).not.toBe(following.result.current.surface);
+  });
+
+  it('uses primaryStroke for builder accent, not hardcoded primary[5] (P75-E)', () => {
+    useThemeMock.mockReturnValue({ themeId: 'tokyo-night', colorScheme: 'dark' as const });
+    const { result } = renderHook(() => useBuilderShellColors(true));
+    const tokyo = getTheme('tokyo-night');
+    const rc = resolveColors(tokyo.definition.colors, 'dark');
+    expect(result.current.accent).toBe(rc.primaryStroke);
   });
 });

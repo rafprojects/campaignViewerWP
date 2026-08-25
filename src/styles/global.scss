@@ -198,7 +198,7 @@
 // leaking through React inline style objects.
 .mullion-mantine-tabs-tab[data-active] {
   color: var(--mullion-color-text);
-  border-color: var(--mullion-color-primary);
+  border-color: var(--mullion-color-primary-stroke);
 }
 
 .mullion-mantine-segmented-control-label[data-active] {
@@ -209,7 +209,7 @@
 // cannot rely on the .mullion-gallery ancestor being present.
 .mullion-mantine-select-option[data-selected] {
   background-color: var(--mullion-color-primary);
-  color: #ffffff;
+  color: var(--mullion-color-primary-on, #ffffff);
 }
 
 // Compact layout variant
