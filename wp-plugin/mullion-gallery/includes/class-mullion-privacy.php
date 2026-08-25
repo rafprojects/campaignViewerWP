@@ -8,9 +8,9 @@
  * previously documented in PRIVACY.md §5.
  *
  * Two PII tables are covered, with a deliberate asymmetry:
- *   - wp_wpsg_access_requests (visitor emails): full DSAR support — an exporter
+ *   - wp_mullion_access_requests (visitor emails): full DSAR support — an exporter
  *     AND an eraser, both keyed on the email address.
- *   - wp_wpsg_audit_log (staff usernames / attempted logins): EXPORT ONLY. An
+ *   - wp_mullion_audit_log (staff usernames / attempted logins): EXPORT ONLY. An
  *     audit/accountability log is a legitimate-interest record (GDPR Art.
  *     6(1)(f), with Art. 17(3)(b) as the erasure exemption) — its purpose is to
  *     show who did what, so a self-service erasure request (reachable only when
@@ -43,12 +43,12 @@ class Mullion_Privacy {
      * @return array
      */
     public static function register_exporters($exporters) {
-        $exporters['wpsg-access-requests'] = [
+        $exporters['mullion-access-requests'] = [
             'exporter_friendly_name' => __('Mullion — Access Requests', 'mullion-gallery'),
             'callback'               => [self::class, 'export_access_requests'],
         ];
         // Export-only for the audit log (see class docblock). No eraser below.
-        $exporters['wpsg-audit-log'] = [
+        $exporters['mullion-audit-log'] = [
             'exporter_friendly_name' => __('Mullion — Audit Log', 'mullion-gallery'),
             'callback'               => [self::class, 'export_audit_log'],
         ];
@@ -62,7 +62,7 @@ class Mullion_Privacy {
     public static function register_erasers($erasers) {
         // Access-request rows (visitor emails) are fully erasable. The audit log
         // is deliberately absent — it is export-only (legitimate-interest record).
-        $erasers['wpsg-access-requests'] = [
+        $erasers['mullion-access-requests'] = [
             'eraser_friendly_name' => __('Mullion — Access Requests', 'mullion-gallery'),
             'callback'             => [self::class, 'erase_access_requests'],
         ];
@@ -90,10 +90,10 @@ class Mullion_Privacy {
         $items = [];
         foreach ($rows as $row) {
             $items[] = [
-                'group_id'          => 'wpsg-access-requests',
+                'group_id'          => 'mullion-access-requests',
                 'group_label'       => __('Mullion — Access Requests', 'mullion-gallery'),
                 'group_description' => __('Gallery access requests submitted with this email address.', 'mullion-gallery'),
-                'item_id'           => 'wpsg-access-request-' . $row['id'],
+                'item_id'           => 'mullion-access-request-' . $row['id'],
                 'data'              => [
                     ['name' => __('Email', 'mullion-gallery'),        'value' => $row['email']],
                     ['name' => __('Campaign ID', 'mullion-gallery'),  'value' => $row['campaign_id']],
@@ -160,10 +160,10 @@ class Mullion_Privacy {
         $items = [];
         foreach ($rows as $row) {
             $items[] = [
-                'group_id'          => 'wpsg-audit-log',
+                'group_id'          => 'mullion-audit-log',
                 'group_label'       => __('Mullion — Audit Log', 'mullion-gallery'),
                 'group_description' => __('Administrative actions recorded under this account. Retained for accountability and not erased on request.', 'mullion-gallery'),
-                'item_id'           => 'wpsg-audit-' . $row['id'],
+                'item_id'           => 'mullion-audit-' . $row['id'],
                 'data'              => [
                     ['name' => __('Action', 'mullion-gallery'),  'value' => $row['action']],
                     ['name' => __('Summary', 'mullion-gallery'), 'value' => $row['summary']],

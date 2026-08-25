@@ -5,10 +5,10 @@ if (!defined('ABSPATH')) {
 }
 
 class Mullion_Alerts {
-    const REST_ERROR_BUCKET = 'wpsg_rest_error_bucket';
-    const ALERT_THROTTLE_FATAL = 'wpsg_alert_throttle_fatal';
-    const ALERT_THROTTLE_REST = 'wpsg_alert_throttle_rest';
-    const EMAIL_QUEUE = 'wpsg_alert_email_queue';
+    const REST_ERROR_BUCKET = 'mullion_rest_error_bucket';
+    const ALERT_THROTTLE_FATAL = 'mullion_alert_throttle_fatal';
+    const ALERT_THROTTLE_REST = 'mullion_alert_throttle_rest';
+    const EMAIL_QUEUE = 'mullion_alert_email_queue';
     const CRON_HOOK = 'mullion_process_alert_emails';
 
     public static function register() {
@@ -117,7 +117,7 @@ class Mullion_Alerts {
         }
 
         // Acquire a short lock to prevent concurrent read-modify-write races.
-        $lock_key = 'wpsg_email_queue_lock';
+        $lock_key = 'mullion_email_queue_lock';
         if (get_transient($lock_key)) {
             // Lock held — fall back to synchronous send so the alert is not lost.
             wp_mail(self::get_recipient(), $subject, $message);
@@ -161,7 +161,7 @@ class Mullion_Alerts {
      */
     public static function process_email_queue(): void {
         // Acquire a lock so concurrent cron runners don't process the same queue.
-        $lock_key = 'wpsg_email_process_lock';
+        $lock_key = 'mullion_email_process_lock';
         if (get_transient($lock_key)) {
             return; // Another runner is already processing.
         }

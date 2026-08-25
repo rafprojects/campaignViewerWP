@@ -74,7 +74,7 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
 
     public function test_ensure_htaccess_creates_file() {
         $upload_dir = wp_upload_dir();
-        $test_dir = trailingslashit($upload_dir['basedir']) . 'wpsg-test-htaccess-' . wp_rand();
+        $test_dir = trailingslashit($upload_dir['basedir']) . 'mullion-test-htaccess-' . wp_rand();
         wp_mkdir_p($test_dir);
 
         $htaccess = trailingslashit($test_dir) . '.htaccess';
@@ -152,7 +152,7 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
     }
 
     public function test_thumbnail_cache_refresh_all_empty_index() {
-        delete_option('wpsg_thumbnail_cache_index');
+        delete_option('mullion_thumbnail_cache_index');
 
         $result = Mullion_Thumbnail_Cache::refresh_all();
         $this->assertIsArray($result);
@@ -174,7 +174,7 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
 
         // Plant an entry in the cache index.
         $hash = md5('https://example.com/thumb.jpg');
-        update_option('wpsg_thumbnail_cache_index', [
+        update_option('mullion_thumbnail_cache_index', [
             $hash => [
                 'thumbnail_url' => 'https://example.com/thumb.jpg',
                 'source_url'    => 'https://example.com/video',
@@ -187,7 +187,7 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
         $this->assertGreaterThanOrEqual(0, $result['refreshed'] + $result['failed']);
 
         // Cleanup.
-        delete_option('wpsg_thumbnail_cache_index');
+        delete_option('mullion_thumbnail_cache_index');
         remove_all_filters('pre_http_request');
     }
 }

@@ -5,23 +5,23 @@ class Mullion_DB_Test extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
         // Reset db version so maybe_upgrade runs fresh.
-        delete_option('wpsg_db_version');
-        delete_option('wpsg_media_refs_backfilled');
+        delete_option('mullion_db_version');
+        delete_option('mullion_media_refs_backfilled');
         delete_option(Mullion_Settings::OPTION_NAME);
     }
 
     public function tearDown(): void {
         global $wpdb;
         // Clean up custom tables after each test.
-        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_analytics_events");
-        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_media_refs");
-        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_access_requests");
-        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_overlays");
-        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}wpsg_assets");
-        delete_option('wpsg_db_version');
-        delete_option('wpsg_media_refs_backfilled');
-        delete_option('wpsg_access_requests_migrated');
-        delete_option('wpsg_overlays_migrated');
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}mullion_analytics_events");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}mullion_media_refs");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}mullion_access_requests");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}mullion_overlays");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}mullion_assets");
+        delete_option('mullion_db_version');
+        delete_option('mullion_media_refs_backfilled');
+        delete_option('mullion_access_requests_migrated');
+        delete_option('mullion_overlays_migrated');
         delete_option(Mullion_Settings::OPTION_NAME);
         parent::tearDown();
     }
@@ -31,58 +31,58 @@ class Mullion_DB_Test extends WP_UnitTestCase {
     public function test_maybe_upgrade_creates_tables_and_sets_version() {
         Mullion_DB::maybe_upgrade();
 
-        $this->assertEquals(Mullion_DB::DB_VERSION, get_option('wpsg_db_version'));
+        $this->assertEquals(Mullion_DB::DB_VERSION, get_option('mullion_db_version'));
 
         // Analytics table should exist.
         global $wpdb;
-        $analytics = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_analytics_events'");
+        $analytics = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}mullion_analytics_events'");
         $this->assertNotNull($analytics);
 
         // Media refs table should exist.
-        $refs = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_media_refs'");
+        $refs = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}mullion_media_refs'");
         $this->assertNotNull($refs);
 
         // Access requests table should exist.
-        $ar = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_access_requests'");
+        $ar = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}mullion_access_requests'");
         $this->assertNotNull($ar);
 
-        // Assets table should exist (formerly wpsg_overlays; renamed in v14).
-        $ol = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}wpsg_assets'");
+        // Assets table should exist (formerly mullion_overlays; renamed in v14).
+        $ol = $wpdb->get_var("SHOW TABLES LIKE '{$wpdb->prefix}mullion_assets'");
         $this->assertNotNull($ol);
     }
 
     public function test_maybe_upgrade_is_idempotent() {
         Mullion_DB::maybe_upgrade();
-        $v1 = get_option('wpsg_db_version');
+        $v1 = get_option('mullion_db_version');
 
         // Second call should be a no-op.
         Mullion_DB::maybe_upgrade();
-        $v2 = get_option('wpsg_db_version');
+        $v2 = get_option('mullion_db_version');
 
         $this->assertEquals($v1, $v2);
     }
 
     public function test_maybe_upgrade_skips_when_version_current() {
-        update_option('wpsg_db_version', Mullion_DB::DB_VERSION);
+        update_option('mullion_db_version', Mullion_DB::DB_VERSION);
 
         Mullion_DB::maybe_upgrade();
 
         // Tables won't exist because upgrade was skipped.
         global $wpdb;
         // We only assert the option wasn't changed.
-        $this->assertEquals(Mullion_DB::DB_VERSION, get_option('wpsg_db_version'));
+        $this->assertEquals(Mullion_DB::DB_VERSION, get_option('mullion_db_version'));
     }
 
     // ── Table name helpers ─────────────────────────────────────────────────
 
     public function test_get_analytics_table_returns_prefixed_name() {
         global $wpdb;
-        $this->assertEquals($wpdb->prefix . 'wpsg_analytics_events', Mullion_DB::get_analytics_table());
+        $this->assertEquals($wpdb->prefix . 'mullion_analytics_events', Mullion_DB::get_analytics_table());
     }
 
     public function test_get_media_refs_table_returns_prefixed_name() {
         global $wpdb;
-        $this->assertEquals($wpdb->prefix . 'wpsg_media_refs', Mullion_DB::get_media_refs_table());
+        $this->assertEquals($wpdb->prefix . 'mullion_media_refs', Mullion_DB::get_media_refs_table());
     }
 
     // ── Analytics table ────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ class Mullion_DB_Test extends WP_UnitTestCase {
         Mullion_DB::maybe_create_analytics_table();
 
         global $wpdb;
-        $cols = $wpdb->get_results("DESCRIBE {$wpdb->prefix}wpsg_analytics_events");
+        $cols = $wpdb->get_results("DESCRIBE {$wpdb->prefix}mullion_analytics_events");
         $col_names = array_map(function ($c) { return $c->Field; }, $cols);
 
         $this->assertContains('id', $col_names);
@@ -278,12 +278,12 @@ class Mullion_DB_Test extends WP_UnitTestCase {
 
     public function test_backfill_runs_only_once() {
         $this->create_refs_table();
-        $this->assertEquals('1', get_option('wpsg_media_refs_backfilled'));
+        $this->assertEquals('1', get_option('mullion_media_refs_backfilled'));
 
         // Reset and recreate — should not backfill because flag is set.
         // We test by checking the flag is still set after second call.
         Mullion_DB::maybe_create_media_refs_table();
-        $this->assertEquals('1', get_option('wpsg_media_refs_backfilled'));
+        $this->assertEquals('1', get_option('mullion_media_refs_backfilled'));
     }
 
     // ── Access requests table ──────────────────────────────────────────────
@@ -297,7 +297,7 @@ class Mullion_DB_Test extends WP_UnitTestCase {
 
         global $wpdb;
         $cols = $wpdb->get_results(
-            "DESCRIBE {$wpdb->prefix}wpsg_access_requests"
+            "DESCRIBE {$wpdb->prefix}mullion_access_requests"
         );
         $col_names = array_map(function ($c) { return $c->Field; }, $cols);
 
@@ -311,7 +311,7 @@ class Mullion_DB_Test extends WP_UnitTestCase {
     public function test_get_access_requests_table_returns_prefixed_name() {
         global $wpdb;
         $this->assertEquals(
-            $wpdb->prefix . 'wpsg_access_requests',
+            $wpdb->prefix . 'mullion_access_requests',
             Mullion_DB::get_access_requests_table()
         );
     }
@@ -473,14 +473,14 @@ class Mullion_DB_Test extends WP_UnitTestCase {
         // Seed legacy options.
         $token1 = wp_generate_uuid4();
         $token2 = wp_generate_uuid4();
-        update_option('wpsg_access_request_index', [$token1, $token2]);
-        update_option('wpsg_access_request_' . $token1, [
+        update_option('mullion_access_request_index', [$token1, $token2]);
+        update_option('mullion_access_request_' . $token1, [
             'campaign_id'  => 7,
             'email'        => 'legacy1@test.com',
             'status'       => 'pending',
             'requested_at' => gmdate('c'),
         ]);
-        update_option('wpsg_access_request_' . $token2, [
+        update_option('mullion_access_request_' . $token2, [
             'campaign_id'  => 7,
             'email'        => 'legacy2@test.com',
             'status'       => 'approved',
@@ -489,13 +489,13 @@ class Mullion_DB_Test extends WP_UnitTestCase {
         ]);
 
         // Reset migration flag and run migration again.
-        delete_option('wpsg_access_requests_migrated');
+        delete_option('mullion_access_requests_migrated');
         Mullion_DB::maybe_create_access_requests_table();
 
         // Legacy options should be cleaned up.
-        $this->assertFalse(get_option('wpsg_access_request_index'));
-        $this->assertFalse(get_option('wpsg_access_request_' . $token1));
-        $this->assertFalse(get_option('wpsg_access_request_' . $token2));
+        $this->assertFalse(get_option('mullion_access_request_index'));
+        $this->assertFalse(get_option('mullion_access_request_' . $token1));
+        $this->assertFalse(get_option('mullion_access_request_' . $token2));
 
         // Data should be in the new table.
         $row1 = Mullion_DB::get_access_request($token1);

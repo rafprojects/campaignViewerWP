@@ -9,7 +9,7 @@
  *  - REST upload (URL path) persists tags.
  *  - REST update_asset updates tags WITHOUT clobbering is_universal (and vice-versa).
  *  - update_asset with neither field is a 400.
- *  - The v14 RENAME migration moves wpsg_overlays → wpsg_assets and adds `tags`,
+ *  - The v14 RENAME migration moves mullion_overlays → mullion_assets and adds `tags`,
  *    idempotently.
  */
 class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
@@ -148,10 +148,10 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
     // ── Migration ────────────────────────────────────────────────
 
     /**
-     * Verifies the v14 schema: the canonical `wpsg_assets` table exists with the
+     * Verifies the v14 schema: the canonical `mullion_assets` table exists with the
      * `tags` column, and re-running maybe_upgrade is idempotent.
      *
-     * Note: the rename-from-legacy path (`wpsg_overlays` → `wpsg_assets`) cannot
+     * Note: the rename-from-legacy path (`mullion_overlays` → `mullion_assets`) cannot
      * be exercised here — `DROP TABLE` does not take effect inside WP's per-test
      * transaction (DDL/transaction fragility also seen in P50-B), so the
      * "old table absent" precondition can't be reproduced. The rename itself is
@@ -161,7 +161,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
         global $wpdb;
         $table = Mullion_DB::get_assets_table();
 
-        delete_option('wpsg_db_version');
+        delete_option('mullion_db_version');
         Mullion_DB::maybe_upgrade();
 
         // Canonical assets table exists.
@@ -177,7 +177,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
         $this->assertSame(1, $has_tags, 'tags column must exist after the v14 migration.');
 
         // Idempotent second run keeps the table + column.
-        delete_option('wpsg_db_version');
+        delete_option('mullion_db_version');
         Mullion_DB::maybe_upgrade();
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
         $this->assertSame($table, $wpdb->get_var( "SHOW TABLES LIKE '{$table}'" ));

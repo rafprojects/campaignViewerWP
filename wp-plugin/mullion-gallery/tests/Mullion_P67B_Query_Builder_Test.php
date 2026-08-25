@@ -93,7 +93,7 @@ class Mullion_P67B_Query_Builder_Test extends WP_UnitTestCase {
             1
         );
 
-        $this->assertStringContainsString('_wpsg_space_id', wp_json_encode($args['meta_query']));
+        $this->assertStringContainsString('_mullion_space_id', wp_json_encode($args['meta_query']));
         $this->assertArrayHasKey('tax_query', $args);
         $this->assertSame('AND', $args['tax_query']['relation']);
     }

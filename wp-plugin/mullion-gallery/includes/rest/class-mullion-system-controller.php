@@ -207,15 +207,15 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             }
         }
 
-        $cache_key = 'wpsg_oembed_' . md5($url);
+        $cache_key = 'mullion_oembed_' . md5($url);
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
             // If we cached a previous error result include its status if present.
-            $cached_status = isset($cached['_wpsg_status']) ? intval($cached['_wpsg_status']) : 200;
+            $cached_status = isset($cached['_mullion_status']) ? intval($cached['_mullion_status']) : 200;
             // Remove internal status marker before returning to clients.
             $out = $cached;
-            if (isset($out['_wpsg_status'])) {
-                unset($out['_wpsg_status']);
+            if (isset($out['_mullion_status'])) {
+                unset($out['_mullion_status']);
             }
             return new WP_REST_Response($out, $cached_status);
         }
@@ -225,10 +225,10 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         // but a DNS rebinding attack can return a public IP for the validation lookup
         // and a private IP for the actual request (TOCTOU gap). This filter re-validates
         // the resolved IP at connection time inside wp_remote_get().
-        $wpsg_ssrf_filter = null;
-        $wpsg_ssrf_blocked = false;
+        $mullion_ssrf_filter = null;
+        $mullion_ssrf_blocked = false;
         if (!$allowed) {
-            $wpsg_ssrf_filter = function ($preempt, $args, $request_url) use (&$wpsg_ssrf_blocked) {
+            $mullion_ssrf_filter = function ($preempt, $args, $request_url) use (&$mullion_ssrf_blocked) {
                 $req_host = wp_parse_url($request_url, PHP_URL_HOST);
                 if (empty($req_host)) {
                     return $preempt;
@@ -260,7 +260,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
 
                 foreach ($ips as $ip) {
                     if (self::check_private_ip($ip)) {
-                        $wpsg_ssrf_blocked = true;
+                        $mullion_ssrf_blocked = true;
                         return new WP_Error(
                             'ssrf_dns_rebind',
                             'DNS rebinding detected: host resolved to a private IP at request time'
@@ -270,7 +270,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
 
                 return $preempt;
             };
-            add_filter('pre_http_request', $wpsg_ssrf_filter, 10, 3);
+            add_filter('pre_http_request', $mullion_ssrf_filter, 10, 3);
         }
 
         $attempts = [];
@@ -278,14 +278,14 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             $result = Mullion_OEmbed_Providers::fetch($url, $parsed, $attempts);
         } finally {
             // Always remove the SSRF filter — even if fetch() throws.
-            if ($wpsg_ssrf_filter !== null) {
-                remove_filter('pre_http_request', $wpsg_ssrf_filter, 10);
+            if ($mullion_ssrf_filter !== null) {
+                remove_filter('pre_http_request', $mullion_ssrf_filter, 10);
             }
         }
 
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
         // return a clear 400 instead of a generic 502 failure.
-        if ($wpsg_ssrf_blocked) {
+        if ($mullion_ssrf_blocked) {
             return self::error_response('DNS rebinding detected: oEmbed host resolved to a private IP', 400, 'mullion_oembed_dns_rebind');
         }
 
@@ -294,13 +294,13 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             // to avoid hammering external services on repeated requests.
             if (!empty($result['error'])) {
                 $error_payload = $result;
-                $error_payload['_wpsg_status'] = 502;
+                $error_payload['_mullion_status'] = 502;
                 // Log and metric: record repeated oEmbed failures
                 Mullion_Logger::warning('oembed', 'oEmbed fetch returned error payload', ['url' => $url, 'attempts' => $attempts]);
                 do_action('mullion_oembed_failure', $url, $attempts);
-                $count = intval(get_option('wpsg_oembed_failure_count', 0));
+                $count = intval(get_option('mullion_oembed_failure_count', 0));
                 // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
-                update_option('wpsg_oembed_failure_count', $count + 1, false);
+                update_option('mullion_oembed_failure_count', $count + 1, false);
                 set_transient($cache_key, $error_payload, 5 * MINUTE_IN_SECONDS);
                 return new WP_REST_Response($result, 502);
             }
@@ -316,17 +316,17 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $fallback = [
             'message' => 'Unable to fetch oEmbed',
         ];
-        $fallback['_wpsg_status'] = 502;
+        $fallback['_mullion_status'] = 502;
         // Log and metric: record generic fallback cache
         Mullion_Logger::warning('oembed', 'oEmbed fetch failed, caching generic fallback', ['url' => $url, 'attempts' => $attempts]);
         do_action('mullion_oembed_failure', $url, $attempts);
-        $count = intval(get_option('wpsg_oembed_failure_count', 0));
+        $count = intval(get_option('mullion_oembed_failure_count', 0));
         // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
-        update_option('wpsg_oembed_failure_count', $count + 1, false);
+        update_option('mullion_oembed_failure_count', $count + 1, false);
         set_transient($cache_key, $fallback, 5 * MINUTE_IN_SECONDS);
         // Do not expose internal cache metadata to clients.
         $out_fallback = $fallback;
-        unset($out_fallback['_wpsg_status']);
+        unset($out_fallback['_mullion_status']);
         return new WP_REST_Response($out_fallback, 502);
     }
 

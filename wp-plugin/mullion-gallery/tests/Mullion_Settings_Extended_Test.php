@@ -58,13 +58,13 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     public function test_get_setting_returns_stored_value() {
         $settings = Mullion_Settings::get_settings();
         $settings['theme'] = 'dark-mode-custom';
-        update_option('wpsg_settings', $settings);
+        update_option('mullion_settings', $settings);
 
         $val = Mullion_Settings::get_setting('theme');
         $this->assertEquals('dark-mode-custom', $val);
 
         // Restore.
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
     }
 
     // ── to_js ──────────────────────────────────────────────────────────────
@@ -119,16 +119,16 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     // ── filter_auth_provider ───────────────────────────────────────────────
 
     public function test_filter_auth_provider_returns_stored_value() {
-        update_option('wpsg_settings', ['auth_provider' => 'jwt']);
+        update_option('mullion_settings', ['auth_provider' => 'jwt']);
         $result = Mullion_Settings_Service::filter_auth_provider('cookie');
         $this->assertEquals('jwt', $result);
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
     }
 
     // ── filter_api_base ────────────────────────────────────────────────────
 
     public function test_filter_api_base_returns_default_when_empty() {
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
         $result = Mullion_Settings_Service::filter_api_base('http://default.test');
         // Should return the stored or default API base.
         $this->assertIsString($result);
@@ -137,7 +137,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     // ── get_settings ───────────────────────────────────────────────────────
 
     public function test_get_settings_merges_with_defaults() {
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
         $settings = Mullion_Settings::get_settings();
 
         $defaults = Mullion_Settings::get_defaults();
@@ -157,7 +157,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_get_settings_omits_legacy_gallery_adapter_fields_when_gallery_config_exists() {
-        update_option('wpsg_settings', [
+        update_option('mullion_settings', [
             'gallery_config' => [
                 'mode' => 'unified',
                 'breakpoints' => [
@@ -193,7 +193,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_get_settings_normalizes_legacy_card_config_desktop_into_flat_fields() {
-        update_option('wpsg_settings', [
+        update_option('mullion_settings', [
             'card_config' => [
                 'breakpoints' => [
                     'desktop' => [
@@ -266,7 +266,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
 
         // Verify the setting was registered.
         $registered = get_registered_settings();
-        $this->assertArrayHasKey('wpsg_settings', $registered);
+        $this->assertArrayHasKey('mullion_settings', $registered);
     }
 
     // ── render section helpers (tests core fields directly) ────────────────

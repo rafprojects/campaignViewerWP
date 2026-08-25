@@ -5,7 +5,7 @@
  *
  * Covers:
  *  - POST /campaigns/{id}/move re-stamps space_id in all four campaign-scoped
- *    custom tables and the _wpsg_space_id post meta.
+ *    custom tables and the _mullion_space_id post meta.
  *  - The source space's campaign list no longer includes the campaign and the
  *    target space's list does.
  *  - A simulated mid-transaction failure (after the second table) rolls every
@@ -34,7 +34,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     }
 
     /** manage_mullion but NOT manage_options — the delegated-mode boundary case. */
-    private function make_wpsg_only_admin(): int {
+    private function make_mullion_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_mullion');
@@ -60,7 +60,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
         update_post_meta($id, 'status', 'active');
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 
@@ -171,7 +171,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
 
         $this->assertSame(200, $response->get_status());
         $this->assertTrue($response->get_data()['moved']);
-        $this->assertSame($space_b, intval(get_post_meta($campaign, '_wpsg_space_id', true)));
+        $this->assertSame($space_b, intval(get_post_meta($campaign, '_mullion_space_id', true)));
 
         foreach ($this->space_ids_by_table($campaign) as $table => $space_ids) {
             $this->assertNotEmpty($space_ids, "{$table} must have a seeded row.");
@@ -209,7 +209,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         $this->assertSame(500, $response->get_status());
         $this->assertSame('mullion_move_failed', $response->get_data()['code']);
 
-        $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)), 'Post meta must be unchanged after rollback.');
+        $this->assertSame($space_a, intval(get_post_meta($campaign, '_mullion_space_id', true)), 'Post meta must be unchanged after rollback.');
         foreach ($this->space_ids_by_table($campaign) as $table => $space_ids) {
             foreach ($space_ids as $space_id) {
                 $this->assertSame($space_a, $space_id, "{$table} row must be rolled back to the source space.");
@@ -224,7 +224,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     // -------------------------------------------------------------------------
 
     public function test_manage_mullion_only_user_denied_for_delegated_target() {
-        $uid      = $this->make_wpsg_only_admin();
+        $uid      = $this->make_mullion_only_admin();
         $space_a  = $this->make_space('open');
         $space_b  = $this->make_space('delegated');
         $campaign = $this->create_campaign_in_space($space_a, 'P50A Denied');
@@ -233,7 +233,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         $response = $this->do_move($campaign, $space_b);
 
         $this->assertSame(403, $response->get_status(), 'manage_mullion-only user must not move a campaign into a delegated space.');
-        $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)));
+        $this->assertSame($space_a, intval(get_post_meta($campaign, '_mullion_space_id', true)));
     }
 
     // -------------------------------------------------------------------------
@@ -249,7 +249,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
 
         $this->assertSame(200, $response->get_status());
         $this->assertFalse($response->get_data()['moved']);
-        $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)));
+        $this->assertSame($space_a, intval(get_post_meta($campaign, '_mullion_space_id', true)));
     }
 
     // -------------------------------------------------------------------------
@@ -266,6 +266,6 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         $response = $this->do_move($campaign, $space_b);
 
         $this->assertSame(404, $response->get_status());
-        $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)));
+        $this->assertSame($space_a, intval(get_post_meta($campaign, '_mullion_space_id', true)));
     }
 }

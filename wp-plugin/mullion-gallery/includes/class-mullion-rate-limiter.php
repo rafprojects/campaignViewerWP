@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 class Mullion_Rate_Limiter {
     const DEFAULT_LIMIT   = 30;   // requests per window
     const DEFAULT_WINDOW  = 60;   // seconds
-    const TRANSIENT_PREFIX = 'wpsg_rl_';
+    const TRANSIENT_PREFIX = 'mullion_rl_';
 
     /**
      * Check if a request should be rate-limited.

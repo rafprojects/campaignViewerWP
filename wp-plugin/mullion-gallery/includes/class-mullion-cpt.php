@@ -55,7 +55,7 @@ class Mullion_CPT {
             add_action('restrict_manage_posts', [self::class, 'render_space_filter_dropdown']);
             add_action('pre_get_posts', [self::class, 'apply_space_filter']);
             // P66-E: keep campaign-template posts out of the wp-admin Campaigns
-            // list table (they are mullion_campaign posts flagged _wpsg_is_template).
+            // list table (they are mullion_campaign posts flagged _mullion_is_template).
             add_action('pre_get_posts', [self::class, 'exclude_templates_from_admin_list']);
             add_action('manage_posts_extra_tablenav', [self::class, 'render_create_space_ui']);
             add_action('admin_post_mullion_create_space', [self::class, 'handle_create_space']);
@@ -266,13 +266,13 @@ class Mullion_CPT {
         ]);
 
         // P47-A: Space assignment.
-        register_post_meta('mullion_campaign', '_wpsg_space_id', [
+        register_post_meta('mullion_campaign', '_mullion_space_id', [
             'type'         => 'integer',
             'single'       => true,
             'show_in_rest' => false,
             'default'      => 0,
         ]);
-        register_term_meta('mullion_company', '_wpsg_space_id', [
+        register_term_meta('mullion_company', '_mullion_space_id', [
             'type'         => 'integer',
             'single'       => true,
             'show_in_rest' => false,
@@ -423,17 +423,17 @@ class Mullion_CPT {
         foreach ($columns as $key => $label) {
             $new[$key] = $label;
             if ($key === 'title') {
-                $new['wpsg_space'] = __('Space', 'mullion-gallery');
+                $new['mullion_space'] = __('Space', 'mullion-gallery');
             }
         }
         return $new;
     }
 
     public static function render_space_column(string $column, int $post_id): void {
-        if ($column !== 'wpsg_space') {
+        if ($column !== 'mullion_space') {
             return;
         }
-        $space_id = (int) get_post_meta($post_id, '_wpsg_space_id', true);
+        $space_id = (int) get_post_meta($post_id, '_mullion_space_id', true);
         if ($space_id <= 0) {
             echo '&mdash;';
             return;
@@ -449,13 +449,13 @@ class Mullion_CPT {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $spaces = $wpdb->get_results(
-            "SELECT id, name FROM {$wpdb->prefix}wpsg_spaces WHERE archived = 0 ORDER BY name ASC"
+            "SELECT id, name FROM {$wpdb->prefix}mullion_spaces WHERE archived = 0 ORDER BY name ASC"
         );
         if (empty($spaces)) {
             return;
         }
-        $selected = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
-        echo '<select name="wpsg_space_filter">';
+        $selected = isset($_GET['mullion_space_filter']) ? intval($_GET['mullion_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
+        echo '<select name="mullion_space_filter">';
         echo '<option value="">' . esc_html__('All spaces', 'mullion-gallery') . '</option>';
         foreach ($spaces as $s) {
             printf(
@@ -475,18 +475,18 @@ class Mullion_CPT {
         if ($query->get('post_type') !== self::POST_TYPE) {
             return;
         }
-        $space_id = isset($_GET['wpsg_space_filter']) ? intval($_GET['wpsg_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
+        $space_id = isset($_GET['mullion_space_filter']) ? intval($_GET['mullion_space_filter']) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin list-table filter: read-only GET navigation (intval'd), core-idiomatic, no nonce.
         if ($space_id <= 0) {
             return;
         }
         $meta = $query->get('meta_query') ?: [];
-        $meta[] = ['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC'];
+        $meta[] = ['key' => '_mullion_space_id', 'value' => $space_id, 'type' => 'NUMERIC'];
         $query->set('meta_query', $meta);
     }
 
     /**
      * P66-E: exclude campaign-template posts from the wp-admin Campaigns list
-     * table. Templates are mullion_campaign posts carrying the _wpsg_is_template
+     * table. Templates are mullion_campaign posts carrying the _mullion_is_template
      * flag; they are managed via the dedicated templates UI, not this table.
      */
     public static function exclude_templates_from_admin_list(\WP_Query $query): void {
@@ -512,16 +512,16 @@ class Mullion_CPT {
             return;
         }
         ?>
-        <div class="wpsg-create-space" style="display:inline-block;margin-left:4px;vertical-align:middle;">
+        <div class="mullion-create-space" style="display:inline-block;margin-left:4px;vertical-align:middle;">
             <details>
                 <summary class="button" style="cursor:pointer;"><?php esc_html_e('+ New Space', 'mullion-gallery'); ?></summary>
                 <form method="post" action="<?php echo esc_url(admin_url('admin-post.php')); ?>"
                       style="margin-top:6px;padding:8px 10px;background:#f6f7f7;border:1px solid #ddd;border-radius:3px;">
                     <input type="hidden" name="action" value="mullion_create_space">
                     <?php wp_nonce_field('mullion_create_space', '_mullion_nonce'); ?>
-                    <input type="text" name="wpsg_space_name" placeholder="<?php esc_attr_e('Space name', 'mullion-gallery'); ?>"
+                    <input type="text" name="mullion_space_name" placeholder="<?php esc_attr_e('Space name', 'mullion-gallery'); ?>"
                            required style="margin-right:4px;vertical-align:middle;">
-                    <input type="text" name="wpsg_space_slug" placeholder="<?php esc_attr_e('Slug (auto)', 'mullion-gallery'); ?>"
+                    <input type="text" name="mullion_space_slug" placeholder="<?php esc_attr_e('Slug (auto)', 'mullion-gallery'); ?>"
                            style="margin-right:4px;vertical-align:middle;">
                     <button type="submit" class="button button-primary"><?php esc_html_e('Create', 'mullion-gallery'); ?></button>
                 </form>
@@ -535,8 +535,8 @@ class Mullion_CPT {
         if (!current_user_can('manage_options') || !check_admin_referer('mullion_create_space', '_mullion_nonce')) {
             wp_die(esc_html__('Forbidden', 'mullion-gallery'));
         }
-        $name     = sanitize_text_field(wp_unslash($_POST['wpsg_space_name'] ?? ''));
-        $raw_slug = sanitize_text_field(wp_unslash($_POST['wpsg_space_slug'] ?? ''));
+        $name     = sanitize_text_field(wp_unslash($_POST['mullion_space_name'] ?? ''));
+        $raw_slug = sanitize_text_field(wp_unslash($_POST['mullion_space_slug'] ?? ''));
         $slug     = sanitize_title($raw_slug ?: $name);
         $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
         if (empty($name) || empty($slug)) {
@@ -553,7 +553,7 @@ class Mullion_CPT {
             exit;
         }
         Mullion_REST_Base::bump_cache_version();
-        wp_safe_redirect(add_query_arg('wpsg_space_created', rawurlencode($name), $redirect));
+        wp_safe_redirect(add_query_arg('mullion_space_created', rawurlencode($name), $redirect));
         exit;
     }
 }

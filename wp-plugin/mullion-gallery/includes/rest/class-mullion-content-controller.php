@@ -409,8 +409,8 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
                 return new WP_Error('mullion_campaign_not_found', 'Source campaign not found', ['status' => 404]);
             }
             $meta['visibility']           = get_post_meta($from_id, 'visibility', true) ?: 'private';
-            $meta['gallery_overrides']    = get_post_meta($from_id, '_wpsg_gallery_overrides', true) ?: null;
-            $meta['layout_template_id']   = get_post_meta($from_id, '_wpsg_layout_binding_template_id', true) ?: null;
+            $meta['gallery_overrides']    = get_post_meta($from_id, '_mullion_gallery_overrides', true) ?: null;
+            $meta['layout_template_id']   = get_post_meta($from_id, '_mullion_layout_binding_template_id', true) ?: null;
         }
 
         $post_id = wp_insert_post([
@@ -427,10 +427,10 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         update_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, '1');
         update_post_meta($post_id, 'visibility', $meta['visibility']);
         if ($meta['gallery_overrides'] !== null) {
-            update_post_meta($post_id, '_wpsg_gallery_overrides', $meta['gallery_overrides']);
+            update_post_meta($post_id, '_mullion_gallery_overrides', $meta['gallery_overrides']);
         }
         if ($meta['layout_template_id'] !== null) {
-            update_post_meta($post_id, '_wpsg_layout_binding_template_id', $meta['layout_template_id']);
+            update_post_meta($post_id, '_mullion_layout_binding_template_id', $meta['layout_template_id']);
         }
 
         $post = get_post($post_id);
@@ -487,10 +487,10 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         update_post_meta($new_id, 'visibility', $settings['visibility'] ?? 'private');
         update_post_meta($new_id, 'status', 'draft');
         if (!empty($settings['galleryOverrides'])) {
-            update_post_meta($new_id, '_wpsg_gallery_overrides', $settings['galleryOverrides']);
+            update_post_meta($new_id, '_mullion_gallery_overrides', $settings['galleryOverrides']);
         }
         if (!empty($settings['layoutTemplateId'])) {
-            update_post_meta($new_id, '_wpsg_layout_binding_template_id', $settings['layoutTemplateId']);
+            update_post_meta($new_id, '_mullion_layout_binding_template_id', $settings['layoutTemplateId']);
         }
 
         return new WP_REST_Response(self::format_campaign(get_post($new_id)), 201);
@@ -622,7 +622,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $q = new WP_Query([
             'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
-            'meta_key'       => '_wpsg_layout_binding_template_id',
+            'meta_key'       => '_mullion_layout_binding_template_id',
             'meta_value'     => $template_id,
             'fields'         => 'ids',
             'posts_per_page' => 1,
@@ -933,14 +933,14 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $space_id    = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
 
         // Transient cache (same invalidation strategy as list_campaigns).
-        $cache_version = get_option('wpsg_cache_version', 0);
-        $cache_key = "wpsg_companies_{$page}_{$per_page}_{$space_id}_{$cache_version}";
+        $cache_version = get_option('mullion_cache_version', 0);
+        $cache_key = "mullion_companies_{$page}_{$per_page}_{$space_id}_{$cache_version}";
         $cached = get_transient($cache_key);
         if ($cached !== false) {
             $response = new WP_REST_Response($cached, 200);
             $count_args = ['hide_empty' => false];
             if ($space_id > 0) {
-                $count_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+                $count_args['meta_query'] = [['key' => '_mullion_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
             }
             $total = wp_count_terms(array_merge(['taxonomy' => 'mullion_company'], $count_args));
             $response->header('X-MULLION-Total', (string) $total);
@@ -956,7 +956,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             'offset' => $offset,
         ];
         if ($space_id > 0) {
-            $terms_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+            $terms_args['meta_query'] = [['key' => '_mullion_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
         }
         $terms = get_terms($terms_args);
 
@@ -1048,7 +1048,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
         $total_args  = ['hide_empty' => false];
         if ($space_id > 0) {
-            $total_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
+            $total_args['meta_query'] = [['key' => '_mullion_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
         }
         $total       = (int) wp_count_terms(array_merge(['taxonomy' => 'mullion_company'], $total_args));
         $total_pages = $per_page > 0 ? max(1, (int) ceil($total / $per_page)) : 1;

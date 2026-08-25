@@ -60,7 +60,7 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
                 imagesetpixel($img, $x, $y, $color);
             }
         }
-        $path = tempnam(sys_get_temp_dir(), 'wpsg-png' . $suffix . '-') . '.png';
+        $path = tempnam(sys_get_temp_dir(), 'mullion-png' . $suffix . '-') . '.png';
         imagepng($img, $path);
         imagedestroy($img);
         return $path;
@@ -98,7 +98,7 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
     }
 
     public function test_compute_returns_null_for_non_image() {
-        $path = tempnam(sys_get_temp_dir(), 'wpsg-txt-');
+        $path = tempnam(sys_get_temp_dir(), 'mullion-txt-');
         file_put_contents($path, 'not an image');
         $hash = Mullion_PHash::compute($path);
         @unlink($path);
@@ -146,8 +146,8 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertArrayHasKey('attachmentId', $data);
 
-        $stored = get_post_meta((int) $data['attachmentId'], '_wpsg_file_phash', true);
-        $this->assertNotEmpty($stored, '_wpsg_file_phash should be set on the new attachment');
+        $stored = get_post_meta((int) $data['attachmentId'], '_mullion_file_phash', true);
+        $this->assertNotEmpty($stored, '_mullion_file_phash should be set on the new attachment');
         $this->assertEquals(16, strlen($stored), 'Stored pHash must be 16 hex chars');
     }
 

@@ -695,12 +695,12 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
      * testable and compatible with rest_do_request().
      */
     private static function magic_link_redirect(string $result): WP_REST_Response {
-        $settings = get_option('wpsg_settings', []);
+        $settings = get_option('mullion_settings', []);
         $page_id  = intval($settings['magic_link_landing_page_id'] ?? 0);
         $page_url = $page_id ? get_permalink($page_id) : null;
 
         if ($page_url) {
-            $redirect_url = add_query_arg('wpsg_result', rawurlencode($result), $page_url);
+            $redirect_url = add_query_arg('mullion_result', rawurlencode($result), $page_url);
             $response = new WP_REST_Response(null, 302);
             $response->header('Location', $redirect_url);
             return $response;
@@ -1108,7 +1108,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $space_id     = (is_numeric($space_param) && intval($space_param) > 0) ? intval($space_param) : 0;
         $space_join   = $space_id > 0
             ? $wpdb->prepare(
-                " INNER JOIN {$wpdb->postmeta} pm_space ON (pm_space.post_id = p.ID AND pm_space.meta_key = '_wpsg_space_id' AND pm_space.meta_value = %d)",
+                " INNER JOIN {$wpdb->postmeta} pm_space ON (pm_space.post_id = p.ID AND pm_space.meta_key = '_mullion_space_id' AND pm_space.meta_value = %d)",
                 $space_id
             )
             : '';

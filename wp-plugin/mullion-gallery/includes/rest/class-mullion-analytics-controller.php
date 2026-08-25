@@ -59,7 +59,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
     public static function record_analytics_event($request) {
 
         // Respect the enable_analytics setting (default: disabled).
-        $settings = get_option('wpsg_settings', []);
+        $settings = get_option('mullion_settings', []);
         if (empty($settings['enable_analytics'])) {
             return new WP_Error('mullion_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
@@ -93,7 +93,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
         // count this event (the column existed since v11 but was never written,
         // leaving every space-scoped query at zero). Same resolution pattern as
         // Mullion_DB::insert_audit_entry().
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
 
         $table = Mullion_DB::get_analytics_table();
         $row   = [

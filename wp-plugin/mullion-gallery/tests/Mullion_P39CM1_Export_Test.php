@@ -240,7 +240,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         // Simulate a crash mid-processing: flip status to processing without completing.
         $job = Mullion_Export_Engine::get_job($id);
         $job['status'] = 'processing';
-        set_transient('wpsg_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
 
         // process_job must be a no-op while stuck in processing.
         Mullion_Export_Engine::process_job($id);
@@ -268,7 +268,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
 
         // Back-date creation to force expiry.
         $job['created_at'] = gmdate('c', time() - (Mullion_Export_Engine::JOB_TTL + 60));
-        set_transient('wpsg_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
 
         Mullion_Export_Engine::cleanup_expired_jobs();
         $this->assertNull(Mullion_Export_Engine::get_job($id));

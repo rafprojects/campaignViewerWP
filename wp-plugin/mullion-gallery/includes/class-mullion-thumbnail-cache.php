@@ -3,10 +3,10 @@
  * External Thumbnail Cache — P14-C / P49-F
  *
  * Downloads and caches external media thumbnails locally for reliability
- * and performance. Thumbnails are stored in wp-content/uploads/wpsg-thumbnails/.
+ * and performance. Thumbnails are stored in wp-content/uploads/mullion-thumbnails/.
  *
  * P49-F: Per-hash wp_options storage — each cached URL is a separate
- * `wpsg_thumb_<sha256>` option row with autoload='no'.
+ * `mullion_thumb_<sha256>` option row with autoload='no'.
  *
  * @package Mullion
  */
@@ -16,11 +16,11 @@ if (!defined('ABSPATH')) {
 }
 
 class Mullion_Thumbnail_Cache {
-    const UPLOAD_DIR          = 'wpsg-thumbnails';
-    const META_KEY            = '_wpsg_cached_thumbnail';
-    const TTL_OPTION          = 'wpsg_thumbnail_cache_ttl';
+    const UPLOAD_DIR          = 'mullion-thumbnails';
+    const META_KEY            = '_mullion_cached_thumbnail';
+    const TTL_OPTION          = 'mullion_thumbnail_cache_ttl';
     const DEFAULT_TTL         = 86400; // 24 hours
-    const OPTION_PREFIX = 'wpsg_thumb_';
+    const OPTION_PREFIX = 'mullion_thumb_';
 
     /**
      * Register hooks.

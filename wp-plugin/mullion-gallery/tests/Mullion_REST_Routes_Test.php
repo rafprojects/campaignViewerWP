@@ -61,7 +61,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_analytics_event_rejects_invalid_event_type() {
-        update_option('wpsg_settings', ['enable_analytics' => true]);
+        update_option('mullion_settings', ['enable_analytics' => true]);
         $campaign_id = wp_insert_post([
             'post_type'   => 'mullion_campaign',
             'post_title'  => 'Analytics Test',
@@ -358,7 +358,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_patch_settings_merges_partial_keys() {
-        update_option('wpsg_settings', ['enable_analytics' => true, 'default_visibility' => 'public']);
+        update_option('mullion_settings', ['enable_analytics' => true, 'default_visibility' => 'public']);
 
         $request = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
@@ -366,7 +366,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
-        $stored = get_option('wpsg_settings');
+        $stored = get_option('mullion_settings');
         // PATCH must not destroy sibling keys.
         $this->assertEquals('private', $stored['default_visibility']);
         $this->assertTrue((bool) $stored['enable_analytics'], 'Unmentioned key must be preserved');

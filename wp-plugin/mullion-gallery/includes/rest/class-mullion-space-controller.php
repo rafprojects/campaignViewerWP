@@ -170,7 +170,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         $include_archived = filter_var($request->get_param('include_archived'), FILTER_VALIDATE_BOOLEAN);
         $cv        = self::get_cache_version();
         $user_id   = get_current_user_id();
-        $cache_key = 'wpsg_spaces_v' . $cv . '_' . $user_id . '_' . ($include_archived ? 'all' : 'active');
+        $cache_key = 'mullion_spaces_v' . $cv . '_' . $user_id . '_' . ($include_archived ? 'all' : 'active');
         $cached    = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
             return new WP_REST_Response($cached, 200);
@@ -187,7 +187,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             }));
         }
 
-        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        $default_id = intval(get_option('mullion_default_space_id', 0));
         $items    = array_map(function ($space) use ($default_id) {
             return self::format_space($space, $default_id);
         }, $spaces);
@@ -227,7 +227,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         self::bump_cache_version();
 
         $space = Mullion_DB::get_space($id);
-        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        $default_id = intval(get_option('mullion_default_space_id', 0));
         return new WP_REST_Response(self::format_space($space, $default_id), 201);
     }
 
@@ -237,7 +237,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         if (!$space) {
             return new WP_Error('mullion_space_not_found', 'Space not found', ['status' => 404]);
         }
-        $default_id     = intval(get_option('wpsg_default_space_id', 0));
+        $default_id     = intval(get_option('mullion_default_space_id', 0));
         $include_grants = current_user_can('manage_options') ||
                           self::get_effective_space_level(get_current_user_id(), $space_id) === 'owner';
         return new WP_REST_Response(self::format_space($space, $default_id, $include_grants), 200);
@@ -273,7 +273,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         }
 
         $updated    = Mullion_DB::get_space($space_id);
-        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        $default_id = intval(get_option('mullion_default_space_id', 0));
         return new WP_REST_Response(self::format_space($updated, $default_id), 200);
     }
 
@@ -284,7 +284,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             return new WP_Error('mullion_space_not_found', 'Space not found', ['status' => 404]);
         }
 
-        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        $default_id = intval(get_option('mullion_default_space_id', 0));
         if ($space_id === $default_id) {
             return new WP_Error('mullion_cannot_delete_default', 'The Default Space cannot be deleted', ['status' => 400]);
         }
@@ -294,7 +294,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             'post_status'    => 'any',
             'posts_per_page' => 1,
             'fields'         => 'ids',
-            'meta_query'     => [['key' => '_wpsg_space_id', 'value' => $space_id]],
+            'meta_query'     => [['key' => '_mullion_space_id', 'value' => $space_id]],
         ]));
 
         $force = filter_var($request->get_param('force'), FILTER_VALIDATE_BOOLEAN);

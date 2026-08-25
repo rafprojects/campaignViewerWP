@@ -21,7 +21,7 @@ class Mullion_P39OC1_CacheHealth_Test extends WP_UnitTestCase {
     }
 
     public function tearDown(): void {
-        wp_cache_delete('wpsg_settings', 'wpsg_settings');
+        wp_cache_delete('mullion_settings', 'mullion_settings');
         parent::tearDown();
     }
 
@@ -83,26 +83,26 @@ class Mullion_P39OC1_CacheHealth_Test extends WP_UnitTestCase {
 
     public function test_warm_settings_primes_cache(): void {
         // Ensure the cache group is cold.
-        wp_cache_delete('wpsg_settings', 'wpsg_settings');
+        wp_cache_delete('mullion_settings', 'mullion_settings');
 
         // Seed the option so warm_settings has something to cache.
-        update_option('wpsg_settings', ['theme' => 'default'], true);
+        update_option('mullion_settings', ['theme' => 'default'], true);
 
         Mullion_Monitoring::warm_settings();
 
-        $cached = wp_cache_get('wpsg_settings', 'wpsg_settings');
-        $this->assertNotFalse($cached, 'warm_settings() should prime the wpsg_settings cache group');
+        $cached = wp_cache_get('mullion_settings', 'mullion_settings');
+        $this->assertNotFalse($cached, 'warm_settings() should prime the mullion_settings cache group');
         $this->assertIsArray($cached);
     }
 
     public function test_warm_settings_is_idempotent(): void {
-        update_option('wpsg_settings', ['theme' => 'test'], true);
+        update_option('mullion_settings', ['theme' => 'test'], true);
 
         // Call twice — second call should be a no-op (cache already warm).
         Mullion_Monitoring::warm_settings();
         Mullion_Monitoring::warm_settings();
 
-        $cached = wp_cache_get('wpsg_settings', 'wpsg_settings');
+        $cached = wp_cache_get('mullion_settings', 'mullion_settings');
         $this->assertNotFalse($cached);
         $this->assertSame('test', $cached['theme'] ?? null);
     }

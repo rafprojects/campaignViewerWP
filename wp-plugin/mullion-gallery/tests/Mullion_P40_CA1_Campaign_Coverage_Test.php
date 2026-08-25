@@ -39,7 +39,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
     }
 
     private function create_temp_gif(string $suffix = ''): string {
-        $path = tempnam(sys_get_temp_dir(), 'wpsg-ca1gif' . $suffix . '-');
+        $path = tempnam(sys_get_temp_dir(), 'mullion-ca1gif' . $suffix . '-');
         file_put_contents($path, base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='));
         return $path;
     }

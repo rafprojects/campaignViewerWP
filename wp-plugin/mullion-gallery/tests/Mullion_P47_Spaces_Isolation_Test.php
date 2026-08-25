@@ -29,7 +29,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     }
 
     /** manage_mullion but NOT manage_options — the delegated-mode boundary case. */
-    private function make_wpsg_only_admin(): int {
+    private function make_mullion_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_mullion');
@@ -56,7 +56,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
         update_post_meta($id, 'status', 'active');
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 
@@ -116,7 +116,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     public function test_open_space_denies_manage_mullion_without_grant() {
         // P53-A: open-mode no longer grants implicit access to manage_mullion editors.
         // Editors need an explicit space grant regardless of isolation mode.
-        $uid   = $this->make_wpsg_only_admin();
+        $uid   = $this->make_mullion_only_admin();
         $space = $this->make_space('open');
         wp_set_current_user($uid);
 
@@ -131,7 +131,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     // -------------------------------------------------------------------------
 
     public function test_delegated_space_denies_manage_mullion_only_admin() {
-        $uid   = $this->make_wpsg_only_admin();
+        $uid   = $this->make_mullion_only_admin();
         $space = $this->make_space('delegated');
         wp_set_current_user($uid);
 

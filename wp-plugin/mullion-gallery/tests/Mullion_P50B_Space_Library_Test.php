@@ -44,7 +44,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
-    private function make_wpsg_only_admin(): int {
+    private function make_mullion_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
         $user->add_cap('manage_mullion');
@@ -174,7 +174,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $space   = $this->make_space('delegated');
         $overlay = $this->add_overlay('P50B Denied Overlay');
 
-        wp_set_current_user($this->make_wpsg_only_admin());
+        wp_set_current_user($this->make_mullion_only_admin());
         $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/library");
         $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay);
@@ -195,8 +195,8 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $font      = $this->add_font('P50B Backfill Font');
 
         // Re-run the migration as if upgrading from a pre-P50B install.
-        delete_option('wpsg_space_library_assoc_backfilled');
-        delete_option('wpsg_db_version');
+        delete_option('mullion_space_library_assoc_backfilled');
+        delete_option('mullion_db_version');
         Mullion_DB::maybe_upgrade();
 
         $this->assertContains($overlay, Mullion_DB::get_space_library_assets($delegated, 'asset'));

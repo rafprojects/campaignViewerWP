@@ -120,7 +120,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $this->assertStringNotContainsString( 'mullion-gallery--compact', $output );
     }
 
-    public function test_render_shortcode_sets_wpsg_has_shortcode_global() {
+    public function test_render_shortcode_sets_mullion_has_shortcode_global() {
         $this->assertArrayNotHasKey( 'mullion_has_shortcode', $GLOBALS );
 
         Mullion_Embed::render_shortcode();
@@ -159,7 +159,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringContainsString( 'wpsg-full-bleed', $output );
+        $this->assertStringContainsString( 'mullion-full-bleed', $output );
         $this->assertStringContainsString( '<style>', $output );
     }
 
@@ -173,11 +173,11 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $output = Mullion_Embed::render_shortcode();
 
         // Wrapper div must carry a data-space attribute.
-        $this->assertMatchesRegularExpression( '/wpsg-full-bleed[^"]*"\s+data-space="[^"]+"/', $output );
+        $this->assertMatchesRegularExpression( '/mullion-full-bleed[^"]*"\s+data-space="[^"]+"/', $output );
         // Emitted CSS selector must be scoped — not the bare class alone.
-        $this->assertStringContainsString( '.wpsg-full-bleed[data-space=', $output );
+        $this->assertStringContainsString( '.mullion-full-bleed[data-space=', $output );
         // The bare unscoped selector must NOT appear.
-        $this->assertStringNotContainsString( '{.wpsg-full-bleed{', $output );
+        $this->assertStringNotContainsString( '{.mullion-full-bleed{', $output );
     }
 
     public function test_render_shortcode_no_bleed_when_all_disabled() {
@@ -189,7 +189,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringNotContainsString( 'wpsg-full-bleed', $output );
+        $this->assertStringNotContainsString( 'mullion-full-bleed', $output );
     }
 
     // ------------------------------------- P72-D: unresolved-space admin notice
@@ -258,7 +258,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     // P72-D review follow-up: "the named entity exists but carries no space" is
-    // NOT a stale reference — a campaign/company with no `_wpsg_space_id` legitimately
+    // NOT a stale reference — a campaign/company with no `_mullion_space_id` legitimately
     // inherits the default space (the common case on a single-space install).
     // Only a reference naming something that does not exist is worth a notice.
 
@@ -271,7 +271,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ] );
         $this->assertNotEmpty( get_post( $post_id ) );
-        // Deliberately no _wpsg_space_id meta — inherits the default space.
+        // Deliberately no _mullion_space_id meta — inherits the default space.
 
         $output = Mullion_Embed::render_shortcode( [ 'campaign' => 'p72d-inherits-default' ] );
 
@@ -289,7 +289,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $term = wp_insert_term( 'P72D Co', 'mullion_company', [ 'slug' => 'p72d-co' ] );
         $this->assertNotWPError( $term );
-        // Deliberately no _wpsg_space_id term meta.
+        // Deliberately no _mullion_space_id term meta.
 
         $output = Mullion_Embed::render_shortcode( [ 'company' => 'p72d-co' ] );
 

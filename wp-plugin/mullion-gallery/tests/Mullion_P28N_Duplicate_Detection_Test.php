@@ -27,7 +27,7 @@ class Mullion_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
     }
 
     private function create_temp_gif(string $suffix = ''): string {
-        $path = tempnam(sys_get_temp_dir(), 'wpsg-gif' . $suffix . '-');
+        $path = tempnam(sys_get_temp_dir(), 'mullion-gif' . $suffix . '-');
         file_put_contents($path, base64_decode('R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='));
         return $path;
     }
@@ -60,8 +60,8 @@ class Mullion_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertArrayHasKey('attachmentId', $data);
 
-        $stored_md5 = get_post_meta((int) $data['attachmentId'], '_wpsg_file_md5', true);
-        $this->assertEquals($expected_md5, $stored_md5, '_wpsg_file_md5 should be stored on the attachment');
+        $stored_md5 = get_post_meta((int) $data['attachmentId'], '_mullion_file_md5', true);
+        $this->assertEquals($expected_md5, $stored_md5, '_mullion_file_md5 should be stored on the attachment');
     }
 
     public function test_duplicate_file_returns_409() {

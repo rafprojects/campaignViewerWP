@@ -40,15 +40,20 @@ function mullion_uninstall_remove_dir( $dir ) {
 	rmdir( $dir ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_rmdir
 }
 
-// ── P66-F / Key Decision C: remove wpsg-exports/ regardless of the
+// ── P66-F / Key Decision C: remove mullion-exports/ regardless of the
 // preserve-data preference — its 24-hour export-job TTL makes preserving ZIPs
 // past uninstall backwards. Must run BEFORE the preserve-data early return
 // below. Migrators are told (packaging docs) to move ZIPs out of
-// uploads/wpsg-exports/ before uninstalling.
-mullion_uninstall_remove_dir( trailingslashit( wp_upload_dir()['basedir'] ) . 'wpsg-exports' );
+// uploads/mullion-exports/ before uninstalling.
+$uninstall_uploads = trailingslashit( wp_upload_dir()['basedir'] );
+mullion_uninstall_remove_dir( $uninstall_uploads . 'mullion-exports' );
+mullion_uninstall_remove_dir( $uninstall_uploads . 'wpsg-exports' );
 
 // ── Respect user preference to preserve data ────────────────
-$settings = get_option( 'wpsg_settings', [] );
+$settings = get_option( 'mullion_settings', [] );
+if ( ! is_array( $settings ) || $settings === [] ) {
+	$settings = get_option( 'wpsg_settings', [] );
+}
 if ( ! empty( $settings['preserve_data_on_uninstall'] ) ) {
 	return;
 }
@@ -71,8 +76,8 @@ foreach ( $template_ids as $id ) {
 	wp_delete_post( (int) $id, true );
 }
 // Also clean up legacy layout template option and backup.
-delete_option( 'wpsg_layout_templates' );
-delete_option( 'wpsg_layout_templates_backup' );
+delete_option( 'mullion_layout_templates' );
+delete_option( 'mullion_layout_templates_backup' );
 
 // ── 3. Delete taxonomy terms ────────────────────────────────
 $taxonomies = [
@@ -94,81 +99,97 @@ foreach ( $taxonomies as $taxonomy ) {
 
 // ── 4. Delete options ───────────────────────────────────────
 $options = [
-	'wpsg_settings',
-	'wpsg_db_version',
-	'wpsg_overlay_library',
-	'wpsg_thumbnail_cache_index',
-	'wpsg_oembed_provider_failures',
-	'wpsg_oembed_failure_count',       // P66-F: distinct from _provider_failures above
-	'wpsg_needs_setup',
-	'wpsg_roles_migrated_editor', // P52-A2: wpsg_admin → mullion_editor migration flag
-	'wpsg_cache_version',
-	'wpsg_layout_templates',
-	'wpsg_media_refs_backfilled',
-	'wpsg_media_refs_backfill_offset',
-	'wpsg_access_requests_migrated',
-	'wpsg_access_request_index',
-	'wpsg_overlays_migrated',
-	'wpsg_preserve_data_on_uninstall', // legacy key, if ever set directly
+	'mullion_settings',
+	'mullion_db_version',
+	'mullion_overlay_library',
+	'mullion_thumbnail_cache_index',
+	'mullion_oembed_provider_failures',
+	'mullion_oembed_failure_count',       // P66-F: distinct from _provider_failures above
+	'mullion_needs_setup',
+	'mullion_roles_migrated_editor', // P52-A2: mullion_admin → mullion_editor migration flag
+	'mullion_cache_version',
+	'mullion_layout_templates',
+	'mullion_media_refs_backfilled',
+	'mullion_media_refs_backfill_offset',
+	'mullion_access_requests_migrated',
+	'mullion_access_request_index',
+	'mullion_overlays_migrated',
+	'mullion_preserve_data_on_uninstall', // legacy key, if ever set directly
 	// P47-A: Gallery Spaces
-	'wpsg_default_space_id',
-	'wpsg_spaces_backfill_complete',
-	'wpsg_spaces_backfill_offset',
+	'mullion_default_space_id',
+	'mullion_spaces_backfill_complete',
+	'mullion_spaces_backfill_offset',
 	// ── P66-F: options the plugin writes but uninstall never removed ──
-	'wpsg_webhook_endpoints',          // contains webhook SECRETS
-	'wpsg_webhook_delivery_log',
-	'wpsg_recent_logs',
-	'wpsg_rest_request_count',
-	'wpsg_rest_error_count',
-	'wpsg_alert_email_queue',
-	'wpsg_export_job_index',
-	'wpsg_font_library',
-	'wpsg_campaign_tables_innodb_v15',
-	'wpsg_space_library_assoc_backfilled',
+	'mullion_webhook_endpoints',          // contains webhook SECRETS
+	'mullion_webhook_delivery_log',
+	'mullion_recent_logs',
+	'mullion_rest_request_count',
+	'mullion_rest_error_count',
+	'mullion_alert_email_queue',
+	'mullion_export_job_index',
+	'mullion_font_library',
+	'mullion_campaign_tables_innodb_v15',
+	'mullion_space_library_assoc_backfilled',
 	// P66-B / P66-C: one-time migration guard flags introduced this phase
-	'wpsg_scoped_space_id_backfilled',
-	'wpsg_archived_at_backfilled',
+	'mullion_scoped_space_id_backfilled',
+	'mullion_archived_at_backfilled',
 	// P67-I: one-time filesize backfill guard.
-	'wpsg_filesize_backfilled',
+	'mullion_filesize_backfilled',
 ];
 foreach ( $options as $option ) {
 	delete_option( $option );
 }
 
-// P66-F: per-hash thumbnail cache rows (wpsg_thumb_<sha256>); the loop above
-// only removed the legacy singular wpsg_thumbnail_cache_index.
+// Leftover pre-P74-F option keys (un-migrated install).
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
-	"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wpsg\_thumb\_%'"
+	"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'wpsg\_%'"
+);
+
+// P66-F: per-hash thumbnail cache rows (mullion_thumb_<sha256>); the loop above
+// only removed the legacy singular mullion_thumbnail_cache_index.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+$wpdb->query(
+	"DELETE FROM {$wpdb->options} WHERE option_name LIKE 'mullion\_thumb\_%' OR option_name LIKE 'wpsg\_thumb\_%'"
 );
 
 // Clean up any legacy per-request options from pre-D-9 wp_options storage.
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
 	"DELETE FROM {$wpdb->options}
-	 WHERE option_name LIKE 'wpsg\_access\_request\_%'
-	   AND option_name != 'wpsg_access_request_index'
-	   AND option_name != 'wpsg_access_requests_migrated'"
+	 WHERE (option_name LIKE 'mullion\_access\_request\_%' OR option_name LIKE 'wpsg\_access\_request\_%')
+	   AND option_name != 'mullion_access_request_index'
+	   AND option_name != 'mullion_access_requests_migrated'"
 );
 
-// ── 5. Delete transients matching wpsg_* ────────────────────
+// ── 5. Delete transients matching mullion_* ────────────────────
 // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 $wpdb->query(
 	"DELETE FROM {$wpdb->options}
-	 WHERE option_name LIKE '_transient_wpsg_%'
+	 WHERE option_name LIKE '_transient_mullion_%'
+	    OR option_name LIKE '_transient_timeout_mullion_%'
+	    OR option_name LIKE '_transient_wpsg_%'
 	    OR option_name LIKE '_transient_timeout_wpsg_%'"
 );
 
 // ── 6. Drop custom tables ───────────────────────────────────
 $tables = [
+	$wpdb->prefix . 'mullion_analytics_events',
+	$wpdb->prefix . 'mullion_access_requests',
+	$wpdb->prefix . 'mullion_media_refs',
+	$wpdb->prefix . 'mullion_overlays',
+	$wpdb->prefix . 'mullion_assets',
+	$wpdb->prefix . 'mullion_audit_log',
+	$wpdb->prefix . 'mullion_spaces',
+	$wpdb->prefix . 'mullion_space_library_assoc',
 	$wpdb->prefix . 'wpsg_analytics_events',
 	$wpdb->prefix . 'wpsg_access_requests',
 	$wpdb->prefix . 'wpsg_media_refs',
-	$wpdb->prefix . 'wpsg_overlays',            // legacy pre-P48 name
-	$wpdb->prefix . 'wpsg_assets',              // P66-F: current name (renamed from wpsg_overlays in v14)
-	$wpdb->prefix . 'wpsg_audit_log',           // P40
-	$wpdb->prefix . 'wpsg_spaces',              // P47-A
-	$wpdb->prefix . 'wpsg_space_library_assoc', // P66-F
+	$wpdb->prefix . 'wpsg_overlays',
+	$wpdb->prefix . 'wpsg_assets',
+	$wpdb->prefix . 'wpsg_audit_log',
+	$wpdb->prefix . 'wpsg_spaces',
+	$wpdb->prefix . 'wpsg_space_library_assoc',
 ];
 foreach ( $tables as $table ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange
@@ -180,6 +201,8 @@ foreach ( $tables as $table ) {
 // must be removed on uninstall or they outlive the plugin. Guarded via
 // INFORMATION_SCHEMA so a DROP on an absent index is a no-op, not an error.
 $core_indexes = [
+	[ 'table' => $wpdb->postmeta, 'index' => 'mullion_postmeta_postid_key' ],
+	[ 'table' => $wpdb->termmeta, 'index' => 'mullion_termmeta_termid_key' ],
 	[ 'table' => $wpdb->postmeta, 'index' => 'wpsg_postmeta_postid_key' ],
 	[ 'table' => $wpdb->termmeta, 'index' => 'wpsg_termmeta_termid_key' ],
 ];
@@ -202,9 +225,9 @@ foreach ( $core_indexes as $ci ) {
 }
 
 // ── 7. Remove roles and capabilities ────────────────────────
-remove_role( 'mullion_editor' );          // P74-E (Space Editor)
-remove_role( 'wpsg_editor' );             // pre-P74-E role slug
-remove_role( 'wpsg_admin' );              // legacy pre-P52-A2 role — remove if still present
+remove_role( 'mullion_editor' );
+remove_role( 'wpsg_editor' );
+remove_role( 'wpsg_admin' );
 
 $admin_role = get_role( 'administrator' );
 if ( $admin_role ) {
@@ -238,9 +261,12 @@ foreach ( mullion_get_cron_hooks() as $hook ) {
 }
 
 // ── 9. Delete uploaded files ────────────────────────────────
-// P66-F: wpsg-fonts/ was previously left behind. wpsg-exports/ is handled
+// P66-F: mullion-fonts/ was previously left behind. mullion-exports/ is handled
 // earlier (before the preserve-data return) per Key Decision C.
 $upload_basedir = trailingslashit( wp_upload_dir()['basedir'] );
+mullion_uninstall_remove_dir( $upload_basedir . 'mullion-thumbnails' );
+mullion_uninstall_remove_dir( $upload_basedir . 'mullion-overlays' );
+mullion_uninstall_remove_dir( $upload_basedir . 'mullion-fonts' );
 mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-thumbnails' );
 mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-overlays' );
 mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-fonts' );

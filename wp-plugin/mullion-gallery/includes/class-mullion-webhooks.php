@@ -28,8 +28,8 @@ class Mullion_Webhooks {
     const MAX_ENDPOINTS = 5;
     const MAX_ATTEMPTS  = 3;
     const RETRY_HOOK    = 'mullion_webhook_retry';
-    const OPTION_NAME   = 'wpsg_webhook_endpoints';
-    const LOG_OPTION    = 'wpsg_webhook_delivery_log';
+    const OPTION_NAME   = 'mullion_webhook_endpoints';
+    const LOG_OPTION    = 'mullion_webhook_delivery_log';
     const MAX_LOG       = 50;
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────

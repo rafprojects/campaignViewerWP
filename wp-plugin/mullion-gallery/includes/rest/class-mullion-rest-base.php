@@ -189,7 +189,7 @@ abstract class Mullion_REST_Base {
         $route = $request->get_route();
         // Include space_id in the key when set so each space has its own bucket (P48-D).
         $space_seg = $space_id > 0 ? '_s' . $space_id : '';
-        $key = sprintf('wpsg_rl_%s%s_%s_%s', $scope, $space_seg, $user_id ?: 'anon', md5($ip . '|' . $route));
+        $key = sprintf('mullion_rl_%s%s_%s_%s', $scope, $space_seg, $user_id ?: 'anon', md5($ip . '|' . $route));
 
         // P63-A: gate the object-cache counter on whether a *persistent* object
         // cache is actually installed. WordPress core defines wp_cache_incr()
@@ -203,16 +203,16 @@ abstract class Mullion_REST_Base {
             $cache_key = $key . '_count';
             $reset_key = $key . '_reset';
 
-            $current = wp_cache_incr($cache_key, 1, 'wpsg_rate_limit');
+            $current = wp_cache_incr($cache_key, 1, 'mullion_rate_limit');
             if ($current === false) {
-                wp_cache_add($cache_key, 1, 'wpsg_rate_limit', $window);
+                wp_cache_add($cache_key, 1, 'mullion_rate_limit', $window);
                 $current = 1;
             }
 
-            $reset = wp_cache_get($reset_key, 'wpsg_rate_limit');
+            $reset = wp_cache_get($reset_key, 'mullion_rate_limit');
             if ($reset === false) {
                 $reset = time() + $window;
-                wp_cache_add($reset_key, $reset, 'wpsg_rate_limit', $window);
+                wp_cache_add($reset_key, $reset, 'mullion_rate_limit', $window);
             }
 
             self::$rate_limit_headers = [
@@ -418,7 +418,7 @@ abstract class Mullion_REST_Base {
         }
 
         // P47-B: Delegated spaces can deny manage_mullion users; must check before the admin short-circuit.
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
         if ($space_id > 0 && !self::can_access_space($space_id, $user_id)) {
             return '';
         }
@@ -540,10 +540,10 @@ abstract class Mullion_REST_Base {
             return false;
         }
 
-        $source_space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $source_space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
         if ($source_space_id <= 0) {
             // Campaign predates the spaces backfill — treat the default space as its source.
-            $source_space_id = intval(get_option('wpsg_default_space_id'));
+            $source_space_id = intval(get_option('mullion_default_space_id'));
         }
         // Use the archived-agnostic level check (not can_access_space) so the
         // handler can still return its 404 for an archived target and so a
@@ -556,16 +556,16 @@ abstract class Mullion_REST_Base {
     }
 
     /**
-     * P63-I: resolve the space that owns a campaign — post meta `_wpsg_space_id`,
+     * P63-I: resolve the space that owns a campaign — post meta `_mullion_space_id`,
      * falling back to the configured default space. Returns 0 when the campaign has
      * no space (pre-spaces install / no default configured). Centralizes the
      * meta+default lookup shared by the space-access gate below and export-job
      * space stamping (Mullion_Export_Controller).
      */
     protected static function resolve_campaign_space_id(int $campaign_id): int {
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
         if ($space_id <= 0) {
-            $space_id = intval(get_option('wpsg_default_space_id'));
+            $space_id = intval(get_option('mullion_default_space_id'));
         }
         return max(0, $space_id);
     }
@@ -739,7 +739,7 @@ abstract class Mullion_REST_Base {
      * @return int
      */
     public static function get_cache_version(): int {
-        return intval(get_option('wpsg_cache_version', 1));
+        return intval(get_option('mullion_cache_version', 1));
     }
 
     /**
@@ -749,7 +749,7 @@ abstract class Mullion_REST_Base {
      */
     public static function bump_cache_version(): void {
         $v = self::get_cache_version();
-        update_option('wpsg_cache_version', $v + 1, true);
+        update_option('mullion_cache_version', $v + 1, true);
     }
 
     // ── P67-D / P72-C: shared global-settings guard + write path ───────────────
@@ -820,7 +820,7 @@ abstract class Mullion_REST_Base {
     /**
      * Single global-settings write path shared by update_settings(),
      * patch_settings(), and the space panel's global-key routing. Sanitizes,
-     * merges per $mode, writes wpsg_settings, and emits the settings.updated
+     * merges per $mode, writes mullion_settings, and emits the settings.updated
      * audit entry.
      *
      * Callers guard authorization first via guard_admin_only_settings() (P72-C
@@ -949,7 +949,7 @@ abstract class Mullion_REST_Base {
         // P47-B: Space gate — delegated spaces deny ungranted admins before the
         // admin short-circuit below. Applies to non-public / draft / out-of-window
         // content only; in-window public campaigns already returned above.
-        $space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
+        $space_id = intval(get_post_meta($post_id, '_mullion_space_id', true));
         if ($space_id > 0 && !self::can_access_space($space_id, intval($user_id))) {
             return false;
         }
@@ -1033,7 +1033,7 @@ abstract class Mullion_REST_Base {
     protected static function get_accessible_campaign_ids($user_id) {
         $sanitized_user_id = absint($user_id);
         $cv = self::get_cache_version();
-        $cache_key = 'wpsg_acc_v' . $cv . '_' . $sanitized_user_id;
+        $cache_key = 'mullion_acc_v' . $cv . '_' . $sanitized_user_id;
         $cached = get_transient($cache_key);
         if (false !== $cached && is_array($cached)) {
             return $cached;
@@ -1364,8 +1364,8 @@ abstract class Mullion_REST_Base {
             'categories' => self::get_campaign_category_ids($post->ID),
             'publishAt' => self::meta_to_iso8601($post->ID, 'publish_at'),
             'unpublishAt' => self::meta_to_iso8601($post->ID, 'unpublish_at'),
-            'layoutTemplateId' => get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: null,
-            'layoutBinding' => get_post_meta($post->ID, '_wpsg_layout_binding', true) ?: null,
+            'layoutTemplateId' => get_post_meta($post->ID, '_mullion_layout_binding_template_id', true) ?: null,
+            'layoutBinding' => get_post_meta($post->ID, '_mullion_layout_binding', true) ?: null,
             'galleryOverrides' => self::get_campaign_gallery_overrides($post->ID),
             'createdAt' => get_post_time('c', true, $post),
             'updatedAt' => get_post_modified_time('c', true, $post),
@@ -1385,7 +1385,7 @@ abstract class Mullion_REST_Base {
     }
 
     private static function get_campaign_gallery_overrides($post_id) {
-        $raw = get_post_meta($post_id, '_wpsg_gallery_overrides', true);
+        $raw = get_post_meta($post_id, '_mullion_gallery_overrides', true);
         $decoded = null;
 
         if (is_array($raw)) {
@@ -1467,7 +1467,7 @@ abstract class Mullion_REST_Base {
     public static function find_attachment_by_md5(string $md5): int {
         global $wpdb;
         $id = $wpdb->get_var($wpdb->prepare(
-            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_wpsg_file_md5' AND meta_value = %s LIMIT 1",
+            "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_mullion_file_md5' AND meta_value = %s LIMIT 1",
             $md5
         ));
         return $id ? intval($id) : 0;

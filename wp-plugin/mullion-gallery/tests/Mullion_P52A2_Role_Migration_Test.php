@@ -77,7 +77,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
 
     public function test_migration_converts_legacy_user_and_removes_role() {
         // Arrange: a pre-P52-A2 install with the legacy role and a user on it.
-        delete_option('wpsg_roles_migrated_editor');
+        delete_option('mullion_roles_migrated_editor');
         $legacy_caps = ['read' => true, 'upload_files' => true, 'manage_wpsg' => true];
         add_role('wpsg_admin', 'Gallery Admin', $legacy_caps);
         $uid = self::factory()->user->create(['role' => 'wpsg_admin']);
@@ -97,11 +97,11 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         // Legacy role removed; flag set so it does not re-run.
         $this->assertNull(get_role('wpsg_admin'), 'legacy wpsg_admin role must be removed');
         $this->assertNotNull(get_role('mullion_editor'), 'mullion_editor role must exist after migration');
-        $this->assertNotEmpty(get_option('wpsg_roles_migrated_editor'), 'migration flag must be set');
+        $this->assertNotEmpty(get_option('mullion_roles_migrated_editor'), 'migration flag must be set');
     }
 
     public function test_migration_is_noop_when_flag_set() {
-        update_option('wpsg_roles_migrated_editor', '1');
+        update_option('mullion_roles_migrated_editor', '1');
         add_role('wpsg_admin', 'Gallery Admin', ['read' => true]);
 
         mullion_maybe_migrate_roles();

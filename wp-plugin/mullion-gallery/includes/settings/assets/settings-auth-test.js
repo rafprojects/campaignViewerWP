@@ -40,8 +40,8 @@
   }
 
   function initAuthTestButton() {
-    var testBtn = document.getElementById('wpsg-test-auth');
-    var resultSpan = document.getElementById('wpsg-test-auth-result');
+    var testBtn = document.getElementById('mullion-test-auth');
+    var resultSpan = document.getElementById('mullion-test-auth-result');
     var config = window.wpsgSettingsAuthTest;
 
     if (!testBtn || !resultSpan || !config) {

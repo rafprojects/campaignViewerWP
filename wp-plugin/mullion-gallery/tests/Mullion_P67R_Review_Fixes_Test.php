@@ -7,9 +7,9 @@
  *   taxonomy. P67-F/G passed 'mullion_company', which expands to no taxonomies at all
  *   and primes nothing, so the batch priming those tracks added was a silent no-op.
  * - R2 stamp_filesize_meta() skipped the write when the file was unreadable, which
- *   left offloaded/broken attachments permanently without _wpsg_filesize while the
+ *   left offloaded/broken attachments permanently without _mullion_filesize while the
  *   backfill stamped 0 for the same rows.
- * - R3 The _wpsg_filesize backfill looped over the entire attachment library in one
+ * - R3 The _mullion_filesize backfill looped over the entire attachment library in one
  *   request; it is now bounded per run and resumed on cron.
  * - R4 dispatch() ignored wp_schedule_single_event()'s return value, so a refused
  *   schedule dropped webhook delivery #1 with no log entry.
@@ -97,7 +97,7 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
 
     private function make_attachment(int $bytes): int {
         $upload = wp_upload_dir();
-        $path   = $upload['basedir'] . '/wpsg-p67r-' . uniqid() . '.bin';
+        $path   = $upload['basedir'] . '/mullion-p67r-' . uniqid() . '.bin';
         file_put_contents($path, str_repeat('x', $bytes));
         $this->tmp_files[] = $path;
 
@@ -115,27 +115,27 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
             'post_title'  => 'offloaded',
         ]);
         update_post_meta($id, '_wp_attached_file', 'does/not/exist.jpg');
-        delete_post_meta($id, '_wpsg_filesize');
+        delete_post_meta($id, '_mullion_filesize');
 
         Mullion_Media_Controller::stamp_filesize_meta($id);
 
         $this->assertSame(
             '0',
-            (string) get_post_meta($id, '_wpsg_filesize', true),
+            (string) get_post_meta($id, '_mullion_filesize', true),
             'an unreadable attachment is stamped 0, exactly as the backfill stamps it'
         );
     }
 
     public function test_backfill_completes_and_flags_when_the_library_fits_in_budget() {
         $id = $this->make_attachment(1234);
-        delete_post_meta($id, '_wpsg_filesize');
-        delete_option('wpsg_filesize_backfilled');
+        delete_post_meta($id, '_mullion_filesize');
+        delete_option('mullion_filesize_backfilled');
         wp_clear_scheduled_hook(Mullion_DB::FILESIZE_BACKFILL_HOOK);
 
         Mullion_DB::run_filesize_backfill_batch();
 
-        $this->assertSame(1234, (int) get_post_meta($id, '_wpsg_filesize', true));
-        $this->assertSame('1', get_option('wpsg_filesize_backfilled'));
+        $this->assertSame(1234, (int) get_post_meta($id, '_mullion_filesize', true));
+        $this->assertSame('1', get_option('mullion_filesize_backfilled'));
         $this->assertFalse(
             wp_next_scheduled(Mullion_DB::FILESIZE_BACKFILL_HOOK),
             'a backfill that finished must not leave a continuation queued'
@@ -150,35 +150,35 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
 
         $ids = [$this->make_attachment(11), $this->make_attachment(22), $this->make_attachment(33)];
         foreach ($ids as $id) {
-            delete_post_meta($id, '_wpsg_filesize');
+            delete_post_meta($id, '_mullion_filesize');
         }
-        delete_option('wpsg_filesize_backfilled');
+        delete_option('mullion_filesize_backfilled');
         wp_clear_scheduled_hook(Mullion_DB::FILESIZE_BACKFILL_HOOK);
 
         Mullion_DB::run_filesize_backfill_batch();
 
         $stamped = 0;
         foreach ($ids as $id) {
-            if (get_post_meta($id, '_wpsg_filesize', true) !== '') {
+            if (get_post_meta($id, '_mullion_filesize', true) !== '') {
                 $stamped++;
             }
         }
         $this->assertSame(1, $stamped, 'exactly one batch of work per run');
-        $this->assertFalse(get_option('wpsg_filesize_backfilled'), 'not flagged complete while rows remain');
+        $this->assertFalse(get_option('mullion_filesize_backfilled'), 'not flagged complete while rows remain');
         $this->assertNotFalse(
             wp_next_scheduled(Mullion_DB::FILESIZE_BACKFILL_HOOK),
             'the remainder is handed to cron rather than run inline'
         );
 
         // Drain it the way cron would.
-        for ($i = 0; $i < 5 && !get_option('wpsg_filesize_backfilled'); $i++) {
+        for ($i = 0; $i < 5 && !get_option('mullion_filesize_backfilled'); $i++) {
             Mullion_DB::run_filesize_backfill_batch();
         }
 
-        $this->assertSame('1', get_option('wpsg_filesize_backfilled'));
-        $this->assertSame(11, (int) get_post_meta($ids[0], '_wpsg_filesize', true));
-        $this->assertSame(22, (int) get_post_meta($ids[1], '_wpsg_filesize', true));
-        $this->assertSame(33, (int) get_post_meta($ids[2], '_wpsg_filesize', true));
+        $this->assertSame('1', get_option('mullion_filesize_backfilled'));
+        $this->assertSame(11, (int) get_post_meta($ids[0], '_mullion_filesize', true));
+        $this->assertSame(22, (int) get_post_meta($ids[1], '_mullion_filesize', true));
+        $this->assertSame(33, (int) get_post_meta($ids[2], '_mullion_filesize', true));
     }
 
     public function test_backfill_cron_hook_is_registered() {

@@ -1,6 +1,6 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-E, P74-G, P74-H, P74-I, P74-J, P74-L landed, remaining tracks Planned
+**Status:** In progress — P74-A through P74-J and P74-L landed (P74-E/F this session), remaining tracks Planned
 **Created:** 2026-08-23
 **Last updated:** 2026-08-24 (P74-J landed — remaining JS/TS `wpsg`/`WPSG` identifiers, host class `.wp-super-gallery` → `.mullion-gallery`, window globals, `data-mullion-*` attrs, and live PHP emitters; P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
@@ -13,7 +13,7 @@
 | P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Done | Medium |
 | P74-D | Shortcode rename, outright (no backward-compat alias) | Done | Low |
 | P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Done | High (data migration) |
-| P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
+| P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Done | High (data migration) |
 | P74-G | PHP class + file rename (56 classes, 56 files) | Done | Medium (large, mechanical) |
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Done | Medium |
 | P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Done | Medium |
@@ -289,7 +289,16 @@ Extend the same migration routine from P74-E to also copy each `wpsg_*` option's
 
 ### Validation
 
-- Extend the P74-E migration PHPUnit test to also seed representative `wpsg_*` options and assert their values survive under `mullion_*` keys.
+- Extend the P74-E migration PHPUnit test to also seed representative `wpsg_*` options and assert their values survive under `mullion_*` keys. **Met** — option copy, CSS-var rewrite, postmeta key rename, custom-table RENAME, dest-exists-no-overwrite.
+- Full PHPUnit suite: 1,313 tests, 13,738 assertions, 2 skipped, 0 failures.
+- No `src/` / `packages/` edits (frontend does not hardcode option/meta/table keys).
+
+### Implementation Notes (2026-08-24)
+
+- **Broader than option keys.** The Problem text's "276 get_option/update_option/add_option occurrences" missed live couplings of the same class: `_wpsg_*` post/term/user meta, 7 custom tables (`analytics_events`, `media_refs`, `access_requests`, `assets`/`overlays`, `audit_log`, `spaces`, `space_library_assoc`), 2 core-table indexes, transients (`wpsg_rl_*`), upload dirs (`wpsg-exports`/`wpsg-fonts`/`wpsg-thumbnails`), admin `PAGE_SLUG`s, script handles, and PHP-only `wpsg-full-bleed`. All folded into this track's mechanical `wpsg_`/`wpsg-` → `mullion_`/`mullion-` pass (93 files), excluding the migrator's old-name map.
+- **Migrator step 2** bumps `mullion_rebrand_migration_version` 1 → 2. Options/transients renamed via `UPDATE wp_options.option_name` (preserves autoload); dest-exists → delete source only. Meta keys `REPLACE(_wpsg_, _mullion_)`. Tables `RENAME TABLE` with an empty-dest fallback (PHPUnit bootstrap already created `mullion_*` tables via `maybe_upgrade`). Indexes renamed or dropped. Upload dirs `rename()` if dest missing. `mullion_settings` string values `var(--wpsg-` → `var(--mullion-` (P74-I punch-list).
+- **`wpsg_admin` is not a prefix-safe replace.** A blanket `wpsg_` → `mullion_` turned the historical role slug into `mullion_admin` in P52 and its tests. Restored `wpsg_admin` as the source slug the migrator and `mullion_maybe_migrate_roles()` still look up. Same for uninstall safety: both old and new post types, taxonomies, tables, indexes, roles, upload dirs, and a leftover `LIKE 'wpsg\_%'` option sweep.
+- **Held back:** REST `/wp-super-gallery/v1/`, Freemius slug (P74-K), `wp-super-gallery-app` script handle, `docs/**` (P74-M).
 
 ---
 

@@ -16,24 +16,24 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
 
     // ── register_image_sizes ───────────────────────────────────────────────
 
-    public function test_register_image_sizes_adds_wpsg_sizes() {
+    public function test_register_image_sizes_adds_mullion_sizes() {
         Mullion_Image_Optimizer::register_image_sizes();
 
         global $_wp_additional_image_sizes;
-        $this->assertArrayHasKey('wpsg_gallery', $_wp_additional_image_sizes);
-        $this->assertArrayHasKey('wpsg_thumb', $_wp_additional_image_sizes);
+        $this->assertArrayHasKey('mullion_gallery', $_wp_additional_image_sizes);
+        $this->assertArrayHasKey('mullion_thumb', $_wp_additional_image_sizes);
     }
 
     public function test_register_image_sizes_uses_defaults() {
         Mullion_Image_Optimizer::register_image_sizes();
 
         global $_wp_additional_image_sizes;
-        $gallery = $_wp_additional_image_sizes['wpsg_gallery'];
+        $gallery = $_wp_additional_image_sizes['mullion_gallery'];
         $this->assertEquals(Mullion_Image_Optimizer::MAX_WIDTH_DEFAULT, $gallery['width']);
         $this->assertEquals(Mullion_Image_Optimizer::MAX_HEIGHT_DEFAULT, $gallery['height']);
         $this->assertFalse($gallery['crop']);
 
-        $thumb = $_wp_additional_image_sizes['wpsg_thumb'];
+        $thumb = $_wp_additional_image_sizes['mullion_thumb'];
         $this->assertEquals(400, $thumb['width']);
         $this->assertEquals(400, $thumb['height']);
     }
@@ -88,7 +88,7 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
     public function test_optimize_on_upload_skips_missing_file() {
         // Even if settings were configured, a nonexistent file returns early.
         $upload = [
-            'file' => '/tmp/nonexistent-wpsg-test-' . uniqid() . '.jpg',
+            'file' => '/tmp/nonexistent-mullion-test-' . uniqid() . '.jpg',
             'url'  => 'http://example.com/test.jpg',
             'type' => 'image/jpeg',
         ];
@@ -100,15 +100,15 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
     // ── P50-I: skip-resize for asset-library uploads ───────────────────────
 
     public function test_skip_resize_preserves_large_image_dimensions() {
-        update_option('wpsg_settings', ['optimize_on_upload' => true]);
-        Mullion_Image_Optimizer::$wpsg_upload_context = true;
-        Mullion_Image_Optimizer::$wpsg_skip_resize    = true;
+        update_option('mullion_settings', ['optimize_on_upload' => true]);
+        Mullion_Image_Optimizer::$mullion_upload_context = true;
+        Mullion_Image_Optimizer::$mullion_skip_resize    = true;
 
         $file = $this->create_test_image(3000, 2000);
         if (!$file) {
-            Mullion_Image_Optimizer::$wpsg_upload_context = false;
-            Mullion_Image_Optimizer::$wpsg_skip_resize    = false;
-            delete_option('wpsg_settings');
+            Mullion_Image_Optimizer::$mullion_upload_context = false;
+            Mullion_Image_Optimizer::$mullion_skip_resize    = false;
+            delete_option('mullion_settings');
             $this->markTestSkipped('Could not create test image (GD not available)');
         }
 
@@ -119,9 +119,9 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
         ], 'upload');
 
         $size = getimagesize($file);
-        Mullion_Image_Optimizer::$wpsg_upload_context = false;
-        Mullion_Image_Optimizer::$wpsg_skip_resize    = false;
-        delete_option('wpsg_settings');
+        Mullion_Image_Optimizer::$mullion_upload_context = false;
+        Mullion_Image_Optimizer::$mullion_skip_resize    = false;
+        delete_option('mullion_settings');
         @unlink($file);
 
         $this->assertSame(3000, $size[0], 'skip_resize must preserve the original width.');
@@ -129,14 +129,14 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
     }
 
     public function test_upload_without_skip_resize_still_constrains() {
-        update_option('wpsg_settings', ['optimize_on_upload' => true]);
-        Mullion_Image_Optimizer::$wpsg_upload_context = true;
-        Mullion_Image_Optimizer::$wpsg_skip_resize    = false;
+        update_option('mullion_settings', ['optimize_on_upload' => true]);
+        Mullion_Image_Optimizer::$mullion_upload_context = true;
+        Mullion_Image_Optimizer::$mullion_skip_resize    = false;
 
         $file = $this->create_test_image(3000, 2000);
         if (!$file) {
-            Mullion_Image_Optimizer::$wpsg_upload_context = false;
-            delete_option('wpsg_settings');
+            Mullion_Image_Optimizer::$mullion_upload_context = false;
+            delete_option('mullion_settings');
             $this->markTestSkipped('Could not create test image (GD not available)');
         }
 
@@ -147,8 +147,8 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
         ], 'upload');
 
         $size = getimagesize($file);
-        Mullion_Image_Optimizer::$wpsg_upload_context = false;
-        delete_option('wpsg_settings');
+        Mullion_Image_Optimizer::$mullion_upload_context = false;
+        delete_option('mullion_settings');
         @unlink($file);
 
         $this->assertLessThanOrEqual(1920, $size[0], 'Default path must downscale to the gallery max.');
@@ -257,7 +257,7 @@ class Mullion_Image_Optimizer_Test extends WP_UnitTestCase {
         $color = imagecolorallocate($img, 255, 0, 0);
         imagefill($img, 0, 0, $color);
 
-        $file = tempnam(sys_get_temp_dir(), 'wpsg_test_') . '.jpg';
+        $file = tempnam(sys_get_temp_dir(), 'mullion_test_') . '.jpg';
         imagejpeg($img, $file, 90);
         imagedestroy($img);
 

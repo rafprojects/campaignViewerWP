@@ -267,17 +267,17 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
 
         $meta_query = [];
         // P66-E: user campaign templates are mullion_campaign posts flagged with
-        // _wpsg_is_template; they are managed through the dedicated templates
+        // _mullion_is_template; they are managed through the dedicated templates
         // endpoint and must never surface as draft campaigns in any listing.
         // Placed first so it applies to the admin, anonymous, and scoped paths.
         $meta_query[] = [
             'key'     => Mullion_Campaign_Templates::META_IS_TEMPLATE,
             'compare' => 'NOT EXISTS',
         ];
-        // P47-C: space scoping — filter by _wpsg_space_id when a numeric space id is given.
+        // P47-C: space scoping — filter by _mullion_space_id when a numeric space id is given.
         if (is_numeric($f['space']) && intval($f['space']) > 0) {
             $meta_query[] = [
-                'key'   => '_wpsg_space_id',
+                'key'   => '_mullion_space_id',
                 'value' => intval($f['space']),
                 'type'  => 'NUMERIC',
             ];
@@ -304,7 +304,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         // P28-E: Filter by layout template ID.
         if (!empty($f['template_id'])) {
             $meta_query[] = [
-                'key'   => '_wpsg_layout_binding_template_id',
+                'key'   => '_mullion_layout_binding_template_id',
                 'value' => $f['template_id'],
             ];
         }
@@ -524,7 +524,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
                 wp_delete_post($post_id, true);
                 return new WP_Error('mullion_forbidden', 'You do not have access to that space.', ['status' => 403]);
             }
-            update_post_meta($post_id, '_wpsg_space_id', $space_id);
+            update_post_meta($post_id, '_mullion_space_id', $space_id);
         }
         self::assign_company($post_id, $request->get_param('company'));
         self::add_audit_entry($post_id, 'campaign.created', [
@@ -638,12 +638,12 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             return new WP_Error('mullion_space_not_found', 'Target space not found or archived', ['status' => 404]);
         }
 
-        $source_space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
+        $source_space_id = intval(get_post_meta($post_id, '_mullion_space_id', true));
         if ($source_space_id <= 0) {
             // Campaign predates the spaces backfill — resolve to the default
             // space, mirroring require_campaign_space_move() so the no-op check
             // and the audit record both reflect the real source space.
-            $source_space_id = intval(get_option('wpsg_default_space_id'));
+            $source_space_id = intval(get_option('mullion_default_space_id'));
         }
         if ($source_space_id === $target_space_id) {
             // No-op: already in the target space; no DB writes.
@@ -1132,14 +1132,14 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             }
         }
         if ($request->has_param('galleryOverrides')) {
-            delete_post_meta($post_id, '_wpsg_image_adapter_id');
-            delete_post_meta($post_id, '_wpsg_video_adapter_id');
+            delete_post_meta($post_id, '_mullion_image_adapter_id');
+            delete_post_meta($post_id, '_mullion_video_adapter_id');
 
             $gallery_overrides = Mullion_Settings_Sanitizer::sanitize_gallery_overrides($request->get_param('galleryOverrides'));
             if (empty($gallery_overrides)) {
-                delete_post_meta($post_id, '_wpsg_gallery_overrides');
+                delete_post_meta($post_id, '_mullion_gallery_overrides');
             } else {
-                update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
+                update_post_meta($post_id, '_mullion_gallery_overrides', wp_json_encode($gallery_overrides));
             }
         }
 
@@ -1148,10 +1148,10 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         if (!is_null($layout_template_id)) {
             $layout_template_id = sanitize_text_field($layout_template_id);
             if ($layout_template_id === '') {
-                delete_post_meta($post_id, '_wpsg_layout_binding_template_id');
-                delete_post_meta($post_id, '_wpsg_layout_binding');
+                delete_post_meta($post_id, '_mullion_layout_binding_template_id');
+                delete_post_meta($post_id, '_mullion_layout_binding');
             } else {
-                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $layout_template_id);
+                update_post_meta($post_id, '_mullion_layout_binding_template_id', $layout_template_id);
             }
         }
         $layout_binding = $request->get_param('layoutBinding');
@@ -1175,9 +1175,9 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
                     }
                 }
             }
-            update_post_meta($post_id, '_wpsg_layout_binding', $sanitized_binding);
+            update_post_meta($post_id, '_mullion_layout_binding', $sanitized_binding);
             if (!empty($sanitized_binding['templateId'])) {
-                update_post_meta($post_id, '_wpsg_layout_binding_template_id', $sanitized_binding['templateId']);
+                update_post_meta($post_id, '_mullion_layout_binding_template_id', $sanitized_binding['templateId']);
             }
         }
     }

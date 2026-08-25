@@ -4,12 +4,12 @@
  *
  * Manages a campaign-agnostic library of reusable visual assets (images used
  * as canvas overlays, backgrounds, masks, etc.) shared across layout templates.
- * Entries are stored in the `{prefix}wpsg_assets` custom table.
+ * Entries are stored in the `{prefix}mullion_assets` custom table.
  *
  * P50-K renamed this from "Overlay Library" — an overlay is one *use* of an
  * asset (a layer placed on the canvas), not the asset itself.
  *
- * Files are uploaded into wp-content/uploads/wpsg-overlays/ (legacy path kept
+ * Files are uploaded into wp-content/uploads/mullion-overlays/ (legacy path kept
  * so existing stored URLs continue to resolve).
  *
  * @package Mullion
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Mullion_Asset_Library {
 
     // Legacy upload subdir — kept so existing stored asset URLs keep resolving.
-    const UPLOAD_SUBDIR = 'wpsg-overlays';
+    const UPLOAD_SUBDIR = 'mullion-overlays';
 
     // ── Read ────────────────────────────────────────────────────
 
@@ -345,16 +345,16 @@ class Mullion_Asset_Library {
         // resolution — decorative asset-library images may exceed the gallery
         // max dimensions (P50-I).
         if ( class_exists( 'Mullion_Image_Optimizer' ) ) {
-            Mullion_Image_Optimizer::$wpsg_upload_context = true;
-            Mullion_Image_Optimizer::$wpsg_skip_resize    = true;
+            Mullion_Image_Optimizer::$mullion_upload_context = true;
+            Mullion_Image_Optimizer::$mullion_skip_resize    = true;
         }
 
         try {
             $result = wp_handle_upload( $file, $overrides );
         } finally {
             if ( class_exists( 'Mullion_Image_Optimizer' ) ) {
-                Mullion_Image_Optimizer::$wpsg_upload_context = false;
-                Mullion_Image_Optimizer::$wpsg_skip_resize    = false;
+                Mullion_Image_Optimizer::$mullion_upload_context = false;
+                Mullion_Image_Optimizer::$mullion_skip_resize    = false;
             }
         }
 
@@ -391,7 +391,7 @@ class Mullion_Asset_Library {
     // ── Upload Directory Security (L-8) ────────────────────────
 
     /**
-     * Ensure the wpsg-overlays directory has an .htaccess file that:
+     * Ensure the mullion-overlays directory has an .htaccess file that:
      * 1. Sets Content-Security-Policy: script-src 'none' on SVG files
      *    (prevents script execution even if served directly)
      * 2. Sets Content-Disposition: inline (safe display, no download prompt)

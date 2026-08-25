@@ -36,7 +36,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
     }
 
     private function enable_analytics(): void {
-        update_option('wpsg_settings', [ 'enable_analytics' => true ]);
+        update_option('mullion_settings', [ 'enable_analytics' => true ]);
     }
 
     public function setUp(): void {
@@ -56,7 +56,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         parent::tearDown();
         // delete_option after parent::tearDown() runs outside any WP transaction,
         // ensuring it commits immediately regardless of autocommit state.
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
         wp_set_current_user(0);
     }
 

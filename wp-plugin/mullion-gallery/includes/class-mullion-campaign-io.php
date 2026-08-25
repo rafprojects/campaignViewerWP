@@ -9,7 +9,7 @@
  * / `campaign_export`). The copies had diverged into real bugs:
  *
  *   - A-4: only the REST JSON path mishandled layout templates (it created posts
- *          of the unregistered CPT `wpsg_layout_template` and read them via
+ *          of the unregistered CPT `mullion_layout_template` and read them via
  *          `get_post(intval($uuid))`); every other path used the CRUD class.
  *   - MD5 dedup ran on REST ZIP import but not CLI ZIP import.
  *   - Schedule datetimes were normalized (`strtotime`) on REST but not CLI.
@@ -54,7 +54,7 @@ class Mullion_Campaign_IO {
 
         // A-4 fix: layout templates are always resolved through the CRUD class
         // (UUID `post_name` lookup), never `get_post(intval($uuid))`.
-        $template_id     = get_post_meta($post_id, '_wpsg_layout_binding_template_id', true);
+        $template_id     = get_post_meta($post_id, '_mullion_layout_binding_template_id', true);
         $layout_template = $template_id ? Mullion_Layout_Templates::get($template_id) : null;
 
         $media_references = array_values(array_map(function ($item) use ($binary) {
@@ -189,7 +189,7 @@ class Mullion_Campaign_IO {
     private static function apply_gallery_overrides(int $post_id, array $src): void {
         $gallery_overrides = Mullion_REST_Base::promote_campaign_gallery_overrides($src['galleryOverrides'] ?? null);
         if (!empty($gallery_overrides)) {
-            update_post_meta($post_id, '_wpsg_gallery_overrides', wp_json_encode($gallery_overrides));
+            update_post_meta($post_id, '_mullion_gallery_overrides', wp_json_encode($gallery_overrides));
         }
     }
 
@@ -211,7 +211,7 @@ class Mullion_Campaign_IO {
         if (is_wp_error($created)) {
             return;
         }
-        update_post_meta($post_id, '_wpsg_layout_binding_template_id', $created['id']);
+        update_post_meta($post_id, '_mullion_layout_binding_template_id', $created['id']);
 
         if (!empty($src['layoutBinding'])) {
             $binding = $src['layoutBinding'];
@@ -223,7 +223,7 @@ class Mullion_Campaign_IO {
                 });
                 $binding['templateId'] = $created['id'];
             }
-            update_post_meta($post_id, '_wpsg_layout_binding', $binding);
+            update_post_meta($post_id, '_mullion_layout_binding', $binding);
         }
     }
 
@@ -325,7 +325,7 @@ class Mullion_Campaign_IO {
             }
 
             if ($md5) {
-                update_post_meta($att_id, '_wpsg_file_md5', $md5);
+                update_post_meta($att_id, '_mullion_file_md5', $md5);
             }
             $items[] = self::upload_media_item((int) $att_id, wp_get_attachment_url($att_id), $ref);
         }

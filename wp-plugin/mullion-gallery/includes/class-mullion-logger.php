@@ -4,7 +4,7 @@
  *
  * Emits one consistent JSON record per log event to two sinks in parallel:
  *   1. The PHP error log (via error_log), preserving existing server-log behavior.
- *   2. A bounded in-database ring buffer (wpsg_recent_logs option) that admins
+ *   2. A bounded in-database ring buffer (mullion_recent_logs option) that admins
  *      can read from the health dashboard without raw server access.
  *
  * Record schema:
@@ -54,7 +54,7 @@ class Mullion_Logger {
     /**
      * WordPress option key for the in-database ring buffer.
      */
-    const LOG_OPTION = 'wpsg_recent_logs';
+    const LOG_OPTION = 'mullion_recent_logs';
 
     /**
      * Default maximum number of log entries to retain in the ring buffer.

@@ -116,7 +116,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
     }
 
     public function test_magic_link_fallback_serves_raw_html_not_json_encoded_data() {
-        update_option('wpsg_settings', []); // no magic_link_landing_page_id → inline fallback path
+        update_option('mullion_settings', []); // no magic_link_landing_page_id → inline fallback path
 
         [$resp, $html] = $this->invoke_magic_link_and_capture('approved');
 

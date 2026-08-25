@@ -636,10 +636,10 @@ class Mullion_CLI {
      * Reset all rate-limit counters (flushes every client, not just one IP).
      *
      * The actual cache keys used by Mullion_REST::rate_limit_check() include the
-     * route in the hash — i.e. wpsg_rl_<scope>_<user|anon>_<md5(ip|route)> —
+     * route in the hash — i.e. mullion_rl_<scope>_<user|anon>_<md5(ip|route)> —
      * so individual keys cannot be recovered from an IP alone. This command
-     * therefore flushes the entire wpsg_rate_limit object-cache group and
-     * bulk-deletes all _transient_wpsg_rl_* rows from wp_options, clearing
+     * therefore flushes the entire mullion_rate_limit object-cache group and
+     * bulk-deletes all _transient_mullion_rl_* rows from wp_options, clearing
      * rate limits for every client. Use on dev/staging only.
      *
      * ## OPTIONS
@@ -662,7 +662,7 @@ class Mullion_CLI {
 
         // Flush the entire object-cache group (wp_cache_flush_group() available WP ≥ 6.1).
         if ( function_exists( 'wp_cache_flush_group' ) ) {
-            wp_cache_flush_group( 'wpsg_rate_limit' );
+            wp_cache_flush_group( 'mullion_rate_limit' );
         }
 
         // Bulk-delete all matching transients from the DB (fallback storage path and
@@ -671,8 +671,8 @@ class Mullion_CLI {
         $deleted = $wpdb->query(
             $wpdb->prepare(
                 "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s OR option_name LIKE %s",
-                $wpdb->esc_like( '_transient_wpsg_rl_' ) . '%',
-                $wpdb->esc_like( '_transient_timeout_wpsg_rl_' ) . '%'
+                $wpdb->esc_like( '_transient_mullion_rl_' ) . '%',
+                $wpdb->esc_like( '_transient_timeout_mullion_rl_' ) . '%'
             )
         );
 

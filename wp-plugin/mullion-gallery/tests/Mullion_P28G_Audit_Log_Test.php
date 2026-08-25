@@ -4,7 +4,7 @@
  * P28-G: Audit Log Improvements
  *
  * Covers:
- *  - wpsg_audit_log table created by Mullion_DB::maybe_create_audit_log_table().
+ *  - mullion_audit_log table created by Mullion_DB::maybe_create_audit_log_table().
  *  - GET /campaigns/{id}/audit?from=&to= returns date-filtered entries.
  *  - GET /campaigns/{id}/audit?action= returns action-filtered entries.
  *  - Backfill from post meta runs on first query when table is empty.
@@ -50,7 +50,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         global $wpdb;
         $table  = Mullion_DB::get_audit_log_table();
         $exists = $wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $table));
-        $this->assertEquals($table, $exists, 'wpsg_audit_log table must exist after maybe_create_audit_log_table().');
+        $this->assertEquals($table, $exists, 'mullion_audit_log table must exist after maybe_create_audit_log_table().');
     }
 
     // =========================================================================

@@ -3,7 +3,7 @@
  * Mullion — Layout Templates CRUD
  *
  * Manages globally-stored layout templates via the
- * `wpsg_layout_templates` WP option. Each template defines
+ * `mullion_layout_templates` WP option. Each template defines
  * a canvas with positioned media slots.
  *
  * @package Mullion
@@ -19,7 +19,7 @@ class Mullion_Layout_Templates {
     /**
      * WP option key storing the global template library.
      */
-    const OPTION_KEY = 'wpsg_layout_templates';
+    const OPTION_KEY = 'mullion_layout_templates';
 
     /**
      * Current schema version for templates.
@@ -113,7 +113,7 @@ class Mullion_Layout_Templates {
      *
      * @since 0.18.0 P20-I-1
      */
-    const META_KEY = '_wpsg_template_data';
+    const META_KEY = '_mullion_template_data';
 
     /**
      * Retrieve all templates.
@@ -399,7 +399,7 @@ class Mullion_Layout_Templates {
      * One-time migration from legacy wp_options storage to CPT posts.
      *
      * Runs automatically on first CRUD call after upgrade. The old option
-     * is renamed to `wpsg_layout_templates_backup` for rollback safety.
+     * is renamed to `mullion_layout_templates_backup` for rollback safety.
      *
      * @since 0.18.0 P20-I-1
      */
@@ -450,7 +450,7 @@ class Mullion_Layout_Templates {
         }
 
         // Backup and remove legacy option.
-        update_option( 'wpsg_layout_templates_backup', $legacy, false );
+        update_option( 'mullion_layout_templates_backup', $legacy, false );
         delete_option( self::OPTION_KEY );
     }
 

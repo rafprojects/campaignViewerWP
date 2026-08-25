@@ -225,7 +225,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('masonry', $created['galleryOverrides']['breakpoints']['desktop']['image']['adapterId'] ?? null);
         $this->assertEquals('per-type', $created['galleryOverrides']['mode'] ?? null);
 
-        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $stored = json_decode(get_post_meta($campaign_id, '_mullion_gallery_overrides', true), true);
         $this->assertEquals('masonry', $stored['breakpoints']['desktop']['image']['adapterId'] ?? null);
         $this->assertEquals(24, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
 
@@ -236,7 +236,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(200, $update_response->get_status());
         $updated = $update_response->get_data();
         $this->assertNull($updated['galleryOverrides'] ?? null);
-        $this->assertEmpty(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true));
+        $this->assertEmpty(get_post_meta($campaign_id, '_mullion_gallery_overrides', true));
     }
 
     public function test_campaign_gallery_overrides_round_trip_from_json_body() {
@@ -349,7 +349,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('modalTransition', $created['galleryOverrides']['breakpoints']['desktop']['video']['adapterSettings'] ?? []);
         $this->assertArrayNotHasKey('watch', $created['galleryOverrides']['breakpoints'] ?? []);
 
-        $stored = json_decode(get_post_meta($campaign_id, '_wpsg_gallery_overrides', true), true);
+        $stored = json_decode(get_post_meta($campaign_id, '_mullion_gallery_overrides', true), true);
         $this->assertEquals(60, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
         $this->assertEquals(50, $stored['breakpoints']['desktop']['image']['common']['adapterMaxWidthPct'] ?? null);
         $this->assertArrayNotHasKey('adapterJustifyContent', $stored['breakpoints']['desktop']['image']['common'] ?? []);

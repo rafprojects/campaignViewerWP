@@ -144,7 +144,7 @@ require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-asset-admin-renderer.p
 register_activation_hook(__FILE__, 'mullion_activate');
 function mullion_activate() {
     // Flag that setup is needed
-    add_option('wpsg_needs_setup', '1');
+    add_option('mullion_needs_setup', '1');
 }
 
 // Deactivation hook - optionally clean up (roles persist by design)
@@ -163,7 +163,7 @@ function mullion_deactivate() {
 add_action('init', 'mullion_setup_roles_and_caps');
 function mullion_setup_roles_and_caps() {
     // Only run heavy admin-role setup if flagged or if capability is missing.
-    $needs_setup = get_option('wpsg_needs_setup', '0');
+    $needs_setup = get_option('mullion_needs_setup', '0');
     $admin_role = get_role('administrator');
     $needs_cap = $admin_role && !$admin_role->has_cap('manage_mullion');
 
@@ -181,7 +181,7 @@ function mullion_setup_roles_and_caps() {
         mullion_ensure_editor_role();
 
         // Clear setup flag
-        delete_option('wpsg_needs_setup');
+        delete_option('mullion_needs_setup');
     }
 
     // Always self-heal the editor role: if the role is absent or is missing
@@ -239,14 +239,12 @@ function mullion_ensure_editor_role() {
 
 /**
  * One-time migration: rename the legacy `wpsg_admin` role to `mullion_editor`
- * (P52-A2). Reassigns every user holding `wpsg_admin` to `mullion_editor`, then
- * removes the old role. Runs on init until complete (flag-gated), so it also
- * covers existing installs where mullion_setup_roles_and_caps() no longer re-runs
- * (administrator already has manage_mullion, so its setup gate is closed).
+ * (P52-A2, destination updated in P74-E). Reassigns every user holding
+ * `wpsg_admin` to `mullion_editor`, then removes the old role.
  */
 add_action('init', 'mullion_maybe_migrate_roles', 11);
 function mullion_maybe_migrate_roles() {
-    if (get_option('wpsg_roles_migrated_editor')) {
+    if (get_option('mullion_roles_migrated_editor')) {
         return;
     }
 
@@ -266,7 +264,7 @@ function mullion_maybe_migrate_roles() {
         remove_role('wpsg_admin');
     }
 
-    update_option('wpsg_roles_migrated_editor', '1');
+    update_option('mullion_roles_migrated_editor', '1');
 }
 
 add_action('init', function () {
@@ -306,7 +304,7 @@ add_action('updated_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4)
 add_action('added_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4);
 add_action('deleted_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4);
 
-// P67-I: stamp _wpsg_filesize on every new attachment so the media-library "size"
+// P67-I: stamp _mullion_filesize on every new attachment so the media-library "size"
 // sort has a real numeric value to order by. Covers native WP / other-plugin
 // uploads; the plugin's own upload path stamps it directly from the known file path.
 add_action('add_attachment', ['Mullion_Media_Controller', 'stamp_filesize_meta']);

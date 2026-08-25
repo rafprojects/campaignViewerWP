@@ -303,7 +303,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
      * A-4 regression: the REST JSON import path must create the layout template
      * under the REGISTERED CPT (mullion_layout_tpl) and bind by UUID, so it is
      * retrievable via Mullion_Layout_Templates::get(). Before P65-A this path built
-     * a post of the unregistered `wpsg_layout_template` type and bound a numeric
+     * a post of the unregistered `mullion_layout_template` type and bound a numeric
      * ID — an orphan the template library never saw. Every existing test in this
      * file exercised sanitize_template_data() directly and so never caught it.
      */
@@ -320,7 +320,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
         $this->assertSame( 201, $response->get_status() );
 
         $new_id   = $response->get_data()['id'];
-        $bound_id = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+        $bound_id = get_post_meta( $new_id, '_mullion_layout_binding_template_id', true );
         $this->assertNotEmpty( $bound_id );
 
         // Retrievable through the CRUD class → lives under the registered CPT.
@@ -328,7 +328,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
         $this->assertIsArray( $fetched, 'Imported template must be retrievable via Mullion_Layout_Templates::get().' );
 
         // The unregistered post type must never be created.
-        $orphans = get_posts( [ 'post_type' => 'wpsg_layout_template', 'post_status' => 'any', 'posts_per_page' => -1 ] );
+        $orphans = get_posts( [ 'post_type' => 'mullion_layout_template', 'post_status' => 'any', 'posts_per_page' => -1 ] );
         $this->assertCount( 0, $orphans );
     }
 

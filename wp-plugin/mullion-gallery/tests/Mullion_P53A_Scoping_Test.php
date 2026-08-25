@@ -59,7 +59,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
         update_post_meta($id, 'status', 'active');
         update_post_meta($id, 'visibility', $visibility);
         update_post_meta($id, 'media_items', []);
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 

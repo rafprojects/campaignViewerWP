@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 
 class Mullion_Asset_Admin_Renderer {
 
-    const PAGE_SLUG = 'wpsg-assets';
+    const PAGE_SLUG = 'mullion-assets';
 
     /** @var string Admin hook suffix for this page. */
     private static $page_hook = '';

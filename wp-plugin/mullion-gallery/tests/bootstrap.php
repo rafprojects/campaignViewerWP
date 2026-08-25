@@ -41,7 +41,7 @@ require_once "{$_tests_dir}/includes/functions.php";
  * @return array
  */
 function mullion_filter_test_upload_dir( $uploads ) {
-	$base_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wpsg-test-uploads';
+	$base_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/mullion-test-uploads';
 	$subdir   = isset( $uploads['subdir'] ) ? (string) $uploads['subdir'] : '';
 	$path     = $base_dir . $subdir;
 	$base_url = 'http://example.org/wp-content/uploads';

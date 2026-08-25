@@ -16,7 +16,7 @@ class Mullion_P66B_Archived_At_Backfill_Test extends WP_UnitTestCase {
         parent::setUp();
         // The backfill ran once at bootstrap and set this guard; clear it so the
         // reflection-invoked run below actually executes.
-        delete_option('wpsg_archived_at_backfilled');
+        delete_option('mullion_archived_at_backfilled');
     }
 
     public function tearDown(): void {

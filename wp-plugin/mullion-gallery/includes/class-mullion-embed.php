@@ -202,7 +202,7 @@ class Mullion_Embed {
         if (!isset($GLOBALS['mullion_instance_ids'])) {
             $GLOBALS['mullion_instance_ids'] = [];
         }
-        $base_id = 'wpsg-' . $space_slug;
+        $base_id = 'mullion-' . $space_slug;
         if (in_array($base_id, $GLOBALS['mullion_instance_ids'], true)) {
             $counter = 2;
             while (in_array($base_id . '-' . $counter, $GLOBALS['mullion_instance_ids'], true)) {
@@ -259,7 +259,7 @@ class Mullion_Embed {
                     return 'family=' . rawurlencode($f) . ':' . $spec;
                 }, $families);
                 $url = 'https://fonts.googleapis.com/css2?' . implode('&', $params) . '&display=swap';
-                $font_handle = 'wpsg-google-fonts-' . md5($url);
+                $font_handle = 'mullion-google-fonts-' . md5($url);
                 wp_enqueue_style($font_handle, $url, [], null);
             }
         }
@@ -268,9 +268,9 @@ class Mullion_Embed {
         if (class_exists('Mullion_Font_Library')) {
             $font_css = Mullion_Font_Library::generate_font_face_css();
             if (!empty($font_css)) {
-                wp_register_style('wpsg-custom-fonts', false);
-                wp_enqueue_style('wpsg-custom-fonts');
-                wp_add_inline_style('wpsg-custom-fonts', $font_css);
+                wp_register_style('mullion-custom-fonts', false);
+                wp_enqueue_style('mullion-custom-fonts');
+                wp_add_inline_style('mullion-custom-fonts', $font_css);
             }
         }
 
@@ -336,7 +336,7 @@ class Mullion_Embed {
          *     This prevents children from growing wider than the content area.
          *
          * SOLUTION (3 parts):
-         *  A. Wrap shortcode output in `<div class="alignfull wpsg-full-bleed">`.
+         *  A. Wrap shortcode output in `<div class="alignfull mullion-full-bleed">`.
          *     WordPress's own `alignfull` class removes `is-layout-constrained`'s
          *     max-width restriction, allowing the element to span the full viewport.
          *     Without alignfull, negative margins alone are clamped by the max-width.
@@ -387,7 +387,7 @@ class Mullion_Embed {
             // Each breakpoint always gets a rule — either bleed or re-constrain.
             // Scope selector to this instance's space slug so two shortcodes on the
             // same page with different bleed settings don't stomp each other (P48-C).
-            $sel = '.wpsg-full-bleed[data-space="' . esc_attr($space_slug) . '"]';
+            $sel = '.mullion-full-bleed[data-space="' . esc_attr($space_slug) . '"]';
             if ($bleed_desktop) {
                 $rules[] = '@media(min-width:1024px){' . $sel . '{' . $neg_margins . '}}';
             } else {
@@ -405,8 +405,8 @@ class Mullion_Embed {
             }
             $bleed_style = '<style>' . implode('', $rules) . '</style>';
             // alignfull is required to escape is-layout-constrained (see docblock above).
-            // wpsg-full-bleed is our own class targeted by the media-query rules.
-            $bleed_open = '<div class="alignfull wpsg-full-bleed" data-space="' . esc_attr($space_slug) . '">';
+            // mullion-full-bleed is our own class targeted by the media-query rules.
+            $bleed_open = '<div class="alignfull mullion-full-bleed" data-space="' . esc_attr($space_slug) . '">';
             $bleed_close = '</div>';
         }
 
@@ -421,15 +421,15 @@ class Mullion_Embed {
     /**
      * Resolve the space ID for a shortcode call.
      *
-     * Priority: explicit space= attr (ID or slug) → campaign's _wpsg_space_id →
-     * company's _wpsg_space_id → Default Space.
+     * Priority: explicit space= attr (ID or slug) → campaign's _mullion_space_id →
+     * company's _mullion_space_id → Default Space.
      *
      * P72-D: `$unresolved_refs` collects the explicit references that name
      * something which *does not exist* — a stale/mistyped space=/campaign=/company=
      * that silently collapsed onto the default, which is worth an admin-facing
      * signal. It is deliberately NOT populated for two non-error cases:
      *   - no explicit reference at all (the intentional default), and
-     *   - a reference whose entity exists but carries no `_wpsg_space_id`
+     *   - a reference whose entity exists but carries no `_mullion_space_id`
      *     (a campaign/company that legitimately *inherits* the default space —
      *     the common case on a single-space install, and not a misconfiguration).
      * It is also only populated on the path that actually reaches the default
@@ -465,7 +465,7 @@ class Mullion_Embed {
                 $post = get_post((int) $atts['campaign']);
             }
             if ($post) {
-                $sid = (int) get_post_meta($post->ID, '_wpsg_space_id', true);
+                $sid = (int) get_post_meta($post->ID, '_mullion_space_id', true);
                 if ($sid > 0) {
                     return $sid;
                 }
@@ -478,7 +478,7 @@ class Mullion_Embed {
         if (!empty($atts['company'])) {
             $term = get_term_by('slug', $atts['company'], 'mullion_company');
             if ($term && !is_wp_error($term)) {
-                $sid = (int) get_term_meta($term->term_id, '_wpsg_space_id', true);
+                $sid = (int) get_term_meta($term->term_id, '_mullion_space_id', true);
                 if ($sid > 0) {
                     return $sid;
                 }
@@ -488,7 +488,7 @@ class Mullion_Embed {
             }
         }
 
-        return (int) get_option('wpsg_default_space_id', 1);
+        return (int) get_option('mullion_default_space_id', 1);
     }
 
     /**
@@ -614,7 +614,7 @@ JS;
         }
 
         $wp_admin_bar->add_node([
-            'id'    => 'wpsg-root',
+            'id'    => 'mullion-root',
             'title' => 'Mullion',
             'href'  => false,
         ]);
@@ -624,21 +624,21 @@ JS;
             $label = esc_html($info['name']);
 
             $wp_admin_bar->add_node([
-                'id'     => 'wpsg-space-' . $slug,
-                'parent' => 'wpsg-root',
+                'id'     => 'mullion-space-' . $slug,
+                'parent' => 'mullion-root',
                 'title'  => $label,
                 'href'   => '#' . $slug,
             ]);
             $wp_admin_bar->add_node([
-                'id'     => 'wpsg-space-' . $slug . '-settings',
-                'parent' => 'wpsg-space-' . $slug,
+                'id'     => 'mullion-space-' . $slug . '-settings',
+                'parent' => 'mullion-space-' . $slug,
                 'title'  => '<span data-mullion-open="settings">Settings</span>',
                 'href'   => '#' . $slug,
                 'meta'   => ['html' => true],
             ]);
             $wp_admin_bar->add_node([
-                'id'     => 'wpsg-space-' . $slug . '-admin',
-                'parent' => 'wpsg-space-' . $slug,
+                'id'     => 'mullion-space-' . $slug . '-admin',
+                'parent' => 'mullion-space-' . $slug,
                 'title'  => '<span data-mullion-open="admin">Admin Panel</span>',
                 'href'   => '#' . $slug,
                 'meta'   => ['html' => true],

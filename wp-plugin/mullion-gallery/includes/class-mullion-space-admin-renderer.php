@@ -16,7 +16,7 @@ if (!defined('ABSPATH')) {
 
 class Mullion_Space_Admin_Renderer {
 
-    const PAGE_SLUG = 'wpsg-spaces';
+    const PAGE_SLUG = 'mullion-spaces';
 
     /** @var string Admin hook suffix for this page. */
     private static $page_hook = '';

@@ -186,7 +186,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $table = Mullion_DB::get_assets_table();
 
         // Re-run the upgrade as if from an older schema version.
-        delete_option('wpsg_db_version');
+        delete_option('mullion_db_version');
         Mullion_DB::maybe_upgrade();
 
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -199,7 +199,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $this->assertSame(1, $has_col, 'is_universal column must exist after migration.');
 
         // A second run must not error and must keep the column.
-        delete_option('wpsg_db_version');
+        delete_option('mullion_db_version');
         Mullion_DB::maybe_upgrade();
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
         $has_col_again = (int) $wpdb->get_var(

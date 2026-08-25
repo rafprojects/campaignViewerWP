@@ -2,7 +2,7 @@
 
 /**
  * P72-F: opt-in retention purge for the two PII tables
- * (wp_wpsg_access_requests — visitor emails; wp_wpsg_audit_log — staff logins).
+ * (wp_mullion_access_requests — visitor emails; wp_mullion_audit_log — staff logins).
  *
  * Both retention windows default to 0 (never purge) so existing installs are
  * never surprised by data loss. A non-zero window purges rows older than the

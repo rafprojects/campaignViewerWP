@@ -53,7 +53,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
      * P64-E: the magic-link fallback no longer returns its HTML as response data
      * (which the REST server JSON-encoded into a broken page); it echoes raw HTML
      * via a one-shot rest_pre_serve_request filter. rest_do_request() doesn't run
-     * that filter, so to see the message text we isolate the wpsg-registered
+     * that filter, so to see the message text we isolate the mullion-registered
      * filter (bootstrap filters on this hook expect 4 args + call header()) and
      * invoke it, capturing the echo.
      *

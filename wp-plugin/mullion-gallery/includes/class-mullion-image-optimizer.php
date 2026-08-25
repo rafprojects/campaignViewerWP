@@ -23,7 +23,7 @@ class Mullion_Image_Optimizer {
      * Set to true by WPSG upload handlers so the optimizer only runs on
      * plugin-initiated uploads, not on all site-wide media uploads.
      */
-    public static bool $wpsg_upload_context = false;
+    public static bool $mullion_upload_context = false;
 
     /**
      * P50-I: When true, the dimension constraint is skipped so the upload keeps
@@ -31,7 +31,7 @@ class Mullion_Image_Optimizer {
      * overlay/asset-library upload handler — decorative assets are intentionally
      * allowed to exceed the gallery max dimensions.
      */
-    public static bool $wpsg_skip_resize = false;
+    public static bool $mullion_skip_resize = false;
 
     /**
      * Register optimization hooks.
@@ -54,8 +54,8 @@ class Mullion_Image_Optimizer {
         $max_width  = intval($settings['optimize_max_width'] ?? self::MAX_WIDTH_DEFAULT);
         $max_height = intval($settings['optimize_max_height'] ?? self::MAX_HEIGHT_DEFAULT);
 
-        add_image_size('wpsg_gallery', $max_width, $max_height, false);
-        add_image_size('wpsg_thumb', 400, 400, false);
+        add_image_size('mullion_gallery', $max_width, $max_height, false);
+        add_image_size('mullion_thumb', 400, 400, false);
     }
 
     /**
@@ -72,7 +72,7 @@ class Mullion_Image_Optimizer {
         }
 
         // Only optimize uploads originating from WPSG endpoints.
-        if (!self::$wpsg_upload_context) {
+        if (!self::$mullion_upload_context) {
             return $upload;
         }
 
@@ -100,7 +100,7 @@ class Mullion_Image_Optimizer {
 
         // Constrain dimensions (skipped for asset-library uploads, which keep
         // their full resolution per P50-I).
-        if (!self::$wpsg_skip_resize) {
+        if (!self::$mullion_skip_resize) {
             $result = self::constrain_image($file, $max_width, $max_height, $quality);
             if (is_wp_error($result)) {
                 // Log but don't fail the upload.

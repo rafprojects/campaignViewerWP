@@ -2,7 +2,7 @@
 
 /**
  * P66-E: user campaign templates (mullion_campaign posts flagged
- * _wpsg_is_template) must not surface in the campaigns.list API. They remain
+ * _mullion_is_template) must not surface in the campaigns.list API. They remain
  * reachable through the dedicated templates endpoint.
  */
 class Mullion_P66E_Template_Listing_Test extends WP_UnitTestCase {

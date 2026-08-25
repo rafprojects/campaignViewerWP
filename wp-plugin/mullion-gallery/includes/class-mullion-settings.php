@@ -25,12 +25,12 @@ class Mullion_Settings {
     /**
      * Option name for all plugin settings.
      */
-    const OPTION_NAME = 'wpsg_settings';
+    const OPTION_NAME = 'mullion_settings';
 
     /**
      * Settings page slug.
      */
-    const PAGE_SLUG = 'wpsg-settings';
+    const PAGE_SLUG = 'mullion-settings';
 
     /**
      * Google Font family names that may be loaded from the CDN.

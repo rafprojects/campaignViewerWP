@@ -52,7 +52,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
                 imagesetpixel($img, $x, $y, $c);
             }
         }
-        $path = tempnam(sys_get_temp_dir(), 'wpsg-gif-');
+        $path = tempnam(sys_get_temp_dir(), 'mullion-gif-');
         imagegif($img, $path);
         imagedestroy($img);
         return $path;
@@ -88,7 +88,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
 
         $tmp_one = $this->create_temp_gif(0);
         $tmp_two = $this->create_temp_gif(1);
-        $tmp_bad = tempnam(sys_get_temp_dir(), 'wpsg-bad-');
+        $tmp_bad = tempnam(sys_get_temp_dir(), 'mullion-bad-');
         file_put_contents($tmp_bad, 'not-an-image');
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');

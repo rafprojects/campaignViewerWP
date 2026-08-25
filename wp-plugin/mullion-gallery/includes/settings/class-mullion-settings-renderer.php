@@ -62,7 +62,7 @@ class Mullion_Settings_Renderer {
         }
 
         wp_register_script(
-            'wpsg-settings-admin',
+            'mullion-settings-admin',
             MULLION_PLUGIN_URL . 'includes/settings/assets/settings-auth-test.js',
             [],
             MULLION_VERSION,
@@ -70,7 +70,7 @@ class Mullion_Settings_Renderer {
         );
 
         wp_localize_script(
-            'wpsg-settings-admin',
+            'mullion-settings-admin',
             'wpsgSettingsAuthTest',
             [
                 'ajaxUrl'              => admin_url('admin-ajax.php'),
@@ -83,7 +83,7 @@ class Mullion_Settings_Renderer {
             ]
         );
 
-        wp_enqueue_script('wpsg-settings-admin');
+        wp_enqueue_script('mullion-settings-admin');
     }
 
     /**

@@ -39,9 +39,9 @@ class Mullion_Monitoring {
 
         $status = is_wp_error($response) ? 500 : (method_exists($response, 'get_status') ? $response->get_status() : 200);
 
-        self::buffer_metric('wpsg_rest_request_count', 1);
+        self::buffer_metric('mullion_rest_request_count', 1);
         if ($status >= 400) {
-            self::buffer_metric('wpsg_rest_error_count', 1);
+            self::buffer_metric('mullion_rest_error_count', 1);
         }
 
         do_action('mullion_rest_metrics', [
@@ -54,7 +54,7 @@ class Mullion_Monitoring {
     }
 
     public static function log_fatal_error() {
-        if (!self::is_wpsg_request()) {
+        if (!self::is_mullion_request()) {
             return;
         }
 
@@ -100,7 +100,7 @@ class Mullion_Monitoring {
         set_transient($buffer_key, $buffer, $flush_seconds);
     }
 
-    private static function is_wpsg_request() {
+    private static function is_mullion_request() {
         $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection for request metrics; no state change, no nonce.
         if (strpos($route, '/wp-super-gallery/v1/') === 0) {
             return true;
@@ -120,7 +120,7 @@ class Mullion_Monitoring {
      */
     public static function track_oembed_failure($url, $attempts) {
         $provider = self::detect_provider($url);
-        $failures = get_option('wpsg_oembed_provider_failures', []);
+        $failures = get_option('mullion_oembed_provider_failures', []);
 
         if (!isset($failures[$provider])) {
             $failures[$provider] = [
@@ -140,7 +140,7 @@ class Mullion_Monitoring {
         $failures[$provider]['recent'][] = time();
         $failures[$provider]['recent'] = array_slice($failures[$provider]['recent'], -10);
 
-        update_option('wpsg_oembed_provider_failures', $failures, false);
+        update_option('mullion_oembed_provider_failures', $failures, false);
     }
 
     /**
@@ -149,7 +149,7 @@ class Mullion_Monitoring {
      * @return array Provider failure stats.
      */
     public static function get_oembed_failures() {
-        return get_option('wpsg_oembed_provider_failures', []);
+        return get_option('mullion_oembed_provider_failures', []);
     }
 
     /**
@@ -159,11 +159,11 @@ class Mullion_Monitoring {
      */
     public static function reset_oembed_failures($provider = null) {
         if ($provider === null) {
-            update_option('wpsg_oembed_provider_failures', [], false);
+            update_option('mullion_oembed_provider_failures', [], false);
         } else {
-            $failures = get_option('wpsg_oembed_provider_failures', []);
+            $failures = get_option('mullion_oembed_provider_failures', []);
             unset($failures[$provider]);
-            update_option('wpsg_oembed_provider_failures', $failures, false);
+            update_option('mullion_oembed_provider_failures', $failures, false);
         }
     }
 
@@ -270,21 +270,21 @@ class Mullion_Monitoring {
      * WordPress loads autoloaded options into its in-memory option cache on the
      * first get_option() call, but that cache does not survive across requests
      * unless a persistent object-cache drop-in is active. This method
-     * explicitly sets the wpsg_settings value in a named cache group so that
+     * explicitly sets the mullion_settings value in a named cache group so that
      * persistent-cache deployments benefit from a warmed entry.
      *
      * Hooked to init at priority 20 so it runs after CPT/role registration.
      */
     public static function warm_settings() {
-        $cache_key   = 'wpsg_settings';
-        $cache_group = 'wpsg_settings';
+        $cache_key   = 'mullion_settings';
+        $cache_group = 'mullion_settings';
 
         wp_cache_get($cache_key, $cache_group, false, $found);
         if ($found) {
             return;
         }
 
-        $value = get_option('wpsg_settings', []);
+        $value = get_option('mullion_settings', []);
         wp_cache_set($cache_key, $value, $cache_group, HOUR_IN_SECONDS);
     }
 
@@ -294,9 +294,9 @@ class Mullion_Monitoring {
      * @return array Health metrics.
      */
     public static function get_health_data() {
-        $request_count = intval(get_option('wpsg_rest_request_count', 0));
-        $error_count   = intval(get_option('wpsg_rest_error_count', 0));
-        $oembed_failures = intval(get_option('wpsg_oembed_failure_count', 0));
+        $request_count = intval(get_option('mullion_rest_request_count', 0));
+        $error_count   = intval(get_option('mullion_rest_error_count', 0));
+        $oembed_failures = intval(get_option('mullion_oembed_failure_count', 0));
 
         // Campaign stats.
         $active_campaigns   = self::count_campaigns_by_status('active');
@@ -305,7 +305,7 @@ class Mullion_Monitoring {
 
         // Storage stats.
         $upload_dir   = wp_upload_dir();
-        $wpsg_storage = self::get_directory_size(trailingslashit($upload_dir['basedir']) . 'wpsg-thumbnails');
+        $mullion_storage = self::get_directory_size(trailingslashit($upload_dir['basedir']) . 'mullion-thumbnails');
 
         // Thumbnail cache stats.
         $cache_stats = [];
@@ -340,7 +340,7 @@ class Mullion_Monitoring {
                 'draft'    => $draft_campaigns,
             ],
             'storage'                      => [
-                'thumbnailCache' => $wpsg_storage,
+                'thumbnailCache' => $mullion_storage,
             ],
             'thumbnailCache'               => $cache_stats,
             'expiredGrantsPendingCleanup'  => $expired_grants_pending,

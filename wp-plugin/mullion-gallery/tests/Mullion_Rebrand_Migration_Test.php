@@ -1,10 +1,9 @@
 <?php
 /**
- * P74-E: one-time CPT / taxonomy / role / capability rename.
+ * P74-E / P74-F: one-time WP Super Gallery → Mullion data-shape migration.
  *
- * Seeds the pre-rename `wpsg_*` data-shape (the strings the migrator still
- * looks for) and asserts the post-rename `mullion_*` shape is what the
- * plugin queries.
+ * Seeds the pre-rename `wpsg_*` rows (the strings the migrator still looks
+ * for) and asserts the post-rename `mullion_*` shape is what the plugin queries.
  */
 class Mullion_Rebrand_Migration_Test extends WP_UnitTestCase {
 
@@ -27,7 +26,7 @@ class Mullion_Rebrand_Migration_Test extends WP_UnitTestCase {
         Mullion_Rebrand_Migration::maybe_run();
 
         $this->assertSame(
-            Mullion_Rebrand_Migration::VERSION_CPT,
+            Mullion_Rebrand_Migration::VERSION_KEYS,
             (int) get_option(Mullion_Rebrand_Migration::VERSION_OPTION, 0)
         );
         $this->assertTrue(post_type_exists('mullion_campaign'));
@@ -54,8 +53,6 @@ class Mullion_Rebrand_Migration_Test extends WP_UnitTestCase {
         $this->assertGreaterThan(0, $campaign_id);
         $this->assertGreaterThan(0, $tpl_id);
 
-        // Old taxonomy slugs are no longer registered; re-register them so
-        // wp_insert_term can seed the rows the migrator will remap.
         foreach (array_keys(Mullion_Rebrand_Migration::TAXONOMIES) as $old_tax) {
             register_taxonomy($old_tax, 'wpsg_campaign', ['public' => false]);
         }
@@ -156,7 +153,7 @@ class Mullion_Rebrand_Migration_Test extends WP_UnitTestCase {
         Mullion_Rebrand_Migration::maybe_run();
         $this->assertSame('mullion_campaign', get_post_type($id));
         $this->assertSame(
-            Mullion_Rebrand_Migration::VERSION_CPT,
+            Mullion_Rebrand_Migration::VERSION_KEYS,
             (int) get_option(Mullion_Rebrand_Migration::VERSION_OPTION)
         );
 
@@ -164,8 +161,96 @@ class Mullion_Rebrand_Migration_Test extends WP_UnitTestCase {
         Mullion_Rebrand_Migration::maybe_run();
         $this->assertSame($before, get_post_type($id));
         $this->assertSame(
-            Mullion_Rebrand_Migration::VERSION_CPT,
+            Mullion_Rebrand_Migration::VERSION_KEYS,
             (int) get_option(Mullion_Rebrand_Migration::VERSION_OPTION)
         );
+    }
+
+    public function test_migrates_option_keys_and_css_var_values() {
+        global $wpdb;
+        delete_option('mullion_settings');
+        delete_option('mullion_db_version');
+        $wpdb->insert($wpdb->options, [
+            'option_name'  => 'wpsg_settings',
+            'option_value' => serialize([
+                'theme'               => 'nord',
+                'dot_nav_active_color'=> 'var(--wpsg-color-primary)',
+            ]),
+            'autoload'     => 'yes',
+        ]);
+        $wpdb->insert($wpdb->options, [
+            'option_name'  => 'wpsg_db_version',
+            'option_value' => '17',
+            'autoload'     => 'yes',
+        ]);
+
+        Mullion_Rebrand_Migration::migrate_persisted_keys();
+
+        $this->assertFalse(get_option('wpsg_settings', false));
+        $this->assertFalse(get_option('wpsg_db_version', false));
+        $settings = get_option('mullion_settings');
+        $this->assertIsArray($settings);
+        $this->assertSame('nord', $settings['theme']);
+        $this->assertSame('var(--mullion-color-primary)', $settings['dot_nav_active_color']);
+        $this->assertSame('17', get_option('mullion_db_version'));
+    }
+
+    public function test_migrates_postmeta_keys() {
+        $id = wp_insert_post([
+            'post_type'   => 'mullion_campaign',
+            'post_title'  => 'Meta',
+            'post_status' => 'publish',
+        ]);
+        add_post_meta($id, '_wpsg_space_id', 42, true);
+        add_post_meta($id, '_wpsg_is_template', '1', true);
+
+        Mullion_Rebrand_Migration::migrate_persisted_keys();
+
+        $this->assertSame('42', get_post_meta($id, '_mullion_space_id', true));
+        $this->assertSame('1', get_post_meta($id, '_mullion_is_template', true));
+        $this->assertSame('', get_post_meta($id, '_wpsg_space_id', true));
+        $this->assertSame('', get_post_meta($id, '_wpsg_is_template', true));
+    }
+
+    public function test_renames_custom_tables() {
+        global $wpdb;
+        $old = $wpdb->prefix . 'wpsg_spaces';
+        $new = $wpdb->prefix . 'mullion_spaces';
+        $exists = static function (string $table) use ($wpdb): bool {
+            return (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
+                     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+                    $table
+                )
+            ) > 0;
+        };
+
+        if ($exists($new)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $wpdb->query("DELETE FROM `{$new}`");
+        }
+        if ($exists($old)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+            $wpdb->query("DROP TABLE `{$old}`");
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.SchemaChange, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $wpdb->query("CREATE TABLE `{$old}` (id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY) {$wpdb->get_charset_collate()}");
+
+        Mullion_Rebrand_Migration::migrate_persisted_keys();
+
+        $this->assertTrue($exists($new), 'destination table must exist after rename');
+        $this->assertFalse($exists($old), 'source table must be gone after rename');
+    }
+
+    public function test_option_rename_does_not_overwrite_existing_dest() {
+        update_option('mullion_settings', ['theme' => 'kept'], false);
+        update_option('wpsg_settings', ['theme' => 'old'], false);
+
+        Mullion_Rebrand_Migration::migrate_persisted_keys();
+
+        $settings = get_option('mullion_settings');
+        $this->assertSame('kept', $settings['theme']);
+        $this->assertFalse(get_option('wpsg_settings', false));
     }
 }

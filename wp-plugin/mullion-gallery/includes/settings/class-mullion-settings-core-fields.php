@@ -56,7 +56,7 @@ class Mullion_Settings_Core_Fields {
             'minimal'   => __('Minimal (thin strip, ≤32px)', 'mullion-gallery'),
         ];
         ?>
-        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[auth_bar_display_mode]" id="wpsg_auth_bar_display_mode">
+        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[auth_bar_display_mode]" id="mullion_auth_bar_display_mode">
             <?php foreach ($options as $key => $label) : ?>
                 <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
                     <?php echo esc_html($label); ?>
@@ -79,7 +79,7 @@ class Mullion_Settings_Core_Fields {
         ?>
         <input type="number"
                name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[auth_bar_drag_margin]"
-               id="wpsg_auth_bar_drag_margin"
+               id="mullion_auth_bar_drag_margin"
                value="<?php echo esc_attr($value); ?>"
                class="small-text"
                min="0"
@@ -122,10 +122,10 @@ class Mullion_Settings_Core_Fields {
             <?php esc_html_e('Select the authentication method for REST API access.', 'mullion-gallery'); ?>
         </p>
         <p style="margin-top: 10px;">
-            <button type="button" class="button" id="wpsg-test-auth">
+            <button type="button" class="button" id="mullion-test-auth">
                 <?php esc_html_e('Test Connection', 'mullion-gallery'); ?>
             </button>
-            <span id="wpsg-test-auth-result" style="margin-left: 10px;"></span>
+            <span id="mullion-test-auth-result" style="margin-left: 10px;"></span>
         </p>
         <?php
     }
@@ -237,7 +237,7 @@ class Mullion_Settings_Core_Fields {
         $value        = Mullion_Settings::get_setting('theme');
         $theme_groups = self::get_theme_groups();
         ?>
-        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[theme]" id="wpsg_theme">
+        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[theme]" id="mullion_theme">
             <?php foreach ($theme_groups as $group_label => $options) : ?>
                 <optgroup label="<?php echo esc_attr($group_label); ?>">
                     <?php foreach ($options as $key => $label) : ?>
@@ -268,7 +268,7 @@ class Mullion_Settings_Core_Fields {
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[allow_user_theme_override]"
-                   id="wpsg_allow_user_theme_override"
+                   id="mullion_allow_user_theme_override"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Allow visitors to switch themes via the gallery UI.', 'mullion-gallery'); ?>
@@ -317,7 +317,7 @@ class Mullion_Settings_Core_Fields {
             'carousel' => __('Carousel', 'mullion-gallery'),
         ];
         ?>
-        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[gallery_layout]" id="wpsg_gallery_layout">
+        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[gallery_layout]" id="mullion_gallery_layout">
             <?php foreach ($options as $key => $label) : ?>
                 <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
                     <?php echo esc_html($label); ?>
@@ -340,7 +340,7 @@ class Mullion_Settings_Core_Fields {
         ?>
         <input type="number"
                name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[items_per_page]"
-               id="wpsg_items_per_page"
+               id="mullion_items_per_page"
                value="<?php echo esc_attr($value); ?>"
                min="1"
                max="100"
@@ -366,7 +366,7 @@ class Mullion_Settings_Core_Fields {
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[enable_lightbox]"
-                   id="wpsg_enable_lightbox"
+                   id="mullion_enable_lightbox"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Enable fullscreen lightbox when clicking gallery items.', 'mullion-gallery'); ?>
@@ -388,7 +388,7 @@ class Mullion_Settings_Core_Fields {
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[enable_animations]"
-                   id="wpsg_enable_animations"
+                   id="mullion_enable_animations"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Enable smooth animations and transitions.', 'mullion-gallery'); ?>

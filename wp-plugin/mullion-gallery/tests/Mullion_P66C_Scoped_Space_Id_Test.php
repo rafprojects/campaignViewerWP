@@ -13,7 +13,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         Mullion_DB::maybe_create_media_refs_table();
         Mullion_DB::maybe_create_access_requests_table();
         parent::setUp();
-        update_option('wpsg_settings', ['enable_analytics' => true]);
+        update_option('mullion_settings', ['enable_analytics' => true]);
     }
 
     public function tearDown(): void {
@@ -22,7 +22,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         $wpdb->query('DELETE FROM ' . Mullion_DB::get_media_refs_table());
         $wpdb->query('DELETE FROM ' . Mullion_DB::get_access_requests_table());
         parent::tearDown();
-        delete_option('wpsg_settings');
+        delete_option('mullion_settings');
         wp_set_current_user(0);
     }
 
@@ -43,7 +43,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
         update_post_meta($id, 'status', 'active');
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 
@@ -148,7 +148,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
             'space_id'     => 0,
         ], ['%d', '%s', '%s', '%s', '%d']);
 
-        delete_option('wpsg_scoped_space_id_backfilled');
+        delete_option('mullion_scoped_space_id_backfilled');
         $method = new ReflectionMethod('Mullion_DB', 'maybe_backfill_scoped_space_ids');
         $method->setAccessible(true);
         $method->invoke(null);
@@ -190,7 +190,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         $insert_legacy_row($camp_b);
         $insert_legacy_row($camp_default);
 
-        delete_option('wpsg_scoped_space_id_backfilled');
+        delete_option('mullion_scoped_space_id_backfilled');
         $method = new ReflectionMethod('Mullion_DB', 'maybe_backfill_scoped_space_ids');
         $method->setAccessible(true);
         $method->invoke(null);

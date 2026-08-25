@@ -196,7 +196,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
     public function test_campaign_duplicate_creates_new_post(): void {
         $id = $this->create_campaign( 'Original' );
         update_post_meta( $id, 'visibility', 'private' );
-        update_post_meta( $id, '_wpsg_gallery_overrides', wp_json_encode( [
+        update_post_meta( $id, '_mullion_gallery_overrides', wp_json_encode( [
             'mode'        => 'unified',
             'breakpoints' => [
                 'desktop' => [
@@ -219,7 +219,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
         $this->assertEquals( 'private', get_post_meta( $new_id, 'visibility', true ) );
         $this->assertEquals(
             'classic',
-            json_decode( get_post_meta( $new_id, '_wpsg_gallery_overrides', true ), true )['breakpoints']['desktop']['unified']['adapterId'] ?? null
+            json_decode( get_post_meta( $new_id, '_mullion_gallery_overrides', true ), true )['breakpoints']['desktop']['unified']['adapterId'] ?? null
         );
     }
 
@@ -282,14 +282,14 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
         ] );
 
         $this->assertIsArray( $template );
-        update_post_meta( $id, '_wpsg_layout_binding_template_id', $template['id'] );
-        update_post_meta( $id, '_wpsg_layout_binding', 'layout-builder' );
+        update_post_meta( $id, '_mullion_layout_binding_template_id', $template['id'] );
+        update_post_meta( $id, '_mullion_layout_binding', 'layout-builder' );
 
         $this->cli->campaign_duplicate( [ (string) $id ], [ 'duplicate-layout-template' => true ] );
 
         preg_match( '/New ID: (\d+)/', $this->last_success(), $m );
         $new_id               = intval( $m[1] ?? 0 );
-        $duplicated_template  = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+        $duplicated_template  = get_post_meta( $new_id, '_mullion_layout_binding_template_id', true );
 
         $this->assertNotEquals( $template['id'], $duplicated_template );
         $cloned_template = Mullion_Layout_Templates::get( $duplicated_template );
@@ -351,7 +351,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
             'layout_template'  => null,
             'media_references' => [],
         ] );
-        $file = tempnam( get_temp_dir(), 'wpsg-import-' );
+        $file = tempnam( get_temp_dir(), 'mullion-import-' );
         file_put_contents( $file, $payload );
 
         try {
@@ -368,7 +368,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
         $post = get_post( $new_id );
         $this->assertEquals( 'Imported From CLI', $post->post_title );
         $this->assertEquals( 'draft', get_post_meta( $new_id, 'status', true ) );
-        $stored_overrides = json_decode( get_post_meta( $new_id, '_wpsg_gallery_overrides', true ), true );
+        $stored_overrides = json_decode( get_post_meta( $new_id, '_mullion_gallery_overrides', true ), true );
         $this->assertEquals( 'per-type', $stored_overrides['mode'] ?? null );
         $this->assertEquals( 'masonry', $stored_overrides['breakpoints']['desktop']['image']['adapterId'] ?? null );
         $this->assertEquals( 'diamond', $stored_overrides['breakpoints']['desktop']['video']['adapterId'] ?? null );
@@ -380,7 +380,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
     }
 
     public function test_campaign_import_unsupported_version_throws(): void {
-        $file = tempnam( get_temp_dir(), 'wpsg-badver-' );
+        $file = tempnam( get_temp_dir(), 'mullion-badver-' );
         file_put_contents( $file, json_encode( [ 'version' => 9, 'campaign' => [] ] ) );
 
         try {
@@ -412,7 +412,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
             'slots'             => [ [ 'id' => 'slot-1', 'x' => 0, 'y' => 0, 'width' => 50, 'height' => 50, 'shape' => 'rectangle' ] ],
             'overlays'          => [],
         ] );
-        update_post_meta( $source_id, '_wpsg_layout_binding_template_id', $tpl['id'] );
+        update_post_meta( $source_id, '_mullion_layout_binding_template_id', $tpl['id'] );
 
         // Export.
         $this->cli->campaign_export( [ (string) $source_id ], [] );
@@ -425,7 +425,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
         }
 
         // Write to file and import.
-        $file = tempnam( get_temp_dir(), 'wpsg-roundtrip-' );
+        $file = tempnam( get_temp_dir(), 'mullion-roundtrip-' );
         file_put_contents( $file, $json_msg );
         WP_CLI::reset();
         try {
@@ -441,7 +441,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
         $this->assertEquals( 'Round-trip Source', $post->post_title );
 
         // The layout template must have been recreated and be retrievable.
-        $bound_id = get_post_meta( $new_id, '_wpsg_layout_binding_template_id', true );
+        $bound_id = get_post_meta( $new_id, '_mullion_layout_binding_template_id', true );
         $this->assertNotEmpty( $bound_id, 'Imported campaign must carry a layout-template binding.' );
         $fetched = Mullion_Layout_Templates::get( $bound_id );
         $this->assertIsArray( $fetched );
@@ -463,7 +463,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
             ],
         ] );
 
-        $file = tempnam( get_temp_dir(), 'wpsg-clizip-' );
+        $file = tempnam( get_temp_dir(), 'mullion-clizip-' );
         $zip_path = $file . '.zip';
         $zip = new ZipArchive();
         $zip->open( $zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE );

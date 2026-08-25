@@ -51,7 +51,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
         update_post_meta($id, 'status', 'active');
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 

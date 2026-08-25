@@ -51,7 +51,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         update_post_meta($cid, 'media_items', [
             ['id' => 'm1', 'url' => 'https://example.com/1.jpg', 'title' => 'Img'],
         ]);
-        update_post_meta($cid, '_wpsg_gallery_overrides', wp_json_encode([
+        update_post_meta($cid, '_mullion_gallery_overrides', wp_json_encode([
             'mode' => 'unified',
             'breakpoints' => [
                 'desktop' => [
@@ -94,8 +94,8 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         ]);
 
         $this->assertIsArray($template);
-        update_post_meta($cid, '_wpsg_layout_binding_template_id', $template['id']);
-        update_post_meta($cid, '_wpsg_layout_binding', 'layout-builder');
+        update_post_meta($cid, '_mullion_layout_binding_template_id', $template['id']);
+        update_post_meta($cid, '_mullion_layout_binding', 'layout-builder');
 
         $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/duplicate");
         $req->set_param('duplicateLayoutTemplate', true);
@@ -862,14 +862,14 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_get_cache_version_returns_integer() {
-        delete_option('wpsg_cache_version');
+        delete_option('mullion_cache_version');
         $v = Mullion_REST::get_cache_version();
         $this->assertIsInt($v);
         $this->assertGreaterThanOrEqual(1, $v);
     }
 
     public function test_bump_cache_version_increments() {
-        delete_option('wpsg_cache_version');
+        delete_option('mullion_cache_version');
         $before = Mullion_REST::get_cache_version();
         Mullion_REST::bump_cache_version();
         $after = Mullion_REST::get_cache_version();
@@ -898,9 +898,9 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('Analytics Record On');
 
         // Enable analytics.
-        $settings = get_option('wpsg_settings', []);
+        $settings = get_option('mullion_settings', []);
         $settings['enable_analytics'] = true;
-        update_option('wpsg_settings', $settings);
+        update_option('mullion_settings', $settings);
 
         $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
         $req->set_param('campaign_id', $cid);
@@ -913,7 +913,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
 
         // Cleanup.
         $settings['enable_analytics'] = false;
-        update_option('wpsg_settings', $settings);
+        update_option('mullion_settings', $settings);
     }
 
     // ═══════════════════════════════════════════════════════════════════════

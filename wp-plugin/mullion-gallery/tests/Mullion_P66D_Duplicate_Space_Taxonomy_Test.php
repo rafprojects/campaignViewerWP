@@ -1,7 +1,7 @@
 <?php
 
 /**
- * P66-D: duplicating a campaign preserves its space (_wpsg_space_id) and its
+ * P66-D: duplicating a campaign preserves its space (_mullion_space_id) and its
  * category/tag taxonomies — previously both were silently dropped, so a
  * duplicate escaped its delegated space and lost its categorization.
  */
@@ -14,7 +14,7 @@ class Mullion_P66D_Duplicate_Space_Taxonomy_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
         update_post_meta($id, 'status', 'active');
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         return intval($id);
     }
 
@@ -27,7 +27,7 @@ class Mullion_P66D_Duplicate_Space_Taxonomy_Test extends WP_UnitTestCase {
         $this->assertIsInt($new_id);
         $this->assertSame(
             (string) $space_id,
-            get_post_meta($new_id, '_wpsg_space_id', true),
+            get_post_meta($new_id, '_mullion_space_id', true),
             'Duplicate must stay in the source campaign space'
         );
     }

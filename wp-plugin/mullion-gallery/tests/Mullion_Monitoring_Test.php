@@ -4,10 +4,10 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        delete_option('wpsg_rest_request_count');
-        delete_option('wpsg_rest_error_count');
-        delete_option('wpsg_oembed_provider_failures');
-        delete_option('wpsg_oembed_failure_count');
+        delete_option('mullion_rest_request_count');
+        delete_option('mullion_rest_error_count');
+        delete_option('mullion_oembed_provider_failures');
+        delete_option('mullion_oembed_failure_count');
         // Reset the static timer.
         $ref = new ReflectionProperty(Mullion_Monitoring::class, 'rest_start');
         $ref->setAccessible(true);
@@ -15,12 +15,12 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     }
 
     public function tearDown(): void {
-        delete_option('wpsg_rest_request_count');
-        delete_option('wpsg_rest_error_count');
-        delete_option('wpsg_oembed_provider_failures');
-        delete_option('wpsg_oembed_failure_count');
-        delete_transient('wpsg_rest_request_count_buffer');
-        delete_transient('wpsg_rest_error_count_buffer');
+        delete_option('mullion_rest_request_count');
+        delete_option('mullion_rest_error_count');
+        delete_option('mullion_oembed_provider_failures');
+        delete_option('mullion_oembed_failure_count');
+        delete_transient('mullion_rest_request_count_buffer');
+        delete_transient('mullion_rest_error_count_buffer');
         remove_all_filters('mullion_metrics_flush_every');
         remove_all_filters('mullion_metrics_flush_seconds');
         parent::tearDown();
@@ -28,7 +28,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
 
     // ── start_timer ────────────────────────────────────────────────────────
 
-    public function test_start_timer_sets_for_wpsg_routes() {
+    public function test_start_timer_sets_for_mullion_routes() {
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
         $server = rest_get_server();
 
@@ -40,7 +40,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         $this->assertNotNull($ref->getValue(null));
     }
 
-    public function test_start_timer_ignores_non_wpsg_routes() {
+    public function test_start_timer_ignores_non_mullion_routes() {
         $request = new WP_REST_Request('GET', '/wp/v2/posts');
         $server = rest_get_server();
 
@@ -54,7 +54,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
 
     // ── attach_metrics ─────────────────────────────────────────────────────
 
-    public function test_attach_metrics_adds_timing_header_for_wpsg_routes() {
+    public function test_attach_metrics_adds_timing_header_for_mullion_routes() {
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
         $server = rest_get_server();
 
@@ -69,7 +69,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         $this->assertIsNumeric($headers['X-MULLION-Response-Time']);
     }
 
-    public function test_attach_metrics_ignores_non_wpsg_routes() {
+    public function test_attach_metrics_ignores_non_mullion_routes() {
         $request = new WP_REST_Request('GET', '/wp/v2/posts');
         $server = rest_get_server();
         $response = new WP_REST_Response(['ok' => true], 200);
@@ -79,7 +79,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         $this->assertArrayNotHasKey('X-MULLION-Response-Time', $headers);
     }
 
-    public function test_attach_metrics_fires_wpsg_rest_metrics_action() {
+    public function test_attach_metrics_fires_mullion_rest_metrics_action() {
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
         $server = rest_get_server();
         $response = new WP_REST_Response(['ok' => true], 200);

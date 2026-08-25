@@ -204,7 +204,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $token       = wp_generate_uuid4();
 
         // Insert a pending request directly.
-        $table = $wpdb->prefix . 'wpsg_access_requests';
+        $table = $wpdb->prefix . 'mullion_access_requests';
         $wpdb->insert($table, [
             'token'        => $token,
             'campaign_id'  => $campaign_id,
@@ -234,7 +234,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $email       = 'p33b-default-viewer@example.com';
         $token       = wp_generate_uuid4();
 
-        $table = $wpdb->prefix . 'wpsg_access_requests';
+        $table = $wpdb->prefix . 'mullion_access_requests';
         $wpdb->insert($table, [
             'token'        => $token,
             'campaign_id'  => $campaign_id,

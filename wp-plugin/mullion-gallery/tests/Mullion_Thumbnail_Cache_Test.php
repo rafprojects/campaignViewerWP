@@ -31,15 +31,15 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
      * Seed a cache entry in the new per-hash option format.
      */
     private function write_thumb_entry(string $hash, array $meta): void {
-        update_option('wpsg_thumb_' . $hash, $meta, false);
+        update_option('mullion_thumb_' . $hash, $meta, false);
     }
 
     /**
-     * Delete all wpsg_thumb_* options via delete_option() so the WP options cache is invalidated.
+     * Delete all mullion_thumb_* options via delete_option() so the WP options cache is invalidated.
      */
     private function delete_all_thumb_options(): void {
         global $wpdb;
-        $like  = $wpdb->esc_like('wpsg_thumb_') . '%';
+        $like  = $wpdb->esc_like('mullion_thumb_') . '%';
         $names = $wpdb->get_col($wpdb->prepare(
             "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s",
             $like
@@ -109,7 +109,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
         // P49-F: metadata is stored in a per-hash option, not the old index.
         $hash  = hash('sha256', 'https://example.com/media/1');
-        $entry = get_option('wpsg_thumb_' . $hash, false);
+        $entry = get_option('mullion_thumb_' . $hash, false);
         $this->assertIsArray($entry);
         $this->assertEquals('https://example.com/media/1', $entry['source_url']);
     }
@@ -150,7 +150,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
         $this->write_thumb_entry($hash, [
             'source_url' => $source,
-            'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/expired.jpg',
+            'local_url'  => 'https://example.com/uploads/mullion-thumbnails/expired.jpg',
             'local_path' => '/nonexistent/path.jpg',
             'cached_at'  => time() - 999999,
             'file_size'  => 100,
@@ -165,8 +165,8 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
         $this->write_thumb_entry($hash, [
             'source_url' => $source,
-            'local_url'  => 'https://example.com/uploads/wpsg-thumbnails/missing.jpg',
-            'local_path' => '/tmp/nonexistent-wpsg-test.jpg',
+            'local_url'  => 'https://example.com/uploads/mullion-thumbnails/missing.jpg',
+            'local_path' => '/tmp/nonexistent-mullion-test.jpg',
             'cached_at'  => time(),
             'file_size'  => 100,
         ]);
@@ -180,7 +180,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
         Mullion_Thumbnail_Cache::cache_oembed_thumbnail('https://example.com/video', []);
         // No per-hash option should have been created.
         $hash = hash('sha256', 'https://example.com/video');
-        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
+        $this->assertFalse(get_option('mullion_thumb_' . $hash, false));
     }
 
     // ── cache_campaign_thumbnails ──────────────────────────────────────────────
@@ -277,7 +277,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
         Mullion_Thumbnail_Cache::cleanup_expired();
 
         $this->assertFileDoesNotExist($path);
-        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
+        $this->assertFalse(get_option('mullion_thumb_' . $hash, false));
     }
 
     public function test_cleanup_expired_keeps_fresh_entries() {
@@ -295,7 +295,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
         Mullion_Thumbnail_Cache::cleanup_expired();
 
         $this->assertFileExists($path);
-        $this->assertIsArray(get_option('wpsg_thumb_' . $hash, false));
+        $this->assertIsArray(get_option('mullion_thumb_' . $hash, false));
     }
 
     // ── clear_all ──────────────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
         $removed = Mullion_Thumbnail_Cache::clear_all();
         $this->assertEquals(1, $removed);
         $this->assertFileDoesNotExist($path);
-        $this->assertFalse(get_option('wpsg_thumb_' . $hash, false));
+        $this->assertFalse(get_option('mullion_thumb_' . $hash, false));
     }
 
     public function test_clear_all_returns_zero_when_empty() {

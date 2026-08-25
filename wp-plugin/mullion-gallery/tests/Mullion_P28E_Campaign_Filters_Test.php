@@ -47,7 +47,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
     }
 
     private function set_template(int $campaign_id, string $uuid): void {
-        update_post_meta($campaign_id, '_wpsg_layout_binding_template_id', $uuid);
+        update_post_meta($campaign_id, '_mullion_layout_binding_template_id', $uuid);
     }
 
     private function set_admin(): void {

@@ -4,11 +4,11 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		delete_option( 'wpsg_cache_version' );
+		delete_option( 'mullion_cache_version' );
 	}
 
 	public function tearDown(): void {
-		delete_option( 'wpsg_cache_version' );
+		delete_option( 'mullion_cache_version' );
 		parent::tearDown();
 	}
 

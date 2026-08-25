@@ -87,18 +87,18 @@ class Mullion_P63C_Security_Headers_Test extends WP_UnitTestCase {
 
     public function test_dead_send_headers_hook_is_gone() {
         // The old, never-effective hook + function must no longer exist.
-        $this->assertFalse( has_action( 'send_headers', 'wpsg_add_security_headers' ) );
-        $this->assertFalse( function_exists( 'wpsg_add_security_headers' ) );
-        $this->assertFalse( function_exists( 'wpsg_should_add_security_headers' ) );
+        $this->assertFalse( has_action( 'send_headers', 'mullion_add_security_headers' ) );
+        $this->assertFalse( function_exists( 'mullion_add_security_headers' ) );
+        $this->assertFalse( function_exists( 'mullion_should_add_security_headers' ) );
     }
 
     // ── REST callback is a pass-through ──────────────────────────────────────
 
     public function test_rest_callback_returns_served_unchanged() {
-        $wpsg_req  = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/campaigns' );
+        $mullion_req  = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/campaigns' );
         $other_req = new WP_REST_Request( 'GET', '/wp/v2/posts' );
 
-        $this->assertTrue( mullion_add_rest_security_headers( true, null, $wpsg_req, null ) );
+        $this->assertTrue( mullion_add_rest_security_headers( true, null, $mullion_req, null ) );
         $this->assertTrue( mullion_add_rest_security_headers( true, null, $other_req, null ) );
     }
 }

@@ -4,7 +4,7 @@
  *
  * Asserts the O(N) query bound and verifies the performance-cliff warning fires
  * when more than 50 campaigns are scanned. The O(1) rewrite is deferred to
- * Phase 50+ and requires extending wpsg_media_refs with an attachment-ID index.
+ * Phase 50+ and requires extending mullion_media_refs with an attachment-ID index.
  */
 
 class Mullion_P49G_N1_Audit_Test extends WP_UnitTestCase {

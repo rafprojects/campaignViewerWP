@@ -272,7 +272,7 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
         return $uid;
     }
 
-    /** A space-scoped editor: manage_mullion but NOT manage_options (the wpsg_admin/mullion_editor shape). */
+    /** A space-scoped editor: manage_mullion but NOT manage_options (the mullion_admin/mullion_editor shape). */
     private function make_manage_mullion_only(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);

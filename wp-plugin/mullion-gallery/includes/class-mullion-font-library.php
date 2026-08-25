@@ -3,8 +3,8 @@
  * Mullion — Custom Font Library
  *
  * Manages custom font uploads for use in typography overrides.
- * Files are stored in wp-content/uploads/wpsg-fonts/.
- * Metadata is stored in the `wpsg_font_library` WP option.
+ * Files are stored in wp-content/uploads/mullion-fonts/.
+ * Metadata is stored in the `mullion_font_library` WP option.
  *
  * Modeled on class-mullion-asset-library.php.
  *
@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Mullion_Font_Library {
 
-    const OPTION_KEY    = 'wpsg_font_library';
-    const UPLOAD_SUBDIR = 'wpsg-fonts';
+    const OPTION_KEY    = 'mullion_font_library';
+    const UPLOAD_SUBDIR = 'mullion-fonts';
     const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2 MB
 
     /**

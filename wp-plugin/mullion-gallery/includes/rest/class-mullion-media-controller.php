@@ -206,7 +206,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     /**
      * GET /media/usage-summary?ids[]=id1&ids[]=id2...
      * Returns a map { mediaId: count } for the given IDs.
-     * Uses indexed wpsg_media_refs table (P20-I-2).
+     * Uses indexed mullion_media_refs table (P20-I-2).
      */
     public static function get_media_usage_summary($request) {
         $ids     = $request->get_param('ids');
@@ -534,7 +534,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     }
 
     /**
-     * P67-I: record an attachment's byte size in the numeric _wpsg_filesize meta
+     * P67-I: record an attachment's byte size in the numeric _mullion_filesize meta
      * that the media-library "size" sort orders by. Registered on add_attachment
      * (for native/other-plugin uploads) and called directly from the plugin's own
      * upload path. Idempotent; a re-stamp just rewrites the same value.
@@ -562,7 +562,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             $bytes = filesize($file_path);
             $size  = ($bytes !== false) ? (int) $bytes : 0;
         }
-        update_post_meta($attachment_id, '_wpsg_filesize', $size);
+        update_post_meta($attachment_id, '_mullion_filesize', $size);
     }
 
     private static function prepare_uploaded_attachment_payload($attachment_id) {
@@ -597,7 +597,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                    AND p.post_type = 'attachment'
                    AND p.post_status = 'inherit'
                  LIMIT %d",
-                '_wpsg_file_phash',
+                '_mullion_file_phash',
                 $limit
             ),
             ARRAY_A
@@ -733,11 +733,11 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         }
 
         if (class_exists('Mullion_Image_Optimizer')) {
-            Mullion_Image_Optimizer::$wpsg_upload_context = true;
+            Mullion_Image_Optimizer::$mullion_upload_context = true;
             try {
                 $upload = Mullion_Image_Optimizer::optimize_on_upload($upload, 'upload');
             } finally {
-                Mullion_Image_Optimizer::$wpsg_upload_context = false;
+                Mullion_Image_Optimizer::$mullion_upload_context = false;
             }
         }
 
@@ -748,12 +748,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
         // P28-N: Store MD5 for future duplicate detection.
         if ($md5) {
-            update_post_meta($attachment_id, '_wpsg_file_md5', $md5);
+            update_post_meta($attachment_id, '_mullion_file_md5', $md5);
         }
 
         // P38-MD1: Store pHash for near-duplicate detection on future uploads.
         if ($phash !== null) {
-            update_post_meta($attachment_id, '_wpsg_file_phash', $phash);
+            update_post_meta($attachment_id, '_mullion_file_phash', $phash);
         }
 
         return self::prepare_uploaded_attachment_payload($attachment_id);
@@ -1317,12 +1317,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             'title_desc'   => ['orderby' => 'title',      'order' => 'DESC'],
             'created_asc'  => ['orderby' => 'date',       'order' => 'ASC'],
             'created_desc' => ['orderby' => 'date',       'order' => 'DESC'],
-            // P67-I: size sorts on the dedicated numeric _wpsg_filesize meta (see
+            // P67-I: size sorts on the dedicated numeric _mullion_filesize meta (see
             // create_attachment_from_upload() + the add_attachment hook + the DB
             // backfill). The old _wp_attachment_metadata key is a serialized array
             // whose numeric cast is 0 for every row, making the sort a no-op.
-            'size_asc'     => ['orderby' => '_wpsg_filesize', 'order' => 'ASC'],
-            'size_desc'    => ['orderby' => '_wpsg_filesize', 'order' => 'DESC'],
+            'size_asc'     => ['orderby' => '_mullion_filesize', 'order' => 'ASC'],
+            'size_desc'    => ['orderby' => '_mullion_filesize', 'order' => 'DESC'],
         ];
         $sort_opts = $sort_map[$sort] ?? $sort_map['created_desc'];
 
@@ -1334,14 +1334,14 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             'order'          => $sort_opts['order'],
             'post_mime_type' => ['image', 'video'],
         ];
-        if ($sort_opts['orderby'] === '_wpsg_filesize') {
+        if ($sort_opts['orderby'] === '_mullion_filesize') {
             // Order by the numeric filesize meta, but keep attachments that don't
             // yet carry it (sorted as NULL) instead of filtering them out — a bare
             // meta_key clause would exclude them.
             $args['meta_query'] = [
                 'relation' => 'OR',
-                'mullion_fs'         => ['key' => '_wpsg_filesize', 'type' => 'NUMERIC', 'compare' => 'EXISTS'],
-                'wpsg_fs_missing' => ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
+                'mullion_fs'         => ['key' => '_mullion_filesize', 'type' => 'NUMERIC', 'compare' => 'EXISTS'],
+                'mullion_fs_missing' => ['key' => '_mullion_filesize', 'compare' => 'NOT EXISTS'],
             ];
             $args['orderby'] = ['mullion_fs' => $sort_opts['order'], 'ID' => 'ASC'];
         } else {

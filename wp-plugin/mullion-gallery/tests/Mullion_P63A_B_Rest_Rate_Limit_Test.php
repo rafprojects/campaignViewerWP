@@ -47,7 +47,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
 
     /** Transient key the way rate_limit_check() derives it for the public scope. */
     private function public_key( string $ip, string $route ): string {
-        return sprintf( 'wpsg_rl_public_anon_%s', md5( $ip . '|' . $route ) );
+        return sprintf( 'mullion_rl_public_anon_%s', md5( $ip . '|' . $route ) );
     }
 
     // ── P63-A ────────────────────────────────────────────────────────────────

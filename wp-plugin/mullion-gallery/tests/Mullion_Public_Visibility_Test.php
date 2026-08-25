@@ -28,7 +28,7 @@ class Mullion_Public_Visibility_Test extends WP_UnitTestCase {
         ]);
         update_post_meta($id, 'status', $status);
         update_post_meta($id, 'visibility', $visibility);
-        update_post_meta($id, '_wpsg_space_id', $space_id);
+        update_post_meta($id, '_mullion_space_id', $space_id);
         foreach ($meta as $k => $v) {
             update_post_meta($id, $k, $v);
         }

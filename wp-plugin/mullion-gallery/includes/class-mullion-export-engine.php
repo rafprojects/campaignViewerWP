@@ -17,7 +17,7 @@ class Mullion_Export_Engine {
     const JOB_CLEANUP_HOOK = 'mullion_export_cleanup';
     const SIZE_LIMIT_BYTES = 104857600; // 100 MB
     const JOB_TTL          = 86400;     // 24 h
-    const JOB_INDEX_OPT    = 'wpsg_export_job_index';
+    const JOB_INDEX_OPT    = 'mullion_export_job_index';
 
     // ── Bootstrap ─────────────────────────────────────────────────────────────
 
@@ -94,14 +94,14 @@ class Mullion_Export_Engine {
             'error'         => null,
         ];
 
-        set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, self::JOB_TTL);
         self::index_add($id);
         wp_schedule_single_event(time(), self::JOB_PROCESS_HOOK, [$id]);
         return $id;
     }
 
     public static function get_job(string $id): ?array {
-        $job = get_transient('wpsg_export_job_' . $id);
+        $job = get_transient('mullion_export_job_' . $id);
         return is_array($job) ? $job : null;
     }
 
@@ -116,7 +116,7 @@ class Mullion_Export_Engine {
         }
         $job['status'] = 'pending';
         $job['error']  = null;
-        set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, self::JOB_TTL);
         return true;
     }
 
@@ -126,7 +126,7 @@ class Mullion_Export_Engine {
         if (file_exists($zip_path)) {
             wp_delete_file($zip_path);
         }
-        delete_transient('wpsg_export_job_' . $id);
+        delete_transient('mullion_export_job_' . $id);
         self::index_remove($id);
     }
 
@@ -139,7 +139,7 @@ class Mullion_Export_Engine {
         }
 
         $job['status'] = 'processing';
-        set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, self::JOB_TTL);
 
         try {
             $zip_path        = self::build_zip($id, $job['manifest'], $job['media_items'], $job['size_limit']);
@@ -151,7 +151,7 @@ class Mullion_Export_Engine {
             $job['error']  = $e->getMessage();
         }
 
-        set_transient('wpsg_export_job_' . $id, $job, self::JOB_TTL);
+        set_transient('mullion_export_job_' . $id, $job, self::JOB_TTL);
     }
 
     // ── ZIP builder ───────────────────────────────────────────────────────────
@@ -173,10 +173,10 @@ class Mullion_Export_Engine {
         }
 
         $upload_dir = wp_upload_dir();
-        $export_dir = trailingslashit($upload_dir['basedir']) . 'wpsg-exports/';
+        $export_dir = trailingslashit($upload_dir['basedir']) . 'mullion-exports/';
         wp_mkdir_p($export_dir);
 
-        $zip_path = $export_dir . 'wpsg-export-' . $id . '.zip';
+        $zip_path = $export_dir . 'mullion-export-' . $id . '.zip';
         $zip      = new ZipArchive();
 
         if ($zip->open($zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
@@ -360,7 +360,7 @@ class Mullion_Export_Engine {
 
     private static function expected_zip_path(string $id): string {
         $upload_dir = wp_upload_dir();
-        return trailingslashit($upload_dir['basedir']) . 'wpsg-exports/wpsg-export-' . $id . '.zip';
+        return trailingslashit($upload_dir['basedir']) . 'mullion-exports/mullion-export-' . $id . '.zip';
     }
 
     // ── Job index ─────────────────────────────────────────────────────────────

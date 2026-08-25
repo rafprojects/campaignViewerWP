@@ -46,15 +46,15 @@ class Mullion_P72B_Privacy_Test extends WP_UnitTestCase {
 
     public function test_both_exporters_are_registered() {
         $exporters = Mullion_Privacy::register_exporters([]);
-        $this->assertArrayHasKey('wpsg-access-requests', $exporters);
-        $this->assertArrayHasKey('wpsg-audit-log', $exporters, 'audit log IS exportable');
+        $this->assertArrayHasKey('mullion-access-requests', $exporters);
+        $this->assertArrayHasKey('mullion-audit-log', $exporters, 'audit log IS exportable');
     }
 
     public function test_only_access_requests_eraser_is_registered() {
         $erasers = Mullion_Privacy::register_erasers([]);
-        $this->assertArrayHasKey('wpsg-access-requests', $erasers);
+        $this->assertArrayHasKey('mullion-access-requests', $erasers);
         $this->assertArrayNotHasKey(
-            'wpsg-audit-log',
+            'mullion-audit-log',
             $erasers,
             'audit log must NOT be erasable — it is a legitimate-interest record (export-only)'
         );
@@ -71,7 +71,7 @@ class Mullion_P72B_Privacy_Test extends WP_UnitTestCase {
 
         $this->assertTrue($result['done']);
         $this->assertCount(2, $result['data'], 'only the subject email\'s two rows are exported');
-        $this->assertSame('wpsg-access-requests', $result['data'][0]['group_id']);
+        $this->assertSame('mullion-access-requests', $result['data'][0]['group_id']);
         // The email value is present in the exported data.
         $emails = array_column($result['data'][0]['data'], 'value', 'name');
         $this->assertSame('subject@example.com', $emails['Email'] ?? null);
@@ -119,7 +119,7 @@ class Mullion_P72B_Privacy_Test extends WP_UnitTestCase {
 
         $this->assertTrue($result['done']);
         $this->assertCount(2, $result['data']);
-        $this->assertSame('wpsg-audit-log', $result['data'][0]['group_id']);
+        $this->assertSame('mullion-audit-log', $result['data'][0]['group_id']);
     }
 
     public function test_export_audit_log_matches_by_actor_login_when_id_absent() {

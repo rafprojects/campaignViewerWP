@@ -49,7 +49,7 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
 
     /**
      * Campaign with NO explicit space, so get_effective_campaign_level's space
-     * gate (which reads _wpsg_space_id directly, no default fallback) stays out
+     * gate (which reads _mullion_space_id directly, no default fallback) stays out
      * of the way. Pass a $space_id to attach one for the permission-gate tests.
      */
     private function campaign(int $company_term_id = 0, int $space_id = 0): int {
@@ -59,7 +59,7 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
             wp_set_object_terms($id, [$company_term_id], 'mullion_company');
         }
         if ($space_id > 0) {
-            update_post_meta($id, '_wpsg_space_id', $space_id);
+            update_post_meta($id, '_mullion_space_id', $space_id);
         }
         return intval($id);
     }

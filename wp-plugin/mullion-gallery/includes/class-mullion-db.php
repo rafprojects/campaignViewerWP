@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 class Mullion_DB {
     const DB_VERSION = '17';
 
-    /** P67-I: attachments stamped per query in the _wpsg_filesize backfill. */
+    /** P67-I: attachments stamped per query in the _mullion_filesize backfill. */
     const FILESIZE_BACKFILL_BATCH = 200;
 
     /**
@@ -24,7 +24,7 @@ class Mullion_DB {
     private static array $space_cache = [];
 
     public static function maybe_upgrade() {
-        $current = get_option('wpsg_db_version', '0');
+        $current = get_option('mullion_db_version', '0');
         if (version_compare($current, self::DB_VERSION, '>=')) {
             return;
         }
@@ -53,14 +53,14 @@ class Mullion_DB {
         // P66-B: seed archived_at for already-archived campaigns so the
         // maintenance auto-purge keys off the real archival date.
         self::maybe_backfill_archived_at();
-        // P67-I: stamp _wpsg_filesize on existing attachments so the media-library
+        // P67-I: stamp _mullion_filesize on existing attachments so the media-library
         // "size" sort orders them correctly (new uploads get it at write time).
         self::maybe_backfill_filesize_meta();
-        update_option('wpsg_db_version', self::DB_VERSION);
+        update_option('mullion_db_version', self::DB_VERSION);
     }
 
     /**
-     * P67-I: one-time, option-guarded backfill of the numeric _wpsg_filesize meta
+     * P67-I: one-time, option-guarded backfill of the numeric _mullion_filesize meta
      * for existing image/video attachments, so the media-library size sort has a
      * real value to order by. New uploads stamp it at write time (the media
      * controller's own path and the add_attachment hook), so this only seeds
@@ -82,14 +82,14 @@ class Mullion_DB {
      * gallery plugin touches, and this runs from maybe_upgrade() on `init` — an
      * unbounded loop over every attachment (a filesize() stat plus a meta write
      * each) can outlive max_execution_time on a large install. Because
-     * `wpsg_db_version` is only bumped after maybe_upgrade() returns, a timeout
+     * `mullion_db_version` is only bumped after maybe_upgrade() returns, a timeout
      * there would re-enter the whole upgrade path on every subsequent request.
      * Bounding the run keeps each request cheap and lets cron finish the tail.
      *
      * Public so the cron hook can call it.
      */
     public static function run_filesize_backfill_batch(): void {
-        if (get_option('wpsg_filesize_backfilled')) {
+        if (get_option('mullion_filesize_backfilled')) {
             return;
         }
 
@@ -111,7 +111,7 @@ class Mullion_DB {
                 'fields'         => 'ids',
                 'no_found_rows'  => true,
                 'meta_query'     => [
-                    ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
+                    ['key' => '_mullion_filesize', 'compare' => 'NOT EXISTS'],
                 ],
             ]);
 
@@ -126,12 +126,12 @@ class Mullion_DB {
                     $bytes = filesize($file);
                     $size = ($bytes !== false) ? (int) $bytes : 0;
                 }
-                update_post_meta($id, '_wpsg_filesize', $size);
+                update_post_meta($id, '_mullion_filesize', $size);
             }
 
             // A short page means there is nothing left to stamp.
             if (count($ids) < $batch_size) {
-                update_option('wpsg_filesize_backfilled', '1', false);
+                update_option('mullion_filesize_backfilled', '1', false);
                 return;
             }
         }
@@ -147,7 +147,7 @@ class Mullion_DB {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $table   = $wpdb->prefix . 'wpsg_analytics_events';
+        $table   = $wpdb->prefix . 'mullion_analytics_events';
         $charset = $wpdb->get_charset_collate();
 
         $sql = "CREATE TABLE {$table} (
@@ -168,13 +168,13 @@ class Mullion_DB {
     // ── P18-F: Analytics helpers ───────────────────────────────────────────
     public static function get_analytics_table() {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_analytics_events';
+        return $wpdb->prefix . 'mullion_analytics_events';
     }
 
     // ── P20-I-2: Media usage reverse index ────────────────────────────────
 
     /**
-     * Create the wpsg_media_refs table for O(1) media usage lookups.
+     * Create the mullion_media_refs table for O(1) media usage lookups.
      *
      * @since 0.18.0 P20-I-2
      */
@@ -198,9 +198,9 @@ class Mullion_DB {
         dbDelta($sql);
 
         // One-time backfill from existing campaign meta.
-        if (!get_option('wpsg_media_refs_backfilled')) {
+        if (!get_option('mullion_media_refs_backfilled')) {
             self::backfill_media_refs();
-            update_option('wpsg_media_refs_backfilled', '1');
+            update_option('mullion_media_refs_backfilled', '1');
         }
     }
 
@@ -211,7 +211,7 @@ class Mullion_DB {
      */
     public static function get_media_refs_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_media_refs';
+        return $wpdb->prefix . 'mullion_media_refs';
     }
 
     /**
@@ -230,7 +230,7 @@ class Mullion_DB {
         $batch_size = 100;
 
         // Track progress so we can resume if the process is interrupted.
-        $offset_option = 'wpsg_media_refs_backfill_offset';
+        $offset_option = 'mullion_media_refs_backfill_offset';
         $offset        = (int) get_option($offset_option, 0);
 
         while (true) {
@@ -305,7 +305,7 @@ class Mullion_DB {
 
         // P66-C: stamp the campaign's space on every ref (same value for all,
         // resolved once). The column existed since v11 but was never written.
-        $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
 
         // Delete existing refs for this campaign.
         $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
@@ -358,7 +358,7 @@ class Mullion_DB {
      * Find which campaigns contain a WordPress attachment by its post ID.
      *
      * P38-MD1: Used to surface campaign context in duplicate/near-duplicate upload warnings.
-     * The wp_wpsg_media_refs lookup table uses media UUIDs, not WordPress attachment IDs, so
+     * The wp_mullion_media_refs lookup table uses media UUIDs, not WordPress attachment IDs, so
      * this method scans campaign media_items postmeta directly. Only called when a duplicate
      * is actually detected (infrequent), so the O(campaigns) scan is acceptable.
      *
@@ -372,12 +372,12 @@ class Mullion_DB {
             "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'mullion_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
         );
 
-        // TODO(P50): replace with wpsg_media_refs attachment-ID index once the mapping table is extended — see Track P49-G.
+        // TODO(P50): replace with mullion_media_refs attachment-ID index once the mapping table is extended — see Track P49-G.
         if (count($campaign_ids) > 50) {
             _doing_it_wrong(
                 __METHOD__,
                 sprintf(
-                    'Performance cliff: scanning %d campaigns for attachment ID %d. This method is O(campaigns) in queries. The O(1) fix requires a wpsg_media_refs attachment-ID index (Phase 50+).',
+                    'Performance cliff: scanning %d campaigns for attachment ID %d. This method is O(campaigns) in queries. The O(1) fix requires a mullion_media_refs attachment-ID index (Phase 50+).',
                     count($campaign_ids),
                     (int) $attachment_id
                 ),
@@ -477,27 +477,27 @@ class Mullion_DB {
         dbDelta($sql);
 
         // One-time migration from wp_options to custom table.
-        if (!get_option('wpsg_access_requests_migrated')) {
+        if (!get_option('mullion_access_requests_migrated')) {
             self::migrate_access_requests_from_options();
-            update_option('wpsg_access_requests_migrated', '1');
+            update_option('mullion_access_requests_migrated', '1');
         }
     }
 
     public static function get_access_requests_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_access_requests';
+        return $wpdb->prefix . 'mullion_access_requests';
     }
 
     /**
      * Migrate access request data from wp_options to the custom table.
      *
-     * Reads the legacy wpsg_access_request_index option and each per-request
+     * Reads the legacy mullion_access_request_index option and each per-request
      * option, inserts rows into the new table, then deletes the old options.
      */
     private static function migrate_access_requests_from_options(): void {
         global $wpdb;
         $table = self::get_access_requests_table();
-        $index = get_option('wpsg_access_request_index', []);
+        $index = get_option('mullion_access_request_index', []);
 
         if (!is_array($index) || empty($index)) {
             return;
@@ -505,7 +505,7 @@ class Mullion_DB {
 
         foreach ($index as $token) {
             $token = (string) $token;
-            $option_name = 'wpsg_access_request_' . $token;
+            $option_name = 'mullion_access_request_' . $token;
             $data = get_option($option_name, null);
 
             if (!is_array($data)) {
@@ -527,7 +527,7 @@ class Mullion_DB {
             delete_option($option_name);
         }
 
-        delete_option('wpsg_access_request_index');
+        delete_option('mullion_access_request_index');
     }
 
     // ── Access request query helpers ─────────────────────────────────────
@@ -557,7 +557,7 @@ class Mullion_DB {
         $table       = self::get_access_requests_table();
         $campaign_id = intval($data['campaign_id']);
         // P66-C: stamp the campaign's space (column existed since v11, unwritten).
-        $space_id    = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+        $space_id    = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
         $wpdb->insert($table, [
             'token'        => $data['token'],
             'campaign_id'  => $campaign_id,
@@ -779,7 +779,7 @@ class Mullion_DB {
      * tables on already-installed sites. Idempotent and safe to re-run.
      */
     private static function maybe_convert_campaign_tables_to_innodb_v15(): void {
-        if (get_option('wpsg_campaign_tables_innodb_v15')) {
+        if (get_option('mullion_campaign_tables_innodb_v15')) {
             return;
         }
         global $wpdb;
@@ -804,20 +804,20 @@ class Mullion_DB {
             }
         }
 
-        update_option('wpsg_campaign_tables_innodb_v15', '1');
+        update_option('mullion_campaign_tables_innodb_v15', '1');
     }
 
     // ── P41-OL1 / P50-K: Asset library table (formerly "overlays") ──────────
 
     /**
-     * P50-K: Idempotent rename of the legacy `wpsg_overlays` table to
-     * `wpsg_assets`. Only renames when the old table exists and the new one
+     * P50-K: Idempotent rename of the legacy `mullion_overlays` table to
+     * `mullion_assets`. Only renames when the old table exists and the new one
      * does not, so it is safe to run repeatedly and on fresh installs.
      */
     private static function maybe_rename_overlays_to_assets_v14(): void {
         global $wpdb;
-        $old = $wpdb->prefix . 'wpsg_overlays';
-        $new = $wpdb->prefix . 'wpsg_assets';
+        $old = $wpdb->prefix . 'mullion_overlays';
+        $new = $wpdb->prefix . 'mullion_assets';
 
         // esc_like() escapes the `_` in the WP table prefix so it isn't treated
         // as a LIKE single-char wildcard.
@@ -851,10 +851,10 @@ class Mullion_DB {
 
         dbDelta($sql);
 
-        if ( ! get_option( 'wpsg_overlays_migrated' ) ) {
+        if ( ! get_option( 'mullion_overlays_migrated' ) ) {
             $migrated = self::migrate_assets_from_options();
             if ( $migrated ) {
-                update_option( 'wpsg_overlays_migrated', '1' );
+                update_option( 'mullion_overlays_migrated', '1' );
             }
         }
     }
@@ -862,7 +862,7 @@ class Mullion_DB {
     private static function migrate_assets_from_options(): bool {
         global $wpdb;
         $table = self::get_assets_table();
-        $raw   = get_option( 'wpsg_overlay_library', [] );
+        $raw   = get_option( 'mullion_overlay_library', [] );
         if ( ! is_array( $raw ) || empty( $raw ) ) {
             return true;
         }
@@ -890,7 +890,7 @@ class Mullion_DB {
             }
         }
         if ( $failed === 0 ) {
-            delete_option( 'wpsg_overlay_library' );
+            delete_option( 'mullion_overlay_library' );
             return true;
         }
         return false;
@@ -898,7 +898,7 @@ class Mullion_DB {
 
     public static function get_assets_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_assets';
+        return $wpdb->prefix . 'mullion_assets';
     }
 
     /**
@@ -986,7 +986,7 @@ class Mullion_DB {
 
     public static function get_audit_log_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_audit_log';
+        return $wpdb->prefix . 'mullion_audit_log';
     }
 
     /**
@@ -1024,7 +1024,7 @@ class Mullion_DB {
         $campaign_id = intval($data['campaign_id']);
         $space_id    = intval($data['space_id'] ?? 0);
         if ($space_id <= 0 && $campaign_id > 0) {
-            $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
+            $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
         }
 
         $wpdb->insert($table, [
@@ -1167,13 +1167,13 @@ class Mullion_DB {
 
         self::ensure_index(
             $wpdb->postmeta,
-            'wpsg_postmeta_postid_key',
+            'mullion_postmeta_postid_key',
             '(post_id, meta_key(191))'
         );
 
         self::ensure_index(
             $wpdb->termmeta,
-            'wpsg_termmeta_termid_key',
+            'mullion_termmeta_termid_key',
             '(term_id, meta_key(191))'
         );
     }
@@ -1183,7 +1183,7 @@ class Mullion_DB {
     private static function maybe_create_spaces_table(): void {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-        $table   = $wpdb->prefix . 'wpsg_spaces';
+        $table   = $wpdb->prefix . 'mullion_spaces';
         $charset = $wpdb->get_charset_collate();
         $sql     = "CREATE TABLE {$table} (
             id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -1229,7 +1229,7 @@ class Mullion_DB {
 
     private static function maybe_seed_default_space(): void {
         global $wpdb;
-        $table = $wpdb->prefix . 'wpsg_spaces';
+        $table = $wpdb->prefix . 'mullion_spaces';
 
         // Recover from a broken state: row exists but option is missing/zero.
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -1237,8 +1237,8 @@ class Mullion_DB {
             "SELECT id FROM {$table} WHERE slug = 'default' LIMIT 1"
         );
         if ($existing_id > 0) {
-            if (!get_option('wpsg_default_space_id')) {
-                update_option('wpsg_default_space_id', $existing_id, false);
+            if (!get_option('mullion_default_space_id')) {
+                update_option('mullion_default_space_id', $existing_id, false);
             }
             return;
         }
@@ -1252,16 +1252,16 @@ class Mullion_DB {
             'archived'           => 0,
         ]);
         if ($inserted && $wpdb->insert_id > 0) {
-            update_option('wpsg_default_space_id', $wpdb->insert_id, false);
+            update_option('mullion_default_space_id', $wpdb->insert_id, false);
         }
     }
 
     private static function maybe_backfill_spaces(): void {
-        $default_id = intval(get_option('wpsg_default_space_id'));
+        $default_id = intval(get_option('mullion_default_space_id'));
         if (!$default_id) {
             return;
         }
-        if (get_option('wpsg_spaces_backfill_complete')) {
+        if (get_option('mullion_spaces_backfill_complete')) {
             return;
         }
 
@@ -1276,18 +1276,18 @@ class Mullion_DB {
             'posts_per_page' => $batch,
             'fields'         => 'ids',
             'meta_query'     => [[
-                'key'     => '_wpsg_space_id',
+                'key'     => '_mullion_space_id',
                 'compare' => 'NOT EXISTS',
             ]],
         ]);
 
         foreach ($posts as $post_id) {
-            add_post_meta($post_id, '_wpsg_space_id', $default_id, true);
+            add_post_meta($post_id, '_mullion_space_id', $default_id, true);
         }
 
         if (count($posts) < $batch) {
             self::backfill_company_spaces($default_id);
-            update_option('wpsg_spaces_backfill_complete', '1', false);
+            update_option('mullion_spaces_backfill_complete', '1', false);
         }
     }
 
@@ -1297,8 +1297,8 @@ class Mullion_DB {
             return;
         }
         foreach ($terms as $term_id) {
-            if (!get_term_meta($term_id, '_wpsg_space_id', true)) {
-                add_term_meta($term_id, '_wpsg_space_id', $default_id, true);
+            if (!get_term_meta($term_id, '_mullion_space_id', true)) {
+                add_term_meta($term_id, '_mullion_space_id', $default_id, true);
             }
         }
     }
@@ -1307,7 +1307,7 @@ class Mullion_DB {
 
     public static function get_spaces_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_spaces';
+        return $wpdb->prefix . 'mullion_spaces';
     }
 
     public static function get_space(int $id): ?object {
@@ -1412,7 +1412,7 @@ class Mullion_DB {
 
     /**
      * Atomically re-stamp a campaign's space across all campaign-scoped custom
-     * tables and the _wpsg_space_id post meta.
+     * tables and the _mullion_space_id post meta.
      *
      * All five writes run inside a single transaction; on any failure the
      * transaction is rolled back and the failing table name is returned so the
@@ -1479,7 +1479,7 @@ class Mullion_DB {
 
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery
         $meta_updated = $wpdb->query($wpdb->prepare(
-            "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE post_id = %d AND meta_key = '_wpsg_space_id'",
+            "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE post_id = %d AND meta_key = '_mullion_space_id'",
             (string) $target_space_id,
             $campaign_id
         ));
@@ -1487,12 +1487,12 @@ class Mullion_DB {
             $finish('ROLLBACK');
             return $wpdb->postmeta;
         }
-        if ($meta_updated === 0 && !metadata_exists('post', $campaign_id, '_wpsg_space_id')) {
+        if ($meta_updated === 0 && !metadata_exists('post', $campaign_id, '_mullion_space_id')) {
             // Campaign predates the spaces backfill: create the meta row.
             // phpcs:ignore WordPress.DB.DirectDatabaseQuery
             $inserted = $wpdb->insert($wpdb->postmeta, [
                 'post_id'    => $campaign_id,
-                'meta_key'   => '_wpsg_space_id',
+                'meta_key'   => '_mullion_space_id',
                 'meta_value' => (string) $target_space_id,
             ]);
             if ($inserted === false) {
@@ -1512,7 +1512,7 @@ class Mullion_DB {
 
     public static function get_space_library_assoc_table(): string {
         global $wpdb;
-        return $wpdb->prefix . 'wpsg_space_library_assoc';
+        return $wpdb->prefix . 'mullion_space_library_assoc';
     }
 
     /**
@@ -1616,7 +1616,7 @@ class Mullion_DB {
      * after this migration start with an empty library by design.
      */
     private static function maybe_backfill_space_library_assoc(): void {
-        if (get_option('wpsg_space_library_assoc_backfilled')) {
+        if (get_option('mullion_space_library_assoc_backfilled')) {
             return;
         }
 
@@ -1642,7 +1642,7 @@ class Mullion_DB {
             }
         }
 
-        update_option('wpsg_space_library_assoc_backfilled', '1', false);
+        update_option('mullion_space_library_assoc_backfilled', '1', false);
     }
 
     // ── P66-C: Backfill space_id on the three scoped tables ───────────────────
@@ -1652,7 +1652,7 @@ class Mullion_DB {
      * never stamped it (analytics_events, media_refs, access_requests). The
      * audit_log table is intentionally excluded — insert_audit_entry() already
      * stamps it (P50-A). Resolves each row's space from the campaign's
-     * `_wpsg_space_id` post meta; rows already stamped (space_id != 0) are left
+     * `_mullion_space_id` post meta; rows already stamped (space_id != 0) are left
      * untouched, so a re-run (or a move-corrected row) is never clobbered.
      *
      * PR-review hardening: the space is resolved once per campaign (bounded by
@@ -1666,7 +1666,7 @@ class Mullion_DB {
      * get that space; every other row stays at 0.
      */
     private static function maybe_backfill_scoped_space_ids(): void {
-        if (get_option('wpsg_scoped_space_id_backfilled')) {
+        if (get_option('mullion_scoped_space_id_backfilled')) {
             return;
         }
 
@@ -1681,7 +1681,7 @@ class Mullion_DB {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $meta_rows = $wpdb->get_results(
             "SELECT post_id, meta_value FROM {$wpdb->postmeta}
-             WHERE meta_key = '_wpsg_space_id' AND meta_value <> '' AND meta_value <> '0'",
+             WHERE meta_key = '_mullion_space_id' AND meta_value <> '' AND meta_value <> '0'",
             ARRAY_A
         );
 
@@ -1707,7 +1707,7 @@ class Mullion_DB {
             }
         }
 
-        update_option('wpsg_scoped_space_id_backfilled', '1', false);
+        update_option('mullion_scoped_space_id_backfilled', '1', false);
     }
 
     // ── P66-B: Seed archived_at for already-archived campaigns ────────────────
@@ -1721,7 +1721,7 @@ class Mullion_DB {
      * archival record exists, which keeps the purge clock conservative.
      */
     private static function maybe_backfill_archived_at(): void {
-        if (get_option('wpsg_archived_at_backfilled')) {
+        if (get_option('mullion_archived_at_backfilled')) {
             return;
         }
 
@@ -1774,7 +1774,7 @@ class Mullion_DB {
             }
         }
 
-        update_option('wpsg_archived_at_backfilled', '1', false);
+        update_option('mullion_archived_at_backfilled', '1', false);
     }
 
     /**

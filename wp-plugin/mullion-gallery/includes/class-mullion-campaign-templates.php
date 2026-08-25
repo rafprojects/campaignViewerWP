@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 
 class Mullion_Campaign_Templates {
 
-    const META_IS_TEMPLATE = '_wpsg_is_template';
+    const META_IS_TEMPLATE = '_mullion_is_template';
 
     const BUILTIN = [
         [
@@ -89,8 +89,8 @@ class Mullion_Campaign_Templates {
             'editable'    => true,
             'settings'    => [
                 'visibility'       => (string) (get_post_meta($post->ID, 'visibility', true) ?: 'private'),
-                'galleryOverrides' => get_post_meta($post->ID, '_wpsg_gallery_overrides', true) ?: null,
-                'layoutTemplateId' => (string) (get_post_meta($post->ID, '_wpsg_layout_binding_template_id', true) ?: '') ?: null,
+                'galleryOverrides' => get_post_meta($post->ID, '_mullion_gallery_overrides', true) ?: null,
+                'layoutTemplateId' => (string) (get_post_meta($post->ID, '_mullion_layout_binding_template_id', true) ?: '') ?: null,
             ],
             'createdAt'   => get_post_time('c', true, $post),
         ];

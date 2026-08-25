@@ -1,7 +1,7 @@
 <?php
 
 /**
- * P67-I: media-library "size" sort orders by a real numeric _wpsg_filesize meta
+ * P67-I: media-library "size" sort orders by a real numeric _mullion_filesize meta
  * instead of the serialized _wp_attachment_metadata blob (which cast to 0 for
  * every row). Covers the three write paths — the add_attachment hook, the one-time
  * backfill migration — and the sort itself.
@@ -23,11 +23,11 @@ class Mullion_P67I_Filesize_Sort_Test extends WP_UnitTestCase {
     /**
      * Create a real attachment of an exact byte size. Going through
      * wp_insert_attachment() fires the add_attachment hook, which is what stamps
-     * _wpsg_filesize for non-plugin uploads.
+     * _mullion_filesize for non-plugin uploads.
      */
     private function make_attachment(int $bytes): int {
         $upload = wp_upload_dir();
-        $path   = $upload['basedir'] . '/wpsg-p67i-' . uniqid() . '.bin';
+        $path   = $upload['basedir'] . '/mullion-p67i-' . uniqid() . '.bin';
         file_put_contents($path, str_repeat('x', $bytes));
         $this->tmp_files[] = $path;
 
@@ -51,29 +51,29 @@ class Mullion_P67I_Filesize_Sort_Test extends WP_UnitTestCase {
 
     public function test_add_attachment_hook_stamps_filesize() {
         $id = $this->make_attachment(4096);
-        $this->assertSame(4096, (int) get_post_meta($id, '_wpsg_filesize', true));
+        $this->assertSame(4096, (int) get_post_meta($id, '_mullion_filesize', true));
     }
 
     public function test_stamp_filesize_meta_is_idempotent() {
         $id = $this->make_attachment(2048);
         Mullion_Media_Controller::stamp_filesize_meta($id);
         Mullion_Media_Controller::stamp_filesize_meta($id);
-        $this->assertSame(2048, (int) get_post_meta($id, '_wpsg_filesize', true));
+        $this->assertSame(2048, (int) get_post_meta($id, '_mullion_filesize', true));
     }
 
     public function test_backfill_stamps_attachments_missing_the_meta() {
         $id = $this->make_attachment(1234);
         // Simulate a pre-migration attachment: strip the meta the hook added.
-        delete_post_meta($id, '_wpsg_filesize');
-        $this->assertSame('', get_post_meta($id, '_wpsg_filesize', true));
+        delete_post_meta($id, '_mullion_filesize');
+        $this->assertSame('', get_post_meta($id, '_mullion_filesize', true));
 
-        delete_option('wpsg_filesize_backfilled');
+        delete_option('mullion_filesize_backfilled');
         $m = new ReflectionMethod('Mullion_DB', 'maybe_backfill_filesize_meta');
         $m->setAccessible(true);
         $m->invoke(null);
 
-        $this->assertSame(1234, (int) get_post_meta($id, '_wpsg_filesize', true));
-        $this->assertSame('1', get_option('wpsg_filesize_backfilled'));
+        $this->assertSame(1234, (int) get_post_meta($id, '_mullion_filesize', true));
+        $this->assertSame('1', get_option('mullion_filesize_backfilled'));
     }
 
     // ── The sort itself ───────────────────────────────────────────────────────

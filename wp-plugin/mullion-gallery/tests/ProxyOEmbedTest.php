@@ -34,7 +34,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
 
     public function test_cached_payload_is_returned() {
         $url = 'https://example.com/video/1';
-        $cache_key = 'wpsg_oembed_' . md5($url);
+        $cache_key = 'mullion_oembed_' . md5($url);
         $payload = ['title' => 'Cached Title', 'thumbnail_url' => 'https://example.com/thumb.jpg'];
         set_transient($cache_key, $payload, 60);
 
@@ -50,11 +50,11 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
 
     public function test_cached_error_payload_returns_correct_status() {
         $url = 'https://example.com/video/1';
-        $cache_key = 'wpsg_oembed_' . md5($url);
+        $cache_key = 'mullion_oembed_' . md5($url);
         $error_payload = [
             'error' => 'Provider error',
             'message' => 'Failed to fetch',
-            '_wpsg_status' => 502
+            '_mullion_status' => 502
         ];
         set_transient($cache_key, $error_payload, 60);
 
@@ -66,7 +66,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         $this->assertEquals(502, $response->get_status());
         $data = $response->get_data();
         $this->assertEquals('Provider error', $data['error']);
-        $this->assertArrayNotHasKey('_wpsg_status', $data); // Internal metadata removed
+        $this->assertArrayNotHasKey('_mullion_status', $data); // Internal metadata removed
     }
 
     public function test_allowlisted_host_bypasses_ip_check() {

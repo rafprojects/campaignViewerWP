@@ -36,11 +36,11 @@ class Mullion_Campaign_Duplicator {
             'visibility',
             'tags',
             'cover_image',
-            '_wpsg_gallery_overrides',
-            '_wpsg_layout_binding',
+            '_mullion_gallery_overrides',
+            '_mullion_layout_binding',
             // P66-D: keep the duplicate in the source campaign's space instead of
             // silently dropping to the Default Space.
-            '_wpsg_space_id',
+            '_mullion_space_id',
         ];
 
         foreach ( $meta_keys as $key ) {
@@ -50,7 +50,7 @@ class Mullion_Campaign_Duplicator {
             }
         }
 
-        $source_layout_template_id = get_post_meta( $source_id, '_wpsg_layout_binding_template_id', true );
+        $source_layout_template_id = get_post_meta( $source_id, '_mullion_layout_binding_template_id', true );
         if ( '' !== $source_layout_template_id && false !== $source_layout_template_id ) {
             if ( $duplicate_layout_template ) {
                 $cloned_template = Mullion_Layout_Templates::duplicate( (string) $source_layout_template_id, '' );
@@ -64,9 +64,9 @@ class Mullion_Campaign_Duplicator {
                     );
                 }
 
-                update_post_meta( $new_id, '_wpsg_layout_binding_template_id', $cloned_template['id'] );
+                update_post_meta( $new_id, '_mullion_layout_binding_template_id', $cloned_template['id'] );
             } else {
-                update_post_meta( $new_id, '_wpsg_layout_binding_template_id', $source_layout_template_id );
+                update_post_meta( $new_id, '_mullion_layout_binding_template_id', $source_layout_template_id );
             }
         }
 

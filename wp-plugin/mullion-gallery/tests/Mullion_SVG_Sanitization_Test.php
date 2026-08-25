@@ -227,7 +227,7 @@ class Mullion_SVG_Sanitization_Test extends WP_UnitTestCase {
     // ── File-level sanitization ────────────────────────────────
 
     public function test_sanitize_svg_file_writes_clean_output(): void {
-        $tmp = wp_tempnam( 'wpsg-test-svg' );
+        $tmp = wp_tempnam( 'mullion-test-svg' );
         $dirty = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="100" height="100"/></svg>';
         file_put_contents( $tmp, $dirty );
 

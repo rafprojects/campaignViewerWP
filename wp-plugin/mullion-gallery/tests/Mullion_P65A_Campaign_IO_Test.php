@@ -81,7 +81,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
         $this->assertIsArray($tpl);
 
         $cid = $this->create_campaign();
-        update_post_meta($cid, '_wpsg_layout_binding_template_id', $tpl['id']);
+        update_post_meta($cid, '_mullion_layout_binding_template_id', $tpl['id']);
 
         $entry = Mullion_Campaign_IO::build_entry($cid, false);
 
@@ -135,16 +135,16 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
 
         // The binding must be a UUID resolvable through the CRUD class — proving
         // the template lives under the registered CPT (mullion_layout_tpl), not the
-        // old hand-rolled wpsg_layout_template.
-        $bound_id = get_post_meta($result['id'], '_wpsg_layout_binding_template_id', true);
+        // old hand-rolled mullion_layout_template.
+        $bound_id = get_post_meta($result['id'], '_mullion_layout_binding_template_id', true);
         $this->assertNotEmpty($bound_id);
         $fetched = Mullion_Layout_Templates::get($bound_id);
         $this->assertIsArray($fetched, 'Imported template must be retrievable via Mullion_Layout_Templates::get().');
         $this->assertSame('Round-Trip Template', $fetched['name']);
 
         // The unregistered post type must never be created.
-        $orphans = get_posts(['post_type' => 'wpsg_layout_template', 'post_status' => 'any', 'posts_per_page' => -1]);
-        $this->assertCount(0, $orphans, 'The unregistered wpsg_layout_template CPT must never be used.');
+        $orphans = get_posts(['post_type' => 'mullion_layout_template', 'post_status' => 'any', 'posts_per_page' => -1]);
+        $this->assertCount(0, $orphans, 'The unregistered mullion_layout_template CPT must never be used.');
     }
 
     public function test_json_import_normalizes_datetimes() {
@@ -162,7 +162,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
     public function test_service_round_trips_layout_template_end_to_end() {
         $tpl = Mullion_Layout_Templates::create($this->valid_template_payload());
         $src = $this->create_campaign('RT Source');
-        update_post_meta($src, '_wpsg_layout_binding_template_id', $tpl['id']);
+        update_post_meta($src, '_mullion_layout_binding_template_id', $tpl['id']);
 
         // Export → import through the service (JSON path).
         $entry  = Mullion_Campaign_IO::build_entry($src, false);
@@ -172,7 +172,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
             ['via' => 'rest', 'format' => 'json']
         );
 
-        $bound_id = get_post_meta($result['id'], '_wpsg_layout_binding_template_id', true);
+        $bound_id = get_post_meta($result['id'], '_mullion_layout_binding_template_id', true);
         $fetched  = Mullion_Layout_Templates::get($bound_id);
         $this->assertIsArray($fetched);
         $this->assertSame('Round-Trip Template', $fetched['name']);
