@@ -5076,8 +5076,8 @@ msgid "CSS color used for the hover glow effect."
 msgstr "用于悬停发光效果的 CSS 颜色。"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1367
-msgid "#7c9ef8"
-msgstr "#7c9ef8"
+msgid "#1ad1c4"
+msgstr "#1ad1c4"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1370
 msgid "Image Viewport Height"
