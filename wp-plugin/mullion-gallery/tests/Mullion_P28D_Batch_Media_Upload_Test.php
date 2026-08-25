@@ -84,7 +84,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         $allow_non_http_uploads = static function ($allow, $file) {
             return true;
         };
-        add_filter('wpsg_allow_non_http_uploads', $allow_non_http_uploads, 10, 2);
+        add_filter('mullion_allow_non_http_uploads', $allow_non_http_uploads, 10, 2);
 
         $tmp_one = $this->create_temp_gif(0);
         $tmp_two = $this->create_temp_gif(1);
@@ -118,7 +118,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
 
         $response = rest_do_request($request);
 
-        remove_filter('wpsg_allow_non_http_uploads', $allow_non_http_uploads, 10);
+        remove_filter('mullion_allow_non_http_uploads', $allow_non_http_uploads, 10);
 
         $this->assertEquals(201, $response->get_status());
         $data = $response->get_data();
@@ -143,8 +143,8 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         $max_batch_upload_size = static function () {
             return 2;
         };
-        add_filter('wpsg_allow_non_http_uploads', $allow_non_http_uploads, 10, 2);
-        add_filter('wpsg_max_batch_upload_size', $max_batch_upload_size);
+        add_filter('mullion_allow_non_http_uploads', $allow_non_http_uploads, 10, 2);
+        add_filter('mullion_max_batch_upload_size', $max_batch_upload_size);
 
         $tmp_one = $this->create_temp_gif();
         $tmp_two = $this->create_temp_gif();
@@ -177,8 +177,8 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
 
         $response = rest_do_request($request);
 
-        remove_filter('wpsg_allow_non_http_uploads', $allow_non_http_uploads, 10);
-        remove_filter('wpsg_max_batch_upload_size', $max_batch_upload_size, 10);
+        remove_filter('mullion_allow_non_http_uploads', $allow_non_http_uploads, 10);
+        remove_filter('mullion_max_batch_upload_size', $max_batch_upload_size, 10);
 
         $this->assertEquals(400, $response->get_status());
         $this->assertSame(

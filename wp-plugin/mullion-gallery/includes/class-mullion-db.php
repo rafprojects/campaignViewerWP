@@ -17,8 +17,8 @@ class Mullion_DB {
      */
     const FILESIZE_BACKFILL_MAX_BATCHES = 5;
 
-    /** P67-I: cron hook that resumes the backfill; see wpsg-cron-hooks.php. */
-    const FILESIZE_BACKFILL_HOOK = 'wpsg_filesize_backfill';
+    /** P67-I: cron hook that resumes the backfill; see mullion-cron-hooks.php. */
+    const FILESIZE_BACKFILL_HOOK = 'mullion_filesize_backfill';
 
     /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
     private static array $space_cache = [];
@@ -96,8 +96,8 @@ class Mullion_DB {
         // Both bounds are filterable so an operator on an unusually large or
         // unusually slow install can retune the trade-off between finishing sooner
         // and keeping each request cheap.
-        $batch_size  = max(1, intval(apply_filters('wpsg_filesize_backfill_batch_size', self::FILESIZE_BACKFILL_BATCH)));
-        $max_batches = max(1, intval(apply_filters('wpsg_filesize_backfill_max_batches', self::FILESIZE_BACKFILL_MAX_BATCHES)));
+        $batch_size  = max(1, intval(apply_filters('mullion_filesize_backfill_batch_size', self::FILESIZE_BACKFILL_BATCH)));
+        $max_batches = max(1, intval(apply_filters('mullion_filesize_backfill_max_batches', self::FILESIZE_BACKFILL_MAX_BATCHES)));
 
         for ($batch = 0; $batch < $max_batches; $batch++) {
             // Always fetch the first page of still-unstamped attachments: stamping a
@@ -1460,7 +1460,7 @@ class Mullion_DB {
              * @param string $table       Table about to be updated.
              * @param int    $campaign_id Campaign being moved.
              */
-            if (apply_filters('wpsg_move_campaign_simulate_failure', false, $table, $campaign_id)) {
+            if (apply_filters('mullion_move_campaign_simulate_failure', false, $table, $campaign_id)) {
                 $finish('ROLLBACK');
                 return $table;
             }

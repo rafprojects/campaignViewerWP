@@ -64,7 +64,7 @@
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          action: 'wpsg_test_auth',
+          action: 'mullion_test_auth',
           _ajax_nonce: config.nonce,
         }),
       })

@@ -58,7 +58,7 @@ class Mullion_Logger {
 
     /**
      * Default maximum number of log entries to retain in the ring buffer.
-     * Operators may override via the `wpsg_log_max_entries` filter.
+     * Operators may override via the `mullion_log_max_entries` filter.
      */
     const DEFAULT_MAX_ENTRIES = 200;
 
@@ -164,7 +164,7 @@ class Mullion_Logger {
      * @param array $entry Structured log record.
      */
     private static function append_to_buffer(array $entry): void {
-        $max = intval(apply_filters('wpsg_log_max_entries', self::DEFAULT_MAX_ENTRIES));
+        $max = intval(apply_filters('mullion_log_max_entries', self::DEFAULT_MAX_ENTRIES));
         $max = max(10, min(1000, $max));
 
         $logs = get_option(self::LOG_OPTION, []);

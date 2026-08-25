@@ -10,15 +10,15 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
         delete_option(Mullion_Webhooks::OPTION_NAME);
         delete_option(Mullion_Webhooks::LOG_OPTION);
         // Remove any registered webhook hooks to avoid bleedthrough between tests.
-        remove_all_actions('wpsg_campaign_created');
-        remove_all_actions('wpsg_campaign_updated');
-        remove_all_actions('wpsg_campaign_archived');
-        remove_all_actions('wpsg_campaign_restored');
-        remove_all_actions('wpsg_campaign_deleted');
-        remove_all_actions('wpsg_media_added');
-        remove_all_actions('wpsg_media_removed');
-        remove_all_actions('wpsg_access_granted');
-        remove_all_actions('wpsg_access_revoked');
+        remove_all_actions('mullion_campaign_created');
+        remove_all_actions('mullion_campaign_updated');
+        remove_all_actions('mullion_campaign_archived');
+        remove_all_actions('mullion_campaign_restored');
+        remove_all_actions('mullion_campaign_deleted');
+        remove_all_actions('mullion_media_added');
+        remove_all_actions('mullion_media_removed');
+        remove_all_actions('mullion_access_granted');
+        remove_all_actions('mullion_access_revoked');
         remove_all_actions(Mullion_Webhooks::RETRY_HOOK);
     }
 
@@ -477,15 +477,15 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
         Mullion_Webhooks::register();
 
-        do_action('wpsg_campaign_created', 1, ['title' => 'T']);
-        do_action('wpsg_campaign_updated', 1, ['title' => 'T2']);
-        do_action('wpsg_campaign_archived', 1);
-        do_action('wpsg_campaign_restored', 1);
-        do_action('wpsg_campaign_deleted', 1);
-        do_action('wpsg_media_added', 1, ['mediaId' => 'x']);
-        do_action('wpsg_media_removed', 1, ['mediaId' => 'x']);
-        do_action('wpsg_access_granted', 1, ['userId' => 2]);
-        do_action('wpsg_access_revoked', 1, ['userId' => 2]);
+        do_action('mullion_campaign_created', 1, ['title' => 'T']);
+        do_action('mullion_campaign_updated', 1, ['title' => 'T2']);
+        do_action('mullion_campaign_archived', 1);
+        do_action('mullion_campaign_restored', 1);
+        do_action('mullion_campaign_deleted', 1);
+        do_action('mullion_media_added', 1, ['mediaId' => 'x']);
+        do_action('mullion_media_removed', 1, ['mediaId' => 'x']);
+        do_action('mullion_access_granted', 1, ['userId' => 2]);
+        do_action('mullion_access_revoked', 1, ['userId' => 2]);
 
         remove_all_filters('pre_http_request');
 

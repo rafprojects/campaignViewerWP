@@ -31,9 +31,9 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
             unset( $_SERVER['REMOTE_ADDR'] );
         }
         unset( $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_X_REAL_IP'] );
-        remove_all_filters( 'wpsg_rate_limit_max' );
-        remove_all_filters( 'wpsg_rate_limit_window' );
-        remove_all_filters( 'wpsg_rate_limiter_trusted_proxies' );
+        remove_all_filters( 'mullion_rate_limit_max' );
+        remove_all_filters( 'mullion_rate_limit_window' );
+        remove_all_filters( 'mullion_rate_limiter_trusted_proxies' );
         parent::tearDown();
     }
 
@@ -57,7 +57,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
 
     public function test_check_blocks_when_limit_exceeded() {
         $limit = 3;
-        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
+        add_filter( 'mullion_rate_limit_max', fn() => $limit );
 
         // Exhaust the allowance.
         for ( $i = 0; $i < $limit; $i++ ) {
@@ -87,7 +87,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
 
     public function test_check_isolates_different_ips() {
         $limit = 2;
-        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
+        add_filter( 'mullion_rate_limit_max', fn() => $limit );
 
         // Exhaust IP A.
         for ( $i = 0; $i <= $limit; $i++ ) {
@@ -101,7 +101,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
 
     public function test_check_isolates_different_endpoints() {
         $limit = 1;
-        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
+        add_filter( 'mullion_rate_limit_max', fn() => $limit );
 
         // Exhaust endpoint A.
         Mullion_Rate_Limiter::check( $this->test_ip, 'endpoint_a' );
@@ -142,7 +142,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
         $_SERVER['REMOTE_ADDR']          = $proxy_ip;
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.7';
 
-        add_filter( 'wpsg_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
+        add_filter( 'mullion_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
 
         $ip = Mullion_Rate_Limiter::get_client_ip();
 
@@ -154,7 +154,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
         $_SERVER['REMOTE_ADDR']          = $proxy_ip;
         $_SERVER['HTTP_X_FORWARDED_FOR'] = '198.51.100.7, 172.16.0.1, 10.0.0.1';
 
-        add_filter( 'wpsg_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
+        add_filter( 'mullion_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
 
         $ip = Mullion_Rate_Limiter::get_client_ip();
 
@@ -167,7 +167,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
         $_SERVER['HTTP_X_REAL_IP'] = '203.0.113.99';
         // No X-Forwarded-For set.
 
-        add_filter( 'wpsg_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
+        add_filter( 'mullion_rate_limiter_trusted_proxies', fn() => [ $proxy_ip ] );
 
         $ip = Mullion_Rate_Limiter::get_client_ip();
 
@@ -191,7 +191,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      */
     public function test_public_rate_limit_default_is_60() {
         // apply_filters with no registered callbacks should return the default.
-        $limit = intval( apply_filters( 'wpsg_rate_limit_public', 60 ) );
+        $limit = intval( apply_filters( 'mullion_rate_limit_public', 60 ) );
         $this->assertEquals( 60, $limit, 'Public rate limit default should be 60 req/min' );
     }
 
@@ -201,7 +201,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-A
      */
     public function test_authenticated_rate_limit_default_is_120() {
-        $limit = intval( apply_filters( 'wpsg_rate_limit_authenticated', 120 ) );
+        $limit = intval( apply_filters( 'mullion_rate_limit_authenticated', 120 ) );
         $this->assertEquals( 120, $limit, 'Authenticated rate limit default should be 120 req/min' );
     }
 
@@ -211,10 +211,10 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-A
      */
     public function test_public_rate_limit_filter_override() {
-        add_filter( 'wpsg_rate_limit_public', fn() => 200 );
-        $limit = intval( apply_filters( 'wpsg_rate_limit_public', 60 ) );
+        add_filter( 'mullion_rate_limit_public', fn() => 200 );
+        $limit = intval( apply_filters( 'mullion_rate_limit_public', 60 ) );
         $this->assertEquals( 200, $limit, 'Filter should override public rate limit' );
-        remove_all_filters( 'wpsg_rate_limit_public' );
+        remove_all_filters( 'mullion_rate_limit_public' );
     }
 
     /**
@@ -223,10 +223,10 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-A
      */
     public function test_authenticated_rate_limit_filter_override() {
-        add_filter( 'wpsg_rate_limit_authenticated', fn() => 500 );
-        $limit = intval( apply_filters( 'wpsg_rate_limit_authenticated', 120 ) );
+        add_filter( 'mullion_rate_limit_authenticated', fn() => 500 );
+        $limit = intval( apply_filters( 'mullion_rate_limit_authenticated', 120 ) );
         $this->assertEquals( 500, $limit, 'Filter should override authenticated rate limit' );
-        remove_all_filters( 'wpsg_rate_limit_authenticated' );
+        remove_all_filters( 'mullion_rate_limit_authenticated' );
     }
 
     /**
@@ -237,7 +237,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      */
     public function test_default_public_limit_triggers_at_threshold() {
         $limit = 5; // Use small value for test speed
-        add_filter( 'wpsg_rate_limit_max', fn() => $limit );
+        add_filter( 'mullion_rate_limit_max', fn() => $limit );
 
         // Exhaust the allowance.
         for ( $i = 0; $i < $limit; $i++ ) {
@@ -249,7 +249,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
         $this->assertFalse( $result['allowed'], 'Public rate limit should block after threshold' );
 
         delete_transient( $this->transient_key( $this->test_ip, 'public' ) );
-        remove_all_filters( 'wpsg_rate_limit_max' );
+        remove_all_filters( 'mullion_rate_limit_max' );
     }
 
     /**
@@ -258,7 +258,7 @@ class Mullion_Rate_Limiter_Test extends WP_UnitTestCase {
      * @since 0.18.0 P20-A
      */
     public function test_rate_limit_window_default_is_60_seconds() {
-        $window = intval( apply_filters( 'wpsg_rate_limit_window', 60 ) );
+        $window = intval( apply_filters( 'mullion_rate_limit_window', 60 ) );
         $this->assertEquals( 60, $window, 'Rate limit window default should be 60 seconds' );
     }
 

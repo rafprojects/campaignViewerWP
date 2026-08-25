@@ -12,7 +12,7 @@ class Mullion_Sentry {
             return;
         }
 
-        $dsn = apply_filters('wpsg_sentry_dsn', '');
+        $dsn = apply_filters('mullion_sentry_dsn', '');
         if (empty($dsn)) {
             return;
         }

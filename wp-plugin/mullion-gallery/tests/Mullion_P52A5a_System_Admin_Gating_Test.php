@@ -46,7 +46,7 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
 
     /** Space editor: manage_wpsg but NOT manage_options. */
     private function make_editor(): int {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
         wp_set_current_user($uid);
         return $uid;

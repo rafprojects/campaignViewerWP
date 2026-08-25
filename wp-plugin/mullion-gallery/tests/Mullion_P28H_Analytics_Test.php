@@ -7,7 +7,7 @@
  *  - POST /analytics/event with media_id stores it in the DB.
  *  - POST /analytics/event without media_id stores NULL.
  *  - POST /analytics/event with event_type=lightbox_open is accepted.
- *  - wpsg_analytics_event action fires for every recorded event.
+ *  - mullion_analytics_event action fires for every recorded event.
  *  - GET /analytics/campaigns/{id}/media returns per-media breakdown.
  *  - GET /analytics/summary returns cross-campaign totals and top campaigns.
  *  - Date-range params respected by both new endpoints.
@@ -119,7 +119,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
 
         $fired_args = [];
-        add_action('wpsg_analytics_event', function (...$args) use (&$fired_args) {
+        add_action('mullion_analytics_event', function (...$args) use (&$fired_args) {
             $fired_args = $args;
         }, 10, 4);
 
@@ -129,7 +129,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         $request->set_param('media_id', 'hook-test-media');
         rest_do_request($request);
 
-        $this->assertNotEmpty($fired_args, 'wpsg_analytics_event action must have fired.');
+        $this->assertNotEmpty($fired_args, 'mullion_analytics_event action must have fired.');
         $this->assertEquals($campaign_id, $fired_args[0], 'campaign_id should be arg 0.');
         $this->assertEquals('hook-test-media', $fired_args[1], 'media_id should be arg 1.');
         $this->assertEquals('view', $fired_args[2], 'event_type should be arg 2.');

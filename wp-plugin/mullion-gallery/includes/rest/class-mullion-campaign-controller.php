@@ -495,7 +495,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $description = wp_kses_post($request->get_param('description') ?? '');
 
         if (empty($title)) {
-            return new WP_Error('wpsg_missing_title', 'Title is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_title', 'Title is required', ['status' => 400]);
         }
 
         $post_id = wp_insert_post([
@@ -506,7 +506,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ], true);
 
         if (is_wp_error($post_id)) {
-            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
         $meta_result = self::apply_campaign_meta($post_id, $request);
@@ -522,7 +522,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         if ($space_id > 0) {
             if (!self::can_access_space($space_id, get_current_user_id())) {
                 wp_delete_post($post_id, true);
-                return new WP_Error('wpsg_forbidden', 'You do not have access to that space.', ['status' => 403]);
+                return new WP_Error('mullion_forbidden', 'You do not have access to that space.', ['status' => 403]);
             }
             update_post_meta($post_id, '_wpsg_space_id', $space_id);
         }
@@ -531,7 +531,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             'title' => $title,
         ]);
 
-        do_action('wpsg_campaign_created', $post_id, ['title' => $title]);
+        do_action('mullion_campaign_created', $post_id, ['title' => $title]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(self::format_campaign(get_post($post_id)), 201);
     }
@@ -540,12 +540,12 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
-            return new WP_Error('wpsg_forbidden', 'Forbidden', ['status' => 403]);
+            return new WP_Error('mullion_forbidden', 'Forbidden', ['status' => 403]);
         }
 
         return new WP_REST_Response(self::format_campaign($post), 200);
@@ -555,7 +555,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $title = $request->get_param('title');
@@ -584,7 +584,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             'status' => $request->get_param('status'),
         ]);
 
-        do_action('wpsg_campaign_updated', $post_id, [
+        do_action('mullion_campaign_updated', $post_id, [
             'title' => $title,
             'status' => $request->get_param('status'),
         ]);
@@ -595,14 +595,14 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function archive_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         // P66-A: centralize the status write so archived_at is stamped alongside
         // it; audit + hook + cache preserve this endpoint's prior side-effects.
         Mullion_Campaign_Status::set($post_id, 'archived', [
             'audit' => ['action' => 'campaign.archived', 'details' => []],
-            'hook'  => 'wpsg_campaign_archived',
+            'hook'  => 'mullion_campaign_archived',
             'cache' => true,
         ]);
         return new WP_REST_Response(['message' => 'Campaign archived'], 200);
@@ -611,14 +611,14 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function restore_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         // P66-A: centralize the status write so restored_at is stamped and
         // archived_at cleared alongside it; audit + hook + cache preserved.
         Mullion_Campaign_Status::set($post_id, 'active', [
             'audit' => ['action' => 'campaign.restored', 'details' => []],
-            'hook'  => 'wpsg_campaign_restored',
+            'hook'  => 'mullion_campaign_restored',
             'cache' => true,
         ]);
         return new WP_REST_Response(['message' => 'Campaign restored'], 200);
@@ -629,13 +629,13 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function move_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $target_space_id = intval($request->get_param('target_space_id'));
         $target_space    = Mullion_DB::get_space($target_space_id);
         if (!$target_space || $target_space->archived) {
-            return new WP_Error('wpsg_space_not_found', 'Target space not found or archived', ['status' => 404]);
+            return new WP_Error('mullion_space_not_found', 'Target space not found or archived', ['status' => 404]);
         }
 
         $source_space_id = intval(get_post_meta($post_id, '_wpsg_space_id', true));
@@ -657,7 +657,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $result = Mullion_DB::move_campaign_to_space($post_id, $target_space_id);
         if ($result !== true) {
             return new WP_Error(
-                'wpsg_move_failed',
+                'mullion_move_failed',
                 sprintf('Campaign move failed while updating %s; all changes were rolled back.', $result),
                 ['status' => 500]
             );
@@ -667,7 +667,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             'from_space_id' => $source_space_id,
             'to_space_id'   => $target_space_id,
         ]);
-        do_action('wpsg_campaign_space_moved', $post_id, $source_space_id, $target_space_id);
+        do_action('mullion_campaign_space_moved', $post_id, $source_space_id, $target_space_id);
         self::clear_accessible_campaigns_cache();
         // Space-filtered campaign/space list caches key off the cache version.
         self::bump_cache_version();
@@ -684,13 +684,13 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function delete_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $confirm = $request->get_param('confirm');
         if (!self::is_truthy_param($confirm)) {
             return new WP_Error(
-                'wpsg_delete_unconfirmed',
+                'mullion_delete_unconfirmed',
                 'Missing confirm=true query parameter',
                 ['status' => 400]
             );
@@ -703,7 +703,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         self::add_audit_entry($post_id, 'campaign.deleted', [
             'purge_analytics' => $purge_analytics,
         ]);
-        do_action('wpsg_campaign_deleted', $post_id);
+        do_action('mullion_campaign_deleted', $post_id);
 
         Mullion_DB::delete_media_refs($post_id);
         Mullion_DB::delete_access_requests_for_campaign($post_id);
@@ -719,7 +719,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
 
         $deleted = wp_delete_post($post_id, true);
         if (!$deleted) {
-            return new WP_Error('wpsg_delete_failed', 'Failed to delete campaign', ['status' => 500]);
+            return new WP_Error('mullion_delete_failed', 'Failed to delete campaign', ['status' => 500]);
         }
 
         self::clear_accessible_campaigns_cache();
@@ -736,7 +736,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $source_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($source_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $source   = get_post($source_id);
@@ -775,10 +775,10 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
 
         $allowed_actions = ['archive', 'restore', 'delete'];
         if (!in_array($action, $allowed_actions, true)) {
-            return new WP_Error('wpsg_invalid_action', 'Invalid action. Allowed: archive, restore, delete', ['status' => 400]);
+            return new WP_Error('mullion_invalid_action', 'Invalid action. Allowed: archive, restore, delete', ['status' => 400]);
         }
         if (!is_array($ids) || empty($ids)) {
-            return new WP_Error('wpsg_invalid_ids', 'ids must be a non-empty array', ['status' => 400]);
+            return new WP_Error('mullion_invalid_ids', 'ids must be a non-empty array', ['status' => 400]);
         }
 
         $success = [];
@@ -787,7 +787,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         if ($action === 'delete') {
             if (!self::is_truthy_param($request->get_param('confirm'))) {
                 return new WP_Error(
-                    'wpsg_delete_unconfirmed',
+                    'mullion_delete_unconfirmed',
                     'Missing confirm=true parameter for bulk delete',
                     ['status' => 400]
                 );
@@ -801,7 +801,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
                     continue;
                 }
                 self::add_audit_entry($post_id, 'campaign.deleted', ['purge_analytics' => $purge_analytics]);
-                do_action('wpsg_campaign_deleted', $post_id);
+                do_action('mullion_campaign_deleted', $post_id);
                 Mullion_DB::delete_media_refs($post_id);
                 Mullion_DB::delete_access_requests_for_campaign($post_id);
                 if ($purge_analytics) {
@@ -839,7 +839,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function list_audit($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         // P28-G: backfill from post meta if no DB entries exist yet for this campaign.
@@ -906,7 +906,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function export_audit_log_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary export.',
                 ['status' => 503]
             );
@@ -979,7 +979,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             'entries'     => $manifest_entries,
         ]);
         if ($manifest === false) {
-            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+            return new WP_Error('mullion_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
         // Collect cover images for each unique campaign referenced in the log.
@@ -1068,14 +1068,14 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $allowed_visibility = ['public', 'private'];
         if (!empty($visibility)) {
             if (!in_array($visibility, $allowed_visibility, true)) {
-                return new WP_Error('wpsg_invalid_visibility', 'Invalid visibility value', ['status' => 400]);
+                return new WP_Error('mullion_invalid_visibility', 'Invalid visibility value', ['status' => 400]);
             }
             update_post_meta($post_id, 'visibility', $visibility);
         }
         $allowed_status = ['draft', 'active', 'archived'];
         if (!empty($status)) {
             if (!in_array($status, $allowed_status, true)) {
-                return new WP_Error('wpsg_invalid_status', 'Invalid status value', ['status' => 400]);
+                return new WP_Error('mullion_invalid_status', 'Invalid status value', ['status' => 400]);
             }
             // P66-A: centralize the status write so a status change to/from
             // 'archived' via create/update stamps archived_at/restored_at too.

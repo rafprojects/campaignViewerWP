@@ -412,7 +412,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_create_user_applies_authenticated_rate_limit() {
-        add_filter('wpsg_rate_limit_authenticated', fn() => 1);
+        add_filter('mullion_rate_limit_authenticated', fn() => 1);
         add_filter('pre_wp_mail', function () { return true; }, 10, 0);
         $_SERVER['REMOTE_ADDR'] = '198.51.100.33';
 
@@ -432,7 +432,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->assertContains($first_response->get_status(), [200, 201]);
         $this->assertEquals(429, $second_response->get_status());
 
-        remove_all_filters('wpsg_rate_limit_authenticated');
+        remove_all_filters('mullion_rate_limit_authenticated');
         unset($_SERVER['REMOTE_ADDR']);
     }
 

@@ -22,7 +22,7 @@ global $wpdb;
  *
  * @param string $dir Absolute directory path.
  */
-function wpsg_uninstall_remove_dir( $dir ) {
+function mullion_uninstall_remove_dir( $dir ) {
 	if ( ! is_dir( $dir ) ) {
 		return;
 	}
@@ -45,7 +45,7 @@ function wpsg_uninstall_remove_dir( $dir ) {
 // past uninstall backwards. Must run BEFORE the preserve-data early return
 // below. Migrators are told (packaging docs) to move ZIPs out of
 // uploads/wpsg-exports/ before uninstalling.
-wpsg_uninstall_remove_dir( trailingslashit( wp_upload_dir()['basedir'] ) . 'wpsg-exports' );
+mullion_uninstall_remove_dir( trailingslashit( wp_upload_dir()['basedir'] ) . 'wpsg-exports' );
 
 // ── Respect user preference to preserve data ────────────────
 $settings = get_option( 'wpsg_settings', [] );
@@ -222,11 +222,11 @@ if ( $admin_role ) {
 }
 
 // ── 8. Clear cron hooks ─────────────────────────────────────
-// P66-F: clear the single canonical hook list shared with wpsg_deactivate(),
+// P66-F: clear the single canonical hook list shared with mullion_deactivate(),
 // instead of the stale 4-of-10 subset this file used to hardcode. This file
 // runs in isolation, so pull the dependency-free helper in directly.
-require_once __DIR__ . '/includes/wpsg-cron-hooks.php';
-foreach ( wpsg_get_cron_hooks() as $hook ) {
+require_once __DIR__ . '/includes/mullion-cron-hooks.php';
+foreach ( mullion_get_cron_hooks() as $hook ) {
 	wp_clear_scheduled_hook( $hook );
 }
 
@@ -234,6 +234,6 @@ foreach ( wpsg_get_cron_hooks() as $hook ) {
 // P66-F: wpsg-fonts/ was previously left behind. wpsg-exports/ is handled
 // earlier (before the preserve-data return) per Key Decision C.
 $upload_basedir = trailingslashit( wp_upload_dir()['basedir'] );
-wpsg_uninstall_remove_dir( $upload_basedir . 'wpsg-thumbnails' );
-wpsg_uninstall_remove_dir( $upload_basedir . 'wpsg-overlays' );
-wpsg_uninstall_remove_dir( $upload_basedir . 'wpsg-fonts' );
+mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-thumbnails' );
+mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-overlays' );
+mullion_uninstall_remove_dir( $upload_basedir . 'wpsg-fonts' );

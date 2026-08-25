@@ -168,7 +168,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
     public static function list_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         // P28-B: include_expired=true shows grants past their expiry (hidden by default).
@@ -217,7 +217,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
     public static function grant_access($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = intval($request->get_param('userId'));
@@ -225,11 +225,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $action = sanitize_text_field($request->get_param('action')) ?: 'grant';
 
         if ($user_id <= 0) {
-            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         if (!in_array($source, ['company', 'campaign'], true)) {
-            return new WP_Error('wpsg_invalid_source', 'Invalid source', ['status' => 400]);
+            return new WP_Error('mullion_invalid_source', 'Invalid source', ['status' => 400]);
         }
 
         // P28-B / P64-A: optional expiry — validate ISO 8601 datetime if provided.
@@ -253,7 +253,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         if ($source === 'company') {
             $company_term = self::get_company_term($post_id);
             if (!$company_term) {
-                return new WP_Error('wpsg_company_not_set', 'Company not set for campaign', ['status' => 400]);
+                return new WP_Error('mullion_company_not_set', 'Company not set for campaign', ['status' => 400]);
             }
             $grants = get_term_meta($company_term->term_id, 'access_grants', true);
             $grants = is_array($grants) ? $grants : [];
@@ -285,7 +285,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         ]);
 
         if ($action !== 'deny') {
-            do_action('wpsg_access_granted', $post_id, ['userId' => $user_id, 'source' => $source]);
+            do_action('mullion_access_granted', $post_id, ['userId' => $user_id, 'source' => $source]);
         }
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access updated'], 200);
@@ -313,7 +313,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $post_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
         if (!self::campaign_exists($post_id) || $user_id <= 0) {
-            return new WP_Error('wpsg_invalid_request', 'Invalid request', ['status' => 400]);
+            return new WP_Error('mullion_invalid_request', 'Invalid request', ['status' => 400]);
         }
 
         // Always drop any campaign-level grant for the user. Company termmeta is
@@ -359,7 +359,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         self::add_audit_entry($post_id, $audit_action, [
             'userId' => $user_id,
         ]);
-        do_action('wpsg_access_revoked', $post_id, ['userId' => $user_id]);
+        do_action('mullion_access_revoked', $post_id, ['userId' => $user_id]);
         self::clear_accessible_campaigns_cache();
         return new WP_REST_Response(['message' => 'Access revoked', 'removed' => $removed], 200);
     }
@@ -402,23 +402,23 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $email      = sanitize_email($request->get_param('email') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
         if (!is_email($email)) {
-            return new WP_Error('wpsg_invalid_email', 'A valid email address is required', ['status' => 400]);
+            return new WP_Error('mullion_invalid_email', 'A valid email address is required', ['status' => 400]);
         }
 
         // Check for existing request (duplicate / cooldown)
         $existing = Mullion_DB::find_access_request_by_email($email, $post_id);
         if ($existing) {
             if ($existing['status'] === 'pending') {
-                return new WP_Error('wpsg_request_pending', 'A request for this email is already pending.', ['status' => 409]);
+                return new WP_Error('mullion_request_pending', 'A request for this email is already pending.', ['status' => 409]);
             }
             if ($existing['status'] === 'denied') {
                 $cooldown_seconds = 24 * 60 * 60;
                 $elapsed = time() - strtotime($existing['requested_at']);
                 if ($elapsed < $cooldown_seconds) {
-                    return new WP_Error('wpsg_rate_limited', 'Please wait 24 hours before submitting another request.', ['status' => 429]);
+                    return new WP_Error('mullion_rate_limited', 'Please wait 24 hours before submitting another request.', ['status' => 429]);
                 }
                 // Remove stale denied request so a fresh one can be created
                 Mullion_DB::delete_access_request($existing['token']);
@@ -477,7 +477,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         // / email-bombing primitive (an attacker loops a victim list to send each
         // one "your request was received"). The requester IS notified once an
         // admin resolves the request — do_approve_request() emails on approval and
-        // deny_access_request() on denial (behind wpsg_send_denial_email) — so no
+        // deny_access_request() on denial (behind mullion_send_denial_email) — so no
         // legitimate requester is left uninformed.
 
         return new WP_REST_Response([
@@ -495,7 +495,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $status  = sanitize_text_field($request->get_param('status') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $rows = Mullion_DB::list_access_requests($post_id, $status);
@@ -513,15 +513,15 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $data = Mullion_DB::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
-            return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
+            return new WP_Error('mullion_request_not_found', 'Request not found', ['status' => 404]);
         }
         if ($data['status'] !== 'pending') {
-            return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
+            return new WP_Error('mullion_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
         // P33-B: admin may specify a role; default to 'viewer'.
@@ -557,7 +557,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             $user_id = wp_create_user($username, wp_generate_password(), $data['email']);
             if (is_wp_error($user_id)) {
                 return new WP_Error(
-                    'wpsg_user_creation_failed',
+                    'mullion_user_creation_failed',
                     'Failed to create user: ' . $user_id->get_error_message(),
                     ['status' => 500]
                 );
@@ -763,15 +763,15 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $token   = sanitize_text_field($request->get_param('token') ?? '');
 
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $data = Mullion_DB::get_access_request($token);
         if (!$data || intval($data['campaign_id']) !== $post_id) {
-            return new WP_Error('wpsg_request_not_found', 'Request not found', ['status' => 404]);
+            return new WP_Error('mullion_request_not_found', 'Request not found', ['status' => 404]);
         }
         if ($data['status'] !== 'pending') {
-            return new WP_Error('wpsg_request_resolved', 'Request already resolved', ['status' => 409]);
+            return new WP_Error('mullion_request_resolved', 'Request already resolved', ['status' => 409]);
         }
 
         Mullion_DB::update_access_request_status($token, 'denied');
@@ -782,7 +782,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         ]);
 
         // Optional denial email
-        $send_denial = apply_filters('wpsg_send_denial_email', true);
+        $send_denial = apply_filters('mullion_send_denial_email', true);
         if ($send_denial) {
             $site_name      = get_bloginfo('name');
             $campaign_title = get_the_title($post_id) ?: 'Campaign #' . $post_id;
@@ -810,7 +810,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
+            return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         // Get company-level grants
@@ -888,11 +888,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
+            return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         if ($user_id <= 0) {
-            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         // P28-B / P64-A: optional expiry.
@@ -953,11 +953,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
+            return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         if ($user_id <= 0) {
-            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_user_id', 'userId is required', ['status' => 400]);
         }
 
         $grants = get_term_meta($term_id, 'access_grants', true);
@@ -999,7 +999,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         $term = get_term($term_id, 'wpsg_company');
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_company_not_found', 'Company not found', ['status' => 404]);
+            return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         // Get all non-archived campaigns for this company

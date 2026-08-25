@@ -268,7 +268,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         if (is_wp_error($terms)) {
-            return new WP_Error('wpsg_internal_error', 'Failed to retrieve categories', ['status' => 500]);
+            return new WP_Error('mullion_internal_error', 'Failed to retrieve categories', ['status' => 500]);
         }
 
         $items = array_map(function ($term) {
@@ -298,7 +298,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $term_id = intval($request->get_param('id'));
         $term    = get_term($term_id, 'wpsg_campaign_category');
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_not_found', 'Category not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Category not found', ['status' => 404]);
         }
         $args = [];
         $name      = $request->get_param('name');
@@ -314,15 +314,15 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             $args['parent'] = (int) $parent_id;
         }
         if (empty($args)) {
-            return new WP_Error('wpsg_bad_request', 'Provide name, slug, or parent_id to update', ['status' => 400]);
+            return new WP_Error('mullion_bad_request', 'Provide name, slug, or parent_id to update', ['status' => 400]);
         }
         $result = wp_update_term($term_id, 'wpsg_campaign_category', $args);
         if (is_wp_error($result)) {
             $code = $result->get_error_code();
             if ($code === 'term_exists' || $code === 'duplicate_term_slug') {
-                return new WP_Error('wpsg_term_exists', 'A category with that name or slug already exists', ['status' => 409]);
+                return new WP_Error('mullion_term_exists', 'A category with that name or slug already exists', ['status' => 409]);
             }
-            return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $result->get_error_message(), ['status' => 500]);
         }
         $updated_term = get_term($result['term_id'], 'wpsg_campaign_category');
         $updated_name = $updated_term ? $updated_term->name : ($args['name'] ?? '');
@@ -406,7 +406,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         if ($from_id > 0) {
             $source = get_post($from_id);
             if (!$source || $source->post_type !== 'wpsg_campaign') {
-                return new WP_Error('wpsg_campaign_not_found', 'Source campaign not found', ['status' => 404]);
+                return new WP_Error('mullion_campaign_not_found', 'Source campaign not found', ['status' => 404]);
             }
             $meta['visibility']           = get_post_meta($from_id, 'visibility', true) ?: 'private';
             $meta['gallery_overrides']    = get_post_meta($from_id, '_wpsg_gallery_overrides', true) ?: null;
@@ -421,7 +421,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ], true);
 
         if (is_wp_error($post_id)) {
-            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
         update_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, '1');
@@ -441,16 +441,16 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $id = sanitize_text_field($request->get_param('id'));
 
         if (Mullion_Campaign_Templates::is_builtin($id)) {
-            return new WP_Error('wpsg_forbidden', 'Built-in templates cannot be deleted', ['status' => 403]);
+            return new WP_Error('mullion_forbidden', 'Built-in templates cannot be deleted', ['status' => 403]);
         }
 
         $post_id = intval($id);
         $post    = get_post($post_id);
         if (!$post || $post->post_type !== 'wpsg_campaign') {
-            return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Template not found', ['status' => 404]);
         }
         if (!get_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, true)) {
-            return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Template not found', ['status' => 404]);
         }
 
         wp_delete_post($post_id, true);
@@ -467,7 +467,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             $post_id = intval($id);
             $post    = get_post($post_id);
             if (!$post || $post->post_type !== 'wpsg_campaign' || !get_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, true)) {
-                return new WP_Error('wpsg_not_found', 'Template not found', ['status' => 404]);
+                return new WP_Error('mullion_not_found', 'Template not found', ['status' => 404]);
             }
             $tpl = Mullion_Campaign_Templates::post_to_template($post);
         }
@@ -481,7 +481,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ], true);
 
         if (is_wp_error($new_id)) {
-            return new WP_Error('wpsg_internal_error', $new_id->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $new_id->get_error_message(), ['status' => 500]);
         }
 
         update_post_meta($new_id, 'visibility', $settings['visibility'] ?? 'private');
@@ -535,7 +535,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $template = Mullion_Layout_Templates::get($id);
 
         if (!$template) {
-            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
+            return new WP_Error('mullion_template_not_found', 'Template not found.', ['status' => 404]);
         }
 
         return new WP_REST_Response($template, 200);
@@ -576,7 +576,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $id       = $request->get_param('templateId');
         $template = Mullion_Layout_Templates::get($id);
         if (!$template) {
-            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
+            return new WP_Error('mullion_template_not_found', 'Template not found.', ['status' => 404]);
         }
         $tmpl_name = $template['name'] ?? $id;
 
@@ -585,7 +585,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $in_use = self::count_campaigns_using_layout_template((string) $id);
         if ($in_use > 0 && !self::is_truthy_param($request->get_param('force'))) {
             return new WP_Error(
-                'wpsg_template_in_use',
+                'mullion_template_in_use',
                 sprintf('This layout template is in use by %d campaign(s). Pass force=true to delete anyway.', $in_use),
                 ['status' => 409, 'inUse' => $in_use]
             );
@@ -594,7 +594,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $deleted = Mullion_Layout_Templates::delete($id);
 
         if (!$deleted) {
-            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
+            return new WP_Error('mullion_template_not_found', 'Template not found.', ['status' => 404]);
         }
         self::bump_cache_version();
 
@@ -668,7 +668,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $template = Mullion_Layout_Templates::get($id);
 
         if (!$template) {
-            return new WP_Error('wpsg_template_not_found', 'Template not found.', ['status' => 404]);
+            return new WP_Error('mullion_template_not_found', 'Template not found.', ['status' => 404]);
         }
 
         return new WP_REST_Response($template, 200);
@@ -720,7 +720,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         if ( ! empty( $files['file'] ) ) {
             $url = Mullion_Asset_Library::handle_upload( $files['file'] );
             if ( is_wp_error( $url ) ) {
-                return new WP_Error( 'wpsg_upload_failed', $url->get_error_message(), [ 'status' => 400 ] );
+                return new WP_Error( 'mullion_upload_failed', $url->get_error_message(), [ 'status' => 400 ] );
             }
             $name         = sanitize_text_field( $request->get_param( 'name' ) ?? basename( $files['file']['name'] ) );
             $is_universal = self::to_bool( $request->get_param( 'is_universal' ) );
@@ -733,13 +733,13 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             $is_universal = self::to_bool( $data['is_universal'] ?? false );
             $tags         = self::parse_tags_param( $data['tags'] ?? null );
             if ( empty( $url ) ) {
-                return new WP_Error( 'wpsg_missing_file_or_url', 'A file or URL is required.', [ 'status' => 400 ] );
+                return new WP_Error( 'mullion_missing_file_or_url', 'A file or URL is required.', [ 'status' => 400 ] );
             }
         }
 
         $entry = Mullion_Asset_Library::add( [ 'url' => $url, 'name' => $name, 'is_universal' => $is_universal, 'tags' => $tags ] );
         if ( is_wp_error( $entry ) ) {
-            return new WP_Error( 'wpsg_asset_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
+            return new WP_Error( 'mullion_asset_save_failed', $entry->get_error_message(), [ 'status' => 500 ] );
         }
         return new WP_REST_Response( $entry, 201 );
     }
@@ -755,21 +755,21 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $has_universal = array_key_exists( 'is_universal', $data );
         $has_tags      = array_key_exists( 'tags', $data );
         if ( ! $has_universal && ! $has_tags ) {
-            return new WP_Error( 'wpsg_missing_field', 'is_universal or tags is required.', [ 'status' => 400 ] );
+            return new WP_Error( 'mullion_missing_field', 'is_universal or tags is required.', [ 'status' => 400 ] );
         }
 
         $response = [ 'id' => $id ];
         if ( $has_universal ) {
             $universal = self::to_bool( $data['is_universal'] );
             if ( ! Mullion_Asset_Library::set_universal( $id, $universal ) ) {
-                return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
+                return new WP_Error( 'mullion_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
             }
             $response['isUniversal'] = $universal;
         }
         if ( $has_tags ) {
             $tags = self::parse_tags_param( $data['tags'] );
             if ( ! Mullion_Asset_Library::set_tags( $id, $tags ) ) {
-                return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
+                return new WP_Error( 'mullion_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
             }
             $response['tags'] = $tags;
         }
@@ -823,7 +823,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $in_use = Mullion_DB::count_asset_associations( (string) $id, 'asset' );
         if ( $in_use > 0 && ! self::is_truthy_param( $request->get_param( 'force' ) ) ) {
             return new WP_Error(
-                'wpsg_asset_in_use',
+                'mullion_asset_in_use',
                 sprintf( 'This asset is associated with %d space(s). Pass force=true to delete anyway.', $in_use ),
                 [ 'status' => 409, 'inUse' => $in_use ]
             );
@@ -831,7 +831,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
         $deleted = Mullion_Asset_Library::remove( $id );
         if ( ! $deleted ) {
-            return new WP_Error( 'wpsg_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
+            return new WP_Error( 'mullion_asset_not_found', 'Asset not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }
@@ -853,7 +853,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
     public static function upload_font( $request ) {
         $files = $request->get_file_params();
         if ( empty( $files['file'] ) ) {
-            return new WP_Error( 'wpsg_missing_file', 'A font file is required.', [ 'status' => 400 ] );
+            return new WP_Error( 'mullion_missing_file', 'A font file is required.', [ 'status' => 400 ] );
         }
 
         $file = $files['file'];
@@ -861,16 +861,16 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         // Mullion_REST_Base instead of an inline copy of the same switch.
         $error = self::get_upload_error_data( $file );
         if ( $error ) {
-            return new WP_Error( 'wpsg_font_upload_failed', $error['message'], [ 'status' => $error['status'] ] );
+            return new WP_Error( 'mullion_font_upload_failed', $error['message'], [ 'status' => $error['status'] ] );
         }
 
         if ( ! isset( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
-            return new WP_Error( 'wpsg_invalid_upload', 'Invalid upload.', [ 'status' => 400 ] );
+            return new WP_Error( 'mullion_invalid_upload', 'Invalid upload.', [ 'status' => 400 ] );
         }
 
         $result = Mullion_Font_Library::handle_upload( $file );
         if ( is_wp_error( $result ) ) {
-            return new WP_Error( 'wpsg_font_upload_failed', $result->get_error_message(), [ 'status' => 400 ] );
+            return new WP_Error( 'mullion_font_upload_failed', $result->get_error_message(), [ 'status' => 400 ] );
         }
 
         $name = sanitize_text_field( $request->get_param( 'name' ) ?? '' );
@@ -899,12 +899,12 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $data = $request->get_json_params() ?? [];
 
         if ( ! array_key_exists( 'is_universal', $data ) ) {
-            return new WP_Error( 'wpsg_missing_field', 'is_universal is required.', [ 'status' => 400 ] );
+            return new WP_Error( 'mullion_missing_field', 'is_universal is required.', [ 'status' => 400 ] );
         }
 
         $universal = self::to_bool( $data['is_universal'] );
         if ( ! Mullion_Font_Library::set_universal( $id, $universal ) ) {
-            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
+            return new WP_Error( 'mullion_font_not_found', 'Font not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'id' => $id, 'isUniversal' => $universal ], 200 );
     }
@@ -916,7 +916,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $id      = $request->get_param( 'id' );
         $deleted = Mullion_Font_Library::remove( $id );
         if ( ! $deleted ) {
-            return new WP_Error( 'wpsg_font_not_found', 'Font not found.', [ 'status' => 404 ] );
+            return new WP_Error( 'mullion_font_not_found', 'Font not found.', [ 'status' => 404 ] );
         }
         return new WP_REST_Response( [ 'deleted' => true ], 200 );
     }
@@ -961,7 +961,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $terms = get_terms($terms_args);
 
         if (is_wp_error($terms)) {
-            return new WP_Error('wpsg_internal_error', 'Failed to fetch companies', ['status' => 500]);
+            return new WP_Error('mullion_internal_error', 'Failed to fetch companies', ['status' => 500]);
         }
 
         $companies = [];

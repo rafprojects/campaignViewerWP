@@ -33,7 +33,7 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
 
     /** Space editor: manage_wpsg but NOT manage_options. */
     private function set_editor(): int {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
         wp_set_current_user($uid);
         return $uid;
@@ -215,7 +215,7 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
 
         // Explicit 403 — the whole request is rejected, matching /settings.
         $this->assertSame(403, $response->get_status());
-        $this->assertSame('wpsg_forbidden_settings', $response->get_data()['code'] ?? null);
+        $this->assertSame('mullion_forbidden_settings', $response->get_data()['code'] ?? null);
 
         // Nothing was applied: neither the admin-only global nor the overridable
         // key (guard runs before any write, so the request is atomic).
@@ -280,7 +280,7 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
         ]));
 
         $this->assertSame(403, $response->get_status());
-        $this->assertSame('wpsg_forbidden_settings', $response->get_data()['code'] ?? null);
+        $this->assertSame('mullion_forbidden_settings', $response->get_data()['code'] ?? null);
         $this->assertSame(['cache_ttl'], $response->get_data()['data']['fields'] ?? null,
             'only the key that would actually change is reported');
         $this->assertSame($cache_ttl_before, Mullion_Settings::get_settings()['cache_ttl']);

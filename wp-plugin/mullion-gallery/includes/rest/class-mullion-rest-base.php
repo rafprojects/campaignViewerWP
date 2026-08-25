@@ -48,7 +48,7 @@ abstract class Mullion_REST_Base {
         return $response;
     }
 
-    protected static function error_response($message, $status, $code = 'wpsg_error') {
+    protected static function error_response($message, $status, $code = 'mullion_error') {
         return new WP_REST_Response([
             'code' => $code,
             'message' => $message,
@@ -59,15 +59,15 @@ abstract class Mullion_REST_Base {
 
     /**
      * P63-B: the REST-base limiter tunes its window via the
-     * `wpsg_rest_rate_limit_window` filter (args: $default_seconds, $scope).
-     * This is deliberately distinct from the oEmbed proxy's `wpsg_rate_limit_window`
+     * `mullion_rest_rate_limit_window` filter (args: $default_seconds, $scope).
+     * This is deliberately distinct from the oEmbed proxy's `mullion_rate_limit_window`
      * filter in Mullion_Rate_Limiter (args: $default, $endpoint) — the two guard
      * different subsystems and previously shared a name with divergent signatures,
      * so tuning one silently affected the other.
      */
     public static function rate_limit_public($request) {
-        $limit = intval(apply_filters('wpsg_rate_limit_public', 60));
-        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'public'));
+        $limit = intval(apply_filters('mullion_rate_limit_public', 60));
+        $window = intval(apply_filters('mullion_rest_rate_limit_window', 60, 'public'));
         return self::rate_limit_check($request, 'public', $limit, $window);
     }
 
@@ -76,7 +76,7 @@ abstract class Mullion_REST_Base {
      *
      * Default: 120 requests per minute per IP. Per-space override via
      * `rate_limit_requests_per_minute` in settings_overrides (P48-D).
-     * Global floor override via `wpsg_rate_limit_authenticated` filter.
+     * Global floor override via `mullion_rate_limit_authenticated` filter.
      *
      * P52-A5: this primitive exclusively guards user creation (POST /users),
      * a System Admin action, so it requires `manage_options` (not merely
@@ -89,7 +89,7 @@ abstract class Mullion_REST_Base {
             return false;
         }
 
-        $global_limit = intval(apply_filters('wpsg_rate_limit_authenticated', 120));
+        $global_limit = intval(apply_filters('mullion_rate_limit_authenticated', 120));
 
         // Resolve per-space quota when the request targets a known space.
         $space_id = intval($request->get_param('id') ?: $request->get_param('space_id'));
@@ -102,7 +102,7 @@ abstract class Mullion_REST_Base {
             }
         }
 
-        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'authenticated'));
+        $window = intval(apply_filters('mullion_rest_rate_limit_window', 60, 'authenticated'));
         $result = self::rate_limit_check($request, 'authenticated', $limit, $window, $space_id);
 
         if (is_wp_error($result)) {
@@ -117,11 +117,11 @@ abstract class Mullion_REST_Base {
      * Rate-limit the magic-link approve endpoint.
      *
      * Default: 10 requests per minute per IP. Override via
-     * `wpsg_rate_limit_magic_approve` filter.
+     * `mullion_rate_limit_magic_approve` filter.
      */
     public static function rate_limit_magic_approve($request) {
-        $limit  = intval(apply_filters('wpsg_rate_limit_magic_approve', 10));
-        $window = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'magic_approve'));
+        $limit  = intval(apply_filters('mullion_rate_limit_magic_approve', 10));
+        $window = intval(apply_filters('mullion_rest_rate_limit_window', 60, 'magic_approve'));
         return self::rate_limit_check($request, 'magic_approve', $limit, $window);
     }
 
@@ -134,25 +134,25 @@ abstract class Mullion_REST_Base {
      * the attacker-chosen-recipient primitive; these limits cap the residual abuse
      * volume (admin-inbox flooding, request-table churn):
      *
-     *   - 5/min/IP           (filter `wpsg_rate_limit_access_request`)
-     *   - 20/day/IP          (filter `wpsg_rate_limit_access_request_daily`)
+     *   - 5/min/IP           (filter `mullion_rate_limit_access_request`)
+     *   - 20/day/IP          (filter `mullion_rate_limit_access_request_daily`)
      *
      * The daily bucket is effectively a per-IP cap on *distinct* emails, since the
      * handler already rejects duplicate pending emails and enforces a 24h cooldown
      * on denied ones — the same email cannot be productively resubmitted.
      *
-     * Also exposes `wpsg_access_request_precheck` — an extension seam for a
+     * Also exposes `mullion_access_request_precheck` — an extension seam for a
      * CAPTCHA/honeypot integration to reject a submission before it is processed.
      */
     public static function rate_limit_access_request($request) {
-        $per_min = intval(apply_filters('wpsg_rate_limit_access_request', 5));
-        $window  = intval(apply_filters('wpsg_rest_rate_limit_window', 60, 'access_request'));
+        $per_min = intval(apply_filters('mullion_rate_limit_access_request', 5));
+        $window  = intval(apply_filters('mullion_rest_rate_limit_window', 60, 'access_request'));
         $minute  = self::rate_limit_check($request, 'access_request', $per_min, $window);
         if (is_wp_error($minute)) {
             return $minute;
         }
 
-        $per_day = intval(apply_filters('wpsg_rate_limit_access_request_daily', 20));
+        $per_day = intval(apply_filters('mullion_rate_limit_access_request_daily', 20));
         $daily   = self::rate_limit_check($request, 'access_request_daily', $per_day, DAY_IN_SECONDS);
         if (is_wp_error($daily)) {
             return $daily;
@@ -160,12 +160,12 @@ abstract class Mullion_REST_Base {
 
         // Extension seam for CAPTCHA / honeypot. Default allows. An integration
         // may return a WP_Error (surfaced as-is) or boolean false to reject.
-        $precheck = apply_filters('wpsg_access_request_precheck', true, $request);
+        $precheck = apply_filters('mullion_access_request_precheck', true, $request);
         if (is_wp_error($precheck)) {
             return $precheck;
         }
         if ($precheck === false) {
-            return new WP_Error('wpsg_access_request_rejected', 'Access request could not be verified.', ['status' => 403]);
+            return new WP_Error('mullion_access_request_rejected', 'Access request could not be verified.', ['status' => 403]);
         }
 
         return true;
@@ -181,7 +181,7 @@ abstract class Mullion_REST_Base {
         // visitor's REMOTE_ADDR is the proxy's IP, which would collapse all public
         // traffic into a single site-wide bucket per route once the limiter is live
         // (P63-A). get_client_ip() only honours X-Forwarded-For / X-Real-IP from
-        // IPs in the wpsg_rate_limiter_trusted_proxies allowlist.
+        // IPs in the mullion_rate_limiter_trusted_proxies allowlist.
         $ip = class_exists('Mullion_Rate_Limiter')
             ? Mullion_Rate_Limiter::get_client_ip()
             : (isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '0.0.0.0');
@@ -223,7 +223,7 @@ abstract class Mullion_REST_Base {
 
             if ($current > $limit) {
                 return new WP_Error(
-                    'wpsg_rate_limited',
+                    'mullion_rate_limited',
                     'Rate limit exceeded. Please try again later.',
                     ['status' => 429]
                 );
@@ -259,7 +259,7 @@ abstract class Mullion_REST_Base {
 
         if ($data['count'] > $limit) {
             return new WP_Error(
-                'wpsg_rate_limited',
+                'mullion_rate_limited',
                 'Rate limit exceeded. Please try again later.',
                 ['status' => 429]
             );
@@ -707,7 +707,7 @@ abstract class Mullion_REST_Base {
      *   1. WordPress resolved a real current user (cookie / Application Password /
      *      an external integration hooked into determine_current_user), and
      *   2. a token-auth integration explicitly asserts, via the
-     *      `wpsg_bearer_auth_verified` filter (default false), that it validated
+     *      `mullion_bearer_auth_verified` filter (default false), that it validated
      *      this specific credential.
      * Sites with no JWT/token integration keep the stricter nonce-required path.
      *
@@ -719,7 +719,7 @@ abstract class Mullion_REST_Base {
             return false;
         }
         return is_user_logged_in()
-            && (bool) apply_filters('wpsg_bearer_auth_verified', false, $auth_header);
+            && (bool) apply_filters('mullion_bearer_auth_verified', false, $auth_header);
     }
 
     public static function require_authenticated() {
@@ -808,7 +808,7 @@ abstract class Mullion_REST_Base {
 
         if (!empty($blocked)) {
             return new WP_Error(
-                'wpsg_forbidden_settings',
+                'mullion_forbidden_settings',
                 'These settings require a System Administrator (manage_options): ' . implode(', ', $blocked),
                 ['status' => 403, 'fields' => $blocked]
             );
@@ -1039,7 +1039,7 @@ abstract class Mullion_REST_Base {
             return $cached;
         }
 
-        $per_page = max(1, intval(apply_filters('wpsg_permissions_page_size', 200)));
+        $per_page = max(1, intval(apply_filters('mullion_permissions_page_size', 200)));
         $page = 1;
         $campaign_ids = [];
 
@@ -1079,7 +1079,7 @@ abstract class Mullion_REST_Base {
             $page += 1;
         } while (count($query->posts) === $per_page);
 
-        $ttl = max(1, intval(apply_filters('wpsg_permissions_cache_ttl', 15 * MINUTE_IN_SECONDS)));
+        $ttl = max(1, intval(apply_filters('mullion_permissions_cache_ttl', 15 * MINUTE_IN_SECONDS)));
         set_transient($cache_key, $campaign_ids, $ttl);
         return $campaign_ids;
     }
@@ -1477,7 +1477,7 @@ abstract class Mullion_REST_Base {
 
     protected static function log_slow_rest($label, $start_time, $context = []) {
         $elapsed_ms = (microtime(true) - $start_time) * 1000;
-        $threshold_ms = intval(apply_filters('wpsg_slow_query_threshold_ms', 500));
+        $threshold_ms = intval(apply_filters('mullion_slow_query_threshold_ms', 500));
 
         if ($elapsed_ms < $threshold_ms) {
             return;
@@ -1490,7 +1490,7 @@ abstract class Mullion_REST_Base {
         ];
 
         Mullion_Logger::warning('rest', 'Slow REST request detected', $payload);
-        do_action('wpsg_slow_rest', $payload);
+        do_action('mullion_slow_rest', $payload);
     }
 
     // -------------------------------------------------------------------------
@@ -1660,7 +1660,7 @@ abstract class Mullion_REST_Base {
     protected static function handle_term_insert($name, $slug, $taxonomy, $created_status = 201, $parent_id = 0) {
         $name = sanitize_text_field($name ?? '');
         if ($name === '') {
-            return new WP_Error('wpsg_missing_name', 'name is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_name', 'name is required', ['status' => 400]);
         }
         $args = [];
         if ($slug !== null && $slug !== '') {
@@ -1673,9 +1673,9 @@ abstract class Mullion_REST_Base {
         if (is_wp_error($result)) {
             $code = $result->get_error_code();
             if ($code === 'term_exists' || $code === 'duplicate_term_slug') {
-                return new WP_Error('wpsg_term_exists', 'A term with that name or slug already exists', ['status' => 409]);
+                return new WP_Error('mullion_term_exists', 'A term with that name or slug already exists', ['status' => 409]);
             }
-            return new WP_Error('wpsg_internal_error', $result->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $result->get_error_message(), ['status' => 500]);
         }
         $label = self::taxonomy_label($taxonomy);
         self::add_audit_entry(0, 'taxonomy.term_created', [
@@ -1697,12 +1697,12 @@ abstract class Mullion_REST_Base {
         $term_id = intval($term_id);
         $term = get_term($term_id, $taxonomy);
         if (!$term || is_wp_error($term)) {
-            return new WP_Error('wpsg_not_found', 'Term not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Term not found', ['status' => 404]);
         }
         $term_name = $term->name;
         $result = wp_delete_term($term_id, $taxonomy);
         if (is_wp_error($result) || $result === false) {
-            return new WP_Error('wpsg_internal_error', 'Failed to delete term', ['status' => 500]);
+            return new WP_Error('mullion_internal_error', 'Failed to delete term', ['status' => 500]);
         }
         $label = self::taxonomy_label($taxonomy);
         self::add_audit_entry(0, 'taxonomy.term_deleted', [

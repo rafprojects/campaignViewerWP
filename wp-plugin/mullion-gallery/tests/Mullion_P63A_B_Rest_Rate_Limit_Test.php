@@ -10,8 +10,8 @@
  * P63-B: the limiter must bucket per real client IP (via the trusted-proxy-aware
  *        Mullion_Rate_Limiter::get_client_ip()), not per raw REMOTE_ADDR, so visitors
  *        behind a shared reverse proxy/CDN don't collapse into one site-wide bucket.
- *        It must also tune its window via the distinct `wpsg_rest_rate_limit_window`
- *        filter (not the oEmbed proxy's `wpsg_rate_limit_window`).
+ *        It must also tune its window via the distinct `mullion_rest_rate_limit_window`
+ *        filter (not the oEmbed proxy's `mullion_rate_limit_window`).
  *
  * These exercise the private rate_limit_check() through the public
  * rate_limit_public() permission callback.
@@ -39,9 +39,9 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
             unset( $_SERVER['REMOTE_ADDR'] );
         }
         unset( $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_X_REAL_IP'] );
-        remove_all_filters( 'wpsg_rate_limit_public' );
-        remove_all_filters( 'wpsg_rest_rate_limit_window' );
-        remove_all_filters( 'wpsg_rate_limiter_trusted_proxies' );
+        remove_all_filters( 'mullion_rate_limit_public' );
+        remove_all_filters( 'mullion_rest_rate_limit_window' );
+        remove_all_filters( 'mullion_rate_limiter_trusted_proxies' );
         parent::tearDown();
     }
 
@@ -56,7 +56,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
         $ip    = '198.51.100.10';
         $route = '/wp-super-gallery/v1/p63a-throttle';
         $_SERVER['REMOTE_ADDR'] = $ip;
-        add_filter( 'wpsg_rate_limit_public', fn() => 2 );
+        add_filter( 'mullion_rate_limit_public', fn() => 2 );
 
         $request = new WP_REST_Request( 'GET', $route );
 
@@ -85,8 +85,8 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
         $proxy = '10.10.0.9';
         $route = '/wp-super-gallery/v1/p63b-proxy';
         $_SERVER['REMOTE_ADDR'] = $proxy;
-        add_filter( 'wpsg_rate_limiter_trusted_proxies', fn() => [ $proxy ] );
-        add_filter( 'wpsg_rate_limit_public', fn() => 1 ); // one request allowed per window
+        add_filter( 'mullion_rate_limiter_trusted_proxies', fn() => [ $proxy ] );
+        add_filter( 'mullion_rate_limit_public', fn() => 1 ); // one request allowed per window
 
         $request = new WP_REST_Request( 'GET', $route );
 
@@ -117,7 +117,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
 
     public function test_window_uses_distinct_rest_filter_with_scope_arg() {
         $seen_scopes = [];
-        add_filter( 'wpsg_rest_rate_limit_window', function ( $window, $scope ) use ( &$seen_scopes ) {
+        add_filter( 'mullion_rest_rate_limit_window', function ( $window, $scope ) use ( &$seen_scopes ) {
             $seen_scopes[] = $scope;
             return $window;
         }, 10, 2 );
@@ -125,7 +125,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
         $_SERVER['REMOTE_ADDR'] = '198.51.100.30';
         Mullion_REST_Base::rate_limit_public( new WP_REST_Request( 'GET', '/wp-super-gallery/v1/p63b-filter' ) );
 
-        $this->assertContains( 'public', $seen_scopes, 'REST-base window is tuned via wpsg_rest_rate_limit_window with a scope arg' );
+        $this->assertContains( 'public', $seen_scopes, 'REST-base window is tuned via mullion_rest_rate_limit_window with a scope arg' );
 
         delete_transient( $this->public_key( '198.51.100.30', '/wp-super-gallery/v1/p63b-filter' ) );
     }

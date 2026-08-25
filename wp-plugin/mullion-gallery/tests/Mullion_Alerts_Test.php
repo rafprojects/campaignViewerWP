@@ -12,7 +12,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
         delete_transient(Mullion_Alerts::ALERT_THROTTLE_FATAL);
         delete_transient(Mullion_Alerts::ALERT_THROTTLE_REST);
         // Enable alert emails via filter.
-        add_filter('wpsg_alert_email_enabled', '__return_true');
+        add_filter('mullion_alert_email_enabled', '__return_true');
         // Capture mail sends (DISABLE_WP_CRON is true in test env, so emails send synchronously).
         // If cron is enabled, explicitly process the queue after triggers.
         $this->sent_mails = [];
@@ -36,11 +36,11 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
         delete_transient(Mullion_Alerts::REST_ERROR_BUCKET);
         delete_transient(Mullion_Alerts::ALERT_THROTTLE_FATAL);
         delete_transient(Mullion_Alerts::ALERT_THROTTLE_REST);
-        remove_all_filters('wpsg_alert_email_enabled');
-        remove_all_filters('wpsg_alert_rate_window_minutes');
-        remove_all_filters('wpsg_alert_error_threshold');
-        remove_all_filters('wpsg_alert_email_recipient');
-        remove_all_filters('wpsg_alert_throttle_minutes');
+        remove_all_filters('mullion_alert_email_enabled');
+        remove_all_filters('mullion_alert_rate_window_minutes');
+        remove_all_filters('mullion_alert_error_threshold');
+        remove_all_filters('mullion_alert_email_recipient');
+        remove_all_filters('mullion_alert_throttle_minutes');
         remove_all_filters('pre_wp_mail');
         parent::tearDown();
     }
@@ -49,19 +49,19 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
 
     public function test_add_cron_interval_adds_every_5min_schedule() {
         $schedules = Mullion_Alerts::add_cron_interval([]);
-        $this->assertArrayHasKey('wpsg_every_5min', $schedules);
-        $this->assertEquals(300, $schedules['wpsg_every_5min']['interval']);
+        $this->assertArrayHasKey('mullion_every_5min', $schedules);
+        $this->assertEquals(300, $schedules['mullion_every_5min']['interval']);
     }
 
     public function test_add_cron_interval_does_not_overwrite_existing() {
         $existing = [
-            'wpsg_every_5min' => [
+            'mullion_every_5min' => [
                 'interval' => 999,
                 'display'  => 'Custom',
             ],
         ];
         $result = Mullion_Alerts::add_cron_interval($existing);
-        $this->assertEquals(999, $result['wpsg_every_5min']['interval']);
+        $this->assertEquals(999, $result['mullion_every_5min']['interval']);
     }
 
     // ── notify_fatal_error ─────────────────────────────────────────────────
@@ -95,7 +95,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
 
     public function test_notify_fatal_error_skipped_when_disabled() {
         remove_all_filters('pre_wp_mail');
-        add_filter('wpsg_alert_email_enabled', '__return_false');
+        add_filter('mullion_alert_email_enabled', '__return_false');
 
         Mullion_Alerts::notify_fatal_error(['type' => E_ERROR, 'message' => 'err', 'file' => 'x', 'line' => 1]);
 
@@ -112,7 +112,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
     }
 
     public function test_track_rest_metrics_accumulates_500_errors() {
-        add_filter('wpsg_alert_error_threshold', function () { return 100; });
+        add_filter('mullion_alert_error_threshold', function () { return 100; });
 
         for ($i = 0; $i < 3; $i++) {
             Mullion_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
@@ -123,7 +123,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
     }
 
     public function test_track_rest_metrics_triggers_alert_at_threshold() {
-        add_filter('wpsg_alert_error_threshold', function () { return 3; });
+        add_filter('mullion_alert_error_threshold', function () { return 3; });
 
         for ($i = 0; $i < 3; $i++) {
             Mullion_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
@@ -135,7 +135,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
     }
 
     public function test_track_rest_metrics_alert_throttled_after_first() {
-        add_filter('wpsg_alert_error_threshold', function () { return 2; });
+        add_filter('mullion_alert_error_threshold', function () { return 2; });
 
         // First spike.
         Mullion_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
@@ -151,7 +151,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
     }
 
     public function test_track_rest_metrics_skipped_when_disabled() {
-        add_filter('wpsg_alert_email_enabled', '__return_false');
+        add_filter('mullion_alert_email_enabled', '__return_false');
 
         for ($i = 0; $i < 10; $i++) {
             Mullion_Alerts::track_rest_metrics(['status' => 500, 'route' => '/test']);
@@ -232,7 +232,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
     // ── Custom recipient filter ────────────────────────────────────────────
 
     public function test_custom_recipient_used() {
-        add_filter('wpsg_alert_email_recipient', function () {
+        add_filter('mullion_alert_email_recipient', function () {
             return 'custom@example.com';
         });
 

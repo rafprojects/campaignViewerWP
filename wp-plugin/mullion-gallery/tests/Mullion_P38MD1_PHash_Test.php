@@ -21,12 +21,12 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
 
         Mullion_CPT::register();
 
-        add_filter('wpsg_allow_non_http_uploads', '__return_true');
+        add_filter('mullion_allow_non_http_uploads', '__return_true');
     }
 
     public function tearDown(): void {
-        remove_all_filters('wpsg_allow_non_http_uploads');
-        remove_all_filters('wpsg_phash_hamming_threshold');
+        remove_all_filters('mullion_allow_non_http_uploads');
+        remove_all_filters('mullion_phash_hamming_threshold');
         parent::tearDown();
     }
 
@@ -159,7 +159,7 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
         $first_id = (int) $response1->get_data()['attachmentId'];
 
         // Use a high threshold to guard against minor dHash variation between GD versions.
-        add_filter('wpsg_phash_hamming_threshold', fn() => 64);
+        add_filter('mullion_phash_hamming_threshold', fn() => 64);
 
         // Second upload: variant=1 shifts one corner pixel — different MD5, same dHash
         // (pixel(0,y) vs pixel(1,y) comparison is unaffected by a small left-edge offset).
@@ -183,7 +183,7 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
         $response1 = rest_do_request($this->make_upload_request($path1, 'origin-meta.png'));
         $this->assertEquals(201, $response1->get_status());
 
-        add_filter('wpsg_phash_hamming_threshold', fn() => 64);
+        add_filter('mullion_phash_hamming_threshold', fn() => 64);
 
         $path2 = $this->create_temp_png('om2', 32, 32, 1);
         $response2 = rest_do_request($this->make_upload_request($path2, 'near-meta.png'));

@@ -31,7 +31,7 @@ class Mullion_Settings_Renderer {
         add_action('admin_menu', [self::class, 'add_menu_page']);
         add_action('admin_init', [self::class, 'register_settings']);
         add_action('admin_enqueue_scripts', [self::class, 'enqueue_admin_assets']);
-        add_action('wp_ajax_wpsg_test_auth', ['Mullion_Settings_Service', 'ajax_test_auth']);
+        add_action('wp_ajax_mullion_test_auth', ['Mullion_Settings_Service', 'ajax_test_auth']);
     }
 
     /**
@@ -74,7 +74,7 @@ class Mullion_Settings_Renderer {
             'wpsgSettingsAuthTest',
             [
                 'ajaxUrl'              => admin_url('admin-ajax.php'),
-                'nonce'                => wp_create_nonce('wpsg_test_auth'),
+                'nonce'                => wp_create_nonce('mullion_test_auth'),
                 'testingText'          => __('Testing...', 'mullion-gallery'),
                 'connectionFailedText' => __('Connection failed', 'mullion-gallery'),
                 'requestFailedText'    => __('Request failed', 'mullion-gallery'),
@@ -93,7 +93,7 @@ class Mullion_Settings_Renderer {
      */
     public static function register_settings() {
         register_setting(
-            'wpsg_settings_group',
+            'mullion_settings_group',
             Mullion_Settings::OPTION_NAME,
             [
                 'type'              => 'array',
@@ -103,7 +103,7 @@ class Mullion_Settings_Renderer {
         );
 
         add_settings_section(
-            'wpsg_auth_section',
+            'mullion_auth_section',
             __('Authentication', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_auth_section'],
             Mullion_Settings::PAGE_SLUG
@@ -114,7 +114,7 @@ class Mullion_Settings_Renderer {
             __('Auth Provider', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_auth_provider_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_auth_section'
+            'mullion_auth_section'
         );
 
         add_settings_field(
@@ -122,11 +122,11 @@ class Mullion_Settings_Renderer {
             __('API Base URL', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_api_base_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_auth_section'
+            'mullion_auth_section'
         );
 
         add_settings_section(
-            'wpsg_display_section',
+            'mullion_display_section',
             __('Display Settings', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_display_section'],
             Mullion_Settings::PAGE_SLUG
@@ -137,7 +137,7 @@ class Mullion_Settings_Renderer {
             __('Theme', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_theme_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -145,7 +145,7 @@ class Mullion_Settings_Renderer {
             __('Allow User Theme Override', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_allow_user_theme_override_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -153,7 +153,7 @@ class Mullion_Settings_Renderer {
             __('Component Debug Names & Markers', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_debug_component_markers_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -161,7 +161,7 @@ class Mullion_Settings_Renderer {
             __('Default Layout', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_layout_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -169,7 +169,7 @@ class Mullion_Settings_Renderer {
             __('Items Per Page', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_items_per_page_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -177,7 +177,7 @@ class Mullion_Settings_Renderer {
             __('Enable Lightbox', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_lightbox_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_field(
@@ -185,11 +185,11 @@ class Mullion_Settings_Renderer {
             __('Enable Animations', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_animations_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_display_section'
+            'mullion_display_section'
         );
 
         add_settings_section(
-            'wpsg_authbar_section',
+            'mullion_authbar_section',
             __('Auth Bar', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_authbar_section'],
             Mullion_Settings::PAGE_SLUG
@@ -200,7 +200,7 @@ class Mullion_Settings_Renderer {
             __('Display Mode', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_auth_bar_display_mode_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_authbar_section'
+            'mullion_authbar_section'
         );
 
         add_settings_field(
@@ -208,11 +208,11 @@ class Mullion_Settings_Renderer {
             __('Drag Margin (px)', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_auth_bar_drag_margin_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_authbar_section'
+            'mullion_authbar_section'
         );
 
         add_settings_section(
-            'wpsg_performance_section',
+            'mullion_performance_section',
             __('Performance', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_performance_section'],
             Mullion_Settings::PAGE_SLUG
@@ -223,7 +223,7 @@ class Mullion_Settings_Renderer {
             __('Cache Duration', 'mullion-gallery'),
             ['Mullion_Settings_Core_Fields', 'render_cache_ttl_field'],
             Mullion_Settings::PAGE_SLUG,
-            'wpsg_performance_section'
+            'mullion_performance_section'
         );
     }
 
@@ -237,11 +237,11 @@ class Mullion_Settings_Renderer {
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
 
-            <?php settings_errors('wpsg_messages'); ?>
+            <?php settings_errors('mullion_messages'); ?>
 
             <form action="options.php" method="post">
                 <?php
-                settings_fields('wpsg_settings_group');
+                settings_fields('mullion_settings_group');
                 do_settings_sections(Mullion_Settings::PAGE_SLUG);
                 submit_button(__('Save Settings', 'mullion-gallery'));
                 ?>

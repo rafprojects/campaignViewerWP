@@ -101,7 +101,7 @@ class Mullion_Grants {
         }
         $ts = strtotime(sanitize_text_field($raw));
         if ($ts === false) {
-            return new WP_Error('wpsg_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
+            return new WP_Error('mullion_invalid_expires_at', 'expires_at must be a valid ISO 8601 datetime', ['status' => 400]);
         }
         return gmdate('c', $ts);
     }

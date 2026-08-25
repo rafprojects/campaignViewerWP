@@ -25,8 +25,8 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
             }
         }
         $this->tmp_files = [];
-        remove_all_filters('wpsg_filesize_backfill_batch_size');
-        remove_all_filters('wpsg_filesize_backfill_max_batches');
+        remove_all_filters('mullion_filesize_backfill_batch_size');
+        remove_all_filters('mullion_filesize_backfill_max_batches');
         remove_all_filters('pre_schedule_event');
         remove_all_filters('pre_http_request');
         parent::tearDown();
@@ -145,8 +145,8 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
     public function test_backfill_is_bounded_per_run_and_resumes_on_cron() {
         // One batch of one row per run: three attachments therefore cannot finish in
         // a single pass, which is the large-library case in miniature.
-        add_filter('wpsg_filesize_backfill_batch_size', fn() => 1);
-        add_filter('wpsg_filesize_backfill_max_batches', fn() => 1);
+        add_filter('mullion_filesize_backfill_batch_size', fn() => 1);
+        add_filter('mullion_filesize_backfill_max_batches', fn() => 1);
 
         $ids = [$this->make_attachment(11), $this->make_attachment(22), $this->make_attachment(33)];
         foreach ($ids as $id) {
@@ -188,7 +188,7 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
         );
         $this->assertContains(
             Mullion_DB::FILESIZE_BACKFILL_HOOK,
-            wpsg_get_cron_hooks(),
+            mullion_get_cron_hooks(),
             'the hook belongs in the canonical list so deactivate/uninstall clear it'
         );
     }

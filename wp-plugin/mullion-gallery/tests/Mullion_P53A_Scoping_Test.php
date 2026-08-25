@@ -36,7 +36,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
     private function make_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg'); // matches wpsg_setup_roles_and_caps()
+        $user->add_cap('manage_wpsg'); // matches mullion_setup_roles_and_caps()
         return $uid;
     }
 

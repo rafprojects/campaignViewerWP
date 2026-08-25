@@ -19,7 +19,7 @@ class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
     }
 
     private function set_editor(): int {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
         wp_set_current_user($uid);
         return $uid;

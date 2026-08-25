@@ -1,8 +1,8 @@
 <?php
 
 /**
- * P66-F: the canonical cron-hook list (includes/wpsg-cron-hooks.php) is the
- * single source of truth shared by wpsg_deactivate() and uninstall.php. This
+ * P66-F: the canonical cron-hook list (includes/mullion-cron-hooks.php) is the
+ * single source of truth shared by mullion_deactivate() and uninstall.php. This
  * test pins the literal list against every originating class constant so a
  * rename can never silently desync them again, and confirms deactivation
  * actually clears the whole set.
@@ -17,8 +17,8 @@ class Mullion_Cron_Hooks_Test extends WP_UnitTestCase {
             Mullion_Maintenance::EXPIRED_GRANTS_HOOK,
             Mullion_Maintenance::ACCESS_REQUESTS_PURGE_HOOK,
             Mullion_Maintenance::AUDIT_LOG_PURGE_HOOK,
-            'wpsg_schedule_auto_archive',
-            'wpsg_thumbnail_cache_cleanup',
+            'mullion_schedule_auto_archive',
+            'mullion_thumbnail_cache_cleanup',
             Mullion_Alerts::CRON_HOOK,
             Mullion_Webhooks::RETRY_HOOK,
             Mullion_Export_Engine::JOB_PROCESS_HOOK,
@@ -28,7 +28,7 @@ class Mullion_Cron_Hooks_Test extends WP_UnitTestCase {
     }
 
     public function test_canonical_list_matches_every_class_constant() {
-        $hooks = wpsg_get_cron_hooks();
+        $hooks = mullion_get_cron_hooks();
 
         foreach ($this->expected_hooks() as $hook) {
             $this->assertContains($hook, $hooks, "Canonical cron-hook list is missing {$hook}");
@@ -41,13 +41,13 @@ class Mullion_Cron_Hooks_Test extends WP_UnitTestCase {
     }
 
     public function test_deactivate_clears_every_scheduled_hook() {
-        foreach (wpsg_get_cron_hooks() as $i => $hook) {
+        foreach (mullion_get_cron_hooks() as $i => $hook) {
             wp_schedule_event(time() + 3600 + $i, 'daily', $hook);
         }
 
-        wpsg_deactivate();
+        mullion_deactivate();
 
-        foreach (wpsg_get_cron_hooks() as $hook) {
+        foreach (mullion_get_cron_hooks() as $hook) {
             $this->assertFalse(
                 wp_next_scheduled($hook),
                 "{$hook} must be cleared on deactivation"

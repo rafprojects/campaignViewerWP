@@ -66,7 +66,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $res = rest_do_request($req);
 
         $this->assertSame(409, $res->get_status(), 'in-use template must not delete without force');
-        $this->assertSame('wpsg_template_in_use', $res->get_data()['code'] ?? null);
+        $this->assertSame('mullion_template_in_use', $res->get_data()['code'] ?? null);
         $this->assertNotNull(Mullion_Layout_Templates::get($tid), 'template must still exist after a blocked delete');
     }
 
@@ -104,7 +104,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $res = rest_do_request($req);
 
         $this->assertSame(409, $res->get_status(), 'associated asset must not delete without force');
-        $this->assertSame('wpsg_asset_in_use', $res->get_data()['code'] ?? null);
+        $this->assertSame('mullion_asset_in_use', $res->get_data()['code'] ?? null);
         $this->assertContains($aid, array_column(Mullion_Asset_Library::get_all(), 'id'), 'asset must still exist');
     }
 

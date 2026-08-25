@@ -116,12 +116,12 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
     public function test_429_response_includes_ratelimit_headers() {
         // Override limit to 0 so the very first request trips the limiter
-        add_filter('wpsg_rate_limit_public', '__return_zero');
+        add_filter('mullion_rate_limit_public', '__return_zero');
 
         $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
         // rate_limit_check returns early when limit <= 0, so use limit=1 instead
-        remove_all_filters('wpsg_rate_limit_public');
-        add_filter('wpsg_rate_limit_public', static function () { return 1; });
+        remove_all_filters('mullion_rate_limit_public');
+        add_filter('mullion_rate_limit_public', static function () { return 1; });
 
         // First request consumes the only slot
         rest_do_request($request);
@@ -137,7 +137,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             $this->assertEquals(0, (int) $headers['X-RateLimit-Remaining']);
         }
 
-        remove_all_filters('wpsg_rate_limit_public');
+        remove_all_filters('mullion_rate_limit_public');
     }
 
     // ── P28-M: sort controls tests ───────────────────────────────────────────

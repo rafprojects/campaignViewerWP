@@ -21,8 +21,8 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         delete_option('wpsg_oembed_failure_count');
         delete_transient('wpsg_rest_request_count_buffer');
         delete_transient('wpsg_rest_error_count_buffer');
-        remove_all_filters('wpsg_metrics_flush_every');
-        remove_all_filters('wpsg_metrics_flush_seconds');
+        remove_all_filters('mullion_metrics_flush_every');
+        remove_all_filters('mullion_metrics_flush_seconds');
         parent::tearDown();
     }
 
@@ -85,7 +85,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         $response = new WP_REST_Response(['ok' => true], 200);
 
         $captured = null;
-        add_action('wpsg_rest_metrics', function ($payload) use (&$captured) {
+        add_action('mullion_rest_metrics', function ($payload) use (&$captured) {
             $captured = $payload;
         });
 

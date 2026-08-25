@@ -41,7 +41,7 @@ class Mullion_Settings_Service {
      * @return void
      */
     public static function ajax_test_auth() {
-        check_ajax_referer('wpsg_test_auth');
+        check_ajax_referer('mullion_test_auth');
 
         if (!current_user_can('manage_options')) {
             wp_send_json_error(['message' => __('Permission denied.', 'mullion-gallery')]);

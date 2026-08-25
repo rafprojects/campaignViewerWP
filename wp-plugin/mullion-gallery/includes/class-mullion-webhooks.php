@@ -27,7 +27,7 @@ class Mullion_Webhooks {
 
     const MAX_ENDPOINTS = 5;
     const MAX_ATTEMPTS  = 3;
-    const RETRY_HOOK    = 'wpsg_webhook_retry';
+    const RETRY_HOOK    = 'mullion_webhook_retry';
     const OPTION_NAME   = 'wpsg_webhook_endpoints';
     const LOG_OPTION    = 'wpsg_webhook_delivery_log';
     const MAX_LOG       = 50;
@@ -35,15 +35,15 @@ class Mullion_Webhooks {
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     public static function register() {
-        add_action('wpsg_campaign_created',  [self::class, 'on_campaign_created'],  10, 2);
-        add_action('wpsg_campaign_updated',  [self::class, 'on_campaign_updated'],  10, 2);
-        add_action('wpsg_campaign_archived', [self::class, 'on_campaign_archived'], 10, 1);
-        add_action('wpsg_campaign_restored', [self::class, 'on_campaign_restored'], 10, 1);
-        add_action('wpsg_campaign_deleted',  [self::class, 'on_campaign_deleted'],  10, 1);
-        add_action('wpsg_media_added',       [self::class, 'on_media_added'],       10, 2);
-        add_action('wpsg_media_removed',     [self::class, 'on_media_removed'],     10, 2);
-        add_action('wpsg_access_granted',    [self::class, 'on_access_granted'],    10, 2);
-        add_action('wpsg_access_revoked',    [self::class, 'on_access_revoked'],    10, 2);
+        add_action('mullion_campaign_created',  [self::class, 'on_campaign_created'],  10, 2);
+        add_action('mullion_campaign_updated',  [self::class, 'on_campaign_updated'],  10, 2);
+        add_action('mullion_campaign_archived', [self::class, 'on_campaign_archived'], 10, 1);
+        add_action('mullion_campaign_restored', [self::class, 'on_campaign_restored'], 10, 1);
+        add_action('mullion_campaign_deleted',  [self::class, 'on_campaign_deleted'],  10, 1);
+        add_action('mullion_media_added',       [self::class, 'on_media_added'],       10, 2);
+        add_action('mullion_media_removed',     [self::class, 'on_media_removed'],     10, 2);
+        add_action('mullion_access_granted',    [self::class, 'on_access_granted'],    10, 2);
+        add_action('mullion_access_revoked',    [self::class, 'on_access_revoked'],    10, 2);
         add_action(self::RETRY_HOOK,         [self::class, 'retry_delivery'],       10, 4);
     }
 

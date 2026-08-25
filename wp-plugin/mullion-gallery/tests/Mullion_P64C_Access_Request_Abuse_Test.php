@@ -11,7 +11,7 @@
  *
  * Fix: (1) no requester-facing email on submit — the admin (fixed recipient) is
  * still notified, and the requester hears back only at approve/deny; (2) a
- * dedicated, tighter rate limit; (3) a `wpsg_access_request_precheck` seam for
+ * dedicated, tighter rate limit; (3) a `mullion_access_request_precheck` seam for
  * CAPTCHA/honeypot.
  */
 class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
@@ -86,43 +86,43 @@ class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
 
     public function test_precheck_filter_can_reject_before_processing() {
         $cid = $this->campaign();
-        add_filter('wpsg_access_request_precheck', '__return_false');
+        add_filter('mullion_access_request_precheck', '__return_false');
 
         $res = $this->submit($cid, 'blocked@example.com');
         $this->assertSame(403, $res->get_status());
-        $this->assertSame('wpsg_access_request_rejected', $res->get_data()['code']);
+        $this->assertSame('mullion_access_request_rejected', $res->get_data()['code']);
         // Rejected before the handler ran → no mail, no DB row.
         $this->assertNotContains(get_option('admin_email'), $this->mailed_to);
         $this->assertNull(Mullion_DB::find_access_request_by_email('blocked@example.com', $cid));
 
-        remove_filter('wpsg_access_request_precheck', '__return_false');
+        remove_filter('mullion_access_request_precheck', '__return_false');
     }
 
     public function test_precheck_wp_error_is_surfaced_verbatim() {
         $cid = $this->campaign();
         $cb  = static function () {
-            return new WP_Error('wpsg_captcha_failed', 'CAPTCHA failed', ['status' => 400]);
+            return new WP_Error('mullion_captcha_failed', 'CAPTCHA failed', ['status' => 400]);
         };
-        add_filter('wpsg_access_request_precheck', $cb);
+        add_filter('mullion_access_request_precheck', $cb);
 
         $res = $this->submit($cid, 'captcha@example.com');
         $this->assertSame(400, $res->get_status());
-        $this->assertSame('wpsg_captcha_failed', $res->get_data()['code']);
+        $this->assertSame('mullion_captcha_failed', $res->get_data()['code']);
 
-        remove_filter('wpsg_access_request_precheck', $cb);
+        remove_filter('mullion_access_request_precheck', $cb);
     }
 
     public function test_endpoint_has_its_own_rate_limit_distinct_from_public() {
         $cid = $this->campaign();
         // Tighten only the access-request limit; the generic public limit stays 60.
         $cap = static fn() => 2;
-        add_filter('wpsg_rate_limit_access_request', $cap);
+        add_filter('mullion_rate_limit_access_request', $cap);
 
         $this->assertSame(201, $this->submit($cid, 'a@example.com')->get_status(), '1st under limit');
         $this->assertSame(201, $this->submit($cid, 'b@example.com')->get_status(), '2nd at limit');
         $third = $this->submit($cid, 'c@example.com');
         $this->assertSame(429, $third->get_status(), '3rd trips the dedicated 2/min limit (not the 60/min public one)');
 
-        remove_filter('wpsg_rate_limit_access_request', $cap);
+        remove_filter('mullion_rate_limit_access_request', $cap);
     }
 }

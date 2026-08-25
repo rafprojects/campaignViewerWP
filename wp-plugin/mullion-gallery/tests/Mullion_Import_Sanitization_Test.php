@@ -23,7 +23,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
 
     public function tearDown(): void {
         // P62-A: never leak a simulated-license filter into the next test.
-        remove_filter( 'wpsg_license_is_pro', '__return_true' );
+        remove_filter( 'mullion_license_is_pro', '__return_true' );
         parent::tearDown();
     }
 
@@ -283,7 +283,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
     }
 
     public function test_import_keeps_pro_fields_when_licensed() {
-        add_filter( 'wpsg_license_is_pro', '__return_true' );
+        add_filter( 'mullion_license_is_pro', '__return_true' );
 
         $result = Mullion_Layout_Templates::sanitize_template_data( [
             'name'  => 'Imported',

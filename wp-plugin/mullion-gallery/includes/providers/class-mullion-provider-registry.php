@@ -7,7 +7,7 @@
  * claims it can_handle() the URL and successfully fetches data wins.
  *
  * Third-party plugins can register additional handlers via the
- * `wpsg_register_providers` action hook.
+ * `mullion_register_providers` action hook.
  *
  * @package Mullion
  * @since   0.10.0
@@ -130,11 +130,11 @@ class Mullion_Provider_Registry {
          * embed provider handlers.
          *
          * Example:
-         *   add_action('wpsg_register_providers', function () {
+         *   add_action('mullion_register_providers', function () {
          *       Mullion_Provider_Registry::register(new My_Custom_Handler());
          *   });
          */
-        do_action('wpsg_register_providers');
+        do_action('mullion_register_providers');
     }
 
     /**

@@ -48,7 +48,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $result = Mullion_Campaign_Status::set($id, 'bogus');
 
         $this->assertInstanceOf('WP_Error', $result);
-        $this->assertSame('wpsg_invalid_status', $result->get_error_code());
+        $this->assertSame('mullion_invalid_status', $result->get_error_code());
         // The invalid write must not have touched the stored status.
         $this->assertSame('active', get_post_meta($id, 'status', true));
     }
@@ -117,7 +117,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $id = $this->create_campaign('active');
 
         $hook_fired = false;
-        add_action('wpsg_campaign_archived', function () use (&$hook_fired) { $hook_fired = true; });
+        add_action('mullion_campaign_archived', function () use (&$hook_fired) { $hook_fired = true; });
         $cache_before = Mullion_REST::get_cache_version();
 
         Mullion_Campaign_Status::set($id, 'archived');
@@ -132,12 +132,12 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $id = $this->create_campaign('active');
 
         $hook_id = 0;
-        add_action('wpsg_campaign_archived', function ($cid) use (&$hook_id) { $hook_id = $cid; });
+        add_action('mullion_campaign_archived', function ($cid) use (&$hook_id) { $hook_id = $cid; });
         $cache_before = Mullion_REST::get_cache_version();
 
         Mullion_Campaign_Status::set($id, 'archived', [
             'audit' => ['action' => 'campaign.archived', 'details' => []],
-            'hook'  => 'wpsg_campaign_archived',
+            'hook'  => 'mullion_campaign_archived',
             'cache' => true,
         ]);
 

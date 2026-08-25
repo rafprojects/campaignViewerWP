@@ -68,7 +68,7 @@ class Mullion_Settings_Controller extends Mullion_REST_Base {
      */
     public static function update_settings($request) {
         if (!class_exists('Mullion_Settings')) {
-            return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
+            return new WP_Error('mullion_internal_error', 'Settings not available', ['status' => 500]);
         }
         $body      = $request->get_json_params() ?: [];
         $input     = Mullion_Settings::from_js($body);
@@ -91,7 +91,7 @@ class Mullion_Settings_Controller extends Mullion_REST_Base {
 
     public static function patch_settings($request) {
         if (!class_exists('Mullion_Settings')) {
-            return new WP_Error('wpsg_internal_error', 'Settings not available', ['status' => 500]);
+            return new WP_Error('mullion_internal_error', 'Settings not available', ['status' => 500]);
         }
         $body      = $request->get_json_params() ?: [];
         $input     = Mullion_Settings::from_js($body);

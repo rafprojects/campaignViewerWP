@@ -31,7 +31,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
     // ── Role definition ───────────────────────────────────────────────────
 
     public function test_editor_role_has_expected_caps() {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $role = get_role('wpsg_editor');
 
         $this->assertNotNull($role, 'wpsg_editor role must exist');
@@ -41,7 +41,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
     }
 
     public function test_editor_role_has_no_admin_or_cpt_caps() {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $role = get_role('wpsg_editor');
 
         $this->assertFalse($role->has_cap('manage_options'), 'editor must NOT have manage_options (no WP dashboard)');
@@ -64,7 +64,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         remove_role('wpsg_editor');
         add_role('wpsg_editor', 'Gallery Editor', $caps);
 
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
 
         $role = get_role('wpsg_editor');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
@@ -85,7 +85,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->assertContains('wpsg_admin', get_user_by('id', $uid)->roles, 'precondition: user is wpsg_admin');
 
         // Act.
-        wpsg_maybe_migrate_roles();
+        mullion_maybe_migrate_roles();
 
         // Assert: user moved to wpsg_editor, access (manage_wpsg) intact.
         $migrated = get_user_by('id', $uid);
@@ -104,7 +104,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         update_option('wpsg_roles_migrated_editor', '1');
         add_role('wpsg_admin', 'Gallery Admin', ['read' => true]);
 
-        wpsg_maybe_migrate_roles();
+        mullion_maybe_migrate_roles();
 
         // Flag was already set → migration returns early, legacy role untouched.
         $this->assertNotNull(get_role('wpsg_admin'), 'migration must not run when flag is set');
@@ -114,7 +114,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
     // ── /users create contract ────────────────────────────────────────────
 
     public function test_create_user_accepts_wpsg_editor() {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $this->set_admin_user();
         add_filter('pre_wp_mail', '__return_true', 10, 0);
 

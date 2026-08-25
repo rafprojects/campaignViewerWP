@@ -18,7 +18,7 @@ class Mullion_Campaign_Duplicator {
     public static function duplicate( int $source_id, string $new_name, bool $copy_media = false, bool $duplicate_layout_template = false ) {
         $source = get_post( $source_id );
         if ( ! $source || 'wpsg_campaign' !== $source->post_type ) {
-            return new WP_Error( 'wpsg_campaign_not_found', 'Campaign not found', [ 'status' => 404 ] );
+            return new WP_Error( 'mullion_campaign_not_found', 'Campaign not found', [ 'status' => 404 ] );
         }
 
         $new_id = wp_insert_post( [
@@ -29,7 +29,7 @@ class Mullion_Campaign_Duplicator {
         ], true );
 
         if ( is_wp_error( $new_id ) ) {
-            return new WP_Error( 'wpsg_internal_error', $new_id->get_error_message(), [ 'status' => 500 ] );
+            return new WP_Error( 'mullion_internal_error', $new_id->get_error_message(), [ 'status' => 500 ] );
         }
 
         $meta_keys = [
@@ -58,7 +58,7 @@ class Mullion_Campaign_Duplicator {
                     wp_delete_post( $new_id, true );
 
                     return new WP_Error(
-                        'wpsg_template_duplicate_failed',
+                        'mullion_template_duplicate_failed',
                         $cloned_template->get_error_message(),
                         [ 'status' => 500 ]
                     );

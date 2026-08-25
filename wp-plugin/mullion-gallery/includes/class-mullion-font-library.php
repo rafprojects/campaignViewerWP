@@ -159,9 +159,9 @@ class Mullion_Font_Library {
      */
     public static function handle_upload( array $file ) {
         // Check file size.
-        $max_size = apply_filters( 'wpsg_font_max_upload_size', self::MAX_FILE_SIZE );
+        $max_size = apply_filters( 'mullion_font_max_upload_size', self::MAX_FILE_SIZE );
         if ( ! empty( $file['size'] ) && $file['size'] > $max_size ) {
-            return new WP_Error( 'wpsg_font_too_large', 'Font file exceeds the maximum allowed size of 2 MB.' );
+            return new WP_Error( 'mullion_font_too_large', 'Font file exceeds the maximum allowed size of 2 MB.' );
         }
 
         if ( ! function_exists( 'wp_handle_upload' ) ) {
@@ -173,7 +173,7 @@ class Mullion_Font_Library {
         $target_url = trailingslashit( $upload_dir['baseurl'] ) . self::UPLOAD_SUBDIR;
 
         if ( ! wp_mkdir_p( $target_dir ) ) {
-            return new WP_Error( 'wpsg_font_dir', 'Could not create font upload directory.' );
+            return new WP_Error( 'mullion_font_dir', 'Could not create font upload directory.' );
         }
 
         self::ensure_htaccess( $target_dir );
@@ -202,7 +202,7 @@ class Mullion_Font_Library {
         remove_filter( 'upload_dir', $upload_dir_filter );
 
         if ( isset( $result['error'] ) ) {
-            return new WP_Error( 'wpsg_font_upload', $result['error'] );
+            return new WP_Error( 'mullion_font_upload', $result['error'] );
         }
 
         // Validate MIME type after upload.
@@ -211,7 +211,7 @@ class Mullion_Font_Library {
             if ( ! empty( $result['file'] ) && file_exists( $result['file'] ) ) {
                 wp_delete_file( $result['file'] );
             }
-            return new WP_Error( 'wpsg_font_type', 'Unsupported font type. Allowed: WOFF2, WOFF, TTF, OTF.' );
+            return new WP_Error( 'mullion_font_type', 'Unsupported font type. Allowed: WOFF2, WOFF, TTF, OTF.' );
         }
 
         // Determine format label for @font-face src.
@@ -312,7 +312,7 @@ HTACCESS;
 
         if ( false === file_put_contents( $htaccess_path, $rules ) ) {
             error_log( '[WPSG] Failed to write font directory .htaccess: ' . $htaccess_path );
-            do_action( 'wpsg_font_htaccess_write_failed', $htaccess_path );
+            do_action( 'mullion_font_htaccess_write_failed', $htaccess_path );
         }
     }
 }

@@ -96,7 +96,7 @@ class Mullion_Campaign_IO {
      */
     public static function import_entry(array $entry, ?ZipArchive $zip = null, array $opts = []) {
         if (empty($entry['campaign']) || !is_array($entry['campaign'])) {
-            return new WP_Error('wpsg_invalid_entry', 'Manifest entry is missing a valid "campaign" object.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_entry', 'Manifest entry is missing a valid "campaign" object.', ['status' => 400]);
         }
 
         $src         = $entry['campaign'];
@@ -110,7 +110,7 @@ class Mullion_Campaign_IO {
             'post_status'  => 'publish',
         ], true);
         if (is_wp_error($post_id)) {
-            return new WP_Error('wpsg_internal_error', $post_id->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $post_id->get_error_message(), ['status' => 500]);
         }
 
         self::apply_scalar_meta($post_id, $src);

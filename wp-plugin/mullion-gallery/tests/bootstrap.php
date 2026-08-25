@@ -40,7 +40,7 @@ require_once "{$_tests_dir}/includes/functions.php";
  * @param array $uploads Upload directory data.
  * @return array
  */
-function wpsg_filter_test_upload_dir( $uploads ) {
+function mullion_filter_test_upload_dir( $uploads ) {
 	$base_dir = rtrim( sys_get_temp_dir(), '/\\' ) . '/wpsg-test-uploads';
 	$subdir   = isset( $uploads['subdir'] ) ? (string) $uploads['subdir'] : '';
 	$path     = $base_dir . $subdir;
@@ -68,7 +68,7 @@ function _manually_load_plugin() {
 }
 
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
-tests_add_filter( 'upload_dir', 'wpsg_filter_test_upload_dir' );
+tests_add_filter( 'upload_dir', 'mullion_filter_test_upload_dir' );
 
 // If the test dependencies are installed locally for the plugin (composer), load them first.
 $local_autoload = dirname( __FILE__ ) . '/vendor/autoload.php';

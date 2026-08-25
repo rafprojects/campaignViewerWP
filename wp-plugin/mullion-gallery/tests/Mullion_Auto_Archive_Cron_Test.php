@@ -39,7 +39,7 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 
 		$before = Mullion_REST::get_cache_version();
 
-		wpsg_run_schedule_auto_archive();
+		mullion_run_schedule_auto_archive();
 
 		$this->assertSame( 'archived', get_post_meta( $active_id, 'status', true ) );
 		$this->assertSame( 'archived', get_post_meta( $missing_id, 'status', true ) );
@@ -60,7 +60,7 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 
 		$before = Mullion_REST::get_cache_version();
 
-		wpsg_run_schedule_auto_archive();
+		mullion_run_schedule_auto_archive();
 
 		foreach ( $post_ids as $post_id ) {
 			$this->assertSame( 'archived', get_post_meta( $post_id, 'status', true ) );
@@ -75,7 +75,7 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 
 		$before = Mullion_REST::get_cache_version();
 
-		wpsg_run_schedule_auto_archive();
+		mullion_run_schedule_auto_archive();
 
 		$this->assertSame( 'active', get_post_meta( $post_id, 'status', true ) );
 		$this->assertSame( $before, Mullion_REST::get_cache_version() );
@@ -89,7 +89,7 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 		$existing_id = $this->create_campaign( 'Expired Active', $expired_at, 'active' );
 		$missing_id  = $this->create_campaign( 'Expired No Status', $expired_at, null );
 
-		wpsg_run_schedule_auto_archive();
+		mullion_run_schedule_auto_archive();
 
 		foreach ( [ $existing_id, $missing_id ] as $post_id ) {
 			$stamp = get_post_meta( $post_id, 'archived_at', true );

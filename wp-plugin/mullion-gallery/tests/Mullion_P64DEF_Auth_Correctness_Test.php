@@ -139,7 +139,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
         // returns false (rather than throwing). A pre_wp_mail short-circuit that
         // also fires wp_mail_failed reproduces exactly what the fix must detect.
         $fail = static function () {
-            do_action('wp_mail_failed', new WP_Error('wpsg_test_forced', 'forced failure'));
+            do_action('wp_mail_failed', new WP_Error('mullion_test_forced', 'forced failure'));
             return false;
         };
         add_filter('pre_wp_mail', $fail, 10, 1);

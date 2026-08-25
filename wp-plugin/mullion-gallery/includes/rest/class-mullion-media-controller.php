@@ -196,7 +196,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $media_id = sanitize_text_field($request->get_param('mediaId'));
 
         if (empty($media_id)) {
-            return new WP_Error('wpsg_missing_media_id', 'mediaId is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_media_id', 'mediaId is required', ['status' => 400]);
         }
 
         $found = Mullion_DB::get_media_usage($media_id);
@@ -217,7 +217,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
         $ids = array_values(array_unique(array_map('sanitize_text_field', $ids)));
         if (count($ids) > 200) {
-            return new WP_Error('wpsg_too_many_ids', 'Too many IDs (max 200)', ['status' => 400]);
+            return new WP_Error('mullion_too_many_ids', 'Too many IDs (max 200)', ['status' => 400]);
         }
 
         $result = Mullion_DB::get_media_usage_summary($ids);
@@ -229,12 +229,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $start = microtime(true);
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $user_id = get_current_user_id();
         if (!self::can_view_campaign($post_id, $user_id)) {
-            return new WP_Error('wpsg_forbidden', 'Forbidden', ['status' => 403]);
+            return new WP_Error('mullion_forbidden', 'Forbidden', ['status' => 403]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -383,12 +383,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $thumbnail = esc_url_raw($payload['thumbnail'] ?? '');
 
         if (!in_array($type, ['video', 'image'], true)) {
-            return new WP_Error('wpsg_invalid_media_type', 'Invalid media type', ['status' => 400]);
+            return new WP_Error('mullion_invalid_media_type', 'Invalid media type', ['status' => 400]);
         }
 
         $custom_media_id = sanitize_text_field($payload['id'] ?? '');
         if ($custom_media_id !== '' && !preg_match('/^[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*$/', $custom_media_id)) {
-            return new WP_Error('wpsg_invalid_media_id', 'Invalid media ID', ['status' => 400]);
+            return new WP_Error('mullion_invalid_media_id', 'Invalid media ID', ['status' => 400]);
         }
 
         $media_item = [
@@ -423,7 +423,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             } else {
                 $normalized = self::normalize_external_media($url);
                 if (is_wp_error($normalized)) {
-                    return new WP_Error('wpsg_bad_request', $normalized->get_error_message(), ['status' => 400]);
+                    return new WP_Error('mullion_bad_request', $normalized->get_error_message(), ['status' => 400]);
                 }
 
                 $media_item['url'] = $normalized['url'];
@@ -436,12 +436,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         } elseif ($source === 'upload') {
             $attachment_id = intval($payload['attachmentId'] ?? 0);
             if ($attachment_id <= 0) {
-                return new WP_Error('wpsg_missing_attachment_id', 'attachmentId is required for uploads', ['status' => 400]);
+                return new WP_Error('mullion_missing_attachment_id', 'attachmentId is required for uploads', ['status' => 400]);
             }
 
             $attachment_url = wp_get_attachment_url($attachment_id);
             if (!$attachment_url) {
-                return new WP_Error('wpsg_invalid_attachment_id', 'Invalid attachmentId', ['status' => 400]);
+                return new WP_Error('mullion_invalid_attachment_id', 'Invalid attachmentId', ['status' => 400]);
             }
 
             $provider = sanitize_text_field($payload['provider'] ?? '');
@@ -452,7 +452,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                 $media_item['provider'] = $provider;
             }
         } else {
-            return new WP_Error('wpsg_invalid_media_source', 'Invalid media source', ['status' => 400]);
+            return new WP_Error('mullion_invalid_media_source', 'Invalid media source', ['status' => 400]);
         }
 
         return $media_item;
@@ -464,7 +464,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             $configured_limit = 20;
         }
 
-        return intval(apply_filters('wpsg_max_batch_upload_size', $configured_limit));
+        return intval(apply_filters('mullion_max_batch_upload_size', $configured_limit));
     }
 
     private static function get_uploaded_file_entries(array $files) {
@@ -492,7 +492,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     }
 
     private static function is_trusted_uploaded_file($tmp_name, array $file) {
-        $allow_non_http_uploads = (bool) apply_filters('wpsg_allow_non_http_uploads', false, $file);
+        $allow_non_http_uploads = (bool) apply_filters('mullion_allow_non_http_uploads', false, $file);
         if ($allow_non_http_uploads) {
             return is_string($tmp_name) && $tmp_name !== '' && file_exists($tmp_name);
         }
@@ -503,7 +503,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     private static function create_attachment_from_upload(array $upload, $original_name) {
         $file_path = $upload['file'] ?? '';
         if (!is_string($file_path) || $file_path === '' || !file_exists($file_path)) {
-            return new WP_Error('wpsg_bad_request', 'Upload failed.', ['status' => 400]);
+            return new WP_Error('mullion_bad_request', 'Upload failed.', ['status' => 400]);
         }
 
         $file_name = $original_name ?: wp_basename($file_path);
@@ -517,7 +517,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
         $attachment_id = wp_insert_attachment($attachment, $file_path, 0, true);
         if (is_wp_error($attachment_id)) {
-            return new WP_Error('wpsg_bad_request', $attachment_id->get_error_message(), ['status' => 400]);
+            return new WP_Error('mullion_bad_request', $attachment_id->get_error_message(), ['status' => 400]);
         }
 
         $attachment_metadata = wp_generate_attachment_metadata($attachment_id, $file_path);
@@ -587,7 +587,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     // Returns ['id' => int, 'url' => string, 'distance' => int] or [].
     private static function find_near_duplicates_by_phash(string $phash, int $threshold): array {
         global $wpdb;
-        $limit = max(1, intval(apply_filters('wpsg_phash_max_scan', 5000)));
+        $limit = max(1, intval(apply_filters('mullion_phash_max_scan', 5000)));
         $rows = $wpdb->get_results(
             $wpdb->prepare(
                 "SELECT pm.post_id, pm.meta_value
@@ -645,14 +645,14 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     private static function upload_single_media_file(array $file, bool $force = false) {
         $error = self::get_upload_error_data($file);
         if ($error) {
-            return new WP_Error('wpsg_upload_error', $error['message'], ['status' => $error['status']]);
+            return new WP_Error('mullion_upload_error', $error['message'], ['status' => $error['status']]);
         }
 
         if (!isset($file['tmp_name']) || !self::is_trusted_uploaded_file($file['tmp_name'], $file)) {
-            return new WP_Error('wpsg_invalid_upload', 'Invalid upload', ['status' => 400]);
+            return new WP_Error('mullion_invalid_upload', 'Invalid upload', ['status' => 400]);
         }
 
-        $allowed_mimes = apply_filters('wpsg_upload_allowed_mimes', [
+        $allowed_mimes = apply_filters('mullion_upload_allowed_mimes', [
             'image/jpeg',
             'image/png',
             'image/gif',
@@ -662,9 +662,9 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             'video/ogg',
         ]);
 
-        $size_limit = intval(apply_filters('wpsg_upload_max_bytes', 50 * 1024 * 1024));
+        $size_limit = intval(apply_filters('mullion_upload_max_bytes', 50 * 1024 * 1024));
         if (isset($file['size']) && intval($file['size']) > $size_limit) {
-            return new WP_Error('wpsg_file_too_large', 'File too large', ['status' => 413]);
+            return new WP_Error('mullion_file_too_large', 'File too large', ['status' => 413]);
         }
 
         $check = wp_check_filetype_and_ext($file['tmp_name'], $file['name']);
@@ -674,11 +674,11 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $mime_filename = $check_filename['type'] ?? '';
 
         if (!$mime || !in_array($mime, $allowed_mimes, true)) {
-            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
+            return new WP_Error('mullion_invalid_file_type', 'Invalid file type', ['status' => 415]);
         }
 
         if (!$ext || ($mime_filename && $mime_filename !== $mime)) {
-            return new WP_Error('wpsg_invalid_file_type', 'Invalid file type', ['status' => 415]);
+            return new WP_Error('mullion_invalid_file_type', 'Invalid file type', ['status' => 415]);
         }
 
         // P28-N: MD5 duplicate detection — compute before sideload while tmp file is readable.
@@ -687,7 +687,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             $existing_id = self::find_attachment_by_md5($md5);
             if ($existing_id > 0) {
                 $origin = self::find_attachment_origin_meta($existing_id);
-                return new WP_Error('wpsg_duplicate_file', 'This file has already been uploaded.', [
+                return new WP_Error('mullion_duplicate_file', 'This file has already been uploaded.', [
                     'status'              => 409,
                     'existing_id'         => $existing_id,
                     'existing_url'        => wp_get_attachment_url($existing_id),
@@ -703,11 +703,11 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         if (class_exists('Mullion_PHash') && Mullion_PHash::is_image_mime($mime)) {
             $phash = Mullion_PHash::compute($file['tmp_name']);
             if ($phash !== null && !$force) {
-                $threshold  = intval(apply_filters('wpsg_phash_hamming_threshold', 10));
+                $threshold  = intval(apply_filters('mullion_phash_hamming_threshold', 10));
                 $near_match = self::find_near_duplicates_by_phash($phash, $threshold);
                 if (!empty($near_match)) {
                     $origin = self::find_attachment_origin_meta($near_match['id']);
-                    return new WP_Error('wpsg_near_duplicate_file', 'A visually similar image has already been uploaded.', [
+                    return new WP_Error('mullion_near_duplicate_file', 'A visually similar image has already been uploaded.', [
                         'status'           => 409,
                         'similar_id'       => $near_match['id'],
                         'similar_url'      => $near_match['url'],
@@ -729,7 +729,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
         $upload = wp_handle_sideload($file, $overrides);
         if (!empty($upload['error'])) {
-            return new WP_Error('wpsg_bad_request', $upload['error'], ['status' => 400]);
+            return new WP_Error('mullion_bad_request', $upload['error'], ['status' => 400]);
         }
 
         if (class_exists('Mullion_Image_Optimizer')) {
@@ -762,7 +762,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function create_media($request) {
         $post_id = self::resolve_campaign_id_from_request($request);
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $payload = $request->get_json_params();
@@ -802,7 +802,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             'url' => $media_item['url'] ?? '',
             'attachmentId' => $media_item['attachmentId'] ?? 0,
         ]);
-        do_action('wpsg_media_added', $post_id, ['mediaId' => $media_item['id'], 'count' => 1]);
+        do_action('mullion_media_added', $post_id, ['mediaId' => $media_item['id'], 'count' => 1]);
         self::bump_cache_version();
 
         return new WP_REST_Response($media_item, 201);
@@ -811,18 +811,18 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function create_media_batch($request) {
         $post_id = self::resolve_campaign_id_from_request($request);
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $items = $request->get_param('items');
         if (!is_array($items) || empty($items)) {
-            return new WP_Error('wpsg_invalid_items', 'items must be a non-empty array', ['status' => 400]);
+            return new WP_Error('mullion_invalid_items', 'items must be a non-empty array', ['status' => 400]);
         }
 
         $max_batch_upload_size = self::get_max_batch_upload_size();
         if (count($items) > $max_batch_upload_size) {
             return new WP_Error(
-                'wpsg_batch_limit_exceeded',
+                'mullion_batch_limit_exceeded',
                 sprintf('A maximum of %d items can be added per batch.', $max_batch_upload_size),
                 ['status' => 400]
             );
@@ -877,7 +877,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                 'resource_type' => 'campaign',
                 'resource_id'   => (string) $post_id,
             ]);
-            do_action('wpsg_media_added', $post_id, ['count' => count($added)]);
+            do_action('mullion_media_added', $post_id, ['count' => count($added)]);
             self::bump_cache_version();
         }
 
@@ -894,7 +894,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -919,7 +919,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         unset($media_item);
 
         if (!$updated) {
-            return new WP_Error('wpsg_media_not_found', 'Media not found', ['status' => 404]);
+            return new WP_Error('mullion_media_not_found', 'Media not found', ['status' => 404]);
         }
 
         update_post_meta($post_id, 'media_items', $media_items);
@@ -933,12 +933,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function reorder_media($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $items = $request->get_param('items');
         if (!is_array($items)) {
-            return new WP_Error('wpsg_invalid_items', 'items must be an array', ['status' => 400]);
+            return new WP_Error('mullion_invalid_items', 'items must be an array', ['status' => 400]);
         }
 
         $order_map = [];
@@ -960,7 +960,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         }
 
         if (empty($order_map)) {
-            return new WP_Error('wpsg_no_valid_items', 'No valid items provided', ['status' => 400]);
+            return new WP_Error('mullion_no_valid_items', 'No valid items provided', ['status' => 400]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -972,7 +972,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             return !in_array($id, $existing_ids, true);
         }));
         if (!empty($invalid)) {
-            return new WP_Error('wpsg_invalid_media_ids', 'Invalid media id(s) provided', ['status' => 400, 'invalid' => $invalid]);
+            return new WP_Error('mullion_invalid_media_ids', 'Invalid media id(s) provided', ['status' => 400, 'invalid' => $invalid]);
         }
 
         foreach ($media_items as &$media_item) {
@@ -998,7 +998,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function rescan_media_types($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -1092,11 +1092,11 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $post_id = intval($request->get_param('id'));
         $media_id = sanitize_text_field($request->get_param('mediaId'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         if (empty($media_id)) {
-            return new WP_Error('wpsg_invalid_media_id', 'mediaId is required', ['status' => 400]);
+            return new WP_Error('mullion_invalid_media_id', 'mediaId is required', ['status' => 400]);
         }
 
         $media_items = get_post_meta($post_id, 'media_items', true);
@@ -1107,7 +1107,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         }));
 
         if (count($media_items) === $before_count) {
-            return new WP_Error('wpsg_media_not_found', 'Media item not found', ['status' => 404]);
+            return new WP_Error('mullion_media_not_found', 'Media item not found', ['status' => 404]);
         }
 
         update_post_meta($post_id, 'media_items', $media_items);
@@ -1115,7 +1115,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         self::add_audit_entry($post_id, 'media.deleted', [
             'mediaId' => $media_id,
         ]);
-        do_action('wpsg_media_removed', $post_id, ['mediaId' => $media_id]);
+        do_action('mullion_media_removed', $post_id, ['mediaId' => $media_id]);
         self::bump_cache_version();
 
         return new WP_REST_Response(['message' => 'Media deleted'], 200);
@@ -1131,7 +1131,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     private static function format_duplicate_fields(WP_Error $upload): array {
         $data = $upload->get_error_data();
         switch ($upload->get_error_code()) {
-            case 'wpsg_duplicate_file':
+            case 'mullion_duplicate_file':
                 return [
                     'duplicate'          => true,
                     'existing_id'        => $data['existing_id'],
@@ -1139,7 +1139,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                     'existing_name'      => $data['existing_name'] ?? '',
                     'existing_campaigns' => $data['existing_campaigns'] ?? [],
                 ];
-            case 'wpsg_near_duplicate_file':
+            case 'mullion_near_duplicate_file':
                 return [
                     'near_duplicate'    => true,
                     'similar_id'        => $data['similar_id'],
@@ -1156,7 +1156,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $files = $request->get_file_params();
         $entries = self::get_uploaded_file_entries($files);
         if (empty($entries)) {
-            return new WP_Error('wpsg_missing_file', 'File is required', ['status' => 400]);
+            return new WP_Error('mullion_missing_file', 'File is required', ['status' => 400]);
         }
 
         $force       = (bool) ($request->get_param('force') ?? false);
@@ -1166,7 +1166,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         $max_batch_upload_size = self::get_max_batch_upload_size();
         if ($is_batch && count($entries) > $max_batch_upload_size) {
             return new WP_Error(
-                'wpsg_batch_limit_exceeded',
+                'mullion_batch_limit_exceeded',
                 sprintf('A maximum of %d files can be uploaded per batch.', $max_batch_upload_size),
                 ['status' => 400]
             );
@@ -1176,7 +1176,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             $upload   = self::upload_single_media_file($entries[0], $force);
             $filename = sanitize_file_name($entries[0]['name'] ?? '');
             if (is_wp_error($upload)) {
-                if ($upload->get_error_code() === 'wpsg_duplicate_file') {
+                if ($upload->get_error_code() === 'mullion_duplicate_file') {
                     $data = $upload->get_error_data();
                     if ($campaign_id > 0) {
                         self::add_audit_entry($campaign_id, 'media.duplicate_rejected', [
@@ -1192,7 +1192,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                     }
                     return new WP_REST_Response(self::format_duplicate_fields($upload), 409);
                 }
-                if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
+                if ($upload->get_error_code() === 'mullion_near_duplicate_file') {
                     $data = $upload->get_error_data();
                     if ($campaign_id > 0) {
                         self::add_audit_entry($campaign_id, 'media.near_duplicate_detected', [
@@ -1241,11 +1241,11 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                     'success'  => false,
                     'error'    => $upload->get_error_message(),
                 ];
-                if ($upload->get_error_code() === 'wpsg_duplicate_file') {
+                if ($upload->get_error_code() === 'mullion_duplicate_file') {
                     $result = array_merge($result, self::format_duplicate_fields($upload));
                     $dup_count++;
                 }
-                if ($upload->get_error_code() === 'wpsg_near_duplicate_file') {
+                if ($upload->get_error_code() === 'mullion_near_duplicate_file') {
                     $result = array_merge($result, self::format_duplicate_fields($upload));
                     $near_dup_count++;
                 }
@@ -1340,10 +1340,10 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             // meta_key clause would exclude them.
             $args['meta_query'] = [
                 'relation' => 'OR',
-                'wpsg_fs'         => ['key' => '_wpsg_filesize', 'type' => 'NUMERIC', 'compare' => 'EXISTS'],
+                'mullion_fs'         => ['key' => '_wpsg_filesize', 'type' => 'NUMERIC', 'compare' => 'EXISTS'],
                 'wpsg_fs_missing' => ['key' => '_wpsg_filesize', 'compare' => 'NOT EXISTS'],
             ];
-            $args['orderby'] = ['wpsg_fs' => $sort_opts['order'], 'ID' => 'ASC'];
+            $args['orderby'] = ['mullion_fs' => $sort_opts['order'], 'ID' => 'ASC'];
         } else {
             $args['orderby'] = $sort_opts['orderby'];
             if (isset($sort_opts['meta_key'])) {
@@ -1574,7 +1574,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function export_media_library_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary export.',
                 ['status' => 503]
             );
@@ -1677,7 +1677,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             'items'      => $manifest_items,
         ]);
         if ($manifest === false) {
-            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+            return new WP_Error('mullion_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
         // P63-E: media-library export is System-Admin-gated to create; stamp the job
@@ -1689,7 +1689,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function import_media_library_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary import.',
                 ['status' => 503]
             );
@@ -1697,29 +1697,29 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
         $files = $request->get_file_params();
         if (empty($files['file'])) {
-            return new WP_Error('wpsg_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
+            return new WP_Error('mullion_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
         }
 
         $file = $files['file'];
         if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
-            return new WP_Error('wpsg_upload_error', 'File upload failed', ['status' => 400]);
+            return new WP_Error('mullion_upload_error', 'File upload failed', ['status' => 400]);
         }
 
         $zip = new ZipArchive();
         if ($zip->open($file['tmp_name']) !== true) {
-            return new WP_Error('wpsg_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
+            return new WP_Error('mullion_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
         }
 
         $manifest_json = $zip->getFromName('manifest.json');
         if ($manifest_json === false) {
             $zip->close();
-            return new WP_Error('wpsg_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
+            return new WP_Error('mullion_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
         }
 
         $manifest = json_decode($manifest_json, true);
         if (!is_array($manifest) || ($manifest['type'] ?? '') !== 'media_library') {
             $zip->close();
-            return new WP_Error('wpsg_invalid_manifest', 'Invalid or incompatible manifest', ['status' => 400]);
+            return new WP_Error('mullion_invalid_manifest', 'Invalid or incompatible manifest', ['status' => 400]);
         }
 
         require_once ABSPATH . 'wp-admin/includes/media.php';

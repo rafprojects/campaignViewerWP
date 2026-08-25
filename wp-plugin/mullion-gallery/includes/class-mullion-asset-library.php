@@ -120,7 +120,7 @@ class Mullion_Asset_Library {
             [ '%s', '%s', '%s', '%d', '%s', '%s' ]
         );
         if ( $result === false ) {
-            return new WP_Error( 'wpsg_db_error', 'Failed to save asset entry.', [ 'status' => 500 ] );
+            return new WP_Error( 'mullion_db_error', 'Failed to save asset entry.', [ 'status' => 500 ] );
         }
 
         return [
@@ -296,7 +296,7 @@ class Mullion_Asset_Library {
         $target_url = trailingslashit( $upload_dir['baseurl'] ) . self::UPLOAD_SUBDIR;
 
         if ( ! wp_mkdir_p( $target_dir ) ) {
-            return new WP_Error( 'wpsg_overlay_dir', 'Could not create overlay upload directory.' );
+            return new WP_Error( 'mullion_overlay_dir', 'Could not create overlay upload directory.' );
         }
 
         // L-8: Ensure the .htaccess with CSP headers exists in the overlays dir.
@@ -314,7 +314,7 @@ class Mullion_Asset_Library {
                 }
             }
             if ( ! class_exists( '\\enshrined\\svgSanitize\\Sanitizer' ) ) {
-                return new WP_Error( 'wpsg_svg_dep', 'SVG sanitizer library is not installed. SVG uploads are disabled until the dependency is available.' );
+                return new WP_Error( 'mullion_svg_dep', 'SVG sanitizer library is not installed. SVG uploads are disabled until the dependency is available.' );
             }
         }
 
@@ -361,7 +361,7 @@ class Mullion_Asset_Library {
         remove_filter( 'upload_dir', $upload_dir_filter );
 
         if ( isset( $result['error'] ) ) {
-            return new WP_Error( 'wpsg_overlay_upload', $result['error'] );
+            return new WP_Error( 'mullion_overlay_upload', $result['error'] );
         }
 
         // Validate MIME type after upload.
@@ -370,7 +370,7 @@ class Mullion_Asset_Library {
             if ( ! empty( $result['file'] ) && file_exists( $result['file'] ) ) {
                 wp_delete_file( $result['file'] );
             }
-            return new WP_Error( 'wpsg_overlay_type', 'Unsupported image type. Allowed: PNG, SVG, WebP, GIF, JPEG, AVIF.' );
+            return new WP_Error( 'mullion_overlay_type', 'Unsupported image type. Allowed: PNG, SVG, WebP, GIF, JPEG, AVIF.' );
         }
 
         // L-2: Server-side SVG sanitization (P20-L).
@@ -447,17 +447,17 @@ HTACCESS;
      */
     public static function sanitize_svg_file( string $file_path ) {
         if ( ! file_exists( $file_path ) ) {
-            return new WP_Error( 'wpsg_svg_missing', 'SVG file not found.' );
+            return new WP_Error( 'mullion_svg_missing', 'SVG file not found.' );
         }
 
         $dirty = file_get_contents( $file_path );
         if ( empty( $dirty ) ) {
-            return new WP_Error( 'wpsg_svg_empty', 'SVG file is empty.' );
+            return new WP_Error( 'mullion_svg_empty', 'SVG file is empty.' );
         }
 
         $clean = self::sanitize_svg_string( $dirty );
         if ( $clean === null || trim( $clean ) === '' ) {
-            return new WP_Error( 'wpsg_svg_malicious', 'SVG rejected: file contained only dangerous content.' );
+            return new WP_Error( 'mullion_svg_malicious', 'SVG rejected: file contained only dangerous content.' );
         }
 
         // Write sanitized content back.

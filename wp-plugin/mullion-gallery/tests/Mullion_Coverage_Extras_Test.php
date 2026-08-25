@@ -137,9 +137,9 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
 
     public function test_thumbnail_cache_register_hooks_cron() {
         // Clear any existing scheduled event.
-        $ts = wp_next_scheduled('wpsg_thumbnail_cache_cleanup');
+        $ts = wp_next_scheduled('mullion_thumbnail_cache_cleanup');
         if ($ts) {
-            wp_unschedule_event($ts, 'wpsg_thumbnail_cache_cleanup');
+            wp_unschedule_event($ts, 'mullion_thumbnail_cache_cleanup');
         }
 
         Mullion_Thumbnail_Cache::register();
@@ -147,7 +147,7 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
         // Verify the oembed success action is hooked.
         $this->assertGreaterThan(
             0,
-            has_action('wpsg_oembed_success', [Mullion_Thumbnail_Cache::class, 'cache_oembed_thumbnail'])
+            has_action('mullion_oembed_success', [Mullion_Thumbnail_Cache::class, 'cache_oembed_thumbnail'])
         );
     }
 

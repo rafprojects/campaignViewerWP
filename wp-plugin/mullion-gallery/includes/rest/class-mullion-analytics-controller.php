@@ -61,17 +61,17 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
         // Respect the enable_analytics setting (default: disabled).
         $settings = get_option('wpsg_settings', []);
         if (empty($settings['enable_analytics'])) {
-            return new WP_Error('wpsg_analytics_disabled', 'Analytics disabled', ['status' => 403]);
+            return new WP_Error('mullion_analytics_disabled', 'Analytics disabled', ['status' => 403]);
         }
 
         $campaign_id = intval($request->get_param('campaign_id'));
         $event_type  = sanitize_text_field($request->get_param('event_type') ?? 'view');
 
         if ($campaign_id <= 0) {
-            return new WP_Error('wpsg_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
+            return new WP_Error('mullion_invalid_campaign_id', 'Invalid campaignId', ['status' => 400]);
         }
         if (!self::campaign_exists($campaign_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $allowed_events = ['view', 'lightbox_open'];
@@ -110,7 +110,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
         }
         $wpdb->insert($table, $row, $fmts);
 
-        do_action('wpsg_analytics_event', $campaign_id, $media_id, $event_type, $hash);
+        do_action('mullion_analytics_event', $campaign_id, $media_id, $event_type, $hash);
 
         return new WP_REST_Response(['recorded' => true], 201);
     }
@@ -123,7 +123,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
         $campaign_id = intval($request->get_param('id'));
 
         if (!self::campaign_exists($campaign_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $range = self::parse_analytics_date_range($request);
@@ -194,7 +194,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
         $to_ts   = $to   ? strtotime($to)   : time();
         $from_ts = $from ? strtotime($from) : strtotime('-30 days', $to_ts);
         if (!$from_ts || !$to_ts || $from_ts > $to_ts) {
-            return new WP_Error('wpsg_invalid_date_range', 'Invalid date range', ['status' => 400]);
+            return new WP_Error('mullion_invalid_date_range', 'Invalid date range', ['status' => 400]);
         }
 
         return [gmdate('Y-m-d 00:00:00', $from_ts), gmdate('Y-m-d 23:59:59', $to_ts)];
@@ -207,7 +207,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
     public static function get_campaign_media_analytics($request) {
         $campaign_id = intval($request->get_param('id'));
         if (!self::campaign_exists($campaign_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $range = self::parse_analytics_date_range($request);

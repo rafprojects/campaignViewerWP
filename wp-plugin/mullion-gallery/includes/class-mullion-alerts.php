@@ -9,11 +9,11 @@ class Mullion_Alerts {
     const ALERT_THROTTLE_FATAL = 'wpsg_alert_throttle_fatal';
     const ALERT_THROTTLE_REST = 'wpsg_alert_throttle_rest';
     const EMAIL_QUEUE = 'wpsg_alert_email_queue';
-    const CRON_HOOK = 'wpsg_process_alert_emails';
+    const CRON_HOOK = 'mullion_process_alert_emails';
 
     public static function register() {
-        add_action('wpsg_php_error', [self::class, 'notify_fatal_error']);
-        add_action('wpsg_rest_metrics', [self::class, 'track_rest_metrics']);
+        add_action('mullion_php_error', [self::class, 'notify_fatal_error']);
+        add_action('mullion_rest_metrics', [self::class, 'track_rest_metrics']);
         add_action(self::CRON_HOOK, [self::class, 'process_email_queue']);
 
         // Register the custom 5-minute interval before scheduling.
@@ -28,8 +28,8 @@ class Mullion_Alerts {
      * @since 0.18.0 P20-I-5
      */
     public static function add_cron_interval(array $schedules): array {
-        if (!isset($schedules['wpsg_every_5min'])) {
-            $schedules['wpsg_every_5min'] = [
+        if (!isset($schedules['mullion_every_5min'])) {
+            $schedules['mullion_every_5min'] = [
                 'interval' => 300,
                 'display'  => 'Every 5 minutes (WPSG alerts)',
             ];
@@ -65,8 +65,8 @@ class Mullion_Alerts {
             return;
         }
 
-        $window_minutes = intval(apply_filters('wpsg_alert_rate_window_minutes', 10));
-        $threshold = intval(apply_filters('wpsg_alert_error_threshold', 5));
+        $window_minutes = intval(apply_filters('mullion_alert_rate_window_minutes', 10));
+        $threshold = intval(apply_filters('mullion_alert_error_threshold', 5));
         $now = time();
         $window_start = $now - ($window_minutes * 60);
 
@@ -150,7 +150,7 @@ class Mullion_Alerts {
 
         // Schedule cron on-demand so it only runs when there are queued items.
         if (!wp_next_scheduled(self::CRON_HOOK)) {
-            wp_schedule_event(time(), 'wpsg_every_5min', self::CRON_HOOK);
+            wp_schedule_event(time(), 'mullion_every_5min', self::CRON_HOOK);
         }
     }
 
@@ -219,11 +219,11 @@ class Mullion_Alerts {
     }
 
     private static function email_enabled() {
-        return apply_filters('wpsg_alert_email_enabled', true) !== false;
+        return apply_filters('mullion_alert_email_enabled', true) !== false;
     }
 
     private static function get_recipient() {
-        $recipient = apply_filters('wpsg_alert_email_recipient', get_option('admin_email'));
+        $recipient = apply_filters('mullion_alert_email_recipient', get_option('admin_email'));
         return is_string($recipient) && $recipient ? $recipient : get_option('admin_email');
     }
 
@@ -232,7 +232,7 @@ class Mullion_Alerts {
     }
 
     private static function throttle($key) {
-        $minutes = intval(apply_filters('wpsg_alert_throttle_minutes', 10));
+        $minutes = intval(apply_filters('mullion_alert_throttle_minutes', 10));
         set_transient($key, '1', $minutes * 60);
     }
 }

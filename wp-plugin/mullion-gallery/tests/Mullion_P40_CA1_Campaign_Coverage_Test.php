@@ -80,12 +80,12 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
         parent::setUp();
         Mullion_DB::maybe_create_audit_log_table();
         Mullion_DB::maybe_upgrade();
-        add_filter('wpsg_allow_non_http_uploads', '__return_true');
+        add_filter('mullion_allow_non_http_uploads', '__return_true');
     }
 
     public function tearDown(): void {
         global $wpdb;
-        remove_all_filters('wpsg_allow_non_http_uploads');
+        remove_all_filters('mullion_allow_non_http_uploads');
         // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
         $wpdb->query('DELETE FROM ' . Mullion_DB::get_audit_log_table());
         parent::tearDown();

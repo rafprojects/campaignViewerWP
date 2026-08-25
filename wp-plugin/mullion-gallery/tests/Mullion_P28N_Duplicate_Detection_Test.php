@@ -18,11 +18,11 @@ class Mullion_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
         Mullion_CPT::register();
 
         // Allow non-HTTP uploads so tests can use temp files directly.
-        add_filter('wpsg_allow_non_http_uploads', '__return_true');
+        add_filter('mullion_allow_non_http_uploads', '__return_true');
     }
 
     public function tearDown(): void {
-        remove_all_filters('wpsg_allow_non_http_uploads');
+        remove_all_filters('mullion_allow_non_http_uploads');
         parent::tearDown();
     }
 

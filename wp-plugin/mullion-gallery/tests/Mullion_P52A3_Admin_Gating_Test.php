@@ -21,7 +21,7 @@ class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
     }
 
     private function set_editor(): int {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
         wp_set_current_user($uid);
         return $uid;
@@ -82,7 +82,7 @@ class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
 
     public function test_administrator_can_manage_options_and_edit_campaigns() {
         // Ensure the administrator role has the plugin caps wired (init setup).
-        wpsg_setup_roles_and_caps();
+        mullion_setup_roles_and_caps();
         $uid = self::factory()->user->create(['role' => 'administrator']);
 
         $this->assertTrue(user_can($uid, 'manage_options'), 'administrator is System Admin');

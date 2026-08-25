@@ -26,10 +26,10 @@ class Mullion_Thumbnail_Cache {
      * Register hooks.
      */
     public static function register() {
-        add_action('wpsg_oembed_success', [self::class, 'cache_oembed_thumbnail'], 10, 2);
-        add_action('wpsg_thumbnail_cache_cleanup', [self::class, 'cleanup_expired']);
-        if (!wp_next_scheduled('wpsg_thumbnail_cache_cleanup')) {
-            wp_schedule_event(time(), 'daily', 'wpsg_thumbnail_cache_cleanup');
+        add_action('mullion_oembed_success', [self::class, 'cache_oembed_thumbnail'], 10, 2);
+        add_action('mullion_thumbnail_cache_cleanup', [self::class, 'cleanup_expired']);
+        if (!wp_next_scheduled('mullion_thumbnail_cache_cleanup')) {
+            wp_schedule_event(time(), 'daily', 'mullion_thumbnail_cache_cleanup');
         }
     }
 
@@ -112,7 +112,7 @@ class Mullion_Thumbnail_Cache {
             return ['cached' => false, 'error' => 'Empty response body'];
         }
 
-        $max_size = intval(apply_filters('wpsg_thumbnail_max_download_size', 5 * 1024 * 1024));
+        $max_size = intval(apply_filters('mullion_thumbnail_max_download_size', 5 * 1024 * 1024));
         if (strlen($body) > $max_size) {
             return ['cached' => false, 'error' => 'Thumbnail exceeds maximum size of ' . size_format($max_size)];
         }
@@ -176,7 +176,7 @@ class Mullion_Thumbnail_Cache {
 
     /**
      * Cache thumbnail from oEmbed result.
-     * Fired on wpsg_oembed_success action.
+     * Fired on mullion_oembed_success action.
      *
      * @param string $url    The original media URL.
      * @param array  $result The oEmbed result data.

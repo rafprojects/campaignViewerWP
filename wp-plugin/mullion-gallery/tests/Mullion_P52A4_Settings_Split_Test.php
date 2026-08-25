@@ -21,7 +21,7 @@ class Mullion_P52A4_Settings_Split_Test extends WP_UnitTestCase {
 
     /** Space editor: manage_wpsg but NOT manage_options. */
     private function set_editor(): int {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
         $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
         wp_set_current_user($uid);
         return $uid;
@@ -62,7 +62,7 @@ class Mullion_P52A4_Settings_Split_Test extends WP_UnitTestCase {
         $res = $this->post_settings(['cacheTtl' => (int) $before + 123]);
 
         $this->assertSame(403, $res->get_status(), 'editor must be denied a system setting');
-        $this->assertSame('wpsg_forbidden_settings', $res->get_data()['code'] ?? null);
+        $this->assertSame('mullion_forbidden_settings', $res->get_data()['code'] ?? null);
         $this->assertSame($before, Mullion_Settings::get_settings()['cache_ttl'], 'system value must be unchanged');
     }
 

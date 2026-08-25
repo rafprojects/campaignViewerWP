@@ -97,13 +97,13 @@ class Mullion_Logger_Test extends WP_UnitTestCase {
 
     public function test_ring_buffer_enforces_max_entries(): void {
         // The clamp floor is 10, so set max to 10 and add 15 entries.
-        add_filter('wpsg_log_max_entries', static function () { return 10; });
+        add_filter('mullion_log_max_entries', static function () { return 10; });
 
         for ($i = 1; $i <= 15; $i++) {
             Mullion_Logger::info('test', "Entry {$i}");
         }
 
-        remove_all_filters('wpsg_log_max_entries');
+        remove_all_filters('mullion_log_max_entries');
 
         $logs = Mullion_Logger::get_recent_logs(100);
         $this->assertCount(10, $logs, 'Ring buffer must cap at the configured max');

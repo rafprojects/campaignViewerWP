@@ -127,19 +127,19 @@ class Mullion_System_Controller extends Mullion_REST_Base {
 
         $url = esc_url_raw($request->get_param('url') ?? '');
         if (empty($url)) {
-            return self::error_response('url is required', 400, 'wpsg_missing_url');
+            return self::error_response('url is required', 400, 'mullion_missing_url');
         }
 
         $parsed = wp_parse_url($url);
         if (!is_array($parsed)) {
-            return self::error_response('Invalid oEmbed URL', 400, 'wpsg_invalid_oembed_url');
+            return self::error_response('Invalid oEmbed URL', 400, 'mullion_invalid_oembed_url');
         }
 
         // Basic SSRF mitigations: require HTTPS and block private/internal IPs.
         $host = strtolower(isset($parsed['host']) ? $parsed['host'] : '');
         $scheme = isset($parsed['scheme']) ? strtolower($parsed['scheme']) : '';
         if (empty($host)) {
-            return self::error_response('Invalid oEmbed URL host', 400, 'wpsg_invalid_oembed_host');
+            return self::error_response('Invalid oEmbed URL host', 400, 'mullion_invalid_oembed_host');
         }
 
         // Normalize IPv6 literals wrapped in brackets (e.g. [::1])
@@ -148,7 +148,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         }
 
         if ($scheme !== 'https') {
-            return self::error_response('Only HTTPS oEmbed URLs are allowed', 400, 'wpsg_oembed_https_required');
+            return self::error_response('Only HTTPS oEmbed URLs are allowed', 400, 'mullion_oembed_https_required');
         }
 
         // Allowlist of well-known oEmbed providers (allows subdomains).
@@ -196,13 +196,13 @@ class Mullion_System_Controller extends Mullion_REST_Base {
                 }
 
                 if (empty($ips_to_check)) {
-                    return self::error_response('Unable to resolve host for oEmbed URL', 400, 'wpsg_oembed_dns_failed');
+                    return self::error_response('Unable to resolve host for oEmbed URL', 400, 'mullion_oembed_dns_failed');
                 }
             }
 
             foreach ($ips_to_check as $ip) {
                 if (self::is_private_ip($ip)) {
-                    return self::error_response('oEmbed host resolves to a private or disallowed IP', 400, 'wpsg_oembed_ssrf_blocked');
+                    return self::error_response('oEmbed host resolves to a private or disallowed IP', 400, 'mullion_oembed_ssrf_blocked');
                 }
             }
         }
@@ -286,7 +286,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         // H-2: If the SSRF filter blocked the request due to DNS rebinding,
         // return a clear 400 instead of a generic 502 failure.
         if ($wpsg_ssrf_blocked) {
-            return self::error_response('DNS rebinding detected: oEmbed host resolved to a private IP', 400, 'wpsg_oembed_dns_rebind');
+            return self::error_response('DNS rebinding detected: oEmbed host resolved to a private IP', 400, 'mullion_oembed_dns_rebind');
         }
 
         if (is_array($result) && !empty($result)) {
@@ -297,7 +297,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
                 $error_payload['_wpsg_status'] = 502;
                 // Log and metric: record repeated oEmbed failures
                 Mullion_Logger::warning('oembed', 'oEmbed fetch returned error payload', ['url' => $url, 'attempts' => $attempts]);
-                do_action('wpsg_oembed_failure', $url, $attempts);
+                do_action('mullion_oembed_failure', $url, $attempts);
                 $count = intval(get_option('wpsg_oembed_failure_count', 0));
                 // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
                 update_option('wpsg_oembed_failure_count', $count + 1, false);
@@ -308,7 +308,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             // Successful fetch: cache for longer TTL
             set_transient($cache_key, $result, 6 * HOUR_IN_SECONDS);
             // P14-C/D: Fire success hook for thumbnail caching.
-            do_action('wpsg_oembed_success', $url, $result);
+            do_action('mullion_oembed_success', $url, $result);
             return new WP_REST_Response($result, 200);
         }
 
@@ -319,7 +319,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $fallback['_wpsg_status'] = 502;
         // Log and metric: record generic fallback cache
         Mullion_Logger::warning('oembed', 'oEmbed fetch failed, caching generic fallback', ['url' => $url, 'attempts' => $attempts]);
-        do_action('wpsg_oembed_failure', $url, $attempts);
+        do_action('mullion_oembed_failure', $url, $attempts);
         $count = intval(get_option('wpsg_oembed_failure_count', 0));
         // P67-J (E-5): a per-failure counter never read on the hot path — keep it off autoload.
         update_option('wpsg_oembed_failure_count', $count + 1, false);
@@ -379,7 +379,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
 
         if (count($endpoints) >= Mullion_Webhooks::MAX_ENDPOINTS) {
             return new WP_Error(
-                'wpsg_webhook_limit',
+                'mullion_webhook_limit',
                 sprintf('Maximum of %d webhook endpoints allowed.', Mullion_Webhooks::MAX_ENDPOINTS),
                 ['status' => 400]
             );
@@ -388,13 +388,13 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $raw_url = $request->get_param('url');
         $url = Mullion_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
         if (empty($url)) {
-            return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
         }
 
         $raw_events = $request->get_param('events');
         $events = Mullion_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
         if (is_array($raw_events) && !empty($raw_events) && empty($events)) {
-            return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
         }
         $raw_enabled = $request->get_param('enabled');
         $enabled     = $raw_enabled === null ? true : self::is_truthy_param($raw_enabled);
@@ -423,7 +423,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $endpoints = Mullion_Webhooks::get_endpoints();
 
         if (!isset($endpoints[$idx])) {
-            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Webhook endpoint not found.', ['status' => 404]);
         }
 
         $existing = $endpoints[$idx];
@@ -432,7 +432,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             $raw_url = $request->get_param('url');
             $url = Mullion_Webhooks::sanitize_url(is_string($raw_url) ? $raw_url : '');
             if (empty($url)) {
-                return new WP_Error('wpsg_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
+                return new WP_Error('mullion_invalid_url', 'A valid HTTP(S) URL is required.', ['status' => 400]);
             }
             $existing['url'] = $url;
         }
@@ -441,7 +441,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             $raw_events      = $request->get_param('events');
             $sanitized_events = Mullion_Webhooks::sanitize_events(is_array($raw_events) ? $raw_events : []);
             if (is_array($raw_events) && !empty($raw_events) && empty($sanitized_events)) {
-                return new WP_Error('wpsg_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
+                return new WP_Error('mullion_invalid_events', 'No recognised event names in the provided list.', ['status' => 400]);
             }
             $existing['events'] = $sanitized_events;
         }
@@ -461,7 +461,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $endpoints = Mullion_Webhooks::get_endpoints();
 
         if (!isset($endpoints[$idx])) {
-            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Webhook endpoint not found.', ['status' => 404]);
         }
 
         array_splice($endpoints, $idx, 1);
@@ -475,7 +475,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         $endpoints = Mullion_Webhooks::get_endpoints();
 
         if (!isset($endpoints[$idx])) {
-            return new WP_Error('wpsg_not_found', 'Webhook endpoint not found.', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Webhook endpoint not found.', ['status' => 404]);
         }
 
         $new_secret           = Mullion_Webhooks::generate_secret();

@@ -132,7 +132,7 @@ class Mullion_P64A_Grants_Helper_Test extends WP_UnitTestCase {
     public function test_parse_expiry_param_rejects_garbage_with_wp_error() {
         $out = Mullion_Grants::parse_expiry_param('definitely not a date');
         $this->assertInstanceOf(WP_Error::class, $out);
-        $this->assertSame('wpsg_invalid_expires_at', $out->get_error_code());
+        $this->assertSame('mullion_invalid_expires_at', $out->get_error_code());
         $this->assertSame(400, $out->get_error_data()['status']);
     }
 

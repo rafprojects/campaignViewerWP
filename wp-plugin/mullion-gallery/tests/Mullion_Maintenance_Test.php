@@ -4,14 +4,14 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        remove_all_filters('wpsg_archive_retention_days');
+        remove_all_filters('mullion_archive_retention_days');
         wp_clear_scheduled_hook(Mullion_Maintenance::CLEANUP_HOOK);
         wp_clear_scheduled_hook(Mullion_Maintenance::TRASH_PURGE_HOOK);
         wp_clear_scheduled_hook(Mullion_Maintenance::ANALYTICS_PURGE_HOOK);
     }
 
     public function tearDown(): void {
-        remove_all_filters('wpsg_archive_retention_days');
+        remove_all_filters('mullion_archive_retention_days');
         wp_clear_scheduled_hook(Mullion_Maintenance::CLEANUP_HOOK);
         wp_clear_scheduled_hook(Mullion_Maintenance::TRASH_PURGE_HOOK);
         wp_clear_scheduled_hook(Mullion_Maintenance::ANALYTICS_PURGE_HOOK);
@@ -43,7 +43,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     // ── register ───────────────────────────────────────────────────────────
 
     public function test_register_schedules_cron_when_retention_set() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         Mullion_Maintenance::register();
 
@@ -52,7 +52,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_register_skips_cron_when_retention_zero() {
-        add_filter('wpsg_archive_retention_days', function () { return 0; });
+        add_filter('mullion_archive_retention_days', function () { return 0; });
 
         Mullion_Maintenance::register();
 
@@ -60,7 +60,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_register_skips_cron_when_retention_negative() {
-        add_filter('wpsg_archive_retention_days', function () { return -5; });
+        add_filter('mullion_archive_retention_days', function () { return -5; });
 
         Mullion_Maintenance::register();
 
@@ -70,7 +70,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     // ── trash_archived_campaigns (phase 1) ─────────────────────────────────
 
     public function test_trash_moves_old_archived_campaigns_to_trash() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         $old_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
         $old_id = $this->create_archived_campaign($old_date);
@@ -83,7 +83,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_keeps_recent_archived_campaigns() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         $recent_date = gmdate('Y-m-d H:i:s', strtotime('-10 days'));
         $recent_id = $this->create_archived_campaign($recent_date);
@@ -96,7 +96,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_keeps_active_campaigns_even_if_old() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         $old_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
         $id = wp_insert_post([
@@ -116,7 +116,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_noop_when_retention_zero() {
-        add_filter('wpsg_archive_retention_days', function () { return 0; });
+        add_filter('mullion_archive_retention_days', function () { return 0; });
 
         $old_date = gmdate('Y-m-d H:i:s', strtotime('-365 days'));
         $id = $this->create_archived_campaign($old_date);
@@ -129,7 +129,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_respects_custom_retention_days() {
-        add_filter('wpsg_archive_retention_days', function () { return 7; });
+        add_filter('mullion_archive_retention_days', function () { return 7; });
 
         $eight_days = gmdate('Y-m-d H:i:s', strtotime('-8 days'));
         $six_days   = gmdate('Y-m-d H:i:s', strtotime('-6 days'));
@@ -146,7 +146,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     // ── P66-B: purge keys off archived_at, not the creation date ───────────
 
     public function test_trash_ignores_creation_date_when_archived_recently() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         // Created two years ago, archived only yesterday. Under the old
         // (post_date_gmt) logic this was trashed on the next cron run — the bug.
@@ -164,7 +164,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_purges_when_archived_long_ago_despite_recent_creation() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         // Created yesterday but archived 60 days ago: purge eligibility follows
         // archived_at, regardless of how new the campaign itself is.
@@ -182,7 +182,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_trash_skips_archived_campaign_without_archived_at() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         // An archived campaign lacking an archived_at stamp (e.g. one the
         // backfill somehow missed) is conservatively left alone, never purged
@@ -205,7 +205,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     // ── purge_trashed_campaigns (phase 2) ──────────────────────────────────
 
     public function test_purge_trashed_deletes_campaigns_past_grace_period() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         // Create a campaign and trash it with an old modified date.
         $old_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
@@ -227,7 +227,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     }
 
     public function test_purge_trashed_keeps_recently_trashed_campaigns() {
-        add_filter('wpsg_archive_retention_days', function () { return 30; });
+        add_filter('mullion_archive_retention_days', function () { return 30; });
 
         $recent_date = gmdate('Y-m-d H:i:s', strtotime('-5 days'));
         $id = $this->create_archived_campaign($recent_date);

@@ -5,13 +5,13 @@ if (!defined('ABSPATH')) {
 }
 
 class Mullion_Maintenance {
-    const CLEANUP_HOOK              = 'wpsg_archive_cleanup';
-    const TRASH_PURGE_HOOK          = 'wpsg_trash_purge';
-    const ANALYTICS_PURGE_HOOK      = 'wpsg_analytics_purge';
-    const EXPIRED_GRANTS_HOOK       = 'wpsg_expired_grants_cleanup';
+    const CLEANUP_HOOK              = 'mullion_archive_cleanup';
+    const TRASH_PURGE_HOOK          = 'mullion_trash_purge';
+    const ANALYTICS_PURGE_HOOK      = 'mullion_analytics_purge';
+    const EXPIRED_GRANTS_HOOK       = 'mullion_expired_grants_cleanup';
     // P72-F: opt-in retention purge for the two PII tables.
-    const ACCESS_REQUESTS_PURGE_HOOK = 'wpsg_access_requests_purge';
-    const AUDIT_LOG_PURGE_HOOK       = 'wpsg_audit_log_purge';
+    const ACCESS_REQUESTS_PURGE_HOOK = 'mullion_access_requests_purge';
+    const AUDIT_LOG_PURGE_HOOK       = 'mullion_audit_log_purge';
 
     /**
      * Hook cron actions and schedule events based on settings.
@@ -124,7 +124,7 @@ class Mullion_Maintenance {
         ]);
 
         foreach ($query->posts as $post) {
-            do_action('wpsg_before_trash_campaign', $post->ID);
+            do_action('mullion_before_trash_campaign', $post->ID);
             wp_trash_post($post->ID);
         }
     }
@@ -157,7 +157,7 @@ class Mullion_Maintenance {
         ]);
 
         foreach ($query->posts as $post) {
-            do_action('wpsg_before_purge_campaign', $post->ID);
+            do_action('mullion_before_purge_campaign', $post->ID);
             self::cleanup_campaign_data($post->ID);
             wp_delete_post($post->ID, true);
         }
@@ -399,7 +399,7 @@ class Mullion_Maintenance {
     }
 
     /**
-     * Read a maintenance setting, falling back to the wpsg_archive_retention_days
+     * Read a maintenance setting, falling back to the mullion_archive_retention_days
      * filter for backward compatibility.
      */
     private static function get_setting($key) {
@@ -412,7 +412,7 @@ class Mullion_Maintenance {
 
         // Backward compat: honor the legacy filter for archive_purge_days.
         if ($key === 'archive_purge_days') {
-            return intval(apply_filters('wpsg_archive_retention_days', 0));
+            return intval(apply_filters('mullion_archive_retention_days', 0));
         }
 
         return 0;

@@ -81,8 +81,8 @@ class Mullion_Settings {
         Mullion_Settings_Renderer::init();
 
         // Register WP filters directly on the service that owns the logic.
-        add_filter('wpsg_auth_provider', ['Mullion_Settings_Service', 'filter_auth_provider']);
-        add_filter('wpsg_api_base',      ['Mullion_Settings_Service', 'filter_api_base']);
+        add_filter('mullion_auth_provider', ['Mullion_Settings_Service', 'filter_auth_provider']);
+        add_filter('mullion_api_base',      ['Mullion_Settings_Service', 'filter_api_base']);
     }
 
     /**

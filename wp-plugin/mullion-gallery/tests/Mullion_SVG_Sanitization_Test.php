@@ -245,6 +245,6 @@ class Mullion_SVG_Sanitization_Test extends WP_UnitTestCase {
         $result = Mullion_Asset_Library::sanitize_svg_file( '/nonexistent/path.svg' );
 
         $this->assertInstanceOf( WP_Error::class, $result );
-        $this->assertSame( 'wpsg_svg_missing', $result->get_error_code() );
+        $this->assertSame( 'mullion_svg_missing', $result->get_error_code() );
     }
 }

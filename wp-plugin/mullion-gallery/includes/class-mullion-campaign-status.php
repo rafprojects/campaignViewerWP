@@ -38,7 +38,7 @@ class Mullion_Campaign_Status {
      *   - 'audit' => array{action:string, details?:array, ctx?:array}
      *       Log an audit entry via Mullion_REST::add_audit_entry().
      *   - 'hook'  => string  Fire this action hook with the post ID
-     *       (e.g. 'wpsg_campaign_archived'). Passed explicitly — rather than
+     *       (e.g. 'mullion_campaign_archived'). Passed explicitly — rather than
      *       derived — so each caller keeps its exact current firing behavior.
      *   - 'cache' => bool  Bump the accessible-campaigns cache version.
      * @return true|WP_Error True on success, WP_Error on an invalid status.
@@ -46,7 +46,7 @@ class Mullion_Campaign_Status {
     public static function set(int $post_id, string $status, array $ctx = []) {
         if (!in_array($status, self::STATUSES, true)) {
             return new WP_Error(
-                'wpsg_invalid_status',
+                'mullion_invalid_status',
                 'Invalid status value',
                 ['status' => 400]
             );
@@ -101,7 +101,7 @@ class Mullion_Campaign_Status {
     /**
      * Batch-stamp archived_at for campaigns the cron path just archived.
      *
-     * The auto-archive cron (wpsg_archive_campaign_status_batch) writes `status`
+     * The auto-archive cron (mullion_archive_campaign_status_batch) writes `status`
      * in bulk SQL for performance; its selection query only ever returns
      * campaigns whose status is not already 'archived', so every id in the batch
      * is a genuine fresh archival. Clears any stale archived_at/restored_at and

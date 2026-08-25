@@ -111,7 +111,7 @@ class Mullion_Settings_Core_Fields {
             'none'   => __('None (Public Access Only)', 'mullion-gallery'),
         ];
         ?>
-        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[auth_provider]" id="wpsg_auth_provider">
+        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[auth_provider]" id="mullion_auth_provider">
             <?php foreach ($options as $key => $label) : ?>
                 <option value="<?php echo esc_attr($key); ?>" <?php selected($value, $key); ?>>
                     <?php echo esc_html($label); ?>
@@ -140,7 +140,7 @@ class Mullion_Settings_Core_Fields {
         ?>
         <input type="url"
                name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[api_base]"
-               id="wpsg_api_base"
+               id="mullion_api_base"
                value="<?php echo esc_attr($value); ?>"
                class="regular-text"
                placeholder="<?php echo esc_attr(home_url()); ?>">
@@ -293,7 +293,7 @@ class Mullion_Settings_Core_Fields {
         <label>
             <input type="checkbox"
                    name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[debug_component_markers]"
-                   id="wpsg_debug_component_markers"
+                   id="mullion_debug_component_markers"
                    value="1"
                    <?php checked((bool) $value, true); ?>>
             <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'mullion-gallery'); ?>
@@ -426,7 +426,7 @@ class Mullion_Settings_Core_Fields {
             604800 => __('1 week', 'mullion-gallery'),
         ];
         ?>
-        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[cache_ttl]" id="wpsg_cache_ttl">
+        <select name="<?php echo esc_attr(Mullion_Settings::OPTION_NAME); ?>[cache_ttl]" id="mullion_cache_ttl">
             <?php foreach ($options as $seconds => $label) : ?>
                 <option value="<?php echo esc_attr($seconds); ?>" <?php selected($value, $seconds); ?>>
                     <?php echo esc_html($label); ?>

@@ -507,7 +507,7 @@ class Mullion_Layout_Templates {
              ( $slot['y'] ?? 0 ) + ( $slot['height'] ?? 0 ) > 100.5 ) {
             // Log it for the admin but allow save.
             if ( function_exists( 'do_action' ) ) {
-                do_action( 'wpsg_layout_slot_out_of_bounds', $slot, $index );
+                do_action( 'mullion_layout_slot_out_of_bounds', $slot, $index );
             }
         }
         return true;

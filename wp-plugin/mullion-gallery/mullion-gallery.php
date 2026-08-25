@@ -28,25 +28,25 @@ define('MULLION_PLUGIN_URL', plugin_dir_url(__FILE__));
 // integration docs require the SDK to bootstrap before other plugin code.
 //
 // Credential-ready: until a real Plugin ID + public key are injected via the
-// `wpsg_freemius_config` filter (outside this repo — a site-specific mu-plugin
-// or wp-config.php-backed constant), this is a safe no-op. wpsg_fs() returns
+// `mullion_freemius_config` filter (outside this repo — a site-specific mu-plugin
+// or wp-config.php-backed constant), this is a safe no-op. mullion_fs() returns
 // null, makes zero network calls, and Mullion_License falls back to its stub
-// (default free tier). This mirrors the wpsg_sentry_dsn pattern in
+// (default free tier). This mirrors the mullion_sentry_dsn pattern in
 // class-mullion-sentry.php.
-if (!function_exists('wpsg_fs')) {
+if (!function_exists('mullion_fs')) {
     /**
      * Freemius SDK instance, or null when no credentials are configured.
      *
      * @return \Freemius|null
      */
-    function wpsg_fs() {
-        global $wpsg_fs;
+    function mullion_fs() {
+        global $mullion_fs;
 
-        if (isset($wpsg_fs)) {
-            return $wpsg_fs;
+        if (isset($mullion_fs)) {
+            return $mullion_fs;
         }
 
-        $config = apply_filters('wpsg_freemius_config', [
+        $config = apply_filters('mullion_freemius_config', [
             'id'         => '',
             'public_key' => '',
             'is_premium' => false,
@@ -55,19 +55,19 @@ if (!function_exists('wpsg_fs')) {
 
         // No credentials → no-op (default free tier). Never phones home.
         if (empty($config['id']) || empty($config['public_key'])) {
-            $wpsg_fs = null;
+            $mullion_fs = null;
             return null;
         }
 
         $sdk_entry = MULLION_PLUGIN_DIR . 'vendor/freemius/wordpress-sdk/start.php';
         if (!file_exists($sdk_entry)) {
-            $wpsg_fs = null;
+            $mullion_fs = null;
             return null;
         }
         require_once $sdk_entry;
 
         if (!function_exists('fs_dynamic_init')) {
-            $wpsg_fs = null;
+            $mullion_fs = null;
             return null;
         }
 
@@ -78,7 +78,7 @@ if (!function_exists('wpsg_fs')) {
         // `is_org_compliant => true`, and sets a non-empty `menu['first-path']`
         // (see docs/PHASE62_REPORT.md P62-K and guides/MARKETPLACE_READINESS.md §4).
         // $config is merged last so real credentials always come from the filter.
-        $wpsg_fs = fs_dynamic_init(array_merge([
+        $mullion_fs = fs_dynamic_init(array_merge([
             'id'             => '',
             'slug'           => 'wp-super-gallery',
             'type'           => 'plugin',
@@ -92,15 +92,15 @@ if (!function_exists('wpsg_fs')) {
             ],
         ], $config));
 
-        return $wpsg_fs;
+        return $mullion_fs;
     }
 
     // Initialize (no-op until credentials exist) and signal readiness.
-    wpsg_fs();
-    do_action('wpsg_fs_loaded');
+    mullion_fs();
+    do_action('mullion_fs_loaded');
 }
 
-require_once MULLION_PLUGIN_DIR . 'includes/wpsg-cron-hooks.php';
+require_once MULLION_PLUGIN_DIR . 'includes/mullion-cron-hooks.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-license.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cpt.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rest.php';
@@ -139,27 +139,27 @@ require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-space-admin-renderer.p
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-asset-admin-renderer.php';
 
 // Activation hook - trigger setup on next load
-register_activation_hook(__FILE__, 'wpsg_activate');
-function wpsg_activate() {
+register_activation_hook(__FILE__, 'mullion_activate');
+function mullion_activate() {
     // Flag that setup is needed
     add_option('wpsg_needs_setup', '1');
 }
 
 // Deactivation hook - optionally clean up (roles persist by design)
-register_deactivation_hook(__FILE__, 'wpsg_deactivate');
-function wpsg_deactivate() {
+register_deactivation_hook(__FILE__, 'mullion_deactivate');
+function mullion_deactivate() {
     // Roles and capabilities are kept on deactivation
     // Only remove on uninstall if desired.
     // P66-F: clear every scheduled hook from the single canonical list shared
     // with uninstall.php, so the two can no longer drift.
-    foreach (wpsg_get_cron_hooks() as $hook) {
+    foreach (mullion_get_cron_hooks() as $hook) {
         wp_clear_scheduled_hook($hook);
     }
 }
 
 // Set up roles and capabilities on init (more reliable than activation hook)
-add_action('init', 'wpsg_setup_roles_and_caps');
-function wpsg_setup_roles_and_caps() {
+add_action('init', 'mullion_setup_roles_and_caps');
+function mullion_setup_roles_and_caps() {
     // Only run heavy admin-role setup if flagged or if capability is missing.
     $needs_setup = get_option('wpsg_needs_setup', '0');
     $admin_role = get_role('administrator');
@@ -176,7 +176,7 @@ function wpsg_setup_roles_and_caps() {
         }
 
         // Space Editor role (P52-A2): app-only admin scoped to granted spaces.
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
 
         // Clear setup flag
         delete_option('wpsg_needs_setup');
@@ -187,15 +187,15 @@ function wpsg_setup_roles_and_caps() {
     // get_role() reads from the in-memory role cache — no DB hit when correct.
     $editor_role = get_role('wpsg_editor');
     if (!$editor_role || !$editor_role->has_cap('manage_wpsg')) {
-        wpsg_ensure_editor_role();
+        mullion_ensure_editor_role();
     }
 }
 
 // Redirect Gallery Editors away from /wp-admin. Editors use the frontend
 // Admin Panel only — /wp-admin is reserved for system administrators.
 // AJAX requests are excluded so WP's own back-channel calls are unaffected.
-add_action('admin_init', 'wpsg_redirect_editors_from_admin');
-function wpsg_redirect_editors_from_admin() {
+add_action('admin_init', 'mullion_redirect_editors_from_admin');
+function mullion_redirect_editors_from_admin() {
     if (wp_doing_ajax()) {
         return;
     }
@@ -211,7 +211,7 @@ function wpsg_redirect_editors_from_admin() {
  * no wp-admin "Campaigns" menu) and NO `manage_options` (P52-A2). Idempotent —
  * also strips CPT caps left over from the legacy `wpsg_admin` role definition.
  */
-function wpsg_ensure_editor_role() {
+function mullion_ensure_editor_role() {
     $editor_caps = [
         'read'         => true,
         'upload_files' => true,
@@ -239,17 +239,17 @@ function wpsg_ensure_editor_role() {
  * One-time migration: rename the legacy `wpsg_admin` role to `wpsg_editor`
  * (P52-A2). Reassigns every user holding `wpsg_admin` to `wpsg_editor`, then
  * removes the old role. Runs on init until complete (flag-gated), so it also
- * covers existing installs where wpsg_setup_roles_and_caps() no longer re-runs
+ * covers existing installs where mullion_setup_roles_and_caps() no longer re-runs
  * (administrator already has manage_wpsg, so its setup gate is closed).
  */
-add_action('init', 'wpsg_maybe_migrate_roles', 11);
-function wpsg_maybe_migrate_roles() {
+add_action('init', 'mullion_maybe_migrate_roles', 11);
+function mullion_maybe_migrate_roles() {
     if (get_option('wpsg_roles_migrated_editor')) {
         return;
     }
 
     // The destination role must exist before reassigning users to it.
-    wpsg_ensure_editor_role();
+    mullion_ensure_editor_role();
 
     $legacy_user_ids = get_users(['role' => 'wpsg_admin', 'fields' => 'ID']);
     foreach ($legacy_user_ids as $uid) {
@@ -291,7 +291,7 @@ add_action('init', ['Mullion_Export_Engine', 'register']);
 // P67-E: one named handler for all three meta hooks (was three near-identical
 // closures). On delete the meta value is gone, so all refs for the post are
 // cleared — detected via current_action() rather than the closure's body.
-function wpsg_sync_media_refs_on_meta_change($meta_id_or_ids, $post_id, $meta_key, $meta_value) {
+function mullion_sync_media_refs_on_meta_change($meta_id_or_ids, $post_id, $meta_key, $meta_value) {
     if ($meta_key !== 'media_items' || get_post_type($post_id) !== Mullion_CPT::POST_TYPE) {
         return;
     }
@@ -300,9 +300,9 @@ function wpsg_sync_media_refs_on_meta_change($meta_id_or_ids, $post_id, $meta_ke
         : (is_array($meta_value) ? $meta_value : []);
     Mullion_DB::sync_media_refs((int) $post_id, $items);
 }
-add_action('updated_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
-add_action('added_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
-add_action('deleted_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
+add_action('updated_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4);
+add_action('added_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4);
+add_action('deleted_post_meta', 'mullion_sync_media_refs_on_meta_change', 10, 4);
 
 // P67-I: stamp _wpsg_filesize on every new attachment so the media-library "size"
 // sort has a real numeric value to order by. Covers native WP / other-plugin
@@ -314,12 +314,12 @@ add_action(Mullion_DB::FILESIZE_BACKFILL_HOOK, ['Mullion_DB', 'run_filesize_back
 add_action('init', ['Mullion_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.
-add_action('init', 'wpsg_register_schedule_cron');
-add_action('wpsg_schedule_auto_archive', 'wpsg_run_schedule_auto_archive');
+add_action('init', 'mullion_register_schedule_cron');
+add_action('mullion_schedule_auto_archive', 'mullion_run_schedule_auto_archive');
 
-function wpsg_register_schedule_cron() {
-    if (!wp_next_scheduled('wpsg_schedule_auto_archive')) {
-        wp_schedule_event(time(), 'hourly', 'wpsg_schedule_auto_archive');
+function mullion_register_schedule_cron() {
+    if (!wp_next_scheduled('mullion_schedule_auto_archive')) {
+        wp_schedule_event(time(), 'hourly', 'mullion_schedule_auto_archive');
     }
 }
 
@@ -329,7 +329,7 @@ function wpsg_register_schedule_cron() {
  * @param int[] $post_ids Campaign IDs to archive.
  * @return int Number of campaigns processed.
  */
-function wpsg_archive_campaign_status_batch_fallback(array $post_ids) {
+function mullion_archive_campaign_status_batch_fallback(array $post_ids) {
     $processed = 0;
 
     foreach ($post_ids as $post_id) {
@@ -352,7 +352,7 @@ function wpsg_archive_campaign_status_batch_fallback(array $post_ids) {
  * @param int[] $post_ids Campaign IDs to archive.
  * @return int Number of campaigns processed.
  */
-function wpsg_archive_campaign_status_batch(array $post_ids) {
+function mullion_archive_campaign_status_batch(array $post_ids) {
     global $wpdb;
 
     $post_ids = array_values(array_unique(array_map('intval', $post_ids)));
@@ -373,7 +373,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
     );
 
     if (!is_array($existing_ids)) {
-        return wpsg_archive_campaign_status_batch_fallback($post_ids);
+        return mullion_archive_campaign_status_batch_fallback($post_ids);
     }
 
     $existing_ids = array_values(array_unique(array_map('intval', $existing_ids)));
@@ -391,7 +391,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
         );
 
         if ($updated === false) {
-            return wpsg_archive_campaign_status_batch_fallback($post_ids);
+            return mullion_archive_campaign_status_batch_fallback($post_ids);
         }
     }
 
@@ -418,7 +418,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
             // UPDATE already succeeded for $existing_ids; stamp those (P66-A),
             // then only retry the missing rows through the metadata-API fallback.
             Mullion_Campaign_Status::stamp_archived_batch($existing_ids);
-            return count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids);
+            return count($existing_ids) + mullion_archive_campaign_status_batch_fallback($missing_ids);
         }
     }
 
@@ -434,7 +434,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
     return count($post_ids);
 }
 
-function wpsg_run_schedule_auto_archive() {
+function mullion_run_schedule_auto_archive() {
     $now = gmdate('Y-m-d H:i:s'); // UTC datetime — matches stored format
     $archived_count = 0;
 
@@ -468,7 +468,7 @@ function wpsg_run_schedule_auto_archive() {
         ]);
 
         if (!empty($query->posts)) {
-            $archived_count += wpsg_archive_campaign_status_batch($query->posts);
+            $archived_count += mullion_archive_campaign_status_batch($query->posts);
         }
     } while (!empty($query->posts));
 
@@ -478,32 +478,32 @@ function wpsg_run_schedule_auto_archive() {
     }
 }
 
-add_filter('rest_pre_serve_request', 'wpsg_add_cors_headers', 10, 4);
+add_filter('rest_pre_serve_request', 'mullion_add_cors_headers', 10, 4);
 
 // P63-C: security headers are emitted at the two points where output has NOT yet
 // started and the request context is actually known:
 //   - front-end pages containing the gallery shortcode → template_redirect
 //   - REST responses on our namespace          → rest_pre_serve_request
 // The previous single `send_headers` hook fired before render_shortcode() set its
-// $GLOBALS['wpsg_has_shortcode'] flag, and after REST requests had already been
+// $GLOBALS['mullion_has_shortcode'] flag, and after REST requests had already been
 // served and terminated by rest_api_loaded() during parse_request, so it never
 // actually emitted anything. Static plugin assets are handled by assets/.htaccess
 // (a real web-server directive), not PHP — those files never enter PHP.
-add_action('template_redirect', 'wpsg_maybe_send_security_headers');
-add_filter('rest_pre_serve_request', 'wpsg_add_rest_security_headers', 9, 4);
+add_action('template_redirect', 'mullion_maybe_send_security_headers');
+add_filter('rest_pre_serve_request', 'mullion_add_rest_security_headers', 9, 4);
 
-function wpsg_add_cors_headers($served, $result, $request, $server) {
+function mullion_add_cors_headers($served, $result, $request, $server) {
     $route = $request->get_route();
     if (strpos($route, '/wp-super-gallery/v1/') !== 0) {
         return $served;
     }
 
     $origin = isset($_SERVER['HTTP_ORIGIN']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_ORIGIN'])) : '';
-    $allowed = apply_filters('wpsg_cors_allowed_origins', []);
+    $allowed = apply_filters('mullion_cors_allowed_origins', []);
 
     if ($origin && !empty($allowed) && in_array($origin, $allowed, true)) {
         header('Access-Control-Allow-Origin: ' . $origin);
-        if (apply_filters('wpsg_cors_allow_credentials', true)) {
+        if (apply_filters('mullion_cors_allow_credentials', true)) {
             header('Access-Control-Allow-Credentials: true');
         }
         header('Vary: Origin');
@@ -518,15 +518,15 @@ function wpsg_add_cors_headers($served, $result, $request, $server) {
  * Build the plugin's security response-header set (name => value). Kept as a pure
  * function so it can be asserted directly in tests without capturing header() output.
  */
-function wpsg_security_headers_list() {
+function mullion_security_headers_list() {
     $headers = [
         'X-Content-Type-Options' => 'nosniff',
-        'X-Frame-Options'        => apply_filters('wpsg_x_frame_options', 'SAMEORIGIN'),
-        'Referrer-Policy'        => apply_filters('wpsg_referrer_policy', 'strict-origin-when-cross-origin'),
-        'Permissions-Policy'     => apply_filters('wpsg_permissions_policy', 'camera=(), microphone=(), geolocation=()'),
+        'X-Frame-Options'        => apply_filters('mullion_x_frame_options', 'SAMEORIGIN'),
+        'Referrer-Policy'        => apply_filters('mullion_referrer_policy', 'strict-origin-when-cross-origin'),
+        'Permissions-Policy'     => apply_filters('mullion_permissions_policy', 'camera=(), microphone=(), geolocation=()'),
     ];
 
-    $csp = apply_filters('wpsg_csp_header', '');
+    $csp = apply_filters('mullion_csp_header', '');
     if (!empty($csp)) {
         $headers['Content-Security-Policy'] = $csp;
     }
@@ -538,15 +538,15 @@ function wpsg_security_headers_list() {
  * Emit the plugin's security response headers. Shared by the front-end and REST
  * entry points. No-op if the feature is filtered off or headers were already sent.
  */
-function wpsg_emit_security_headers() {
-    if (!apply_filters('wpsg_security_headers_enabled', true)) {
+function mullion_emit_security_headers() {
+    if (!apply_filters('mullion_security_headers_enabled', true)) {
         return;
     }
     if (headers_sent()) {
         return;
     }
 
-    foreach (wpsg_security_headers_list() as $name => $value) {
+    foreach (mullion_security_headers_list() as $name => $value) {
         header($name . ': ' . $value);
     }
 }
@@ -556,7 +556,7 @@ function wpsg_emit_security_headers() {
  * from the queried post's stored content (not the runtime render flag, which is
  * set too late — P63-C). Pure/side-effect-free so it can be unit-tested via go_to().
  */
-function wpsg_page_has_gallery_shortcode() {
+function mullion_page_has_gallery_shortcode() {
     if (is_admin() || wp_doing_ajax()) {
         return false;
     }
@@ -570,9 +570,9 @@ function wpsg_page_has_gallery_shortcode() {
  * Runs on template_redirect — after send_headers but before any template output,
  * so header() calls are still valid (P63-C).
  */
-function wpsg_maybe_send_security_headers() {
-    if (wpsg_page_has_gallery_shortcode()) {
-        wpsg_emit_security_headers();
+function mullion_maybe_send_security_headers() {
+    if (mullion_page_has_gallery_shortcode()) {
+        mullion_emit_security_headers();
     }
 }
 
@@ -583,9 +583,9 @@ function wpsg_maybe_send_security_headers() {
  * fires inside the REST server just before the response body is sent — the correct
  * place for REST headers, since send_headers never fires for REST requests (P63-C).
  */
-function wpsg_add_rest_security_headers($served, $result, $request, $server) {
+function mullion_add_rest_security_headers($served, $result, $request, $server) {
     if ($request instanceof WP_REST_Request && strpos((string) $request->get_route(), '/wp-super-gallery/v1/') === 0) {
-        wpsg_emit_security_headers();
+        mullion_emit_security_headers();
     }
     return $served;
 }

@@ -34,7 +34,7 @@ describe('AssetsApi', () => {
   });
 
   it('exposes the in-use sentinel code', () => {
-    expect(ASSET_IN_USE_CODE).toBe('wpsg_asset_in_use');
+    expect(ASSET_IN_USE_CODE).toBe('mullion_asset_in_use');
   });
 
   describe('list', () => {

@@ -39,7 +39,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     /**
      * P69-B: debug component markers must default to OFF so a fresh install does
      * not stamp data-wpsg-component / data-wpsg-slot attributes onto public
-     * gallery output. The admin toggle and the wpsg_debug_component_markers
+     * gallery output. The admin toggle and the mullion_debug_component_markers
      * filter remain the explicit opt-in.
      */
     public function test_get_defaults_debug_component_markers_is_false() {
@@ -260,7 +260,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
     public function test_register_settings_registers_option() {
         // Reset global to allow re-registration.
         global $new_allowed_options;
-        unset($new_allowed_options['wpsg_settings_group']);
+        unset($new_allowed_options['mullion_settings_group']);
 
         Mullion_Settings_Renderer::register_settings();
 

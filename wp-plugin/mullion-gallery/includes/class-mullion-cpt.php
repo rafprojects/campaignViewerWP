@@ -540,16 +540,16 @@ class Mullion_CPT {
         $slug     = sanitize_title($raw_slug ?: $name);
         $redirect = admin_url('edit.php?post_type=' . self::POST_TYPE);
         if (empty($name) || empty($slug)) {
-            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('mullion_error', '1', $redirect));
             exit;
         }
         if (!class_exists('Mullion_DB')) {
-            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('mullion_error', '1', $redirect));
             exit;
         }
         $new_id = Mullion_DB::insert_space(['name' => $name, 'slug' => $slug]);
         if (!$new_id) {
-            wp_safe_redirect(add_query_arg('wpsg_error', '1', $redirect));
+            wp_safe_redirect(add_query_arg('mullion_error', '1', $redirect));
             exit;
         }
         Mullion_REST_Base::bump_cache_version();

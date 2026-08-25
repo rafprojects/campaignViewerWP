@@ -11,7 +11,7 @@ class Mullion_Monitoring {
         add_filter('rest_pre_dispatch', [self::class, 'start_timer'], 1, 3);
         add_filter('rest_post_dispatch', [self::class, 'attach_metrics'], 10, 3);
         add_action('shutdown', [self::class, 'log_fatal_error']);
-        add_action('wpsg_oembed_failure', [self::class, 'track_oembed_failure'], 10, 2);
+        add_action('mullion_oembed_failure', [self::class, 'track_oembed_failure'], 10, 2);
         add_action('init', [self::class, 'warm_settings'], 20);
     }
 
@@ -44,7 +44,7 @@ class Mullion_Monitoring {
             self::buffer_metric('wpsg_rest_error_count', 1);
         }
 
-        do_action('wpsg_rest_metrics', [
+        do_action('mullion_rest_metrics', [
             'route' => $route,
             'status' => $status,
             'elapsedMs' => $elapsed_ms,
@@ -76,7 +76,7 @@ class Mullion_Monitoring {
         ];
 
         Mullion_Logger::error('monitoring', 'Fatal PHP error', $payload);
-        do_action('wpsg_php_error', $payload);
+        do_action('mullion_php_error', $payload);
     }
 
     private static function buffer_metric($key, $increment) {
@@ -86,8 +86,8 @@ class Mullion_Monitoring {
 
         $buffer['count'] += $increment;
 
-        $flush_every = intval(apply_filters('wpsg_metrics_flush_every', 10));
-        $flush_seconds = intval(apply_filters('wpsg_metrics_flush_seconds', 60));
+        $flush_every = intval(apply_filters('mullion_metrics_flush_every', 10));
+        $flush_seconds = intval(apply_filters('mullion_metrics_flush_seconds', 60));
 
         $should_flush = $buffer['count'] >= $flush_every || (time() - intval($buffer['last_flush'])) >= $flush_seconds;
 

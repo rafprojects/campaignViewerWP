@@ -59,9 +59,9 @@ class Mullion_Embed {
      * the React app with an identical, nonce-authenticated config.
      */
     public static function page_config_js(): string {
-        $auth_provider = apply_filters('wpsg_auth_provider', 'wp-jwt');
-        $api_base      = apply_filters('wpsg_api_base', home_url());
-        $sentry_dsn    = apply_filters('wpsg_sentry_dsn', '');
+        $auth_provider = apply_filters('mullion_auth_provider', 'wp-jwt');
+        $api_base      = apply_filters('mullion_api_base', home_url());
+        $sentry_dsn    = apply_filters('mullion_sentry_dsn', '');
 
         $settings = class_exists('Mullion_Settings') ? Mullion_Settings::get_settings() : [];
         $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
@@ -72,7 +72,7 @@ class Mullion_Embed {
             'apiBase'                => $api_base,
             'sentryDsn'              => $sentry_dsn,
             'enableJwt'              => defined('MULLION_ENABLE_JWT_AUTH') && MULLION_ENABLE_JWT_AUTH,
-            'debugComponentMarkers'  => (bool) apply_filters('wpsg_debug_component_markers', $debug_component_markers),
+            'debugComponentMarkers'  => (bool) apply_filters('mullion_debug_component_markers', $debug_component_markers),
             'allowUserThemeOverride' => $allow_user_theme_override,
             // P50-F: absolute URL at which the SW is served (via maybe_serve_service_worker).
             // Injected so main.tsx uses the correct URL regardless of which page the SPA loads on.
@@ -80,7 +80,7 @@ class Mullion_Embed {
             // P62-A: license/entitlement state for pro-feature gating. Read by
             // src/hooks/useWpsgLicense.ts to drive upsell UI in the LayoutBuilder.
             // Defaults to the free tier (isPro=false) until real Freemius
-            // credentials are wired via the wpsg_freemius_config filter.
+            // credentials are wired via the mullion_freemius_config filter.
             'license'                => [
                 'isPro'      => class_exists('Mullion_License') ? Mullion_License::can_use_premium_code() : false,
                 'tier'       => class_exists('Mullion_License') ? Mullion_License::get_tier() : null,
@@ -114,7 +114,7 @@ class Mullion_Embed {
         $i18n = [
             'locale'  => get_locale(),
             'strings' => apply_filters(
-                'wpsg_i18n_strings',
+                'mullion_i18n_strings',
                 class_exists('Mullion_Frontend_Strings') ? Mullion_Frontend_Strings::get_translated() : []
             ),
         ];
@@ -180,7 +180,7 @@ class Mullion_Embed {
     }
 
     public static function render_shortcode($atts = []) {
-        $GLOBALS['wpsg_has_shortcode'] = true;
+        $GLOBALS['mullion_has_shortcode'] = true;
         $valid_auth_bar_modes = ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'];
         $atts = shortcode_atts([
             'campaign'      => '',
@@ -199,20 +199,20 @@ class Mullion_Embed {
         // P48-I: Generate a stable, unique instance ID for this shortcode mount point.
         // getRootId() in main.tsx uses host.id as highest priority, making the rootId
         // space-slug-based and collision-free instead of index-based.
-        if (!isset($GLOBALS['wpsg_instance_ids'])) {
-            $GLOBALS['wpsg_instance_ids'] = [];
+        if (!isset($GLOBALS['mullion_instance_ids'])) {
+            $GLOBALS['mullion_instance_ids'] = [];
         }
         $base_id = 'wpsg-' . $space_slug;
-        if (in_array($base_id, $GLOBALS['wpsg_instance_ids'], true)) {
+        if (in_array($base_id, $GLOBALS['mullion_instance_ids'], true)) {
             $counter = 2;
-            while (in_array($base_id . '-' . $counter, $GLOBALS['wpsg_instance_ids'], true)) {
+            while (in_array($base_id . '-' . $counter, $GLOBALS['mullion_instance_ids'], true)) {
                 $counter++;
             }
             $instance_id = $base_id . '-' . $counter;
         } else {
             $instance_id = $base_id;
         }
-        $GLOBALS['wpsg_instance_ids'][] = $instance_id;
+        $GLOBALS['mullion_instance_ids'][] = $instance_id;
 
         // Accumulate space instances for the WP admin bar (P48-I Layer 4).
         if (!isset($GLOBALS['wpsg_spaces_on_page'])) {
@@ -311,8 +311,8 @@ class Mullion_Embed {
 
         // Global page config: emitted once per page load (page-global values only).
         // Space-specific settings live in data-wpsg-config on each mount node.
-        if (empty($GLOBALS['wpsg_config_emitted'])) {
-            $GLOBALS['wpsg_config_emitted'] = true;
+        if (empty($GLOBALS['mullion_config_emitted'])) {
+            $GLOBALS['mullion_config_emitted'] = true;
             // admin_bar_delegation_js() is emitted once here alongside page config.
             // It listens for WP admin bar clicks and routes them to per-instance openers.
             $config_script = '<script>' . self::page_config_js() . self::admin_bar_delegation_js() . '</script>';

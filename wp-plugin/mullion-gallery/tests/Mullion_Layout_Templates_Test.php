@@ -16,7 +16,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
      */
     public function setUp(): void {
         parent::setUp();
-        add_filter( 'wpsg_license_is_pro', '__return_true' );
+        add_filter( 'mullion_license_is_pro', '__return_true' );
     }
 
     /**
@@ -25,7 +25,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
     public function tearDown(): void {
         delete_option( Mullion_Layout_Templates::OPTION_KEY );
         // Ensure the licensed-state filter never leaks into the next test.
-        remove_filter( 'wpsg_license_is_pro', '__return_true' );
+        remove_filter( 'mullion_license_is_pro', '__return_true' );
         parent::tearDown();
     }
 
@@ -859,8 +859,8 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
     // ── P62-A: license/entitlement gating (server-side enforcement) ──────────
     //
     // enforce_license_gates() strips pro fields on create/import and freezes
-    // them on update when unlicensed. In the test env wpsg_fs() returns null,
-    // so Mullion_License falls back to the `wpsg_license_is_pro` filter (default
+    // them on update when unlicensed. In the test env mullion_fs() returns null,
+    // so Mullion_License falls back to the `mullion_license_is_pro` filter (default
     // false = free tier); toggling it via add_filter simulates a pro license.
 
     /** A text layer payload fixture. */
@@ -882,7 +882,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_create_strips_text_layers_when_unlicensed() {
-        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // drop the suite's default license
+        remove_filter( 'mullion_license_is_pro', '__return_true' ); // drop the suite's default license
         $result = Mullion_Layout_Templates::create( $this->valid_template_data( [
             'texts' => [ $this->text_layer_fixture() ],
         ] ) );
@@ -892,7 +892,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_create_strips_breakpoint_overrides_when_unlicensed() {
-        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // drop the suite's default license
+        remove_filter( 'mullion_license_is_pro', '__return_true' ); // drop the suite's default license
         $result = Mullion_Layout_Templates::create( $this->valid_template_data( [
             'breakpointOverrides' => $this->breakpoint_override_fixture(),
         ] ) );
@@ -914,9 +914,9 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_per_feature_filter_can_override_a_single_feature() {
-        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // globally free
+        remove_filter( 'mullion_license_is_pro', '__return_true' ); // globally free
         // …but selectively enable ONLY text layers.
-        add_filter( 'wpsg_license_feature_enabled', function ( $enabled, $feature ) {
+        add_filter( 'mullion_license_feature_enabled', function ( $enabled, $feature ) {
             return Mullion_License::FEATURE_LAYOUT_TEXT_LAYERS === $feature ? true : $enabled;
         }, 10, 2 );
 
@@ -928,7 +928,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
         $this->assertCount( 1, $result['texts'], 'Text layers enabled by per-feature filter must persist.' );
         $this->assertSame( [], $result['breakpointOverrides'], 'Breakpoint overrides remain gated.' );
 
-        remove_all_filters( 'wpsg_license_feature_enabled' );
+        remove_all_filters( 'mullion_license_feature_enabled' );
     }
 
     public function test_update_freezes_text_layers_when_unlicensed() {
@@ -937,7 +937,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
             'texts' => [ $this->text_layer_fixture( 'Original' ) ],
         ] ) );
         $this->assertCount( 1, $created['texts'] );
-        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // now unlicensed
+        remove_filter( 'mullion_license_is_pro', '__return_true' ); // now unlicensed
 
         // Now unlicensed: an attempt to change text layers must be frozen to
         // the last-saved value, NOT emptied and NOT accepted.
@@ -957,7 +957,7 @@ class Mullion_Layout_Templates_Test extends WP_UnitTestCase {
             'breakpointOverrides' => $this->breakpoint_override_fixture( 10 ),
         ] ) );
         $this->assertArrayHasKey( 'slot-1', $created['breakpointOverrides']['tablet'] );
-        remove_filter( 'wpsg_license_is_pro', '__return_true' ); // now unlicensed
+        remove_filter( 'mullion_license_is_pro', '__return_true' ); // now unlicensed
 
         $updated = Mullion_Layout_Templates::update( $created['id'], [
             'breakpointOverrides' => $this->breakpoint_override_fixture( 99 ),

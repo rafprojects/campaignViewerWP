@@ -357,22 +357,22 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
 
         // Validate required fields
         if (empty($email) || !is_email($email)) {
-            return new WP_Error('wpsg_invalid_email', 'Valid email is required.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_email', 'Valid email is required.', ['status' => 400]);
         }
 
         if (empty($display_name)) {
-            return new WP_Error('wpsg_missing_display_name', 'Display name is required.', ['status' => 400]);
+            return new WP_Error('mullion_missing_display_name', 'Display name is required.', ['status' => 400]);
         }
 
         // Check if email already exists
         if (email_exists($email)) {
-            return new WP_Error('wpsg_user_exists', 'A user with this email already exists.', ['status' => 409]);
+            return new WP_Error('mullion_user_exists', 'A user with this email already exists.', ['status' => 409]);
         }
 
         // Validate role exists and prevent privilege escalation
         $allowed_roles = ['subscriber', 'wpsg_editor'];
         if (!in_array($role, $allowed_roles, true)) {
-            return new WP_Error('wpsg_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_editor.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_editor.', ['status' => 400]);
         }
 
         // Generate username from email (before @)
@@ -398,7 +398,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
         ]);
 
         if (is_wp_error($user_id)) {
-            return new WP_Error('wpsg_internal_error', $user_id->get_error_message(), ['status' => 500]);
+            return new WP_Error('mullion_internal_error', $user_id->get_error_message(), ['status' => 500]);
         }
 
         // Send password reset email so user can set their own password

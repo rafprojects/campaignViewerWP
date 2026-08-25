@@ -200,14 +200,14 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         // Fail on the third table (media refs) — after two successful updates.
         $fail_table = Mullion_DB::get_media_refs_table();
         $simulate   = fn($fail, $table) => $table === $fail_table ? true : $fail;
-        add_filter('wpsg_move_campaign_simulate_failure', $simulate, 10, 2);
+        add_filter('mullion_move_campaign_simulate_failure', $simulate, 10, 2);
 
         $response = $this->do_move($campaign, $space_b);
 
-        remove_filter('wpsg_move_campaign_simulate_failure', $simulate, 10);
+        remove_filter('mullion_move_campaign_simulate_failure', $simulate, 10);
 
         $this->assertSame(500, $response->get_status());
-        $this->assertSame('wpsg_move_failed', $response->get_data()['code']);
+        $this->assertSame('mullion_move_failed', $response->get_data()['code']);
 
         $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)), 'Post meta must be unchanged after rollback.');
         foreach ($this->space_ids_by_table($campaign) as $table => $space_ids) {

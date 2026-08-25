@@ -5,7 +5,7 @@
  * verify_admin_auth() previously honored the mere PRESENCE of an
  * `Authorization: Bearer …` header, skipping the nonce check. The extracted
  * predicate bearer_auth_is_verified() now requires BOTH a real logged-in user AND
- * an explicit `wpsg_bearer_auth_verified` filter assertion (default false).
+ * an explicit `mullion_bearer_auth_verified` filter assertion (default false).
  *
  * @package Mullion
  */
@@ -13,7 +13,7 @@ class Mullion_P63G_Bearer_Auth_Test extends WP_UnitTestCase {
 
     public function tearDown(): void {
         wp_set_current_user( 0 );
-        remove_all_filters( 'wpsg_bearer_auth_verified' );
+        remove_all_filters( 'mullion_bearer_auth_verified' );
         parent::tearDown();
     }
 
@@ -34,21 +34,21 @@ class Mullion_P63G_Bearer_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_filter_alone_without_user_is_insufficient() {
-        add_filter( 'wpsg_bearer_auth_verified', '__return_true' );
+        add_filter( 'mullion_bearer_auth_verified', '__return_true' );
         // No logged-in user → not honored even with the filter asserting true.
         $this->assertFalse( Mullion_REST_Base::bearer_auth_is_verified( 'Bearer token' ) );
     }
 
     public function test_honored_only_when_user_and_integration_confirm() {
         wp_set_current_user( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
-        add_filter( 'wpsg_bearer_auth_verified', '__return_true' );
+        add_filter( 'mullion_bearer_auth_verified', '__return_true' );
         $this->assertTrue( Mullion_REST_Base::bearer_auth_is_verified( 'Bearer valid-token' ) );
     }
 
     public function test_filter_receives_the_header_value() {
         wp_set_current_user( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
         $seen = null;
-        add_filter( 'wpsg_bearer_auth_verified', function ( $verified, $header ) use ( &$seen ) {
+        add_filter( 'mullion_bearer_auth_verified', function ( $verified, $header ) use ( &$seen ) {
             $seen = $header;
             return true;
         }, 10, 2 );

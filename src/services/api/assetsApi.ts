@@ -18,7 +18,7 @@ export interface AssetDeleteResult {
 }
 
 /** Sentinel error code returned by DELETE when the asset is still in use. */
-export const ASSET_IN_USE_CODE = 'wpsg_asset_in_use';
+export const ASSET_IN_USE_CODE = 'mullion_asset_in_use';
 
 /**
  * P52-B — standalone CRUD helpers for the global asset library.

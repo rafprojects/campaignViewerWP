@@ -2,7 +2,7 @@
 /**
  * Tests for Mullion_License — entitlement seam (P62-A).
  *
- * In the test environment wpsg_fs() returns null (no Freemius credentials), so
+ * In the test environment mullion_fs() returns null (no Freemius credentials), so
  * every check falls back to its filter. These tests exercise the stub/filter
  * paths; the real-SDK path is validated only against a Freemius sandbox (M1-M3,
  * blocked pre-account).
@@ -13,11 +13,11 @@
 class Mullion_License_Test extends WP_UnitTestCase {
 
     public function tearDown(): void {
-        remove_filter( 'wpsg_license_is_pro', '__return_true' );
-        remove_all_filters( 'wpsg_license_feature_enabled' );
-        remove_all_filters( 'wpsg_license_tier' );
-        remove_all_filters( 'wpsg_license_upgrade_url' );
-        remove_all_filters( 'wpsg_freemius_config' );
+        remove_filter( 'mullion_license_is_pro', '__return_true' );
+        remove_all_filters( 'mullion_license_feature_enabled' );
+        remove_all_filters( 'mullion_license_tier' );
+        remove_all_filters( 'mullion_license_upgrade_url' );
+        remove_all_filters( 'mullion_freemius_config' );
         parent::tearDown();
     }
 
@@ -26,7 +26,7 @@ class Mullion_License_Test extends WP_UnitTestCase {
     }
 
     public function test_is_sdk_active_false_without_credentials() {
-        // wpsg_fs() returns null in the test env (empty wpsg_freemius_config).
+        // mullion_fs() returns null in the test env (empty mullion_freemius_config).
         $this->assertFalse( Mullion_License::is_sdk_active() );
     }
 
@@ -35,14 +35,14 @@ class Mullion_License_Test extends WP_UnitTestCase {
     }
 
     public function test_can_use_premium_code_true_with_filter() {
-        add_filter( 'wpsg_license_is_pro', '__return_true' );
+        add_filter( 'mullion_license_is_pro', '__return_true' );
         $this->assertTrue( Mullion_License::can_use_premium_code() );
     }
 
     public function test_can_use_feature_follows_premium_by_default() {
         $this->assertFalse( Mullion_License::can_use_feature( Mullion_License::FEATURE_LAYOUT_TEXT_LAYERS ) );
 
-        add_filter( 'wpsg_license_is_pro', '__return_true' );
+        add_filter( 'mullion_license_is_pro', '__return_true' );
         $this->assertTrue( Mullion_License::can_use_feature( Mullion_License::FEATURE_LAYOUT_TEXT_LAYERS ) );
         $this->assertTrue( Mullion_License::can_use_feature( Mullion_License::FEATURE_LAYOUT_BREAKPOINT_OVERRIDES ) );
         $this->assertTrue( Mullion_License::can_use_feature( Mullion_License::FEATURE_LAYOUT_STARTER_LIBRARY ) );
@@ -50,7 +50,7 @@ class Mullion_License_Test extends WP_UnitTestCase {
 
     public function test_can_use_feature_per_feature_override() {
         // Globally free, but enable ONLY the starter library.
-        add_filter( 'wpsg_license_feature_enabled', function ( $enabled, $feature ) {
+        add_filter( 'mullion_license_feature_enabled', function ( $enabled, $feature ) {
             return Mullion_License::FEATURE_LAYOUT_STARTER_LIBRARY === $feature ? true : $enabled;
         }, 10, 2 );
 
@@ -72,14 +72,14 @@ class Mullion_License_Test extends WP_UnitTestCase {
     }
 
     public function test_get_tier_from_filter() {
-        add_filter( 'wpsg_license_tier', function () {
+        add_filter( 'mullion_license_tier', function () {
             return 'agency';
         } );
         $this->assertSame( 'agency', Mullion_License::get_tier() );
     }
 
     public function test_get_tier_ignores_empty_filter_value() {
-        add_filter( 'wpsg_license_tier', function () {
+        add_filter( 'mullion_license_tier', function () {
             return '';
         } );
         $this->assertNull( Mullion_License::get_tier() );
@@ -87,11 +87,11 @@ class Mullion_License_Test extends WP_UnitTestCase {
 
     public function test_get_upgrade_url_default_and_filter() {
         // Stub path (no SDK in the test env): default is the placeholder pricing URL.
-        // When the SDK is live, get_upgrade_url() prefers wpsg_fs()->get_upgrade_url()
+        // When the SDK is live, get_upgrade_url() prefers mullion_fs()->get_upgrade_url()
         // (P62-K) — validated against a Freemius sandbox, not here.
         $this->assertSame( 'https://your-site.tld/pricing', Mullion_License::get_upgrade_url() );
 
-        add_filter( 'wpsg_license_upgrade_url', function () {
+        add_filter( 'mullion_license_upgrade_url', function () {
             return 'https://example.test/buy';
         } );
         $this->assertSame( 'https://example.test/buy', Mullion_License::get_upgrade_url() );
@@ -106,7 +106,7 @@ class Mullion_License_Test extends WP_UnitTestCase {
     }
 
     public function test_get_config_from_filter() {
-        add_filter( 'wpsg_freemius_config', function () {
+        add_filter( 'mullion_freemius_config', function () {
             return [ 'id' => '12345', 'public_key' => 'pk_test', 'is_premium' => true ];
         } );
         $config = Mullion_License::get_config();

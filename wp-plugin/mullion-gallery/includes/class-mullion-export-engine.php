@@ -13,8 +13,8 @@ if (!defined('ABSPATH')) {
  */
 class Mullion_Export_Engine {
 
-    const JOB_PROCESS_HOOK = 'wpsg_export_process_job';
-    const JOB_CLEANUP_HOOK = 'wpsg_export_cleanup';
+    const JOB_PROCESS_HOOK = 'mullion_export_process_job';
+    const JOB_CLEANUP_HOOK = 'mullion_export_cleanup';
     const SIZE_LIMIT_BYTES = 104857600; // 100 MB
     const JOB_TTL          = 86400;     // 24 h
     const JOB_INDEX_OPT    = 'wpsg_export_job_index';

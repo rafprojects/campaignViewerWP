@@ -5,7 +5,7 @@
  * on both the front-end shortcode page and the wp-admin Spaces/Admin pages.
  * The value flows from the PHP entitlement seam (Mullion_License), which defaults
  * to the free tier (isPro=false) until real Freemius credentials are wired via
- * the `wpsg_freemius_config` filter.
+ * the `mullion_freemius_config` filter.
  *
  * Reads the global config directly (the same convention as src/main.tsx) rather
  * than introducing a React Context — there is no config-context to extend.

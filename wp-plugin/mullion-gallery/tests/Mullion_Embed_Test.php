@@ -13,16 +13,16 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $ref = new ReflectionProperty( Mullion_Embed::class, 'manifest_cache' );
         $ref->setAccessible( true );
         $ref->setValue( null, null );
-        unset( $GLOBALS['wpsg_has_shortcode'] );
+        unset( $GLOBALS['mullion_has_shortcode'] );
         // P47-E emits window.__WPSG_CONFIG__ once per page, guarded by this global.
         // Reset it so each test's render_shortcode() re-emits the config script.
-        unset( $GLOBALS['wpsg_config_emitted'] );
+        unset( $GLOBALS['mullion_config_emitted'] );
         delete_option( Mullion_Settings::OPTION_NAME );
     }
 
     public function tearDown(): void {
-        unset( $GLOBALS['wpsg_has_shortcode'] );
-        unset( $GLOBALS['wpsg_config_emitted'] );
+        unset( $GLOBALS['mullion_has_shortcode'] );
+        unset( $GLOBALS['mullion_config_emitted'] );
         delete_option( Mullion_Settings::OPTION_NAME );
         // Reset manifest cache.
         $ref = new ReflectionProperty( Mullion_Embed::class, 'manifest_cache' );
@@ -121,11 +121,11 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_render_shortcode_sets_wpsg_has_shortcode_global() {
-        $this->assertArrayNotHasKey( 'wpsg_has_shortcode', $GLOBALS );
+        $this->assertArrayNotHasKey( 'mullion_has_shortcode', $GLOBALS );
 
         Mullion_Embed::render_shortcode();
 
-        $this->assertTrue( $GLOBALS['wpsg_has_shortcode'] ?? false );
+        $this->assertTrue( $GLOBALS['mullion_has_shortcode'] ?? false );
     }
 
     public function test_render_shortcode_reflects_theme_from_settings() {

@@ -80,7 +80,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
     public static function export_campaign($request) {
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         // P65-A: single source of truth for the export entry. build_entry()
@@ -117,11 +117,11 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         $body    = $request->get_json_params();
 
         if (empty($body) || !isset($body['campaign'])) {
-            return new WP_Error('wpsg_invalid_payload', 'Invalid payload: missing campaign key', ['status' => 400]);
+            return new WP_Error('mullion_invalid_payload', 'Invalid payload: missing campaign key', ['status' => 400]);
         }
         $version = intval($body['version'] ?? 0);
         if ($version !== 1) {
-            return new WP_Error('wpsg_unsupported_version', 'Unsupported export version', ['status' => 400]);
+            return new WP_Error('mullion_unsupported_version', 'Unsupported export version', ['status' => 400]);
         }
 
         // P65-A: thin wrapper over the shared import pipeline. JSON import is
@@ -149,7 +149,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
     public static function export_campaign_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary export.',
                 ['status' => 500]
             );
@@ -157,7 +157,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
 
         $post_id = intval($request->get_param('id'));
         if (!self::campaign_exists($post_id)) {
-            return new WP_Error('wpsg_campaign_not_found', 'Campaign not found', ['status' => 404]);
+            return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
         $media = get_post_meta($post_id, 'media_items', true) ?: [];
@@ -176,7 +176,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
             'media_references' => $entry['media_references'],
         ]);
         if ($manifest === false) {
-            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+            return new WP_Error('mullion_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
         // P63-I: stamp the campaign's space so read/download re-checks space access.
@@ -206,7 +206,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
     public static function batch_export_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary export.',
                 ['status' => 500]
             );
@@ -251,7 +251,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         }
 
         if (empty($campaigns_data)) {
-            return new WP_Error('wpsg_not_found', 'No valid campaigns found for export.', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'No valid campaigns found for export.', ['status' => 404]);
         }
 
         // build_entry() derives each manifest filename from that campaign's own
@@ -276,7 +276,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
             'campaigns'    => $campaigns_data,
         ]);
         if ($manifest === false) {
-            return new WP_Error('wpsg_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
+            return new WP_Error('mullion_encode_failed', 'Failed to encode export manifest.', ['status' => 500]);
         }
 
         // P63-I: stamp every contributing space; read/download requires access to
@@ -378,7 +378,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
     /** P63-I: the single 403 an unauthorized job access returns. */
     private static function job_forbidden(): WP_Error {
         return new WP_Error(
-            'wpsg_forbidden',
+            'mullion_forbidden',
             'You do not have permission to access this export job.',
             ['status' => 403]
         );
@@ -390,7 +390,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         $job    = Mullion_Export_Engine::get_job($job_id);
 
         if (!$job) {
-            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Export job not found', ['status' => 404]);
         }
 
         $authorized = self::authorize_job_access($job);
@@ -419,7 +419,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         $job    = Mullion_Export_Engine::get_job($job_id);
 
         if (!$job) {
-            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Export job not found', ['status' => 404]);
         }
 
         $authorized = self::authorize_job_access($job);
@@ -437,7 +437,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         $job    = Mullion_Export_Engine::get_job($job_id);
 
         if (!$job) {
-            return new WP_Error('wpsg_not_found', 'Export job not found', ['status' => 404]);
+            return new WP_Error('mullion_not_found', 'Export job not found', ['status' => 404]);
         }
 
         $authorized = self::authorize_job_access($job);
@@ -447,7 +447,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
 
         if ($job['status'] !== 'complete') {
             return new WP_Error(
-                'wpsg_not_ready',
+                'mullion_not_ready',
                 'Export is not complete (status: ' . esc_html($job['status']) . ')',
                 ['status' => 409]
             );
@@ -455,7 +455,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
 
         $zip_path = $job['zip_path'];
         if (!$zip_path || !file_exists($zip_path)) {
-            return new WP_Error('wpsg_file_missing', 'Export file not found', ['status' => 404]);
+            return new WP_Error('mullion_file_missing', 'Export file not found', ['status' => 404]);
         }
 
         $filename = basename($zip_path);
@@ -476,7 +476,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
     public static function import_campaign_binary($request) {
         if (!Mullion_Export_Engine::check_zip_available()) {
             return new WP_Error(
-                'wpsg_missing_dependency',
+                'mullion_missing_dependency',
                 'ext-zip is required for binary import.',
                 ['status' => 500]
             );
@@ -484,29 +484,29 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
 
         $files = $request->get_file_params();
         if (empty($files['file'])) {
-            return new WP_Error('wpsg_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
+            return new WP_Error('mullion_missing_file', 'No file uploaded (field: file)', ['status' => 400]);
         }
 
         $file = $files['file'];
         if (isset($file['error']) && $file['error'] !== UPLOAD_ERR_OK) {
-            return new WP_Error('wpsg_upload_error', 'File upload failed', ['status' => 400]);
+            return new WP_Error('mullion_upload_error', 'File upload failed', ['status' => 400]);
         }
 
         $zip = new ZipArchive();
         if ($zip->open($file['tmp_name']) !== true) {
-            return new WP_Error('wpsg_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
+            return new WP_Error('mullion_invalid_zip', 'Could not open ZIP archive', ['status' => 400]);
         }
 
         $manifest_json = $zip->getFromName('manifest.json');
         if ($manifest_json === false) {
             $zip->close();
-            return new WP_Error('wpsg_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
+            return new WP_Error('mullion_invalid_package', 'manifest.json not found in archive', ['status' => 400]);
         }
 
         $body = json_decode($manifest_json, true);
         if (!is_array($body)) {
             $zip->close();
-            return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+            return new WP_Error('mullion_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
         }
 
         $version = intval($body['version'] ?? 0);
@@ -514,7 +514,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         if ($version === 2) {
             if (!isset($body['campaign'])) {
                 $zip->close();
-                return new WP_Error('wpsg_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
+                return new WP_Error('mullion_invalid_manifest', 'Invalid manifest structure', ['status' => 400]);
             }
             $entry = [
                 'campaign'         => $body['campaign'],
@@ -533,7 +533,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         } elseif ($version === 3 && ($body['type'] ?? '') === 'multi') {
             if (!isset($body['campaigns']) || !is_array($body['campaigns'])) {
                 $zip->close();
-                return new WP_Error('wpsg_invalid_manifest', 'Invalid v3 manifest structure', ['status' => 400]);
+                return new WP_Error('mullion_invalid_manifest', 'Invalid v3 manifest structure', ['status' => 400]);
             }
             $created = [];
             foreach ($body['campaigns'] as $entry) {
@@ -547,7 +547,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
             }
             $zip->close();
             if (empty($created)) {
-                return new WP_Error('wpsg_import_failed', 'No campaigns could be imported from the archive.', ['status' => 422]);
+                return new WP_Error('mullion_import_failed', 'No campaigns could be imported from the archive.', ['status' => 422]);
             }
             self::add_audit_entry(0, 'campaign.batch_imported', [
                 'format'   => 'binary',
@@ -564,7 +564,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         } else {
             $zip->close();
             return new WP_Error(
-                'wpsg_unsupported_version',
+                'mullion_unsupported_version',
                 'Binary import requires manifest version 2 or a v3 multi-campaign archive.',
                 ['status' => 400]
             );
