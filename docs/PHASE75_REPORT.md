@@ -1,15 +1,15 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A and P75-H landed
+**Status:** In progress — P75-A, P75-B, and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-A edition self-identification landed. Remaining: B–G.)
+**Last updated:** 2026-08-25 (P75-B dual-channel release wiring landed. Remaining: C–G.)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Done | Small-Medium |
-| P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Planned | Medium |
+| P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Done | Medium |
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
@@ -169,6 +169,22 @@ No changes to the premium build, Vitest sanity gate, or PHPUnit sanity gate step
 - Local dry-run without triggering the real workflow (see phase-wide Verification below) — this is the primary way to prove the YAML logic before it ever runs in Actions, since `workflow_dispatch` can't be exercised locally.
 - Manual review of the YAML diff for step-ordering correctness (the ordering constraint in the Fix section above is the one genuine footgun — a future reorder that runs the free build before the premium zip would silently ship a stripped-down "premium" ZIP).
 - No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting.
+
+### Implementation Notes (2026-08-25)
+
+Verified against current WordPress.org guidelines, Freemius deployment docs, and the live YAML/`copy-wp-assets.js` layout — not only this plan.
+
+- **[WP.org Plugin Guideline 5](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/#5-trialware-is-not-permitted):** "Plugins may not contain functionality that is restricted or locked, only to be made available by payment or upgrade." Lite ZIP + SVN path must be the DCE-stripped free build. Freemius [Software Licensing](https://freemius.com/help/documentation/wordpress-sdk/integration/software-licensing/) quotes the same bar and tells you to keep premium code out of the `.org` package.
+- **[Freemius Deployment Process](https://freemius.com/help/documentation/wordpress/deployment-process/):** "Freemius prepares the WordPress.org-compatible package, but it does not publish it to WordPress.org for you." This product already chose the self-managed fallback (Vite DCE, not Freemius's preprocessor), so `release.yml` emits the lite ZIP and `svn-deploy.yml` is the SVN publish step. Freemius still gets the premium ZIP (out of band / later M1 deploy-on-Freemius). No credentials invented.
+- **Scan-path footgun vs the plan.** `copy-wp-assets.js` copies all of `dist/` into `wp-plugin/mullion-gallery/assets/`, so hashed chunks live at `assets/assets/*.js` (confirmed on disk; `sw.js` sits at the parent). The plan's `check-free-build-clean.mjs wp-plugin/mullion-gallery/assets` against a *non-recursive* scanner would have listed only `sw.js`, reported clean, and shipped Pro chunks. The scanner now walks `.js` files recursively and matches chunk prefixes on `basename()`. `npm run check:free-build` (no argv, `./dist/assets`) stays equivalent.
+- **Edition-marker assertion** (not in the original Fix sketch, added because P75-A exists): after the Pro-code scan, both `release.yml` and `svn-deploy.yml` require `mullion-edition.json` to parse as `{ premium: false }`. Catches zipping the premium working tree as `-lite-` if the free rebuild is skipped or reordered.
+- **`release.yml` optional `deploy_svn`.** Pre-existing hole: that step used `BUILD_DIR: wp-plugin/mullion-gallery` with no P62-G guard, so checking the box would have pushed premium assets. After this track it runs *after* `build:wp:free` overwrites `assets/`, so it deploys lite. Comment forbids moving it above the free build. Dedicated `svn-deploy.yml` still prefers the downloaded lite ZIP (exact released bytes).
+- **ZIP naming / excludes.** Premium `mullion-gallery-v${VERSION}.zip`, lite `mullion-gallery-lite-v${VERSION}.zip`; internal folder remains `mullion-gallery/` (Phase 74 Decision C). Same `zip -x` list as before; `.distignore` unchanged.
+- **Validation.** Scanner on leftover premium plugin assets: exit 1, all five Pro markers. Missing-dir argv: exit 1. Local dual-build dry-run (`build:wp` → zip premium → `build:wp:free` → scan plugin `assets/` and `./dist/assets` → zip lite → unzip both → scan extracted lite as `svn-deploy.yml` would):
+  - Premium ZIP `mullion-gallery-v0.90.0.zip`: 3234 files, marker `{ premium: true }`, contains `PresetGalleryModal-*.js` + `TextPropertiesPanel-*.js`; lite-scan of the extracted tree fails with all five Pro markers.
+  - Lite ZIP `mullion-gallery-lite-v0.90.0.zip`: 3232 files (the two Pro chunks), marker `{ premium: false }`; scan of working-tree assets, `./dist/assets` (58 JS), plugin `assets/` (59 JS, includes `sw.js`), and extracted lite tree: all clean.
+  - Both ZIPs include `readme.txt`, `mullion-gallery.php`, and `vendor/freemius/wordpress-sdk`. Local host has `unzip` but not `zip`; the dry-run used Python `zipfile` with the same exclude set the YAML `zip -x` list uses. Marker deleted after the dry-run so the PHPUnit no-marker path stays valid.
+  - Pre-existing, not changed: `zip -x` excludes `phpunit/*` but not the root `phpunit` binary; `.distignore` lists `phpunit`. 10up SVN (`.distignore`) and the GitHub ZIP therefore still diverge on that file. P75-C can call it out; this track does not retune the exclude list.
 
 ## Track P75-C - Update `docs/guides/PACKAGING_RELEASE.md`
 
@@ -427,12 +443,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H and P75-A have landed — see those tracks' Implementation Notes. B–G remain planned.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, and P75-B have landed — see those tracks' Implementation Notes. C–G remain planned.
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B/C are still code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C should document A/B as they shipped. P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
 **The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) landed without designer input. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
-Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
+Once the remaining tracks land, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

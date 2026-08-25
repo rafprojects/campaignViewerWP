@@ -9,12 +9,17 @@
 #   1. Compute or validate version
 #   2. Bump version in package.json + plugin header + MULLION_VERSION constant
 #   3. Run tests (sanity gate)
-#   4. Production build (build:wp)
+#   4. Production build (build:wp) — premium JS
 #   5. Install production-only Composer deps
-#   6. Create distribution ZIP
-#   7. Commit version bump → create git tag → push
-#   8. Create GitHub Release with ZIP attached
-#   9. (Optional) Deploy to WordPress.org SVN
+#   6. Package premium ZIP (mullion-gallery-v*.zip)
+#   7. Rebuild free/lite assets (build:wp:free) — OVERWRITES plugin assets/
+#      Must stay AFTER step 6. WordPress.org guideline 5 forbids locked/premium
+#      code in the directory; Freemius does not SVN-publish for us
+#      (https://freemius.com/help/documentation/wordpress/deployment-process/).
+#   8. Static Pro-code scan + package lite ZIP (mullion-gallery-lite-v*.zip)
+#   9. Commit version bump → create git tag → push
+#  10. Create GitHub Release with BOTH ZIPs attached
+#  11. (Optional) Deploy to WordPress.org SVN from the lite working tree
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: Release
@@ -148,15 +153,75 @@ jobs:
         run: |
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
-      # ── Create distribution ZIP ─────────────────────────────────────────────
-      - name: Package distribution ZIP
+      # ── Create premium distribution ZIP ─────────────────────────────────────
+      # Capture premium assets as ZIP bytes BEFORE the free rebuild below
+      # overwrites wp-plugin/mullion-gallery/assets/. Do not reorder.
+      - name: Package premium distribution ZIP
         id: zip
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          PLUGIN_DIR="wp-plugin/mullion-gallery"
           ZIP_NAME="mullion-gallery-v${VERSION}.zip"
 
+          cd wp-plugin
+          zip -r "../${ZIP_NAME}" mullion-gallery \
+            -x "mullion-gallery/tests/*" \
+            -x "mullion-gallery/phpunit/*" \
+            -x "mullion-gallery/phpunit.xml.dist" \
+            -x "mullion-gallery/phpcs.xml" \
+            -x "mullion-gallery/.phpunit.result.cache" \
+            -x "mullion-gallery/composer.json" \
+            -x "mullion-gallery/composer.lock" \
+            -x "mullion-gallery/.wp-env.json" \
+            -x "mullion-gallery/bin/*"
+          cd ..
+
+          echo "zip_path=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Created $ZIP_NAME ($(du -h "$ZIP_NAME" | cut -f1))"
+
+      # ── Free / lite channel (P75-B) ─────────────────────────────────────────
+      # build:wp:free sets MULLION_PREMIUM=false, DCE-strips Pro authoring from
+      # the JS bundle, and rewrites assets/mullion-edition.json to premium:false.
+      # PHP is byte-identical across editions (license enforcement, not feature
+      # code), so Composer --no-dev from above is reused.
+      #
+      # ORDERING: this MUST run after the premium ZIP step. Both editions share
+      # wp-plugin/mullion-gallery/assets/; the free build destroys the premium
+      # assets the ZIP already captured. Moving this before the premium zip
+      # would ship a stripped "premium" artifact.
+      - name: Build free (lite) assets
+        run: npm run build:wp:free
+
+      - name: Verify free (lite) assets are Pro-code clean
+        run: |
+          # Recurses; hashed chunks live in assets/assets/ (copy of dist/).
+          node scripts/check-free-build-clean.mjs wp-plugin/mullion-gallery/assets
+          node -e '
+            const fs = require("fs");
+            const p = "wp-plugin/mullion-gallery/assets/mullion-edition.json";
+            let data;
+            try { data = JSON.parse(fs.readFileSync(p, "utf8")); }
+            catch (e) {
+              console.error("FAIL — missing or malformed edition marker at", p);
+              process.exit(1);
+            }
+            if (data.premium !== false) {
+              console.error("FAIL — lite package marker is not { premium: false }:", data);
+              process.exit(1);
+            }
+            console.log("Edition marker is free (premium: false)");
+          '
+
+      - name: Package lite distribution ZIP
+        id: zip_lite
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ZIP_NAME="mullion-gallery-lite-v${VERSION}.zip"
+
+          # Same exclude list as the premium ZIP (canonical: .distignore).
+          # Internal folder is still mullion-gallery/; only the filename
+          # carries -lite- (Phase 74 Decision C / P75 Key Decision F).
           cd wp-plugin
           zip -r "../${ZIP_NAME}" mullion-gallery \
             -x "mullion-gallery/tests/*" \
@@ -198,17 +263,30 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
-          files: ${{ steps.zip.outputs.zip_path }}
+          files: |
+            ${{ steps.zip.outputs.zip_path }}
+            ${{ steps.zip_lite.outputs.zip_path }}
 
-      # ── Upload ZIP as workflow artifact (backup) ────────────────────────────
-      - name: Upload release ZIP artifact
+      # ── Upload ZIPs as workflow artifacts (backup) ──────────────────────────
+      - name: Upload premium release ZIP artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-zip
           path: ${{ steps.zip.outputs.zip_path }}
           retention-days: 90
 
-      # ── Optional: Deploy to WordPress.org SVN ───────────────────────────────
+      - name: Upload lite release ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-zip-lite
+          path: ${{ steps.zip_lite.outputs.zip_path }}
+          retention-days: 90
+
+      # ── Optional: Deploy lite build to WordPress.org SVN ────────────────────
+      # BUILD_DIR is the working tree AFTER build:wp:free overwrote assets/.
+      # Do not move this before the free build — that would push Pro code to
+      # WordPress.org (guideline 5). Dedicated SVN Deploy workflow downloads
+      # the lite ZIP from the GitHub Release instead (exact released bytes).
       - name: Deploy to WordPress.org SVN
         if: ${{ inputs.deploy_svn }}
         uses: 10up/action-wordpress-plugin-deploy@v2
