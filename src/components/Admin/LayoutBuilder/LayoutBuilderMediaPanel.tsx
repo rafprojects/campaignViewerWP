@@ -44,8 +44,8 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         display: 'flex',
         flexDirection: 'column',
         padding: 'var(--mantine-spacing-sm)',
-        background: 'var(--wpsg-builder-surface)',
-        color: 'var(--wpsg-builder-text)',
+        background: 'var(--mullion-builder-surface)',
+        color: 'var(--mullion-builder-text)',
         overflow: 'hidden',
       }}
     >

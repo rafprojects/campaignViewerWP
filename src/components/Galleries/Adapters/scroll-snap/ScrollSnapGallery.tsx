@@ -193,7 +193,7 @@ export function ScrollSnapGallery({
                   borderRadius: br,
                   cursor: 'pointer',
                   flexShrink: 0,
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                 }}
               >
                 <LazyImage

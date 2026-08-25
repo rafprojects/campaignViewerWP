@@ -44,9 +44,9 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       <Box
         p="md"
         style={{
-          background: 'color-mix(in srgb, var(--wpsg-color-surface) 95%, transparent)',
+          background: 'color-mix(in srgb, var(--mullion-color-surface) 95%, transparent)',
           borderRadius: 8,
-          border: '1px solid var(--wpsg-color-border, rgba(255,255,255,0.15))',
+          border: '1px solid var(--mullion-color-border, rgba(255,255,255,0.15))',
           textAlign: 'center',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -68,9 +68,9 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       onSubmit={handleSubmit}
       p="md"
       style={{
-        background: 'color-mix(in srgb, var(--wpsg-color-surface) 95%, transparent)',
+        background: 'color-mix(in srgb, var(--mullion-color-surface) 95%, transparent)',
         borderRadius: 8,
-        border: '1px solid var(--wpsg-color-border, rgba(255,255,255,0.15))',
+        border: '1px solid var(--mullion-color-border, rgba(255,255,255,0.15))',
       }}
       onClick={(e) => e.stopPropagation()}
     >

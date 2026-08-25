@@ -92,7 +92,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
                 overflow: 'hidden',
                 padding: 0,
                 border: 'none',
-                background: 'var(--wpsg-color-surface, #1a1a2e)',
+                background: 'var(--mullion-color-surface, #1a1a2e)',
                 flexShrink: 0,
               }}
             >

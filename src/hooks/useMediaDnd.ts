@@ -54,9 +54,9 @@ export function useMediaDnd(
       return undefined;
     }
     const position = getDropPosition(activeMediaId, overMediaId);
-    // --wpsg-color-primary is a gallery-side token; fall back to Mantine blue in the admin context.
-    const c = 'var(--wpsg-color-primary, var(--mantine-color-blue-5))';
-    const glow = `color-mix(in srgb, var(--wpsg-color-primary, var(--mantine-color-blue-5)) 40%, transparent)`;
+    // --mullion-color-primary is a gallery-side token; fall back to Mantine blue in the admin context.
+    const c = 'var(--mullion-color-primary, var(--mantine-color-blue-5))';
+    const glow = `color-mix(in srgb, var(--mullion-color-primary, var(--mantine-color-blue-5)) 40%, transparent)`;
     if (axis === 'horizontal') {
       return {
         boxShadow: position === 'before'

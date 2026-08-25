@@ -198,8 +198,8 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        background: 'var(--wpsg-builder-surface)',
-        color: 'var(--wpsg-builder-text)',
+        background: 'var(--mullion-builder-surface)',
+        color: 'var(--mullion-builder-text)',
       }}
     >
       {/* Slot toolbar */}
@@ -209,7 +209,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={4}
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
             flexShrink: 0,
           }}
         >
@@ -301,7 +301,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={3}
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
             flexShrink: 0,
           }}
         >
@@ -360,7 +360,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
       )}
 
       {/* Layer search filter */}
-      <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--wpsg-builder-border)', flexShrink: 0 }}>
+      <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--mullion-builder-border)', flexShrink: 0 }}>
         <TextInput
           size="xs"
           placeholder={tr('lb_layers_filter_ph', 'Filter layers…')}
@@ -376,7 +376,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
               )
               : null
           }
-          styles={{ input: { background: 'var(--wpsg-builder-surface)', color: 'var(--wpsg-builder-text)', borderColor: 'var(--wpsg-builder-border)' } }}
+          styles={{ input: { background: 'var(--mullion-builder-surface)', color: 'var(--mullion-builder-text)', borderColor: 'var(--mullion-builder-border)' } }}
         />
       </div>
 

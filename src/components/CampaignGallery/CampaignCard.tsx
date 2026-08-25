@@ -63,7 +63,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     const showInfo = settings?.showCardInfoPanel !== false;
     const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
     const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
-    const thumbnailFade = `linear-gradient(to top, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientEndOpacity * 100)}%, transparent) 0%, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientStartOpacity * 100)}%, transparent) 100%)`;
+    const thumbnailFade = `linear-gradient(to top, color-mix(in srgb, var(--mullion-color-background) ${Math.round(gradientEndOpacity * 100)}%, transparent) 0%, color-mix(in srgb, var(--mullion-color-background) ${Math.round(gradientStartOpacity * 100)}%, transparent) 100%)`;
     return (
       <UnstyledButton
         ref={ref}
@@ -135,7 +135,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 pos="absolute"
                 inset={0}
                 style={{
-                  background: 'color-mix(in srgb, var(--wpsg-color-background) 60%, transparent)',
+                  background: 'color-mix(in srgb, var(--mullion-color-background) 60%, transparent)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -152,14 +152,14 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                   <Box
                     p="lg"
                     style={{
-                      background: 'color-mix(in srgb, var(--wpsg-color-surface) 90%, transparent)',
+                      background: 'color-mix(in srgb, var(--mullion-color-surface) 90%, transparent)',
                       borderRadius: '9999px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <IconLock size={lockIconSize} color="var(--wpsg-color-text-muted)" />
+                    <IconLock size={lockIconSize} color="var(--mullion-color-text-muted)" />
                   </Box>
                 )}
               </Box>

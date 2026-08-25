@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-H, P74-L landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-H, P74-I, P74-L landed, remaining tracks Planned
 **Created:** 2026-08-23
-**Last updated:** 2026-08-24 (P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
+**Last updated:** 2026-08-24 (P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
 ### Tracks
 
@@ -16,7 +16,7 @@
 | P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
 | P74-G | PHP class + file rename (56 classes, 56 files) | Done | Medium (large, mechanical) |
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Done | Medium |
-| P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Planned | Medium |
+| P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Done | Medium |
 | P74-J | Remaining JS/TS identifier cleanup | Planned | Low-Medium |
 | P74-K | Freemius slug wiring | Planned | Low (hard sequencing dependency on Phase 75) |
 | P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
@@ -365,13 +365,27 @@ The `--wpsg-*` CSS custom-property namespace (52+ distinct variable names) is de
 
 ### Acceptance criteria
 
-- `grep -rn -- "--wpsg-"` across `src/` and `packages/*/src` returns zero results.
-- Visual regression suite (Playwright, 3 viewports × adapters) shows no unintended change — this track is a pure rename, not a visual change (visual changes come from P74-N).
+- `grep -rn -- "--wpsg-"` across `src/` and `packages/*/src` returns zero results. **Met.**
+- Visual regression suite (Playwright, 3 viewports × adapters) shows no unintended change — this track is a pure rename, not a visual change (visual changes come from P74-N). **Met** — 33/33 passed, zero diffs against pre-rename baselines.
 
 ### Validation
 
-- Full Vitest suite.
-- Playwright visual-regression run, diffed against pre-rename baselines — any diff here indicates a fallback value was missed, not just a renamed variable.
+- Full Vitest suite: 3,775/3,775 passing across 255 files.
+- `tsc --noEmit` clean.
+- `npm run i18n:check` + `npm run i18n:check:locales` — 2,379/2,379 for all 5 locales, unchanged.
+- `php -l` on the settings registry and generated frontend-strings file — clean.
+- Full PHPUnit suite (wp-env): 1,304 tests, 13,683 assertions, 2 skipped, 0 failures.
+- `npm run build:wp` succeeds; hashed assets under `wp-plugin/mullion-gallery/assets` contain `--mullion-` and zero `--wpsg-`.
+- Playwright visual-regression (`npm run build-storybook` then `npm run test:visual`): **33 passed (11 adapters × 3 viewports), 0 diffs.** Confirms generator and every consumer stayed in lockstep — a missed fallback would have shown the old hex (or unthemed) colors.
+
+### Implementation Notes (2026-08-24)
+
+- **Scope-count discovery, again.** The Problem text's "61 hardcoded bypass sites" / "52+ distinct variable names" undercounted the same way P74-G/H did: 47 files / ~236 hits in `src/` + `packages/theme-engine/src/`. Changing `DEFAULT_CSS_VAR_PREFIX` alone would have been a silent visual break — the generator would emit `--mullion-color-*` while every SCSS/inline-style consumer still read `--wpsg-color-*` and fell through to hex fallbacks. That is exactly the failure mode the visual-regression gate is there to catch.
+- **Mechanical `--wpsg` → `--mullion`**, not a refactor onto the JS constant. SCSS/CSS cannot import `DEFAULT_CSS_VAR_PREFIX`, so "consistently" (the Fix text's own option) means the literal `--mullion-` prefix everywhere. The `--` prefix already isolates CSS custom properties from `wpsg-tile-*`, `data-wpsg-*`, and `wpsg-theme-vars`, so no word-boundary regex was needed. Covers the generated theme tokens, the 14 `--wpsg-builder-*` shell tokens, `--wpsg-slot-rot`, `--wpsg-glow-color`, and `--wpsg-media-grid-max-*`.
+- **Folded in the PHP/i18n default, same class of live coupling as P74-H's `ASSET_IN_USE_CODE`.** `class-mullion-settings-registry.php`'s `'dot_nav_active_color' => 'var(--wpsg-color-primary)'`, the matching TS default / adapter-setting fallback, and the i18n placeholder `set_sg_carousel_dotNavActiveColor_ph` are stored *values* that name a CSS variable. Left unrenamed, a new gallery's default active-dot color would reference a variable that no longer exists. `class-mullion-frontend-strings.php` was regenerated via `npm run i18n:generate` (never hand-edited). Surgical msgid swap in the `.pot` + 5 `.po` files (`var(--wpsg-color-primary)` → `var(--mullion-color-primary)`, identity translations), then `wp i18n make-mo` + `wp i18n make-php` only — **not** `make-pot`, preserving P74-C's stale-~150-string harvest decision. Locale coverage stayed 2,379/2,379.
+- **No `--wpsg-*` runtime aliases.** Pre-launch full rename, same call as P74-D dropping the shortcode alias.
+- **Stored option values** already persisted as `var(--wpsg-color-primary)` are **not** rewritten here. P74-F migrates option *keys*, not CSS-var strings inside values. Flagged as a punch-list note for P74-F/P74-M rather than invented as a value-migration in this track.
+- **Held back on purpose:** `.wp-super-gallery` host class, `.wpsg-sr-only`, `.wpsg-tile-*`, `wpsg-theme-vars` style-element id, `data-wpsg-*` / `wpsgDebug` (all P74-J); hex fallbacks inside `var(--mullion-…, #1a1a2e)` (P74-O, blocked on P74-N); every `docs/*.md` reference (P74-M, standing phase precedent). The `.wp-super-gallery` selector mention in `cssVariables.ts`'s docstring was left as well — that class is P74-J.
 
 ---
 

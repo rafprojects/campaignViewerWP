@@ -43,10 +43,10 @@ describe('mediaTabLayout', () => {
       maxWidth: 160,
     });
 
-    expect(vars['--wpsg-media-grid-max-base']).toBe('336px');
-    expect(vars['--wpsg-media-grid-max-sm']).toBe('512px');
-    expect(vars['--wpsg-media-grid-max-md']).toBe('688px');
-    expect(vars['--wpsg-media-grid-max-lg']).toBe('688px');
+    expect(vars['--mullion-media-grid-max-base']).toBe('336px');
+    expect(vars['--mullion-media-grid-max-sm']).toBe('512px');
+    expect(vars['--mullion-media-grid-max-md']).toBe('688px');
+    expect(vars['--mullion-media-grid-max-lg']).toBe('688px');
   });
 
   it('keeps compact view bounded at higher column counts', () => {
@@ -56,10 +56,10 @@ describe('mediaTabLayout', () => {
       maxWidth: 112,
     });
 
-    expect(vars['--wpsg-media-grid-max-base']).toBe('240px');
-    expect(vars['--wpsg-media-grid-max-sm']).toBe('496px');
-    expect(vars['--wpsg-media-grid-max-md']).toBe('752px');
-    expect(vars['--wpsg-media-grid-max-lg']).toBe('752px');
+    expect(vars['--mullion-media-grid-max-base']).toBe('240px');
+    expect(vars['--mullion-media-grid-max-sm']).toBe('496px');
+    expect(vars['--mullion-media-grid-max-md']).toBe('752px');
+    expect(vars['--mullion-media-grid-max-lg']).toBe('752px');
   });
 
   describe('mapToMediaGridBreakpoint', () => {

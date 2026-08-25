@@ -46,8 +46,8 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const panelStyle = {
     overflowY: 'auto' as const,
     height: '100%',
-    background: 'var(--wpsg-builder-surface)',
-    color: 'var(--wpsg-builder-text)',
+    background: 'var(--mullion-builder-surface)',
+    color: 'var(--mullion-builder-text)',
   };
 
   if (builder.isPreview) {

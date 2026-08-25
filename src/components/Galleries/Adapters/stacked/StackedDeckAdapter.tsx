@@ -233,7 +233,7 @@ export function StackedDeckAdapter({
                     ? `translateX(${flying.dir * 130}%) rotate(${flying.dir * 14}deg)`
                     : `translateX(${translateX}px) rotate(${rotate}deg)`,
                   transformOrigin: 'center center',
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                   boxShadow: isTop
                     ? '0 8px 32px rgba(0,0,0,0.4)'
                     : '0 2px 12px rgba(0,0,0,0.25)',

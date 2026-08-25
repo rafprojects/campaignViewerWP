@@ -6,7 +6,7 @@
  * and the ThemeContext's CSS variable injection — no color CSS here.
  *
  * Global.scss contains only structural/reset rules + the legacy token
- * bridge (_tokens.scss) that aliases --color-* → --wpsg-*.
+ * bridge (_tokens.scss) that aliases --color-* → --mullion-*.
  *
  * Gold source: docs/THEME_SYSTEM_ASSESSMENT.md §Shadow DOM Integration
  */

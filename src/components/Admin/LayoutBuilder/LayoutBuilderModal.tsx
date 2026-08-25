@@ -112,20 +112,20 @@ export function LayoutBuilderModal({
 
   const builderShellVars = useMemo(
     () => ({
-      '--wpsg-builder-surface': shellColors.surface,
-      '--wpsg-builder-surface-2': shellColors.surface2,
-      '--wpsg-builder-surface-3': shellColors.surface3,
-      '--wpsg-builder-background': shellColors.background,
-      '--wpsg-builder-border': shellColors.border,
-      '--wpsg-builder-border-muted': shellColors.borderMuted,
-      '--wpsg-builder-text': shellColors.text,
-      '--wpsg-builder-text-muted': shellColors.textMuted,
-      '--wpsg-builder-text-muted-2': shellColors.textMuted2,
-      '--wpsg-builder-accent': shellColors.accent,
-      '--wpsg-builder-accent-soft': shellColors.accentSoft,
-      '--wpsg-builder-icon-hover': shellColors.iconHover,
-      '--wpsg-builder-shadow': shellColors.shadow,
-      '--wpsg-builder-scrollbar': shellColors.scrollbar,
+      '--mullion-builder-surface': shellColors.surface,
+      '--mullion-builder-surface-2': shellColors.surface2,
+      '--mullion-builder-surface-3': shellColors.surface3,
+      '--mullion-builder-background': shellColors.background,
+      '--mullion-builder-border': shellColors.border,
+      '--mullion-builder-border-muted': shellColors.borderMuted,
+      '--mullion-builder-text': shellColors.text,
+      '--mullion-builder-text-muted': shellColors.textMuted,
+      '--mullion-builder-text-muted-2': shellColors.textMuted2,
+      '--mullion-builder-accent': shellColors.accent,
+      '--mullion-builder-accent-soft': shellColors.accentSoft,
+      '--mullion-builder-icon-hover': shellColors.iconHover,
+      '--mullion-builder-shadow': shellColors.shadow,
+      '--mullion-builder-scrollbar': shellColors.scrollbar,
     }) as CSSProperties,
     [shellColors],
   );
@@ -501,8 +501,8 @@ export function LayoutBuilderModal({
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: 'var(--wpsg-builder-surface)',
-          color: 'var(--wpsg-builder-text)',
+          background: 'var(--mullion-builder-surface)',
+          color: 'var(--mullion-builder-text)',
         }}
       >
         {/* ── Header Bar ── */}
@@ -510,8 +510,8 @@ export function LayoutBuilderModal({
           px="md"
           py="xs"
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
-            background: 'var(--wpsg-builder-surface)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
+            background: 'var(--mullion-builder-surface)',
             flexShrink: 0,
           }}
         >

@@ -239,7 +239,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
                 borderRadius: isVideo ? videoBorderRadius : borderRadius,
                 overflow: 'hidden',
                 position: 'relative',
-                background: 'var(--wpsg-color-surface, #1a1a2e)',
+                background: 'var(--mullion-color-surface, #1a1a2e)',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
               }}
             >

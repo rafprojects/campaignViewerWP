@@ -176,7 +176,7 @@ export function PinterestAdapter({
                   overflow: 'hidden',
                   borderRadius: br,
                   cursor: 'pointer',
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                   transform: isHovered ? 'scale(1.02)' : 'scale(1)',
                   transition: 'transform 0.18s ease, box-shadow 0.18s ease',
                   boxShadow: isHovered

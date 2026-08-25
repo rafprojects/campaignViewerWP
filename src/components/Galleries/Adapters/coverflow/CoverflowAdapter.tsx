@@ -190,7 +190,7 @@ export function CoverflowAdapter({
                   transform: `translateX(${translateX}px) rotateY(${rotateY}deg) scale(${scale})`,
                   transformOrigin: offset < 0 ? 'right center' : offset > 0 ? 'left center' : 'center center',
                   transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease',
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                   boxShadow: isActive
                     ? '0 8px 40px rgba(0,0,0,0.45)'
                     : '0 4px 16px rgba(0,0,0,0.25)',

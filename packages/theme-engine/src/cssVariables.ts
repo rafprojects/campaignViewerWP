@@ -1,7 +1,7 @@
 /**
  * CSS Variable Generator
  *
- * Produces --wpsg-* CSS custom property declarations from a resolved
+ * Produces --mullion-* CSS custom property declarations from a resolved
  * color palette. These variables serve as a secondary output for:
  *  - Shadow DOM injection (so host-page CSS can't leak in)
  *  - Any residual SCSS that hasn't been migrated to Mantine overrides
@@ -21,9 +21,9 @@ import { sanitizeCssValue } from '@mullion/shared-utils';
 /**
  * Default CSS custom-property namespace. [P51-L] Parametrized (playbook §6) so
  * external consumers of this package can pick their own prefix instead of the
- * hardcoded WPSG one; in-repo callers use the default.
+ * hardcoded Mullion one; in-repo callers use the default.
  */
-export const DEFAULT_CSS_VAR_PREFIX = '--wpsg';
+export const DEFAULT_CSS_VAR_PREFIX = '--mullion';
 
 // ---------------------------------------------------------------------------
 // Generator
@@ -37,7 +37,7 @@ export const DEFAULT_CSS_VAR_PREFIX = '--wpsg';
  * @param rc - Resolved colors from colorGen
  * @param def - Full theme definition (for non-color tokens)
  * @param selector - CSS selector to scope the variables
- * @param prefix - CSS custom-property namespace (default `--wpsg`)
+ * @param prefix - CSS custom-property namespace (default `--mullion`)
  * @returns A complete CSS rule string
  */
 export function generateCssVariables(

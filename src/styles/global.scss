@@ -7,16 +7,16 @@
 // contains only structural resets, accessibility utilities, responsive
 // adjustments, and layout scaffolding.
 //
-// The @use './tokens' above provides the legacy --color-* → --wpsg-*
+// The @use './tokens' above provides the legacy --color-* → --mullion-*
 // bridge for SCSS modules that haven't migrated yet.
 //
 // Gold source: docs/THEME_SYSTEM_ASSESSMENT.md
 // ==========================================================================
 
 .wp-super-gallery {
-  color: var(--wpsg-color-text);
-  background-color: var(--wpsg-color-background);
-  font-family: var(--wpsg-font-family);
+  color: var(--mullion-color-text);
+  background-color: var(--mullion-color-background);
+  font-family: var(--mullion-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -91,7 +91,7 @@
 
 .wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar-thumb],
 .wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-thumb] {
-  background-color: var(--wpsg-color-text-muted) !important;
+  background-color: var(--mullion-color-text-muted) !important;
   opacity: 0.65 !important;
 }
 
@@ -141,74 +141,74 @@
   justify-content: space-between;
   padding: 0.75rem 1rem;
   border-radius: 0.75rem;
-  background: var(--wpsg-color-surface);
-  border: 1px solid var(--wpsg-color-border);
-  color: var(--wpsg-color-text);
+  background: var(--mullion-color-surface);
+  border: 1px solid var(--mullion-color-border);
+  color: var(--mullion-color-text);
   font-weight: 600;
 }
 
 // Auth button
 .wp-super-gallery__authbar-button {
-  border: 1px solid var(--wpsg-color-border);
-  background: var(--wpsg-color-background);
-  color: var(--wpsg-color-text);
+  border: 1px solid var(--mullion-color-border);
+  background: var(--mullion-color-background);
+  color: var(--mullion-color-text);
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
   cursor: pointer;
 }
 
 .wp-super-gallery__authbar-button:hover {
-  background: var(--wpsg-color-surface2);
+  background: var(--mullion-color-surface2);
 }
 
 // Error banner — uses theme error color
 .wp-super-gallery__banner--error {
-  background: var(--wpsg-color-error);
+  background: var(--mullion-color-error);
   opacity: 0.85;
-  border: 1px solid var(--wpsg-color-error);
-  color: var(--wpsg-color-text);
+  border: 1px solid var(--mullion-color-error);
+  color: var(--mullion-color-text);
 }
 
 // Success banner — uses theme success color
 .wp-super-gallery__banner--success {
-  background: var(--wpsg-color-success);
+  background: var(--mullion-color-success);
   opacity: 0.85;
-  border: 1px solid var(--wpsg-color-success);
-  color: var(--wpsg-color-text);
+  border: 1px solid var(--mullion-color-success);
+  color: var(--mullion-color-text);
 }
 
 // Admin button with hover effects (for Admin Panel and Settings buttons)
 .wp-super-gallery .wpsg-admin-btn {
-  background-color: var(--wpsg-color-surface2);
-  border-color: var(--wpsg-color-border);
-  color: var(--wpsg-color-text);
+  background-color: var(--mullion-color-surface2);
+  border-color: var(--mullion-color-border);
+  color: var(--mullion-color-text);
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
 .wp-super-gallery .wpsg-admin-btn:hover {
-  background-color: var(--wpsg-color-surface3);
-  border-color: var(--wpsg-color-primary);
-  color: var(--wpsg-color-text);
+  background-color: var(--mullion-color-surface3);
+  border-color: var(--mullion-color-primary);
+  color: var(--mullion-color-text);
   transform: translateY(-1px);
-  box-shadow: var(--wpsg-shadow-md);
+  box-shadow: var(--mullion-shadow-md);
 }
 
 // Mantine active/selected state helpers. These stay in CSS so selectors like
 // [data-active] and [data-selected] are handled by the browser instead of
 // leaking through React inline style objects.
 .wpsg-mantine-tabs-tab[data-active] {
-  color: var(--wpsg-color-text);
-  border-color: var(--wpsg-color-primary);
+  color: var(--mullion-color-text);
+  border-color: var(--mullion-color-primary);
 }
 
 .wpsg-mantine-segmented-control-label[data-active] {
-  color: var(--wpsg-color-text);
+  color: var(--mullion-color-text);
 }
 
 // Select dropdowns may render in a portal, so selected option styling
 // cannot rely on the .wp-super-gallery ancestor being present.
 .wpsg-mantine-select-option[data-selected] {
-  background-color: var(--wpsg-color-primary);
+  background-color: var(--mullion-color-primary);
   color: #ffffff;
 }
 

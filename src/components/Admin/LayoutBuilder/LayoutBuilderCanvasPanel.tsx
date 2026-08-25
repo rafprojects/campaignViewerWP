@@ -355,7 +355,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             variant="light"
             p="xs"
             radius={0}
-            style={{ flexShrink: 0, borderBottom: '1px solid var(--wpsg-builder-border)' }}
+            style={{ flexShrink: 0, borderBottom: '1px solid var(--mullion-builder-border)' }}
           >
             <Text size="xs" ta="center">
               {tr('lb_canvas_editing_pre', 'Editing ')}
@@ -497,8 +497,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             px="md"
             py={6}
             style={{
-              borderTop: '1px solid var(--wpsg-builder-border)',
-              background: 'var(--wpsg-builder-surface)',
+              borderTop: '1px solid var(--mullion-builder-border)',
+              background: 'var(--mullion-builder-surface)',
               flexShrink: 0,
             }}
           >
@@ -739,8 +739,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             py={6}
             data-testid="preview-preset-bar"
             style={{
-              borderTop: '1px solid var(--wpsg-builder-border)',
-              background: 'var(--wpsg-builder-surface)',
+              borderTop: '1px solid var(--mullion-builder-border)',
+              background: 'var(--mullion-builder-surface)',
               flexShrink: 0,
             }}
           >

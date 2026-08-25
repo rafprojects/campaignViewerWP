@@ -645,8 +645,8 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
         key: 'dotNavActiveColor',
         label: 'Active Dot Color',
         description: 'Fill color used for the active dot.',
-        fallback: 'var(--wpsg-color-primary)',
-        placeholder: 'var(--wpsg-color-primary)',
+        fallback: 'var(--mullion-color-primary)',
+        placeholder: 'var(--mullion-color-primary)',
       },
       {
         control: 'text',

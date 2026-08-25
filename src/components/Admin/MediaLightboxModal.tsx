@@ -33,7 +33,7 @@ export function MediaLightboxModal({
       padding={0}
       withCloseButton={false}
       centered
-      styles={{ body: { background: 'color-mix(in srgb, var(--wpsg-color-background) 90%, transparent)' } }}
+      styles={{ body: { background: 'color-mix(in srgb, var(--mullion-color-background) 90%, transparent)' } }}
       aria-label={ariaLabel}
     >
       {imageItems.length > 0 && currentItem && (
@@ -89,7 +89,7 @@ export function MediaLightboxModal({
             left={0}
             right={0}
             p="md"
-            style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--wpsg-color-background) 80%, transparent))' }}
+            style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--mullion-color-background) 80%, transparent))' }}
           >
             <Text c="white" size="sm">{currentItem.caption || t('admin_untitled', 'Untitled')}</Text>
             <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>

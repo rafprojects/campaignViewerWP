@@ -714,7 +714,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   dotNavEnabled: true,
   dotNavPosition: 'below',
   dotNavSize: 10,
-  dotNavActiveColor: 'var(--wpsg-color-primary)',
+  dotNavActiveColor: 'var(--mullion-color-primary)',
   dotNavInactiveColor: 'rgba(128,128,128,0.4)',
   dotNavShape: 'circle',
   dotNavSpacing: 6,

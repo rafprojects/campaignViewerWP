@@ -60,7 +60,7 @@ class Mullion_Settings_Registry {
         'dot_nav_enabled'            => true,
         'dot_nav_position'           => 'below',
         'dot_nav_size'               => 10,
-        'dot_nav_active_color'       => 'var(--wpsg-color-primary)',
+        'dot_nav_active_color'       => 'var(--mullion-color-primary)',
         'dot_nav_inactive_color'     => 'rgba(128,128,128,0.4)',
         'dot_nav_shape'              => 'circle',
         'dot_nav_spacing'            => 6,

@@ -1,16 +1,16 @@
 .gallery {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--wpsg-color-background) 0%, var(--wpsg-color-surface) 45%, var(--wpsg-color-background) 100%);
+  background: linear-gradient(135deg, var(--mullion-color-background) 0%, var(--mullion-color-surface) 45%, var(--mullion-color-background) 100%);
 }
 
 .header {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  background: color-mix(in srgb, var(--wpsg-color-background) 92%, transparent);
+  background: color-mix(in srgb, var(--mullion-color-background) 92%, transparent);
   backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--wpsg-color-border);
-  box-shadow: var(--wpsg-shadow-md);
+  border-bottom: 1px solid var(--mullion-color-border);
+  box-shadow: var(--mullion-shadow-md);
   padding-top: env(safe-area-inset-top);
 }
 

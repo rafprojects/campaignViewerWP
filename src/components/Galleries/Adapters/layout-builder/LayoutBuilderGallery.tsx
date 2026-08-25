@@ -662,7 +662,7 @@ function LayoutBuilderGalleryInner({
       // Expose rotation as a custom property too, so the shared hover-bounce
       // keyframes compose it instead of overwriting the angle on hover (B-7).
       const rotCss = slot.rotation
-        ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center;--wpsg-slot-rot:${slot.rotation}deg`
+        ? `;transform:rotate(${slot.rotation}deg);transform-origin:center center;--mullion-slot-rot:${slot.rotation}deg`
         : '';
       const opacityCss = slot.opacity !== undefined && slot.opacity !== 1 ? `;opacity:${slot.opacity}` : '';
       return `.${slotCssClass(instanceId, slot.id)}{position:absolute;left:${pxX}px;top:${pxY}px;width:${pxW}px;height:${pxH}px;z-index:${slot.zIndex}${rotCss}${opacityCss}}`;

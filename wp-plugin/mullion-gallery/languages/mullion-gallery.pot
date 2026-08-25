@@ -5493,7 +5493,7 @@ msgid "Fill color used for the active dot."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1458
-msgid "var(--wpsg-color-primary)"
+msgid "var(--mullion-color-primary)"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1460

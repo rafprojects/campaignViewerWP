@@ -104,7 +104,7 @@ function CampaignViewerCoverHeader({
         pos="absolute"
         inset={0}
         style={{
-          background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
+          background: 'linear-gradient(to top, var(--mullion-color-surface) 0%, color-mix(in srgb, var(--mullion-color-surface) 60%, transparent) 45%, transparent 80%)',
           pointerEvents: 'none',
         }}
       />
@@ -131,7 +131,7 @@ function CampaignViewerCoverHeader({
         {settings.showCampaignDate !== false && (
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
-              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
+              <IconCalendar size={16} color="var(--mullion-color-text-muted)" />
               <Text size="sm" c="dimmed" style={campaignDateStyle}>
                 {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
@@ -142,7 +142,7 @@ function CampaignViewerCoverHeader({
             </Group>
             {settings.showCampaignTags !== false && (
               <Group gap={4}>
-                <IconTag size={16} color="var(--wpsg-color-text-muted)" />
+                <IconTag size={16} color="var(--mullion-color-text-muted)" />
                 <Text size="sm" c="dimmed">
                   {displayedCampaign.tags.join(', ')}
                 </Text>
@@ -246,7 +246,7 @@ function CampaignViewerStatsSection({
         </Stack>
       </InContextEditor>
       <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--mullion-color-border)' }}>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
           <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>{t('cv_videos', 'Videos')}</Text>

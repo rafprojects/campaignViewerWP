@@ -112,7 +112,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                     zIndex: 2,
                     transition: 'filter 150ms ease',
                     filter: badgeHovered
-                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--wpsg-color-primary) 80%, transparent))'
+                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--mullion-color-primary) 80%, transparent))'
                       : undefined,
                   }}
                 >

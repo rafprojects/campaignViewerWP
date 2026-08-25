@@ -6,7 +6,7 @@
  * pairs are not encoded in the theme JSON — they live in the Mantine adapter's
  * component overrides (`src/themes/adapter.ts`, where each override co-locates a
  * `backgroundColor` + `color`) and in the LayoutBuilder shell tokens
- * (`useBuilderShellColors` → `--wpsg-builder-*`). This module mirrors those
+ * (`useBuilderShellColors` → `--mullion-builder-*`). This module mirrors those
  * intended pairings so a token change that drops below AA fails a unit test
  * (`contrastAudit.test.ts`) in the blocking CI gate, rather than shipping.
  *

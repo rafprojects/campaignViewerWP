@@ -1459,7 +1459,7 @@ class Mullion_Frontend_Strings {
             'set_sg_carousel_dotNavMaxVisibleDots_desc' => __('Maximum number of dot buttons shown before truncation inserts ellipses.', 'mullion-gallery'),
             'set_sg_carousel_dotNavActiveColor' => __('Active Dot Color', 'mullion-gallery'),
             'set_sg_carousel_dotNavActiveColor_desc' => __('Fill color used for the active dot.', 'mullion-gallery'),
-            'set_sg_carousel_dotNavActiveColor_ph' => __('var(--wpsg-color-primary)', 'mullion-gallery'),
+            'set_sg_carousel_dotNavActiveColor_ph' => __('var(--mullion-color-primary)', 'mullion-gallery'),
             'set_sg_carousel_dotNavInactiveColor' => __('Inactive Dot Color', 'mullion-gallery'),
             'set_sg_carousel_dotNavInactiveColor_desc' => __('Fill color used for inactive dots.', 'mullion-gallery'),
             'set_sg_carousel_dotNavInactiveColor_ph' => __('rgba(128,128,128,0.4)', 'mullion-gallery'),

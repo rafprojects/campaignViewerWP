@@ -94,7 +94,7 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
         <Table.Tr
           key={`${a.userId}-${a.source}-${a.campaignId || 'company'}`}
           style={{
-            ...(a.source === 'company' ? { backgroundColor: 'color-mix(in srgb, var(--wpsg-color-primary) 5%, transparent)' } : {}),
+            ...(a.source === 'company' ? { backgroundColor: 'color-mix(in srgb, var(--mullion-color-primary) 5%, transparent)' } : {}),
             ...(isExpired ? { opacity: 0.55 } : {}),
           }}
         >

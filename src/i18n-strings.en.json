@@ -1432,7 +1432,7 @@
   "set_sg_carousel_dotNavMaxVisibleDots_desc": "Maximum number of dot buttons shown before truncation inserts ellipses.",
   "set_sg_carousel_dotNavActiveColor": "Active Dot Color",
   "set_sg_carousel_dotNavActiveColor_desc": "Fill color used for the active dot.",
-  "set_sg_carousel_dotNavActiveColor_ph": "var(--wpsg-color-primary)",
+  "set_sg_carousel_dotNavActiveColor_ph": "var(--mullion-color-primary)",
   "set_sg_carousel_dotNavInactiveColor": "Inactive Dot Color",
   "set_sg_carousel_dotNavInactiveColor_desc": "Fill color used for inactive dots.",
   "set_sg_carousel_dotNavInactiveColor_ph": "rgba(128,128,128,0.4)",
