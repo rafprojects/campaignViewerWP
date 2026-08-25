@@ -1,6 +1,5 @@
 {
   "_comment": "Mullion / Rig Cyan — brand default. Palette from .wordpress-org/COLOR-SPEC.md §1 (P74-N). surface2/surface3/textMuted2 are derived at resolve time from the authored anchors.",
-  "_primaryShade": "Owned by P75-F (Phase 74 Decision I). Criterion: first array index 0–9 from the dark end clearing 4.5:1 against the lightest surface AND 4.5:1 under white text. Current HSL generator: index 7 (#0f7971, 4.79:1 on text / 5.26:1 under white). Do not copy a number into colors.primaryShade — the OKLCH ramp will resolve a different index.",
   "id": "default-dark",
   "name": "Mullion",
   "colorScheme": "dark",
@@ -16,6 +15,7 @@
     "borderStrong": "#577577",
 
     "primary": "#1ad1c4",
+    "primaryShade": { "light": 6, "dark": 5 },
 
     "success": "#56b93e",
     "warning": "#f5b12b",

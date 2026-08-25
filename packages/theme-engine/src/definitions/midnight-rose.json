@@ -17,7 +17,7 @@
     "success": "#4caf50",
 
     "primary": "#e91e63",
-    "primaryShade": { "light": 6, "dark": 5 },
+    "primaryShade": { "light": 5, "dark": 4 },
 
     "warning": "#ff9800",
     "error": "#f44336",

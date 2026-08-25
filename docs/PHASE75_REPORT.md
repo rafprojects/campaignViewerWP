@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A, P75-B, P75-C, P75-D, and P75-H landed
+**Status:** In progress — P75-A, P75-B, P75-C, P75-D, P75-F, and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-D chrome lock + `applyThemeEverywhere` landed. Remaining: E–G.)
+**Last updated:** 2026-08-25 (P75-F OKLCH ramp + criterion-derived `primaryShade`. Remaining: E, G.)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Done | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Done | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
-| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
+| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Done | Small-Medium |
 | P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
 | P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
 
@@ -364,6 +364,20 @@ Per the designer's own suggestion (round 4): implement as a **property test**, n
 
 Must land before P75-E's step 3 repair layer is implemented. **Does not block Phase 74** — P74-N/O close with no `primaryShade` on Rig Cyan (Decision I). This track is what *sets* that index, rather than a gate that Phase 74 waits on.
 
+### Implementation Notes (2026-08-25)
+
+Verified against the live `generateColorScale`, chroma-js 3.2 `oklch`/`clipped()`, and COLOR-SPEC.md §2 — not only this plan.
+
+- **HSL comment was always wrong.** `generateColorScale` stepped HSL L% (with a 0.7 sat taper at i<2 / i>7). LAB is used by `deriveDarkTuple` / `deriveBorderStrong` only. The stale "Uses LAB" header is gone.
+- **Lightness stops, chosen here.** OKLCH L is not HSL L%, so copying `[95,15]` / `[85,10]` as 0–1 values made the dark end near-black (Rig Cyan HSL index 9 was OKLCH L≈0.25, not 0.10). Stops: light **0.95→0.25**, dark **0.85→0.25**. Same floor, higher light-scheme ceiling so shade 0 stays a wash and the existing "light shade 0 lighter than dark shade 0" property still holds. No cosmetic chroma taper — gamut mapping is the only C reduction.
+- **Gamut mapping matches the spec table exactly.** `mapOklchToSrgbHex` binary-searches C down, holding L and H, until `!chroma.oklch(...).clipped()`. Cyberpunk `#ff2d95` at L=0.95/0.88/0.78/0.68 emits `#ffe7ee` / `#ffc5d8` / `#ff8eb8` / `#ff4199` (hue drift 0.7° / 0.2° / 0.1° / 0.1°). Naive clip at L=0.95 is `#ff9af0` at 24.8° — the failure the spec warned about.
+- **1° hue bar vs 8-bit hex.** Colorimetric hue is preserved by construction. Post-hex quantization at the pale/dark cusp can exceed 1° on some hues (the spec's 1° claim was demonstrated on Cyberpunk, not a 360° sweep). Tests: every rung in-gamut; well-chromatic rungs (C≥0.08) stay under 1°; chromatic rungs (C≥0.03) stay under 5° (clipping is 8–25°).
+- **Criterion walk.** Spec text says "first from the dark end"; the measured HSL answer (index 7, not 9) is the *lightest still-safe* shade — walk 0→9, take the first that clears both 4.5:1 bars. Using a dark theme's own panel as "lightest surface" makes the dual criterion empty (dark fill vs dark panel vs white text cannot all pass). `inkContrastGround`: lightest surface token if OKLCH L≥0.5; else near-neutral light `text` (Rig Cyan `#eef8fb`); else `#ffffff`. Chromatic text (Halloween orange) is not a surface stand-in.
+- **"16 of 23" did not match the repo.** 8 themes authored a non-`{light:6,dark:5}` pair, 14 authored the default pair, 1 omitted (`default-dark`). The coupling applies to every index, so **all 23 were re-derived**. Five kept `6/5` (catppuccin-latte, forest-whisper, ocean-breeze, solarized-dark, solarized-light). Rig Cyan / `default-dark` is now `{light:6, dark:5}` filling `#007870` (ΔE≈1.0 from brand `#007a70`). `_primaryShade` note removed.
+- **Omit path.** `resolveColors` derives by criterion when the field is missing (custom themes); authored JSON remains the snapshot the regression test locks to.
+- **P75-G.** F has landed. When the light companion overwrites `default-light.json`, re-derive `primaryShade` against that palette — do not copy Rig Cyan dark's `6/5`.
+- **Validation.** Theme-engine + adapter Vitest 352/352. `tsc -b` clean. `node scripts/validate-themes.mjs` 23/23. No browser MCP; `e2e/theme-qa` screenshots were not recaptured (ramps change filled-control colours; 0.1 maxDiffPixelRatio may still pass). Adapter still hardcodes `primary[5]` in many sites — that is P75-E step 1, not this track.
+
 ---
 
 ## Track P75-G - Rig Cyan light companion (`default-light.json`)
@@ -386,7 +400,7 @@ Once values exist:
 
 - Overwrite `packages/theme-engine/src/definitions/default-light.json` in place. Keep `id: "default-light"` (same Decision F as the dark default).
 - Author `surfaceRaised` / `borderStrong` explicitly if the spec includes them; otherwise let resolve derive (raised → surface2; borderStrong → 3:1 against surface).
-- Omit `primaryShade` or set it in the same commit as P75-F if F has already landed — do not bake an HSL-ramp index that F will invalidate. If G lands first, follow P74-N: no live `primaryShade`, a `_primaryShade` note pointing at F.
+- **P75-F has landed.** Set `primaryShade` in the same overwrite via `derivePrimaryShade` against the new light palette. Do not copy Rig Cyan dark's `{light:6, dark:5}` and do not bake an HSL-era index.
 - Update `theme-catalog.json`'s `default-light` `name` / `description` so the Default group reads as a light/dark Rig Cyan pair, not "Mullion" vs "Clean light baseline."
 - Run `auditThemeContrast` on the new light palette before commit. Visual-regression: `default-light` is not the Storybook adapter default, so no snapshot recapture is required unless a test hardcodes those old hexes.
 
@@ -470,12 +484,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, P75-C, and P75-D have landed — see those tracks' Implementation Notes. E–G remain planned.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, P75-C, P75-D, and P75-F have landed — see those tracks' Implementation Notes. E and G remain planned (G blocked on designer light hexes).
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — F closes the second of those; E step 3 can now use the OKLCH ramp.
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the remaining color-system tracks. P75-D (chrome-locking toggle) and P75-H (Checkbox/Switch outlines) have landed. Once E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-E (non-text contrast spike + repair; step 3 unblocked now that F exists) and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the remaining color-system tracks. P75-D (chrome-locking toggle), P75-F (OKLCH + `primaryShade`), and P75-H (Checkbox/Switch outlines) have landed. Once E/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once the remaining tracks land, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

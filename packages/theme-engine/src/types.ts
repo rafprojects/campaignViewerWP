@@ -98,9 +98,10 @@ export interface ThemeColors {
   // Primary accent — expanded to 10-step array via chroma.js
   primary: ColorShorthand;
   /**
-   * Optional. When omitted, resolveColors fills `{ light: 6, dark: 5 }`
-   * (historical Mantine default). Rig Cyan omits this on purpose; P75-F
-   * sets the live index against the OKLCH ramp (Phase 74 Decision I).
+   * Optional. When omitted, resolveColors derives both indices by the
+   * COLOR-SPEC.md §2 criterion against the OKLCH ramp (P75-F). Authored
+   * values are a data snapshot of that criterion — re-derive if the
+   * generator changes.
    */
   primaryShade?: PrimaryShade;
 
