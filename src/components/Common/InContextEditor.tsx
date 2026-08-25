@@ -2,7 +2,7 @@ import { forwardRef, useCallback, type ReactNode } from 'react';
 import { ActionIcon, Popover, ScrollArea, Box } from '@mantine/core';
 import { IconSettings } from '@tabler/icons-react';
 import { useDisclosure } from '@mantine/hooks';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface InContextEditorProps {
   /** Position relative to the nearest positioned parent. */
@@ -28,7 +28,7 @@ const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggl
 
     return (
       <ActionIcon
-        {...getWpsgDebugProps('InContextEditor', 'toggle')}
+        {...getMullionDebugProps('InContextEditor', 'toggle')}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {...(actionIconProps as any)}
         ref={ref}
@@ -47,7 +47,7 @@ const InContextEditorToggle = forwardRef<HTMLButtonElement, InContextEditorToggl
   },
 );
 
-setWpsgDebugDisplayName(InContextEditorToggle, 'InContextEditorToggle');
+setMullionDebugDisplayName(InContextEditorToggle, 'InContextEditorToggle');
 
 interface InContextEditorContentProps {
   children: ReactNode;
@@ -55,8 +55,8 @@ interface InContextEditorContentProps {
 
 function InContextEditorContent({ children }: InContextEditorContentProps) {
   return (
-    <Popover.Dropdown {...getWpsgDebugProps('InContextEditor', 'dropdown')}>
-      <ScrollArea.Autosize {...getWpsgDebugProps('InContextEditor', 'content')} mah={400}>
+    <Popover.Dropdown {...getMullionDebugProps('InContextEditor', 'dropdown')}>
+      <ScrollArea.Autosize {...getMullionDebugProps('InContextEditor', 'content')} mah={400}>
         {children}
       </ScrollArea.Autosize>
     </Popover.Dropdown>
@@ -91,9 +91,9 @@ export function InContextEditor({
   if (!visible) return null;
 
   return (
-    <Box {...getWpsgDebugProps('InContextEditor', 'anchor')} style={positionStyles[position]} onKeyDown={handleKeyDown}>
+    <Box {...getMullionDebugProps('InContextEditor', 'anchor')} style={positionStyles[position]} onKeyDown={handleKeyDown}>
       <Popover
-        {...getWpsgDebugProps('InContextEditor')}
+        {...getMullionDebugProps('InContextEditor')}
         opened={opened}
         onClose={close}
         withinPortal={false}
@@ -114,4 +114,4 @@ export function InContextEditor({
   );
 }
 
-setWpsgDebugDisplayName(InContextEditor, 'InContextEditor');
+setMullionDebugDisplayName(InContextEditor, 'InContextEditor');

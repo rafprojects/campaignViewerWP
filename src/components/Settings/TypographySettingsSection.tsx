@@ -6,7 +6,7 @@ import { TypographyEditor, type CustomFontEntry } from '@/components/Common/Typo
 import { FontLibraryManager } from '@/components/Admin/FontLibraryManager';
 import type { ApiClient } from '@/services/apiClient';
 import type { TypographyOverride } from '@/types';
-import type { FontLibraryEntry } from '@wp-super-gallery/shared-utils';
+import type { FontLibraryEntry } from '@mullion/shared-utils';
 
 interface TypographySettingsSectionProps {
   apiClient: ApiClient;
@@ -47,7 +47,7 @@ export function TypographySettingsSection({
   onOverrideChange,
   isSystemAdmin = false,
 }: TypographySettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { value: accordionValue, onChange: onAccordionChange } = usePersistentAccordion('typography', null);
 
   return (

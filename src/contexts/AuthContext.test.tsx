@@ -29,13 +29,13 @@ describe('AuthProvider', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    delete window.__WPSG_CONFIG__;
-    delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
+    delete window.__MULLION_CONFIG__;
+    delete (window as Window & { __MULLION_REST_NONCE__?: string }).__MULLION_REST_NONCE__;
   });
 
   it('detects nonce-only system-admin auth via permissions endpoint (P20-K / P51-I WpNonceProvider)', async () => {
     // Simulate WP-injected config with nonce but no JWT.
-    window.__WPSG_CONFIG__ = {
+    window.__MULLION_CONFIG__ = {
       restNonce: 'test-nonce-123',
     };
 
@@ -66,8 +66,8 @@ describe('AuthProvider', () => {
     });
   });
 
-  it('resolves the editor tier (manage_wpsg, not manage_options) and gates isSystemAdmin off (P53-A)', async () => {
-    window.__WPSG_CONFIG__ = { restNonce: 'test-nonce-editor' };
+  it('resolves the editor tier (manage_mullion, not manage_options) and gates isSystemAdmin off (P53-A)', async () => {
+    window.__MULLION_CONFIG__ = { restNonce: 'test-nonce-editor' };
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -95,7 +95,7 @@ describe('AuthProvider', () => {
   });
 
   it('falls back to guest when nonce-only returns no user (P20-K / P51-I WpNonceProvider)', async () => {
-    window.__WPSG_CONFIG__ = {
+    window.__MULLION_CONFIG__ = {
       restNonce: 'test-nonce-456',
     };
 
@@ -120,7 +120,7 @@ describe('AuthProvider', () => {
   });
 
   it('becomes ready without provider and without nonce', async () => {
-    // No __WPSG_CONFIG__ set — no nonce available
+    // No __MULLION_CONFIG__ set — no nonce available
     render(
       <AuthProvider fallbackPermissions={['a', 'b']}>
         <AuthConsumer />
@@ -163,7 +163,7 @@ describe('AuthProvider', () => {
   // ── P20-K: Nonce-only cookie login/logout ───────────────
 
   it('logs in via cookie endpoint through WpNonceProvider (P20-K / P51-I)', async () => {
-    window.__WPSG_CONFIG__ = { restNonce: 'initial-nonce' };
+    window.__MULLION_CONFIG__ = { restNonce: 'initial-nonce' };
 
     // First call: WpNonceProvider.init() detect — returns guest.
     // Second call: POST /auth/login — returns authenticated user.
@@ -208,7 +208,7 @@ describe('AuthProvider', () => {
     });
 
     // Verify the global nonce was updated.
-    expect(window.__WPSG_CONFIG__?.restNonce).toBe('fresh-nonce-after-login');
+    expect(window.__MULLION_CONFIG__?.restNonce).toBe('fresh-nonce-after-login');
 
     // Verify correct fetch call.
     const loginCall = fetchMock.mock.calls[1];
@@ -217,7 +217,7 @@ describe('AuthProvider', () => {
   });
 
   it('throws on cookie login failure with server error message (P20-K / P51-I)', async () => {
-    window.__WPSG_CONFIG__ = { restNonce: 'nonce-x' };
+    window.__MULLION_CONFIG__ = { restNonce: 'nonce-x' };
 
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
     fetchMock
@@ -270,7 +270,7 @@ describe('AuthProvider', () => {
   });
 
   it('logs out via cookie endpoint and resets to guest (P20-K / P51-I)', async () => {
-    window.__WPSG_CONFIG__ = { restNonce: 'authed-nonce' };
+    window.__MULLION_CONFIG__ = { restNonce: 'authed-nonce' };
 
     const fetchMock = globalThis.fetch as ReturnType<typeof vi.fn>;
     // Init: returns authenticated user.
@@ -309,7 +309,7 @@ describe('AuthProvider', () => {
     });
 
     // Nonce should be updated to the guest-level nonce.
-    expect(window.__WPSG_CONFIG__?.restNonce).toBe('guest-nonce');
+    expect(window.__MULLION_CONFIG__?.restNonce).toBe('guest-nonce');
 
     // Verify correct fetch call.
     const logoutCall = fetchMock.mock.calls[1];

@@ -1,6 +1,6 @@
 import { Select } from '@mantine/core';
 import type { CSSProperties } from 'react';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export type SpaceSelectItem = { value: string; label: string };
 
@@ -40,4 +40,4 @@ export function SpaceSelector({
   );
 }
 
-setWpsgDebugDisplayName(SpaceSelector, 'SpaceSelector');
+setMullionDebugDisplayName(SpaceSelector, 'SpaceSelector');

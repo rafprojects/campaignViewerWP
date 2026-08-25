@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { safeLocalStorage } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage } from '@mullion/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaItem } from '@/types';
 import { useAllCampaignOptions, useMediaItems } from '@/services/adminQuery';
@@ -29,7 +29,7 @@ export function useBuilderCampaignMedia(
   );
 
   const campaignSelectionStorageKey = useMemo(
-    () => `wpsg_layout_builder_campaign_${initialTemplateId ?? 'new'}`,
+    () => `mullion_layout_builder_campaign_${initialTemplateId ?? 'new'}`,
     [initialTemplateId],
   );
 

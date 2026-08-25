@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import type { AccessSummaryItem, AdminCampaign } from '@/services/adminQuery';
 import type { CampaignActionsHandle } from '@/hooks/useAdminCampaignActions';
 import { describeCampaignGalleryOverrides, hasCampaignGalleryOverrides } from '@/utils/campaignGalleryOverrides';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // Returns an i18next key + English default so the caller can translate in render.
 function scheduleLabel(publishAt?: string, unpublishAt?: string): { key: string; text: string; color: string } | null {
@@ -48,7 +48,7 @@ export function CampaignsMobileList({
   total,
   onPageChange,
 }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const {
     selectedCampaignIds,
     handleToggleCampaignSelect,
@@ -201,4 +201,4 @@ export function CampaignsMobileList({
   );
 }
 
-setWpsgDebugDisplayName(CampaignsMobileList, 'AdminPanel:CampaignsMobileList');
+setMullionDebugDisplayName(CampaignsMobileList, 'AdminPanel:CampaignsMobileList');

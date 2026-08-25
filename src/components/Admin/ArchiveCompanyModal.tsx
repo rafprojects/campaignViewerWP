@@ -1,7 +1,7 @@
 import { Alert, Box, Checkbox, ScrollArea, Stack, Text } from '@mantine/core';
 import { Trans, useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 type CompanyCampaign = { id: number; title: string; status: string };
 
@@ -31,7 +31,7 @@ export function ArchiveCompanyModal({
   onConfirm,
   accessSaving,
 }: ArchiveCompanyModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const campaignsToArchive = (Array.isArray(company?.campaigns) ? company.campaigns : []).filter((c) => c.status !== 'archived');
   const activeCount = company?.activeCampaigns ?? 0;
 
@@ -58,9 +58,9 @@ export function ArchiveCompanyModal({
       loading={accessSaving}
     >
       {campaignsToArchive.length > 0 && (
-        <Box {...getWpsgDebugProps('ArchiveCompanyModal', 'campaign-list')}>
+        <Box {...getMullionDebugProps('ArchiveCompanyModal', 'campaign-list')}>
           <Text size="sm" fw={500} mb="xs">{t('admin_archco_list_heading', 'Campaigns to be archived:')}</Text>
-          <ScrollArea {...getWpsgDebugProps('ArchiveCompanyModal', 'campaign-scroll')} style={{ maxHeight: 150 }}>
+          <ScrollArea {...getMullionDebugProps('ArchiveCompanyModal', 'campaign-scroll')} style={{ maxHeight: 150 }}>
             <Stack gap={4}>
               {campaignsToArchive.map((c) => (
                 <Text key={c.id} size="sm" c="dimmed">• {c.title}</Text>
@@ -71,17 +71,17 @@ export function ArchiveCompanyModal({
       )}
 
       <Checkbox
-        {...getWpsgDebugProps('ArchiveCompanyModal', 'revoke-access')}
+        {...getMullionDebugProps('ArchiveCompanyModal', 'revoke-access')}
         label={t('admin_archco_revoke', 'Also revoke all company-level access grants')}
         checked={archiveRevokeAccess}
         onChange={(e) => onArchiveRevokeAccessChange(e.currentTarget.checked)}
       />
 
-      <Alert {...getWpsgDebugProps('ArchiveCompanyModal', 'warning')} color="yellow" variant="light">
+      <Alert {...getMullionDebugProps('ArchiveCompanyModal', 'warning')} color="yellow" variant="light">
         <Text size="sm">{t('admin_archco_warning', 'Access grants for individual campaigns will be preserved but become inactive.')}</Text>
       </Alert>
     </ConfirmModal>
   );
 }
 
-setWpsgDebugDisplayName(ArchiveCompanyModal, 'AdminPanel:ArchiveCompanyModal');
+setMullionDebugDisplayName(ArchiveCompanyModal, 'AdminPanel:ArchiveCompanyModal');

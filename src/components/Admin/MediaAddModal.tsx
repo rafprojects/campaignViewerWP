@@ -18,7 +18,7 @@ import {
 import { IconUpload, IconX, IconFile, IconVideo } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { OEmbedResponse } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaAddModalProps {
   opened: boolean;
@@ -89,7 +89,7 @@ export function MediaAddModal({
   targetLabel,
   targetExtra,
 }: MediaAddModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const hasFiles = selectedFiles.length > 0;
   const showTargetSelect = Array.isArray(targetOptions) && targetOptions.length > 0;
   const isBatchSelection = selectedFiles.length > 1;
@@ -387,4 +387,4 @@ export function MediaAddModal({
   );
 }
 
-setWpsgDebugDisplayName(MediaAddModal, 'AdminPanel:MediaAddModal');
+setMullionDebugDisplayName(MediaAddModal, 'AdminPanel:MediaAddModal');

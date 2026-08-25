@@ -14,7 +14,7 @@ import {
 } from '@mantine/core';
 import { IconAlertCircle, IconUserPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 type AdminCampaign = {
   id: string;
@@ -56,7 +56,7 @@ interface QuickAddUserSuccessStateProps {
 }
 
 function QuickAddUserSuccessState({ quickAddResult, onClose, onNotify }: QuickAddUserSuccessStateProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <>
       <Alert
@@ -108,14 +108,14 @@ function QuickAddUserSuccessState({ quickAddResult, onClose, onNotify }: QuickAd
           </Box>
         )}
       </Alert>
-      <Group {...getWpsgDebugProps('QuickAddUserModal', 'success-actions')} justify="flex-end" wrap="wrap" gap="sm">
+      <Group {...getMullionDebugProps('QuickAddUserModal', 'success-actions')} justify="flex-end" wrap="wrap" gap="sm">
         <Button onClick={onClose}>{t('admin_qau_close', 'Close')}</Button>
       </Group>
     </>
   );
 }
 
-setWpsgDebugDisplayName(QuickAddUserSuccessState, 'AdminPanel:QuickAddUserModal:SuccessState');
+setMullionDebugDisplayName(QuickAddUserSuccessState, 'AdminPanel:QuickAddUserModal:SuccessState');
 
 interface QuickAddUserFormStateProps {
   quickAddEmail: string;
@@ -150,7 +150,7 @@ function QuickAddUserFormState({
   onClose,
   quickAddSaving,
 }: QuickAddUserFormStateProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <>
       <TextInput
@@ -175,7 +175,7 @@ function QuickAddUserFormState({
         label={t('admin_qau_role', 'Role')}
         data={[
           { value: 'subscriber', label: t('admin_qau_role_viewer', '👁 Viewer - Can view granted campaigns') },
-          { value: 'wpsg_editor', label: t('admin_qau_role_editor', '⚙️ Gallery Editor - Can manage this plugin') },
+          { value: 'mullion_editor', label: t('admin_qau_role_editor', '⚙️ Gallery Editor - Can manage this plugin') },
         ]}
         value={quickAddRole}
         onChange={(value) => setQuickAddRole(value ?? 'subscriber')}
@@ -204,7 +204,7 @@ function QuickAddUserFormState({
         description={t('admin_qau_test_mode_desc', 'Enable to test the password reset link UI without actually sending email')}
       />
 
-      <Group {...getWpsgDebugProps('QuickAddUserModal', 'actions')} justify="flex-end" mt="md" wrap="wrap" gap="sm">
+      <Group {...getMullionDebugProps('QuickAddUserModal', 'actions')} justify="flex-end" mt="md" wrap="wrap" gap="sm">
         <Button variant="default" onClick={onClose}>{t('admin_qau_cancel', 'Cancel')}</Button>
         <Button
           onClick={onSubmit}
@@ -219,7 +219,7 @@ function QuickAddUserFormState({
   );
 }
 
-setWpsgDebugDisplayName(QuickAddUserFormState, 'AdminPanel:QuickAddUserModal:FormState');
+setMullionDebugDisplayName(QuickAddUserFormState, 'AdminPanel:QuickAddUserModal:FormState');
 
 export function QuickAddUserModal({
   opened,
@@ -240,21 +240,21 @@ export function QuickAddUserModal({
   quickAddSaving,
   onNotify,
 }: QuickAddUserModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const activeCampaigns = campaigns.filter((c) => c.status === 'active');
 
   return (
     <Modal
-      {...getWpsgDebugProps('QuickAddUserModal')}
+      {...getMullionDebugProps('QuickAddUserModal')}
       opened={opened}
       onClose={onClose}
-      title={<span {...getWpsgDebugProps('QuickAddUserModal', 'title')}>{t('admin_qau_title', 'Quick Add User')}</span>}
+      title={<span {...getMullionDebugProps('QuickAddUserModal', 'title')}>{t('admin_qau_title', 'Quick Add User')}</span>}
       size="md"
       padding="md"
-      closeButtonProps={getWpsgDebugProps('QuickAddUserModal', 'close')}
-      overlayProps={getWpsgDebugProps('QuickAddUserModal', 'overlay')}
+      closeButtonProps={getMullionDebugProps('QuickAddUserModal', 'close')}
+      overlayProps={getMullionDebugProps('QuickAddUserModal', 'overlay')}
     >
-      <Stack {...getWpsgDebugProps('QuickAddUserModal', 'stack')} gap="md">
+      <Stack {...getMullionDebugProps('QuickAddUserModal', 'stack')} gap="md">
         {quickAddResult ? (
           <QuickAddUserSuccessState
             quickAddResult={quickAddResult}
@@ -284,4 +284,4 @@ export function QuickAddUserModal({
   );
 }
 
-setWpsgDebugDisplayName(QuickAddUserModal, 'AdminPanel:QuickAddUserModal');
+setMullionDebugDisplayName(QuickAddUserModal, 'AdminPanel:QuickAddUserModal');

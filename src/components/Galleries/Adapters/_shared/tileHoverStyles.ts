@@ -6,7 +6,7 @@
  * multiple different adapters on the same page don't collide.
  */
 import type { GalleryBehaviorSettings } from '@/types';
-import { sanitizeCssColor } from '@wp-super-gallery/shared-utils';
+import { sanitizeCssColor } from '@mullion/shared-utils';
 
 /** Expand 3-digit hex (#abc) to 6-digit (#aabbcc); pass others through unchanged. */
 function expandHex(hex: string): string {
@@ -31,11 +31,11 @@ export interface TileStyleOptions {
 }
 
 /**
- * Returns the full <style> element content for hover effects on `.wpsg-tile-{scope}`.
+ * Returns the full <style> element content for hover effects on `.mullion-tile-{scope}`.
  * Also exports a helper to generate the border style string.
  */
 export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOptions): string {
-  const cls = `wpsg-tile-${scope}`;
+  const cls = `mullion-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
   const glowColor = sanitizeCssColor(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread ?? 8;
@@ -53,15 +53,15 @@ export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOpt
 `);
 
   // ── Bounce keyframes (always emitted — needed by both combined & per-slot) ─
-  // Composes a per-slot rotation custom property (--wpsg-slot-rot, default 0deg)
+  // Composes a per-slot rotation custom property (--mullion-slot-rot, default 0deg)
   // so rotated slots keep their angle during the bounce (B-7). Adapters that
   // never set the property are unaffected (rotate(0deg) is a no-op).
   parts.push(`
 @keyframes ${cls}-bounce {
-  0%   { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
-  40%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1.07); }
-  75%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(0.97); }
-  100% { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
+  0%   { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1); }
+  40%  { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1.07); }
+  75%  { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(0.97); }
+  100% { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1); }
 }
 `);
 
@@ -111,7 +111,7 @@ export function tileBorderStyle(settings: GalleryBehaviorSettings): string {
 
 /** Box-shadow for non-clip-path tiles (justified/masonry) where box-shadow works. */
 export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSettings): string {
-  const cls = `wpsg-tile-${scope}`;
+  const cls = `mullion-tile-${scope}`;
   const glowColor = sanitizeCssColor(settings.tileGlowColor) || '#00bfff';
   const glowSpread = settings.tileGlowSpread ?? 8;
   const parts: string[] = [];
@@ -125,14 +125,14 @@ export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSet
 `);
 
   // ── Bounce keyframes (always emitted) ──────────────────────────────────
-  // Composes a per-slot rotation custom property (--wpsg-slot-rot, default 0deg)
+  // Composes a per-slot rotation custom property (--mullion-slot-rot, default 0deg)
   // so rotated slots keep their angle during the bounce (B-7).
   parts.push(`
 @keyframes ${cls}-bounce {
-  0%   { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
-  40%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1.06); }
-  75%  { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(0.98); }
-  100% { transform: rotate(var(--wpsg-slot-rot, 0deg)) scale(1); }
+  0%   { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1); }
+  40%  { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1.06); }
+  75%  { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(0.98); }
+  100% { transform: rotate(var(--mullion-slot-rot, 0deg)) scale(1); }
 }
 `);
 

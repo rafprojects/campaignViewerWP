@@ -12,7 +12,7 @@ import '@testing-library/jest-dom/vitest';
 import type { MediaItem, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 
-vi.mock('@wp-super-gallery/shared-ui', () => ({
+vi.mock('@mullion/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));
@@ -82,9 +82,9 @@ describe('StackedDeckAdapter', () => {
   it('renders all cards with the first item on top', () => {
     render(<StackedDeckAdapter media={THREE_IMAGES} settings={SETTINGS} />);
 
-    expect(getCard('Image img-1')).toHaveClass('wpsg-stacked-top');
-    expect(getCard('Image img-2')).not.toHaveClass('wpsg-stacked-top');
-    expect(getCard('Image img-3')).not.toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-1')).toHaveClass('mullion-stacked-top');
+    expect(getCard('Image img-2')).not.toHaveClass('mullion-stacked-top');
+    expect(getCard('Image img-3')).not.toHaveClass('mullion-stacked-top');
   });
 
   it('peeking cards have alternating depth offsets and rotation', () => {
@@ -112,7 +112,7 @@ describe('StackedDeckAdapter', () => {
     swipe(getStage(container), 200, 100);
 
     // The next card becomes top; the dismissed card flies out above the stack.
-    expect(getCard('Image img-2')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-2')).toHaveClass('mullion-stacked-top');
     expect(getCard('Image img-1').style.zIndex).toBe('4');
     expect(getCard('Image img-1').style.transform).toContain('translateX(-130%)');
 
@@ -128,7 +128,7 @@ describe('StackedDeckAdapter', () => {
 
     swipe(getStage(container), 100, 200);
 
-    expect(getCard('Image img-2')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-2')).toHaveClass('mullion-stacked-top');
     expect(getCard('Image img-1').style.transform).toContain('translateX(130%)');
   });
 
@@ -137,7 +137,7 @@ describe('StackedDeckAdapter', () => {
 
     fireEvent.click(getCard('Image img-3'));
 
-    expect(getCard('Image img-3')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-3')).toHaveClass('mullion-stacked-top');
     expect(screen.queryByTestId('lightbox-open')).not.toBeInTheDocument();
   });
 
@@ -156,10 +156,10 @@ describe('StackedDeckAdapter', () => {
     const stage = getStage(container);
 
     fireEvent.keyDown(stage, { key: 'ArrowRight' });
-    expect(getCard('Image img-2')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-2')).toHaveClass('mullion-stacked-top');
 
     fireEvent.keyDown(stage, { key: 'ArrowLeft' });
-    expect(getCard('Image img-1')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image img-1')).toHaveClass('mullion-stacked-top');
   });
 
   it('Enter on the stage opens the lightbox for the top card', () => {
@@ -186,7 +186,7 @@ describe('StackedDeckAdapter', () => {
 
     swipe(getStage(container), 200, 100);
 
-    expect(getCard('Image solo')).toHaveClass('wpsg-stacked-top');
+    expect(getCard('Image solo')).toHaveClass('mullion-stacked-top');
     expect(getCard('Image solo').style.transform).toBe('translateX(0px) rotate(0deg)');
   });
 

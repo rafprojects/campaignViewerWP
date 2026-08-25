@@ -6,14 +6,14 @@
  * gettext pipeline. Reads the canonical English source (src/i18n-strings.en.json)
  * and emits a generated PHP "strings manifest":
  *
- *   wp-plugin/wp-super-gallery/includes/i18n/class-wpsg-frontend-strings.php
+ *   wp-plugin/mullion-gallery/includes/i18n/class-mullion-frontend-strings.php
  *
  * Each i18next key becomes an entry mapping to its English default wrapped in
  * __(), which achieves two things at once:
  *   1. `wp i18n make-pot` harvests the English defaults into the .pot, so a
  *      single .po/.mo per locale translates BOTH the PHP and React surfaces.
- *   2. WPSG_Frontend_Strings::get_translated() resolves the active-locale
- *      translation at runtime for injection into window.__WPSG_I18N__.strings.
+ *   2. Mullion_Frontend_Strings::get_translated() resolves the active-locale
+ *      translation at runtime for injection into window.__MULLION_I18N__.strings.
  *
  * Usage:
  *   node scripts/generate-frontend-i18n.mjs           # (re)write the manifest
@@ -30,12 +30,12 @@ const SOURCE = path.join(projectRoot, 'src', 'i18n-strings.en.json');
 const TARGET = path.join(
   projectRoot,
   'wp-plugin',
-  'wp-super-gallery',
+  'mullion-gallery',
   'includes',
   'i18n',
-  'class-wpsg-frontend-strings.php',
+  'class-mullion-frontend-strings.php',
 );
-const TEXT_DOMAIN = 'wp-super-gallery';
+const TEXT_DOMAIN = 'mullion-gallery';
 
 /** Escape a JS string for embedding in a PHP single-quoted literal. */
 function phpSingleQuote(value) {
@@ -52,7 +52,7 @@ function buildManifest(strings) {
 
   return `<?php
 /**
- * WPSG_Frontend_Strings — GENERATED FILE, DO NOT EDIT BY HAND.
+ * Mullion_Frontend_Strings — GENERATED FILE, DO NOT EDIT BY HAND.
  *
  * Regenerate with: npm run i18n:generate
  * Source of truth: src/i18n-strings.en.json
@@ -61,16 +61,16 @@ function buildManifest(strings) {
  * gettext pipeline. Each i18next key maps to its English default wrapped in
  * __(), so \`wp i18n make-pot\` harvests the strings into the .pot AND
  * get_translated() can resolve the active-locale translation for injection
- * into window.__WPSG_I18N__.strings (consumed by src/i18n.ts).
+ * into window.__MULLION_I18N__.strings (consumed by src/i18n.ts).
  *
- * @package WP_Super_Gallery
+ * @package Mullion
  */
 
 if (!defined('ABSPATH')) {
     exit;
 }
 
-class WPSG_Frontend_Strings {
+class Mullion_Frontend_Strings {
     /**
      * i18next key => translated string for the current locale.
      *
@@ -95,7 +95,7 @@ function main() {
     const existing = fs.existsSync(TARGET) ? fs.readFileSync(TARGET, 'utf8') : '';
     if (existing !== output) {
       console.error(
-        '✗ class-wpsg-frontend-strings.php is stale. Run `npm run i18n:generate` and commit the result.',
+        '✗ class-mullion-frontend-strings.php is stale. Run `npm run i18n:generate` and commit the result.',
       );
       process.exit(1);
     }

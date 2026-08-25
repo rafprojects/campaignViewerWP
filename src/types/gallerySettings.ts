@@ -17,23 +17,23 @@ export type GalleryConfigMode = 'unified' | 'per-type';
 
 export interface GalleryCommonSettings {
   sectionMaxWidth?: number | undefined;
-  sectionMaxWidthUnit?: import('@wp-super-gallery/shared-utils').CssWidthUnit | undefined;
+  sectionMaxWidthUnit?: import('@mullion/shared-utils').CssWidthUnit | undefined;
   sectionMaxHeight?: number | undefined;
-  sectionMaxHeightUnit?: import('@wp-super-gallery/shared-utils').CssHeightUnit | undefined;
+  sectionMaxHeightUnit?: import('@mullion/shared-utils').CssHeightUnit | undefined;
   sectionMinWidth?: number | undefined;
-  sectionMinWidthUnit?: import('@wp-super-gallery/shared-utils').CssWidthUnit | undefined;
+  sectionMinWidthUnit?: import('@mullion/shared-utils').CssWidthUnit | undefined;
   sectionMinHeight?: number | undefined;
-  sectionMinHeightUnit?: import('@wp-super-gallery/shared-utils').CssHeightUnit | undefined;
+  sectionMinHeightUnit?: import('@mullion/shared-utils').CssHeightUnit | undefined;
   sectionHeightMode?: 'auto' | 'manual' | 'viewport' | undefined;
   sectionPadding?: number | undefined;
-  sectionPaddingUnit?: import('@wp-super-gallery/shared-utils').CssSpacingUnit | undefined;
+  sectionPaddingUnit?: import('@mullion/shared-utils').CssSpacingUnit | undefined;
   adapterContentPadding?: number | undefined;
-  adapterContentPaddingUnit?: import('@wp-super-gallery/shared-utils').CssSpacingUnit | undefined;
+  adapterContentPaddingUnit?: import('@mullion/shared-utils').CssSpacingUnit | undefined;
   adapterSizingMode?: 'fill' | 'manual' | undefined;
   adapterMaxWidthPct?: number | undefined;
   adapterMaxHeightPct?: number | undefined;
   adapterItemGap?: number | undefined;
-  adapterItemGapUnit?: import('@wp-super-gallery/shared-utils').CssSpacingUnit | undefined;
+  adapterItemGapUnit?: import('@mullion/shared-utils').CssSpacingUnit | undefined;
   adapterJustifyContent?: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch' | undefined;
   gallerySizingMode?: 'auto' | 'viewport' | 'manual' | undefined;
   galleryManualHeight?: string | undefined;
@@ -125,18 +125,18 @@ export interface TypographyOverride {
 
 export interface GalleryBehaviorSettings {
   videoViewportHeight: number;
-  videoViewportHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  videoViewportHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   imageViewportHeight: number;
-  imageViewportHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  imageViewportHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   thumbnailScrollSpeed: number;
   scrollAnimationStyle: ScrollAnimationStyle;
   scrollAnimationDurationMs: number;
   scrollAnimationEasing: ScrollAnimationEasing;
   scrollTransitionType: ScrollTransitionType;
   imageBorderRadius: number;
-  imageBorderRadiusUnit: import('@wp-super-gallery/shared-utils').CssBorderRadiusUnit;
+  imageBorderRadiusUnit: import('@mullion/shared-utils').CssBorderRadiusUnit;
   videoBorderRadius: number;
-  videoBorderRadiusUnit: import('@wp-super-gallery/shared-utils').CssBorderRadiusUnit;
+  videoBorderRadiusUnit: import('@mullion/shared-utils').CssBorderRadiusUnit;
   transitionFadeEnabled: boolean;
   // P12-A/B: Advanced thumbnail strip controls
   videoThumbnailWidth: number;
@@ -148,22 +148,22 @@ export interface GalleryBehaviorSettings {
   thumbnailDragScrollEnabled: boolean;
   thumbnailScrollButtonsVisible: boolean;
   gridCardWidth: number;
-  gridCardWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  gridCardWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   gridCardAspectRatio: GridCardAspectRatio;
   gridCardMaxColumns: number;
   gridCardMinHeight: number;
   /** Legacy fallback when gridCardAspectRatio remains on 'auto'. */
   gridCardHeight: number;
-  gridCardHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  gridCardHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   mosaicTargetRowHeight: number;
-  mosaicTargetRowHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  mosaicTargetRowHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   // Tile appearance — shared by masonry, justified, hexagonal, circular, diamond
   tileSize: number;          // px: fixed tile size for shape adapters
-  tileSizeUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  tileSizeUnit: import('@mullion/shared-utils').CssWidthUnit;
   tileGapX: number;          // px: horizontal gap between tiles
-  tileGapXUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  tileGapXUnit: import('@mullion/shared-utils').CssSpacingUnit;
   tileGapY: number;          // px: vertical gap between tiles
-  tileGapYUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  tileGapYUnit: import('@mullion/shared-utils').CssSpacingUnit;
   tileBorderWidth: number;   // px: 0 = no border
   tileBorderColor: string;   // CSS color
   tileGlowEnabled: boolean;  // hover glow via drop-shadow
@@ -178,15 +178,15 @@ export interface GalleryBehaviorSettings {
   scrollSnapAlignment: string;        // 'start' | 'center' | 'end'
   scrollSnapPageIndicator: boolean;   // show slide counter (n / total)
   scrollSnapMaxWidth: number;         // 0 = no max-width (full container)
-  scrollSnapMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  scrollSnapMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   // P31-E: Spotlight / Hero adapter
   spotlightHeroAspectRatio: string;                                          // e.g. '16:9', '4:3', '1:1'
   spotlightThumbnailSize: number;                                            // px: thumbnail strip item size
-  spotlightThumbnailSizeUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  spotlightThumbnailSizeUnit: import('@mullion/shared-utils').CssWidthUnit;
   spotlightTransitionDuration: number;                                       // ms: hero swap / border transition
   spotlightStripPosition: 'below' | 'right';                                 // strip layout direction
   spotlightHeroMaxWidth: number;      // 0 = no max-width (full container)
-  spotlightHeroMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  spotlightHeroMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   spotlightHeroJustification: 'start' | 'center' | 'end';                    // horizontal alignment of the hero block within the container
   // P12-H: Navigation Overlay Arrows
   navArrowPosition: NavArrowPosition;
@@ -225,22 +225,22 @@ export interface GalleryBehaviorSettings {
   unifiedBgImageUrl: string;
   // P13-A: Campaign Card settings
   cardBorderRadius: number;
-  cardBorderRadiusUnit: import('@wp-super-gallery/shared-utils').CssBorderRadiusUnit;
+  cardBorderRadiusUnit: import('@mullion/shared-utils').CssBorderRadiusUnit;
   cardBorderWidth: number;
   cardBorderMode: 'single' | 'auto' | 'individual';
   cardBorderColor: string;
   cardShadowPreset: string;
   cardThumbnailHeight: number;
-  cardThumbnailHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  cardThumbnailHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   cardThumbnailFit: string;
   cardGridColumns: number;
   cardGapH: number;
-  cardGapHUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  cardGapHUnit: import('@mullion/shared-utils').CssSpacingUnit;
   cardGapV: number;
-  cardGapVUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  cardGapVUnit: import('@mullion/shared-utils').CssSpacingUnit;
   cardMaxWidth: number;
   modalCoverHeight: number;
-  modalCoverHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  modalCoverHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   modalTransition: string;
   modalTransitionDuration: number;
   modalMaxHeight: number;
@@ -257,19 +257,19 @@ export interface GalleryBehaviorSettings {
   showSearchBox: boolean;
   // P13-E: App width control (0 = full width / edge-to-edge)
   appMaxWidth: number;
-  appMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  appMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   // P13-E: Container padding (px). Controls horizontal padding on all containers.
   // Default 16 (matches Mantine spacing-md). Set to 0 for true edge-to-edge.
   appPadding: number;
-  appPaddingUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  appPaddingUnit: import('@mullion/shared-utils').CssSpacingUnit;
   // P36-D: Settings Panel (right-side drawer) width on non-small screens.
   settingsPanelWidth: number;
-  settingsPanelWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  settingsPanelWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   // P57-A: Settings Panel open/close transition. 'none' opens instantly.
   settingsPanelAnimation: 'slide-left' | 'fade' | 'scale' | 'none';
   // P36-D: Admin Panel (main container) max-width. 0 = no constraint (full width).
   adminPanelMaxWidth: number;
-  adminPanelMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  adminPanelMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   /**
    * P13-E: WP Full Bleed — break out of WordPress block theme container padding.
    *
@@ -279,16 +279,16 @@ export interface GalleryBehaviorSettings {
    * CSS media-query rules that apply negative margins (bleed ON) or re-constrain
    * (bleed OFF) at each breakpoint. Server-rendered — requires page refresh.
    *
-   * See: class-wpsg-embed.php render_shortcode() for the full implementation.
+   * See: class-mullion-embed.php render_shortcode() for the full implementation.
    */
   wpFullBleedDesktop: boolean; // ≥ 1024px
   wpFullBleedTablet: boolean;  // 768–1023px
   wpFullBleedMobile: boolean;  // < 768px
   // P13-E: Per-gallery tile sizes (shape adapters)
   imageTileSize: number;
-  imageTileSizeUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  imageTileSizeUnit: import('@mullion/shared-utils').CssWidthUnit;
   videoTileSize: number;
-  videoTileSizeUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  videoTileSizeUnit: import('@mullion/shared-utils').CssWidthUnit;
   // P14-C: Thumbnail cache TTL
   thumbnailCacheTtl: number;
   // P14-F: Image optimization on upload
@@ -318,7 +318,7 @@ export interface GalleryBehaviorSettings {
   modalCloseButtonSize: number;
   modalCloseButtonBgColor: string;
   modalContentMaxWidth: number;
-  modalContentMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  modalContentMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   campaignDescriptionLineHeight: number;
   modalMobileBreakpoint: number;
   cardPageTransitionOpacity: number;
@@ -346,7 +346,7 @@ export interface GalleryBehaviorSettings {
   diamondClipPath: string;
   tileDefaultPerRow: number;
   photoNormalizeHeight: number;
-  photoNormalizeHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  photoNormalizeHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   masonryAutoColumnBreakpoints: string;
   gridCardHoverShadow: string;
   gridCardDefaultShadow: string;
@@ -357,9 +357,9 @@ export interface GalleryBehaviorSettings {
   lightboxBackdropColor: string;
   lightboxEntryScale: number;
   lightboxVideoMaxWidth: number;
-  lightboxVideoMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  lightboxVideoMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   lightboxVideoHeight: number;
-  lightboxVideoHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  lightboxVideoHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   lightboxMediaMaxHeight: string;
   lightboxZIndex: number;
   // P14-B: Navigation (advanced)
@@ -411,13 +411,13 @@ export interface GalleryBehaviorSettings {
   // P21-D: Viewer background & border
   viewerBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   viewerBgColor: string;
-  viewerBgGradient: import('@wp-super-gallery/shared-utils').GradientOptions;
+  viewerBgGradient: import('@mullion/shared-utils').GradientOptions;
   showViewerBorder: boolean;
   // P21-C: Card aspect ratio & max columns
   cardMaxColumns: number;
   cardAspectRatio: 'auto' | '16:9' | '4:3' | '1:1' | '3:4' | '9:16' | '2:3' | '3:2' | '21:9';
   cardMinHeight: number;
-  cardMinHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  cardMinHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   // P21-G: Gallery label editing & justification
   galleryImageLabel: string;
   galleryVideoLabel: string;
@@ -449,77 +449,77 @@ export interface GalleryBehaviorSettings {
   showCampaignAdminActions: boolean;
   showCampaignGalleryLabels: boolean;
   fullscreenContentMaxWidth: number;
-  fullscreenContentMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  fullscreenContentMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   // P22-K: Modal max width & background
   modalMaxWidth: number;
-  modalMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  modalMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   modalBgType: 'theme' | 'transparent' | 'solid' | 'gradient';
   modalBgColor: string;
-  modalBgGradient: import('@wp-super-gallery/shared-utils').GradientOptions;
+  modalBgGradient: import('@mullion/shared-utils').GradientOptions;
   // P22-M: Modal gallery width/gap/margin
   modalGalleryMaxWidth: number;
-  modalGalleryMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  modalGalleryMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   modalGalleryGap: number;
-  modalGalleryGapUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  modalGalleryGapUnit: import('@mullion/shared-utils').CssSpacingUnit;
   modalGalleryMargin: number;
-  modalGalleryMarginUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  modalGalleryMarginUnit: import('@mullion/shared-utils').CssSpacingUnit;
   // P22-P8: Vertical alignment of modal content
   modalContentVerticalAlign: 'top' | 'center' | 'bottom';
   // P25-T: Gallery shell vertical alignment + offset
   modalGalleryVerticalAlign: 'start' | 'center' | 'end';
   modalGalleryOffsetY: number;
-  modalGalleryOffsetYUnit: import('@wp-super-gallery/shared-utils').CssOffsetUnit;
+  modalGalleryOffsetYUnit: import('@mullion/shared-utils').CssOffsetUnit;
   // P22-M: Gallery height constraint mode + manual CSS height
   gallerySizingMode: 'auto' | 'viewport' | 'manual';
   galleryManualHeight: string;
   // P22-P2: Dimension propagation — gallery section sizing
   gallerySectionMaxWidth: number;
-  gallerySectionMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  gallerySectionMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   gallerySectionMaxHeight: number;
-  gallerySectionMaxHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  gallerySectionMaxHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   gallerySectionHeightMode: 'auto' | 'manual' | 'viewport';
   gallerySectionMinWidth: number;
-  gallerySectionMinWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  gallerySectionMinWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   gallerySectionMinHeight: number;
-  gallerySectionMinHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  gallerySectionMinHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   // P25-T: Section content alignment + offset
   gallerySectionContentAlignX: 'start' | 'center' | 'end';
   gallerySectionContentAlignY: 'start' | 'center' | 'end';
   gallerySectionContentOffsetX: number;
-  gallerySectionContentOffsetXUnit: import('@wp-super-gallery/shared-utils').CssOffsetUnit;
+  gallerySectionContentOffsetXUnit: import('@mullion/shared-utils').CssOffsetUnit;
   gallerySectionContentOffsetY: number;
-  gallerySectionContentOffsetYUnit: import('@wp-super-gallery/shared-utils').CssOffsetUnit;
+  gallerySectionContentOffsetYUnit: import('@mullion/shared-utils').CssOffsetUnit;
   // P25-S: Primary gallery section scale multiplier
   sectionScale: number;
   perTypeSectionEqualHeight: boolean;
   modalInnerPadding: number;
-  modalInnerPaddingUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  modalInnerPaddingUnit: import('@mullion/shared-utils').CssSpacingUnit;
   gallerySectionPadding: number;
-  gallerySectionPaddingUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  gallerySectionPaddingUnit: import('@mullion/shared-utils').CssSpacingUnit;
   adapterContentPadding: number;
-  adapterContentPaddingUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  adapterContentPaddingUnit: import('@mullion/shared-utils').CssSpacingUnit;
   adapterSizingMode: 'fill' | 'manual';
   adapterMaxWidthPct: number;
   adapterMaxHeightPct: number;
   // P22-P7: Card width responsive unit & last-row justification
-  cardMaxWidthUnit: import('@wp-super-gallery/shared-utils').CssWidthUnit;
+  cardMaxWidthUnit: import('@mullion/shared-utils').CssWidthUnit;
   cardJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly';
   // P25-S: Primary card scale multiplier
   cardScale: number;
   // P25-Q: Card gallery vertical justification
   cardGalleryVerticalAlign: 'start' | 'center' | 'end';
   cardGalleryMinHeight: number;
-  cardGalleryMinHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  cardGalleryMinHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   cardGalleryMaxHeight: number;
-  cardGalleryMaxHeightUnit: import('@wp-super-gallery/shared-utils').CssHeightUnit;
+  cardGalleryMaxHeightUnit: import('@mullion/shared-utils').CssHeightUnit;
   // P25-T: Card gallery offset nudges
   cardGalleryOffsetX: number;
-  cardGalleryOffsetXUnit: import('@wp-super-gallery/shared-utils').CssOffsetUnit;
+  cardGalleryOffsetXUnit: import('@mullion/shared-utils').CssOffsetUnit;
   cardGalleryOffsetY: number;
-  cardGalleryOffsetYUnit: import('@wp-super-gallery/shared-utils').CssOffsetUnit;
+  cardGalleryOffsetYUnit: import('@mullion/shared-utils').CssOffsetUnit;
   // P22-P7: Unified adapter item gap & justification
   adapterItemGap: number;
-  adapterItemGapUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  adapterItemGapUnit: import('@mullion/shared-utils').CssSpacingUnit;
   adapterJustifyContent: 'start' | 'center' | 'end' | 'space-between' | 'space-evenly' | 'stretch';
   // P25-S: Primary gallery item scale multiplier (applies to adapter sizing)
   itemScale: number;
@@ -535,7 +535,7 @@ export interface GalleryBehaviorSettings {
   carouselEdgeFade: boolean;
   carouselLoop: boolean;
   carouselGap: number;
-  carouselGapUnit: import('@wp-super-gallery/shared-utils').CssSpacingUnit;
+  carouselGapUnit: import('@mullion/shared-utils').CssSpacingUnit;
   // P25-U Phase 1b: Drawer backdrop blur toggle
   settingsDrawerBlurEnabled: boolean;
   // P25-X Phase 5: Card breakpoint overrides
@@ -714,7 +714,7 @@ export const DEFAULT_GALLERY_BEHAVIOR_SETTINGS: GalleryBehaviorSettings = {
   dotNavEnabled: true,
   dotNavPosition: 'below',
   dotNavSize: 10,
-  dotNavActiveColor: 'var(--wpsg-color-primary)',
+  dotNavActiveColor: 'var(--mullion-color-primary)',
   dotNavInactiveColor: 'rgba(128,128,128,0.4)',
   dotNavShape: 'circle',
   dotNavSpacing: 6,

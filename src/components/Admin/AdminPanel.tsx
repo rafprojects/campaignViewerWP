@@ -32,8 +32,8 @@ import { useUnifiedCampaignModal } from '@/hooks/useUnifiedCampaignModal';
 import { UnifiedCampaignModal } from '@/components/Campaign/UnifiedCampaignModal';
 import { useCampaignsRows } from '@/hooks/useCampaignsRows';
 import { useLayoutTemplates } from '@/services/layoutTemplateQuery';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { spaceColor } from '@wp-super-gallery/shared-utils';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { spaceColor } from '@mullion/shared-utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -77,13 +77,13 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   // P53-A: AdminPanel only mounts for editor-or-above (isAdmin); isSystemAdmin
   // gates the system-only surfaces (Import, ZIP/rescan, System Audit, etc.).
   const { isSystemAdmin } = useAuth();
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
 
   // P36-A: Root-scoped admin tab persistence. Migrates the old global key on
   // first use so existing tab state is not lost when upgrading from pre-P36-A.
   const legacyTabDefault = (() => {
     try {
-      return localStorage.getItem('wpsg_admin_active_tab');
+      return localStorage.getItem('mullion_admin_active_tab');
     } catch {
       return null;
     }
@@ -99,10 +99,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   // user never changes tabs (setActiveTab is the only write path for the hook).
   useEffect(() => {
     try {
-      const legacyValue = localStorage.getItem('wpsg_admin_active_tab');
+      const legacyValue = localStorage.getItem('mullion_admin_active_tab');
       if (legacyValue !== null) {
         setActiveTab(legacyValue);
-        localStorage.removeItem('wpsg_admin_active_tab');
+        localStorage.removeItem('mullion_admin_active_tab');
       }
     } catch { /* ignore */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -240,8 +240,8 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   const campaignsRows = useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns, onAddMedia: setAddMediaCampaign, categoryItems: campaignCategories });
 
   return (
-    <Card {...getWpsgDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
-      <Group {...getWpsgDebugProps('AdminPanel', 'header')} justify="space-between" wrap="wrap" gap="sm" mb="md">
+    <Card {...getMullionDebugProps('AdminPanel')} shadow="sm" radius="md" withBorder tabIndex={-1} onKeyDown={campaignActions.hotkeyHandler} style={{ outline: 'none' }}>
+      <Group {...getMullionDebugProps('AdminPanel', 'header')} justify="space-between" wrap="wrap" gap="sm" mb="md">
         <Group>
           <ActionIcon variant="light" size="lg" onClick={onClose} aria-label={t('admin_back_to_gallery', 'Back to gallery')}>
             <IconArrowLeft />
@@ -315,10 +315,10 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
         </Group>
       </Group>
 
-      <Tabs {...getWpsgDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
+      <Tabs {...getMullionDebugProps('AdminPanel', 'tabs')} value={activeTab} onChange={setActiveTab}>
         {isMobile ? (
           <Select
-            {...getWpsgDebugProps('AdminPanel', 'tab-select')}
+            {...getMullionDebugProps('AdminPanel', 'tab-select')}
             value={activeTab ?? 'campaigns'}
             onChange={(v) => setActiveTab(v)}
             data={[
@@ -337,7 +337,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
             aria-label={t('admin_select_tab', 'Select admin panel tab')}
           />
         ) : (
-          <Tabs.List {...getWpsgDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
+          <Tabs.List {...getMullionDebugProps('AdminPanel', 'tab-list')} style={{ overflowX: 'auto', flexWrap: 'nowrap' }}>
             <Tabs.Tab value="campaigns">{t('admin_tab_campaigns', 'Campaigns')}</Tabs.Tab>
             <Tabs.Tab value="media">{t('admin_tab_media', 'Media')}</Tabs.Tab>
             <Tabs.Tab value="layouts">{t('admin_tab_layouts', 'Layouts')}</Tabs.Tab>
@@ -350,7 +350,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           </Tabs.List>
         )}
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'campaigns-panel')} value="campaigns" pt="md">
           <Group justify="space-between" align="flex-start" mb="sm" wrap="wrap" gap="sm">
             <Box style={{ flex: '1 1 auto' }}>
               {isMobile && (
@@ -480,7 +480,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           tagItems={campaignTags}
         />
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'media-panel')} value="media" pt="md">
           {/* P72-E: media tab-selection (+ rescan loading) lives in MediaPanel now;
               key={selectedSpaceId} resets it on space change. `addMediaCampaign`
               stays in AdminPanel — it's a Campaigns-tab row action, not media-local. */}
@@ -496,7 +496,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Tabs.Panel>
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'layouts-panel')} value="layouts" pt="md">
           <LayoutTemplateList apiClient={apiClient} onNotify={onNotify} initialTemplateId={pendingEditLayoutId ?? undefined} spaceId={selectedSpaceId} />
         </Tabs.Panel>
 
@@ -511,7 +511,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           </Suspense>
         </Tabs.Panel>
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'access-panel')} value="access" pt="md">
           {/* P72-E: access tab-selection state + its two modals live in AccessPanel now;
               key={selectedSpaceId} resets that state when the space changes. */}
           <AccessPanel
@@ -529,7 +529,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />
         </Tabs.Panel>
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'audit-panel')} value="audit" pt="md" component="section">
           {/* P72-E: audit tab-selection + filter state lives in AuditPanel now;
               key={selectedSpaceId} resets that state when the space changes. */}
           <AuditPanel
@@ -560,7 +560,7 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
           />}
         </Tabs.Panel>
 
-        <Tabs.Panel {...getWpsgDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
+        <Tabs.Panel {...getMullionDebugProps('AdminPanel', 'analytics-panel')} value="analytics" pt="md">
           <ErrorBoundary isAdmin={true}>
             <Suspense fallback={<Center py="xl"><Loader size="sm" /></Center>}>
               <AnalyticsDashboard apiClient={apiClient} campaigns={campaignSelectData} isSystemAdmin={isSystemAdmin} />
@@ -732,4 +732,4 @@ export function AdminPanel({ apiClient, onClose, onCampaignsUpdated, onNotify, i
   );
 }
 
-setWpsgDebugDisplayName(AdminPanel, 'AdminPanel');
+setMullionDebugDisplayName(AdminPanel, 'AdminPanel');

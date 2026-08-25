@@ -22,13 +22,13 @@ import type {
   MediaItem,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { useLightbox } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
+import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
@@ -58,7 +58,7 @@ interface IsotopeAdapterProps {
 }
 
 export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('default');
 
@@ -168,7 +168,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
   const videoBorderRadius = toCssOrNumber(settings.videoBorderRadius, settings.videoBorderRadiusUnit);
 
   return (
-    <Stack {...getWpsgDebugProps('IsotopeAdapter')} gap="md" style={adapterSizing}>
+    <Stack {...getMullionDebugProps('IsotopeAdapter')} gap="md" style={adapterSizing}>
       <AdapterHeading common={common} heading={heading} icon={<IconLayoutGrid size={18} />} />
 
       {/* Controls row */}
@@ -239,7 +239,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
                 borderRadius: isVideo ? videoBorderRadius : borderRadius,
                 overflow: 'hidden',
                 position: 'relative',
-                background: 'var(--wpsg-color-surface, #1a1a2e)',
+                background: 'var(--mullion-color-surface, #1a1a2e)',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
               }}
             >
@@ -256,7 +256,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
 
               {/* Hover overlay */}
               <Box
-                className="wpsg-isotope-overlay"
+                className="mullion-isotope-overlay"
                 style={{
                   position: 'absolute',
                   inset: 0,
@@ -276,7 +276,7 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
                   />
                 ) : (
                   <IconZoomIn
-                    className="wpsg-isotope-zoom"
+                    className="mullion-isotope-zoom"
                     size={28}
                     color="white"
                     style={{ opacity: 0, filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))', transition: 'opacity 0.25s ease' }}
@@ -310,9 +310,9 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
       </Box>
 
       <style>{`
-        .wpsg-isotope-overlay { transition: background 0.25s ease; }
-        button:hover .wpsg-isotope-overlay { background: rgba(0,0,0,0.32) !important; }
-        button:hover .wpsg-isotope-zoom { opacity: 1 !important; }
+        .mullion-isotope-overlay { transition: background 0.25s ease; }
+        button:hover .mullion-isotope-overlay { background: rgba(0,0,0,0.32) !important; }
+        button:hover .mullion-isotope-zoom { opacity: 1 !important; }
         @media (prefers-reduced-motion: reduce) {
           [ref] { transition: none !important; }
         }
@@ -331,4 +331,4 @@ export function IsotopeAdapter({ media, settings, runtime }: IsotopeAdapterProps
   );
 }
 
-setWpsgDebugDisplayName(IsotopeAdapter, 'IsotopeAdapter');
+setMullionDebugDisplayName(IsotopeAdapter, 'IsotopeAdapter');

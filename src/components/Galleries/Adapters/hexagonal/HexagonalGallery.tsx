@@ -14,7 +14,7 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { ClippedTileGridGallery, type ClippedTileGridConfig } from '../_shared/ClippedTileGridGallery';
 
 /** Pointy-top hexagon — tip at 12 o'clock and 6 o'clock. */
@@ -41,4 +41,4 @@ export function HexagonalGallery({ media, settings, runtime }: HexagonalGalleryP
   return <ClippedTileGridGallery media={media} settings={settings} runtime={runtime} config={HEXAGONAL_CONFIG} />;
 }
 
-setWpsgDebugDisplayName(HexagonalGallery, 'HexagonalGallery');
+setMullionDebugDisplayName(HexagonalGallery, 'HexagonalGallery');

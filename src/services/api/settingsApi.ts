@@ -33,19 +33,19 @@ export class SettingsApi {
 
   getSettings(spaceId?: number): Promise<SettingsResponse> {
     const url = spaceId != null
-      ? `/wp-json/wp-super-gallery/v1/settings?space=${spaceId}`
-      : '/wp-json/wp-super-gallery/v1/settings';
+      ? `/wp-json/mullion-gallery/v1/settings?space=${spaceId}`
+      : '/wp-json/mullion-gallery/v1/settings';
     return this.transport.get<SettingsResponse>(url);
   }
 
   updateSettings(settings: SettingsUpdateRequest): Promise<SettingsResponse> {
-    return this.transport.post<SettingsResponse>('/wp-json/wp-super-gallery/v1/settings', settings);
+    return this.transport.post<SettingsResponse>('/wp-json/mullion-gallery/v1/settings', settings);
   }
 
   /** Connectivity probe — reuses the campaigns list endpoint. */
   testConnection(): Promise<{ success: boolean; message: string }> {
     return this.transport.get<{ success: boolean; message: string }>(
-      '/wp-json/wp-super-gallery/v1/campaigns',
+      '/wp-json/mullion-gallery/v1/campaigns',
     );
   }
 }

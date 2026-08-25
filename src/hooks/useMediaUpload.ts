@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
-import { useXhrUpload } from '@wp-super-gallery/shared-utils';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { useXhrUpload } from '@mullion/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';
@@ -121,7 +121,7 @@ export function useMediaUpload({
 
       const authHeaders = await apiClient.getAuthHeaders();
       const uploadResponse = await uploadMany<BatchUploadResponse>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        url: `${apiClient.getBaseUrl()}/wp-json/mullion-gallery/v1/media/upload`,
         files: selectedFiles,
         headers: authHeaders,
         extraFields: { campaign_id: String(campaignId) },
@@ -281,7 +281,7 @@ export function useMediaUpload({
     try {
       const authHeaders = await apiClient.getAuthHeaders();
       const singleResult = await upload<{ attachmentId: number; url: string; thumbnail?: string }>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        url: `${apiClient.getBaseUrl()}/wp-json/mullion-gallery/v1/media/upload`,
         file: entry.file,
         headers: authHeaders,
         extraFields: { force: '1', campaign_id: String(campaignId) },

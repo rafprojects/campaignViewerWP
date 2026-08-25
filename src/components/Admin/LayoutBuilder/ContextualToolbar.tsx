@@ -16,8 +16,8 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type { LayoutGroup } from '@/types';
-import { buildGroupMap, collectDescendantSlotIds } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { buildGroupMap, collectDescendantSlotIds } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ export function ContextualToolbar({
   canvasHeight,
   callbacks,
 }: ContextualToolbarProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   if (!selectionRect || selectedSlotIds.size === 0) return null;
@@ -365,4 +365,4 @@ export function ContextualToolbar({
   );
 }
 
-setWpsgDebugDisplayName(ContextualToolbar, 'LayoutBuilder:ContextualToolbar');
+setMullionDebugDisplayName(ContextualToolbar, 'LayoutBuilder:ContextualToolbar');

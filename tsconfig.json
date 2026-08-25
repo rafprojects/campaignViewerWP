@@ -21,9 +21,9 @@
     "noUncheckedIndexedAccess": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@wp-super-gallery/shared-utils": ["./packages/shared-utils/src/index.ts"],
-      "@wp-super-gallery/shared-ui": ["./packages/shared-ui/src/index.ts"],
-      "@wp-super-gallery/theme-engine": ["./packages/theme-engine/src/index.ts"]
+      "@mullion/shared-utils": ["./packages/shared-utils/src/index.ts"],
+      "@mullion/shared-ui": ["./packages/shared-ui/src/index.ts"],
+      "@mullion/theme-engine": ["./packages/theme-engine/src/index.ts"]
     }
   },
   "include": ["src", "packages/shared-utils/src", "packages/shared-ui/src", "packages/theme-engine/src"],

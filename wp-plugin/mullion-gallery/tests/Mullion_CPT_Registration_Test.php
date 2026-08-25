@@ -1,0 +1,242 @@
+<?php
+
+class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
+
+    public function setUp(): void {
+        parent::setUp();
+        // Ensure CPT/taxonomies/meta are registered (may be cleared by other test teardowns).
+        Mullion_CPT::register();
+    }
+
+    // ── Post type registration ─────────────────────────────────────────────
+
+    public function test_mullion_campaign_post_type_is_registered() {
+        $this->assertTrue(post_type_exists('mullion_campaign'));
+    }
+
+    public function test_mullion_layout_tpl_post_type_is_registered() {
+        $this->assertTrue(post_type_exists('mullion_layout_tpl'));
+    }
+
+    public function test_campaign_post_type_is_not_public() {
+        $obj = get_post_type_object('mullion_campaign');
+        $this->assertFalse($obj->public);
+    }
+
+    public function test_campaign_post_type_supports_title_and_editor() {
+        $supports = get_all_post_type_supports('mullion_campaign');
+        $this->assertArrayHasKey('title', $supports);
+        $this->assertArrayHasKey('editor', $supports);
+    }
+
+    public function test_campaign_post_type_has_rest_support() {
+        $obj = get_post_type_object('mullion_campaign');
+        $this->assertTrue($obj->show_in_rest);
+    }
+
+    // ── Taxonomy registration ──────────────────────────────────────────────
+
+    public function test_mullion_company_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_company'));
+    }
+
+    public function test_mullion_campaign_tag_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_campaign_tag'));
+    }
+
+    public function test_mullion_campaign_category_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_campaign_category'));
+    }
+
+    public function test_mullion_media_tag_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_media_tag'));
+    }
+
+    public function test_company_taxonomy_applies_to_campaign() {
+        $taxonomies = get_object_taxonomies('mullion_campaign');
+        $this->assertContains('mullion_company', $taxonomies);
+        $this->assertContains('mullion_campaign_tag', $taxonomies);
+    }
+
+    // ── P51-G: admin IA labels + Companies term-list column ────────────────────
+
+    public function test_campaign_menu_is_supergallery_with_campaigns_list_item() {
+        $obj = get_post_type_object('mullion_campaign');
+        $this->assertSame('Mullion', $obj->labels->menu_name);
+        // The submenu list item stays "Campaigns".
+        $this->assertSame('Campaigns', $obj->labels->all_items);
+        $this->assertSame('Add New Campaign', $obj->labels->add_new_item);
+    }
+
+    public function test_company_taxonomy_uses_company_labels_not_tag_defaults() {
+        $tax = get_taxonomy('mullion_company');
+        $this->assertSame('Add New Company', $tax->labels->add_new_item);
+        $this->assertSame('New Company Name', $tax->labels->new_item_name);
+        // Guard against the default non-hierarchical tag fallback strings.
+        $this->assertStringNotContainsString('Tag', $tax->labels->add_new_item);
+    }
+
+    public function test_rename_company_count_column_relabels_posts_to_campaigns() {
+        $columns = Mullion_CPT::rename_company_count_column([
+            'cb'    => '<input type="checkbox" />',
+            'name'  => 'Name',
+            'posts' => 'Count',
+        ]);
+        $this->assertSame('Campaigns', $columns['posts']);
+        // Other columns are untouched.
+        $this->assertSame('Name', $columns['name']);
+    }
+
+    public function test_rename_company_count_column_is_noop_without_posts_column() {
+        $columns = Mullion_CPT::rename_company_count_column(['name' => 'Name']);
+        $this->assertArrayNotHasKey('posts', $columns);
+        $this->assertSame(['name' => 'Name'], $columns);
+    }
+
+    // ── CPT_CAPS constant ──────────────────────────────────────────────────
+
+    public function test_cpt_caps_constant_is_array() {
+        $this->assertIsArray(Mullion_CPT::CPT_CAPS);
+    }
+
+    public function test_cpt_caps_contains_expected_capabilities() {
+        $expected = [
+            'edit_mullion_campaigns',
+            'edit_others_mullion_campaigns',
+            'publish_mullion_campaigns',
+            'read_private_mullion_campaigns',
+            'delete_mullion_campaigns',
+            'delete_private_mullion_campaigns',
+            'delete_published_mullion_campaigns',
+            'delete_others_mullion_campaigns',
+            'edit_private_mullion_campaigns',
+            'edit_published_mullion_campaigns',
+        ];
+
+        foreach ($expected as $cap) {
+            $this->assertContains($cap, Mullion_CPT::CPT_CAPS, "Missing capability: $cap");
+        }
+    }
+
+    // ── Post meta registration ─────────────────────────────────────────────
+
+    public function test_campaign_meta_fields_are_registered() {
+        // Registered meta keys for mullion_campaign.
+        $registered = get_registered_meta_keys('post', 'mullion_campaign');
+
+        $expected_keys = ['visibility', 'status', 'media_items', 'tags', 'cover_image'];
+        foreach ($expected_keys as $key) {
+            $this->assertArrayHasKey($key, $registered, "Meta key '$key' not registered for mullion_campaign");
+        }
+    }
+
+    // ── Sanitization methods ───────────────────────────────────────────────
+
+    public function test_sanitize_visibility_valid_values() {
+        $this->assertEquals('public', Mullion_CPT::sanitize_visibility('public'));
+        $this->assertEquals('private', Mullion_CPT::sanitize_visibility('private'));
+    }
+
+    public function test_sanitize_visibility_invalid_returns_private() {
+        $this->assertEquals('private', Mullion_CPT::sanitize_visibility('invalid'));
+        $this->assertEquals('private', Mullion_CPT::sanitize_visibility(''));
+        $this->assertEquals('private', Mullion_CPT::sanitize_visibility('unlisted'));
+    }
+
+    public function test_sanitize_status_valid_values() {
+        $this->assertEquals('active', Mullion_CPT::sanitize_status('active'));
+        $this->assertEquals('draft', Mullion_CPT::sanitize_status('draft'));
+        $this->assertEquals('archived', Mullion_CPT::sanitize_status('archived'));
+    }
+
+    public function test_sanitize_status_invalid_returns_draft() {
+        $this->assertEquals('draft', Mullion_CPT::sanitize_status('invalid'));
+        $this->assertEquals('draft', Mullion_CPT::sanitize_status(''));
+    }
+
+    public function test_sanitize_media_items_strips_html() {
+        $items = [
+            [
+                'id'       => '<script>alert(1)</script>abc',
+                'url'      => 'https://example.com/img.jpg',
+                'title'    => 'Clean <b>Title</b>',
+                'thumbnail' => 'https://example.com/thumb.jpg',
+            ],
+        ];
+
+        $result = Mullion_CPT::sanitize_media_items($items);
+        $this->assertIsArray($result);
+        $this->assertCount(1, $result);
+        // ID should be sanitized.
+        $this->assertStringNotContainsString('<script>', $result[0]['id']);
+    }
+
+    public function test_sanitize_media_items_returns_empty_for_non_array() {
+        $this->assertEquals([], Mullion_CPT::sanitize_media_items('not-an-array'));
+        $this->assertEquals([], Mullion_CPT::sanitize_media_items(null));
+    }
+
+    public function test_sanitize_tags_returns_array() {
+        $result = Mullion_CPT::sanitize_tags(['tag1', 'tag2', '<b>bold</b>']);
+        $this->assertIsArray($result);
+        $this->assertContains('tag1', $result);
+        $this->assertContains('tag2', $result);
+    }
+
+    public function test_sanitize_tags_returns_empty_for_non_array() {
+        $this->assertEquals([], Mullion_CPT::sanitize_tags('string'));
+        $this->assertEquals([], Mullion_CPT::sanitize_tags(null));
+    }
+
+    public function test_sanitize_datetime_valid_iso8601() {
+        $input = '2024-03-15T10:30:00Z';
+        $result = Mullion_CPT::sanitize_datetime($input);
+        $this->assertEquals('2024-03-15 10:30:00', $result);
+    }
+
+    public function test_sanitize_datetime_accepts_stored_utc_format() {
+        $result = Mullion_CPT::sanitize_datetime('2024-03-15 10:30:00');
+        $this->assertEquals('2024-03-15 10:30:00', $result);
+    }
+
+    public function test_sanitize_datetime_rejects_invalid() {
+        $result = Mullion_CPT::sanitize_datetime('not-a-date');
+        $this->assertEmpty($result);
+    }
+
+    public function test_sanitize_datetime_empty_input() {
+        $result = Mullion_CPT::sanitize_datetime('');
+        $this->assertEmpty($result);
+    }
+
+    // ── Integration: creating a campaign with meta ─────────────────────────
+
+    public function test_campaign_meta_round_trip() {
+        $user_id = self::factory()->user->create(['role' => 'administrator']);
+        $user = get_user_by('id', $user_id);
+        $user->add_cap('manage_mullion');
+        foreach (Mullion_CPT::CPT_CAPS as $cap) {
+            $user->add_cap($cap);
+        }
+        wp_set_current_user($user_id);
+
+        $cid = wp_insert_post([
+            'post_type'   => 'mullion_campaign',
+            'post_title'  => 'Meta Round Trip',
+            'post_status' => 'publish',
+        ]);
+
+        update_post_meta($cid, 'visibility', 'public');
+        update_post_meta($cid, 'status', 'active');
+        update_post_meta($cid, 'media_items', [
+            ['id' => 'm1', 'url' => 'https://example.com/1.jpg', 'title' => 'Image 1'],
+        ]);
+
+        $this->assertEquals('public', get_post_meta($cid, 'visibility', true));
+        $this->assertEquals('active', get_post_meta($cid, 'status', true));
+
+        $items = get_post_meta($cid, 'media_items', true);
+        $this->assertIsArray($items);
+        $this->assertCount(1, $items);
+    }
+}

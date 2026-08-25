@@ -9,7 +9,7 @@ import type {
   MediaItem,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const LayoutBuilderGallery = lazy(() =>
   import('@/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery').then((module) => ({
@@ -64,4 +64,4 @@ export function CampaignGalleryAdapterRenderer({
   /* eslint-enable react-hooks/static-components */
 }
 
-setWpsgDebugDisplayName(CampaignGalleryAdapterRenderer, 'CampaignGalleryAdapterRenderer');
+setMullionDebugDisplayName(CampaignGalleryAdapterRenderer, 'CampaignGalleryAdapterRenderer');

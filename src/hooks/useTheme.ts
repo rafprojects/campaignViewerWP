@@ -1,5 +1,5 @@
 /**
- * useTheme Hook — Access the WPSG theme context
+ * useTheme Hook — Access the MULLION theme context
  *
  * Separated from ThemeContext.tsx for React Fast Refresh compatibility.
  * Components use this hook to read theme state and trigger switches.

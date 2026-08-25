@@ -258,7 +258,7 @@ describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/spaces/10/access',
+        '/wp-json/mullion-gallery/v1/spaces/10/access',
         { userId: 42, access_level: 'owner' },
       );
     });
@@ -337,7 +337,7 @@ describe('SpaceManagementView — Access revoke confirmation (P64-G)', () => {
     fireEvent.click(screen.getByRole('button', { name: /^revoke$/i }));
 
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/spaces/10/access/42');
+      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/spaces/10/access/42');
     });
   });
 });

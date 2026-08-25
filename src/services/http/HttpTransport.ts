@@ -12,7 +12,7 @@ export interface ApiClientOptions {
   /**
    * Returns the current REST nonce to send as `X-WP-Nonce`, or undefined when
    * none is available. Injected so the transport stays free of any direct
-   * `window.__WPSG_*` reads — the WordPress glue lives at the wiring site
+   * `window.__MULLION_*` reads — the WordPress glue lives at the wiring site
    * (see `@/services/wpNonce`). When omitted, no nonce header is sent.
    */
   getNonce?: (() => string | undefined) | undefined;

@@ -6,7 +6,7 @@
  * logic lives in adapterRegistry.ts; this module owns the definitions.
  */
 import { createElement, lazy, type ComponentType } from 'react';
-import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 import type {
   AdapterRegistration,
   AdapterSettingGroupDefinition,
@@ -645,8 +645,8 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
         key: 'dotNavActiveColor',
         label: 'Active Dot Color',
         description: 'Fill color used for the active dot.',
-        fallback: 'var(--wpsg-color-primary)',
-        placeholder: 'var(--wpsg-color-primary)',
+        fallback: 'var(--mullion-color-primary)',
+        placeholder: 'var(--mullion-color-primary)',
       },
       {
         control: 'text',

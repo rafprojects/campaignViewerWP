@@ -3,7 +3,7 @@ import { enableMapSet } from 'immer';
 import type { LayoutTemplate, LayoutSlot, LayoutGraphicLayer, LayoutTextLayer, LayoutGroup, MediaItem, ResponsiveBreakpoint, SlotBreakpointOverrides } from '@/types';
 import { DEFAULT_LAYOUT_SLOT, SLOT_BREAKPOINT_OVERRIDE_KEYS } from '@/types';
 import { buildLayerList, computeReorderedZIndices } from '@/utils/layerList';
-import { computeGridSlots } from '@wp-super-gallery/shared-utils';
+import { computeGridSlots } from '@mullion/shared-utils';
 import { useLayoutBuilderHistory } from './useLayoutBuilderHistory';
 import { useLayoutBuilderZIndex } from './useLayoutBuilderZIndex';
 import { useLayoutBuilderOverlays } from './useLayoutBuilderOverlays';
@@ -18,7 +18,7 @@ enableMapSet();
 
 // ── Constants ────────────────────────────────────────────────
 
-const STORAGE_KEY_PREFIX = 'wpsg_layout_draft_';
+const STORAGE_KEY_PREFIX = 'mullion_layout_draft_';
 
 /**
  * P36-A: Autosave payload wrapper. The `savedAt` timestamp is set at each

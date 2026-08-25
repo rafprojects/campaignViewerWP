@@ -189,7 +189,7 @@ describe('useLayoutBuilderText — persistence (P59-A)', () => {
       // Autosave is debounced ~2s on the template object.
       act(() => { vi.advanceTimersByTime(2100); });
 
-      const raw = localStorage.getItem('wpsg_layout_draft_tpl-text-1');
+      const raw = localStorage.getItem('mullion_layout_draft_tpl-text-1');
       expect(raw).toBeTruthy();
       const payload = JSON.parse(raw!) as { schemaVersion: number; template: LayoutTemplate };
       expect(payload.schemaVersion).toBe(3);

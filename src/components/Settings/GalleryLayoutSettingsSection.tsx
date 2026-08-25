@@ -19,7 +19,7 @@ export function GalleryLayoutSettingsSection({
   updateSetting,
   onOpenResponsiveConfig,
 }: GalleryLayoutSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, value, onChange } = usePersistentAccordion('gallery-layout', 'adapters');
 
   return (

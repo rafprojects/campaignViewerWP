@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useShortcutConfig, ACTION_DEFAULTS, ACTION_IDS } from './useShortcutConfig';
 
-const STORAGE_KEY = 'wpsg_admin_shortcuts';
+const STORAGE_KEY = 'mullion_admin_shortcuts';
 
 beforeEach(() => {
   localStorage.clear();

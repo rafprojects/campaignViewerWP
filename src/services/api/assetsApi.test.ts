@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { HttpTransport } from '../http/HttpTransport';
 import { AssetsApi, ASSET_IN_USE_CODE } from './assetsApi';
 
-const BASE = '/wp-json/wp-super-gallery/v1/admin/asset-library';
+const BASE = '/wp-json/mullion-gallery/v1/admin/asset-library';
 
 function makeMockTransport(overrides: Partial<HttpTransport> = {}): HttpTransport {
   return {
@@ -34,7 +34,7 @@ describe('AssetsApi', () => {
   });
 
   it('exposes the in-use sentinel code', () => {
-    expect(ASSET_IN_USE_CODE).toBe('wpsg_asset_in_use');
+    expect(ASSET_IN_USE_CODE).toBe('mullion_asset_in_use');
   });
 
   describe('list', () => {

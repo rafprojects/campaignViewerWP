@@ -7,7 +7,7 @@ import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
 import type { GalleryBehaviorSettings, GalleryCommonSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_HEIGHT_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 import {
   getRepresentativeGalleryCommonSetting,
   resolveGalleryConfig,
@@ -22,7 +22,7 @@ interface CampaignViewerSettingsSectionProps {
 }
 
 export function CampaignViewerSettingsSection({ settings, updateSetting }: CampaignViewerSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, value, onChange } = usePersistentAccordion('campaign-viewer', 'cv-open-mode');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'showCampaignGalleryLabels') as boolean | undefined;

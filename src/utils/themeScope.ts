@@ -1,5 +1,5 @@
 export function createThemeScopeToken(): string {
-  return `wpsg-theme-${Math.random().toString(36).slice(2, 10)}`;
+  return `mullion-theme-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 export function normalizeThemeScopeToken(value: string | null | undefined): string {
@@ -17,18 +17,18 @@ export function escapeThemeScopeSelectorValue(value: string): string {
 }
 
 export function buildThemeScopeSelector(scopeToken: string): string {
-  return `[data-wpsg-theme-scope="${escapeThemeScopeSelectorValue(scopeToken)}"]`;
+  return `[data-mullion-theme-scope="${escapeThemeScopeSelectorValue(scopeToken)}"]`;
 }
 
 export function buildThemeStyleElementId(scopeToken: string): string {
-  return `wpsg-theme-vars-${normalizeThemeScopeToken(scopeToken)}`;
+  return `mullion-theme-vars-${normalizeThemeScopeToken(scopeToken)}`;
 }
 
 export function ensureHostThemeScopeToken(host: HTMLElement): string {
   const scopeToken = normalizeThemeScopeToken(
-    host.dataset.wpsgThemeScope || host.id || host.dataset.wpsgKey || createThemeScopeToken(),
+    host.dataset.mullionThemeScope || host.id || host.dataset.mullionKey || createThemeScopeToken(),
   );
 
-  host.dataset.wpsgThemeScope = scopeToken;
+  host.dataset.mullionThemeScope = scopeToken;
   return scopeToken;
 }

@@ -17,8 +17,8 @@ export function useBuilderDockLayout({
     dockApiRef.current = event.api;
     const templateId = initialTemplateId;
     const LAYOUT_KEY = layoutScope === 'per-template' && templateId
-      ? `wpsg_builder_${rootId}_template_${templateId}_layout`
-      : `wpsg_builder_${rootId}_layout`;
+      ? `mullion_builder_${rootId}_template_${templateId}_layout`
+      : `mullion_builder_${rootId}_layout`;
     // P30-E: bumped 1 → 2 (removed History dock tab).
     // P50-H: bumped 2 → 3 (canvas panel carries tabComponent:'canvas' for hideClose;
     // old saves without that field must be cleared so the close button disappears).

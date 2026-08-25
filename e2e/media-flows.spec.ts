@@ -3,16 +3,16 @@ import { test, expect } from '@playwright/test';
 test('admin media flows: upload, external add, edit, delete, reorder', async ({ page }) => {
   await page.addInitScript(() => {
     const globals = window as Window & {
-      __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-      __WPSG_API_BASE__?: string;
-      __WPSG_CONFIG__?: { enableJwt?: boolean };
+      __MULLION_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
+      __MULLION_API_BASE__?: string;
+      __MULLION_CONFIG__?: { enableJwt?: boolean };
     };
-    globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    globals.__WPSG_API_BASE__ = 'http://localhost:5173';
-    globals.__WPSG_CONFIG__ = { enableJwt: true };
-    localStorage.setItem('wpsg_access_token', 'fake-token');
+    globals.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    globals.__MULLION_API_BASE__ = 'http://localhost:5173';
+    globals.__MULLION_CONFIG__ = { enableJwt: true };
+    localStorage.setItem('mullion_access_token', 'fake-token');
     localStorage.setItem(
-      'wpsg_user',
+      'mullion_user',
       JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }),
     );
   });
@@ -21,7 +21,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -47,7 +47,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     ],
   };
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -55,7 +55,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns?**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -66,7 +66,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
   const mediaItems: any[] = [];
   let lastReorderItems: any[] = [];
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media', async (route) => {
     const method = route.request().method();
     if (method === 'GET') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mediaItems) });
@@ -82,7 +82,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media/**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media/**', async (route) => {
     const method = route.request().method();
     if (method === 'PUT') {
       const update = route.request().postDataJSON();
@@ -99,7 +99,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media/reorder', async (route) => {
     try {
       const body = route.request().postDataJSON();
       const items = Array.isArray(body?.items) ? body.items : [];
@@ -115,7 +115,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/media/upload', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/media/upload', async (route) => {
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
@@ -123,7 +123,7 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/oembed?**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/oembed?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

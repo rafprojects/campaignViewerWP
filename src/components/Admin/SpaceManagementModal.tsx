@@ -15,7 +15,7 @@ interface SpaceManagementModalProps {
 }
 
 export function SpaceManagementModal({ opened, apiClient, onClose, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Modal
       opened={opened}

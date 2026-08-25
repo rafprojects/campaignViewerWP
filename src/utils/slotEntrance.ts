@@ -12,9 +12,9 @@
 import type { SlotEntranceAnimation } from '@/types';
 
 /** Class added (by the IntersectionObserver) when a slot enters the viewport. */
-export const REVEAL_CLASS = 'wpsg-lb-revealed';
+export const REVEAL_CLASS = 'mullion-lb-revealed';
 /** Marker class on animated slots — the observer queries for it. */
-export const ENTRANCE_MARKER_CLASS = 'wpsg-lb-entrance';
+export const ENTRANCE_MARKER_CLASS = 'mullion-lb-entrance';
 /** Default animation duration (ms) when none is specified. */
 export const DEFAULT_ENTRANCE_DURATION_MS = 600;
 /** Travel distance (px) for slide animations. */
@@ -73,5 +73,5 @@ export function buildSlotEntranceCss(opts: {
 
 /** Stable, CSS-safe @keyframes name for a slot in a given gallery instance. */
 export function entranceKeyframeName(instanceId: string, slotId: string): string {
-  return `wpsgLbEnter_${instanceId}_${slotId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+  return `mullionLbEnter_${instanceId}_${slotId.replace(/[^a-zA-Z0-9_]/g, '_')}`;
 }

@@ -10,10 +10,10 @@
  * the ruler always reflect true canvas dimensions.
  */
 import { useMemo } from 'react';
-import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
-import { rulerTickIntervals } from '@wp-super-gallery/shared-utils';
-import type { PctRect } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { useCanvasTransform } from '@mullion/shared-ui';
+import { rulerTickIntervals } from '@mullion/shared-utils';
+import type { PctRect } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -204,4 +204,4 @@ export function CanvasRulers({ canvasWidth, canvasHeight, selectionPct }: Canvas
   );
 }
 
-setWpsgDebugDisplayName(CanvasRulers, 'LayoutBuilder:CanvasRulers');
+setMullionDebugDisplayName(CanvasRulers, 'LayoutBuilder:CanvasRulers');

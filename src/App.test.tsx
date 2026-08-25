@@ -24,15 +24,15 @@ describe('App', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
-    delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
-    delete window.__WPSG_CONFIG__;
+    delete (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__;
+    delete window.__MULLION_CONFIG__;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     localStorage.clear();
-    delete (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__;
-    delete window.__WPSG_CONFIG__;
+    delete (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__;
+    delete window.__MULLION_CONFIG__;
   });
 
   it('renders campaigns from API', async () => {
@@ -48,9 +48,9 @@ describe('App', () => {
   });
 
   it('shows error banner when campaigns request fails', async () => {
-    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    localStorage.setItem('wpsg_access_token', 'token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+    (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('mullion_access_token', 'token');
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
       const url = typeof input === 'string' ? input : (input as Request).url;
@@ -81,7 +81,7 @@ describe('App', () => {
   });
 
   it('shows compact sign-in trigger when auth provider is configured', async () => {
-    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+    (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
@@ -121,9 +121,9 @@ describe('App', () => {
   });
 
   it('uses first campaign media thumbnail when campaign thumbnail is missing', async () => {
-    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    localStorage.setItem('wpsg_access_token', 'token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+    (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('mullion_access_token', 'token');
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     vi.spyOn(globalThis, 'fetch').mockImplementation((input, init) => {
       const url = String(input);
@@ -133,7 +133,7 @@ describe('App', () => {
         return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
       }
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/permissions')) {
+      if (url.includes('/wp-json/mullion-gallery/v1/permissions')) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -141,7 +141,7 @@ describe('App', () => {
         } as Response);
       }
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -192,7 +192,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return {
           ok: true,
           status: 200,
@@ -243,7 +243,7 @@ describe('App', () => {
     expect(await screen.findByText('Campaign Alpha')).toBeInTheDocument();
 
     const calledPerCampaignMedia = fetchMock.mock.calls.some(([url]) =>
-      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns/101/media'),
+      String(url).includes('/wp-json/mullion-gallery/v1/campaigns/101/media'),
     );
     expect(calledPerCampaignMedia).toBe(false);
   });
@@ -270,7 +270,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         const pageMatch = url.match(/[?&]page=(\d+)/);
         const page = pageMatch ? Number(pageMatch[1]) : 1;
         const items =
@@ -297,7 +297,7 @@ describe('App', () => {
 
     // Exactly two campaign-list requests were made (page 1 and page 2).
     const listCalls = fetchMock.mock.calls.filter(([url]) =>
-      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+      String(url).includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1'),
     );
     expect(listCalls).toHaveLength(2);
     expect(String(listCalls[0][0])).toContain('page=1');
@@ -317,7 +317,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return {
           ok: true,
           status: 200,
@@ -336,7 +336,7 @@ describe('App', () => {
 
     const listCallCount = () =>
       fetchMock.mock.calls.filter(([url]) =>
-        String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+        String(url).includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1'),
       ).length;
 
     const afterLoad = listCallCount();
@@ -362,9 +362,9 @@ describe('App', () => {
   });
 
   it('shows session expired message on 401 responses', async () => {
-    (window as Window & { __WPSG_AUTH_PROVIDER__?: string }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    localStorage.setItem('wpsg_access_token', 'token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+    (window as Window & { __MULLION_AUTH_PROVIDER__?: string }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    localStorage.setItem('mullion_access_token', 'token');
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
 
     vi.spyOn(globalThis, 'fetch').mockImplementation((input) => {
       const url = typeof input === 'string' ? input : (input as Request).url;

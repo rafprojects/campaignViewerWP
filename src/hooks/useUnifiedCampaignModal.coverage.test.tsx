@@ -15,8 +15,8 @@ const h = vi.hoisted(() => ({
   companies: [{ id: 'c1', name: 'Acme', slug: 'acme' }],
 }));
 
-vi.mock('@wp-super-gallery/shared-utils', async (orig) => {
-  const actual = await orig<typeof import('@wp-super-gallery/shared-utils')>();
+vi.mock('@mullion/shared-utils', async (orig) => {
+  const actual = await orig<typeof import('@mullion/shared-utils')>();
   return {
     ...actual,
     useXhrUpload: () => ({

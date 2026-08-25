@@ -29,7 +29,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.post).mockResolvedValue(undefined);
       await api.recordAnalyticsEvent('42');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/event',
+        '/wp-json/mullion-gallery/v1/analytics/event',
         { campaignId: '42', eventType: 'view' },
       );
     });
@@ -38,7 +38,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.post).mockResolvedValue(undefined);
       await api.recordAnalyticsEvent('42', 'lightbox_open', 'media-1');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/event',
+        '/wp-json/mullion-gallery/v1/analytics/event',
         { campaignId: '42', eventType: 'lightbox_open', mediaId: 'media-1' },
       );
     });
@@ -49,7 +49,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.get).mockResolvedValue({ totalViews: 10, uniqueVisitors: 5, daily: [] });
       await api.getCampaignAnalytics('42');
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/campaigns/42',
+        '/wp-json/mullion-gallery/v1/analytics/campaigns/42',
       );
     });
 
@@ -70,7 +70,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.get).mockResolvedValue({ items: [] });
       await api.getCampaignMediaAnalytics('42');
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/campaigns/42/media',
+        '/wp-json/mullion-gallery/v1/analytics/campaigns/42/media',
       );
     });
 
@@ -88,7 +88,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.get).mockResolvedValue({ totalViews: 0, uniqueVisitors: 0, topCampaigns: [] });
       await api.getAnalyticsSummary();
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/summary',
+        '/wp-json/mullion-gallery/v1/analytics/summary',
       );
     });
 
@@ -104,7 +104,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.get).mockResolvedValue({ totalViews: 0, uniqueVisitors: 0, topCampaigns: [] });
       await api.getAnalyticsSummary(undefined, undefined, 'all');
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/analytics/summary',
+        '/wp-json/mullion-gallery/v1/analytics/summary',
       );
     });
   });
@@ -114,7 +114,7 @@ describe('AnalyticsApi', () => {
       vi.mocked(transport.get).mockResolvedValue({ count: 2, campaigns: [] });
       await api.getMediaUsage('media-42');
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/media/media-42/usage',
+        '/wp-json/mullion-gallery/v1/media/media-42/usage',
       );
     });
   });

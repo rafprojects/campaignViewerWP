@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface DotNavigatorProps {
   total: number;
@@ -171,4 +171,4 @@ export function DotNavigator({ total, currentIndex, onSelect, settings }: DotNav
   );
 }
 
-setWpsgDebugDisplayName(DotNavigator, 'DotNavigator');
+setMullionDebugDisplayName(DotNavigator, 'DotNavigator');

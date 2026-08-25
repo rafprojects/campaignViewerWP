@@ -3,9 +3,9 @@
  *
  * Shared CRUD component for the global visual asset library.  Used in both the
  * Admin Panel "Assets" tab and the WP-admin "Asset Library" page
- * (#wpsg-assets-admin).
+ * (#mullion-assets-admin).
  *
- * REST routes used (all require_admin / manage_wpsg):
+ * REST routes used (all require_admin / manage_mullion):
  *   GET  /admin/asset-library          — list all assets
  *   POST /admin/asset-library          — upload new asset
  *   POST /admin/asset-library/{id}     — update is_universal / tags
@@ -28,7 +28,7 @@ import {
   useUpdateGlobalAsset,
   useDeleteGlobalAsset,
 } from '@/services/adminQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface GlobalAssetManagerProps {
   apiClient: ApiClient;
@@ -36,7 +36,7 @@ interface GlobalAssetManagerProps {
 }
 
 export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { data: assets, isLoading } = useAssetLibrary(apiClient);
   const uploadAsset = useUploadGlobalAsset(apiClient);
   const updateAsset = useUpdateGlobalAsset(apiClient);
@@ -165,4 +165,4 @@ export function GlobalAssetManager({ apiClient, onNotify }: GlobalAssetManagerPr
   );
 }
 
-setWpsgDebugDisplayName(GlobalAssetManager, 'Admin:GlobalAssetManager');
+setMullionDebugDisplayName(GlobalAssetManager, 'Admin:GlobalAssetManager');

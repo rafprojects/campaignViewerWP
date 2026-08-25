@@ -28,13 +28,13 @@ import type {
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
 import type { ReactNode } from 'react';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
 import { gridRowMaxWidthCss, resolveFixedCardWidth, formatGapCss, resolveListingColumns } from '@/utils/gridLayout';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 function resolveCompactGridAspectRatio(settings: GalleryBehaviorSettings, cardWidth: number, itemScale: number): string {
@@ -148,7 +148,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   if (isListingMode && listingLayout) {
     return (
       <Box
-        {...getWpsgDebugProps('CompactGridGallery', 'grid')}
+        {...getMullionDebugProps('CompactGridGallery', 'grid')}
         data-testid="card-gallery-grid"
         style={listingLayout.containerStyle}
       >
@@ -201,13 +201,13 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps('CompactGridGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps('CompactGridGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       <AdapterHeading common={common} heading={heading} icon={<IconLayoutGrid size={18} />} />
 
       {/* Flex-wrap grid — justify-content distributes items per-row, so
           partially filled last rows can be center/space-between/etc. */}
       <Box
-        {...getWpsgDebugProps('CompactGridGallery', 'grid')}
+        {...getMullionDebugProps('CompactGridGallery', 'grid')}
         style={{
           display: 'flex',
           flexWrap: 'wrap',
@@ -252,7 +252,7 @@ export function CompactGridGallery({ media, settings, runtime, containerDimensio
   );
 }
 
-setWpsgDebugDisplayName(CompactGridGallery, 'CompactGridGallery');
+setMullionDebugDisplayName(CompactGridGallery, 'CompactGridGallery');
 
 // ─── Internal card component ────────────────────────────────────────────────
 
@@ -266,7 +266,7 @@ interface GridCardProps {
 }
 
 function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }: GridCardProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [hovered, setHovered] = useState(false);
   const isVideo = item.type === 'video';
   const thumbSrc = item.thumbnail || item.url;
@@ -278,7 +278,7 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
 
   return (
     <Box
-      {...getWpsgDebugProps('CompactGridGallery', 'card')}
+      {...getMullionDebugProps('CompactGridGallery', 'card')}
       component="button"
       onClick={() => onOpen(index)}
       onMouseEnter={() => setHovered(true)}
@@ -300,7 +300,7 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
         borderRadius,
         overflow: 'hidden',
         position: 'relative',
-        background: 'var(--wpsg-color-surface, #1a1a2e)',
+        background: 'var(--mullion-color-surface, #1a1a2e)',
         /* Elevation + pop on hover */
         boxShadow: hovered
           ? '0 8px 24px rgba(0,0,0,0.35)'
@@ -382,4 +382,4 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
   );
 }
 
-setWpsgDebugDisplayName(GridCard, 'GridCard');
+setMullionDebugDisplayName(GridCard, 'GridCard');

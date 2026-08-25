@@ -31,11 +31,11 @@ const getId = (name: VitalName) => `${name}-${Math.random().toString(36).slice(2
 const defaultReport = (metric: VitalMetric) => {
   vitalsBuffer.push(metric);
   if (typeof window !== 'undefined') {
-    window.__WPSG_VITALS__ = vitalsBuffer;
+    window.__MULLION_VITALS__ = vitalsBuffer;
   }
   // Gate verbose logging behind DEV mode (P20-H-12)
   if (import.meta.env.DEV) {
-    console.info('[WPSG][Vitals]', metric.name, metric.value.toFixed(2));
+    console.info('[MULLION][Vitals]', metric.name, metric.value.toFixed(2));
   }
 };
 

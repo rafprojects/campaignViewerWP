@@ -133,7 +133,7 @@ describe('useUnifiedCampaignModal', () => {
     });
 
     expect(put).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/1',
+      '/wp-json/mullion-gallery/v1/campaigns/1',
       expect.objectContaining({
         galleryOverrides: {
           mode: 'unified',
@@ -183,7 +183,7 @@ describe('useUnifiedCampaignModal', () => {
     });
 
     expect(put).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/1',
+      '/wp-json/mullion-gallery/v1/campaigns/1',
       expect.objectContaining({
         galleryOverrides: {
           mode: 'per-type',
@@ -224,7 +224,7 @@ describe('useUnifiedCampaignModal', () => {
     });
 
     expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns',
+      '/wp-json/mullion-gallery/v1/campaigns',
       expect.objectContaining({ title: 'New Campaign' }),
     );
     expect(onNotify).toHaveBeenCalledWith(

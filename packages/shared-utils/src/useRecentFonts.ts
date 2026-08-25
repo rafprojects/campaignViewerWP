@@ -4,10 +4,10 @@ import { useCallback, useSyncExternalStore } from 'react';
  * Default localStorage key for the recent-fonts list.
  *
  * [P51-D] The key is now parametrizable (playbook §6) so external consumers can
- * pick their own namespace instead of the hardcoded WPSG one. In-repo callers
+ * pick their own namespace instead of the hardcoded MULLION one. In-repo callers
  * use the default, which preserves the shared-store semantics they rely on.
  */
-const DEFAULT_STORAGE_KEY = 'wpsg-recent-fonts';
+const DEFAULT_STORAGE_KEY = 'mullion-recent-fonts';
 const MAX_RECENT = 8;
 
 /**
@@ -80,7 +80,7 @@ function getStore(storageKey: string): RecentFontsStore {
  * sees the same list without prop-drilling.
  *
  * @param storageKey localStorage key for the list. Defaults to
- *   `'wpsg-recent-fonts'`; pass a custom value to namespace an external app.
+ *   `'mullion-recent-fonts'`; pass a custom value to namespace an external app.
  */
 export function useRecentFonts(storageKey: string = DEFAULT_STORAGE_KEY) {
   const store = getStore(storageKey);

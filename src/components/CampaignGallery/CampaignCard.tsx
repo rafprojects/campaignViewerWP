@@ -6,8 +6,8 @@ import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import styles from './CampaignCard.module.scss';
@@ -19,12 +19,12 @@ interface CampaignCardProps {
   settings?: GalleryBehaviorSettings | undefined;
   apiClient?: ApiClient | undefined;
   maxWidth?: number | undefined;
-  maxWidthUnit?: import('@wp-super-gallery/shared-utils').CssWidthUnit | undefined;
+  maxWidthUnit?: import('@mullion/shared-utils').CssWidthUnit | undefined;
 }
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
-    const { t } = useTranslation('wpsg');
+    const { t } = useTranslation('mullion');
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderRadiusUnit = settings?.cardBorderRadiusUnit ?? 'px';
     const borderWidth = settings?.cardBorderWidth ?? 4;
@@ -63,7 +63,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     const showInfo = settings?.showCardInfoPanel !== false;
     const safeSettings = settings ?? DEFAULT_GALLERY_BEHAVIOR_SETTINGS;
     const cardTitleStyle = useTypographyStyle('cardTitle', safeSettings);
-    const thumbnailFade = `linear-gradient(to top, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientEndOpacity * 100)}%, transparent) 0%, color-mix(in srgb, var(--wpsg-color-background) ${Math.round(gradientStartOpacity * 100)}%, transparent) 100%)`;
+    const thumbnailFade = `linear-gradient(to top, color-mix(in srgb, var(--mullion-color-background) ${Math.round(gradientEndOpacity * 100)}%, transparent) 0%, color-mix(in srgb, var(--mullion-color-background) ${Math.round(gradientStartOpacity * 100)}%, transparent) 100%)`;
     return (
       <UnstyledButton
         ref={ref}
@@ -135,7 +135,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                 pos="absolute"
                 inset={0}
                 style={{
-                  background: 'color-mix(in srgb, var(--wpsg-color-background) 60%, transparent)',
+                  background: 'color-mix(in srgb, var(--mullion-color-background) 60%, transparent)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -152,14 +152,14 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
                   <Box
                     p="lg"
                     style={{
-                      background: 'color-mix(in srgb, var(--wpsg-color-surface) 90%, transparent)',
+                      background: 'color-mix(in srgb, var(--mullion-color-surface) 90%, transparent)',
                       borderRadius: '9999px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}
                   >
-                    <IconLock size={lockIconSize} color="var(--wpsg-color-text-muted)" />
+                    <IconLock size={lockIconSize} color="var(--mullion-color-text-muted)" />
                   </Box>
                 )}
               </Box>
@@ -255,4 +255,4 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   },
 );
 
-setWpsgDebugDisplayName(CampaignCard, 'CampaignCard');
+setMullionDebugDisplayName(CampaignCard, 'CampaignCard');

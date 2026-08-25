@@ -48,7 +48,7 @@ export function assignMediaToSlots(
   const summary: SlotAssignmentSummary = { kept: [], cleared: [], autoFilled: [], empty: [] };
 
   // ── DEBUG: Log inputs so we can trace assignment issues ──
-  debugGroup('[WPSG] assignMediaToSlots');
+  debugGroup('[MULLION] assignMediaToSlots');
   debugLog('Slots:', template.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
   debugLog('Campaign media (by order):', [...media].sort((a, b) => a.order - b.order).map((m) => `${m.id} (order ${m.order}, ${m.title ?? m.url})`));
   debugLog('Overrides:', Object.entries(overrides).length > 0 ? overrides : '(none)');

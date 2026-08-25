@@ -2,7 +2,7 @@ import { Button, Group, Pagination, Skeleton, Table, Text, Checkbox } from '@man
 import { IconPlus } from '@tabler/icons-react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 /** P13-C: Skeleton rows displayed while campaign list loads. */
 function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
@@ -33,7 +33,7 @@ function CampaignSkeletonRows({ withCheckbox }: { withCheckbox: boolean }) {
   );
 }
 
-setWpsgDebugDisplayName(CampaignSkeletonRows, 'AdminPanel:CampaignSkeletonRows');
+setMullionDebugDisplayName(CampaignSkeletonRows, 'AdminPanel:CampaignSkeletonRows');
 
 interface CampaignsTabProps {
   isLoading: boolean;
@@ -71,7 +71,7 @@ export function CampaignsTab({
   onPageChange,
   onAddCampaign,
 }: CampaignsTabProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (error) {
     return <Text c="red" role="alert" aria-live="assertive">{error}</Text>;
   }
@@ -126,4 +126,4 @@ export function CampaignsTab({
   );
 }
 
-setWpsgDebugDisplayName(CampaignsTab, 'AdminPanel:CampaignsTab');
+setMullionDebugDisplayName(CampaignsTab, 'AdminPanel:CampaignsTab');

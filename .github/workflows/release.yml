@@ -97,7 +97,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          PLUGIN_FILE="wp-plugin/wp-super-gallery/wp-super-gallery.php"
+          PLUGIN_FILE="wp-plugin/mullion-gallery/mullion-gallery.php"
 
           # 1. package.json
           npm version "$VERSION" --no-git-tag-version
@@ -109,7 +109,7 @@ jobs:
           sed -i "s/define('WPSG_VERSION', '.*')/define('WPSG_VERSION', '$VERSION')/" "$PLUGIN_FILE"
 
           # 4. readme.txt stable tag
-          sed -i "s/^Stable tag: .*/Stable tag: $VERSION/" wp-plugin/wp-super-gallery/readme.txt
+          sed -i "s/^Stable tag: .*/Stable tag: $VERSION/" wp-plugin/mullion-gallery/readme.txt
 
           echo "Bumped to $VERSION"
           grep -n "Version:" "$PLUGIN_FILE" | head -1
@@ -127,7 +127,7 @@ jobs:
 
       # ── PHPUnit sanity gate ─────────────────────────────────────────────────
       - name: Install Composer dependencies (dev)
-        working-directory: wp-plugin/wp-super-gallery
+        working-directory: wp-plugin/mullion-gallery
         run: composer install --prefer-dist --no-interaction
 
       - name: Start wp-env
@@ -136,7 +136,7 @@ jobs:
       - name: PHPUnit (sanity gate)
         run: |
           npx wp-env run tests-cli sh -c \
-            "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+            "cd /var/www/html/wp-content/plugins/mullion-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 
       - name: Stop wp-env
         if: always()
@@ -144,7 +144,7 @@ jobs:
 
       # ── Production Composer deps ────────────────────────────────────────────
       - name: Install production PHP deps
-        working-directory: wp-plugin/wp-super-gallery
+        working-directory: wp-plugin/mullion-gallery
         run: |
           composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 
@@ -154,20 +154,20 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          PLUGIN_DIR="wp-plugin/wp-super-gallery"
-          ZIP_NAME="wp-super-gallery-v${VERSION}.zip"
+          PLUGIN_DIR="wp-plugin/mullion-gallery"
+          ZIP_NAME="mullion-gallery-v${VERSION}.zip"
 
           cd wp-plugin
-          zip -r "../${ZIP_NAME}" wp-super-gallery \
-            -x "wp-super-gallery/tests/*" \
-            -x "wp-super-gallery/phpunit/*" \
-            -x "wp-super-gallery/phpunit.xml.dist" \
-            -x "wp-super-gallery/phpcs.xml" \
-            -x "wp-super-gallery/.phpunit.result.cache" \
-            -x "wp-super-gallery/composer.json" \
-            -x "wp-super-gallery/composer.lock" \
-            -x "wp-super-gallery/.wp-env.json" \
-            -x "wp-super-gallery/bin/*"
+          zip -r "../${ZIP_NAME}" mullion-gallery \
+            -x "mullion-gallery/tests/*" \
+            -x "mullion-gallery/phpunit/*" \
+            -x "mullion-gallery/phpunit.xml.dist" \
+            -x "mullion-gallery/phpcs.xml" \
+            -x "mullion-gallery/.phpunit.result.cache" \
+            -x "mullion-gallery/composer.json" \
+            -x "mullion-gallery/composer.lock" \
+            -x "mullion-gallery/.wp-env.json" \
+            -x "mullion-gallery/bin/*"
           cd ..
 
           echo "zip_path=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
@@ -185,8 +185,8 @@ jobs:
           # Stage only the files touched by the version bump step.
           # (The ZIP is left intact for the GitHub Release upload step.)
           git add package.json package-lock.json \
-            wp-plugin/wp-super-gallery/wp-super-gallery.php \
-            wp-plugin/wp-super-gallery/readme.txt
+            wp-plugin/mullion-gallery/mullion-gallery.php \
+            wp-plugin/mullion-gallery/readme.txt
           git commit -m "chore(release): ${TAG}" --no-verify
           git tag -a "$TAG" -m "Release ${TAG}"
           git push origin HEAD --follow-tags
@@ -217,6 +217,6 @@ jobs:
         env:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
-          SLUG: wp-super-gallery
+          SLUG: mullion-gallery
           VERSION: ${{ steps.version.outputs.version }}
-          BUILD_DIR: wp-plugin/wp-super-gallery
+          BUILD_DIR: wp-plugin/mullion-gallery

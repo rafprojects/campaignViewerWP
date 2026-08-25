@@ -10,7 +10,7 @@ import { render, fireEvent } from '@/test/test-utils';
 import '@testing-library/jest-dom/vitest';
 
 const showProUpsell = vi.fn();
-vi.mock('@/utils/wpsgUpsell', () => ({
+vi.mock('@/utils/mullionUpsell', () => ({
   showProUpsell: (...args: unknown[]) => showProUpsell(...args),
 }));
 
@@ -21,8 +21,8 @@ vi.mock('react-zoom-pan-pinch', () => ({
   TransformComponent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock('./LayoutCanvas', () => ({ LayoutCanvas: () => null }));
-vi.mock('@wp-super-gallery/shared-ui', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@wp-super-gallery/shared-ui')>()),
+vi.mock('@mullion/shared-ui', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@mullion/shared-ui')>()),
   useRootId: () => 'test-root',
 }));
 
@@ -82,11 +82,11 @@ describe('LayoutBuilderCanvasPanel — per-breakpoint pro gate', () => {
     showProUpsell.mockClear();
   });
   afterEach(() => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
   });
 
   it('unlicensed: selecting tablet upsells and does not switch breakpoint', () => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     const { container } = render(<LayoutBuilderCanvasPanel {...panelProps} />);
 
     fireEvent.click(breakpointInput(container, 'tablet'));
@@ -97,7 +97,7 @@ describe('LayoutBuilderCanvasPanel — per-breakpoint pro gate', () => {
   });
 
   it('unlicensed: selecting mobile also upsells (only desktop is free)', () => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     const { container } = render(<LayoutBuilderCanvasPanel {...panelProps} />);
 
     fireEvent.click(breakpointInput(container, 'mobile'));
@@ -107,7 +107,7 @@ describe('LayoutBuilderCanvasPanel — per-breakpoint pro gate', () => {
   });
 
   it('licensed: selecting tablet switches breakpoint and does not upsell', () => {
-    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
     const { container } = render(<LayoutBuilderCanvasPanel {...panelProps} />);
 
     fireEvent.click(breakpointInput(container, 'tablet'));

@@ -5,8 +5,8 @@ import type { GalleryBehaviorSettings, MediaItem } from '@/types';
 
 // applyGalleryTransition now lives in the shared-utils barrel (P51-B): spread
 // the real module and no-op just the animation.
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-	const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+	const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
 	return {
 		...actual,
 		applyGalleryTransition: vi.fn(),
@@ -145,7 +145,7 @@ describe('useMediaTransition', () => {
 	});
 
 	it('calls applyGalleryTransition when index changes with active animation settings (lines 83-86)', async () => {
-		const { applyGalleryTransition } = await import('@wp-super-gallery/shared-utils');
+		const { applyGalleryTransition } = await import('@mullion/shared-utils');
 		const spied = vi.mocked(applyGalleryTransition);
 		spied.mockClear();
 

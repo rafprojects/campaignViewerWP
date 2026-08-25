@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type GalleryCommonSettings } from '@/types';
-import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 import { anyAdapterUsesSettingGroup } from '@/components/Galleries/Adapters/adapterRegistry';
 import {
   collectGalleryAdapterSettingValues,
@@ -26,7 +26,7 @@ function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
 }
 
 export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPanels }: GalleryLayoutDetailSectionsProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
   const showCarouselSettings = usesCarouselSettings(settings);

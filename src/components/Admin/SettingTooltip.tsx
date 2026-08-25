@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Tooltip, ActionIcon, Group } from '@mantine/core';
 import { IconInfoCircle } from '@tabler/icons-react';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingTooltipProps {
   label: ReactNode;
@@ -23,4 +23,4 @@ export function SettingTooltip({ label, tooltip, enabled }: SettingTooltipProps)
   );
 }
 
-setWpsgDebugDisplayName(SettingTooltip, 'SettingTooltip');
+setMullionDebugDisplayName(SettingTooltip, 'SettingTooltip');

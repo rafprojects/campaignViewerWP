@@ -7,7 +7,7 @@ import type { SettingsData } from '@/contexts/SettingsStore';
 import type { UpdateGallerySetting } from '../GalleryAdapterSettingsSection';
 import { CampaignCardSettingsSection } from '../CampaignCardSettingsSection';
 import { usePersistentAccordion } from '@/hooks/usePersistentAccordion';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsCardsTabProps {
   settings: SettingsData;
@@ -24,7 +24,7 @@ export const SettingsCardsTab = memo(function SettingsCardsTab({
   cardSettingsBreakpoint,
   setCardSettingsBreakpoint,
 }: SettingsCardsTabProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { value: cardAccordionValue, onChange: cardAccordionOnChange } = usePersistentAccordion('cards', 'appearance');
   const cardBreakpointOptions: Array<{ value: CardConfigBreakpoint; label: string }> = [
     { value: 'desktop', label: t('admin_bp_desktop', 'Desktop') },
@@ -58,4 +58,4 @@ export const SettingsCardsTab = memo(function SettingsCardsTab({
     </Stack>
   );
 });
-setWpsgDebugDisplayName(SettingsCardsTab, 'SettingsPanel:CardsTab');
+setMullionDebugDisplayName(SettingsCardsTab, 'SettingsPanel:CardsTab');

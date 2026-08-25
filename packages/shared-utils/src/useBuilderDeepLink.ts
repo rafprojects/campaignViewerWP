@@ -2,14 +2,14 @@
  * P30-D — Builder URL deep-link hook.
  *
  * Provides search-param-based builder URL state management that is compatible
- * with the WordPress admin URL pattern (?page=wpsg-gallery).
+ * with the WordPress admin URL pattern (?page=mullion-gallery).
  *
  * Strategy:
  *  - On open   → `history.pushState` adds `?builder=<templateId>` so the
  *    browser Back button closes the builder naturally via popstate.
  *  - On close  → `history.replaceState` removes `builder` param (no phantom
  *    forward entry; closing is not a new navigation step).
- *  - Existing params (e.g. `?page=wpsg-gallery`) are always preserved.
+ *  - Existing params (e.g. `?page=mullion-gallery`) are always preserved.
  *
  * Usage:
  *   const { initialBuilderTemplateId, pushBuilderUrl, clearBuilderUrl } =

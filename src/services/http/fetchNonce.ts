@@ -7,7 +7,7 @@
  * error). Callers decide whether/when to retry.
  *
  * Deliberately WordPress-agnostic: it takes the URL and current nonce as
- * arguments and touches no `window.__WPSG_*` globals. That lets the decoupled
+ * arguments and touches no `window.__MULLION_*` globals. That lets the decoupled
  * HTTP transport (`HttpTransportImpl.refreshNonce`) and the WordPress nonce glue
  * (`wpNonce.fetchFreshNonce`) share one fetch implementation without the
  * transport being re-coupled to WordPress (preserving the P51-D decoupling).

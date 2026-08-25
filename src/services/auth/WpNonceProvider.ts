@@ -44,7 +44,7 @@ export class WpNonceProvider implements AuthProvider {
 
   async login(email: string, password: string): Promise<AuthSession> {
     const nonce = getWpNonce();
-    const response = await fetch(`${this.apiBase()}/wp-json/wp-super-gallery/v1/auth/login`, {
+    const response = await fetch(`${this.apiBase()}/wp-json/mullion-gallery/v1/auth/login`, {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -81,7 +81,7 @@ export class WpNonceProvider implements AuthProvider {
   async logout(): Promise<void> {
     const nonce = getWpNonce();
     try {
-      const response = await fetch(`${this.apiBase()}/wp-json/wp-super-gallery/v1/auth/logout`, {
+      const response = await fetch(`${this.apiBase()}/wp-json/mullion-gallery/v1/auth/logout`, {
         method: 'POST',
         credentials: 'same-origin',
         headers: {
@@ -117,7 +117,7 @@ export class WpNonceProvider implements AuthProvider {
     nonce: string,
   ): Promise<{ user: AuthUser | null; permissions: string[] }> {
     try {
-      const response = await fetch(`${this.apiBase()}/wp-json/wp-super-gallery/v1/permissions`, {
+      const response = await fetch(`${this.apiBase()}/wp-json/mullion-gallery/v1/permissions`, {
         credentials: 'same-origin',
         headers: { 'X-WP-Nonce': nonce },
       });
@@ -147,8 +147,8 @@ export class WpNonceProvider implements AuthProvider {
 
   private apiBase(): string {
     return (
-      window.__WPSG_CONFIG__?.apiBase ??
-      window.__WPSG_API_BASE__ ??
+      window.__MULLION_CONFIG__?.apiBase ??
+      window.__MULLION_API_BASE__ ??
       window.location.origin
     );
   }

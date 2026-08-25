@@ -2,10 +2,10 @@
  * P62-A gating test for LayoutBuilderPropertiesPanel — text-layer editor.
  *
  * Regression guard: in the premium build the text properties editor must be
- * gated on the runtime `isPro` license, not only the `__WPSG_PREMIUM__` build
+ * gated on the runtime `isPro` license, not only the `__MULLION_PREMIUM__` build
  * flag. An unlicensed premium user editing an existing text layer would have
  * their edits silently discarded by the server-side freeze
- * (WPSG_Layout_Templates::enforce_license_gates) on save — so we show the
+ * (Mullion_Layout_Templates::enforce_license_gates) on save — so we show the
  * upsell instead of a live editor.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -54,18 +54,18 @@ const panelProps = {} as never;
 
 describe('LayoutBuilderPropertiesPanel — text-layer pro gate', () => {
   afterEach(() => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
   });
 
   it('licensed: renders the text properties editor', async () => {
-    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
     render(<LayoutBuilderPropertiesPanel {...panelProps} />);
 
     expect(await screen.findByTestId('text-props-editor')).toBeInTheDocument();
   });
 
   it('unlicensed: shows the upsell instead of the editor (no silent edit-loss)', () => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     render(<LayoutBuilderPropertiesPanel {...panelProps} />);
 
     expect(screen.queryByTestId('text-props-editor')).not.toBeInTheDocument();

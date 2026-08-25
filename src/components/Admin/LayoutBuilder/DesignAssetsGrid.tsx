@@ -4,10 +4,10 @@ import { IconX, IconWorld, IconWorldOff, IconTag } from '@tabler/icons-react';
 import type { AssetLibraryItem } from './BuilderDockContext';
 import { getAssetFileType } from '@/utils/assetFileType';
 import { CHECKERED_BG } from '@/utils/checkeredBg';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 /** Custom MIME type for Design Asset drag-and-drop. */
-export const ASSET_MIME = 'application/x-wpsg-asset-url';
+export const ASSET_MIME = 'application/x-mullion-asset-url';
 
 export interface DesignAssetsGridProps {
   items: AssetLibraryItem[];
@@ -37,7 +37,7 @@ export function DesignAssetsGrid({
   maxHeight = 180,
   columns = 2,
 }: DesignAssetsGridProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (!items.length) {
     return <Text size="xs" c="dimmed">{t('lb_dag_empty', 'No design assets in library yet.')}</Text>;
   }
@@ -213,4 +213,4 @@ export function DesignAssetsGrid({
   );
 }
 
-setWpsgDebugDisplayName(DesignAssetsGrid, 'LayoutBuilder:DesignAssetsGrid');
+setMullionDebugDisplayName(DesignAssetsGrid, 'LayoutBuilder:DesignAssetsGrid');

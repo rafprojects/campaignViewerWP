@@ -6,7 +6,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS, type GalleryBehaviorSettings, type M
 import type { Breakpoint } from '@/hooks/useBreakpoint';
 import { MediaCarouselInner } from '@/components/Galleries/Adapters/MediaCarouselAdapter';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface VideoCarouselProps {
   videos: MediaItem[];
@@ -28,4 +28,4 @@ export function VideoCarousel({ videos, settings = DEFAULT_GALLERY_BEHAVIOR_SETT
   );
 }
 
-setWpsgDebugDisplayName(VideoCarousel, 'VideoCarousel');
+setMullionDebugDisplayName(VideoCarousel, 'VideoCarousel');

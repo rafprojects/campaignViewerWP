@@ -3,8 +3,8 @@
  * on top of the layout builder canvas during drag operations.
  */
 
-import type { GuideLine } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import type { GuideLine } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Props ────────────────────────────────────────────────────
@@ -133,4 +133,4 @@ export function SmartGuides({
   );
 }
 
-setWpsgDebugDisplayName(SmartGuides, 'LayoutBuilder:SmartGuides');
+setMullionDebugDisplayName(SmartGuides, 'LayoutBuilder:SmartGuides');

@@ -28,7 +28,7 @@ describe('WebhooksApi', () => {
     it('GETs the webhooks endpoint', async () => {
       vi.mocked(transport.get).mockResolvedValue([]);
       const result = await api.listEndpoints();
-      expect(transport.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/webhooks');
+      expect(transport.get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/webhooks');
       expect(result).toEqual([]);
     });
   });
@@ -39,7 +39,7 @@ describe('WebhooksApi', () => {
       vi.mocked(transport.post).mockResolvedValue(response);
       const result = await api.createEndpoint({ url: 'https://hook.example.com' });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/webhooks',
+        '/wp-json/mullion-gallery/v1/webhooks',
         { url: 'https://hook.example.com' },
       );
       expect(result).toEqual(response);
@@ -52,7 +52,7 @@ describe('WebhooksApi', () => {
       vi.mocked(transport.put).mockResolvedValue(response);
       await api.updateEndpoint(0, { enabled: false });
       expect(transport.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/webhooks/0',
+        '/wp-json/mullion-gallery/v1/webhooks/0',
         { enabled: false },
       );
     });
@@ -62,7 +62,7 @@ describe('WebhooksApi', () => {
     it('DELETEs a specific webhook endpoint', async () => {
       vi.mocked(transport.delete).mockResolvedValue({ deleted: true });
       const result = await api.deleteEndpoint(2);
-      expect(transport.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/webhooks/2');
+      expect(transport.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/webhooks/2');
       expect(result).toEqual({ deleted: true });
     });
   });
@@ -72,7 +72,7 @@ describe('WebhooksApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ secret: 'newSecret' });
       const result = await api.rotateSecret(1);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/webhooks/1/rotate-secret',
+        '/wp-json/mullion-gallery/v1/webhooks/1/rotate-secret',
         {},
       );
       expect(result.secret).toBe('newSecret');
@@ -84,7 +84,7 @@ describe('WebhooksApi', () => {
       vi.mocked(transport.get).mockResolvedValue([]);
       await api.listDeliveries();
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/webhooks/delivery-log?limit=50',
+        '/wp-json/mullion-gallery/v1/webhooks/delivery-log?limit=50',
       );
     });
 
@@ -92,7 +92,7 @@ describe('WebhooksApi', () => {
       vi.mocked(transport.get).mockResolvedValue([]);
       await api.listDeliveries(10);
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/webhooks/delivery-log?limit=10',
+        '/wp-json/mullion-gallery/v1/webhooks/delivery-log?limit=10',
       );
     });
   });

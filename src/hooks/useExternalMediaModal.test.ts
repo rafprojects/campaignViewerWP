@@ -11,8 +11,8 @@ const mockResetProgress = vi.fn();
 
 // useXhrUpload now lives in the shared-utils barrel (P51-B): spread the real
 // module and override just the hook.
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
   return {
     ...actual,
     useXhrUpload: () => ({

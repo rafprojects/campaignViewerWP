@@ -38,10 +38,10 @@ describe('ApiClient', () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
 
     const client = new ApiClient({ baseUrl, authProvider });
-    await client.get('/wp-json/wp-super-gallery/v1/campaigns');
+    await client.get('/wp-json/mullion-gallery/v1/campaigns');
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns`,
+      `${baseUrl}/wp-json/mullion-gallery/v1/campaigns`,
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer token-123',
@@ -62,7 +62,7 @@ describe('ApiClient', () => {
 
     const client = new ApiClient({ baseUrl, onUnauthorized });
 
-    await expect(client.get('/wp-json/wp-super-gallery/v1/campaigns')).rejects.toBeInstanceOf(ApiError);
+    await expect(client.get('/wp-json/mullion-gallery/v1/campaigns')).rejects.toBeInstanceOf(ApiError);
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
@@ -76,15 +76,15 @@ describe('ApiClient', () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
 
     const client = new ApiClient({ baseUrl });
-    await client.put('/wp-json/wp-super-gallery/v1/campaigns/1', { title: 'Update' });
-    await client.delete('/wp-json/wp-super-gallery/v1/campaigns/1');
+    await client.put('/wp-json/mullion-gallery/v1/campaigns/1', { title: 'Update' });
+    await client.delete('/wp-json/mullion-gallery/v1/campaigns/1');
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/1`,
+      `${baseUrl}/wp-json/mullion-gallery/v1/campaigns/1`,
       expect.objectContaining({ method: 'PUT' }),
     );
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/1`,
+      `${baseUrl}/wp-json/mullion-gallery/v1/campaigns/1`,
       expect.objectContaining({ method: 'DELETE' }),
     );
   });
@@ -114,7 +114,7 @@ describe('ApiClient', () => {
 
     const client = new ApiClient({ baseUrl });
 
-    await expect(client.get('/wp-json/wp-super-gallery/v1/campaigns')).rejects.toMatchObject({
+    await expect(client.get('/wp-json/mullion-gallery/v1/campaigns')).rejects.toMatchObject({
       message: 'You appear to be offline. Some features are unavailable.',
       status: 0,
     });
@@ -135,10 +135,10 @@ describe('ApiClient', () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(response);
 
     const client = new ApiClient({ baseUrl });
-    const result = await client.post('/wp-json/wp-super-gallery/v1/campaigns', { title: 'New' });
+    const result = await client.post('/wp-json/mullion-gallery/v1/campaigns', { title: 'New' });
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns`,
+      `${baseUrl}/wp-json/mullion-gallery/v1/campaigns`,
       expect.objectContaining({ method: 'POST', body: JSON.stringify({ title: 'New' }) }),
     );
     expect(result).toEqual({ id: '1', title: 'New' });
@@ -155,10 +155,10 @@ describe('ApiClient', () => {
     const client = new ApiClient({ baseUrl });
     const fd = new FormData();
     fd.append('file', new Blob(['test']), 'test.jpg');
-    await client.postForm('/wp-json/wp-super-gallery/v1/media', fd);
+    await client.postForm('/wp-json/mullion-gallery/v1/media', fd);
 
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      `${baseUrl}/wp-json/wp-super-gallery/v1/media`,
+      `${baseUrl}/wp-json/mullion-gallery/v1/media`,
       expect.objectContaining({ method: 'POST', body: fd }),
     );
   });
@@ -224,7 +224,7 @@ describe('ApiClient', () => {
       status: 200,
       json: async () => data,
     });
-    const templateBase = '/wp-json/wp-super-gallery/v1/admin/layout-templates';
+    const templateBase = '/wp-json/mullion-gallery/v1/admin/layout-templates';
 
     beforeEach(() => {
       client = new ApiClient({ baseUrl });
@@ -289,7 +289,7 @@ describe('ApiClient', () => {
       (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(okResponse({ id: 'tpl1' }));
       await client.getLayoutTemplatePublic('tpl1');
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        `${baseUrl}/wp-json/wp-super-gallery/v1/layout-templates/tpl1`,
+        `${baseUrl}/wp-json/mullion-gallery/v1/layout-templates/tpl1`,
         expect.objectContaining({}),
       );
     });
@@ -302,7 +302,7 @@ describe('ApiClient', () => {
         duplicateLayoutTemplate: true,
       });
       expect(globalThis.fetch).toHaveBeenCalledWith(
-        `${baseUrl}/wp-json/wp-super-gallery/v1/campaigns/42/duplicate`,
+        `${baseUrl}/wp-json/mullion-gallery/v1/campaigns/42/duplicate`,
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({

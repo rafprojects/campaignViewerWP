@@ -6,7 +6,7 @@ import { ModalSelect } from '@/components/Common/ModalSelect';
 import { DimensionInput } from '@/components/Settings/DimensionInput';
 
 import type { CardBreakpointOverrides, CardConfigBreakpoint, GalleryBehaviorSettings } from '@/types';
-import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@wp-super-gallery/shared-utils';
+import { CSS_BORDER_RADIUS_UNITS, CSS_HEIGHT_UNITS, CSS_OFFSET_UNITS, CSS_SPACING_UNITS, CSS_WIDTH_UNITS } from '@mullion/shared-utils';
 import {
   resolveCardBreakpointSettings,
   setCardBreakpointOverride,
@@ -55,7 +55,7 @@ interface CampaignCardSettingsSectionProps {
 }
 
 export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint, apiClient }: CampaignCardSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const isDesktop = activeBreakpoint === 'desktop';
 
   // P37-LB: Fetch layout templates for listing-builder template selector

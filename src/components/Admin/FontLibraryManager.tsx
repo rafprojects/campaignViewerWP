@@ -12,8 +12,8 @@ import {
 import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
-import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';
 
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = false }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -38,7 +38,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
   const fetchFonts = useCallback(async () => {
     try {
       const data = await apiClient.get<FontLibraryEntry[]>(
-        '/wp-json/wp-super-gallery/v1/admin/font-library',
+        '/wp-json/mullion-gallery/v1/admin/font-library',
       );
       setFonts(data);
       loadCustomFonts(data);
@@ -59,7 +59,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
       const fd = new FormData();
       fd.append('file', file);
       await apiClient.postForm<FontLibraryEntry>(
-        '/wp-json/wp-super-gallery/v1/admin/font-library',
+        '/wp-json/mullion-gallery/v1/admin/font-library',
         fd,
       );
       await fetchFonts();
@@ -72,7 +72,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
 
   const handleDelete = useCallback(async (id: string) => {
     try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/font-library/${id}`);
+      await apiClient.delete(`/wp-json/mullion-gallery/v1/admin/font-library/${id}`);
       await fetchFonts();
     } catch {
       // Delete failed
@@ -81,7 +81,7 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
 
   const handleToggleUniversal = useCallback(async (id: string, universal: boolean) => {
     try {
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/admin/font-library/${id}`, {
+      await apiClient.post(`/wp-json/mullion-gallery/v1/admin/font-library/${id}`, {
         is_universal: universal,
       });
       await fetchFonts();
@@ -158,4 +158,4 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
   );
 }
 
-setWpsgDebugDisplayName(FontLibraryManager, 'AdminPanel:FontLibraryManager');
+setMullionDebugDisplayName(FontLibraryManager, 'AdminPanel:FontLibraryManager');

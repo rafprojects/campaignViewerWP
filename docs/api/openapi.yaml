@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
-  title: WP Super Gallery API
+  title: Mullion API
   version: "0.24.0"
   license:
     name: GPL-2.0-or-later
     url: https://www.gnu.org/licenses/gpl-2.0.html
   description: |
-    OpenAPI 3.0.3 description of all `wp-super-gallery/v1` REST endpoints
+    OpenAPI 3.0.3 description of all `mullion-gallery/v1` REST endpoints
     used by the admin SPA and public site.
 
     ## Authentication
@@ -1078,7 +1078,7 @@ paths:
 
   # ── Auth ──────────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/auth/login:
+  /wp-json/mullion-gallery/v1/auth/login:
     post:
       operationId: cookieLogin
       tags: [Auth]
@@ -1149,7 +1149,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/auth/logout:
+  /wp-json/mullion-gallery/v1/auth/logout:
     post:
       operationId: cookieLogout
       tags: [Auth]
@@ -1176,7 +1176,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/nonce:
+  /wp-json/mullion-gallery/v1/nonce:
     get:
       operationId: refreshNonce
       tags: [Auth]
@@ -1208,7 +1208,7 @@ paths:
 
   # ── Permissions ───────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/permissions:
+  /wp-json/mullion-gallery/v1/permissions:
     get:
       operationId: getPermissions
       tags: [Auth]
@@ -1248,7 +1248,7 @@ paths:
 
   # ── Settings ──────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/settings:
+  /wp-json/mullion-gallery/v1/settings:
     get:
       operationId: getPublicSettings
       tags: [Settings]
@@ -1317,7 +1317,7 @@ paths:
 
   # ── Campaigns ─────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/campaigns:
+  /wp-json/mullion-gallery/v1/campaigns:
     get:
       operationId: listCampaigns
       tags: [Campaigns]
@@ -1445,7 +1445,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}:
+  /wp-json/mullion-gallery/v1/campaigns/{id}:
     parameters:
       - in: path
         name: id
@@ -1598,7 +1598,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/archive:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/archive:
     post:
       operationId: archiveCampaign
       tags: [Campaigns]
@@ -1642,7 +1642,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/restore:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/restore:
     post:
       operationId: restoreCampaign
       tags: [Campaigns]
@@ -1686,7 +1686,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/duplicate:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/duplicate:
     post:
       operationId: duplicateCampaign
       tags: [Campaigns]
@@ -1745,7 +1745,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/batch:
+  /wp-json/mullion-gallery/v1/campaigns/batch:
     post:
       operationId: batchCampaigns
       tags: [Campaigns]
@@ -1812,7 +1812,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/export:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/export:
     get:
       operationId: exportCampaign
       tags: [Campaigns]
@@ -1873,7 +1873,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/import:
+  /wp-json/mullion-gallery/v1/campaigns/import:
     post:
       operationId: importCampaign
       tags: [Campaigns]
@@ -1929,7 +1929,7 @@ paths:
 
   # ── Campaign Media ────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/media:
     parameters:
       - in: path
         name: id
@@ -2021,7 +2021,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/batch:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/media/batch:
     parameters:
       - in: path
         name: id
@@ -2080,7 +2080,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/{mediaId}:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/media/{mediaId}:
     parameters:
       - in: path
         name: id
@@ -2181,7 +2181,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/media/rescan:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/media/rescan:
     post:
       operationId: rescanCampaignMedia
       tags: [Media]
@@ -2231,7 +2231,7 @@ paths:
 
   # ── Media (site-wide) ─────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/media/rescan-all:
+  /wp-json/mullion-gallery/v1/media/rescan-all:
     post:
       operationId: rescanAllMedia
       tags: [Media]
@@ -2270,7 +2270,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/media/library:
+  /wp-json/mullion-gallery/v1/media/library:
     get:
       operationId: listMediaLibrary
       tags: [Media]
@@ -2330,7 +2330,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/media/upload:
+  /wp-json/mullion-gallery/v1/media/upload:
     post:
       operationId: uploadMedia
       tags: [Media]
@@ -2397,7 +2397,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/media/{mediaId}/usage:
+  /wp-json/mullion-gallery/v1/media/{mediaId}/usage:
     get:
       operationId: getMediaUsage
       tags: [Media]
@@ -2455,7 +2455,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/media/usage-summary:
+  /wp-json/mullion-gallery/v1/media/usage-summary:
     get:
       operationId: getMediaUsageSummary
       tags: [Media]
@@ -2510,7 +2510,7 @@ paths:
 
   # ── Campaign Access ───────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/campaigns/access-summary:
+  /wp-json/mullion-gallery/v1/campaigns/access-summary:
     get:
       summary: Access totals summary
       description: |
@@ -2550,7 +2550,7 @@ paths:
         '403':
           description: Admin role required.
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access:
     parameters:
       - in: path
         name: id
@@ -2685,7 +2685,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access/{userId}:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access/{userId}:
     delete:
       operationId: revokeCampaignAccess
       tags: [Access]
@@ -2736,7 +2736,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access-requests:
     parameters:
       - in: path
         name: id
@@ -2843,7 +2843,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/approve:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access-requests/{token}/approve:
     post:
       operationId: approveAccessRequest
       tags: [Access]
@@ -2903,7 +2903,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/magic-approve:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access-requests/{token}/magic-approve:
     get:
       operationId: magicApproveAccessRequest
       tags: [Access]
@@ -2962,7 +2962,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/access-requests/{token}/deny:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/access-requests/{token}/deny:
     post:
       operationId: denyAccessRequest
       tags: [Access]
@@ -3022,7 +3022,7 @@ paths:
 
   # ── Campaign Audit Log ────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/campaigns/{id}/audit:
+  /wp-json/mullion-gallery/v1/campaigns/{id}/audit:
     get:
       operationId: listCampaignAudit
       tags: [Campaigns]
@@ -3109,7 +3109,7 @@ paths:
 
   # ── Admin Audit ────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/admin/audit-log:
+  /wp-json/mullion-gallery/v1/admin/audit-log:
     get:
       operationId: listGlobalAuditLog
       tags: [Admin]
@@ -3194,7 +3194,7 @@ paths:
 
   # ── Analytics ─────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/analytics/event:
+  /wp-json/mullion-gallery/v1/analytics/event:
     post:
       operationId: recordAnalyticsEvent
       tags: [Analytics]
@@ -3233,7 +3233,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/analytics/campaigns/{id}:
+  /wp-json/mullion-gallery/v1/analytics/campaigns/{id}:
     get:
       operationId: getCampaignAnalytics
       tags: [Analytics]
@@ -3291,7 +3291,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/analytics/campaigns/{id}/media:
+  /wp-json/mullion-gallery/v1/analytics/campaigns/{id}/media:
     get:
       operationId: getCampaignMediaAnalytics
       tags: [Analytics]
@@ -3351,7 +3351,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/analytics/summary:
+  /wp-json/mullion-gallery/v1/analytics/summary:
     get:
       operationId: getAnalyticsSummary
       tags: [Analytics]
@@ -3401,7 +3401,7 @@ paths:
 
   # ── Tags & Categories ─────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/campaign-categories:
+  /wp-json/mullion-gallery/v1/campaign-categories:
     get:
       operationId: listCampaignCategories
       tags: [Taxonomy]
@@ -3494,7 +3494,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/campaign-categories/{id}:
+  /wp-json/mullion-gallery/v1/campaign-categories/{id}:
     parameters:
       - name: id
         in: path
@@ -3596,7 +3596,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/tags/campaign:
+  /wp-json/mullion-gallery/v1/tags/campaign:
     get:
       operationId: listCampaignTags
       tags: [Taxonomy]
@@ -3688,7 +3688,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/tags/campaign/{id}:
+  /wp-json/mullion-gallery/v1/tags/campaign/{id}:
     parameters:
       - name: id
         in: path
@@ -3735,7 +3735,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/tags/media:
+  /wp-json/mullion-gallery/v1/tags/media:
     get:
       operationId: listMediaTags
       tags: [Taxonomy]
@@ -3827,7 +3827,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/tags/media/{id}:
+  /wp-json/mullion-gallery/v1/tags/media/{id}:
     parameters:
       - name: id
         in: path
@@ -3876,7 +3876,7 @@ paths:
 
   # ── Companies ─────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/companies:
+  /wp-json/mullion-gallery/v1/companies:
     get:
       operationId: listCompanies
       tags: [Companies]
@@ -3931,7 +3931,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/companies/{id}/access:
+  /wp-json/mullion-gallery/v1/companies/{id}/access:
     parameters:
       - in: path
         name: id
@@ -4048,7 +4048,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/companies/{id}/access/{userId}:
+  /wp-json/mullion-gallery/v1/companies/{id}/access/{userId}:
     delete:
       operationId: revokeCompanyAccess
       tags: [Companies]
@@ -4099,7 +4099,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/companies/{id}/archive:
+  /wp-json/mullion-gallery/v1/companies/{id}/archive:
     post:
       operationId: archiveCompany
       tags: [Companies]
@@ -4146,7 +4146,7 @@ paths:
 
   # ── Users & Roles ─────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/users/search:
+  /wp-json/mullion-gallery/v1/users/search:
     get:
       operationId: searchUsers
       tags: [Users]
@@ -4194,7 +4194,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/users:
+  /wp-json/mullion-gallery/v1/users:
     post:
       operationId: createUser
       tags: [Users]
@@ -4257,7 +4257,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/roles:
+  /wp-json/mullion-gallery/v1/roles:
     get:
       operationId: listRoles
       tags: [Users]
@@ -4313,7 +4313,7 @@ paths:
 
   # ── oEmbed ────────────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/oembed:
+  /wp-json/mullion-gallery/v1/oembed:
     get:
       operationId: proxyOembed
       tags: [Media]
@@ -4360,7 +4360,7 @@ paths:
 
   # ── Admin Tools ───────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/admin/health:
+  /wp-json/mullion-gallery/v1/admin/health:
     get:
       operationId: getHealthData
       tags: [Admin]
@@ -4388,7 +4388,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/oembed-failures:
+  /wp-json/mullion-gallery/v1/admin/oembed-failures:
     get:
       operationId: listOembedFailures
       tags: [Admin]
@@ -4465,7 +4465,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/thumbnail-cache:
+  /wp-json/mullion-gallery/v1/admin/thumbnail-cache:
     get:
       operationId: getThumbnailCacheStats
       tags: [Admin]
@@ -4525,7 +4525,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/thumbnail-cache/refresh:
+  /wp-json/mullion-gallery/v1/admin/thumbnail-cache/refresh:
     post:
       operationId: refreshThumbnailCache
       tags: [Admin]
@@ -4561,7 +4561,7 @@ paths:
 
   # ── Layout Templates (Admin) ──────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/admin/layout-templates:
+  /wp-json/mullion-gallery/v1/admin/layout-templates:
     get:
       operationId: listLayoutTemplates
       tags: [LayoutTemplates]
@@ -4650,7 +4650,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}:
+  /wp-json/mullion-gallery/v1/admin/layout-templates/{templateId}:
     parameters:
       - in: path
         name: templateId
@@ -4790,7 +4790,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/layout-templates/{templateId}/duplicate:
+  /wp-json/mullion-gallery/v1/admin/layout-templates/{templateId}/duplicate:
     post:
       operationId: duplicateLayoutTemplate
       tags: [LayoutTemplates]
@@ -4834,7 +4834,7 @@ paths:
 
   # ── Layout Templates (Public) ─────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/layout-templates/{templateId}:
+  /wp-json/mullion-gallery/v1/layout-templates/{templateId}:
     get:
       operationId: getPublicLayoutTemplate
       tags: [LayoutTemplates]
@@ -4868,7 +4868,7 @@ paths:
 
   # ── Overlay Library ───────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/admin/overlay-library:
+  /wp-json/mullion-gallery/v1/admin/overlay-library:
     get:
       operationId: listOverlayLibrary
       tags: [Admin]
@@ -4954,7 +4954,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/overlay-library/{id}:
+  /wp-json/mullion-gallery/v1/admin/overlay-library/{id}:
     delete:
       operationId: deleteOverlay
       tags: [Admin]
@@ -5002,7 +5002,7 @@ paths:
 
   # ── Font Library ──────────────────────────────────────────────────────
 
-  /wp-json/wp-super-gallery/v1/admin/font-library:
+  /wp-json/mullion-gallery/v1/admin/font-library:
     get:
       operationId: listFontLibrary
       tags: [Admin]
@@ -5098,7 +5098,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /wp-json/wp-super-gallery/v1/admin/font-library/{id}:
+  /wp-json/mullion-gallery/v1/admin/font-library/{id}:
     delete:
       operationId: deleteFont
       tags: [Admin]

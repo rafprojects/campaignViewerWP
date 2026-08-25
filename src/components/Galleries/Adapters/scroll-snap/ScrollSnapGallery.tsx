@@ -31,19 +31,19 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { useLightbox } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
+import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
-import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
+import { resolveBoundedSectionHeight } from '@mullion/shared-utils';
 
 /** Fallback snap container height when the section has no measured height. */
 const FALLBACK_HEIGHT_PX = 500;
@@ -61,7 +61,7 @@ export function ScrollSnapGallery({
   runtime,
   containerDimensions,
 }: ScrollSnapGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -134,7 +134,7 @@ export function ScrollSnapGallery({
         ...adapterSizing,
         ...(snapMaxWidth > 0 ? { maxWidth: toCss(snapMaxWidth, snapMaxWidthUnit), marginInline: 'auto' } : {}),
       }}
-      {...getWpsgDebugProps('ScrollSnapGallery')}
+      {...getMullionDebugProps('ScrollSnapGallery')}
     >
       {/* Optional gallery heading */}
       <AdapterHeading common={common} heading={heading} />
@@ -143,7 +143,7 @@ export function ScrollSnapGallery({
       <Box
         ref={snapContainerRef}
         onScroll={handleScroll}
-        {...getWpsgDebugProps('ScrollSnapGallery', 'snap-container')}
+        {...getMullionDebugProps('ScrollSnapGallery', 'snap-container')}
         style={{
           height: snapHeightCss,
           overflowY: 'scroll',
@@ -184,7 +184,7 @@ export function ScrollSnapGallery({
                     handleSlideClick(idx);
                   }
                 }}
-                {...getWpsgDebugProps('ScrollSnapGallery', 'slide')}
+                {...getMullionDebugProps('ScrollSnapGallery', 'slide')}
                 style={{
                   height: snapHeightCss,
                   scrollSnapAlign: snapAlignment,
@@ -193,7 +193,7 @@ export function ScrollSnapGallery({
                   borderRadius: br,
                   cursor: 'pointer',
                   flexShrink: 0,
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                 }}
               >
                 <LazyImage
@@ -219,7 +219,7 @@ export function ScrollSnapGallery({
                     transition: 'background 0.2s ease',
                     pointerEvents: 'none',
                   }}
-                  className="wpsg-snap-overlay"
+                  className="mullion-snap-overlay"
                 >
                   {isVideo ? (
                     <IconPlayerPlay
@@ -231,7 +231,7 @@ export function ScrollSnapGallery({
                     <IconZoomIn
                       size={40}
                       color="white"
-                      className="wpsg-snap-zoom"
+                      className="mullion-snap-zoom"
                       style={{
                         opacity: 0,
                         transition: 'opacity 0.2s ease',
@@ -270,10 +270,10 @@ export function ScrollSnapGallery({
 
       {/* Hover styles */}
       <style>{`
-        [data-wpsg="ScrollSnapGallery"][data-wpsg-role="slide"]:hover .wpsg-snap-overlay {
+        [data-mullion="ScrollSnapGallery"][data-mullion-role="slide"]:hover .mullion-snap-overlay {
           background: rgba(0,0,0,0.22) !important;
         }
-        [data-wpsg="ScrollSnapGallery"][data-wpsg-role="slide"]:hover .wpsg-snap-zoom {
+        [data-mullion="ScrollSnapGallery"][data-mullion-role="slide"]:hover .mullion-snap-zoom {
           opacity: 1 !important;
         }
       `}</style>
@@ -291,4 +291,4 @@ export function ScrollSnapGallery({
   );
 }
 
-setWpsgDebugDisplayName(ScrollSnapGallery, 'ScrollSnapGallery');
+setMullionDebugDisplayName(ScrollSnapGallery, 'ScrollSnapGallery');

@@ -8,11 +8,11 @@
 #
 # Nginx has no per-directory equivalent — add this to the server block instead:
 #
-#   location ~* ^/wp-content/plugins/wp-super-gallery/assets/.+\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif)$ {
+#   location ~* ^/wp-content/plugins/mullion-gallery/assets/.+\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif)$ {
 #       add_header Cache-Control "public, max-age=31536000, immutable";
 #   }
 #   # The service worker must NOT be long-cached:
-#   location = /wp-content/plugins/wp-super-gallery/assets/sw.js {
+#   location = /wp-content/plugins/mullion-gallery/assets/sw.js {
 #       add_header Cache-Control "no-cache, no-store, must-revalidate";
 #   }
 

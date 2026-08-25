@@ -9,7 +9,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { WpJwtProvider } from './services/auth/WpJwtProvider';
 import { WpNonceProvider } from './services/auth/WpNonceProvider';
 import { useAuth } from './hooks/useAuth';
-import { LoginForm } from '@wp-super-gallery/shared-ui';
+import { LoginForm } from '@mullion/shared-ui';
 import { AuthBar } from './components/Auth/AuthBar';
 import { UnifiedCampaignModal } from './components/Campaign/UnifiedCampaignModal';
 import { ArchiveCampaignModal } from './components/Campaign/ArchiveCampaignModal';
@@ -24,14 +24,14 @@ import type { Campaign, Company, MediaItem, GalleryBehaviorSettings } from './ty
 import { getCompanyById } from './data/mockData';
 import { FALLBACK_IMAGE_SRC } from './utils/fallback';
 import { buildCampaignGalleryOverrideEditorValue } from './utils/campaignGalleryOverrides';
-import { sortByOrder } from '@wp-super-gallery/shared-utils';
-import { useBuilderDeepLink } from '@wp-super-gallery/shared-utils';
+import { sortByOrder } from '@mullion/shared-utils';
+import { useBuilderDeepLink } from '@mullion/shared-utils';
 import { useTranslation } from 'react-i18next';
 import { useReloadSafeView } from './hooks/useReloadSafeView';
-import { useRootId } from '@wp-super-gallery/shared-ui';
-import { useOnlineStatus } from '@wp-super-gallery/shared-utils';
+import { useRootId } from '@mullion/shared-ui';
+import { useOnlineStatus } from '@mullion/shared-utils';
 import { useNonceHeartbeat } from './hooks/useNonceHeartbeat';
-import { useIdleTimeout } from '@wp-super-gallery/shared-utils';
+import { useIdleTimeout } from '@mullion/shared-utils';
 import { useUnifiedCampaignModal } from './hooks/useUnifiedCampaignModal';
 import { useArchiveModal } from './hooks/useArchiveModal';
 import { useExternalMediaModal } from './hooks/useExternalMediaModal';
@@ -41,7 +41,7 @@ import {
   useGetSettings,
 } from './services/settingsQuery';
 import { CampaignContextProvider } from '@/contexts/CampaignContext';
-import { toCss } from '@wp-super-gallery/shared-utils';
+import { toCss } from '@mullion/shared-utils';
 
 // Lazy load admin-only components for better initial bundle size
 const AdminPanel = lazy(() => import('./components/Admin/AdminPanel').then(m => ({ default: m.AdminPanel })));
@@ -49,9 +49,9 @@ const SettingsPanel = lazy(() => import('./components/Admin/SettingsPanel').then
 
 const getAuthProvider = (apiBaseUrl: string) => {
   // [P20-K] JWT auth is now opt-in. Only instantiate WpJwtProvider when the
-  // WordPress site defines WPSG_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
-  const enableJwt = window.__WPSG_CONFIG__?.enableJwt === true;
-  if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
+  // WordPress site defines MULLION_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
+  const enableJwt = window.__MULLION_CONFIG__?.enableJwt === true;
+  if (enableJwt && window.__MULLION_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
   }
   // [P51-I] Default same-origin deployment: cookie + REST nonce, now behind the
@@ -67,7 +67,7 @@ interface ApiCampaignResponse {
   items: ApiCampaign[];
   mediaByCampaign?: Record<string, MediaItem[]>;
   // [P68-A] The server already returns these on every campaigns.list response
-  // (WPSG_Campaign_Controller::list_campaigns); they were simply undeclared
+  // (Mullion_Campaign_Controller::list_campaigns); they were simply undeclared
   // here, which is why the public fetch never paged. `totalPages` drives the
   // shared fetchAllPages loop below.
   total?: number;
@@ -90,7 +90,7 @@ const buildCompany = (companyId: string): Company => {
   return { id: key, name: key === 'unknown' ? 'Unknown' : titleCase(companyId), logo: '🏷️', brandColor: stringToColor(key) };
 };
 
-const ACCESS_MODE_STORAGE_KEY = 'wpsg_access_mode';
+const ACCESS_MODE_STORAGE_KEY = 'mullion_access_mode';
 
 function AppContent({
   apiBaseUrl,
@@ -109,7 +109,7 @@ function AppContent({
   instanceId?: string;
   authBarMode?: string | undefined;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin, isSystemAdmin } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -159,7 +159,7 @@ function AppContent({
   // can open the correct space's panel without global event listeners.
   useEffect(() => {
     if (!instanceId) return;
-    const key = `__wpsgOpen_${instanceId}` as keyof Window;
+    const key = `__mullionOpen_${instanceId}` as keyof Window;
     (window as unknown as Record<string, unknown>)[key] = (panel: 'admin' | 'settings') => {
       if (panel === 'admin') openAdminPanel();
       else openSettings();
@@ -179,7 +179,7 @@ function AppContent({
     // Restore window scroll for the target view.
     const targetView = savedActiveView === 'admin' && isAdmin ? 'admin' : 'listing';
     try {
-      const scrollKey = `wpsg_view_${rootId}_scroll_${targetView}`;
+      const scrollKey = `mullion_view_${rootId}_scroll_${targetView}`;
       const stored = localStorage.getItem(scrollKey);
       const scrollY = stored !== null ? (JSON.parse(stored) as number) : 0;
       if (scrollY > 0) {
@@ -191,7 +191,7 @@ function AppContent({
   // P36-A2: Capture window scroll position per-view (debounced 200 ms).
   useEffect(() => {
     const activeView = isAdminPanelOpen ? 'admin' : 'listing';
-    const scrollKey = `wpsg_view_${rootId}_scroll_${activeView}`;
+    const scrollKey = `mullion_view_${rootId}_scroll_${activeView}`;
     let timer: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
       clearTimeout(timer);
@@ -252,7 +252,7 @@ function AppContent({
     const pages = await fetchAllPages<ApiCampaignResponse>(
       (page) =>
         apiClient.get<ApiCampaignResponse>(
-          `/wp-json/wp-super-gallery/v1/campaigns?include_media=1&per_page=50&page=${page}${spaceParam}`,
+          `/wp-json/mullion-gallery/v1/campaigns?include_media=1&per_page=50&page=${page}${spaceParam}`,
         ),
       { onPage: (completed, total) => setCampaignLoadProgress({ completed, total }) },
     );
@@ -386,7 +386,7 @@ function AppContent({
       onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
     >
       <div
-        className="wp-super-gallery"
+        className="mullion-gallery"
         style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
       >
         {!isAuthenticated && isReady && (
@@ -542,9 +542,9 @@ interface AppProps {
 }
 
 function App({ accessMode, spaceId, spaceName, instanceId, authBarMode }: AppProps) {
-  const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
+  const apiBaseUrl = window.__MULLION_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
-  const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
+  const resolvedAccessMode = accessMode ?? window.__MULLION_ACCESS_MODE__ ?? 'lock';
 
   // [P20-K] Keep WP nonce fresh in long-running tabs (no-op when JWT is active).
   useNonceHeartbeat();

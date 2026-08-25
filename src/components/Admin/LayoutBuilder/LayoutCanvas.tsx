@@ -4,7 +4,7 @@ import { Text } from '@mantine/core';
 import { Rnd } from 'react-rnd';
 import type { LayoutTemplate, MediaItem, PersistentGuide, ResponsiveBreakpoint } from '@/types';
 import { assignMediaToSlots, resolveSlotForBreakpoint } from '@/utils/layoutSlotAssignment';
-import { computeGuides, type GuideLine, type SlotRect } from '@wp-super-gallery/shared-utils';
+import { computeGuides, type GuideLine, type SlotRect } from '@mullion/shared-utils';
 import {
   type SnapMode,
   snapToGrid,
@@ -13,10 +13,10 @@ import {
   normalizeDragRect,
   pctRectsIntersect,
   type PctRect,
-} from '@wp-super-gallery/shared-utils';
-import { useCanvasTransform } from '@wp-super-gallery/shared-ui';
-import { useViewportHeight } from '@wp-super-gallery/shared-utils';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
+import { useCanvasTransform } from '@mullion/shared-ui';
+import { useViewportHeight } from '@mullion/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import { LayoutSlotComponent } from './LayoutSlotComponent';
 import { SmartGuides } from './SmartGuides';
 import { ContextualToolbar, type ContextualToolbarCallbacks } from './ContextualToolbar';
@@ -27,10 +27,10 @@ import { GraphicLayerContent } from '@/components/Galleries/Adapters/layout-buil
 import { TextLayerContent } from '@/components/Galleries/Adapters/layout-builder/TextLayerContent';
 import { textLayerTextStyle } from '@/utils/textLayerStyle';
 import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
-import { buildGradientCss, templateToGradientOpts } from '@wp-super-gallery/shared-utils';
-import { sanitizeCssUrl } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss, templateToGradientOpts } from '@mullion/shared-utils';
+import { sanitizeCssUrl } from '@mullion/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ export function LayoutCanvas({
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
   const viewportHeight = useViewportHeight();
@@ -517,7 +517,7 @@ export function LayoutCanvas({
     (e: React.DragEvent) => {
       if (
         e.dataTransfer.types.includes(ASSET_MIME) ||
-        e.dataTransfer.types.includes('application/x-wpsg-media-id')
+        e.dataTransfer.types.includes('application/x-mullion-media-id')
       ) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
@@ -542,9 +542,9 @@ export function LayoutCanvas({
       }
 
       // Campaign media drop → new slot
-      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      const mediaId = e.dataTransfer.getData('application/x-mullion-media-id');
       if (mediaId && onMediaCanvasDrop) {
-        const metaRaw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+        const metaRaw = e.dataTransfer.getData('application/x-mullion-media-meta');
         let meta: { attachmentId?: number | undefined; url?: string | undefined } = {};
         try { meta = metaRaw ? JSON.parse(metaRaw) : {}; } catch { /* ignore */ }
         onMediaCanvasDrop(mediaId, meta, pctX, pctY);
@@ -1029,4 +1029,4 @@ export function LayoutCanvas({
   );
 }
 
-setWpsgDebugDisplayName(LayoutCanvas, 'LayoutBuilder:LayoutCanvas');
+setMullionDebugDisplayName(LayoutCanvas, 'LayoutBuilder:LayoutCanvas');

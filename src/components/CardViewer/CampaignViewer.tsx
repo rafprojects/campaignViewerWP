@@ -11,12 +11,12 @@ import { useInContextSave } from '@/hooks/useInContextSave';
 import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GalleryConfigEditorLoader } from '@/components/Common/GalleryConfigEditorLoader';
-import { buildGradientCss } from '@wp-super-gallery/shared-utils';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
-import { loadGoogleFontsFromOverrides } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss } from '@mullion/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
+import { loadGoogleFontsFromOverrides } from '@mullion/shared-utils';
 import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { useCampaignContext } from '@/contexts/CampaignContext';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 import { notifications } from '@mantine/notifications';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
@@ -24,7 +24,7 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -69,7 +69,7 @@ function CampaignViewerCoverHeader({
   campaignDateStyle,
   coverHeights,
 }: CampaignViewerCoverHeaderProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Box pos="relative" h={coverHeights} component="div">
       <InContextEditor
@@ -104,7 +104,7 @@ function CampaignViewerCoverHeader({
         pos="absolute"
         inset={0}
         style={{
-          background: 'linear-gradient(to top, var(--wpsg-color-surface) 0%, color-mix(in srgb, var(--wpsg-color-surface) 60%, transparent) 45%, transparent 80%)',
+          background: 'linear-gradient(to top, var(--mullion-color-surface) 0%, color-mix(in srgb, var(--mullion-color-surface) 60%, transparent) 45%, transparent 80%)',
           pointerEvents: 'none',
         }}
       />
@@ -131,7 +131,7 @@ function CampaignViewerCoverHeader({
         {settings.showCampaignDate !== false && (
           <Group gap="lg" wrap="wrap">
             <Group gap={4}>
-              <IconCalendar size={16} color="var(--wpsg-color-text-muted)" />
+              <IconCalendar size={16} color="var(--mullion-color-text-muted)" />
               <Text size="sm" c="dimmed" style={campaignDateStyle}>
                 {new Date(displayedCampaign.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
@@ -142,7 +142,7 @@ function CampaignViewerCoverHeader({
             </Group>
             {settings.showCampaignTags !== false && (
               <Group gap={4}>
-                <IconTag size={16} color="var(--wpsg-color-text-muted)" />
+                <IconTag size={16} color="var(--mullion-color-text-muted)" />
                 <Text size="sm" c="dimmed">
                   {displayedCampaign.tags.join(', ')}
                 </Text>
@@ -174,14 +174,14 @@ function CampaignViewerGalleryContent({
   isAdmin,
   apiClient,
 }: CampaignViewerGalleryContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
     return null;
   }
 
   return (
     <Box
-      {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
+      {...getMullionDebugProps('CampaignViewer', 'gallery-shell')}
       style={{
         width: '100%',
         maxWidth: galleryShellLayout.maxWidth,
@@ -232,7 +232,7 @@ function CampaignViewerStatsSection({
   campaignStatsValueStyle,
   campaignStatsLabelStyle,
 }: CampaignViewerStatsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
       <InContextEditor
@@ -245,8 +245,8 @@ function CampaignViewerStatsSection({
           <Switch label={t('cv_admin_only', 'Admin Only')} checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
         </Stack>
       </InContextEditor>
-      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
-      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--wpsg-color-border)' }}>
+      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="mullion-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
+      <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--mullion-color-border)' }}>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
           <Text size="sm" c="dimmed" style={campaignStatsLabelStyle}>{t('cv_videos', 'Videos')}</Text>
@@ -284,7 +284,7 @@ export function CampaignViewer({
   onClose,
   spaceId,
 }: CampaignViewerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const s = galleryBehaviorSettings;
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const [viewerCampaign, setViewerCampaign] = useState(campaign);
@@ -341,7 +341,7 @@ export function CampaignViewer({
     };
 
     try {
-      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(viewerCampaign.id)}`, payload);
+      await apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(viewerCampaign.id)}`, payload);
 
       setViewerCampaign((current) => ({
         ...current,
@@ -463,7 +463,7 @@ export function CampaignViewer({
   }, [useFullscreen, s.modalBgType, s.modalBgColor, s.modalBgGradient]);
   return (
     <Modal
-      {...getWpsgDebugProps('CampaignViewer')}
+      {...getMullionDebugProps('CampaignViewer')}
       opened={opened}
       onClose={onClose}
       withinPortal={false}
@@ -473,11 +473,11 @@ export function CampaignViewer({
       padding={0}
       withCloseButton
       closeButtonProps={{
-        ...getWpsgDebugProps('CampaignViewer', 'close'),
+        ...getMullionDebugProps('CampaignViewer', 'close'),
         'aria-label': t('cv_close_aria', 'Close campaign viewer'),
         size: 'lg',
       }}
-      overlayProps={getWpsgDebugProps('CampaignViewer', 'overlay')}
+      overlayProps={getMullionDebugProps('CampaignViewer', 'overlay')}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius={useFullscreen ? 0 : 'lg'}
       fullScreen={useFullscreen}
@@ -510,7 +510,7 @@ export function CampaignViewer({
 
       {/* Content */}
       <Box
-        {...getWpsgDebugProps('CampaignViewer', 'content-shell')}
+        {...getMullionDebugProps('CampaignViewer', 'content-shell')}
         ref={containerRef}
         style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}
       >
@@ -609,4 +609,4 @@ export function CampaignViewer({
   );
 }
 
-setWpsgDebugDisplayName(CampaignViewer, 'CampaignViewer');
+setMullionDebugDisplayName(CampaignViewer, 'CampaignViewer');

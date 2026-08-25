@@ -18,7 +18,7 @@ import {
   TextInput,
 } from '@mantine/core';
 import { IconUpload } from '@tabler/icons-react';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface AssetUploaderProps {
   /** Called when the user picks a file via the file dialog. */
@@ -55,7 +55,7 @@ export function AssetUploader({
   uploadAriaLabel,
   urlAriaLabel,
 }: AssetUploaderProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const effectiveUploadLabel = uploadLabel ?? t('lb_au_upload_image', 'Upload image');
   const effectiveUrlPlaceholder = urlPlaceholder ?? t('lb_au_url_ph', 'Or paste image URL…');
   const effectiveUrlAria = urlAriaLabel ?? t('lb_au_url_aria', 'Image URL');
@@ -123,4 +123,4 @@ export function AssetUploader({
   );
 }
 
-setWpsgDebugDisplayName(AssetUploader, 'LayoutBuilder:AssetUploader');
+setMullionDebugDisplayName(AssetUploader, 'LayoutBuilder:AssetUploader');

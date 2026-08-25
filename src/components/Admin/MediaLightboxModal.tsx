@@ -2,7 +2,7 @@ import { ActionIcon, Box, Image, Modal, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaLightboxModalProps {
   opened: boolean;
@@ -21,7 +21,7 @@ export function MediaLightboxModal({
   onPrev,
   onNext,
 }: MediaLightboxModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const currentItem = imageItems[lightboxIndex];
   const ariaLabel = t('admin_media_lb_aria', 'Media lightbox: {{caption}} ({{index}} of {{total}})', { caption: currentItem?.caption || t('admin_media_type_image', 'Image'), index: lightboxIndex + 1, total: imageItems.length });
 
@@ -33,7 +33,7 @@ export function MediaLightboxModal({
       padding={0}
       withCloseButton={false}
       centered
-      styles={{ body: { background: 'color-mix(in srgb, var(--wpsg-color-background) 90%, transparent)' } }}
+      styles={{ body: { background: 'color-mix(in srgb, var(--mullion-color-background) 90%, transparent)' } }}
       aria-label={ariaLabel}
     >
       {imageItems.length > 0 && currentItem && (
@@ -89,7 +89,7 @@ export function MediaLightboxModal({
             left={0}
             right={0}
             p="md"
-            style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--wpsg-color-background) 80%, transparent))' }}
+            style={{ background: 'linear-gradient(transparent, color-mix(in srgb, var(--mullion-color-background) 80%, transparent))' }}
           >
             <Text c="white" size="sm">{currentItem.caption || t('admin_untitled', 'Untitled')}</Text>
             <Text c="dimmed" size="xs">{lightboxIndex + 1} / {imageItems.length}</Text>
@@ -100,4 +100,4 @@ export function MediaLightboxModal({
   );
 }
 
-setWpsgDebugDisplayName(MediaLightboxModal, 'AdminPanel:MediaLightboxModal');
+setMullionDebugDisplayName(MediaLightboxModal, 'AdminPanel:MediaLightboxModal');

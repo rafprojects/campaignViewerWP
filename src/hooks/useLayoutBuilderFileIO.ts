@@ -18,7 +18,7 @@ export function useLayoutBuilderFileIO({ builder }: { builder: UseLayoutBuilderR
     const a = document.createElement('a');
     const safeName = builder.template.name.replace(/[^a-z0-9_-]/gi, '-') || 'layout';
     a.href = url;
-    a.download = `${safeName}.wpsg-layout.json`;
+    a.download = `${safeName}.mullion-layout.json`;
     a.click();
     URL.revokeObjectURL(url);
   }, [builder.template]);

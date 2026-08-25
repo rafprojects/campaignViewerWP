@@ -3,7 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useBuilderWorkspacePrefs } from './useBuilderWorkspacePrefs';
 
 const ROOT = 'test-root';
-const SWATCHES_KEY = `wpsg_builder_${ROOT}_color_swatches`;
+const SWATCHES_KEY = `mullion_builder_${ROOT}_color_swatches`;
 
 beforeEach(() => {
   localStorage.clear();

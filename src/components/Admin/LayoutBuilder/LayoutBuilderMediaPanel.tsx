@@ -14,11 +14,11 @@ import { useBuilderDock } from './BuilderDockContext';
 import { MediaPickerSidebar } from './MediaPickerSidebar';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
 import { MediaUploadController, GENERAL_LIBRARY_TARGET } from '../MediaUploadController';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useRootId } from '@mullion/shared-ui';
 
 export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const {
     builder,
     apiClient,
@@ -44,8 +44,8 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
         display: 'flex',
         flexDirection: 'column',
         padding: 'var(--mantine-spacing-sm)',
-        background: 'var(--wpsg-builder-surface)',
-        color: 'var(--wpsg-builder-text)',
+        background: 'var(--mullion-builder-surface)',
+        color: 'var(--mullion-builder-text)',
         overflow: 'hidden',
       }}
     >
@@ -95,7 +95,7 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
           const next = val === 'asset-library';
           setDesignAssetsOpen(next);
           try {
-            localStorage.setItem(`wpsg_builder_${rootId}_design_assets_open`, String(next));
+            localStorage.setItem(`mullion_builder_${rootId}_design_assets_open`, String(next));
           } catch { /* ignore */ }
         }}
         mt="sm"
@@ -143,4 +143,4 @@ export function LayoutBuilderMediaPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderMediaPanel, 'LayoutBuilder:LayoutBuilderMediaPanel');
+setMullionDebugDisplayName(LayoutBuilderMediaPanel, 'LayoutBuilder:LayoutBuilderMediaPanel');

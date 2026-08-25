@@ -27,7 +27,7 @@ export function CompanyCombobox({
   size,
   placeholder,
 }: CompanyComboboxProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const resolvedPlaceholder = placeholder ?? t('cc_placeholder', 'Search or add company…');
   const resolveDisplay = (v: string) => {
     const match = companies.find((c) => c.slug === v);

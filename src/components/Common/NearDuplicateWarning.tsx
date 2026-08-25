@@ -2,7 +2,7 @@ import { Button, Group, Image, Modal, Stack, Text, Badge } from '@mantine/core';
 import { Trans, useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import type { UploadDuplicateCampaign } from '@/types';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface NearDuplicateWarningProps {
   opened: boolean;
@@ -22,11 +22,11 @@ export interface NearDuplicateWarningProps {
 }
 
 function formatCampaignLine(campaigns: UploadDuplicateCampaign[]): string {
-  if (campaigns.length === 0) return i18n.t('ndw_campaign_none', 'Not in any campaign', { ns: 'wpsg' });
-  if (campaigns.length === 1) return i18n.t('ndw_campaign_one', 'Used in: {{a}}', { a: campaigns[0]!.title, ns: 'wpsg' });
-  if (campaigns.length === 2) return i18n.t('ndw_campaign_two', 'Used in: {{a}}, {{b}}', { a: campaigns[0]!.title, b: campaigns[1]!.title, ns: 'wpsg' });
+  if (campaigns.length === 0) return i18n.t('ndw_campaign_none', 'Not in any campaign', { ns: 'mullion' });
+  if (campaigns.length === 1) return i18n.t('ndw_campaign_one', 'Used in: {{a}}', { a: campaigns[0]!.title, ns: 'mullion' });
+  if (campaigns.length === 2) return i18n.t('ndw_campaign_two', 'Used in: {{a}}, {{b}}', { a: campaigns[0]!.title, b: campaigns[1]!.title, ns: 'mullion' });
   const rest = campaigns.length - 2;
-  return i18n.t('ndw_campaign_more', 'Used in: {{a}}, {{b}} and {{count}} more', { a: campaigns[0]!.title, b: campaigns[1]!.title, count: rest, ns: 'wpsg' });
+  return i18n.t('ndw_campaign_more', 'Used in: {{a}}, {{b}} and {{count}} more', { a: campaigns[0]!.title, b: campaigns[1]!.title, count: rest, ns: 'mullion' });
 }
 
 export function NearDuplicateWarning({
@@ -42,19 +42,19 @@ export function NearDuplicateWarning({
   onDismiss,
   loading = false,
 }: NearDuplicateWarningProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Modal
-      {...getWpsgDebugProps('NearDuplicateWarning')}
+      {...getMullionDebugProps('NearDuplicateWarning')}
       opened={opened}
       onClose={onDismiss}
       withinPortal={false}
-      title={<span {...getWpsgDebugProps('NearDuplicateWarning', 'title')}>{t('ndw_title', 'Visually similar image found')}</span>}
-      closeButtonProps={getWpsgDebugProps('NearDuplicateWarning', 'close')}
-      overlayProps={getWpsgDebugProps('NearDuplicateWarning', 'overlay')}
+      title={<span {...getMullionDebugProps('NearDuplicateWarning', 'title')}>{t('ndw_title', 'Visually similar image found')}</span>}
+      closeButtonProps={getMullionDebugProps('NearDuplicateWarning', 'close')}
+      overlayProps={getMullionDebugProps('NearDuplicateWarning', 'overlay')}
       padding="md"
     >
-      <Stack {...getWpsgDebugProps('NearDuplicateWarning', 'stack')}>
+      <Stack {...getMullionDebugProps('NearDuplicateWarning', 'stack')}>
         <Text size="sm">
           <Trans
             i18nKey="ndw_looks_like"
@@ -68,7 +68,7 @@ export function NearDuplicateWarning({
           <Stack gap={6} style={{ flex: 1, minWidth: 0 }}>
             <Text size="xs" c="dimmed">{t('ndw_existing_image', 'Existing image')}</Text>
             <Image
-              {...getWpsgDebugProps('NearDuplicateWarning', 'similar-image')}
+              {...getMullionDebugProps('NearDuplicateWarning', 'similar-image')}
               src={similarUrl}
               alt={t('ndw_similar_alt', 'Similar existing image')}
               fit="contain"
@@ -83,14 +83,14 @@ export function NearDuplicateWarning({
                 </Text>
               ) : null}
               <Text
-                {...getWpsgDebugProps('NearDuplicateWarning', 'campaign-line')}
+                {...getMullionDebugProps('NearDuplicateWarning', 'campaign-line')}
                 size="xs"
                 c="dimmed"
               >
                 {formatCampaignLine(campaigns)}
               </Text>
               <Badge
-                {...getWpsgDebugProps('NearDuplicateWarning', 'distance-badge')}
+                {...getMullionDebugProps('NearDuplicateWarning', 'distance-badge')}
                 variant="light"
                 color="orange"
                 size="sm"
@@ -105,10 +105,10 @@ export function NearDuplicateWarning({
           {t('ndw_help', 'Use the existing image to avoid duplicates, or upload this file anyway.')}
         </Text>
 
-        <Group {...getWpsgDebugProps('NearDuplicateWarning', 'actions')} justify="flex-end">
+        <Group {...getMullionDebugProps('NearDuplicateWarning', 'actions')} justify="flex-end">
           <Button variant="default" onClick={onDismiss}>{t('common_cancel', 'Cancel')}</Button>
           <Button
-            {...getWpsgDebugProps('NearDuplicateWarning', 'use-existing')}
+            {...getMullionDebugProps('NearDuplicateWarning', 'use-existing')}
             variant="light"
             onClick={onUseExisting}
             loading={loading}
@@ -116,7 +116,7 @@ export function NearDuplicateWarning({
             {t('ndw_use_existing', 'Use existing')}
           </Button>
           <Button
-            {...getWpsgDebugProps('NearDuplicateWarning', 'upload-anyway')}
+            {...getMullionDebugProps('NearDuplicateWarning', 'upload-anyway')}
             onClick={onUploadAnyway}
             loading={loading}
           >
@@ -128,4 +128,4 @@ export function NearDuplicateWarning({
   );
 }
 
-setWpsgDebugDisplayName(NearDuplicateWarning, 'NearDuplicateWarning');
+setMullionDebugDisplayName(NearDuplicateWarning, 'NearDuplicateWarning');

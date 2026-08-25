@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import i18n from 'i18next';
 import { ActionIcon, Popover, Stack, Text, Button, Divider, Group } from '@mantine/core';
 import { IconMenu2, IconSettings, IconLogout, IconDashboard, IconGripVertical, IconLogin, IconEdit, IconPhoto, IconArchive, IconAdjustments } from '@tabler/icons-react';
-import { safeLocalStorage, spaceColor } from '@wp-super-gallery/shared-utils';
+import { safeLocalStorage, spaceColor } from '@mullion/shared-utils';
 import { SpaceSwitcher, type SpaceSwitcherSpace } from './SpaceSwitcher';
 
-const STORAGE_KEY = 'wpsg-authbar-pos';
+const STORAGE_KEY = 'mullion-authbar-pos';
 const ICON_SIZE = 44;
 
 /**
@@ -107,7 +107,7 @@ interface AuthBarFloatingMenuContentProps<TCampaign extends AuthBarCampaignItem>
 }
 
 function callOpener(instanceId: string, panel: 'settings' | 'admin') {
-  const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${instanceId}`];
+  const opener = (window as unknown as Record<string, unknown>)[`__mullionOpen_${instanceId}`];
   if (typeof opener === 'function') (opener as (p: string) => void)(panel);
 }
 
@@ -130,7 +130,7 @@ function AuthBarFloatingMenuContent<TCampaign extends AuthBarCampaignItem>({
   onSpaceSelect,
   pageSpaces,
 }: AuthBarFloatingMenuContentProps<TCampaign>) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const handleOpenAdmin = useCallback(() => {
     if (activeInstanceId && activeInstanceId !== instanceId) {
       callOpener(activeInstanceId, 'admin');

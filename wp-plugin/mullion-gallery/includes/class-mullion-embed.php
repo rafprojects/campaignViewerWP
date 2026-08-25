@@ -1,0 +1,672 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Mullion_Embed {
+    private static $manifest_cache = null;
+
+    public static function register_shortcode() {
+        add_shortcode('mullion-gallery', [self::class, 'render_shortcode']);
+    }
+
+    public static function register_assets() {
+        $handle = 'mullion-gallery-app';
+        $base_url = MULLION_PLUGIN_URL . 'assets/';
+        $manifest = self::get_manifest();
+        $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
+
+        // P63-C: no send_headers hook for asset caching here. Static files under
+        // assets/ are served by the web server without entering PHP, so a PHP-side
+        // Cache-Control attempt never ran. Long-cache immutable headers are set by
+        // the shipped assets/.htaccess (Apache) — see public/.htaccess in source.
+
+        if ($entry && isset($entry['file'])) {
+            $script_url = $base_url . $entry['file'];
+            // Vite entry/chunk filenames are content-hashed already. Avoid a
+            // WordPress `?ver=` query on ES module entrypoints or the browser
+            // will treat the entry script and lazy-loaded `./index-*.js`
+            // imports as distinct module URLs, duplicating app state.
+            wp_register_script($handle, $script_url, [], null, true);
+
+            if (!empty($entry['css'])) {
+                foreach ($entry['css'] as $index => $css_file) {
+                    $style_handle = $handle . '-style-' . $index;
+                    wp_register_style($style_handle, $base_url . $css_file, [], null);
+                }
+            }
+
+            // Add filter to load script as ES module (required for Vite code splitting)
+            add_filter('script_loader_tag', [self::class, 'add_module_type'], 10, 3);
+            return;
+        }
+
+        $script_url = $base_url . 'mullion-gallery.js';
+        wp_register_script($handle, $script_url, [], MULLION_VERSION, true);
+    }
+
+    /**
+     * Page-global JS config consumed by main.tsx / App.tsx.
+     *
+     * Returns the inline JS (no <script> wrapper) that sets window.__MULLION_CONFIG__
+     * plus the legacy __MULLION_AUTH_PROVIDER__ / __MULLION_API_BASE__ globals. All values
+     * are page-global (auth/api/nonce); the only settings-derived fields
+     * (debug_component_markers, allow_user_theme_override) are admin-only, so the
+     * global settings are authoritative regardless of space context.
+     *
+     * Shared by the front-end shortcode and the wp-admin Spaces page so both mount
+     * the React app with an identical, nonce-authenticated config.
+     */
+    public static function page_config_js(): string {
+        $auth_provider = apply_filters('mullion_auth_provider', 'wp-jwt');
+        $api_base      = apply_filters('mullion_api_base', home_url());
+        $sentry_dsn    = apply_filters('mullion_sentry_dsn', '');
+
+        $settings = class_exists('Mullion_Settings') ? Mullion_Settings::get_settings() : [];
+        $allow_user_theme_override = isset($settings['allow_user_theme_override']) ? (bool) $settings['allow_user_theme_override'] : true;
+        $debug_component_markers   = isset($settings['debug_component_markers']) ? (bool) $settings['debug_component_markers'] : false;
+
+        $config = [
+            'authProvider'           => $auth_provider,
+            'apiBase'                => $api_base,
+            'sentryDsn'              => $sentry_dsn,
+            'enableJwt'              => defined('MULLION_ENABLE_JWT_AUTH') && MULLION_ENABLE_JWT_AUTH,
+            'debugComponentMarkers'  => (bool) apply_filters('mullion_debug_component_markers', $debug_component_markers),
+            'allowUserThemeOverride' => $allow_user_theme_override,
+            // P50-F: absolute URL at which the SW is served (via maybe_serve_service_worker).
+            // Injected so main.tsx uses the correct URL regardless of which page the SPA loads on.
+            'swUrl'                  => home_url('/sw.js'),
+            // P62-A: license/entitlement state for pro-feature gating. Read by
+            // src/hooks/useMullionLicense.ts to drive upsell UI in the LayoutBuilder.
+            // Defaults to the free tier (isPro=false) until real Freemius
+            // credentials are wired via the mullion_freemius_config filter.
+            'license'                => [
+                'isPro'      => class_exists('Mullion_License') ? Mullion_License::can_use_premium_code() : false,
+                'tier'       => class_exists('Mullion_License') ? Mullion_License::get_tier() : null,
+                'upgradeUrl' => class_exists('Mullion_License') ? Mullion_License::get_upgrade_url() : '',
+            ],
+        ];
+
+        // P68-B: only emit a REST nonce for an authenticated user. For an
+        // anonymous visitor wp_create_nonce('wp_rest') mints a guest (user 0)
+        // nonce that authenticates nothing — but its mere presence as an
+        // X-WP-Nonce header (attached by HttpTransportImpl.buildAuthHeaders
+        // whenever getNonce() is truthy) made every public request look
+        // "authenticated" to the service worker, so the anonymous
+        // stale-while-revalidate cache in public/sw.js never ran for real app
+        // traffic. Omitting the key leaves getNonce() undefined, the header is
+        // skipped, and the SW's isAuthenticated gate correctly treats the
+        // request as anonymous. Logged-in users (incl. every wp-admin screen
+        // that emits this config) still get their nonce. The login flow does
+        // not depend on this value: it mints a fresh nonce server-side in
+        // Mullion_Auth_Controller::handle_cookie_login().
+        if (is_user_logged_in()) {
+            $config['restNonce'] = wp_create_nonce('wp_rest');
+        }
+
+        // P49-C / P60-G: i18n payload — locale + the active-locale translation of the
+        // React (i18next) front-end string catalogue. Mullion_Frontend_Strings is generated
+        // from src/i18n-strings.en.json (single source of truth) so the keys match the
+        // i18next namespace exactly and a single .po/.mo per locale translates both the
+        // PHP and React surfaces. Keys default to their English value when untranslated,
+        // and src/i18n.ts additionally falls back to its bundled English defaults.
+        $i18n = [
+            'locale'  => get_locale(),
+            'strings' => apply_filters(
+                'mullion_i18n_strings',
+                class_exists('Mullion_Frontend_Strings') ? Mullion_Frontend_Strings::get_translated() : []
+            ),
+        ];
+
+        return 'window.__MULLION_CONFIG__ = ' . wp_json_encode($config) . ';'
+            . 'window.__MULLION_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
+            . 'window.__MULLION_API_BASE__ = ' . wp_json_encode($api_base) . ';'
+            . 'window.__MULLION_I18N__ = ' . wp_json_encode($i18n) . ';';
+    }
+
+    /**
+     * P50-F: Serve the service worker script at /sw.js (relative to home_url) with the
+     * headers required for a root-scope registration:
+     *   Content-Type: application/javascript
+     *   Service-Worker-Allowed: /          — allows the browser to accept scope:'/' even
+     *                                        though the script isn't at the root path
+     *   Cache-Control: no-cache, no-store  — browser must re-fetch on every navigation so
+     *                                        SW updates are detected promptly
+     *
+     * Hooked on 'init' at priority 1 so it fires before WordPress's own template routing.
+     */
+    public static function maybe_serve_service_worker(): void {
+        if (headers_sent()) {
+            return;
+        }
+
+        // Strip the query string to get the bare request path.
+        $raw_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
+        $request_path = strtok((string) $raw_uri, '?');
+
+        // The SW is served at the path component of home_url('/sw.js'), e.g. '/sw.js'
+        // or '/wordpress/sw.js' for subdirectory installs.
+        $sw_path = wp_parse_url(home_url('/sw.js'), PHP_URL_PATH);
+
+        if ($request_path !== $sw_path) {
+            return;
+        }
+
+        $sw_file = MULLION_PLUGIN_DIR . 'assets/sw.js';
+        if (!file_exists($sw_file)) {
+            status_header(404);
+            exit;
+        }
+
+        header('Content-Type: application/javascript; charset=utf-8');
+        header('Service-Worker-Allowed: /');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('X-Content-Type-Options: nosniff');
+        // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readfile
+        readfile($sw_file);
+        exit;
+    }
+
+    /**
+     * Add type="module" to the script tag for ES module support.
+     */
+    public static function add_module_type($tag, $handle, $src) {
+        if ($handle !== 'mullion-gallery-app') {
+            return $tag;
+        }
+        // Replace the script tag to use type="module"
+        return str_replace('<script ', '<script type="module" ', $tag);
+    }
+
+    public static function render_shortcode($atts = []) {
+        $GLOBALS['mullion_has_shortcode'] = true;
+        $valid_auth_bar_modes = ['bar', 'floating', 'draggable', 'minimal', 'auto-hide'];
+        $atts = shortcode_atts([
+            'campaign'      => '',
+            'company'       => '',
+            'compact'       => 'false',
+            'space'         => '',
+            'auth_bar_mode' => '',
+        ], $atts, 'mullion-gallery');
+
+        $unresolved_space_refs = [];
+        $space_id = self::resolve_space_id($atts, $unresolved_space_refs);
+        $space_obj  = class_exists('Mullion_DB') ? Mullion_DB::get_space($space_id) : null;
+        $space_slug = ($space_obj && !empty($space_obj->slug)) ? $space_obj->slug : (string) $space_id;
+        $space_name = ($space_obj && !empty($space_obj->name)) ? $space_obj->name : $space_slug;
+
+        // P48-I: Generate a stable, unique instance ID for this shortcode mount point.
+        // getRootId() in main.tsx uses host.id as highest priority, making the rootId
+        // space-slug-based and collision-free instead of index-based.
+        if (!isset($GLOBALS['mullion_instance_ids'])) {
+            $GLOBALS['mullion_instance_ids'] = [];
+        }
+        $base_id = 'mullion-' . $space_slug;
+        if (in_array($base_id, $GLOBALS['mullion_instance_ids'], true)) {
+            $counter = 2;
+            while (in_array($base_id . '-' . $counter, $GLOBALS['mullion_instance_ids'], true)) {
+                $counter++;
+            }
+            $instance_id = $base_id . '-' . $counter;
+        } else {
+            $instance_id = $base_id;
+        }
+        $GLOBALS['mullion_instance_ids'][] = $instance_id;
+
+        // Accumulate space instances for the WP admin bar (P48-I Layer 4).
+        if (!isset($GLOBALS['mullion_spaces_on_page'])) {
+            $GLOBALS['mullion_spaces_on_page'] = [];
+        }
+        $GLOBALS['mullion_spaces_on_page'][$instance_id] = [
+            'id'   => $space_id,
+            'slug' => $space_slug,
+            'name' => $space_name,
+        ];
+        if (!has_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'])) {
+            add_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'], 90);
+            // Emit __MULLION_PAGE_SPACES__ after all shortcodes have accumulated their entries.
+            // Priority 1 fires before wp_print_footer_scripts (priority 10+) so the global
+            // is set before the React bundle loads.
+            add_action('wp_footer', [self::class, 'emit_page_spaces_js'], 1);
+        }
+
+        $classes = ['mullion-gallery'];
+        if ($atts['compact'] === 'true') {
+            $classes[] = 'mullion-gallery--compact';
+        }
+
+        wp_enqueue_script('mullion-gallery-app');
+
+        // Get effective settings for this space (falls back to global defaults).
+        // Page-global config (auth/api/nonce) is emitted via self::page_config_js().
+        $settings = class_exists('Mullion_Settings') ? Mullion_Settings::get_effective_settings($space_id) : [];
+        $theme = isset($settings['theme']) ? $settings['theme'] : 'default-dark';
+        $gallery_layout = isset($settings['gallery_layout']) ? $settings['gallery_layout'] : 'grid';
+        $enable_lightbox = isset($settings['enable_lightbox']) ? $settings['enable_lightbox'] : true;
+        $enable_animations = isset($settings['enable_animations']) ? $settings['enable_animations'] : true;
+
+        // Enqueue Google Fonts server-side so they load even if JS injection is blocked.
+        if (class_exists('Mullion_Settings_Typography')) {
+            $families = Mullion_Settings_Typography::extract_google_font_families($settings);
+            if (!empty($families)) {
+                $specs = Mullion_Settings_Typography::GOOGLE_FONT_SPECS;
+                $params = array_map(function ($f) use ($specs) {
+                    $spec = isset($specs[$f]) ? $specs[$f] : null;
+                    if ($spec === null) {
+                        return 'family=' . rawurlencode($f);
+                    }
+                    return 'family=' . rawurlencode($f) . ':' . $spec;
+                }, $families);
+                $url = 'https://fonts.googleapis.com/css2?' . implode('&', $params) . '&display=swap';
+                $font_handle = 'mullion-google-fonts-' . md5($url);
+                wp_enqueue_style($font_handle, $url, [], null);
+            }
+        }
+
+        // Enqueue @font-face CSS for custom uploaded fonts (P22-L5).
+        if (class_exists('Mullion_Font_Library')) {
+            $font_css = Mullion_Font_Library::generate_font_face_css();
+            if (!empty($font_css)) {
+                wp_register_style('mullion-custom-fonts', false);
+                wp_enqueue_style('mullion-custom-fonts');
+                wp_add_inline_style('mullion-custom-fonts', $font_css);
+            }
+        }
+
+        $manifest = self::get_manifest();
+        $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
+        if ($entry && !empty($entry['css'])) {
+            foreach ($entry['css'] as $index => $css_file) {
+                $style_handle = 'mullion-gallery-app-style-' . $index;
+                if (!wp_style_is($style_handle, 'enqueued')) {
+                    wp_enqueue_style($style_handle);
+                }
+            }
+        }
+
+        $props = esc_attr(wp_json_encode([
+            'campaign' => $atts['campaign'],
+            'company'  => $atts['company'],
+            'space'    => $atts['space'],
+        ]));
+
+        // Per-node config: space-specific display settings read by main.tsx per mount point.
+        $raw_auth_bar_mode = trim((string) $atts['auth_bar_mode']);
+        $auth_bar_mode     = in_array($raw_auth_bar_mode, $valid_auth_bar_modes, true) ? $raw_auth_bar_mode : null;
+
+        $node_config_data = [
+            'spaceId'          => $space_id,
+            'spaceName'        => $space_name,
+            'instanceId'       => $instance_id,
+            'theme'            => $theme,
+            'galleryLayout'    => $gallery_layout,
+            'enableLightbox'   => $enable_lightbox,
+            'enableAnimations' => $enable_animations,
+        ];
+        if ($auth_bar_mode !== null) {
+            $node_config_data['authBarMode'] = $auth_bar_mode;
+        }
+        $node_config = esc_attr(wp_json_encode($node_config_data));
+
+        // Global page config: emitted once per page load (page-global values only).
+        // Space-specific settings live in data-mullion-config on each mount node.
+        if (empty($GLOBALS['mullion_config_emitted'])) {
+            $GLOBALS['mullion_config_emitted'] = true;
+            // admin_bar_delegation_js() is emitted once here alongside page config.
+            // It listens for WP admin bar clicks and routes them to per-instance openers.
+            $config_script = '<script>' . self::page_config_js() . self::admin_bar_delegation_js() . '</script>';
+        } else {
+            $config_script = '';
+        }
+
+        /**
+         * P13-E: WP Full Bleed — per-breakpoint edge-to-edge layout.
+         *
+         * PROBLEM:
+         * WordPress Block Themes (FSE) wrap shortcode output in a container such as
+         *   <div class="entry-content has-global-padding is-layout-constrained">
+         *
+         * Two WP classes create the issue:
+         *  1. `.has-global-padding` adds horizontal padding via CSS variables:
+         *       padding-left:  var(--wp--style--root--padding-left)
+         *       padding-right: var(--wp--style--root--padding-right)
+         *  2. `.is-layout-constrained` applies max-width on direct children:
+         *       > * { max-width: var(--wp--style--global--content-size) }
+         *     This prevents children from growing wider than the content area.
+         *
+         * SOLUTION (3 parts):
+         *  A. Wrap shortcode output in `<div class="alignfull mullion-full-bleed">`.
+         *     WordPress's own `alignfull` class removes `is-layout-constrained`'s
+         *     max-width restriction, allowing the element to span the full viewport.
+         *     Without alignfull, negative margins alone are clamped by the max-width.
+         *
+         *  B. For breakpoints where bleed is ON: apply negative margins that exactly
+         *     cancel the parent's has-global-padding values, using WP's own CSS vars:
+         *       margin-left:  calc(-1 * var(--wp--style--root--padding-left, 0px))
+         *       margin-right: calc(-1 * var(--wp--style--root--padding-right, 0px))
+         *     This makes the element flush with the viewport edge.
+         *
+         *  C. For breakpoints where bleed is OFF: re-constrain the element by
+         *     restoring max-width + centering (since alignfull removed these globally):
+         *       max-width: var(--wp--style--global--content-size, ...) !important
+         *       margin-left: auto !important; margin-right: auto !important
+         *     This ensures the element stays within WP's normal content width at
+         *     viewports where the admin doesn't want full bleed.
+         *
+         * WHY THIS APPROACH:
+         *  - Using WP CSS variables means it auto-adapts to any block theme's spacing.
+         *  - alignfull is the only reliable escape from is-layout-constrained;
+         *    alternatives like max-width:none !important alone fail because the
+         *    constrained layout's specificity varies across themes.
+         *  - The re-constrain rules for OFF breakpoints are essential because
+         *    alignfull is all-or-nothing — it removes constraints at every viewport.
+         *  - Server-rendered (PHP), not client-controlled: changing these settings
+         *    requires a page refresh since it modifies the HTML outside the React
+         *    Shadow DOM boundary.
+         *
+         * BREAKPOINTS:  Desktop ≥ 1024px | Tablet 768–1023px | Mobile < 768px
+         */
+        $bleed_desktop = !empty($settings['wp_full_bleed_desktop']);
+        $bleed_tablet  = !empty($settings['wp_full_bleed_tablet']);
+        $bleed_mobile  = !empty($settings['wp_full_bleed_mobile']);
+        $any_bleed = $bleed_desktop || $bleed_tablet || $bleed_mobile;
+
+        $bleed_style = '';
+        $bleed_open = '';
+        $bleed_close = '';
+        if ($any_bleed) {
+            // Bleed ON rule: negative margins cancel parent padding.
+            $neg_margins = 'margin-left:calc(-1 * var(--wp--style--root--padding-left,0px));'
+                . 'margin-right:calc(-1 * var(--wp--style--root--padding-right,0px));';
+            // Bleed OFF rule: re-constrain to WP content width (undo alignfull at this breakpoint).
+            // Falls back through --global--content-size → --global--wide-size → 1200px.
+            $constrain = 'max-width:var(--wp--style--global--content-size,var(--wp--style--global--wide-size,1200px)) !important;'
+                . 'margin-left:auto !important;margin-right:auto !important;';
+            $rules = [];
+            // Each breakpoint always gets a rule — either bleed or re-constrain.
+            // Scope selector to this instance's space slug so two shortcodes on the
+            // same page with different bleed settings don't stomp each other (P48-C).
+            $sel = '.mullion-full-bleed[data-space="' . esc_attr($space_slug) . '"]';
+            if ($bleed_desktop) {
+                $rules[] = '@media(min-width:1024px){' . $sel . '{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(min-width:1024px){' . $sel . '{' . $constrain . '}}';
+            }
+            if ($bleed_tablet) {
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){' . $sel . '{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(min-width:768px) and (max-width:1023px){' . $sel . '{' . $constrain . '}}';
+            }
+            if ($bleed_mobile) {
+                $rules[] = '@media(max-width:767px){' . $sel . '{' . $neg_margins . '}}';
+            } else {
+                $rules[] = '@media(max-width:767px){' . $sel . '{' . $constrain . '}}';
+            }
+            $bleed_style = '<style>' . implode('', $rules) . '</style>';
+            // alignfull is required to escape is-layout-constrained (see docblock above).
+            // mullion-full-bleed is our own class targeted by the media-query rules.
+            $bleed_open = '<div class="alignfull mullion-full-bleed" data-space="' . esc_attr($space_slug) . '">';
+            $bleed_close = '</div>';
+        }
+
+        // P72-D: admin-only notice when an explicit space reference fell back to
+        // the default. Placed outside the full-bleed wrapper so it isn't pulled
+        // edge-to-edge, and before the mount node so it reads as a page-level hint.
+        $unresolved_notice = self::render_unresolved_space_notice($unresolved_space_refs);
+
+        return $config_script . $unresolved_notice . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-mullion-props="' . $props . '" data-mullion-config="' . $node_config . '"></div>' . $bleed_close;
+    }
+
+    /**
+     * Resolve the space ID for a shortcode call.
+     *
+     * Priority: explicit space= attr (ID or slug) → campaign's _mullion_space_id →
+     * company's _mullion_space_id → Default Space.
+     *
+     * P72-D: `$unresolved_refs` collects the explicit references that name
+     * something which *does not exist* — a stale/mistyped space=/campaign=/company=
+     * that silently collapsed onto the default, which is worth an admin-facing
+     * signal. It is deliberately NOT populated for two non-error cases:
+     *   - no explicit reference at all (the intentional default), and
+     *   - a reference whose entity exists but carries no `_mullion_space_id`
+     *     (a campaign/company that legitimately *inherits* the default space —
+     *     the common case on a single-space install, and not a misconfiguration).
+     * It is also only populated on the path that actually reaches the default
+     * fallback: a higher-priority reference that resolved returns early.
+     *
+     * @param array $atts            Shortcode attributes.
+     * @param array $unresolved_refs Out-param: attr => value for each explicit
+     *                               reference naming a nonexistent entity.
+     * @return int Resolved space ID (always ≥ 1).
+     */
+    private static function resolve_space_id(array $atts, array &$unresolved_refs = []): int {
+        $unresolved_refs = [];
+
+        if (!empty($atts['space']) && class_exists('Mullion_DB')) {
+            $s = $atts['space'];
+            if (is_numeric($s)) {
+                $space = Mullion_DB::get_space((int) $s);
+                if ($space) {
+                    return (int) $space->id;
+                }
+            }
+            $space = Mullion_DB::get_space_by_slug($s);
+            if ($space) {
+                return (int) $space->id;
+            }
+            // space= names a space directly, so "not found" is always stale.
+            $unresolved_refs['space'] = $s;
+        }
+
+        if (!empty($atts['campaign'])) {
+            $post = get_page_by_path($atts['campaign'], OBJECT, 'mullion_campaign');
+            if (!$post && is_numeric($atts['campaign'])) {
+                $post = get_post((int) $atts['campaign']);
+            }
+            if ($post) {
+                $sid = (int) get_post_meta($post->ID, '_mullion_space_id', true);
+                if ($sid > 0) {
+                    return $sid;
+                }
+                // Campaign exists, just unassigned — inherits the default space.
+            } else {
+                $unresolved_refs['campaign'] = $atts['campaign'];
+            }
+        }
+
+        if (!empty($atts['company'])) {
+            $term = get_term_by('slug', $atts['company'], 'mullion_company');
+            if ($term && !is_wp_error($term)) {
+                $sid = (int) get_term_meta($term->term_id, '_mullion_space_id', true);
+                if ($sid > 0) {
+                    return $sid;
+                }
+                // Company exists, just unassigned — inherits the default space.
+            } else {
+                $unresolved_refs['company'] = $atts['company'];
+            }
+        }
+
+        return (int) get_option('mullion_default_space_id', 1);
+    }
+
+    /**
+     * P72-D: admin-only inline notice shown when a shortcode names a
+     * space=/campaign=/company= that does not exist and the gallery silently
+     * fell back to the default space. Gated on manage_mullion so it is never shown
+     * to visitors; returns '' for non-admins and when nothing was stale (the
+     * omitted-attribute default, or an entity that merely inherits the default).
+     *
+     * @param array $unresolved_refs attr => value pairs that failed to resolve.
+     * @return string Notice HTML, or '' when no notice should render.
+     */
+    private static function render_unresolved_space_notice(array $unresolved_refs): string {
+        if (empty($unresolved_refs) || !current_user_can('manage_mullion')) {
+            return '';
+        }
+
+        // Name only the reference(s) that failed, in priority order.
+        $refs = [];
+        foreach ($unresolved_refs as $attr => $value) {
+            $refs[] = $attr . '="' . $value . '"';
+        }
+        $ref_label = implode(' ', $refs);
+
+        $message = sprintf(
+            /* translators: %s: the shortcode reference that did not resolve, e.g. space="acme". */
+            __(
+                'Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice.',
+                'mullion-gallery'
+            ),
+            $ref_label
+        );
+
+        return '<div class="mullion-shortcode-notice" role="status" style="'
+            . 'margin:0 0 12px;padding:10px 14px;border:1px solid #f0b849;border-left-width:4px;'
+            . 'background:#fcf9e8;color:#3c2f00;border-radius:4px;font-size:14px;line-height:1.5;">'
+            . esc_html($message)
+            . '</div>';
+    }
+
+    /**
+     * JS snippet emitted once per page. Listens for WP admin bar clicks that
+     * carry [data-mullion-open] and routes them to the per-instance opener
+     * registered by each React root (window.__mullionOpen_<instanceId>).
+     */
+    private static function admin_bar_delegation_js(): string {
+        return <<<'JS'
+(function(){
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-mullion-open]');
+    if(!btn)return;
+    var a=btn.closest('a');
+    var href=a?a.getAttribute('href'):'';
+    var instanceId=href?href.replace(/^#/,''):'';
+    var panel=btn.getAttribute('data-mullion-open');
+    var opener=instanceId&&window['__mullionOpen_'+instanceId];
+    if(opener){e.preventDefault();opener(panel);}
+  });
+})();
+JS;
+    }
+
+    /**
+     * Emits window.__MULLION_PAGE_SPACES__ into the footer after all shortcodes have
+     * rendered so the React SpaceSwitcher can read the full list on mount.
+     * Only emitted for users with manage_mullion capability.
+     */
+    public static function emit_page_spaces_js(): void {
+        if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
+            return;
+        }
+        if (!current_user_can('manage_mullion') && !current_user_can('manage_options')) {
+            return;
+        }
+        // Reshape to indexed array with instanceId included in each entry.
+        // P53-A: scope to spaces the actor can access. System admins resolve to
+        // every space; a mullion_editor sees only the spaces it has been granted
+        // access to (in either isolation mode), so the SpaceSwitcher never
+        // offers a space it cannot reach.
+        $spaces = [];
+        foreach ($GLOBALS['mullion_spaces_on_page'] as $instance_id => $info) {
+            if (!Mullion_REST_Base::current_actor_can_access_space((int) $info['id'])) {
+                continue;
+            }
+            $spaces[] = [
+                'instanceId' => $instance_id,
+                'id'         => $info['id'],
+                'slug'       => $info['slug'],
+                'name'       => $info['name'],
+            ];
+        }
+        if (empty($spaces)) {
+            return;
+        }
+        echo '<script>window.__MULLION_PAGE_SPACES__ = ' . wp_json_encode($spaces) . ';</script>' . "\n";
+    }
+
+    /**
+     * Registers per-space WP admin bar nodes from $GLOBALS['mullion_spaces_on_page'].
+     * Hooked at priority 90 (after WP core nodes).
+     *
+     * @param \WP_Admin_Bar $wp_admin_bar
+     */
+    public static function register_admin_bar_nodes(\WP_Admin_Bar $wp_admin_bar): void {
+        if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
+            return;
+        }
+        if (!current_user_can('manage_mullion')) {
+            return;
+        }
+
+        // P53-A: scope to spaces the actor can access (system admins see all; a
+        // mullion_editor sees only the spaces it has been granted access to, in
+        // either isolation mode).
+        $accessible = array_filter(
+            $GLOBALS['mullion_spaces_on_page'],
+            static function ($info) {
+                return Mullion_REST_Base::current_actor_can_access_space((int) $info['id']);
+            }
+        );
+        if (empty($accessible)) {
+            return;
+        }
+
+        $wp_admin_bar->add_node([
+            'id'    => 'mullion-root',
+            'title' => 'Mullion',
+            'href'  => false,
+        ]);
+
+        foreach ($accessible as $instance_id => $info) {
+            $slug  = esc_attr($instance_id);
+            $label = esc_html($info['name']);
+
+            $wp_admin_bar->add_node([
+                'id'     => 'mullion-space-' . $slug,
+                'parent' => 'mullion-root',
+                'title'  => $label,
+                'href'   => '#' . $slug,
+            ]);
+            $wp_admin_bar->add_node([
+                'id'     => 'mullion-space-' . $slug . '-settings',
+                'parent' => 'mullion-space-' . $slug,
+                'title'  => '<span data-mullion-open="settings">Settings</span>',
+                'href'   => '#' . $slug,
+                'meta'   => ['html' => true],
+            ]);
+            $wp_admin_bar->add_node([
+                'id'     => 'mullion-space-' . $slug . '-admin',
+                'parent' => 'mullion-space-' . $slug,
+                'title'  => '<span data-mullion-open="admin">Admin Panel</span>',
+                'href'   => '#' . $slug,
+                'meta'   => ['html' => true],
+            ]);
+        }
+    }
+
+    private static function get_manifest() {
+        if (self::$manifest_cache !== null) {
+            return self::$manifest_cache;
+        }
+
+        $manifest_path = MULLION_PLUGIN_DIR . 'assets/manifest.json';
+        $manifest_alt_path = MULLION_PLUGIN_DIR . 'assets/.vite/manifest.json';
+        $resolved_manifest_path = file_exists($manifest_path) ? $manifest_path : $manifest_alt_path;
+
+        if (file_exists($resolved_manifest_path)) {
+            $content = file_get_contents($resolved_manifest_path);
+            if ($content !== false) {
+                $manifest = json_decode($content, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($manifest)) {
+                    self::$manifest_cache = $manifest;
+                    return self::$manifest_cache;
+                }
+            }
+        }
+
+        self::$manifest_cache = [];
+        return self::$manifest_cache;
+    }
+}

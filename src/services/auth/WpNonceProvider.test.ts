@@ -14,17 +14,17 @@ import { WpNonceProvider } from './WpNonceProvider';
 describe('WpNonceProvider', () => {
   beforeEach(() => {
     globalThis.fetch = vi.fn();
-    window.__WPSG_CONFIG__ = { restNonce: 'nonce-1' };
+    window.__MULLION_CONFIG__ = { restNonce: 'nonce-1' };
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    delete window.__WPSG_CONFIG__;
-    delete (window as Window & { __WPSG_REST_NONCE__?: string }).__WPSG_REST_NONCE__;
+    delete window.__MULLION_CONFIG__;
+    delete (window as Window & { __MULLION_REST_NONCE__?: string }).__MULLION_REST_NONCE__;
   });
 
   it('init() returns null without ever fetching when no nonce is present', async () => {
-    delete window.__WPSG_CONFIG__;
+    delete window.__MULLION_CONFIG__;
     const provider = new WpNonceProvider();
     expect(await provider.init()).toBeNull();
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -32,8 +32,8 @@ describe('WpNonceProvider', () => {
     expect(await provider.getPermissions()).toEqual([]);
   });
 
-  it('init() resolves manage_wpsg-only to the editor tier and caches user + permissions', async () => {
-    // P53-A: isAdmin (manage_wpsg) without isSystemAdmin (manage_options) = editor.
+  it('init() resolves manage_mullion-only to the editor tier and caches user + permissions', async () => {
+    // P53-A: isAdmin (manage_mullion) without isSystemAdmin (manage_options) = editor.
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => ({ campaignIds: ['7', '9'], isAdmin: true, isSystemAdmin: false, userId: 3, userEmail: 'a@b.c' }),
@@ -87,9 +87,9 @@ describe('WpNonceProvider', () => {
 
     expect(session.accessToken).toBe('fresh-nonce');
     const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/wp-json/wp-super-gallery/v1/auth/login');
+    expect(url).toContain('/wp-json/mullion-gallery/v1/auth/login');
     expect(init.method).toBe('POST');
-    expect(window.__WPSG_CONFIG__?.restNonce).toBe('fresh-nonce');
+    expect(window.__MULLION_CONFIG__?.restNonce).toBe('fresh-nonce');
     expect(await provider.getUser()).toEqual({ id: '5', email: 'u@e.com', role: 'viewer' });
     expect(await provider.getPermissions()).toEqual(['1']);
   });
@@ -114,9 +114,9 @@ describe('WpNonceProvider', () => {
     await provider.logout();
 
     const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/wp-json/wp-super-gallery/v1/auth/logout');
+    expect(url).toContain('/wp-json/mullion-gallery/v1/auth/logout');
     expect(init.method).toBe('POST');
-    expect(window.__WPSG_CONFIG__?.restNonce).toBe('guest-nonce');
+    expect(window.__MULLION_CONFIG__?.restNonce).toBe('guest-nonce');
     expect(await provider.getUser()).toBeNull();
     expect(await provider.getPermissions()).toEqual([]);
   });

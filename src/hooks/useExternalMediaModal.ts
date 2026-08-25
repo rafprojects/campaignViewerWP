@@ -13,8 +13,8 @@ import type {
   OEmbedResponse,
 } from '@/types';
 import { ApiError } from '@/services/apiClient';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
-import { useXhrUpload } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
+import { useXhrUpload } from '@mullion/shared-utils';
 
 function normalizeSelectedFiles(value: File | File[] | null): File[] {
   if (!value) {
@@ -171,7 +171,7 @@ export function useExternalMediaModal({
 
     try {
       await apiClient.post(
-        `/wp-json/wp-super-gallery/v1/campaigns/${externalMediaCampaign.id}/media`,
+        `/wp-json/mullion-gallery/v1/campaigns/${externalMediaCampaign.id}/media`,
         {
           type: externalMediaPreview?.type || getMediaTypeFromUrl(externalMediaUrl),
           source: 'external',
@@ -206,7 +206,7 @@ export function useExternalMediaModal({
       setExternalMediaLoading(true);
       setExternalMediaError(null);
       const response = await apiClient.get<OEmbedResponse>(
-        `/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalMediaUrl)}`,
+        `/wp-json/mullion-gallery/v1/oembed?url=${encodeURIComponent(externalMediaUrl)}`,
       );
       setExternalMediaPreview(response);
       onNotify({ type: 'success', text: response.title ?? 'Preview available.' });
@@ -227,7 +227,7 @@ export function useExternalMediaModal({
 
       const authHeaders = await apiClient.getAuthHeaders();
       const uploadResponse = await uploadMany<BatchUploadResponse>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        url: `${apiClient.getBaseUrl()}/wp-json/mullion-gallery/v1/media/upload`,
         files: selectedFiles,
         headers: authHeaders,
       });

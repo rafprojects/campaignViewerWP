@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { parseCss, toCss } from '@wp-super-gallery/shared-utils';
+import { parseCss, toCss } from '@mullion/shared-utils';
 import { UnitScrubField } from '@/components/Common/UnitScrubField';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface CssValueInputProps {
   label: string;
@@ -63,4 +63,4 @@ export function CssValueInput({
   );
 }
 
-setWpsgDebugDisplayName(CssValueInput, 'CssValueInput');
+setMullionDebugDisplayName(CssValueInput, 'CssValueInput');

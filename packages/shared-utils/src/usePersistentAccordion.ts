@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 export interface ViewScopeOptions {
   /** Per-mount scope id (e.g. a React root id) used to namespace keys. Default `'root'`. */
   scopeId?: string;
-  /** Storage-key namespace prefix. Default `'wpsg_view'`. */
+  /** Storage-key namespace prefix. Default `'mullion_view'`. */
   namespace?: string;
 }
 
@@ -18,7 +18,7 @@ export interface ViewScopeOptions {
  *
  * The `scopeId` (typically a React root id) namespaces the key so multiple
  * mounts on the same page don't collide. Inject it via `options.scopeId`;
- * defaults keep the `wpsg_view_<scopeId>_accordion_<storageKey>` format.
+ * defaults keep the `mullion_view_<scopeId>_accordion_<storageKey>` format.
  *
  * Usage:
  *   const { mounted, value, onChange } = usePersistentAccordion('gallery-style', 'viewport', { scopeId });
@@ -33,7 +33,7 @@ export function usePersistentAccordion(
   defaultValue: string | null = null,
   options: ViewScopeOptions = {},
 ) {
-  const { scopeId = 'root', namespace = 'wpsg_view' } = options;
+  const { scopeId = 'root', namespace = 'mullion_view' } = options;
   const key = `${namespace}_${scopeId}_accordion_${storageKey}`;
 
   const readStored = (): string | null => {

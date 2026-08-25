@@ -113,14 +113,14 @@ describe('MediaTab', () => {
     await screen.findByText('Grid Width Item');
 
     const shell = screen.getByTestId('media-grid-shell');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-base')).toBe('224px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-sm')).toBe('464px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-md')).toBe('704px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-lg')).toBe('704px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-base')).toBe('224px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-sm')).toBe('464px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-md')).toBe('704px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-lg')).toBe('704px');
   });
 
   it('uses the compact bounded-width preset when compact view is restored from storage', async () => {
-    window.localStorage.setItem('wpsg_media_viewMode_layout-compact', JSON.stringify('compact'));
+    window.localStorage.setItem('mullion_media_viewMode_layout-compact', JSON.stringify('compact'));
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm-compact',
@@ -138,14 +138,14 @@ describe('MediaTab', () => {
     await screen.findByTestId('media-draggable-m-compact');
 
     const shell = screen.getByTestId('media-grid-shell');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-base')).toBe('240px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-sm')).toBe('496px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-md')).toBe('752px');
-    expect(shell.style.getPropertyValue('--wpsg-media-grid-max-lg')).toBe('752px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-base')).toBe('240px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-sm')).toBe('496px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-md')).toBe('752px');
+    expect(shell.style.getPropertyValue('--mullion-media-grid-max-lg')).toBe('752px');
   });
 
   it('keeps the list branch outside the bounded grid shell', async () => {
-    window.localStorage.setItem('wpsg_media_viewMode_layout-list', JSON.stringify('list'));
+    window.localStorage.setItem('mullion_media_viewMode_layout-list', JSON.stringify('list'));
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm-list',
@@ -229,7 +229,7 @@ describe('MediaTab', () => {
 
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media/m1',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media/m1',
         expect.objectContaining({ caption: 'Updated' }),
       );
     });
@@ -244,7 +244,7 @@ describe('MediaTab', () => {
     await act(async () => { fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' }); });
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media/reorder',
         expect.any(Object),
       );
     });
@@ -256,7 +256,7 @@ describe('MediaTab', () => {
     }, { timeout: 3000 });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Remove media Item Two' })); });
     await waitFor(() => {
-      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/media/m2');
+      expect(apiClient.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/campaigns/101/media/m2');
     });
   });
 
@@ -279,7 +279,7 @@ describe('MediaTab', () => {
 
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media/m1',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media/m1',
         expect.objectContaining({ caption: 'External Title', thumbnail: 'https://example.com/thumb.jpg' }),
       );
     });
@@ -336,7 +336,7 @@ describe('MediaTab', () => {
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media',
         expect.objectContaining({ source: 'external', url: 'https://example.com/video' }),
       );
     });
@@ -476,7 +476,7 @@ describe('MediaTab', () => {
 
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media/m1',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media/m1',
         expect.objectContaining({ caption: 'Updated Caption' }),
       );
     });
@@ -670,7 +670,7 @@ describe('MediaTab', () => {
     dragHandle.focus();
     fireEvent.keyDown(dragHandle, { key: 'ArrowRight', code: 'ArrowRight' });
     expect(apiClient.put).not.toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/101/media/reorder',
+      '/wp-json/mullion-gallery/v1/campaigns/101/media/reorder',
       expect.any(Object),
     );
   });
@@ -785,7 +785,7 @@ describe('MediaTab', () => {
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/101/media/rescan',
+        '/wp-json/mullion-gallery/v1/campaigns/101/media/rescan',
         {},
       );
     });
@@ -893,7 +893,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (list view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode_root');
+    localStorage.removeItem('mullion_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'm1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Alpha', order: 1 },
@@ -923,7 +923,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (grid view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode_root');
+    localStorage.removeItem('mullion_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'g1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Gamma', order: 1 },

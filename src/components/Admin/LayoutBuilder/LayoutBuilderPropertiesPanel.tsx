@@ -8,12 +8,12 @@ import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
 
 // P62-G: gate the Pro text editor behind the build flag so the free WP.org build
 // dead-code-eliminates TextPropertiesPanel (and its heavyweight TypographyEditor).
-const TextPropertiesPanel = __WPSG_PREMIUM__
+const TextPropertiesPanel = __MULLION_PREMIUM__
   ? lazy(() => import('./TextPropertiesPanel').then((m) => ({ default: m.TextPropertiesPanel })))
   : null;
 
@@ -26,8 +26,8 @@ const ASPECT_PRESETS = [
 ] as const;
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
-  const { t } = useTranslation('wpsg');
-  const { isPro } = useWpsgLicense();
+  const { t } = useTranslation('mullion');
+  const { isPro } = useMullionLicense();
   const {
     builder,
     selectedSlot,
@@ -46,8 +46,8 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   const panelStyle = {
     overflowY: 'auto' as const,
     height: '100%',
-    background: 'var(--wpsg-builder-surface)',
-    color: 'var(--wpsg-builder-text)',
+    background: 'var(--mullion-builder-surface)',
+    color: 'var(--mullion-builder-text)',
   };
 
   if (builder.isPreview) {
@@ -128,7 +128,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
     return (
       <Box style={panelStyle}>
         <Text size="xs" fw={600} c="dimmed" p="sm" pb={0}>{t('lb_props_hdr_text', 'TEXT LAYER')}</Text>
-        {__WPSG_PREMIUM__ && TextPropertiesPanel && isPro ? (
+        {__MULLION_PREMIUM__ && TextPropertiesPanel && isPro ? (
           <Suspense fallback={null}>
             <TextPropertiesPanel
               key={selectedText.id}
@@ -148,7 +148,7 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
           </Suspense>
         ) : (
           // Text-layer editing is a Pro feature. Two paths reach here:
-          //  • free WP.org build (__WPSG_PREMIUM__ false) — TextPropertiesPanel is
+          //  • free WP.org build (__MULLION_PREMIUM__ false) — TextPropertiesPanel is
           //    dead-code-eliminated entirely; existing text still renders on canvas.
           //  • premium build, unlicensed runtime (!isPro) — we must NOT show a live
           //    editor: the server freezes `texts` on save (enforce_license_gates),
@@ -244,4 +244,4 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderPropertiesPanel, 'LayoutBuilder:LayoutBuilderPropertiesPanel');
+setMullionDebugDisplayName(LayoutBuilderPropertiesPanel, 'LayoutBuilder:LayoutBuilderPropertiesPanel');

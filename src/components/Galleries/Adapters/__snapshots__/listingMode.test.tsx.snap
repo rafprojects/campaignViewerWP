@@ -3,9 +3,9 @@
 exports[`CompactGridGallery listing mode (P35-D) > snapshot: responsive-grid structure at default settings with 4 items 1`] = `
 <div
   class=""
+  data-mullion-component="CompactGridGallery"
+  data-mullion-slot="grid"
   data-testid="card-gallery-grid"
-  data-wpsg-component="CompactGridGallery"
-  data-wpsg-slot="grid"
   style="display: flex; flex-wrap: wrap; gap: 16px 16px; justify-content: center; align-content: start; width: 100%;"
 >
   <div

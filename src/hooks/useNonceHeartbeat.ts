@@ -7,13 +7,13 @@ import { fetchFreshNonce, getWpNonce, setWpNonce } from '@/services/wpNonce';
  *
  * WordPress nonces expire after 24 hours (two 12-hour ticks). This hook
  * calls a lightweight endpoint every `intervalMs` (default: 20 minutes)
- * to obtain a fresh nonce and updates `window.__WPSG_CONFIG__.restNonce`
+ * to obtain a fresh nonce and updates `window.__MULLION_CONFIG__.restNonce`
  * so subsequent API calls use the refreshed value.
  *
  * The nonce read (`getWpNonce`), fetch (`fetchFreshNonce`) and store
  * (`setWpNonce`) all go through the shared `wpNonce.ts` helpers (P70-C) — this
  * hook no longer touches the nonce globals directly. Only the JWT gate and the
- * API base URL are read from `window.__WPSG_CONFIG__` here (non-nonce config).
+ * API base URL are read from `window.__MULLION_CONFIG__` here (non-nonce config).
  *
  * Only active when JWT auth is **not** enabled (nonce-only path).
  *
@@ -24,7 +24,7 @@ export function useNonceHeartbeat(intervalMs = 20 * 60 * 1000): void {
 
   useEffect(() => {
     // Skip heartbeat when JWT auth is active (tokens manage their own expiry).
-    const enableJwt = window.__WPSG_CONFIG__?.enableJwt === true;
+    const enableJwt = window.__MULLION_CONFIG__?.enableJwt === true;
     if (enableJwt) {
       return;
     }
@@ -34,8 +34,8 @@ export function useNonceHeartbeat(intervalMs = 20 * 60 * 1000): void {
     }
 
     const apiBase =
-      window.__WPSG_CONFIG__?.apiBase ??
-      window.__WPSG_API_BASE__ ??
+      window.__MULLION_CONFIG__?.apiBase ??
+      window.__MULLION_API_BASE__ ??
       window.location.origin;
 
     const refresh = async () => {

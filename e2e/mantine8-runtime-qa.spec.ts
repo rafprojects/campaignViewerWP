@@ -36,24 +36,24 @@ const mediaPayload = [
 async function installAdminSession(page: Page) {
   await page.addInitScript(() => {
     const globals = window as Window & {
-      __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-      __WPSG_API_BASE__?: string;
-      __WPSG_CONFIG__?: {
+      __MULLION_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
+      __MULLION_API_BASE__?: string;
+      __MULLION_CONFIG__?: {
         enableJwt?: boolean;
         restNonce?: string;
       };
     };
 
-    globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    globals.__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
-    globals.__WPSG_CONFIG__ = {
+    globals.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    globals.__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
+    globals.__MULLION_CONFIG__ = {
       enableJwt: true,
       restNonce: 'test-nonce',
     };
 
-    localStorage.setItem('wpsg_access_token', 'fake-token');
+    localStorage.setItem('mullion_access_token', 'fake-token');
     localStorage.setItem(
-      'wpsg_user',
+      'mullion_user',
       JSON.stringify({
         id: '1',
         email: 'admin@example.com',
@@ -80,7 +80,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -91,7 +91,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/settings', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/settings', async (route) => {
     if (route.request().method() === 'POST') {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       currentSettings = {
@@ -107,7 +107,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns?**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,7 +115,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -123,7 +123,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -131,7 +131,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101', async (route) => {
     if (route.request().method() === 'PUT') {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({
@@ -183,7 +183,7 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
 
   const settingsPanel = page.getByRole('dialog', { name: 'Display Settings' });
   await expect(settingsPanel).toBeVisible();
-  await expect(page.locator('[data-wpsg-component="SettingsPanel"][data-wpsg-slot="overlay"]')).toBeVisible();
+  await expect(page.locator('[data-mullion-component="SettingsPanel"][data-mullion-slot="overlay"]')).toBeVisible();
 
   const tabMetrics = await settingsPanel.getByRole('tab').evaluateAll((tabs) =>
     tabs.map((tab) => {
@@ -211,7 +211,7 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
   const galleryConfigEditor = page.getByRole('dialog', { name: 'Responsive Gallery Config' });
   await expect(galleryConfigEditor).toBeVisible();
   await expect(settingsPanel).toBeVisible();
-  await expect(page.locator('[data-wpsg-component="GalleryConfigEditorModal"][data-wpsg-slot="overlay"]')).toBeVisible();
+  await expect(page.locator('[data-mullion-component="GalleryConfigEditorModal"][data-mullion-slot="overlay"]')).toBeVisible();
 
   await selectOption(page, galleryConfigEditor, 'Gallery Mode', 'Unified');
   await expect(galleryConfigEditor.getByText('Each breakpoint tab controls its own unified adapter and responsive settings.')).toBeVisible();
@@ -223,7 +223,7 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
   await settingsPanel.getByRole('button', { name: 'Save Changes' }).click();
   await expect(page.getByText('Settings saved successfully.')).toBeVisible();
 
-  await page.locator('[data-wpsg-component="SettingsPanel"][data-wpsg-slot="close"]').click();
+  await page.locator('[data-mullion-component="SettingsPanel"][data-mullion-slot="close"]').click();
   await expect(settingsPanel).toBeHidden();
 });
 
@@ -235,11 +235,11 @@ test('campaign viewer nested overlays stay usable in shadow DOM', async ({ page 
   await expect.poll(async () => page.evaluate(() => !!document.getElementById('root')?.shadowRoot)).toBe(true);
   await page.getByRole('button', { name: 'Open campaign Admin Campaign' }).click();
 
-  const campaignViewer = page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="content-shell"]');
+  const campaignViewer = page.locator('[data-mullion-component="CampaignViewer"][data-mullion-slot="content-shell"]');
   await expect(campaignViewer).toBeVisible();
   await expect(page.getByRole('button', { name: 'Close campaign viewer' })).toBeVisible();
 
-  const inContextToggle = campaignViewer.locator('[data-wpsg-component="InContextEditor"][data-wpsg-slot="toggle"]').first();
+  const inContextToggle = campaignViewer.locator('[data-mullion-component="InContextEditor"][data-mullion-slot="toggle"]').first();
   await expect(inContextToggle).toBeVisible();
   await inContextToggle.click();
   await expect(page.getByText('About Section')).toBeVisible();
@@ -250,7 +250,7 @@ test('campaign viewer nested overlays stay usable in shadow DOM', async ({ page 
   const galleryConfigEditor = page.getByRole('dialog', { name: 'Campaign Gallery Config' });
   await expect(galleryConfigEditor).toBeVisible();
   await expect(campaignViewer).toBeVisible();
-  await expect(page.locator('[data-wpsg-component="GalleryConfigEditorModal"][data-wpsg-slot="overlay"]')).toBeVisible();
+  await expect(page.locator('[data-mullion-component="GalleryConfigEditorModal"][data-mullion-slot="overlay"]')).toBeVisible();
 
   await selectOption(page, galleryConfigEditor, 'Gallery Mode', 'Unified');
   await galleryConfigEditor.getByRole('button', { name: 'Save Campaign Gallery Config' }).click();
@@ -259,7 +259,7 @@ test('campaign viewer nested overlays stay usable in shadow DOM', async ({ page 
   await expect(galleryConfigEditor).toBeHidden();
   await expect(campaignViewer).toBeVisible();
 
-  await page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="close"]').click();
+  await page.locator('[data-mullion-component="CampaignViewer"][data-mullion-slot="close"]').click();
   await expect(campaignViewer).toBeHidden();
 });
 
@@ -271,10 +271,10 @@ test('in-context typography editor opens nested controls in shadow DOM', async (
   await expect.poll(async () => page.evaluate(() => !!document.getElementById('root')?.shadowRoot)).toBe(true);
   await page.getByRole('button', { name: 'Open campaign Admin Campaign' }).click();
 
-  const campaignViewer = page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="content-shell"]');
+  const campaignViewer = page.locator('[data-mullion-component="CampaignViewer"][data-mullion-slot="content-shell"]');
   await expect(campaignViewer).toBeVisible();
 
-  const typographyToggle = campaignViewer.locator('[data-wpsg-component="InContextEditor"][data-wpsg-slot="toggle"]').first();
+  const typographyToggle = campaignViewer.locator('[data-mullion-component="InContextEditor"][data-mullion-slot="toggle"]').first();
   await expect(typographyToggle).toBeVisible();
   await typographyToggle.click();
 
@@ -298,11 +298,11 @@ test('non-shadow mount still renders viewer flow', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Open campaign Admin Campaign' }).click();
 
-  const campaignViewer = page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="content-shell"]');
+  const campaignViewer = page.locator('[data-mullion-component="CampaignViewer"][data-mullion-slot="content-shell"]');
   await expect(campaignViewer).toBeVisible();
   await expect(page.getByRole('button', { name: 'Close campaign viewer' })).toBeVisible();
   await expect(campaignViewer.getByText('Admin description')).toBeVisible();
 
-  await page.locator('[data-wpsg-component="CampaignViewer"][data-wpsg-slot="close"]').click();
+  await page.locator('[data-mullion-component="CampaignViewer"][data-mullion-slot="close"]').click();
   await expect(campaignViewer).toBeHidden();
 });

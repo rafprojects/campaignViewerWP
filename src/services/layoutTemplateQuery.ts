@@ -35,7 +35,7 @@ export function getAssetLibraryQueryKey(apiClient: ApiClient, spaceId?: string |
 
 function getApiBase(): string {
   return (
-    (window as unknown as Record<string, string>).__WPSG_API_BASE__ ??
+    (window as unknown as Record<string, string>).__MULLION_API_BASE__ ??
     window.location.origin
   );
 }
@@ -45,7 +45,7 @@ export function getPublicLayoutTemplateQueryKey(templateId: string) {
 }
 
 async function fetchPublicTemplate(templateId: string): Promise<LayoutTemplate> {
-  const url = `${getApiBase()}/wp-json/wp-super-gallery/v1/layout-templates/${templateId}`;
+  const url = `${getApiBase()}/wp-json/mullion-gallery/v1/layout-templates/${templateId}`;
   const response = await fetch(url);
 
   if (!response.ok) {
@@ -71,8 +71,8 @@ export function useAssetLibrary(apiClient: ApiClient, enabled = true, spaceId?: 
   // assets). 'all' / undefined fetches the full library unscoped.
   const scoped = spaceId !== undefined && spaceId !== null && String(spaceId) !== 'all';
   const path = scoped
-    ? `/wp-json/wp-super-gallery/v1/admin/asset-library?space=${encodeURIComponent(String(spaceId))}`
-    : '/wp-json/wp-super-gallery/v1/admin/asset-library';
+    ? `/wp-json/mullion-gallery/v1/admin/asset-library?space=${encodeURIComponent(String(spaceId))}`
+    : '/wp-json/mullion-gallery/v1/admin/asset-library';
   return useQuery<AssetLibraryItem[]>({
     queryKey: getAssetLibraryQueryKey(apiClient, spaceId),
     queryFn: async () => (

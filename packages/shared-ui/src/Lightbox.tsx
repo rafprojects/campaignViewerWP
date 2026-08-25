@@ -12,9 +12,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FocusTrap, Portal, ActionIcon, Box, Stack, Text } from '@mantine/core';
 import { IconX, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
-import { toCss } from '@wp-super-gallery/shared-utils';
-import { useSwipe } from '@wp-super-gallery/shared-utils';
-import { acquireBodyScrollLock, releaseBodyScrollLock } from '@wp-super-gallery/shared-utils';
+import { toCss } from '@mullion/shared-utils';
+import { useSwipe } from '@mullion/shared-utils';
+import { acquireBodyScrollLock, releaseBodyScrollLock } from '@mullion/shared-utils';
 import { KeyboardHintOverlay } from './KeyboardHintOverlay';
 
 const TRANSITION_MS = 250;
@@ -49,7 +49,7 @@ export interface LightboxProps {
 }
 
 export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose, videoMaxWidth, videoMaxWidthUnit, videoHeight, videoHeightUnit, mediaMaxHeight }: LightboxProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const current = media[currentIndex];
 
   // Resolve lightbox sizing — settings → props → hardcoded defaults

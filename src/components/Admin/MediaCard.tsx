@@ -4,7 +4,7 @@ import { IconPhoto, IconTrash, IconGripVertical } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import styles from './MediaCard.module.scss';
 
 interface MediaCardProps {
@@ -35,7 +35,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
     cardStyle,
     dragHandleProps,
   }, ref) => {
-    const { t } = useTranslation('wpsg');
+    const { t } = useTranslation('mullion');
     const [badgeHovered, setBadgeHovered] = useState(false);
     const isClickableImage = item.type === 'image' && onImageClick;
     const mediaTypeLabel = item.type === 'video' ? t('admin_media_type_video', 'Video') : t('admin_media_type_image', 'Image');
@@ -112,7 +112,7 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
                     zIndex: 2,
                     transition: 'filter 150ms ease',
                     filter: badgeHovered
-                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--wpsg-color-primary) 80%, transparent))'
+                      ? 'drop-shadow(0 0 4px color-mix(in srgb, var(--mullion-color-primary) 80%, transparent))'
                       : undefined,
                   }}
                 >
@@ -173,4 +173,4 @@ export const MediaCard = forwardRef<HTMLDivElement, MediaCardProps>(
   },
 );
 
-setWpsgDebugDisplayName(MediaCard, 'AdminPanel:MediaCard');
+setMullionDebugDisplayName(MediaCard, 'AdminPanel:MediaCard');

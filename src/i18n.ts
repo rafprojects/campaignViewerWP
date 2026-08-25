@@ -1,8 +1,8 @@
 /**
  * P49-C / P54-B: i18n bootstrap
  *
- * Initialises i18next with the `wpsg` namespace. Strings are sourced from
- * `window.__WPSG_I18N__.strings` when the PHP layer has injected them via
+ * Initialises i18next with the `mullion` namespace. Strings are sourced from
+ * `window.__MULLION_I18N__.strings` when the PHP layer has injected them via
  * wp_localize_script / page_config_js.
  *
  * English defaults (src/i18n-strings.en.json) are always loaded as the 'en'
@@ -15,34 +15,34 @@ import enStrings from './i18n-strings.en.json';
 
 declare global {
   interface Window {
-    __WPSG_I18N__?: {
+    __MULLION_I18N__?: {
       locale?: string;
       strings?: Record<string, string>;
     };
   }
 }
 
-const injected = window.__WPSG_I18N__ ?? {};
+const injected = window.__MULLION_I18N__ ?? {};
 const locale = injected.locale ?? 'en';
 
-// P60-G: PHP (WPSG_Frontend_Strings) injects the active-locale translation of the
+// P60-G: PHP (Mullion_Frontend_Strings) injects the active-locale translation of the
 // whole front-end catalogue, keyed identically to enStrings. Merge it over the
 // bundled English defaults so any key missing from the injection degrades to
 // English per-key (belt-and-suspenders alongside fallbackLng below).
 const active = { ...enStrings, ...(injected.strings ?? {}) };
 
-const resources: Record<string, { wpsg: Record<string, string> }> = {
-  en: { wpsg: locale === 'en' ? active : enStrings },
+const resources: Record<string, { mullion: Record<string, string> }> = {
+  en: { mullion: locale === 'en' ? active : enStrings },
 };
 
 if (locale !== 'en') {
-  resources[locale] = { wpsg: active };
+  resources[locale] = { mullion: active };
 }
 
 i18n.use(initReactI18next).init({
   lng: locale,
   fallbackLng: 'en',
-  defaultNS: 'wpsg',
+  defaultNS: 'mullion',
   resources,
   // P60 review: our catalogue keys are flat, literal strings (e.g.
   // `set_sg_compact-grid_gridCardAspectRatio_opt_16:9`) — several aspect-ratio

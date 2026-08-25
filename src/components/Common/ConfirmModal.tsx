@@ -1,7 +1,7 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface ConfirmModalProps {
   opened: boolean;
@@ -38,12 +38,12 @@ function ConfirmModalContent({
   confirmAriaLabel,
   loading,
 }: ConfirmModalContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
-    <Stack {...getWpsgDebugProps('ConfirmModal', 'stack')}>
+    <Stack {...getMullionDebugProps('ConfirmModal', 'stack')}>
       {typeof message === 'string' ? <Text>{message}</Text> : message}
       {children}
-      <Group {...getWpsgDebugProps('ConfirmModal', 'actions')} justify="flex-end">
+      <Group {...getMullionDebugProps('ConfirmModal', 'actions')} justify="flex-end">
         <Button variant="default" onClick={onClose}>{t('common_cancel', 'Cancel')}</Button>
         <Button
           color={confirmColor}
@@ -72,13 +72,13 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Modal
-      {...getWpsgDebugProps('ConfirmModal')}
+      {...getMullionDebugProps('ConfirmModal')}
       opened={opened}
       onClose={onClose}
       withinPortal={false}
-      title={<span {...getWpsgDebugProps('ConfirmModal', 'title')}>{title}</span>}
-      closeButtonProps={getWpsgDebugProps('ConfirmModal', 'close')}
-      overlayProps={getWpsgDebugProps('ConfirmModal', 'overlay')}
+      title={<span {...getMullionDebugProps('ConfirmModal', 'title')}>{title}</span>}
+      closeButtonProps={getMullionDebugProps('ConfirmModal', 'close')}
+      overlayProps={getMullionDebugProps('ConfirmModal', 'overlay')}
       padding="md"
     >
       <ConfirmModalContent
@@ -95,5 +95,5 @@ export function ConfirmModal({
   );
 }
 
-setWpsgDebugDisplayName(ConfirmModal, 'ConfirmModal');
-setWpsgDebugDisplayName(ConfirmModalContent, 'ConfirmModalContent');
+setMullionDebugDisplayName(ConfirmModal, 'ConfirmModal');
+setMullionDebugDisplayName(ConfirmModalContent, 'ConfirmModalContent');

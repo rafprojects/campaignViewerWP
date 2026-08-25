@@ -18,7 +18,7 @@ import {
   UnstyledButton,
 } from '@mantine/core';
 import { IconClockHour4, IconTrash } from '@tabler/icons-react';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,7 +48,7 @@ export function BuilderHistoryDropdown({
   opened: openedProp,
   onOpenedChange,
 }: BuilderHistoryDropdownProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [openedLocal, setOpenedLocal] = useState(false);
   const isControlled = openedProp !== undefined;
   const opened = isControlled ? openedProp : openedLocal;
@@ -185,4 +185,4 @@ export function BuilderHistoryDropdown({
   );
 }
 
-setWpsgDebugDisplayName(BuilderHistoryDropdown, 'LayoutBuilder:BuilderHistoryDropdown');
+setMullionDebugDisplayName(BuilderHistoryDropdown, 'LayoutBuilder:BuilderHistoryDropdown');

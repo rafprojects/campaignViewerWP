@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import classes from './TemplatePickerModal.module.scss';
 
-type TemplateCardStyle = CSSProperties & Record<'--wpsg-glow-color', string>;
+type TemplateCardStyle = CSSProperties & Record<'--mullion-glow-color', string>;
 
 function buildTemplateCardStyle(glowColor: string): TemplateCardStyle {
   return {
     cursor: 'pointer',
-    '--wpsg-glow-color': glowColor,
+    '--mullion-glow-color': glowColor,
   };
 }
 
@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [templates, setTemplates] = useState<CampaignTemplate[]>([]);
   const [loading, setLoading] = useState(false);
 

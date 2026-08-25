@@ -37,8 +37,8 @@ afterAll(() => {
 
 // Shared hook / component mocks. useCarousel + useMediaDimensions now live in
 // the shared-utils barrel (P51-B): spread the real module and override these.
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
   return {
     ...actual,
     useCarousel: () => ({
@@ -51,7 +51,7 @@ vi.mock('@wp-super-gallery/shared-utils', async () => {
   };
 });
 
-vi.mock('@wp-super-gallery/shared-ui', () => ({
+vi.mock('@mullion/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? <div data-testid="lightbox-open" /> : null,
 }));
@@ -395,17 +395,17 @@ describe('MasonryGallery — specific', () => {
   // P31-G: Waterfall entrance animation tests
   it('does not add waterfall class when animation is disabled (default)', () => {
     const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={SETTINGS} />);
-    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    const waterfall = container.querySelectorAll('.mullion-waterfall-tile');
     expect(waterfall.length).toBe(0);
   });
 
-  it('adds wpsg-waterfall-tile class to every tile when waterfall animation is enabled', () => {
+  it('adds mullion-waterfall-tile class to every tile when waterfall animation is enabled', () => {
     const animSettings: GalleryBehaviorSettings = {
       ...SETTINGS,
       masonryEntranceAnimation: 'waterfall',
     };
     const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
-    const waterfall = container.querySelectorAll('.wpsg-waterfall-tile');
+    const waterfall = container.querySelectorAll('.mullion-waterfall-tile');
     // One tile per photo
     expect(waterfall.length).toBe(THREE_IMAGES.length);
   });
@@ -417,7 +417,7 @@ describe('MasonryGallery — specific', () => {
       masonryEntranceStagger: 80,
     };
     const { container } = render(<MasonryGallery media={THREE_IMAGES} settings={animSettings} />);
-    const tiles = Array.from(container.querySelectorAll('.wpsg-waterfall-tile')) as HTMLElement[];
+    const tiles = Array.from(container.querySelectorAll('.mullion-waterfall-tile')) as HTMLElement[];
     // Index 0 → 0ms, index 1 → 80ms, index 2 → 160ms
     expect(tiles[0].style.animationDelay).toBe('0ms');
     expect(tiles[1].style.animationDelay).toBe('80ms');
@@ -587,7 +587,7 @@ describe('ScrollSnapGallery — specific', () => {
     const { container } = render(
       <ScrollSnapGallery media={THREE_IMAGES} settings={SETTINGS} />,
     );
-    const snapContainer = container.querySelector('[data-wpsg-slot="snap-container"]') as HTMLElement | null;
+    const snapContainer = container.querySelector('[data-mullion-slot="snap-container"]') as HTMLElement | null;
     expect(snapContainer?.style.scrollSnapType).toBe('y mandatory');
   });
 
@@ -631,7 +631,7 @@ describe('ScrollSnapGallery — specific', () => {
       <ScrollSnapGallery media={THREE_IMAGES} settings={constrainedSettings} />,
     );
 
-    const shell = container.querySelector('[data-wpsg-component="ScrollSnapGallery"]') as HTMLElement | null;
+    const shell = container.querySelector('[data-mullion-component="ScrollSnapGallery"]') as HTMLElement | null;
     expect(shell?.style.maxWidth).toBe('75%');
     expect(shell?.style.marginInline).toBe('auto');
   });

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import type { Campaign } from '@/types';
 import { ApiError } from '@/services/apiClient';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 
 interface UseArchiveModalOptions {
   apiClient: ApiClient;
@@ -36,7 +36,7 @@ export function useArchiveModal({
     if (!archiveModalCampaign) return;
     try {
       await apiClient.post(
-        `/wp-json/wp-super-gallery/v1/campaigns/${archiveModalCampaign.id}/archive`,
+        `/wp-json/mullion-gallery/v1/campaigns/${archiveModalCampaign.id}/archive`,
         {},
       );
       onNotify({ type: 'success', text: 'Campaign archived.' });

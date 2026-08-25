@@ -15,20 +15,20 @@ import {
   centerSlotsHorizontally, centerSlotsVertically,
   distributeSlotsHorizontally, distributeSlotsVertically,
   distributeSlotsHorizontallyByGap, distributeSlotsVerticallyByGap,
-} from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
-import { showProUpsell } from '@/utils/wpsgUpsell';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useRootId } from '@mullion/shared-ui';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
+import { showProUpsell } from '@/utils/mullionUpsell';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
-  const { t: tr } = useTranslation('wpsg');
-  const { isPro, upgradeUrl } = useWpsgLicense();
+  const { t: tr } = useTranslation('mullion');
+  const { isPro, upgradeUrl } = useMullionLicense();
   const [filterQuery, setFilterQuery] = useState('');
 
   const {
@@ -198,8 +198,8 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
         flexDirection: 'column',
         height: '100%',
         overflow: 'hidden',
-        background: 'var(--wpsg-builder-surface)',
-        color: 'var(--wpsg-builder-text)',
+        background: 'var(--mullion-builder-surface)',
+        color: 'var(--mullion-builder-text)',
       }}
     >
       {/* Slot toolbar */}
@@ -209,7 +209,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={4}
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
             flexShrink: 0,
           }}
         >
@@ -226,7 +226,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           {/* P62-G: text layers are Pro — the add-text control is absent from the free
               WP.org build. In the premium build the runtime isPro check below still
               upsells expired/unlicensed installs. */}
-          {__WPSG_PREMIUM__ && (
+          {__MULLION_PREMIUM__ && (
             <Tooltip label={tr('lb_layers_add_text', 'Add text')}>
               <ActionIcon
                 size="sm"
@@ -301,7 +301,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
           px={6}
           py={3}
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
             flexShrink: 0,
           }}
         >
@@ -360,7 +360,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
       )}
 
       {/* Layer search filter */}
-      <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--wpsg-builder-border)', flexShrink: 0 }}>
+      <div style={{ padding: '4px 6px', borderBottom: '1px solid var(--mullion-builder-border)', flexShrink: 0 }}>
         <TextInput
           size="xs"
           placeholder={tr('lb_layers_filter_ph', 'Filter layers…')}
@@ -376,7 +376,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
               )
               : null
           }
-          styles={{ input: { background: 'var(--wpsg-builder-surface)', color: 'var(--wpsg-builder-text)', borderColor: 'var(--wpsg-builder-border)' } }}
+          styles={{ input: { background: 'var(--mullion-builder-surface)', color: 'var(--mullion-builder-text)', borderColor: 'var(--mullion-builder-border)' } }}
         />
       </div>
 
@@ -447,7 +447,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             dockApiRef.current?.getPanel('media')?.api.setActive();
             setDesignAssetsOpen(true);
             try {
-              localStorage.setItem(`wpsg_builder_${rootId}_design_assets_open`, 'true');
+              localStorage.setItem(`mullion_builder_${rootId}_design_assets_open`, 'true');
             } catch { /* ignore */ }
             requestAnimationFrame(() =>
               bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -533,4 +533,4 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderLayersPanel, 'LayoutBuilder:LayoutBuilderLayersPanel');
+setMullionDebugDisplayName(LayoutBuilderLayersPanel, 'LayoutBuilder:LayoutBuilderLayersPanel');

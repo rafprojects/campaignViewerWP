@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-const CAMPAIGNS_URL = '**/wp-json/wp-super-gallery/v1/campaigns**';
+const CAMPAIGNS_URL = '**/wp-json/mullion-gallery/v1/campaigns**';
 
 const imageMedia = [
   {
@@ -66,20 +66,20 @@ test.describe('accessibility baseline', () => {
     // JWT mode so the sign-in flow is available
     await page.addInitScript(() => {
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_CONFIG__ = { enableJwt: true };
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_CONFIG__ = { enableJwt: true };
     });
 
     // Token-validate returns 401 → unauthenticated state
@@ -122,7 +122,7 @@ test.describe('accessibility baseline', () => {
         body: JSON.stringify({ items: [publicCampaign], mediaByCampaign: { '201': imageMedia } }),
       });
     });
-    await page.route('**/wp-json/wp-super-gallery/v1/campaigns/201/media**', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/campaigns/201/media**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -154,7 +154,7 @@ test.describe('accessibility baseline', () => {
         body: JSON.stringify({ items: [publicCampaign], mediaByCampaign: { '201': imageMedia } }),
       });
     });
-    await page.route('**/wp-json/wp-super-gallery/v1/campaigns/201/media**', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/campaigns/201/media**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -203,15 +203,15 @@ const adminCampaign = {
 async function prepareAdminApp(page: Page) {
   await page.addInitScript(() => {
     const g = window as Window & {
-      __WPSG_AUTH_PROVIDER__?: string;
-      __WPSG_API_BASE__?: string;
-      __WPSG_CONFIG__?: Record<string, unknown>;
+      __MULLION_AUTH_PROVIDER__?: string;
+      __MULLION_API_BASE__?: string;
+      __MULLION_CONFIG__?: Record<string, unknown>;
     };
-    g.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    g.__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
-    g.__WPSG_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
-    localStorage.setItem('wpsg_access_token', 'fake-token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+    g.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    g.__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
+    g.__MULLION_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
+    localStorage.setItem('mullion_access_token', 'fake-token');
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
   });
 
   const settings = {
@@ -223,15 +223,15 @@ async function prepareAdminApp(page: Page) {
 
   await page.route('**/wp-json/jwt-auth/v1/token/validate', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', (route) =>
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ campaignIds: ['101'], isAdmin: true }) }));
-  await page.route('**/wp-json/wp-super-gallery/v1/settings', (route) =>
+  await page.route('**/wp-json/mullion-gallery/v1/settings', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(settings) }));
   // General campaigns list — registered BEFORE the specific routes below so the
   // later, more-specific handlers win (Playwright checks most-recent first).
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns**', (route) =>
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns**', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ items: [adminCampaign] }) }));
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media', (route) =>
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
 }
 

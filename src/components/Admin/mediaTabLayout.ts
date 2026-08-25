@@ -22,10 +22,10 @@ export interface MediaGridPreset {
 export type MediaGridSizeConfig = Record<MediaGridPresetKey, MediaGridPreset>;
 
 export type MediaGridShellVars = CSSProperties & {
-  '--wpsg-media-grid-max-base'?: string;
-  '--wpsg-media-grid-max-sm'?: string;
-  '--wpsg-media-grid-max-md'?: string;
-  '--wpsg-media-grid-max-lg'?: string;
+  '--mullion-media-grid-max-base'?: string;
+  '--mullion-media-grid-max-sm'?: string;
+  '--mullion-media-grid-max-md'?: string;
+  '--mullion-media-grid-max-lg'?: string;
 };
 
 export const MEDIA_GRID_TOTAL_COLUMNS = 12;
@@ -92,7 +92,7 @@ export function buildMediaGridShellVars(
   for (const breakpoint of MEDIA_GRID_BREAKPOINTS) {
     const span = resolveResponsiveMediaGridSpan(preset.span, breakpoint);
     const columns = resolveMediaGridColumns(span);
-    vars[`--wpsg-media-grid-max-${breakpoint}`] = mediaGridRowMaxWidthCss(preset.maxWidth, columns, gutterPx);
+    vars[`--mullion-media-grid-max-${breakpoint}`] = mediaGridRowMaxWidthCss(preset.maxWidth, columns, gutterPx);
   }
 
   return vars;

@@ -5,7 +5,7 @@
  * Validates:
  *  1. All theme definition JSON files (src/themes/definitions/*.json)
  *     — required fields: id, name, colorScheme ('light' | 'dark')
- *  2. The shared theme catalog (wp-plugin/wp-super-gallery/theme-catalog.json)
+ *  2. The shared theme catalog (wp-plugin/mullion-gallery/theme-catalog.json)
  *     — required fields: id, name, colorScheme, group, description, displayOrder, seasonal
  *     — cross-check: every catalog entry has a matching definition file
  *
@@ -88,10 +88,10 @@ for (const file of allDefFiles) {
 
 console.log('\n── Theme catalog ────────────────────────────────────────────');
 
-const catalogPath = join(root, 'wp-plugin/wp-super-gallery/theme-catalog.json');
+const catalogPath = join(root, 'wp-plugin/mullion-gallery/theme-catalog.json');
 
 if (!existsSync(catalogPath)) {
-  error('theme-catalog.json not found at wp-plugin/wp-super-gallery/theme-catalog.json');
+  error('theme-catalog.json not found at wp-plugin/mullion-gallery/theme-catalog.json');
 } else {
   let catalog;
   try {

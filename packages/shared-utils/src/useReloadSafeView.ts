@@ -6,7 +6,7 @@ import type { ViewScopeOptions } from './usePersistentAccordion';
  *
  * Reads from `localStorage` on mount (via lazy initializer — no effect needed)
  * and writes back on every update. The key is
- * `wpsg_view_<scopeId>_<feature>`, which prevents collisions between multiple
+ * `mullion_view_<scopeId>_<feature>`, which prevents collisions between multiple
  * shortcode mounts on the same page. Inject the per-mount `scopeId` via
  * `options.scopeId` (defaults to `'root'`).
  *
@@ -17,7 +17,7 @@ export function useReloadSafeView<T>(
   defaultValue: T,
   options: ViewScopeOptions = {},
 ): [T, (next: T) => void] {
-  const { scopeId = 'root', namespace = 'wpsg_view' } = options;
+  const { scopeId = 'root', namespace = 'mullion_view' } = options;
   const key = `${namespace}_${scopeId}_${feature}`;
 
   const [value, setValueState] = useState<T>(() => {

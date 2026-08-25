@@ -6,11 +6,11 @@
   // only the thumbnail, which produced a "zoom through a window" effect.
   &:hover {
     transform: translateY(-2px) scale(1.02);
-    box-shadow: var(--wpsg-shadow-lg);
+    box-shadow: var(--mullion-shadow-lg);
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--wpsg-color-primary) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }
@@ -27,9 +27,9 @@
   gap: 0.35rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--wpsg-color-background) 60%, transparent);
-  border: 1px solid color-mix(in srgb, var(--wpsg-color-text-muted) 35%, transparent);
-  color: var(--wpsg-color-text);
+  background: color-mix(in srgb, var(--mullion-color-background) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mullion-color-text-muted) 35%, transparent);
+  color: var(--mullion-color-text);
   font-size: 0.8125rem;
   line-height: 1.2;
 }

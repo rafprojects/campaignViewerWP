@@ -1,5 +1,5 @@
 import { Select, type SelectProps } from '@mantine/core';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export function ModalSelect(props: SelectProps) {
   const { comboboxProps, ...restSelectProps } = props;
@@ -12,4 +12,4 @@ export function ModalSelect(props: SelectProps) {
   );
 }
 
-setWpsgDebugDisplayName(ModalSelect, 'ModalSelect');
+setMullionDebugDisplayName(ModalSelect, 'ModalSelect');

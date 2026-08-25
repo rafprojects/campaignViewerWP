@@ -126,7 +126,7 @@ describe('useAdminAccessState', () => {
     act(() => { result.current.setAccessUserId('42'); });
     await act(async () => { await result.current.handleGrantAccess(); });
     expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/101/access',
+      '/wp-json/mullion-gallery/v1/campaigns/101/access',
       expect.objectContaining({ userId: 42 }),
     );
   });
@@ -168,7 +168,7 @@ describe('useAdminAccessState', () => {
     );
     await act(async () => { await result.current.handleRevokeAccess(campaignAccessEntry); });
     expect(deleteMethod).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/101/access/42',
+      '/wp-json/mullion-gallery/v1/campaigns/101/access/42',
     );
   });
 
@@ -217,7 +217,7 @@ describe('useAdminAccessState', () => {
     });
     await act(async () => { await result.current.handleQuickAddUser(); });
     expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/users',
+      '/wp-json/mullion-gallery/v1/users',
       expect.objectContaining({ email: 'user@example.com', displayName: 'Test User' }),
     );
     expect(result.current.quickAddResult).toMatchObject({

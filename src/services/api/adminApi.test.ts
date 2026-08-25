@@ -101,7 +101,7 @@ describe('AdminApi', () => {
 
       expect(mockFetch).toHaveBeenCalledOnce();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.test/wp-json/wp-super-gallery/v1/admin/health',
+        'https://example.test/wp-json/mullion-gallery/v1/admin/health',
         {
           headers: {
             Authorization: 'Bearer token',
@@ -214,7 +214,7 @@ describe('AdminApi', () => {
 
       expect(mockFetch).toHaveBeenCalledOnce();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.test/wp-json/wp-super-gallery/v1/admin/audit-log',
+        'https://example.test/wp-json/mullion-gallery/v1/admin/audit-log',
         {
           headers: {
             Authorization: 'Bearer token',
@@ -235,7 +235,7 @@ describe('AdminApi', () => {
 
       expect(mockFetch).toHaveBeenCalledOnce();
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.test/wp-json/wp-super-gallery/v1/admin/audit-log',
+        'https://example.test/wp-json/mullion-gallery/v1/admin/audit-log',
         expect.any(Object),
       );
     });
@@ -375,7 +375,7 @@ describe('AdminApi', () => {
       await api.downloadGlobalAuditCsv();
 
       const [url] = vi.mocked(mockFetch).mock.calls[0]!;
-      expect(url).toBe('https://example.test/wp-json/wp-super-gallery/v1/admin/audit-log');
+      expect(url).toBe('https://example.test/wp-json/mullion-gallery/v1/admin/audit-log');
     });
 
     it('skips undefined/empty params in query string', async () => {

@@ -8,7 +8,7 @@ import type { CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { CampaignSelector } from '@/components/Common/CampaignSelector';
 import { prefetchAllCampaignMedia } from '@/services/adminQuery';
 import type { useAdminZipTransfers } from '@/hooks/useAdminZipTransfers';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const MediaTab = lazy(() => import('./MediaTab'));
 
@@ -45,7 +45,7 @@ export function MediaPanel({
   onCampaignsUpdated,
   isSystemAdmin,
 }: MediaPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const queryClient = useQueryClient();
   const [mediaCampaignId, setMediaCampaignId] = useState('');
   const [rescanAllLoading, setRescanAllLoading] = useState(false);
@@ -112,7 +112,7 @@ export function MediaPanel({
                 setRescanAllLoading(true);
                 try {
                   const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
-                    '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
+                    '/wp-json/mullion-gallery/v1/media/rescan-all', {},
                   );
                   onNotify({
                     type: 'success', text: result.media_updated > 0
@@ -138,4 +138,4 @@ export function MediaPanel({
   );
 }
 
-setWpsgDebugDisplayName(MediaPanel, 'MediaPanel');
+setMullionDebugDisplayName(MediaPanel, 'MediaPanel');

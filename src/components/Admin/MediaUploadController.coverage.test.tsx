@@ -11,8 +11,8 @@ import type { ApiClient } from '@/services/apiClient';
 const { notifyShow, uploadMany } = vi.hoisted(() => ({ notifyShow: vi.fn(), uploadMany: vi.fn() }));
 vi.mock('@mantine/notifications', () => ({ notifications: { show: notifyShow } }));
 
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
   return {
     ...actual,
     useXhrUpload: () => ({

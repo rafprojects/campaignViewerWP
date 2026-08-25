@@ -6,7 +6,7 @@
  * than dominate the canvas.
  */
 import { useMemo } from 'react';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -81,4 +81,4 @@ export function CanvasGrid({ canvasWidth, canvasHeight, gridSizePx }: CanvasGrid
   );
 }
 
-setWpsgDebugDisplayName(CanvasGrid, 'LayoutBuilder:CanvasGrid');
+setMullionDebugDisplayName(CanvasGrid, 'LayoutBuilder:CanvasGrid');

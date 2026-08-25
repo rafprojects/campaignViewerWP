@@ -4,7 +4,7 @@ import { Box, Button, Text, TextInput, Stack, Alert } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface RequestAccessFormProps {
   campaignId: string;
@@ -15,7 +15,7 @@ interface RequestAccessFormProps {
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: RequestAccessFormProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [email, setEmail] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -44,9 +44,9 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       <Box
         p="md"
         style={{
-          background: 'color-mix(in srgb, var(--wpsg-color-surface) 95%, transparent)',
+          background: 'color-mix(in srgb, var(--mullion-color-surface) 95%, transparent)',
           borderRadius: 8,
-          border: '1px solid var(--wpsg-color-border, rgba(255,255,255,0.15))',
+          border: '1px solid var(--mullion-color-border, rgba(255,255,255,0.15))',
           textAlign: 'center',
         }}
         onClick={(e) => e.stopPropagation()}
@@ -68,9 +68,9 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
       onSubmit={handleSubmit}
       p="md"
       style={{
-        background: 'color-mix(in srgb, var(--wpsg-color-surface) 95%, transparent)',
+        background: 'color-mix(in srgb, var(--mullion-color-surface) 95%, transparent)',
         borderRadius: 8,
-        border: '1px solid var(--wpsg-color-border, rgba(255,255,255,0.15))',
+        border: '1px solid var(--mullion-color-border, rgba(255,255,255,0.15))',
       }}
       onClick={(e) => e.stopPropagation()}
     >
@@ -128,4 +128,4 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
   );
 }
 
-setWpsgDebugDisplayName(RequestAccessForm, 'RequestAccessForm');
+setMullionDebugDisplayName(RequestAccessForm, 'RequestAccessForm');

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { notifications } from '@mantine/notifications';
 import { modals } from '@mantine/modals';
 import { Text } from '@mantine/core';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import type { LayoutTemplate } from '@/types';
 import type { LayoutDraftPayload } from '@/hooks/useLayoutBuilderState';
@@ -51,7 +51,7 @@ export function useBuilderDraftRestore({
     draftCheckedRef.current = true;
 
     const stored = (() => {
-      try { return localStorage.getItem(`wpsg_layout_draft_${templateId}`); } catch { return null; }
+      try { return localStorage.getItem(`mullion_layout_draft_${templateId}`); } catch { return null; }
     })();
     if (!stored) return;
 
@@ -72,7 +72,7 @@ export function useBuilderDraftRestore({
 
     if (!payload) {
       // Old format (raw LayoutTemplate) — discard silently; can't determine age
-      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      try { localStorage.removeItem(`mullion_layout_draft_${templateId}`); } catch { /* ignore */ }
       return;
     }
 
@@ -82,7 +82,7 @@ export function useBuilderDraftRestore({
       : 0;
     if (payload.savedAt <= serverSavedAt) {
       // Draft predates the current server version — silently discard
-      try { localStorage.removeItem(`wpsg_layout_draft_${templateId}`); } catch { /* ignore */ }
+      try { localStorage.removeItem(`mullion_layout_draft_${templateId}`); } catch { /* ignore */ }
       return;
     }
 

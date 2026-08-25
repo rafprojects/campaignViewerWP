@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { ModalColorInput } from '@/components/Common/ModalColorInput';
 import type { ColorInputProps } from '@mantine/core';
 import { useBuilderDock } from './BuilderDockContext';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 /**
  * Builder-specific ColorInput wrapper.
@@ -37,4 +37,4 @@ export function BuilderColorInput({ onChangeEnd, withEyeDropper = true, ...rest 
   );
 }
 
-setWpsgDebugDisplayName(BuilderColorInput, 'LayoutBuilder:BuilderColorInput');
+setMullionDebugDisplayName(BuilderColorInput, 'LayoutBuilder:BuilderColorInput');

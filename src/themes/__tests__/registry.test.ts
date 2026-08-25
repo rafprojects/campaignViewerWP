@@ -99,8 +99,8 @@ describe('getTheme', () => {
 
   it('includes CSS variables string', () => {
     const entry = getTheme('solarized-dark');
-    expect(entry.cssVars).toContain('--wpsg-color-background');
-    expect(entry.cssVars).toContain('--wpsg-color-primary');
+    expect(entry.cssVars).toContain('--mullion-color-background');
+    expect(entry.cssVars).toContain('--mullion-color-primary');
   });
 });
 

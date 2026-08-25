@@ -9,8 +9,8 @@
  *  3. Every TS registry field key is in the schema (no missing schema entries).
  *  4. Every schema camelKey is in the TS registry (no orphan schema entries).
  *  5. Every schema snakeSlug is registered in PHP $defaults.
- *  6. Every canonical adapter id is in WPSG_CPT::VALID_ADAPTERS.
- *  7. PHP sanitizer sources adapter map from WPSG_Adapter_Field_Schema (not a hand-maintained array).
+ *  6. Every canonical adapter id is in Mullion_CPT::VALID_ADAPTERS.
+ *  7. PHP sanitizer sources adapter map from Mullion_Adapter_Field_Schema (not a hand-maintained array).
  *  8. Legacy orphan keys were pruned and are absent from the schema.
  *
  * Run: npx vitest run adapterSettingsParity
@@ -37,7 +37,7 @@ interface SchemaField {
   snakeSlug: string;
 }
 
-const schemaPath = 'wp-plugin/wp-super-gallery/includes/schema/adapter-fields.json';
+const schemaPath = 'wp-plugin/mullion-gallery/includes/schema/adapter-fields.json';
 const schema: { version: string; fields: SchemaField[] } = JSON.parse(readSource(schemaPath));
 const schemaFields = schema.fields;
 const schemaCamelKeys = new Set(schemaFields.map((f) => f.camelKey));
@@ -105,7 +105,7 @@ describe('adapter fields schema contract (P55-C)', () => {
 
   it('every schema snakeSlug is registered in PHP $defaults', () => {
     const registryPhpSource = readSource(
-      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php',
+      'wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-registry.php',
     );
     const defaultsStart = registryPhpSource.indexOf('private static $defaults = [');
     const defaultsEnd   = registryPhpSource.indexOf('\n    ];', defaultsStart);
@@ -117,16 +117,16 @@ describe('adapter fields schema contract (P55-C)', () => {
     const missing = schemaFields.filter((f) => !defaultKeys.has(f.snakeSlug));
     expect(missing, [
       'One or more schema snakeSlugs are missing from $defaults in',
-      'class-wpsg-settings-registry.php. The nested sanitizer rejects any slug',
+      'class-mullion-settings-registry.php. The nested sanitizer rejects any slug',
       'absent from $defaults, so these values are silently dropped on save.',
       'Add a default (and valid_options / field_ranges where applicable) for:',
       ...missing.map((f) => `  '${f.snakeSlug}' (from camelKey '${f.camelKey}'),`),
     ].join('\n')).toHaveLength(0);
   });
 
-  it('every canonical adapter id is in WPSG_CPT::VALID_ADAPTERS', () => {
+  it('every canonical adapter id is in Mullion_CPT::VALID_ADAPTERS', () => {
     const dataSource = readSource('src/data/adapterSettingGroups.ts');
-    const cptSource  = readSource('wp-plugin/wp-super-gallery/includes/class-wpsg-cpt.php');
+    const cptSource  = readSource('wp-plugin/mullion-gallery/includes/class-mullion-cpt.php');
 
     const adaptersBlockStart = dataSource.indexOf('const BUILTIN_ADAPTERS');
     const adaptersBlockEnd   = dataSource.indexOf('\n];', adaptersBlockStart);
@@ -144,16 +144,16 @@ describe('adapter fields schema contract (P55-C)', () => {
     const missing = registryIds.filter((id) => !phpIds.includes(id));
     expect(missing, [
       'One or more adapter ids are in the TS registry but missing from',
-      'WPSG_CPT::VALID_ADAPTERS. Add to class-wpsg-cpt.php:',
+      'Mullion_CPT::VALID_ADAPTERS. Add to class-mullion-cpt.php:',
       ...missing.map((id) => `  '${id}',`),
     ].join('\n')).toHaveLength(0);
   });
 
-  it('PHP sanitizer sources adapter map from WPSG_Adapter_Field_Schema, not a hand-maintained array', () => {
+  it('PHP sanitizer sources adapter map from Mullion_Adapter_Field_Schema, not a hand-maintained array', () => {
     const sanitizerSource = readSource(
-      'wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
+      'wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-sanitizer.php',
     );
-    expect(sanitizerSource).toContain('WPSG_Adapter_Field_Schema::get_map()');
+    expect(sanitizerSource).toContain('Mullion_Adapter_Field_Schema::get_map()');
     expect(sanitizerSource).not.toContain("private static $nested_adapter_field_map = [");
   });
 

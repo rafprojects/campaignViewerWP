@@ -7,7 +7,7 @@ import { IconTrash, IconPlus } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient, CampaignTemplate } from '@/services/apiClient';
 import type { AdminCampaign } from '@/services/adminQuery';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 
 interface Props {
   apiClient: ApiClient;
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function TemplatesTab({ apiClient, campaigns, onNotify }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [templates, setTemplates] = useState<CampaignTemplate[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -168,7 +168,7 @@ function TemplateRow({
   deletingId: string | null;
   onDelete: (tpl: CampaignTemplate) => void;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Group justify="space-between" wrap="wrap" px="xs" py={4}>
       <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>

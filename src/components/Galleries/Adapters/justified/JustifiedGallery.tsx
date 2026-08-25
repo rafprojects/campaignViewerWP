@@ -31,15 +31,15 @@ import type {
   ResolvedGallerySectionRuntime,
 } from '@/types';
 import type { ListingItem } from '../GalleryAdapter';
-import { useMediaDimensions } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
+import { useMediaDimensions } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/tileHoverStyles';
-import { toCss, toCssOrNumber } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber } from '@mullion/shared-utils';
 import { resolveListingColumns } from '@/utils/gridLayout';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'justified';
@@ -65,7 +65,7 @@ interface JustifiedGalleryProps {
 }
 
 export function JustifiedGallery({ media, settings, runtime, containerDimensions, items, renderItem }: JustifiedGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // P35-F: listing-mode detection
   const isListingMode = !!(items && renderItem);
 
@@ -109,7 +109,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
 
     return (
       <Box
-        {...getWpsgDebugProps('JustifiedGallery', 'listing-grid')}
+        {...getMullionDebugProps('JustifiedGallery', 'listing-grid')}
         data-testid="justified-listing-grid"
         style={{
           display: 'flex',
@@ -161,7 +161,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps('JustifiedGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps('JustifiedGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       <AdapterHeading common={common} heading={heading} icon={<IconLayoutRows size={18} />} />
 
       <style>{buildBoxShadowStyles(SCOPE, settings)}</style>
@@ -185,8 +185,8 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
             return (
               <button
                 {...props}
-                {...getWpsgDebugProps('JustifiedGallery', 'tile')}
-                className={`wpsg-tile-${SCOPE} ${className ?? ''}`}
+                {...getMullionDebugProps('JustifiedGallery', 'tile')}
+                className={`mullion-tile-${SCOPE} ${className ?? ''}`}
                 style={{
                   ...style,
                   overflow: 'hidden',
@@ -195,7 +195,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
                   border: settings.tileBorderWidth
                     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
                     : undefined,
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                 }}
               />
             );
@@ -215,10 +215,10 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
             return (
               <Box
                 style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius }}
-                className="wpsg-jus-overlay"
+                className="mullion-jus-overlay"
               >
                 <Box
-                  className="wpsg-jus-icon-wrap"
+                  className="mullion-jus-icon-wrap"
                   style={{
                     position: 'absolute', inset: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -230,7 +230,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
                     ? <IconPlayerPlay size={iconSize} color="white"
                       style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                     : <IconZoomIn size={iconSize} color="white"
-                      className="wpsg-jus-zoom"
+                      className="mullion-jus-zoom"
                       style={{
                         opacity: 0, transition: 'opacity 0.2s ease',
                         filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))'
@@ -252,10 +252,10 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
 
       {/* Hover UI — must live in shadow DOM, so we use an inline <style> here */}
       <style>{`
-        .react-photo-album--button:hover .wpsg-jus-icon-wrap {
+        .react-photo-album--button:hover .mullion-jus-icon-wrap {
           background: rgba(0,0,0,0.28) !important;
         }
-        .react-photo-album--button:hover .wpsg-jus-zoom {
+        .react-photo-album--button:hover .mullion-jus-zoom {
           opacity: 1 !important;
         }
       `}</style>
@@ -266,4 +266,4 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
   );
 }
 
-setWpsgDebugDisplayName(JustifiedGallery, 'JustifiedGallery');
+setMullionDebugDisplayName(JustifiedGallery, 'JustifiedGallery');

@@ -12,12 +12,12 @@
 
 import type { MantineThemeOverride, MantineColorShade } from '@mantine/core';
 import { colorsTuple } from '@mantine/core';
-import type { ThemeDefinition, ResolvedColors } from '@wp-super-gallery/theme-engine';
-import { resolveColors, withAlpha } from '@wp-super-gallery/theme-engine';
+import type { ThemeDefinition, ResolvedColors } from '@mullion/theme-engine';
+import { resolveColors, withAlpha } from '@mullion/theme-engine';
 
-const TABS_TAB_CLASS = 'wpsg-mantine-tabs-tab';
-const SEGMENTED_CONTROL_LABEL_CLASS = 'wpsg-mantine-segmented-control-label';
-const SELECT_OPTION_CLASS = 'wpsg-mantine-select-option';
+const TABS_TAB_CLASS = 'mullion-mantine-tabs-tab';
+const SEGMENTED_CONTROL_LABEL_CLASS = 'mullion-mantine-segmented-control-label';
+const SELECT_OPTION_CLASS = 'mullion-mantine-select-option';
 // 'md' is intentionally larger than Mantine 9's default 'sm' to match the
 // PHASE26 design decision (see docs/PHASE26_REVIEW.md Track P26-B).
 const DEFAULT_RADIUS = 'md';

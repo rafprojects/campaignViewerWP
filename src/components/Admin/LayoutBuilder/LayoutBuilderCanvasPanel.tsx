@@ -12,12 +12,12 @@ import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
 import { LayoutCanvas } from './LayoutCanvas';
 import type { ContextualToolbarCallbacks } from './ContextualToolbar';
-import { CanvasTransformContext, useRootId } from '@wp-super-gallery/shared-ui';
-import { SNAP_MODE_LABELS, type SnapMode } from '@wp-super-gallery/shared-utils';
-import { safeLocalStorage, fitRectsIntoBand } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
-import { showProUpsell } from '@/utils/wpsgUpsell';
+import { CanvasTransformContext, useRootId } from '@mullion/shared-ui';
+import { SNAP_MODE_LABELS, type SnapMode } from '@mullion/shared-utils';
+import { safeLocalStorage, fitRectsIntoBand } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
+import { showProUpsell } from '@/utils/mullionUpsell';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 
@@ -113,8 +113,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     toggleGuideLock,
   } = useBuilderDock();
 
-  const { t: tr } = useTranslation('wpsg');
-  const { isPro, upgradeUrl } = useWpsgLicense();
+  const { t: tr } = useTranslation('mullion');
+  const { isPro, upgradeUrl } = useMullionLicense();
   const presetSegmentedData = PRESET_SEGMENTED_DATA.map(({ value, label }) => ({ value, label: tr(`lb_canvas_preset_${value}`, label) }));
   const breakpointEditData = BREAKPOINT_EDIT_DATA.map(({ value, label }) => ({ value, label: tr(`admin_bp_${value}`, label) }));
 
@@ -251,25 +251,25 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
   // ── P30-C: Device preview presets (root-scoped per P37-KS1) ─────────────
   const [previewPreset, setPreviewPreset] = useState<PreviewPreset>(() =>
-    (safeLocalStorage.getItem(`wpsg_builder_${rootId}_preview_preset`) as PreviewPreset | null) ?? 'none',
+    (safeLocalStorage.getItem(`mullion_builder_${rootId}_preview_preset`) as PreviewPreset | null) ?? 'none',
   );
   const [customPreviewWidth, setCustomPreviewWidth] = useState<number>(() =>
-    Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_custom_preview_width`)) || 800,
+    Number(safeLocalStorage.getItem(`mullion_builder_${rootId}_custom_preview_width`)) || 800,
   );
   const [showPreviewFrame, setShowPreviewFrame] = useState<boolean>(
-    () => safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_preview_frame`) === 'true',
+    () => safeLocalStorage.getItem(`mullion_builder_${rootId}_show_preview_frame`) === 'true',
   );
 
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_preview_preset`, previewPreset); }, [rootId, previewPreset]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_custom_preview_width`, String(customPreviewWidth)); }, [rootId, customPreviewWidth]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_preview_frame`, String(showPreviewFrame)); }, [rootId, showPreviewFrame]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_preview_preset`, previewPreset); }, [rootId, previewPreset]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_custom_preview_width`, String(customPreviewWidth)); }, [rootId, customPreviewWidth]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_show_preview_frame`, String(showPreviewFrame)); }, [rootId, showPreviewFrame]);
 
   // P37-KS1: one-time migration of legacy global preview keys to root-scoped keys.
   useEffect(() => {
     const migrations: [string, string][] = [
-      ['wpsg_builder_preview_preset', `wpsg_builder_${rootId}_preview_preset`],
-      ['wpsg_builder_custom_preview_width', `wpsg_builder_${rootId}_custom_preview_width`],
-      ['wpsg_builder_show_preview_frame', `wpsg_builder_${rootId}_show_preview_frame`],
+      ['mullion_builder_preview_preset', `mullion_builder_${rootId}_preview_preset`],
+      ['mullion_builder_custom_preview_width', `mullion_builder_${rootId}_custom_preview_width`],
+      ['mullion_builder_show_preview_frame', `mullion_builder_${rootId}_show_preview_frame`],
     ];
     for (const [oldKey, newKey] of migrations) {
       try {
@@ -355,7 +355,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             variant="light"
             p="xs"
             radius={0}
-            style={{ flexShrink: 0, borderBottom: '1px solid var(--wpsg-builder-border)' }}
+            style={{ flexShrink: 0, borderBottom: '1px solid var(--mullion-builder-border)' }}
           >
             <Text size="xs" ta="center">
               {tr('lb_canvas_editing_pre', 'Editing ')}
@@ -497,8 +497,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             px="md"
             py={6}
             style={{
-              borderTop: '1px solid var(--wpsg-builder-border)',
-              background: 'var(--wpsg-builder-surface)',
+              borderTop: '1px solid var(--mullion-builder-border)',
+              background: 'var(--mullion-builder-surface)',
               flexShrink: 0,
             }}
           >
@@ -636,7 +636,7 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
                   edit desktop only. Saved tablet/mobile overrides still render in
                   preview/published via the renderer. In premium the runtime isPro check
                   still upsells expired/unlicensed installs. */}
-              {__WPSG_PREMIUM__ && (
+              {__MULLION_PREMIUM__ && (
                 <>
                   <Group gap={6} wrap="nowrap" align="center">
                     <Text size="xs" c="dimmed" style={{ whiteSpace: 'nowrap' }}>{tr('lb_canvas_breakpoint', 'Breakpoint:')}</Text>
@@ -739,8 +739,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
             py={6}
             data-testid="preview-preset-bar"
             style={{
-              borderTop: '1px solid var(--wpsg-builder-border)',
-              background: 'var(--wpsg-builder-surface)',
+              borderTop: '1px solid var(--mullion-builder-border)',
+              background: 'var(--mullion-builder-surface)',
               flexShrink: 0,
             }}
           >
@@ -814,4 +814,4 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderCanvasPanel, 'LayoutBuilder:LayoutBuilderCanvasPanel');
+setMullionDebugDisplayName(LayoutBuilderCanvasPanel, 'LayoutBuilder:LayoutBuilderCanvasPanel');

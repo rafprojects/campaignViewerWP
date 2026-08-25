@@ -82,11 +82,11 @@ export function getEditableScopes(mode: GalleryConfigMode): Array<EditableGaller
 export function formatScopeLabel(scope: EditableGalleryScope): string {
   switch (scope) {
     case 'unified':
-      return i18n.t('set_ad_gce_scope_unified', 'Unified Gallery', { ns: 'wpsg' });
+      return i18n.t('set_ad_gce_scope_unified', 'Unified Gallery', { ns: 'mullion' });
     case 'image':
-      return i18n.t('set_ad_gce_scope_image', 'Image Gallery', { ns: 'wpsg' });
+      return i18n.t('set_ad_gce_scope_image', 'Image Gallery', { ns: 'mullion' });
     case 'video':
-      return i18n.t('set_ad_gce_scope_video', 'Video Gallery', { ns: 'wpsg' });
+      return i18n.t('set_ad_gce_scope_video', 'Video Gallery', { ns: 'mullion' });
   }
 }
 
@@ -400,7 +400,7 @@ export function formatSettingGroupLabel(group: AdapterSettingGroupDefinition['gr
         return group.charAt(0).toUpperCase() + group.slice(1);
     }
   })();
-  return i18n.t(`set_sg_group_${group}`, english, { ns: 'wpsg' });
+  return i18n.t(`set_sg_group_${group}`, english, { ns: 'mullion' });
 }
 
 export function setAdapterSettingForMatchingScopes(

@@ -52,7 +52,7 @@ describe('useBuilderDockLayout — no saved layout', () => {
 });
 
 describe('useBuilderDockLayout — saved layout with current version', () => {
-  const LAYOUT_KEY = 'wpsg_builder_root_layout';
+  const LAYOUT_KEY = 'mullion_builder_root_layout';
   const LAYOUT_VERSION = 3;
 
   beforeEach(() => localStorage.clear());
@@ -88,7 +88,7 @@ describe('useBuilderDockLayout — saved layout with current version', () => {
 });
 
 describe('useBuilderDockLayout — saved layout with old version', () => {
-  const LAYOUT_KEY = 'wpsg_builder_root_layout';
+  const LAYOUT_KEY = 'mullion_builder_root_layout';
 
   beforeEach(() => localStorage.clear());
 
@@ -106,7 +106,7 @@ describe('useBuilderDockLayout — saved layout with old version', () => {
 });
 
 describe('useBuilderDockLayout — corrupted JSON', () => {
-  const LAYOUT_KEY = 'wpsg_builder_root_layout';
+  const LAYOUT_KEY = 'mullion_builder_root_layout';
 
   beforeEach(() => localStorage.clear());
 
@@ -144,7 +144,7 @@ describe('useBuilderDockLayout — per-template layout scope', () => {
 });
 
 describe('useBuilderDockLayout — persistLayout callback', () => {
-  const LAYOUT_KEY = 'wpsg_builder_root_layout';
+  const LAYOUT_KEY = 'mullion_builder_root_layout';
 
   beforeEach(() => localStorage.clear());
 

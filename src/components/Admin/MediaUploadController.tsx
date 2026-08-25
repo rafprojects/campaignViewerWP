@@ -27,10 +27,10 @@ import type {
   CampaignMediaBatchRequestItem,
   OEmbedResponse,
 } from '@/types';
-import { useXhrUpload } from '@wp-super-gallery/shared-utils';
+import { useXhrUpload } from '@mullion/shared-utils';
 import { getAssetLibraryQueryKey } from '@/services/layoutTemplateQuery';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 /** Sentinel target value for the campaign-agnostic general asset library. */
 export const GENERAL_LIBRARY_TARGET = '__general__';
@@ -61,7 +61,7 @@ export function MediaUploadController({
   title,
   zIndex,
 }: MediaUploadControllerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const queryClient = useQueryClient();
   const dropRef = useRef<HTMLDivElement>(null);
   const { uploadMany, batchProgress, isUploading } = useXhrUpload();
@@ -138,7 +138,7 @@ export function MediaUploadController({
         formData.append('name', uploadTitle.trim() || file.name.replace(/\.[^/.]+$/, ''));
         if (markUniversal) formData.append('is_universal', '1');
         if (tags.length) formData.append('tags', JSON.stringify(tags));
-        await apiClient.postForm('/wp-json/wp-super-gallery/v1/admin/asset-library', formData);
+        await apiClient.postForm('/wp-json/mullion-gallery/v1/admin/asset-library', formData);
       } catch {
         failures += 1;
       }
@@ -151,7 +151,7 @@ export function MediaUploadController({
   const uploadToCampaign = useCallback(async (campaignId: string) => {
     const authHeaders = await apiClient.getAuthHeaders();
     const response = await uploadMany<BatchUploadResponse>({
-      url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+      url: `${apiClient.getBaseUrl()}/wp-json/mullion-gallery/v1/media/upload`,
       files: selectedFiles,
       headers: authHeaders,
       extraFields: { campaign_id: campaignId },
@@ -237,7 +237,7 @@ export function MediaUploadController({
     setExternalError(null);
     try {
       if (isGeneral) {
-        await apiClient.post('/wp-json/wp-super-gallery/v1/admin/asset-library', {
+        await apiClient.post('/wp-json/mullion-gallery/v1/admin/asset-library', {
           url,
           name: url.split('/').pop() || 'external asset',
           ...(markUniversal ? { is_universal: true } : {}),
@@ -317,4 +317,4 @@ export function MediaUploadController({
   );
 }
 
-setWpsgDebugDisplayName(MediaUploadController, 'AdminPanel:MediaUploadController');
+setMullionDebugDisplayName(MediaUploadController, 'AdminPanel:MediaUploadController');

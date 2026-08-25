@@ -4,7 +4,7 @@ import { AuthBar } from './AuthBar';
 import type { PageSpace } from '@/hooks/usePageSpaces';
 
 type Win = typeof window & {
-    __WPSG_PAGE_SPACES__?: PageSpace[];
+    __MULLION_PAGE_SPACES__?: PageSpace[];
     [key: string]: unknown;
 };
 
@@ -12,16 +12,16 @@ const SPACE_A: PageSpace = { instanceId: 'space-a', id: 1, slug: 'hero', name: '
 const SPACE_B: PageSpace = { instanceId: 'space-b', id: 2, slug: 'products', name: 'Products' };
 
 function setSpaces(...spaces: PageSpace[]) {
-    (window as Win).__WPSG_PAGE_SPACES__ = spaces;
+    (window as Win).__MULLION_PAGE_SPACES__ = spaces;
 }
 function setOpener(instanceId: string, fn: (...args: unknown[]) => void) {
-    (window as Win)[`__wpsgOpen_${instanceId}`] = fn;
+    (window as Win)[`__mullionOpen_${instanceId}`] = fn;
 }
 
 afterEach(() => {
-    delete (window as Win).__WPSG_PAGE_SPACES__;
-    delete (window as Win).__wpsgOpen_space_b;
-    delete (window as Win)['__wpsgOpen_space-b'];
+    delete (window as Win).__MULLION_PAGE_SPACES__;
+    delete (window as Win).__mullionOpen_space_b;
+    delete (window as Win)['__mullionOpen_space-b'];
 });
 
 const baseProps = {
@@ -71,7 +71,7 @@ describe('AuthBar', () => {
 //
 // This is the critical invariant: when the user switches the target space via
 // SpaceSwitcher, Admin Panel and Settings must call the OTHER space's
-// window.__wpsgOpen_<id> opener, NOT the local prop handlers.
+// window.__mullionOpen_<id> opener, NOT the local prop handlers.
 
 describe('AuthBar bar mode — SpaceSwitcher visibility', () => {
     it('renders SpaceSwitcher for an admin user when instanceId is provided', () => {

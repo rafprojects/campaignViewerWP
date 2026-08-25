@@ -30,7 +30,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ id: '2', title: 'Copy' });
       const result = await api.duplicateCampaign('1', { name: 'Copy', copyMedia: true });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/1/duplicate',
+        '/wp-json/mullion-gallery/v1/campaigns/1/duplicate',
         { name: 'Copy', copyMedia: true, duplicateLayoutTemplate: false },
       );
       expect(result).toEqual({ id: '2', title: 'Copy' });
@@ -60,7 +60,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ success: ['1'], failed: [] });
       await api.batchCampaigns('archive', ['1', '2']);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/batch',
+        '/wp-json/mullion-gallery/v1/campaigns/batch',
         { action: 'archive', ids: ['1', '2'] },
       );
     });
@@ -69,7 +69,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ success: ['1'], failed: [] });
       await api.batchCampaigns('delete', ['1']);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/batch',
+        '/wp-json/mullion-gallery/v1/campaigns/batch',
         expect.objectContaining({ action: 'delete', confirm: true }),
       );
     });
@@ -80,7 +80,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ added: [], skipped: [] });
       await api.addCampaignMediaBatch('42', []);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/42/media/batch',
+        '/wp-json/mullion-gallery/v1/campaigns/42/media/batch',
         { items: [] },
       );
     });
@@ -98,7 +98,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.get).mockResolvedValue(payload);
       const result = await api.exportCampaign('5');
       expect(transport.get).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/5/export',
+        '/wp-json/mullion-gallery/v1/campaigns/5/export',
       );
       expect(result).toEqual(payload);
     });
@@ -116,7 +116,7 @@ describe('CampaignsApi', () => {
       };
       await api.importCampaign(payload);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/import',
+        '/wp-json/mullion-gallery/v1/campaigns/import',
         payload,
       );
     });
@@ -128,7 +128,7 @@ describe('CampaignsApi', () => {
       const file = new File(['data'], 'campaign.zip');
       await api.importCampaignBinary(file);
       expect(transport.postForm).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/import/binary',
+        '/wp-json/mullion-gallery/v1/campaigns/import/binary',
         expect.any(FormData),
       );
     });
@@ -155,7 +155,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ id: '1', name: 'New', slug: 'new', count: 0, parent_id: 0 });
       await api.createCampaignCategory('New');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaign-categories',
+        '/wp-json/mullion-gallery/v1/campaign-categories',
         { name: 'New' },
       );
     });
@@ -166,7 +166,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.put).mockResolvedValue({ id: '1', name: 'Updated', slug: 'updated', count: 0, parent_id: 0 });
       await api.updateCampaignCategory('1', { name: 'Updated' });
       expect(transport.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaign-categories/1',
+        '/wp-json/mullion-gallery/v1/campaign-categories/1',
         { name: 'Updated' },
       );
     });
@@ -177,7 +177,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.delete).mockResolvedValue({ deleted: true, id: '1' });
       await api.deleteCampaignCategory('1');
       expect(transport.delete).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaign-categories/1',
+        '/wp-json/mullion-gallery/v1/campaign-categories/1',
       );
     });
   });
@@ -202,7 +202,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ id: 1, name: 'T', slug: 't', count: 0 });
       await api.createCampaignTag('T');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/tags/campaign',
+        '/wp-json/mullion-gallery/v1/tags/campaign',
         { name: 'T' },
       );
     });
@@ -213,7 +213,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.delete).mockResolvedValue({ deleted: true, id: '1' });
       await api.deleteCampaignTag('1');
       expect(transport.delete).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/tags/campaign/1',
+        '/wp-json/mullion-gallery/v1/tags/campaign/1',
       );
     });
   });
@@ -232,7 +232,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ id: '1', name: 'T', description: '', source: 'user', editable: true, settings: { visibility: 'public', galleryOverrides: null, layoutTemplateId: null }, createdAt: null });
       await api.createCampaignTemplate({ name: 'T' });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaign-templates',
+        '/wp-json/mullion-gallery/v1/campaign-templates',
         { name: 'T' },
       );
     });
@@ -243,7 +243,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.delete).mockResolvedValue(undefined);
       await api.deleteCampaignTemplate('1');
       expect(transport.delete).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaign-templates/1',
+        '/wp-json/mullion-gallery/v1/campaign-templates/1',
       );
     });
   });
@@ -262,7 +262,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ id: 1, name: 'MT', slug: 'mt', count: 0 });
       await api.createMediaTag('MT');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/tags/media',
+        '/wp-json/mullion-gallery/v1/tags/media',
         { name: 'MT' },
       );
     });
@@ -273,7 +273,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.delete).mockResolvedValue({ deleted: true, id: '1' });
       await api.deleteMediaTag('1');
       expect(transport.delete).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/tags/media/1',
+        '/wp-json/mullion-gallery/v1/tags/media/1',
       );
     });
   });
@@ -283,7 +283,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ message: 'ok', token: 'abc' });
       await api.submitAccessRequest('5', 'user@example.com');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/5/access-requests',
+        '/wp-json/mullion-gallery/v1/campaigns/5/access-requests',
         { email: 'user@example.com' },
       );
     });
@@ -319,7 +319,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ message: 'approved' });
       await api.approveAccessRequest('5', 'tok1');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/5/access-requests/tok1/approve',
+        '/wp-json/mullion-gallery/v1/campaigns/5/access-requests/tok1/approve',
         {},
       );
     });
@@ -330,7 +330,7 @@ describe('CampaignsApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ message: 'denied' });
       await api.denyAccessRequest('5', 'tok1');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/5/access-requests/tok1/deny',
+        '/wp-json/mullion-gallery/v1/campaigns/5/access-requests/tok1/deny',
         {},
       );
     });

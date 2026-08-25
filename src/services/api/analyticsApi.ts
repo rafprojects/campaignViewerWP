@@ -59,7 +59,7 @@ export class AnalyticsApi {
     eventType = 'view',
     mediaId?: string,
   ): Promise<void> {
-    await this.transport.post('/wp-json/wp-super-gallery/v1/analytics/event', {
+    await this.transport.post('/wp-json/mullion-gallery/v1/analytics/event', {
       campaignId,
       eventType,
       ...(mediaId ? { mediaId } : {}),
@@ -76,7 +76,7 @@ export class AnalyticsApi {
     if (to) params.set('to', to);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.transport.get<CampaignAnalyticsResponse>(
-      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
+      `/wp-json/mullion-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}${qs}`,
     );
   }
 
@@ -90,7 +90,7 @@ export class AnalyticsApi {
     if (to) params.set('to', to);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.transport.get<MediaAnalyticsResponse>(
-      `/wp-json/wp-super-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}/media${qs}`,
+      `/wp-json/mullion-gallery/v1/analytics/campaigns/${encodeURIComponent(campaignId)}/media${qs}`,
     );
   }
 
@@ -101,13 +101,13 @@ export class AnalyticsApi {
     if (spaceId && spaceId !== 'all') params.set('space', spaceId);
     const qs = params.toString() ? `?${params.toString()}` : '';
     return this.transport.get<AnalyticsSummaryResponse>(
-      `/wp-json/wp-super-gallery/v1/analytics/summary${qs}`,
+      `/wp-json/mullion-gallery/v1/analytics/summary${qs}`,
     );
   }
 
   getMediaUsage(mediaId: string): Promise<MediaUsageResponse> {
     return this.transport.get<MediaUsageResponse>(
-      `/wp-json/wp-super-gallery/v1/media/${encodeURIComponent(mediaId)}/usage`,
+      `/wp-json/mullion-gallery/v1/media/${encodeURIComponent(mediaId)}/usage`,
     );
   }
 
@@ -115,7 +115,7 @@ export class AnalyticsApi {
     if (ids.length === 0) return Promise.resolve({});
     const qs = ids.map((id) => `ids[]=${encodeURIComponent(id)}`).join('&');
     return this.transport.get<Record<string, number>>(
-      `/wp-json/wp-super-gallery/v1/media/usage-summary?${qs}`,
+      `/wp-json/mullion-gallery/v1/media/usage-summary?${qs}`,
     );
   }
 }

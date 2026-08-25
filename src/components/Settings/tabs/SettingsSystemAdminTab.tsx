@@ -6,7 +6,7 @@ import type { ApiClient } from '@/services/apiClient';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import type { UpdateGallerySetting } from '../GalleryAdapterSettingsSection';
 import { AdvancedSettingsSection } from '../AdvancedSettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 function MagicLinkPageSelector({
   apiClient,
@@ -17,7 +17,7 @@ function MagicLinkPageSelector({
   value: number;
   onChange: (id: number) => void;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { data: pages, isLoading } = useQuery({
     queryKey: ['wpPages', apiClient.getBaseUrl()],
     queryFn: () => apiClient.listWpPages(),
@@ -39,7 +39,7 @@ function MagicLinkPageSelector({
         <Text size="xs" c="dimmed">
           {t('set_sys_magic_desc_pre', 'When an admin clicks a one-click approval link, the result is shown on this page (via ')}
           {/* eslint-disable-next-line i18next/no-literal-string -- literal URL query-string token (not translatable prose); same precedent as P60-I taxonomy tree-indent glyph */}
-          <code>?wpsg_result=approved|expired|used|invalid</code>
+          <code>?mullion_result=approved|expired|used|invalid</code>
           {t('set_sys_magic_desc_post', '). If no page is selected, a minimal inline HTML page is returned instead.')}
         </Text>
         <Select
@@ -93,4 +93,4 @@ export const SettingsSystemAdminTab = memo(function SettingsSystemAdminTab({
     </Stack>
   );
 });
-setWpsgDebugDisplayName(SettingsSystemAdminTab, 'SettingsPanel:SystemAdminTab');
+setMullionDebugDisplayName(SettingsSystemAdminTab, 'SettingsPanel:SystemAdminTab');

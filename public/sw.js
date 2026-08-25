@@ -1,10 +1,10 @@
-const CACHE_VERSION = 'wpsg-v3';
-const RUNTIME_CACHE = `wpsg-runtime-${CACHE_VERSION}`;
+const CACHE_VERSION = 'mullion-v3';
+const RUNTIME_CACHE = `mullion-runtime-${CACHE_VERSION}`;
 
 // Stale-while-revalidate cache for public gallery metadata.
 // Versioned independently from RUNTIME_CACHE: bump META_CACHE to clear stale
 // metadata for all users on a breaking API change.
-const META_CACHE = 'wpsg-meta-v1';
+const META_CACHE = 'mullion-meta-v1';
 
 // Revalidate in background only when the cached entry is older than this.
 // Serves stale data immediately regardless; TTL just throttles server hits.
@@ -23,7 +23,7 @@ const META_MAX_ENTRIES = 50;
 // revalidated in the background once the entry ages past UPLOADS_TTL_MS. Kept
 // separate from META_CACHE (different TTL/size profile) and from RUNTIME_CACHE
 // (which stays cache-first for fonts / immutable static assets).
-const UPLOADS_CACHE = 'wpsg-uploads-swr-v1';
+const UPLOADS_CACHE = 'mullion-uploads-swr-v1';
 const UPLOADS_PATH_RE = /\/wp-content\/uploads\//;
 // Images change rarely and are bandwidth-heavy, so revalidate at most hourly
 // (vs the metadata cache's 5 min) — long enough to avoid re-downloading a
@@ -33,15 +33,15 @@ const UPLOADS_TTL_MS = 60 * 60 * 1000; // 1 hour
 const UPLOADS_MAX_ENTRIES = 100;
 
 // Matches the two public gallery metadata endpoints (pathname only):
-//   /wp-json/wp-super-gallery/v1/campaigns              (campaign list)
-//   /wp-json/wp-super-gallery/v1/campaigns/{id}/media   (per-campaign media list)
-// Does NOT match /wp-json/wp-super-gallery/v1/admin/* or any other route.
+//   /wp-json/mullion-gallery/v1/campaigns              (campaign list)
+//   /wp-json/mullion-gallery/v1/campaigns/{id}/media   (per-campaign media list)
+// Does NOT match /wp-json/mullion-gallery/v1/admin/* or any other route.
 //
 // NOTE: this tests url.pathname (query string excluded), so the admin campaign
 // list — same pathname plus ?include_archived=… — also matches. The auth-header
 // bypass in the fetch handler keeps those (and every authenticated/mutation
 // flow) network-first per Key Decision D; only anonymous public reads get SWR.
-const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/media)?$/;
+const META_ENDPOINT_RE = /\/wp-json\/mullion-gallery\/v1\/campaigns(\/\d+\/media)?$/;
 
 // Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
 // These should NOT be SW-cached because the hash already busts browser cache,
@@ -49,12 +49,12 @@ const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/medi
 const HASHED_ASSET_RE = /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.(js|css)$/;
 
 // P52-D: versioned shell cache for navigation responses (HTML pages).
-// __WPSG_BUILD_HASH__ is replaced with a hash of the Vite manifest by the
-// wpsg-sw-hash-inject Vite plugin on every production build. A new hash means
+// __MULLION_BUILD_HASH__ is replaced with a hash of the Vite manifest by the
+// mullion-sw-hash-inject Vite plugin on every production build. A new hash means
 // a new SW file → the browser detects the update → activate deletes the old
-// shell cache (any wpsg-* name not matching the current set is swept).
-const BUILD_HASH = '__WPSG_BUILD_HASH__';
-const SHELL_CACHE = `wpsg-shell-${BUILD_HASH}`;
+// shell cache (any mullion-* name not matching the current set is swept).
+const BUILD_HASH = '__MULLION_BUILD_HASH__';
+const SHELL_CACHE = `mullion-shell-${BUILD_HASH}`;
 
 // Minimal branded offline fallback served when the network is down and no
 // cached shell is available (first offline load, or post-deploy before revisit).
@@ -79,7 +79,7 @@ self.addEventListener('activate', (event) => {
         keys
           .filter(
             (key) =>
-              key.startsWith('wpsg-') &&
+              key.startsWith('mullion-') &&
               key !== RUNTIME_CACHE &&
               key !== META_CACHE &&
               key !== SHELL_CACHE &&
@@ -178,7 +178,7 @@ self.addEventListener('fetch', (event) => {
  *   otherwise serve the inline OFFLINE_HTML fallback.
  *
  * The shell cache name encodes the build hash so a new deploy automatically
- * invalidates it (activate sweeps any wpsg-* name not in the current set).
+ * invalidates it (activate sweeps any mullion-* name not in the current set).
  */
 async function handleNavigationRequest(request) {
   try {
@@ -206,7 +206,7 @@ async function handleNavigationRequest(request) {
  *   revalidation if the entry is older than META_TTL_MS.
  * - Cache miss: fetch synchronously, cache the result, respond.
  *
- * Timestamps are stored as a custom `x-wpsg-cached-at` header on each cached
+ * Timestamps are stored as a custom `x-mullion-cached-at` header on each cached
  * Response so they survive SW restarts without needing IndexedDB.
  */
 async function handleMetaRequest(event, request) {
@@ -229,7 +229,7 @@ async function handleMetaRequest(event, request) {
   if (cached) {
     // Serve stale immediately. Only revalidate in the background when the
     // entry has aged past META_TTL_MS (throttles server hits on hot pages).
-    const cachedAt = parseInt(cached.headers.get('x-wpsg-cached-at') || '0', 10);
+    const cachedAt = parseInt(cached.headers.get('x-mullion-cached-at') || '0', 10);
     const age = Date.now() - cachedAt;
     if (age >= META_TTL_MS) {
       event.waitUntil(revalidate());
@@ -259,7 +259,7 @@ async function handleMetaRequest(event, request) {
  *   UPLOADS_TTL_MS (throttles image re-downloads on hot pages).
  * - Cache miss: fetch synchronously, cache if eligible, respond.
  *
- * Mirrors handleMetaRequest (same `x-wpsg-cached-at` timestamp mechanism) but
+ * Mirrors handleMetaRequest (same `x-mullion-cached-at` timestamp mechanism) but
  * uses UPLOADS_CACHE and preserves the original runtime branch's caching guards
  * (200 only, honour `no-store`, skip responses over 5 MB) since uploads are
  * arbitrary binary rather than the trusted small JSON the metadata cache holds.
@@ -282,7 +282,7 @@ async function handleUploadsRequest(event, request) {
   };
 
   if (cached) {
-    const cachedAt = parseInt(cached.headers.get('x-wpsg-cached-at') || '0', 10);
+    const cachedAt = parseInt(cached.headers.get('x-mullion-cached-at') || '0', 10);
     const age = Date.now() - cachedAt;
     if (age >= UPLOADS_TTL_MS) {
       event.waitUntil(revalidate());
@@ -332,14 +332,14 @@ async function evictOldestUploadEntries(cache) {
 }
 
 /**
- * Clones a Response and adds an `x-wpsg-cached-at` timestamp header.
+ * Clones a Response and adds an `x-mullion-cached-at` timestamp header.
  * Reading the body via arrayBuffer is necessary to reconstruct the Response
  * with modified headers (Headers are immutable on live Response objects).
  */
 async function stampResponse(response) {
   const body = await response.arrayBuffer();
   const headers = new Headers(response.headers);
-  headers.set('x-wpsg-cached-at', Date.now().toString());
+  headers.set('x-mullion-cached-at', Date.now().toString());
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,

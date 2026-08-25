@@ -28,7 +28,7 @@ export function SortableListRow({
   item, getInsertionStyle, moveByKeyboard, openLightbox, openEdit, handleDelete,
   usageSummaryLoading, usageSummary, apiClient, dragDisabled,
 }: SharedSortableProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
   const onHandleKeyDown: KeyboardEventHandler<HTMLButtonElement> = (event) => {
     listeners?.onKeyDown?.(event);

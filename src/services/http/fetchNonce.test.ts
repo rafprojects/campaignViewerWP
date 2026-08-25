@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetchNonceFrom } from './fetchNonce';
 
-const URL = 'https://example.test/wp-json/wp-super-gallery/v1/nonce';
+const URL = 'https://example.test/wp-json/mullion-gallery/v1/nonce';
 
 describe('fetchNonceFrom', () => {
   beforeEach(() => {

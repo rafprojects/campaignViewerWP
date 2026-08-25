@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 type CampaignSummary = {
   id: string;
@@ -20,7 +20,7 @@ export function AdminCampaignArchiveModal({
   onClose,
   onConfirm,
 }: AdminCampaignArchiveModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <ConfirmModal
       opened={opened}
@@ -35,4 +35,4 @@ export function AdminCampaignArchiveModal({
   );
 }
 
-setWpsgDebugDisplayName(AdminCampaignArchiveModal, 'AdminCampaignArchiveModal');
+setMullionDebugDisplayName(AdminCampaignArchiveModal, 'AdminCampaignArchiveModal');

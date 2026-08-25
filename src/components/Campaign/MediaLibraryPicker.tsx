@@ -3,7 +3,7 @@ import { IconPhoto } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaLibraryPickerProps {
   libraryMedia: MediaItem[];
@@ -24,7 +24,7 @@ export function MediaLibraryPicker({
   onAddFromLibrary,
   isAlreadyAdded,
 }: MediaLibraryPickerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Card withBorder>
       <Stack gap="sm">
@@ -111,4 +111,4 @@ export function MediaLibraryPicker({
   );
 }
 
-setWpsgDebugDisplayName(MediaLibraryPicker, 'MediaLibraryPicker');
+setMullionDebugDisplayName(MediaLibraryPicker, 'MediaLibraryPicker');

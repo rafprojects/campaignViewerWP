@@ -37,7 +37,7 @@ import {
   IconTrash,
 } from '@tabler/icons-react';
 import type { LayoutSlot, LayoutTemplate, MediaItem } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export function MediaPickerSidebar({
   onClearMedia,
   onAutoAssign,
 }: MediaPickerSidebarProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
@@ -162,8 +162,8 @@ export function MediaPickerSidebar({
   // Handle drag start: store mediaId + metadata in dataTransfer
   const handleDragStart = useCallback(
     (e: React.DragEvent<HTMLButtonElement>, mediaItem: MediaItem) => {
-      e.dataTransfer.setData('application/x-wpsg-media-id', mediaItem.id);
-      e.dataTransfer.setData('application/x-wpsg-media-meta', JSON.stringify({
+      e.dataTransfer.setData('application/x-mullion-media-id', mediaItem.id);
+      e.dataTransfer.setData('application/x-mullion-media-meta', JSON.stringify({
         attachmentId: mediaItem.attachmentId,
         url: mediaItem.url,
       }));
@@ -439,4 +439,4 @@ export function MediaPickerSidebar({
   );
 }
 
-setWpsgDebugDisplayName(MediaPickerSidebar, 'LayoutBuilder:MediaPickerSidebar');
+setMullionDebugDisplayName(MediaPickerSidebar, 'LayoutBuilder:MediaPickerSidebar');

@@ -18,7 +18,7 @@ export interface AssetDeleteResult {
 }
 
 /** Sentinel error code returned by DELETE when the asset is still in use. */
-export const ASSET_IN_USE_CODE = 'wpsg_asset_in_use';
+export const ASSET_IN_USE_CODE = 'mullion_asset_in_use';
 
 /**
  * P52-B — standalone CRUD helpers for the global asset library.
@@ -31,7 +31,7 @@ export class AssetsApi {
 
   list(): Promise<AssetLibraryItem[]> {
     return this.transport.get<AssetLibraryItem[]>(
-      '/wp-json/wp-super-gallery/v1/admin/asset-library',
+      '/wp-json/mullion-gallery/v1/admin/asset-library',
     );
   }
 
@@ -42,7 +42,7 @@ export class AssetsApi {
     if (opts.isUniversal !== undefined) fd.append('is_universal', String(Number(opts.isUniversal)));
     if (opts.tags?.length) fd.append('tags', JSON.stringify(opts.tags));
     return this.transport.postForm<AssetLibraryItem>(
-      '/wp-json/wp-super-gallery/v1/admin/asset-library',
+      '/wp-json/mullion-gallery/v1/admin/asset-library',
       fd,
     );
   }
@@ -52,14 +52,14 @@ export class AssetsApi {
     patch: AssetUpdatePatch,
   ): Promise<{ id: string; isUniversal?: boolean; tags?: string[] }> {
     return this.transport.post<{ id: string; isUniversal?: boolean; tags?: string[] }>(
-      `/wp-json/wp-super-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`,
+      `/wp-json/mullion-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`,
       patch,
     );
   }
 
   delete(id: string, force = false): Promise<AssetDeleteResult> {
     // Encode the id (matches layoutTemplatesApi) so an odd id can't alter the path.
-    const base = `/wp-json/wp-super-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`;
+    const base = `/wp-json/mullion-gallery/v1/admin/asset-library/${encodeURIComponent(id)}`;
     return this.transport.delete<AssetDeleteResult>(force ? `${base}?force=true` : base);
   }
 }

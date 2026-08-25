@@ -17,7 +17,7 @@ export interface FontLibraryEntry {
   isUniversal?: boolean;
 }
 
-const STYLE_ID = 'wpsg-custom-fonts';
+const STYLE_ID = 'mullion-custom-fonts';
 
 function escapeCssString(value: string): string {
   return value

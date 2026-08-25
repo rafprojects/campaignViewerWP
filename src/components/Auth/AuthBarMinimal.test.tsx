@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
-import { AuthBarMinimal, type SpaceSwitcherSpace } from '@wp-super-gallery/shared-ui';
+import { AuthBarMinimal, type SpaceSwitcherSpace } from '@mullion/shared-ui';
 
 type Win = typeof window & { [key: string]: unknown };
 
@@ -10,11 +10,11 @@ const SPACE_A: SpaceSwitcherSpace = { instanceId: 'space-a', name: 'Hero Gallery
 const SPACE_B: SpaceSwitcherSpace = { instanceId: 'space-b', name: 'Products' };
 
 function setOpener(instanceId: string, fn: (...args: unknown[]) => void) {
-    (window as Win)[`__wpsgOpen_${instanceId}`] = fn;
+    (window as Win)[`__mullionOpen_${instanceId}`] = fn;
 }
 
 afterEach(() => {
-    delete (window as Win)['__wpsgOpen_space-b'];
+    delete (window as Win)['__mullionOpen_space-b'];
 });
 
 const baseProps = {

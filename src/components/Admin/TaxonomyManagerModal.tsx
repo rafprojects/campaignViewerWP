@@ -22,7 +22,7 @@ import {
   useCampaignTags,
   useMediaTags,
 } from '@/services/adminQuery';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface TaxonomyManagerModalProps {
   opened: boolean;
@@ -43,7 +43,7 @@ interface CategoryRowProps {
 }
 
 function CategoryRow({ cat, depth, parentName, apiClient, onNotify, onMutate }: CategoryRowProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(cat.name);
   const [saving, setSaving] = useState(false);
@@ -128,7 +128,7 @@ interface TagRowProps {
 }
 
 function TagRow({ tag, onDelete, deleting }: TagRowProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Group gap="xs" justify="space-between">
       <Group gap="xs">
@@ -150,7 +150,7 @@ interface AddTermFormProps {
 }
 
 function AddTermForm({ placeholder, onAdd }: AddTermFormProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -187,7 +187,7 @@ function AddTermForm({ placeholder, onAdd }: AddTermFormProps) {
 // ── Main Modal ────────────────────────────────────────────────────────────────
 
 export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: TaxonomyManagerModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const queryClient = useQueryClient();
   const { campaignCategories, mutateCampaignCategories } = useCampaignCategories(apiClient, opened);
   const { campaignTags, mutateCampaignTags } = useCampaignTags(apiClient, opened);
@@ -272,7 +272,7 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
       onClose={onClose}
       title={t('admin_tax_title', 'Manage Taxonomy')}
       size="sm"
-      {...getWpsgDebugProps('TaxonomyManagerModal')}
+      {...getMullionDebugProps('TaxonomyManagerModal')}
     >
       <Tabs defaultValue="categories">
         <Tabs.List>
@@ -360,4 +360,4 @@ export function TaxonomyManagerModal({ opened, apiClient, onClose, onNotify }: T
   );
 }
 
-setWpsgDebugDisplayName(TaxonomyManagerModal, 'TaxonomyManagerModal');
+setMullionDebugDisplayName(TaxonomyManagerModal, 'TaxonomyManagerModal');

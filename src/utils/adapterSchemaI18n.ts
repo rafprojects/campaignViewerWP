@@ -21,7 +21,7 @@
 import i18n from '@/i18n';
 import type { AdapterSettingGroup, AdapterSettingFieldDefinition } from '@/components/Galleries/Adapters/GalleryAdapter';
 
-const NS = { ns: 'wpsg' } as const;
+const NS = { ns: 'mullion' } as const;
 
 function fieldBaseKey(group: AdapterSettingGroup, field: AdapterSettingFieldDefinition): string {
   return `set_sg_${group}_${String(field.key)}`;

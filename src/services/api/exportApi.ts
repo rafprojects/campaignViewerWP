@@ -18,7 +18,7 @@ export class ExportApi {
   /** Enqueue a background binary ZIP export for a campaign. Returns the job ID. */
   startCampaignBinaryExport(campaignId: string): Promise<{ jobId: string; status: ExportJobStatus }> {
     return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/export/binary`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/export/binary`,
       {},
     );
   }
@@ -36,7 +36,7 @@ export class ExportApi {
     if (params.severity)   body['severity']    = params.severity;
     if (params.space)      body['space']       = Number(params.space);
     return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
-      '/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary',
+      '/wp-json/mullion-gallery/v1/admin/audit-log/export/binary',
       body,
     );
   }
@@ -44,7 +44,7 @@ export class ExportApi {
   /** Enqueue a background multi-campaign ZIP export. Returns a single job ID. */
   startBulkBinaryExport(ids: string[]): Promise<{ jobId: string; status: ExportJobStatus }> {
     return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
-      '/wp-json/wp-super-gallery/v1/campaigns/batch/export/binary',
+      '/wp-json/mullion-gallery/v1/campaigns/batch/export/binary',
       { ids: ids.map(Number) },
     );
   }
@@ -58,7 +58,7 @@ export class ExportApi {
     if (params.mimeType && params.mimeType !== 'all') body['mime_type'] = params.mimeType;
     if (params.search) body['search'] = params.search;
     return this.transport.post<{ jobId: string; status: ExportJobStatus }>(
-      '/wp-json/wp-super-gallery/v1/admin/media/export/binary',
+      '/wp-json/mullion-gallery/v1/admin/media/export/binary',
       body,
     );
   }
@@ -70,7 +70,7 @@ export class ExportApi {
   async importMediaLibraryBinary(
     file: File,
   ): Promise<{ imported: Array<{ id: number; url: string }>; skipped: string[] }> {
-    const url = `${this.transport.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/import/binary`;
+    const url = `${this.transport.getBaseUrl()}/wp-json/mullion-gallery/v1/media/import/binary`;
     const headers = await this.transport.getAuthHeaders();
     const body = new FormData();
     body.append('file', file);
@@ -85,14 +85,14 @@ export class ExportApi {
   /** Poll the status of an export job. */
   getExportJob(jobId: string): Promise<ExportJob> {
     return this.transport.get<ExportJob>(
-      `/wp-json/wp-super-gallery/v1/export-jobs/${encodeURIComponent(jobId)}`,
+      `/wp-json/mullion-gallery/v1/export-jobs/${encodeURIComponent(jobId)}`,
     );
   }
 
   /** Cancel and delete an export job. */
   deleteExportJob(jobId: string): Promise<{ deleted: boolean }> {
     return this.transport.delete<{ deleted: boolean }>(
-      `/wp-json/wp-super-gallery/v1/export-jobs/${encodeURIComponent(jobId)}`,
+      `/wp-json/mullion-gallery/v1/export-jobs/${encodeURIComponent(jobId)}`,
     );
   }
 
@@ -101,7 +101,7 @@ export class ExportApi {
    * Uses fetch() directly (with auth headers) to support authenticated routes.
    */
   async downloadExportJob(jobId: string, filename = 'campaign-export.zip'): Promise<void> {
-    const url = `${this.transport.getBaseUrl()}/wp-json/wp-super-gallery/v1/export-jobs/${encodeURIComponent(jobId)}/download`;
+    const url = `${this.transport.getBaseUrl()}/wp-json/mullion-gallery/v1/export-jobs/${encodeURIComponent(jobId)}/download`;
     const headers = await this.transport.getAuthHeaders();
     const res = await fetch(url, { headers: { ...headers, Accept: 'application/zip' } });
     if (!res.ok) {

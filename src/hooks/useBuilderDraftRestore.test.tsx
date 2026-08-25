@@ -37,7 +37,7 @@ function storeDraft(templateId: string, payload: Partial<LayoutDraftPayload>) {
     schemaVersion: 1,
     template: makeTemplate({ id: templateId }),
   };
-  localStorage.setItem(`wpsg_layout_draft_${templateId}`, JSON.stringify({ ...defaultPayload, ...payload }));
+  localStorage.setItem(`mullion_layout_draft_${templateId}`, JSON.stringify({ ...defaultPayload, ...payload }));
 }
 
 function makeProps(overrides = {}) {
@@ -100,14 +100,14 @@ describe('useBuilderDraftRestore — early return guards', () => {
 
 describe('useBuilderDraftRestore — old format draft', () => {
   it('silently removes an old-format draft (no savedAt/template)', () => {
-    localStorage.setItem('wpsg_layout_draft_tmpl-1', JSON.stringify({ id: 'tmpl-1', name: 'old' }));
+    localStorage.setItem('mullion_layout_draft_tmpl-1', JSON.stringify({ id: 'tmpl-1', name: 'old' }));
     renderHook(() => useBuilderDraftRestore(makeProps()));
     expect(openConfirmModalMock).not.toHaveBeenCalled();
-    expect(localStorage.getItem('wpsg_layout_draft_tmpl-1')).toBeNull();
+    expect(localStorage.getItem('mullion_layout_draft_tmpl-1')).toBeNull();
   });
 
   it('ignores corrupt JSON draft', () => {
-    localStorage.setItem('wpsg_layout_draft_tmpl-1', '{invalid json}');
+    localStorage.setItem('mullion_layout_draft_tmpl-1', '{invalid json}');
     renderHook(() => useBuilderDraftRestore(makeProps()));
     expect(openConfirmModalMock).not.toHaveBeenCalled();
   });
@@ -119,7 +119,7 @@ describe('useBuilderDraftRestore — stale draft (savedAt <= serverSavedAt)', ()
     storeDraft('tmpl-1', { savedAt: 1000 }); // savedAt (1000ms) <= serverSavedAt (5000ms)
     renderHook(() => useBuilderDraftRestore({ ...makeProps(), initialTemplate: template }));
     expect(openConfirmModalMock).not.toHaveBeenCalled();
-    expect(localStorage.getItem('wpsg_layout_draft_tmpl-1')).toBeNull();
+    expect(localStorage.getItem('mullion_layout_draft_tmpl-1')).toBeNull();
   });
 });
 

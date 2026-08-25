@@ -8,7 +8,7 @@ import { Modal, SimpleGrid, Card, Text, Group, Badge, Box } from '@mantine/core'
 import { useTranslation } from 'react-i18next';
 import { IconLayoutDashboard } from '@tabler/icons-react';
 import { LAYOUT_PRESETS, type LayoutPreset } from '@/data/layoutPresets';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -63,7 +63,7 @@ function PresetPreview({ preset }: { preset: LayoutPreset }) {
   );
 }
 
-setWpsgDebugDisplayName(PresetPreview, 'LayoutBuilder:PresetGalleryModal:PresetPreview');
+setMullionDebugDisplayName(PresetPreview, 'LayoutBuilder:PresetGalleryModal:PresetPreview');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ export function PresetGalleryModal({
   onClose,
   onSelect,
 }: PresetGalleryModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Modal
       opened={opened}
@@ -136,4 +136,4 @@ export function PresetGalleryModal({
   );
 }
 
-setWpsgDebugDisplayName(PresetGalleryModal, 'LayoutBuilder:PresetGalleryModal');
+setMullionDebugDisplayName(PresetGalleryModal, 'LayoutBuilder:PresetGalleryModal');

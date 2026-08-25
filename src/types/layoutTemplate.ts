@@ -407,7 +407,7 @@ export interface PersistentGuide {
 
 /**
  * A reusable layout template that defines the visual arrangement of media slots
- * on a fixed-ratio canvas. Stored globally in `wpsg_layout_templates` WP option.
+ * on a fixed-ratio canvas. Stored globally in `mullion_layout_templates` WP option.
  */
 export interface LayoutTemplate {
   id: string;
@@ -530,7 +530,7 @@ export interface LayoutGroup {
 /**
  * Per-campaign binding that references a global template and stores
  * per-slot overrides (e.g. fixed media assignments, focal point tweaks).
- * Stored as post_meta `_wpsg_layout_binding`.
+ * Stored as post_meta `_mullion_layout_binding`.
  */
 export interface CampaignLayoutBinding {
   templateId: string;

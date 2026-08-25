@@ -44,28 +44,28 @@ describe('generateCssVariables', () => {
     expect(result).toContain('.my-root {');
   });
 
-  it('includes --wpsg-color-background variable', () => {
+  it('includes --mullion-color-background variable', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-color-background:');
+    expect(result).toContain('--mullion-color-background:');
     expect(result).toContain('#0f172a');
   });
 
-  it('includes --wpsg-color-text variable', () => {
+  it('includes --mullion-color-text variable', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-color-text:');
+    expect(result).toContain('--mullion-color-text:');
     expect(result).toContain('#ffffff');
   });
 
-  it('includes --wpsg-color-primary variable', () => {
+  it('includes --mullion-color-primary variable', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
     // primary is rc.primary[5], which is a generated shade
-    expect(result).toContain('--wpsg-color-primary:');
+    expect(result).toContain('--mullion-color-primary:');
   });
 
   it('includes all 10 primary shade variables', () => {
@@ -73,7 +73,7 @@ describe('generateCssVariables', () => {
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
     for (let i = 0; i < 10; i++) {
-      expect(result).toContain(`--wpsg-color-primary-${i}:`);
+      expect(result).toContain(`--mullion-color-primary-${i}:`);
     }
   });
 
@@ -81,51 +81,51 @@ describe('generateCssVariables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-spacing-xs:');
-    expect(result).toContain('--wpsg-spacing-md:');
-    expect(result).toContain('--wpsg-spacing-xl:');
+    expect(result).toContain('--mullion-spacing-xs:');
+    expect(result).toContain('--mullion-spacing-md:');
+    expect(result).toContain('--mullion-spacing-xl:');
   });
 
   it('includes radius variables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-radius-sm:');
-    expect(result).toContain('--wpsg-radius-md:');
+    expect(result).toContain('--mullion-radius-sm:');
+    expect(result).toContain('--mullion-radius-md:');
   });
 
   it('includes shadow variables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-shadow-xs:');
-    expect(result).toContain('--wpsg-shadow-lg:');
+    expect(result).toContain('--mullion-shadow-xs:');
+    expect(result).toContain('--mullion-shadow-lg:');
   });
 
   it('includes typography variables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-font-family:');
-    expect(result).toContain('--wpsg-font-family-mono:');
+    expect(result).toContain('--mullion-font-family:');
+    expect(result).toContain('--mullion-font-family-mono:');
   });
 
   it('includes color-scheme meta variable', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-color-scheme: dark');
+    expect(result).toContain('--mullion-color-scheme: dark');
   });
 
   it('includes semantic color variables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-color-success:');
-    expect(result).toContain('--wpsg-color-warning:');
-    expect(result).toContain('--wpsg-color-error:');
-    expect(result).toContain('--wpsg-color-info:');
-    expect(result).toContain('--wpsg-color-accent:');
+    expect(result).toContain('--mullion-color-success:');
+    expect(result).toContain('--mullion-color-warning:');
+    expect(result).toContain('--mullion-color-error:');
+    expect(result).toContain('--mullion-color-info:');
+    expect(result).toContain('--mullion-color-accent:');
   });
 
   it('falls back to "none" / "inherit" / "monospace" when shadow/typography values are undefined (lines 89-97)', () => {
@@ -136,8 +136,8 @@ describe('generateCssVariables', () => {
     defAny.shadows = { xs: null, sm: null, md: null, lg: null, xl: null };
     defAny.typography = { fontFamily: null, fontFamilyMono: null };
     const result = generateCssVariables(rc, def);
-    expect(result).toContain('--wpsg-shadow-xs: none');
-    expect(result).toContain('--wpsg-font-family: inherit');
-    expect(result).toContain('--wpsg-font-family-mono: monospace');
+    expect(result).toContain('--mullion-shadow-xs: none');
+    expect(result).toContain('--mullion-font-family: inherit');
+    expect(result).toContain('--mullion-font-family-mono: monospace');
   });
 });

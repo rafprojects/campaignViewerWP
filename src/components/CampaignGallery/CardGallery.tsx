@@ -29,15 +29,15 @@ import { InContextEditor } from '@/components/Common/InContextEditor';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
 import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
 import { notifications } from '@mantine/notifications';
-import { loadGoogleFontsFromOverrides } from '@wp-super-gallery/shared-utils';
-import { buildGradientCss } from '@wp-super-gallery/shared-utils';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
-import { toCssOrNumber, type CssWidthUnit } from '@wp-super-gallery/shared-utils';
+import { loadGoogleFontsFromOverrides } from '@mullion/shared-utils';
+import { buildGradientCss } from '@mullion/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
+import { toCssOrNumber, type CssWidthUnit } from '@mullion/shared-utils';
 import { resolveFixedCardWidth, resolveListingColumns } from '@/utils/gridLayout';
 import { resolveCardBreakpointSettings } from '@/utils/cardConfig';
 import { resolveListingAdapterId } from '@/utils/resolveListingAdapterId';
 import { adapterOwnsPagination, resolveAdapter } from '@/components/Galleries/Adapters/adapterRegistry';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import styles from './CardGallery.module.scss';
 
 const CampaignViewer = lazy(() => import('@/components/CardViewer/CampaignViewer').then((m) => ({ default: m.CampaignViewer })));
@@ -69,7 +69,7 @@ export function CardGallery({
   apiClient,
   spaceId,
 }: CardGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // ── Modal state ───────────────────────────────────────────────────────────
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   // Keep a ref to the last campaign so CampaignViewer stays mounted during close animation.
@@ -327,8 +327,8 @@ export function CardGallery({
             />
           </Stack>
         </InContextEditor>
-        <Container {...getWpsgDebugProps('CardGallery', 'header-shell')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
-          <Stack {...getWpsgDebugProps('CardGallery', 'header-stack')} gap="lg">
+        <Container {...getMullionDebugProps('CardGallery', 'header-shell')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py={{ base: 'sm', md: 'md' }} style={containerPaddingStyle}>
+          <Stack {...getMullionDebugProps('CardGallery', 'header-stack')} gap="lg">
             {/* Title and subtitle */}
             {(galleryBehaviorSettings.showGalleryTitle || galleryBehaviorSettings.showGallerySubtitle || (isAdmin && galleryBehaviorSettings.showAccessMode)) && (
               <Group justify="space-between" align="flex-start" wrap="wrap" gap="md">
@@ -400,13 +400,13 @@ export function CardGallery({
       </Box>
 
       {/* Gallery main area */}
-      <Container {...getWpsgDebugProps('CardGallery')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
+      <Container {...getMullionDebugProps('CardGallery')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} component="main" py={{ base: 'lg', md: 'xl' }} style={containerPaddingStyle}>
         {adapterPaginated ? (
           // Adapter-owned pagination (e.g. classic carousel): host hides all
           // display-mode controls; the adapter manages its own slide state.
           <>
             <Box
-              {...getWpsgDebugProps('CardGallery', 'adapter-shell')}
+              {...getMullionDebugProps('CardGallery', 'adapter-shell')}
               ref={gridContainerRef}
               style={{ position: 'relative', overflow: 'hidden' }}
             >
@@ -451,4 +451,4 @@ export function CardGallery({
   );
 }
 
-setWpsgDebugDisplayName(CardGallery, 'CardGallery');
+setMullionDebugDisplayName(CardGallery, 'CardGallery');

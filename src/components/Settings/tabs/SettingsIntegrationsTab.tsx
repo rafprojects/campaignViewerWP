@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { ApiClient } from '@/services/apiClient';
 import { WebhookSettingsSection } from '../WebhookSettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsIntegrationsTabProps {
   apiClient: ApiClient;
@@ -12,4 +12,4 @@ export const SettingsIntegrationsTab = memo(function SettingsIntegrationsTab({
 }: SettingsIntegrationsTabProps) {
   return <WebhookSettingsSection apiClient={apiClient} />;
 });
-setWpsgDebugDisplayName(SettingsIntegrationsTab, 'SettingsPanel:IntegrationsTab');
+setMullionDebugDisplayName(SettingsIntegrationsTab, 'SettingsPanel:IntegrationsTab');

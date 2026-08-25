@@ -7,8 +7,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useFeatheredMask } from './useFeatheredMask';
 
 const featherMaskMock = vi.hoisted(() => vi.fn());
-vi.mock('@wp-super-gallery/shared-utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@wp-super-gallery/shared-utils')>();
+vi.mock('@mullion/shared-utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@mullion/shared-utils')>();
   return { ...actual, featherMask: featherMaskMock };
 });
 

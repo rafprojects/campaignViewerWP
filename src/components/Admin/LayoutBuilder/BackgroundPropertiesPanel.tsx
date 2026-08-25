@@ -23,11 +23,11 @@ import type {
   RadialShape,
   RadialSize,
 } from '@/types';
-import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@wp-super-gallery/shared-utils';
+import { buildGradientCss, templateToGradientOpts, DEFAULT_GRADIENT_STOPS } from '@mullion/shared-utils';
 import { useBuilderDock } from './BuilderDockContext';
 import { AssetUploader } from './AssetUploader';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Helpers ──────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ function GRow({ label, children }: { label: string; children: React.ReactNode })
     </Group>
   );
 }
-setWpsgDebugDisplayName(GRow, 'LayoutBuilder:GRow');
+setMullionDebugDisplayName(GRow, 'LayoutBuilder:GRow');
 
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -48,7 +48,7 @@ function SectionHeader({ label }: { label: string }) {
     </Box>
   );
 }
-setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SectionHeader');
+setMullionDebugDisplayName(SectionHeader, 'LayoutBuilder:SectionHeader');
 
 const GRADIENT_DIRECTIONS: Array<{ value: GradientDirection; icon: string; label: string }> = [
   { value: 'horizontal', icon: '→', label: 'Horizontal (90°)' },
@@ -67,7 +67,7 @@ const RADIAL_SIZES: Array<{ value: RadialSize; label: string }> = [
 // ── Component ────────────────────────────────────────────────
 
 export function BackgroundPropertiesPanel() {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const {
     builder,
     assetLibrary,
@@ -121,7 +121,7 @@ export function BackgroundPropertiesPanel() {
   );
 }
 
-setWpsgDebugDisplayName(BackgroundPropertiesPanel, 'LayoutBuilder:BackgroundPropertiesPanel');
+setMullionDebugDisplayName(BackgroundPropertiesPanel, 'LayoutBuilder:BackgroundPropertiesPanel');
 
 // ── Background mode controls ─────────────────────────────────
 
@@ -134,7 +134,7 @@ function BackgroundModeControls({
   handleUploadBgImage: (file: File) => void;
   isUploadingBg: boolean;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const mode = builder.template.backgroundMode ?? 'color';
   const [stopCount, setStopCount] = useState<2 | 3>(
     (builder.template.backgroundGradientStops?.length ?? 2) > 2 ? 3 : 2,
@@ -353,4 +353,4 @@ function BackgroundModeControls({
   );
 }
 
-setWpsgDebugDisplayName(BackgroundModeControls, 'LayoutBuilder:BackgroundModeControls');
+setMullionDebugDisplayName(BackgroundModeControls, 'LayoutBuilder:BackgroundModeControls');

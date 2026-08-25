@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import type { ApiClient } from '@/services/apiClient';
 import type { GalleryBehaviorSettings } from '@/types';
 import {
@@ -49,7 +49,7 @@ export function useInContextSave(
         pendingRef.current = {};
         try {
           if (sid != null) {
-            const spaceResponse = await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${sid}/settings`, batch) as { settings?: unknown };
+            const spaceResponse = await apiClient.put(`/wp-json/mullion-gallery/v1/spaces/${sid}/settings`, batch) as { settings?: unknown };
             // Reflect sanitizer clamping and allowlist drops from the server response
             // back into the cache so the UI stays in sync with persisted state.
             if (spaceResponse?.settings) {
@@ -60,7 +60,7 @@ export function useInContextSave(
             queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
           }
         } catch (err) {
-          console.error('[WPSG] In-context save failed:', err);
+          console.error('[MULLION] In-context save failed:', err);
           onErrorRef.current?.(err);
           // Revert to server state on failure
           try {

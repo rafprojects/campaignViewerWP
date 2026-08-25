@@ -13,8 +13,8 @@ import {
 } from '@mantine/core';
 import { ModalColorInput as ColorInput } from '@/components/Common/ModalColorInput';
 import type { GradientStop, GradientDirection, GradientType, RadialShape, RadialSize } from '@/types';
-import { buildGradientCss, DEFAULT_GRADIENT_STOPS, type GradientOptions } from '@wp-super-gallery/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { buildGradientCss, DEFAULT_GRADIENT_STOPS, type GradientOptions } from '@mullion/shared-utils';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface GradientEditorProps {
   value: GradientOptions;
@@ -182,4 +182,4 @@ export function GradientEditor({ value, onChange }: GradientEditorProps) {
   );
 }
 
-setWpsgDebugDisplayName(GradientEditor, 'GradientEditor');
+setMullionDebugDisplayName(GradientEditor, 'GradientEditor');

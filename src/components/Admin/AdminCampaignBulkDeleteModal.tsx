@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, Checkbox, Group, Modal, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface AdminCampaignBulkDeleteModalProps {
   opened: boolean;
@@ -18,7 +18,7 @@ export function AdminCampaignBulkDeleteModal({
   onClose,
   onConfirm,
 }: AdminCampaignBulkDeleteModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [purgeAnalytics, setPurgeAnalytics] = useState(false);
 
   useEffect(() => {
@@ -60,4 +60,4 @@ export function AdminCampaignBulkDeleteModal({
   );
 }
 
-setWpsgDebugDisplayName(AdminCampaignBulkDeleteModal, 'AdminCampaignBulkDeleteModal');
+setMullionDebugDisplayName(AdminCampaignBulkDeleteModal, 'AdminCampaignBulkDeleteModal');

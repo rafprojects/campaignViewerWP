@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import { GalleryNavigationAccordion } from '../MediaDisplaySettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsGalleryNavigationTabProps {
   settings: SettingsData;
@@ -22,4 +22,4 @@ export const SettingsGalleryNavigationTab = memo(function SettingsGalleryNavigat
     />
   );
 });
-setWpsgDebugDisplayName(SettingsGalleryNavigationTab, 'SettingsPanel:GalleryNavigationTab');
+setMullionDebugDisplayName(SettingsGalleryNavigationTab, 'SettingsPanel:GalleryNavigationTab');

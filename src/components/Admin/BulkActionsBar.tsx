@@ -1,7 +1,7 @@
 import { Button, Group, Text, Paper, ActionIcon, Tooltip } from '@mantine/core';
 import { IconX, IconArchive, IconArchiveOff, IconFileZip, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface BulkActionsBarProps {
   selectedCount: number;
@@ -30,7 +30,7 @@ export function BulkActionsBar({
   onDelete,
   onClearSelection,
 }: BulkActionsBarProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (selectedCount === 0) return null;
 
   return (
@@ -115,4 +115,4 @@ export function BulkActionsBar({
   );
 }
 
-setWpsgDebugDisplayName(BulkActionsBar, 'AdminPanel:BulkActionsBar');
+setMullionDebugDisplayName(BulkActionsBar, 'AdminPanel:BulkActionsBar');

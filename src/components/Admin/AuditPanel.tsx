@@ -6,7 +6,7 @@ import { useAuditEntries, prefetchAllCampaignAudit } from '@/services/adminQuery
 import type { AuditFilters } from '@/services/adminQuery';
 import { useAuditRows } from '@/hooks/useAuditRows';
 import type { useAdminZipTransfers } from '@/hooks/useAdminZipTransfers';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { AuditTab } from './AuditTab';
 
 interface AuditPanelProps {
@@ -83,4 +83,4 @@ export function AuditPanel({ active, apiClient, campaignSelectData, zipTransfers
   );
 }
 
-setWpsgDebugDisplayName(AuditPanel, 'AuditPanel');
+setMullionDebugDisplayName(AuditPanel, 'AuditPanel');

@@ -28,7 +28,7 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
-import { useLatestRef } from '@wp-super-gallery/shared-utils';
+import { useLatestRef } from '@mullion/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
 import {
@@ -45,8 +45,8 @@ import { AutoGridDialog } from './AutoGridDialog';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useRootId } from '@wp-super-gallery/shared-ui';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useRootId } from '@mullion/shared-ui';
 import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
 import { useBroadcastStaleness } from '@/hooks/useBroadcastStaleness';
@@ -103,7 +103,7 @@ export function LayoutBuilderModal({
   listingMode = false,
   spaceId,
 }: LayoutBuilderModalProps) {
-  const { t: tr } = useTranslation('wpsg');
+  const { t: tr } = useTranslation('mullion');
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
   const { colorScheme } = useTheme();
@@ -112,28 +112,28 @@ export function LayoutBuilderModal({
 
   const builderShellVars = useMemo(
     () => ({
-      '--wpsg-builder-surface': shellColors.surface,
-      '--wpsg-builder-surface-2': shellColors.surface2,
-      '--wpsg-builder-surface-3': shellColors.surface3,
-      '--wpsg-builder-background': shellColors.background,
-      '--wpsg-builder-border': shellColors.border,
-      '--wpsg-builder-border-muted': shellColors.borderMuted,
-      '--wpsg-builder-text': shellColors.text,
-      '--wpsg-builder-text-muted': shellColors.textMuted,
-      '--wpsg-builder-text-muted-2': shellColors.textMuted2,
-      '--wpsg-builder-accent': shellColors.accent,
-      '--wpsg-builder-accent-soft': shellColors.accentSoft,
-      '--wpsg-builder-icon-hover': shellColors.iconHover,
-      '--wpsg-builder-shadow': shellColors.shadow,
-      '--wpsg-builder-scrollbar': shellColors.scrollbar,
+      '--mullion-builder-surface': shellColors.surface,
+      '--mullion-builder-surface-2': shellColors.surface2,
+      '--mullion-builder-surface-3': shellColors.surface3,
+      '--mullion-builder-background': shellColors.background,
+      '--mullion-builder-border': shellColors.border,
+      '--mullion-builder-border-muted': shellColors.borderMuted,
+      '--mullion-builder-text': shellColors.text,
+      '--mullion-builder-text-muted': shellColors.textMuted,
+      '--mullion-builder-text-muted-2': shellColors.textMuted2,
+      '--mullion-builder-accent': shellColors.accent,
+      '--mullion-builder-accent-soft': shellColors.accentSoft,
+      '--mullion-builder-icon-hover': shellColors.iconHover,
+      '--mullion-builder-shadow': shellColors.shadow,
+      '--mullion-builder-scrollbar': shellColors.scrollbar,
     }) as CSSProperties,
     [shellColors],
   );
 
   const dockTheme = useMemo(
     () => ({
-      name: `wpsg-builder-shell-${colorScheme}`,
-      className: 'dockview-theme-wpsg',
+      name: `mullion-builder-shell-${colorScheme}`,
+      className: 'dockview-theme-mullion',
     }),
     [colorScheme],
   );
@@ -235,7 +235,7 @@ export function LayoutBuilderModal({
       const t = builder.normalizeZIndices();
 
       // ── DEBUG: Log what we're about to save ──
-      debugGroup('[WPSG] Layout Save — pre-flight');
+      debugGroup('[MULLION] Layout Save — pre-flight');
       debugLog('Slots being sent:', t.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
       debugGroupEnd();
 
@@ -247,7 +247,7 @@ export function LayoutBuilderModal({
       }
 
       // ── DEBUG: Log what came back from the server ──
-      debugGroup('[WPSG] Layout Save — response');
+      debugGroup('[MULLION] Layout Save — response');
       debugLog('Slots returned:', saved.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
       debugGroupEnd();
 
@@ -501,8 +501,8 @@ export function LayoutBuilderModal({
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: 'var(--wpsg-builder-surface)',
-          color: 'var(--wpsg-builder-text)',
+          background: 'var(--mullion-builder-surface)',
+          color: 'var(--mullion-builder-text)',
         }}
       >
         {/* ── Header Bar ── */}
@@ -510,8 +510,8 @@ export function LayoutBuilderModal({
           px="md"
           py="xs"
           style={{
-            borderBottom: '1px solid var(--wpsg-builder-border)',
-            background: 'var(--wpsg-builder-surface)',
+            borderBottom: '1px solid var(--mullion-builder-border)',
+            background: 'var(--mullion-builder-surface)',
             flexShrink: 0,
           }}
         >
@@ -707,4 +707,4 @@ export function LayoutBuilderModal({
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');
+setMullionDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');

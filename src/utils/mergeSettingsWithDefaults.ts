@@ -62,7 +62,7 @@ export function mergeSettingsWithDefaults(
           // assign directly without a cast.
           result.typographyOverrides = parsedTypographyOverrides;
         } else {
-          console.warn('[WPSG] Failed to parse typographyOverrides payload:', incoming);
+          console.warn('[MULLION] Failed to parse typographyOverrides payload:', incoming);
         }
         continue;
       }

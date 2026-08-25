@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Modal, Table, Text, Stack, Badge, Group, Button, ActionIcon, Tooltip, TextInput } from '@mantine/core';
 import { IconEdit, IconCheck, IconX, IconRotateClockwise } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { ACTION_IDS, ACTION_DEFAULTS, type ShortcutActionId, type ShortcutConfigHandle } from '@/hooks/useShortcutConfig';
 
 // ── Key display helpers ───────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ function Keys({ keys }: { keys: string[] }) {
   );
 }
 
-setWpsgDebugDisplayName(Keys, 'AdminPanel:ShortcutKeys');
+setMullionDebugDisplayName(Keys, 'AdminPanel:ShortcutKeys');
 
 interface EditRowProps {
   id: ShortcutActionId;
@@ -74,7 +74,7 @@ interface EditRowProps {
 }
 
 function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [recording, setRecording] = useState(false);
   const [pendingKey, setPendingKey] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -180,7 +180,7 @@ function EditRow({ id, currentKey, defaultKey, config }: EditRowProps) {
   );
 }
 
-setWpsgDebugDisplayName(EditRow, 'AdminPanel:ShortcutEditRow');
+setMullionDebugDisplayName(EditRow, 'AdminPanel:ShortcutEditRow');
 
 // ── Main modal ────────────────────────────────────────────────────────────────
 
@@ -199,7 +199,7 @@ interface KeyboardShortcutsModalProps {
 }
 
 export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShortcutsModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [editMode, setEditMode] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -310,4 +310,4 @@ export function KeyboardShortcutsModal({ opened, onClose, config }: KeyboardShor
   );
 }
 
-setWpsgDebugDisplayName(KeyboardShortcutsModal, 'AdminPanel:KeyboardShortcutsModal');
+setMullionDebugDisplayName(KeyboardShortcutsModal, 'AdminPanel:KeyboardShortcutsModal');

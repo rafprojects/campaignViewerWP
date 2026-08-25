@@ -21,7 +21,7 @@ const UPLOADS_MAX_ENTRIES = 100;
 async function stampResponse(response: Response): Promise<Response> {
   const body = await response.arrayBuffer();
   const headers = new Headers(response.headers);
-  headers.set('x-wpsg-cached-at', Date.now().toString());
+  headers.set('x-mullion-cached-at', Date.now().toString());
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
@@ -78,7 +78,7 @@ async function handleUploadsRequest(
   };
 
   if (cached) {
-    const cachedAt = parseInt(cached.headers.get('x-wpsg-cached-at') || '0', 10);
+    const cachedAt = parseInt(cached.headers.get('x-mullion-cached-at') || '0', 10);
     const age = Date.now() - cachedAt;
     if (age >= UPLOADS_TTL_MS) {
       event.waitUntil(revalidate());
@@ -157,9 +157,9 @@ describe('UPLOADS_PATH_RE', () => {
 
   it('does not match non-upload static assets or API routes', () => {
     expect(match('/wp-content/themes/x/style.css')).toBe(false);
-    expect(match('/wp-content/plugins/wp-super-gallery/font.woff2')).toBe(false);
+    expect(match('/wp-content/plugins/mullion-gallery/font.woff2')).toBe(false);
     expect(match('/fonts/roboto.woff2')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns')).toBe(false);
   });
 });
 
@@ -216,7 +216,7 @@ describe('handleUploadsRequest', () => {
     const stamped = await stampResponse(new Response(body, { status: 200 }));
     // Override the just-written timestamp to simulate a given age.
     const headers = new Headers(stamped.headers);
-    headers.set('x-wpsg-cached-at', String(Date.now() - ageMs));
+    headers.set('x-mullion-cached-at', String(Date.now() - ageMs));
     const buf = await stamped.arrayBuffer();
     await cache.put(new Request(url), new Response(buf, { status: 200, headers }));
   };
@@ -263,7 +263,7 @@ describe('handleUploadsRequest', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     // Now cached (stamped) for next time.
     const cached = cache.store.get(url);
-    expect(cached?.headers.get('x-wpsg-cached-at')).toBeTruthy();
+    expect(cached?.headers.get('x-mullion-cached-at')).toBeTruthy();
   });
 
   it('does not cache a non-200 miss response', async () => {

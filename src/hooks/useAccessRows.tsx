@@ -19,7 +19,7 @@ interface Options {
 const ROLE_ORDER: CampaignAccessLevel[] = ['viewer', 'editor', 'owner'];
 
 export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, onChangeRole }: Options) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return useMemo(() => {
     // P33-D → P60-I: role label/tip localized at render time. These were a
     // module-level const, which can't call t() and so shipped raw English.
@@ -94,7 +94,7 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
         <Table.Tr
           key={`${a.userId}-${a.source}-${a.campaignId || 'company'}`}
           style={{
-            ...(a.source === 'company' ? { backgroundColor: 'color-mix(in srgb, var(--wpsg-color-primary) 5%, transparent)' } : {}),
+            ...(a.source === 'company' ? { backgroundColor: 'color-mix(in srgb, var(--mullion-color-primary) 5%, transparent)' } : {}),
             ...(isExpired ? { opacity: 0.55 } : {}),
           }}
         >

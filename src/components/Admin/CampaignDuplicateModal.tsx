@@ -12,7 +12,7 @@ import {
 import { IconCopy } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { AdminCampaign } from '@/services/adminQuery';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface CampaignDuplicateModalProps {
   /** Source campaign to duplicate; null when modal is closed. */
@@ -47,9 +47,9 @@ function CampaignDuplicateModalOptions({
   onConfirm,
   isSaving,
 }: CampaignDuplicateModalOptionsProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
-    <Stack {...getWpsgDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
+    <Stack {...getMullionDebugProps('CampaignDuplicateModal', 'stack')} gap="md">
       <div>
         <Text size="sm" c="dimmed" mb={4}>
           {t('admin_dup_source_label', 'Source:')}
@@ -97,7 +97,7 @@ function CampaignDuplicateModalOptions({
         )}
       </Stack>
 
-      <Group {...getWpsgDebugProps('CampaignDuplicateModal', 'actions')} justify="flex-end" mt="xs">
+      <Group {...getMullionDebugProps('CampaignDuplicateModal', 'actions')} justify="flex-end" mt="xs">
         <Button variant="subtle" onClick={onClose} disabled={isSaving}>
           {t('admin_cancel', 'Cancel')}
         </Button>
@@ -114,7 +114,7 @@ function CampaignDuplicateModalOptions({
   );
 }
 
-setWpsgDebugDisplayName(CampaignDuplicateModalOptions, 'AdminPanel:CampaignDuplicateModalOptions');
+setMullionDebugDisplayName(CampaignDuplicateModalOptions, 'AdminPanel:CampaignDuplicateModalOptions');
 
 export function CampaignDuplicateModal({
   source,
@@ -122,7 +122,7 @@ export function CampaignDuplicateModal({
   onConfirm,
   onClose,
 }: CampaignDuplicateModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [name, setName] = useState('');
   const [copyMedia, setCopyMedia] = useState(true);
   const [duplicateLayoutTemplate, setDuplicateLayoutTemplate] = useState(false);
@@ -144,14 +144,14 @@ export function CampaignDuplicateModal({
 
   return (
     <Modal
-      {...getWpsgDebugProps('CampaignDuplicateModal')}
+      {...getMullionDebugProps('CampaignDuplicateModal')}
       opened={source !== null}
       onClose={onClose}
-      title={<span {...getWpsgDebugProps('CampaignDuplicateModal', 'title')}>{t('admin_dup_title', 'Duplicate Campaign')}</span>}
+      title={<span {...getMullionDebugProps('CampaignDuplicateModal', 'title')}>{t('admin_dup_title', 'Duplicate Campaign')}</span>}
       size="sm"
       aria-label={t('admin_dup_aria', 'Duplicate campaign')}
-      closeButtonProps={getWpsgDebugProps('CampaignDuplicateModal', 'close')}
-      overlayProps={getWpsgDebugProps('CampaignDuplicateModal', 'overlay')}
+      closeButtonProps={getMullionDebugProps('CampaignDuplicateModal', 'close')}
+      overlayProps={getMullionDebugProps('CampaignDuplicateModal', 'overlay')}
     >
       <CampaignDuplicateModalOptions
         source={source}
@@ -169,4 +169,4 @@ export function CampaignDuplicateModal({
   );
 }
 
-setWpsgDebugDisplayName(CampaignDuplicateModal, 'AdminPanel:CampaignDuplicateModal');
+setMullionDebugDisplayName(CampaignDuplicateModal, 'AdminPanel:CampaignDuplicateModal');

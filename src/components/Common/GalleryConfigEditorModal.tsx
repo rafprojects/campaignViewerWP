@@ -19,7 +19,7 @@ import {
   type GalleryConfig,
   type GalleryConfigBreakpoint,
 } from '@/types';
-import { useLazyAccordion } from '@wp-super-gallery/shared-utils';
+import { useLazyAccordion } from '@mullion/shared-utils';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
 
 import {
@@ -70,7 +70,7 @@ type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactEle
 
 /** Localised breakpoint label (reuses the shared admin_bp_* keys). */
 const tBreakpointLabel = (bp: GalleryConfigBreakpoint): string =>
-  i18n.t(`admin_bp_${bp}`, bp.charAt(0).toUpperCase() + bp.slice(1), { ns: 'wpsg' });
+  i18n.t(`admin_bp_${bp}`, bp.charAt(0).toUpperCase() + bp.slice(1), { ns: 'mullion' });
 
 type GalleryConfigDraftUpdater = (updater: (current: GalleryConfig) => GalleryConfig) => void;
 
@@ -99,7 +99,7 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
 }) => (
   <>
     <Text size="sm" c="dimmed">
-      {i18n.t('set_ad_gce_intro', 'This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.', { ns: 'wpsg' })}
+      {i18n.t('set_ad_gce_intro', 'This shared editor owns the nested gallery selection model. Inline selectors remain available for quick scanning and small edits.', { ns: 'mullion' })}
     </Text>
 
     {contextSummary && (
@@ -109,11 +109,11 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
     )}
 
     <Select
-      label={i18n.t('set_ad_gce_mode_label', 'Gallery Mode', { ns: 'wpsg' })}
-      description={i18n.t('set_ad_gce_mode_desc', 'Choose whether this config resolves a unified gallery or separate image and video galleries.', { ns: 'wpsg' })}
+      label={i18n.t('set_ad_gce_mode_label', 'Gallery Mode', { ns: 'mullion' })}
+      description={i18n.t('set_ad_gce_mode_desc', 'Choose whether this config resolves a unified gallery or separate image and video galleries.', { ns: 'mullion' })}
       data={[
-        { value: 'unified', label: i18n.t('set_ad_gce_mode_unified', 'Unified', { ns: 'wpsg' }) },
-        { value: 'per-type', label: i18n.t('set_ad_gce_mode_pertype', 'Per-Type', { ns: 'wpsg' }) },
+        { value: 'unified', label: i18n.t('set_ad_gce_mode_unified', 'Unified', { ns: 'mullion' }) },
+        { value: 'per-type', label: i18n.t('set_ad_gce_mode_pertype', 'Per-Type', { ns: 'mullion' }) },
       ]}
       value={resolvedDraft.mode ?? 'per-type'}
       onChange={(nextMode) => {
@@ -130,7 +130,7 @@ const GalleryConfigEditorIntro: NamedComponent<GalleryConfigEditorIntroProps> = 
         </Text>
       ) : (
         <Text size="sm" c="dimmed">
-          {i18n.t('set_ad_gce_unified_inherit_note', 'Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice.', { ns: 'wpsg' })}
+          {i18n.t('set_ad_gce_unified_inherit_note', 'Unified mode selection is supported here, but campaign-level unified adapter overrides still inherit the global unified adapter in this slice.', { ns: 'mullion' })}
         </Text>
       )
     ) : null}
@@ -172,7 +172,7 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
   updateDraft,
 }) => (
   <Accordion.Item value="breakpoint-adapters">
-    <Accordion.Control>{i18n.t('set_ad_gce_bp_adapters', 'Breakpoint Adapters', { ns: 'wpsg' })}</Accordion.Control>
+    <Accordion.Control>{i18n.t('set_ad_gce_bp_adapters', 'Breakpoint Adapters', { ns: 'mullion' })}</Accordion.Control>
     <Accordion.Panel>
       <Stack gap="md">
         <Tabs
@@ -194,21 +194,21 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
                 <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
                   <Stack gap="md">
                     <Text size="sm" c="dimmed">
-                      {i18n.t('set_ad_gce_bp_editing_unified', 'Editing breakpoint-specific unified settings for the {{bp}} layout.', { bp: tBreakpointLabel(breakpoint), ns: 'wpsg' })}
+                      {i18n.t('set_ad_gce_bp_editing_unified', 'Editing breakpoint-specific unified settings for the {{bp}} layout.', { bp: tBreakpointLabel(breakpoint), ns: 'mullion' })}
                     </Text>
                     {unifiedAdapterEnabled ? (
                       <Select
-                        label={i18n.t('set_ad_gce_unified_adapter_label', 'Unified Gallery Adapter', { ns: 'wpsg' })}
-                        description={i18n.t('set_ad_gce_unified_adapter_desc', 'Unified gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'wpsg' })}
+                        label={i18n.t('set_ad_gce_unified_adapter_label', 'Unified Gallery Adapter', { ns: 'mullion' })}
+                        description={i18n.t('set_ad_gce_unified_adapter_desc', 'Unified gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'mullion' })}
                         data={getAdapterSelectOptions({ context: 'unified-gallery', breakpoint })}
                         value={getScopeAdapterId(resolvedDraft, breakpoint, 'unified') || null}
                         onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'unified', adapterId ?? ''))}
                         clearable
-                        placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'wpsg' })}
+                        placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'mullion' })}
                       />
                     ) : (
                       <Text size="sm" c="dimmed">
-                        {i18n.t('set_ad_gce_unified_overrides_inherited', 'Unified adapter overrides remain inherited in this slice.', { ns: 'wpsg' })}
+                        {i18n.t('set_ad_gce_unified_overrides_inherited', 'Unified adapter overrides remain inherited in this slice.', { ns: 'mullion' })}
                       </Text>
                     )}
                   </Stack>
@@ -225,22 +225,22 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
               <Tabs.Panel key={breakpoint} value={breakpoint} pt="md">
                 <Stack gap="md">
                   <Select
-                    label={i18n.t('set_ad_gce_image_adapter_label', 'Image Adapter', { ns: 'wpsg' })}
-                    description={i18n.t('set_ad_gce_image_adapter_desc', 'Image gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'wpsg' })}
+                    label={i18n.t('set_ad_gce_image_adapter_label', 'Image Adapter', { ns: 'mullion' })}
+                    description={i18n.t('set_ad_gce_image_adapter_desc', 'Image gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'mullion' })}
                     data={adapterOptions}
                     value={getScopeAdapterId(resolvedDraft, breakpoint, 'image') || null}
                     onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'image', adapterId ?? ''))}
                     clearable
-                    placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'wpsg' })}
+                    placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'mullion' })}
                   />
                   <Select
-                    label={i18n.t('set_ad_gce_video_adapter_label', 'Video Adapter', { ns: 'wpsg' })}
-                    description={i18n.t('set_ad_gce_video_adapter_desc', 'Video gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'wpsg' })}
+                    label={i18n.t('set_ad_gce_video_adapter_label', 'Video Adapter', { ns: 'mullion' })}
+                    description={i18n.t('set_ad_gce_video_adapter_desc', 'Video gallery adapter for the {{bp}} breakpoint.', { bp: tBreakpointLabel(breakpoint), ns: 'mullion' })}
                     data={adapterOptions}
                     value={getScopeAdapterId(resolvedDraft, breakpoint, 'video') || null}
                     onChange={(adapterId) => updateDraft((current) => setScopeAdapterId(current, breakpoint, 'video', adapterId ?? ''))}
                     clearable
-                    placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'wpsg' })}
+                    placeholder={i18n.t('set_ad_gce_default_adapter', 'Default adapter', { ns: 'mullion' })}
                   />
                 </Stack>
               </Tabs.Panel>
@@ -250,8 +250,8 @@ const GalleryConfigBreakpointAdaptersSection: NamedComponent<GalleryConfigBreakp
 
         <Text size="xs" c="dimmed">
           {resolvedDraft.mode === 'unified'
-            ? i18n.t('set_ad_gce_settings_apply_unified', 'Settings below apply to the {{bp}} breakpoint for the unified gallery surface.', { bp: tBreakpointLabel(activeBreakpoint), ns: 'wpsg' })
-            : i18n.t('set_ad_gce_settings_apply_pertype', 'Settings below apply to the {{bp}} breakpoint for the current per-type gallery surface.', { bp: tBreakpointLabel(activeBreakpoint), ns: 'wpsg' })}
+            ? i18n.t('set_ad_gce_settings_apply_unified', 'Settings below apply to the {{bp}} breakpoint for the unified gallery surface.', { bp: tBreakpointLabel(activeBreakpoint), ns: 'mullion' })
+            : i18n.t('set_ad_gce_settings_apply_pertype', 'Settings below apply to the {{bp}} breakpoint for the current per-type gallery surface.', { bp: tBreakpointLabel(activeBreakpoint), ns: 'mullion' })}
         </Text>
       </Stack>
     </Accordion.Panel>
@@ -278,7 +278,7 @@ export function GalleryConfigEditorModal({
   zIndex,
   blurEnabled,
 }: GalleryConfigEditorModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const resolvedSaveLabel = saveLabel ?? t('set_ad_gce_save', 'Apply Gallery Config');
   const resolvedClearLabel = clearLabel ?? t('set_ad_gce_clear', 'Clear Overrides');
   const [draft, setDraft] = useState<GalleryConfig | undefined>(undefined);
@@ -761,7 +761,7 @@ export function GalleryConfigEditorModal({
                       <Accordion.Panel>
                         <Stack gap="sm">
                           {group.note && (
-                            <Text size="xs" c="dimmed">{i18n.t(`set_sg_note_${group.group}`, group.note, { ns: 'wpsg' })}</Text>
+                            <Text size="xs" c="dimmed">{i18n.t(`set_sg_note_${group.group}`, group.note, { ns: 'mullion' })}</Text>
                           )}
                           {group.fields.filter((field) => shouldRenderAdapterSettingField(resolvedDraft, activeBreakpoint, group, field)).map((field) => {
                             const representativeValue = getRepresentativeAdapterSettingValue(resolvedDraft, activeBreakpoint, group, field);

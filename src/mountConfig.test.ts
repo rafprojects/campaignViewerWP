@@ -1,8 +1,8 @@
 /**
  * P69-C: mount-attribute parsing boundary tests.
  *
- * `parseNodeConfig` must give `data-wpsg-config` the same allowlist + type-check
- * treatment `parseProps` gives `data-wpsg-props` — unknown keys stripped,
+ * `parseNodeConfig` must give `data-mullion-config` the same allowlist + type-check
+ * treatment `parseProps` gives `data-mullion-props` — unknown keys stripped,
  * wrong-typed known keys dropped, legitimate PHP-generated payloads unchanged.
  */
 import { describe, it, expect } from 'vitest'
@@ -14,8 +14,8 @@ const nodeWith = (attr: string, value: string): Element => {
   return el
 }
 
-const configNode = (value: string) => nodeWith('data-wpsg-config', value)
-const propsNode = (value: string) => nodeWith('data-wpsg-props', value)
+const configNode = (value: string) => nodeWith('data-mullion-config', value)
+const propsNode = (value: string) => nodeWith('data-mullion-props', value)
 
 describe('parseNodeConfig', () => {
   it('returns {} when the attribute is absent', () => {
@@ -38,7 +38,7 @@ describe('parseNodeConfig', () => {
     const config = {
       spaceId: 12,
       spaceName: 'Marketing',
-      instanceId: 'wpsg-abc',
+      instanceId: 'mullion-abc',
       theme: 'default-dark',
       galleryLayout: 'grid',
       enableLightbox: true,

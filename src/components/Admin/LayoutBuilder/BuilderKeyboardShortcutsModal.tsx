@@ -1,6 +1,6 @@
 import { Modal, Table, Text, Kbd, Group, Stack } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface BuilderKeyboardShortcutsModalProps {
   opened: boolean;
@@ -78,7 +78,7 @@ export function BuilderKeyboardShortcutsModal({
   opened,
   onClose,
 }: BuilderKeyboardShortcutsModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Modal
       opened={opened}
@@ -127,4 +127,4 @@ export function BuilderKeyboardShortcutsModal({
   );
 }
 
-setWpsgDebugDisplayName(BuilderKeyboardShortcutsModal, 'LayoutBuilder:BuilderKeyboardShortcutsModal');
+setMullionDebugDisplayName(BuilderKeyboardShortcutsModal, 'LayoutBuilder:BuilderKeyboardShortcutsModal');

@@ -1,8 +1,8 @@
 import { Button, Group, Modal, Stack, TextInput, Textarea } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
-import { useDirtyGuard } from '@wp-super-gallery/shared-utils';
+import { useDirtyGuard } from '@mullion/shared-utils';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaEditModalProps {
   opened: boolean;
@@ -37,9 +37,9 @@ function MediaEditForm({
   onClose,
   onSave,
 }: MediaEditFormProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
-    <Stack {...getWpsgDebugProps('MediaEditModal', 'stack')} gap="md">
+    <Stack {...getMullionDebugProps('MediaEditModal', 'stack')} gap="md">
       <TextInput
         label={t('admin_media_edit_title_label', 'Title')}
         placeholder={t('admin_media_edit_title_ph', 'Enter a title (optional)')}
@@ -64,7 +64,7 @@ function MediaEditForm({
         onChange={(e) => onEditingThumbnailChange(e.currentTarget.value)}
         description={t('admin_media_edit_thumb_desc', 'Custom preview image URL (optional)')}
       />
-      <Group {...getWpsgDebugProps('MediaEditModal', 'actions')} justify="flex-end" wrap="wrap" gap="sm">
+      <Group {...getMullionDebugProps('MediaEditModal', 'actions')} justify="flex-end" wrap="wrap" gap="sm">
         <Button variant="default" onClick={onClose}>{t('admin_cancel', 'Cancel')}</Button>
         <Button onClick={onSave}>{t('admin_save', 'Save')}</Button>
       </Group>
@@ -72,7 +72,7 @@ function MediaEditForm({
   );
 }
 
-setWpsgDebugDisplayName(MediaEditForm, 'AdminPanel:MediaEditForm');
+setMullionDebugDisplayName(MediaEditForm, 'AdminPanel:MediaEditForm');
 
 export function MediaEditModal({
   opened,
@@ -85,7 +85,7 @@ export function MediaEditModal({
   onEditingThumbnailChange,
   onSave,
 }: MediaEditModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { confirmOpen, guardedClose, confirmDiscard, cancelDiscard } = useDirtyGuard({
     current: { editingTitle, editingCaption, editingThumbnail },
     isOpen: opened,
@@ -95,13 +95,13 @@ export function MediaEditModal({
   return (
     <>
       <Modal
-        {...getWpsgDebugProps('MediaEditModal')}
+        {...getMullionDebugProps('MediaEditModal')}
         opened={opened}
         onClose={guardedClose}
-        title={<span {...getWpsgDebugProps('MediaEditModal', 'title')}>{t('admin_media_edit_modal_title', 'Edit Media')}</span>}
+        title={<span {...getMullionDebugProps('MediaEditModal', 'title')}>{t('admin_media_edit_modal_title', 'Edit Media')}</span>}
         padding="md"
-        closeButtonProps={getWpsgDebugProps('MediaEditModal', 'close')}
-        overlayProps={getWpsgDebugProps('MediaEditModal', 'overlay')}
+        closeButtonProps={getMullionDebugProps('MediaEditModal', 'close')}
+        overlayProps={getMullionDebugProps('MediaEditModal', 'overlay')}
       >
         <MediaEditForm
           editingTitle={editingTitle}
@@ -128,4 +128,4 @@ export function MediaEditModal({
   );
 }
 
-setWpsgDebugDisplayName(MediaEditModal, 'AdminPanel:MediaEditModal');
+setMullionDebugDisplayName(MediaEditModal, 'AdminPanel:MediaEditModal');

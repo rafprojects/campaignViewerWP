@@ -15,7 +15,7 @@ import { IconAlertCircle, IconCheck, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { useAccessRequests } from '@/services/adminQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface PendingRequestsPanelProps {
   campaignId: string;
@@ -29,7 +29,7 @@ function formatDate(iso: string): string {
 }
 
 export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: PendingRequestsPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const { data: requests, isLoading, refetch } = useAccessRequests(apiClient, campaignId);
@@ -209,4 +209,4 @@ export function PendingRequestsPanel({ campaignId, apiClient, onMutate }: Pendin
   );
 }
 
-setWpsgDebugDisplayName(PendingRequestsPanel, 'AdminPanel:PendingRequestsPanel');
+setMullionDebugDisplayName(PendingRequestsPanel, 'AdminPanel:PendingRequestsPanel');

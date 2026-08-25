@@ -1,0 +1,1833 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Mullion_DB {
+    const DB_VERSION = '17';
+
+    /** P67-I: attachments stamped per query in the _mullion_filesize backfill. */
+    const FILESIZE_BACKFILL_BATCH = 200;
+
+    /**
+     * P67-I: batches stamped per run before the rest is handed to WP-Cron.
+     * 200 × 5 = 1000 attachments per request: enough to finish a normal library in
+     * the upgrade itself, small enough that a huge one cannot exhaust the request.
+     */
+    const FILESIZE_BACKFILL_MAX_BATCHES = 5;
+
+    /** P67-I: cron hook that resumes the backfill; see mullion-cron-hooks.php. */
+    const FILESIZE_BACKFILL_HOOK = 'mullion_filesize_backfill';
+
+    /** @var array<int,object|null> Request-level get_space() cache; busted by write methods. */
+    private static array $space_cache = [];
+
+    public static function maybe_upgrade() {
+        $current = get_option('mullion_db_version', '0');
+        if (version_compare($current, self::DB_VERSION, '>=')) {
+            return;
+        }
+
+        self::add_indexes();
+        self::maybe_create_analytics_table();
+        self::maybe_create_media_refs_table();
+        self::maybe_create_access_requests_table();
+        self::maybe_create_audit_log_table();
+        self::maybe_upgrade_audit_log_v9();
+        self::maybe_rename_overlays_to_assets_v14();
+        self::maybe_create_assets_table();
+        self::maybe_upgrade_assets_is_universal();
+        self::maybe_upgrade_assets_tags_v14();
+        self::maybe_create_spaces_table();
+        self::maybe_upgrade_v11_space_columns();
+        self::maybe_seed_default_space();
+        self::maybe_backfill_spaces();
+        self::maybe_create_space_library_assoc_table();
+        self::maybe_migrate_assoc_overlay_type_v14();
+        self::maybe_backfill_space_library_assoc();
+        self::maybe_convert_campaign_tables_to_innodb_v15();
+        // P66-C: stamp historical space_id on the three scoped tables whose
+        // writers never set it (analytics/media_refs/access_requests).
+        self::maybe_backfill_scoped_space_ids();
+        // P66-B: seed archived_at for already-archived campaigns so the
+        // maintenance auto-purge keys off the real archival date.
+        self::maybe_backfill_archived_at();
+        // P67-I: stamp _mullion_filesize on existing attachments so the media-library
+        // "size" sort orders them correctly (new uploads get it at write time).
+        self::maybe_backfill_filesize_meta();
+        update_option('mullion_db_version', self::DB_VERSION);
+    }
+
+    /**
+     * P67-I: one-time, option-guarded backfill of the numeric _mullion_filesize meta
+     * for existing image/video attachments, so the media-library size sort has a
+     * real value to order by. New uploads stamp it at write time (the media
+     * controller's own path and the add_attachment hook), so this only seeds
+     * history.
+     *
+     * Entry point from maybe_upgrade(); the work itself is bounded per run and
+     * resumed on cron (see run_filesize_backfill_batch()).
+     */
+    private static function maybe_backfill_filesize_meta(): void {
+        self::run_filesize_backfill_batch();
+    }
+
+    /**
+     * P67-I: stamp up to FILESIZE_BACKFILL_MAX_BATCHES batches of unstamped
+     * attachments, then either mark the backfill complete or schedule itself to
+     * continue.
+     *
+     * The work is deliberately bounded. A media library is the largest table a
+     * gallery plugin touches, and this runs from maybe_upgrade() on `init` — an
+     * unbounded loop over every attachment (a filesize() stat plus a meta write
+     * each) can outlive max_execution_time on a large install. Because
+     * `mullion_db_version` is only bumped after maybe_upgrade() returns, a timeout
+     * there would re-enter the whole upgrade path on every subsequent request.
+     * Bounding the run keeps each request cheap and lets cron finish the tail.
+     *
+     * Public so the cron hook can call it.
+     */
+    public static function run_filesize_backfill_batch(): void {
+        if (get_option('mullion_filesize_backfilled')) {
+            return;
+        }
+
+        // Both bounds are filterable so an operator on an unusually large or
+        // unusually slow install can retune the trade-off between finishing sooner
+        // and keeping each request cheap.
+        $batch_size  = max(1, intval(apply_filters('mullion_filesize_backfill_batch_size', self::FILESIZE_BACKFILL_BATCH)));
+        $max_batches = max(1, intval(apply_filters('mullion_filesize_backfill_max_batches', self::FILESIZE_BACKFILL_MAX_BATCHES)));
+
+        for ($batch = 0; $batch < $max_batches; $batch++) {
+            // Always fetch the first page of still-unstamped attachments: stamping a
+            // batch removes it from the NOT EXISTS filter, so the next batch is the
+            // new first page. Incrementing a page offset here would skip rows.
+            $ids = get_posts([
+                'post_type'      => 'attachment',
+                'post_status'    => 'inherit',
+                'post_mime_type' => ['image', 'video'],
+                'posts_per_page' => $batch_size,
+                'fields'         => 'ids',
+                'no_found_rows'  => true,
+                'meta_query'     => [
+                    ['key' => '_mullion_filesize', 'compare' => 'NOT EXISTS'],
+                ],
+            ]);
+
+            foreach ($ids as $id) {
+                // Always stamp a value (0 when the file is missing/unreadable) so
+                // the row leaves the NOT EXISTS filter — otherwise the loop would
+                // re-fetch the same unstampable rows forever. Mirrors what
+                // Mullion_Media_Controller::stamp_filesize_meta() writes for new rows.
+                $file = get_attached_file($id);
+                $size = 0;
+                if (is_string($file) && $file !== '' && file_exists($file)) {
+                    $bytes = filesize($file);
+                    $size = ($bytes !== false) ? (int) $bytes : 0;
+                }
+                update_post_meta($id, '_mullion_filesize', $size);
+            }
+
+            // A short page means there is nothing left to stamp.
+            if (count($ids) < $batch_size) {
+                update_option('mullion_filesize_backfilled', '1', false);
+                return;
+            }
+        }
+
+        // Budget spent with rows still unstamped — resume on the next cron tick.
+        if (!wp_next_scheduled(self::FILESIZE_BACKFILL_HOOK)) {
+            wp_schedule_single_event(time() + MINUTE_IN_SECONDS, self::FILESIZE_BACKFILL_HOOK);
+        }
+    }
+
+    // ── P18-F: Analytics events table ─────────────────────────────────────
+    public static function maybe_create_analytics_table() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = $wpdb->prefix . 'mullion_analytics_events';
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id  BIGINT UNSIGNED NOT NULL,
+            event_type   VARCHAR(32) NOT NULL DEFAULT 'view',
+            visitor_hash CHAR(64) NOT NULL,
+            occurred_at  DATETIME NOT NULL,
+            media_id     VARCHAR(191) NULL DEFAULT NULL,
+            PRIMARY KEY  (id),
+            KEY campaign_occurred (campaign_id, occurred_at),
+            KEY media_id (media_id)
+        ) ENGINE=InnoDB {$charset};";
+
+        dbDelta($sql);
+    }
+
+    // ── P18-F: Analytics helpers ───────────────────────────────────────────
+    public static function get_analytics_table() {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_analytics_events';
+    }
+
+    // ── P20-I-2: Media usage reverse index ────────────────────────────────
+
+    /**
+     * Create the mullion_media_refs table for O(1) media usage lookups.
+     *
+     * @since 0.18.0 P20-I-2
+     */
+    public static function maybe_create_media_refs_table() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_media_refs_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            media_id     VARCHAR(191) NOT NULL,
+            campaign_id  BIGINT UNSIGNED NOT NULL,
+            created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY media_campaign (media_id, campaign_id),
+            KEY campaign_id (campaign_id)
+        ) ENGINE=InnoDB {$charset};";
+
+        dbDelta($sql);
+
+        // One-time backfill from existing campaign meta.
+        if (!get_option('mullion_media_refs_backfilled')) {
+            self::backfill_media_refs();
+            update_option('mullion_media_refs_backfilled', '1');
+        }
+    }
+
+    /**
+     * Get the media refs table name.
+     *
+     * @since 0.18.0 P20-I-2
+     */
+    public static function get_media_refs_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_media_refs';
+    }
+
+    /**
+     * Backfill media_refs from existing campaign media_items meta.
+     *
+     * This runs in batches to avoid time/memory issues on large sites and
+     * stores progress (offset) so it can safely resume if interrupted.
+     *
+     * @since 0.18.0 P20-I-2
+     */
+    private static function backfill_media_refs(): void {
+        global $wpdb;
+        $table = self::get_media_refs_table();
+
+        // Process campaigns in batches to limit memory/time usage.
+        $batch_size = 100;
+
+        // Track progress so we can resume if the process is interrupted.
+        $offset_option = 'mullion_media_refs_backfill_offset';
+        $offset        = (int) get_option($offset_option, 0);
+
+        while (true) {
+            $campaigns = get_posts([
+                'post_type'      => 'mullion_campaign',
+                'posts_per_page' => $batch_size,
+                'offset'         => $offset,
+                'post_status'    => ['publish', 'draft', 'private'],
+                'fields'         => 'ids',
+            ]);
+
+            $count = is_array($campaigns) ? count($campaigns) : 0;
+
+            if ($count === 0) {
+                delete_option($offset_option);
+                break;
+            }
+
+            foreach ($campaigns as $campaign_id) {
+                $items = get_post_meta($campaign_id, 'media_items', true);
+                if (!is_array($items)) {
+                    continue;
+                }
+
+                $seen         = [];
+                $placeholders = [];
+                $values       = [];
+
+                foreach ($items as $item) {
+                    $mid = $item['id'] ?? '';
+                    if ($mid === '' || in_array($mid, $seen, true)) {
+                        continue;
+                    }
+                    $seen[]         = $mid;
+                    $placeholders[] = '(%s, %d)';
+                    $values[]       = $mid;
+                    $values[]       = $campaign_id;
+                }
+
+                if (!empty($placeholders)) {
+                    $sql = "INSERT IGNORE INTO {$table} (media_id, campaign_id) VALUES " . implode(', ', $placeholders);
+                    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
+                    $wpdb->query($wpdb->prepare($sql, $values));
+                }
+            }
+
+            // Advance offset and persist progress.
+            $offset += $count;
+            update_option($offset_option, $offset);
+
+            // If we fetched fewer than a full batch, we've reached the end.
+            if ($count < $batch_size) {
+                delete_option($offset_option);
+                break;
+            }
+        }
+    }
+
+    /**
+     * Sync media_refs for a campaign after its media_items are updated.
+     *
+     * Call this whenever a campaign's media_items meta changes.
+     *
+     * @since 0.18.0 P20-I-2
+     *
+     * @param int   $campaign_id Campaign post ID.
+     * @param array $media_items Array of media item arrays (each must have 'id' key).
+     */
+    public static function sync_media_refs(int $campaign_id, array $media_items): void {
+        global $wpdb;
+        $table = self::get_media_refs_table();
+
+        // P66-C: stamp the campaign's space on every ref (same value for all,
+        // resolved once). The column existed since v11 but was never written.
+        $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
+
+        // Delete existing refs for this campaign.
+        $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
+
+        // Insert current refs.
+        $seen = [];
+        foreach ($media_items as $item) {
+            $mid = $item['id'] ?? '';
+            if ($mid === '' || in_array($mid, $seen, true)) {
+                continue;
+            }
+            $seen[] = $mid;
+            $wpdb->insert($table, [
+                'media_id'    => $mid,
+                'campaign_id' => $campaign_id,
+                'space_id'    => $space_id,
+            ], ['%s', '%d', '%d']);
+        }
+    }
+
+    /**
+     * Find which campaigns reference a given media ID.
+     *
+     * @since 0.18.0 P20-I-2
+     *
+     * @param string $media_id Media item ID.
+     * @return array Array of ['id' => campaign_id, 'title' => post_title].
+     */
+    public static function get_media_usage(string $media_id): array {
+        global $wpdb;
+        $table = self::get_media_refs_table();
+
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT r.campaign_id, p.post_title
+             FROM {$table} r
+             INNER JOIN {$wpdb->posts} p ON p.ID = r.campaign_id
+             WHERE r.media_id = %s",
+            $media_id
+        ));
+
+        return array_map(function ($row) {
+            return [
+                'id'    => strval($row->campaign_id),
+                'title' => $row->post_title,
+            ];
+        }, $rows ?: []);
+    }
+
+    /**
+     * Find which campaigns contain a WordPress attachment by its post ID.
+     *
+     * P38-MD1: Used to surface campaign context in duplicate/near-duplicate upload warnings.
+     * The wp_mullion_media_refs lookup table uses media UUIDs, not WordPress attachment IDs, so
+     * this method scans campaign media_items postmeta directly. Only called when a duplicate
+     * is actually detected (infrequent), so the O(campaigns) scan is acceptable.
+     *
+     * @param int $attachment_id WordPress attachment post ID.
+     * @return array Array of ['id' => string, 'title' => string].
+     */
+    public static function get_campaigns_for_attachment_id(int $attachment_id): array {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $campaign_ids = $wpdb->get_col(
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'mullion_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
+        );
+
+        // TODO(P50): replace with mullion_media_refs attachment-ID index once the mapping table is extended — see Track P49-G.
+        if (count($campaign_ids) > 50) {
+            _doing_it_wrong(
+                __METHOD__,
+                sprintf(
+                    'Performance cliff: scanning %d campaigns for attachment ID %d. This method is O(campaigns) in queries. The O(1) fix requires a mullion_media_refs attachment-ID index (Phase 50+).',
+                    count($campaign_ids),
+                    (int) $attachment_id
+                ),
+                '0.26.0'
+            );
+        }
+
+        $result = [];
+        foreach ($campaign_ids as $campaign_id) {
+            $items = get_post_meta((int) $campaign_id, 'media_items', true);
+            if (!is_array($items)) {
+                continue;
+            }
+            foreach ($items as $item) {
+                if (isset($item['attachmentId']) && intval($item['attachmentId']) === $attachment_id) {
+                    $result[] = [
+                        'id'    => strval($campaign_id),
+                        'title' => get_the_title((int) $campaign_id),
+                    ];
+                    break; // One entry per campaign — stop scanning this campaign's items.
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get usage counts for multiple media IDs at once.
+     *
+     * @since 0.18.0 P20-I-2
+     *
+     * @param array $media_ids Array of media ID strings.
+     * @return array Associative map { media_id => count }.
+     */
+    public static function get_media_usage_summary(array $media_ids): array {
+        global $wpdb;
+        $table = self::get_media_refs_table();
+
+        if (empty($media_ids)) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($media_ids), '%s'));
+        $rows = $wpdb->get_results($wpdb->prepare(
+            "SELECT media_id, COUNT(*) as cnt FROM {$table}
+             WHERE media_id IN ({$placeholders})
+             GROUP BY media_id",
+            ...$media_ids
+        ));
+
+        $result = array_fill_keys($media_ids, 0);
+        foreach ($rows ?: [] as $row) {
+            $result[$row->media_id] = (int) $row->cnt;
+        }
+        return $result;
+    }
+
+    /**
+     * Remove all media_refs for a campaign (e.g., on delete).
+     *
+     * @since 0.18.0 P20-I-2
+     *
+     * @param int $campaign_id Campaign post ID.
+     */
+    public static function delete_media_refs(int $campaign_id): void {
+        global $wpdb;
+        $table = self::get_media_refs_table();
+        $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
+    }
+
+    // ── D-9: Access requests table ──────────────────────────────────────
+
+    public static function maybe_create_access_requests_table() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_access_requests_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            token                VARCHAR(36)  NOT NULL,
+            campaign_id          BIGINT UNSIGNED NOT NULL,
+            email                VARCHAR(255) NOT NULL,
+            status               VARCHAR(20)  NOT NULL DEFAULT 'pending',
+            requested_at         DATETIME     NOT NULL,
+            resolved_at          DATETIME     DEFAULT NULL,
+            magic_key_hash       VARCHAR(64)  NULL DEFAULT NULL,
+            magic_key_expires_at DATETIME     NULL DEFAULT NULL,
+            magic_key_used_at    DATETIME     NULL DEFAULT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY token (token),
+            KEY campaign_status (campaign_id, status),
+            KEY email_campaign (email, campaign_id)
+        ) ENGINE=InnoDB {$charset};";
+
+        dbDelta($sql);
+
+        // One-time migration from wp_options to custom table.
+        if (!get_option('mullion_access_requests_migrated')) {
+            self::migrate_access_requests_from_options();
+            update_option('mullion_access_requests_migrated', '1');
+        }
+    }
+
+    public static function get_access_requests_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_access_requests';
+    }
+
+    /**
+     * Migrate access request data from wp_options to the custom table.
+     *
+     * Reads the legacy mullion_access_request_index option and each per-request
+     * option, inserts rows into the new table, then deletes the old options.
+     */
+    private static function migrate_access_requests_from_options(): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $index = get_option('mullion_access_request_index', []);
+
+        if (!is_array($index) || empty($index)) {
+            return;
+        }
+
+        foreach ($index as $token) {
+            $token = (string) $token;
+            $option_name = 'mullion_access_request_' . $token;
+            $data = get_option($option_name, null);
+
+            if (!is_array($data)) {
+                delete_option($option_name);
+                continue;
+            }
+
+            $wpdb->insert($table, [
+                'token'        => $token,
+                'campaign_id'  => intval($data['campaign_id'] ?? 0),
+                'email'        => sanitize_email($data['email'] ?? ''),
+                'status'       => sanitize_text_field($data['status'] ?? 'pending'),
+                'requested_at' => gmdate('Y-m-d H:i:s', strtotime($data['requested_at'] ?? 'now')),
+                'resolved_at'  => !empty($data['resolved_at'])
+                    ? gmdate('Y-m-d H:i:s', strtotime($data['resolved_at']))
+                    : null,
+            ], ['%s', '%d', '%s', '%s', '%s', '%s']);
+
+            delete_option($option_name);
+        }
+
+        delete_option('mullion_access_request_index');
+    }
+
+    // ── Access request query helpers ─────────────────────────────────────
+
+    /**
+     * Get a single access request by token.
+     *
+     * @return array|null Request row as associative array, or null.
+     */
+    public static function get_access_request(string $token): ?array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $row = $wpdb->get_row(
+            $wpdb->prepare("SELECT * FROM {$table} WHERE token = %s", $token),
+            ARRAY_A
+        );
+        return $row ?: null;
+    }
+
+    /**
+     * Insert a new access request.
+     *
+     * @return string The token of the inserted request.
+     */
+    public static function insert_access_request(array $data): string {
+        global $wpdb;
+        $table       = self::get_access_requests_table();
+        $campaign_id = intval($data['campaign_id']);
+        // P66-C: stamp the campaign's space (column existed since v11, unwritten).
+        $space_id    = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
+        $wpdb->insert($table, [
+            'token'        => $data['token'],
+            'campaign_id'  => $campaign_id,
+            'email'        => $data['email'],
+            'status'       => $data['status'] ?? 'pending',
+            'requested_at' => gmdate('Y-m-d H:i:s', strtotime($data['requested_at'])),
+            'resolved_at'  => null,
+            'space_id'     => $space_id,
+        ], ['%s', '%d', '%s', '%s', '%s', '%s', '%d']);
+        return $data['token'];
+    }
+
+    /**
+     * Update the status of an access request.
+     */
+    public static function update_access_request_status(string $token, string $status): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            [
+                'status'      => $status,
+                'resolved_at' => gmdate('Y-m-d H:i:s'),
+            ],
+            ['token' => $token],
+            ['%s', '%s'],
+            ['%s']
+        );
+    }
+
+    /**
+     * Delete an access request by token.
+     */
+    public static function delete_access_request(string $token): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->delete($table, ['token' => $token], ['%s']);
+    }
+
+    /**
+     * Store a magic key hash and expiry against an access request token.
+     * Resets used_at so a freshly generated key is treated as unused.
+     */
+    public static function set_magic_key(string $token, string $hash, string $expires_at): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            [
+                'magic_key_hash'       => $hash,
+                'magic_key_expires_at' => $expires_at,
+                'magic_key_used_at'    => null,
+            ],
+            ['token' => $token],
+            ['%s', '%s', null],
+            ['%s']
+        );
+    }
+
+    /**
+     * Mark the magic key for a request as consumed.
+     * Called immediately before processing approval to prevent replay.
+     */
+    public static function mark_magic_key_used(string $token): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->update(
+            $table,
+            ['magic_key_used_at' => current_time('mysql', true)],
+            ['token' => $token],
+            ['%s'],
+            ['%s']
+        );
+    }
+
+    /**
+     * List access requests for a campaign, optionally filtered by status.
+     *
+     * @return array Array of associative arrays, newest first.
+     */
+    public static function list_access_requests(int $campaign_id, string $status = ''): array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+
+        if ($status) {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE campaign_id = %d AND status = %s ORDER BY requested_at DESC",
+                    $campaign_id,
+                    $status
+                ),
+                ARRAY_A
+            );
+        } else {
+            $rows = $wpdb->get_results(
+                $wpdb->prepare(
+                    "SELECT * FROM {$table} WHERE campaign_id = %d ORDER BY requested_at DESC",
+                    $campaign_id
+                ),
+                ARRAY_A
+            );
+        }
+
+        return $rows ?: [];
+    }
+
+    /**
+     * Find an existing request by email + campaign (for duplicate/cooldown checks).
+     *
+     * @return array|null Request row or null.
+     */
+    public static function find_access_request_by_email(string $email, int $campaign_id): ?array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $row = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE LOWER(email) = LOWER(%s) AND campaign_id = %d LIMIT 1",
+                $email,
+                $campaign_id
+            ),
+            ARRAY_A
+        );
+        return $row ?: null;
+    }
+
+    /**
+     * Delete all access requests for a campaign (cleanup on campaign delete).
+     */
+    public static function delete_access_requests_for_campaign(int $campaign_id): void {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $wpdb->delete($table, ['campaign_id' => $campaign_id], ['%d']);
+    }
+
+    /**
+     * P72-B: fetch a page of access requests for an email address, for the WP
+     * core personal-data exporter. Case-insensitive on email, oldest first.
+     *
+     * @return array<int, array<string, mixed>> Rows as associative arrays.
+     */
+    public static function get_access_requests_by_email(string $email, int $limit, int $offset): array {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE LOWER(email) = LOWER(%s) ORDER BY requested_at ASC LIMIT %d OFFSET %d",
+                $email,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+        return $rows ?: [];
+    }
+
+    /**
+     * P72-B: delete every access request for an email address, for the WP core
+     * personal-data eraser. Case-insensitive on email.
+     *
+     * @return int Number of rows deleted.
+     */
+    public static function delete_access_requests_by_email(string $email): int {
+        global $wpdb;
+        $table = self::get_access_requests_table();
+        // $wpdb->delete() has no case-insensitive option, so use a prepared query.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $deleted = $wpdb->query(
+            $wpdb->prepare("DELETE FROM {$table} WHERE LOWER(email) = LOWER(%s)", $email)
+        );
+        return (int) $deleted;
+    }
+
+    // ── P28-G: Audit log table ──────────────────────────────────────────────
+
+    public static function maybe_create_audit_log_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_audit_log_table();
+        $charset = $wpdb->get_charset_collate();
+
+        // P40-CT1: expanded canonical event contract. campaign_id=0 denotes
+        // system-scope events (no campaign owner). New columns have safe
+        // defaults so legacy rows are always readable.
+        $sql = "CREATE TABLE {$table} (
+            id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            campaign_id    BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            action         VARCHAR(128) NOT NULL,
+            actor_id       BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            actor_login    VARCHAR(60) NOT NULL DEFAULT '',
+            details        LONGTEXT NOT NULL,
+            created_at     DATETIME NOT NULL,
+            severity       VARCHAR(16) NOT NULL DEFAULT 'info',
+            scope          VARCHAR(16) NOT NULL DEFAULT 'campaign',
+            summary        VARCHAR(255) NOT NULL DEFAULT '',
+            resource_type  VARCHAR(64) NOT NULL DEFAULT '',
+            resource_id    VARCHAR(128) NOT NULL DEFAULT '',
+            resource_label VARCHAR(255) NOT NULL DEFAULT '',
+            source         VARCHAR(64) NOT NULL DEFAULT '',
+            PRIMARY KEY  (id),
+            KEY campaign_created (campaign_id, created_at),
+            KEY action (action),
+            KEY created_at (created_at),
+            KEY scope (scope)
+        ) ENGINE=InnoDB {$charset};";
+
+        dbDelta($sql);
+    }
+
+    /**
+     * P50 (review #2): convert the four campaign-scoped tables to InnoDB.
+     *
+     * move_campaign_to_space() wraps five writes in START TRANSACTION/ROLLBACK,
+     * which is only atomic on a transactional engine. These tables were
+     * historically created without an explicit ENGINE, so a server defaulting
+     * to MyISAM would silently no-op the ROLLBACK and leave a partial move.
+     * New installs now pin ENGINE=InnoDB in their CREATE statements; this
+     * one-time, option-guarded migration converts any pre-existing non-InnoDB
+     * tables on already-installed sites. Idempotent and safe to re-run.
+     */
+    private static function maybe_convert_campaign_tables_to_innodb_v15(): void {
+        if (get_option('mullion_campaign_tables_innodb_v15')) {
+            return;
+        }
+        global $wpdb;
+
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $engine = $wpdb->get_var($wpdb->prepare(
+                'SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s',
+                DB_NAME,
+                $table
+            ));
+            if ($engine && strtoupper($engine) !== 'INNODB') {
+                // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+                $wpdb->query("ALTER TABLE {$table} ENGINE=InnoDB");
+            }
+        }
+
+        update_option('mullion_campaign_tables_innodb_v15', '1');
+    }
+
+    // ── P41-OL1 / P50-K: Asset library table (formerly "overlays") ──────────
+
+    /**
+     * P50-K: Idempotent rename of the legacy `mullion_overlays` table to
+     * `mullion_assets`. Only renames when the old table exists and the new one
+     * does not, so it is safe to run repeatedly and on fresh installs.
+     */
+    private static function maybe_rename_overlays_to_assets_v14(): void {
+        global $wpdb;
+        $old = $wpdb->prefix . 'mullion_overlays';
+        $new = $wpdb->prefix . 'mullion_assets';
+
+        // esc_like() escapes the `_` in the WP table prefix so it isn't treated
+        // as a LIKE single-char wildcard.
+        $old_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $old ) ) ) === $old;
+        $new_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $new ) ) ) === $new;
+        if ( $old_exists && ! $new_exists ) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query( "RENAME TABLE {$old} TO {$new}" );
+        }
+    }
+
+    public static function maybe_create_assets_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_assets_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            overlay_id   VARCHAR(36)   NOT NULL,
+            url          VARCHAR(2083) NOT NULL DEFAULT '',
+            name         VARCHAR(255)  NOT NULL DEFAULT '',
+            is_universal TINYINT(1)    NOT NULL DEFAULT 0,
+            tags         TEXT          NULL,
+            uploaded_at  DATETIME      NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY overlay_id (overlay_id),
+            KEY uploaded_at (uploaded_at)
+        ) {$charset};";
+
+        dbDelta($sql);
+
+        if ( ! get_option( 'mullion_overlays_migrated' ) ) {
+            $migrated = self::migrate_assets_from_options();
+            if ( $migrated ) {
+                update_option( 'mullion_overlays_migrated', '1' );
+            }
+        }
+    }
+
+    private static function migrate_assets_from_options(): bool {
+        global $wpdb;
+        $table = self::get_assets_table();
+        $raw   = get_option( 'mullion_overlay_library', [] );
+        if ( ! is_array( $raw ) || empty( $raw ) ) {
+            return true;
+        }
+        $failed = 0;
+        foreach ( $raw as $entry ) {
+            if ( ! isset( $entry['id'] ) ) {
+                continue;
+            }
+            $uploaded_at = isset( $entry['uploadedAt'] )
+                ? gmdate( 'Y-m-d H:i:s', (int) strtotime( $entry['uploadedAt'] ) )
+                : gmdate( 'Y-m-d H:i:s' );
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $result = $wpdb->replace(
+                $table,
+                [
+                    'overlay_id'  => $entry['id'],
+                    'url'         => esc_url_raw( $entry['url'] ?? '' ),
+                    'name'        => sanitize_text_field( $entry['name'] ?? '' ),
+                    'uploaded_at' => $uploaded_at,
+                ],
+                [ '%s', '%s', '%s', '%s' ]
+            );
+            if ( $result === false ) {
+                $failed++;
+            }
+        }
+        if ( $failed === 0 ) {
+            delete_option( 'mullion_overlay_library' );
+            return true;
+        }
+        return false;
+    }
+
+    public static function get_assets_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_assets';
+    }
+
+    /**
+     * P50-I: Idempotent migration — adds the `is_universal` column to the
+     * assets table when upgrading from a pre-v13 schema. A universal asset
+     * bypasses the P50-B per-space association filter and is visible to every
+     * space site-wide. Guard on column presence mirrors the v11 pattern.
+     */
+    private static function maybe_upgrade_assets_is_universal(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'is_universal'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN is_universal TINYINT(1) NOT NULL DEFAULT 0 AFTER name" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — adds the `tags` column (JSON array) to the
+     * assets table for tag-based filtering.
+     */
+    private static function maybe_upgrade_assets_tags_v14(): void {
+        global $wpdb;
+        $table = self::get_assets_table();
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $has_col = $wpdb->get_var(
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = '{$table}'
+               AND COLUMN_NAME = 'tags'"
+        );
+        if ( intval( $has_col ) > 0 ) {
+            return;
+        }
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "ALTER TABLE {$table} ADD COLUMN tags TEXT NULL AFTER is_universal" );
+    }
+
+    /**
+     * P50-K: Idempotent migration — re-labels legacy `asset_type = 'overlay'`
+     * association rows to the canonical `'asset'` type after the overlay→asset
+     * rename. Safe to run repeatedly.
+     */
+    private static function maybe_migrate_assoc_overlay_type_v14(): void {
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $wpdb->query( "UPDATE {$table} SET asset_type = 'asset' WHERE asset_type = 'overlay'" );
+    }
+
+    /**
+     * P40-CT1: Idempotent migration — adds the seven new audit columns
+     * (severity, scope, summary, resource_type, resource_id, resource_label,
+     * source) when upgrading from a pre-v9 schema. dbDelta handles ADD COLUMN
+     * for any missing columns. The presence of `severity` is used as the guard
+     * because it is the first of the new columns; if it exists the full
+     * migration has already run.
+     */
+    private static function maybe_upgrade_audit_log_v9(): void {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+
+        // Guard: if the severity column is already present the migration ran.
+        $has_severity = $wpdb->get_var(
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{$table}' AND COLUMN_NAME = 'severity'"
+        );
+        if (intval($has_severity) > 0) {
+            return;
+        }
+
+        // Re-run dbDelta with the full updated schema; it will ADD missing columns.
+        self::maybe_create_audit_log_table();
+    }
+
+    public static function get_audit_log_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_audit_log';
+    }
+
+    /**
+     * P72-B: fetch a page of audit-log rows attributable to a given staff
+     * member, for the WP core personal-data exporter. Matches on either the
+     * numeric actor_id or the actor_login (legacy rows carry only one), oldest
+     * first. Export-only — there is deliberately no by-actor delete counterpart
+     * (audit trails are a legitimate-interest record, exempt from erasure).
+     *
+     * @return array<int, array<string, mixed>> Rows as associative arrays.
+     */
+    public static function get_audit_entries_by_actor(int $actor_id, string $actor_login, int $limit, int $offset): array {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+        $rows  = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE (actor_id > 0 AND actor_id = %d) OR (actor_login <> '' AND actor_login = %s) ORDER BY created_at ASC LIMIT %d OFFSET %d",
+                $actor_id,
+                $actor_login,
+                $limit,
+                $offset
+            ),
+            ARRAY_A
+        );
+        return $rows ?: [];
+    }
+
+    public static function insert_audit_entry(array $data): void {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+
+        // P50-A: stamp new audit rows with the campaign's current space so
+        // space-filtered audit queries see them (the P47 column was previously
+        // never written, leaving every row at the 0 default).
+        $campaign_id = intval($data['campaign_id']);
+        $space_id    = intval($data['space_id'] ?? 0);
+        if ($space_id <= 0 && $campaign_id > 0) {
+            $space_id = intval(get_post_meta($campaign_id, '_mullion_space_id', true));
+        }
+
+        $wpdb->insert($table, [
+            'campaign_id'    => $campaign_id,
+            'action'         => sanitize_text_field($data['action']),
+            'actor_id'       => intval($data['actor_id'] ?? 0),
+            'actor_login'    => sanitize_text_field($data['actor_login'] ?? ''),
+            'details'        => is_array($data['details']) ? wp_json_encode($data['details']) : '{}',
+            'created_at'     => $data['created_at'] ?? gmdate('Y-m-d H:i:s'),
+            'severity'       => in_array($data['severity'] ?? '', ['info', 'warning', 'error'], true) ? $data['severity'] : 'info',
+            'scope'          => in_array($data['scope'] ?? '', ['campaign', 'system'], true) ? $data['scope'] : 'campaign',
+            'summary'        => sanitize_text_field($data['summary'] ?? ''),
+            'resource_type'  => sanitize_text_field($data['resource_type'] ?? ''),
+            'resource_id'    => sanitize_text_field($data['resource_id'] ?? ''),
+            'resource_label' => sanitize_text_field($data['resource_label'] ?? ''),
+            'source'         => sanitize_text_field($data['source'] ?? 'rest'),
+            'space_id'       => $space_id,
+        ], ['%d', '%s', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%d']);
+    }
+
+    /**
+     * Backfill audit entries from post meta into the DB table for a campaign.
+     * Called on first `list_audit` request when the table has no entries for that campaign.
+     */
+    public static function backfill_audit_entries(int $campaign_id, array $legacy_entries): void {
+        foreach ($legacy_entries as $entry) {
+            $created_raw = $entry['createdAt'] ?? $entry['created_at'] ?? '';
+            $created_at  = $created_raw
+                ? gmdate('Y-m-d H:i:s', strtotime($created_raw))
+                : gmdate('Y-m-d H:i:s');
+
+            self::insert_audit_entry([
+                'campaign_id' => $campaign_id,
+                'action'      => $entry['action'] ?? 'unknown',
+                'actor_id'    => intval($entry['userId'] ?? 0),
+                'actor_login' => '',
+                'details'     => $entry['details'] ?? [],
+                'created_at'  => $created_at,
+                'source'      => 'legacy',
+            ]);
+        }
+    }
+
+    /**
+     * Query audit log entries with filtering and pagination.
+     *
+     * @param array $args {
+     *   campaign_id?: int,
+     *   from?: string  (ISO date string),
+     *   to?:   string  (ISO date string),
+     *   action?: string,
+     *   scope?: 'campaign'|'system',
+     *   severity?: 'info'|'warning'|'error',
+     *   page?: int,
+     *   per_page?: int,
+     * }
+     * @return array { total: int, items: array }
+     */
+    public static function list_audit_entries(array $args): array {
+        global $wpdb;
+        $table = self::get_audit_log_table();
+
+        $where  = ['1=1'];
+        $values = [];
+
+        if (!empty($args['campaign_id'])) {
+            $where[]  = 'campaign_id = %d';
+            $values[] = intval($args['campaign_id']);
+        }
+        if (!empty($args['space_id']) && intval($args['space_id']) > 0) {
+            $where[]  = 'space_id = %d';
+            $values[] = intval($args['space_id']);
+        }
+        if (!empty($args['from'])) {
+            $where[]  = 'created_at >= %s';
+            $values[] = gmdate('Y-m-d H:i:s', strtotime($args['from']));
+        }
+        if (!empty($args['to'])) {
+            $where[]  = 'created_at <= %s';
+            $values[] = gmdate('Y-m-d H:i:s', strtotime($args['to'] . ' 23:59:59'));
+        }
+        if (!empty($args['action'])) {
+            $where[]  = 'action = %s';
+            $values[] = $args['action'];
+        }
+        if (!empty($args['scope']) && in_array($args['scope'], ['campaign', 'system'], true)) {
+            $where[]  = 'scope = %s';
+            $values[] = $args['scope'];
+        }
+        if (!empty($args['severity']) && in_array($args['severity'], ['info', 'warning', 'error'], true)) {
+            $where[]  = 'severity = %s';
+            $values[] = $args['severity'];
+        }
+
+        $where_sql = implode(' AND ', $where);
+        $page      = max(1, intval($args['page'] ?? 1));
+        $per_page  = max(1, intval($args['per_page'] ?? 50));
+        $offset    = ($page - 1) * $per_page;
+
+        $count_sql = "SELECT COUNT(*) FROM {$table} WHERE {$where_sql}";
+        $total     = empty($values)
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            ? (int) $wpdb->get_var($count_sql)
+            : (int) $wpdb->get_var($wpdb->prepare($count_sql, $values)); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Dynamic WHERE from internal columns; values bound via $wpdb->prepare().
+
+        $items_sql      = "SELECT * FROM {$table} WHERE {$where_sql} ORDER BY created_at DESC LIMIT %d OFFSET %d";
+        $items_values   = array_merge($values, [$per_page, $offset]);
+        // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+        $rows = $wpdb->get_results($wpdb->prepare($items_sql, $items_values), ARRAY_A);
+
+        return [
+            'total' => $total,
+            'items' => array_map([self::class, 'format_audit_entry'], $rows ?: []),
+        ];
+    }
+
+    public static function format_audit_entry(array $row): array {
+        return [
+            'id'            => strval($row['id']),
+            'campaignId'    => strval($row['campaign_id']),
+            'action'        => $row['action'],
+            'userId'        => intval($row['actor_id']),
+            'actorLogin'    => $row['actor_login'],
+            'details'       => json_decode($row['details'], true) ?? [],
+            'createdAt'     => str_replace(' ', 'T', $row['created_at']) . 'Z',
+            // P40-CT1: canonical event contract fields. Defaults handle legacy rows
+            // written before the v9 schema migration.
+            'severity'      => $row['severity'] ?? 'info',
+            'scope'         => $row['scope'] ?? 'campaign',
+            'summary'       => $row['summary'] ?? '',
+            'resourceType'  => $row['resource_type'] ?? '',
+            'resourceId'    => $row['resource_id'] ?? '',
+            'resourceLabel' => $row['resource_label'] ?? '',
+            'source'        => $row['source'] ?? '',
+        ];
+    }
+
+    private static function add_indexes() {
+        global $wpdb;
+
+        self::ensure_index(
+            $wpdb->postmeta,
+            'mullion_postmeta_postid_key',
+            '(post_id, meta_key(191))'
+        );
+
+        self::ensure_index(
+            $wpdb->termmeta,
+            'mullion_termmeta_termid_key',
+            '(term_id, meta_key(191))'
+        );
+    }
+
+    // ── P47-A: Gallery Spaces ─────────────────────────────────────────────────
+
+    private static function maybe_create_spaces_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        $table   = $wpdb->prefix . 'mullion_spaces';
+        $charset = $wpdb->get_charset_collate();
+        $sql     = "CREATE TABLE {$table} (
+            id bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
+            slug varchar(100) NOT NULL,
+            name varchar(255) NOT NULL,
+            isolation_mode varchar(20) NOT NULL DEFAULT 'open',
+            access_grants longtext NOT NULL,
+            settings_overrides longtext NOT NULL,
+            archived tinyint(1) NOT NULL DEFAULT 0,
+            created_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY slug (slug)
+        ) {$charset};";
+        dbDelta($sql);
+    }
+
+    private static function maybe_upgrade_v11_space_columns(): void {
+        global $wpdb;
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+        foreach ($tables as $table) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $has_col = $wpdb->get_var(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE()
+                   AND TABLE_NAME = '{$table}'
+                   AND COLUMN_NAME = 'space_id'"
+            );
+            if (intval($has_col) > 0) {
+                continue;
+            }
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query("ALTER TABLE {$table} ADD COLUMN space_id bigint(20) UNSIGNED NOT NULL DEFAULT 0");
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $wpdb->query("ALTER TABLE {$table} ADD INDEX idx_space_id (space_id)");
+        }
+    }
+
+    private static function maybe_seed_default_space(): void {
+        global $wpdb;
+        $table = $wpdb->prefix . 'mullion_spaces';
+
+        // Recover from a broken state: row exists but option is missing/zero.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $existing_id = (int) $wpdb->get_var(
+            "SELECT id FROM {$table} WHERE slug = 'default' LIMIT 1"
+        );
+        if ($existing_id > 0) {
+            if (!get_option('mullion_default_space_id')) {
+                update_option('mullion_default_space_id', $existing_id, false);
+            }
+            return;
+        }
+
+        $inserted = $wpdb->insert($table, [
+            'slug'               => 'default',
+            'name'               => 'Default',
+            'isolation_mode'     => 'open',
+            'access_grants'      => '[]',
+            'settings_overrides' => '{}',
+            'archived'           => 0,
+        ]);
+        if ($inserted && $wpdb->insert_id > 0) {
+            update_option('mullion_default_space_id', $wpdb->insert_id, false);
+        }
+    }
+
+    private static function maybe_backfill_spaces(): void {
+        $default_id = intval(get_option('mullion_default_space_id'));
+        if (!$default_id) {
+            return;
+        }
+        if (get_option('mullion_spaces_backfill_complete')) {
+            return;
+        }
+
+        $batch = 50;
+
+        // Do NOT use an offset with NOT EXISTS: as each batch assigns the meta,
+        // those posts leave the result set, so incrementing offset would skip
+        // still-unassigned campaigns. Always fetch the first N unassigned posts.
+        $posts = get_posts([
+            'post_type'      => 'mullion_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => $batch,
+            'fields'         => 'ids',
+            'meta_query'     => [[
+                'key'     => '_mullion_space_id',
+                'compare' => 'NOT EXISTS',
+            ]],
+        ]);
+
+        foreach ($posts as $post_id) {
+            add_post_meta($post_id, '_mullion_space_id', $default_id, true);
+        }
+
+        if (count($posts) < $batch) {
+            self::backfill_company_spaces($default_id);
+            update_option('mullion_spaces_backfill_complete', '1', false);
+        }
+    }
+
+    private static function backfill_company_spaces(int $default_id): void {
+        $terms = get_terms(['taxonomy' => 'mullion_company', 'hide_empty' => false, 'fields' => 'ids']);
+        if (is_wp_error($terms)) {
+            return;
+        }
+        foreach ($terms as $term_id) {
+            if (!get_term_meta($term_id, '_mullion_space_id', true)) {
+                add_term_meta($term_id, '_mullion_space_id', $default_id, true);
+            }
+        }
+    }
+
+    // ── P47-A: Space table helpers ────────────────────────────────────────────
+
+    public static function get_spaces_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_spaces';
+    }
+
+    public static function get_space(int $id): ?object {
+        if (array_key_exists($id, self::$space_cache)) {
+            return self::$space_cache[$id];
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $row                    = $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE id = %d', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name from internal method; id bound via prepare().
+            $id
+        )) ?: null;
+        self::$space_cache[$id] = $row;
+        return $row;
+    }
+
+    public static function get_space_by_slug(string $slug): ?object {
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . self::get_spaces_table() . ' WHERE slug = %s', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table name from internal method; slug bound via prepare().
+            $slug
+        )) ?: null;
+    }
+
+    public static function list_spaces(array $args = []): array {
+        global $wpdb;
+        $table = self::get_spaces_table();
+        // When 'archived' key is absent, return all spaces (no filter).
+        // Pass ['archived' => 0] to restrict to active, ['archived' => 1] for archived only.
+        if (array_key_exists('archived', $args)) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            return $wpdb->get_results($wpdb->prepare(
+                "SELECT * FROM {$table} WHERE archived = %d ORDER BY id ASC",
+                intval($args['archived'])
+            ));
+        }
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        return $wpdb->get_results("SELECT * FROM {$table} ORDER BY id ASC");
+    }
+
+    public static function insert_space(array $data): int {
+        global $wpdb;
+        $wpdb->insert(self::get_spaces_table(), [
+            'slug'               => sanitize_title($data['slug'] ?? ''),
+            'name'               => sanitize_text_field($data['name'] ?? ''),
+            'isolation_mode'     => in_array($data['isolation_mode'] ?? '', ['open', 'delegated'], true)
+                                        ? $data['isolation_mode'] : 'open',
+            'access_grants'      => wp_json_encode(array_values((array) ($data['access_grants'] ?? []))),
+            'settings_overrides' => wp_json_encode((array) ($data['settings_overrides'] ?? [])),
+            'archived'           => 0,
+        ]);
+        return intval($wpdb->insert_id);
+    }
+
+    public static function update_space(int $id, array $data): bool {
+        global $wpdb;
+        $allowed = ['slug', 'name', 'isolation_mode', 'access_grants', 'settings_overrides'];
+        $payload = [];
+        foreach ($allowed as $key) {
+            if (!array_key_exists($key, $data)) {
+                continue;
+            }
+            if (in_array($key, ['access_grants', 'settings_overrides'], true)) {
+                $payload[$key] = wp_json_encode((array) $data[$key]);
+            } elseif ($key === 'isolation_mode') {
+                $payload[$key] = in_array($data[$key], ['open', 'delegated'], true) ? $data[$key] : 'open';
+            } elseif ($key === 'slug') {
+                $payload[$key] = sanitize_title($data[$key]);
+            } else {
+                $payload[$key] = sanitize_text_field($data[$key]);
+            }
+        }
+        if (empty($payload)) {
+            return false;
+        }
+        $payload['updated_at'] = gmdate('Y-m-d H:i:s');
+        $result                = (bool) $wpdb->update(self::get_spaces_table(), $payload, ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
+    }
+
+    public static function archive_space(int $id): bool {
+        global $wpdb;
+        $result = (bool) $wpdb->update(
+            self::get_spaces_table(),
+            ['archived' => 1, 'updated_at' => gmdate('Y-m-d H:i:s')],
+            ['id' => $id]
+        );
+        unset(self::$space_cache[$id]);
+        return $result;
+    }
+
+    public static function delete_space(int $id): bool {
+        global $wpdb;
+        $result = (bool) $wpdb->delete(self::get_spaces_table(), ['id' => $id]);
+        unset(self::$space_cache[$id]);
+        return $result;
+    }
+
+    // ── P50-A: Cross-space campaign move ─────────────────────────────────────
+
+    /**
+     * Atomically re-stamp a campaign's space across all campaign-scoped custom
+     * tables and the _mullion_space_id post meta.
+     *
+     * All five writes run inside a single transaction; on any failure the
+     * transaction is rolled back and the failing table name is returned so the
+     * caller can surface it. The post meta row is written with direct SQL (not
+     * update_post_meta) so it participates in the transaction without mutating
+     * the object cache before COMMIT; the meta cache is flushed on every exit
+     * path instead.
+     *
+     * Atomicity requires a transactional storage engine: the four campaign
+     * tables are pinned to InnoDB at creation and converted on upgrade (see
+     * maybe_convert_campaign_tables_to_innodb_v15). $wpdb->postmeta uses the
+     * WordPress core default, which is InnoDB on all supported MySQL/MariaDB
+     * versions. On a non-transactional engine START TRANSACTION/ROLLBACK are
+     * silent no-ops and a mid-move failure would leave a partial move.
+     *
+     * @param int $campaign_id     Campaign post ID.
+     * @param int $target_space_id Destination space id.
+     * @return true|string True on success, the failing table name on failure.
+     */
+    public static function move_campaign_to_space(int $campaign_id, int $target_space_id) {
+        global $wpdb;
+
+        $tables = [
+            self::get_analytics_table(),
+            self::get_audit_log_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->query('START TRANSACTION');
+
+        $finish = static function (string $statement) use ($wpdb, $campaign_id) {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->query($statement); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Internal cascade DELETE; $statement built from internal table names + int campaign_id.
+            wp_cache_delete($campaign_id, 'post_meta');
+        };
+
+        foreach ($tables as $table) {
+            /**
+             * Test seam: simulate a mid-transaction failure on a specific table
+             * so rollback behavior can be exercised without DB-level mocking.
+             *
+             * @param bool   $fail        Whether to treat this table as failed.
+             * @param string $table       Table about to be updated.
+             * @param int    $campaign_id Campaign being moved.
+             */
+            if (apply_filters('mullion_move_campaign_simulate_failure', false, $table, $campaign_id)) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared -- table name from trusted helper
+            $result = $wpdb->query($wpdb->prepare(
+                "UPDATE {$table} SET space_id = %d WHERE campaign_id = %d",
+                $target_space_id,
+                $campaign_id
+            ));
+            if ($result === false) {
+                $finish('ROLLBACK');
+                return $table;
+            }
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $meta_updated = $wpdb->query($wpdb->prepare(
+            "UPDATE {$wpdb->postmeta} SET meta_value = %s WHERE post_id = %d AND meta_key = '_mullion_space_id'",
+            (string) $target_space_id,
+            $campaign_id
+        ));
+        if ($meta_updated === false) {
+            $finish('ROLLBACK');
+            return $wpdb->postmeta;
+        }
+        if ($meta_updated === 0 && !metadata_exists('post', $campaign_id, '_mullion_space_id')) {
+            // Campaign predates the spaces backfill: create the meta row.
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $inserted = $wpdb->insert($wpdb->postmeta, [
+                'post_id'    => $campaign_id,
+                'meta_key'   => '_mullion_space_id',
+                'meta_value' => (string) $target_space_id,
+            ]);
+            if ($inserted === false) {
+                $finish('ROLLBACK');
+                return $wpdb->postmeta;
+            }
+        }
+
+        $finish('COMMIT');
+        return true;
+    }
+
+    // ── P50-B: Per-space shared-asset library associations ───────────────────
+
+    /** Asset types supported by the per-space library association table. */
+    private const LIBRARY_ASSET_TYPES = ['asset', 'font'];
+
+    public static function get_space_library_assoc_table(): string {
+        global $wpdb;
+        return $wpdb->prefix . 'mullion_space_library_assoc';
+    }
+
+    /**
+     * An overlay/font is visible to a `delegated` space only when an
+     * association row exists; `open` spaces bypass this table entirely.
+     * Asset ids are the library UUIDs (overlay_id / font option id).
+     */
+    private static function maybe_create_space_library_assoc_table(): void {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        $table   = self::get_space_library_assoc_table();
+        $charset = $wpdb->get_charset_collate();
+
+        $sql = "CREATE TABLE {$table} (
+            id         BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            space_id   BIGINT UNSIGNED NOT NULL,
+            asset_type VARCHAR(10) NOT NULL,
+            asset_id   VARCHAR(36) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY  (id),
+            UNIQUE KEY space_asset (space_id, asset_type, asset_id),
+            KEY space_type (space_id, asset_type)
+        ) {$charset};";
+        dbDelta($sql);
+    }
+
+    /**
+     * Asset ids associated with a space for one asset type.
+     *
+     * @return string[] Library asset UUIDs.
+     */
+    public static function get_space_library_assets(int $space_id, string $asset_type): array {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true)) {
+            return [];
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        return $wpdb->get_col($wpdb->prepare(
+            "SELECT asset_id FROM {$table} WHERE space_id = %d AND asset_type = %s ORDER BY id ASC",
+            $space_id,
+            $asset_type
+        ));
+    }
+
+    public static function associate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // INSERT IGNORE: associating an already-associated asset is a no-op.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        $result = $wpdb->query($wpdb->prepare(
+            "INSERT IGNORE INTO {$table} (space_id, asset_type, asset_id) VALUES (%d, %s, %s)",
+            $space_id,
+            $asset_type,
+            sanitize_text_field($asset_id)
+        ));
+        return $result !== false;
+    }
+
+    public static function dissociate_asset(int $space_id, string $asset_type, string $asset_id): bool {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $space_id <= 0 || $asset_id === '') {
+            return false;
+        }
+        global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $result = $wpdb->delete(self::get_space_library_assoc_table(), [
+            'space_id'   => $space_id,
+            'asset_type' => $asset_type,
+            'asset_id'   => sanitize_text_field($asset_id),
+        ], ['%d', '%s', '%s']);
+        return $result !== false;
+    }
+
+    /**
+     * P52-A5c: how many spaces is this library asset associated with?
+     * Backs the asset-delete in-use guard (delete is blocked while > 0 unless
+     * the caller explicitly forces it).
+     */
+    public static function count_asset_associations(string $asset_id, string $asset_type): int {
+        if (!in_array($asset_type, self::LIBRARY_ASSET_TYPES, true) || $asset_id === '') {
+            return 0;
+        }
+        global $wpdb;
+        $table = self::get_space_library_assoc_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+        return (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$table} WHERE asset_type = %s AND asset_id = %s",
+            $asset_type,
+            sanitize_text_field($asset_id)
+        ));
+    }
+
+    /**
+     * One-time migration: associate every existing overlay/font with every
+     * existing delegated space so no delegated tenant loses access to assets
+     * that were globally visible before P50-B. New delegated spaces created
+     * after this migration start with an empty library by design.
+     */
+    private static function maybe_backfill_space_library_assoc(): void {
+        if (get_option('mullion_space_library_assoc_backfilled')) {
+            return;
+        }
+
+        $delegated = array_filter(
+            self::list_spaces(),
+            fn($space) => ($space->isolation_mode ?? '') === 'delegated'
+        );
+        if (!empty($delegated)) {
+            $asset_ids = class_exists('Mullion_Asset_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), Mullion_Asset_Library::get_all())
+                : [];
+            $font_ids = class_exists('Mullion_Font_Library')
+                ? array_map(fn($item) => (string) ($item['id'] ?? ''), Mullion_Font_Library::get_all())
+                : [];
+
+            foreach ($delegated as $space) {
+                foreach ($asset_ids as $asset_id) {
+                    self::associate_asset(intval($space->id), 'asset', $asset_id);
+                }
+                foreach ($font_ids as $font_id) {
+                    self::associate_asset(intval($space->id), 'font', $font_id);
+                }
+            }
+        }
+
+        update_option('mullion_space_library_assoc_backfilled', '1', false);
+    }
+
+    // ── P66-C: Backfill space_id on the three scoped tables ───────────────────
+
+    /**
+     * One-time backfill of space_id on the campaign-scoped tables whose writers
+     * never stamped it (analytics_events, media_refs, access_requests). The
+     * audit_log table is intentionally excluded — insert_audit_entry() already
+     * stamps it (P50-A). Resolves each row's space from the campaign's
+     * `_mullion_space_id` post meta; rows already stamped (space_id != 0) are left
+     * untouched, so a re-run (or a move-corrected row) is never clobbered.
+     *
+     * PR-review hardening: the space is resolved once per campaign (bounded by
+     * the campaign count) and campaigns are grouped by space, so each UPDATE is
+     * bounded to a 500-id chunk. The earlier `UPDATE ... JOIN ... WHERE
+     * space_id = 0` rewrote the entire — potentially multi-million-row —
+     * analytics table in one locking statement; on a large site that can exceed
+     * the request/MySQL timeout, and because the guard option is written only
+     * after the loop, a failure would re-run the migration on every request. The
+     * end state is identical: rows keyed to a campaign with a non-default space
+     * get that space; every other row stays at 0.
+     */
+    private static function maybe_backfill_scoped_space_ids(): void {
+        if (get_option('mullion_scoped_space_id_backfilled')) {
+            return;
+        }
+
+        global $wpdb;
+        $tables = [
+            self::get_analytics_table(),
+            self::get_media_refs_table(),
+            self::get_access_requests_table(),
+        ];
+
+        // Resolve each campaign's non-default space once and group ids by space.
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+        $meta_rows = $wpdb->get_results(
+            "SELECT post_id, meta_value FROM {$wpdb->postmeta}
+             WHERE meta_key = '_mullion_space_id' AND meta_value <> '' AND meta_value <> '0'",
+            ARRAY_A
+        );
+
+        $ids_by_space = [];
+        foreach ($meta_rows as $meta_row) {
+            $space_id = intval($meta_row['meta_value']);
+            if ($space_id > 0) {
+                $ids_by_space[$space_id][] = intval($meta_row['post_id']);
+            }
+        }
+
+        foreach ($tables as $table) {
+            foreach ($ids_by_space as $space_id => $campaign_ids) {
+                foreach (array_chunk($campaign_ids, 500) as $chunk) {
+                    $placeholders = implode(', ', array_fill(0, count($chunk), '%d'));
+                    // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Table name from internal method; space id + campaign ids parameterized.
+                    $wpdb->query($wpdb->prepare(
+                        "UPDATE {$table} SET space_id = %d
+                         WHERE space_id = 0 AND campaign_id IN ({$placeholders})",
+                        array_merge([$space_id], $chunk)
+                    ));
+                }
+            }
+        }
+
+        update_option('mullion_scoped_space_id_backfilled', '1', false);
+    }
+
+    // ── P66-B: Seed archived_at for already-archived campaigns ────────────────
+
+    /**
+     * One-time backfill of the archived_at post meta introduced in P66-A, so the
+     * maintenance auto-purge (which now keys off archived_at) has a value for
+     * campaigns archived before this release. archived_at is derived from the
+     * most recent `campaign.archived` audit entry — the DB audit-log table first,
+     * then the legacy `audit_log` post meta — falling back to "now" only when no
+     * archival record exists, which keeps the purge clock conservative.
+     */
+    private static function maybe_backfill_archived_at(): void {
+        if (get_option('mullion_archived_at_backfilled')) {
+            return;
+        }
+
+        // Currently-archived campaigns that have no archived_at stamp yet.
+        $post_ids = get_posts([
+            'post_type'      => 'mullion_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+            'meta_query'     => [
+                'relation' => 'AND',
+                ['key' => 'status', 'value' => 'archived'],
+                ['key' => Mullion_Campaign_Status::META_ARCHIVED_AT, 'compare' => 'NOT EXISTS'],
+            ],
+        ]);
+
+        if (!empty($post_ids)) {
+            global $wpdb;
+            $audit_table = self::get_audit_log_table();
+            $now         = gmdate('Y-m-d H:i:s');
+
+            foreach (array_chunk(array_map('intval', $post_ids), 200) as $chunk) {
+                $placeholders = implode(', ', array_fill(0, count($chunk), '%d'));
+                // Most-recent campaign.archived timestamp per campaign, one query per chunk.
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+                $rows = $wpdb->get_results($wpdb->prepare(
+                    "SELECT campaign_id, MAX(created_at) AS archived_at
+                     FROM {$audit_table}
+                     WHERE action = 'campaign.archived' AND campaign_id IN ({$placeholders})
+                     GROUP BY campaign_id",
+                    $chunk
+                ), ARRAY_A);
+
+                $db_map = [];
+                foreach ($rows as $row) {
+                    $db_map[intval($row['campaign_id'])] = $row['archived_at'];
+                }
+
+                foreach ($chunk as $cid) {
+                    $ts = $db_map[$cid] ?? null;
+                    if (empty($ts)) {
+                        $ts = self::derive_archived_at_from_legacy_meta($cid);
+                    }
+                    if (empty($ts)) {
+                        $ts = $now;
+                    }
+                    update_post_meta($cid, Mullion_Campaign_Status::META_ARCHIVED_AT, $ts);
+                }
+            }
+        }
+
+        update_option('mullion_archived_at_backfilled', '1', false);
+    }
+
+    /**
+     * Derive an archived_at timestamp from a campaign's legacy `audit_log` post
+     * meta (the pre-P28-G store, still authoritative until a campaign's audit is
+     * first viewed and migrated into the DB table). Returns the most recent
+     * `campaign.archived` entry as a UTC `Y-m-d H:i:s` string, or null.
+     */
+    private static function derive_archived_at_from_legacy_meta(int $campaign_id): ?string {
+        $legacy = get_post_meta($campaign_id, 'audit_log', true);
+        if (!is_array($legacy)) {
+            return null;
+        }
+        $max = null;
+        foreach ($legacy as $entry) {
+            if (!is_array($entry) || ($entry['action'] ?? '') !== 'campaign.archived') {
+                continue;
+            }
+            $raw = $entry['createdAt'] ?? $entry['created_at'] ?? '';
+            if ($raw === '') {
+                continue;
+            }
+            $ts = strtotime((string) $raw);
+            if ($ts !== false && ($max === null || $ts > $max)) {
+                $max = $ts;
+            }
+        }
+        return $max !== null ? gmdate('Y-m-d H:i:s', $max) : null;
+    }
+
+    private static function ensure_index($table, $index_name, $columns_sql) {
+        // Validate identifiers to prevent SQL injection.
+        // prepare() cannot be used for DDL identifiers (table/index/column names).
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $index_name)) {
+            return;
+        }
+        if (!preg_match('/^\([a-zA-Z0-9_,\s\(\)]+\)$/', $columns_sql)) {
+            return;
+        }
+
+        global $wpdb;
+
+        $existing = $wpdb->get_var(
+            $wpdb->prepare(
+                "SHOW INDEX FROM {$table} WHERE Key_name = %s",
+                $index_name
+            )
+        );
+
+        if ($existing) {
+            return;
+        }
+
+        $wpdb->query("ALTER TABLE {$table} ADD INDEX {$index_name} {$columns_sql}");
+    }
+}

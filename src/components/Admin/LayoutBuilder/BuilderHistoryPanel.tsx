@@ -4,12 +4,12 @@ import { Stack, Text, Box, ActionIcon, Tooltip, Group, ScrollArea, UnstyledButto
 import { IconClockHour4, IconTrash } from '@tabler/icons-react';
 import type { IDockviewPanelProps } from 'dockview';
 import { useBuilderDock } from './BuilderDockContext';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Component ────────────────────────────────────────────────
 
 export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { builder } = useBuilderDock();
   const { historyEntries, historyCurrentIndex, undo, redo, canUndo, canRedo, jumpToHistoryIndex, isHistoryTrimmed } =
     builder;
@@ -154,4 +154,4 @@ export function BuilderHistoryPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(BuilderHistoryPanel, 'LayoutBuilder:BuilderHistoryPanel');
+setMullionDebugDisplayName(BuilderHistoryPanel, 'LayoutBuilder:BuilderHistoryPanel');

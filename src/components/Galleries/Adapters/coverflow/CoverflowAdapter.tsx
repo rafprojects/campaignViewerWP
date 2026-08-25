@@ -15,19 +15,19 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCssOrNumber, useSwipe } from '@wp-super-gallery/shared-utils';
-import { useCarousel } from '@wp-super-gallery/shared-utils';
-import { useLightbox } from '@wp-super-gallery/shared-utils';
+import { toCssOrNumber, useSwipe } from '@mullion/shared-utils';
+import { useCarousel } from '@mullion/shared-utils';
+import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
   resolveGalleryHeading,
 } from '../_shared/runtimeCommon';
-import { resolveBoundedSectionHeight } from '@wp-super-gallery/shared-utils';
+import { resolveBoundedSectionHeight } from '@mullion/shared-utils';
 
 const FALLBACK_HEIGHT_PX = 500;
 /** Width of each item as a fraction of the container width */
@@ -50,7 +50,7 @@ export function CoverflowAdapter({
   runtime,
   containerDimensions,
 }: CoverflowAdapterProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -111,7 +111,7 @@ export function CoverflowAdapter({
   );
 
   return (
-    <Stack gap="xs" style={adapterSizing} {...getWpsgDebugProps('CoverflowAdapter')}>
+    <Stack gap="xs" style={adapterSizing} {...getMullionDebugProps('CoverflowAdapter')}>
       <AdapterHeading common={common} heading={heading} />
 
       <Box
@@ -119,7 +119,7 @@ export function CoverflowAdapter({
         tabIndex={0}
         onKeyDown={handleKeyDown}
         {...swipeHandlers}
-        {...getWpsgDebugProps('CoverflowAdapter', 'stage')}
+        {...getMullionDebugProps('CoverflowAdapter', 'stage')}
         style={{
           position: 'relative',
           height: containerHeight,
@@ -173,7 +173,7 @@ export function CoverflowAdapter({
                     handleItemClick(idx);
                   }
                 }}
-                {...getWpsgDebugProps('CoverflowAdapter', 'item')}
+                {...getMullionDebugProps('CoverflowAdapter', 'item')}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -190,7 +190,7 @@ export function CoverflowAdapter({
                   transform: `translateX(${translateX}px) rotateY(${rotateY}deg) scale(${scale})`,
                   transformOrigin: offset < 0 ? 'right center' : offset > 0 ? 'left center' : 'center center',
                   transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease',
-                  background: 'var(--wpsg-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #1a1a2e)',
                   boxShadow: isActive
                     ? '0 8px 40px rgba(0,0,0,0.45)'
                     : '0 4px 16px rgba(0,0,0,0.25)',
@@ -219,7 +219,7 @@ export function CoverflowAdapter({
                     transition: 'background 0.2s ease',
                     pointerEvents: 'none',
                   }}
-                  {...(isActive ? { className: 'wpsg-cf-overlay' } : {})}
+                  {...(isActive ? { className: 'mullion-cf-overlay' } : {})}
                 >
                   {isVideo ? (
                     <IconPlayerPlay
@@ -231,7 +231,7 @@ export function CoverflowAdapter({
                     <IconZoomIn
                       size={40}
                       color="white"
-                      className="wpsg-cf-zoom"
+                      className="mullion-cf-zoom"
                       style={{
                         opacity: 0,
                         transition: 'opacity 0.2s ease',
@@ -248,10 +248,10 @@ export function CoverflowAdapter({
 
       {/* Hover styles for active item */}
       <style>{`
-        [data-wpsg="CoverflowAdapter"][data-wpsg-role="item"]:hover .wpsg-cf-overlay {
+        [data-mullion="CoverflowAdapter"][data-mullion-role="item"]:hover .mullion-cf-overlay {
           background: rgba(0,0,0,0.22) !important;
         }
-        [data-wpsg="CoverflowAdapter"][data-wpsg-role="item"]:hover .wpsg-cf-zoom {
+        [data-mullion="CoverflowAdapter"][data-mullion-role="item"]:hover .mullion-cf-zoom {
           opacity: 1 !important;
         }
       `}</style>
@@ -269,4 +269,4 @@ export function CoverflowAdapter({
   );
 }
 
-setWpsgDebugDisplayName(CoverflowAdapter, 'CoverflowAdapter');
+setMullionDebugDisplayName(CoverflowAdapter, 'CoverflowAdapter');

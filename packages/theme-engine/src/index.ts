@@ -1,4 +1,4 @@
-// @wp-super-gallery/theme-engine — framework-neutral theme pipeline.
+// @mullion/theme-engine — framework-neutral theme pipeline.
 //
 // [P51-L] The portable core extracted from src/themes: type definitions, the
 // chroma-based color generator, the strict validator, the CSS-variable emitter

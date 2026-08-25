@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { showNotification } from '@mantine/notifications';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 import i18n from '@/i18n';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
 import type { ApiClient } from '@/services/apiClient';
@@ -41,7 +41,7 @@ export function useMediaCrud({
   async function confirmDelete() {
     if (!deleteItem) return;
     try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
+      await apiClient.delete(`/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media/${deleteItem.id}`);
       setMedia((m) => m.filter((x) => x.id !== deleteItem.id));
       queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => (prev ?? []).filter((x) => x.id !== deleteItem.id));
       showNotification({ title: t('mediacrud_deleted_title', 'Deleted'), message: t('mediacrud_deleted_message', 'Media removed.') });
@@ -65,7 +65,7 @@ export function useMediaCrud({
   async function saveEdit() {
     if (!editingItem) return;
     try {
-      const updated = await apiClient.put<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, {
+      const updated = await apiClient.put<MediaItem>(`/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media/${editingItem.id}`, {
         title: editingTitle.trim() || undefined,
         caption: editingCaption,
         thumbnail: editingThumbnail
@@ -83,7 +83,7 @@ export function useMediaCrud({
     setRescanning(true);
     try {
       const result = await apiClient.post<{ message: string; updated: number; total: number }>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/rescan`,
+        `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media/rescan`,
         {},
       );
       if (result.updated > 0) {

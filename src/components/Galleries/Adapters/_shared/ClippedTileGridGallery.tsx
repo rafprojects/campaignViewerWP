@@ -19,10 +19,10 @@ import type {
   MediaItem,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { toCss, toCssOrNumber, useCarousel, resolveTileGridLayout } from '@wp-super-gallery/shared-utils';
+import { toCss, toCssOrNumber, useCarousel, resolveTileGridLayout } from '@mullion/shared-utils';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
 import { buildTileStyles } from './tileHoverStyles';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getMullionDebugProps } from '@/utils/mullionDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './runtimeCommon';
 import { AdapterHeading } from './AdapterHeading';
 import { AdapterLightbox } from './AdapterLightbox';
@@ -32,7 +32,7 @@ import { useContainerWidth } from './useContainerWidth';
 export interface ClippedTileGridConfig {
   /** CSS scope string (e.g. `'diamond'`, `'hex'`) — drives tile/overlay/zoom class names. */
   scope: string;
-  /** Component name used for the `data-wpsg-*` debug attributes. */
+  /** Component name used for the `data-mullion-*` debug attributes. */
   debugName: string;
   /** clip-path polygon applied to every tile. */
   clipPath: string;
@@ -64,7 +64,7 @@ interface ClippedTileGridGalleryProps {
 
 export function ClippedTileGridGallery({ media, settings, runtime, config }: ClippedTileGridGalleryProps) {
   const { scope, debugName, clipPath, vOverlap, icon, playIconRatio, zoomIconRatio, badge } = config;
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -106,17 +106,17 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps(debugName)} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps(debugName)} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       <AdapterHeading common={common} heading={heading} icon={icon} />
 
       <style>{buildTileStyles({ scope, settings })}</style>
 
-      <Box {...getWpsgDebugProps(debugName, 'grid')} ref={containerRef} style={{ width: '100%', position: 'relative' }}>
+      <Box {...getMullionDebugProps(debugName, 'grid')} ref={containerRef} style={{ width: '100%', position: 'relative' }}>
         {rows.map((row, rowIdx) => {
           const isOffset = rowIdx % 2 === 1;
           return (
             <Box
-              {...getWpsgDebugProps(debugName, 'row')}
+              {...getMullionDebugProps(debugName, 'row')}
               key={rowIdx}
               style={{
                 display: 'flex',
@@ -137,7 +137,7 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
                     component="button"
                     onClick={() => openAt(globalIdx)}
                     aria-label={label}
-                    className={`wpsg-tile-${scope}`}
+                    className={`mullion-tile-${scope}`}
                     style={{
                       flexShrink: 0,
                       width: tilePx,
@@ -147,7 +147,7 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
                       position: 'relative',
                       overflow: 'hidden',
                       padding: 0,
-                      background: 'var(--wpsg-color-surface, #1a1a2e)',
+                      background: 'var(--mullion-color-surface, #1a1a2e)',
                     }}
                   >
                     <LazyImage
@@ -161,7 +161,7 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
                       }}
                     />
                     <Box
-                      className={`wpsg-${scope}-overlay`}
+                      className={`mullion-${scope}-overlay`}
                       style={{
                         position: 'absolute', inset: 0,
                         background: 'rgba(0,0,0,0)',
@@ -173,7 +173,7 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
                         ? <IconPlayerPlay size={tilePx * playIconRatio} color="white"
                           style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                         : <IconZoomIn size={tilePx * zoomIconRatio} color="white"
-                          className={`wpsg-${scope}-zoom`}
+                          className={`mullion-${scope}-zoom`}
                           style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                       }
                     </Box>
@@ -201,10 +201,10 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
       </Box>
 
       <style>{`
-        .wpsg-tile-${scope}:hover .wpsg-${scope}-overlay {
+        .mullion-tile-${scope}:hover .mullion-${scope}-overlay {
           background: rgba(0,0,0,0.28) !important;
         }
-        .wpsg-tile-${scope}:hover .wpsg-${scope}-zoom {
+        .mullion-tile-${scope}:hover .mullion-${scope}-zoom {
           opacity: 1 !important;
         }
       `}</style>

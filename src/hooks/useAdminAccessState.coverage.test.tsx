@@ -75,7 +75,7 @@ describe('handleGrantAccess', () => {
     });
     await act(async () => { await hook.result.current.handleGrantAccess(); });
     expect(api.post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/5/access',
+      '/wp-json/mullion-gallery/v1/campaigns/5/access',
       expect.objectContaining({ userId: 42, access_level: 'viewer', expires_at: '2030-01-01' }),
     );
     expect(mutateAccess).toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe('handleGrantAccess', () => {
     act(() => hook.result.current.setAccessUserId('8'));
     await act(async () => { await hook.result.current.handleGrantAccess(); });
     expect(api.post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/companies/3/access',
+      '/wp-json/mullion-gallery/v1/companies/3/access',
       expect.objectContaining({ userId: 8 }),
     );
   });
@@ -115,15 +115,15 @@ describe('handleRevokeAccess', () => {
   it('revokes a campaign grant', async () => {
     const { hook, api } = setup();
     await act(async () => { await hook.result.current.handleRevokeAccess({ userId: 4, source: 'campaign' } as never); });
-    expect(api.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/5/access/4');
+    expect(api.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/campaigns/5/access/4');
   });
 
   it('revokes a company grant and a campaign-source grant in company mode', async () => {
     const { hook, api } = setup({ accessViewMode: 'company', selectedCompanyId: '3' });
     await act(async () => { await hook.result.current.handleRevokeAccess({ userId: 4, source: 'company' } as never); });
-    expect(api.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/companies/3/access/4');
+    expect(api.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/companies/3/access/4');
     await act(async () => { await hook.result.current.handleRevokeAccess({ userId: 6, source: 'campaign', campaignId: '99' } as never); });
-    expect(api.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/99/access/6');
+    expect(api.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/campaigns/99/access/6');
   });
 
   it('notifies on a revoke error', async () => {
@@ -149,7 +149,7 @@ describe('handleChangeRole', () => {
       );
     });
     expect(api.post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/5/access',
+      '/wp-json/mullion-gallery/v1/campaigns/5/access',
       expect.objectContaining({ userId: 4, access_level: 'editor', expires_at: '2031-01-01' }),
     );
   });
@@ -157,7 +157,7 @@ describe('handleChangeRole', () => {
   it('changes a company-source role in company mode and reports errors', async () => {
     const { hook, api } = setup({ accessViewMode: 'company', selectedCompanyId: '3' });
     await act(async () => { await hook.result.current.handleChangeRole({ userId: 4, source: 'company', access_level: 'viewer' } as never, 'owner'); });
-    expect(api.post).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/companies/3/access', expect.objectContaining({ access_level: 'owner' }));
+    expect(api.post).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/companies/3/access', expect.objectContaining({ access_level: 'owner' }));
 
     const err = setup({ api: makeApi({ post: vi.fn().mockRejectedValue(new Error('x')) }) });
     await act(async () => { await err.hook.result.current.handleChangeRole({ userId: 4, source: 'campaign', access_level: 'viewer' } as never, 'editor'); });

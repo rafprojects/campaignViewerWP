@@ -15,15 +15,15 @@ import { SpotlightGallery } from './SpotlightGallery';
 
 // useCarousel + useLightbox now live in the shared-utils barrel (P51-B): spread
 // the real module and override just these two.
-vi.mock('@wp-super-gallery/shared-utils', async () => {
-  const actual = await vi.importActual<typeof import('@wp-super-gallery/shared-utils')>('@wp-super-gallery/shared-utils');
+vi.mock('@mullion/shared-utils', async () => {
+  const actual = await vi.importActual<typeof import('@mullion/shared-utils')>('@mullion/shared-utils');
   return {
     ...actual,
     useCarousel: () => ({ currentIndex: 0, setCurrentIndex: vi.fn(), next: vi.fn(), prev: vi.fn() }),
     useLightbox: () => ({ isOpen: false, open: vi.fn(), close: vi.fn() }),
   };
 });
-vi.mock('@wp-super-gallery/shared-ui', () => ({
+vi.mock('@mullion/shared-ui', () => ({
   Lightbox: ({ isOpen }: { isOpen: boolean }) => (isOpen ? <div data-testid="lightbox-open" /> : null),
 }));
 vi.mock('@/components/CampaignGallery/LazyImage', () => ({

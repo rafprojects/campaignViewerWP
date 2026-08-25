@@ -23,7 +23,7 @@ import { IconCopy, IconRefresh, IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient, WebhookEndpoint } from '@/services/apiClient';
 import { notifications } from '@mantine/notifications';
-import { getErrorMessage } from '@wp-super-gallery/shared-utils';
+import { getErrorMessage } from '@mullion/shared-utils';
 
 // value + English default; the label is translated at the use site (t key set_wh_<event>).
 const WEBHOOK_EVENTS = [
@@ -40,7 +40,7 @@ const WEBHOOK_EVENTS = [
 
 /** Translate the WEBHOOK_EVENTS labels via keys like `set_wh_campaign_created`. */
 function useWebhookEventOptions() {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return WEBHOOK_EVENTS.map((e) => ({ value: e.value, label: t(`set_wh_${e.value.replace('.', '_')}`, e.label) }));
 }
 
@@ -58,7 +58,7 @@ interface AddFormState {
 }
 
 function SecretReveal({ secret }: { secret: string }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Box
       p="xs"
@@ -107,7 +107,7 @@ function EndpointRow({
   isRotating: boolean;
   isUpdating: boolean;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const eventOptions = useWebhookEventOptions();
   const [showEvents, setShowEvents] = useState(false);
 
@@ -199,7 +199,7 @@ function EndpointRow({
 }
 
 export function WebhookSettingsSection({ apiClient }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const eventOptions = useWebhookEventOptions();
   const queryClient = useQueryClient();
 
@@ -282,7 +282,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
   return (
     <Stack gap="md">
       <Text size="sm" c="dimmed">
-        {t('set_wh_desc', 'Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity.', { header: 'X-WPSG-Signature' })}
+        {t('set_wh_desc', 'Webhook endpoints receive signed HMAC-SHA256 POST requests when campaign events occur. Payloads include the event type, ISO timestamp, and event data. Use the {{header}} header to verify delivery authenticity.', { header: 'X-MULLION-Signature' })}
       </Text>
 
       {endpoints.length === 0 && (
@@ -354,7 +354,7 @@ export function WebhookSettingsSection({ apiClient }: Props) {
       >
         <Stack gap="sm">
           <Text size="sm">
-            {t('set_wh_secret_body', 'This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256.', { header: 'X-WPSG-Signature' })}
+            {t('set_wh_secret_body', 'This is the only time the full secret will be shown. Copy it and configure your endpoint to verify the {{header}} header using HMAC-SHA256.', { header: 'X-MULLION-Signature' })}
           </Text>
           {newSecret && <SecretReveal secret={newSecret} />}
           <Group justify="flex-end">

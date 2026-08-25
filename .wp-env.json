@@ -1,6 +1,6 @@
 {
   "core": "WordPress/WordPress#7.0",
-  "plugins": [ "./wp-plugin/wp-super-gallery" ],
+  "plugins": [ "./wp-plugin/mullion-gallery" ],
   "config": {
     "WP_DEBUG": true,
     "WP_DEBUG_LOG": true,

@@ -250,7 +250,7 @@ describe('CampaignViewer', () => {
 
     await waitFor(() => {
       expect(apiClient.put).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/1',
+        '/wp-json/mullion-gallery/v1/campaigns/1',
         expect.objectContaining({
           galleryOverrides: expect.objectContaining({
             mode: 'unified',

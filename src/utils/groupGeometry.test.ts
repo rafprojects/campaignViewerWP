@@ -20,7 +20,7 @@ import {
   computeGroupResizeDelta,
   reparentGroup,
   dissolveGroupInHierarchy,
-} from '@wp-super-gallery/shared-utils';
+} from '@mullion/shared-utils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
