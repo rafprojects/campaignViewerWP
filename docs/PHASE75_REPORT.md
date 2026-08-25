@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A, P75-B, and P75-H landed
+**Status:** In progress — P75-A, P75-B, P75-C, and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-B dual-channel release wiring landed. Remaining: C–G.)
+**Last updated:** 2026-08-25 (P75-C PACKAGING_RELEASE split docs landed. Remaining: D–G.)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Done | Small-Medium |
 | P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Done | Medium |
-| P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
+| P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Done | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
@@ -209,6 +209,18 @@ Verified against current WordPress.org guidelines, Freemius deployment docs, and
 
 - Manual read-through diffing the doc against `package.json`'s actual script names and `release.yml`'s actual ZIP-naming output (post P75-B) to catch drift before it ships, same as this track exists to fix in the first place.
 - No automated doc-link checker exists in this repo (confirmed: no CI step lints markdown links) — this stays a manual check, consistent with how the other guides are maintained.
+
+### Implementation Notes (2026-08-25)
+
+Documented A/B as they shipped, not the pre-B sketch:
+
+- **Links.** `PACKAGING_RELEASE.md` lives in `docs/guides/`, so PRO_FEATURES anchors are same-directory (`PRO_FEATURES.md#…`), not `guides/PRO_FEATURES.md#…`. GitHub-slugger style: em dash / `&` become `--` (`#7-free-vs-premium-build-split--the-wporg-lite-build-p62-f-decision`, `#8-building--deploy-testing-the-free-vs-premium-editions`).
+- **Script names and bodies** copied from current `package.json` (`build`, `build:wp`, `build:free`, `build:wp:free`, `check:free-build`). Env var is `MULLION_PREMIUM` (vite.config.ts), not the stale `Mullion_PREMIUM` still sitting in a couple of PRO_FEATURES sentences.
+- **Asset layout** in "Verify the Build" was wrong (hashed files are `assets/assets/`, marker at `assets/mullion-edition.json`, Vite manifest at `assets/.vite/manifest.json`). Corrected so a reader can find the lite scan path.
+- **No `npm run package`.** The old "if configured" example is gone. Manual zip uses the live `release.yml` `zip -x` list and `VERSION` from `package.json`.
+- **`composer.json` does not ship** — `.distignore` and `zip -x` both exclude it; `vendor/` does ship. The old "MUST include composer.json" line is gone.
+- **`phpunit` binary drift** (P75-B leftover): `.distignore` excludes it; GitHub `zip -x` does not. Called out so a manual packager copies the Release artifact rather than "fixing" it ad hoc.
+- **Common Commands** in this guide is a bash listing, not a markdown table; `build:wp:free` / `build:free` / `check:free-build` / the static-scan argv are in that listing plus the 3a table.
 
 ## Track P75-D - Decouple admin chrome from the gallery theme by default
 
@@ -443,11 +455,11 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, and P75-B have landed — see those tracks' Implementation Notes. C–G remain planned.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, and P75-C have landed — see those tracks' Implementation Notes. D–G remain planned.
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C should document A/B as they shipped. P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
 **The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) landed without designer input. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
