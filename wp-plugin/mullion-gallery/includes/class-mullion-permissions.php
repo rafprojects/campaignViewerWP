@@ -291,7 +291,7 @@ final class Mullion_Permissions {
         if (!array_key_exists($action, self::MAP)) {
             _doing_it_wrong(
                 __METHOD__,
-                sprintf('Unknown WPSG permission action: %s', esc_html($action)),
+                sprintf('Unknown Mullion permission action: %s', esc_html($action)),
                 'P52-A1'
             );
         }

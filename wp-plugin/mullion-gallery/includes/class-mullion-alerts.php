@@ -31,7 +31,7 @@ class Mullion_Alerts {
         if (!isset($schedules['mullion_every_5min'])) {
             $schedules['mullion_every_5min'] = [
                 'interval' => 300,
-                'display'  => 'Every 5 minutes (WPSG alerts)',
+                'display'  => 'Every 5 minutes (Mullion alerts)',
             ];
         }
         return $schedules;
@@ -46,11 +46,11 @@ class Mullion_Alerts {
             return;
         }
 
-        $subject = '[WPSG] Fatal error detected';
+        $subject = '[Mullion] Fatal error detected';
         $message = "A fatal error occurred in Mullion.\n\n" . wp_json_encode($payload, JSON_PRETTY_PRINT);
         self::queue_email($subject, $message);
         if (class_exists('Mullion_Sentry')) {
-            Mullion_Sentry::capture_message('WPSG fatal error', $payload);
+            Mullion_Sentry::capture_message('Mullion fatal error', $payload);
         }
         self::throttle(self::ALERT_THROTTLE_FATAL);
     }
@@ -87,7 +87,7 @@ class Mullion_Alerts {
             return;
         }
 
-        $subject = '[WPSG] REST error spike detected';
+        $subject = '[Mullion] REST error spike detected';
         $message = sprintf(
             "Detected %d REST errors (>=500) in the last %d minutes.\n\nLast payload:\n%s",
             count($bucket),
@@ -97,7 +97,7 @@ class Mullion_Alerts {
 
         self::queue_email($subject, $message);
         if (class_exists('Mullion_Sentry')) {
-            Mullion_Sentry::capture_message('WPSG REST error spike', $payload);
+            Mullion_Sentry::capture_message('Mullion REST error spike', $payload);
         }
         self::throttle(self::ALERT_THROTTLE_REST);
     }

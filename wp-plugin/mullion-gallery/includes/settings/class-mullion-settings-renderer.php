@@ -71,7 +71,7 @@ class Mullion_Settings_Renderer {
 
         wp_localize_script(
             'mullion-settings-admin',
-            'wpsgSettingsAuthTest',
+            'mullionSettingsAuthTest',
             [
                 'ajaxUrl'              => admin_url('admin-ajax.php'),
                 'nonce'                => wp_create_nonce('mullion_test_auth'),

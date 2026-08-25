@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# WP Super Gallery — End-to-End Tests (manual trigger)
+# Mullion — End-to-End Tests (manual trigger)
 #
 # Runs Playwright E2E tests against a full wp-env WordPress instance.
 # Triggered manually via workflow_dispatch — not part of the regular CI gate

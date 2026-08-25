@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# WP Super Gallery — Release workflow
+# Mullion — Release workflow
 #
 # Triggered manually via workflow_dispatch.  Inputs:
 #   version     – "auto" to compute from conventional commits, or explicit "X.Y.Z"
@@ -7,7 +7,7 @@
 #
 # Flow:
 #   1. Compute or validate version
-#   2. Bump version in package.json + plugin header + WPSG_VERSION constant
+#   2. Bump version in package.json + plugin header + MULLION_VERSION constant
 #   3. Run tests (sanity gate)
 #   4. Production build (build:wp)
 #   5. Install production-only Composer deps
@@ -105,15 +105,15 @@ jobs:
           # 2. Plugin header: "Version: X.Y.Z"
           sed -i "s/^ \* Version: .*/ * Version:           $VERSION/" "$PLUGIN_FILE"
 
-          # 3. WPSG_VERSION constant
-          sed -i "s/define('WPSG_VERSION', '.*')/define('WPSG_VERSION', '$VERSION')/" "$PLUGIN_FILE"
+          # 3. MULLION_VERSION constant
+          sed -i "s/define('MULLION_VERSION', '.*')/define('MULLION_VERSION', '$VERSION')/" "$PLUGIN_FILE"
 
           # 4. readme.txt stable tag
           sed -i "s/^Stable tag: .*/Stable tag: $VERSION/" wp-plugin/mullion-gallery/readme.txt
 
           echo "Bumped to $VERSION"
           grep -n "Version:" "$PLUGIN_FILE" | head -1
-          grep -n "WPSG_VERSION" "$PLUGIN_FILE" | head -1
+          grep -n "MULLION_VERSION" "$PLUGIN_FILE" | head -1
           grep "version" package.json | head -1
 
       # ── Install & test ──────────────────────────────────────────────────────

@@ -311,7 +311,7 @@ class Mullion_Font_Library {
 HTACCESS;
 
         if ( false === file_put_contents( $htaccess_path, $rules ) ) {
-            error_log( '[WPSG] Failed to write font directory .htaccess: ' . $htaccess_path );
+            error_log( '[Mullion] Failed to write font directory .htaccess: ' . $htaccess_path );
             do_action( 'mullion_font_htaccess_write_failed', $htaccess_path );
         }
     }

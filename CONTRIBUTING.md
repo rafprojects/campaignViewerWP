@@ -108,7 +108,7 @@ The fastest reliable broad validation sweep is:
 npm run build:wp
 npm run test:silent
 npm run test:e2e
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 If the default Vitest runner is noisy or looks hung, switch to the serial triage commands before assuming a product regression:
@@ -122,18 +122,18 @@ For PHPUnit from a fresh checkout:
 
 ```bash
 npm install
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 composer install
 cd ../..
 npx wp-env start
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ls vendor/bin/phpunit phpunit.xml.dist tests/bootstrap.php"
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ls vendor/bin/phpunit phpunit.xml.dist tests/bootstrap.php"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 Key points:
 
 - Run `npx wp-env ...` from the repo root because `.wp-env.json` lives there.
-- Run `composer ...` from `wp-plugin/wp-super-gallery` because that is where `composer.json` and `vendor/` live.
+- Run `composer ...` from `wp-plugin/mullion-gallery` because that is where `composer.json` and `vendor/` live.
 - Docker must be running before `npx wp-env start`.
 - The `pre-push` hook only runs `npx vitest run`; it does not cover Playwright or PHPUnit.
 

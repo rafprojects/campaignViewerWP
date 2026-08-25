@@ -14,7 +14,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
 
     public function setUp(): void {
         parent::setUp();
-        // Ensure we have an admin user with the WPSG capability.
+        // Ensure we have an admin user with the Mullion capability.
         $user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
         $user    = get_user_by( 'id', $user_id );
         $user->add_cap( 'manage_mullion' );

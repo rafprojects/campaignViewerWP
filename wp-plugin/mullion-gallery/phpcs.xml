@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<ruleset name="WP Super Gallery — Security">
+<ruleset name="Mullion — Security">
     <description>
         Security-scoped PHPCS ruleset for the P60-C compliance pass: output escaping,
         input sanitization, and nonce verification across the PHP surface. Intentionally

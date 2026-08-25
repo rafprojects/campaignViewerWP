@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "description": "P55-C: Canonical adapter field-map schema. Single source of truth for the camelCase (TS) <-> snake_case (PHP) field contract. TS imports this at build time; PHP loads it at runtime via WPSG_Adapter_Field_Schema. Add a field here to register it on both sides.",
+  "description": "P55-C: Canonical adapter field-map schema. Single source of truth for the camelCase (TS) <-> snake_case (PHP) field contract. TS imports this at build time; PHP loads it at runtime via Mullion_Adapter_Field_Schema. Add a field here to register it on both sides.",
   "fields": [
     { "camelKey": "gridCardWidth",                  "snakeSlug": "grid_card_width" },
     { "camelKey": "gridCardAspectRatio",             "snakeSlug": "grid_card_aspect_ratio" },

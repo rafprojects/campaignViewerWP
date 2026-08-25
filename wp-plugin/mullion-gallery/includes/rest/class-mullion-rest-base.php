@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Abstract base class for all WPSG REST controllers.
+ * Abstract base class for all Mullion REST controllers.
  *
  * Provides shared HTTP helpers, rate limiting, auth gates, pagination,
  * cache version management, and campaign/access utility methods that
