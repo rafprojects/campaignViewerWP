@@ -307,7 +307,7 @@ describe('createEmptyTemplate', () => {
     expect(t.overlays).toEqual([]);
     expect(t.texts).toEqual([]);
     expect(t.id).toBe('');
-    expect(t.backgroundColor).toBe('#1a1a2e');
+    expect(t.backgroundColor).toBe('#102530');
     expect(t.tags).toEqual([]);
   });
 

@@ -1,6 +1,6 @@
 # Embedded Media Security Plan
 
-This document defines how external media links (YouTube, Vimeo, Rumble, BitChute, Odysee) are handled securely in WP Super Gallery.
+This document defines how external media links (YouTube, Vimeo, Rumble, BitChute, Odysee) are handled securely in Mullion.
 
 ---
 

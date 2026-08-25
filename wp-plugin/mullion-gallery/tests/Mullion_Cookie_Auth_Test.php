@@ -54,7 +54,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_returns_admin_role_for_admin_users() {
-        // Promote the test user to admin with WPSG capability.
+        // Promote the test user to admin with Mullion capability.
         $user = get_user_by('id', $this->test_user_id);
         $user->set_role('administrator');
         $user->add_cap('manage_mullion');

@@ -1,4 +1,4 @@
-# Translating WP Super Gallery
+# Translating Mullion
 
 This guide explains how to add a new language for **both** surfaces of the plugin:
 
@@ -17,33 +17,33 @@ The React UI uses i18next keys (e.g. `auth_admin_menu_label`), whose English
 defaults are the single source of truth in [`src/i18n-strings.en.json`](../../src/i18n-strings.en.json).
 
 `scripts/generate-frontend-i18n.mjs` turns that JSON into a generated PHP
-manifest, [`includes/i18n/class-wpsg-frontend-strings.php`](../../wp-plugin/wp-super-gallery/includes/i18n/class-wpsg-frontend-strings.php),
+manifest, [`includes/i18n/class-mullion-frontend-strings.php`](../../wp-plugin/mullion-gallery/includes/i18n/class-mullion-frontend-strings.php),
 in which every key maps to its English default wrapped in `__()`:
 
 ```php
-'auth_admin_menu_label' => __('Admin menu', 'wp-super-gallery'),
+'auth_admin_menu_label' => __('Admin menu', 'mullion-gallery'),
 ```
 
 That single manifest does two jobs:
 
 1. **Harvest** — `wp i18n make-pot` scans the `__()` calls, so the React strings
-   land in `languages/wp-super-gallery.pot` alongside the PHP strings.
-2. **Runtime** — on each page load, `WPSG_Frontend_Strings::get_translated()`
+   land in `languages/mullion-gallery.pot` alongside the PHP strings.
+2. **Runtime** — on each page load, `Mullion_Frontend_Strings::get_translated()`
    resolves each key to the active locale's translation and PHP injects the map
-   into `window.__WPSG_I18N__.strings`. `src/i18n.ts` feeds that to i18next,
+   into `window.__MULLION_I18N__.strings`. `src/i18n.ts` feeds that to i18next,
    falling back to the bundled English per-key for anything untranslated.
 
 ```
-src/i18n-strings.en.json  ──generate──▶  class-wpsg-frontend-strings.php
+src/i18n-strings.en.json  ──generate──▶  class-mullion-frontend-strings.php
         (key → English)                        (key → __(English))
                                                    │           │
                                         make-pot   │           │  runtime
                                                    ▼           ▼
-                                     wp-super-gallery.pot   window.__WPSG_I18N__
+                                     mullion-gallery.pot   window.__MULLION_I18N__
                                      (PHP + React strings)   → i18next (fallback: en)
 ```
 
-> **Never edit `class-wpsg-frontend-strings.php` by hand.** It is generated.
+> **Never edit `class-mullion-frontend-strings.php` by hand.** It is generated.
 > After changing `src/i18n-strings.en.json`, run `npm run i18n:generate` and
 > commit the result. CI (`npm run i18n:check`) fails if the two drift apart.
 
@@ -60,29 +60,29 @@ Prerequisites: [WP-CLI](https://wp-cli.org/) with the i18n command
 
    ```bash
    npm run i18n:generate                 # refresh the PHP manifest
-   wp i18n make-pot wp-plugin/wp-super-gallery \
-     wp-plugin/wp-super-gallery/languages/wp-super-gallery.pot \
-     --domain=wp-super-gallery \
+   wp i18n make-pot wp-plugin/mullion-gallery \
+     wp-plugin/mullion-gallery/languages/mullion-gallery.pot \
+     --domain=mullion-gallery \
      --exclude=node_modules,vendor,tests,build
    ```
 
 2. **Create the locale `.po`** from the template, e.g. for German:
 
    ```bash
-   cp wp-plugin/wp-super-gallery/languages/wp-super-gallery.pot \
-      wp-plugin/wp-super-gallery/languages/wp-super-gallery-de_DE.po
+   cp wp-plugin/mullion-gallery/languages/mullion-gallery.pot \
+      wp-plugin/mullion-gallery/languages/mullion-gallery-de_DE.po
    ```
 
    Then translate each `msgstr` (with [Poedit](https://poedit.net/),
    [Loco Translate](https://wordpress.org/plugins/loco-translate/), or by hand).
-   Add the header fields shown in `wp-super-gallery-fr_FR.po` (`Language`,
+   Add the header fields shown in `mullion-gallery-fr_FR.po` (`Language`,
    `Plural-Forms`, `Content-Type: … charset=UTF-8`).
 
 3. **Compile** the runtime binaries:
 
    ```bash
-   wp i18n make-mo  wp-plugin/wp-super-gallery/languages   # → .mo (all locales)
-   wp i18n make-php wp-plugin/wp-super-gallery/languages   # → .l10n.php (WP 6.5+ fast format)
+   wp i18n make-mo  wp-plugin/mullion-gallery/languages   # → .mo (all locales)
+   wp i18n make-php wp-plugin/mullion-gallery/languages   # → .l10n.php (WP 6.5+ fast format)
    ```
 
 4. **Commit** the `.po`, `.mo`, and `.l10n.php`. They ship automatically in the

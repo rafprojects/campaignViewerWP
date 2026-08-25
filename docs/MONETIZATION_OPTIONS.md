@@ -1,7 +1,7 @@
 # Monetization & Distribution Options
 
 > **Created:** 2026-06-17
-> **Purpose:** Decision-support for taking wp-super-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) anchored to this codebase.
+> **Purpose:** Decision-support for taking mullion-gallery to production. Lays out every realistic distribution channel and monetization model, the licensing/update mechanics each requires, the fees involved, and the level of effort (LOE) on top of [PHASE54_REPORT.md](archive/phases/PHASE54_REPORT.md) anchored to this codebase.
 > **Status:** Reference. *(Update 2026-07-06: the path is now **chosen** — **Freemius premium** is the decision of record; see PHASE60 / [PHASE62_REPORT.md](PHASE62_REPORT.md) Key Decision A, and the go-live runbook [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md). This doc is retained for the option analysis behind that choice.)* PHASE54's must-fix bar was kept target-independent so the decision could be made later without invalidating that work.
 > **Tone:** Honest engineering assessment, not marketing. Every LOE claim ties to a concrete file/seam in the repo.
 
@@ -10,7 +10,7 @@
 ## TL;DR
 
 - **PHASE54 (security, i18n-user-facing, a11y baseline, builder robustness, release closeout) is the floor for *every* path.** Nothing below replaces it.
-- The plugin was **not** built toward monetization, but nothing structurally blocks it. The two natural "pro/free gating seams" already exist: the **adapter registry** (`adapterRegistry.ts`) and the **`WPSG_Permissions` tier map** (`includes/class-wpsg-permissions.php`).
+- The plugin was **not** built toward monetization, but nothing structurally blocks it. The two natural "pro/free gating seams" already exist: the **adapter registry** (`adapterRegistry.ts`) and the **`Mullion_Permissions` tier map** (`includes/class-mullion-permissions.php`).
 - **Lowest-risk monetization path:** private/client sales first (validate willingness to pay) → **premium via Freemius** (it collapses licensing + updates + taxes + analytics into one SDK) → optionally a free WP.org "lite" tier later for top-of-funnel.
 - **Biggest extra cost to go *public* (WP.org or marketplace):** full admin-panel i18n + a WordPress Plugin Check / escaping-sanitization compliance pass + `readme.txt`/assets. These are deferred FUTURE_TASKS, not P54.
 
@@ -77,12 +77,12 @@ Any paid path needs three things the free WP.org channel gives you for free: **l
 What each path needs **on top of** PHASE54, with the concrete artifacts involved:
 
 **Common to all paid paths**
-- **Pro/free gating seam.** Two clean cut-points already exist: gate advanced adapters at the **adapter registry** (`src/components/Galleries/Adapters/adapterRegistry.ts` — registrations are already metadata-driven, so a `pro: true` flag + a license check at `resolveAdapter` is a small, localized change) and gate management features at the **`WPSG_Permissions` tier map** (`includes/class-wpsg-permissions.php` — already a declarative action→requirement map, P52-A). LayoutBuilder "pro" features (e.g. text layers, responsive editing from `FUTURE_TASKS`) gate naturally at their entry points.
-- **License/update SDK integration** — Freemius SDK init in `wp-super-gallery.php`; ~days, not weeks.
+- **Pro/free gating seam.** Two clean cut-points already exist: gate advanced adapters at the **adapter registry** (`src/components/Galleries/Adapters/adapterRegistry.ts` — registrations are already metadata-driven, so a `pro: true` flag + a license check at `resolveAdapter` is a small, localized change) and gate management features at the **`Mullion_Permissions` tier map** (`includes/class-mullion-permissions.php` — already a declarative action→requirement map, P52-A). LayoutBuilder "pro" features (e.g. text layers, responsive editing from `FUTURE_TASKS`) gate naturally at their entry points.
+- **License/update SDK integration** — Freemius SDK init in `mullion-gallery.php`; ~days, not weeks.
 
 **Public WP.org (free or freemium free-core)** — **High delta**
 - **Full admin-panel i18n** — flip `i18next/no-literal-string` from `'off'` to `'error'` globally (`eslint.config.js:82`) and harvest the remaining ~300 literals (P54-B only does the user-facing subset). Add a proper WP text domain + generated `.pot`.
-- **Plugin Check + escaping/sanitization compliance pass** — extends P54-A across the whole PHP surface (output escaping at every echo, nonce/capability checks audited, no `eval`/remote-code, no undisclosed external requests). The codebase is already strong here (centralized sanitizer, `WPSG_Permissions`), so this is a focused audit, not a rewrite.
+- **Plugin Check + escaping/sanitization compliance pass** — extends P54-A across the whole PHP surface (output escaping at every echo, nonce/capability checks audited, no `eval`/remote-code, no undisclosed external requests). The codebase is already strong here (centralized sanitizer, `Mullion_Permissions`), so this is a focused audit, not a rewrite.
 - **`readme.txt`, banner/icon assets, screenshots, stable-tag discipline.**
 - **Full WCAG AA** beyond P54-C's critical/serious baseline.
 
@@ -112,7 +112,7 @@ What each path needs **on top of** PHASE54, with the concrete artifacts involved
 ## 7. Recommended sequencing
 
 1. **Validate (now → post-PHASE54): private / client sales.** Lowest bar, fastest cash, real signal on willingness to pay. Requires nothing beyond PHASE54.
-2. **Monetize: premium via Freemius.** Once there's demand, add the gating flag at the adapter registry + `WPSG_Permissions` seams and the Freemius SDK. Subscription + tiered-by-site-count pricing. Avoids building/hosting licensing + update + tax infrastructure. *(Superseded by Phase 62: gating went through a new `WPSG_License` entitlement seam — deliberately orthogonal to `WPSG_Permissions` — and all 14 adapters stayed free; the 3 gated features are LayoutBuilder capabilities. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).)*
+2. **Monetize: premium via Freemius.** Once there's demand, add the gating flag at the adapter registry + `Mullion_Permissions` seams and the Freemius SDK. Subscription + tiered-by-site-count pricing. Avoids building/hosting licensing + update + tax infrastructure. *(Superseded by Phase 62: gating went through a new `Mullion_License` entitlement seam — deliberately orthogonal to `Mullion_Permissions` — and all 14 adapters stayed free; the 3 gated features are LayoutBuilder capabilities. See [guides/PRO_FEATURES.md](guides/PRO_FEATURES.md).)*
 3. **Scale reach: free WP.org "lite" tier.** A freemium free-core on .org becomes the top-of-funnel for the Freemius-licensed pro plugin. This is the step that requires the free/paid code split + Plugin Check + WCAG AA work. *(Updated 2026-07-10: this is **no longer "defer until the pro tier proves out"** — the owner has chosen freemium, so the WP.org "lite" tier is **in scope** and tracked in [PHASE62_REPORT.md](PHASE62_REPORT.md) as **P62-F–I**. Sequencing recommendation stands: ship premium first, add the free WP.org tier afterwards, so the Large code-split/WCAG work and the ~1–10 day WP.org review stay off the paid-launch critical path — see [guides/MARKETPLACE_READINESS.md](guides/MARKETPLACE_READINESS.md) §10.)*
 
 **Decision triggers to move between stages:** repeated inbound "can I buy this?" → stage 2; pro renewals healthy and support load manageable → stage 3 (**now planned regardless**, per the 2026-07-10 freemium decision). If demand never materializes, stopping at stage 1 (or internal/single-site) is a perfectly valid end state.

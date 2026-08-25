@@ -118,9 +118,29 @@ describe('adaptTheme', () => {
     const result = adaptTheme(def);
     const other = result.other as Record<string, unknown>;
     const colors = other['colors'] as Record<string, string>;
-    expect(colors['background']).toBe('#0f172a');
-    expect(colors['text']).toBe('#ffffff');
-    expect(colors['success']).toBe('#22c55e');
+    expect(colors['background']).toBe('#08141b');
+    expect(colors['text']).toBe('#eef8fb');
+    expect(colors['success']).toBe('#56b93e');
+  });
+
+  it('uses borderStrong for input-outline roles including NumberInput and ColorInput', () => {
+    const def = makeThemeDef();
+    const result = adaptTheme(def);
+    const other = result.other as Record<string, unknown>;
+    const colors = other['colors'] as Record<string, string>;
+    const inputBorder = (name: string): string | undefined => {
+      const comp = result.components?.[name] as
+        | { styles?: () => { input?: { borderColor?: string } } }
+        | undefined;
+      return comp?.styles?.().input?.borderColor;
+    };
+
+    expect(inputBorder('Input')).toBe(colors['borderStrong']);
+    expect(inputBorder('TextInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('PasswordInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('NumberInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('ColorInput')).toBe(colors['borderStrong']);
+    expect(colors['borderStrong']).not.toBe(colors['border']);
   });
 
   it('works with a light theme definition', () => {

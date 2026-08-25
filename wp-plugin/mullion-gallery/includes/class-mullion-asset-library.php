@@ -250,7 +250,7 @@ class Mullion_Asset_Library {
     // ── File upload helper ──────────────────────────────────────
 
     /**
-     * Handle an uploaded overlay file, move it to the WPSG uploads sub-dir,
+     * Handle an uploaded overlay file, move it to the Mullion uploads sub-dir,
      * and return the public URL.
      *
      * @param  array $file  A single entry from $_FILES (after validation).

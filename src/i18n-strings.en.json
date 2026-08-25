@@ -1341,7 +1341,7 @@
   "set_sg_tile-appearance_tileGlowEnabled_desc": "Drop-shadow glow on hover for supported tile-based adapters.",
   "set_sg_tile-appearance_tileGlowColor": "Glow Color",
   "set_sg_tile-appearance_tileGlowColor_desc": "CSS color used for the hover glow effect.",
-  "set_sg_tile-appearance_tileGlowColor_ph": "#7c9ef8",
+  "set_sg_tile-appearance_tileGlowColor_ph": "#1ad1c4",
   "set_sg_tile-appearance_tileGlowSpread": "Glow Spread (px)",
   "set_sg_tile-appearance_tileGlowSpread_desc": "Radius of the glow effect.",
   "set_sg_carousel_imageViewportHeight": "Image Viewport Height",

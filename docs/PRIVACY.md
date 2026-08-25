@@ -1,6 +1,6 @@
-# WP Super Gallery — Privacy & GDPR Statement
+# Mullion — Privacy & GDPR Statement
 
-**Applies to:** WP Super Gallery plugin, all editions (free and Pro).
+**Applies to:** Mullion plugin, all editions (free and Pro).
 **Last reviewed:** 2026-07-21 (plugin 0.90.0; documented Google Fonts data flow §3)
 
 This document describes exactly what data the plugin collects, where it is stored,
@@ -9,7 +9,7 @@ requests. It is written for the **site owner** who installs the plugin — you a
 data controller for any personal data your visitors submit; the plugin is a
 processor running entirely on your own WordPress hosting.
 
-> **Summary in one line:** WP Super Gallery stores its data in your own WordPress
+> **Summary in one line:** Mullion stores its data in your own WordPress
 > database and sends **nothing to us or any analytics service**. The only personal
 > data it can hold is (a) pseudonymized visitor counts *if you turn analytics on*
 > and (b) email addresses *if you enable the access-request feature*. Both are
@@ -28,9 +28,9 @@ Nothing below is transmitted to the plugin author.
 
 | Data | Where | When it's collected | Personal? |
 |------|-------|--------------------|-----------|
-| **Pseudonymized visitor hash** | `wp_wpsg_analytics_events.visitor_hash` | Only when **Analytics is enabled** (off by default) and a visitor views/opens a gallery | Pseudonymized — see §2 |
-| **Requester email address** | `wp_wpsg_access_requests.email` | Only when a visitor submits an **access request** for a private campaign | **Yes — direct PII** |
-| **Admin/editor username & user ID** | `wp_wpsg_audit_log` (`actor_login`, `actor_id`, `details`) | When a logged-in admin/editor performs an auditable action, or on a failed login attempt (the attempted username is recorded) | Yes — but only your own staff / login attempts |
+| **Pseudonymized visitor hash** | `wp_mullion_analytics_events.visitor_hash` | Only when **Analytics is enabled** (off by default) and a visitor views/opens a gallery | Pseudonymized — see §2 |
+| **Requester email address** | `wp_mullion_access_requests.email` | Only when a visitor submits an **access request** for a private campaign | **Yes — direct PII** |
+| **Admin/editor username & user ID** | `wp_mullion_audit_log` (`actor_login`, `actor_id`, `details`) | When a logged-in admin/editor performs an auditable action, or on a failed login attempt (the attempted username is recorded) | Yes — but only your own staff / login attempts |
 | **Access grants by user ID** | Campaign postmeta / company term-meta (`access_grants`) | When you grant a WordPress user access to a campaign or company | By reference (WP user ID) |
 | **UI preferences** | Browser `localStorage` (see §4) | As the admin/visitor uses the UI | No |
 
@@ -60,7 +60,7 @@ device fingerprints, geolocation. The plugin sets **no tracking cookies** of its
   back to an IP. Treat the analytics table as pseudonymized personal data under GDPR.
 - **Retention defaults to "keep forever"** (`analytics_retention_days = 0`). If you
   enable analytics, set a retention window (Settings → Advanced, 1–730 days) so old
-  rows are purged automatically by the `wpsg_analytics_purge` cron job.
+  rows are purged automatically by the `mullion_analytics_purge` cron job.
 
 **Recommendation:** if you enable analytics, (1) set a finite retention period and
 (2) mention pseudonymized gallery analytics in your site's own privacy policy.
@@ -72,8 +72,8 @@ device fingerprints, geolocation. The plugin sets **no tracking cookies** of its
 By default, **no personal data leaves your server.** The plugin makes outbound requests
 only in these cases, none of which send visitor PII to the plugin author:
 
-- **Google Fonts (`fonts.googleapis.com`) — only if you select a Google font**: WP Super
-  Gallery ships a set of optional Google-hosted web fonts for gallery typography. **If, and
+- **Google Fonts (`fonts.googleapis.com`) — only if you select a Google font**: Mullion
+  ships a set of optional Google-hosted web fonts for gallery typography. **If, and
   only if, you choose one of these fonts** in **Settings → Typography** (a per-element
   typography override), the plugin loads that font's stylesheet from Google's CDN on the
   **public gallery page** — so **your visitor's browser connects to Google, disclosing the
@@ -81,7 +81,7 @@ only in these cases, none of which send visitor PII to the plugin author:
   both triggered by the same font selection:
   - **Server-side (primary):** the shortcode output enqueues a `<link
     rel="stylesheet" href="https://fonts.googleapis.com/css2?family=…">` into the page HTML
-    (`class-wpsg-embed.php`), so the font request fires even with JavaScript disabled.
+    (`class-mullion-embed.php`), so the font request fires even with JavaScript disabled.
   - **Client-side:** the gallery app additionally injects the same `<link>` at runtime for
     fonts referenced by typography overrides (`loadGoogleFont.ts`, via `CardGallery` /
     `CampaignViewer`).
@@ -124,11 +124,11 @@ The plugin sets **no cookies of its own.** Standard WordPress login cookies
 **except** in the optional JWT-auth mode:
 
 - **Default (cookie/nonce) auth:** no tokens or personal data in `localStorage`.
-- **Optional JWT auth** (`WPSG_ENABLE_JWT_AUTH`, off by default): stores an access token
-  and a small `{ id, email, role }` profile in `localStorage` under `wpsg_access_token` /
-  `wpsg_user` / `wpsg_permissions`. These are cleared on logout. Only enable JWT mode if
+- **Optional JWT auth** (`MULLION_ENABLE_JWT_AUTH`, off by default): stores an access token
+  and a small `{ id, email, role }` profile in `localStorage` under `mullion_access_token` /
+  `mullion_user` / `mullion_permissions`. These are cleared on logout. Only enable JWT mode if
   you understand this trade-off.
-- **Everything else** (`wpsg_admin_active_tab`, `wpsg_debug`, media/builder/settings view
+- **Everything else** (`mullion_admin_active_tab`, `mullion_debug`, media/builder/settings view
   preferences, theme id, scroll position) is non-personal UI state.
 
 ---
@@ -141,8 +141,8 @@ The plugin sets **no cookies of its own.** Standard WordPress login cookies
 >
 > | Data | Export | Erase |
 > |------|--------|-------|
-> | **Access requests** (`wp_wpsg_access_requests`, visitor emails) | ✅ *WP Super Gallery — Access Requests* exporter, matched by email | ✅ *WP Super Gallery — Access Requests* eraser deletes all rows for the email |
-> | **Audit log** (`wp_wpsg_audit_log`, staff usernames) | ✅ *WP Super Gallery — Audit Log* exporter, matched by the email's WP user (`actor_id`/`actor_login`) | ❌ **Deliberately not erasable** |
+> | **Access requests** (`wp_mullion_access_requests`, visitor emails) | ✅ *Mullion — Access Requests* exporter, matched by email | ✅ *Mullion — Access Requests* eraser deletes all rows for the email |
+> | **Audit log** (`wp_mullion_audit_log`, staff usernames) | ✅ *Mullion — Audit Log* exporter, matched by the email's WP user (`actor_id`/`actor_login`) | ❌ **Deliberately not erasable** |
 >
 > **Why the audit log is export-only.** An audit/accountability log is a
 > legitimate-interest record (GDPR Art. 6(1)(f), with Art. 17(3)(b) as the
@@ -157,18 +157,18 @@ The plugin sets **no cookies of its own.** Standard WordPress login cookies
 access grants, or the analytics hashes the core tools don't cover):
 
 **To locate a person's data:**
-- **Access requests (email):** search `wp_wpsg_access_requests` for the address
+- **Access requests (email):** search `wp_mullion_access_requests` for the address
   (`email` column, indexed). This is the primary place a visitor email is stored.
 - **Analytics:** analytics stores only irreversible hashes — you cannot look up an
   individual, and there is no raw IP to return. If asked, you can disclose that only a
   salted hash for counting was stored, and delete the relevant rows by date range.
 - **Access grants:** search campaign postmeta / company term-meta `access_grants` for the
   person's WordPress user ID.
-- **Audit log:** search `wp_wpsg_audit_log` `actor_login` / `actor_id` / `details` for a
+- **Audit log:** search `wp_mullion_audit_log` `actor_login` / `actor_id` / `details` for a
   staff member's username.
 
 **To erase a person's data:**
-- Delete the matching row(s) from `wp_wpsg_access_requests` and/or `wp_wpsg_audit_log`,
+- Delete the matching row(s) from `wp_mullion_access_requests` and/or `wp_mullion_audit_log`,
   and remove their user ID from any `access_grants` entries. WP-CLI or a direct SQL
   `DELETE` (with a backup) is the current path.
 - A full site erasure removes everything on **uninstall** — see §6.
@@ -184,12 +184,12 @@ privacy policy and obtain consent as your jurisdiction requires.
 
 | Data | Automatic cleanup | Action needed |
 |------|-------------------|--------------|
-| Analytics events | `wpsg_analytics_purge` cron, but **only if** `analytics_retention_days > 0` | Set a retention window; default 0 = never |
-| Expired access grants | `wpsg_expired_grants_cleanup` (daily) removes expired grants | None |
+| Analytics events | `mullion_analytics_purge` cron, but **only if** `analytics_retention_days > 0` | Set a retention window; default 0 = never |
+| Expired access grants | `mullion_expired_grants_cleanup` (daily) removes expired grants | None |
 | Rate-limit counters | Self-expire via transient TTL; no IP stored | None |
-| **Access requests (emails)** | `wpsg_access_requests_purge` cron (weekly), **only if** `access_requests_retention_days > 0` (P72-F) | Set **Access-Request Retention** in Settings → Advanced → Data Maintenance; default 0 = never |
-| **Audit log (usernames)** | `wpsg_audit_log_purge` cron (weekly), **only if** `audit_log_retention_days > 0` (P72-F) | Set **Audit-Log Retention** in Settings → Advanced → Data Maintenance; default 0 = never (kept for accountability) |
-| Thumbnail cache | `wpsg_thumbnail_cache` cron cleanup | None |
+| **Access requests (emails)** | `mullion_access_requests_purge` cron (weekly), **only if** `access_requests_retention_days > 0` (P72-F) | Set **Access-Request Retention** in Settings → Advanced → Data Maintenance; default 0 = never |
+| **Audit log (usernames)** | `mullion_audit_log_purge` cron (weekly), **only if** `audit_log_retention_days > 0` (P72-F) | Set **Audit-Log Retention** in Settings → Advanced → Data Maintenance; default 0 = never (kept for accountability) |
+| Thumbnail cache | `mullion_thumbnail_cache` cron cleanup | None |
 
 **On uninstall:** unless you tick **"Preserve data on uninstall"** in Settings, deleting
 the plugin drops its custom tables (analytics, access requests, audit log, media refs,
@@ -231,7 +231,7 @@ secure updates, and checkout. Freemius acts as our **merchant of record**.
   **uninstalling** stops it.
 - **Only where credentials are configured:** a build with no Freemius credentials (e.g. the plugin
   before go-live, or a self-hosted copy without a key) makes **zero** Freemius network calls —
-  `wpsg_fs()` is a no-op.
+  `mullion_fs()` is a no-op.
 
 Buyer-facing view: [guides/LICENSE_ACTIVATION.md](guides/LICENSE_ACTIVATION.md); commercial terms:
 [EULA.md](EULA.md).

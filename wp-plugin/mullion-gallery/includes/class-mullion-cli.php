@@ -703,7 +703,7 @@ class Mullion_CLI {
     }
 
     /**
-     * Invalidate all wpsg campaign transient caches via version bump.
+     * Invalidate all campaign transient caches via version bump.
      */
     private function clear_campaign_cache(): void {
         Mullion_REST::bump_cache_version();

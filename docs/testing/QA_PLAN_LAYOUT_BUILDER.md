@@ -38,12 +38,12 @@ npx vitest run
 
 | Area | Test File | What It Covers |
 |------|-----------|----------------|
-| Template CRUD | `tests/WPSG_Layout_Templates_Test.php` | Create, read, update, delete, duplicate, sanitize, migrate, shape whitelist |
+| Template CRUD | `tests/Mullion_Layout_Templates_Test.php` | Create, read, update, delete, duplicate, sanitize, migrate, shape whitelist |
 
 **Run command (requires WP test environment):**
 ```bash
-cd wp-plugin/wp-super-gallery
-./vendor/bin/phpunit --filter WPSG_Layout_Templates_Test
+cd wp-plugin/mullion-gallery
+./vendor/bin/phpunit --filter Mullion_Layout_Templates_Test
 ```
 
 **Pass criteria:** 0 failures, 0 errors.
@@ -226,7 +226,7 @@ After any code change to the layout builder, verify these don't regress:
 
 ### Must-Check Regressions
 
-1. **Shape whitelist sync:** `LayoutSlotShape` TypeScript type, `getClipPath()` in `src/utils/clipPath.ts`, and `$valid_shapes` in `class-wpsg-layout-templates.php` all list the same shapes. Currently 11: `rectangle`, `circle`, `ellipse`, `hexagon`, `diamond`, `parallelogram-left`, `parallelogram-right`, `chevron`, `arrow`, `trapezoid`, `custom`.
+1. **Shape whitelist sync:** `LayoutSlotShape` TypeScript type, `getClipPath()` in `src/utils/clipPath.ts`, and `$valid_shapes` in `class-mullion-layout-templates.php` all list the same shapes. Currently 11: `rectangle`, `circle`, `ellipse`, `hexagon`, `diamond`, `parallelogram-left`, `parallelogram-right`, `chevron`, `arrow`, `trapezoid`, `custom`.
 
 2. **getClipPath single source of truth:** The `getClipPath()` function lives ONLY in `src/utils/clipPath.ts`. Both `LayoutSlotComponent.tsx` and `LayoutBuilderGallery.tsx` import from there. Never duplicate it.
 
@@ -252,7 +252,7 @@ After any code change to the layout builder, verify these don't regress:
 | `LayoutBuilderGallery.test.tsx` | ~17 | Gallery adapter rendering, overlays, clip-paths |
 | `smartGuides.test.ts` | ~25 | Snap alignment calculations |
 | `layoutSlotAssignment.test.ts` | ~20 | Media auto-assignment |
-| `WPSG_Layout_Templates_Test.php` | ~35 | PHP CRUD, sanitization, migration, duplication |
+| `Mullion_Layout_Templates_Test.php` | ~35 | PHP CRUD, sanitization, migration, duplication |
 | **Total** | **~190** | |
 
 ### Coverage Gaps (Future Work)
@@ -286,8 +286,8 @@ npx vitest run src/hooks/useLayoutBuilderState.test.ts \
   src/utils/layoutSlotAssignment.test.ts
 
 # 4. PHP tests (requires WP test environment)
-cd wp-plugin/wp-super-gallery
-./vendor/bin/phpunit --filter WPSG_Layout_Templates_Test
+cd wp-plugin/mullion-gallery
+./vendor/bin/phpunit --filter Mullion_Layout_Templates_Test
 
 # 5. E2E smoke (if Playwright configured)
 npx playwright test e2e/smoke.spec.ts

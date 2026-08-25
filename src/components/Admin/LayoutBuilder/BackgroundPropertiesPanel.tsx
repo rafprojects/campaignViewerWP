@@ -153,7 +153,7 @@ function BackgroundModeControls({
             value={builder.template.backgroundColor}
             onChange={(color) => builder.setTemplateField('backgroundColor', color)}
             format="hexa"
-            swatches={['#1a1a2e', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
+            swatches={['#102530', '#0d1117', '#000000', '#ffffff', '#16213e', 'transparent']}
             style={{ flex: 1 }}
           />
         </GRow>

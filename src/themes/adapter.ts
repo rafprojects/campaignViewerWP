@@ -80,7 +80,7 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
           '&:focus': { borderColor: rc.primary[5] },
@@ -92,7 +92,7 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
           '&:focus': { borderColor: rc.primary[5] },
@@ -105,7 +105,7 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
           '&::placeholder': { color: rc.textMuted2 },
           '&:focus': { borderColor: rc.primary[5] },
@@ -243,7 +243,7 @@ function generateComponentOverrides(
     Tooltip: {
       styles: () => ({
         tooltip: {
-          backgroundColor: rc.surface2,
+          backgroundColor: rc.surfaceRaised,
           color: rc.text,
           border: `1px solid ${rc.border}`,
           fontSize: '0.8125rem',
@@ -254,7 +254,7 @@ function generateComponentOverrides(
     Menu: {
       styles: () => ({
         dropdown: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
         item: {
@@ -272,11 +272,11 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
         },
         dropdown: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
         option: {
@@ -337,7 +337,7 @@ function generateComponentOverrides(
     Popover: {
       styles: () => ({
         dropdown: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
           color: rc.text,
         },
@@ -363,11 +363,11 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
-        control: { borderColor: rc.border, color: rc.text },
+        control: { borderColor: rc.borderStrong, color: rc.text },
       }),
     },
 
@@ -375,12 +375,12 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
       }),
@@ -523,10 +523,12 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
         surface: rc.surface,
         surface2: rc.surface2,
         surface3: rc.surface3,
+        surfaceRaised: rc.surfaceRaised,
         text: rc.text,
         textMuted: rc.textMuted,
         textMuted2: rc.textMuted2,
         border: rc.border,
+        borderStrong: rc.borderStrong,
         success: rc.success,
         warning: rc.warning,
         error: rc.error,

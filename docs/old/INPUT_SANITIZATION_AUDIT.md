@@ -1,12 +1,12 @@
 # Input Sanitization Audit (Phase 8)
 
-This document summarizes the input sanitization checks for WP Super Gallery REST endpoints.
+This document summarizes the input sanitization checks for Mullion REST endpoints.
 
 ---
 
 ## Scope
 
-- Public and admin REST endpoints in `WPSG_REST`
+- Public and admin REST endpoints in `Mullion_REST`
 - Frontend settings submission
 - Upload handling (file validation already covered separately)
 
@@ -30,7 +30,7 @@ This document summarizes the input sanitization checks for WP Super Gallery REST
 - `POST /campaigns/{id}/media` validates type/source, normalizes URLs, and sanitizes captions.
 - `PUT /campaigns/{id}/media/{mediaId}` sanitizes caption/order/thumbnail.
 - `POST /users` sanitizes email, display name, role, and campaign ID.
-- `POST /settings` sanitizes all settings and re‑uses `WPSG_Settings::sanitize_settings`.
+- `POST /settings` sanitizes all settings and re‑uses `Mullion_Settings::sanitize_settings`.
 
 ---
 

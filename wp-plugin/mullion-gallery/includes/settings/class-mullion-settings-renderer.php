@@ -42,7 +42,7 @@ class Mullion_Settings_Renderer {
     public static function add_menu_page() {
         self::$settings_page_hook = add_submenu_page(
             'edit.php?post_type=mullion_campaign',
-            __('Super Gallery Settings', 'mullion-gallery'),
+            __('Mullion Settings', 'mullion-gallery'),
             __('Settings', 'mullion-gallery'),
             'manage_options',
             Mullion_Settings::PAGE_SLUG,
@@ -71,7 +71,7 @@ class Mullion_Settings_Renderer {
 
         wp_localize_script(
             'mullion-settings-admin',
-            'wpsgSettingsAuthTest',
+            'mullionSettingsAuthTest',
             [
                 'ajaxUrl'              => admin_url('admin-ajax.php'),
                 'nonce'                => wp_create_nonce('mullion_test_auth'),

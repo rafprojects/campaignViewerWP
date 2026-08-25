@@ -103,8 +103,6 @@ if (!function_exists('mullion_fs')) {
 require_once MULLION_PLUGIN_DIR . 'includes/mullion-cron-hooks.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-license.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cpt.php';
-require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rebrand-migration.php';
-add_action('plugins_loaded', ['Mullion_Rebrand_Migration', 'maybe_run'], 1);
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rest.php';
 require_once MULLION_PLUGIN_DIR . 'includes/i18n/class-mullion-frontend-strings.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-embed.php';
@@ -211,7 +209,7 @@ function mullion_redirect_editors_from_admin() {
  * Ensure the `mullion_editor` role exists with exactly the intended capabilities:
  * `manage_mullion` + `read` + `upload_files`, with NO custom CPT caps (so it gets
  * no wp-admin "Campaigns" menu) and NO `manage_options` (P52-A2). Idempotent —
- * also strips CPT caps left over from the legacy `wpsg_admin` role definition.
+ * also strips CPT caps if a leftover role definition granted them.
  */
 function mullion_ensure_editor_role() {
     $editor_caps = [
@@ -235,36 +233,6 @@ function mullion_ensure_editor_role() {
             $role->remove_cap($cap);
         }
     }
-}
-
-/**
- * One-time migration: rename the legacy `wpsg_admin` role to `mullion_editor`
- * (P52-A2, destination updated in P74-E). Reassigns every user holding
- * `wpsg_admin` to `mullion_editor`, then removes the old role.
- */
-add_action('init', 'mullion_maybe_migrate_roles', 11);
-function mullion_maybe_migrate_roles() {
-    if (get_option('mullion_roles_migrated_editor')) {
-        return;
-    }
-
-    // The destination role must exist before reassigning users to it.
-    mullion_ensure_editor_role();
-
-    $legacy_user_ids = get_users(['role' => 'wpsg_admin', 'fields' => 'ID']);
-    foreach ($legacy_user_ids as $uid) {
-        $user = get_user_by('id', $uid);
-        if ($user instanceof WP_User) {
-            $user->add_role('mullion_editor');
-            $user->remove_role('wpsg_admin');
-        }
-    }
-
-    if (get_role('wpsg_admin')) {
-        remove_role('wpsg_admin');
-    }
-
-    update_option('mullion_roles_migrated_editor', '1');
 }
 
 add_action('init', function () {

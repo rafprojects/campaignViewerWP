@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# WP Super Gallery — Deploy existing release to WordPress.org SVN
+# Mullion — Deploy existing release to WordPress.org SVN
 #
 # This workflow downloads a previously-built release ZIP from GitHub Releases
 # and deploys it to WordPress.org SVN — no rebuild required.

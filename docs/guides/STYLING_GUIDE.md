@@ -6,21 +6,21 @@ This guide covers styling practices to ensure the gallery works well both as a s
 
 **Why:** WordPress themes and plugins frequently apply global CSS that can collide with app styles.
 **Recommendation:** Wrap the app in a single root class and scope all global rules beneath it.
-**Implementation:** Use a root class like `.wp-super-gallery` and keep global styles limited to that subtree.
+**Implementation:** Use a root class like `.mullion-gallery` and keep global styles limited to that subtree.
 **Benefit:** Significantly reduces unexpected overrides and improves portability across sites.
 
 ## 2) Avoid global resets in widget mode
 
 **Why:** Global resets can alter the host page’s typography, spacing, and component styles.
 **Recommendation:** Apply reset-like rules only inside the gallery root container.
-**Implementation:** Move `* { box-sizing: border-box; }`, default fonts, and base typography into `.wp-super-gallery` selectors.
+**Implementation:** Move `* { box-sizing: border-box; }`, default fonts, and base typography into `.mullion-gallery` selectors.
 **Benefit:** The widget does not affect the rest of the WordPress site.
 
 ## 3) Use CSS variables for theming
 
 **Why:** Theme customization is common in WordPress and should be safe and predictable.
 **Recommendation:** Expose colors, spacing, radii, and typography as CSS variables.
-**Implementation:** Define variables in `:root` (or `.wp-super-gallery`) and allow overrides via inline styles or WP settings.
+**Implementation:** Define variables in `:root` (or `.mullion-gallery`) and allow overrides via inline styles or WP settings.
 **Benefit:** Enables brand theming without rebuilding the app.
 
 ## 4) Prefix class names and keep CSS Modules
@@ -44,7 +44,7 @@ This guide covers styling practices to ensure the gallery works well both as a s
 **Implementation:** Centralize container sizing in a single wrapper class.
 **Benefit:** Consistent layout at different embed widths.
 
-**Variant:** Use `.wp-super-gallery--compact` on the root wrapper to reduce the max-width and horizontal padding for narrow embeds.
+**Variant:** Use `.mullion-gallery--compact` on the root wrapper to reduce the max-width and horizontal padding for narrow embeds.
 
 ## 7) Consider Shadow DOM for isolation (optional)
 
@@ -111,9 +111,9 @@ This guide covers styling practices to ensure the gallery works well both as a s
 
 ## Current Implementation Notes
 
-- Root scoping is enabled via `.wp-super-gallery` wrapper.
+- Root scoping is enabled via `.mullion-gallery` wrapper.
 - Global styles are applied only inside this wrapper.
-- CSS variables are scoped to `.wp-super-gallery`.
+- CSS variables are scoped to `.mullion-gallery`.
 - CSS Modules are used for all components.
 - Z-index scale tokens are defined and used for headers/modals.
 - Shadow DOM rendering is enabled with inline style injection.

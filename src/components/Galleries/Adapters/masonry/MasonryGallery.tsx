@@ -198,7 +198,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
                   display: 'block',
                   width: '100%',
                   breakInside: 'avoid',
-                  background: 'var(--mullion-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #102530)',
                   // P31-G: per-tile entrance stagger delay (overridden by reduced-motion rule)
                   ...(waterfallEnabled ? { animationDelay: `${index * entranceStagger}ms` } : {}),
                 }}

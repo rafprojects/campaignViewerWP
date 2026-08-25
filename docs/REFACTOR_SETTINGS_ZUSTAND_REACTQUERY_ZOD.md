@@ -11,7 +11,7 @@
 
 ### Problem Statement
 
-The current settings implementation in `wp-super-gallery` suffers from several architectural challenges:
+The current settings implementation in `mullion-gallery` suffers from several architectural challenges:
 
 1. **Monolithic Type Definition**: The `GalleryBehaviorSettings` interface in `src/types/index.ts` is over 600 lines, mixing UI toggles, layout parameters, and theme configurations. This makes it difficult to maintain, test, and reason about.
 
@@ -190,13 +190,13 @@ Adopt a three-library stack to address each concern:
 **Actionable Tasks**:
 
 1. **Update PHP Settings Service**
-   - Edit `wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-service.php`
+   - Edit `wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-service.php`
    - Modify `getSettings()` to return nested `galleryConfig` structure
    - Modify `updateSettings()` to accept nested structure
    - Ensure JSON encoding/decoding preserves nested objects
 
 2. **Update PHP Settings Registry**
-   - Edit `wp-plugin/wp-super-gallery/includes/settings/class-wpsg-settings-registry.php`
+   - Edit `wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-registry.php`
    - Register nested fields if not already done
    - Add sanitization for nested JSON fields
 
@@ -211,7 +211,7 @@ Adopt a three-library stack to address each concern:
    - Mark deprecated fields in schemas
 
 5. **Write Integration Tests**
-   - Update PHPUnit tests in `wp-plugin/wp-super-gallery/tests/`
+   - Update PHPUnit tests in `wp-plugin/mullion-gallery/tests/`
    - Test nested JSON storage and retrieval
    - Verify frontend/backend data alignment
 

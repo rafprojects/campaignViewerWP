@@ -308,8 +308,8 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
         key: 'tileGlowColor',
         label: 'Glow Color',
         description: 'CSS color used for the hover glow effect.',
-        fallback: '#7c9ef8',
-        placeholder: '#7c9ef8',
+        fallback: '#1ad1c4',
+        placeholder: '#1ad1c4',
       },
       {
         control: 'number',
@@ -1037,7 +1037,7 @@ export const SETTING_GROUP_DEFINITIONS: Record<string, AdapterSettingGroupDefini
         key: 'tileGlowColor',
         label: 'Default Glow Color',
         description: 'Fallback glow color for slots using Hover = Glow when the slot does not override it.',
-        fallback: '#7c9ef8',
+        fallback: '#1ad1c4',
       },
       {
         control: 'number',

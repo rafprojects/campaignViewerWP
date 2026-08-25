@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────────────────────────────────────────
-# WP Super Gallery — Continuous Integration
+# Mullion — Continuous Integration
 #
 # Runs on every push / PR to main and develop.
 #   Job 1: lint-typecheck  — ESLint + TypeScript (fast-fail gate)

@@ -1,11 +1,11 @@
-# WP Super Gallery — End-User License Agreement (EULA)
+# Mullion — End-User License Agreement (EULA)
 
 > **⚠️ TEMPLATE — not yet legal advice.** This is a starting-point EULA for the **Pro**
 > (paid) edition, to be finalized at go-live (P62-J / M4). **Have a qualified attorney review
 > it** and fill every `[PLACEHOLDER]` before publishing it on the store listing. Freemius also
 > provides a default EULA you may adopt or merge with this one.
 
-**Product:** WP Super Gallery (the "Plugin"), Pro edition.
+**Product:** Mullion (the "Plugin"), Pro edition.
 **Licensor:** [PLACEHOLDER: legal entity / seller name] ("we", "us").
 **Merchant of record:** Freemius, Inc., which processes checkout, billing, and refunds on our behalf.
 **Effective date:** [PLACEHOLDER: effective date].
@@ -18,7 +18,7 @@ do not purchase or activate the license (and see the refund terms in §7).
 ## 1. The software is GPL; this EULA covers the commercial services
 
 The Plugin's code is licensed under the **GNU General Public License v2 or later (GPLv2+)** — see
-[`LICENSE`](../wp-plugin/wp-super-gallery/LICENSE). Nothing in this EULA removes or restricts the
+[`LICENSE`](../wp-plugin/mullion-gallery/LICENSE). Nothing in this EULA removes or restricts the
 freedoms the GPL grants you **in the code itself** (to run, study, modify, and redistribute it
 under the GPL).
 

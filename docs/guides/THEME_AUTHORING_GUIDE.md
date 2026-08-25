@@ -1,6 +1,6 @@
 # Theme Authoring Guide
 
-Create custom themes for WP Super Gallery by writing a JSON file that specifies colors, and optionally typography, spacing, and component overrides. The theme engine handles everything else — shade generation, Mantine integration, CSS variable injection, and Shadow DOM support.
+Create custom themes for Mullion by writing a JSON file that specifies colors, and optionally typography, spacing, and component overrides. The theme engine handles everything else — shade generation, Mantine integration, CSS variable injection, and Shadow DOM support.
 
 ---
 
@@ -9,28 +9,21 @@ Create custom themes for WP Super Gallery by writing a JSON file that specifies 
 1. **Copy** an existing theme as a starting point:
 
    ```bash
-   cp src/themes/definitions/default-dark.json src/themes/definitions/my-brand.json
+   cp packages/theme-engine/src/definitions/default-dark.json \
+      packages/theme-engine/src/definitions/my-brand.json
    ```
+
+   The bundled default (`id: "default-dark"`, display name **Mullion**) is the Rig Cyan palette in [COLOR-SPEC.md](../../.wordpress-org/COLOR-SPEC.md). The hexes in the examples below are a generic dark slate used to illustrate the schema, not that default.
 
 2. **Edit** the JSON — at minimum change `id`, `name`, and colors.
 
-3. **Register** the theme in `src/themes/index.ts`:
+3. **Register** the theme in three places:
 
-   ```typescript
-   import myBrandDef from './definitions/my-brand.json';
+   - Import and append it in [`packages/theme-engine/src/bundledThemes.ts`](../../packages/theme-engine/src/bundledThemes.ts)
+   - Add a catalog entry in [`wp-plugin/mullion-gallery/theme-catalog.json`](../../wp-plugin/mullion-gallery/theme-catalog.json)
+   - Whitelist the id in [`wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-registry.php`](../../wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-registry.php)
 
-   // In the bundled array inside initializeRegistry():
-   const bundled: ThemeExtension[] = [
-     // ... existing themes ...
-     myBrandDef as unknown as ThemeExtension,
-   ];
-   ```
-
-4. **Whitelist** the theme in `includes/settings/class-wpsg-settings-registry.php`;
-  
-  Add entries around line 411, before the "gallery_layout" section
-
-5. **Build & test** — the theme appears automatically in the ThemeSelector dropdown.
+4. **Build & test** — the theme appears in the ThemeSelector dropdown.
 
 ---
 
@@ -102,9 +95,25 @@ The `colors` object is the most important part of a theme. All fields accept CSS
 
 ```json
 {
-  "border": "#334155"
+  "border": "#334155",
+  "borderStrong": "#64748b"
 }
 ```
+
+| Token          | Usage                                                                 |
+|----------------|-----------------------------------------------------------------------|
+| `border`       | Decorative dividers. Often below 3:1 against `surface` — WCAG 1.4.11 exempts that. |
+| `borderStrong` | Input outlines and other focusable edges. Optional; when omitted the engine derives a 3:1-against-`surface` color. Do **not** alias it to `border`. |
+
+### Raised surfaces
+
+```json
+{
+  "surfaceRaised": "#334155"
+}
+```
+
+Optional. Menus, popovers, tooltips, and select dropdowns use this. When omitted it falls back to `surface2` (flatter, no new elevation).
 
 ### Primary Color
 
@@ -267,15 +276,15 @@ const success = registerCustomTheme(customTheme);
 
 When deployed as a WordPress plugin, the active theme is controlled by:
 
-1. **WP Admin Settings** → Super Gallery → Settings → Theme dropdown
+1. **WP Admin Settings** → Mullion → Settings → Theme dropdown
 2. **Allow User Theme Override** checkbox — when enabled, visitors can switch themes via the gallery UI and their preference is saved to localStorage
-3. **Shortcode** — the `[super-gallery]` shortcode injects the selected theme ID into `window.__wpsgThemeId`
+3. **Shortcode** — the `[mullion-gallery]` shortcode injects the selected theme ID into `window.__mullionThemeId`
 
 ### Theme Resolution Priority
 
-1. `window.__wpsgThemeId` (set by WP embed shortcode)
-2. `window.__WPSG_CONFIG__.theme` (same embed, alternative path)
-3. `[data-wpsg-theme]` HTML attribute
+1. `window.__mullionThemeId` (set by WP embed shortcode)
+2. `window.__MULLION_CONFIG__.theme` (same embed, alternative path)
+3. `[data-mullion-theme]` HTML attribute
 4. `localStorage` (if user override is allowed)
 5. `default-dark` fallback
 
@@ -321,14 +330,16 @@ All processing happens **once at startup**. Theme switching at runtime is a simp
 
 | File | Purpose |
 |------|---------|
-| `src/themes/types.ts` | TypeScript interfaces |
-| `src/themes/validation.ts` | Schema validation |
-| `src/themes/colorGen.ts` | chroma.js shade generation |
+| `packages/theme-engine/src/types.ts` | TypeScript interfaces |
+| `packages/theme-engine/src/validation.ts` | Schema validation |
+| `packages/theme-engine/src/colorGen.ts` | chroma.js shade generation + `surfaceRaised` / `borderStrong` derivation |
+| `packages/theme-engine/src/cssVariables.ts` | `--mullion-*` CSS variable generation |
+| `packages/theme-engine/src/definitions/_base.json` | Shared defaults |
+| `packages/theme-engine/src/definitions/*.json` | Individual theme definitions |
+| `packages/theme-engine/src/bundledThemes.ts` | Bundled-theme export list |
 | `src/themes/adapter.ts` | JSON → MantineThemeOverride |
-| `src/themes/cssVariables.ts` | `--wpsg-*` CSS variable generation |
-| `src/themes/index.ts` | Registry, public API |
-| `src/themes/definitions/_base.json` | Shared defaults |
-| `src/themes/definitions/*.json` | Individual theme definitions |
+| `src/themes/index.ts` | App registry, public API |
+| `wp-plugin/mullion-gallery/theme-catalog.json` | Admin catalog (name, group, display order) |
 | `src/contexts/ThemeContext.tsx` | React provider, persistence |
 | `src/contexts/themeContextDef.ts` | Context type definition |
 | `src/hooks/useTheme.ts` | Consumer hook |

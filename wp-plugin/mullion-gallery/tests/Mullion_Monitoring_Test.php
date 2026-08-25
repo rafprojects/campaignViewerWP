@@ -100,7 +100,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     // ── log_fatal_error ────────────────────────────────────────────────────
 
     public function test_log_fatal_error_fires_action_on_fatal() {
-        // Simulate a WPSG request context.
+        // Simulate a Mullion request context.
         $_GET['rest_route'] = '/mullion-gallery/v1/campaigns';
 
         // We can't easily simulate error_get_last() returning a fatal in unit tests,

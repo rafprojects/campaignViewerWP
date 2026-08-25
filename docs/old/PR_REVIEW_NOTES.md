@@ -18,7 +18,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
   - Breaks refresh persistence (users must re‑authenticate on every reload), which complicates QA and manual testing.
   - Current app flow relies on persisted tokens for a smoother UX.
 - Follow‑up options:
-  - Consider a **configurable storage mode**, e.g. `window.__WPSG_TOKEN_STORAGE__ = "memory" | "local"`.
+  - Consider a **configurable storage mode**, e.g. `window.__MULLION_TOKEN_STORAGE__ = "memory" | "local"`.
   - Default to `local` for UX, allow `memory` for hardened deployments.
   - Add a “security mode” section to docs explaining trade‑offs.
 - Dependencies/impact:
@@ -42,7 +42,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Database‑level filtering for non‑admins using `post__in` and accessible IDs.
   - Pagination metadata returned from `WP_Query` totals.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.
+  - Implemented in [wp-plugin/mullion-gallery/includes/class-mullion-rest.php](../../wp-plugin/mullion-gallery/includes/class-mullion-rest.php) on 2026‑01‑23.
 - Follow‑up options:
   - Consider using 404 for unauthorized access in `get_campaign()` / `list_media()`
     to reduce information leakage.
@@ -59,7 +59,7 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Existing `can_view_campaign()` checks are enforced for campaign and media
     access, and list filtering is scoped to accessible IDs.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) during Phase 2.
+  - Implemented in [wp-plugin/mullion-gallery/includes/class-mullion-rest.php](../../wp-plugin/mullion-gallery/includes/class-mullion-rest.php) during Phase 2.
 - Follow‑up options:
   - Evaluate swapping unauthorized responses to 404 for sensitive endpoints.
 
@@ -75,4 +75,4 @@ This document tracks PRs reviewed but **not** applied to this codebase yet. It c
 - Addressed in this repo:
   - Anonymous users are forced to `visibility=public` in `list_campaigns()`.
   - Authenticated non‑admins are constrained to `post__in` accessible IDs.
-  - Implemented in [wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php) on 2026‑01‑23.
+  - Implemented in [wp-plugin/mullion-gallery/includes/class-mullion-rest.php](../../wp-plugin/mullion-gallery/includes/class-mullion-rest.php) on 2026‑01‑23.

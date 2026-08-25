@@ -149,7 +149,7 @@ class Mullion_Logger {
         }
 
         // Sink 1: PHP error log — keeps existing server-log observability.
-        error_log('[WPSG] ' . wp_json_encode($entry));
+        error_log('[Mullion] ' . wp_json_encode($entry));
 
         // Sink 2: In-database ring buffer for the admin health surface.
         self::append_to_buffer($entry);

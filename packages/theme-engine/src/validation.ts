@@ -87,12 +87,23 @@ function validateColors(colors: unknown, issues: string[]): void {
 
   const c = colors as Record<string, unknown>;
 
-  // Required simple color fields
+  // Required simple color fields. surface2/3, textMuted2, surfaceRaised,
+  // and borderStrong are optional (P74-N derives them in resolveColors).
   const requiredColorFields: (keyof ThemeColors)[] = [
-    'background', 'surface', 'surface2', 'surface3',
-    'text', 'textMuted', 'textMuted2',
+    'background', 'surface',
+    'text', 'textMuted',
     'border', 'success',
   ];
+
+  const optionalDerivedColorFields: (keyof ThemeColors)[] = [
+    'surface2', 'surface3', 'surfaceRaised',
+    'textMuted2', 'borderStrong',
+  ];
+  for (const field of optionalDerivedColorFields) {
+    if (c[field] !== undefined && !isValidColor(c[field])) {
+      issues.push(`colors.${field} must be a valid CSS color, got: ${JSON.stringify(c[field])}`);
+    }
+  }
 
   for (const field of requiredColorFields) {
     if (!isValidColor(c[field])) {
@@ -118,17 +129,19 @@ function validateColors(colors: unknown, issues: string[]): void {
     issues.push(`colors.primary must be a color string or {base, shades} object`);
   }
 
-  // PrimaryShade
+  // PrimaryShade — optional (P74-N / P75-F). When present, must be 0-9.
   const ps = c['primaryShade'];
-  if (typeof ps !== 'object' || ps === null) {
-    issues.push('colors.primaryShade must be {light: number, dark: number}');
-  } else {
-    const shade = ps as Record<string, unknown>;
-    if (typeof shade['light'] !== 'number' || shade['light'] < 0 || shade['light'] > 9) {
-      issues.push('colors.primaryShade.light must be 0-9');
-    }
-    if (typeof shade['dark'] !== 'number' || shade['dark'] < 0 || shade['dark'] > 9) {
-      issues.push('colors.primaryShade.dark must be 0-9');
+  if (ps !== undefined) {
+    if (typeof ps !== 'object' || ps === null) {
+      issues.push('colors.primaryShade must be {light: number, dark: number}');
+    } else {
+      const shade = ps as Record<string, unknown>;
+      if (typeof shade['light'] !== 'number' || shade['light'] < 0 || shade['light'] > 9) {
+        issues.push('colors.primaryShade.light must be 0-9');
+      }
+      if (typeof shade['dark'] !== 'number' || shade['dark'] < 0 || shade['dark'] > 9) {
+        issues.push('colors.primaryShade.dark must be 0-9');
+      }
     }
   }
 

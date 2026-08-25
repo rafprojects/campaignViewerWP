@@ -1,6 +1,6 @@
 # Versioning Scheme
 
-This document outlines the versioning strategy for WP Super Gallery.
+This document outlines the versioning strategy for Mullion.
 
 ## Version Format
 
@@ -31,17 +31,17 @@ Version bumps are handled automatically by the **GitHub Actions release workflow
 3. Override: enter a specific version (e.g., `1.0.0`) to bypass auto-computation
 4. The workflow updates version in all 3 locations:
    - `package.json` (`version` field)
-   - `wp-plugin/wp-super-gallery/wp-super-gallery.php` (plugin header `Version:`)
-   - `wp-plugin/wp-super-gallery/wp-super-gallery.php` (`WPSG_VERSION` constant)
+   - `wp-plugin/mullion-gallery/mullion-gallery.php` (plugin header `Version:`)
+   - `wp-plugin/mullion-gallery/mullion-gallery.php` (`Mullion_VERSION` constant)
 5. Creates a git tag (`v{version}`) and GitHub Release with a production ZIP
 6. Optionally deploys to WordPress.org SVN (checkbox in workflow UI)
 
 **Manual version bump** (if needed):
 1. Update version in `package.json`
-2. Update version in `wp-plugin/wp-super-gallery/wp-super-gallery.php` (header + constant)
+2. Update version in `wp-plugin/mullion-gallery/mullion-gallery.php` (header + constant)
 3. Update `docs/VERSION_HISTORY.md` with release notes
 4. Update `CHANGELOG.md` with a new `[{version}]` section following Keep a Changelog format
-5. Update version in `wp-plugin/wp-super-gallery/readme.txt` (`Stable tag`)
+5. Update version in `wp-plugin/mullion-gallery/readme.txt` (`Stable tag`)
 6. Commit all version-bump changes
 7. Create git tag: `git tag v{version}`
 8. Push tag: `git push origin v{version}`

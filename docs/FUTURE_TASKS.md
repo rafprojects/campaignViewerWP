@@ -262,7 +262,7 @@ Nothing yet.
 
 ### Server-Side (PHP) Sentry PII Scrubber
 
-**Files:** `class-wpsg-sentry.php` (parity with the browser-side `beforeSend` scrubber in `src/services/monitoring/sentry.ts`).
+**Files:** `class-mullion-sentry.php` (parity with the browser-side `beforeSend` scrubber in `src/services/monitoring/sentry.ts`).
 
 **Context:** The browser Sentry path strips `Authorization` headers and `user.ip_address`; the PHP path sends `$context` verbatim. Sentry is off by default (requires a DSN), so this is low-likelihood, but a scrubber should exist before recommending server-side error reporting.
 
@@ -270,7 +270,7 @@ Nothing yet.
 
 ### Per-Day Salt Rotation for Analytics Visitor Hash
 
-**Files:** `class-wpsg-analytics-controller.php` (`record_analytics_event`).
+**Files:** `class-mullion-analytics-controller.php` (`record_analytics_event`).
 
 **Context:** `visitor_hash = sha256(IP + wp_salt('auth'))` uses a static, non-rotating salt, so a given IP always hashes the same value — good for unique-visitor counts but re-identifiable for the small IPv4 space. Rotating the salt per day (bucketing the hash by date) reduces re-identifiability while preserving same-day uniqueness. Trade-off: cross-day unique counts become approximate.
 
@@ -292,11 +292,11 @@ Nothing yet.
 
 ### Campaign Binary Export — Stream Large Media Sets
 
-**Files:** `class-wpsg-export-engine.php`
+**Files:** `class-mullion-export-engine.php`
 
-P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via `curl CURLOPT_FILE` rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
+P39-CM1 ships background ZIP generation via `Mullion_Export_Engine` with a 100 MB size limit. For larger campaigns, add chunked/streamed media fetching (write directly to the ZIP via `curl CURLOPT_FILE` rather than buffering each media body in memory) and a configurable size ceiling in settings. Most campaigns fall within the current 100 MB limit today.
 
-**Dependencies:** `WPSG_Export_Engine` (shipped P39-CM1). `ext-zip` required.
+**Dependencies:** `Mullion_Export_Engine` (shipped P39-CM1). `ext-zip` required.
 
 **Effort:** Medium (4-6 hours) | **Impact:** Low — only relevant for campaigns exceeding the current 100 MB size ceiling
 
@@ -306,11 +306,11 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 **Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
 
-**Context:** P65-B fixed `export_media_library_binary()` to filter a campaign's media by `attachmentId` instead of the always-zero `id`. But any campaign whose media was sideloaded via ZIP import **before** Phase 65 landed (when `attachmentId` was never stamped on sideloaded items) still has no `attachmentId` on those items — the campaign-filtered export silently returns an empty archive for exactly those campaigns, same symptom P65-B fixed, different root cause (stale data vs. wrong filter key). This is consistent with an existing codebase convention — `WPSG_CLI::media_orphans()` has the identical blind spot today, items without `attachmentId` are already invisible to it — but there is no signal anywhere distinguishing "campaign genuinely has no media" from "media exists but predates the `attachmentId` fix."
+**Context:** P65-B fixed `export_media_library_binary()` to filter a campaign's media by `attachmentId` instead of the always-zero `id`. But any campaign whose media was sideloaded via ZIP import **before** Phase 65 landed (when `attachmentId` was never stamped on sideloaded items) still has no `attachmentId` on those items — the campaign-filtered export silently returns an empty archive for exactly those campaigns, same symptom P65-B fixed, different root cause (stale data vs. wrong filter key). This is consistent with an existing codebase convention — `Mullion_CLI::media_orphans()` has the identical blind spot today, items without `attachmentId` are already invisible to it — but there is no signal anywhere distinguishing "campaign genuinely has no media" from "media exists but predates the `attachmentId` fix."
 
 **What to implement:** Either (a) a one-time backfill/migration that stamps `attachmentId` on legacy sideloaded media items by matching `url` to an existing attachment, or (b) a softer fix: have `export_media_library_binary()`'s empty-result branch distinguish "campaign has zero `media_items`" from "campaign has `media_items` but none resolved an `attachmentId`," surfacing the latter as a warning instead of a silent empty export.
 
-**Files:** `includes/rest/class-wpsg-media-controller.php` (`export_media_library_binary()`); a backfill migration would also touch `includes/class-wpsg-campaign-io.php`.
+**Files:** `includes/rest/class-mullion-media-controller.php` (`export_media_library_binary()`); a backfill migration would also touch `includes/class-mullion-campaign-io.php`.
 
 **Effort:** Small (warning signal) to Medium (backfill migration) | **Impact:** Low — only affects campaigns imported via ZIP before Phase 65; new imports are unaffected.
 
@@ -320,11 +320,11 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 
 **Origin:** Surfaced during the Phase 65 post-landing PR review (2026-07-18) while verifying a fix for dropped `embedUrl`/`provider` fields — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
 
-**Context:** `WPSG_Export_Engine::build_zip()` treats every `media_items[].url` as a downloadable file and fetches it via `wp_safe_remote_get()`. For `source:"external"`/`"oembed"` items (YouTube, Vimeo, etc.) `url` is the original webpage link, not a media file — `normalize_external_media()` deliberately keeps the real embeddable link in a separate `embedUrl` field. So a binary (ZIP) campaign export either downloads garbage bytes (an HTML page) and stores them under a made-up filename, or the entry fails WordPress's file-type validation on re-import and silently lands in `media_skipped` — a video/embed item never meaningfully round-trips through the ZIP transport, only through JSON (where P65-D's fix already works, since JSON never touches `build_zip()`). This predates Phase 65 — the `build_zip()` download loop wasn't touched by the P65 commits — and is a deeper change than the metadata-preservation fix that shipped in the post-landing pass, so it was documented rather than fixed on the spot.
+**Context:** `Mullion_Export_Engine::build_zip()` treats every `media_items[].url` as a downloadable file and fetches it via `wp_safe_remote_get()`. For `source:"external"`/`"oembed"` items (YouTube, Vimeo, etc.) `url` is the original webpage link, not a media file — `normalize_external_media()` deliberately keeps the real embeddable link in a separate `embedUrl` field. So a binary (ZIP) campaign export either downloads garbage bytes (an HTML page) and stores them under a made-up filename, or the entry fails WordPress's file-type validation on re-import and silently lands in `media_skipped` — a video/embed item never meaningfully round-trips through the ZIP transport, only through JSON (where P65-D's fix already works, since JSON never touches `build_zip()`). This predates Phase 65 — the `build_zip()` download loop wasn't touched by the P65 commits — and is a deeper change than the metadata-preservation fix that shipped in the post-landing pass, so it was documented rather than fixed on the spot.
 
-**What to implement:** In `WPSG_Export_Engine::build_zip()` (or upstream, before media items reach `create_job()`), skip items whose `source` is `external`/`oembed` — no real attachment bytes to fetch — rather than attempting to download `url`. The manifest already carries `embedUrl`/`provider` for these items (P65-D); a ZIP export should include them in the JSON manifest only, with no corresponding `media/` file, and `WPSG_Campaign_IO::sideload_media_items()` should recognize a media reference with no `filename` and route it through the URL-only path `build_url_media_items()` already uses for JSON imports, instead of trying (and failing) to find it in the archive.
+**What to implement:** In `Mullion_Export_Engine::build_zip()` (or upstream, before media items reach `create_job()`), skip items whose `source` is `external`/`oembed` — no real attachment bytes to fetch — rather than attempting to download `url`. The manifest already carries `embedUrl`/`provider` for these items (P65-D); a ZIP export should include them in the JSON manifest only, with no corresponding `media/` file, and `Mullion_Campaign_IO::sideload_media_items()` should recognize a media reference with no `filename` and route it through the URL-only path `build_url_media_items()` already uses for JSON imports, instead of trying (and failing) to find it in the archive.
 
-**Files:** `includes/class-wpsg-export-engine.php` (`build_zip()`), `includes/class-wpsg-campaign-io.php` (`build_entry()`'s `filename` assignment, `sideload_media_items()`'s embed-ref handling).
+**Files:** `includes/class-mullion-export-engine.php` (`build_zip()`), `includes/class-mullion-campaign-io.php` (`build_entry()`'s `filename` assignment, `sideload_media_items()`'s embed-ref handling).
 
 **Effort:** Medium — touches the shared export engine and the P65-A service's import branching; needs new fixture coverage for a video/embed item through a real binary export→import | **Impact:** Medium — today the only transport where a video/embed campaign item survives a full round-trip is JSON; ZIP export/import of a campaign with embedded video content silently loses that item.
 
@@ -335,14 +335,14 @@ P39-CM1 ships background ZIP generation via `WPSG_Export_Engine` with a 100 MB s
 **Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass". Noted but not fixed in that pass, to avoid widening the diff's blast radius on freshly-landed, already-tested consolidation code.
 
 **Context:** Four small duplication/indirection items surfaced during the review, none a correctness bug:
-1. `WPSG_Campaign_IO::build_url_media_items()`/`upload_media_item()`/`normalize_media_type()` re-derive the same type/source whitelisting `WPSG_Cpt::sanitize_media_items()` already implements as the registered meta sanitizer.
-2. `WPSG_Campaign_IO::apply_scalar_meta()`'s inline `strtotime()`/`gmdate()` datetime normalization duplicates `WPSG_Cpt::sanitize_datetime()`.
-3. The `total_available`/`truncated` truncation-flag computation (P65-C) is implemented near-identically in both `class-wpsg-media-controller.php` and `class-wpsg-campaign-controller.php`, with no shared helper.
-4. `WPSG_Campaign_IO::import_entry()`'s `$opts['via']`/`$opts['format']` derivation is a residual per-transport special case — every call site already passes both explicitly, so the `??` defaults are unreachable, and `format` is fully derivable from whether `$zip` is passed.
+1. `Mullion_Campaign_IO::build_url_media_items()`/`upload_media_item()`/`normalize_media_type()` re-derive the same type/source whitelisting `Mullion_Cpt::sanitize_media_items()` already implements as the registered meta sanitizer.
+2. `Mullion_Campaign_IO::apply_scalar_meta()`'s inline `strtotime()`/`gmdate()` datetime normalization duplicates `Mullion_Cpt::sanitize_datetime()`.
+3. The `total_available`/`truncated` truncation-flag computation (P65-C) is implemented near-identically in both `class-mullion-media-controller.php` and `class-mullion-campaign-controller.php`, with no shared helper.
+4. `Mullion_Campaign_IO::import_entry()`'s `$opts['via']`/`$opts['format']` derivation is a residual per-transport special case — every call site already passes both explicitly, so the `??` defaults are unreachable, and `format` is fully derivable from whether `$zip` is passed.
 
-**What to implement:** Route (1)/(2) through the existing `WPSG_Cpt` sanitizers instead of re-implementing them; extract (3) into a shared helper (alongside `WPSG_REST_Base::paginated_response()`/`parse_pagination()`); simplify (4) by having each call site pass an explicit `source` string instead of the `via`/`format` ternary.
+**What to implement:** Route (1)/(2) through the existing `Mullion_Cpt` sanitizers instead of re-implementing them; extract (3) into a shared helper (alongside `Mullion_REST_Base::paginated_response()`/`parse_pagination()`); simplify (4) by having each call site pass an explicit `source` string instead of the `via`/`format` ternary.
 
-**Files:** `includes/class-wpsg-campaign-io.php`, `includes/class-wpsg-cpt.php`, `includes/rest/class-wpsg-media-controller.php`, `includes/rest/class-wpsg-campaign-controller.php`.
+**Files:** `includes/class-mullion-campaign-io.php`, `includes/class-mullion-cpt.php`, `includes/rest/class-mullion-media-controller.php`, `includes/rest/class-mullion-campaign-controller.php`.
 
 **Effort:** Small-Medium | **Impact:** Low — maintainability only; no observed behavioral bug today.
 
@@ -356,12 +356,12 @@ Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPO
 
 ### Granular Custom-Role Permission Engine (GitHub-style)
 
-**Files:** `includes/class-wpsg-permissions.php` (introduced in P52-A), role/cap setup in `wp-super-gallery.php`, a new admin UI + storage.
+**Files:** `includes/class-mullion-permissions.php` (introduced in P52-A), role/cap setup in `mullion-gallery.php`, a new admin UI + storage.
 
-**Context:** P52-A establishes the authorization foundation as a centralized `WPSG_Permissions` action→requirement map — every protected action declares its required tier (`manage_options` / `manage_wpsg` / per-space grant level) and scope in one place, with the named tiers (viewer / editor / owner / wpsg_editor / admin) acting as fixed **presets** over that map. This future task is the optional **builder layer** on top of that foundation: let site admins compose **custom roles** from atomic capabilities (à la GitHub's Read/Triage/Write/Maintain/Admin presets plus Enterprise custom repository roles), with optional **per-space role overrides**.
+**Context:** P52-A establishes the authorization foundation as a centralized `Mullion_Permissions` action→requirement map — every protected action declares its required tier (`manage_options` / `manage_mullion` / per-space grant level) and scope in one place, with the named tiers (viewer / editor / owner / mullion_editor / admin) acting as fixed **presets** over that map. This future task is the optional **builder layer** on top of that foundation: let site admins compose **custom roles** from atomic capabilities (à la GitHub's Read/Triage/Write/Maintain/Admin presets plus Enterprise custom repository roles), with optional **per-space role overrides**.
 
 **What it would take:**
-- Promote the implicit atomic actions in the `WPSG_Permissions` map to first-class, individually grantable capabilities.
+- Promote the implicit atomic actions in the `Mullion_Permissions` map to first-class, individually grantable capabilities.
 - A storage schema for custom role definitions (composition of base preset + added/removed atomic caps), and optional per-space scoping of those definitions.
 - An admin UI to create/edit custom roles and assign them, plus a migration path from the fixed presets.
 - Permission resolution that layers custom roles over the preset map without breaking the existing tier checks or the P52-A regression matrix.
@@ -374,11 +374,11 @@ Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPO
 
 ### CORS Origin Allow-List & Admin UI
 
-**Files:** `wp-super-gallery.php`, `class-wpsg-settings.php`
+**Files:** `mullion-gallery.php`, `class-mullion-settings.php`
 
 Add a CORS allowed-origins admin setting and enforce it on REST API responses, rejecting wildcard (`*`) when credentials are used. Only affects cross-origin REST API usage; standard same-origin WordPress shortcode deployments are unaffected (WP core already reflects the request origin unconditionally for those).
 
-**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. This track becomes relevant only when WPSG is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for the JWT work below.
+**P39-CO1 deferral note (2026-06-01):** P39-CO1 attempted to promote this to a first-party settings-backed surface. Work was rolled back because CORS restriction provides no meaningful value for the primary use case — the plugin is embedded via WordPress shortcode and runs same-origin. This track becomes relevant only when Mullion is deployed as a standalone SPA on a different origin, which requires preparatory work (auth model, build changes, deployment docs) that is not yet in scope. Prerequisite for the JWT work below.
 
 **Effort:** Medium (4-6 hours) | **Impact:** Low — meaningful only for standalone SPA deployments
 
@@ -386,29 +386,29 @@ Add a CORS allowed-origins admin setting and enforce it on REST API responses, r
 
 ### JWT In-Memory Token Auth (Standalone SPA)
 
-**Context:** Phase 20 (P20-K) defaulted the plugin to nonce-only authentication and gated the JWT `localStorage` flow behind an opt-in flag (`WPSG_ENABLE_JWT_AUTH`) to eliminate the XSS → token-theft vector for the default deployment. However, if WPSG is ever deployed as a **standalone SPA on a different origin** (i.e. not embedded via shortcode), WP nonces are unavailable because they require a same-origin page load. In that scenario, JWT auth is required.
+**Context:** Phase 20 (P20-K) defaulted the plugin to nonce-only authentication and gated the JWT `localStorage` flow behind an opt-in flag (`MULLION_ENABLE_JWT_AUTH`) to eliminate the XSS → token-theft vector for the default deployment. However, if Mullion is ever deployed as a **standalone SPA on a different origin** (i.e. not embedded via shortcode), WP nonces are unavailable because they require a same-origin page load. In that scenario, JWT auth is required.
 
-The JWT code (`src/services/auth/WpJwtProvider.ts`) is **live, working code today** — not commented out. It is simply not instantiated unless the site opts in: `getAuthProvider()` in `src/App.tsx` returns a `WpJwtProvider` only when `enableJwt === true` (backed by the `WPSG_ENABLE_JWT_AUTH` constant), otherwise a cookie/nonce `WpNonceProvider`. It stores tokens in `localStorage`, which is accessible to any script on the page. The secure alternative is:
+The JWT code (`src/services/auth/WpJwtProvider.ts`) is **live, working code today** — not commented out. It is simply not instantiated unless the site opts in: `getAuthProvider()` in `src/App.tsx` returns a `WpJwtProvider` only when `enableJwt === true` (backed by the `MULLION_ENABLE_JWT_AUTH` constant), otherwise a cookie/nonce `WpNonceProvider`. It stores tokens in `localStorage`, which is accessible to any script on the page. The secure alternative is:
 
 1. **In-memory access token** — stored in a module-scoped variable (not `localStorage`). Survives only for the tab's lifetime.
-2. **httpOnly refresh cookie** — issued by a new `/wpsg/v1/token/refresh` endpoint with `SameSite=Strict; Secure; HttpOnly`. The browser sends it automatically; JS cannot read it.
-3. **Silent refresh** — on app boot and before access-token expiry, `POST /wpsg/v1/token/refresh` returns a fresh short-lived access token.
+2. **httpOnly refresh cookie** — issued by a new `/mullion/v1/token/refresh` endpoint with `SameSite=Strict; Secure; HttpOnly`. The browser sends it automatically; JS cannot read it.
+3. **Silent refresh** — on app boot and before access-token expiry, `POST /mullion/v1/token/refresh` returns a fresh short-lived access token.
 
 **What it would take:**
-- New PHP endpoint: `POST /wpsg/v1/token/refresh` — validates the httpOnly cookie, issues a new JWT with a 15-minute TTL.
+- New PHP endpoint: `POST /mullion/v1/token/refresh` — validates the httpOnly cookie, issues a new JWT with a 15-minute TTL.
 - Modify `WpJwtProvider.ts` (live today, flag-gated — not commented out): replace `localStorage.setItem/getItem` with a module-scoped `let accessToken: string | null`.
-- **Permissions-cache staleness (from the 2026-07-13 React review, § B-4, tracked as Phase 69 P69-E):** `WpJwtProvider.getPermissions()` returns the cached `wpsg_permissions` `localStorage` entry with **no TTL** — it is only cleared on logout, so a revoked grant persists in the client UI until the user logs out (display-only; the server still enforces on every request). Fold the fix into this rework: add a TTL to the cache, or drop it entirely since the `/permissions` endpoint is cheap. See [PHASE69_REPORT.md → P69-E](PHASE69_REPORT.md#track-p69-e---jwt-providers-localstorage-permissions-cache-never-expires-tracking-only).
+- **Permissions-cache staleness (from the 2026-07-13 React review, § B-4, tracked as Phase 69 P69-E):** `WpJwtProvider.getPermissions()` returns the cached `mullion_permissions` `localStorage` entry with **no TTL** — it is only cleared on logout, so a revoked grant persists in the client UI until the user logs out (display-only; the server still enforces on every request). Fold the fix into this rework: add a TTL to the cache, or drop it entirely since the `/permissions` endpoint is cheap. See [PHASE69_REPORT.md → P69-E](PHASE69_REPORT.md#track-p69-e---jwt-providers-localstorage-permissions-cache-never-expires-tracking-only).
 - Add a `useTokenRefresh` hook that calls the refresh endpoint 1 minute before expiry and on window `focus` events.
-- `apiClient.ts`: attach `Authorization: Bearer <in-memory-token>` only when the env-var opt-in `WPSG_ENABLE_JWT=1` is set.
-- Server-side: set the refresh cookie on `POST /wpsg/v1/token` (login) and clear it on `DELETE /wpsg/v1/token` (logout).
+- `apiClient.ts`: attach `Authorization: Bearer <in-memory-token>` only when the env-var opt-in `Mullion_ENABLE_JWT=1` is set.
+- Server-side: set the refresh cookie on `POST /mullion/v1/token` (login) and clear it on `DELETE /mullion/v1/token` (logout).
 - CORS configuration for the cross-origin case (`Access-Control-Allow-Credentials: true`, explicit origin).
 
 **Open questions:**
 - Q1: Should refresh-token rotation be implemented (invalidate old refresh cookie on each use)? This limits replay but adds a revocation table.
 - Q2: What is the refresh-cookie TTL? 7 days (convenience) vs. 24 hours (security) — should it be admin-configurable?
-- Q3: Is a `/wpsg/v1/token/revoke-all` endpoint needed for the "log out everywhere" use case?
+- Q3: Is a `/mullion/v1/token/revoke-all` endpoint needed for the "log out everywhere" use case?
 
-**Prerequisites:** P20-K must be complete (nonce-only default + JWT provider behind the `WPSG_ENABLE_JWT_AUTH` env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
+**Prerequisites:** P20-K must be complete (nonce-only default + JWT provider behind the `MULLION_ENABLE_JWT_AUTH` env-var gate). D-1 (CORS allow-list) must ship first to define the accepted cross-origin policy.
 
 **P39-AU1 deferral note (2026-06-01):** P39-AU1 was gated on P39-CO1. Both tracks were deferred together — the CORS restriction work itself was rolled back because the primary deployment model (embedded WordPress shortcode) is same-origin and does not need cross-origin auth. The standalone SPA path requires the app to be prepared for that deployment model first (routing, build config, deployment documentation, CORS policy). Revisit when there is a concrete standalone SPA deployment requirement.
 
@@ -420,7 +420,7 @@ The JWT code (`src/services/auth/WpJwtProvider.ts`) is **live, working code toda
 
 **Files:** `src/services/apiClient.ts`, `src/hooks/useAuth.ts`
 
-Transparent silent refresh of the in-memory JWT access token before expiry via a `useTokenRefresh` hook that posts to `/wpsg/v1/token/refresh`. **Blocked on the JWT In-Memory Token Auth work above** (requires the in-memory token architecture and the `/token/refresh` PHP endpoint to exist first). Standard nonce-auth deployments are unaffected.
+Transparent silent refresh of the in-memory JWT access token before expiry via a `useTokenRefresh` hook that posts to `/mullion/v1/token/refresh`. **Blocked on the JWT In-Memory Token Auth work above** (requires the in-memory token architecture and the `/token/refresh` PHP endpoint to exist first). Standard nonce-auth deployments are unaffected.
 
 **Effort:** Medium | **Impact:** Low — only relevant for standalone SPA JWT deployments
 
@@ -493,7 +493,7 @@ When promoting future tasks to an active phase:
 
 *Updated: June 3, 2026 (P39-CL1) — Removed "Webhook Support for Campaign Events" (shipped P39-IN1) and "Redis/Memcached Object Cache" (shipped P39-OC1); retired D-12 (rate-limiter object-cache docs, now covered by P39-OC1); added P39-IN1 and P39-OC1 to the ownership snapshot; updated Infrastructure & Performance section intro.*
 
-*Updated: June 3, 2026 (P40-QA1) — Reconciled audit-domain backlog against Phase 40 outcome. "Audit Log Binary Export" (Campaign Management section) remains correctly deferred — `WPSG_Export_Engine` exists but the compliance use case is not yet active enough to justify promotion. No other audit-domain items require movement or promotion.*
+*Updated: June 3, 2026 (P40-QA1) — Reconciled audit-domain backlog against Phase 40 outcome. "Audit Log Binary Export" (Campaign Management section) remains correctly deferred — `Mullion_Export_Engine` exists but the compliance use case is not yet active enough to justify promotion. No other audit-domain items require movement or promotion.*
 
 *Updated: June 3, 2026 (P41-FT1) — Updated "Alignment Variants" (Builder section): P30-K (alignment spike) and P30-G (nested group hierarchy) are both complete as of Phase 30; removed the blocking-dependency language and marked the item as unblocked.*
 
@@ -507,7 +507,7 @@ When promoting future tasks to an active phase:
 
 *Updated: June 7, 2026 (P47 planning) — Added "Gallery Spaces" section with four Phase 47 follow-on candidates: Cross-Space Campaign Move, Per-Instance Full-Bleed CSS Scoping, Per-Space Library Isolation (Overlays/Fonts), and Space-Scoped Rate-Limit Buckets.*
 
-*Updated: June 7, 2026 (P46-D/E) — Auth components and Lightbox are now genuinely decoupled from all WPSG-internal imports. `safeLocalStorage`, `useSwipe`, and `scrollLock` moved from `@/utils/`/`@/hooks/` to `src/lib/`. `AuthBarFloating` Campaign type replaced with local generic `AuthBarCampaignItem`. The monorepo infrastructure step (npm workspaces, `packages/shared-utils/`, `packages/shared-ui/`) remains the open follow-on before actual npm package publication.*
+*Updated: June 7, 2026 (P46-D/E) — Auth components and Lightbox are now genuinely decoupled from all Mullion-internal imports. `safeLocalStorage`, `useSwipe`, and `scrollLock` moved from `@/utils/`/`@/hooks/` to `src/lib/`. `AuthBarFloating` Campaign type replaced with local generic `AuthBarCampaignItem`. The monorepo infrastructure step (npm workspaces, `packages/shared-utils/`, `packages/shared-ui/`) remains the open follow-on before actual npm package publication.*
 
 *Updated: June 9, 2026 (P48 planning) — Promoted to Phase 48: "Accumulative Multi-File Selection with Per-File Preview" (P48-A), "Alignment Variants" (P48-B), "Per-Instance Full-Bleed CSS Scoping" (P48-C), "Space-Scoped Rate-Limit Buckets" (P48-D), "Audit Log Binary Export" (P48-E), "Media Library Binary Export" (P48-F), "Coverflow / 3D Adapter" (P48-G), "Mosaic / Pinterest Adapter" (P48-H). Retired as already shipped: "Spotlight / Hero Adapter" (`spotlight/SpotlightGallery.tsx`) and "Vertical Scroll Snap Adapter" (`scroll-snap/ScrollSnapGallery.tsx`) — both fully registered in `adapterRegistry.ts`.*
 

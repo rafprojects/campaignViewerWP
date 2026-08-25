@@ -7,7 +7,7 @@ This document details the process of setting up PHPUnit testing for a WordPress 
 ## Initial Setup
 
 ### 1. Project Structure
-The WordPress plugin is located in `/wp-plugin/wp-super-gallery/` within the project root. The plugin includes:
+The WordPress plugin is located in `/wp-plugin/mullion-gallery/` within the project root. The plugin includes:
 - Core files in `includes/`
 - REST API endpoints with oEmbed proxy functionality
 - SSRF protections (HTTPS enforcement, allowlist, private IP blocking)
@@ -16,7 +16,7 @@ The WordPress plugin is located in `/wp-plugin/wp-super-gallery/` within the pro
 First, installed the necessary testing dependencies using Composer in the plugin directory:
 
 ```bash
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 composer require --dev yoast/phpunit-polyfills phpunit/phpunit
 ```
 
@@ -68,7 +68,7 @@ if (!file_exists("{$_tests_dir}/includes/functions.php")) {
 require_once "{$_tests_dir}/includes/functions.php";
 
 function _manually_load_plugin() {
-    require dirname(dirname(__FILE__)) . '/wp-super-gallery.php';
+    require dirname(dirname(__FILE__)) . '/mullion-gallery.php';
 }
 tests_add_filter('muplugins_loaded', '_manually_load_plugin');
 
@@ -105,7 +105,7 @@ Different PHPUnit versions (9, 10, 11) had varying compatibility with WordPress 
 First, confirmed that test files were correctly mounted in the wp-env container:
 
 ```bash
-docker exec -u 1000 -i <container_id> bash -lc "cd /var/www/html/wp-content/plugins/wp-super-gallery && ls -la tests/"
+docker exec -u 1000 -i <container_id> bash -lc "cd /var/www/html/wp-content/plugins/mullion-gallery && ls -la tests/"
 ```
 
 Files were present, so mounting wasn't the issue.
@@ -126,7 +126,7 @@ Created a debug script to check if the bootstrap loaded correctly and classes we
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/test-proxy-oembed.php';
-echo 'Proxy Test exists: ' . (class_exists('WPSG_REST_Proxy_OEmbed_Test') ? 'yes' : 'no') . PHP_EOL;
+echo 'Proxy Test exists: ' . (class_exists('Mullion_REST_Proxy_OEmbed_Test') ? 'yes' : 'no') . PHP_EOL;
 echo 'WP_UnitTestCase exists: ' . (class_exists('WP_UnitTestCase') ? 'yes' : 'no') . PHP_EOL;
 ```
 
@@ -178,8 +178,8 @@ Renamed test files to follow PHPUnit naming conventions:
 - `test-proxy-oembed-ssrf.php` → `ProxyOEmbedSSRFTest.php`
 
 Updated class names accordingly:
-- `WPSG_REST_Proxy_OEmbed_Test` → `ProxyOEmbedTest`
-- `WPSG_REST_Proxy_OEmbed_SSRF_Test` → `ProxyOEmbedSSRFTest`
+- `Mullion_REST_Proxy_OEmbed_Test` → `ProxyOEmbedTest`
+- `Mullion_REST_Proxy_OEmbed_SSRF_Test` → `ProxyOEmbedSSRFTest`
 
 ### 2. Updating PHPUnit Configuration
 Modified `phpunit.xml.dist` to use suffix-based discovery:
@@ -231,7 +231,7 @@ composer dump-autoload --ignore-platform-reqs
 
 ### Directory Structure
 ```
-wp-plugin/wp-super-gallery/
+wp-plugin/mullion-gallery/
 ├── composer.json
 ├── phpunit.xml.dist
 ├── tests/
@@ -247,7 +247,7 @@ wp-plugin/wp-super-gallery/
 Use wp-env to run tests in the proper environment:
 
 ```bash
-wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 This produces:

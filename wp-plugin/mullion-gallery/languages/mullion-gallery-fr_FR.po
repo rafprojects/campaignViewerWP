@@ -5076,8 +5076,8 @@ msgid "CSS color used for the hover glow effect."
 msgstr "Couleur CSS utilisée pour l’effet de lueur au survol."
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1367
-msgid "#7c9ef8"
-msgstr "#7c9ef8"
+msgid "#1ad1c4"
+msgstr "#1ad1c4"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1370
 msgid "Image Viewport Height"

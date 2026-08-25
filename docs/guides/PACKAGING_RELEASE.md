@@ -1,6 +1,6 @@
 # Packaging & Release Guide
 
-This document provides a comprehensive guide for building, packaging, and releasing WP Super Gallery for production deployment.
+This document provides a comprehensive guide for building, packaging, and releasing Mullion for production deployment.
 
 ---
 
@@ -81,8 +81,8 @@ npm run build:wp
 Or manually:
 
 ```bash
-rm -rf wp-plugin/wp-super-gallery/assets/*
-cp -r dist/* wp-plugin/wp-super-gallery/assets/
+rm -rf wp-plugin/mullion-gallery/assets/*
+cp -r dist/* wp-plugin/mullion-gallery/assets/
 ```
 
 ### 5. Verify the Build
@@ -90,7 +90,7 @@ cp -r dist/* wp-plugin/wp-super-gallery/assets/
 Check that the plugin assets directory contains:
 
 ```
-wp-plugin/wp-super-gallery/assets/
+wp-plugin/mullion-gallery/assets/
 ├── index-[hash].js          # Main JS bundle
 ├── index-[hash].css         # Main CSS bundle
 ├── manifest.json            # Vite manifest for asset resolution
@@ -104,22 +104,22 @@ wp-plugin/wp-super-gallery/assets/
 The complete plugin structure for distribution:
 
 ```
-wp-super-gallery/
+mullion-gallery/
 ├── assets/                     # Built SPA assets (from dist/)
 │   ├── index-[hash].js
 │   ├── index-[hash].css
 │   └── manifest.json
 ├── includes/
-│   ├── class-wpsg-cpt.php      # Custom post type registration
-│   ├── class-wpsg-embed.php    # Shortcode and embed logic
-│   ├── class-wpsg-rest.php     # REST API endpoints
-│   ├── class-wpsg-settings.php # Admin settings page
-│   └── class-wpsg-oembed-providers.php  # oEmbed provider handling
+│   ├── class-mullion-cpt.php      # Custom post type registration
+│   ├── class-mullion-embed.php    # Shortcode and embed logic
+│   ├── class-mullion-rest.php     # REST API endpoints
+│   ├── class-mullion-settings.php # Admin settings page
+│   └── class-mullion-oembed-providers.php  # oEmbed provider handling
 ├── tests/                      # PHPUnit tests (exclude from distribution)
 ├── vendor/                     # Composer dependencies (if any)
 ├── composer.json               # PHP dependencies
 ├── phpunit.xml.dist            # PHPUnit configuration
-└── wp-super-gallery.php        # Main plugin file
+└── mullion-gallery.php        # Main plugin file
 ```
 
 ---
@@ -135,13 +135,13 @@ For sharing or uploading to WordPress:
 cd wp-plugin
 
 # Create ZIP excluding development files
-zip -r wp-super-gallery-v$(cat wp-super-gallery/wp-super-gallery.php | grep "Version:" | sed 's/.*Version: //').zip wp-super-gallery \
-  -x "wp-super-gallery/tests/*" \
-  -x "wp-super-gallery/.phpunit.result.cache" \
-  -x "wp-super-gallery/phpunit.xml.dist" \
-  -x "wp-super-gallery/composer.json" \
-  -x "wp-super-gallery/composer.lock" \
-  -x "wp-super-gallery/bin/*"
+zip -r mullion-gallery-v$(cat mullion-gallery/mullion-gallery.php | grep "Version:" | sed 's/.*Version: //').zip mullion-gallery \
+  -x "mullion-gallery/tests/*" \
+  -x "mullion-gallery/.phpunit.result.cache" \
+  -x "mullion-gallery/phpunit.xml.dist" \
+  -x "mullion-gallery/composer.json" \
+  -x "mullion-gallery/composer.lock" \
+  -x "mullion-gallery/bin/*"
 ```
 
 Or use the npm script (if configured):
@@ -166,7 +166,7 @@ These files should NOT be in the production ZIP:
 
 These files MUST be in the production ZIP:
 
-- `wp-super-gallery.php` (main plugin file)
+- `mullion-gallery.php` (main plugin file)
 - `includes/` directory (all PHP classes)
 - `assets/` directory (built SPA assets)
 - `composer.json` (for dependency reference)
@@ -182,13 +182,13 @@ For local WordPress or staging environments:
 
 ```bash
 # Remove old plugin files
-rm -rf /path/to/wordpress/wp-content/plugins/wp-super-gallery
+rm -rf /path/to/wordpress/wp-content/plugins/mullion-gallery
 
 # Copy new plugin files
-cp -r wp-plugin/wp-super-gallery /path/to/wordpress/wp-content/plugins/
+cp -r wp-plugin/mullion-gallery /path/to/wordpress/wp-content/plugins/
 
 # Verify permissions (Linux/Mac)
-chmod -R 755 /path/to/wordpress/wp-content/plugins/wp-super-gallery
+chmod -R 755 /path/to/wordpress/wp-content/plugins/mullion-gallery
 ```
 
 ### Method 2: ZIP Upload (WordPress Admin)
@@ -203,7 +203,7 @@ chmod -R 755 /path/to/wordpress/wp-content/plugins/wp-super-gallery
 1. Create the distribution ZIP and extract locally.
 2. Connect via FTP/SFTP to your production server.
 3. Navigate to `wp-content/plugins/`.
-4. Upload the `wp-super-gallery/` folder.
+4. Upload the `mullion-gallery/` folder.
 5. Deactivate/Reactivate the plugin if it was already active.
 
 ### Method 4: Git-based Deployment
@@ -213,10 +213,10 @@ For CI/CD pipelines:
 ```bash
 # Example: deploy from CI
 git clone --depth 1 <repo-url>
-cd wp-super-gallery
+cd mullion-gallery
 npm ci
 npm run build:wp
-rsync -avz --delete wp-plugin/wp-super-gallery/ user@server:/path/to/wp-content/plugins/wp-super-gallery/
+rsync -avz --delete wp-plugin/mullion-gallery/ user@server:/path/to/wp-content/plugins/mullion-gallery/
 ```
 
 ---
@@ -236,11 +236,11 @@ For manual releases, use this checklist:
 
 - [ ] All tests pass (`npm test -- --run`)
 - [ ] TypeScript compiles without errors (`npx tsc --noEmit`)
-- [ ] PHP syntax is valid (`php -l wp-plugin/wp-super-gallery/wp-super-gallery.php`)
+- [ ] PHP syntax is valid (`php -l wp-plugin/mullion-gallery/mullion-gallery.php`)
 - [ ] Version number updated in:
-  - [ ] `wp-super-gallery.php` (Plugin header)
-  - [ ] `wp-super-gallery.php` (`WPSG_VERSION` constant)
-  - [ ] `wp-plugin/wp-super-gallery/readme.txt` (`Stable tag`)
+  - [ ] `mullion-gallery.php` (Plugin header)
+  - [ ] `mullion-gallery.php` (`Mullion_VERSION` constant)
+  - [ ] `wp-plugin/mullion-gallery/readme.txt` (`Stable tag`)
   - [ ] `package.json` (npm version)
   - [ ] `package-lock.json` (lockfile root version)
 - [ ] CHANGELOG updated with release notes
@@ -252,7 +252,7 @@ For manual releases, use this checklist:
 - [ ] Clean install dependencies (`rm -rf node_modules && npm ci`)
 - [ ] Production build created (`npm run build`)
 - [ ] Assets copied to plugin (`npm run build:wp`)
-- [ ] Build artifacts verified in `wp-plugin/wp-super-gallery/assets/`
+- [ ] Build artifacts verified in `wp-plugin/mullion-gallery/assets/`
 
 ### Package
 
@@ -304,17 +304,17 @@ Follow [SemVer](https://semver.org/):
 
 Update version in these locations:
 
-1. **Plugin Header** (`wp-super-gallery.php`):
+1. **Plugin Header** (`mullion-gallery.php`):
    ```php
    * Version: 1.2.3
    ```
 
-2. **Version Constant** (`wp-super-gallery.php`):
+2. **Version Constant** (`mullion-gallery.php`):
    ```php
-   define('WPSG_VERSION', '1.2.3');
+   define('Mullion_VERSION', '1.2.3');
    ```
 
-3. **WordPress.org readme** (`wp-plugin/wp-super-gallery/readme.txt`):
+3. **WordPress.org readme** (`wp-plugin/mullion-gallery/readme.txt`):
    ```text
    Stable tag: 1.2.3
    ```
@@ -354,8 +354,8 @@ This section documents how to safely upgrade the plugin while preserving user da
 
 | Data Type | Storage Location | Preserved? |
 | --------- | ---------------- | ---------- |
-| Plugin settings | `wp_options` table (`wpsg_settings`) | ✅ Yes |
-| Campaigns | `wp_posts` table (CPT: `wpsg_campaign`) | ✅ Yes |
+| Plugin settings | `wp_options` table (`mullion_settings`) | ✅ Yes |
+| Campaigns | `wp_posts` table (CPT: `mullion_campaign`) | ✅ Yes |
 | Campaign metadata | `wp_postmeta` table | ✅ Yes |
 | Media items | Campaign post meta | ✅ Yes |
 | Access grants | Campaign post meta | ✅ Yes |
@@ -369,7 +369,7 @@ This section documents how to safely upgrade the plugin while preserving user da
 | --------- | ----- |
 | PHP classes | All files in `includes/` are replaced |
 | JS/CSS assets | All files in `assets/` are replaced (content-hashed) |
-| Main plugin file | `wp-super-gallery.php` is replaced |
+| Main plugin file | `mullion-gallery.php` is replaced |
 
 ### Standard Upgrade Procedure
 
@@ -377,13 +377,13 @@ This section documents how to safely upgrade the plugin while preserving user da
 
 ```bash
 # 1. Backup current plugin (recommended)
-cp -r /path/to/wp-content/plugins/wp-super-gallery /path/to/backups/wp-super-gallery-$(date +%Y%m%d)
+cp -r /path/to/wp-content/plugins/mullion-gallery /path/to/backups/mullion-gallery-$(date +%Y%m%d)
 
 # 2. Remove old plugin files (preserves database)
-rm -rf /path/to/wp-content/plugins/wp-super-gallery
+rm -rf /path/to/wp-content/plugins/mullion-gallery
 
 # 3. Copy new plugin files
-cp -r wp-plugin/wp-super-gallery /path/to/wp-content/plugins/
+cp -r wp-plugin/mullion-gallery /path/to/wp-content/plugins/
 
 # 4. Clear caches
 wp cache flush  # If using object cache
@@ -408,8 +408,8 @@ npm run build:wp
 rsync -avz --delete \
   --exclude 'tests/' \
   --exclude 'phpunit.xml.dist' \
-  wp-plugin/wp-super-gallery/ \
-  user@server:/path/to/wp-content/plugins/wp-super-gallery/
+  wp-plugin/mullion-gallery/ \
+  user@server:/path/to/wp-content/plugins/mullion-gallery/
 ```
 
 ### Migration Considerations
@@ -422,7 +422,7 @@ If a new version adds settings fields:
 2. Existing settings are preserved.
 3. No migration script needed for additive changes.
 
-Example in `class-wpsg-settings.php`:
+Example in `class-mullion-settings.php`:
 ```php
 public static function get_settings() {
     $settings = get_option(self::OPTION_NAME, []);
@@ -440,18 +440,18 @@ For major version upgrades with breaking changes:
 
 Example migration hook (if needed in future):
 ```php
-// In wp-super-gallery.php
-register_activation_hook(__FILE__, 'wpsg_run_migrations');
+// In mullion-gallery.php
+register_activation_hook(__FILE__, 'mullion_run_migrations');
 
-function wpsg_run_migrations() {
-    $current_version = get_option('wpsg_db_version', '0.0.0');
+function mullion_run_migrations() {
+    $current_version = get_option('mullion_db_version', '0.0.0');
     
     if (version_compare($current_version, '2.0.0', '<')) {
         // Run migration for v2.0.0
-        wpsg_migrate_to_v2();
+        mullion_migrate_to_v2();
     }
     
-    update_option('wpsg_db_version', WPSG_VERSION);
+    update_option('mullion_db_version', Mullion_VERSION);
 }
 ```
 
@@ -481,7 +481,7 @@ If an upgrade causes issues:
 2. Delete the plugin folder.
 3. Restore from backup:
    ```bash
-   cp -r /path/to/backups/wp-super-gallery-YYYYMMDD /path/to/wp-content/plugins/wp-super-gallery
+   cp -r /path/to/backups/mullion-gallery-YYYYMMDD /path/to/wp-content/plugins/mullion-gallery
    ```
 4. Reactivate the plugin.
 5. Verify functionality.
@@ -506,11 +506,11 @@ If issues are discovered after deployment:
 
 ```bash
 # Keep a backup before deploying
-cp -r /path/to/wordpress/wp-content/plugins/wp-super-gallery /path/to/backups/wp-super-gallery-backup-$(date +%Y%m%d)
+cp -r /path/to/wordpress/wp-content/plugins/mullion-gallery /path/to/backups/mullion-gallery-backup-$(date +%Y%m%d)
 
 # Rollback to previous version
-rm -rf /path/to/wordpress/wp-content/plugins/wp-super-gallery
-cp -r /path/to/backups/wp-super-gallery-previous /path/to/wordpress/wp-content/plugins/wp-super-gallery
+rm -rf /path/to/wordpress/wp-content/plugins/mullion-gallery
+cp -r /path/to/backups/mullion-gallery-previous /path/to/wordpress/wp-content/plugins/mullion-gallery
 ```
 
 ### Rollback via Git
@@ -539,7 +539,7 @@ If the plugin made database changes (rare):
 2. Or manually revert option changes:
    ```php
    // In wp-cli or a script
-   delete_option('wpsg_settings');
+   delete_option('mullion_settings');
    ```
 
 ---
@@ -579,7 +579,7 @@ npx tsc --noEmit
 **Problem:** Plugin activation fails
 
 - Check PHP error log for syntax errors.
-- Validate PHP syntax: `php -l wp-super-gallery.php`
+- Validate PHP syntax: `php -l mullion-gallery.php`
 - Ensure PHP version meets requirements (7.4+).
 
 **Problem:** Shortcode not rendering
@@ -637,22 +637,22 @@ npm run build:wp
 npx tsc --noEmit
 
 # PHP syntax check
-php -l wp-plugin/wp-super-gallery/wp-super-gallery.php
+php -l wp-plugin/mullion-gallery/mullion-gallery.php
 
 # Deploy to local WP (adjust path)
-rm -rf /path/to/wp-content/plugins/wp-super-gallery && \
-cp -r wp-plugin/wp-super-gallery /path/to/wp-content/plugins/
+rm -rf /path/to/wp-content/plugins/mullion-gallery && \
+cp -r wp-plugin/mullion-gallery /path/to/wp-content/plugins/
 ```
 
 ### Key File Locations
 
 | Purpose | Location |
 | ------- | -------- |
-| Main plugin file | `wp-plugin/wp-super-gallery/wp-super-gallery.php` |
-| Built assets | `wp-plugin/wp-super-gallery/assets/` |
-| PHP classes | `wp-plugin/wp-super-gallery/includes/` |
-| Settings class | `wp-plugin/wp-super-gallery/includes/class-wpsg-settings.php` |
-| REST API | `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` |
+| Main plugin file | `wp-plugin/mullion-gallery/mullion-gallery.php` |
+| Built assets | `wp-plugin/mullion-gallery/assets/` |
+| PHP classes | `wp-plugin/mullion-gallery/includes/` |
+| Settings class | `wp-plugin/mullion-gallery/includes/class-mullion-settings.php` |
+| REST API | `wp-plugin/mullion-gallery/includes/class-mullion-rest.php` |
 | Frontend source | `src/` |
 | Build output | `dist/` |
 

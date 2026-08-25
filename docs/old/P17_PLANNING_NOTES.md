@@ -112,7 +112,7 @@ interface PanelDockState {
 }
 
 const DEFAULT_DOCK: PanelDockState = { media: 'left', properties: 'right' };
-// Persisted: localStorage.getItem('wpsg_builder_dock')
+// Persisted: localStorage.getItem('mullion_builder_dock')
 
 // In modal render:
 const leftPanels  = panelsForSide('left',  dockState);   // → [Layers, maybe Media]

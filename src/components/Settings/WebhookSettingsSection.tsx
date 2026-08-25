@@ -63,7 +63,7 @@ function SecretReveal({ secret }: { secret: string }) {
     <Box
       p="xs"
       style={{
-        background: 'var(--mantine-color-dark-6, #1a1a2e)',
+        background: 'var(--mantine-color-dark-6, #102530)',
         borderRadius: 4,
         fontFamily: 'monospace',
         fontSize: 12,

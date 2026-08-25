@@ -159,7 +159,7 @@ class Mullion_Campaign_Status {
     }
 
     /**
-     * Current time as a UTC `Y-m-d H:i:s` string, matching every other WPSG
+     * Current time as a UTC `Y-m-d H:i:s` string, matching every other Mullion
      * datetime column/meta (audit created_at, publish_at, etc.).
      */
     public static function now(): string {

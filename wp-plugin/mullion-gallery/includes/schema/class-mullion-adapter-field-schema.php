@@ -35,7 +35,7 @@ class Mullion_Adapter_Field_Schema {
 
         if ($json === false) {
             throw new RuntimeException(
-                '[WPSG] Could not read adapter field schema: ' . $schema_path  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message from a trusted __DIR__ constant path; not echoed output.
+                '[Mullion] Could not read adapter field schema: ' . $schema_path  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message from a trusted __DIR__ constant path; not echoed output.
             );
         }
 
@@ -43,7 +43,7 @@ class Mullion_Adapter_Field_Schema {
 
         if (!is_array($schema) || !isset($schema['fields']) || !is_array($schema['fields'])) {
             throw new RuntimeException(
-                '[WPSG] Invalid adapter field schema format: ' . $schema_path  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message from a trusted __DIR__ constant path; not echoed output.
+                '[Mullion] Invalid adapter field schema format: ' . $schema_path  // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Exception message from a trusted __DIR__ constant path; not echoed output.
             );
         }
 

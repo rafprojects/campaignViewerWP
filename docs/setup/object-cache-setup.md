@@ -1,6 +1,6 @@
-# Object-Cache Setup for WP Super Gallery
+# Object-Cache Setup for Mullion
 
-WP Super Gallery works correctly with WordPress' default non-persistent object
+Mullion works correctly with WordPress' default non-persistent object
 cache. However, on higher-traffic sites or deployments with automation-heavy
 workflows (batch exports, webhook delivery retries, frequent admin operations),
 a persistent external object cache reduces database load and improves
@@ -19,7 +19,7 @@ Consider a persistent object cache when:
 - You run multiple concurrent webhook endpoints with retry queues active
 - You run binary media exports on a schedule alongside live gallery traffic
 - Multiple WP processes share the same site (e.g., PHP-FPM with > 4 workers)
-- You notice `wpsg_rest_error_rate` rising in the health dashboard without a
+- You notice `mullion_rest_error_rate` rising in the health dashboard without a
   clear application cause (a saturated database cache is a common hidden factor)
 
 With the default non-persistent cache, values are cached only for the lifetime
@@ -61,7 +61,7 @@ define('WP_REDIS_HOST', '127.0.0.1');   // or your Redis host/socket
 define('WP_REDIS_PORT', 6379);
 define('WP_REDIS_DATABASE', 0);
 // Optional: namespace your site's keys to avoid collisions on shared Redis
-define('WP_REDIS_PREFIX', 'wpsg_site1_');
+define('WP_REDIS_PREFIX', 'mullion_site1_');
 ```
 
 **Verify:**
@@ -202,15 +202,15 @@ To swap backends:
 
 ## Plugin cache groups
 
-WP Super Gallery uses two named object-cache groups:
+Mullion uses two named object-cache groups:
 
 | Group | Purpose | TTL |
 |---|---|---|
-| `wpsg_settings` | Plugin settings option — warmed on `init` at priority 20 | 1 hour |
-| `wpsg_rate_limit` | Per-IP/user rate-limit counters | Per-window (default 60 s) |
+| `mullion_settings` | Plugin settings option — warmed on `init` at priority 20 | 1 hour |
+| `mullion_rate_limit` | Per-IP/user rate-limit counters | Per-window (default 60 s) |
 
-Cache groups are isolated: flushing `wpsg_rate_limit` (e.g., via
-`wp wpsg cache flush-rate-limits`) does not affect settings.
+Cache groups are isolated: flushing `mullion_rate_limit` (e.g., via
+`wp mullion cache flush-rate-limits`) does not affect settings.
 
 ---
 
@@ -220,15 +220,15 @@ Access-control reads (grant lookups, role checks) use a **maximum TTL of 60 s**
 or bypass the cache entirely. This ensures that grant revocations propagate to
 all in-flight requests within one minute.
 
-**Do not** cache access decisions with `WPSG_REST::CACHE_TTL_SETTINGS` (1 hour).
-Use `WPSG_REST::CACHE_TTL_ACCESS` (60 s) or skip the cache for any check whose
+**Do not** cache access decisions with `Mullion_REST::CACHE_TTL_SETTINGS` (1 hour).
+Use `Mullion_REST::CACHE_TTL_ACCESS` (60 s) or skip the cache for any check whose
 result determines whether a user is allowed to perform an action.
 
 ---
 
 ## Health surface
 
-The plugin's `/wp-json/wp-super-gallery/v1/admin/health` endpoint includes an
+The plugin's `/wp-json/mullion-gallery/v1/admin/health` endpoint includes an
 `objectCache` key:
 
 ```json

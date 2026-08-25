@@ -42,16 +42,16 @@
   function initAuthTestButton() {
     var testBtn = document.getElementById('mullion-test-auth');
     var resultSpan = document.getElementById('mullion-test-auth-result');
-    var config = window.wpsgSettingsAuthTest;
+    var config = window.mullionSettingsAuthTest;
 
     if (!testBtn || !resultSpan || !config) {
       return;
     }
 
-    if (testBtn.dataset.wpsgBound === 'true') {
+    if (testBtn.dataset.mullionBound === 'true') {
       return;
     }
-    testBtn.dataset.wpsgBound = 'true';
+    testBtn.dataset.mullionBound = 'true';
 
     testBtn.addEventListener('click', function() {
       testBtn.disabled = true;

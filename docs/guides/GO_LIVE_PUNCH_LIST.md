@@ -1,4 +1,4 @@
-# WP Super Gallery — Go-Live Punch List
+# Mullion — Go-Live Punch List
 
 **One place for everything left to launch.** The Phase 62 *engineering* is essentially complete
 (F–K); what remains below is human/dashboard, legal, design, and validation work. Detail lives in
@@ -13,12 +13,12 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 ---
 
 ## A. Freemius account & product — M1–M3 (owner / dashboard)
-- ⬜ **M1:** create a Freemius account; register "WP Super Gallery" as a plugin product → get the **Plugin ID + public key** (keep the secret key private, never in the repo).
-- ⬜ **M2:** configure the product/bundle (premium build, menu placement); reconcile `wpsg_fs()`'s `fs_dynamic_init` with Freemius's generated snippet — for **freemium** that adds `has_premium_version`, a distinct `premium_slug`, `is_org_compliant`, and a non-empty `menu['first-path']` (see the `NOTE (M2)` in `wp-super-gallery.php`; P62-K).
+- ⬜ **M1:** create a Freemius account; register "Mullion" as a plugin product → get the **Plugin ID + public key** (keep the secret key private, never in the repo).
+- ⬜ **M2:** configure the product/bundle (premium build, menu placement); reconcile `mullion_fs()`'s `fs_dynamic_init` with Freemius's generated snippet — for **freemium** that adds `has_premium_version`, a distinct `premium_slug`, `is_org_compliant`, and a non-empty `menu['first-path']` (see the `NOTE (M2)` in `mullion-gallery.php`; P62-K).
 - ⬜ **M3:** configure **pricing** — tiers (single / 5-site / agency), renewals, trial. Proposed defaults in [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md) §6 — validate vs competitors before locking.
 
 ## B. Credentials injection — technical go-live
-- ⬜ Add a site-specific **`wpsg_freemius_config` mu-plugin** (outside the repo) with the real `id` + `public_key` + `is_premium`; confirm `WPSG_License::is_sdk_active()` returns **true** on the store site. (The upgrade URL is now SDK-derived — P62-K — so no manual `wpsg_license_upgrade_url` filter is required; it still overrides if set.)
+- ⬜ Add a site-specific **`mullion_freemius_config` mu-plugin** (outside the repo) with the real `id` + `public_key` + `is_premium`; confirm `Mullion_License::is_sdk_active()` returns **true** on the store site. (The upgrade URL is now SDK-derived — P62-K — so no manual `mullion_license_upgrade_url` filter is required; it still overrides if set.)
 
 ## C. Buyer-facing text & legal — M4 (P62-D / P62-J)
 - ⬜ Decide the **support channel/email + SLA** and the **refund policy**.

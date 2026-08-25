@@ -28,19 +28,19 @@ export BASE=http://localhost:8888
 
 ## 2. Test personas & the RBAC model (read this before P63-E/-E-2/-I)
 
-Getting the authorization model right is the difference between a test that proves something and one that passes for the wrong reason. The model enforced by the code (`WPSG_Permissions::actor_has_tier`, `WPSG_REST_Base::get_effective_space_level`) is:
+Getting the authorization model right is the difference between a test that proves something and one that passes for the wrong reason. The model enforced by the code (`Mullion_Permissions::actor_has_tier`, `Mullion_REST_Base::get_effective_space_level`) is:
 
 | Persona | WP capability | Space access | Reaches export/admin endpoints? |
 |---|---|---|---|
-| **System Admin** | `manage_options` (+ `manage_wpsg`) | **Owner in every space, always** (escape hatch) | Yes — everything |
-| **Editor (delegated)** | `manage_wpsg`, **not** `manage_options` | **Only spaces they hold an explicit grant to** | Yes, but space-scoped |
-| **Reader / Viewer** | logged-in, no `manage_wpsg` | n/a | **No** — rejected at the `permission_callback` |
+| **System Admin** | `manage_options` (+ `manage_mullion`) | **Owner in every space, always** (escape hatch) | Yes — everything |
+| **Editor (delegated)** | `manage_mullion`, **not** `manage_options` | **Only spaces they hold an explicit grant to** | Yes, but space-scoped |
+| **Reader / Viewer** | logged-in, no `manage_mullion` | n/a | **No** — rejected at the `permission_callback` |
 
-**Critical, and easy to get wrong:** per **P53-A**, a `manage_wpsg` editor has access to a space **only via an explicit grant — in *both* `open` and `delegated` isolation modes.** Open mode does **not** hand editors implicit access (that was removed in P53-A; the test `WPSG_P47_Spaces_Isolation_Test::test_open_space_denies_manage_wpsg_without_grant` pins it). `isolation_mode` now governs *asset/library visibility*, not this access gate. Only `manage_options` is owner-everywhere.
+**Critical, and easy to get wrong:** per **P53-A**, a `manage_mullion` editor has access to a space **only via an explicit grant — in *both* `open` and `delegated` isolation modes.** Open mode does **not** hand editors implicit access (that was removed in P53-A; the test `Mullion_P47_Spaces_Isolation_Test::test_open_space_denies_manage_mullion_without_grant` pins it). `isolation_mode` now governs *asset/library visibility*, not this access gate. Only `manage_options` is owner-everywhere.
 
 Consequence for P63-E/-E-2/-I testing: to make an editor *lack* access to a space, you simply **don't grant it** (or you **revoke** the grant) — the space's mode is irrelevant to the gate.
 
-**"Reader" ≠ the space `viewer` grant-level.** "Reader/Viewer" above is a content consumer with no `manage_wpsg`. The per-space grant levels (`viewer` / `editor` / `owner`) are grants given to a `manage_wpsg` *editor* to scope them; a `viewer`-level grant still requires the user to hold `manage_wpsg` to reach export endpoints. Throughout this doc, "editor" means a `manage_wpsg` actor.
+**"Reader" ≠ the space `viewer` grant-level.** "Reader/Viewer" above is a content consumer with no `manage_mullion`. The per-space grant levels (`viewer` / `editor` / `owner`) are grants given to a `manage_mullion` *editor* to scope them; a `viewer`-level grant still requires the user to hold `manage_mullion` to reach export endpoints. Throughout this doc, "editor" means a `manage_mullion` actor.
 
 ### 2.1 Authenticating REST requests
 
@@ -53,24 +53,24 @@ Two mechanisms; pick per test:
   ```
   Then:
   ```bash
-  curl -i -u '<user_login>:abcd EFGH ijkl MNOP qrst UVWX' "$BASE/wp-json/wp-super-gallery/v1/..."
+  curl -i -u '<user_login>:abcd EFGH ijkl MNOP qrst UVWX' "$BASE/wp-json/mullion-gallery/v1/..."
   ```
 - **Browser session + nonce.** Log in as the persona in a browser; in DevTools console read `wpApiSettings.nonce`; send `-H "X-WP-Nonce: <nonce>"` with the session cookies. Needed only for P63-G (the cookie-CSRF path).
 
 ### 2.2 Creating the personas
 
 ```bash
-# System Admin (administrator already gets manage_wpsg at plugin setup)
+# System Admin (administrator already gets manage_mullion at plugin setup)
 npx wp-env run cli wp user create sysadmin sysadmin@ex.com --role=administrator --user_pass=pass
 
-# Delegated editor: manage_wpsg WITHOUT manage_options
+# Delegated editor: manage_mullion WITHOUT manage_options
 npx wp-env run cli wp user create editor_a editor_a@ex.com --role=subscriber --user_pass=pass
-npx wp-env run cli wp user add-cap editor_a manage_wpsg
+npx wp-env run cli wp user add-cap editor_a manage_mullion
 # (repeat for editor_b for the cross-space tests)
 npx wp-env run cli wp user create editor_b editor_b@ex.com --role=subscriber --user_pass=pass
-npx wp-env run cli wp user add-cap editor_b manage_wpsg
+npx wp-env run cli wp user add-cap editor_b manage_mullion
 
-# Reader: logged-in, no manage_wpsg
+# Reader: logged-in, no manage_mullion
 npx wp-env run cli wp user create reader reader@ex.com --role=subscriber --user_pass=pass
 ```
 
@@ -83,23 +83,23 @@ npx wp-env run cli wp user list --field=user_login --capability=manage_options  
 
 ## 3. Reusable setup recipes
 
-**Spaces & grants** — do these through the **Spaces admin screen** (the realistic path a site admin uses) *or* REST. The admin screen: WP Admin → WP Super Gallery → Spaces → create Space A and Space B; open a space → Access → add/remove a user grant. Note each space's numeric ID (shown in the URL / list).
+**Spaces & grants** — do these through the **Spaces admin screen** (the realistic path a site admin uses) *or* REST. The admin screen: WP Admin → Mullion → Spaces → create Space A and Space B; open a space → Access → add/remove a user grant. Note each space's numeric ID (shown in the URL / list).
 
 REST equivalents (act as System Admin):
 ```bash
 # Create a space (POST /spaces).  isolation_mode: "open" | "delegated" — irrelevant to the access gate (see §2).
-curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/spaces" \
+curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/spaces" \
   -H 'Content-Type: application/json' -d '{"name":"Space A","isolation_mode":"delegated"}'
 
 # Grant a user access to a space (POST /spaces/{id}/access): {userId, access_level}
-curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/spaces/<SPACE_ID>/access" \
+curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/spaces/<SPACE_ID>/access" \
   -H 'Content-Type: application/json' -d '{"userId":<EDITOR_ID>,"access_level":"editor"}'
 
 # Revoke (DELETE /spaces/{id}/access/{userId})
-curl -s -u 'sysadmin:APPPW' -X DELETE "$BASE/wp-json/wp-super-gallery/v1/spaces/<SPACE_ID>/access/<EDITOR_ID>"
+curl -s -u 'sysadmin:APPPW' -X DELETE "$BASE/wp-json/mullion-gallery/v1/spaces/<SPACE_ID>/access/<EDITOR_ID>"
 ```
 
-**Put a campaign in a space:** create a campaign in the builder, then assign its space via the campaign's space selector (or set the `_wpsg_space_id` post-meta). Get a user's numeric ID with `npx wp-env run cli wp user get <login> --field=ID`.
+**Put a campaign in a space:** create a campaign in the builder, then assign its space via the campaign's space selector (or set the `_mullion_space_id` post-meta). Get a user's numeric ID with `npx wp-env run cli wp user get <login> --field=ID`.
 
 **Generate an audit-log entry (for P63-D):** perform any audited action as a user whose login starts with a formula character (see P63-D for the crafted-username trick), e.g. edit/publish a campaign, or approve an access request.
 
@@ -117,11 +117,11 @@ Each track: **What & why → Preconditions → Steps → Expected (pass) → Why
 
 **Preconditions.** A host with **no persistent object cache** — default wp-env qualifies. (If you added Redis, this test is meaningless; see Regression.) Rate-limited route: `GET /campaigns/{id}/media` (`rate_limit_public`, default **60 req / 60 s**). Use a real campaign ID.
 
-**Steps.** Optionally lower the limit for speed via a scratch mu-plugin: `add_filter('wpsg_rate_limit_public', fn() => 5);`. Then hammer the route from one IP:
+**Steps.** Optionally lower the limit for speed via a scratch mu-plugin: `add_filter('mullion_rate_limit_public', fn() => 5);`. Then hammer the route from one IP:
 ```bash
 CID=<campaign_id>
 for i in $(seq 1 70); do
-  curl -s -o /dev/null -w "%{http_code}\n" "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/media"
+  curl -s -o /dev/null -w "%{http_code}\n" "$BASE/wp-json/mullion-gallery/v1/campaigns/$CID/media"
 done | sort | uniq -c
 ```
 
@@ -140,17 +140,17 @@ done | sort | uniq -c
 
 ### P63-B — Per-client-IP bucketing behind a trusted proxy + distinct window filter
 
-**What & why.** The REST limiter now resolves the client IP through `WPSG_Rate_Limiter::get_client_ip()` (trusted-proxy-aware) instead of raw `REMOTE_ADDR`. Behind a reverse proxy every visitor shares the proxy's `REMOTE_ADDR`, which pre-fix collapsed all traffic into one site-wide bucket. Also, the REST window filter was renamed `wpsg_rate_limit_window` → **`wpsg_rest_rate_limit_window`** to end a name collision with the oEmbed proxy limiter.
+**What & why.** The REST limiter now resolves the client IP through `Mullion_Rate_Limiter::get_client_ip()` (trusted-proxy-aware) instead of raw `REMOTE_ADDR`. Behind a reverse proxy every visitor shares the proxy's `REMOTE_ADDR`, which pre-fix collapsed all traffic into one site-wide bucket. Also, the REST window filter was renamed `mullion_rate_limit_window` → **`mullion_rest_rate_limit_window`** to end a name collision with the oEmbed proxy limiter.
 
 **Preconditions.** Forwarded headers are only honored when `REMOTE_ADDR` is in the trusted-proxy allowlist — otherwise they're ignored (that's the anti-spoofing design). Simulate a proxy by trusting your own origin IP via a scratch mu-plugin:
 ```php
-add_filter('wpsg_rate_limiter_trusted_proxies', fn() => ['127.0.0.1']); // the REMOTE_ADDR wp-env sees
-add_filter('wpsg_rate_limit_public', fn() => 2);                        // tiny limit to make it quick
+add_filter('mullion_rate_limiter_trusted_proxies', fn() => ['127.0.0.1']); // the REMOTE_ADDR wp-env sees
+add_filter('mullion_rate_limit_public', fn() => 2);                        // tiny limit to make it quick
 ```
 
 **Steps.** Two "clients" behind the same proxy, distinguished by `X-Forwarded-For`:
 ```bash
-CID=<campaign_id>; URL="$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/media"
+CID=<campaign_id>; URL="$BASE/wp-json/mullion-gallery/v1/campaigns/$CID/media"
 # Client A — exhaust its 2 allowed
 curl -s -o /dev/null -w "A %{http_code}\n" -H 'X-Forwarded-For: 203.0.113.11' "$URL"
 curl -s -o /dev/null -w "A %{http_code}\n" -H 'X-Forwarded-For: 203.0.113.11' "$URL"
@@ -165,8 +165,8 @@ curl -s -o /dev/null -w "B %{http_code}\n" -H 'X-Forwarded-For: 203.0.113.22' "$
 
 **Filter distinctness sub-test.**
 ```php
-add_filter('wpsg_rest_rate_limit_window', fn($w,$scope) => 1, 10, 2); // REST window → 1s (scope arg present)
-add_filter('wpsg_rate_limit_window',      fn($w,$ep)    => 999, 10, 2); // oEmbed window — must NOT affect REST
+add_filter('mullion_rest_rate_limit_window', fn($w,$scope) => 1, 10, 2); // REST window → 1s (scope arg present)
+add_filter('mullion_rate_limit_window',      fn($w,$ep)    => 999, 10, 2); // oEmbed window — must NOT affect REST
 ```
 Confirm REST buckets now expire after ~1 s (a blocked client is allowed again ~1 s later), while the oEmbed proxy limiter is unaffected. Tuning one subsystem must not move the other.
 
@@ -178,20 +178,20 @@ Confirm REST buckets now expire after ~1 s (a blocked client is allowed again ~1
 
 ### P63-C — Security & asset-cache headers fire at the right time
 
-**What & why.** Pre-fix the headers were wired to `send_headers`, which fires *before* the shortcode flag is set and *after* REST requests were already served — so nothing was emitted. Fix: front-end pages containing `[super-gallery]` emit on `template_redirect`; the plugin's REST namespace emits on `rest_pre_serve_request`. Static-asset long-cache headers ship via `assets/.htaccess` (Apache), which needs a **built** plugin.
+**What & why.** Pre-fix the headers were wired to `send_headers`, which fires *before* the shortcode flag is set and *after* REST requests were already served — so nothing was emitted. Fix: front-end pages containing `[mullion-gallery]` emit on `template_redirect`; the plugin's REST namespace emits on `rest_pre_serve_request`. Static-asset long-cache headers ship via `assets/.htaccess` (Apache), which needs a **built** plugin.
 
-**Preconditions.** `npm run build:wp` (so `assets/` and `assets/.htaccess` exist). A published page whose content contains `[super-gallery ...]`, and a page without it.
+**Preconditions.** `npm run build:wp` (so `assets/` and `assets/.htaccess` exist). A published page whose content contains `[mullion-gallery ...]`, and a page without it.
 
 **Steps.**
 ```bash
 # 1. Front-end page WITH the shortcode
 curl -sI "$BASE/<page-with-shortcode>/" | grep -iE 'x-content-type-options|x-frame-options|referrer-policy|permissions-policy'
 # 2. A plugin REST route
-curl -sI "$BASE/wp-json/wp-super-gallery/v1/campaigns" | grep -iE 'x-content-type-options|x-frame-options|referrer-policy|permissions-policy'
+curl -sI "$BASE/wp-json/mullion-gallery/v1/campaigns" | grep -iE 'x-content-type-options|x-frame-options|referrer-policy|permissions-policy'
 # 3. A hashed asset (Apache + mod_headers), built plugin
-curl -sI "$BASE/wp-content/plugins/wp-super-gallery/assets/assets/index-<hash>.js" | grep -i cache-control   # → max-age=31536000, immutable
+curl -sI "$BASE/wp-content/plugins/mullion-gallery/assets/assets/index-<hash>.js" | grep -i cache-control   # → max-age=31536000, immutable
 # 4. The service worker must NOT be long-cached
-curl -sI "$BASE/wp-content/plugins/wp-super-gallery/assets/sw.js" | grep -i cache-control                   # → no-cache/no-store
+curl -sI "$BASE/wp-content/plugins/mullion-gallery/assets/sw.js" | grep -i cache-control                   # → no-cache/no-store
 ```
 
 **Expected (pass).** Steps 1 & 2 return all four security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy`, `Permissions-Policy`). Step 3 → `immutable` long cache. Step 4 → no-store.
@@ -201,12 +201,12 @@ curl -sI "$BASE/wp-content/plugins/wp-super-gallery/assets/sw.js" | grep -i cach
 **Regression checks.**
 - A page **without** the shortcode must **not** carry the security headers (step 1 on the plain page → absent). This proves emission is scoped, not global.
 - The SPA still loads (assets return `200`).
-- CSP is **opt-in**: absent unless `add_filter('wpsg_csp_header', fn() => "default-src 'self'")` is set — then step 1/2 also show `Content-Security-Policy`.
+- CSP is **opt-in**: absent unless `add_filter('mullion_csp_header', fn() => "default-src 'self'")` is set — then step 1/2 also show `Content-Security-Policy`.
 
 **Pitfalls.**
 - Running against **source** (not a build) means no `assets/.htaccess` and no hashed files → steps 3–4 are meaningless. Build first.
 - Some hosts/proxies strip or add these headers; check at the origin.
-- `X-Frame-Options` is filterable (`wpsg_x_frame_options`); default is `SAMEORIGIN`.
+- `X-Frame-Options` is filterable (`mullion_x_frame_options`); default is `SAMEORIGIN`.
 
 ---
 
@@ -217,7 +217,7 @@ curl -sI "$BASE/wp-content/plugins/wp-super-gallery/assets/sw.js" | grep -i cach
 **Preconditions.** System Admin persona (the global audit-log export is `require_system_admin`). An audit entry whose `actor_login` starts with a formula char:
 ```bash
 npx wp-env run cli wp user create '=cmd' evil@ex.com --role=subscriber --user_pass=pass
-npx wp-env run cli wp user add-cap '=cmd' manage_wpsg
+npx wp-env run cli wp user add-cap '=cmd' manage_mullion
 # Perform an audited action AS that user so it appears as actor_login, e.g. publish/edit a campaign.
 ```
 (If a `=`-leading login is rejected by your WP config, use `@sum` or a campaign **title** starting with `=` for a title-bearing audit field.)
@@ -225,7 +225,7 @@ npx wp-env run cli wp user add-cap '=cmd' manage_wpsg
 **Steps.**
 ```bash
 curl -s -u 'sysadmin:APPPW' -H 'Accept: text/csv' \
-  "$BASE/wp-json/wp-super-gallery/v1/admin/audit-log" -o audit.csv
+  "$BASE/wp-json/mullion-gallery/v1/admin/audit-log" -o audit.csv
 ```
 Open `audit.csv` **in a spreadsheet app** (double-click / import), not just a text editor.
 
@@ -244,20 +244,20 @@ Open `audit.csv` **in a spreadsheet app** (double-click / import), not just a te
 
 ### P63-E — Export-job read/download gated to the creator's tier
 
-**What & why.** Export jobs are created under varying gates (audit / media-library export require System Admin) but the `export-jobs/*` endpoints sit at the coarse `require_admin` (`manage_wpsg`) floor. Pre-fix, a `manage_wpsg`-only editor who obtained a job ID could download System-Admin-only content. Fix stamps `required_tier` on the job and re-checks it.
+**What & why.** Export jobs are created under varying gates (audit / media-library export require System Admin) but the `export-jobs/*` endpoints sit at the coarse `require_admin` (`manage_mullion`) floor. Pre-fix, a `manage_mullion`-only editor who obtained a job ID could download System-Admin-only content. Fix stamps `required_tier` on the job and re-checks it.
 
 **Preconditions.** System Admin + a delegated editor. Job type that stamps System-Admin tier: the audit-log binary export.
 
 **Steps.**
 ```bash
 # As System Admin: enqueue an audit-log binary export, capture the job ID
-JOB=$(curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary" | tr ',' '\n' | grep -o '[a-f0-9]\{32\}' | head -1)
+JOB=$(curl -s -u 'sysadmin:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/admin/audit-log/export/binary" | tr ',' '\n' | grep -o '[a-f0-9]\{32\}' | head -1)
 echo "job=$JOB"
-# As a manage_wpsg-only editor: try to read and download it
-curl -s -o /dev/null -w "read  %{http_code}\n"     -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"
-curl -s -o /dev/null -w "dl    %{http_code}\n"     -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB/download"
+# As a manage_mullion-only editor: try to read and download it
+curl -s -o /dev/null -w "read  %{http_code}\n"     -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"
+curl -s -o /dev/null -w "dl    %{http_code}\n"     -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB/download"
 # As the System Admin: same calls
-curl -s -o /dev/null -w "admin %{http_code}\n"     -u 'sysadmin:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"
+curl -s -o /dev/null -w "admin %{http_code}\n"     -u 'sysadmin:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"
 ```
 
 **Expected (pass).** Editor `read`/`dl` → **403**; System Admin → **200** (and download works once the job completes).
@@ -279,13 +279,13 @@ curl -s -o /dev/null -w "admin %{http_code}\n"     -u 'sysadmin:APPPW' "$BASE/wp
 **Steps.**
 ```bash
 # Editor A creates a campaign (editor-tier) export in space S
-JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/<CID_in_S>/export/binary" | grep -o '[a-f0-9]\{32\}' | head -1)
+JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/<CID_in_S>/export/binary" | grep -o '[a-f0-9]\{32\}' | head -1)
 # Editor B (same tier, same space) tries to read it
-curl -s -o /dev/null -w "peerB %{http_code}\n"  -u 'editor_b:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"
+curl -s -o /dev/null -w "peerB %{http_code}\n"  -u 'editor_b:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"
 # Editor A (the creator) reads it
-curl -s -o /dev/null -w "ownerA %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"
+curl -s -o /dev/null -w "ownerA %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"
 # System Admin reads it
-curl -s -o /dev/null -w "admin %{http_code}\n"  -u 'sysadmin:APPPW'  "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"
+curl -s -o /dev/null -w "admin %{http_code}\n"  -u 'sysadmin:APPPW'  "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"
 ```
 
 **Expected (pass).** `peerB` → **403**; `ownerA` → **200**; `admin` → **200**.
@@ -302,15 +302,15 @@ curl -s -o /dev/null -w "admin %{http_code}\n"  -u 'sysadmin:APPPW'  "$BASE/wp-j
 
 **What & why.** Adds IPv4 benchmarking `198.18.0.0/15`, multicast `224.0.0.0/4`, reserved `240.0.0.0/4` (incl. `255.255.255.255`) and the IPv6 NAT64 well-known prefix `64:ff9b::/96` (extracts the embedded IPv4 and recurses), closing SSRF gaps in the oEmbed proxy's private-IP filter.
 
-**Manual QA: N/A (rationale).** This is a pure IP-classification helper with no user-facing surface. It is exhaustively covered by `WPSG_P63F_Private_IP_Test` (each new range, NAT64 mapping to metadata/RFC-1918, and adjacent-public regressions asserting no false positives). Arranging a live oEmbed request whose host resolves into one of these ranges is impractical and adds nothing over the unit assertions.
+**Manual QA: N/A (rationale).** This is a pure IP-classification helper with no user-facing surface. It is exhaustively covered by `Mullion_P63F_Private_IP_Test` (each new range, NAT64 mapping to metadata/RFC-1918, and adjacent-public regressions asserting no false positives). Arranging a live oEmbed request whose host resolves into one of these ranges is impractical and adds nothing over the unit assertions.
 
-**If you want a smoke check anyway:** confirm the automated `WPSG_P63F_Private_IP_Test` passes, and that the existing SSRF/oEmbed suite shows no regression on previously-blocked ranges (RFC-1918, loopback, link-local, IPv6 ULA). See P63-H for a live public-target sanity check that exercises the same proxy path.
+**If you want a smoke check anyway:** confirm the automated `Mullion_P63F_Private_IP_Test` passes, and that the existing SSRF/oEmbed suite shows no regression on previously-blocked ranges (RFC-1918, loopback, link-local, IPv6 ULA). See P63-H for a live public-target sanity check that exercises the same proxy path.
 
 ---
 
 ### P63-G — Bearer-auth branch hardening (defense-in-depth)
 
-**What & why.** Pre-fix, the mere *presence* of an `Authorization: Bearer …` header made `verify_admin_auth()` skip the nonce check, regardless of whether any token was validated. Fix: the skip is honored only when `is_user_logged_in()` **and** the `wpsg_bearer_auth_verified` filter (default `false`) asserts a real integration validated *this* credential. Not directly exploitable pre-fix (WP core demotes a nonce-less cookie session to user 0), but trusting an unvalidated header is needless.
+**What & why.** Pre-fix, the mere *presence* of an `Authorization: Bearer …` header made `verify_admin_auth()` skip the nonce check, regardless of whether any token was validated. Fix: the skip is honored only when `is_user_logged_in()` **and** the `mullion_bearer_auth_verified` filter (default `false`) asserts a real integration validated *this* credential. Not directly exploitable pre-fix (WP core demotes a nonce-less cookie session to user 0), but trusting an unvalidated header is needless.
 
 **Preconditions.** An admin REST route, e.g. `GET /spaces` (`require_admin`). No JWT/token integration installed (default).
 
@@ -318,9 +318,9 @@ curl -s -o /dev/null -w "admin %{http_code}\n"  -u 'sysadmin:APPPW'  "$BASE/wp-j
 ```bash
 # 1. Bare Bearer, nothing else — the pre-fix bug case
 curl -s -o /dev/null -w "%{http_code}\n" -H 'Authorization: Bearer garbage' \
-  "$BASE/wp-json/wp-super-gallery/v1/spaces"                                   # → 401/403
+  "$BASE/wp-json/mullion-gallery/v1/spaces"                                   # → 401/403
 # 2. A real integration confirms the credential (simulate via mu-plugin):
-#      add_filter('wpsg_bearer_auth_verified', '__return_true');
+#      add_filter('mullion_bearer_auth_verified', '__return_true');
 #    AND a logged-in user context — then the skip is honored.
 ```
 
@@ -338,11 +338,11 @@ curl -s -o /dev/null -w "%{http_code}\n" -H 'Authorization: Bearer garbage' \
 
 **What & why.** All four oEmbed provider handlers switched `wp_remote_get()` → `wp_safe_remote_get()`, so each is SSRF-safe on any call path (not only through the proxy's out-of-band filter). Behavior-identical for legitimate public targets.
 
-**Preconditions.** The oEmbed proxy route `GET /wp-json/wp-super-gallery/v1/oembed?url=…` and a real, public embeddable URL.
+**Preconditions.** The oEmbed proxy route `GET /wp-json/mullion-gallery/v1/oembed?url=…` and a real, public embeddable URL.
 
 **Steps.**
 ```bash
-curl -s "$BASE/wp-json/wp-super-gallery/v1/oembed?url=https://rumble.com/<a-real-video>" | head -c 300; echo
+curl -s "$BASE/wp-json/mullion-gallery/v1/oembed?url=https://rumble.com/<a-real-video>" | head -c 300; echo
 ```
 
 **Expected (pass).** A normal oEmbed payload resolves (title/thumbnail/html), i.e. no behavior change for public targets.
@@ -367,28 +367,28 @@ curl -s "$BASE/wp-json/wp-super-gallery/v1/oembed?url=https://rumble.com/<a-real
 ```bash
 # Grant editor_a space A; create a campaign export in A (editor is the creator)
 #   (grant via admin UI or the §3 REST recipe)
-JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/<CID_in_A>/export/binary" | grep -o '[a-f0-9]\{32\}' | head -1)
-curl -s -o /dev/null -w "before-revoke %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"   # → 200 (owner + has A)
+JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/<CID_in_A>/export/binary" | grep -o '[a-f0-9]\{32\}' | head -1)
+curl -s -o /dev/null -w "before-revoke %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"   # → 200 (owner + has A)
 # Revoke editor_a's grant to space A, then re-check
 #   DELETE /spaces/<A_ID>/access/<editor_a_ID>   (as sysadmin)
-curl -s -o /dev/null -w "after-revoke  %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"   # → 403
-curl -s -o /dev/null -w "download      %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB/download" # → 403 (before the not-ready check)
+curl -s -o /dev/null -w "after-revoke  %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"   # → 403
+curl -s -o /dev/null -w "download      %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB/download" # → 403 (before the not-ready check)
 ```
 
 **Steps — batch "all contributing spaces".**
 ```bash
 # Grant editor_a BOTH A and B; create a batch export spanning a campaign in A and one in B
-JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/batch/export/binary" \
+JOB=$(curl -s -u 'editor_a:APPPW' -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/batch/export/binary" \
   -H 'Content-Type: application/json' -d '{"ids":[<CID_in_A>,<CID_in_B>]}' | grep -o '[a-f0-9]\{32\}' | head -1)
-curl -s -o /dev/null -w "both %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB"   # → 200
+curl -s -o /dev/null -w "both %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB"   # → 200
 # Revoke ONLY space B, re-check — one missing contributing space denies the whole aggregate
 #   DELETE /spaces/<B_ID>/access/<editor_a_ID>
-curl -s -o /dev/null -w "minusB %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB" # → 403
+curl -s -o /dev/null -w "minusB %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB" # → 403
 ```
 
 **Expected (pass).** Single: `before-revoke 200`, `after-revoke 403`, `download 403`. Batch: `both 200`, `minusB 403`.
 
-**Why it proves the fix.** The actor is unchanged (still the owner, still `manage_wpsg`), so neither tier nor ownership explains the flip to 403 — only the re-checked **space** gate does. The batch case proves the **all-spaces** semantics: losing access to *one* contributing space denies the aggregate.
+**Why it proves the fix.** The actor is unchanged (still the owner, still `manage_mullion`), so neither tier nor ownership explains the flip to 403 — only the re-checked **space** gate does. The batch case proves the **all-spaces** semantics: losing access to *one* contributing space denies the aggregate.
 
 **Regression checks.**
 - **System Admin** reads/downloads the same job regardless of grants → `200` (owner everywhere).
@@ -412,7 +412,7 @@ curl -s -o /dev/null -w "minusB %{http_code}\n" -u 'editor_a:APPPW' "$BASE/wp-js
 | P63-D | Crafted `actor_login` cell inert in a spreadsheet | Ordinary CSV content unchanged | ☐ |
 | P63-E | Editor `403` on a System-Admin-tier job; admin `200` | Editor-tier campaign job still works for editor | ☐ |
 | P63-E-2 | Peer editor `403` on another editor's job; owner/admin `200` | Owner keeps access; CLI/legacy tier-only fallback works | ☐ |
-| P63-F | Automated `WPSG_P63F_Private_IP_Test` green (manual N/A) | SSRF suite: no regression on old ranges | ☐ |
+| P63-F | Automated `Mullion_P63F_Private_IP_Test` green (manual N/A) | SSRF suite: no regression on old ranges | ☐ |
 | P63-G | Bare `Bearer` header rejected on admin route | Cookie+nonce and App-Password auth still work | ☐ |
 | P63-H | Public oEmbed target still resolves via the proxy | Zero `wp_remote_get(` in `includes/providers/`; suite green | ☐ |
 | P63-I | Owner flips to `403` after their contributing-space grant is revoked; batch denied when one space missing | Admin bypass; retained-grant editor OK; spaceless jobs unaffected | ☐ |

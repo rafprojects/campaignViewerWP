@@ -3,7 +3,7 @@
  * Build-time theme validation script (P30-I).
  *
  * Validates:
- *  1. All theme definition JSON files (src/themes/definitions/*.json)
+ *  1. All theme definition JSON files (packages/theme-engine/src/definitions/*.json)
  *     — required fields: id, name, colorScheme ('light' | 'dark')
  *  2. The shared theme catalog (wp-plugin/mullion-gallery/theme-catalog.json)
  *     — required fields: id, name, colorScheme, group, description, displayOrder, seasonal
@@ -40,7 +40,7 @@ function warn(msg) {
 
 console.log('\n── Theme definition files ──────────────────────────────────');
 
-const defsDir = join(root, 'src/themes/definitions');
+const defsDir = join(root, 'packages/theme-engine/src/definitions');
 const allDefFiles = readdirSync(defsDir).filter((f) => f.endsWith('.json'));
 const nonBaseFiles = allDefFiles.filter((f) => !f.startsWith('_'));
 
@@ -133,7 +133,7 @@ if (!existsSync(catalogPath)) {
 
       // Cross-check: catalog entry must have a matching definition file
       if (!registeredIds.has(entryId)) {
-        warn(`[catalog/${entryId}] No matching definition file found in src/themes/definitions/`);
+        warn(`[catalog/${entryId}] No matching definition file found in packages/theme-engine/src/definitions/`);
       } else {
         // Cross-check colorScheme matches the definition file
         const defPath = join(defsDir, `${entryId}.json`);

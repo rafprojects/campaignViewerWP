@@ -21,11 +21,11 @@ This guide explains how to enable query profiling using the Query Monitor plugin
 
 ---
 
-## Focus Areas for WP Super Gallery
+## Focus Areas for Mullion
 
-- `/wp-json/wp-super-gallery/v1/campaigns`
-- `/wp-json/wp-super-gallery/v1/companies/{id}/access?include_campaigns=true`
-- `/wp-json/wp-super-gallery/v1/campaigns/{id}/media`
+- `/wp-json/mullion-gallery/v1/campaigns`
+- `/wp-json/mullion-gallery/v1/companies/{id}/access?include_campaigns=true`
+- `/wp-json/mullion-gallery/v1/campaigns/{id}/media`
 
 ---
 

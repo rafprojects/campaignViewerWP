@@ -1,6 +1,6 @@
 # Webhook Manual Testing Guide (P39-IN1)
 
-Manual end-to-end test procedure for the WPSG webhook system. Covers REST route
+Manual end-to-end test procedure for the Mullion webhook system. Covers REST route
 verification, endpoint CRUD, event delivery, HMAC signature verification, event
 filtering, and secret rotation.
 
@@ -45,11 +45,11 @@ Save the printed token. Use it as `<APP_PASS>` throughout this guide.
 > are only required for cookie-based (browser) sessions.
 
 Run the plugin activation hook once after a fresh `wp-env start` to ensure the
-`manage_wpsg` capability is assigned to the Administrator role:
+`manage_mullion` capability is assigned to the Administrator role:
 
 ```bash
-npx wp-env run cli wp plugin deactivate wp-super-gallery
-npx wp-env run cli wp plugin activate wp-super-gallery
+npx wp-env run cli wp plugin deactivate mullion-gallery
+npx wp-env run cli wp plugin activate mullion-gallery
 ```
 
 ---
@@ -73,7 +73,7 @@ Or just paste the flags directly — they are shown in full in each command belo
 curl -s \
   -u "admin:<APP_PASS>" \
 
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks
 ```
 
 Expected: `[]`
@@ -89,7 +89,7 @@ curl -s \
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"url":"https://webhook.site/<YOUR-UUID>","events":[],"enabled":true}' \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks
 ```
 
 The response includes a `secret` field — this is the only time it is shown.
@@ -108,7 +108,7 @@ curl -s \
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"title":"Webhook Test Campaign"}' \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns
 ```
 
 webhook.site should receive a POST with body:
@@ -121,7 +121,7 @@ webhook.site should receive a POST with body:
 }
 ```
 
-And headers including `X-WPSG-Signature: sha256=<hex>`.
+And headers including `X-Mullion-Signature: sha256=<hex>`.
 
 ---
 
@@ -134,7 +134,7 @@ from Step 2:
 echo -n '<COMPACT_BODY>' | openssl dgst -sha256 -hmac '<SECRET>'
 ```
 
-The hex output must match the value after `sha256=` in the `X-WPSG-Signature`
+The hex output must match the value after `sha256=` in the `X-Mullion-Signature`
 header.
 
 > **Getting the compact body:** webhook.site may display pretty-printed JSON.
@@ -155,7 +155,7 @@ curl -s \
   -H "Content-Type: application/json" \
   -X POST \
   -d '{"url":"https://webhook.site/<YOUR-UUID>","events":["campaign.archived"],"enabled":true}' \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks
 ```
 
 **Create a campaign** — webhook.site should receive exactly **one** delivery
@@ -169,7 +169,7 @@ curl -s \
   -u "admin:<APP_PASS>" \
 
   -X POST \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/<ID>/archive
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/<ID>/archive
 ```
 
 webhook.site should now receive **two** deliveries — one `campaign.archived` to
@@ -192,7 +192,7 @@ state:
 curl -s \
   -u "admin:<APP_PASS>" \
 
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks
 ```
 
 Delete from highest index downward, then recreate one endpoint (save the
@@ -205,7 +205,7 @@ curl -s \
   -u "admin:<APP_PASS>" \
 
   -X POST \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks/0/rotate-secret
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks/0/rotate-secret
 ```
 
 Save the `secret` from this response — this is the **new secret**.
@@ -213,7 +213,7 @@ Save the `secret` from this response — this is the **new secret**.
 Trigger an event, then verify both secrets against the delivered signature:
 
 ```bash
-# New secret — must match the X-WPSG-Signature value
+# New secret — must match the X-Mullion-Signature value
 echo -n '<COMPACT_BODY>' | openssl dgst -sha256 -hmac '<NEW_SECRET>'
 
 # Old secret — must NOT match
@@ -228,7 +228,7 @@ echo -n '<COMPACT_BODY>' | openssl dgst -sha256 -hmac '<OLD_SECRET>'
 curl -s \
   -u "admin:<APP_PASS>" \
 
-  http://localhost:8888/wp-json/wp-super-gallery/v1/webhooks/delivery-log
+  http://localhost:8888/wp-json/mullion-gallery/v1/webhooks/delivery-log
 ```
 
 Returns up to 50 entries: `deliveryId`, `event`, `url`, `attempt`, `success`,
@@ -241,9 +241,9 @@ Returns up to 50 entries: `deliveryId`, `event`, `url`, `attempt`, `success`,
 | Symptom | Cause | Fix |
 |---|---|---|
 | `rest_forbidden` 401 | Plain password used | Generate an Application Password |
-| `rest_forbidden` 403 | `manage_wpsg` cap missing | Re-run plugin deactivate/activate |
+| `rest_forbidden` 403 | `manage_mullion` cap missing | Re-run plugin deactivate/activate |
 | `rest_no_route` 404 | Typo in URL (e.g. `/webhook` not `/webhooks`) | Check the URL |
 | Empty response body | `[]` printed before the bash prompt | That *is* the response — success |
 | Database error on `wp-env start` | MySQL container not ready | `npx wp-env stop && npx wp-env start` |
-| HMAC mismatch | Wrong endpoint's secret used, or wrong body (pretty-printed vs compact) | Check stored secrets with `npx wp-env run cli wp option get wpsg_webhook_endpoints --format=json`; use compact body |
+| HMAC mismatch | Wrong endpoint's secret used, or wrong body (pretty-printed vs compact) | Check stored secrets with `npx wp-env run cli wp option get mullion_webhook_endpoints --format=json`; use compact body |
 | Rotation applied to wrong endpoint | Endpoints re-indexed after a deletion | Always delete from highest index down; verify state with `GET /webhooks` before rotating |

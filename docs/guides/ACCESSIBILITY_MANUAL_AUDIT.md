@@ -1,4 +1,4 @@
-# WP Super Gallery — Manual Assistive-Technology (AT) Audit
+# Mullion — Manual Assistive-Technology (AT) Audit
 
 **A living, follow-along QA script for the WCAG 2.1 AA criteria that automated tooling can't verify**
 (keyboard operability, focus management, real screen-reader output, Shadow-DOM exposure, motion,
@@ -58,7 +58,7 @@ segmented controls, radios) · `Home`/`End` first/last.
 ### Launching the app (real render required — not Storybook)
 
 - **Full WordPress context:** `npx wp-env start`, then log into `http://localhost:8888/wp-admin`
-  (admin surfaces) and put `[super-gallery campaign="<slug>"]` on a page for the public embed. See
+  (admin surfaces) and put `[mullion-gallery campaign="<slug>"]` on a page for the public embed. See
   `docs/testing/TESTING_QUICKSTART.md`.
 - **Shadow-DOM toggle:** the public gallery mounts in an **open shadow root** by default; append
   **`?shadow=0`** to the page URL to render without shadow DOM (compare AT behaviour with/without).

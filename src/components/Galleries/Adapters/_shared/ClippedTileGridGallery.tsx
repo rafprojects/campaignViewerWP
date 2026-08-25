@@ -147,7 +147,7 @@ export function ClippedTileGridGallery({ media, settings, runtime, config }: Cli
                       position: 'relative',
                       overflow: 'hidden',
                       padding: 0,
-                      background: 'var(--mullion-color-surface, #1a1a2e)',
+                      background: 'var(--mullion-color-surface, #102530)',
                     }}
                   >
                     <LazyImage

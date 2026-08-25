@@ -78,7 +78,7 @@ class Mullion_Alerts_Test extends WP_UnitTestCase {
         $this->flush_email_queue();
 
         $this->assertCount(1, $this->sent_mails);
-        $this->assertStringContainsString('[WPSG] Fatal error', $this->sent_mails[0]['subject']);
+        $this->assertStringContainsString('[Mullion] Fatal error', $this->sent_mails[0]['subject']);
         $this->assertStringContainsString('Class not found', $this->sent_mails[0]['message']);
     }
 

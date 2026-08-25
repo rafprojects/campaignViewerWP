@@ -44,12 +44,22 @@ describe('generateCssVariables', () => {
     expect(result).toContain('.my-root {');
   });
 
+  it('includes surface-raised and border-strong variables (P74-N)', () => {
+    const rc = makeResolvedColors();
+    const def = makeThemeDef();
+    const result = generateCssVariables(rc, def);
+    expect(result).toContain('--mullion-color-surface-raised:');
+    expect(result).toContain('#1a3542');
+    expect(result).toContain('--mullion-color-border-strong:');
+    expect(result).toContain('#577577');
+  });
+
   it('includes --mullion-color-background variable', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
     expect(result).toContain('--mullion-color-background:');
-    expect(result).toContain('#0f172a');
+    expect(result).toContain('#08141b');
   });
 
   it('includes --mullion-color-text variable', () => {
@@ -57,7 +67,7 @@ describe('generateCssVariables', () => {
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
     expect(result).toContain('--mullion-color-text:');
-    expect(result).toContain('#ffffff');
+    expect(result).toContain('#eef8fb');
   });
 
   it('includes --mullion-color-primary variable', () => {

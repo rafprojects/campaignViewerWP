@@ -24,7 +24,7 @@ git checkout feature/phase71-react-hardening-4-of-4   # back to the fixes
 | Browser DevTools (Network panel) | P71-A (campaigns refetch count on reconnect), P71-B (settings save → no redundant GET), P71-D (uploads-dir revalidation). |
 | A **production** build served through the shortcode, or `npm run dev` | For the optional live checks. P71-D's SW behaviour is only meaningful against a real service-worker registration (prod build / served app), not jsdom. |
 
-**Personas / auth.** Unchanged from prior phases. The only track touching a privileged surface is P71-C (global-asset mutation hooks, admin-only) and P71-B's settings save (admin). See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for creating a System Admin and a `wpsg_editor`.
+**Personas / auth.** Unchanged from prior phases. The only track touching a privileged surface is P71-C (global-asset mutation hooks, admin-only) and P71-B's settings save (admin). See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for creating a System Admin and a `mullion_editor`.
 
 ---
 
@@ -35,8 +35,8 @@ git checkout feature/phase71-react-hardening-4-of-4   # back to the fixes
 | P71-A | Deleted the manual `isOnline && isReady` effect in `App.tsx` that called `refetch()`; the campaigns query now relies solely on its own `refetchOnReconnect: true`. | **Yes (by network count)** — a reconnect while the query is fresh no longer fires an extra `/campaigns` request; the offline banner (`!isOnline`) is unchanged |
 | P71-B | Removed the `invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })` in `useUpdateSettings`'s `onSuccess`; the normalized response is still written to cache via `setSettingsQueryData`. | **Yes (by network count)** — saving settings no longer schedules a redundant refetch of the just-written data |
 | P71-C | The three global-asset mutation hooks (`useUploadGlobalAsset`/`useUpdateGlobalAsset`/`useDeleteGlobalAsset`) now `useMemo(() => new AssetsApi(apiClient), [apiClient])` instead of constructing a new instance every render. | No — `AssetsApi` is stateless; identical calls, identical results. Consistency/footgun fix only |
-| P71-D | Uploaded media (`/wp-content/uploads/`) moved from the cache-first-forever runtime branch into a dedicated stale-while-revalidate cache (`wpsg-uploads-swr-v1`): served from cache immediately, revalidated in the background once older than 1h. Fonts/other static assets keep cache-first. | **Yes (eventually)** — an image edited under the same URL is refreshed for returning visitors after the TTL, instead of never |
-| P71-E | 60 hardcoded notification title/message strings (across 10 files) + 3 App.tsx literals routed through `i18n.t`; 69 new catalogue keys translated into all 5 reference locales; a new `wpsg/no-untranslated-notification` ESLint rule enforces it repo-wide. | **Yes** — those toasts now render translated on a non-English locale; a new hardcoded notification string now fails `npm run lint` |
+| P71-D | Uploaded media (`/wp-content/uploads/`) moved from the cache-first-forever runtime branch into a dedicated stale-while-revalidate cache (`mullion-uploads-swr-v1`): served from cache immediately, revalidated in the background once older than 1h. Fonts/other static assets keep cache-first. | **Yes (eventually)** — an image edited under the same URL is refreshed for returning visitors after the TTL, instead of never |
+| P71-E | 60 hardcoded notification title/message strings (across 10 files) + 3 App.tsx literals routed through `i18n.t`; 69 new catalogue keys translated into all 5 reference locales; a new `mullion/no-untranslated-notification` ESLint rule enforces it repo-wide. | **Yes** — those toasts now render translated on a non-English locale; a new hardcoded notification string now fails `npm run lint` |
 
 ---
 
@@ -121,7 +121,7 @@ The existing global-asset mutation coverage passes **unmodified** — that is th
 
 ### P71-D — Stale-while-revalidate for uploaded media
 
-**What & why.** `public/sw.js`'s default fetch branch served every same-origin non-hashed GET (fonts, favicon, **and** `/wp-content/uploads/` images) cache-first *forever* — an entry only changed when `CACHE_VERSION` bumped. So a WP-media image edited or regenerated under the same URL (media editor, thumbnail-regeneration plugins) rendered stale indefinitely for any returning visitor with a warm cache. P71-D routes only `/wp-content/uploads/` requests (matched by `UPLOADS_PATH_RE`) into a dedicated SWR cache (`UPLOADS_CACHE = 'wpsg-uploads-swr-v1'`) via `handleUploadsRequest`, mirroring the metadata cache's `x-wpsg-cached-at`/`stampResponse` mechanism: cached asset served immediately, background revalidation fired only when the entry is older than `UPLOADS_TTL_MS` (1 hour). Fonts and other static assets stay on the unchanged cache-first branch. `UPLOADS_CACHE` was added to the `activate` keep-set so it isn't swept.
+**What & why.** `public/sw.js`'s default fetch branch served every same-origin non-hashed GET (fonts, favicon, **and** `/wp-content/uploads/` images) cache-first *forever* — an entry only changed when `CACHE_VERSION` bumped. So a WP-media image edited or regenerated under the same URL (media editor, thumbnail-regeneration plugins) rendered stale indefinitely for any returning visitor with a warm cache. P71-D routes only `/wp-content/uploads/` requests (matched by `UPLOADS_PATH_RE`) into a dedicated SWR cache (`UPLOADS_CACHE = 'mullion-uploads-swr-v1'`) via `handleUploadsRequest`, mirroring the metadata cache's `x-mullion-cached-at`/`stampResponse` mechanism: cached asset served immediately, background revalidation fired only when the entry is older than `UPLOADS_TTL_MS` (1 hour). Fonts and other static assets stay on the unchanged cache-first branch. `UPLOADS_CACHE` was added to the `activate` keep-set so it isn't swept.
 
 **Pre-fix behaviour.** An uploads image, once cached, was returned from `RUNTIME_CACHE` on every subsequent request with no revalidation — a server-side edit under the same URL was never picked up until a `CACHE_VERSION` bump.
 
@@ -137,11 +137,11 @@ Because `sw.js` is a standalone non-module file (not importable), the test **rep
 **Why it proves the fix.** The replicated handler is byte-faithful to `sw.js`, and the stale→revalidate→fresh sequence is exactly the property the acceptance criteria demand ("no longer served stale indefinitely"). The matcher tests prove fonts/static assets are **not** pulled into SWR (the "no regression in the common case" criterion).
 
 **Live check (recommended — SWR is only real against an actual service worker).** On a **production** build served through the shortcode (jsdom can't register a SW):
-1. Load a public gallery, let images cache. DevTools → Application → Cache Storage shows a `wpsg-uploads-swr-v1` cache populated with `/wp-content/uploads/...` entries, each carrying an `x-wpsg-cached-at` header.
+1. Load a public gallery, let images cache. DevTools → Application → Cache Storage shows a `mullion-uploads-swr-v1` cache populated with `/wp-content/uploads/...` entries, each carrying an `x-mullion-cached-at` header.
 2. Edit one of those images server-side under the **same URL** (WP media editor "Edit image" → overwrite, or a thumbnail-regeneration plugin).
 3. Reload within the hour → the **old** image is still shown immediately (stale-while-revalidate serves cache first) — this is expected, not a bug.
 4. Reload again after the entry has aged past the 1h TTL (or temporarily lower `UPLOADS_TTL_MS` to force it) → the request triggers a background revalidation; the **next** reload shows the updated image. Contrast with `main` pre-P71-D, where it never updates without a `CACHE_VERSION` bump.
-5. Confirm a **font** or other `/wp-content/plugins/...` static asset is still served from the original `wpsg-runtime-*` cache (cache-first), not from `wpsg-uploads-swr-v1`.
+5. Confirm a **font** or other `/wp-content/plugins/...` static asset is still served from the original `mullion-runtime-*` cache (cache-first), not from `mullion-uploads-swr-v1`.
 
 **Regression checks.** `swMeta.test.ts` passes unmodified (the metadata SWR path is untouched). The navigation/shell and hashed-asset branches are unchanged. New: `src/test/swUploads.test.ts`.
 
@@ -151,7 +151,7 @@ Because `sw.js` is a standalone non-module file (not importable), the test **rep
 
 ### P71-E — Notification strings routed through i18n + a lint gate
 
-**What & why.** `eslint-plugin-i18next` runs `jsx-text-only`, so it only guards literal JSX **text** — strings passed to `notifications.show()`/`showNotification()`/`notifications.update()` inside plain-object arguments (in `.ts`/`.tsx` hooks) escaped it entirely. Since the P60/61 i18n milestone shipped "fully localizable," 60 hardcoded English notification strings had crept back across 10 files, plus 3 non-notification literals in `App.tsx`. P71-E (a) routes every one through `i18n.t('key', 'English default')` (the `wpsgUpsell.tsx` precedent: `const t = i18n.t.bind(i18n)` for use outside JSX), (b) adds 69 new keys to `src/i18n-strings.en.json`, regenerates the PHP manifest, and translates all 69 into the 5 reference locales (de/es/fr/ru/zh), and (c) adds a **new local ESLint rule** `wpsg/no-untranslated-notification` (in `eslint-rules/`, wired into `eslint.config.js` over all `src/**`) that fails the build on a bare string/template literal in a notification `title`/`message` — closing the lint hole so this can't regress a third time.
+**What & why.** `eslint-plugin-i18next` runs `jsx-text-only`, so it only guards literal JSX **text** — strings passed to `notifications.show()`/`showNotification()`/`notifications.update()` inside plain-object arguments (in `.ts`/`.tsx` hooks) escaped it entirely. Since the P60/61 i18n milestone shipped "fully localizable," 60 hardcoded English notification strings had crept back across 10 files, plus 3 non-notification literals in `App.tsx`. P71-E (a) routes every one through `i18n.t('key', 'English default')` (the `mullionUpsell.tsx` precedent: `const t = i18n.t.bind(i18n)` for use outside JSX), (b) adds 69 new keys to `src/i18n-strings.en.json`, regenerates the PHP manifest, and translates all 69 into the 5 reference locales (de/es/fr/ru/zh), and (c) adds a **new local ESLint rule** `mullion/no-untranslated-notification` (in `eslint-rules/`, wired into `eslint.config.js` over all `src/**`) that fails the build on a bare string/template literal in a notification `title`/`message` — closing the lint hole so this can't regress a third time.
 
 **Unlike P71-A–D, this is a real content + tooling change, not a refactor** — so its verification borrows the [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md) shape: a locale-switch manual check plus a deliberately-introduced-violation test for the new gate.
 
@@ -177,7 +177,7 @@ The **gate test** (`noUntranslatedNotification.gate.test.ts`) lints code strings
 4. **Session expired** (let the session lapse / force a 401) → the `App.tsx` "Session expired…" banner in German.
 Then switch back to English and confirm the exact original wording is intact.
 
-**Deliberate-violation manual check (the gate).** Add a line like `notifications.show({ message: 'temp hardcoded' });` to any `src/**` hook, run `npm run lint`, and confirm it fails with `wpsg/no-untranslated-notification`; remove it and confirm lint is green. (The automated gate test already encodes this, but it's a 20-second hands-on confirmation the CI gate is live.)
+**Deliberate-violation manual check (the gate).** Add a line like `notifications.show({ message: 'temp hardcoded' });` to any `src/**` hook, run `npm run lint`, and confirm it fails with `mullion/no-untranslated-notification`; remove it and confirm lint is green. (The automated gate test already encodes this, but it's a 20-second hands-on confirmation the CI gate is live.)
 
 **Regression checks.** New: `src/test/noUntranslatedNotification.gate.test.ts`; `eslint-rules/no-untranslated-notification.js`. Unchanged: all existing hook/component tests pass without edits (155 across the swept files verified green); the `.po`/`.mo`/`.l10n.php` for the 5 locales gained the 69 entries; `.pot` regenerated (+69 msgids, none removed).
 
@@ -222,7 +222,7 @@ After the five tracks landed, the branch's three feature commits were put throug
 
 **Re-verification commands (the whole pass — must all be green):**
 ```bash
-npm run lint                 # incl. wpsg/no-untranslated-notification — 0 violations
+npm run lint                 # incl. mullion/no-untranslated-notification — 0 violations
 npx tsc -b                   # or `npm run build` for tsc + vite build together
 npm test                     # full Vitest suite — 3760 tests / 251 files, 0 failed
 npm run i18n:check

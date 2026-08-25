@@ -300,7 +300,7 @@ function GridCard({ item, index, aspectRatio, minHeight, borderRadius, onOpen }:
         borderRadius,
         overflow: 'hidden',
         position: 'relative',
-        background: 'var(--mullion-color-surface, #1a1a2e)',
+        background: 'var(--mullion-color-surface, #102530)',
         /* Elevation + pop on hover */
         boxShadow: hovered
           ? '0 8px 24px rgba(0,0,0,0.35)'

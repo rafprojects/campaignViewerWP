@@ -1,30 +1,29 @@
 {
-  "_comment": "Default Dark — the flagship theme, extracted from the original theme.ts",
+  "_comment": "Mullion / Rig Cyan — brand default. Palette from .wordpress-org/COLOR-SPEC.md §1 (P74-N). surface2/surface3/textMuted2 are derived at resolve time from the authored anchors.",
+  "_primaryShade": "Owned by P75-F (Phase 74 Decision I). Criterion: first array index 0–9 from the dark end clearing 4.5:1 against the lightest surface AND 4.5:1 under white text. Current HSL generator: index 7 (#0f7971, 4.79:1 on text / 5.26:1 under white). Do not copy a number into colors.primaryShade — the OKLCH ramp will resolve a different index.",
   "id": "default-dark",
-  "name": "Default Dark",
+  "name": "Mullion",
   "colorScheme": "dark",
   "colors": {
-    "background": "#0f172a",
-    "surface": "#1e293b",
-    "surface2": "#334155",
-    "surface3": "#475569",
+    "background": "#08141b",
+    "surface": "#102530",
+    "surfaceRaised": "#1a3542",
 
-    "text": "#ffffff",
-    "textMuted": "#c0c9d5",
-    "textMuted2": "#9eadc3",
+    "text": "#eef8fb",
+    "textMuted": "#9db4bf",
 
-    "border": "#334155",
+    "border": "#22414f",
+    "borderStrong": "#577577",
 
-    "primary": "#3b82f6",
-    "primaryShade": { "light": 6, "dark": 5 },
+    "primary": "#1ad1c4",
 
-    "success": "#22c55e",
-    "warning": "#f59e0b",
-    "error": "#ef4444",
-    "info": "#3b82f6",
+    "success": "#56b93e",
+    "warning": "#f5b12b",
+    "error": "#ff6b5e",
+    "info": "#1ad1c4",
 
-    "accent": "#3b82f6",
-    "accentGreen": "#22c55e",
+    "accent": "#1ad1c4",
+    "accentGreen": "#56b93e",
     "accentPurple": "#a855f7"
   }
 }

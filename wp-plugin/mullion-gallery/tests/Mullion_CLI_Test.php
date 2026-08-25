@@ -376,7 +376,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
 
     public function test_campaign_import_missing_file_throws(): void {
         $this->expectException( RuntimeException::class );
-        $this->cli->campaign_import( [ '/tmp/does-not-exist-wpsg.json' ], [] );
+        $this->cli->campaign_import( [ '/tmp/does-not-exist-mullion.json' ], [] );
     }
 
     public function test_campaign_import_unsupported_version_throws(): void {

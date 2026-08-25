@@ -5404,7 +5404,7 @@ msgid "CSS color used for the hover glow effect."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1367
-msgid "#7c9ef8"
+msgid "#1ad1c4"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1370

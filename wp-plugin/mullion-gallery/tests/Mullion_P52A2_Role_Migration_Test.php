@@ -1,24 +1,14 @@
 <?php
 
 /**
- * P52-A2: Role rename wpsg_admin → mullion_editor.
+ * P52-A2: `mullion_editor` role definition and /users contract.
  *
  * Proves:
  *   - the mullion_editor role carries exactly the intended caps (manage_mullion +
  *     read + upload_files; NO custom CPT caps, NO manage_options);
- *   - the one-time migration reassigns legacy wpsg_admin users to mullion_editor
- *     with their plugin access (manage_mullion) intact, and removes the old role;
- *   - the /users create contract now accepts mullion_editor and rejects wpsg_admin.
+ *   - the /users create contract accepts mullion_editor and rejects unknown roles.
  */
 class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
-
-    public function tearDown(): void {
-        // Defensive: never let a re-added legacy role leak into other suites.
-        if (get_role('wpsg_admin')) {
-            remove_role('wpsg_admin');
-        }
-        parent::tearDown();
-    }
 
     private function set_admin_user(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
@@ -73,44 +63,6 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->assertTrue($role->has_cap('manage_mullion'));
     }
 
-    // ── Migration ─────────────────────────────────────────────────────────
-
-    public function test_migration_converts_legacy_user_and_removes_role() {
-        // Arrange: a pre-P52-A2 install with the legacy role and a user on it.
-        delete_option('mullion_roles_migrated_editor');
-        $legacy_caps = ['read' => true, 'upload_files' => true, 'manage_wpsg' => true];
-        add_role('wpsg_admin', 'Gallery Admin', $legacy_caps);
-        $uid = self::factory()->user->create(['role' => 'wpsg_admin']);
-
-        $this->assertContains('wpsg_admin', get_user_by('id', $uid)->roles, 'precondition: user is wpsg_admin');
-
-        // Act.
-        mullion_maybe_migrate_roles();
-
-        // Assert: user moved to mullion_editor, access (manage_mullion) intact.
-        $migrated = get_user_by('id', $uid);
-        $this->assertContains('mullion_editor', $migrated->roles, 'user must be reassigned to mullion_editor');
-        $this->assertNotContains('wpsg_admin', $migrated->roles, 'user must no longer hold wpsg_admin');
-        $this->assertTrue(user_can($uid, 'manage_mullion'), 'migrated user keeps plugin access');
-        $this->assertFalse(user_can($uid, 'manage_options'), 'migrated user does not gain WP admin');
-
-        // Legacy role removed; flag set so it does not re-run.
-        $this->assertNull(get_role('wpsg_admin'), 'legacy wpsg_admin role must be removed');
-        $this->assertNotNull(get_role('mullion_editor'), 'mullion_editor role must exist after migration');
-        $this->assertNotEmpty(get_option('mullion_roles_migrated_editor'), 'migration flag must be set');
-    }
-
-    public function test_migration_is_noop_when_flag_set() {
-        update_option('mullion_roles_migrated_editor', '1');
-        add_role('wpsg_admin', 'Gallery Admin', ['read' => true]);
-
-        mullion_maybe_migrate_roles();
-
-        // Flag was already set → migration returns early, legacy role untouched.
-        $this->assertNotNull(get_role('wpsg_admin'), 'migration must not run when flag is set');
-        remove_role('wpsg_admin');
-    }
-
     // ── /users create contract ────────────────────────────────────────────
 
     public function test_create_user_accepts_mullion_editor() {
@@ -129,26 +81,25 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->assertContains('mullion_editor', $created->roles);
     }
 
-    public function test_create_user_rejects_legacy_wpsg_admin() {
+    public function test_create_user_rejects_unknown_role() {
         $this->set_admin_user();
         add_filter('pre_wp_mail', '__return_true', 10, 0);
 
         $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
-        $req->set_param('email', 'legacy-' . uniqid() . '@example.com');
-        $req->set_param('displayName', 'Legacy Admin');
-        $req->set_param('role', 'wpsg_admin');
+        $req->set_param('email', 'unknown-' . uniqid() . '@example.com');
+        $req->set_param('displayName', 'Unknown Role');
+        $req->set_param('role', 'not_a_role');
         $res = rest_do_request($req);
 
-        $this->assertSame(400, $res->get_status(), 'legacy wpsg_admin must be rejected by the role enum');
+        $this->assertSame(400, $res->get_status(), 'unknown roles must be rejected by the role enum');
     }
 
-    public function test_list_roles_exposes_mullion_editor_not_legacy() {
+    public function test_list_roles_exposes_mullion_editor() {
         $this->set_admin_user();
         $req = new WP_REST_Request('GET', '/mullion-gallery/v1/roles');
         $res = rest_do_request($req);
         $values = array_column($res->get_data()['items'], 'value');
 
         $this->assertContains('mullion_editor', $values, 'roles list must offer mullion_editor');
-        $this->assertNotContains('wpsg_admin', $values, 'roles list must not offer legacy wpsg_admin');
     }
 }

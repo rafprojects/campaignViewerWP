@@ -25,8 +25,8 @@ git checkout feature/<phase72-branch>            # back to the fixes
 | Local `wp-env` dev site (`npx @wordpress/env start`, base URL `http://localhost:8888`) | For the *optional* live checks (an admin viewing a stale shortcode for D; a DSAR flow for B; a locale switch for A). |
 
 **Personas / auth.** Two tiers matter this phase, per the P52-A RBAC model:
-- **System Admin** — `administrator` + `manage_wpsg` + `manage_options`. Can write system (admin-only) settings.
-- **Space Editor** — `wpsg_editor` role: `manage_wpsg` but **not** `manage_options`. Can write display/campaign settings but not system ones.
+- **System Admin** — `administrator` + `manage_mullion` + `manage_options`. Can write system (admin-only) settings.
+- **Space Editor** — `mullion_editor` role: `manage_mullion` but **not** `manage_options`. Can write display/campaign settings but not system ones.
 
 See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for creating each.
 
@@ -36,11 +36,11 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 
 | Track | The change | Observable at runtime? |
 |---|---|---|
-| P72-C | `update_space_settings()`'s global-key write now routes through the shared `guard_admin_only_settings()` (promoted to `WPSG_REST_Base`). An admin-only global key **whose value would actually change** returns a `wpsg_forbidden_settings` 403 for a non-`manage_options` caller instead of being silently dropped; a non-admin-only global key is written (consistency with `/settings`). *(Batch 6 narrowed this from presence to effective change — see §3 P72-C.)* | **Yes (by response status)** — an editor *changing* an admin-only global is now 403, not a silent 200; an editor changing only display keys still gets a 200. |
-| P72-D | `resolve_space_id()` reports (via a new out-param) which explicit `space=`/`campaign=`/`company=` references name an entity that **does not exist**; `render_shortcode()` emits a `manage_wpsg`-gated inline notice naming only those. *(Batch 6 narrowed this from "fell back to the default" — see §3 P72-D.)* | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped reference sees an inline notice; visitors never do; omitting the attribute, or naming an entity that merely inherits the default space, shows nothing. |
-| P72-B | New `WPSG_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
+| P72-C | `update_space_settings()`'s global-key write now routes through the shared `guard_admin_only_settings()` (promoted to `Mullion_REST_Base`). An admin-only global key **whose value would actually change** returns a `mullion_forbidden_settings` 403 for a non-`manage_options` caller instead of being silently dropped; a non-admin-only global key is written (consistency with `/settings`). *(Batch 6 narrowed this from presence to effective change — see §3 P72-C.)* | **Yes (by response status)** — an editor *changing* an admin-only global is now 403, not a silent 200; an editor changing only display keys still gets a 200. |
+| P72-D | `resolve_space_id()` reports (via a new out-param) which explicit `space=`/`campaign=`/`company=` references name an entity that **does not exist**; `render_shortcode()` emits a `manage_mullion`-gated inline notice naming only those. *(Batch 6 narrowed this from "fell back to the default" — see §3 P72-D.)* | **Yes** — an admin viewing a page whose shortcode points at a deleted/mistyped reference sees an inline notice; visitors never do; omitting the attribute, or naming an entity that merely inherits the default space, shows nothing. |
+| P72-B | New `Mullion_Privacy` registers WP core personal-data exporters/erasers. Access-requests (visitor emails): exporter + eraser. Audit-log (staff usernames): exporter ONLY (legitimate-interest exemption). | **Yes** — Tools → Export/Erase Personal Data now returns/erases gallery data; audit-log appears under Export but never under Erase. |
 | P72-F | Two opt-in retention windows (`access_requests_retention_days`, `audit_log_retention_days`, default 0) drive weekly cron purges of the two PII tables, plus admin NumberInput controls in Settings → Advanced → Data Maintenance. | **Yes** — a configured window purges old rows weekly; 0 keeps forever; the controls are settable in the admin UI. |
-| P72-A | ~30 hardcoded strings (a11y `announce()`, draft-restore modal chrome, adapter-import validator errors, an external-media error fallback) routed through `i18n.t`; the `wpsg/no-untranslated-notification` gate widened to also guard `announce()` + `openConfirmModal` chrome. | **Yes** — those strings now render translated on a non-English locale; a new hardcoded `announce()`/modal-chrome string now fails `npm run lint`. |
+| P72-A | ~30 hardcoded strings (a11y `announce()`, draft-restore modal chrome, adapter-import validator errors, an external-media error fallback) routed through `i18n.t`; the `mullion/no-untranslated-notification` gate widened to also guard `announce()` + `openConfirmModal` chrome. | **Yes** — those strings now render translated on a non-English locale; a new hardcoded `announce()`/modal-chrome string now fails `npm run lint`. |
 | P72-G | `LayoutTemplateList` icon-only view-toggle segments gained visually-hidden accessible names; the grid card stopped being a `role="button"` wrapping the menu button — the primary action is now a real `UnstyledButton` with the menu as a sibling. A new axe test gates the component. | **Screen-reader only** — the view-toggle now announces "Grid view"/"List view"; the card is no longer a button-in-a-button. No visible change. |
 
 | P72-E | The three data tabs (Media / Access / Audit) moved into child components that own their own selection state; `AdminPanel` renders each with `key={selectedSpaceId}` (reset) and `active={activeTab === '…'}` (fetch-gating). | **No** — behaviour is unchanged by design; what changed is *which* subtree re-renders. Verify with the React DevTools Profiler (see §3 P72-E). |
@@ -55,36 +55,36 @@ See §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for crea
 
 ### P72-C — Space-panel global-key write returns an explicit 403
 
-**What & why.** `update_settings()`/`patch_settings()` (the `/settings` write paths) return an explicit `wpsg_forbidden_settings` 403 via `guard_admin_only_settings()` when a non-`manage_options` caller writes a system (admin-only) key. `update_space_settings()`'s global-key branch instead **silently dropped** those keys (`if (!empty($global_input) && current_user_can('manage_options'))` with no `else`). P72-C unifies the boundary: `guard_admin_only_settings()` moved from `private` on `WPSG_Settings_Controller` to `protected static` on `WPSG_REST_Base`, and the space controller now routes its global-key branch through it, **before any write** (so a rejected request applies nothing — no partial override write). Chosen behaviour is **option 1A** (full consistency with `/settings`): editors can write the 98 non-admin-only global keys via the space panel (they already can via `/settings`), and only the 29 admin-only keys 403.
+**What & why.** `update_settings()`/`patch_settings()` (the `/settings` write paths) return an explicit `mullion_forbidden_settings` 403 via `guard_admin_only_settings()` when a non-`manage_options` caller writes a system (admin-only) key. `update_space_settings()`'s global-key branch instead **silently dropped** those keys (`if (!empty($global_input) && current_user_can('manage_options'))` with no `else`). P72-C unifies the boundary: `guard_admin_only_settings()` moved from `private` on `Mullion_Settings_Controller` to `protected static` on `Mullion_REST_Base`, and the space controller now routes its global-key branch through it, **before any write** (so a rejected request applies nothing — no partial override write). Chosen behaviour is **option 1A** (full consistency with `/settings`): editors can write the 98 non-admin-only global keys via the space panel (they already can via `/settings`), and only the 29 admin-only keys 403.
 
-**Pre-fix behaviour.** An editor (`manage_wpsg`, no `manage_options`) writing *any* global key via `PUT /spaces/{id}/settings` got a **200** with the global keys silently discarded — no error, no write, no signal.
+**Pre-fix behaviour.** An editor (`manage_mullion`, no `manage_options`) writing *any* global key via `PUT /spaces/{id}/settings` got a **200** with the global keys silently discarded — no error, no write, no signal.
 
-**This track's meaningful check is failure-first** — the rewritten `WPSG_P57A_Settings_Split_Save_Test` methods assert the new 403 / write behaviour, which cannot hold on the pre-fix source (pre-fix an editor's admin-only global write returned 200 and changed nothing).
+**This track's meaningful check is failure-first** — the rewritten `Mullion_P57A_Settings_Split_Save_Test` methods assert the new 403 / write behaviour, which cannot hold on the pre-fix source (pre-fix an editor's admin-only global write returned 200 and changed nothing).
 
 **Verification (primary — automated).**
 ```bash
 # via the /php-testing skill:
-tests/WPSG_P57A_Settings_Split_Save_Test.php   # 2 new methods: editor non-admin write succeeds; admin-only write 403s
-tests/WPSG_P52A4_Settings_Split_Test.php       # regression: /settings 403 behaviour unchanged after the guard moved
-tests/WPSG_Settings_Rest_Test.php              # regression: settings REST paths
-tests/WPSG_P47_Spaces_Settings_Test.php        # regression: space-settings paths
+tests/Mullion_P57A_Settings_Split_Save_Test.php   # 2 new methods: editor non-admin write succeeds; admin-only write 403s
+tests/Mullion_P52A4_Settings_Split_Test.php       # regression: /settings 403 behaviour unchanged after the guard moved
+tests/Mullion_Settings_Rest_Test.php              # regression: settings REST paths
+tests/Mullion_P47_Spaces_Settings_Test.php        # regression: space-settings paths
 ```
-`test_editor_gets_403_on_admin_only_global_via_space_panel` sends a mixed payload (`theme` overridable + `cacheTtl` admin-only) as an editor, asserts a **403** with `code == 'wpsg_forbidden_settings'`, and asserts **neither** the admin-only global (`cache_ttl` unchanged) **nor** the overridable key (`theme` absent from the space override) was applied — proving the guard runs before any write and the request is atomic. `test_editor_may_write_a_non_admin_global_key_via_space_panel` sends `theme` + `settingsPanelAnimation` (a non-admin global) and asserts a **200** with the global actually written — proving the 1A consistency case.
+`test_editor_gets_403_on_admin_only_global_via_space_panel` sends a mixed payload (`theme` overridable + `cacheTtl` admin-only) as an editor, asserts a **403** with `code == 'mullion_forbidden_settings'`, and asserts **neither** the admin-only global (`cache_ttl` unchanged) **nor** the overridable key (`theme` absent from the space override) was applied — proving the guard runs before any write and the request is atomic. `test_editor_may_write_a_non_admin_global_key_via_space_panel` sends `theme` + `settingsPanelAnimation` (a non-admin global) and asserts a **200** with the global actually written — proving the 1A consistency case.
 
 **Why it proves the fix.** The two new methods bracket the exact boundary the fix defines: admin-only globals → 403 (was silent drop), non-admin globals → written (was silent drop). The P52A4 regression proves promoting `guard_admin_only_settings()` to the base class left the `/settings` 403 behaviour byte-identical (the `self::` call sites resolve to the inherited method). Confirmed: 64 tests / 376 assertions green across the five files.
 
-**Optional live check.** On the dev site, sign in as a **Space Editor**, open a space's Settings panel, and — with DevTools → Network open — save a change. An editor UI hides the System & Admin tab, so a normal save sends only overridable keys (200, no notice). To exercise the 403 path you must craft the request (e.g. `curl`/console `fetch` a `PUT /wp-super-gallery/v1/spaces/{id}/settings` body containing `cacheTtl`) — confirm a 403 `wpsg_forbidden_settings`, and that `GET /settings` still shows the old `cache_ttl`. This is an edge/hardening path, not a normal-UI flow, so the automated test is the real proof; the live check is only for peace of mind.
+**Optional live check.** On the dev site, sign in as a **Space Editor**, open a space's Settings panel, and — with DevTools → Network open — save a change. An editor UI hides the System & Admin tab, so a normal save sends only overridable keys (200, no notice). To exercise the 403 path you must craft the request (e.g. `curl`/console `fetch` a `PUT /mullion-gallery/v1/spaces/{id}/settings` body containing `cacheTtl`) — confirm a 403 `mullion_forbidden_settings`, and that `GET /settings` still shows the old `cache_ttl`. This is an edge/hardening path, not a normal-UI flow, so the automated test is the real proof; the live check is only for peace of mind.
 
-**Regression checks.** `WPSG_P52A4_Settings_Split_Test`, `WPSG_Settings_Rest_Test`, `WPSG_P47_Spaces_Settings_Test` all green unmodified. The overridable-key write path (the common case) is untouched.
+**Regression checks.** `Mullion_P52A4_Settings_Split_Test`, `Mullion_Settings_Rest_Test`, `Mullion_P47_Spaces_Settings_Test` all green unmodified. The overridable-key write path (the common case) is untouched.
 
 **Pitfall.** The guard must be checked **before** the override write, not after — otherwise a rejected admin-only write would still have persisted the overridable keys in the same request (a partial apply). The test's `assertArrayNotHasKey('theme', …)` after a 403 is exactly the assertion that catches a misordered guard. Also: do **not** guard on the whole `$snake_input` — guard on the global branch (`$global_input`) only; overridable keys are legitimately writable by space admins and are never admin-only, so the two happen to be equivalent here, but guarding the global branch reads correctly and stays correct if the key sets ever change.
 
 > **⚠ Batch 6 correction — the guard blocks an effective *change*, not the presence of a key.**
-> As landed, the guard 403'd whenever an admin-only key merely *appeared* in the payload. `SettingsPanel.handleSave()` PUTs the **whole settings object** every time — `to_js()` computes `$is_admin` from `manage_wpsg`, so an editor's GET already carries every admin-only field, and the client's `mergeSettingsWithDefaults()` re-adds any the server stripped. All 31 `admin_only_fields` are disjoint from the 227 overridable ones, so **every editor save** (even a pure theme change) 403'd naming all 31 system keys and, the guard being atomic, threw away their display overrides. The same defect existed on `POST /settings` (pre-existing since P52-A4).
+> As landed, the guard 403'd whenever an admin-only key merely *appeared* in the payload. `SettingsPanel.handleSave()` PUTs the **whole settings object** every time — `to_js()` computes `$is_admin` from `manage_mullion`, so an editor's GET already carries every admin-only field, and the client's `mergeSettingsWithDefaults()` re-adds any the server stripped. All 31 `admin_only_fields` are disjoint from the 227 overridable ones, so **every editor save** (even a pure theme change) 403'd naming all 31 system keys and, the guard being atomic, threw away their display overrides. The same defect existed on `POST /settings` (pre-existing since P52-A4).
 > The guard now sanitizes the input and strict-compares each admin-only key against the stored option — the same computation `write_global_settings()` uses for its changed-key set — so an editor may echo back a system value but still cannot change one. All three call sites pass the key⇒value map instead of `array_keys(...)`.
-> **When re-verifying this track, the payload shape is the whole point:** a mixed payload of two or three keys will *not* reproduce the bug. Use `WPSG_Settings::to_js(WPSG_Settings::get_settings(), true)` as the body (that is what the panel sends) plus the one key you mean to change. The three Batch-6 methods do exactly this:
+> **When re-verifying this track, the payload shape is the whole point:** a mixed payload of two or three keys will *not* reproduce the bug. Use `Mullion_Settings::to_js(Mullion_Settings::get_settings(), true)` as the body (that is what the panel sends) plus the one key you mean to change. The three Batch-6 methods do exactly this:
 > ```bash
-> tests/WPSG_P57A_Settings_Split_Save_Test.php
+> tests/Mullion_P57A_Settings_Split_Save_Test.php
 > #   test_editor_full_payload_roundtrip_saves_space_overrides              → 200, theme override persisted
 > #   test_editor_full_payload_still_403s_when_an_admin_only_key_changes    → 403, fields == ['cache_ttl'] only
 > #   test_editor_full_payload_roundtrip_on_global_settings_endpoint        → 200 on POST /settings
@@ -96,7 +96,7 @@ tests/WPSG_P47_Spaces_Settings_Test.php        # regression: space-settings path
 
 ### P72-D — Admin notice on an unresolved shortcode space reference
 
-**What & why.** `WPSG_Embed::resolve_space_id()` resolves an explicit `space=`/`campaign=`/`company=` attribute and, when the target does not exist, silently falls through to `wpsg_default_space_id` — no admin-facing signal (the confirmed Phase 62 QA case: three shortcodes for three deleted spaces silently collapsed onto the default, confusing to diagnose). P72-D adds a `bool &$unresolved` out-param to `resolve_space_id()`, set true **only** when at least one explicit attribute was given *and* every resolution path failed (so the default fallback was taken). `render_shortcode()` captures it and, via the new `render_unresolved_space_notice()` helper, emits a `manage_wpsg`-gated inline notice naming the stale reference — placed outside the full-bleed wrapper, before the mount node, routed through `__()`/`esc_html()` (text domain `wp-super-gallery`).
+**What & why.** `Mullion_Embed::resolve_space_id()` resolves an explicit `space=`/`campaign=`/`company=` attribute and, when the target does not exist, silently falls through to `mullion_default_space_id` — no admin-facing signal (the confirmed Phase 62 QA case: three shortcodes for three deleted spaces silently collapsed onto the default, confusing to diagnose). P72-D adds a `bool &$unresolved` out-param to `resolve_space_id()`, set true **only** when at least one explicit attribute was given *and* every resolution path failed (so the default fallback was taken). `render_shortcode()` captures it and, via the new `render_unresolved_space_notice()` helper, emits a `manage_mullion`-gated inline notice naming the stale reference — placed outside the full-bleed wrapper, before the mount node, routed through `__()`/`esc_html()` (text domain `mullion-gallery`).
 
 **Pre-fix behaviour.** A shortcode with a stale explicit reference rendered the default-space gallery with **no** notice for anyone — the fallback was invisible.
 
@@ -105,64 +105,64 @@ tests/WPSG_P47_Spaces_Settings_Test.php        # regression: space-settings path
 **Verification (primary — automated).**
 ```bash
 # via the /php-testing skill:
-tests/WPSG_Embed_Test.php   # 4 new P72-D methods
+tests/Mullion_Embed_Test.php   # 4 new P72-D methods
 ```
 The four new methods pin all four corners of the behaviour:
-- `test_unresolved_explicit_space_shows_admin_notice` — admin (`manage_wpsg`) + `space="deleted-space-xyz"` → output contains `wpsg-shortcode-notice` **and** names the stale ref, and the gallery div still renders.
-- `test_unresolved_explicit_space_hidden_from_visitor` — anonymous visitor + same stale ref → **no** `wpsg-shortcode-notice`, gallery still renders (default space).
+- `test_unresolved_explicit_space_shows_admin_notice` — admin (`manage_mullion`) + `space="deleted-space-xyz"` → output contains `mullion-shortcode-notice` **and** names the stale ref, and the gallery div still renders.
+- `test_unresolved_explicit_space_hidden_from_visitor` — anonymous visitor + same stale ref → **no** `mullion-shortcode-notice`, gallery still renders (default space).
 - `test_omitted_space_reference_shows_no_notice_even_for_admin` — admin, no attribute → **no** notice (the intentional-default case is not an error).
 - `test_resolved_explicit_space_shows_no_notice` — admin + a **valid** `space=` slug → **no** notice (no false positive on a good reference).
 
-**Why it proves the fix.** The four cases are the full truth table of the out-param logic: (explicit ∧ unresolved) × (admin ∨ visitor), plus the omitted case and the resolved case. The admin-visible + visitor-hidden pair proves the `manage_wpsg` gate; the omitted + resolved pair proves the notice fires *only* on a genuinely stale explicit reference, never on the intentional default or a good ref. Confirmed green (22 tests / 37 assertions in the file).
+**Why it proves the fix.** The four cases are the full truth table of the out-param logic: (explicit ∧ unresolved) × (admin ∨ visitor), plus the omitted case and the resolved case. The admin-visible + visitor-hidden pair proves the `manage_mullion` gate; the omitted + resolved pair proves the notice fires *only* on a genuinely stale explicit reference, never on the intentional default or a good ref. Confirmed green (22 tests / 37 assertions in the file).
 
 **Live check (recommended — this is a real user-visible change).** On the dev site, reproduce the original Phase 62 scenario directly:
-1. Create a page with `[super-gallery space="acme"]` pointing at an existing space; confirm it renders with no notice.
+1. Create a page with `[mullion-gallery space="acme"]` pointing at an existing space; confirm it renders with no notice.
 2. Delete (or rename) the `acme` space so the slug no longer resolves.
 3. Reload the page **as a System Admin** → the inline notice appears above the gallery, naming `space="acme"`, and the gallery still renders (default space).
-4. Reload **as a logged-out visitor** (or a non-`manage_wpsg` user) → **no** notice; the gallery renders normally.
-5. Edit the shortcode to omit the attribute entirely (`[super-gallery]`) → **no** notice even as admin (intentional default).
+4. Reload **as a logged-out visitor** (or a non-`manage_mullion` user) → **no** notice; the gallery renders normally.
+5. Edit the shortcode to omit the attribute entirely (`[mullion-gallery]`) → **no** notice even as admin (intentional default).
 
-**i18n check.** The notice string uses WP's `__()` with text domain `wp-super-gallery`. It is a *PHP/WordPress* string, so it goes through the WP `.pot`, **not** the front-end `src/i18n-strings.en.json` catalogue that `npm run i18n:check` guards. Confirm it is present in `wp-super-gallery.pot` and translated in all five reference `.po` files — **`npm run i18n:check:locales` will not tell you**, because it only walks the front-end manifest. Batch 6 found this string (and ten from P72-B) missing from every catalog; see §3 → *Batch 6 — i18n catalog gap* below.
+**i18n check.** The notice string uses WP's `__()` with text domain `mullion-gallery`. It is a *PHP/WordPress* string, so it goes through the WP `.pot`, **not** the front-end `src/i18n-strings.en.json` catalogue that `npm run i18n:check` guards. Confirm it is present in `mullion-gallery.pot` and translated in all five reference `.po` files — **`npm run i18n:check:locales` will not tell you**, because it only walks the front-end manifest. Batch 6 found this string (and ten from P72-B) missing from every catalog; see §3 → *Batch 6 — i18n catalog gap* below.
 
-**Regression checks.** All pre-existing `WPSG_Embed_Test` methods pass unmodified — the notice is additive and only prepends output in the narrow (admin ∧ explicit ∧ unresolved) case; every other render path returns the same HTML as before.
+**Regression checks.** All pre-existing `Mullion_Embed_Test` methods pass unmodified — the notice is additive and only prepends output in the narrow (admin ∧ explicit ∧ unresolved) case; every other render path returns the same HTML as before.
 
 **Pitfall.** The out-param must be populated **only** for references that name something that does not exist, and only on the path that reaches the default fallback. Three distinct false-positive directions have to stay closed, and each has a test: the attribute was simply **omitted** (`test_omitted_…`), the reference **resolved** (`test_resolved_…`), and — the one Batch 6 had to fix — the named entity **exists but has no space assignment**.
 
 > **⚠ Batch 6 correction — "reached the default" is not the same as "the reference is stale".**
-> As landed, the flag was `$unresolved = $had_explicit` at the fallback return. But `campaign=`/`company=` only return early when the entity carries a `_wpsg_space_id`; a campaign or company that **exists and simply has no space assignment** — the normal case on a single-space install, and on any campaign predating spaces — fell through to the default and was reported to the admin as *"references a space that no longer exists"*. The notice also named every attribute supplied, including ones that had resolved.
+> As landed, the flag was `$unresolved = $had_explicit` at the fallback return. But `campaign=`/`company=` only return early when the entity carries a `_mullion_space_id`; a campaign or company that **exists and simply has no space assignment** — the normal case on a single-space install, and on any campaign predating spaces — fell through to the default and was reported to the admin as *"references a space that no longer exists"*. The notice also named every attribute supplied, including ones that had resolved.
 > The out-param is now `array &$unresolved_refs`, populated per reference and only when the lookup found **nothing**: a missing space id/slug, a campaign post that cannot be found, a company term that cannot be found. An entity that exists but inherits the default space is explicitly not an error. The notice names only the failing references, and the message was corrected to *"this shortcode reference could not be resolved (%s)"* (the failing reference may be a campaign or company, not just a space).
-> **Batch-6 regression tests (all four in `WPSG_Embed_Test`):**
+> **Batch-6 regression tests (all four in `Mullion_Embed_Test`):**
 > ```bash
 > #   test_campaign_without_space_meta_shows_no_notice   → campaign exists, no meta  → NO notice
 > #   test_company_without_space_meta_shows_no_notice    → company  exists, no meta  → NO notice
 > #   test_nonexistent_campaign_reference_shows_notice   → campaign truly missing    → notice, names it
 > #   test_notice_names_only_the_reference_that_failed   → stale space= + good campaign= → notice names only space=
 > ```
-> **Live check to add to the sequence above:** put `[super-gallery campaign="<slug-of-a-campaign-with-no-space-assigned>"]` on a page and view it **as a System Admin** → there must be **no** notice. Pre-Batch-6 this warned, which on a single-space install meant a false warning on essentially every campaign shortcode.
-> **Pitfall when re-verifying the "names only the failing ref" case:** assert against the notice `<div>` only, not the whole output — the mount node's `data-wpsg-props` legitimately echoes every attribute back, so a naive `assertStringNotContainsString` over the full HTML fails for the wrong reason.
+> **Live check to add to the sequence above:** put `[mullion-gallery campaign="<slug-of-a-campaign-with-no-space-assigned>"]` on a page and view it **as a System Admin** → there must be **no** notice. Pre-Batch-6 this warned, which on a single-space install meant a false warning on essentially every campaign shortcode.
+> **Pitfall when re-verifying the "names only the failing ref" case:** assert against the notice `<div>` only, not the whole output — the mount node's `data-mullion-props` legitimately echoes every attribute back, so a naive `assertStringNotContainsString` over the full HTML fails for the wrong reason.
 
 ---
 
 ### P72-B — WordPress core privacy integration (DSAR export/erase)
 
-**What & why.** The plugin stored visitor emails (`wp_wpsg_access_requests`) and staff usernames (`wp_wpsg_audit_log`) but registered no WP core personal-data exporters/erasers, so DSAR requests were a manual SQL/WP-CLI chore. P72-B adds `WPSG_Privacy` (hooked on `init`), registering: an **access-requests exporter + eraser** (both keyed on email, case-insensitive) and an **audit-log exporter with NO eraser**. The audit-log erasure exemption is the deliberate decision — an audit trail is a legitimate-interest record (GDPR Art. 6(1)(f)/17(3)(b)); a self-service erase reachable only when the requester's email matches their own `actor_login` must not let someone erase the record of their own privileged actions. Time-boxed retention (P72-F) bounds the audit log instead.
+**What & why.** The plugin stored visitor emails (`wp_mullion_access_requests`) and staff usernames (`wp_mullion_audit_log`) but registered no WP core personal-data exporters/erasers, so DSAR requests were a manual SQL/WP-CLI chore. P72-B adds `Mullion_Privacy` (hooked on `init`), registering: an **access-requests exporter + eraser** (both keyed on email, case-insensitive) and an **audit-log exporter with NO eraser**. The audit-log erasure exemption is the deliberate decision — an audit trail is a legitimate-interest record (GDPR Art. 6(1)(f)/17(3)(b)); a self-service erase reachable only when the requester's email matches their own `actor_login` must not let someone erase the record of their own privileged actions. Time-boxed retention (P72-F) bounds the audit log instead.
 
 **Pre-fix behaviour.** Tools → Export/Erase Personal Data returned/erased nothing from the plugin; a DSAR meant hand-written SQL.
 
-**This track's meaningful check is failure-first for the registration + behaviour** — the new registration/exporter/eraser assertions cannot hold on the pre-fix source (no `WPSG_Privacy` existed), and the "no audit eraser" assertion encodes the exemption decision as an explicit, regression-proof contract.
+**This track's meaningful check is failure-first for the registration + behaviour** — the new registration/exporter/eraser assertions cannot hold on the pre-fix source (no `Mullion_Privacy` existed), and the "no audit eraser" assertion encodes the exemption decision as an explicit, regression-proof contract.
 
 **Verification (primary — automated).**
 ```bash
 # via the /php-testing skill:
-tests/WPSG_P72B_Privacy_Test.php   # 9 methods
+tests/Mullion_P72B_Privacy_Test.php   # 9 methods
 ```
-The **decision-locking** methods: `test_both_exporters_are_registered` (audit IS exportable) and `test_only_access_requests_eraser_is_registered` (audit is **not** in the eraser registry — `assertArrayNotHasKey('wpsg-audit-log', …)`). The **behaviour** methods exercise each callback against seeded rows: access-request export returns only the subject email's rows (case-insensitively), the eraser deletes only the subject's rows (another email's survive), and the audit exporter returns the matching user's rows — including a **legacy-shaped row** (`actor_id = 0`, matched by `actor_login`) — and returns empty+done for an email that maps to no WP user.
+The **decision-locking** methods: `test_both_exporters_are_registered` (audit IS exportable) and `test_only_access_requests_eraser_is_registered` (audit is **not** in the eraser registry — `assertArrayNotHasKey('mullion-audit-log', …)`). The **behaviour** methods exercise each callback against seeded rows: access-request export returns only the subject email's rows (case-insensitively), the eraser deletes only the subject's rows (another email's survive), and the audit exporter returns the matching user's rows — including a **legacy-shaped row** (`actor_id = 0`, matched by `actor_login`) — and returns empty+done for an email that maps to no WP user.
 
 **Why it proves the fix.** The two registry assertions prove the export/erase *asymmetry* is real and can't silently regress (a future dev adding an audit eraser fails the test). The callback tests prove each path returns/removes exactly the right rows and nothing else — the core DSAR-correctness property. Confirmed: 9 tests / 21 assertions green.
 
-**Live check (recommended — real admin flow).** On the dev site: seed an access request (submit one as a visitor for a private campaign) and perform a couple of audited admin actions while logged in as a user whose email you know. Then Tools → **Export Personal Data** for that email → the report contains a *WP Super Gallery — Access Requests* group and a *WP Super Gallery — Audit Log* group. Then Tools → **Erase Personal Data** for the same email → the access-request rows are removed, and note the audit-log group is **absent from the eraser** (it was export-only). Re-run Export → the access-request group is now empty, the audit-log group still present.
+**Live check (recommended — real admin flow).** On the dev site: seed an access request (submit one as a visitor for a private campaign) and perform a couple of audited admin actions while logged in as a user whose email you know. Then Tools → **Export Personal Data** for that email → the report contains a *Mullion — Access Requests* group and a *Mullion — Audit Log* group. Then Tools → **Erase Personal Data** for the same email → the access-request rows are removed, and note the audit-log group is **absent from the eraser** (it was export-only). Re-run Export → the access-request group is now empty, the audit-log group still present.
 
-**Regression checks.** No existing behaviour changed — `WPSG_Privacy` is purely additive (new class, new filters, new DB read/delete-by-email helpers). The existing audit/access-request read/write paths are untouched.
+**Regression checks.** No existing behaviour changed — `Mullion_Privacy` is purely additive (new class, new filters, new DB read/delete-by-email helpers). The existing audit/access-request read/write paths are untouched.
 
 **Pitfall.** (1) The audit exporter must match on **either** `actor_id` **or** `actor_login` — legacy rows carry only the login, newer rows carry the id; matching only one silently misses half the history. The `..._matches_by_actor_login_when_id_absent` test guards this. (2) Do **not** add an audit-log eraser "for completeness" — its absence is the whole point of the track; the `test_only_access_requests_eraser_is_registered` assertion will (correctly) fail if you do. (3) The exporter must page (`done === count(rows) < PAGE_SIZE`) — returning `done: true` unconditionally would truncate a subject with more than `PAGE_SIZE` (100) rows.
 
@@ -170,7 +170,7 @@ The **decision-locking** methods: `test_both_exporters_are_registered` (audit IS
 
 ### P72-F — Opt-in retention purge for the PII tables (+ admin UI)
 
-**What & why.** `wp_wpsg_access_requests` (emails) and `wp_wpsg_audit_log` (usernames) grew unbounded — no purge job. P72-F adds two **opt-in** retention windows (`access_requests_retention_days`, `audit_log_retention_days`, both default **0 = never purge**, so existing installs are never surprised), each driving a weekly cron purge (`purge_old_access_requests` / `purge_old_audit_log`, batched `DELETE` keyed on `requested_at` / `created_at`) that mirrors the analytics job exactly. Both hooks are in the canonical `wpsg_get_cron_hooks()` list so they're cleared on deactivate/uninstall. Because the mirrored analytics-retention setting has a React admin control, matching **NumberInput controls** were added to Settings → Advanced → Data Maintenance (scope addition decided with the user), with the two keys added to the `GallerySettings` type + defaults and 4 new i18n strings translated across all 5 locales.
+**What & why.** `wp_mullion_access_requests` (emails) and `wp_mullion_audit_log` (usernames) grew unbounded — no purge job. P72-F adds two **opt-in** retention windows (`access_requests_retention_days`, `audit_log_retention_days`, both default **0 = never purge**, so existing installs are never surprised), each driving a weekly cron purge (`purge_old_access_requests` / `purge_old_audit_log`, batched `DELETE` keyed on `requested_at` / `created_at`) that mirrors the analytics job exactly. Both hooks are in the canonical `mullion_get_cron_hooks()` list so they're cleared on deactivate/uninstall. Because the mirrored analytics-retention setting has a React admin control, matching **NumberInput controls** were added to Settings → Advanced → Data Maintenance (scope addition decided with the user), with the two keys added to the `GallerySettings` type + defaults and 4 new i18n strings translated across all 5 locales.
 
 **Pre-fix behaviour.** No purge job for either table; rows accumulated forever, and there was no admin control to configure retention.
 
@@ -179,21 +179,21 @@ The **decision-locking** methods: `test_both_exporters_are_registered` (audit IS
 **Verification (primary — automated).**
 ```bash
 # via the /php-testing skill:
-tests/WPSG_P72F_PII_Retention_Test.php   # 6 methods
-tests/WPSG_Cron_Hooks_Test.php           # updated: the 2 new hooks in the canonical list
+tests/Mullion_P72F_PII_Retention_Test.php   # 6 methods
+tests/Mullion_Cron_Hooks_Test.php           # updated: the 2 new hooks in the canonical list
 # front-end:
 npx tsc -b
 npm run i18n:check && npm run i18n:check:locales   # 4 new strings × 5 locales
 ```
 The purge methods are proven by seeding a 90-day-old and a 5-day-old row in each table, setting a 30-day window, running the purge, and asserting exactly the old row is gone and the recent one (identified by email/`actor_login`) survives. The **opt-in** methods seed a 9999-day-old row with a **zero** window and assert the purge removes nothing. The **scheduling** methods assert `register()` schedules each hook when its window > 0 and clears it when 0.
 
-**Why it proves the fix.** The old-removed/recent-kept pair proves the window boundary is applied correctly (not "delete all" and not "delete none"); the zero-window pair proves the opt-in default is safe (the criterion that this ships off by default); the scheduling pair proves the cron wiring matches the analytics precedent. Confirmed: 6 tests / 12 assertions green, plus `WPSG_Cron_Hooks_Test` green (the canonical-list count assertion catches a missing hook).
+**Why it proves the fix.** The old-removed/recent-kept pair proves the window boundary is applied correctly (not "delete all" and not "delete none"); the zero-window pair proves the opt-in default is safe (the criterion that this ships off by default); the scheduling pair proves the cron wiring matches the analytics precedent. Confirmed: 6 tests / 12 assertions green, plus `Mullion_Cron_Hooks_Test` green (the canonical-list count assertion catches a missing hook).
 
-**Live check (recommended — the admin UI + a real purge).** On the dev site as a System Admin: Settings → Advanced → **Data Maintenance** shows the two new controls (*Access-Request Retention*, *Audit-Log Retention*), each defaulting to 0. Set one to e.g. 1 (day), save, and confirm the value round-trips (reload). Seed an old row (or wait), then trigger the cron (`wp cron event run wpsg_access_requests_purge` / `wpsg_audit_log_purge`, or `wp cron event run --due-now`) and confirm old rows are gone while recent ones remain. Switch the site to a non-English locale and confirm the two control labels/descriptions render translated (they were added to all 5 `.po` and recompiled to `.mo`/`.l10n.php`).
+**Live check (recommended — the admin UI + a real purge).** On the dev site as a System Admin: Settings → Advanced → **Data Maintenance** shows the two new controls (*Access-Request Retention*, *Audit-Log Retention*), each defaulting to 0. Set one to e.g. 1 (day), save, and confirm the value round-trips (reload). Seed an old row (or wait), then trigger the cron (`wp cron event run mullion_access_requests_purge` / `mullion_audit_log_purge`, or `wp cron event run --due-now`) and confirm old rows are gone while recent ones remain. Switch the site to a non-English locale and confirm the two control labels/descriptions render translated (they were added to all 5 `.po` and recompiled to `.mo`/`.l10n.php`).
 
-**Regression checks.** `WPSG_Maintenance_Test` and the settings tests pass unmodified — the new settings are additive (they don't shift any existing key), and the new cron hooks don't touch the existing jobs. The two new UI controls are appended to an existing accordion panel; `tsc`/ESLint clean.
+**Regression checks.** `Mullion_Maintenance_Test` and the settings tests pass unmodified — the new settings are additive (they don't shift any existing key), and the new cron hooks don't touch the existing jobs. The two new UI controls are appended to an existing accordion panel; `tsc`/ESLint clean.
 
-**Pitfall.** (1) The retention windows **must** default to 0 and treat 0/negative as "never purge" — an accidental non-zero default (or treating 0 as "purge everything") would silently destroy PII on every existing install's next cron run. The zero-window tests are the guard; keep them. (2) Both hooks **must** be in `wpsg_get_cron_hooks()` (and its test's expected list) — omit one and it leaks a scheduled event past deactivation/uninstall. (3) The i18n binaries (`.mo`/`.l10n.php`) must be **recompiled** from the `.po` after adding the strings — `i18n:check:locales` reads the `.po` and will pass without recompiling, but the non-English runtime falls back to English until the binaries are rebuilt (`wp i18n make-mo` / `make-php`).
+**Pitfall.** (1) The retention windows **must** default to 0 and treat 0/negative as "never purge" — an accidental non-zero default (or treating 0 as "purge everything") would silently destroy PII on every existing install's next cron run. The zero-window tests are the guard; keep them. (2) Both hooks **must** be in `mullion_get_cron_hooks()` (and its test's expected list) — omit one and it leaks a scheduled event past deactivation/uninstall. (3) The i18n binaries (`.mo`/`.l10n.php`) must be **recompiled** from the `.po` after adding the strings — `i18n:check:locales` reads the `.po` and will pass without recompiling, but the non-English runtime falls back to English until the binaries are rebuilt (`wp i18n make-mo` / `make-php`).
 
 ---
 
@@ -220,7 +220,7 @@ The gate test's new cases: a hardcoded `announce('…')` flags (1), a `t()`-wrap
 
 **Manual check (recommended — real user-visible behaviour).** Switch the site to a non-English locale (e.g. `de_DE`, with the recompiled `.mo`/`.l10n.php` present) and, in the Layout Builder: upload an overlay/background (screen-reader announcement, inspect via the devtools accessibility tree / live region), trigger a keyboard action like copy/paste slots (pluralized announcement), open the draft-restore modal (title/body/buttons + the "N minutes ago" age label), and import a malformed adapter-settings JSON (the validator error toast). Confirm each renders German, then switch back to English and confirm the exact original wording.
 
-**Deliberate-violation manual check (the gate).** Add `announce('temp hardcoded');` (or `modals.openConfirmModal({ title: 'temp' })`) to any `src/**` file, run `npm run lint`, confirm it fails with `wpsg/no-untranslated-notification`; remove it and confirm green.
+**Deliberate-violation manual check (the gate).** Add `announce('temp hardcoded');` (or `modals.openConfirmModal({ title: 'temp' })`) to any `src/**` file, run `npm run lint`, confirm it fails with `mullion/no-untranslated-notification`; remove it and confirm green.
 
 **Regression checks.** All existing hook/component tests pass unmodified (English defaults unchanged); the `.po`/`.mo`/`.l10n.php` for the 5 locales gained the new entries; `.pot` + PHP manifest regenerated.
 
@@ -306,26 +306,26 @@ The **isolation test is the "only meaningful under (b)" assertion**: a stable-pr
 
 ### Batch 6 — i18n catalog gap for PHP-side strings (P72-B + P72-D)
 
-**What & why.** Batches 2 and 3 regenerated the `.pot` and the five reference `.po` files for the *front-end* manifest strings, but the PHP `__()` strings added by **P72-B** (`WPSG_Privacy`: exporter/eraser friendly names, group descriptions, the `Requested at` / `Resolved at` / `Date` field labels) and **P72-D** (the shortcode notice) were never harvested — **zero** of them appeared in `wp-super-gallery.pot`. They would have shipped English-only in every reference locale. This is not the project's convention: the `.pot` already covers PHP-only sources (`class-wpsg-cpt.php`, the settings renderers, `wp-super-gallery.php`).
+**What & why.** Batches 2 and 3 regenerated the `.pot` and the five reference `.po` files for the *front-end* manifest strings, but the PHP `__()` strings added by **P72-B** (`Mullion_Privacy`: exporter/eraser friendly names, group descriptions, the `Requested at` / `Resolved at` / `Date` field labels) and **P72-D** (the shortcode notice) were never harvested — **zero** of them appeared in `mullion-gallery.pot`. They would have shipped English-only in every reference locale. This is not the project's convention: the `.pot` already covers PHP-only sources (`class-mullion-cpt.php`, the settings renderers, `mullion-gallery.php`).
 
 **Why no gate caught it.** `scripts/check-i18n-locales.mjs` asserts coverage only for values in `src/i18n-strings.en.json`. A PHP-only `__()` string is outside its remit, so `npm run i18n:check` and `npm run i18n:check:locales` were both green with eleven strings missing. **Treat those two commands as necessary but not sufficient for any track that adds a PHP `__()` string.**
 
 **Verification.**
 ```bash
-cd wp-plugin/wp-super-gallery/languages
+cd wp-plugin/mullion-gallery/languages
 # every new PHP msgid must be in the .pot …
-grep -c 'msgid "WP Super Gallery — Access Requests"' wp-super-gallery.pot     # → 1
-grep -c 'msgid "this shortcode reference could not be resolved' wp-super-gallery.pot
+grep -c 'msgid "Mullion — Access Requests"' mullion-gallery.pot     # → 1
+grep -c 'msgid "this shortcode reference could not be resolved' mullion-gallery.pot
 # … and carry a non-empty msgstr in each locale
 for l in de_DE es_ES fr_FR ru_RU zh_CN; do
-  grep -A1 'msgid "WP Super Gallery — Audit Log"' wp-super-gallery-$l.po
+  grep -A1 'msgid "Mullion — Audit Log"' mullion-gallery-$l.po
 done
 ```
-Then confirm the binaries were rebuilt from the `.po` (not hand-edited): `wp i18n make-mo wp-super-gallery-<locale>.po .` and `wp i18n make-php .` should produce **no** further diff.
+Then confirm the binaries were rebuilt from the `.po` (not hand-edited): `wp i18n make-mo mullion-gallery-<locale>.po .` and `wp i18n make-php .` should produce **no** further diff.
 
 **What was added.** Eight new msgids × 5 locales. Six of the exporter's field labels (`Email`, `Campaign ID`, `Status`, `Action`, `Summary`, `Actor`) were **already** translated msgids in every locale and are deliberately not duplicated — gettext dedupes on msgid, so re-adding them would only create conflicting duplicate entries. Terminology follows the existing catalogue (`space` → Bereich / Espacio / Espace / Пространство / 空间). Translations are AI-generated with the same native-review caveat as P71-E and Batches 2–3.
 
-**Pitfall.** Do **not** run a bare `wp i18n make-pot` over the plugin to fix this — it regenerates the whole file and will drop the hand-maintained `class-wpsg-frontend-strings.php` reference block style used by the rest of the catalog. Append the missing entries in the existing block format (`#: <file>:<line>` / `msgid` / `msgstr`), then recompile the `.mo`/`.l10n.php` from the `.po`.
+**Pitfall.** Do **not** run a bare `wp i18n make-pot` over the plugin to fix this — it regenerates the whole file and will drop the hand-maintained `class-mullion-frontend-strings.php` reference block style used by the rest of the catalog. Append the missing entries in the existing block format (`#: <file>:<line>` / `msgid` / `msgstr`), then recompile the `.mo`/`.l10n.php` from the `.po`.
 
 ---
 

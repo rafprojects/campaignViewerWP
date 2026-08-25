@@ -195,7 +195,7 @@ export function JustifiedGallery({ media, settings, runtime, containerDimensions
                   border: settings.tileBorderWidth
                     ? `${settings.tileBorderWidth}px solid ${settings.tileBorderColor}`
                     : undefined,
-                  background: 'var(--mullion-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #102530)',
                 }}
               />
             );

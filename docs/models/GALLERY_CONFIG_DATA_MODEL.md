@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the implemented gallery configuration model for WP Super Gallery as of Phase 25. Phase 23 and Phase 24 introduced the nested structures; Phase 25 completed the contract reset that makes them the active gallery settings surface.
+This document records the implemented gallery configuration model for Mullion as of Phase 25. Phase 23 and Phase 24 introduced the nested structures; Phase 25 completed the contract reset that makes them the active gallery settings surface.
 
 ## Status Note (2026-04-30)
 
@@ -151,9 +151,9 @@ export interface Campaign {
 }
 ```
 
-The WordPress storage key for the nested campaign override payload is `_wpsg_gallery_overrides`.
+The WordPress storage key for the nested campaign override payload is `_mullion_gallery_overrides`.
 
-Older `_wpsg_image_adapter_id` and `_wpsg_video_adapter_id` post meta are no longer exposed as parallel campaign fields in the app contract.
+Older `_mullion_image_adapter_id` and `_mullion_video_adapter_id` post meta are no longer exposed as parallel campaign fields in the app contract.
 
 ### Current Rule
 

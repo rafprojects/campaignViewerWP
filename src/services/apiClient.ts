@@ -1,5 +1,5 @@
 /**
- * WP Super Gallery API Client
+ * Mullion API Client
  *
  * Public surface unchanged — all existing imports continue to work.
  *

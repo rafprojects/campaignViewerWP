@@ -1,10 +1,10 @@
 [
   {
     "id": "default-dark",
-    "name": "Default Dark",
+    "name": "Mullion",
     "colorScheme": "dark",
     "group": "Default",
-    "description": "Clean dark baseline — the gallery's native look",
+    "description": "Rig Cyan — the Mullion brand default",
     "displayOrder": 1,
     "seasonal": false
   },

@@ -3,7 +3,7 @@
  * Image Optimization on Upload — P14-F
  *
  * Auto-generates optimized image variants when media is uploaded
- * through the WPSG plugin. Supports WebP conversion and max dimension
+ * through the Mullion plugin. Supports WebP conversion and max dimension
  * constraints. Leverages WordPress image editor API.
  *
  * @package Mullion
@@ -19,8 +19,8 @@ class Mullion_Image_Optimizer {
     const QUALITY_DEFAULT    = 82;
 
     /**
-     * Whether the current upload originated from a WPSG endpoint.
-     * Set to true by WPSG upload handlers so the optimizer only runs on
+     * Whether the current upload originated from a Mullion endpoint.
+     * Set to true by Mullion upload handlers so the optimizer only runs on
      * plugin-initiated uploads, not on all site-wide media uploads.
      */
     public static bool $mullion_upload_context = false;
@@ -71,7 +71,7 @@ class Mullion_Image_Optimizer {
             return $upload;
         }
 
-        // Only optimize uploads originating from WPSG endpoints.
+        // Only optimize uploads originating from Mullion endpoints.
         if (!self::$mullion_upload_context) {
             return $upload;
         }

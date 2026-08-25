@@ -12,7 +12,7 @@ const TEMPLATE_3SLOT: LayoutTemplate = {
   canvasAspectRatio: 16 / 9,
   canvasMinWidth: 400,
   canvasMaxWidth: 900,
-  backgroundColor: '#1a1a2e',
+  backgroundColor: '#102530',
   overlays: [],
   groups: [],
   createdAt: '2026-01-01T00:00:00Z',

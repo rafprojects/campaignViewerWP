@@ -29,7 +29,7 @@ git checkout feature/phase70-react-hardening-3-of-4   # back to the refactor
 | Front-end dev server (`npm run dev`) or a build served via the shortcode | To eyeball a rendered gallery for the visual-equivalence checks (P70-A/B/H). |
 | The Vitest suite (`npm test`) and type-checker (`npx tsc -b`) | The **primary** proof for every track — see the golden rule. |
 
-**Personas / auth.** Unchanged from prior phases. The only track touching a privileged surface is P70-H (AdminPanel), which mounts for editor-or-above; see §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for creating a System Admin and a `wpsg_editor`.
+**Personas / auth.** Unchanged from prior phases. The only track touching a privileged surface is P70-H (AdminPanel), which mounts for editor-or-above; see §2 of [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md) for creating a System Admin and a `mullion_editor`.
 
 ---
 
@@ -69,7 +69,7 @@ npx vitest run src/components/Galleries/Adapters/     # smoke + listing-mode sna
 npx vitest run src/components/Galleries/Adapters/_shared/   # new AdapterHeading/AdapterLightbox/useContainerWidth units
 npx tsc -b
 ```
-- The adapter smoke suite (`__tests__/adapters.test.tsx`) and the `listingMode` **DOM snapshot** exercise the migrated adapters; a component-boundary refactor that preserved output leaves them green *unmodified*. That the snapshot (which serializes `data-wpsg-*` attributes + inline styles) is unchanged is the strongest single signal that the DOM did not move.
+- The adapter smoke suite (`__tests__/adapters.test.tsx`) and the `listingMode` **DOM snapshot** exercise the migrated adapters; a component-boundary refactor that preserved output leaves them green *unmodified*. That the snapshot (which serializes `data-mullion-*` attributes + inline styles) is unchanged is the strongest single signal that the DOM did not move.
 - The new unit tests pin the extracted pieces directly: `AdapterHeading` (hidden → nothing; icon shown/hidden by `showGalleryLabelIcon`; label-only variant; `titleStyle` applied), `AdapterLightbox` (all five settings props + variable props forwarded), `useContainerWidth` (initial `clientWidth` seed, `ResizeObserver` update, teardown on unmount).
 
 **Why it proves the fix.** The extraction's *entire* contract is "same output, fewer copies." Unchanged snapshots + green smoke tests demonstrate the output is unchanged; the new unit tests demonstrate the shared pieces reproduce each per-adapter branch (icon vs no-icon, the five lightbox props, the width seed).
@@ -118,9 +118,9 @@ Confirm each matches the pre-P70-B behaviour (diff against the pre-phase commit 
 
 ### P70-C — Nonce-refresh consolidation
 
-**What & why.** "GET the nonce endpoint (presenting the current nonce as `X-WP-Nonce`), parse the `nonce` field, store it" was implemented three times: `HttpTransportImpl.refreshNonce` (the 403-retry path), `useNonceHeartbeat`'s inline `refresh()` (which bypassed the P51-D helpers and read/wrote `window.__WPSG_*` directly), and — for the store half — `wpNonce.ts`. P70-C extracts the **fetch-and-parse** into one pure `services/http/fetchNonce.ts::fetchNonceFrom(url, currentNonce?)` (WordPress-agnostic — takes URL + nonce as args, touches no globals). The transport calls it directly; `wpNonce.fetchFreshNonce(apiBase)` wraps it with `getWpNonce()` + `WP_NONCE_PATH`; the heartbeat calls `fetchFreshNonce` + `setWpNonce`, so it no longer reads or writes the nonce globals. The transport stays decoupled from WordPress (it imports the pure helper from its own `http/` layer, never `wpNonce.ts`).
+**What & why.** "GET the nonce endpoint (presenting the current nonce as `X-WP-Nonce`), parse the `nonce` field, store it" was implemented three times: `HttpTransportImpl.refreshNonce` (the 403-retry path), `useNonceHeartbeat`'s inline `refresh()` (which bypassed the P51-D helpers and read/wrote `window.__MULLION_*` directly), and — for the store half — `wpNonce.ts`. P70-C extracts the **fetch-and-parse** into one pure `services/http/fetchNonce.ts::fetchNonceFrom(url, currentNonce?)` (WordPress-agnostic — takes URL + nonce as args, touches no globals). The transport calls it directly; `wpNonce.fetchFreshNonce(apiBase)` wraps it with `getWpNonce()` + `WP_NONCE_PATH`; the heartbeat calls `fetchFreshNonce` + `setWpNonce`, so it no longer reads or writes the nonce globals. The transport stays decoupled from WordPress (it imports the pure helper from its own `http/` layer, never `wpNonce.ts`).
 
-**Pre-fix behaviour.** Three separate fetch/parse copies; the heartbeat read `window.__WPSG_CONFIG__.restNonce`/`__WPSG_REST_NONCE__` and wrote both globals inline.
+**Pre-fix behaviour.** Three separate fetch/parse copies; the heartbeat read `window.__MULLION_CONFIG__.restNonce`/`__MULLION_REST_NONCE__` and wrote both globals inline.
 
 **This is a no-behaviour-change track — the meaningful check is equivalence, backed by the thorough existing coverage.**
 
@@ -133,11 +133,11 @@ The pre-existing transport tests (`403 nonce refresh and retry`, `persists via i
 
 **Why it proves the fix.** The transport and heartbeat tests assert the *observable* contract (same URL, same header, same stored result, same retry semantics); their passing unmodified means the extraction changed no behaviour. The new unit test pins the single shared implementation so a future regression localises to one place.
 
-**Optional live check.** On a nonce-only (non-JWT) dev site, open DevTools → Network and confirm the heartbeat fires a `…/wp-json/wp-super-gallery/v1/nonce` GET on mount (and every interval) carrying an `X-WP-Nonce` header, and that `window.__WPSG_CONFIG__.restNonce` updates to the returned value — identical to pre-fix.
+**Optional live check.** On a nonce-only (non-JWT) dev site, open DevTools → Network and confirm the heartbeat fires a `…/wp-json/mullion-gallery/v1/nonce` GET on mount (and every interval) carrying an `X-WP-Nonce` header, and that `window.__MULLION_CONFIG__.restNonce` updates to the returned value — identical to pre-fix.
 
 **Regression checks.** New: `src/services/http/fetchNonce.test.ts`. Unchanged: transport / wpNonce / heartbeat suites all green without edits.
 
-**Pitfall.** The pure helper lives in `services/http/` (transport layer), **not** in `wpNonce.ts`. That is deliberate: the transport must remain publishable without dragging WordPress along (P51-D), so it cannot import `wpNonce.ts` (which touches `window.__WPSG_*`). If you "consolidate" further by moving `fetchNonceFrom` into `wpNonce.ts` and importing it from the transport, you re-couple the transport to WordPress. Also note the heartbeat still reads `enableJwt` and `apiBase` from `window.__WPSG_CONFIG__` — those are non-nonce config the hook legitimately owns; only the *nonce* read/write moved to the helpers.
+**Pitfall.** The pure helper lives in `services/http/` (transport layer), **not** in `wpNonce.ts`. That is deliberate: the transport must remain publishable without dragging WordPress along (P51-D), so it cannot import `wpNonce.ts` (which touches `window.__MULLION_*`). If you "consolidate" further by moving `fetchNonceFrom` into `wpNonce.ts` and importing it from the transport, you re-couple the transport to WordPress. Also note the heartbeat still reads `enableJwt` and `apiBase` from `window.__MULLION_CONFIG__` — those are non-nonce config the hook legitimately owns; only the *nonce* read/write moved to the helpers.
 
 ---
 
