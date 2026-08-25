@@ -115,7 +115,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
     public static function proxy_oembed($request) {
 
         // P14-D: Rate limiting — exempt authenticated admins.
-        if (!current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+        if (!current_user_can('manage_mullion') && !current_user_can('manage_options')) {
             $ip = Mullion_Rate_Limiter::get_client_ip();
             $rate_check = Mullion_Rate_Limiter::check($ip, 'oembed');
             if (!$rate_check['allowed']) {

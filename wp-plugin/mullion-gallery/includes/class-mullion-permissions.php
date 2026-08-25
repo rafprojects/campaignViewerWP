@@ -26,13 +26,13 @@ if (!defined('ABSPATH')) {
  *   rate_limit_access_request   public        — unauthenticated, tight limit + precheck seam (P64-C)
  *   require_authenticated       authenticated — any logged-in user (self scope)
  *   rate_limit_authenticated    manage_options— user creation, rate-limited (System Admin)
- *   require_admin               manage_wpsg   — global admin (bare cap, no space scope)
+ *   require_admin               manage_mullion   — global admin (bare cap, no space scope)
  *   require_system_admin        manage_options— System Admin only (WP dashboard tier)
- *   require_campaign_space_access       manage_wpsg + space — per-campaign admin op, scoped to the campaign's space
- *   require_campaign_batch_space_access manage_wpsg + space — batch variant, every id's space must be accessible
- *   require_campaign_space_move manage_wpsg + space — manage_wpsg + access to BOTH source & target space
+ *   require_campaign_space_access       manage_mullion + space — per-campaign admin op, scoped to the campaign's space
+ *   require_campaign_batch_space_access manage_mullion + space — batch variant, every id's space must be accessible
+ *   require_campaign_space_move manage_mullion + space — manage_mullion + access to BOTH source & target space
  *   require_space_member        grant         — any access level in the space (read)
- *   require_space_admin         manage_wpsg + space — per-space management/access, scoped to the space
+ *   require_space_admin         manage_mullion + space — per-space management/access, scoped to the space
  *
  * ── P52-A staging ─────────────────────────────────────────────────────────
  * A1 (this commit) wires the map to the *current* gates verbatim — a provable
@@ -210,7 +210,7 @@ final class Mullion_Permissions {
 
     /** Full WP/system control (currently `manage_options`). */
     const TIER_SYSTEM_ADMIN = 'system_admin';
-    /** Space-scoped app admin / editor (currently `manage_wpsg`). */
+    /** Space-scoped app admin / editor (currently `manage_mullion`). */
     const TIER_EDITOR = 'editor';
     /** Any authenticated user. */
     const TIER_VIEWER = 'viewer';
@@ -227,7 +227,7 @@ final class Mullion_Permissions {
             case self::TIER_SYSTEM_ADMIN:
                 return current_user_can('manage_options');
             case self::TIER_EDITOR:
-                return current_user_can('manage_wpsg');
+                return current_user_can('manage_mullion');
             case self::TIER_VIEWER:
                 return is_user_logged_in();
             default:

@@ -41,7 +41,7 @@ class Mullion_Settings_Renderer {
      */
     public static function add_menu_page() {
         self::$settings_page_hook = add_submenu_page(
-            'edit.php?post_type=wpsg_campaign',
+            'edit.php?post_type=mullion_campaign',
             __('Super Gallery Settings', 'mullion-gallery'),
             __('Settings', 'mullion-gallery'),
             'manage_options',

@@ -106,7 +106,7 @@ class Mullion_Campaign_IO {
         $post_id = wp_insert_post([
             'post_title'   => $title,
             'post_content' => $description,
-            'post_type'    => 'wpsg_campaign',
+            'post_type'    => 'mullion_campaign',
             'post_status'  => 'publish',
         ], true);
         if (is_wp_error($post_id)) {

@@ -309,7 +309,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
      * cannot pull a job they did not create.
      *
      * The permission_callback for the job endpoints (export_jobs.read/delete/download)
-     * is the coarse `require_admin` floor (manage_wpsg). Two gates are re-applied here:
+     * is the coarse `require_admin` floor (manage_mullion). Two gates are re-applied here:
      *
      *   1. Tier — jobs created under a stricter gate (audit / media-library export →
      *      System Admin) stamp `required_tier`, which must be re-checked so a
@@ -318,7 +318,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
      *      to the old floor, TIER_EDITOR.
      *
      *   2. Ownership — `require_admin` is a *global* capability (not space-scoped),
-     *      so without this a manage_wpsg editor in one campaign space could
+     *      so without this a manage_mullion editor in one campaign space could
      *      read/download a `campaign` / `multi_campaign` export created by an editor
      *      in another space merely by holding the 32-hex job ID. A non-System-Admin
      *      actor may therefore only touch a job they created; System Admins retain

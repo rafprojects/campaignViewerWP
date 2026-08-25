@@ -235,7 +235,7 @@ class Mullion_DB {
 
         while (true) {
             $campaigns = get_posts([
-                'post_type'      => 'wpsg_campaign',
+                'post_type'      => 'mullion_campaign',
                 'posts_per_page' => $batch_size,
                 'offset'         => $offset,
                 'post_status'    => ['publish', 'draft', 'private'],
@@ -369,7 +369,7 @@ class Mullion_DB {
         global $wpdb;
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
         $campaign_ids = $wpdb->get_col(
-            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
+            "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'mullion_campaign' AND post_status NOT IN ('trash', 'auto-draft')"
         );
 
         // TODO(P50): replace with wpsg_media_refs attachment-ID index once the mapping table is extended — see Track P49-G.
@@ -1271,7 +1271,7 @@ class Mullion_DB {
         // those posts leave the result set, so incrementing offset would skip
         // still-unassigned campaigns. Always fetch the first N unassigned posts.
         $posts = get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => $batch,
             'fields'         => 'ids',
@@ -1292,7 +1292,7 @@ class Mullion_DB {
     }
 
     private static function backfill_company_spaces(int $default_id): void {
-        $terms = get_terms(['taxonomy' => 'wpsg_company', 'hide_empty' => false, 'fields' => 'ids']);
+        $terms = get_terms(['taxonomy' => 'mullion_company', 'hide_empty' => false, 'fields' => 'ids']);
         if (is_wp_error($terms)) {
             return;
         }
@@ -1727,7 +1727,7 @@ class Mullion_DB {
 
         // Currently-archived campaigns that have no archived_at stamp yet.
         $post_ids = get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => -1,
             'fields'         => 'ids',

@@ -31,7 +31,7 @@ class Mullion_Space_Admin_Renderer {
         // not a space-editor one. Editors never see this page (the parent CPT
         // menu is already hidden for them since they hold no CPT caps).
         self::$page_hook = (string) add_submenu_page(
-            'edit.php?post_type=wpsg_campaign',
+            'edit.php?post_type=mullion_campaign',
             __('Gallery Spaces', 'mullion-gallery'),
             __('Spaces', 'mullion-gallery'),
             'manage_options',

@@ -66,7 +66,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_updates_values_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         // Grant CPT caps introduced in J-4.
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
@@ -94,7 +94,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_round_trips_gallery_config_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -154,7 +154,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_validates_compact_grid_adapter_settings_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -205,7 +205,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_round_trips_card_config_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -258,7 +258,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_normalizes_legacy_desktop_card_config_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -298,7 +298,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     public function test_settings_post_ignores_flat_nested_only_gallery_fields_for_admin() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }

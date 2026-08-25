@@ -2,25 +2,25 @@
 /**
  * WP-CLI command surface for Mullion.
  *
- * Registers the `wp wpsg` command group. All sub-commands bypass
- * the HTTP-layer permission checks (no `manage_wpsg` capability check)
+ * Registers the `wp mullion` command group. All sub-commands bypass
+ * the HTTP-layer permission checks (no `manage_mullion` capability check)
  * because the CLI already requires shell-level access to the server.
  *
  * Usage examples:
  *
- *   wp wpsg campaign list
- *   wp wpsg campaign list --status=archived --format=table
- *   wp wpsg campaign archive 42
- *   wp wpsg campaign restore 42
- *   wp wpsg campaign duplicate 42 --name="Copy of Campaign" --copy-media --duplicate-layout-template
- *   wp wpsg campaign export 42
- *   wp wpsg campaign export 42 > campaign-42.json
- *   wp wpsg campaign import ./campaign-42.json
- *   wp wpsg media list 42
- *   wp wpsg media orphans
- *   wp wpsg cache clear
- *   wp wpsg analytics clear 42
- *   wp wpsg rate-limit reset 192.168.1.1
+ *   wp mullion campaign list
+ *   wp mullion campaign list --status=archived --format=table
+ *   wp mullion campaign archive 42
+ *   wp mullion campaign restore 42
+ *   wp mullion campaign duplicate 42 --name="Copy of Campaign" --copy-media --duplicate-layout-template
+ *   wp mullion campaign export 42
+ *   wp mullion campaign export 42 > campaign-42.json
+ *   wp mullion campaign import ./campaign-42.json
+ *   wp mullion media list 42
+ *   wp mullion media orphans
+ *   wp mullion cache clear
+ *   wp mullion analytics clear 42
+ *   wp mullion rate-limit reset 192.168.1.1
  *
  * @package Mullion
  * @since   0.17.0
@@ -52,9 +52,9 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign list
-     *   wp wpsg campaign list --status=archived
-     *   wp wpsg campaign list --format=json
+     *   wp mullion campaign list
+     *   wp mullion campaign list --status=archived
+     *   wp mullion campaign list --format=json
      *
      * @subcommand campaign list
      * @when       after_wp_load
@@ -64,7 +64,7 @@ class Mullion_CLI {
         $format = isset( $assoc_args['format'] ) ? sanitize_text_field( $assoc_args['format'] ) : 'table';
 
         $query_args = [
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
             'no_found_rows'  => true,
@@ -126,7 +126,7 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign archive 42
+     *   wp mullion campaign archive 42
      *
      * @subcommand campaign archive
      * @when       after_wp_load
@@ -156,7 +156,7 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign restore 42
+     *   wp mullion campaign restore 42
      *
      * @subcommand campaign restore
      * @when       after_wp_load
@@ -192,8 +192,8 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign duplicate 42
-     *   wp wpsg campaign duplicate 42 --name="My New Campaign" --copy-media
+     *   wp mullion campaign duplicate 42
+     *   wp mullion campaign duplicate 42 --name="My New Campaign" --copy-media
      *
      * @subcommand campaign duplicate
      * @when       after_wp_load
@@ -249,9 +249,9 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign export 42
-     *   wp wpsg campaign export 42 > campaign-42.json
-     *   wp wpsg campaign export 42 --format=binary --output=./campaign-42.zip
+     *   wp mullion campaign export 42
+     *   wp mullion campaign export 42 > campaign-42.json
+     *   wp mullion campaign export 42 --format=binary --output=./campaign-42.zip
      *
      * @subcommand campaign export
      * @when       after_wp_load
@@ -322,12 +322,12 @@ class Mullion_CLI {
      * ## OPTIONS
      *
      * <file>
-     * : Path to a .json or .zip file previously exported by `wp wpsg campaign export`.
+     * : Path to a .json or .zip file previously exported by `wp mullion campaign export`.
      *
      * ## EXAMPLES
      *
-     *   wp wpsg campaign import ./campaign-42.json
-     *   wp wpsg campaign import ./campaign-42.zip
+     *   wp mullion campaign import ./campaign-42.json
+     *   wp mullion campaign import ./campaign-42.zip
      *
      * @subcommand campaign import
      * @when       after_wp_load
@@ -450,8 +450,8 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg media list 42
-     *   wp wpsg media list 42 --format=json
+     *   wp mullion media list 42
+     *   wp mullion media list 42 --format=json
      *
      * @subcommand media list
      * @when       after_wp_load
@@ -488,7 +488,7 @@ class Mullion_CLI {
      * List media items that are not attached to any campaign.
      *
      * Orphan media items are WordPress attachments (post_type=attachment) under
-     * the wpsg_company taxonomy that are not referenced by any campaign's
+     * the mullion_company taxonomy that are not referenced by any campaign's
      * media_items meta array (i.e. no campaign has an entry whose attachmentId
      * matches the attachment's post ID).
      *
@@ -499,8 +499,8 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg media orphans
-     *   wp wpsg media orphans --format=json
+     *   wp mullion media orphans
+     *   wp mullion media orphans --format=json
      *
      * @subcommand media orphans
      * @when       after_wp_load
@@ -510,7 +510,7 @@ class Mullion_CLI {
 
         // Collect all media IDs referenced by any campaign.
         $campaigns = get_posts( [
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
             'fields'         => 'ids',
@@ -538,7 +538,7 @@ class Mullion_CLI {
             'posts_per_page' => -1,
             'tax_query'      => [
                 [
-                    'taxonomy' => 'wpsg_company',
+                    'taxonomy' => 'mullion_company',
                     'operator' => 'EXISTS',
                 ],
             ],
@@ -574,7 +574,7 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg cache clear
+     *   wp mullion cache clear
      *
      * @subcommand cache clear
      * @when       after_wp_load
@@ -599,8 +599,8 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg analytics clear 42
-     *   wp wpsg analytics clear 0
+     *   wp mullion analytics clear 42
+     *   wp mullion analytics clear 0
      *
      * @subcommand analytics clear
      * @when       after_wp_load
@@ -649,8 +649,8 @@ class Mullion_CLI {
      *
      * ## EXAMPLES
      *
-     *   wp wpsg rate-limit reset
-     *   wp wpsg rate-limit reset 192.168.1.1
+     *   wp mullion rate-limit reset
+     *   wp mullion rate-limit reset 192.168.1.1
      *
      * @subcommand rate-limit reset
      * @when       after_wp_load
@@ -692,7 +692,7 @@ class Mullion_CLI {
             return false;
         }
         $post = get_post( $post_id );
-        return $post instanceof WP_Post && $post->post_type === 'wpsg_campaign';
+        return $post instanceof WP_Post && $post->post_type === 'mullion_campaign';
     }
 
     /**

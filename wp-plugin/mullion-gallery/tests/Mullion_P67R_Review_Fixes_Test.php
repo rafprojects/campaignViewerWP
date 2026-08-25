@@ -4,7 +4,7 @@
  * P67-R: regressions found in the Phase 67 PR review and the guards that pin them.
  *
  * - R1 update_object_term_cache()'s second argument is an *object type*, not a
- *   taxonomy. P67-F/G passed 'wpsg_company', which expands to no taxonomies at all
+ *   taxonomy. P67-F/G passed 'mullion_company', which expands to no taxonomies at all
  *   and primes nothing, so the batch priming those tracks added was a silent no-op.
  * - R2 stamp_filesize_meta() skipped the write when the file was unreadable, which
  *   left offloaded/broken attachments permanently without _wpsg_filesize while the
@@ -41,13 +41,13 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
     public function test_object_term_cache_primes_only_for_an_object_type() {
         $this->assertSame(
             [],
-            get_object_taxonomies('wpsg_company'),
-            'wpsg_company is a taxonomy, not an object type — priming against it is a no-op'
+            get_object_taxonomies('mullion_company'),
+            'mullion_company is a taxonomy, not an object type — priming against it is a no-op'
         );
         $this->assertContains(
-            'wpsg_company',
-            get_object_taxonomies('wpsg_campaign'),
-            'the wpsg_campaign object type is what expands to the wpsg_company taxonomy'
+            'mullion_company',
+            get_object_taxonomies('mullion_campaign'),
+            'the mullion_campaign object type is what expands to the mullion_company taxonomy'
         );
     }
 
@@ -61,14 +61,14 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
         $ids = [];
         for ($i = 0; $i < 3; $i++) {
             $id = wp_insert_post([
-                'post_type'   => 'wpsg_campaign',
+                'post_type'   => 'mullion_campaign',
                 'post_title'  => 'Primed ' . $i,
                 'post_status' => 'publish',
             ]);
             update_post_meta($id, 'status', 'active');
             update_post_meta($id, 'visibility', 'public');
-            $term = wp_insert_term('p67r-co-' . $i . '-' . uniqid(), 'wpsg_company');
-            wp_set_object_terms($id, [intval($term['term_id'])], 'wpsg_company');
+            $term = wp_insert_term('p67r-co-' . $i . '-' . uniqid(), 'mullion_company');
+            wp_set_object_terms($id, [intval($term['term_id'])], 'mullion_company');
             $ids[] = (int) $id;
         }
 
@@ -87,7 +87,7 @@ class Mullion_P67R_Review_Fixes_Test extends WP_UnitTestCase {
                 "post object cache primed for {$id}"
             );
             $this->assertNotFalse(
-                get_object_term_cache($id, 'wpsg_company'),
+                get_object_term_cache($id, 'mullion_company'),
                 "company term cache primed for {$id} — a taxonomy-name argument primes nothing"
             );
         }

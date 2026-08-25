@@ -13,7 +13,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         // via the rest_api_init action in the main plugin file
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($this->admin_id);
     }
 
@@ -63,7 +63,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     public function test_analytics_event_rejects_invalid_event_type() {
         update_option('wpsg_settings', ['enable_analytics' => true]);
         $campaign_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Analytics Test',
             'post_status' => 'publish',
         ]);
@@ -144,7 +144,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
     private function create_campaign_with_media(string $title, array $media_items): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -249,7 +249,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     public function test_valid_media_ids_work_with_api() {
         // Create a test campaign first
         $campaign_id = wp_insert_post([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'post_title' => 'Test Campaign',
             'post_status' => 'publish',
         ]);
@@ -290,7 +290,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     public function test_invalid_media_ids_are_rejected_by_api() {
         // Create a test campaign first
         $campaign_id = wp_insert_post([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'post_title' => 'Test Campaign',
             'post_status' => 'publish',
         ]);
@@ -383,7 +383,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     // ── P28-Q: Hierarchical campaign categories ──────────────────────────────
 
     public function test_campaign_category_list_includes_parent_id() {
-        $result = wp_insert_term('Parent Cat', 'wpsg_campaign_category');
+        $result = wp_insert_term('Parent Cat', 'mullion_campaign_category');
         $parent_term_id = $result['term_id'];
 
         $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
@@ -394,11 +394,11 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertArrayHasKey('parent_id', $items[0]);
         $this->assertEquals(0, $items[0]['parent_id']); // top-level
 
-        wp_delete_term($parent_term_id, 'wpsg_campaign_category');
+        wp_delete_term($parent_term_id, 'mullion_campaign_category');
     }
 
     public function test_create_child_category_with_parent_id() {
-        $parent = wp_insert_term('Parent', 'wpsg_campaign_category');
+        $parent = wp_insert_term('Parent', 'mullion_campaign_category');
         $parent_id = (int) $parent['term_id'];
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
@@ -410,13 +410,13 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $data = $response->get_data();
         $this->assertEquals($parent_id, $data['parent_id']);
 
-        wp_delete_term((int) $data['id'], 'wpsg_campaign_category');
-        wp_delete_term($parent_id, 'wpsg_campaign_category');
+        wp_delete_term((int) $data['id'], 'mullion_campaign_category');
+        wp_delete_term($parent_id, 'mullion_campaign_category');
     }
 
     public function test_update_category_can_set_parent_id() {
-        $parent = wp_insert_term('Update Parent', 'wpsg_campaign_category');
-        $child  = wp_insert_term('Update Child',  'wpsg_campaign_category');
+        $parent = wp_insert_term('Update Parent', 'mullion_campaign_category');
+        $child  = wp_insert_term('Update Child',  'mullion_campaign_category');
         $parent_id = (int) $parent['term_id'];
         $child_id  = (int) $child['term_id'];
 
@@ -427,23 +427,23 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertEquals(200, $response->get_status());
         $this->assertEquals($parent_id, $response->get_data()['parent_id']);
 
-        wp_delete_term($child_id,  'wpsg_campaign_category');
-        wp_delete_term($parent_id, 'wpsg_campaign_category');
+        wp_delete_term($child_id,  'mullion_campaign_category');
+        wp_delete_term($parent_id, 'mullion_campaign_category');
     }
 
     // ── P28-R: categories saved and returned as term IDs ─────────────────────
 
     public function test_format_campaign_returns_category_ids() {
-        $term    = wp_insert_term('ID Cat', 'wpsg_campaign_category');
+        $term    = wp_insert_term('ID Cat', 'mullion_campaign_category');
         $term_id = (int) $term['term_id'];
 
         $post_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_status' => 'publish',
             'post_title'  => 'Cat ID Test',
         ]);
         update_post_meta($post_id, 'status', 'active');
-        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+        wp_set_object_terms($post_id, [$term_id], 'mullion_campaign_category');
 
         $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$post_id}");
         $response = rest_do_request($request);
@@ -453,15 +453,15 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertContains(strval($term_id), $data['categories']);
 
         wp_delete_post($post_id, true);
-        wp_delete_term($term_id, 'wpsg_campaign_category');
+        wp_delete_term($term_id, 'mullion_campaign_category');
     }
 
     public function test_put_campaign_saves_categories_by_id() {
-        $term    = wp_insert_term('Save By ID', 'wpsg_campaign_category');
+        $term    = wp_insert_term('Save By ID', 'mullion_campaign_category');
         $term_id = (int) $term['term_id'];
 
         $post_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_status' => 'publish',
             'post_title'  => 'Save Cat Test',
         ]);
@@ -476,24 +476,24 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertEquals(200, $response->get_status());
         $this->assertContains(strval($term_id), $response->get_data()['categories']);
 
-        $assigned = wp_get_object_terms($post_id, 'wpsg_campaign_category', ['fields' => 'ids']);
+        $assigned = wp_get_object_terms($post_id, 'mullion_campaign_category', ['fields' => 'ids']);
         $this->assertContains($term_id, $assigned);
 
         wp_delete_post($post_id, true);
-        wp_delete_term($term_id, 'wpsg_campaign_category');
+        wp_delete_term($term_id, 'mullion_campaign_category');
     }
 
     public function test_put_campaign_clears_categories_when_empty_array() {
-        $term    = wp_insert_term('Clear Cat', 'wpsg_campaign_category');
+        $term    = wp_insert_term('Clear Cat', 'mullion_campaign_category');
         $term_id = (int) $term['term_id'];
 
         $post_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_status' => 'publish',
             'post_title'  => 'Clear Cat Test',
         ]);
         update_post_meta($post_id, 'status', 'active');
-        wp_set_object_terms($post_id, [$term_id], 'wpsg_campaign_category');
+        wp_set_object_terms($post_id, [$term_id], 'mullion_campaign_category');
 
         $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
         $request->set_param('title', 'Clear Cat Test');
@@ -504,7 +504,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $this->assertEmpty($response->get_data()['categories']);
 
         wp_delete_post($post_id, true);
-        wp_delete_term($term_id, 'wpsg_campaign_category');
+        wp_delete_term($term_id, 'mullion_campaign_category');
     }
 }
 

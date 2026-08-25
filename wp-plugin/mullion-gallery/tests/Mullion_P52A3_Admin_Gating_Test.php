@@ -7,12 +7,12 @@
  *   - the Spaces submenu page is registered with `manage_options`;
  *   - Settings remains `manage_options` (regression);
  *   - the admin_post create-space handler denies a space editor;
- *   - a wpsg_editor cannot `manage_options` and holds no CPT caps, so the
- *     "SuperGallery" CPT menu (and its submenus) is hidden for them.
+ *   - a mullion_editor cannot `manage_options` and holds no CPT caps, so the
+ *     "Mullion" CPT menu (and its submenus) is hidden for them.
  */
 class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
 
-    private const PARENT = 'edit.php?post_type=wpsg_campaign';
+    private const PARENT = 'edit.php?post_type=mullion_campaign';
 
     private function set_administrator(): int {
         $uid = self::factory()->user->create(['role' => 'administrator']);
@@ -22,7 +22,7 @@ class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
 
     private function set_editor(): int {
         mullion_ensure_editor_role();
-        $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
+        $uid = self::factory()->user->create(['role' => 'mullion_editor']);
         wp_set_current_user($uid);
         return $uid;
     }
@@ -71,10 +71,10 @@ class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
     public function test_editor_lacks_manage_options_and_cpt_caps() {
         $uid = $this->set_editor();
 
-        $this->assertTrue(user_can($uid, 'manage_wpsg'), 'editor keeps plugin access');
+        $this->assertTrue(user_can($uid, 'manage_mullion'), 'editor keeps plugin access');
         $this->assertFalse(user_can($uid, 'manage_options'), 'editor must not reach wp-admin system screens');
 
-        // No CPT caps → the "SuperGallery" (wpsg_campaign) menu is hidden for editors.
+        // No CPT caps → the "Mullion" (mullion_campaign) menu is hidden for editors.
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $this->assertFalse(user_can($uid, $cap), "editor must not hold CPT cap '{$cap}'");
         }
@@ -86,7 +86,7 @@ class Mullion_P52A3_Admin_Gating_Test extends WP_UnitTestCase {
         $uid = self::factory()->user->create(['role' => 'administrator']);
 
         $this->assertTrue(user_can($uid, 'manage_options'), 'administrator is System Admin');
-        $this->assertTrue(user_can($uid, 'edit_wpsg_campaigns'), 'administrator can use the wp-admin Campaigns UI');
+        $this->assertTrue(user_can($uid, 'edit_mullion_campaigns'), 'administrator can use the wp-admin Campaigns UI');
     }
 
     // ── admin_post create-space handler ───────────────────────────────────

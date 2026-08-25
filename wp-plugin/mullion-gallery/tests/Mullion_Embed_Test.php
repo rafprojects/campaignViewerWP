@@ -194,17 +194,17 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
     // ------------------------------------- P72-D: unresolved-space admin notice
 
-    /** System admin: administrator + manage_wpsg. */
-    private function set_manage_wpsg_admin(): int {
+    /** System admin: administrator + manage_mullion. */
+    private function set_manage_mullion_admin(): int {
         $uid  = self::factory()->user->create( [ 'role' => 'administrator' ] );
         $user = get_user_by( 'id', $uid );
-        $user->add_cap( 'manage_wpsg' );
+        $user->add_cap( 'manage_mullion' );
         wp_set_current_user( $uid );
         return $uid;
     }
 
     public function test_unresolved_explicit_space_shows_admin_notice() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         // An explicit space= that does not resolve to any space.
         $output = Mullion_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
@@ -219,7 +219,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_unresolved_explicit_space_hidden_from_visitor() {
-        wp_set_current_user( 0 ); // anonymous visitor, no manage_wpsg
+        wp_set_current_user( 0 ); // anonymous visitor, no manage_mullion
 
         $output = Mullion_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
 
@@ -229,7 +229,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_omitted_space_reference_shows_no_notice_even_for_admin() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         // No explicit space/campaign/company: the default is intentional, not an error.
         $output = Mullion_Embed::render_shortcode();
@@ -240,7 +240,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_resolved_explicit_space_shows_no_notice() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         $space_id = Mullion_DB::insert_space( [
             'name'           => 'P72D Real Space',
@@ -263,10 +263,10 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     // Only a reference naming something that does not exist is worth a notice.
 
     public function test_campaign_without_space_meta_shows_no_notice() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         $post_id = self::factory()->post->create( [
-            'post_type'  => 'wpsg_campaign',
+            'post_type'  => 'mullion_campaign',
             'post_name'  => 'p72d-inherits-default',
             'post_status' => 'publish',
         ] );
@@ -285,9 +285,9 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_company_without_space_meta_shows_no_notice() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
-        $term = wp_insert_term( 'P72D Co', 'wpsg_company', [ 'slug' => 'p72d-co' ] );
+        $term = wp_insert_term( 'P72D Co', 'mullion_company', [ 'slug' => 'p72d-co' ] );
         $this->assertNotWPError( $term );
         // Deliberately no _wpsg_space_id term meta.
 
@@ -303,7 +303,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_nonexistent_campaign_reference_shows_notice() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         $output = Mullion_Embed::render_shortcode( [ 'campaign' => 'no-such-campaign-xyz' ] );
 
@@ -314,10 +314,10 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_notice_names_only_the_reference_that_failed() {
-        $this->set_manage_wpsg_admin();
+        $this->set_manage_mullion_admin();
 
         $post_id = self::factory()->post->create( [
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_name'   => 'p72d-real-campaign',
             'post_status' => 'publish',
         ] );

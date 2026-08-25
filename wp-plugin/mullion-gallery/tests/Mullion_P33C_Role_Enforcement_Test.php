@@ -5,17 +5,17 @@
  *
  * ── UPDATED for P53-D (2026-06-15) ────────────────────────────────────────
  * The per-campaign editor/owner GRANT levels no longer confer mutation or
- * management. Editing/managing a campaign now requires the `wpsg_editor` role
- * (`manage_wpsg`) + access to the campaign's space (`require_campaign_space_access`);
+ * management. Editing/managing a campaign now requires the `mullion_editor` role
+ * (`manage_mullion`) + access to the campaign's space (`require_campaign_space_access`);
  * per-campaign grants are viewer-only (read). So a non-admin holding a legacy
  * `editor`/`owner` grant can still VIEW the campaign but is denied every mutation.
  *
  * Resulting matrix asserted here:
  *  - viewer / editor / owner GRANT (non-admin):  all mutations → 403
- *  - site-wide admin (`manage_wpsg`):            mutations → allowed
+ *  - site-wide admin (`manage_mullion`):            mutations → allowed
  *  - explicit deny override + no-grant:          → 403
  *
- * Affirmative coverage of the role-based path (manage_wpsg editor allowed; a
+ * Affirmative coverage of the role-based path (manage_mullion editor allowed; a
  * delegated-space editor without access denied — F2) lives in
  * Mullion_P52A5b_Campaign_Space_Scoping_Test and Mullion_P53D_Grant_Model_Test.
  */
@@ -26,7 +26,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
     private function set_admin_user(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user    = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap($cap);
         }
@@ -54,7 +54,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
     private function create_campaign(): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'P33-C Test Campaign',
             'post_status' => 'publish',
         ]);
@@ -120,7 +120,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
     public function test_editor_grant_no_longer_allows_update_campaign() {
         // P53-D: a per-campaign 'editor' grant on a non-admin no longer confers
-        // edit rights — editing requires the wpsg_editor role (manage_wpsg).
+        // edit rights — editing requires the mullion_editor role (manage_mullion).
         $admin_id    = $this->set_admin_user();
         $campaign_id = $this->create_campaign();
         $editor_id   = $this->create_user_with_level($campaign_id, 'editor');
@@ -173,8 +173,8 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
     }
 
     // ── P53-D: an 'owner' grant no longer confers mutation/management ─────────
-    // Editing, archiving, and access management now require the wpsg_editor role
-    // (manage_wpsg) + access to the campaign's space — not a per-campaign grant.
+    // Editing, archiving, and access management now require the mullion_editor role
+    // (manage_mullion) + access to the campaign's space — not a per-campaign grant.
 
     public function test_owner_grant_no_longer_allows_update_campaign() {
         $admin_id    = $this->set_admin_user();
@@ -311,9 +311,9 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
 
         // Create a company and attach the campaign.
-        $company_result = wp_insert_term('P33-C Company', 'wpsg_company');
+        $company_result = wp_insert_term('P33-C Company', 'mullion_company');
         $company_id     = intval($company_result['term_id']);
-        wp_set_object_terms($campaign_id, $company_id, 'wpsg_company');
+        wp_set_object_terms($campaign_id, $company_id, 'mullion_company');
 
         // Grant editor access at the company level.
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
@@ -339,9 +339,9 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
 
         // Company grant: editor.
-        $company_result = wp_insert_term('P33-C Override Company', 'wpsg_company');
+        $company_result = wp_insert_term('P33-C Override Company', 'mullion_company');
         $company_id     = intval($company_result['term_id']);
-        wp_set_object_terms($campaign_id, $company_id, 'wpsg_company');
+        wp_set_object_terms($campaign_id, $company_id, 'mullion_company');
 
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         update_term_meta($company_id, 'access_grants', [[

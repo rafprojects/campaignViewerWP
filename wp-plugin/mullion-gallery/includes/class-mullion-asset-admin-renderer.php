@@ -33,7 +33,7 @@ class Mullion_Asset_Admin_Renderer {
         // Only System Admins (manage_options) can reach WP admin; editors use
         // the in-app Admin Panel "Assets" tab instead.
         self::$page_hook = (string) add_submenu_page(
-            'edit.php?post_type=wpsg_campaign',
+            'edit.php?post_type=mullion_campaign',
             __('Asset Library', 'mullion-gallery'),
             __('Asset Library', 'mullion-gallery'),
             'manage_options',

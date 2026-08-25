@@ -40,7 +40,7 @@ class Mullion_Export_Engine {
      * @param int    $size_limit    Maximum total ZIP size in bytes.
      * @param string $required_tier P63-E: Mullion_Permissions TIER_* required to
      *                              read/delete/download this job. Defaults to
-     *                              TIER_EDITOR (manage_wpsg); callers whose create
+     *                              TIER_EDITOR (manage_mullion); callers whose create
      *                              gate is stricter (e.g. audit / media-library
      *                              export require System Admin) must pass
      *                              TIER_SYSTEM_ADMIN so the job can't be pulled by a

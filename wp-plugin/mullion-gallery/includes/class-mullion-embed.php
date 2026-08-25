@@ -460,7 +460,7 @@ class Mullion_Embed {
         }
 
         if (!empty($atts['campaign'])) {
-            $post = get_page_by_path($atts['campaign'], OBJECT, 'wpsg_campaign');
+            $post = get_page_by_path($atts['campaign'], OBJECT, 'mullion_campaign');
             if (!$post && is_numeric($atts['campaign'])) {
                 $post = get_post((int) $atts['campaign']);
             }
@@ -476,7 +476,7 @@ class Mullion_Embed {
         }
 
         if (!empty($atts['company'])) {
-            $term = get_term_by('slug', $atts['company'], 'wpsg_company');
+            $term = get_term_by('slug', $atts['company'], 'mullion_company');
             if ($term && !is_wp_error($term)) {
                 $sid = (int) get_term_meta($term->term_id, '_wpsg_space_id', true);
                 if ($sid > 0) {
@@ -494,7 +494,7 @@ class Mullion_Embed {
     /**
      * P72-D: admin-only inline notice shown when a shortcode names a
      * space=/campaign=/company= that does not exist and the gallery silently
-     * fell back to the default space. Gated on manage_wpsg so it is never shown
+     * fell back to the default space. Gated on manage_mullion so it is never shown
      * to visitors; returns '' for non-admins and when nothing was stale (the
      * omitted-attribute default, or an entity that merely inherits the default).
      *
@@ -502,7 +502,7 @@ class Mullion_Embed {
      * @return string Notice HTML, or '' when no notice should render.
      */
     private static function render_unresolved_space_notice(array $unresolved_refs): string {
-        if (empty($unresolved_refs) || !current_user_can('manage_wpsg')) {
+        if (empty($unresolved_refs) || !current_user_can('manage_mullion')) {
             return '';
         }
 
@@ -554,18 +554,18 @@ JS;
     /**
      * Emits window.__MULLION_PAGE_SPACES__ into the footer after all shortcodes have
      * rendered so the React SpaceSwitcher can read the full list on mount.
-     * Only emitted for users with manage_wpsg capability.
+     * Only emitted for users with manage_mullion capability.
      */
     public static function emit_page_spaces_js(): void {
         if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
             return;
         }
-        if (!current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+        if (!current_user_can('manage_mullion') && !current_user_can('manage_options')) {
             return;
         }
         // Reshape to indexed array with instanceId included in each entry.
         // P53-A: scope to spaces the actor can access. System admins resolve to
-        // every space; a wpsg_editor sees only the spaces it has been granted
+        // every space; a mullion_editor sees only the spaces it has been granted
         // access to (in either isolation mode), so the SpaceSwitcher never
         // offers a space it cannot reach.
         $spaces = [];
@@ -596,12 +596,12 @@ JS;
         if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
             return;
         }
-        if (!current_user_can('manage_wpsg')) {
+        if (!current_user_can('manage_mullion')) {
             return;
         }
 
         // P53-A: scope to spaces the actor can access (system admins see all; a
-        // wpsg_editor sees only the spaces it has been granted access to, in
+        // mullion_editor sees only the spaces it has been granted access to, in
         // either isolation mode).
         $accessible = array_filter(
             $GLOBALS['mullion_spaces_on_page'],

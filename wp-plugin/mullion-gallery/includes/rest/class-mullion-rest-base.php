@@ -80,7 +80,7 @@ abstract class Mullion_REST_Base {
      *
      * P52-A5: this primitive exclusively guards user creation (POST /users),
      * a System Admin action, so it requires `manage_options` (not merely
-     * `manage_wpsg`). Keep that in mind if it is ever reused for another route.
+     * `manage_mullion`). Keep that in mind if it is ever reused for another route.
      *
      * @since 0.18.0 P20-A
      */
@@ -305,8 +305,8 @@ abstract class Mullion_REST_Base {
 
     /**
      * P52-A5: System Admin gate — requires `manage_options` (WordPress admin),
-     * not merely `manage_wpsg`. Used for system/global surfaces that a
-     * space-scoped `wpsg_editor` must never reach (health, caches, webhooks,
+     * not merely `manage_mullion`. Used for system/global surfaces that a
+     * space-scoped `mullion_editor` must never reach (health, caches, webhooks,
      * global audit log, media library, binary import/export, role assignment,
      * cross-space aggregates, company management, space creation).
      */
@@ -340,7 +340,7 @@ abstract class Mullion_REST_Base {
      * Resolves the user's access level within a space.
      *
      * System admins (manage_options) are implicitly 'owner' in every space
-     * regardless of isolation mode. Editors (manage_wpsg) require an explicit
+     * regardless of isolation mode. Editors (manage_mullion) require an explicit
      * space grant — open-mode spaces no longer confer implicit access to
      * editors (P53-A: two-tier RBAC split).
      *
@@ -387,7 +387,7 @@ abstract class Mullion_REST_Base {
      * P53-A: public accessor so non-controller code (the embed page-spaces list
      * and admin-bar nodes) can scope a space list to the CURRENT actor without
      * duplicating the open/delegated resolution. System admins (manage_options)
-     * resolve to 'owner' for every space and see all; a wpsg_editor sees only
+     * resolve to 'owner' for every space and see all; a mullion_editor sees only
      * the spaces it has been explicitly granted access to.
      */
     public static function current_actor_can_access_space(int $space_id): bool {
@@ -400,7 +400,7 @@ abstract class Mullion_REST_Base {
      * Resolve the effective access level for a user on a specific campaign.
      *
      * Precedence (highest → lowest):
-     *   1. manage_wpsg capability → implicitly 'owner' (site-wide admin override)
+     *   1. manage_mullion capability → implicitly 'owner' (site-wide admin override)
      *   2. Explicit deny override → '' (no access)
      *   3. Campaign-level grant (overrides company grant for this campaign)
      *   4. Company-level grant (propagated to all company campaigns)
@@ -417,7 +417,7 @@ abstract class Mullion_REST_Base {
             return '';
         }
 
-        // P47-B: Delegated spaces can deny manage_wpsg users; must check before the admin short-circuit.
+        // P47-B: Delegated spaces can deny manage_mullion users; must check before the admin short-circuit.
         $space_id = intval(get_post_meta($campaign_id, '_wpsg_space_id', true));
         if ($space_id > 0 && !self::can_access_space($space_id, $user_id)) {
             return '';
@@ -426,7 +426,7 @@ abstract class Mullion_REST_Base {
         // 1. Site-wide admin always wins — they are treated as owner.
         // P67-J (G-3): resolve the capability against the passed $user_id, not the
         // current request user, so this helper is correct if reused for another user.
-        if (user_can($user_id, 'manage_wpsg')) {
+        if (user_can($user_id, 'manage_mullion')) {
             return 'owner';
         }
 
@@ -497,11 +497,11 @@ abstract class Mullion_REST_Base {
     }
 
     /**
-     * P53-D2: per-space admin gate — requires manage_wpsg AND access to the space
+     * P53-D2: per-space admin gate — requires manage_mullion AND access to the space
      * in the request's `id` param. Space management + access-management are
      * admin-tier: a non-admin viewer-grantee can READ the space
      * (require_space_member) but cannot manage it. manage_options ⇒ allowed
-     * everywhere; open-mode manage_wpsg ⇒ allowed; delegated ⇒ explicit space
+     * everywhere; open-mode manage_mullion ⇒ allowed; delegated ⇒ explicit space
      * grant required (closes F2 for space management).
      */
     public static function require_space_admin(WP_REST_Request $request): bool {
@@ -521,9 +521,9 @@ abstract class Mullion_REST_Base {
 
     /**
      * P50-A / P53-D2: Permission callback for cross-space campaign moves —
-     * requires manage_wpsg AND access to BOTH the campaign's current space and
+     * requires manage_mullion AND access to BOTH the campaign's current space and
      * the target space. manage_options resolves to access everywhere; an
-     * open-mode manage_wpsg editor has access to open spaces; a delegated-space
+     * open-mode manage_mullion editor has access to open spaces; a delegated-space
      * editor needs an explicit grant on both spaces.
      */
     public static function require_campaign_space_move(WP_REST_Request $request): bool {
@@ -574,9 +574,9 @@ abstract class Mullion_REST_Base {
      * P52-A5b: does the user have access to the space that owns this campaign?
      *
      * Mirrors the space gate in get_effective_campaign_level(): a campaign with
-     * no space (pre-spaces install) is accessible to any manage_wpsg holder;
+     * no space (pre-spaces install) is accessible to any manage_mullion holder;
      * otherwise the user must have a level in its space (manage_options ⇒ owner
-     * everywhere; open-mode manage_wpsg ⇒ owner; delegated ⇒ explicit grant).
+     * everywhere; open-mode manage_mullion ⇒ owner; delegated ⇒ explicit grant).
      */
     private static function user_can_access_campaign_space(int $campaign_id, int $user_id): bool {
         $space_id = self::resolve_campaign_space_id($campaign_id);
@@ -587,10 +587,10 @@ abstract class Mullion_REST_Base {
     }
 
     /**
-     * P52-A5b: per-campaign admin gate — requires manage_wpsg AND access to the
+     * P52-A5b: per-campaign admin gate — requires manage_mullion AND access to the
      * space that owns the campaign in the request's `id` param. Closes F2: a
-     * manage_wpsg editor cannot act on campaigns in delegated spaces they were
-     * not granted. Subscribers (no manage_wpsg) are denied, preserving the
+     * manage_mullion editor cannot act on campaigns in delegated spaces they were
+     * not granted. Subscribers (no manage_mullion) are denied, preserving the
      * admin-tier nature of these endpoints (analytics, audit, per-campaign export).
      */
     public static function require_campaign_space_access(WP_REST_Request $request): bool {
@@ -609,7 +609,7 @@ abstract class Mullion_REST_Base {
     }
 
     /**
-     * P52-A5b: batch variant — requires manage_wpsg AND access to the space of
+     * P52-A5b: batch variant — requires manage_mullion AND access to the space of
      * EVERY campaign in the request's `ids` param. Any inaccessible campaign
      * denies the whole batch (no cross-space batch actions).
      */
@@ -757,10 +757,10 @@ abstract class Mullion_REST_Base {
     /**
      * P52-A4 / P72-C: enforce the system-vs-display settings boundary.
      *
-     * Writing settings requires manage_wpsg (the route gate). Writing any
+     * Writing settings requires manage_mullion (the route gate). Writing any
      * *system-level* key (the registry's $admin_only_fields — cache, uploads,
      * auth provider, retention, etc.) additionally requires manage_options.
-     * A space editor (manage_wpsg only) may write display/campaign keys but
+     * A space editor (manage_mullion only) may write display/campaign keys but
      * not system ones.
      *
      * Shared by every global-settings write path — update_settings(),
@@ -770,7 +770,7 @@ abstract class Mullion_REST_Base {
      *
      * What counts as a "write" is an *effective change*, not the mere presence
      * of the key in the payload. The settings panel PUTs the whole settings
-     * object on every save — `to_js()` hands a manage_wpsg user every admin-only
+     * object on every save — `to_js()` hands a manage_mullion user every admin-only
      * field, and the client's `mergeSettingsWithDefaults()` re-adds any the
      * server stripped — so blocking on presence would 403 every editor save,
      * including one that only touched a display key, and (the guard being
@@ -928,7 +928,7 @@ abstract class Mullion_REST_Base {
 
     protected static function campaign_exists($post_id) {
         $post = get_post($post_id);
-        return $post && $post->post_type === 'wpsg_campaign';
+        return $post && $post->post_type === 'mullion_campaign';
     }
 
     protected static function can_view_campaign($post_id, $user_id) {
@@ -954,7 +954,7 @@ abstract class Mullion_REST_Base {
             return false;
         }
 
-        if ($user_id && (user_can($user_id, 'manage_wpsg') || user_can($user_id, 'manage_options'))) {
+        if ($user_id && (user_can($user_id, 'manage_mullion') || user_can($user_id, 'manage_options'))) {
             return true;
         }
 
@@ -1045,7 +1045,7 @@ abstract class Mullion_REST_Base {
 
         do {
             $query = new WP_Query([
-                'post_type' => 'wpsg_campaign',
+                'post_type' => 'mullion_campaign',
                 'post_status' => 'publish',
                 'posts_per_page' => $per_page,
                 'paged' => $page,
@@ -1139,7 +1139,7 @@ abstract class Mullion_REST_Base {
     protected static function get_company_term($post_id) {
         // P67-F: get_the_terms() reads the object-term cache primed by WP_Query /
         // update_object_term_cache(); wp_get_object_terms() always hits the DB.
-        $terms = get_the_terms($post_id, 'wpsg_company');
+        $terms = get_the_terms($post_id, 'mullion_company');
         if (is_array($terms) && !empty($terms)) {
             return reset($terms);
         }
@@ -1374,13 +1374,13 @@ abstract class Mullion_REST_Base {
 
     private static function get_campaign_category_names($post_id) {
         // P67-F: read the primed object-term cache instead of hitting the DB.
-        $terms = get_the_terms($post_id, 'wpsg_campaign_category');
+        $terms = get_the_terms($post_id, 'mullion_campaign_category');
         return is_array($terms) ? array_values(wp_list_pluck($terms, 'name')) : [];
     }
 
     private static function get_campaign_category_ids($post_id) {
         // P67-F: read the primed object-term cache instead of hitting the DB.
-        $terms = get_the_terms($post_id, 'wpsg_campaign_category');
+        $terms = get_the_terms($post_id, 'mullion_campaign_category');
         return is_array($terms) ? array_values(array_map('strval', wp_list_pluck($terms, 'term_id'))) : [];
     }
 
@@ -1579,7 +1579,7 @@ abstract class Mullion_REST_Base {
 
                 $all_terms = wp_get_object_terms(
                     $attachment_ids,
-                    'wpsg_media_tag',
+                    'mullion_media_tag',
                     ['fields' => 'all_with_object_id'],
                 );
                 if (!is_wp_error($all_terms)) {
@@ -1650,9 +1650,9 @@ abstract class Mullion_REST_Base {
 
     protected static function taxonomy_label(string $taxonomy): string {
         $labels = [
-            'wpsg_campaign_category' => 'Campaign category',
-            'wpsg_campaign_tag'      => 'Campaign tag',
-            'wpsg_media_tag'         => 'Media tag',
+            'mullion_campaign_category' => 'Campaign category',
+            'mullion_campaign_tag'      => 'Campaign tag',
+            'mullion_media_tag'         => 'Media tag',
         ];
         return $labels[$taxonomy] ?? $taxonomy;
     }

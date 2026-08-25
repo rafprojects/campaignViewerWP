@@ -3,12 +3,12 @@
 /**
  * P52-A5b: per-campaign endpoints are space-scoped (closes F2).
  *
- * Previously `require_admin` (bare manage_wpsg) let a space editor act on ANY
+ * Previously `require_admin` (bare manage_mullion) let a space editor act on ANY
  * campaign — including campaigns in delegated spaces they were never granted.
  * Now per-campaign admin endpoints (analytics, audit, per-campaign export) and
- * the batch endpoints require manage_wpsg AND access to the target campaign's
+ * the batch endpoints require manage_mullion AND access to the target campaign's
  * space. System Admins (manage_options) keep the escape hatch; plain
- * subscribers (no manage_wpsg) remain denied. `GET /spaces` is filtered to the
+ * subscribers (no manage_mullion) remain denied. `GET /spaces` is filtered to the
  * caller's accessible spaces.
  */
 class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
@@ -16,16 +16,16 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
     private function set_super_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** manage_wpsg but NOT manage_options — the delegated-mode boundary case. */
+    /** manage_mullion but NOT manage_options — the delegated-mode boundary case. */
     private function make_editor(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         $this->assertFalse(user_can($uid, 'manage_options'), 'fixture must lack manage_options');
         return $uid;
     }
@@ -46,7 +46,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
 
     private function campaign_in_space(int $space_id): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'A5b campaign',
             'post_status' => 'publish',
         ]);
@@ -79,7 +79,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
         $campaign = $this->campaign_in_space($space);
         wp_set_current_user($this->make_editor());
 
-        // F2: previously this returned 200 (bare manage_wpsg). Must be 403 now.
+        // F2: previously this returned 200 (bare manage_mullion). Must be 403 now.
         $this->assertSame(403, $this->audit_status($campaign), 'delegated-space editor without grant must be denied');
     }
 
@@ -103,14 +103,14 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
 
     public function test_subscriber_with_grant_still_denied_admin_endpoint() {
         // A plain subscriber granted into the space is NOT an admin — per-campaign
-        // admin endpoints stay manage_wpsg-tier.
+        // admin endpoints stay manage_mullion-tier.
         $sub   = self::factory()->user->create(['role' => 'subscriber']);
         $space = $this->make_space('open');
         $this->grant_space($space, $sub, 'owner');
         $campaign = $this->campaign_in_space($space);
         wp_set_current_user($sub);
 
-        $this->assertSame(403, $this->audit_status($campaign), 'subscriber (no manage_wpsg) denied admin endpoint');
+        $this->assertSame(403, $this->audit_status($campaign), 'subscriber (no manage_mullion) denied admin endpoint');
     }
 
     // ── Batch space scoping ───────────────────────────────────────────────

@@ -249,7 +249,7 @@ class Mullion_Settings_Extended_Test extends WP_UnitTestCase {
         // Must be admin to add menu pages.
         $admin_id = self::factory()->user->create(['role' => 'administrator']);
         wp_set_current_user($admin_id);
-        set_current_screen('edit-wpsg_campaign');
+        set_current_screen('edit-mullion_campaign');
 
         Mullion_Settings_Renderer::add_menu_page();
         $this->assertTrue(true); // No exception = pass.

@@ -202,7 +202,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     private static function build_campaign_cache_key(array $f, int $user_id, bool $is_system_admin): string {
         $search_key = $f['search'] ? md5($f['search']) : 'none';
         $cv = self::get_cache_version();
-        return 'wpsg_campaigns_' . md5(sprintf(
+        return 'mullion_campaigns_' . md5(sprintf(
             'v%d_%d_%s_%s_%s_%s_%d_%d_%s_%s_%s_%s_%s_%s_%s_%s',
             $cv,
             $user_id,
@@ -235,7 +235,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
      */
     private static function build_campaign_query_args(array $f, bool $is_system_admin, int $user_id): array {
         $args = [
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'publish',
             'paged'          => $f['page'],
             'posts_per_page' => $f['per_page'],
@@ -266,7 +266,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         }
 
         $meta_query = [];
-        // P66-E: user campaign templates are wpsg_campaign posts flagged with
+        // P66-E: user campaign templates are mullion_campaign posts flagged with
         // _wpsg_is_template; they are managed through the dedicated templates
         // endpoint and must never surface as draft campaigns in any listing.
         // Placed first so it applies to the admin, anonymous, and scoped paths.
@@ -316,21 +316,21 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $tax_clauses = [];
         if (!empty($f['company'])) {
             $tax_clauses[] = [
-                'taxonomy' => 'wpsg_company',
+                'taxonomy' => 'mullion_company',
                 'field'    => 'slug',
                 'terms'    => [$f['company']],
             ];
         }
         if (!empty($f['category'])) {
             $tax_clauses[] = [
-                'taxonomy' => 'wpsg_campaign_category',
+                'taxonomy' => 'mullion_campaign_category',
                 'field'    => 'slug',
                 'terms'    => [$f['category']],
             ];
         }
         if (!empty($f['tag'])) {
             $tax_clauses[] = [
-                'taxonomy' => 'wpsg_campaign_tag',
+                'taxonomy' => 'mullion_campaign_tag',
                 'field'    => 'slug',
                 'terms'    => [$f['tag']],
             ];
@@ -409,7 +409,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
 
         $user_id = get_current_user_id();
         // P53-A: only a System Admin (manage_options) gets the unscoped "see every
-        // campaign" view. A wpsg_editor (manage_wpsg) is scoped to the campaigns it
+        // campaign" view. A mullion_editor (manage_mullion) is scoped to the campaigns it
         // can access — public campaigns everywhere (P53-B) plus everything in the
         // spaces it can access — closing the cross-space private-metadata leak while
         // preserving public visibility.
@@ -499,7 +499,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         }
 
         $post_id = wp_insert_post([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'post_title' => $title,
             'post_content' => $description,
             'post_status' => 'publish',
@@ -515,7 +515,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             return $meta_result;
         }
         // P47-J: persist space assignment if the caller supplied a valid space_id.
-        // Guard access: in delegated-isolation mode a manage_wpsg-only user must be
+        // Guard access: in delegated-isolation mode a manage_mullion-only user must be
         // an explicit grantee; without this check they could assign campaigns to any
         // space including ones they were denied from.
         $space_id = (int) $request->get_param('space_id');
@@ -539,7 +539,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function get_campaign($request) {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
-        if (!$post || $post->post_type !== 'wpsg_campaign') {
+        if (!$post || $post->post_type !== 'mullion_campaign') {
             return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
@@ -554,7 +554,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
     public static function update_campaign($request) {
         $post_id = intval($request->get_param('id'));
         $post = get_post($post_id);
-        if (!$post || $post->post_type !== 'wpsg_campaign') {
+        if (!$post || $post->post_type !== 'mullion_campaign') {
             return new WP_Error('mullion_campaign_not_found', 'Campaign not found', ['status' => 404]);
         }
 
@@ -826,7 +826,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
                 // restored_at); cache is bumped once after the loop below.
                 Mullion_Campaign_Status::set($post_id, $new_status, [
                     'audit' => ['action' => "campaign.{$action}d", 'details' => []],
-                    'hook'  => "wpsg_campaign_{$action}d",
+                    'hook'  => "mullion_campaign_{$action}d",
                 ]);
                 $success[] = (string) $post_id;
             }
@@ -1092,7 +1092,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         $categories = $request->get_param('categories');
         if (is_array($categories)) {
             $term_ids = array_values(array_filter(array_map('intval', $categories)));
-            wp_set_object_terms($post_id, $term_ids, 'wpsg_campaign_category');
+            wp_set_object_terms($post_id, $term_ids, 'mullion_campaign_category');
         }
         if (!is_null($cover_image_param)) {
             $cover_image = esc_url_raw($cover_image_param);
@@ -1193,27 +1193,27 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             if (empty($name)) {
                 return;
             }
-            $term = $slug ? term_exists($slug, 'wpsg_company') : null;
+            $term = $slug ? term_exists($slug, 'mullion_company') : null;
             if (!$term) {
-                $term = term_exists($name, 'wpsg_company');
+                $term = term_exists($name, 'mullion_company');
             }
             if (!$term) {
                 $args = $slug ? ['slug' => $slug] : [];
-                $term = wp_insert_term($name, 'wpsg_company', $args);
+                $term = wp_insert_term($name, 'mullion_company', $args);
             }
         } else {
             $company = sanitize_text_field($company);
             if (empty($company)) {
                 return;
             }
-            $term = term_exists($company, 'wpsg_company');
+            $term = term_exists($company, 'mullion_company');
             if (!$term) {
-                $term = wp_insert_term($company, 'wpsg_company');
+                $term = wp_insert_term($company, 'mullion_company');
             }
         }
 
         if (!is_wp_error($term)) {
-            wp_set_object_terms($post_id, intval($term['term_id']), 'wpsg_company', false);
+            wp_set_object_terms($post_id, intval($term['term_id']), 'mullion_company', false);
         }
     }
 }

@@ -256,10 +256,10 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
     public static function list_campaign_categories($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_campaign_category', 'hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'mullion_campaign_category', 'hide_empty' => false]);
 
         $terms = get_terms([
-            'taxonomy'   => 'wpsg_campaign_category',
+            'taxonomy'   => 'mullion_campaign_category',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
@@ -288,7 +288,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         return self::handle_term_insert(
             $request->get_param('name'),
             $request->get_param('slug'),
-            'wpsg_campaign_category',
+            'mullion_campaign_category',
             201,
             (int) ($request->get_param('parent_id') ?? 0),
         );
@@ -296,7 +296,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
     public static function update_campaign_category(WP_REST_Request $request) {
         $term_id = intval($request->get_param('id'));
-        $term    = get_term($term_id, 'wpsg_campaign_category');
+        $term    = get_term($term_id, 'mullion_campaign_category');
         if (!$term || is_wp_error($term)) {
             return new WP_Error('mullion_not_found', 'Category not found', ['status' => 404]);
         }
@@ -316,7 +316,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         if (empty($args)) {
             return new WP_Error('mullion_bad_request', 'Provide name, slug, or parent_id to update', ['status' => 400]);
         }
-        $result = wp_update_term($term_id, 'wpsg_campaign_category', $args);
+        $result = wp_update_term($term_id, 'mullion_campaign_category', $args);
         if (is_wp_error($result)) {
             $code = $result->get_error_code();
             if ($code === 'term_exists' || $code === 'duplicate_term_slug') {
@@ -324,10 +324,10 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             }
             return new WP_Error('mullion_internal_error', $result->get_error_message(), ['status' => 500]);
         }
-        $updated_term = get_term($result['term_id'], 'wpsg_campaign_category');
+        $updated_term = get_term($result['term_id'], 'mullion_campaign_category');
         $updated_name = $updated_term ? $updated_term->name : ($args['name'] ?? '');
         self::add_audit_entry(0, 'taxonomy.term_updated', [
-            'taxonomy' => 'wpsg_campaign_category',
+            'taxonomy' => 'mullion_campaign_category',
             'name'     => $updated_name,
             'termId'   => strval($term_id),
         ], [
@@ -341,16 +341,16 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
     }
 
     public static function delete_campaign_category(WP_REST_Request $request) {
-        return self::handle_term_delete($request->get_param('id'), 'wpsg_campaign_category');
+        return self::handle_term_delete($request->get_param('id'), 'mullion_campaign_category');
     }
 
     public static function list_campaign_tags($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_campaign_tag', 'hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'mullion_campaign_tag', 'hide_empty' => false]);
 
         $terms = get_terms([
-            'taxonomy'   => 'wpsg_campaign_tag',
+            'taxonomy'   => 'mullion_campaign_tag',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
@@ -378,12 +378,12 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         return self::handle_term_insert(
             $request->get_param('name'),
             $request->get_param('slug'),
-            'wpsg_campaign_tag',
+            'mullion_campaign_tag',
         );
     }
 
     public static function delete_campaign_tag(WP_REST_Request $request) {
-        return self::handle_term_delete($request->get_param('id'), 'wpsg_campaign_tag');
+        return self::handle_term_delete($request->get_param('id'), 'mullion_campaign_tag');
     }
 
     public static function list_campaign_templates($request) {
@@ -405,7 +405,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
         if ($from_id > 0) {
             $source = get_post($from_id);
-            if (!$source || $source->post_type !== 'wpsg_campaign') {
+            if (!$source || $source->post_type !== 'mullion_campaign') {
                 return new WP_Error('mullion_campaign_not_found', 'Source campaign not found', ['status' => 404]);
             }
             $meta['visibility']           = get_post_meta($from_id, 'visibility', true) ?: 'private';
@@ -414,7 +414,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         }
 
         $post_id = wp_insert_post([
-            'post_type'    => 'wpsg_campaign',
+            'post_type'    => 'mullion_campaign',
             'post_title'   => $name,
             'post_content' => $description,
             'post_status'  => 'publish',
@@ -446,7 +446,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
         $post_id = intval($id);
         $post    = get_post($post_id);
-        if (!$post || $post->post_type !== 'wpsg_campaign') {
+        if (!$post || $post->post_type !== 'mullion_campaign') {
             return new WP_Error('mullion_not_found', 'Template not found', ['status' => 404]);
         }
         if (!get_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, true)) {
@@ -466,7 +466,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         } else {
             $post_id = intval($id);
             $post    = get_post($post_id);
-            if (!$post || $post->post_type !== 'wpsg_campaign' || !get_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, true)) {
+            if (!$post || $post->post_type !== 'mullion_campaign' || !get_post_meta($post_id, Mullion_Campaign_Templates::META_IS_TEMPLATE, true)) {
                 return new WP_Error('mullion_not_found', 'Template not found', ['status' => 404]);
             }
             $tpl = Mullion_Campaign_Templates::post_to_template($post);
@@ -475,7 +475,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $settings = $tpl['settings'] ?? [];
 
         $new_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $name,
             'post_status' => 'publish',
         ], true);
@@ -620,7 +620,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             return 0;
         }
         $q = new WP_Query([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'meta_key'       => '_wpsg_layout_binding_template_id',
             'meta_value'     => $template_id,
@@ -942,7 +942,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             if ($space_id > 0) {
                 $count_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
             }
-            $total = wp_count_terms(array_merge(['taxonomy' => 'wpsg_company'], $count_args));
+            $total = wp_count_terms(array_merge(['taxonomy' => 'mullion_company'], $count_args));
             $response->header('X-MULLION-Total', (string) $total);
             $response->header('X-MULLION-Page', (string) $page);
             $response->header('X-MULLION-Per-Page', (string) $per_page);
@@ -950,7 +950,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         }
 
         $terms_args = [
-            'taxonomy' => 'wpsg_company',
+            'taxonomy' => 'mullion_company',
             'hide_empty' => false,
             'number' => $per_page,
             'offset' => $offset,
@@ -972,11 +972,11 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         $all_campaigns = [];
         if (!empty($term_ids)) {
             $all_campaigns = get_posts([
-                'post_type'      => 'wpsg_campaign',
+                'post_type'      => 'mullion_campaign',
                 'posts_per_page' => -1,
                 'tax_query'      => [
                     [
-                        'taxonomy' => 'wpsg_company',
+                        'taxonomy' => 'mullion_company',
                         'field'    => 'term_id',
                         'terms'    => $term_ids,
                     ],
@@ -987,13 +987,13 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         // Prime meta + term caches in batch to eliminate N+1 queries in the loop.
         // update_object_term_cache()'s second parameter is the *object type* (the
         // post type), not a taxonomy: it expands to every taxonomy registered for
-        // that type — wpsg_company included. Passing the taxonomy name instead makes
-        // the call a silent no-op (get_object_taxonomies('wpsg_company') === []),
+        // that type — mullion_company included. Passing the taxonomy name instead makes
+        // the call a silent no-op (get_object_taxonomies('mullion_company') === []),
         // which leaves the get_the_terms() lookups below hitting the DB per campaign.
         if (!empty($all_campaigns)) {
             $campaign_ids = wp_list_pluck($all_campaigns, 'ID');
             update_meta_cache('post', $campaign_ids);
-            update_object_term_cache($campaign_ids, 'wpsg_campaign');
+            update_object_term_cache($campaign_ids, 'mullion_campaign');
         }
 
         // Index campaigns by company term_id for O(1) lookup per company.
@@ -1001,7 +1001,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         foreach ($all_campaigns as $campaign) {
             // P67-F: get_the_terms() reads the cache primed above; wp_get_object_terms()
             // would always hit the DB per campaign.
-            $campaign_terms = get_the_terms($campaign->ID, 'wpsg_company');
+            $campaign_terms = get_the_terms($campaign->ID, 'mullion_company');
             if (is_array($campaign_terms)) {
                 foreach ($campaign_terms as $term) {
                     $campaigns_by_term[$term->term_id][] = $campaign;
@@ -1050,7 +1050,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         if ($space_id > 0) {
             $total_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
         }
-        $total       = (int) wp_count_terms(array_merge(['taxonomy' => 'wpsg_company'], $total_args));
+        $total       = (int) wp_count_terms(array_merge(['taxonomy' => 'mullion_company'], $total_args));
         $total_pages = $per_page > 0 ? max(1, (int) ceil($total / $per_page)) : 1;
         $response_data = [
             'items'       => $companies,

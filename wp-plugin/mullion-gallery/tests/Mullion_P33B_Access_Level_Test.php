@@ -5,7 +5,7 @@
  *
  * ── UPDATED for P53-D (2026-06-15) ────────────────────────────────────────
  * Access grants are now VIEWER-ONLY — editing/managing comes from the
- * wpsg_editor role, not from per-campaign/company grant levels. The grant
+ * mullion_editor role, not from per-campaign/company grant levels. The grant
  * endpoints' access_level enum is `['viewer']`; editor/owner are rejected (400)
  * — that rejection is asserted in Mullion_P53D_Grant_Model_Test. This suite now
  * covers the storage/normalisation of the (viewer) access_level and that
@@ -26,7 +26,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
     private function set_admin_user(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user    = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap($cap);
         }
@@ -36,7 +36,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
 
     private function create_campaign(): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'P33-B Test Campaign',
             'post_status' => 'publish',
         ]);
@@ -45,7 +45,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
     }
 
     private function create_company(): int {
-        $result = wp_insert_term('P33-B Test Company', 'wpsg_company');
+        $result = wp_insert_term('P33-B Test Company', 'mullion_company');
         return intval($result['term_id']);
     }
 

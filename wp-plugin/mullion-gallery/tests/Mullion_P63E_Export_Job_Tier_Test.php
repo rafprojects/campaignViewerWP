@@ -3,7 +3,7 @@
  * P63-E — export-job read/download gated by the creator's tier.
  *
  * Jobs created under a System-Admin gate (audit / media-library export) must not
- * be readable/downloadable by a lower-tier (manage_wpsg) user who obtains the job
+ * be readable/downloadable by a lower-tier (manage_mullion) user who obtains the job
  * ID. create_job() stamps `created_by` + `required_tier`; the three job endpoints
  * re-check the stamped tier.
  *
@@ -18,8 +18,8 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
         parent::setUp();
         $this->admin_id  = self::factory()->user->create( [ 'role' => 'administrator' ] );
         $this->editor_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
-        // A manage_wpsg editor that is NOT a System Admin (no manage_options).
-        get_user_by( 'id', $this->editor_id )->add_cap( 'manage_wpsg' );
+        // A manage_mullion editor that is NOT a System Admin (no manage_options).
+        get_user_by( 'id', $this->editor_id )->add_cap( 'manage_mullion' );
     }
 
     public function tearDown(): void {
@@ -117,13 +117,13 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
 
     // ── Ownership enforcement (P63-E-2: same-tier peer / cross-space) ─────────
 
-    /** Editor B (a manage_wpsg peer in another space) must not read Editor A's job. */
+    /** Editor B (a manage_mullion peer in another space) must not read Editor A's job. */
     public function test_editor_cannot_access_another_editors_job() {
         wp_set_current_user( $this->editor_id );
         $id = Mullion_Export_Engine::create_job( 'campaign', '{}', [] ); // editor-tier, created_by = editor A
 
         $editor_b = self::factory()->user->create( [ 'role' => 'subscriber' ] );
-        get_user_by( 'id', $editor_b )->add_cap( 'manage_wpsg' );
+        get_user_by( 'id', $editor_b )->add_cap( 'manage_mullion' );
 
         $resp = $this->poll_job( $editor_b, $id );
 
@@ -180,7 +180,7 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
         $id = Mullion_Export_Engine::create_job( 'campaign', '{}', [] );
 
         $editor_b = self::factory()->user->create( [ 'role' => 'subscriber' ] );
-        get_user_by( 'id', $editor_b )->add_cap( 'manage_wpsg' );
+        get_user_by( 'id', $editor_b )->add_cap( 'manage_mullion' );
 
         wp_set_current_user( $editor_b );
         $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $id . '/download' );

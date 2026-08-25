@@ -105,7 +105,7 @@ class Mullion_Maintenance {
         // excluded (conservative) — the P66-B migration seeds it for every
         // already-archived campaign, so this only shields anomalies.
         $query = new WP_Query([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => 100,
             'meta_query'     => [
@@ -144,7 +144,7 @@ class Mullion_Maintenance {
         $before = gmdate('Y-m-d H:i:s', strtotime("-{$grace_days} days"));
 
         $query = new WP_Query([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'trash',
             'posts_per_page' => 100,
             'date_query'     => [
@@ -270,7 +270,7 @@ class Mullion_Maintenance {
 
         // --- Campaign-level grants ---
         $campaigns = get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => -1,
             'fields'         => 'ids',
@@ -318,7 +318,7 @@ class Mullion_Maintenance {
 
         // --- Company-level grants (stored in term meta) ---
         $terms = get_terms([
-            'taxonomy'   => 'wpsg_company',
+            'taxonomy'   => 'mullion_company',
             'hide_empty' => false,
             'fields'     => 'ids',
         ]);

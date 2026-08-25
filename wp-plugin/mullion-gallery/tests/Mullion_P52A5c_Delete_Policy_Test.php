@@ -13,16 +13,16 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
     private function set_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** manage_wpsg but NOT manage_options. */
+    /** manage_mullion but NOT manage_options. */
     private function set_editor(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
@@ -59,7 +59,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
     public function test_template_delete_blocked_while_in_use() {
         $this->set_system_admin();
         $tid      = $this->make_template();
-        $campaign = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
+        $campaign = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
         update_post_meta($campaign, '_wpsg_layout_binding_template_id', $tid);
 
         $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$tid}");
@@ -73,7 +73,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
     public function test_template_delete_force_overrides_in_use() {
         $this->set_system_admin();
         $tid      = $this->make_template();
-        $campaign = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
+        $campaign = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
         update_post_meta($campaign, '_wpsg_layout_binding_template_id', $tid);
 
         $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$tid}");

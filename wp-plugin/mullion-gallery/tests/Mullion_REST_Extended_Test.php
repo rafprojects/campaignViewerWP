@@ -16,7 +16,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         parent::setUp();
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -31,7 +31,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title = 'Test Campaign', string $status = 'active'): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -478,7 +478,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
 
     public function test_archive_company() {
         // Create a company term.
-        $term = wp_insert_term('Test Corp', 'wpsg_company');
+        $term = wp_insert_term('Test Corp', 'mullion_company');
         $term_id = is_array($term) ? $term['term_id'] : 0;
         $this->assertGreaterThan(0, $term_id);
 
@@ -489,7 +489,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_list_company_access() {
-        $term = wp_insert_term('Access Corp', 'wpsg_company');
+        $term = wp_insert_term('Access Corp', 'mullion_company');
         $term_id = is_array($term) ? $term['term_id'] : 0;
 
         $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/companies/{$term_id}/access");
@@ -499,7 +499,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_grant_and_revoke_company_access() {
-        $term = wp_insert_term('Grant Corp', 'wpsg_company');
+        $term = wp_insert_term('Grant Corp', 'mullion_company');
         $term_id = is_array($term) ? $term['term_id'] : 0;
         $viewer = self::factory()->user->create(['role' => 'subscriber']);
 
@@ -1004,11 +1004,11 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_list_media_includes_tags_for_upload_items() {
         $aid = $this->create_test_attachment();
 
-        // Create a wpsg_media_tag term and assign it to the attachment.
+        // Create a mullion_media_tag term and assign it to the attachment.
         // wp_insert_term() returns WP_Error (with 'term_exists' code) when the
         // same slug already exists from a prior test run. Extract the existing
         // term_id from the error data in that case so the test stays idempotent.
-        $term_result = wp_insert_term('Portrait', 'wpsg_media_tag', ['slug' => 'portrait']);
+        $term_result = wp_insert_term('Portrait', 'mullion_media_tag', ['slug' => 'portrait']);
         if (is_wp_error($term_result)) {
             $existing_id = $term_result->get_error_data('term_exists');
             $this->assertNotEmpty($existing_id, 'wp_insert_term failed for an unexpected reason: ' . $term_result->get_error_message());
@@ -1017,7 +1017,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             $this->assertIsArray($term_result);
             $term_id = (int) $term_result['term_id'];
         }
-        wp_set_object_terms($aid, [$term_id], 'wpsg_media_tag');
+        wp_set_object_terms($aid, [$term_id], 'mullion_media_tag');
 
         $cid = $this->create_campaign('P31-H Tags Test');
         update_post_meta($cid, 'media_items', [

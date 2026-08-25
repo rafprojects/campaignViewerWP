@@ -77,7 +77,7 @@ msgid "Campaign"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:74
-msgid "SuperGallery"
+msgid "Mullion"
 msgstr ""
 
 #: includes/class-wpsg-cpt.php:76

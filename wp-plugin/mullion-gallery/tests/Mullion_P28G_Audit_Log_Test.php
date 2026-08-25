@@ -21,7 +21,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);

@@ -10,7 +10,7 @@
  *   - route the remaining global-only keys that actually changed to the GLOBAL
  *     option, subject to the shared settings guard (P72-C):
  *       · non-admin-only globals (e.g. settings_panel_animation) may be written
- *         by an editor (manage_wpsg) — the same keys they can write via /settings;
+ *         by an editor (manage_mullion) — the same keys they can write via /settings;
  *       · admin-only globals (e.g. cache_ttl) require manage_options and return
  *         an explicit 403 for editors (no longer silently dropped).
  *
@@ -19,11 +19,11 @@
  */
 class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
 
-    /** System admin: administrator + manage_wpsg (administrators hold manage_options). */
+    /** System admin: administrator + manage_mullion (administrators hold manage_options). */
     private function set_admin_user(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -31,10 +31,10 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
         return $uid;
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function set_editor(): int {
         mullion_ensure_editor_role();
-        $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
+        $uid = self::factory()->user->create(['role' => 'mullion_editor']);
         wp_set_current_user($uid);
         return $uid;
     }
@@ -158,7 +158,7 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
     //     dropped before P72-C).
     // -------------------------------------------------------------------------
 
-    /** Space-admin editor (manage_wpsg + space grant, no manage_options). */
+    /** Space-admin editor (manage_mullion + space grant, no manage_options). */
     private function make_editor_space(): array {
         $editor_id = $this->set_editor();
         $space_id  = Mullion_DB::insert_space([
@@ -236,7 +236,7 @@ class Mullion_P57A_Settings_Split_Save_Test extends WP_UnitTestCase {
     // mere presence of an admin-only key in the payload.
     //
     // SettingsPanel.handleSave() PUTs the WHOLE settings object (it hydrates from
-    // to_js(), which includes every admin-only field for a manage_wpsg user, and
+    // to_js(), which includes every admin-only field for a manage_mullion user, and
     // mergeSettingsWithDefaults() re-adds any the server stripped). Guarding on
     // presence therefore 403'd every save an editor made — including saves that
     // only touched a display key — and, because the guard is atomic, dropped

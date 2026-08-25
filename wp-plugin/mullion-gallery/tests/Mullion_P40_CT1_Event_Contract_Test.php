@@ -14,7 +14,7 @@ class Mullion_P40_CT1_Event_Contract_Test extends WP_UnitTestCase {
     private function set_admin(): int {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         $user    = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -24,7 +24,7 @@ class Mullion_P40_CT1_Event_Contract_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);

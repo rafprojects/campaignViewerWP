@@ -28,7 +28,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
     private function create_archived_campaign(string $archived_at, ?string $post_date_gmt = null): int {
         $post_date_gmt = $post_date_gmt ?? $archived_at;
         $id = wp_insert_post([
-            'post_type'     => 'wpsg_campaign',
+            'post_type'     => 'mullion_campaign',
             'post_title'    => 'Old Campaign',
             'post_status'   => 'publish',
             'post_date_gmt' => $post_date_gmt,
@@ -100,7 +100,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
 
         $old_date = gmdate('Y-m-d H:i:s', strtotime('-60 days'));
         $id = wp_insert_post([
-            'post_type'     => 'wpsg_campaign',
+            'post_type'     => 'mullion_campaign',
             'post_title'    => 'Active Old',
             'post_status'   => 'publish',
             'post_date_gmt' => $old_date,
@@ -189,7 +189,7 @@ class Mullion_Maintenance_Test extends WP_UnitTestCase {
         // earlier than it would have been.
         $old = gmdate('Y-m-d H:i:s', strtotime('-365 days'));
         $id  = wp_insert_post([
-            'post_type'     => 'wpsg_campaign',
+            'post_type'     => 'mullion_campaign',
             'post_title'    => 'No archived_at',
             'post_status'   => 'publish',
             'post_date_gmt' => $old,

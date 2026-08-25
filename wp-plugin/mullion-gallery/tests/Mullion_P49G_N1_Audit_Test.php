@@ -20,7 +20,7 @@ class Mullion_P49G_N1_Audit_Test extends WP_UnitTestCase {
         $ids = [];
         for ($i = 1; $i <= $n; $i++) {
             $campaign_id = wp_insert_post([
-                'post_type'   => 'wpsg_campaign',
+                'post_type'   => 'mullion_campaign',
                 'post_title'  => "P49G Test Campaign $i",
                 'post_status' => 'publish',
             ]);
@@ -57,7 +57,7 @@ class Mullion_P49G_N1_Audit_Test extends WP_UnitTestCase {
 
     public function test_does_not_return_trashed_campaigns(): void {
         $campaign_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Trashed',
             'post_status' => 'trash',
         ]);

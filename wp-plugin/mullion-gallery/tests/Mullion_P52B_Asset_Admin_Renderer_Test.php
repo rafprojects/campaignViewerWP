@@ -6,11 +6,11 @@
  * Proves the WP-admin "Asset Library" page is correctly gated:
  *   - registered with manage_options (System Admin only);
  *   - render_page() outputs the #mullion-assets-admin mount div;
- *   - a wpsg_editor lacks manage_options and cannot access the page.
+ *   - a mullion_editor lacks manage_options and cannot access the page.
  */
 class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
 
-    private const PARENT = 'edit.php?post_type=wpsg_campaign';
+    private const PARENT = 'edit.php?post_type=mullion_campaign';
 
     private function set_administrator(): int {
         $uid = self::factory()->user->create(['role' => 'administrator']);
@@ -20,7 +20,7 @@ class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
 
     private function set_editor(): int {
         mullion_ensure_editor_role();
-        $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
+        $uid = self::factory()->user->create(['role' => 'mullion_editor']);
         wp_set_current_user($uid);
         return $uid;
     }
@@ -64,9 +64,9 @@ class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
 
         $this->assertFalse(
             user_can($uid, 'manage_options'),
-            'wpsg_editor must not have manage_options and therefore cannot reach the WP-admin Asset Library page'
+            'mullion_editor must not have manage_options and therefore cannot reach the WP-admin Asset Library page'
         );
-        // The editor still keeps plugin access (manage_wpsg) so the REST API works.
-        $this->assertTrue(user_can($uid, 'manage_wpsg'), 'editor retains plugin access');
+        // The editor still keeps plugin access (manage_mullion) so the REST API works.
+        $this->assertTrue(user_can($uid, 'manage_mullion'), 'editor retains plugin access');
     }
 }

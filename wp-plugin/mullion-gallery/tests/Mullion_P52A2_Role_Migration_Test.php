@@ -1,14 +1,14 @@
 <?php
 
 /**
- * P52-A2: Role rename wpsg_admin → wpsg_editor.
+ * P52-A2: Role rename wpsg_admin → mullion_editor.
  *
  * Proves:
- *   - the wpsg_editor role carries exactly the intended caps (manage_wpsg +
+ *   - the mullion_editor role carries exactly the intended caps (manage_mullion +
  *     read + upload_files; NO custom CPT caps, NO manage_options);
- *   - the one-time migration reassigns legacy wpsg_admin users to wpsg_editor
- *     with their plugin access (manage_wpsg) intact, and removes the old role;
- *   - the /users create contract now accepts wpsg_editor and rejects wpsg_admin.
+ *   - the one-time migration reassigns legacy wpsg_admin users to mullion_editor
+ *     with their plugin access (manage_mullion) intact, and removes the old role;
+ *   - the /users create contract now accepts mullion_editor and rejects wpsg_admin.
  */
 class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
 
@@ -23,7 +23,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
     private function set_admin_user(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
@@ -32,17 +32,17 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
 
     public function test_editor_role_has_expected_caps() {
         mullion_ensure_editor_role();
-        $role = get_role('wpsg_editor');
+        $role = get_role('mullion_editor');
 
-        $this->assertNotNull($role, 'wpsg_editor role must exist');
-        $this->assertTrue($role->has_cap('manage_wpsg'), 'editor must have manage_wpsg');
+        $this->assertNotNull($role, 'mullion_editor role must exist');
+        $this->assertTrue($role->has_cap('manage_mullion'), 'editor must have manage_mullion');
         $this->assertTrue($role->has_cap('read'), 'editor must have read');
         $this->assertTrue($role->has_cap('upload_files'), 'editor must have upload_files');
     }
 
     public function test_editor_role_has_no_admin_or_cpt_caps() {
         mullion_ensure_editor_role();
-        $role = get_role('wpsg_editor');
+        $role = get_role('mullion_editor');
 
         $this->assertFalse($role->has_cap('manage_options'), 'editor must NOT have manage_options (no WP dashboard)');
 
@@ -56,21 +56,21 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
     }
 
     public function test_ensure_editor_role_strips_legacy_cpt_caps() {
-        // Simulate a wpsg_editor role left over from a build that granted CPT caps.
-        $caps = ['read' => true, 'upload_files' => true, 'manage_wpsg' => true];
+        // Simulate a mullion_editor role left over from a build that granted CPT caps.
+        $caps = ['read' => true, 'upload_files' => true, 'manage_mullion' => true];
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $caps[$cap] = true;
         }
-        remove_role('wpsg_editor');
-        add_role('wpsg_editor', 'Gallery Editor', $caps);
+        remove_role('mullion_editor');
+        add_role('mullion_editor', 'Gallery Editor', $caps);
 
         mullion_ensure_editor_role();
 
-        $role = get_role('wpsg_editor');
+        $role = get_role('mullion_editor');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $this->assertFalse($role->has_cap($cap), "ensure_editor_role must strip CPT cap '{$cap}'");
         }
-        $this->assertTrue($role->has_cap('manage_wpsg'));
+        $this->assertTrue($role->has_cap('manage_mullion'));
     }
 
     // ── Migration ─────────────────────────────────────────────────────────
@@ -87,16 +87,16 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         // Act.
         mullion_maybe_migrate_roles();
 
-        // Assert: user moved to wpsg_editor, access (manage_wpsg) intact.
+        // Assert: user moved to mullion_editor, access (manage_mullion) intact.
         $migrated = get_user_by('id', $uid);
-        $this->assertContains('wpsg_editor', $migrated->roles, 'user must be reassigned to wpsg_editor');
+        $this->assertContains('mullion_editor', $migrated->roles, 'user must be reassigned to mullion_editor');
         $this->assertNotContains('wpsg_admin', $migrated->roles, 'user must no longer hold wpsg_admin');
-        $this->assertTrue(user_can($uid, 'manage_wpsg'), 'migrated user keeps plugin access');
+        $this->assertTrue(user_can($uid, 'manage_mullion'), 'migrated user keeps plugin access');
         $this->assertFalse(user_can($uid, 'manage_options'), 'migrated user does not gain WP admin');
 
         // Legacy role removed; flag set so it does not re-run.
         $this->assertNull(get_role('wpsg_admin'), 'legacy wpsg_admin role must be removed');
-        $this->assertNotNull(get_role('wpsg_editor'), 'wpsg_editor role must exist after migration');
+        $this->assertNotNull(get_role('mullion_editor'), 'mullion_editor role must exist after migration');
         $this->assertNotEmpty(get_option('wpsg_roles_migrated_editor'), 'migration flag must be set');
     }
 
@@ -113,7 +113,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
 
     // ── /users create contract ────────────────────────────────────────────
 
-    public function test_create_user_accepts_wpsg_editor() {
+    public function test_create_user_accepts_mullion_editor() {
         mullion_ensure_editor_role();
         $this->set_admin_user();
         add_filter('pre_wp_mail', '__return_true', 10, 0);
@@ -121,12 +121,12 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
         $req->set_param('email', 'editor-' . uniqid() . '@example.com');
         $req->set_param('displayName', 'New Editor');
-        $req->set_param('role', 'wpsg_editor');
+        $req->set_param('role', 'mullion_editor');
         $res = rest_do_request($req);
 
-        $this->assertContains($res->get_status(), [200, 201], 'wpsg_editor must be an accepted role');
+        $this->assertContains($res->get_status(), [200, 201], 'mullion_editor must be an accepted role');
         $created = get_user_by('id', $res->get_data()['userId']);
-        $this->assertContains('wpsg_editor', $created->roles);
+        $this->assertContains('mullion_editor', $created->roles);
     }
 
     public function test_create_user_rejects_legacy_wpsg_admin() {
@@ -142,13 +142,13 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->assertSame(400, $res->get_status(), 'legacy wpsg_admin must be rejected by the role enum');
     }
 
-    public function test_list_roles_exposes_wpsg_editor_not_legacy() {
+    public function test_list_roles_exposes_mullion_editor_not_legacy() {
         $this->set_admin_user();
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/roles');
         $res = rest_do_request($req);
         $values = array_column($res->get_data()['items'], 'value');
 
-        $this->assertContains('wpsg_editor', $values, 'roles list must offer wpsg_editor');
+        $this->assertContains('mullion_editor', $values, 'roles list must offer mullion_editor');
         $this->assertNotContains('wpsg_admin', $values, 'roles list must not offer legacy wpsg_admin');
     }
 }

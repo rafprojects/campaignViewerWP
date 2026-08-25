@@ -17,7 +17,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
         // Ensure we have an admin user with the WPSG capability.
         $user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
         $user    = get_user_by( 'id', $user_id );
-        $user->add_cap( 'manage_wpsg' );
+        $user->add_cap( 'manage_mullion' );
         wp_set_current_user( $user_id );
     }
 
@@ -301,7 +301,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
 
     /**
      * A-4 regression: the REST JSON import path must create the layout template
-     * under the REGISTERED CPT (wpsg_layout_tpl) and bind by UUID, so it is
+     * under the REGISTERED CPT (mullion_layout_tpl) and bind by UUID, so it is
      * retrievable via Mullion_Layout_Templates::get(). Before P65-A this path built
      * a post of the unregistered `wpsg_layout_template` type and bound a numeric
      * ID — an orphan the template library never saw. Every existing test in this

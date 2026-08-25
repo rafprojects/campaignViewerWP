@@ -4,7 +4,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     private function set_admin_user(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         // Grant CPT caps introduced in J-4 so REST + wp_insert_post pass.
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
@@ -15,7 +15,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
 
     private function create_public_campaign(array $meta = []): int {
         $campaign_id = wp_insert_post([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'post_title' => 'Scheduled Campaign',
             'post_status' => 'publish',
         ]);
@@ -93,7 +93,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals(404, $response->get_status());
     }
 
-    public function test_create_campaign_requires_manage_wpsg_capability() {
+    public function test_create_campaign_requires_manage_mullion_capability() {
         // Unauthenticated (no user set).
         wp_set_current_user(0);
 

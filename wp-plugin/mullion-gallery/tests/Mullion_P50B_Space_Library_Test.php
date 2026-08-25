@@ -9,7 +9,7 @@
  *  - Associating an asset makes it visible to that space; dissociating hides it.
  *  - Open-mode spaces (and unscoped requests) always see the full library.
  *  - GET /spaces/{id}/library returns both association lists.
- *  - A manage_wpsg-only user without a grant cannot modify a delegated
+ *  - A manage_mullion-only user without a grant cannot modify a delegated
  *    space's library (403).
  *  - The one-time migration associates all pre-existing assets with all
  *    pre-existing delegated spaces.
@@ -36,7 +36,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
     private function set_super_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -47,7 +47,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
     private function make_wpsg_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         $this->assertFalse(user_can($user_id, 'manage_options'), 'Fixture must lack manage_options.');
         return $user_id;
     }

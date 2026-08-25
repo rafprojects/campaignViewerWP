@@ -187,7 +187,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
     public function test_cache_campaign_thumbnails_returns_zero_for_no_media() {
         $cid = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Empty',
             'post_status' => 'publish',
         ]);
@@ -200,7 +200,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
     public function test_cache_campaign_thumbnails_skips_local_attachments() {
         $cid = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Local',
             'post_status' => 'publish',
         ]);
@@ -220,7 +220,7 @@ class Mullion_Thumbnail_Cache_Test extends WP_UnitTestCase {
 
     public function test_cache_campaign_thumbnails_skips_missing_thumbnail() {
         $cid = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'No Thumb',
             'post_status' => 'publish',
         ]);

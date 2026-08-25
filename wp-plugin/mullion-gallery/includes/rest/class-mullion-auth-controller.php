@@ -86,7 +86,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
                     ],
                     'role'        => [
                         'type'    => 'string',
-                        'enum'    => ['subscriber', 'wpsg_editor'],
+                        'enum'    => ['subscriber', 'mullion_editor'],
                         'default' => 'subscriber',
                     ],
                     'campaignId'  => [
@@ -114,7 +114,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
 
         $campaign_ids = self::get_accessible_campaign_ids($user_id);
         // P53-A: two tier signals via the WP-coupling seam. isAdmin = editor-or-above
-        // (manage_wpsg); isSystemAdmin = system admin (manage_options). The frontend
+        // (manage_mullion); isSystemAdmin = system admin (manage_options). The frontend
         // derives the tier from this pair (system_admin > editor > viewer).
         $is_admin = Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_EDITOR);
         $is_system_admin = Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_SYSTEM_ADMIN);
@@ -333,7 +333,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
                 'email' => $user->user_email,
                 'displayName' => $user->display_name,
                 'login' => $user->user_login,
-                'isAdmin' => user_can($user->ID, 'manage_wpsg'),
+                'isAdmin' => user_can($user->ID, 'manage_mullion'),
             ];
         }
 
@@ -370,9 +370,9 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
         }
 
         // Validate role exists and prevent privilege escalation
-        $allowed_roles = ['subscriber', 'wpsg_editor'];
+        $allowed_roles = ['subscriber', 'mullion_editor'];
         if (!in_array($role, $allowed_roles, true)) {
-            return new WP_Error('mullion_invalid_role', 'Invalid role. Allowed: subscriber, wpsg_editor.', ['status' => 400]);
+            return new WP_Error('mullion_invalid_role', 'Invalid role. Allowed: subscriber, mullion_editor.', ['status' => 400]);
         }
 
         // Generate username from email (before @)
@@ -516,7 +516,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
                 'description' => 'Can view campaigns they are granted access to.',
             ],
             [
-                'value' => 'wpsg_editor',
+                'value' => 'mullion_editor',
                 'label' => 'Gallery Editor',
                 'description' => 'Can manage campaigns and access in this plugin, but not WordPress admin.',
             ],

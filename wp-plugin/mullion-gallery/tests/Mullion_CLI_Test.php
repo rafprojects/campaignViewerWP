@@ -96,7 +96,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
 
     private function create_campaign( string $title = 'Test Campaign', string $status = 'active' ): int {
         $id = wp_insert_post( [
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ] );
@@ -396,7 +396,7 @@ class Mullion_CLI_Test extends WP_UnitTestCase {
 
     public function test_campaign_export_import_round_trip(): void {
         // Export now routes through the shared build_entry() → full
-        // format_campaign(), which reads the wpsg_company / category taxonomies.
+        // format_campaign(), which reads the mullion_company / category taxonomies.
         Mullion_CPT::register();
 
         // Create source campaign with tags and a bound layout template.

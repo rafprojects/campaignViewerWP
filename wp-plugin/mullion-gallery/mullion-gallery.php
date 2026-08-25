@@ -103,6 +103,8 @@ if (!function_exists('mullion_fs')) {
 require_once MULLION_PLUGIN_DIR . 'includes/mullion-cron-hooks.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-license.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cpt.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rebrand-migration.php';
+add_action('plugins_loaded', ['Mullion_Rebrand_Migration', 'maybe_run'], 1);
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rest.php';
 require_once MULLION_PLUGIN_DIR . 'includes/i18n/class-mullion-frontend-strings.php';
 require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-embed.php';
@@ -163,13 +165,13 @@ function mullion_setup_roles_and_caps() {
     // Only run heavy admin-role setup if flagged or if capability is missing.
     $needs_setup = get_option('wpsg_needs_setup', '0');
     $admin_role = get_role('administrator');
-    $needs_cap = $admin_role && !$admin_role->has_cap('manage_wpsg');
+    $needs_cap = $admin_role && !$admin_role->has_cap('manage_mullion');
 
     if ($needs_setup === '1' || $needs_cap) {
         // System Admin (administrator): full plugin control + the custom CPT
         // caps that drive the wp-admin gallery screens.
         if ($admin_role) {
-            $admin_role->add_cap('manage_wpsg');
+            $admin_role->add_cap('manage_mullion');
             foreach (Mullion_CPT::CPT_CAPS as $cap) {
                 $admin_role->add_cap($cap);
             }
@@ -183,10 +185,10 @@ function mullion_setup_roles_and_caps() {
     }
 
     // Always self-heal the editor role: if the role is absent or is missing
-    // manage_wpsg (e.g. after a DB restore or WP role reset), repair it now.
+    // manage_mullion (e.g. after a DB restore or WP role reset), repair it now.
     // get_role() reads from the in-memory role cache — no DB hit when correct.
-    $editor_role = get_role('wpsg_editor');
-    if (!$editor_role || !$editor_role->has_cap('manage_wpsg')) {
+    $editor_role = get_role('mullion_editor');
+    if (!$editor_role || !$editor_role->has_cap('manage_mullion')) {
         mullion_ensure_editor_role();
     }
 }
@@ -199,15 +201,15 @@ function mullion_redirect_editors_from_admin() {
     if (wp_doing_ajax()) {
         return;
     }
-    if (current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
+    if (current_user_can('manage_mullion') && !current_user_can('manage_options')) {
         wp_safe_redirect(home_url());
         exit;
     }
 }
 
 /**
- * Ensure the `wpsg_editor` role exists with exactly the intended capabilities:
- * `manage_wpsg` + `read` + `upload_files`, with NO custom CPT caps (so it gets
+ * Ensure the `mullion_editor` role exists with exactly the intended capabilities:
+ * `manage_mullion` + `read` + `upload_files`, with NO custom CPT caps (so it gets
  * no wp-admin "Campaigns" menu) and NO `manage_options` (P52-A2). Idempotent —
  * also strips CPT caps left over from the legacy `wpsg_admin` role definition.
  */
@@ -215,12 +217,12 @@ function mullion_ensure_editor_role() {
     $editor_caps = [
         'read'         => true,
         'upload_files' => true,
-        'manage_wpsg'  => true,
+        'manage_mullion'  => true,
     ];
 
-    $role = get_role('wpsg_editor');
+    $role = get_role('mullion_editor');
     if (!$role) {
-        add_role('wpsg_editor', __('Gallery Editor', 'mullion-gallery'), $editor_caps);
+        add_role('mullion_editor', __('Gallery Editor', 'mullion-gallery'), $editor_caps);
         return;
     }
 
@@ -236,11 +238,11 @@ function mullion_ensure_editor_role() {
 }
 
 /**
- * One-time migration: rename the legacy `wpsg_admin` role to `wpsg_editor`
- * (P52-A2). Reassigns every user holding `wpsg_admin` to `wpsg_editor`, then
+ * One-time migration: rename the legacy `wpsg_admin` role to `mullion_editor`
+ * (P52-A2). Reassigns every user holding `wpsg_admin` to `mullion_editor`, then
  * removes the old role. Runs on init until complete (flag-gated), so it also
  * covers existing installs where mullion_setup_roles_and_caps() no longer re-runs
- * (administrator already has manage_wpsg, so its setup gate is closed).
+ * (administrator already has manage_mullion, so its setup gate is closed).
  */
 add_action('init', 'mullion_maybe_migrate_roles', 11);
 function mullion_maybe_migrate_roles() {
@@ -255,7 +257,7 @@ function mullion_maybe_migrate_roles() {
     foreach ($legacy_user_ids as $uid) {
         $user = get_user_by('id', $uid);
         if ($user instanceof WP_User) {
-            $user->add_role('wpsg_editor');
+            $user->add_role('mullion_editor');
             $user->remove_role('wpsg_admin');
         }
     }
@@ -441,7 +443,7 @@ function mullion_run_schedule_auto_archive() {
     // Process in batches of 100 until none remain.
     do {
         $query = new WP_Query([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'publish',
             'posts_per_page' => 100,
             'fields'         => 'ids',
@@ -604,5 +606,5 @@ Mullion_Image_Optimizer::register();
 // P19-C: WP-CLI command surface — only loaded when running under WP-CLI.
 if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
     require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cli.php';
-    WP_CLI::add_command( 'wpsg', 'Mullion_CLI' );
+    WP_CLI::add_command( 'mullion', 'Mullion_CLI' );
 }

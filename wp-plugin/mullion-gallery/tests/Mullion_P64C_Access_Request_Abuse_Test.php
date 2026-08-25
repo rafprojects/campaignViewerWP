@@ -35,7 +35,7 @@ class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
     }
 
     private function campaign(string $title = 'AR'): int {
-        $id = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => $title, 'post_status' => 'publish']);
+        $id = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => $title, 'post_status' => 'publish']);
         update_post_meta($id, 'status', 'active');
         return intval($id);
     }
@@ -74,7 +74,7 @@ class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
 
         // Approve as System Admin.
         $admin = self::factory()->user->create(['role' => 'administrator']);
-        get_user_by('id', $admin)->add_cap('manage_wpsg');
+        get_user_by('id', $admin)->add_cap('manage_mullion');
         wp_set_current_user($admin);
 
         $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");

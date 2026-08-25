@@ -33,7 +33,7 @@ class Mullion_P66B_Archived_At_Backfill_Test extends WP_UnitTestCase {
 
     private function create_archived_campaign(): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'P66-B Archived',
             'post_status' => 'publish',
         ]);
@@ -117,7 +117,7 @@ class Mullion_P66B_Archived_At_Backfill_Test extends WP_UnitTestCase {
 
     public function test_backfill_ignores_non_archived_campaigns() {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Active',
             'post_status' => 'publish',
         ]);

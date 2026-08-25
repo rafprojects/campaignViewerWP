@@ -371,7 +371,7 @@ class Mullion_Monitoring {
         $count = 0;
 
         $campaigns = get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => -1,
             'fields'         => 'ids',
@@ -443,7 +443,7 @@ class Mullion_Monitoring {
      */
     private static function count_campaigns_by_status($status) {
         $query = new WP_Query([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'meta_key'       => 'status',
             'meta_value'     => $status,

@@ -17,12 +17,12 @@ class Mullion_Campaign_Duplicator {
      */
     public static function duplicate( int $source_id, string $new_name, bool $copy_media = false, bool $duplicate_layout_template = false ) {
         $source = get_post( $source_id );
-        if ( ! $source || 'wpsg_campaign' !== $source->post_type ) {
+        if ( ! $source || 'mullion_campaign' !== $source->post_type ) {
             return new WP_Error( 'mullion_campaign_not_found', 'Campaign not found', [ 'status' => 404 ] );
         }
 
         $new_id = wp_insert_post( [
-            'post_type'    => 'wpsg_campaign',
+            'post_type'    => 'mullion_campaign',
             'post_title'   => $new_name,
             'post_content' => $source->post_content,
             'post_status'  => 'publish',
@@ -79,14 +79,14 @@ class Mullion_Campaign_Duplicator {
             }
         }
 
-        $company_terms = wp_get_post_terms( $source_id, 'wpsg_company', [ 'fields' => 'ids' ] );
+        $company_terms = wp_get_post_terms( $source_id, 'mullion_company', [ 'fields' => 'ids' ] );
         if ( ! is_wp_error( $company_terms ) && ! empty( $company_terms ) ) {
-            wp_set_object_terms( $new_id, $company_terms, 'wpsg_company' );
+            wp_set_object_terms( $new_id, $company_terms, 'mullion_company' );
         }
 
         // P66-D: carry the categorization taxonomies too — previously only the
         // company term was copied, so a duplicate lost its categories and tags.
-        foreach ( [ 'wpsg_campaign_category', 'wpsg_campaign_tag' ] as $taxonomy ) {
+        foreach ( [ 'mullion_campaign_category', 'mullion_campaign_tag' ] as $taxonomy ) {
             $term_ids = wp_get_post_terms( $source_id, $taxonomy, [ 'fields' => 'ids' ] );
             if ( ! is_wp_error( $term_ids ) && ! empty( $term_ids ) ) {
                 wp_set_object_terms( $new_id, $term_ids, $taxonomy );

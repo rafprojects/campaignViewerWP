@@ -10,7 +10,7 @@
  * Admins (owner everywhere) bypass; jobs with no stamped space skip the gate.
  *
  * Space fixtures follow the P52-A5b pattern: a delegated-mode editor is
- * manage_wpsg WITHOUT manage_options and gains space access only via an explicit
+ * manage_mullion WITHOUT manage_options and gains space access only via an explicit
  * grant (P53-A: open mode confers no implicit editor access).
  *
  * @package Mullion
@@ -22,10 +22,10 @@ class Mullion_P63I_Export_Job_Space_Test extends WP_UnitTestCase {
     public function setUp(): void {
         parent::setUp();
         $this->admin_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
-        // Production administrators are granted manage_wpsg at plugin setup; add it
-        // explicitly so the fixture is a true System Admin (manage_options + manage_wpsg)
+        // Production administrators are granted manage_mullion at plugin setup; add it
+        // explicitly so the fixture is a true System Admin (manage_options + manage_mullion)
         // that also satisfies the TIER_EDITOR gate on editor-tier jobs.
-        get_user_by( 'id', $this->admin_id )->add_cap( 'manage_wpsg' );
+        get_user_by( 'id', $this->admin_id )->add_cap( 'manage_mullion' );
     }
 
     public function tearDown(): void {
@@ -33,10 +33,10 @@ class Mullion_P63I_Export_Job_Space_Test extends WP_UnitTestCase {
         parent::tearDown();
     }
 
-    /** manage_wpsg but NOT manage_options — the delegated-space boundary case. */
+    /** manage_mullion but NOT manage_options — the delegated-space boundary case. */
     private function make_editor(): int {
         $uid = self::factory()->user->create( [ 'role' => 'subscriber' ] );
-        get_user_by( 'id', $uid )->add_cap( 'manage_wpsg' );
+        get_user_by( 'id', $uid )->add_cap( 'manage_mullion' );
         $this->assertFalse( user_can( $uid, 'manage_options' ), 'fixture must lack manage_options' );
         return $uid;
     }

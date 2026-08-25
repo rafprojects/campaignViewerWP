@@ -14,7 +14,7 @@ class Mullion_Auto_Archive_Cron_Test extends WP_UnitTestCase {
 
 	private function create_campaign( string $title, string $unpublish_at, ?string $status = 'active' ): int {
 		$post_id = wp_insert_post( [
-			'post_type'   => 'wpsg_campaign',
+			'post_type'   => 'mullion_campaign',
 			'post_title'  => $title,
 			'post_status' => 'publish',
 		] );

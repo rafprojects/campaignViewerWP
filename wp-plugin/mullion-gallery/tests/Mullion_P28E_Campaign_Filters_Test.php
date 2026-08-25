@@ -16,7 +16,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title, string $status = 'active'): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -25,25 +25,25 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
     }
 
     private function set_category(int $campaign_id, string $slug): void {
-        $term = get_term_by('slug', $slug, 'wpsg_campaign_category');
+        $term = get_term_by('slug', $slug, 'mullion_campaign_category');
         if (!$term) {
-            $result = wp_insert_term($slug, 'wpsg_campaign_category', ['slug' => $slug]);
+            $result = wp_insert_term($slug, 'mullion_campaign_category', ['slug' => $slug]);
             $term_id = $result['term_id'];
         } else {
             $term_id = $term->term_id;
         }
-        wp_set_object_terms($campaign_id, [$term_id], 'wpsg_campaign_category');
+        wp_set_object_terms($campaign_id, [$term_id], 'mullion_campaign_category');
     }
 
     private function set_tag(int $campaign_id, string $slug): void {
-        $term = get_term_by('slug', $slug, 'wpsg_campaign_tag');
+        $term = get_term_by('slug', $slug, 'mullion_campaign_tag');
         if (!$term) {
-            $result = wp_insert_term($slug, 'wpsg_campaign_tag', ['slug' => $slug]);
+            $result = wp_insert_term($slug, 'mullion_campaign_tag', ['slug' => $slug]);
             $term_id = $result['term_id'];
         } else {
             $term_id = $term->term_id;
         }
-        wp_set_object_terms($campaign_id, [$term_id], 'wpsg_campaign_tag');
+        wp_set_object_terms($campaign_id, [$term_id], 'mullion_campaign_tag');
     }
 
     private function set_template(int $campaign_id, string $uuid): void {

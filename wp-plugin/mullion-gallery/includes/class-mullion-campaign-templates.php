@@ -98,7 +98,7 @@ class Mullion_Campaign_Templates {
 
     public static function get_user_templates(): array {
         $posts = get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'publish',
             'posts_per_page' => -1,
             'meta_query'     => [[

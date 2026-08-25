@@ -1,6 +1,6 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-H, P74-I, P74-J, P74-L landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-E, P74-G, P74-H, P74-I, P74-J, P74-L landed, remaining tracks Planned
 **Created:** 2026-08-23
 **Last updated:** 2026-08-24 (P74-J landed — remaining JS/TS `wpsg`/`WPSG` identifiers, host class `.wp-super-gallery` → `.mullion-gallery`, window globals, `data-mullion-*` attrs, and live PHP emitters; P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
@@ -12,7 +12,7 @@
 | P74-B | Plugin metadata: header, `package.json` name | Done | Low |
 | P74-C | Text domain rename + i18n regeneration (~3,066 call sites, 16 language files) | Done | Medium |
 | P74-D | Shortcode rename, outright (no backward-compat alias) | Done | Low |
-| P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Planned | High (data migration) |
+| P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Done | High (data migration) |
 | P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
 | P74-G | PHP class + file rename (56 classes, 56 files) | Done | Medium (large, mechanical) |
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Done | Medium |
@@ -257,8 +257,18 @@ The campaign post type (`wpsg_campaign`), its taxonomies (`wpsg_company`, `wpsg_
 
 ### Validation
 
-- New PHPUnit test seeding a fixture DB with old-prefix data, running the migration, and asserting the new-prefix data is queryable and the old-prefix data is gone.
-- Manual QA pass in wp-env: seed old-style data manually via `wp post create --post_type=wpsg_campaign`, activate the renamed plugin, confirm the migration recovers it.
+- New PHPUnit test seeding a fixture DB with old-prefix data, running the migration, and asserting the new-prefix data is queryable and the old-prefix data is gone. **Met** — `Mullion_Rebrand_Migration_Test` 5/5.
+- Full PHPUnit suite: 1,309 tests, 13,724 assertions, 2 skipped, 0 failures (was 1,304 before the new file).
+- `npm run i18n:check:locales` — 2,379/2,379 for all 5 locales after the SuperGallery msgid swap.
+
+### Implementation Notes (2026-08-24)
+
+- **Scope-count discovery, again.** The Problem text's "CPT `wpsg_campaign` + 3 taxonomies + 12 capabilities" undercounted: **2 CPTs** (`wpsg_campaign`, `wpsg_layout_tpl`), **4 taxonomies** (`wpsg_company`, `wpsg_campaign_tag`, `wpsg_campaign_category`, `wpsg_media_tag`), **10** primitives in `Mullion_CPT::CPT_CAPS` plus plugin cap **`manage_wpsg`** (225 hits / 70 files) plus role slug **`wpsg_editor`** (and leftover `wpsg_admin`). `wpsg_campaign` alone was ~257 hits across 77 plugin files. Frontend `src/` had zero CPT/cap/role literals (REST abstracts them); P74-J already rewrote empty-state copy to `manage_mullion`.
+- **Shared migrator, versioned flag.** New `Mullion_Rebrand_Migration`, hooked at `plugins_loaded:1` (before `init` CPT register and `Mullion_DB::maybe_upgrade`). Flag is `mullion_rebrand_migration_version` (integer, not a boolean) so P74-F can bump 1 → 2 without being trapped behind a completed-once flag. Source strings in this class stay `wpsg_*` on purpose — a mechanical sweep of it would make it look for rows that no longer match the on-disk names.
+- **Step 1 (this track):** `$wpdb` UPDATE of `post_type` and `term_taxonomy.taxonomy`; reassign `wpsg_editor` / `wpsg_admin` users onto `mullion_editor`; remap role + per-user extra caps (`manage_wpsg` and the 10 CPT primitives); `remove_role` the old slugs. Direct SQL bypasses `wp_insert_post`, so the migrator `wp_cache_flush()`s afterwards (without that, in-request `get_post_type()` kept returning the old slug — caught by the new PHPUnit test).
+- **Mechanical code rename, not a blanket `wpsg_` → `mullion_`.** A global prefix replace would have rewritten P74-F option keys (notably `wpsg_campaign_tables_innodb_v15`, which contains the CPT token as a substring). Token list was CPT/tax/cap/role-specific; that option key was placeholder-protected. Folded in: P74-H leftover `admin_post_wpsg_create_space` + `_wpsg_nonce`, REST `/users` role enum, `WP_CLI::add_command( 'mullion' )`, CPT `menu_name` SuperGallery → Mullion (surgical `.po`/`.pot` msgid swap + `make-mo`/`make-php` only, not `make-pot`). `uninstall.php` deletes both old and new post types / taxonomies / roles / caps so an uninstall without a prior load does not leave orphans.
+- **P52-A2 subsumed, not deleted.** `mullion_maybe_migrate_roles()` still converts leftover `wpsg_admin` → `mullion_editor` (destination updated by the mechanical pass); the rebrand migrator does the same plus `wpsg_editor` → `mullion_editor`. P52 tests keep seeding the historical `wpsg_admin` slug.
+- **Held back on purpose for P74-F:** option keys (`wpsg_settings`, `wpsg_db_version`, …), post/term meta (`_wpsg_space_id`, …), custom tables, upload dirs, `PAGE_SLUG` (`wpsg-settings` / `wpsg-assets` / `wpsg-spaces`), `wpsg-full-bleed`, transients. REST namespace `/wp-super-gallery/v1/` and Freemius slug stay for their own tracks. `docs/**` for P74-M.
 
 ---
 

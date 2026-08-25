@@ -51,7 +51,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
                     // P33-B: per-campaign role level.
                     'access_level' => [
                         'type'    => 'string',
-                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        // P53-D: editing/managing comes from the mullion_editor role; grants are viewer-only.
                         'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
@@ -101,7 +101,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
                     // P33-B: role to assign on approval. Defaults to 'viewer'.
                     'access_level' => [
                         'type'    => 'string',
-                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        // P53-D: editing/managing comes from the mullion_editor role; grants are viewer-only.
                         'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
@@ -140,7 +140,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
                     // P33-B: per-company role level propagated to all company campaigns.
                     'access_level' => [
                         'type'    => 'string',
-                        // P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+                        // P53-D: editing/managing comes from the mullion_editor role; grants are viewer-only.
                         'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
@@ -808,7 +808,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $term_id = intval($request->get_param('id'));
         $include_campaigns = $request->get_param('include_campaigns') === 'true';
 
-        $term = get_term($term_id, 'wpsg_company');
+        $term = get_term($term_id, 'mullion_company');
         if (!$term || is_wp_error($term)) {
             return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
@@ -828,11 +828,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         // If requested, also include campaign-level grants for all campaigns under this company
         if ($include_campaigns) {
             $campaigns = get_posts([
-                'post_type' => 'wpsg_campaign',
+                'post_type' => 'mullion_campaign',
                 'posts_per_page' => -1,
                 'tax_query' => [
                     [
-                        'taxonomy' => 'wpsg_company',
+                        'taxonomy' => 'mullion_company',
                         'field' => 'term_id',
                         'terms' => $term_id,
                     ],
@@ -886,7 +886,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $term_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
 
-        $term = get_term($term_id, 'wpsg_company');
+        $term = get_term($term_id, 'mullion_company');
         if (!$term || is_wp_error($term)) {
             return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
@@ -921,11 +921,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         // Get first campaign for audit log (if any)
         $campaigns = get_posts([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'posts_per_page' => 1,
             'tax_query' => [
                 [
-                    'taxonomy' => 'wpsg_company',
+                    'taxonomy' => 'mullion_company',
                     'field' => 'term_id',
                     'terms' => $term_id,
                 ],
@@ -951,7 +951,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $term_id = intval($request->get_param('id'));
         $user_id = intval($request->get_param('userId'));
 
-        $term = get_term($term_id, 'wpsg_company');
+        $term = get_term($term_id, 'mullion_company');
         if (!$term || is_wp_error($term)) {
             return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
@@ -967,11 +967,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
         // Get first campaign for audit log (if any)
         $campaigns = get_posts([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'posts_per_page' => 1,
             'tax_query' => [
                 [
-                    'taxonomy' => 'wpsg_company',
+                    'taxonomy' => 'mullion_company',
                     'field' => 'term_id',
                     'terms' => $term_id,
                 ],
@@ -997,14 +997,14 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         $term_id = intval($request->get_param('id'));
         $revoke_access = $request->get_param('revokeAccess') === true || $request->get_param('revokeAccess') === 'true';
 
-        $term = get_term($term_id, 'wpsg_company');
+        $term = get_term($term_id, 'mullion_company');
         if (!$term || is_wp_error($term)) {
             return new WP_Error('mullion_company_not_found', 'Company not found', ['status' => 404]);
         }
 
         // Get all non-archived campaigns for this company
         $campaigns = get_posts([
-            'post_type' => 'wpsg_campaign',
+            'post_type' => 'mullion_campaign',
             'posts_per_page' => -1,
             'meta_query' => [
                 [
@@ -1015,7 +1015,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
             'tax_query' => [
                 [
-                    'taxonomy' => 'wpsg_company',
+                    'taxonomy' => 'mullion_company',
                     'field' => 'term_id',
                     'terms' => $term_id,
                 ],
@@ -1116,11 +1116,11 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         if ($space_id > 0) {
             $total = intval($wpdb->get_var(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-                "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p{$space_join} WHERE p.post_type = 'wpsg_campaign' AND p.post_status NOT IN ('trash','auto-draft')"
+                "SELECT COUNT(DISTINCT p.ID) FROM {$wpdb->posts} p{$space_join} WHERE p.post_type = 'mullion_campaign' AND p.post_status NOT IN ('trash','auto-draft')"
             ));
         } else {
             $total = intval($wpdb->get_var(
-                "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign' AND post_status NOT IN ('trash','auto-draft')"
+                "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'mullion_campaign' AND post_status NOT IN ('trash','auto-draft')"
             ));
         }
 
@@ -1131,7 +1131,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             $ids = $wpdb->get_col($wpdb->prepare(
                 // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
                 "SELECT DISTINCT p.ID FROM {$wpdb->posts} p{$space_join}
-                 WHERE p.post_type = 'wpsg_campaign'
+                 WHERE p.post_type = 'mullion_campaign'
                    AND p.post_status NOT IN ('trash','auto-draft')
                  ORDER BY p.post_title ASC
                  LIMIT %d OFFSET %d",
@@ -1141,7 +1141,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         } else {
             $ids = $wpdb->get_col($wpdb->prepare(
                 "SELECT ID FROM {$wpdb->posts}
-                 WHERE post_type = 'wpsg_campaign'
+                 WHERE post_type = 'mullion_campaign'
                    AND post_status NOT IN ('trash','auto-draft')
                  ORDER BY post_title ASC
                  LIMIT %d OFFSET %d",

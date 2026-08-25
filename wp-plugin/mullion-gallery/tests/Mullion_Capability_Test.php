@@ -21,10 +21,10 @@ class Mullion_Capability_Test extends WP_UnitTestCase {
         $this->assertEquals(403, $response->get_status());
     }
 
-    public function test_manage_wpsg_allows_campaign_create() {
+    public function test_manage_mullion_allows_campaign_create() {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         // Grant CPT caps introduced in J-4.
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
@@ -41,7 +41,7 @@ class Mullion_Capability_Test extends WP_UnitTestCase {
         $this->assertEquals('Allowed Campaign', $data['title'] ?? null);
     }
 
-    public function test_manage_wpsg_required_for_settings_update() {
+    public function test_manage_mullion_required_for_settings_update() {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);
 

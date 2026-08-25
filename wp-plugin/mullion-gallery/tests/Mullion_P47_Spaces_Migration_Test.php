@@ -74,7 +74,7 @@ class Mullion_P47_Spaces_Migration_Test extends WP_UnitTestCase {
     public function test_backfill_assigns_default_space_to_unassigned_campaign(): void {
         $default_id = (int) get_option( 'wpsg_default_space_id' );
 
-        $post_id = self::factory()->post->create( [ 'post_type' => 'wpsg_campaign', 'post_status' => 'publish' ] );
+        $post_id = self::factory()->post->create( [ 'post_type' => 'mullion_campaign', 'post_status' => 'publish' ] );
         delete_post_meta( $post_id, '_wpsg_space_id' );
 
         // Reset backfill state and re-run.
@@ -96,7 +96,7 @@ class Mullion_P47_Spaces_Migration_Test extends WP_UnitTestCase {
         ] );
         $this->assertGreaterThan( 0, $other_space_id );
 
-        $post_id = self::factory()->post->create( [ 'post_type' => 'wpsg_campaign' ] );
+        $post_id = self::factory()->post->create( [ 'post_type' => 'mullion_campaign' ] );
         delete_post_meta( $post_id, '_wpsg_space_id' );
         add_post_meta( $post_id, '_wpsg_space_id', $other_space_id, true );
 
@@ -112,7 +112,7 @@ class Mullion_P47_Spaces_Migration_Test extends WP_UnitTestCase {
     // ── Backfill: idempotent — no duplicate meta ───────────────────────────────
 
     public function test_backfill_is_idempotent_no_duplicate_meta(): void {
-        $post_id = self::factory()->post->create( [ 'post_type' => 'wpsg_campaign' ] );
+        $post_id = self::factory()->post->create( [ 'post_type' => 'mullion_campaign' ] );
         delete_post_meta( $post_id, '_wpsg_space_id' );
 
         // First run.

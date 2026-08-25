@@ -216,14 +216,14 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     public function test_get_health_data_counts_campaigns_by_status() {
         // Create active and archived campaigns.
         $active_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Active',
             'post_status' => 'publish',
         ]);
         update_post_meta($active_id, 'status', 'active');
 
         $archived_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Archived',
             'post_status' => 'publish',
         ]);

@@ -1526,10 +1526,10 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
     public static function list_media_tags($request) {
         [$page, $per_page, $offset] = self::parse_pagination($request);
 
-        $total = (int) wp_count_terms(['taxonomy' => 'wpsg_media_tag', 'hide_empty' => false]);
+        $total = (int) wp_count_terms(['taxonomy' => 'mullion_media_tag', 'hide_empty' => false]);
 
         $terms = get_terms([
-            'taxonomy'   => 'wpsg_media_tag',
+            'taxonomy'   => 'mullion_media_tag',
             'hide_empty' => false,
             'orderby'    => 'name',
             'order'      => 'ASC',
@@ -1561,12 +1561,12 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         return self::handle_term_insert(
             $request->get_param('name'),
             $request->get_param('slug'),
-            'wpsg_media_tag',
+            'mullion_media_tag',
         );
     }
 
     public static function delete_media_tag(WP_REST_Request $request) {
-        return self::handle_term_delete($request->get_param('id'), 'wpsg_media_tag');
+        return self::handle_term_delete($request->get_param('id'), 'mullion_media_tag');
     }
 
     // ── P48-F: Media Library Binary Export / Import ────────────────────────────

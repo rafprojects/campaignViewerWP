@@ -10,7 +10,7 @@
  *    target space's list does.
  *  - A simulated mid-transaction failure (after the second table) rolls every
  *    table back and leaves the post meta unchanged.
- *  - A manage_wpsg-only user is denied when the target space is delegated.
+ *  - A manage_mullion-only user is denied when the target space is delegated.
  *  - Moving a campaign already in the target space is a no-op (200, moved=false).
  *  - Moving into an archived space is rejected.
  *
@@ -25,7 +25,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     private function set_super_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -33,11 +33,11 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
-    /** manage_wpsg but NOT manage_options — the delegated-mode boundary case. */
+    /** manage_mullion but NOT manage_options — the delegated-mode boundary case. */
     private function make_wpsg_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -55,7 +55,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
 
     private function create_campaign_in_space(int $space_id, string $title): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -220,10 +220,10 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // Authorization: manage_wpsg-only user cannot move into a delegated space.
+    // Authorization: manage_mullion-only user cannot move into a delegated space.
     // -------------------------------------------------------------------------
 
-    public function test_manage_wpsg_only_user_denied_for_delegated_target() {
+    public function test_manage_mullion_only_user_denied_for_delegated_target() {
         $uid      = $this->make_wpsg_only_admin();
         $space_a  = $this->make_space('open');
         $space_b  = $this->make_space('delegated');
@@ -232,7 +232,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
         wp_set_current_user($uid);
         $response = $this->do_move($campaign, $space_b);
 
-        $this->assertSame(403, $response->get_status(), 'manage_wpsg-only user must not move a campaign into a delegated space.');
+        $this->assertSame(403, $response->get_status(), 'manage_mullion-only user must not move a campaign into a delegated space.');
         $this->assertSame($space_a, intval(get_post_meta($campaign, '_wpsg_space_id', true)));
     }
 

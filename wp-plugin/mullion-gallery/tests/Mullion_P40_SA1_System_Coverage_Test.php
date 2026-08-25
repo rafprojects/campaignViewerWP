@@ -25,7 +25,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
 
     private function set_admin(): void {
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -297,7 +297,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
 
     public function test_update_campaign_category_writes_taxonomy_term_updated() {
         $this->set_admin();
-        $result = wp_insert_term('SA1 Cat To Update', 'wpsg_campaign_category');
+        $result = wp_insert_term('SA1 Cat To Update', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
         $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
@@ -314,7 +314,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
 
     public function test_delete_campaign_category_writes_taxonomy_term_deleted() {
         $this->set_admin();
-        $result = wp_insert_term('SA1 Cat To Delete', 'wpsg_campaign_category');
+        $result = wp_insert_term('SA1 Cat To Delete', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
         $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
@@ -345,7 +345,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
 
     public function test_delete_campaign_tag_writes_taxonomy_term_deleted() {
         $this->set_admin();
-        $result  = wp_insert_term('sa1-tag-to-delete', 'wpsg_campaign_tag');
+        $result  = wp_insert_term('sa1-tag-to-delete', 'mullion_campaign_tag');
         $term_id = $result['term_id'];
 
         $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/tags/campaign/{$term_id}");

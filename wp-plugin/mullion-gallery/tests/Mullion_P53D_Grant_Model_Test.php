@@ -1,9 +1,9 @@
 <?php
 
 /**
- * P53-D: editing/managing comes from the wpsg_editor role; grants are viewer-only.
+ * P53-D: editing/managing comes from the mullion_editor role; grants are viewer-only.
  *
- * - A space editor (manage_wpsg) can edit campaigns in spaces they can access;
+ * - A space editor (manage_mullion) can edit campaigns in spaces they can access;
  *   a delegated-space editor WITHOUT access cannot (closes the residual F2 gap
  *   on the edit endpoints).
  * - A non-admin with a legacy editor/owner grant can VIEW but not mutate.
@@ -14,16 +14,16 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
     private function set_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function make_editor(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         return $uid;
     }
 
@@ -42,7 +42,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
     }
 
     private function campaign(int $space_id = 0, string $visibility = 'public'): int {
-        $id = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => 'D', 'post_status' => 'publish']);
+        $id = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'D', 'post_status' => 'publish']);
         update_post_meta($id, 'status', 'active');
         update_post_meta($id, 'visibility', $visibility);
         if ($space_id > 0) {
@@ -67,7 +67,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $cid = $this->campaign($space);
         wp_set_current_user($editor);
 
-        $this->assertSame(200, $this->update_status($cid), 'a wpsg_editor may edit a campaign in a space it has been granted access to');
+        $this->assertSame(200, $this->update_status($cid), 'a mullion_editor may edit a campaign in a space it has been granted access to');
     }
 
     public function test_editor_role_denied_in_delegated_space_without_access() {
@@ -75,8 +75,8 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $cid    = $this->campaign($this->make_space('delegated'));
         wp_set_current_user($editor);
 
-        // Closes the residual F2 gap: bare manage_wpsg no longer bypasses space scope on edit endpoints.
-        $this->assertSame(403, $this->update_status($cid), 'a wpsg_editor cannot edit campaigns in a delegated space they lack access to');
+        // Closes the residual F2 gap: bare manage_mullion no longer bypasses space scope on edit endpoints.
+        $this->assertSame(403, $this->update_status($cid), 'a mullion_editor cannot edit campaigns in a delegated space they lack access to');
     }
 
     public function test_editor_role_allowed_in_delegated_space_with_grant() {
@@ -86,7 +86,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $cid = $this->campaign($space);
         wp_set_current_user($editor);
 
-        $this->assertSame(200, $this->update_status($cid), 'a granted wpsg_editor may edit in a delegated space');
+        $this->assertSame(200, $this->update_status($cid), 'a granted mullion_editor may edit in a delegated space');
     }
 
     // ── A legacy grant lets you view, not mutate ──────────────────────────
@@ -168,7 +168,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $manage = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
         $manage->set_param('userId', $target);
         $manage->set_param('access_level', 'viewer');
-        $this->assertSame(403, rest_do_request($manage)->get_status(), 'a viewer-grantee (no manage_wpsg) cannot manage the space');
+        $this->assertSame(403, rest_do_request($manage)->get_status(), 'a viewer-grantee (no manage_mullion) cannot manage the space');
     }
 
     public function test_space_grant_endpoint_rejects_non_viewer_level() {

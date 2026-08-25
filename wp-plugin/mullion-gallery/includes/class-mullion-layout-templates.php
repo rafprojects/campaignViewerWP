@@ -106,7 +106,7 @@ class Mullion_Layout_Templates {
      *
      * @since 0.18.0 P20-I-1
      */
-    const CPT = 'wpsg_layout_tpl';
+    const CPT = 'mullion_layout_tpl';
 
     /**
      * Post meta key for template data blob.

@@ -23,7 +23,7 @@ class Mullion_P36C_Draft_Permissions_Test extends WP_UnitTestCase {
     private function set_admin_user(): int {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         $user    = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -40,7 +40,7 @@ class Mullion_P36C_Draft_Permissions_Test extends WP_UnitTestCase {
      */
     private function create_draft_campaign(int $author_id = 0): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Draft Campaign',
             'post_status' => 'publish',
             'post_author' => $author_id,
@@ -55,7 +55,7 @@ class Mullion_P36C_Draft_Permissions_Test extends WP_UnitTestCase {
      */
     private function create_active_campaign(): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Active Campaign',
             'post_status' => 'publish',
         ]);

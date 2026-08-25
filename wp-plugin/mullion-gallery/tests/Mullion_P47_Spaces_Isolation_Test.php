@@ -10,8 +10,8 @@
  * Covers:
  *  - GET /campaigns?space=ID returns only that space's campaigns.
  *  - GET /settings?space=ID returns that space's effective theme (A != B).
- *  - open mode: a manage_wpsg admin (no manage_options) is admitted.
- *  - delegated mode: that same manage_wpsg-only admin is denied (403).
+ *  - open mode: a manage_mullion admin (no manage_options) is admitted.
+ *  - delegated mode: that same manage_mullion-only admin is denied (403).
  *  - delegated mode: a manage_options super-admin is always admitted (escape hatch).
  *  - delegated mode: an explicit space grantee is admitted.
  */
@@ -20,7 +20,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     private function set_super_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'administrator' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -28,11 +28,11 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         return $user_id;
     }
 
-    /** manage_wpsg but NOT manage_options — the delegated-mode boundary case. */
+    /** manage_mullion but NOT manage_options — the delegated-mode boundary case. */
     private function make_wpsg_only_admin(): int {
         $user_id = self::factory()->user->create([ 'role' => 'editor' ]);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach ( Mullion_CPT::CPT_CAPS as $cap ) {
             $user->add_cap( $cap );
         }
@@ -51,7 +51,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
 
     private function create_campaign_in_space(int $space_id, string $title): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -110,11 +110,11 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // open mode: manage_wpsg admin is admitted.
+    // open mode: manage_mullion admin is admitted.
     // -------------------------------------------------------------------------
 
-    public function test_open_space_denies_manage_wpsg_without_grant() {
-        // P53-A: open-mode no longer grants implicit access to manage_wpsg editors.
+    public function test_open_space_denies_manage_mullion_without_grant() {
+        // P53-A: open-mode no longer grants implicit access to manage_mullion editors.
         // Editors need an explicit space grant regardless of isolation mode.
         $uid   = $this->make_wpsg_only_admin();
         $space = $this->make_space('open');
@@ -123,14 +123,14 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
-        $this->assertSame(403, $response->get_status(), 'manage_wpsg without an explicit grant must be denied even an open space.');
+        $this->assertSame(403, $response->get_status(), 'manage_mullion without an explicit grant must be denied even an open space.');
     }
 
     // -------------------------------------------------------------------------
-    // delegated mode: manage_wpsg-only admin is denied; super-admin escapes.
+    // delegated mode: manage_mullion-only admin is denied; super-admin escapes.
     // -------------------------------------------------------------------------
 
-    public function test_delegated_space_denies_manage_wpsg_only_admin() {
+    public function test_delegated_space_denies_manage_mullion_only_admin() {
         $uid   = $this->make_wpsg_only_admin();
         $space = $this->make_space('delegated');
         wp_set_current_user($uid);
@@ -138,7 +138,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
-        $this->assertSame(403, $response->get_status(), 'Delegated space must deny a manage_wpsg-only admin.');
+        $this->assertSame(403, $response->get_status(), 'Delegated space must deny a manage_mullion-only admin.');
     }
 
     public function test_delegated_space_admits_manage_options_escape_hatch() {

@@ -12,7 +12,7 @@ class Mullion_P39OC1_CacheHealth_Test extends WP_UnitTestCase {
 
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }

@@ -3,12 +3,12 @@
 /**
  * P53-A: the /permissions endpoint exposes two tier signals so the React app
  * can distinguish a system admin (manage_options) from a space editor
- * (manage_wpsg). isAdmin = editor-or-above; isSystemAdmin = system admin only.
+ * (manage_mullion). isAdmin = editor-or-above; isSystemAdmin = system admin only.
  *
  * Tiers (matching Mullion_Permissions::actor_has_tier):
- *   - viewer       : logged in, no manage_wpsg
- *   - editor       : manage_wpsg, NOT manage_options
- *   - system admin : manage_options (administrator; also carries manage_wpsg)
+ *   - viewer       : logged in, no manage_mullion
+ *   - editor       : manage_mullion, NOT manage_options
+ *   - system admin : manage_options (administrator; also carries manage_mullion)
  */
 class Mullion_P53A_Tier_Signal_Test extends WP_UnitTestCase {
 
@@ -19,14 +19,14 @@ class Mullion_P53A_Tier_Signal_Test extends WP_UnitTestCase {
     private function make_editor(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         return $uid;
     }
 
     private function make_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg'); // matches mullion_setup_roles_and_caps()
+        $user->add_cap('manage_mullion'); // matches mullion_setup_roles_and_caps()
         return $uid;
     }
 
@@ -45,8 +45,8 @@ class Mullion_P53A_Tier_Signal_Test extends WP_UnitTestCase {
 
     public function test_editor_is_admin_but_not_system_admin() {
         $data = $this->permissions_for($this->make_editor());
-        $this->assertTrue($data['isAdmin'], 'a wpsg_editor is editor-or-above');
-        $this->assertFalse($data['isSystemAdmin'], 'a wpsg_editor lacks manage_options');
+        $this->assertTrue($data['isAdmin'], 'a mullion_editor is editor-or-above');
+        $this->assertFalse($data['isSystemAdmin'], 'a mullion_editor lacks manage_options');
     }
 
     public function test_viewer_is_neither() {

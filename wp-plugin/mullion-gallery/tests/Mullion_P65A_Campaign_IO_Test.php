@@ -7,7 +7,7 @@
  * four transport copies and are now guaranteed by construction:
  *
  *   - A-4: JSON export embeds the layout template (was always null); JSON import
- *          creates it under the REGISTERED CPT (`wpsg_layout_tpl`) and binds by
+ *          creates it under the REGISTERED CPT (`mullion_layout_tpl`) and binds by
  *          UUID, so it round-trips and is visible to the template library.
  *   - G-4: URL-only (JSON) media import uses `source: 'external'` (was `'url'`).
  *   - attachmentId: sideloaded media carry `attachmentId`, so orphan detection
@@ -26,7 +26,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
         parent::setUp();
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -38,7 +38,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title = 'IO Test Campaign'): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -134,7 +134,7 @@ class Mullion_P65A_Campaign_IO_Test extends WP_UnitTestCase {
         $this->assertIsArray($result);
 
         // The binding must be a UUID resolvable through the CRUD class — proving
-        // the template lives under the registered CPT (wpsg_layout_tpl), not the
+        // the template lives under the registered CPT (mullion_layout_tpl), not the
         // old hand-rolled wpsg_layout_template.
         $bound_id = get_post_meta($result['id'], '_wpsg_layout_binding_template_id', true);
         $this->assertNotEmpty($bound_id);

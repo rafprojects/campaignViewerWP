@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) {
  * Mullion_License — entitlement (license) state, orthogonal to Mullion_Permissions (P62-A).
  *
  * Mullion_Permissions answers "WHO may call this REST route" (role/capability:
- * manage_options / manage_wpsg / logged-in viewer). Mullion_License answers "IS
+ * manage_options / manage_mullion / logged-in viewer). Mullion_License answers "IS
  * this pro feature unlocked for this site" (entitlement/license). These are
  * deliberately separate concerns: a permission failure hard-blocks a request
  * (403); an entitlement failure lets the request succeed but silently degrades

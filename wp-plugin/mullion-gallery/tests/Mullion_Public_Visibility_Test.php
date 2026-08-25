@@ -22,7 +22,7 @@ class Mullion_Public_Visibility_Test extends WP_UnitTestCase {
 
     private function campaign(int $space_id, string $visibility, string $status = 'active', array $meta = []): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'PV campaign',
             'post_status' => 'publish',
         ]);

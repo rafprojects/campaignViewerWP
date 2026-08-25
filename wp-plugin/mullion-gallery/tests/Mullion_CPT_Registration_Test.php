@@ -10,66 +10,66 @@ class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
 
     // ── Post type registration ─────────────────────────────────────────────
 
-    public function test_wpsg_campaign_post_type_is_registered() {
-        $this->assertTrue(post_type_exists('wpsg_campaign'));
+    public function test_mullion_campaign_post_type_is_registered() {
+        $this->assertTrue(post_type_exists('mullion_campaign'));
     }
 
-    public function test_wpsg_layout_tpl_post_type_is_registered() {
-        $this->assertTrue(post_type_exists('wpsg_layout_tpl'));
+    public function test_mullion_layout_tpl_post_type_is_registered() {
+        $this->assertTrue(post_type_exists('mullion_layout_tpl'));
     }
 
     public function test_campaign_post_type_is_not_public() {
-        $obj = get_post_type_object('wpsg_campaign');
+        $obj = get_post_type_object('mullion_campaign');
         $this->assertFalse($obj->public);
     }
 
     public function test_campaign_post_type_supports_title_and_editor() {
-        $supports = get_all_post_type_supports('wpsg_campaign');
+        $supports = get_all_post_type_supports('mullion_campaign');
         $this->assertArrayHasKey('title', $supports);
         $this->assertArrayHasKey('editor', $supports);
     }
 
     public function test_campaign_post_type_has_rest_support() {
-        $obj = get_post_type_object('wpsg_campaign');
+        $obj = get_post_type_object('mullion_campaign');
         $this->assertTrue($obj->show_in_rest);
     }
 
     // ── Taxonomy registration ──────────────────────────────────────────────
 
-    public function test_wpsg_company_taxonomy_is_registered() {
-        $this->assertTrue(taxonomy_exists('wpsg_company'));
+    public function test_mullion_company_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_company'));
     }
 
-    public function test_wpsg_campaign_tag_taxonomy_is_registered() {
-        $this->assertTrue(taxonomy_exists('wpsg_campaign_tag'));
+    public function test_mullion_campaign_tag_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_campaign_tag'));
     }
 
-    public function test_wpsg_campaign_category_taxonomy_is_registered() {
-        $this->assertTrue(taxonomy_exists('wpsg_campaign_category'));
+    public function test_mullion_campaign_category_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_campaign_category'));
     }
 
-    public function test_wpsg_media_tag_taxonomy_is_registered() {
-        $this->assertTrue(taxonomy_exists('wpsg_media_tag'));
+    public function test_mullion_media_tag_taxonomy_is_registered() {
+        $this->assertTrue(taxonomy_exists('mullion_media_tag'));
     }
 
     public function test_company_taxonomy_applies_to_campaign() {
-        $taxonomies = get_object_taxonomies('wpsg_campaign');
-        $this->assertContains('wpsg_company', $taxonomies);
-        $this->assertContains('wpsg_campaign_tag', $taxonomies);
+        $taxonomies = get_object_taxonomies('mullion_campaign');
+        $this->assertContains('mullion_company', $taxonomies);
+        $this->assertContains('mullion_campaign_tag', $taxonomies);
     }
 
     // ── P51-G: admin IA labels + Companies term-list column ────────────────────
 
     public function test_campaign_menu_is_supergallery_with_campaigns_list_item() {
-        $obj = get_post_type_object('wpsg_campaign');
-        $this->assertSame('SuperGallery', $obj->labels->menu_name);
+        $obj = get_post_type_object('mullion_campaign');
+        $this->assertSame('Mullion', $obj->labels->menu_name);
         // The submenu list item stays "Campaigns".
         $this->assertSame('Campaigns', $obj->labels->all_items);
         $this->assertSame('Add New Campaign', $obj->labels->add_new_item);
     }
 
     public function test_company_taxonomy_uses_company_labels_not_tag_defaults() {
-        $tax = get_taxonomy('wpsg_company');
+        $tax = get_taxonomy('mullion_company');
         $this->assertSame('Add New Company', $tax->labels->add_new_item);
         $this->assertSame('New Company Name', $tax->labels->new_item_name);
         // Guard against the default non-hierarchical tag fallback strings.
@@ -101,16 +101,16 @@ class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
 
     public function test_cpt_caps_contains_expected_capabilities() {
         $expected = [
-            'edit_wpsg_campaigns',
-            'edit_others_wpsg_campaigns',
-            'publish_wpsg_campaigns',
-            'read_private_wpsg_campaigns',
-            'delete_wpsg_campaigns',
-            'delete_private_wpsg_campaigns',
-            'delete_published_wpsg_campaigns',
-            'delete_others_wpsg_campaigns',
-            'edit_private_wpsg_campaigns',
-            'edit_published_wpsg_campaigns',
+            'edit_mullion_campaigns',
+            'edit_others_mullion_campaigns',
+            'publish_mullion_campaigns',
+            'read_private_mullion_campaigns',
+            'delete_mullion_campaigns',
+            'delete_private_mullion_campaigns',
+            'delete_published_mullion_campaigns',
+            'delete_others_mullion_campaigns',
+            'edit_private_mullion_campaigns',
+            'edit_published_mullion_campaigns',
         ];
 
         foreach ($expected as $cap) {
@@ -121,12 +121,12 @@ class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
     // ── Post meta registration ─────────────────────────────────────────────
 
     public function test_campaign_meta_fields_are_registered() {
-        // Registered meta keys for wpsg_campaign.
-        $registered = get_registered_meta_keys('post', 'wpsg_campaign');
+        // Registered meta keys for mullion_campaign.
+        $registered = get_registered_meta_keys('post', 'mullion_campaign');
 
         $expected_keys = ['visibility', 'status', 'media_items', 'tags', 'cover_image'];
         foreach ($expected_keys as $key) {
-            $this->assertArrayHasKey($key, $registered, "Meta key '$key' not registered for wpsg_campaign");
+            $this->assertArrayHasKey($key, $registered, "Meta key '$key' not registered for mullion_campaign");
         }
     }
 
@@ -214,14 +214,14 @@ class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
     public function test_campaign_meta_round_trip() {
         $user_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
         wp_set_current_user($user_id);
 
         $cid = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Meta Round Trip',
             'post_status' => 'publish',
         ]);

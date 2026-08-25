@@ -16,20 +16,20 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
 
     private function set_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
-        get_user_by('id', $uid)->add_cap('manage_wpsg');
+        get_user_by('id', $uid)->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function make_editor(): int {
         $uid = self::factory()->user->create(['role' => 'subscriber']);
-        get_user_by('id', $uid)->add_cap('manage_wpsg');
+        get_user_by('id', $uid)->add_cap('manage_mullion');
         return $uid;
     }
 
     private function make_company(string $name): int {
-        $term = wp_insert_term($name . ' ' . wp_generate_password(6, false), 'wpsg_company');
+        $term = wp_insert_term($name . ' ' . wp_generate_password(6, false), 'mullion_company');
         return intval($term['term_id']);
     }
 
@@ -53,10 +53,10 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
      * of the way. Pass a $space_id to attach one for the permission-gate tests.
      */
     private function campaign(int $company_term_id = 0, int $space_id = 0): int {
-        $id = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => 'C', 'post_status' => 'publish']);
+        $id = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'C', 'post_status' => 'publish']);
         update_post_meta($id, 'status', 'active');
         if ($company_term_id > 0) {
-            wp_set_object_terms($id, [$company_term_id], 'wpsg_company');
+            wp_set_object_terms($id, [$company_term_id], 'mullion_company');
         }
         if ($space_id > 0) {
             update_post_meta($id, '_wpsg_space_id', $space_id);
@@ -66,7 +66,7 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
 
     /**
      * Effective level for a user, evaluated as a logged-out observer so the
-     * `current_user_can('manage_wpsg')` admin short-circuit (which keys off the
+     * `current_user_can('manage_mullion')` admin short-circuit (which keys off the
      * CURRENT user, not $user_id) doesn't mask the grant/override resolution.
      */
     private function effective_level(int $user_id, int $campaign_id): string {

@@ -22,13 +22,13 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
 
     private function admin(): int {
         $uid = self::factory()->user->create(['role' => 'administrator']);
-        get_user_by('id', $uid)->add_cap('manage_wpsg');
+        get_user_by('id', $uid)->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
     private function campaign(): int {
-        $id = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => 'C', 'post_status' => 'publish']);
+        $id = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'C', 'post_status' => 'publish']);
         update_post_meta($id, 'status', 'active');
         return intval($id);
     }

@@ -43,7 +43,7 @@ class Mullion_P67B_Query_Builder_Test extends WP_UnitTestCase {
     public function test_admin_args_have_no_scoping_or_schedule_window() {
         $args = $this->build_args($this->filters(), true, 1);
 
-        $this->assertSame('wpsg_campaign', $args['post_type']);
+        $this->assertSame('mullion_campaign', $args['post_type']);
         $this->assertSame('publish', $args['post_status']);
         $this->assertArrayNotHasKey('post__in', $args, 'admin is unscoped');
 
@@ -118,7 +118,7 @@ class Mullion_P67B_Query_Builder_Test extends WP_UnitTestCase {
         $k1 = $this->build_key($this->filters(), 1, true);
         $k2 = $this->build_key($this->filters(), 1, true);
         $this->assertSame($k1, $k2);
-        $this->assertStringStartsWith('wpsg_campaigns_', $k1);
+        $this->assertStringStartsWith('mullion_campaigns_', $k1);
     }
 
     public function test_cache_key_varies_by_filter_user_and_admin_flag() {

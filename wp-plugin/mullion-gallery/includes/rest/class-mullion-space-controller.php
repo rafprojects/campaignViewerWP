@@ -88,7 +88,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
                     ],
                     'access_level' => [
                         'type'    => 'string',
-                        // P53-D: managing comes from the wpsg_editor role; space grants are viewer-only.
+                        // P53-D: managing comes from the mullion_editor role; space grants are viewer-only.
                         'enum'    => ['viewer'],
                         'default' => 'viewer',
                     ],
@@ -178,7 +178,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
 
         $spaces   = Mullion_DB::list_spaces($include_archived ? [] : ['archived' => 0]);
 
-        // P52-A5b: a space editor (manage_wpsg, not manage_options) sees only the
+        // P52-A5b: a space editor (manage_mullion, not manage_options) sees only the
         // spaces they can access; System Admins see every space. The list cache
         // key is already per-user, so the filtered view caches safely.
         if (!current_user_can('manage_options')) {
@@ -290,7 +290,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         }
 
         $has_campaigns = !empty(get_posts([
-            'post_type'      => 'wpsg_campaign',
+            'post_type'      => 'mullion_campaign',
             'post_status'    => 'any',
             'posts_per_page' => 1,
             'fields'         => 'ids',
@@ -430,7 +430,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
 
         $effective  = Mullion_Settings::get_effective_settings($space_id);
         $overrides  = json_decode($space->settings_overrides, true);
-        $is_admin   = current_user_can('manage_wpsg');
+        $is_admin   = current_user_can('manage_mullion');
 
         return new WP_REST_Response([
             'settings'  => Mullion_Settings::to_js($effective, $is_admin),
@@ -513,7 +513,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         $updated_space = Mullion_DB::get_space($space_id);
         $effective     = Mullion_Settings::get_effective_settings($space_id);
         $raw_overrides = json_decode($updated_space->settings_overrides, true);
-        $is_admin      = current_user_can('manage_wpsg');
+        $is_admin      = current_user_can('manage_mullion');
 
         return new WP_REST_Response([
             'settings'  => Mullion_Settings::to_js($effective, $is_admin),

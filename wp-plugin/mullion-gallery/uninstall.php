@@ -53,17 +53,19 @@ if ( ! empty( $settings['preserve_data_on_uninstall'] ) ) {
 	return;
 }
 
-// ── 1. Delete all wpsg_campaign posts + meta ────────────────
+// ── 1. Delete all mullion_campaign posts + meta ────────────────
+// Include the pre-P74-E post_type so an uninstall without a prior load
+// (migration never ran) does not leave orphaned rows.
 $campaign_ids = $wpdb->get_col(
-	"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_campaign'"
+	"SELECT ID FROM {$wpdb->posts} WHERE post_type IN ('mullion_campaign','wpsg_campaign')"
 );
 foreach ( $campaign_ids as $id ) {
 	wp_delete_post( (int) $id, true ); // force delete, bypasses trash
 }
 
-// ── 2. Delete all wpsg_layout_tpl posts + meta ─────────────
+// ── 2. Delete all mullion_layout_tpl posts + meta ─────────────
 $template_ids = $wpdb->get_col(
-	"SELECT ID FROM {$wpdb->posts} WHERE post_type = 'wpsg_layout_tpl'"
+	"SELECT ID FROM {$wpdb->posts} WHERE post_type IN ('mullion_layout_tpl','wpsg_layout_tpl')"
 );
 foreach ( $template_ids as $id ) {
 	wp_delete_post( (int) $id, true );
@@ -73,7 +75,10 @@ delete_option( 'wpsg_layout_templates' );
 delete_option( 'wpsg_layout_templates_backup' );
 
 // ── 3. Delete taxonomy terms ────────────────────────────────
-$taxonomies = [ 'wpsg_company', 'wpsg_campaign_category', 'wpsg_campaign_tag', 'wpsg_media_tag' ];
+$taxonomies = [
+	'mullion_company', 'mullion_campaign_category', 'mullion_campaign_tag', 'mullion_media_tag',
+	'wpsg_company', 'wpsg_campaign_category', 'wpsg_campaign_tag', 'wpsg_media_tag',
+];
 foreach ( $taxonomies as $taxonomy ) {
 	$terms = get_terms( [
 		'taxonomy'   => $taxonomy,
@@ -96,7 +101,7 @@ $options = [
 	'wpsg_oembed_provider_failures',
 	'wpsg_oembed_failure_count',       // P66-F: distinct from _provider_failures above
 	'wpsg_needs_setup',
-	'wpsg_roles_migrated_editor', // P52-A2: wpsg_admin → wpsg_editor migration flag
+	'wpsg_roles_migrated_editor', // P52-A2: wpsg_admin → mullion_editor migration flag
 	'wpsg_cache_version',
 	'wpsg_layout_templates',
 	'wpsg_media_refs_backfilled',
@@ -197,24 +202,26 @@ foreach ( $core_indexes as $ci ) {
 }
 
 // ── 7. Remove roles and capabilities ────────────────────────
-remove_role( 'wpsg_editor' );          // P52-A2 (Space Editor)
-remove_role( 'wpsg_admin' );           // legacy pre-P52-A2 role — remove if still present
+remove_role( 'mullion_editor' );          // P74-E (Space Editor)
+remove_role( 'wpsg_editor' );             // pre-P74-E role slug
+remove_role( 'wpsg_admin' );              // legacy pre-P52-A2 role — remove if still present
 
 $admin_role = get_role( 'administrator' );
 if ( $admin_role ) {
+	$admin_role->remove_cap( 'manage_mullion' );
 	$admin_role->remove_cap( 'manage_wpsg' );
 	// Remove custom CPT capabilities
 	$cpt_caps = [
-		'edit_wpsg_campaigns',
-		'edit_others_wpsg_campaigns',
-		'publish_wpsg_campaigns',
-		'read_private_wpsg_campaigns',
-		'delete_wpsg_campaigns',
-		'delete_private_wpsg_campaigns',
-		'delete_published_wpsg_campaigns',
-		'delete_others_wpsg_campaigns',
-		'edit_private_wpsg_campaigns',
-		'edit_published_wpsg_campaigns',
+		'edit_mullion_campaigns',
+		'edit_others_mullion_campaigns',
+		'publish_mullion_campaigns',
+		'read_private_mullion_campaigns',
+		'delete_mullion_campaigns',
+		'delete_private_mullion_campaigns',
+		'delete_published_mullion_campaigns',
+		'delete_others_mullion_campaigns',
+		'edit_private_mullion_campaigns',
+		'edit_published_mullion_campaigns',
 	];
 	foreach ( $cpt_caps as $cap ) {
 		$admin_role->remove_cap( $cap );

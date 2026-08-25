@@ -15,7 +15,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
 
     private function create_campaign(): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'P28-I Test Campaign',
             'post_status' => 'publish',
         ]);

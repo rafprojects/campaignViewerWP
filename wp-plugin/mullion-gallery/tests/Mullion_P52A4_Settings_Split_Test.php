@@ -3,9 +3,9 @@
 /**
  * P52-A4: system-vs-display settings split.
  *
- * Writing settings requires manage_wpsg (route gate). Writing a *system-level*
+ * Writing settings requires manage_mullion (route gate). Writing a *system-level*
  * key ($admin_only_fields — cache, uploads, auth provider, retention, …) ALSO
- * requires manage_options. A space editor (manage_wpsg only) may write
+ * requires manage_options. A space editor (manage_mullion only) may write
  * display/campaign keys but is denied (403) on system keys, with no partial
  * write of the rest of a mixed payload.
  */
@@ -14,15 +14,15 @@ class Mullion_P52A4_Settings_Split_Test extends WP_UnitTestCase {
     private function set_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function set_editor(): int {
         mullion_ensure_editor_role();
-        $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
+        $uid = self::factory()->user->create(['role' => 'mullion_editor']);
         wp_set_current_user($uid);
         return $uid;
     }

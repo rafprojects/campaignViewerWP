@@ -53,7 +53,7 @@ class Mullion_Settings_Controller extends Mullion_REST_Base {
         $settings    = $space_id > 0
             ? Mullion_Settings::get_effective_settings($space_id)
             : Mullion_Settings::get_settings();
-        $is_admin = current_user_can('manage_wpsg');
+        $is_admin = current_user_can('manage_mullion');
         $payload  = Mullion_Settings::to_js($settings, $is_admin);
         return self::respond_with_etag($request, $payload);
     }

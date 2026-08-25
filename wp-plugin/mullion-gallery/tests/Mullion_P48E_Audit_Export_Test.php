@@ -11,7 +11,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
         parent::setUp();
         $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $this->admin_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         foreach (Mullion_CPT::CPT_CAPS as $cap) {
             $user->add_cap($cap);
         }
@@ -63,7 +63,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
         }
 
         $campaign_id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => 'Audit Campaign',
             'post_status' => 'publish',
         ]);

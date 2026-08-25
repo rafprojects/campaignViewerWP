@@ -267,34 +267,34 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
     private function make_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** A space-scoped editor: manage_wpsg but NOT manage_options (the wpsg_admin/wpsg_editor shape). */
-    private function make_manage_wpsg_only(): int {
+    /** A space-scoped editor: manage_mullion but NOT manage_options (the wpsg_admin/mullion_editor shape). */
+    private function make_manage_mullion_only(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    public function test_require_admin_baseline_allows_manage_wpsg_denies_others() {
-        // Admin (manage_options + manage_wpsg) → allowed.
+    public function test_require_admin_baseline_allows_manage_mullion_denies_others() {
+        // Admin (manage_options + manage_mullion) → allowed.
         $this->make_admin();
         $this->assertTrue(
             Mullion_Permissions::check('settings.update'),
             'administrator must pass require_admin (settings.update)'
         );
 
-        // BASELINE (pre-A4/A5): a manage_wpsg-only editor ALSO passes require_admin
+        // BASELINE (pre-A4/A5): a manage_mullion-only editor ALSO passes require_admin
         // on system actions. F2 documents this; A4/A5 will tighten it.
-        $this->make_manage_wpsg_only();
+        $this->make_manage_mullion_only();
         $this->assertTrue(
             Mullion_Permissions::check('settings.update'),
-            'P52-A1 baseline: manage_wpsg-only currently passes require_admin'
+            'P52-A1 baseline: manage_mullion-only currently passes require_admin'
         );
 
         // Plain subscriber → denied.
@@ -368,14 +368,14 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
     // ── Capability-tier seam (single WP-coupling point) ───────────────────
 
     public function test_actor_has_tier_resolves_current_user() {
-        // System Admin (manage_options + manage_wpsg) meets every tier.
+        // System Admin (manage_options + manage_mullion) meets every tier.
         $this->make_admin();
         $this->assertTrue(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_SYSTEM_ADMIN));
         $this->assertTrue(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_EDITOR));
         $this->assertTrue(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_VIEWER));
 
-        // Space editor (manage_wpsg only) meets EDITOR + VIEWER, not SYSTEM_ADMIN.
-        $this->make_manage_wpsg_only();
+        // Space editor (manage_mullion only) meets EDITOR + VIEWER, not SYSTEM_ADMIN.
+        $this->make_manage_mullion_only();
         $this->assertFalse(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_SYSTEM_ADMIN));
         $this->assertTrue(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_EDITOR));
         $this->assertTrue(Mullion_Permissions::actor_has_tier(Mullion_Permissions::TIER_VIEWER));

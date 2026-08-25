@@ -57,7 +57,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         // Promote the test user to admin with WPSG capability.
         $user = get_user_by('id', $this->test_user_id);
         $user->set_role('administrator');
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
@@ -73,10 +73,10 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         $this->assertTrue($data['isSystemAdmin']);
     }
 
-    public function test_login_returns_editor_role_for_wpsg_editor() {
-        // manage_wpsg without manage_options = the wpsg_editor tier.
+    public function test_login_returns_editor_role_for_mullion_editor() {
+        // manage_mullion without manage_options = the mullion_editor tier.
         $user = get_user_by('id', $this->test_user_id);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
 
         $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
@@ -86,7 +86,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         $data     = $response->get_data();
 
         $this->assertEquals(200, $response->get_status());
-        $this->assertEquals('editor', $data['user']['role'], 'manage_wpsg-only resolves to the editor tier');
+        $this->assertEquals('editor', $data['user']['role'], 'manage_mullion-only resolves to the editor tier');
         $this->assertTrue($data['isAdmin'], 'an editor is editor-or-above');
         $this->assertFalse($data['isSystemAdmin'], 'an editor lacks manage_options');
     }

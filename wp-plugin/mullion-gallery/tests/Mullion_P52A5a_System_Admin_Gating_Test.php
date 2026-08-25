@@ -3,7 +3,7 @@
 /**
  * P52-A5a: system endpoints require manage_options.
  *
- * Closes most of F1: a space-scoped wpsg_editor (manage_wpsg only) is denied
+ * Closes most of F1: a space-scoped mullion_editor (manage_mullion only) is denied
  * every system/global REST action (health, caches, webhooks, global audit log,
  * media library, binary import/export, role assignment, cross-space aggregates,
  * company management, space creation, user creation), while a System Admin is
@@ -29,7 +29,7 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
         'spaces.create',
     ];
 
-    /** Global content actions a space editor must keep (still manage_wpsg). */
+    /** Global content actions a space editor must keep (still manage_mullion). */
     private const EDITOR_RETAINED_ACTIONS = [
         'categories.create', 'campaign_tags.create', 'media_tags.create', 'media.upload',
         'companies.list', 'layout_templates.create', 'assets.upload', 'fonts.upload',
@@ -39,15 +39,15 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
     private function make_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         wp_set_current_user($uid);
         return $uid;
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function make_editor(): int {
         mullion_ensure_editor_role();
-        $uid = self::factory()->user->create(['role' => 'wpsg_editor']);
+        $uid = self::factory()->user->create(['role' => 'mullion_editor']);
         wp_set_current_user($uid);
         return $uid;
     }
@@ -57,7 +57,7 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
         foreach (self::SYSTEM_ACTIONS as $action) {
             $this->assertFalse(
                 (bool) Mullion_Permissions::check($action),
-                "wpsg_editor must be denied system action '{$action}'"
+                "mullion_editor must be denied system action '{$action}'"
             );
         }
     }
@@ -77,7 +77,7 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
         foreach (self::EDITOR_RETAINED_ACTIONS as $action) {
             $this->assertTrue(
                 Mullion_Permissions::check($action) === true,
-                "wpsg_editor must retain content action '{$action}'"
+                "mullion_editor must retain content action '{$action}'"
             );
         }
     }
@@ -87,7 +87,7 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
         $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
         $this->assertFalse(
             (bool) Mullion_Permissions::check('users.create', $req),
-            'wpsg_editor must not create users'
+            'mullion_editor must not create users'
         );
 
         $this->make_system_admin();

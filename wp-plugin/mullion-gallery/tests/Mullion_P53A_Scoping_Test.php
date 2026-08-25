@@ -4,12 +4,12 @@
  * P53-A: surfacing the editor tier exposed two cross-space scoping gaps that
  * are closed here.
  *
- *  1. GET /campaigns gave ANY manage_wpsg user the unscoped "see all" view, so a
+ *  1. GET /campaigns gave ANY manage_mullion user the unscoped "see all" view, so a
  *     delegated-space editor saw campaign metadata for spaces it cannot access.
- *     Now only a System Admin (manage_options) gets the bypass; a wpsg_editor is
+ *     Now only a System Admin (manage_options) gets the bypass; a mullion_editor is
  *     scoped to public campaigns (everywhere, per P53-B) + everything in the
  *     spaces it can access.
- *  2. The page-spaces list / admin-bar nodes were emitted for every manage_wpsg
+ *  2. The page-spaces list / admin-bar nodes were emitted for every manage_mullion
  *     user without scoping. Now they are filtered to accessible spaces via
  *     Mullion_REST_Base::current_actor_can_access_space().
  */
@@ -25,18 +25,18 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
         parent::tearDown();
     }
 
-    /** Space editor: manage_wpsg but NOT manage_options. */
+    /** Space editor: manage_mullion but NOT manage_options. */
     private function make_editor(): int {
         $uid  = self::factory()->user->create(['role' => 'subscriber']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg');
+        $user->add_cap('manage_mullion');
         return $uid;
     }
 
     private function make_system_admin(): int {
         $uid  = self::factory()->user->create(['role' => 'administrator']);
         $user = get_user_by('id', $uid);
-        $user->add_cap('manage_wpsg'); // matches mullion_setup_roles_and_caps()
+        $user->add_cap('manage_mullion'); // matches mullion_setup_roles_and_caps()
         return $uid;
     }
 
@@ -55,7 +55,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
     }
 
     private function campaign(int $space_id, string $visibility, string $title): int {
-        $id = wp_insert_post(['post_type' => 'wpsg_campaign', 'post_title' => $title, 'post_status' => 'publish']);
+        $id = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => $title, 'post_status' => 'publish']);
         update_post_meta($id, 'status', 'active');
         update_post_meta($id, 'visibility', $visibility);
         update_post_meta($id, 'media_items', []);

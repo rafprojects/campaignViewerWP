@@ -26,7 +26,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
 
     private function create_campaign(string $title): int {
         $id = wp_insert_post([
-            'post_type'   => 'wpsg_campaign',
+            'post_type'   => 'mullion_campaign',
             'post_title'  => $title,
             'post_status' => 'publish',
         ]);
@@ -56,7 +56,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
 
         for ($i = 1; $i <= 3; $i++) {
-            wp_insert_term("Cat $i", 'wpsg_campaign_category', ['slug' => "cat-$i"]);
+            wp_insert_term("Cat $i", 'mullion_campaign_category', ['slug' => "cat-$i"]);
         }
 
         $req1 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
@@ -84,7 +84,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
 
     public function test_campaign_categories_over_bounds_returns_empty() {
         $this->set_admin();
-        wp_insert_term('Solo Cat', 'wpsg_campaign_category', ['slug' => 'solo-cat']);
+        wp_insert_term('Solo Cat', 'mullion_campaign_category', ['slug' => 'solo-cat']);
 
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
         $req->set_param('per_page', 50);
@@ -103,7 +103,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
 
         for ($i = 1; $i <= 3; $i++) {
-            wp_insert_term("Tag $i", 'wpsg_campaign_tag', ['slug' => "ctag-$i"]);
+            wp_insert_term("Tag $i", 'mullion_campaign_tag', ['slug' => "ctag-$i"]);
         }
 
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
@@ -125,7 +125,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
 
     public function test_campaign_tags_over_bounds_returns_empty() {
         $this->set_admin();
-        wp_insert_term('One Tag', 'wpsg_campaign_tag', ['slug' => 'one-tag']);
+        wp_insert_term('One Tag', 'mullion_campaign_tag', ['slug' => 'one-tag']);
 
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
         $req->set_param('page', 999);
@@ -143,7 +143,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
 
         for ($i = 1; $i <= 3; $i++) {
-            wp_insert_term("MTag $i", 'wpsg_media_tag', ['slug' => "mtag-$i"]);
+            wp_insert_term("MTag $i", 'mullion_media_tag', ['slug' => "mtag-$i"]);
         }
 
         $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/media');
@@ -235,7 +235,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
 
     public function test_company_access_pagination() {
         $this->set_admin();
-        $result  = wp_insert_term('Acme Corp', 'wpsg_company', ['slug' => 'acme-p28f']);
+        $result  = wp_insert_term('Acme Corp', 'mullion_company', ['slug' => 'acme-p28f']);
         $term_id = intval($result['term_id']);
 
         $grants = [];
@@ -327,7 +327,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
 
     public function test_companies_response_includes_pagination_fields() {
         $this->set_admin();
-        wp_insert_term('P28F Corp', 'wpsg_company', ['slug' => 'p28f-corp']);
+        wp_insert_term('P28F Corp', 'mullion_company', ['slug' => 'p28f-corp']);
 
         $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/companies');
         $data = rest_do_request($req)->get_data();
