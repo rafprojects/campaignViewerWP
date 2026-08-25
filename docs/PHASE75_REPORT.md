@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-07-27
-**Last updated:** 2026-08-23 (renumbered from Phase 74 and rewritten for the post-Mullion-rename codebase — see [PHASE74_REPORT.md](PHASE74_REPORT.md))
+**Last updated:** 2026-08-24 (color-system design collaboration closed out, round 6 — designer independently confirmed our index-7 correction, retracted the unverified value from the delivered theme JSON, and standardized spec numbers into two explicit reliability classes; P75-F scoped as a data migration — 16/23 themes' `primaryShade` must be re-derived in the same change the generator swaps, not after; P75-D/E/F are now the sole blocker on continuing the designer engagement — see Outcome)
 
 ### Tracks
 
@@ -11,6 +11,9 @@
 | P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Planned | Small-Medium |
 | P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Planned | Medium |
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
+| P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
+| P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
+| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping) — gates P74-N's `primaryShade` value and P75-E's step 3 repair layer | Planned | Small-Medium |
 
 ---
 
@@ -174,6 +177,132 @@ No changes to the premium build, Vitest sanity gate, or PHPUnit sanity gate step
 - Manual read-through diffing the doc against `package.json`'s actual script names and `release.yml`'s actual ZIP-naming output (post P75-B) to catch drift before it ships, same as this track exists to fix in the first place.
 - No automated doc-link checker exists in this repo (confirmed: no CI step lints markdown links) — this stays a manual check, consistent with how the other guides are maintained.
 
+## Track P75-D - Decouple admin chrome from the gallery theme by default
+
+### Problem
+
+Originated from a designer review of the new default theme's color system (`.wordpress-org/color-response-from-designer.md.md`, response drafted in `.wordpress-org/response-to-designer.md`). The designer's core point: the Settings Panel and Layout Builder are surfaces the same admin/agency user sees every day across every site they run, unlike the front-end gallery embed, which is themed per-site specifically to match that site's own visitors and brand. Today, the admin-side chrome unintentionally inherits whatever gallery display theme is currently selected, rather than staying fixed to the Mullion brand:
+
+- `src/main.tsx:93` — `ThemedApp` calls `useTheme()`, which resolves the *currently selected gallery theme*, and feeds it into the `MantineProvider` (`src/main.tsx:109`) wrapping the whole app tree, including the lazy-loaded Settings Panel / Admin Panel.
+- `src/hooks/useBuilderShellColors.ts:27-29` — the Layout Builder shell independently calls `getTheme(themeId)` and derives its own accent (`colors.primary[5] ?? colors.accent`) from it.
+- `src/components/Admin/LayoutBuilder/LayoutBuilderModal.tsx:115-127` — those derived colors are written onto CSS custom properties (`--wpsg-builder-*`, including `--wpsg-builder-accent`) that drive the Builder's own chrome.
+- `src/styles/builder.css:43-45` — Dockview's panel-docking chrome (active-panel outline, drag-over highlight) reads `--wpsg-builder-accent` directly, so it visibly reskins when the gallery theme changes.
+
+This was investigated and confirmed against a separate designer claim (that Builder *selection/snap-guide* UI is accent-derived and risks disappearing against user photos) — that claim turned out to be **false**: selection handles, snap guides, rulers, and the grid all already use fixed, theme-independent colors (`src/components/Admin/LayoutBuilder/LayoutSlotComponent.tsx:558,752`, `src/components/Admin/LayoutBuilder/LayerRow.tsx:162-169`, `src/hooks/useBuilderOverlayColors.ts:41-43`), unaffected by this track either way. The only genuinely theme-derived admin-side chrome is the Settings Panel's own Mantine theme and the Builder's Dockview panel-docking outline — cosmetic app-shell styling, not anything overlaid on user photos. Two standalone wp-admin pages (Gallery Spaces, Asset Library) are already unaffected today — they mount a bare `MantineProvider` with no theme override (`src/components/Admin/SpacesAdminApp.tsx:41`, `src/components/Admin/GlobalAssetAdminApp.tsx:33`) — so this track's scope is exactly the Settings Panel + Layout Builder shell, not "all of wp-admin."
+
+### Decision
+
+Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Panel + Builder chrome, but keep an explicit toggle to restore full theming for anyone who wants the "editor matches what you're building" cohesion (comparable to how VS Code lets a user theme the whole editor chrome, not just the code being edited). This preserves the theme engine's value as a power-user option rather than removing a capability outright, while fixing the default brand-consistency gap the designer flagged. The theme engine itself is untouched by this track either way — its only real job, generating the full palette/ramp applied to the public-facing gallery embed for whichever of the 23+ themes a site owner picks, is unaffected regardless of this setting.
+
+### Fix (sketch — not yet detailed)
+
+- New setting, canonical name pinned to remove the ambiguity an earlier informal description of this track had (see `.wordpress-org/response-to-designer.md` history): **`applyThemeEverywhere: false`** by default. `false` means chrome is locked to the fixed Mullion brand palette; `true` restores today's behavior (chrome follows the selected gallery theme). `ThemedApp` (`src/main.tsx`) and `useBuilderShellColors.ts` resolve their palette from a fixed Mullion brand theme object instead of `useTheme()`/`getTheme(themeId)` whenever the flag is `false`.
+- Where the setting lives (a dedicated "advanced" toggle vs. folded into the existing theme-selection settings area) and its exact plumbing through `useTheme()`/`useBuilderShellColors()` needs design during implementation — not resolved by this planning pass.
+
+### Acceptance criteria
+
+- With the toggle off (default), the Settings Panel and Layout Builder chrome always render in the Mullion brand palette regardless of the gallery's selected display theme.
+- With the toggle on, behavior is pixel-identical to today's (Settings Panel + Builder chrome follow the selected gallery theme).
+- The public-facing gallery embed's theming is unaffected by this setting in either state.
+- Two standalone admin pages (Gallery Spaces, Asset Library) remain unaffected, consistent with their current unthemed behavior.
+
+### Validation
+
+- Not yet started — full test plan (Vitest for the new setting's branch logic, manual verification of both toggle states across at least one non-default gallery theme) to be written when this track is picked up.
+
+---
+
+## Track P75-E - Non-text UI contrast correctness (WCAG 1.4.11)
+
+### Problem
+
+A second round of designer review on P75-D (`.wordpress-org/color-response-from-designer.md.md`) flagged that the Layout Builder's panel-docking chrome (active-panel outline, drag-over border/background) draws in the raw theme accent with no contrast guarantee against its own panel surface, and that a custom theme can make this arbitrarily worse. Investigating that claim against the actual code (rather than the designer's own approximation of it) surfaced a bigger and more specific problem than either side had scoped:
+
+1. **The code never uses the raw accent hex.** `useBuilderShellColors.ts:29` derives the Builder's accent as `colors.primary[5] ?? colors.accent` — one rung of the theme's auto-generated 10-step ramp, not the raw base color the designer's table tested. `[5]` is **hardcoded**, ignoring each theme's own authored `colors.primaryShade[colorScheme]` — the field every theme JSON already carries specifically to name which rung its UI fills should use. Checked against all 23 shipped theme definitions: **16 of 23 have a `primaryShade` that differs from index 5**, meaning the Builder's panel chrome has been silently ignoring most themes' own authored intent since before this rebrand — a pre-existing, independent defect, not something either this phase or the designer conversation created.
+2. **Once the correct authored shade is used instead of the hardcoded one, the contrast picture changes.** The designer's single flagged example (Sunset Boulevard, reported ~2.26–2.68:1 depending on surface approximation) **passes at 3.73:1** once bug #1 is fixed — their fix target didn't need a WCAG-specific repair at all, just the existing-field bug fixed. But a *different* set of themes still fails 3:1 even using their own correctly-authored shade: **catppuccin-mocha, crimson-canvas, darcula, default-dark (pre-Rig Cyan), forest-whisper, material-dark, solarized-dark, tokyo-night — 8 of 23.**
+3. **The footprint is bigger than "the Builder."** The same raw-primary/accent-as-non-text-indicator pattern (borders, hover backgrounds, active-tab indicators) appears at minimum 21 more times outside the Builder shell, in general admin CSS (`src/styles/global.scss`'s `.wpsg-admin-btn:hover` border, `.wpsg-mantine-tabs-tab[data-active]` border, `.wpsg-mantine-select-option[data-selected]` background; `MediaTab.module.scss`), and the same question applies to the front-end gallery embed itself (e.g. `CampaignCard`'s focus ring, adapter hover-border treatments) — none of which have been audited against this criterion yet.
+
+The designer's proposed repair mechanism — "derive it, don't pin it: keep the theme's shade where it already clears 3:1, step to the nearest rung that does where it doesn't" — references a mechanism named `accentFillRung`, which **does not exist anywhere in this codebase**. Its provenance is unconfirmed; the response to the designer asks directly where the term came from rather than guessing.
+
+### Scope
+
+**Both admin chrome and the front-end gallery embed** — every place a theme's `primary`/`accent` color is used as a non-text UI indicator (border, background, outline, focus ring — anything WCAG 1.4.11 governs), not only the Builder's panel-docking chrome. This is a real expansion from where the designer's original finding was scoped, made deliberately: the same underlying pattern (raw ramp color used for a UI-state indicator with no contrast guarantee) recurs throughout the product, and fixing only the Builder would leave the identical defect everywhere else it also appears.
+
+### Fix — sequenced, not a single change
+
+**Step 1 — fix the authored-shade bug first, on its own merits.** Replace every hardcoded `primary[5]`-style lookup (starting with `useBuilderShellColors.ts`, then each of the ≥21 non-Builder sites found so far) with the theme's own `colors.primaryShade[colorScheme]`. This is a correctness fix independent of WCAG — it makes every theme render the UI-fill shade its own author actually specified — and it is a prerequisite for step 2, since acting on wrong data would misdiagnose which themes have a real problem (as happened with the Sunset Boulevard example).
+
+**Step 2 — spike: full audit, all 23 themes × every non-text indicator site, admin and front-end.** With step 1's correct-by-authored-intent baseline established, measure real contrast for every (theme, indicator-site, surface) combination and confirm the true failure set — expected to be close to the 8 themes found in this investigation for the Builder specifically, but not yet confirmed for the front-end gallery or the other 21 admin sites. This spike's job is to produce that confirmed list before any repair-layer code is written, given how much the designer's own 8-theme sample diverged from what the real code does.
+
+The spike carries two methodology requirements from a second designer review round (`.wordpress-org/color-response-from-designer.md.md`, round 4), both to be settled empirically rather than assumed:
+
+- **Classify before measuring pass/fail.** WCAG 1.4.11's 3:1 bar applies only to a non-text indicator that is the *sole* means of identifying a UI component or state. A hover border that merely reinforces a state already signaled another way (cursor change, tooltip, an already-distinct icon) is decorative and exempt — the same distinction the designer's finished palette formalizes as `border` (1.46:1, decorative dividers, exempt) vs. `borderStrong` (3:1, input outlines and focusable edges — the affordance itself). Focus rings are always the non-exempt case: run every one of the ≥21+ admin sites and the front-end sites through this classification *before* computing pass/fail, not after — repairing an exempt decorative site the same as a sole-indicator one is how the fix makes the admin UI look heavier without actually improving accessibility.
+- **Test the fill-vs-stroke-shade hypothesis, don't assume it.** `primaryShade` is authored to answer "what shade of the accent does a white button label sit on" (a 4.5:1-under-white-text criterion — see round 4's `COLOR-SPEC.md` §2) — a different question from "what shade of the accent is visible as a thin border against this panel surface" (3:1 against the *surface*, no text-legibility component). The designer's own modeling of the confirmed Builder failures suggests these two needs may require different ramp rungs — tokyo-night and catppuccin-mocha ~3 rungs apart, material-dark and solarized-dark ~2 apart — which, if it holds generally, means the repair layer needs two roles (a fill rung and a separate stroke rung), not one. Flagged explicitly as unconfirmed: their own model doesn't explain forest-whisper (predicts 0 rungs of separation, i.e. no problem, but forest-whisper fails today), and it was built on the same surface approximation already shown wrong twice in this investigation. The spike should test this directly — for every theme in the confirmed failure set, does a single `primaryShade`-derived rung satisfy both the fill criterion and 3:1-against-surface, or genuinely not — before deciding whether a second shade role is needed at all.
+
+**Step 3 — criterion-based repair layer, only where the spike found a real failure.** For each (theme, site) pair that still fails 3:1 after step 1, step to the nearest ramp rung (by generated-ramp index, not by re-deriving an arbitrary new color) that clears 3:1 against its actual adjacent surface — the designer's proposed mechanism, implemented for real this time, scoped to only the confirmed failures rather than applied blanket. Requires the OKLCH/gamut-mapping work from P75-D's sibling discussion (correct rung selection depends on the ramp being generated correctly) to be sequenced sensibly — see Execution Priority.
+
+### Acceptance criteria
+
+- Every theme's admin-chrome and front-end non-text UI indicators render at the theme's own authored `primaryShade`-derived color, not a hardcoded ramp index.
+- The spike produces a confirmed, complete list of (theme, site) pairs failing 3:1 — not an estimate — covering admin chrome and the front-end gallery.
+- Every confirmed failure is repaired via the nearest-passing-rung mechanism; every already-passing pair is provably unchanged (no regression from the repair layer touching things that didn't need it).
+- `auditThemeContrast`-style automated coverage exists for this criterion going forward (mirroring how text contrast is already a blocking CI gate) — a hardcoded-index regression like the one found here shouldn't be possible to reintroduce silently.
+
+### Validation
+
+- Not yet started. The spike itself (step 2) is the first deliverable and directly informs the shape of automated test coverage for step 3.
+
+---
+
+## Track P75-F - Migrate the ramp generator from HSL to OKLCH
+
+### Problem
+
+`packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`.wordpress-org/color-response-from-designer.md.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
+
+- **P74-N's `primaryShade` value.** The designer's Rig Cyan spec (`.wordpress-org/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). An earlier revision reported the answer as an OKLCH-only rung name (since retracted — see below); the spec's final state carries no value at all for Rig Cyan, since the current HSL generator and the not-yet-designed OKLCH generator resolve the criterion to different, currently-unknown-for-OKLCH indices. Setting `primaryShade` before P75-F lands would mean guessing.
+- **P75-E step 3's repair layer**, which selects a ramp rung by criterion (nearest rung clearing 3:1 against a panel/UI surface) — correctness of that selection depends on the ramp itself being generated correctly.
+
+### The gamut-mapping requirement (not optional)
+
+OKLCH can describe colors outside the sRGB gamut. The naive port — hold chroma constant, step lightness — pushes the light rungs of any high-chroma accent out of gamut; clipping the resulting RGB channels back into range **shifts hue**, which a plain HSL ramp (in-gamut by construction) never does. Demonstrated against Cyberpunk's `#ff2d95` (C=0.249):
+
+| L | naive clip | hue drift | gamut-mapped | hue drift |
+|---|---|---|---|---|
+| 0.95 | `#ff9af0` | 24.8° | `#ffe7ee` | 0.7° |
+| 0.88 | `#ff82d9` | 17.2° | `#ffc5d8` | 0.2° |
+| 0.78 | `#ff5db9` | 8.5° | `#ff8eb8` | 0.1° |
+| 0.68 | `#ff3499` | 0.9° | `#ff4199` | 0.1° |
+
+A naive OKLCH port would be **worse** than the HSL generator it replaces for exactly the themes (high-chroma dark accents) most likely to need it.
+
+### Fix
+
+Before emitting each rung, test whether `oklch(L, C, H)` falls inside sRGB; if not, binary-search chroma downward, holding L and H fixed, until it does. Estimated ~15 lines. The chroma taper already used cosmetically for the Rig Cyan ramp is a refinement on top of this, not a substitute for it.
+
+**This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`.wordpress-org/color-response-from-designer.md.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
+
+**In the same change that swaps the generator:**
+1. Re-derive `primaryShade` for all 16 affected themes against the new OKLCH ramp, by the same criterion each was presumably chosen for originally (first rung from the dark end clearing 4.5:1 against the theme's lightest surface and under white text — the criterion `COLOR-SPEC.md` §2 defines for Rig Cyan, generalized to every theme).
+2. Add a regression test: for every shipped theme, the *resolved* `primaryShade` color clears its intended contrast bar. This is what would have caught this class of bug before it shipped, and prevents the next recurrence (e.g. a future ramp-formula tweak that isn't a full algorithm swap).
+
+> **Note on the numbers, resolved as of round 6.** An earlier designer round claimed current-HSL index 6 yields `#1ce3d5` at 1.47:1, and that the criterion resolves at index 9. Neither matched `generateColorScale('#1ad1c4', 'dark')`, verified directly against the real function: index 6 actually produces `#149f95` (2.98:1 on `#e8f7fc`), and the real first-from-the-dark-end index clearing the criterion is **index 7** (`#0f7971`, 4.79:1 on text / 5.26:1 under white). The designer independently re-ran the correction, confirmed the same two values, and — rather than swap in the corrected index — removed `primaryShade` from the delivered theme JSON entirely, replacing it with a `_primaryShade` note (criterion + these measured values + "pending P75-F," no number to copy by mistake). Both sides also standardized on **plain array indices only, never Tailwind-style rung names (50/100/…/950)** going forward — the two conventions don't map cleanly onto a 10-element array and the mismatch went uncaught for several rounds. The structural finding (index-based `primaryShade` recolors under any generator swap) was never in question — only the illustrative numbers needed correcting, and now have been on both sides.
+
+### Acceptance criteria
+
+- Every generated ramp (all 23 shipped themes plus any user-authored custom theme) stays within sRGB gamut at every rung.
+- Hue drift between a ramp's base accent and every generated rung stays under 1°.
+- Rig Cyan's `primaryShade` resolves against the real, implemented algorithm — not assumed equal to any number quoted in either design round, since the exact lightness-stepping bounds for the new generator aren't decided yet and both sides' prior numbers have been provisional model output, not verified output.
+- All 16 themes with a non-default `primaryShade` are re-derived in the same change, with a passing regression test per theme.
+
+### Validation
+
+Per the designer's own suggestion (round 4): implement as a **property test**, not a fixture table — for a broad sample of accent hues (not just the 23 shipped ones), assert hue drift stays under 1° at every rung. A fixture-only test would only catch regressions on today's hue set and would miss a regression on a hue a user picks for their own custom theme.
+
+### Sequencing
+
+Must land before P74-N's `primaryShade` is finalized and before P75-E's step 3 repair layer is implemented. Does not block P74-N's other palette fields (background/surface/text/accent/status colors), which are independent of ramp generation.
+
 ---
 
 ## Verification (phase-wide)
@@ -201,4 +330,8 @@ Not started. This document currently reflects the **plan** only — see the Stat
 
 ## Outcome
 
-**Planned, not yet implemented.** All three tracks are code-only and require no live Freemius credentials to build or test. Once implemented, this phase should be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
+**Planned, not yet implemented.** P75-A/B/C are code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), and P75-F (OKLCH migration) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." Once P75-D/E/F land, `primaryShade` can finally be set for real (P74-N's one remaining blocked item) and the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+
+Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
