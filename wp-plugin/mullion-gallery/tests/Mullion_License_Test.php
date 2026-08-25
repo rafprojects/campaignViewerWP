@@ -114,4 +114,25 @@ class Mullion_License_Test extends WP_UnitTestCase {
         $this->assertSame( 'pk_test', $config['public_key'] );
         $this->assertTrue( $config['is_premium'] );
     }
+
+    /**
+     * P74-K: mullion_fs() is a no-op without credentials, so the SDK path
+     * cannot be exercised here. Gate the Freemius product/menu slug by
+     * reading the bootstrap source (same pattern as Mullion_CLI_Test).
+     */
+    public function test_freemius_bootstrap_slug_is_mullion_gallery() {
+        $plugin_file = MULLION_PLUGIN_DIR . 'mullion-gallery.php';
+        $source      = file_get_contents( $plugin_file );
+        $this->assertNotFalse( $source );
+        $this->assertSame(
+            2,
+            preg_match_all( "/'slug'\\s+=>\\s+'mullion-gallery'/", $source ),
+            'fs_dynamic_init product slug and menu slug must both be mullion-gallery'
+        );
+        $this->assertSame(
+            0,
+            preg_match_all( "/'slug'\\s+=>\\s+'wp-super-gallery'/", $source ),
+            'fs_dynamic_init must not still hardcode the old Freemius slug'
+        );
+    }
 }

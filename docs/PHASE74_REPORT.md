@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A through P74-J and P74-L landed (P74-E/F this session), remaining tracks Planned
+**Status:** In progress — P74-A through P74-L landed (P74-K this session), remaining tracks Planned (M, N, O)
 **Created:** 2026-08-23
-**Last updated:** 2026-08-24 (P74-J landed — remaining JS/TS `wpsg`/`WPSG` identifiers, host class `.wp-super-gallery` → `.mullion-gallery`, window globals, `data-mullion-*` attrs, and live PHP emitters; P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
+**Last updated:** 2026-08-24 (P74-K landed — Freemius `fs_dynamic_init` product/menu slug `wp-super-gallery` → `mullion-gallery`; P74-E/F landed earlier this session; P74-J landed — remaining JS/TS `wpsg`/`WPSG` identifiers, host class `.wp-super-gallery` → `.mullion-gallery`, window globals, `data-mullion-*` attrs, and live PHP emitters; P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
 ### Tracks
 
@@ -18,7 +18,7 @@
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Done | Medium |
 | P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Done | Medium |
 | P74-J | Remaining JS/TS identifier cleanup | Done | Low-Medium |
-| P74-K | Freemius slug wiring | Planned | Low (hard sequencing dependency on Phase 75) |
+| P74-K | Freemius slug wiring | Done | Low (hard sequencing dependency on Phase 75) |
 | P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Planned | Low (volume) |
 | P74-N | New default theme: Mullion / Rig Cyan | Planned — palette finalized, `primaryShade` blocked on Phase 75 P75-F | Low-Medium |
@@ -457,9 +457,18 @@ Update both slug arguments to `'mullion-gallery'` as part of the same edit that 
 
 ### Validation
 
-- Manual code review — this function can't be meaningfully exercised without real Freemius credentials, consistent with how it's validated today.
+- Manual code review — this function can't be meaningfully exercised without real Freemius credentials, consistent with how it's validated today. **Also met via source-level PHPUnit:** `Mullion_License_Test::test_freemius_bootstrap_slug_is_mullion_gallery` asserts both `fs_dynamic_init` slug defaults are `'mullion-gallery'` and that `'slug' => 'wp-super-gallery'` is absent from the bootstrap file. Existing `test_is_sdk_active_false_without_credentials` still covers the no-op path.
+- Focused `Mullion_License_Test`: 14 tests, 26 assertions (was 13 / 23). Full PHPUnit: 1,314 tests, 13,741 assertions, 2 skipped, 0 failures (was 1,313 / 13,738).
 
 **Sequencing note:** this track must land before Phase 75 is implemented — Phase 75's draft plan references `wpsg_fs()` and the old slug throughout, and depends on this track's output to be implementable as written.
+
+### Implementation Notes (2026-08-24)
+
+- **The function rename was already done.** The Problem/Fix text still described updating the slugs "as part of the same edit that renames `wpsg_fs()` → `mullion_fs()`". P74-H already renamed the function, the `mullion_freemius_config` filter, and `mullion_fs_loaded`. This track is the two remaining `fs_dynamic_init` literals: product `'slug'` and `'menu' => ['slug']`, both now `'mullion-gallery'`.
+- **Did not retarget `menu.slug` at a live admin page.** No WP admin page is registered as `mullion-gallery` (pages are `mullion-settings` / `mullion-assets` / `mullion-spaces` under the CPT parent). That mismatch already existed under `wp-super-gallery`. NOTE(M2) / P75-A own `first-path`, `premium_slug`, `is_premium`, `has_premium_version`, and `is_org_compliant` once the dashboard product exists. Both slug args match Key Decision C (one product slug).
+- **Did not extract `mullion_freemius_init_args()`.** That is P75-A. `mullion_fs()` still no-ops with empty credentials (zero network calls). Added `Mullion_License_Test::test_freemius_bootstrap_slug_is_mullion_gallery` as a source-level gate because the SDK path cannot run in CI.
+- **Folded a P74-C leftover:** `phpcs.xml` `<config name="text_domain">` was still `wp-super-gallery`, which would make WordPress.WP.I18n mis-sniff every `'mullion-gallery'` call. Ruleset display name left as prose for P74-M.
+- **Held back on purpose:** REST namespace `/wp-super-gallery/v1/` (85 `register_rest_route` calls, 502 PHPUnit hits, 281 src hits — unclaimed, atomic, changing one side 404s the app); script handle `wp-super-gallery-app` / fallback `wp-super-gallery.js`; `docs/**` (P74-M); i18n GitHub URI msgids (P74-C `make-pot` backlog).
 
 ---
 
@@ -631,8 +640,8 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 
 ## Implementation Notes
 
-Not started. This document currently reflects the **plan** only — see the Status header.
+Per-track notes live under each track section above. P74-A through P74-L have landed.
 
 ## Outcome
 
-**Planned, not yet implemented.** All fifteen tracks are laid out with explicit dependencies and risk levels; P74-E/F (data migration) and P74-N (blocked on a corrected ink-safe value) carry the phase's real risk, everything else is large but mechanical. Once implemented, [PHASE75_REPORT.md](PHASE75_REPORT.md) becomes executable as written.
+**In progress.** P74-A through P74-L landed. Remaining: **P74-M** (docs), **P74-N** (Rig Cyan; `primaryShade` still blocked on P75-F), **P74-O** (hex fallbacks, blocked on N). Unclaimed shipped-code gap: REST namespace `/wp-super-gallery/v1/` and script handle `wp-super-gallery-app`. P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.

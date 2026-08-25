@@ -80,14 +80,14 @@ if (!function_exists('mullion_fs')) {
         // $config is merged last so real credentials always come from the filter.
         $mullion_fs = fs_dynamic_init(array_merge([
             'id'             => '',
-            'slug'           => 'wp-super-gallery',
+            'slug'           => 'mullion-gallery',
             'type'           => 'plugin',
             'public_key'     => '',
             'is_premium'     => false,
             'has_addons'     => false,
             'has_paid_plans' => true,
             'menu'           => [
-                'slug'       => 'wp-super-gallery',
+                'slug'       => 'mullion-gallery',
                 'first-path' => '',
             ],
         ], $config));

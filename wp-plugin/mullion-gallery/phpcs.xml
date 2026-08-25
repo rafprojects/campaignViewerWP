@@ -30,5 +30,5 @@
     <rule ref="WordPress.Security"/>
 
     <!-- Lets the sanitization/nonce sniffs recognise this plugin's i18n text domain. -->
-    <config name="text_domain" value="wp-super-gallery"/>
+    <config name="text_domain" value="mullion-gallery"/>
 </ruleset>
