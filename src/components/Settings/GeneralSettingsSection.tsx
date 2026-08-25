@@ -13,6 +13,7 @@ import { ThemeSelector } from '../Admin/ThemeSelector';
 
 interface GeneralSettingsData extends GalleryBehaviorSettings {
   theme?: string | undefined;
+  applyThemeEverywhere?: boolean;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -41,6 +42,16 @@ export function GeneralSettingsSection({ settings, updateSetting, onThemeChange,
                 description={t('set_theme_desc', 'Choose a color theme. Preview applies instantly; saved when you click Save.')}
                 value={settings.theme}
                 onThemeChange={onThemeChange}
+              />
+
+              <Switch
+                label={t('set_apply_theme_everywhere', 'Apply gallery theme to editor')}
+                description={t(
+                  'set_apply_theme_everywhere_desc',
+                  'When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme.',
+                )}
+                checked={settings.applyThemeEverywhere === true}
+                onChange={(event) => updateSetting('applyThemeEverywhere', event.currentTarget.checked)}
               />
 
               <ModalSelect

@@ -506,6 +506,8 @@ class Mullion_Frontend_Strings {
             'set_responsive_config' => __('Responsive Gallery Config', 'mullion-gallery'),
             'set_gen_theme_layout' => __('Theme & Layout', 'mullion-gallery'),
             'set_theme_desc' => __('Choose a color theme. Preview applies instantly; saved when you click Save.', 'mullion-gallery'),
+            'set_apply_theme_everywhere' => __('Apply gallery theme to editor', 'mullion-gallery'),
+            'set_apply_theme_everywhere_desc' => __('When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme.', 'mullion-gallery'),
             'set_default_layout' => __('Default Layout', 'mullion-gallery'),
             'set_default_layout_desc' => __('Default layout for displaying gallery items.', 'mullion-gallery'),
             'set_layout_grid' => __('Grid', 'mullion-gallery'),

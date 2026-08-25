@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A, P75-B, P75-C, and P75-H landed
+**Status:** In progress — P75-A, P75-B, P75-C, P75-D, and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-C PACKAGING_RELEASE split docs landed. Remaining: D–G.)
+**Last updated:** 2026-08-25 (P75-D chrome lock + `applyThemeEverywhere` landed. Remaining: E–G.)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Done | Small-Medium |
 | P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Done | Medium |
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Done | Small |
-| P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
+| P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Done | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
 | P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
@@ -253,7 +253,22 @@ Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Pa
 
 ### Validation
 
-- Not yet started — full test plan (Vitest for the new setting's branch logic, manual verification of both toggle states across at least one non-default gallery theme) to be written when this track is picked up.
+- Vitest: `chromeTheme` (lock vs follow, classNames), `AdminChromeProvider` (passthrough vs brand primary swatch), `useBuilderShellColors` (default lock vs follow), SettingsStore/settingsQuery defaults, Appearance tab switch off by default, SettingsPanel save payload includes `applyThemeEverywhere: true` when toggled, LayoutBuilder keyboard suite still green with `getSettings` mock.
+- PHPUnit: `Mullion_Settings_Test` (default false, bool sanitize, space-overridable) plus settings REST/split files — 23 tests, 159 assertions.
+- `tsc -b` clean. `npm run i18n:check` + `i18n:check:locales` — 2381/2381.
+- No browser MCP in this session; Settings Panel / Builder visual check of both toggle states against a non-default gallery theme was not run here.
+
+### Implementation Notes (2026-08-25)
+
+Verified against the live tree, not only this plan's sketch.
+
+- **Did not retarget `ThemedApp`.** `ThemedApp`'s `MantineProvider` wraps the public gallery as well as admin chrome. Swapping it to Mullion when the toggle is off would restyle CardGallery / AuthBar / campaign modals — violating "public-facing gallery embed's theming is unaffected." Chrome lock is a **nested** `AdminChromeProvider` on Settings Panel + Layout Builder only. `cssVariablesSelector=".mullion-admin-chrome"` so nested tokens cannot overwrite `:root` / `:host` gallery vars. When the toggle is on, the provider is a passthrough (no extra MantineProvider) so chrome is pixel-identical to today.
+- **Setting location.** Folded into Theme & Layout next to `ThemeSelector` as a Switch. Canonical name `applyThemeEverywhere` / `apply_theme_everywhere`. Default **false**. Space-overridable (with `theme`); not admin-only. PHP registry boolean is handled by the generic sanitizer. Missing/undefined API values map to `false` (`=== true` only).
+- **Brand palette.** Locked chrome uses `DEFAULT_THEME_ID` (`default-dark` / Mullion / Rig Cyan), including its dark `colorScheme`. Do not follow the gallery's light/dark pair — `default-light` is still Instrument Blue until P75-G.
+- **Builder.** `useBuilderShellColors(applyThemeEverywhere)` and Dockview `colorScheme` follow the chrome theme. Overlay colors (`useBuilderOverlayColors`) stay on the gallery scheme — selection/snap/rulers were already classified as theme-independent for this track.
+- **Standalone wp-admin pages** (Gallery Spaces, Asset Library) untouched — they already mount a bare `MantineProvider`.
+- **e2e `theme-qa`.** Existing per-theme Display Settings snapshots were captured against today's themed chrome. `BASE_SETTINGS.applyThemeEverywhere` is **true** there so those baselines stay valid (the "toggle on" acceptance path). Gallery-shell snapshots are unaffected.
+- **i18n.** New `set_apply_theme_everywhere` / `_desc` keys harvested into the frontend manifest and translated in de/es/fr/ru/zh; `.mo` / `.l10n.php` recompiled.
 
 ---
 
@@ -455,12 +470,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, and P75-C have landed — see those tracks' Implementation Notes. D–G remain planned.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H, P75-A, P75-B, P75-C, and P75-D have landed — see those tracks' Implementation Notes. E–G remain planned.
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) landed without designer input. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the remaining color-system tracks. P75-D (chrome-locking toggle) and P75-H (Checkbox/Switch outlines) have landed. Once E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once the remaining tracks land, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

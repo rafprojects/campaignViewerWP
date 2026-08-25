@@ -170,6 +170,8 @@ const mockApiClient = {
   postForm: vi.fn(),
   put: vi.fn(),
   delete: vi.fn(),
+  getBaseUrl: vi.fn().mockReturnValue('http://test'),
+  getSettings: vi.fn().mockResolvedValue({}),
   updateLayoutTemplate: vi.fn().mockResolvedValue({ id: 1, name: 'Test Layout', slots: [], overlays: [], canvasAspectRatio: 1.78 }),
   createLayoutTemplate: vi.fn().mockResolvedValue({ id: 1, name: 'Test Layout', slots: [], overlays: [], canvasAspectRatio: 1.78 }),
 };

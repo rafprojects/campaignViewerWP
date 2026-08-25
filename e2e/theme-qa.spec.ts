@@ -38,6 +38,9 @@ const BASE_SETTINGS = {
   showInContextEditors: true,
   settingsDrawerBlurEnabled: false, // disabled for stable snapshots
   advancedSettingsEnabled: true,
+  // P75-D default is false (Mullion chrome). Keep the existing per-theme
+  // settings-dialog snapshots on the "toggle on" path they were captured against.
+  applyThemeEverywhere: true,
 };
 
 async function installThemeSession(

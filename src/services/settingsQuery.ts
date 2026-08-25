@@ -16,6 +16,7 @@ export interface ResolvedSettingsResponse extends GalleryBehaviorSettings {
   authProvider?: string;
   apiBase?: string;
   theme?: string;
+  applyThemeEverywhere?: boolean;
   galleryLayout?: string;
   itemsPerPage?: number;
   enableLightbox?: boolean;
@@ -36,6 +37,7 @@ export function normalizeSettingsResponse(
   return {
     ...(response ?? {}),
     ...mergeSettingsWithDefaults((response ?? {}) as Partial<GalleryBehaviorSettings>),
+    applyThemeEverywhere: response?.applyThemeEverywhere === true,
   };
 }
 

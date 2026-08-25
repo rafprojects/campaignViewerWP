@@ -697,6 +697,38 @@ describe('SettingsPanel', () => {
     });
   });
 
+  it('renders the apply-theme-everywhere switch off by default', async () => {
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    const toggle = screen.getByRole('switch', { name: /Apply gallery theme to editor/i });
+    expect(toggle).not.toBeChecked();
+  });
+
+  it('includes applyThemeEverywhere in the save payload when toggled on', async () => {
+    const updateSettings = vi.fn().mockResolvedValue({
+      ...seedSettings,
+      applyThemeEverywhere: true,
+    });
+    apiClient = createMockApiClient({ updateSettings });
+
+    render(
+      <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />
+    );
+
+    await waitForTabs();
+    toggleSwitchByLabel('Apply gallery theme to editor');
+    fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
+
+    await waitFor(() => {
+      expect(updateSettings).toHaveBeenCalledOnce();
+    });
+    const payload = updateSettings.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload.applyThemeEverywhere).toBe(true);
+  });
+
   it('renders ThemeSelector on the Appearance tab', async () => {
     render(
       <SettingsPanel opened={true} apiClient={apiClient} onClose={onClose} onNotify={onNotify} initialSettings={seedSettings} />

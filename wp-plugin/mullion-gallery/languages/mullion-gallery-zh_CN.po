@@ -2068,6 +2068,14 @@ msgstr "主题和布局"
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr "选择一个颜色主题。预览会立即应用；单击“保存”时才会保存。"
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr "将图库主题应用到编辑器"
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr "关闭时，设置面板和布局构建器保持 Mullion 品牌配色。打开后，这些编辑器界面会跟随所选图库主题。"
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"

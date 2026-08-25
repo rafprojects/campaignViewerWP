@@ -28,6 +28,10 @@ import {
 } from '@/hooks/useLayoutBuilderState';
 import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
+import { useGetSettings } from '@/services/settingsQuery';
+import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
+import { adminChromeClassNames, resolveChromeThemeId } from '@/themes/chromeTheme';
+import { getTheme } from '@/themes/index';
 import { useLatestRef } from '@mullion/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
 import { debugGroup, debugLog, debugGroupEnd } from '@/utils/debug';
@@ -106,8 +110,14 @@ export function LayoutBuilderModal({
   const { t: tr } = useTranslation('mullion');
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
-  const { colorScheme } = useTheme();
-  const shellColors = useBuilderShellColors();
+  const { themeId } = useTheme();
+  const settingsSpaceId = spaceId && spaceId !== 'all' && /^\d+$/.test(spaceId)
+    ? Number(spaceId)
+    : undefined;
+  const { data: chromeSettings } = useGetSettings(apiClient, settingsSpaceId);
+  const applyThemeEverywhere = chromeSettings?.applyThemeEverywhere === true;
+  const shellColors = useBuilderShellColors(applyThemeEverywhere);
+  const chromeScheme = getTheme(resolveChromeThemeId(applyThemeEverywhere, themeId)).meta.colorScheme;
   const [isSaving, setIsSaving] = useState(false);
 
   const builderShellVars = useMemo(
@@ -132,10 +142,10 @@ export function LayoutBuilderModal({
 
   const dockTheme = useMemo(
     () => ({
-      name: `mullion-builder-shell-${colorScheme}`,
+      name: `mullion-builder-shell-${chromeScheme}`,
       className: 'dockview-theme-mullion',
     }),
-    [colorScheme],
+    [chromeScheme],
   );
 
   // ── Campaign list + media for the media picker ──
@@ -458,13 +468,15 @@ export function LayoutBuilderModal({
   };
 
   return (
-    <Modal
+    <AdminChromeProvider applyThemeEverywhere={applyThemeEverywhere}>
+      <Modal
       opened={opened}
       onClose={handleClose}
       fullScreen
       withCloseButton={false}
       closeOnEscape={false}
       padding={0}
+      classNames={adminChromeClassNames(applyThemeEverywhere)}
       styles={{
         body: { height: '100vh', display: 'flex', flexDirection: 'column' },
         content: { overflow: 'hidden' },
@@ -703,7 +715,8 @@ export function LayoutBuilderModal({
         </div>
       </div>
       </ErrorBoundary>
-    </Modal>
+      </Modal>
+    </AdminChromeProvider>
   );
 }
 

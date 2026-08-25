@@ -2068,6 +2068,14 @@ msgstr "Thème et mise en page"
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr "Choisissez un thème de couleur. L’aperçu s’applique instantanément ; enregistré lorsque vous cliquez sur Enregistrer."
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr "Appliquer le thème de la galerie à l’éditeur"
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr "Lorsque cette option est désactivée, le panneau Réglages et le Layout Builder restent sur la palette de marque Mullion. Activez-la pour habiller ces surfaces d’éditeur avec le thème de galerie sélectionné."
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { getTheme } from '@/themes/index';
+import { resolveChromeThemeId } from '@/themes/chromeTheme';
 import { resolveColors, withAlpha } from '@mullion/theme-engine';
 import { useTheme } from './useTheme';
 
@@ -20,12 +21,14 @@ export interface BuilderShellColors {
   scrollbar: string;
 }
 
-export function useBuilderShellColors(): BuilderShellColors {
+export function useBuilderShellColors(applyThemeEverywhere = false): BuilderShellColors {
   const { themeId, colorScheme } = useTheme();
+  const chromeThemeId = resolveChromeThemeId(applyThemeEverywhere, themeId);
+  const chromeEntry = getTheme(chromeThemeId);
+  const chromeScheme = applyThemeEverywhere ? colorScheme : chromeEntry.meta.colorScheme;
 
   return useMemo(() => {
-    const themeEntry = getTheme(themeId);
-    const colors = resolveColors(themeEntry.definition.colors, colorScheme);
+    const colors = resolveColors(chromeEntry.definition.colors, chromeScheme);
     const accent = colors.primary[5] ?? colors.accent;
 
     return {
@@ -42,7 +45,7 @@ export function useBuilderShellColors(): BuilderShellColors {
       accentSoft: withAlpha(accent, 0.14),
       iconHover: withAlpha(colors.surface3, 0.78),
       shadow: `8px 8px 8px 0 ${withAlpha(colors.background, 0.32)}`,
-      scrollbar: withAlpha(colors.textMuted, colorScheme === 'dark' ? 0.35 : 0.28),
+      scrollbar: withAlpha(colors.textMuted, chromeScheme === 'dark' ? 0.35 : 0.28),
     };
-  }, [themeId, colorScheme]);
+  }, [chromeEntry, chromeScheme]);
 }

@@ -479,6 +479,8 @@
   "set_responsive_config": "Responsive Gallery Config",
   "set_gen_theme_layout": "Theme & Layout",
   "set_theme_desc": "Choose a color theme. Preview applies instantly; saved when you click Save.",
+  "set_apply_theme_everywhere": "Apply gallery theme to editor",
+  "set_apply_theme_everywhere_desc": "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme.",
   "set_default_layout": "Default Layout",
   "set_default_layout_desc": "Default layout for displaying gallery items.",
   "set_layout_grid": "Grid",

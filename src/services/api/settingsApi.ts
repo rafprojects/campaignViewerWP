@@ -10,6 +10,7 @@ export interface SettingsResponse extends Partial<GalleryBehaviorSettings> {
   authProvider?: string;
   apiBase?: string;
   theme?: string;
+  applyThemeEverywhere?: boolean;
   galleryLayout?: string;
   itemsPerPage?: number;
   enableLightbox?: boolean;
