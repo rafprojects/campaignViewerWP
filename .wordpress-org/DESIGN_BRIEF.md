@@ -5,16 +5,20 @@ It is the companion to [`README.md`](README.md) in this directory, which holds t
 **filename and dimension spec**. Read that one for *what files to produce*; read this one for
 *what they should look like and why*.
 
-> **Status: name and default palette direction decided; one color needs a revision.** The
-> product name is **Mullion** (WordPress.org slug `mullion-gallery`) — a mullion is the bar
-> that divides a window into framed panes, which is exactly what the Layout Builder lets someone
-> do by hand. The default theme is being rebuilt around the submitted **Rig Cyan** palette
-> (ground `#08141b` / surface `#102530` / text `#e8f7fc` / accent `#1ad1c4`) — four of five
-> colors are locked in. The fifth, "ink-safe" (`#0f857c`), doesn't clear this plugin's own
-> accessibility bar as submitted; see [Color system](#color-system--what-a-palette-submission-needs)
-> below for the numbers and what a revision should target. Everything else in this brief
-> (icon, banner, screenshots) is still undecided — this document previously described the
-> product under its old working name, "WP Super Gallery"; renamed throughout.
+> **Status: name and default palette closed; engineering is now the pacing item.** The product
+> name is **Mullion** (WordPress.org slug `mullion-gallery`) — a mullion is the bar that divides
+> a window into framed panes, which is exactly what the Layout Builder lets someone do by hand.
+> The default theme's colors are final: the full **Rig Cyan** spec (11 roles, every pairing
+> WCAG AA-verified) lives in [`COLOR-SPEC.md`](COLOR-SPEC.md), the product of a six-round
+> collaboration with the designer that also surfaced and fixed two real engineering defects
+> along the way — a hardcoded ramp index ignoring each theme's own authored shade, and an
+> unsafe fallback that would have silently reinstated a contrast failure. That collaboration
+> is now closed pending our side: `primaryShade` can't be set until the ramp generator's
+> HSL→OKLCH migration lands (tracked in [`docs/PHASE75_REPORT.md`](../docs/PHASE75_REPORT.md),
+> tracks P75-D/E/F), and the designer separately is holding on trademark clearance for
+> "Mullion" before cutting final assets. Icon, banner, and screenshots are still undecided
+> and unblocked by any of the above — this document previously described the product under
+> its old working name, "WP Super Gallery"; renamed throughout.
 
 ---
 

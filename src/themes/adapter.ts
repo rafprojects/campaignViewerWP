@@ -363,11 +363,11 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
-        control: { borderColor: rc.border, color: rc.text },
+        control: { borderColor: rc.borderStrong, color: rc.text },
       }),
     },
 
@@ -375,12 +375,12 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           backgroundColor: rc.surface2,
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           color: rc.text,
         },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
-          backgroundColor: rc.surface,
+          backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
       }),

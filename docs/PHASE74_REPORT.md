@@ -2,7 +2,7 @@
 
 **Status:** Complete — P74-A through P74-Q landed. Rig Cyan `primaryShade` lives in P75-F (Decision I).
 **Created:** 2026-08-23
-**Last updated:** 2026-08-25 (P74-N visual rebaseline + P74-O hex fallbacks. Phase closed.)
+**Last updated:** 2026-08-25 (PR Review pass. Phase closed.)
 
 ### Tracks
 
@@ -765,6 +765,7 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 | Removing the retired old-blue palette from any design references outside the theme JSON itself (e.g. marketing screenshots already captured under the old theme) | Screenshot recapture is already tracked separately per the design brief's own screenshot-manifest section; not duplicated here. |
 | A distinct "ink-safe"/accent-text schema role, if the designer's corrected submission turns out to need one | Genuinely blocked on knowing what the designer intended; adding schema surface speculatively would be worse than waiting for the real requirement. |
 | Rig Cyan `primaryShade` (the live index on `default-dark.json`) | Moved to P75-F (Decision I). An index set against the HSL generator would be wrong the moment the OKLCH ramp lands; F already re-derives the other 16 themes' indices in that same commit. |
+| `wp i18n make-pot` harvest of `languages/` | P74-C skipped a real harvest so locale coverage stayed 2,379/2,379. The catalogs still carry old plugin-name/GitHub-URI msgids, stale `#: class-wpsg-*.php` comments, and ~150 pre-rename untranslated strings. Confirmed during the PR Review pass: leave as follow-on rather than mix a large i18n diff into this branch. |
 
 ## Implementation Notes
 
@@ -773,3 +774,70 @@ Per-track notes live under each track section above. All P74 tracks have landed.
 ## Outcome
 
 **Complete.** P74-A through P74-Q landed. The plugin is Mullion end-to-end (identifiers, docs, Rig Cyan default theme). Rig Cyan's `primaryShade` index is **P75-F** (Decision I), not a Phase 74 hold. P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.
+
+---
+
+## PR Review (2026-08-25)
+
+Self-reviewed the full Phase 74 branch (`origin/main...HEAD`, 21 commits, 719 files) as a completeness audit of the rebrand: whether each track actually covered the domain it claimed, and whether any product surface sat outside every track. Validated the report's load-bearing greps against the tree rather than re-reading the prose. Two interviews during this pass: (1) stage `.wordpress-org/DESIGN_BRIEF.md` without the untracked designer-correspondence files; (2) leave the P74-C `make-pot` harvest as a follow-on.
+
+### Per-track assessment
+
+| Track | Claim vs tree | Verdict |
+|-------|---------------|---------|
+| **P74-A** folder + tooling paths | Plugin lives at `wp-plugin/mullion-gallery/`. `.wp-env.json`, CI, scripts, `update_dev_plugin.sh`, theme-catalog import, and adapter-parity tests all resolve the new path. `validate-themes.mjs` still pointed at the pre-P51-L `src/themes/definitions/` path (P74-A noted this as pre-existing). `public/.htaccess` Nginx paths were updated; the file banner was not. | **Met**, with two comment/tooling leftovers fixed this pass. |
+| **P74-B** metadata | Header is `Plugin Name: Mullion`, text domain `mullion-gallery`, URIs `github.com/rafprojects/mullion-gallery` (GitHub repo is already named `mullion-gallery`; the git remote URL still says `campaignViewerWP` and redirects). `package.json` name is `mullion-gallery`. `Contributors: wpsupergallery` kept on purpose. | **Met.** |
+| **P74-C** text domain + i18n | Live `__()` / `load_plugin_textdomain` arguments are `'mullion-gallery'`. Language *filenames* renamed. `make-pot` was deliberately not run: catalogs still have msgid `WP Super Gallery`, the old GitHub URI, and `#: class-wpsg-*.php` comments. Runtime English does not display those msgids (they no longer match source). | **Met as revised** (header-only). Harvest remains a follow-on. |
+| **P74-D** shortcode | Single `add_shortcode('mullion-gallery')`. `has_shortcode` / `shortcode_atts` match. No `super-gallery` alias. | **Met.** |
+| **P74-E** CPT / tax / caps / roles | `mullion_campaign`, `mullion_layout_tpl`, four taxonomies, `edit_mullion_campaigns…`, `manage_mullion`, `mullion_editor`. Menu `Mullion`. Migrator later dropped in Q (Decision H). | **Met**, then superseded by H/Q. |
+| **P74-F** option / meta / table keys | `mullion_settings`, `mullion_db_version`, `{prefix}mullion_*` tables, `_mullion_*` meta, `mullion-exports`/`-fonts`/`-thumbnails`, PAGE_SLUGs `mullion-settings`/`-assets`/`-spaces`. | **Met.** Local `wpsg_*` rows are not rewritten after Q. |
+| **P74-G** PHP classes / constants | `Mullion_*` classes, `class-mullion-*.php`, `MULLION_*` constants. No `require` of `class-wpsg-*`. | **Met.** One `@package Wp_Super_Gallery` on `tests/bootstrap.php` survived; fixed this pass. |
+| **P74-H** functions / hooks / error codes | No `function wpsg_` / `apply_filters('wpsg_` / `do_action('wpsg_`. Cron file is `mullion-cron-hooks.php`. REST error codes and the `mullion_asset_in_use` JS match. | **Met.** |
+| **P74-I** CSS custom properties | `DEFAULT_CSS_VAR_PREFIX = '--mullion'`. Zero `--wpsg-` in `src/` / `packages/*/src`. | **Met.** |
+| **P74-J** JS/TS identifiers | Host class `.mullion-gallery`, `data-mullion-*`, `__MULLION_*` globals, i18next `mullion`, localStorage `mullion_*`. PHP emit and JS read match. | **Met.** |
+| **P74-K** Freemius slug | Both `fs_dynamic_init` slugs are `'mullion-gallery'`. License test asserts the old slug is absent. `premium_slug` / `is_org_compliant` / `first-path` remain Phase 75. | **Met** for the slug this track owns. |
+| **P74-L** build / CI / npm scope | ZIP `mullion-gallery-v*.zip`, `SLUG: mullion-gallery`, `@mullion/*`, `MULLION_PREMIUM` / `__MULLION_PREMIUM__`, SW cache prefixes. | **Met.** |
+| **P74-P** REST + script handle | 85 `register_rest_route('mullion-gallery/v1', …)` only. JS/e2e/SW `META_ENDPOINT_RE` all talk to `/wp-json/mullion-gallery/v1/`. Handle `mullion-gallery-app`, fallback `mullion-gallery.js`. No old-namespace alias. No `REST_NAMESPACE` constant (same as before). | **Met.** |
+| **P74-Q** leftovers + drop migrator | No `Mullion_Rebrand_Migration`, no `mullion_maybe_migrate_roles`, uninstall is `mullion_*` only. `release.yml` bumps `MULLION_VERSION`. Auth-test localize object is `mullionSettingsAuthTest`. Q's "zero leftover in plugin PHP" grep missed `.distignore`'s banner comment. | **Met**, with the comment miss fixed this pass. |
+| **P74-M** docs | Active `docs/` (except this FROM-map and PHASE75's origin sentence), README, CHANGELOG, CONTRIBUTING, `.wordpress-org/README.md` are Mullion. P74-M missed the one-word **SuperGallery** menu label in PHASE66/67 runbooks, glow/`card_border_color` hexes that P74-O changed, and the theme-authoring guide's pre-P51-L definition paths. | **Mostly met**; those misses fixed this pass. |
+| **P74-N** Rig Cyan default | `default-dark.json` matches COLOR-SPEC §1. `id` stays `default-dark`. `surfaceRaised` / `borderStrong` optional; `borderStrong` is derived to 3:1, not aliased. `primaryShade` omitted with `_primaryShade` note (Decision I). Catalog name **Mullion**. Adapter wired Input/TextInput/PasswordInput/Select to `borderStrong` and menus/popovers to `surfaceRaised`, but **NumberInput and ColorInput still painted `rc.border`**, undoing the input-outline token on Layout Builder fields. | **Mostly met**; NumberInput/ColorInput fixed this pass. |
+| **P74-O** hex fallbacks | `src/` grep of `#1a1a2e` / `#0f3460` / `#228be6` / `#7c9ef8` is clean. Registry/sanitizer/layout defaults are Rig Cyan. Sanitizer fixture `#1a1a2e` remains on purpose. Docs still described the old glow and card-border fallbacks. | **Met** in code; docs hexes fixed this pass. |
+
+### Surfaces no track claimed (and whether that mattered)
+
+Checked against a WordPress-plugin + React-SPA rebrand checklist. These exist and were renamed by a neighbouring track even though no Fix section named them: nonce actions, `X-MULLION-*` headers, cache groups, upload dirs, WP-CLI `wp mullion`, privacy exporter ids, cron schedule key, webhook signature header, i18next namespace, ESLint plugin id, SW cache names, PAGE_SLUGs, full-bleed class.
+
+These **do not exist** in this repo, so they were not holes: Gutenberg `block.json`, cookies, rewrite tags, dashboard widgets, Site Health, XML-RPC, Customizer, TinyMCE, widgets, network admin, composer `name` / PSR-4, JWT iss/aud, CODEOWNERS, issue templates.
+
+Real unclaimed leftovers (not load-bearing at runtime):
+
+- **Comment banners** in `public/.htaccess` and `.distignore` still said WP Super Gallery. Fixed this pass. The `.htaccess` comment ships in the ZIP (the file is copied into `assets/`).
+- **REST namespace is copy-pasted**, not a PHP constant. P74-P renamed every site; a future rename will 404 again if one side is missed. Pre-existing shape, not a leftover `wpsg`.
+- **Git clone directory** is still `wp-super-gallery`; remote URL is still `rafprojects/campaignViewerWP` (GitHub repo name is already `mullion-gallery` and redirects). Out of tree.
+- **`default-light.json`** is still the retired navy/Instrument Blue palette sitting next to Rig Cyan in the Default group. Explicit P74-N deferral; still the user-visible leftover of the old brand in the theme picker.
+- **Checkbox / Switch** adapter outlines still use `rc.border` (1.46:1 on Rig Cyan). Overlaps P75-E's contrast spike; not changed here.
+- **`auditThemeContrast`** does not gate `borderStrong` vs `surface` at 3:1. Derivation is unit-tested; the CI theme gate is text-on-surface only.
+- **readme.txt** "or the block editor embed" — there is no `register_block_type`. Pre-existing, not introduced by the rename.
+
+Intentional keeps (do not rewrite): this report's FROM-map, PHASE75 origin sentence, `docs/archive/**`, `docs/old/PR_REVIEW_NOTES.md` GitHub URLs to `campaignViewerWP`, `Contributors: wpsupergallery`, `readme.txt` changelog history (`wp wpsg`, `@wpsg`), P74-K license-test negative assertion, `languages/` until `make-pot`, "WP Super Cache" as a third-party plugin.
+
+### Fixes made in this pass
+
+| # | Finding | Disposition |
+|---|---------|-------------|
+| 1 | `NumberInput` / `ColorInput` overrode `Input`'s `borderStrong` with `rc.border`, so Layout Builder number fields and color pickers kept the 1.46:1 decorative divider. ColorInput dropdown used `surface` instead of `surfaceRaised`. | **Fixed.** Both inputs use `borderStrong`; ColorInput dropdown uses `surfaceRaised`. New adapter test locks the input-outline set. |
+| 2 | `resolveColors` had no test that omitted `borderStrong` is *not* aliased to `border`. | **Fixed.** `colorGen.test.ts` now asserts inequality and ≥3:1 against surface. |
+| 3 | `scripts/validate-themes.mjs` still read `src/themes/definitions/` (gone since P51-L). P74-A noted it; P74-N's theme gate could not actually run this script. | **Fixed.** Points at `packages/theme-engine/src/definitions/`. |
+| 4 | P74-M missed **SuperGallery** (one word, no `wpsg` substring) in PHASE66/67 QA runbooks, plus P74-O hexes `#7c9ef8` / `#228be6` still documented as current defaults. | **Fixed.** Menu copy is **Mullion**; glow and card-border fallbacks are `#1ad1c4`. |
+| 5 | Theme authoring guide still copied from `src/themes/definitions/` and did not document `surfaceRaised` / `borderStrong`. | **Fixed.** Paths, registration steps, file map, and the two new tokens. |
+| 6 | `.distignore` and `public/.htaccess` file banners still said WP Super Gallery. Q's plugin-tree grep should have caught `.distignore`. | **Fixed.** |
+| 7 | `tests/bootstrap.php` `@package Wp_Super_Gallery`; CPT test method `test_campaign_menu_is_supergallery_…`. | **Fixed.** Package tag and method name only; assertions already used Mullion. |
+| 8 | Working-tree `DESIGN_BRIEF.md` linked two untracked designer-response files. | **Fixed** per interview: kept the status update, dropped those links, point only at tracked `COLOR-SPEC.md`. Correspondence files stay untracked. |
+
+### Verification (this pass)
+
+- `node scripts/validate-themes.mjs` — run after the path fix.
+- Focused Vitest: `src/themes/__tests__/adapter.test.ts` and `packages/theme-engine/src/colorGen.test.ts`.
+- Identifier greps outside `docs/archive/`, this report, `languages/`, and the P74-K negative assertion: live PHP/TS/JS/yml have no `wpsg` / `WPSG` / `wp-super-gallery` left except that assertion.
+
+No UI-visible identifier behavior changed except NumberInput/ColorInput outlines now using the 3:1 token P74-N already shipped for the other inputs.

@@ -1,4 +1,4 @@
-# WP Super Gallery — static asset caching (P63-C)
+# Mullion — static asset caching (P63-C)
 #
 # Vite emits content-hashed, immutable asset filenames (e.g. index-<hash>.js),
 # so they can be cached aggressively and effectively forever. This file is the

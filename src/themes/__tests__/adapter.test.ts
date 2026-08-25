@@ -123,6 +123,26 @@ describe('adaptTheme', () => {
     expect(colors['success']).toBe('#56b93e');
   });
 
+  it('uses borderStrong for input-outline roles including NumberInput and ColorInput', () => {
+    const def = makeThemeDef();
+    const result = adaptTheme(def);
+    const other = result.other as Record<string, unknown>;
+    const colors = other['colors'] as Record<string, string>;
+    const inputBorder = (name: string): string | undefined => {
+      const comp = result.components?.[name] as
+        | { styles?: () => { input?: { borderColor?: string } } }
+        | undefined;
+      return comp?.styles?.().input?.borderColor;
+    };
+
+    expect(inputBorder('Input')).toBe(colors['borderStrong']);
+    expect(inputBorder('TextInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('PasswordInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('NumberInput')).toBe(colors['borderStrong']);
+    expect(inputBorder('ColorInput')).toBe(colors['borderStrong']);
+    expect(colors['borderStrong']).not.toBe(colors['border']);
+  });
+
   it('works with a light theme definition', () => {
     const lightDef = deepMerge(
       JSON.parse(JSON.stringify(baseDefaults)),

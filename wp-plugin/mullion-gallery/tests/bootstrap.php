@@ -2,7 +2,7 @@
 /**
  * PHPUnit bootstrap file.
  *
- * @package Wp_Super_Gallery
+ * @package Mullion
  */
 
 // Load local vendor autoload for polyfills and other dependencies.

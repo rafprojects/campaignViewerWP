@@ -301,7 +301,7 @@ curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaign-templates" | jq '.[].id
 
 **Expected (pass).** `hasNormal: true, hasTemplate: false`, and the template still appears in the templates listing. **Why it proves the fix:** pre-fix, `hasTemplate` is `true` — the template leaks into the campaign list.
 
-**wp-admin list table.** Log into wp-admin → **SuperGallery → Campaigns**. The template post must **not** appear in the table. (Pre-fix it did, as a Draft.)
+**wp-admin list table.** Log into wp-admin → **Mullion → Campaigns**. The template post must **not** appear in the table. (Pre-fix it did, as a Draft.)
 
 **Regression checks.** `Mullion_P66E_Template_Listing_Test` (REST exclusion + templates-API still returns it). `Mullion_P28O_Campaign_Templates_Test` stays green. The wp-admin `pre_get_posts` filter is verified manually (above) — it is a thin mirror of the existing `apply_space_filter`, so its unit-level risk is low; the REST path (the higher-traffic, higher-risk surface) carries the automated coverage.
 

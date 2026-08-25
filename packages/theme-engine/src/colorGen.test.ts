@@ -233,6 +233,12 @@ describe('resolveColors', () => {
     expect(resolved.surfaceRaised).toBe(baseColors.surface2);
   });
 
+  it('derives borderStrong instead of aliasing to border when unset', () => {
+    const resolved = resolveColors(baseColors, 'dark');
+    expect(resolved.borderStrong).not.toBe(resolved.border);
+    expect(chroma.contrast(resolved.borderStrong, resolved.surface)).toBeGreaterThanOrEqual(3);
+  });
+
   it('handles primary as an object with base+shades', () => {
     const colorsWithObj = {
       ...baseColors,

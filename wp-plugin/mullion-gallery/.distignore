@@ -1,4 +1,4 @@
-# WP Super Gallery — files excluded from the distributed plugin (P62-K).
+# Mullion — files excluded from the distributed plugin (P62-K).
 #
 # Canonical exclude list: mirrors the inline `zip -x` excludes in
 # .github/workflows/release.yml. Keep the two in sync until the release workflow

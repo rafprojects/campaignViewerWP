@@ -603,7 +603,7 @@ The following manual tests cover changes landed in QA Round 5: glow hover fix, p
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | In the Layout Builder, set a slot's **Hover** to "Glow". | A **Glow** colour picker and **Spread** slider appear below the Hover selector. Default colour is `#7c9ef8`, default spread is 12 px. |
+| 1 | In the Layout Builder, set a slot's **Hover** to "Glow". | A **Glow** colour picker and **Spread** slider appear below the Hover selector. Default colour is `#1ad1c4`, default spread is 12 px. |
 | 2 | Change the glow colour to `#ff0000` (red). Save. View front-end and hover. | Glow renders in red. |
 | 3 | Adjust the spread slider to 30 px. Save. View front-end and hover. | Glow is noticeably wider/softer than the default. |
 | 4 | Add a second slot, set Hover = Glow with a green colour (`#00ff00`). View front-end. | Slot 1 has red glow, Slot 2 has green glow — each independent. |

@@ -60,7 +60,7 @@ class Mullion_CPT_Registration_Test extends WP_UnitTestCase {
 
     // ── P51-G: admin IA labels + Companies term-list column ────────────────────
 
-    public function test_campaign_menu_is_supergallery_with_campaigns_list_item() {
+    public function test_campaign_menu_is_mullion_with_campaigns_list_item() {
         $obj = get_post_type_object('mullion_campaign');
         $this->assertSame('Mullion', $obj->labels->menu_name);
         // The submenu list item stays "Campaigns".

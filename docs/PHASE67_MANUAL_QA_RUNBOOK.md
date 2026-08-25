@@ -476,10 +476,10 @@ curl -s $AUTH -X PUT "$BASE/wp-json/mullion-gallery/v1/settings" \
   }' | jq '{itemsPerPage, cacheTtl, theme, enableLightbox, cardBorderColor, thumbnailScrollSpeed}'
 # → itemsPerPage clamped to 100; cacheTtl clamped to 604800; theme reset to its
 #   default (invalid enum); enableLightbox coerced to a bool; cardBorderColor
-#   falls back to #228be6 (invalid hex); thumbnailScrollSpeed clamped to 3.
+#   falls back to #1ad1c4 (invalid hex); thumbnailScrollSpeed clamped to 3.
 ```
 
-**Expected (pass).** Out-of-range ints clamp to their registry range, invalid enums fall back to the default, invalid booleans coerce, and the special `card_border_color` still applies its `#228be6` fallback. **Why it proves the fix:** the clamps/enums are now enforced entirely by the generic loop + registry metadata; identical outputs prove the extraction preserved behavior. Also open **wp-admin → SuperGallery → Settings**, save the page, and confirm nothing visibly changed (catches a field silently dropping out of both the hand list and the registry).
+**Expected (pass).** Out-of-range ints clamp to their registry range, invalid enums fall back to the default, invalid booleans coerce, and the special `card_border_color` still applies its `#1ad1c4` fallback. **Why it proves the fix:** the clamps/enums are now enforced entirely by the generic loop + registry metadata; identical outputs prove the extraction preserved behavior. Also open **wp-admin → Mullion → Settings**, save the page, and confirm nothing visibly changed (catches a field silently dropping out of both the hand list and the registry).
 
 **Pitfall.** If a *new* settings field is added later with standard bool/int-range/enum/float-range semantics, it now needs **zero** sanitizer code — just registry metadata (`$defaults` type, and `$valid_options` or `$field_ranges`). A field added to `$defaults` but forgotten in `$valid_options`/`$field_ranges` will be accepted but unclamped/unvalidated; that is a registry omission, not a sanitizer bug.
 
