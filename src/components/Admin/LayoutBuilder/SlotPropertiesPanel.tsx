@@ -913,7 +913,7 @@ export function SlotPropertiesPanel({
               <>
                 <PropRow label={t('lb_slot_glow', 'Glow')}>
                   <ColorInput
-                    value={slot.glowColor || '#7c9ef8'}
+                    value={slot.glowColor || '#1ad1c4'}
                     onChange={(v) => onUpdate({ glowColor: v })}
                     size="xs" format="hex" variant="filled"
                   />

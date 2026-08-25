@@ -39,7 +39,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx serve storybook-static -l 6007 --no-clipboard',
+    // serve.json disables cleanUrls — without it, `serve` 301s
+    // `/iframe.html?id=…` to `/iframe` and drops the story query string
+    // (P74-N: committed baselines were Storybook "No Preview" empty states).
+    command: 'cp e2e/visual/serve.json storybook-static/serve.json && npx serve storybook-static -l 6007 --no-clipboard',
     url: 'http://localhost:6007',
     reuseExistingServer: true,
     timeout: 30_000,

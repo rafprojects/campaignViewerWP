@@ -903,7 +903,7 @@ function LayoutBuilderGalleryInner({
                   canvasHeight={canvasH}
                   onOpenAt={onOpenAt}
                   mediaIndexMap={mediaIndexMap}
-                  glowColor={slot.glowColor || settings.tileGlowColor || '#7c9ef8'}
+                  glowColor={slot.glowColor || settings.tileGlowColor || '#1ad1c4'}
                   glowSpread={slot.glowSpread ?? settings.tileGlowSpread ?? 12}
                   positionClassName={slotCssClass(instanceId, slot.id)}
                 />

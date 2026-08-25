@@ -294,7 +294,7 @@ class Mullion_Settings_Sanitizer {
         }
 
         if (isset($input['card_border_color'])) {
-            $sanitized['card_border_color'] = sanitize_hex_color($input['card_border_color']) ?: '#228be6';
+            $sanitized['card_border_color'] = sanitize_hex_color($input['card_border_color']) ?: '#1ad1c4';
         }
 
         if (isset($input['typography_overrides'])) {

@@ -593,7 +593,7 @@ class Mullion_Layout_Templates {
             'backgroundMode'       => in_array( $data['backgroundMode'] ?? '', [ 'none', 'color', 'gradient', 'image' ], true )
                 ? $data['backgroundMode']
                 : 'color',
-            'backgroundColor'      => self::sanitize_css_value( $data['backgroundColor'] ?? '#1a1a2e', 'color' ),
+            'backgroundColor'      => self::sanitize_css_value( $data['backgroundColor'] ?? '#102530', 'color' ),
             'backgroundGradientDirection' => in_array( $data['backgroundGradientDirection'] ?? '', [ 'horizontal', 'vertical', 'diagonal-right', 'diagonal-left', 'radial' ], true )
                 ? $data['backgroundGradientDirection']
                 : 'horizontal',
@@ -707,7 +707,7 @@ class Mullion_Layout_Templates {
                 'mediaUrl'       => isset( $s['mediaUrl'] ) ? esc_url_raw( $s['mediaUrl'] ) : null,
                 'clickAction'    => in_array( $s['clickAction'] ?? '', $valid_clicks, true ) ? $s['clickAction'] : 'lightbox',
                 'hoverEffect'    => in_array( $s['hoverEffect'] ?? '', $valid_hovers, true ) ? $s['hoverEffect'] : 'pop',
-                'glowColor'      => isset( $s['glowColor'] ) ? ( sanitize_hex_color( $s['glowColor'] ) ?: '#7c9ef8' ) : null,
+                'glowColor'      => isset( $s['glowColor'] ) ? ( sanitize_hex_color( $s['glowColor'] ) ?: '#1ad1c4' ) : null,
                 'glowSpread'     => isset( $s['glowSpread'] ) ? max( 2, min( 60, intval( $s['glowSpread'] ) ) ) : null,
                 // ── Layer system (P16) ──
                 'name'           => isset( $s['name'] ) && is_string( $s['name'] ) ? sanitize_text_field( $s['name'] ) : null,

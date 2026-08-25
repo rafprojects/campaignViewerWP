@@ -40,7 +40,7 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
     // Resolve border color based on mode
     let resolvedBorderColor = campaign.company.brandColor;
     if (borderMode === 'single') {
-      resolvedBorderColor = settings?.cardBorderColor ?? '#228be6';
+      resolvedBorderColor = settings?.cardBorderColor ?? '#1ad1c4';
     } else if (borderMode === 'individual' && campaign.borderColor) {
       resolvedBorderColor = campaign.borderColor;
     }

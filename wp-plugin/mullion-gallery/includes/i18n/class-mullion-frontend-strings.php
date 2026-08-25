@@ -1368,7 +1368,7 @@ class Mullion_Frontend_Strings {
             'set_sg_tile-appearance_tileGlowEnabled_desc' => __('Drop-shadow glow on hover for supported tile-based adapters.', 'mullion-gallery'),
             'set_sg_tile-appearance_tileGlowColor' => __('Glow Color', 'mullion-gallery'),
             'set_sg_tile-appearance_tileGlowColor_desc' => __('CSS color used for the hover glow effect.', 'mullion-gallery'),
-            'set_sg_tile-appearance_tileGlowColor_ph' => __('#7c9ef8', 'mullion-gallery'),
+            'set_sg_tile-appearance_tileGlowColor_ph' => __('#1ad1c4', 'mullion-gallery'),
             'set_sg_tile-appearance_tileGlowSpread' => __('Glow Spread (px)', 'mullion-gallery'),
             'set_sg_tile-appearance_tileGlowSpread_desc' => __('Radius of the glow effect.', 'mullion-gallery'),
             'set_sg_carousel_imageViewportHeight' => __('Image Viewport Height', 'mullion-gallery'),

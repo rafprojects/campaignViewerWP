@@ -32,7 +32,7 @@ function PresetPreview({ preset }: { preset: LayoutPreset }) {
         width: previewW,
         height: previewH,
         position: 'relative',
-        background: '#1a1a2e',
+        background: '#102530',
         borderRadius: 4,
         overflow: 'hidden',
         margin: '0 auto',

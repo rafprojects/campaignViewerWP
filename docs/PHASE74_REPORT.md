@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A through P74-M, P74-P, and P74-Q landed, remaining tracks Planned (N, O)
+**Status:** Complete — P74-A through P74-Q landed. Rig Cyan `primaryShade` lives in P75-F (Decision I).
 **Created:** 2026-08-23
-**Last updated:** 2026-08-25 (P74-N `primaryShade` ownership moved to P75-F so Phase 74 can close without waiting on the OKLCH ramp. Remaining: P74-N palette, P74-O.)
+**Last updated:** 2026-08-25 (P74-N visual rebaseline + P74-O hex fallbacks. Phase closed.)
 
 ### Tracks
 
@@ -23,8 +23,8 @@
 | P74-P | REST namespace + script-handle rename (`wp-super-gallery/v1`, `wp-super-gallery-app`) | Done | Medium (atomic PHP+JS+tests; changing one side 404s the app) |
 | P74-Q | Leftover live-identifier punch-list + drop the rebrand migrator | Done | Low-Medium (deletes E/F migration machinery; local wp-env data is not migrated) |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Done | Low (volume) |
-| P74-N | New default theme: Mullion / Rig Cyan | In progress — palette + schema landed; visual snapshot rebaseline still open | Low-Medium |
-| P74-O | CSS fallback-color reconciliation (depends on P74-N) | Planned | Low |
+| P74-N | New default theme: Mullion / Rig Cyan | Done — `primaryShade` moved to P75-F | Low-Medium |
+| P74-O | CSS fallback-color reconciliation (depends on P74-N) | Done | Low |
 
 ---
 
@@ -717,7 +717,7 @@ Overwrite `packages/theme-engine/src/definitions/default-dark.json`'s `colors` b
 - **Schema.** `surfaceRaised` / `borderStrong` optional on `ThemeColors`; always present on `ResolvedColors`. `surfaceRaised` falls back to `surface2` (flatter). `borderStrong` is **derived**, not aliased to `border`: LCH step toward mid-grey, chroma eased 20%, until 3:1 against surface. Fixture surfaces from designer review (Rig Cyan / tokyo-night / sunset-boulevard / forest-whisper) all clear 3:1. `primaryShade` optional; resolve fills `{ light: 6, dark: 5 }` so existing consumers don't crash — that is the historical Mantine default, **not** Rig Cyan's criterion index.
 - **Adapter.** Input / TextInput / PasswordInput / Select input outlines use `borderStrong`. Menu / Popover / Tooltip / Select dropdowns use `surfaceRaised`. Decorative dividers stay on `border`.
 - **Gate.** `auditThemeContrast` on all 23 bundled themes: 0 failures, including Rig Cyan with derived fields. Theme-engine + adapter Vitest: 352 passed.
-- **Still open before calling this track Done:** Playwright visual-regression rebaseline for the default theme (intentional diffs). P74-O after that.
+- **Visual rebaseline.** Committed Storybook adapter snapshots were Storybook **"No Preview"** empty states: `npx serve` 301s `/iframe.html?id=…` to `/iframe` and drops the story query. Added `e2e/visual/serve.json` (`cleanUrls: false`) and copy-it-in on the Playwright webServer command. Recaptured all 33 adapter × viewport PNGs; `npm run test:visual` 33/33. Picsum fixtures often don't load (known Phase 49 flake) — tiles show the CSS-var fallback, which P74-O retargeted to Rig Cyan `#102530`. Not run: `e2e/theme-qa.spec.ts` (Vite app, separate from this Storybook suite).
 
 ---
 
@@ -738,6 +738,12 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 ### Validation
 
 - Visual check of an unthemed/fallback-triggering context (e.g. briefly disabling the CSS variable injection in a dev build) to confirm no seam.
+
+### Implementation Notes (2026-08-25)
+
+- **Mapping.** `#1a1a2e` → surface `#102530`; `#0f3460` / `#0d0d0d` → background `#08141b`; `#228be6` / `#7c9ef8` → accent `#1ad1c4`. Adapter `var(--mullion-color-surface, …)` fallbacks, gallery-behavior defaults, layout-builder empty-template background, PHP settings registry / sanitizer / layout-template defaults, and the i18n glow-color placeholder. Regenerated `class-mullion-frontend-strings.php` via `npm run i18n:generate`.
+- **Left as a sanitizer fixture.** `Mullion_Import_Sanitization_Test` still feeds `#1a1a2e` as sample payload to prove a valid hex is not stripped — not a default-theme fallback.
+- **Acceptance.** `rg "#1a1a2e|#0f3460|#228be6|#7c9ef8" src` is clean. Focused Vitest on the two tests that asserted old defaults: 134 passed.
 
 ---
 
@@ -762,8 +768,8 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 
 ## Implementation Notes
 
-Per-track notes live under each track section above. P74-A through P74-M, P74-P, and P74-Q have landed.
+Per-track notes live under each track section above. All P74 tracks have landed.
 
 ## Outcome
 
-**In progress.** P74-A through P74-M, P74-P, and P74-Q landed. Remaining: **P74-N** (Rig Cyan palette; completable — `primaryShade` is P75-F, Decision I), **P74-O** (hex fallbacks, blocked on N). P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.
+**Complete.** P74-A through P74-Q landed. The plugin is Mullion end-to-end (identifiers, docs, Rig Cyan default theme). Rig Cyan's `primaryShade` index is **P75-F** (Decision I), not a Phase 74 hold. P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.

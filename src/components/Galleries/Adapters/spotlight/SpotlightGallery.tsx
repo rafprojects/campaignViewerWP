@@ -165,7 +165,7 @@ export function SpotlightGallery({
             aspectRatio: heroAspectCss,
             overflow: 'hidden',
             borderRadius: heroBorderRadius,
-            background: 'var(--mullion-color-surface, #1a1a2e)',
+            background: 'var(--mullion-color-surface, #102530)',
             cursor: media.length > 0 ? 'pointer' : 'default',
           }}
         >
@@ -287,13 +287,13 @@ export function SpotlightGallery({
                   flexShrink: 0,
                   padding: 0,
                   border: isActive
-                    ? '2px solid var(--mullion-color-primary, #7c9ef8)'
+                    ? '2px solid var(--mullion-color-primary, #1ad1c4)'
                     : '2px solid transparent',
                   borderRadius: thumbBr,
                   overflow: 'hidden',
                   cursor: 'pointer',
                   position: 'relative',
-                  background: 'var(--mullion-color-surface, #1a1a2e)',
+                  background: 'var(--mullion-color-surface, #102530)',
                   transition: `border-color ${transitionMs}ms ease`,
                   opacity: isActive ? 1 : 0.7,
                 }}

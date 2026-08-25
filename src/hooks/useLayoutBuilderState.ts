@@ -47,7 +47,7 @@ export function createEmptyTemplate(name = 'Untitled Layout'): LayoutTemplate {
     canvasAspectRatio: 16 / 9,
     canvasMinWidth: 320,
     canvasMaxWidth: 0,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: '#102530',
     slots: [],
     overlays: [],
     texts: [],

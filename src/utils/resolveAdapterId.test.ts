@@ -627,7 +627,7 @@ describe('applyResolvedGalleryAdapterSettings', () => {
       tileBorderColor: '#ffffff',
       tileHoverBounce: true,
       tileGlowEnabled: false,
-      tileGlowColor: '#7c9ef8',
+      tileGlowColor: '#1ad1c4',
       tileGlowSpread: 12,
       tileGapX: 8,
       tileGapY: 8,
@@ -668,7 +668,7 @@ describe('applyResolvedGalleryAdapterSettings', () => {
   it('projects layout-builder adapter defaults back onto legacy runtime fields', () => {
     const s = makeSettings({
       layoutBuilderScope: 'full',
-      tileGlowColor: '#7c9ef8',
+      tileGlowColor: '#1ad1c4',
       tileGlowSpread: 12,
       galleryConfig: {
         breakpoints: {
