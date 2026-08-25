@@ -761,11 +761,12 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| `default-light.json` companion to Rig Cyan | No light-scheme values were supplied by the designer; inventing them would be worse than leaving the gap explicit. |
+| `default-light.json` companion to Rig Cyan | Moved to [P75-G](PHASE75_REPORT.md). Still blocked on designer light-scheme values; do not invent hexes. |
+| Checkbox / Switch adapter outlines still on `rc.border` | Moved to [P75-H](PHASE75_REPORT.md). Same 1.4.11 miss as NumberInput; independently landable. |
 | Removing the retired old-blue palette from any design references outside the theme JSON itself (e.g. marketing screenshots already captured under the old theme) | Screenshot recapture is already tracked separately per the design brief's own screenshot-manifest section; not duplicated here. |
 | A distinct "ink-safe"/accent-text schema role, if the designer's corrected submission turns out to need one | Genuinely blocked on knowing what the designer intended; adding schema surface speculatively would be worse than waiting for the real requirement. |
 | Rig Cyan `primaryShade` (the live index on `default-dark.json`) | Moved to P75-F (Decision I). An index set against the HSL generator would be wrong the moment the OKLCH ramp lands; F already re-derives the other 16 themes' indices in that same commit. |
-| `wp i18n make-pot` harvest of `languages/` | P74-C skipped a real harvest so locale coverage stayed 2,379/2,379. The catalogs still carry old plugin-name/GitHub-URI msgids, stale `#: class-wpsg-*.php` comments, and ~150 pre-rename untranslated strings. Confirmed during the PR Review pass: leave as follow-on rather than mix a large i18n diff into this branch. |
+| `wp i18n make-pot` harvest of `languages/` | Moved to [Phase 76](PHASE76_REPORT.md). P74-C skipped a real harvest so locale coverage stayed 2,379/2,379. |
 
 ## Implementation Notes
 
@@ -786,7 +787,7 @@ Self-reviewed the full Phase 74 branch (`origin/main...HEAD`, 21 commits, 719 fi
 | Track | Claim vs tree | Verdict |
 |-------|---------------|---------|
 | **P74-A** folder + tooling paths | Plugin lives at `wp-plugin/mullion-gallery/`. `.wp-env.json`, CI, scripts, `update_dev_plugin.sh`, theme-catalog import, and adapter-parity tests all resolve the new path. `validate-themes.mjs` still pointed at the pre-P51-L `src/themes/definitions/` path (P74-A noted this as pre-existing). `public/.htaccess` Nginx paths were updated; the file banner was not. | **Met**, with two comment/tooling leftovers fixed this pass. |
-| **P74-B** metadata | Header is `Plugin Name: Mullion`, text domain `mullion-gallery`, URIs `github.com/rafprojects/mullion-gallery` (GitHub repo is already named `mullion-gallery`; the git remote URL still says `campaignViewerWP` and redirects). `package.json` name is `mullion-gallery`. `Contributors: wpsupergallery` kept on purpose. | **Met.** |
+| **P74-B** metadata | Header is `Plugin Name: Mullion`, text domain `mullion-gallery`, URIs `github.com/rafprojects/mullion-gallery`. `package.json` name is `mullion-gallery`. `Contributors: wpsupergallery` kept on purpose. Git remote retargeted to `rafprojects/mullion-gallery` in the leftover pass (GitHub had already renamed the repo; the old URL redirected). | **Met.** |
 | **P74-C** text domain + i18n | Live `__()` / `load_plugin_textdomain` arguments are `'mullion-gallery'`. Language *filenames* renamed. `make-pot` was deliberately not run: catalogs still have msgid `WP Super Gallery`, the old GitHub URI, and `#: class-wpsg-*.php` comments. Runtime English does not display those msgids (they no longer match source). | **Met as revised** (header-only). Harvest remains a follow-on. |
 | **P74-D** shortcode | Single `add_shortcode('mullion-gallery')`. `has_shortcode` / `shortcode_atts` match. No `super-gallery` alias. | **Met.** |
 | **P74-E** CPT / tax / caps / roles | `mullion_campaign`, `mullion_layout_tpl`, four taxonomies, `edit_mullion_campaigns…`, `manage_mullion`, `mullion_editor`. Menu `Mullion`. Migrator later dropped in Q (Decision H). | **Met**, then superseded by H/Q. |
@@ -813,13 +814,27 @@ Real unclaimed leftovers (not load-bearing at runtime):
 
 - **Comment banners** in `public/.htaccess` and `.distignore` still said WP Super Gallery. Fixed this pass. The `.htaccess` comment ships in the ZIP (the file is copied into `assets/`).
 - **REST namespace is copy-pasted**, not a PHP constant. P74-P renamed every site; a future rename will 404 again if one side is missed. Pre-existing shape, not a leftover `wpsg`.
-- **Git clone directory** is still `wp-super-gallery`; remote URL is still `rafprojects/campaignViewerWP` (GitHub repo name is already `mullion-gallery` and redirects). Out of tree.
-- **`default-light.json`** is still the retired navy/Instrument Blue palette sitting next to Rig Cyan in the Default group. Explicit P74-N deferral; still the user-visible leftover of the old brand in the theme picker.
-- **Checkbox / Switch** adapter outlines still use `rc.border` (1.46:1 on Rig Cyan). Overlaps P75-E's contrast spike; not changed here.
-- **`auditThemeContrast`** does not gate `borderStrong` vs `surface` at 3:1. Derivation is unit-tested; the CI theme gate is text-on-surface only.
+- **Git clone directory** is still `wp-super-gallery` on disk. That is the local checkout folder; renaming it is `mv` after this session, not a git object. **`origin` now points at `https://github.com/rafprojects/mullion-gallery.git`** (leftover pass). Historical PR links in `docs/old/PR_REVIEW_NOTES.md` still use `campaignViewerWP` because that is the URL those PRs were opened under; GitHub redirects them.
+- **`default-light.json`** — [P75-G](PHASE75_REPORT.md).
+- **Checkbox / Switch** adapter outlines — [P75-H](PHASE75_REPORT.md).
+- **`languages/` make-pot harvest** — [Phase 76](PHASE76_REPORT.md).
+- **`auditThemeContrast`** does not gate `borderStrong` vs `surface` at 3:1. Derivation is unit-tested; the CI theme gate is text-on-surface only. Belongs with P75-E's "automated coverage for this criterion" acceptance item, not a new track.
 - **readme.txt** "or the block editor embed" — there is no `register_block_type`. Pre-existing, not introduced by the rename.
 
-Intentional keeps (do not rewrite): this report's FROM-map, PHASE75 origin sentence, `docs/archive/**`, `docs/old/PR_REVIEW_NOTES.md` GitHub URLs to `campaignViewerWP`, `Contributors: wpsupergallery`, `readme.txt` changelog history (`wp wpsg`, `@wpsg`), P74-K license-test negative assertion, `languages/` until `make-pot`, "WP Super Cache" as a third-party plugin.
+### Intentional keeps (why they stay)
+
+These still contain the old name on purpose. Rewriting them would either break a test, lie about history, or change a WordPress.org account handle we do not control.
+
+| Keep | Why it stays |
+|------|----------------|
+| **This report (PHASE74)** | It is the rebrand's FROM-map. A sentence like "rename `wpsg_*` to `mullion_*`" becomes nonsense if the left-hand side is rewritten. Same reason P74-M excluded it from the docs sweep. |
+| **PHASE75 origin sentence** | One historical clause ("rebrand from WP Super Gallery to Mullion") so a later reader knows why Freemius work is numbered 75. The rest of that file is already post-rename identifiers. |
+| **`docs/archive/**`** | Phase reports and reviews of what shipped under the old name. Rewriting them would fabricate a history in which the plugin was always called Mullion. |
+| **`docs/old/PR_REVIEW_NOTES.md` GitHub URLs** | Those PRs were opened on `rafprojects/campaignViewerWP`. The links still resolve via GitHub's rename redirect. Changing the path would be cosmetic; the PR numbers are the record. |
+| **`Contributors: wpsupergallery` in `readme.txt`** | WordPress.org *account slug*, not a product identifier. The listing credits whoever owns that.org user. Renaming it here does not rename the account, and a slug that does not exist will fail Plugin Check / wp.org ingest. Keep until a `mullion` (or similar).org account exists and is the actual contributor. |
+| **`readme.txt` changelog history** (`wp wpsg`, `@wpsg`, old ZIP names) | Changelog lines describe what that version *shipped*. v0.x users (even if only us) grepping an installed `readme.txt` should see the CLI command that version actually had. New versions' notes use `wp mullion`. |
+| **P74-K license-test negative assertion** | `Mullion_License_Test` searches plugin PHP for `'slug' => 'wp-super-gallery'` and asserts **zero** matches. That string must remain in the test or the gate goes blind. It is not displayed to users. |
+| **"WP Super Cache"** in PACKAGING_RELEASE.md | Third-party plugin. Not this product. |
 
 ### Fixes made in this pass
 

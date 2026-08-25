@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P74-N's Rig Cyan `primaryShade` sub-item moved here into P75-F — Phase 74 closes without waiting on the OKLCH ramp; F sets `default-dark`'s index in the same commit that re-derives the other 16 themes.)
+**Last updated:** 2026-08-25 (P74 PR Review leftovers: P75-G Rig Cyan light companion, P75-H Checkbox/Switch `borderStrong`. `primaryShade` remains P75-F.)
 
 ### Tracks
 
@@ -14,6 +14,8 @@
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
+| P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
+| P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Planned | Small |
 
 ---
 
@@ -64,7 +66,11 @@ Every Freemius-behavior claim in this report was verified directly against Freem
 
 1. **P75-A** — pure PHP + a small script change, no CI dependency. Should land first so the release pipeline (P75-B) ships a lite ZIP whose PHP already self-identifies correctly from day one, rather than needing a follow-up fix.
 2. **P75-B** — depends on P75-A only in the sense that it's more useful once A exists, but is independently implementable/testable (the ZIP-shape and YAML wiring don't care what the marker's default value is).
-3. **P75-C** — last; should document the mechanism and scripts as they actually ship after A/B land, not an in-progress state.
+3. **P75-C** — last of the Freemius trio; should document the mechanism and scripts as they actually ship after A/B land, not an in-progress state.
+4. **P75-H** — independently landable at any time (including before A). Same class of fix as the P74-review NumberInput/ColorInput pass; does not wait on the OKLCH ramp or the 1.4.11 spike.
+5. **P75-F** — before P75-E step 3. Sets Rig Cyan's `primaryShade` and re-derives the other 16 themes' indices.
+6. **P75-D** then **P75-E** — color-system collab work. E step 1 (authored-shade bug) can start before F; E step 3 cannot.
+7. **P75-G** — blocked on a designer light-scheme spec. Independent of Freemius (A–C). Can land alongside D/E/F once the hexes exist; do not invent them.
 
 ---
 
@@ -306,6 +312,82 @@ Must land before P75-E's step 3 repair layer is implemented. **Does not block Ph
 
 ---
 
+## Track P75-G - Rig Cyan light companion (`default-light.json`)
+
+### Problem
+
+P74-N overwrote `default-dark.json` in place (id kept, display name **Mullion**, Rig Cyan palette). `default-light.json` was left untouched on purpose: the designer never supplied light-scheme values, and inventing them would have been worse than an explicit gap ([PHASE74_REPORT.md](PHASE74_REPORT.md) Follow-On / Decision F).
+
+The gap is now user-visible. The Default group in the theme picker is **Mullion (Rig Cyan)** next to **Default Light**, which is still the retired navy/Instrument Blue (`text` `#0f172a`, `primary`/`accent` `#3b82f6`). Switching "default" dark ↔ light is a brand change, not a scheme change — the same mismatch Decision F retired blue from the dark default to avoid ("blue is the most crowded color in this product category").
+
+The light file also predates P74-N's schema: no `surfaceRaised` / `borderStrong` (resolve derives them). Its `_comment` still says "light counterpart to the flagship dark theme," which is no longer true of the flagship.
+
+Sourced from the 2026-08-25 P74 PR Review leftover list.
+
+### Fix
+
+**Do not invent hexes.** Ask the designer for a Rig Cyan *light* 11-role spec, same roles as [COLOR-SPEC.md](../.wordpress-org/COLOR-SPEC.md) §1 (`background`, `surface`, `surfaceRaised`, `border`, `borderStrong`, `text`, `textMuted`, `accent`, `success`, `warning`, `error`), plus whatever they want for `info` / `accentGreen` / `accentPurple`. Wordmark-on-light and "accent on light" (`#007a70`) already exist in COLOR-SPEC §3 as *brand* rules, not as a full theme. Those are not enough to fill `default-light.json` on their own.
+
+Once values exist:
+
+- Overwrite `packages/theme-engine/src/definitions/default-light.json` in place. Keep `id: "default-light"` (same Decision F as the dark default).
+- Author `surfaceRaised` / `borderStrong` explicitly if the spec includes them; otherwise let resolve derive (raised → surface2; borderStrong → 3:1 against surface).
+- Omit `primaryShade` or set it in the same commit as P75-F if F has already landed — do not bake an HSL-ramp index that F will invalidate. If G lands first, follow P74-N: no live `primaryShade`, a `_primaryShade` note pointing at F.
+- Update `theme-catalog.json`'s `default-light` `name` / `description` so the Default group reads as a light/dark Rig Cyan pair, not "Mullion" vs "Clean light baseline."
+- Run `auditThemeContrast` on the new light palette before commit. Visual-regression: `default-light` is not the Storybook adapter default, so no snapshot recapture is required unless a test hardcodes those old hexes.
+
+**If the designer declines a light scheme:** close this track as won't-fix, and change the catalog copy so `default-light` no longer claims to be the flagship counterpart (it becomes just another light theme). Do not ship a guessed Rig Cyan light.
+
+### Acceptance criteria
+
+- `default-light.json` is either (a) a designer-specified Rig Cyan light that passes `auditThemeContrast`, or (b) explicitly documented as not-the-brand-default with catalog copy that matches that decision.
+- Theme picker Default group no longer pairs Rig Cyan dark with Instrument Blue light *unless* (b) was chosen and the copy says so.
+- No invented hexes in git history for this track.
+
+### Validation
+
+- `auditThemeContrast` / theme-engine Vitest, including a light-scheme case.
+- `node scripts/validate-themes.mjs`.
+- Manual: ThemeSelector, switch Default dark ↔ light, confirm brand continuity (or the won't-fix copy).
+
+---
+
+## Track P75-H - Checkbox / Switch `borderStrong` outlines
+
+### Problem
+
+P74-N added `borderStrong` for 1.4.11 affordance edges and wired Input / TextInput / PasswordInput / Select. The P74 PR Review found NumberInput / ColorInput still painting `rc.border` (fixed in that pass). **Checkbox and Switch were left:**
+
+```ts
+Checkbox.input.borderColor = rc.border        // adapter.ts, unchecked box
+Switch.track.borderColor   = rc.border        // adapter.ts, track outline
+```
+
+On Rig Cyan, `border` is `#22414f` against `surface` `#102530` at **1.46:1**. That is correct for decorative dividers (WCAG 1.4.11 exempts them) and wrong for the unchecked checkbox square / switch track, which *are* the control. Same failure mode NumberInput had: a more-specific component override undoes `Input`'s `borderStrong`.
+
+This is classified already — it does not need P75-E's spike to decide "affordance vs decorative." E's spike should treat these two sites as already-fixed (or already-queued) so it does not double-count them.
+
+Independent of P75-F: `borderStrong` is a surface-relative derived token, not a ramp index.
+
+### Fix
+
+- `src/themes/adapter.ts` — Checkbox `input.borderColor` and Switch `track.borderColor` use `rc.borderStrong`. Leave the checked/on state on `rc.primary[primaryShade]` (that fill is P75-E/F, not this track).
+- Extend the P74-review adapter test (`uses borderStrong for input-outline roles…`) to include Checkbox and Switch.
+- Do not retarget Chip, Divider, Paper, or other `rc.border` sites here — those are decorative unless E's spike says otherwise.
+
+### Acceptance criteria
+
+- Unchecked Checkbox and Switch track outlines resolve to `borderStrong` (Rig Cyan `#577577`, ~3.18:1 on surface).
+- Checked / on styles unchanged by this track.
+- Adapter unit test fails if either site regresses to `rc.border`.
+
+### Validation
+
+- Focused Vitest on `src/themes/__tests__/adapter.test.ts`.
+- Manual: Settings Panel, a checkbox and a switch on the default theme, unthemed-enough to see the outline against `surface` / `surface2`.
+
+---
+
 ## Verification (phase-wide)
 
 Proving both ZIPs come out correct end-to-end without running the real GitHub Actions workflow:
@@ -333,6 +415,6 @@ Not started. This document currently reflects the **plan** only — see the Stat
 
 **Planned, not yet implemented.** P75-A/B/C are code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), and P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." Once P75-D/E/F land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) does not need the designer. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
