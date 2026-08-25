@@ -303,8 +303,8 @@ describe('validateTheme — comprehensive coverage', () => {
 
     describe('required color fields', () => {
       const requiredFields = [
-        'background', 'surface', 'surface2', 'surface3',
-        'text', 'textMuted', 'textMuted2', 'border', 'success',
+        'background', 'surface',
+        'text', 'textMuted', 'border', 'success',
       ] as const;
 
       requiredFields.forEach((field) => {
@@ -327,6 +327,26 @@ describe('validateTheme — comprehensive coverage', () => {
 
         it(`throws when ${field} is whitespace only`, () => {
           const theme = makeValidTheme({ colors: { [field]: '   ' } });
+          expect(() => validateTheme(theme)).toThrow(`colors.${field} must be a valid CSS color`);
+        });
+      });
+    });
+
+    describe('optional derived color fields (P74-N)', () => {
+      const optionalFields = [
+        'surface2', 'surface3', 'surfaceRaised', 'textMuted2', 'borderStrong',
+      ] as const;
+
+      optionalFields.forEach((field) => {
+        it(`accepts a theme that omits ${field}`, () => {
+          const theme = makeValidTheme();
+          const colors = (theme as Record<string, unknown>).colors as Record<string, unknown>;
+          delete colors[field];
+          expect(() => validateTheme(theme)).not.toThrow();
+        });
+
+        it(`throws when ${field} is present but invalid`, () => {
+          const theme = makeValidTheme({ colors: { [field]: 'not-a-color' } });
           expect(() => validateTheme(theme)).toThrow(`colors.${field} must be a valid CSS color`);
         });
       });
@@ -386,6 +406,11 @@ describe('validateTheme — comprehensive coverage', () => {
     });
 
     describe('primaryShade', () => {
+      it('accepts a theme that omits primaryShade (P74-N / P75-F)', () => {
+        const theme = makeValidTheme();
+        expect(() => validateTheme(theme)).not.toThrow();
+      });
+
       it('throws when primaryShade is not an object', () => {
         const theme = makeValidTheme({ colors: { primaryShade: null } });
         expect(() => validateTheme(theme)).toThrow('colors.primaryShade must be {light: number, dark: number}');

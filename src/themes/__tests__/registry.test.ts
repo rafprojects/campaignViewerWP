@@ -80,7 +80,7 @@ describe('getTheme', () => {
     const entry = getTheme('default-dark');
     expect(entry).toBeDefined();
     expect(entry.meta.id).toBe('default-dark');
-    expect(entry.meta.name).toBe('Default Dark');
+    expect(entry.meta.name).toBe('Mullion');
     expect(entry.meta.colorScheme).toBe('dark');
     expect(entry.mantine).toBeDefined();
     expect(entry.cssVars).toBeTruthy();

@@ -54,10 +54,12 @@ export function generateCssVariables(
   vars.push(`${PREFIX}-color-surface: ${rc.surface};`);
   vars.push(`${PREFIX}-color-surface2: ${rc.surface2};`);
   vars.push(`${PREFIX}-color-surface3: ${rc.surface3};`);
+  vars.push(`${PREFIX}-color-surface-raised: ${rc.surfaceRaised};`);
   vars.push(`${PREFIX}-color-text: ${rc.text};`);
   vars.push(`${PREFIX}-color-text-muted: ${rc.textMuted};`);
   vars.push(`${PREFIX}-color-text-muted2: ${rc.textMuted2};`);
   vars.push(`${PREFIX}-color-border: ${rc.border};`);
+  vars.push(`${PREFIX}-color-border-strong: ${rc.borderStrong};`);
   vars.push(`${PREFIX}-color-primary: ${rc.primary[5]};`);
   vars.push(`${PREFIX}-color-success: ${rc.success};`);
   vars.push(`${PREFIX}-color-warning: ${rc.warning};`);

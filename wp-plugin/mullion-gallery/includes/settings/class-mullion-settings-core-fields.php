@@ -190,7 +190,7 @@ class Mullion_Settings_Core_Fields {
         // Fallback: hard-coded full list matching the catalog (all 23 themes).
         return [
             __('Default', 'mullion-gallery') => [
-                'default-dark'  => __('Default Dark', 'mullion-gallery'),
+                'default-dark'  => __('Mullion', 'mullion-gallery'),
                 'default-light' => __('Default Light', 'mullion-gallery'),
             ],
             __('Material', 'mullion-gallery') => [

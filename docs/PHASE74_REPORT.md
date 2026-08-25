@@ -23,7 +23,7 @@
 | P74-P | REST namespace + script-handle rename (`wp-super-gallery/v1`, `wp-super-gallery-app`) | Done | Medium (atomic PHP+JS+tests; changing one side 404s the app) |
 | P74-Q | Leftover live-identifier punch-list + drop the rebrand migrator | Done | Low-Medium (deletes E/F migration machinery; local wp-env data is not migrated) |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Done | Low (volume) |
-| P74-N | New default theme: Mullion / Rig Cyan | Planned — palette finalized; `primaryShade` moved to P75-F | Low-Medium |
+| P74-N | New default theme: Mullion / Rig Cyan | In progress — palette + schema landed; visual snapshot rebaseline still open | Low-Medium |
 | P74-O | CSS fallback-color reconciliation (depends on P74-N) | Planned | Low |
 
 ---
@@ -707,9 +707,17 @@ Overwrite `packages/theme-engine/src/definitions/default-dark.json`'s `colors` b
 
 - Run `auditThemeContrast` directly against the candidate JSON, independent of the CI test suite, before committing — catches an AA failure before it's baked into a snapshot.
 - Full Vitest suite, including a regenerate-and-review pass on visual-regression snapshots for the default theme specifically.
-- Confirm the `surfaceRaised`/`borderStrong` fallback path with a theme that omits them (any of the other 22) — should resolve to `surface2`/`border` unchanged, zero visual regression for themes that don't specify the new fields.
+- Confirm the `surfaceRaised`/`borderStrong` fallback path with a theme that omits them (any of the other 22): `surfaceRaised` → `surface2` (flatter, no new elevation). `borderStrong` is **derived to 3:1**, not aliased to `border` — input outlines on those themes will shift (intentional; aliasing would reinstall the 1.4.11 failure).
 
 **Moved, not blocked:** `primaryShade`'s final value is [PHASE75_REPORT.md](PHASE75_REPORT.md) P75-F's job (Decision I). This track is completable — and Phase 74 is closable — without it.
+
+### Implementation Notes (2026-08-25)
+
+- **Palette.** Overwrote `packages/theme-engine/src/definitions/default-dark.json` in place (`id` still `default-dark`). Authored the designer's 11 roles from `COLOR-SPEC.md` §1. Omitted `surface2` / `surface3` / `textMuted2` (derived at resolve time) and omitted `primaryShade` (Decision I) with a `_primaryShade` note pointing at P75-F. Catalog name is **Mullion**, description **Rig Cyan — the Mullion brand default**. PHP settings fallback label updated to match.
+- **Schema.** `surfaceRaised` / `borderStrong` optional on `ThemeColors`; always present on `ResolvedColors`. `surfaceRaised` falls back to `surface2` (flatter). `borderStrong` is **derived**, not aliased to `border`: LCH step toward mid-grey, chroma eased 20%, until 3:1 against surface. Fixture surfaces from designer review (Rig Cyan / tokyo-night / sunset-boulevard / forest-whisper) all clear 3:1. `primaryShade` optional; resolve fills `{ light: 6, dark: 5 }` so existing consumers don't crash — that is the historical Mantine default, **not** Rig Cyan's criterion index.
+- **Adapter.** Input / TextInput / PasswordInput / Select input outlines use `borderStrong`. Menu / Popover / Tooltip / Select dropdowns use `surfaceRaised`. Decorative dividers stay on `border`.
+- **Gate.** `auditThemeContrast` on all 23 bundled themes: 0 failures, including Rig Cyan with derived fields. Theme-engine + adapter Vitest: 352 passed.
+- **Still open before calling this track Done:** Playwright visual-regression rebaseline for the default theme (intentional diffs). P74-O after that.
 
 ---
 

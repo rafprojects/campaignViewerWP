@@ -118,9 +118,9 @@ describe('adaptTheme', () => {
     const result = adaptTheme(def);
     const other = result.other as Record<string, unknown>;
     const colors = other['colors'] as Record<string, string>;
-    expect(colors['background']).toBe('#0f172a');
-    expect(colors['text']).toBe('#ffffff');
-    expect(colors['success']).toBe('#22c55e');
+    expect(colors['background']).toBe('#08141b');
+    expect(colors['text']).toBe('#eef8fb');
+    expect(colors['success']).toBe('#56b93e');
   });
 
   it('works with a light theme definition', () => {

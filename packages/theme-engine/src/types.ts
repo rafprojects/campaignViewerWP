@@ -70,20 +70,39 @@ export interface ThemeColors {
   // Surface layers (background → elevated)
   background: string;
   surface: string;
-  surface2: string;
-  surface3: string;
+  /** Derived from surface→surfaceRaised when omitted (P74-N). */
+  surface2?: string;
+  /** Derived from surface→surfaceRaised when omitted (P74-N). */
+  surface3?: string;
+  /**
+   * Menus/popovers. Optional: falls back to surface2 (a theme without it
+   * just reads flatter). P74-N.
+   */
+  surfaceRaised?: string;
 
   // Text hierarchy
   text: string;
   textMuted: string;
-  textMuted2: string;
+  /** Derived between text and textMuted when omitted (P74-N). */
+  textMuted2?: string;
 
   // Border
   border: string;
+  /**
+   * Input outlines and focusable edges (WCAG 1.4.11 affordances).
+   * Optional: derived from surface until it clears 3:1 — never aliased
+   * to `border`, which is often a decorative 1.46:1 divider. P74-N.
+   */
+  borderStrong?: string;
 
   // Primary accent — expanded to 10-step array via chroma.js
   primary: ColorShorthand;
-  primaryShade: PrimaryShade;
+  /**
+   * Optional. When omitted, resolveColors fills `{ light: 6, dark: 5 }`
+   * (historical Mantine default). Rig Cyan omits this on purpose; P75-F
+   * sets the live index against the OKLCH ramp (Phase 74 Decision I).
+   */
+  primaryShade?: PrimaryShade;
 
   // Semantic status colors
   success: string;
@@ -186,12 +205,14 @@ export interface ResolvedColors {
   surface: string;
   surface2: string;
   surface3: string;
+  surfaceRaised: string;
 
   text: string;
   textMuted: string;
   textMuted2: string;
 
   border: string;
+  borderStrong: string;
 
   /** Fully expanded 10-step array */
   primary: string[];

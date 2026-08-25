@@ -10,7 +10,9 @@ import {
   generateColorScale,
   withAlpha,
   deriveDarkTuple,
+  deriveBorderStrong,
   resolveColors,
+  DEFAULT_PRIMARY_SHADE,
 } from './colorGen';
 import type { ThemeColors } from './types';
 
@@ -114,6 +116,18 @@ describe('deriveDarkTuple', () => {
   });
 });
 
+describe('deriveBorderStrong', () => {
+  it.each([
+    ['#102530', 'rig-cyan surface'],
+    ['#1a1b26', 'tokyo-night surface'],
+    ['#fffbeb', 'sunset-boulevard surface'],
+    ['#f3f5f4', 'forest-whisper surface'],
+  ])('clears 3:1 against %s (%s)', (surface) => {
+    const derived = deriveBorderStrong(surface);
+    expect(chroma.contrast(derived, surface)).toBeGreaterThanOrEqual(3);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // resolveColors
 // ---------------------------------------------------------------------------
@@ -188,6 +202,35 @@ describe('resolveColors', () => {
     expect(resolved.error).toBeTruthy();
     expect(resolved.info).toBeTruthy();
     expect(resolved.accent).toBeTruthy();
+  });
+
+  it('derives surface2/3, textMuted2, and primaryShade when omitted (P74-N)', () => {
+    const rig: ThemeColors = {
+      background: '#08141b',
+      surface: '#102530',
+      surfaceRaised: '#1a3542',
+      text: '#eef8fb',
+      textMuted: '#9db4bf',
+      border: '#22414f',
+      borderStrong: '#577577',
+      primary: '#1ad1c4',
+      success: '#56b93e',
+      warning: '#f5b12b',
+      error: '#ff6b5e',
+      info: '#1ad1c4',
+    };
+    const resolved = resolveColors(rig, 'dark');
+    expect(resolved.surfaceRaised).toBe('#1a3542');
+    expect(resolved.borderStrong).toBe('#577577');
+    expect(resolved.surface2).toMatch(/^#/);
+    expect(resolved.surface3).toMatch(/^#/);
+    expect(resolved.textMuted2).toMatch(/^#/);
+    expect(resolved.primaryShade).toEqual(DEFAULT_PRIMARY_SHADE);
+  });
+
+  it('falls surfaceRaised back to surface2 when unset', () => {
+    const resolved = resolveColors(baseColors, 'dark');
+    expect(resolved.surfaceRaised).toBe(baseColors.surface2);
   });
 
   it('handles primary as an object with base+shades', () => {

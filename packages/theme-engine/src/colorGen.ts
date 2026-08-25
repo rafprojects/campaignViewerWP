@@ -8,7 +8,7 @@
  */
 
 import chroma from 'chroma-js';
-import type { ColorShorthand, ThemeColors, ResolvedColors } from './types';
+import type { ColorShorthand, ThemeColors, ResolvedColors, PrimaryShade } from './types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -20,6 +20,12 @@ const SHADE_COUNT = 10;
 /** Lightness range for the 10-step array (lightest → darkest) */
 const LIGHTNESS_RANGE_LIGHT = [95, 15] as const; // shade 0 = very light
 const LIGHTNESS_RANGE_DARK = [85, 10] as const;
+
+/** Historical Mantine default when a theme omits primaryShade (P74-N / P75-F). */
+export const DEFAULT_PRIMARY_SHADE: PrimaryShade = { light: 6, dark: 5 };
+
+/** WCAG 1.4.11 non-text contrast bar for affordance borders. */
+const UI_CONTRAST_MIN = 3;
 
 // ---------------------------------------------------------------------------
 // Core generators
@@ -100,6 +106,35 @@ export function deriveDarkTuple(
   return scale.map((c) => chroma(c).hex());
 }
 
+/**
+ * Derive a 3:1-against-surface border color (P74-N).
+ *
+ * Holds hue, eases chroma slightly, and steps lightness toward mid-grey
+ * until WCAG 1.4.11's 3:1 bar clears. Must not alias to `border` — that
+ * token is often a decorative divider below 3:1.
+ */
+export function deriveBorderStrong(surface: string): string {
+  const base = chroma(surface);
+  const [l, c, h] = base.lch();
+  const towardMid = l < 50 ? 1 : -1;
+  let best = surface;
+  for (let i = 1; i <= 100; i++) {
+    const t = i / 100;
+    const L = l + towardMid * t * 50;
+    const C = c * (1 - 0.2 * t);
+    const hex = chroma.lch(L, Math.max(0, C), h).hex();
+    best = hex;
+    if (chroma.contrast(hex, surface) >= UI_CONTRAST_MIN) {
+      return hex;
+    }
+  }
+  return best;
+}
+
+function labStops(from: string, to: string, count: number): string[] {
+  return chroma.scale([from, to]).mode('lab').colors(count).map((c) => chroma(c).hex());
+}
+
 // ---------------------------------------------------------------------------
 // Color resolution pipeline
 // ---------------------------------------------------------------------------
@@ -146,20 +181,34 @@ export function resolveColors(
     ? colors.dark
     : deriveDarkTuple(colors.text, colors.surface, colors.background);
 
+  // surfaceRaised → surface2 when unset (flatter, safe). surface2/3 fill
+  // the 3-tier schema between surface and that raised anchor.
+  const surfaceRaised = colors.surfaceRaised ?? colors.surface2 ?? colors.surface;
+  const elev = labStops(colors.surface, surfaceRaised, 4);
+  const surface2 = colors.surface2 ?? elev[1]!;
+  const surface3 = colors.surface3 ?? elev[2]!;
+
+  const textMuted2 = colors.textMuted2
+    ?? chroma.mix(colors.text, colors.textMuted, 0.65, 'lab').hex();
+
+  const borderStrong = colors.borderStrong ?? deriveBorderStrong(colors.surface);
+
   return {
     background: colors.background,
     surface: colors.surface,
-    surface2: colors.surface2,
-    surface3: colors.surface3,
+    surface2,
+    surface3,
+    surfaceRaised,
 
     text: colors.text,
     textMuted: colors.textMuted,
-    textMuted2: colors.textMuted2,
+    textMuted2,
 
     border: colors.border,
+    borderStrong,
 
     primary: primaryArray,
-    primaryShade: colors.primaryShade,
+    primaryShade: colors.primaryShade ?? DEFAULT_PRIMARY_SHADE,
 
     success: colors.success,
     warning: colors.warning ?? '#f59e0b',
