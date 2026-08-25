@@ -1,14 +1,14 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-H landed
+**Status:** In progress — P75-A and P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-H Checkbox/Switch `borderStrong` landed. Remaining: A–G.)
+**Last updated:** 2026-08-25 (P75-A edition self-identification landed. Remaining: B–G.)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Planned | Small-Medium |
+| P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Done | Small-Medium |
 | P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Planned | Medium |
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
@@ -122,6 +122,17 @@ The `NOTE (M2)` comment is tightened to reflect that `is_premium`/`has_premium_v
 - **Updated** `Mullion_License_Test::test_get_config_defaults_empty_credentials` — the asserted `is_premium` default changes from `false` to `true` (no marker exists in the PHPUnit CI job), with an inline comment explaining this is the intended P75-A behavior change, not a regression.
 - `php -l` on the two changed files (already CI-gated repo-wide in `test-php`).
 - No new Vitest unit test for `copy-wp-assets.js`'s marker-writing logic — consistent with that script's existing untested-by-design status (it has zero unit tests today; correctness is proven by running it). Verified instead via the phase-wide Verification section below (local build dry-run, inspect the emitted JSON).
+
+### Implementation Notes (2026-08-25)
+
+Verified against current Freemius docs and the vendored SDK, not only this plan:
+
+- **[Software Licensing](https://freemius.com/help/documentation/wordpress-sdk/integration/software-licensing/) §Managing One Codebase:** if you ignore Freemius's generated free ZIP, "make sure to also integrate the SDK into your free version and set the `is_premium` flag to `false` to indicate that the SDK is running in the scope of the free version." That is code *type* (which ZIP is running), distinct from `can_use_premium_code()` (entitlement). Matches this track's split.
+- **[Integration snippet](https://freemius.com/help/documentation/wordpress-sdk/integration/integration-snippet/) settings:** `is_premium` = "Specify if the product's codebase is the free or premium version"; `has_premium_version` default `false` in the snippet reference; `is_org_compliant` default `true`. Set the first two explicitly (`has_premium_version` true — this product always has a premium sibling) and `is_org_compliant` true for the WP.org lite model.
+- **Vendored SDK** (`class-freemius.php` `dynamic_init`): `is_premium` defaults to **true** if omitted (`get_bool_option(..., 'is_premium', true)`); `has_premium_version` defaults to `has_paid_plans`; `is_org_compliant` defaults to true. Key Decision B (missing marker → premium) matches the SDK, not the old hardcoded `false`.
+- **Snippet warning vs helper.** Freemius says do not pass a *variable* into `fs_dynamic_init()` because *their* preprocessor rewrites a literal `'is_premium' => true|false` when generating the free ZIP. This product does not use that preprocessor (Vite DCE, byte-identical PHP in both ZIPs), so a literal cannot vary between editions. Runtime `fs_dynamic_init($module)` just reads the array. The helper is therefore required, not a violation. Documented on `mullion_freemius_init_args()`.
+- **Stricter than the plan's `(bool) $data['premium']`.** JSON string `"false"` is truthy in PHP. Only a JSON boolean is accepted; anything else falls back to premium. Extra test: `test_non_boolean_premium_falls_back_to_premium`.
+- **Validation.** `php -l` on the three PHP files. `Mullion_Package_Edition_Test` 8/8, `Mullion_License_Test` 14/14. `node scripts/copy-wp-assets.js` wrote `{"premium": true, ...}`; `MULLION_PREMIUM=false node scripts/copy-wp-assets.js` wrote `{"premium": false, ...}`. Marker deleted after the dry-run so the no-marker PHPUnit path stays clean.
 
 ## Track P75-B - Dual-channel release pipeline
 
@@ -416,11 +427,11 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H is the first track implemented — see that track's Implementation Notes. A–G remain planned.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H and P75-A have landed — see those tracks' Implementation Notes. B–G remain planned.
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A/B/C are still code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B/C are still code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
 **The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) landed without designer input. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
