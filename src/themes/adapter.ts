@@ -289,7 +289,7 @@ function generateComponentOverrides(
     Checkbox: {
       styles: () => ({
         input: {
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           '&:checked': {
             backgroundColor: rc.primary[5],
             borderColor: rc.primary[5],
@@ -302,7 +302,7 @@ function generateComponentOverrides(
     Switch: {
       styles: () => ({
         track: {
-          borderColor: rc.border,
+          borderColor: rc.borderStrong,
           backgroundColor: rc.surface2,
         },
         label: { color: rc.text },

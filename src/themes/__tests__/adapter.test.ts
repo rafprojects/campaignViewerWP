@@ -123,24 +123,33 @@ describe('adaptTheme', () => {
     expect(colors['success']).toBe('#56b93e');
   });
 
-  it('uses borderStrong for input-outline roles including NumberInput and ColorInput', () => {
+  it('uses borderStrong for input-outline roles including NumberInput, ColorInput, Checkbox, and Switch', () => {
     const def = makeThemeDef();
     const result = adaptTheme(def);
     const other = result.other as Record<string, unknown>;
     const colors = other['colors'] as Record<string, string>;
-    const inputBorder = (name: string): string | undefined => {
+    const componentBorder = (name: string, part: 'input' | 'track'): string | undefined => {
       const comp = result.components?.[name] as
-        | { styles?: () => { input?: { borderColor?: string } } }
+        | { styles?: () => Record<string, { borderColor?: string }> }
         | undefined;
-      return comp?.styles?.().input?.borderColor;
+      return comp?.styles?.()[part]?.borderColor;
     };
 
-    expect(inputBorder('Input')).toBe(colors['borderStrong']);
-    expect(inputBorder('TextInput')).toBe(colors['borderStrong']);
-    expect(inputBorder('PasswordInput')).toBe(colors['borderStrong']);
-    expect(inputBorder('NumberInput')).toBe(colors['borderStrong']);
-    expect(inputBorder('ColorInput')).toBe(colors['borderStrong']);
+    expect(componentBorder('Input', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('TextInput', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('PasswordInput', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('NumberInput', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('ColorInput', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('Checkbox', 'input')).toBe(colors['borderStrong']);
+    expect(componentBorder('Switch', 'track')).toBe(colors['borderStrong']);
     expect(colors['borderStrong']).not.toBe(colors['border']);
+
+    const checkbox = result.components?.Checkbox as
+      | { styles?: () => { input?: { '&:checked'?: { backgroundColor?: string; borderColor?: string } } } }
+      | undefined;
+    const checked = checkbox?.styles?.().input?.['&:checked'];
+    expect(checked?.backgroundColor).toBe(result.colors?.primary?.[5]);
+    expect(checked?.borderColor).toBe(result.colors?.primary?.[5]);
   });
 
   it('works with a light theme definition', () => {

@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** Planned — no code yet
+**Status:** In progress — P75-H landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P74 PR Review leftovers: P75-G Rig Cyan light companion, P75-H Checkbox/Switch `borderStrong`. `primaryShade` remains P75-F.)
+**Last updated:** 2026-08-25 (P75-H Checkbox/Switch `borderStrong` landed. Remaining: A–G.)
 
 ### Tracks
 
@@ -15,7 +15,7 @@
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
 | P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
-| P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Planned | Small |
+| P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
 
 ---
 
@@ -386,6 +386,13 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 - Focused Vitest on `src/themes/__tests__/adapter.test.ts`.
 - Manual: Settings Panel, a checkbox and a switch on the default theme, unthemed-enough to see the outline against `surface` / `surface2`.
 
+### Implementation Notes (2026-08-25)
+
+- **Verified the leftover against the adapter, not just the plan.** After P74-N and the P74-review NumberInput/ColorInput pass, `Checkbox.input.borderColor` and `Switch.track.borderColor` were still `rc.border`. Chip, Divider, Paper, Accordion, Card, and dropdown chrome stay on `rc.border` — left alone as decorative unless P75-E's spike reclassifies them.
+- **Fix.** Unchecked Checkbox outline and Switch track outline now use `rc.borderStrong` (`#577577` on Rig Cyan). Checkbox `&:checked` fill/border still `rc.primary[5]` — the `primaryShade` swap is P75-E/F, not this track. Switch has no explicit on-state override in this adapter; none was added.
+- **Test.** Extended the P74-review adapter test to cover Checkbox `input` and Switch `track`, plus an assertion that Checkbox checked styles still resolve to `primary[5]` so this track cannot silently retarget the fill.
+- **Validation.** `npx vitest run src/themes/__tests__/adapter.test.ts` — 13 passed. No browser MCP in this session, so the Settings Panel visual check was not run here.
+
 ---
 
 ## Verification (phase-wide)
@@ -409,12 +416,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Not started. This document currently reflects the **plan** only — see the Status header. Implementation cannot begin until Phase 74's P74-K (Freemius slug wiring) lands — every identifier in this document already assumes the post-rename codebase.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-H is the first track implemented — see that track's Implementation Notes. A–G remain planned.
 
 ## Outcome
 
-**Planned, not yet implemented.** P75-A/B/C are code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A/B/C are still code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) does not need the designer. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) landed without designer input. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
